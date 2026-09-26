@@ -18,6 +18,8 @@ use mahayana_host_runtime::extensions::action_audit::extension::{
 use mahayana_host_runtime::extensions::cloud_agents::extension::{
     CloudAgentsExtension, start_cloud_agents_extension,
 };
+use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
+use mahayana_host_runtime::extensions::attachments::extension::start_attachments_extension;
 use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
 use mahayana_host_runtime::extensions::experiments::{
     HostExperimentsExtension, start_host_experiments_extension,
@@ -2848,9 +2850,14 @@ where
 fn dispatch_gateway_call(
     host: &UnifiedAppHost,
     forever_box: &ForeverBoxService,
+    attachments: &AttachmentsService,
     method: &str,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
+    if let Some(result) = attachments.dispatch_gateway(method, &args) {
+        return result.map_err(GatewayCommandError::Internal);
+    }
+
     match host.grok_gateway_call(method, args.clone()) {
         Ok(Some(result)) => return Ok(result),
         Ok(None) => {}
@@ -3033,6 +3040,15 @@ fn main() {
         lifecycle,
         ForeverBoxExtensionOptions::from_process_env(),
     );
+    let attachment_logs = host_telemetry.logs.clone();
+    let attachments_extension = start_attachments_extension(
+        Arc::clone(&production_extensions.auth),
+        Arc::clone(&forever_box),
+        Some(Arc::new(move |diagnostic| {
+            let _ = attachment_logs.report_host_extension_diagnostic(&diagnostic);
+        })),
+    );
+    let attachments_service = attachments_extension.service();
     let secrets_extension = start_secrets_extension(
         Arc::clone(&forever_box),
         Arc::new(|message| eprintln!("mahayana-host-secrets {message}")),
@@ -3364,7 +3380,7 @@ fn main() {
     while let Ok(request) = host_rx.recv() {
         match request {
             HostLaneRequest::Gateway { method, args, reply } => {
-                let _ = reply.send(dispatch_gateway_call(&host, &forever_box, &method, args));
+                let _ = reply.send(dispatch_gateway_call(&host, &forever_box, &attachments_service, &method, args));
             }
             HostLaneRequest::StdinClosed => break,
             HostLaneRequest::Stdin(line) => {

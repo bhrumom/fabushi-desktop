@@ -75,6 +75,14 @@ impl HostStructuredLogTelemetry {
         debug_assert_eq!(projection.event, Some(BOX_HELP_EVENT));
         self.report_projection(&projection)
     }
+
+    pub fn report_host_extension_diagnostic(&self, diagnostic: &Value) -> io::Result<()> {
+        self.sink.emit(&PersistedHostTelemetryRecord {
+            channel: "structured_log".into(),
+            event: "sand.host_extension_diagnostic".into(),
+            payload: diagnostic.clone(),
+        })
+    }
 }
 
 #[derive(Clone)]
