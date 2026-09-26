@@ -37,6 +37,27 @@ fn push_string(field: u64, value: &str, output: &mut Vec<u8>) {
     push_bytes(field, value.as_bytes(), output);
 }
 
+fn push_varint(field: u64, value: u64, output: &mut Vec<u8>) {
+    encode_varint(field << 3, output);
+    encode_varint(value, output);
+}
+
+fn subagent_state_bytes(created: u64, last_used: u64) -> Vec<u8> {
+    let mut state = Vec::new();
+    push_bytes(1, &[], &mut state);
+    push_varint(2, created, &mut state);
+    push_varint(3, last_used, &mut state);
+    push_bytes(4, b"default", &mut state);
+    state
+}
+
+fn map_entry(key: &str, value: &[u8]) -> Vec<u8> {
+    let mut entry = Vec::new();
+    push_string(1, key, &mut entry);
+    push_bytes(2, value, &mut entry);
+    entry
+}
+
 #[test]
 fn production_agent_store_persists_content_addressed_checkpoint_and_resets_from_db() {
     let root = temp_root("checkpoint");
@@ -248,4 +269,95 @@ fn production_agent_store_metadata_key_surface_matches_frozen_agent_store() {
             "blobEncryptionKey",
         ]
     );
+}
+
+
+#[test]
+fn production_agent_store_subagent_refs_override_inline_and_missing_refs_fall_back_inline() {
+    let root = temp_root("subagents");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let session = workers
+        .materialize_session_with_active(None, "user", None, None)
+        .expect("materialized session");
+    let blob_store = workers
+        .create_agent_blob_store(&session.record.id)
+        .expect("blob store");
+
+    let referenced_state = subagent_state_bytes(20, 30);
+    let referenced_id = Sha256::digest(&referenced_state).to_vec();
+    futures::executor::block_on(blob_store.set_blob(
+        &(),
+        &referenced_id,
+        &referenced_state,
+    ))
+    .expect("referenced subagent state");
+
+    let missing_id = vec![0xAB; 32];
+    let mut checkpoint = Vec::new();
+    push_bytes(
+        16,
+        &map_entry("subagent-ref", &subagent_state_bytes(1, 2)),
+        &mut checkpoint,
+    );
+    push_bytes(
+        31,
+        &map_entry("subagent-ref", &referenced_id),
+        &mut checkpoint,
+    );
+    push_bytes(
+        16,
+        &map_entry("subagent-fallback", &subagent_state_bytes(7, 8)),
+        &mut checkpoint,
+    );
+    push_bytes(
+        31,
+        &map_entry("subagent-fallback", &missing_id),
+        &mut checkpoint,
+    );
+    session
+        .agent_store
+        .handle_checkpoint_bytes(&checkpoint)
+        .expect("checkpoint");
+
+    let (_, subagents) = session
+        .agent_store
+        .get_full_conversation_with_subagents()
+        .expect("subagent hydration");
+    assert_eq!(subagents.len(), 2);
+    assert_eq!(subagents["subagent-ref"].created_timestamp_ms, 20);
+    assert_eq!(subagents["subagent-ref"].last_used_timestamp_ms, 30);
+    assert_eq!(subagents["subagent-fallback"].created_timestamp_ms, 7);
+    assert_eq!(subagents["subagent-fallback"].last_used_timestamp_ms, 8);
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn production_agent_store_missing_subagent_ref_without_inline_fails_closed() {
+    let root = temp_root("missing-subagent");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let session = workers
+        .materialize_session_with_active(None, "user", None, None)
+        .expect("materialized session");
+
+    let mut checkpoint = Vec::new();
+    push_bytes(
+        31,
+        &map_entry("subagent-missing", &[0xCD; 32]),
+        &mut checkpoint,
+    );
+    session
+        .agent_store
+        .handle_checkpoint_bytes(&checkpoint)
+        .expect("checkpoint");
+
+    let error = session
+        .agent_store
+        .get_full_conversation_with_subagents()
+        .expect_err("missing ref without inline fallback must fail");
+    assert!(error.contains("subagent state ref blob not found"));
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
 }
