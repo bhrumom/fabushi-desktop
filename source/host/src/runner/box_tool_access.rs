@@ -57,6 +57,16 @@ pub trait RunnerBoxResourcePort: Send + Sync {
         &self,
         request: RunnerBoxWriteRequest,
     ) -> Result<(), ProviderSessionError>;
+
+    /// Resolve the Host-owned browser window assigned to this agent.
+    ///
+    /// The default fails closed so non-desktop box ports do not accidentally
+    /// expose a synthetic display identity.
+    fn browser_window_index(&self) -> Result<u32, ProviderSessionError> {
+        Err(ProviderSessionError::Tool(
+            "Box browser window is not available for this agent".into(),
+        ))
+    }
 }
 
 pub fn runner_box_tool_definitions() -> Vec<RoutedToolDefinition> {
