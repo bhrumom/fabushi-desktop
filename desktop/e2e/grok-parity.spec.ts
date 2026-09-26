@@ -1296,7 +1296,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
         if (status.kind !== 'logged-in') return false;
         const slot = status.authId ?? status.email ?? 'account';
         const encodedSlot = encodeURIComponent(slot).replaceAll('.', '%2E');
-        const raw = await candidate.desktop.agent.clientPersistence.read(\`sand.client.slice.account.\${encodedSlot}.composer-drafts\`);
+        const raw = await candidate.desktop.agent.clientPersistence.read('sand.client.slice.account.' + encodedSlot + '.composer-drafts');
         return raw?.includes('Use the attached note.') === true && raw.includes('agent-notes.txt');
       }), { timeout: 5_000 }).toBe(true);
       await composer.getByRole('button', { name: 'Send message' }).click();
