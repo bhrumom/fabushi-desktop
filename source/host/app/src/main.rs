@@ -223,8 +223,12 @@ use std::sync::{
     Arc, Mutex, mpsc,
     atomic::{AtomicBool, Ordering},
 };
+use signal_hook::consts::signal::{SIGINT, SIGTERM};
+use signal_hook::iterator::Signals;
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+const SHUTDOWN_WATCHDOG_MS: u64 = 5_000;
 
 fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
     // The desktop product owns this fallback workspace.  It must exist before
@@ -232,6 +236,29 @@ fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
     // session.  User-selected workspace paths are validated elsewhere and are
     // never created implicitly.
     fs::create_dir_all(app_data_dir.join("feature-host/runtime/workspace"))
+}
+
+fn install_shutdown_signal_worker(
+    host_tx: mpsc::Sender<HostLaneRequest>,
+    shutdown_complete: Arc<AtomicBool>,
+) -> io::Result<thread::JoinHandle<()>> {
+    let mut signals = Signals::new([SIGTERM, SIGINT])?;
+    Ok(thread::spawn(move || {
+        let Some(signal) = signals.forever().next() else {
+            return;
+        };
+        let label = if signal == SIGTERM { "SIGTERM" } else { "SIGINT" };
+        eprintln!("[sand-host] received {label}, shutting down");
+        let _ = host_tx.send(HostLaneRequest::StdinClosed);
+
+        thread::spawn(move || {
+            thread::sleep(Duration::from_millis(SHUTDOWN_WATCHDOG_MS));
+            if !shutdown_complete.load(Ordering::Acquire) {
+                eprintln!("[sand-host] shutdown watchdog expired");
+                std::process::exit(1);
+            }
+        });
+    }))
 }
 
 
@@ -3519,6 +3546,18 @@ fn main() {
         return;
     }
 
+    let shutdown_complete = Arc::new(AtomicBool::new(false));
+    let _shutdown_signal_worker = match install_shutdown_signal_worker(
+        host_tx.clone(),
+        Arc::clone(&shutdown_complete),
+    ) {
+        Ok(worker) => worker,
+        Err(error) => {
+            eprintln!("failed to install Mahayana Host shutdown signal handlers: {error}");
+            return;
+        }
+    };
+
     production_extensions.notify_bus.mark_background_work_ready();
     let _ = local_tool_permission_extension.background_work_ready();
 
@@ -3636,6 +3675,7 @@ fn main() {
             host_lock_path.display()
         );
     }
+    shutdown_complete.store(true, Ordering::Release);
 }
 
 #[cfg(test)]

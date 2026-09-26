@@ -13,6 +13,7 @@ path = "src/main.rs"
 mahayana-host-runtime = { path = ".." }
 mahayana-unified-app-host = { path = "../../mahayana/mahayana-rs/mahayana-unified-app-host" }
 serde_json = "1"
+signal-hook = "0.3"
 uuid = { version = "1", features = ["v4"] }
 
 [profile.dev]
