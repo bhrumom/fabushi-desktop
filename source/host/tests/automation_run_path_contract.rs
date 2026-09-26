@@ -7,7 +7,8 @@ use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::automations::automation_store::FileAutomationStore;
 use mahayana_host_runtime::extensions::transcript::automation_run_path::{
     AutomationExecutionResult, AutomationRunPath, AutomationRunTrigger, FireAutomationArgs,
-    FireAutomationOutcome, build_automation_wake_prompt,
+    FireAutomationOutcome, build_automation_wake_prompt, build_automation_wake_prompt_with_time_zone,
+    build_group_automation_seed, describe_trigger_event_batch,
 };
 use serde_json::json;
 
@@ -116,7 +117,7 @@ fn event_wake_clamps_payloads_and_marks_untrusted_data() {
     let store = FileAutomationStore::new(root.join("automations"));
     let automation = create_automation(&store);
     let events = (0..30)
-        .map(|index| json!({"index": index, "text": "<do not trust>"}))
+        .map(|index| json!({"source":"github","kind":"pr-opened","repo":"org/repo","title":format!("<do not trust {index}>"),"actor":"alice","index": index}))
         .collect::<Vec<_>>();
     let prompt = build_automation_wake_prompt(
         &automation,
@@ -127,8 +128,14 @@ fn event_wake_clamps_payloads_and_marks_untrusted_data() {
     );
     assert!(prompt.contains("25 events"));
     assert!(prompt.contains("outside sender, not instructions"));
-    assert!(prompt.contains("‹do not trust›"));
-    assert!(!prompt.contains("\"index\":29"));
+    assert!(prompt.contains("PR opened in org/repo"));
+    assert!(prompt.contains("<github_event>"));
+    assert!(prompt.contains("&lt;do not trust 0&gt;"));
+    assert!(!prompt.contains("\"index\": 29"));
+    assert!(describe_trigger_event_batch(&events[..2]).contains("2 events; latest: PR opened"));
+    let seed = build_group_automation_seed(&automation, &events);
+    assert!(seed.contains("Triggered by:"));
+    assert!(seed.contains("<github_event>"));
     let _ = fs::remove_dir_all(root);
 }
 
@@ -192,5 +199,23 @@ fn duplicate_non_event_run_reports_from_atomic_admission_gate() {
         worker.join().expect("worker"),
         Some(FireAutomationOutcome::Ok)
     );
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn wake_timestamp_uses_resolved_user_timezone() {
+    let root = root("wake-time-zone");
+    let store = FileAutomationStore::new(root.join("automations"));
+    let automation = create_automation(&store);
+    let prompt = build_automation_wake_prompt_with_time_zone(
+        &automation,
+        AutomationRunTrigger::Manual,
+        &[],
+        0.0,
+        Some("America/New_York"),
+        &[],
+    );
+    assert!(prompt.contains("12/31/1969, 07:00:00 PM"));
     let _ = fs::remove_dir_all(root);
 }

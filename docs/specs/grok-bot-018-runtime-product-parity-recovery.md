@@ -1324,3 +1324,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Shipping `SandTriggerHub` and `BackendRelaySource` consume these canonical matchers; matching and trigger-foundation contracts cover direct and grouped admission plus store round-trip.
 - This mapping is now final `implemented`. The neighboring `automation.ts` row remains non-final because its frozen system-prompt/wake-batch surface is still incomplete.
 
+### 2026-09-26 canonical automation wake projection
+
+- Starting exact HEAD: `af184f02f51f7f493b8c10a88e54b1dfa50e1462`.
+- Reworked the shipping AutomationRunPath wake projection to consume the finalized canonical trigger helpers instead of serializing generic `<event_data>` blocks. Event runs now use source-specific escaped context blocks and human trigger summaries, preserve the 25-event cap, and provide the frozen group-seed projection.
+- Added a timezone-aware wake-prompt variant; the production fire path resolves the Agent automation store's live user timezone before formatting fired/started timestamps.
+- Contracts now cover source-specific GitHub event context, human batch summaries, untrusted XML escaping, event clamping, group seeds and timezone rendering. The broader frozen `automation.ts` row remains non-final until its routines capability system prompt is production-wired.
+
