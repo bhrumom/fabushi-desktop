@@ -1416,3 +1416,14 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Exact-head Desktop Chat Parity run `36230057523`: Focused Electron chat E2E and Renderer typecheck/build both succeeded.
 - With those gates, `source/host/extensions/memory/agent-state.ts` and both Notifications rows are now final `implemented`. `source/host/runner/tools/sand-state-tool.ts` advances from `planned` to `existing-needs-parity`: remaining work is frozen auto-review/approval semantics for routine/workflow writes, listener post-save integration, full trigger validation, communicate activity projection, and box-path avatar reads.
 - Manifest after this slice: 1,815 implemented / 103 existing-needs-parity / 84 planned (187 not final).
+
+
+### 2026-09-26 browser production wiring
+
+- Browser production-wiring exact HEAD: `51496cb3fcba95b98a06a54ee32905979a62efd8`.
+- The frozen Grok browser driver v2 payload remains JavaScript inside the Rust Runner owner because Playwright/CDP executes inside the box Node runtime. Rust owns upload, per-turn registration, Host resource routing, validation and result projection.
+- Added a narrow Host `RunnerBoxResourcePort::browser_window_index` seam. `ForeverBoxRunnerResourcePort` resolves the real per-agent window only after `ensure_ready(agent_id)`; the default port fails closed.
+- Added `ProductionBrowserToolExecutor`: it uploads the frozen driver through the Host write port, launches it through the Host shell port, redirects its marker output to a box result file, reads/parses that file through the Host read port, and retrieves screenshot bytes through the same port. Runner never owns ForeverBox lifecycle or transport credentials.
+- Shipping `TurnToolset`, `TurnAgentComposition`, `ProductionRunnerCompositionInput` and `source/host/app/src/main.rs` now project this executor into real provider turns.
+- Exact-head Rust runtime run `36232610771`: rust-host job `108378519115` succeeded, including shipping Host compile, full Host Runner cargo tests and subsequent Mahayana contracts. Desktop Chat Parity run `36232610733` succeeded for both Focused Electron chat E2E and Renderer typecheck/build.
+- `sand-browser-driver-source.ts` is final `implemented`. `sand-browser-tools.ts` remains `existing-needs-parity` until frozen browser Auto-review preflight/capture-review-state, navigation-audit callback and screenshot persistImage callback are bound to the shipping executor.
