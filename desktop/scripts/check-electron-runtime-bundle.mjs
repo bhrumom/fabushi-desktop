@@ -24,6 +24,24 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+const coordinatorCarrierPath = path.join(
+  desktopRoot,
+  "dist/node-agent-coordinator/main.cjs",
+);
+const coordinatorCarrier = fs.readFileSync(coordinatorCarrierPath, "utf8");
+if (!coordinatorCarrier.includes("parentPort")) {
+  console.error("Rust Coordinator carrier does not read the utility-process parent port.");
+  process.exit(1);
+}
+if (/require\(["']electron["']\)\.parentPort/.test(coordinatorCarrier)) {
+  console.error("Rust Coordinator carrier incorrectly reads electron.parentPort instead of process.parentPort.");
+  process.exit(1);
+}
+if (!coordinatorCarrier.includes("process.parentPort")) {
+  console.error("Rust Coordinator carrier must read process.parentPort in the emitted bundle.");
+  process.exit(1);
+}
+
 console.log(
   "Desktop runtime artifact graph passed: Electron main, preload, Rust Coordinator carrier, and Renderer are co-staged.",
 );
