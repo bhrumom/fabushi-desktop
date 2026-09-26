@@ -13,8 +13,11 @@ use crate::agents::agent_profile::{
     SandAgentProfile, get_sand_profile_path, read_sand_profile_file, write_sand_profile_file,
 };
 use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_file};
+use crate::automations::automation::{AutomationRecord, AutomationSpec, describe_trigger};
 use crate::extensions::session::channel_store::{FileChannelStore, get_agent_channels_dir};
 use crate::storage::folder_id::is_safe_folder_id;
+use crate::workflows::workflow_library::{WorkflowSpec, get_global_workflows_dir};
+use crate::workflows::workflow_store::FileWorkflowStore;
 use super::memory_service::{
     FileMemoryStore, MemoryKind, get_agent_memory_dir, get_project_dir,
     get_project_memory_shard_dir, get_user_memory_shard_dir, normalize_memory_content,
@@ -48,6 +51,7 @@ pub struct SandAgentState {
     memory: FileMemoryStore,
     membership: AgentProjectMembership,
     channels: FileChannelStore,
+    workflows: FileWorkflowStore,
     now: AgentStateClock,
     on_avatar_changed: Option<AvatarChanged>,
 }
@@ -64,6 +68,7 @@ impl SandAgentState {
             memory: FileMemoryStore::new(get_agent_memory_dir(&agent_dir)),
             membership: AgentProjectMembership::new(&agent_dir),
             channels: FileChannelStore::new(get_agent_channels_dir(&agent_dir)),
+            workflows: FileWorkflowStore::new(&agent_dir, get_global_workflows_dir(&sand_root)),
             agent_id, agent_dir, sand_root,
             now: Arc::new(system_now_ms),
             on_avatar_changed: None,
@@ -94,6 +99,97 @@ impl SandAgentState {
             Ok(true) => StateWriteResult::success(format!("Forgot from {label}: {}", normalize_memory_content(content))),
             Ok(false) => StateWriteResult::failure(format!("no fact with exactly that text is recorded in {label}.")),
             Err(error) => StateWriteResult::failure(format!("could not update {label}: {error}")),
+        }
+    }
+
+
+    pub fn create_automation(&self, spec: &AutomationSpec) -> StateWriteResult {
+        match self.workflows.automations.upsert(spec, (self.now)() as f64) {
+            Ok(Some(record)) => automation_result("Saved", &record),
+            Ok(None) => StateWriteResult::failure(
+                "the routine could not be saved - check its name, instruction, and trigger.",
+            ),
+            Err(error) => StateWriteResult::failure(format!("the routine could not be saved: {error}")),
+        }
+    }
+
+    pub fn update_automation(&self, id: &str, spec: &AutomationSpec) -> StateWriteResult {
+        match self.workflows.automations.update(id, spec) {
+            Ok(Some(record)) => automation_result("Updated", &record),
+            Ok(None) => StateWriteResult::failure(format!(
+                "no routine with folder \"{id}\" exists, or the new fields were invalid."
+            )),
+            Err(error) => StateWriteResult::failure(format!("the routine could not be updated: {error}")),
+        }
+    }
+
+    pub fn set_automation_enabled(&self, id: &str, enabled: bool) -> StateWriteResult {
+        match self.workflows.automations.set_enabled(id, enabled) {
+            Ok(Some(record)) => StateWriteResult::success(format!(
+                "{} routine \"{}\" (folder {}).",
+                if enabled { "Resumed" } else { "Paused" },
+                record.name,
+                record.id
+            )),
+            Ok(None) => StateWriteResult::failure(format!("no routine with folder \"{id}\" exists.")),
+            Err(error) => StateWriteResult::failure(format!("the routine could not be updated: {error}")),
+        }
+    }
+
+    pub fn delete_automation(&self, id: &str) -> StateWriteResult {
+        let name = self.workflows.automations.get(id)
+            .map(|record| record.name)
+            .unwrap_or_else(|| id.to_string());
+        match self.workflows.automations.remove(id) {
+            Ok(true) => StateWriteResult::success(format!("Deleted routine \"{name}\" (folder {id}).")),
+            Ok(false) => StateWriteResult::failure(format!("no routine with folder \"{id}\" exists.")),
+            Err(error) => StateWriteResult::failure(format!("the routine could not be deleted: {error}")),
+        }
+    }
+
+    pub fn write_workflow(
+        &self,
+        id: Option<&str>,
+        name: &str,
+        description: Option<&str>,
+        body: &str,
+    ) -> StateWriteResult {
+        let spec = WorkflowSpec {
+            name: name.to_string(),
+            description: description.unwrap_or_default().to_string(),
+            body: body.to_string(),
+            trigger: None,
+            source_ref: None,
+        };
+        let result = match id {
+            Some(id) => self.workflows.update(id, &spec),
+            None => self.workflows.create(&spec),
+        };
+        match result {
+            Ok(Some(record)) => StateWriteResult::success(format!(
+                "{} workflow \"{}\" (id {}).",
+                if id.is_some() { "Updated" } else { "Saved" },
+                record.name,
+                record.id
+            )),
+            Ok(None) => StateWriteResult::failure(
+                if let Some(id) = id {
+                    format!("no workflow with id \"{id}\" exists, or the new fields were invalid.")
+                } else {
+                    "the workflow could not be saved - a name and non-empty body are required.".to_string()
+                },
+            ),
+            Err(error) => StateWriteResult::failure(format!("the workflow could not be saved: {error}")),
+        }
+    }
+
+    pub fn delete_workflow(&self, id: &str) -> StateWriteResult {
+        match self.workflows.remove(id) {
+            Ok(true) => StateWriteResult::success(format!("Deleted workflow {id}.")),
+            Ok(false) => StateWriteResult::failure(format!(
+                "no workflow with id \"{id}\" exists, or it is managed and cannot be deleted."
+            )),
+            Err(error) => StateWriteResult::failure(format!("the workflow could not be deleted: {error}")),
         }
     }
 
@@ -212,6 +308,17 @@ impl SandAgentState {
             }
         }
     }
+}
+
+
+fn automation_result(verb: &str, record: &AutomationRecord) -> StateWriteResult {
+    StateWriteResult::success(format!(
+        "{verb} routine \"{}\" (folder {}) - {}{}.",
+        record.name,
+        record.id,
+        describe_trigger(&record.trigger),
+        if record.is_enabled { "" } else { ", paused" }
+    ))
 }
 
 fn tier_label(tier: MemoryTier) -> &'static str {
