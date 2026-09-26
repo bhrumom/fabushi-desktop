@@ -10229,7 +10229,7 @@
       "targetPath": "source/host/src/extensions/attachments/attachments_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "007c275ce7a4ac9eeb39c96def1efaae286087c1",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10241,7 +10241,7 @@
         "source/host/tests/attachments_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust AttachmentsService now ports the frozen content-addressed ingest/upload surface, owner/path fencing, image/video/text/chunk reads, 8 MiB chunk cap, 64 KiB text preview and binary detection, image and MP4 dimensions, content-addressed generated-image persistence, safe link metadata/cache/OpenGraph/auth-redirect policy, channel attachment resolution, box staging, video-playback rendition, generated-image factory and the four production Coordinator attachment RPCs. Shipping Host routes uploadAttachment/readAttachmentImage/readAttachmentText/readAttachmentChunk through this service before the compatibility backend. Awaiting exact-HEAD Host contract/build verification before module-level final status."
+      "notes": "Rust AttachmentsService now owns the frozen content-addressed ingest/upload surface, owner/path fencing, image/video/text/chunk reads, byte caps, binary detection, image/MP4 dimensions, generated-image persistence, SSRF-safe link metadata/cache/OpenGraph/auth-redirect policy, channel attachment resolution, box staging, video playback rendition and the four production Coordinator attachment RPCs. Shipping Host routes uploadAttachment/readAttachmentImage/readAttachmentText/readAttachmentChunk through the single service before unrelated compatibility dispatch. Exact HEAD c13b120be01f89f097eb5bb459cb2a6e8bf1edcf: Rust desktop runtime rust-host job 108366096422 passed shipping Host build, full source/host Cargo test suite, prompt attachment projection, Computer takeover and ConversationActor/CapabilityBroker ownership; Desktop Chat Parity run 36228173698 passed both Renderer typecheck/build and Focused Electron chat E2E."
     },
     {
       "referencePath": "source/host/extensions/attachments/box-staging.ts",
@@ -10267,7 +10267,7 @@
       "targetPath": "source/host/src/extensions/attachments/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "666af20680c2acc2ce1b1dc8db77020bb2f98744",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10279,7 +10279,7 @@
         "source/host/tests/attachments_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host extension declares the frozen Attachments id and Auth/ForeverBox/Telemetry dependencies, starts exactly one AttachmentsService after ForeverBox becomes available, reuses the production Host Auth owner and ForeverBox owner, and forwards extension diagnostics into Host structured telemetry. The single service is used by the production Host gateway. Awaiting exact-HEAD Host contract/build verification before module-level final status."
+      "notes": "Rust Host extension declares the frozen Attachments id and Auth/ForeverBox/Telemetry dependencies, starts exactly one AttachmentsService after ForeverBox becomes available, reuses production Host Auth and ForeverBox owners, forwards diagnostics into Host structured telemetry, and is used by the production Host gateway. Exact HEAD c13b120be01f89f097eb5bb459cb2a6e8bf1edcf: Rust desktop runtime rust-host job 108366096422 passed shipping Host build, full source/host Cargo test suite, prompt attachment projection, Computer takeover and ConversationActor/CapabilityBroker ownership; Desktop Chat Parity run 36228173698 passed both Renderer typecheck/build and Focused Electron chat E2E."
     },
     {
       "referencePath": "source/host/extensions/attachments/generate-image-resource-accessor.ts",
@@ -10305,7 +10305,7 @@
       "targetPath": "source/host/src/extensions/attachments/generate_image_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "89647ae8951e29beb5603802c167b3c3fb9f7508",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10322,7 +10322,7 @@
         "source/host/tests/generate_image_cursor_backend_contract.rs",
         "source/host/tests/attachments_service_contract.rs"
       ],
-      "notes": "Rust Host service preserves generated-image base64 decoding, byte persistence, MIME forwarding, returned media path/original base64 and fail-closed persistence semantics. The canonical production backend constructs the frozen aiserver.v1 RunGenerateImage protobuf, uses Host Auth access-token/machine-id, privacy-derived ghost mode and standard Cursor headers, selects SAND_AGENT_MODEL or grok-4.5, forces maxMode, projects reference images, emits the exact x-request-id through an observer and preserves model-restricted errors. The production Attachments extension now owns the factory using the same Host Auth service; exact-HEAD verification of that extension/wiring is still required before final status."
+      "notes": "Rust Host service preserves generated-image base64 decoding, persistence, MIME forwarding, returned media path/original base64 and fail-closed persistence. Its production backend constructs frozen aiserver.v1 RunGenerateImage protobuf, uses Host Auth access-token/machine-id, privacy-derived ghost mode and Cursor headers, SAND_AGENT_MODEL or grok-4.5, maxMode, reference images, exact request-id observation and model-restricted errors. Production Attachments owns the factory with the same Host Auth owner. Exact HEAD c13b120be01f89f097eb5bb459cb2a6e8bf1edcf: Rust desktop runtime rust-host job 108366096422 passed shipping Host build, full source/host Cargo test suite, prompt attachment projection, Computer takeover and ConversationActor/CapabilityBroker ownership; Desktop Chat Parity run 36228173698 passed both Renderer typecheck/build and Focused Electron chat E2E."
     },
     {
       "referencePath": "source/host/extensions/attachments/link-preview-image-bounds.ts",
@@ -15823,7 +15823,7 @@
       "targetPath": "source/host/src/gateway_protocol.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "c439e282a7d0fb074f5bd39121f72dc7cfbf5a77",
       "architecturalRole": "host/gateway-protocol",
       "processOrPackage": "mahayana-host",
@@ -15836,7 +15836,7 @@
         "source/host/tests/gateway_server_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "The frozen Grok gateway command inventory, empty-body/JSON parsing, prepare-upgrade path, and slim-avatar command/event transforms now live in a dedicated Rust Host protocol module. The shipping GatewayServer imports and executes these functions; Fabushi-only extension commands remain explicitly separated at the server boundary. Final is withheld until exact-HEAD Host verification succeeds and legacy Host compatibility dispatch is no longer required."
+      "notes": "Dedicated Rust Host protocol owns the frozen command inventory, command-body parsing, /prepare-upgrade path, slim-avatar command results and event transforms; shipping GatewayServer imports and executes these owners. The immutable Grok 0.18 inventory was audited item-for-item against GROK_GATEWAY_COMMANDS: 122/122 methods, zero missing and zero extra. Fabushi-only extension commands remain explicitly separate at the server boundary. Exact HEAD c13b120be01f89f097eb5bb459cb2a6e8bf1edcf: Rust desktop runtime rust-host job 108366096422 passed shipping Host build, full source/host Cargo test suite, prompt attachment projection, Computer takeover and ConversationActor/CapabilityBroker ownership; Desktop Chat Parity run 36228173698 passed both Renderer typecheck/build and Focused Electron chat E2E."
     },
     {
       "referencePath": "source/host/gateway-server.ts",
@@ -38745,5 +38745,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-26T07:42:00Z"
+  "generatedAt": "2026-09-26T07:59:00Z"
 }
