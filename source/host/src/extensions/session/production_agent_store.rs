@@ -8,10 +8,14 @@ use crate::agent_isolation::{
     ProductionAgentStoreWorkerBackend, WorkerBlobStore,
 };
 use crate::transcript_mirror::conversation_state_binary::{
-    decode_conversation_state_recovery_fields,
+    ConversationTurnStructureFields, decode_conversation_state_recovery_fields,
+    decode_conversation_turn_structure_fields,
 };
 
 use super::agent_db::{AgentDbSubscription, SandAgentDb};
+use super::session_conversation_state::{
+    ResolvedConversationState, SessionConversationState,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProductionAgentMetadataKey {
@@ -135,6 +139,46 @@ impl ProductionAgentStore {
             .flatten()
             .and_then(|value| value.as_str().map(ToOwned::to_owned))
             .unwrap_or_else(|| self.agent_id.clone())
+    }
+
+    /// Frozen AgentStore2.getLastRequestIdFromConversation semantics. Missing
+    /// turn blobs are skipped and the newest agent turn with a request id wins.
+    pub fn get_last_request_id_from_conversation(&self) -> Result<Option<String>, String> {
+        let checkpoint = self.latest_checkpoint_bytes().unwrap_or_default();
+        let structure = decode_conversation_state_recovery_fields(&checkpoint)
+            .map_err(|error| format!("invalid ConversationStateStructure checkpoint: {error}"))?;
+        for turn_id in structure.turns.iter().rev() {
+            let Some(turn_blob) = self.get_blob(turn_id)? else {
+                continue;
+            };
+            if let Some(ConversationTurnStructureFields::Agent { request_id, .. }) =
+                decode_conversation_turn_structure_fields(&turn_blob)
+                    .map_err(|error| format!("invalid ConversationTurnStructure blob: {error}"))?
+            {
+                return Ok(request_id);
+            }
+        }
+        Ok(None)
+    }
+
+    /// Shipping equivalent of AgentStore2.getFullConversation. Resolution stays
+    /// on the production SessionConversationState owner so checkpoint, transcript
+    /// and UI reads share one blob/database interpretation.
+    pub fn get_full_conversation(&self) -> Result<ResolvedConversationState, String> {
+        let resolver = SessionConversationState::new(self.db.busy_timeout_ms());
+        resolver
+            .read_agent_conversation_state(
+                Arc::clone(&self.blob_store.pool),
+                &self.agent_id,
+                self.db.db_path(),
+                &self.blob_db_path,
+            )
+            .map(|state| state.unwrap_or(ResolvedConversationState {
+                turns: Vec::new(),
+                todos: Vec::new(),
+                summary: None,
+            }))
+            .map_err(|error| error.to_string())
     }
 
     /// Frozen AgentStore2.tryResetFromDb semantics: bad metadata, missing blob,
