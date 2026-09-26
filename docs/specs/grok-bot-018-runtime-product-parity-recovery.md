@@ -1301,3 +1301,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - From exact HEAD `1bdb19535587086c82117e3fe21cfcc7fb3c0a7e`, ported the frozen desktop-health normalization/aggregation/forwarding decision boundary into Rust Host.
 - The owner validates component scopes/kinds, normalizes bounded down reasons and restart counts, preserves first-seen duplicate merge order, computes healthy/degraded/crashloop metadata, and forwards on revision change or heartbeat with absent/parse/skipped/emitted settlement.
 - `desktop_health_forwarder_contract.rs` covers normalization, duplicate merge, invalid snapshots, metadata, heartbeat/revision decisions and forwarding state. The row remains `existing-needs-parity` until the production Host health-file reader and telemetry emitter are composed against it.
+
+### 2026-09-25 automation-store final watcher cutover
+
+- Starting exact HEAD: `0acbbe87bfe8985dd4369d97da5dfc79adf7089e`.
+- `FileAutomationStore` now uses the Host-owned native `WatchedDirectory` for its root, atomic config/run writes, external filesystem edits, debounced callbacks and removal notifications instead of the prior callback-only shim.
+- Authored cron schedules are normalized before durable storage, and the frozen definition-only `recordRunDefinition` / `finishRunDefinition` paths are present so cloud/backend reconciliation can mutate run state without synthesizing `nextRunAt`.
+- The automation-store contract now exercises internal atomic notifications, direct external file edits, schedule normalization and definition-only next-run suppression. Together with the existing timezone/cron/trigger/run-history coverage and shipping Session factory wiring, the frozen `automation-store.ts` manifest row is final `implemented`.
+

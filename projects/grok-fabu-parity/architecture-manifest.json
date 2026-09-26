@@ -9560,28 +9560,22 @@
       "targetPath": "source/host/src/automations/automation_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "42ed543bc56706f0533c93daf35557771ec325ab",
       "architecturalRole": "host/automations",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/automations/automation_store.rs",
-        "source/host/src/extensions/session/session_store_factories.rs",
-        "source/host/src/extensions/session/production.rs",
-        "source/host/src/extensions/session/session_roster.rs",
+        "source/host/src/watched_directory.rs",
         "source/host/src/automations/automation_schedule.rs",
-        "source/host/src/extensions/settings/settings_service.rs",
-        "source/host/app/src/main.rs"
+        "source/host/src/extensions/session/session_store_factories.rs"
       ],
       "testEvidence": [
         "source/host/tests/automation_store_contract.rs",
-        "source/host/tests/session_store_factories_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/automation_schedule_contract.rs",
-        "source/host/tests/settings_service_contract.rs"
+        "source/host/tests/watched_directory_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust FileAutomationStore owns on-disk automation.json/runs.json parsing, validation, atomic CRUD, unique ids, enablement, notices and bounded run history. Shipping Session creates it through the dbPath factory. Timezone-aware nextRunAt now covers frozen @every/cron/alias/CRON_TZ behavior and consumes the live SettingsService resolver; list/get derive next-run while listDefinitions does not. Final remains withheld for frozen filesystem watcher/debounce semantics and any remaining schedule edge-case parity."
+      "notes": "Final Rust port: FileAutomationStore now owns the same native WatchedDirectory/debounced subscription boundary as frozen Grok, routes config/runs atomic writes through that owner, observes external filesystem edits, schedules removal notifications, normalizes authored cron schedules, preserves timezone-aware nextRunAt, and exposes definition-only record/finish mutations that suppress next-run derivation. Shipping Session factories construct this implementation with the live Settings timezone resolver."
     },
     {
       "referencePath": "source/host/automations/automation-trigger.ts",
