@@ -243,3 +243,33 @@ fn preparatory_action_is_fenced_and_scope_retirement_is_observable() {
     assert_eq!(retired.lock().expect("retired").as_slice(), &["approval-prep"]);
     let _ = fs::remove_file(path);
 }
+
+
+#[test]
+fn standing_grant_with_implicit_epoch_does_not_reenter_state_lock() {
+    let path = temp_settings("implicit-epoch");
+    let settings = Arc::new(SettingsService::new(path.clone()));
+    let controller = SandLocalToolPermissionController::with_options(
+        Arc::clone(&settings),
+        100,
+        Arc::new(|| 1),
+        Arc::new(|| "unused".to_string()),
+    );
+    controller.begin_turn("agent-lock");
+    settings
+        .set_local_tool_permission(SandLocalToolPermission::Always)
+        .expect("always");
+    controller.note_permission_changed();
+    let scope = SandLocalToolScope {
+        agent_id: "agent-lock".into(),
+        tool_call_id: Some("tool".into()),
+        action: Some("read-file".into()),
+        direction_epoch: None,
+    };
+    assert!(
+        controller
+            .authorize(Some(&scope), &SandLocalToolRequest::simple("read-file", "/tmp/a"))
+            .allowed
+    );
+    let _ = fs::remove_file(path);
+}

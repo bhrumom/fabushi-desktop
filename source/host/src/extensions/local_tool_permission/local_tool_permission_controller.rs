@@ -776,11 +776,12 @@ impl SandLocalToolPermissionController {
     }
 
     fn predates_standing_grant(&self, scope: &SandLocalToolScope) -> bool {
+        let epoch = self.scope_epoch(scope);
         let state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         state
             .always_granted_at_epoch
             .get(&scope.agent_id)
-            .is_some_and(|granted_at| self.scope_epoch(scope) < *granted_at)
+            .is_some_and(|granted_at| epoch < *granted_at)
     }
 
     fn refusal_for(
