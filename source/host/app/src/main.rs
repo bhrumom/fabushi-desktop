@@ -10,6 +10,12 @@ use mahayana_host_runtime::extensions::action_audit::action_audit_service::{Audi
 use mahayana_host_runtime::extensions::action_audit::extension::ActionAuditExtension;
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
 use mahayana_host_runtime::extensions::attachments::extension::start_attachments_extension;
+use mahayana_host_runtime::extensions::auto_review::auto_review_service::AutoReviewService;
+use mahayana_host_runtime::extensions::auto_review::extension::{
+    HostAutoReviewExtension, no_op_auto_review_telemetry_sink,
+    no_op_auto_review_update_sink, start_auto_review_extension,
+};
+use mahayana_host_runtime::runner::sand_auto_review::SandAutoReviewResolution;
 use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
 use mahayana_host_runtime::production_binding_providers::production_secrets_log;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
@@ -654,6 +660,7 @@ struct UnifiedGatewayApi {
     cloud_agents: Arc<SandCloudAgentManager>,
     secrets: Arc<HostSecretsExtension>,
     local_tool_permission: Arc<HostLocalToolPermissionExtension>,
+    auto_review: Arc<HostAutoReviewExtension>,
     host_runner_composition: Arc<HostRunnerComposition>,
 }
 
@@ -2629,6 +2636,60 @@ impl GatewayApi for UnifiedGatewayApi {
             drop(send_ack_guard);
             return send_result.map_err(map_production_send_error);
         }
+        if method == "resolveAutoReviewApproval" {
+            let agent_id = args
+                .get("agentId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "resolveAutoReviewApproval requires agentId".into(),
+                ))?;
+            let entry_id = args
+                .get("entryId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "resolveAutoReviewApproval requires entryId".into(),
+                ))?;
+            let request_id = args
+                .get("requestId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "resolveAutoReviewApproval requires requestId".into(),
+                ))?;
+            let resolution = match args
+                .get("resolution")
+                .and_then(serde_json::Value::as_str)
+            {
+                Some("approved") => SandAutoReviewResolution::Approved,
+                Some("denied") => SandAutoReviewResolution::Denied,
+                _ => {
+                    return Err(GatewayCommandError::BadRequest(
+                        "resolveAutoReviewApproval requires approved or denied resolution".into(),
+                    ));
+                }
+            };
+            self.auto_review
+                .service()
+                .resolve_approval_for_entry(
+                    request_id,
+                    resolution,
+                    agent_id,
+                    entry_id,
+                )
+                .map_err(|error| {
+                    if error.contains("SAND_AUTO_REVIEW_STALE") {
+                        GatewayCommandError::BadRequest(error)
+                    } else {
+                        GatewayCommandError::Internal(error)
+                    }
+                })?;
+            return Ok(serde_json::Value::Null);
+        }
         if method == "resolveLocalToolPermission" {
             let agent_id = args
                 .get("agentId")
@@ -3123,6 +3184,14 @@ fn main() {
     );
     let session_workers = session_extension.store();
     let session_handoff = session_extension.handoff_service();
+    let auto_review_extension = Arc::new(start_auto_review_extension(
+        Arc::clone(&session_workers),
+        Arc::clone(&production_extensions.experiments),
+        Arc::clone(&settings_extension),
+        format!("host-{}", uuid::Uuid::new_v4()),
+        no_op_auto_review_update_sink(),
+        no_op_auto_review_telemetry_sink(),
+    ));
     let transcript_event_hub = gateway_events.clone();
     let transcript_extension = start_transcript_extension(
         &app_data_dir,
@@ -3320,6 +3389,7 @@ fn main() {
             cloud_agents: production_extensions.cloud_agents.service(),
             secrets: Arc::clone(&secrets_extension),
             local_tool_permission: Arc::clone(&local_tool_permission_extension),
+            auto_review: Arc::clone(&auto_review_extension),
             host_runner_composition: Arc::clone(&host_runner_composition),
         });
     let gateway_server = match start_gateway_server(GatewayServerDeps {
