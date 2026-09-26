@@ -58,6 +58,8 @@ jobs:
         run: node scripts/check-agent-workspace-boundary.mjs
       - run: npm run typecheck
       - run: npm run build:renderer
+      - name: Verify co-staged desktop runtime
+        run: npm run check:desktop-runtime
       - name: Enforce built desktop bundle boundary
         run: node scripts/check-desktop-bundle.mjs
 
@@ -127,6 +129,8 @@ jobs:
       - name: Build deterministic Mahayana test host
         run: npm run build:host:ci
       - run: npm run build:renderer
+      - name: Verify co-staged desktop runtime
+        run: npm run check:desktop-runtime
       - name: Enforce built desktop bundle boundary
         run: node scripts/check-desktop-bundle.mjs
       - name: Run Grok Agent shell and Mahayana chat regression
