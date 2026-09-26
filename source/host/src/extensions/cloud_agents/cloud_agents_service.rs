@@ -1249,7 +1249,7 @@ impl SandCloudAgentManager {
             bc_id: id.to_string(),
             status: map_run_status(composer.status).to_string(),
             name: composer.name,
-            prompt: detailed.prompt.map(|prompt| prompt.text).unwrap_or_default(),
+            prompt: detailed.prompt.as_ref().map(|prompt| prompt.text.clone()).unwrap_or_default(),
             branch_name: resolve_branch_name(&detailed),
             pr_url: pr.url,
             pr_state: live_pr_state.unwrap_or(pr.state),
