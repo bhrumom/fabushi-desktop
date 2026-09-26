@@ -1,12 +1,17 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
+use mahayana_host_runtime::runner::box_tool_access::{
+    RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest,
+    RunnerBoxWriteRequest,
+};
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BOX_CDP_PORT_BASE, BrowserDriverOutput, BrowserEnvelope, BrowserToolExecutor,
-    BrowserToolSpec, SandBrowserToolBridge, browser_tool_specs,
+    BrowserToolSpec, ProductionBrowserToolExecutor, SandBrowserToolBridge,
+    browser_tool_specs,
     build_browser_driver_invocation, decode_envelope, encode_envelope,
     parse_driver_response, sanitize_for_box_path, stash_screenshot,
     take_stashed_screenshot, to_browser_review_action,
@@ -33,6 +38,59 @@ impl RoutedToolBridge for BaseBridge {
         _tool_call_id: &str,
     ) -> Result<Value, ProviderSessionError> {
         Ok(Value::String("delegated".into()))
+    }
+}
+
+#[derive(Default)]
+struct ProductionBoxPort {
+    shells: Mutex<Vec<RunnerBoxShellRequest>>,
+    reads: Mutex<Vec<RunnerBoxReadRequest>>,
+    writes: Mutex<Vec<RunnerBoxWriteRequest>>,
+}
+
+impl RunnerBoxResourcePort for ProductionBoxPort {
+    fn execute_shell(
+        &self,
+        request: RunnerBoxShellRequest,
+    ) -> Result<Value, ProviderSessionError> {
+        self.shells.lock().expect("shells").push(request);
+        Ok(json!({"kind":"success","exitCode":0,"stderr":""}))
+    }
+
+    fn execute_read(
+        &self,
+        request: RunnerBoxReadRequest,
+    ) -> Result<Value, ProviderSessionError> {
+        let path = request.path.clone();
+        self.reads.lock().expect("reads").push(request);
+        if path.contains("/result-") {
+            return Ok(json!({
+                "kind":"success",
+                "output":{
+                    "kind":"content",
+                    "content":"driver log\n__SAND_BROWSER_RESULT__{\"ok\":true,\"summary\":\"Opened page\",\"url\":\"https://example.com\",\"title\":\"Example\",\"screenshot\":true}\n"
+                }
+            }));
+        }
+        if path.ends_with(".png") {
+            return Ok(json!({
+                "kind":"success",
+                "output":{"kind":"data","data":[137,80,78,71]}
+            }));
+        }
+        Ok(json!({"kind":"fileNotFound","path":path}))
+    }
+
+    fn execute_write(
+        &self,
+        request: RunnerBoxWriteRequest,
+    ) -> Result<(), ProviderSessionError> {
+        self.writes.lock().expect("writes").push(request);
+        Ok(())
+    }
+
+    fn browser_window_index(&self) -> Result<u32, ProviderSessionError> {
+        Ok(4)
     }
 }
 
@@ -186,4 +244,47 @@ fn screenshot_cache_returns_stashed_image_once() {
     let key = stash_screenshot("aW1hZ2U=");
     assert_eq!(take_stashed_screenshot(&key).as_deref(), Some("aW1hZ2U="));
     assert!(take_stashed_screenshot(&key).is_none());
+}
+
+
+#[test]
+fn production_browser_executor_uses_only_host_box_port() {
+    let port = Arc::new(ProductionBoxPort::default());
+    let resources: Arc<dyn RunnerBoxResourcePort> = port.clone();
+    let executor = ProductionBrowserToolExecutor::new(resources, "agent-browser");
+    let spec = browser_tool_specs()
+        .into_iter()
+        .find(|spec| spec.name == "browser_navigate")
+        .expect("navigate spec");
+    let args = json!({"url":"https://example.com"});
+    let output = executor
+        .execute(
+            &spec,
+            args.as_object().expect("args"),
+            "browser/call:1",
+        )
+        .expect("browser output");
+
+    assert!(!output.is_error);
+    assert!(output.text.contains("Opened page"));
+    assert!(output.text.contains("https://example.com"));
+    assert!(output.image_b64.as_deref().is_some_and(|value| !value.is_empty()));
+
+    let writes = port.writes.lock().expect("writes");
+    assert_eq!(writes.len(), 1);
+    assert_eq!(writes[0].path, "/tmp/.sand-browser/driver-v2.mjs");
+    assert!(writes[0].data.len() > 35_000);
+    drop(writes);
+
+    let shells = port.shells.lock().expect("shells");
+    assert!(shells.iter().any(|request| request.command.contains("mkdir -p /tmp/.sand-browser")));
+    assert!(shells.iter().any(|request| {
+        request.command.contains("node /tmp/.sand-browser/driver-v2.mjs")
+            && request.command.contains("result-browsercall1.txt")
+    }));
+    drop(shells);
+
+    let reads = port.reads.lock().expect("reads");
+    assert!(reads.iter().any(|request| request.path.contains("result-browsercall1.txt")));
+    assert!(reads.iter().any(|request| request.path.ends_with("shot-browsercall1.png")));
 }
