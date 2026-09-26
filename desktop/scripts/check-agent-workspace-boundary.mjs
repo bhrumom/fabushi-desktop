@@ -84,9 +84,14 @@ requirePattern(
   /<script\s+type=["']module["']\s+src=["']\.\.\/frontend\/src\/main\.tsx["']/,
 );
 requirePattern(
+  "Renderer entry must import ProductionRenderer",
+  rendererEntry,
+  /import\s+\{\s*ProductionRenderer\s*\}\s+from\s+["']\.\/production\/ProductionRenderer["']/,
+);
+requirePattern(
   "Renderer entry must mount ProductionRenderer",
   rendererEntry,
-  /import\s+\{\s*ProductionRenderer\s*\}[\s\S]{0,500}<ProductionRenderer\b/,
+  /<ProductionRenderer\b/,
 );
 requirePattern(
   "Production Renderer must consume the Grok conversation composer",
@@ -172,9 +177,14 @@ requirePattern(
   /process\.parentPort/,
 );
 requirePattern(
-  "Rust Coordinator carrier must spawn the independent Coordinator binary",
+  "Rust Coordinator carrier must resolve the independent Coordinator binary",
   coordinatorCarrier,
-  /spawn\s*\([\s\S]{0,500}mahayana-node-agent-coordinator/,
+  /mahayana-node-agent-coordinator/,
+);
+requirePattern(
+  "Rust Coordinator carrier must spawn the resolved Coordinator executable",
+  coordinatorCarrier,
+  /spawn\s*\(\s*coordinatorExecutablePath\(\)/,
 );
 forbidPattern(
   "Rust Coordinator carrier must not import Host/Runner implementation",
