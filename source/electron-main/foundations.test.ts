@@ -24,6 +24,7 @@ import { resolveDefaultDownloadDir, resolveDefaultDownloadPath, resolveSuggested
 import { assertTrustedClientPersistenceSender, assertTrustedSecretsSender, isTrustedSecretsSender, UntrustedClientPersistenceSenderError, UntrustedSecretsSenderError } from "./secrets/secrets-ipc-guard.js";
 import { createIdleRelaunchSignals, isScreensaverRunning } from "./update/idle-relaunch-signals.js";
 import { createDesktopAccountAuthorizer } from "./account/account-authorization.js";
+import { resolveAccountOAuthE2eOverrides } from "./adapters/account-oauth.js";
 import { createSandRecreateCommands, type RecreateOperationId } from "./box/box-recreate-commands.js";
 import { createDesktopHostSettingsFields } from "./prefs/host-settings-fields.js";
 import { createReleaseMetadata } from "./update/release-metadata.js";
@@ -301,6 +302,38 @@ test("account authorization scopes durable state only after approval", async () 
   assert.match(scoped ?? "", /^[0-9a-f]{64}$/);
   assert.equal(abandoned, 1);
   assert.equal(authorizeCalls.length, 2);
+});
+
+
+test("focused Electron auth replaces only the interactive OAuth leg", async () => {
+  assert.equal(resolveAccountOAuthE2eOverrides({}), undefined);
+
+  const overrides = resolveAccountOAuthE2eOverrides({ FABUSHI_E2E: "1" });
+  assert.ok(overrides);
+  assert.equal(overrides.sentryEnabled, false);
+  assert.equal(typeof overrides.openExternal, "function");
+  assert.equal(typeof overrides.serviceOptions?.createLoginManager, "function");
+
+  const manager = overrides.serviceOptions!.createLoginManager!();
+  const started = manager.startLogin();
+  assert.equal(started.loginUrl, "about:blank#fabushi-e2e-account-login");
+  const tokens = await manager.waitForResult(started.metadata);
+  assert.ok(tokens);
+  assert.equal(tokens!.accessToken, tokens!.refreshToken);
+
+  const [, payload] = tokens!.accessToken.split(".");
+  assert.ok(payload);
+  const claims = JSON.parse(Buffer.from(payload!, "base64url").toString("utf8"));
+  assert.equal(claims.sub, "fabushi-e2e-account");
+  assert.equal(claims.email, "e2e@fabushi.local");
+  assert.ok(Number(claims.exp) * 1_000 > Date.now() + 365 * 24 * 60 * 60 * 1_000);
+
+  assert.deepEqual(await overrides.fetchProfile!(() => Promise.resolve(tokens!.accessToken)), {
+    email: "e2e@fabushi.local",
+    displayName: "Fabushi E2E",
+    isAnysphereUser: false,
+  });
+  assert.equal(await overrides.fetchLocalToolPermissionCeiling!(() => Promise.resolve(tokens!.accessToken)), undefined);
 });
 
 test("box recreate commands preserve tracked, untrackable, fallback and rejected outcomes", async () => {
