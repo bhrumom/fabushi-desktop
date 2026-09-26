@@ -3,7 +3,7 @@ use std::fs;
 use std::io::{BufRead, BufReader};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::{Child, ChildStdin, Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -95,6 +95,7 @@ pub fn box_exec_daemon_binary_name() -> &'static str {
 #[derive(Debug)]
 pub struct OwnedBoxExecDaemon {
     child: Option<Child>,
+    parent_pipe: Option<ChildStdin>,
     pub pid: u32,
     pub executable_path: PathBuf,
     host: String,
@@ -108,14 +109,24 @@ impl OwnedBoxExecDaemon {
     }
 
     fn close_inner(&mut self, strict: bool) -> Result<(), String> {
+        // The managed daemon treats EOF on this pipe as parent death. Dropping
+        // it first gives normal Host shutdown the same path as an abrupt Host
+        // crash, so the daemon cannot survive a generation replacement.
+        self.parent_pipe.take();
         let Some(mut child) = self.child.take() else {
             return Ok(());
         };
-        let forced = terminate_child(
-            &mut child,
-            self.pid,
-            Duration::from_millis(self.stop_timeout_ms),
-        )?;
+        let eof_grace = Duration::from_millis(self.stop_timeout_ms.min(1_000));
+        let exited_on_parent_disconnect = wait_for_child_exit(&mut child, eof_grace)?;
+        let forced = if exited_on_parent_disconnect {
+            false
+        } else {
+            terminate_child(
+                &mut child,
+                self.pid,
+                Duration::from_millis(self.stop_timeout_ms),
+            )?
+        };
         if port_accepts_connections(&self.host, self.port, Duration::from_millis(300))? {
             return Err(format!(
                 "box exec-daemon shutdown left {}:{} bound",
@@ -198,7 +209,8 @@ pub fn start_box_exec_daemon_process(
         .env("SAND_BOX_EXEC_DAEMON_AUTH_TOKEN", &options.auth_token)
         .env("SAND_BOX_WORKSPACE_ROOT", &options.workspace_root)
         .env("SAND_BOX_TERMINALS_DIRECTORY", &options.terminals_directory)
-        .stdin(Stdio::null())
+        .env("SAND_BOX_PARENT_PIPE", "1")
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
@@ -209,6 +221,14 @@ pub fn start_box_exec_daemon_process(
         )
     })?;
     let pid = child.id();
+    let parent_pipe = match child.stdin.take() {
+        Some(parent_pipe) => parent_pipe,
+        None => {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err("managed box exec-daemon did not expose its parent-lifetime pipe".into());
+        }
+    };
     if let Some(stdout) = child.stdout.take() {
         spawn_log_reader(stdout, false);
     }
@@ -255,6 +275,7 @@ pub fn start_box_exec_daemon_process(
     };
 
     if let Err(error) = readiness {
+        drop(parent_pipe);
         let _ = terminate_child(
             &mut child,
             pid,
@@ -265,6 +286,7 @@ pub fn start_box_exec_daemon_process(
 
     Ok(OwnedBoxExecDaemon {
         child: Some(child),
+        parent_pipe: Some(parent_pipe),
         pid,
         executable_path: options.executable_path,
         host: options.host,
@@ -305,6 +327,19 @@ fn env_flag(name: &str) -> bool {
         .ok()
         .map(|value| value.trim().to_ascii_lowercase())
         .is_some_and(|value| matches!(value.as_str(), "1" | "true" | "yes" | "on"))
+}
+
+fn wait_for_child_exit(child: &mut Child, timeout: Duration) -> Result<bool, String> {
+    let deadline = Instant::now() + timeout;
+    loop {
+        if child.try_wait().map_err(|error| error.to_string())?.is_some() {
+            return Ok(true);
+        }
+        if Instant::now() >= deadline {
+            return Ok(false);
+        }
+        thread::sleep(Duration::from_millis(25));
+    }
 }
 
 fn terminate_child(
