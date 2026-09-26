@@ -480,6 +480,87 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
   };
 }
 
+function isProjectedUserAttachmentMessage(
+  entry: ProductionTranscriptEntry,
+): entry is ProjectedUserAttachmentMessage {
+  return entry.kind === "message"
+    && "sourceKind" in entry
+    && entry.sourceKind === "user-attachment";
+}
+
+function mergeProjectedAttachments(
+  left: readonly DraftAttachment[] | undefined,
+  right: readonly DraftAttachment[],
+): DraftAttachment[] {
+  const merged: DraftAttachment[] = [];
+  const seen = new Set<string>();
+  for (const attachment of [...(left ?? []), ...right]) {
+    const key = attachment.path;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(attachment);
+  }
+  return merged;
+}
+
+/**
+ * Host persistence stores one immutable user-attachment row per file followed
+ * by the addressed user message, all under the same client nonce. The Grok
+ * conversation surface renders that send as one user turn. Collapse those
+ * durable rows at the renderer projection boundary so snapshots, pagination,
+ * restart replay, and live optimistic reconciliation share the same shape.
+ */
+export function coalesceProjectedUserAttachmentTurns(
+  entries: readonly ProductionTranscriptEntry[],
+): ProductionTranscriptEntry[] {
+  const attachmentGroups = new Map<string, DraftAttachment[]>();
+  const ordinaryUserMessageNonces = new Set<string>();
+  const firstAttachmentEntryByNonce = new Map<string, ProjectedUserAttachmentMessage>();
+
+  for (const entry of entries) {
+    if (entry.kind !== "message" || entry.role !== "user" || entry.clientNonce == null || entry.clientNonce.length === 0) continue;
+    if (isProjectedUserAttachmentMessage(entry)) {
+      const attachments = attachmentGroups.get(entry.clientNonce) ?? [];
+      attachmentGroups.set(
+        entry.clientNonce,
+        mergeProjectedAttachments(attachments, entry.attachments),
+      );
+      if (!firstAttachmentEntryByNonce.has(entry.clientNonce)) {
+        firstAttachmentEntryByNonce.set(entry.clientNonce, entry);
+      }
+      continue;
+    }
+    ordinaryUserMessageNonces.add(entry.clientNonce);
+  }
+
+  if (attachmentGroups.size === 0) return [...entries];
+
+  const emittedAttachmentOnly = new Set<string>();
+  return entries.flatMap((entry) => {
+    if (entry.kind !== "message" || entry.role !== "user" || entry.clientNonce == null || entry.clientNonce.length === 0) {
+      return [entry];
+    }
+    const attachments = attachmentGroups.get(entry.clientNonce);
+    if (attachments == null || attachments.length === 0) return [entry];
+
+    if (isProjectedUserAttachmentMessage(entry)) {
+      if (ordinaryUserMessageNonces.has(entry.clientNonce)) return [];
+      if (emittedAttachmentOnly.has(entry.clientNonce)) return [];
+      emittedAttachmentOnly.add(entry.clientNonce);
+      const anchor = firstAttachmentEntryByNonce.get(entry.clientNonce) ?? entry;
+      return [{
+        ...anchor,
+        attachments: mergeProjectedAttachments(anchor.attachments, attachments),
+      }];
+    }
+
+    return [{
+      ...entry,
+      attachments: mergeProjectedAttachments(entry.attachments, attachments),
+    }];
+  });
+}
+
 /**
  * Projects the immutable transcript-feed snapshot through the same entry
  * boundary as tail pages and appended events. Invalid rows are dropped while
@@ -490,10 +571,10 @@ export function projectTranscriptFeedEntries(
   agentName: string,
   agentId: string,
 ): ProductionTranscriptEntry[] {
-  return values.flatMap((value, index) => {
+  return coalesceProjectedUserAttachmentTurns(values.flatMap((value, index) => {
     const projected = projectTranscriptEntry(value, index, agentName, agentId);
     return projected == null ? [] : [projected];
-  });
+  }));
 }
 
 export interface ProjectedTranscriptPage {
@@ -516,14 +597,14 @@ function projectThreadSummaries(value: unknown): TranscriptThreadSummary[] | und
 
 export function projectTranscriptPageResult(value: unknown, agentName: string, agentId?: string | null): ProjectedTranscriptPage {
   if (!isRecord(value) || !Array.isArray(value.entries)) return { entries: [] };
-  const entries = value.entries
+  const entries = coalesceProjectedUserAttachmentTurns(value.entries
     .map((entry, index) => projectTranscriptEntry(entry, index, agentName, agentId))
     .filter((entry): entry is ProductionTranscriptEntry => entry != null)
     .map((entry) => {
       if (entry.kind !== "message" || entry.composedAtMs != null) return entry;
       const composedAtMs = sentWhileOfflineAtMs(value, entry.id);
       return composedAtMs == null ? entry : { ...entry, composedAtMs };
-  });
+  }));
   const nextBeforeSeq = typeof value.nextBeforeSeq === "number" && Number.isFinite(value.nextBeforeSeq) ? value.nextBeforeSeq : undefined;
   const threadSummaries = projectThreadSummaries(value);
   return {

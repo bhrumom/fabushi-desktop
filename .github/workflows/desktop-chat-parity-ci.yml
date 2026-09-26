@@ -5,7 +5,7 @@ on:
     branches: [main, refactor/grok-018-architecture-rebuild]
     paths:
       - "desktop/**"
-      - "frontend/apps/web/**"
+      - "frontend/**"
       - "projects/desktop-chat-streaming-parity/**"
       - "projects/grok-fabu-parity/architecture-semantic-adaptations.json"
       - "scripts/check-grok-architecture.mjs"
