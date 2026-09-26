@@ -1427,3 +1427,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Shipping `TurnToolset`, `TurnAgentComposition`, `ProductionRunnerCompositionInput` and `source/host/app/src/main.rs` now project this executor into real provider turns.
 - Exact-head Rust runtime run `36232610771`: rust-host job `108378519115` succeeded, including shipping Host compile, full Host Runner cargo tests and subsequent Mahayana contracts. Desktop Chat Parity run `36232610733` succeeded for both Focused Electron chat E2E and Renderer typecheck/build.
 - `sand-browser-driver-source.ts` is final `implemented`. `sand-browser-tools.ts` remains `existing-needs-parity` until frozen browser Auto-review preflight/capture-review-state, navigation-audit callback and screenshot persistImage callback are bound to the shipping executor.
+
+
+### 2026-09-26 Coordinator OAuth retry CI stabilization
+
+- Exact HEAD `61191947a34ec9e8a4d4bf11aa6cfba2f31ee641` kept Desktop Chat Parity green, but Rust desktop runtime run `36232906010` failed the independent shipping Coordinator production protocol at the MCP OAuth callback: the fake Host gateway intentionally returned one transient HTTP 503, while the callback surfaced HTTP 500 instead of completing on the bounded second attempt.
+- The Coordinator implementation itself was unchanged from the previously independently verified Coordinator checkpoint; the failure was isolated to the production-protocol fake gateway on macOS. Its listener is intentionally non-blocking for shutdown polling, while accepted sockets could inherit non-blocking mode and race the retry request before the client finished writing it.
+- Exact implementation HEAD `59e2b02c16c696bf75e22677b7430994c84153e6` normalizes each accepted fake-gateway HTTP socket back to blocking mode before applying the existing two-second read/write timeouts, matching the already-required loopback/box-exec test transport discipline.
+- OAuth semantics and acceptance criteria were not weakened: the fake gateway still returns one transient 503; the shipping Coordinator must still retry exactly once, complete successfully, and preserve the assertion that `oauth_completion_attempts() == 2`.
+- Exact-HEAD verification runs were triggered: Desktop Chat Parity `36233439852` and Rust desktop runtime `36233439856`. Their final results remain authoritative before advancing any additional manifest row or merge claim.
