@@ -1331,3 +1331,8 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added a timezone-aware wake-prompt variant; the production fire path resolves the Agent automation store's live user timezone before formatting fired/started timestamps.
 - Contracts now cover source-specific GitHub event context, human batch summaries, untrusted XML escaping, event clamping, group seeds and timezone rendering. The broader frozen `automation.ts` row remains non-final until its routines capability system prompt is production-wired.
 
+### 2026-09-26 routine notice ownership correction
+
+- Restored the frozen `routineNoticeWakeLines` responsibility to `routine_notices.rs` and removed the duplicate notice strings from `AutomationRunPath`.
+- The shipping fire path still computes/marks one-shot notice IDs before execution, but wake text now comes from the canonical notices owner. This repairs evidence behind the already-final routine-notices mapping rather than merely changing its status.
+

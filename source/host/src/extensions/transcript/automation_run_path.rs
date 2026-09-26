@@ -9,7 +9,7 @@ use crate::automations::automation::AutomationRecord;
 use crate::automations::automation_store::FileAutomationStore;
 use crate::automations::automation_trigger::{build_trigger_event_context_block, describe_trigger_event};
 use crate::automations::routine_notices::{
-    GITHUB_LISTENER_SCOPE, routine_notice_ids_to_raise,
+    routine_notice_ids_to_raise, routine_notice_lines_for_ids,
 };
 use super::sand_automation_failure::{
     normalize_automation_error_kind, should_notify_automation_failure,
@@ -396,14 +396,7 @@ pub fn build_automation_wake_prompt_with_time_zone(
     lines.push(
         "Carry it out now. Surface useful results naturally; if the saved instruction says to stay quiet when nothing changed, end without filler.".into(),
     );
-    if notices.iter().any(|notice| notice == GITHUB_LISTENER_SCOPE) {
-        lines.push(format!(
-            "NOTICE {GITHUB_LISTENER_SCOPE} (raised once for this routine, and only here — act on it now or not at all): this routine's github listener filters nobody, so it fires for everyone in the repo, the shape of a listener written before userAllowlist existed. Decide whether this event was genuinely in scope for the saved prompt; silence by design is not a wasted fire."
-        ));
-        lines.push(
-            "If this fire is clearly wasted, update the listener now: narrow userAllowlist to a confirmed GitHub login or remove event kinds the saved prompt never covered. CI events are never user-gated. Tell the user what changed, and leave it alone when the mismatch or login is uncertain.".into(),
-        );
-    }
+    lines.extend(routine_notice_lines_for_ids(notices));
     lines.join("\n")
 }
 

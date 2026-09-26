@@ -9647,14 +9647,16 @@
       "architecturalRole": "host/automations",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/automations/routine_notices.rs"
+        "source/host/src/automations/routine_notices.rs",
+        "source/host/src/extensions/transcript/automation_run_path.rs"
       ],
       "testEvidence": [
+        "source/host/tests/automation_run_path_contract.rs",
         "source/host/tests/automation_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port of the one-shot GitHub listener-scope notice applicability/id contract."
+      "notes": "Final Rust port of the one-shot GitHub listener-scope notice: applicability/id/raised-state filtering and the exact two wake lines are owned by routine_notices.rs; the shipping AutomationRunPath consumes those canonical lines instead of duplicating notice text."
     },
     {
       "referencePath": "source/host/box/box-capabilities.ts",
