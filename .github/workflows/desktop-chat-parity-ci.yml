@@ -133,6 +133,9 @@ jobs:
         env:
           FABUSHI_FEATURE_HOST_MODE: test
           MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
+          DEBUG: pw:browser*
+          ELECTRON_ENABLE_LOGGING: "1"
+          ELECTRON_ENABLE_STACK_DUMPING: "1"
         run: npx playwright test e2e/mahayana-agent-workbench.spec.ts e2e/grok-parity.spec.ts --grep "Mahayana renders one Hermes-style assistant turn|desktop uses the Fabushi-owned Grok parity surface"
       - name: Upload Playwright evidence
         if: always()
