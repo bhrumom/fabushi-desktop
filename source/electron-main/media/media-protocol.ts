@@ -1,6 +1,6 @@
 import { createReadStream, promises as fs } from "node:fs";
 import { Readable } from "node:stream";
-import { reanchorSandPath } from "../../host/host-paths.js";
+import { reanchorSandPath } from "../../shared/node/sand-data-root.js";
 import { audioMimeFromPath, videoMimeFromPath } from "../../shared/media/image-mime.js";
 
 export const SAND_MEDIA_SCHEME = "sand-media";
