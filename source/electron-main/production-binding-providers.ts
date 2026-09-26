@@ -5,7 +5,7 @@ import {
   getLocalExecDaemonDiscoveryPath,
   readLocalExecDaemonDiscovery,
 } from "../host/local-exec/local-exec-daemon-protocol.js";
-import { getSandRootDir } from "../host/host-paths.js";
+import { getSandRootDir } from "../shared/node/sand-data-root.js";
 import type {
   ElectronProductionAdapterBindings,
 } from "./production-adapters.js";
