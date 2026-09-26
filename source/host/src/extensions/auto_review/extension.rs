@@ -40,7 +40,7 @@ pub fn parse_local_auto_review_mode(value: Option<&str>) -> Option<SandAutoRevie
 pub struct HostAutoReviewExtension {
     service: Arc<AutoReviewService>,
     experiments: Arc<HostExperimentsExtension>,
-    _settings: Arc<SettingsService>,
+    settings: Arc<SettingsService>,
     local_mode: Option<SandAutoReviewMode>,
 }
 
@@ -51,7 +51,7 @@ impl HostAutoReviewExtension {
 
     pub fn current_modes(&self) -> SandAutoReviewModes {
         AutoReviewService::current_modes(
-            true,
+            self.settings.get_auto_review_instructions().is_enabled,
             self.experiments.check_feature_gate("sand_auto_review"),
             self.local_mode,
         )
@@ -88,7 +88,7 @@ pub fn start_auto_review_extension(
     HostAutoReviewExtension {
         service,
         experiments,
-        _settings: settings,
+        settings,
         local_mode: parse_local_auto_review_mode(
             std::env::var("SAND_AUTO_REVIEW_MODE").ok().as_deref(),
         ),
