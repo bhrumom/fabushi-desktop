@@ -212,6 +212,7 @@ impl SessionConversationState {
         blob_db_path: &Path,
         root_blob: &[u8],
     ) -> Result<Option<ResolvedConversationState>, SessionConversationStateError> {
+        let structure = parse_conversation_state_structure(root_blob)
             .ok_or_else(|| SessionConversationStateError::Blob(
                 "latest conversation root blob is not a ConversationStateStructure".into(),
             ))?;
