@@ -78,8 +78,30 @@ const adapters: ElectronProductionAdapterBindings = {
   imageContextMenu: createElectronProductionImageContextMenuBinding(),
 };
 
+const nativeBindings = createElectronProductionNativeBindings(electron as never);
+const e2eAuthWebsite = process.env.FABUSHI_E2E === "1"
+  ? process.env.SAND_CURSOR_WEBSITE_URL
+  : undefined;
+const entryNativeBindings = e2eAuthWebsite == null
+  ? nativeBindings
+  : {
+      ...nativeBindings,
+      shell: {
+        openExternal: async (url: string) => {
+          try {
+            const expected = new URL(e2eAuthWebsite);
+            const actual = new URL(url);
+            if (actual.origin === expected.origin && actual.pathname === "/loginDeepControl") return;
+          } catch {
+            // Preserve the shipping external-url path for malformed/unrelated URLs.
+          }
+          return await nativeBindings.shell.openExternal(url);
+        },
+      },
+    };
+
 startElectronMainProduction({
-  native: createElectronProductionNativeBindings(electron as never),
+  native: entryNativeBindings,
   moduleDir: __dirname,
   env: process.env,
   platform: process.platform,
