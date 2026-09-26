@@ -20986,6 +20986,7 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/session/production_agent_store.rs",
+        "source/host/src/extensions/session/session_conversation_state.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/agent_isolation/worker_blob_store.rs",
@@ -20994,13 +20995,14 @@
       ],
       "testEvidence": [
         "source/host/tests/production_agent_store_contract.rs",
+        "source/host/tests/session_conversation_state_contract.rs",
         "source/host/tests/session_materialization_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/production_agent_checkpoint_contract.rs"
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        "source/host/tests/turn_settle_checkpoint_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Corrected prior false-final reference-copy mapping: the byte-identical TypeScript copy is not imported by shipping production. Rust ProductionAgentStore is now the live AgentStore2 checkpoint owner inside every ProductionMaterializedSession: generated-wire-compatible ConversationStateStructure validation, SHA-256 content root, WorkerBlobStore persistence, SandAgentDb latestRootBlobId metadata advancement and fail-closed tryResetFromDb are production wired. Final remains withheld for full typed metadata subscription surface, generated ConversationState derive/getFullConversation, subagent-state resolution and the Runner turn-settle/transcript-mirror checkpoint adapter."
+      "notes": "Rust ProductionAgentStore is the live AgentStore2 owner. It now exposes the full frozen typed metadata key surface and subscriptions; SHA-256 content-addressed checkpoint persistence with metadata advancement; fail-closed tryResetFromDb; reverse getLastRequestIdFromConversation; lenient getFullConversation hydration that skips missing referenced blobs like the frozen API; inline/ref subagent state resolution with ref override, inline fallback, missing-ref failure, and child conversation hydration; and the shipping Runner/transcript-mirror checkpoint adapter. Implementation is complete at this checkpoint; keep existing-needs-parity until the exact-HEAD Rust gate passes the expanded contracts."
     },
     {
       "referencePath": "source/packages/agent-kv/blob-not-found-error.ts",
