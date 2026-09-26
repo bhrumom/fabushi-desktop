@@ -4,11 +4,9 @@ use std::sync::Arc;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider,
 };
-use crate::cloud_agents::cloud_agent_tool::{
-    CloudAgentToolBridge, CloudAgentToolDependencies,
-};
+use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
 
-use super::box_tool_access::{RunnerBoxResourcePort, RunnerBoxToolBridge};
+use super::box_tool_access::RunnerBoxResourcePort;
 use super::production_turn_run_shell_adapter::{
     ProviderRetryEvent, ProviderRetryReport, RoutedProviderCheckpointStore,
 };
@@ -18,14 +16,13 @@ use super::routed_provider_runtime::{
 };
 use super::sand_action_audit::{AuditedRoutedToolBridge, RoutedMcpAuditConfig};
 use super::turn_observation::{ObservedRoutedToolBridge, TurnObservationHandle};
-use super::tools::box_help_tool::BoxHelpToolBridge;
-use super::tools::send_message_tool::{SendMessageSink, SendMessageToolBridge};
-use super::tools::sand_reaction_tool::{ReactionSink, ReactionToolBridge};
-use super::tools::sand_agent_management_tools::{
-    AgentManagementSink, AgentManagementToolBridge,
+use super::tools::send_message_tool::SendMessageSink;
+use super::tools::sand_reaction_tool::ReactionSink;
+use super::tools::sand_agent_management_tools::AgentManagementSink;
+use super::tools::sand_state_tool::SandStateWriter;
+use super::tools::turn_toolset::{
+    TurnToolsetDependencies, build_turn_toolset, fence_turn_toolset,
 };
-use super::tools::sand_spotlight_tools::SpotlightedRoutedToolBridge;
-use super::tools::sand_state_tool::{SandStateToolBridge, SandStateWriter};
 
 /// Shipping Runner composition for one provider-backed turn.
 ///
@@ -221,56 +218,18 @@ impl TurnAgentComposition {
             )),
             None => Arc::clone(&self.bridge),
         };
-        let bridge: Arc<dyn RoutedToolBridge> = match &self.box_resources {
-            Some(box_resources) => Arc::new(RunnerBoxToolBridge::new(
-                bridge,
-                Arc::clone(box_resources),
-            )),
-            None => bridge,
-        };
-        let bridge: Arc<dyn RoutedToolBridge> = match &self.reaction_sink {
-            Some(sink) => Arc::new(ReactionToolBridge::new(
-                bridge,
-                Arc::clone(sink),
-            )),
-            None => bridge,
-        };
-        let bridge: Arc<dyn RoutedToolBridge> = match &self.agent_management_sink {
-            Some(sink) => Arc::new(AgentManagementToolBridge::new(
-                bridge,
-                Arc::clone(sink),
-            )),
-            None => bridge,
-        };
-        let bridge: Arc<dyn RoutedToolBridge> = match &self.state_writer {
-            Some(state) => Arc::new(SandStateToolBridge::new(
-                bridge,
-                Arc::clone(state),
-            )),
-            None => bridge,
-        };
-        let bridge: Arc<dyn RoutedToolBridge> = match &self.cloud_agent_tool {
-            Some(deps) => Arc::new(CloudAgentToolBridge::new(
-                bridge,
-                deps.clone(),
-            )),
-            None => bridge,
-        };
-        let bridge: Arc<dyn RoutedToolBridge> = match &self.send_message_sink {
-            Some(sink) => Arc::new(BoxHelpToolBridge::new(
-                bridge,
-                Arc::clone(sink),
-                self.cancellation.clone(),
-            )),
-            None => bridge,
-        };
-        let bridge: Arc<dyn RoutedToolBridge> = match &self.send_message_sink {
-            Some(sink) => Arc::new(SendMessageToolBridge::new(
-                bridge,
-                Arc::clone(sink),
-            )),
-            None => bridge,
-        };
+        let bridge = build_turn_toolset(
+            bridge,
+            TurnToolsetDependencies {
+                cancellation: self.cancellation.clone(),
+                box_resources: self.box_resources.clone(),
+                send_message_sink: self.send_message_sink.clone(),
+                reaction_sink: self.reaction_sink.clone(),
+                agent_management_sink: self.agent_management_sink.clone(),
+                state_writer: self.state_writer.clone(),
+                cloud_agent_tool: self.cloud_agent_tool.clone(),
+            },
+        );
         let bridge: Arc<dyn RoutedToolBridge> = match &self.observation {
             Some(observation) => Arc::new(ObservedRoutedToolBridge::new(
                 bridge,
@@ -278,11 +237,7 @@ impl TurnAgentComposition {
             )),
             None => bridge,
         };
-        let bridge: Arc<dyn RoutedToolBridge> = if self.spotlight_enabled {
-            Arc::new(SpotlightedRoutedToolBridge::new(bridge))
-        } else {
-            bridge
-        };
+        let bridge = fence_turn_toolset(bridge, self.spotlight_enabled);
         run_routed_provider_in_runner(
             RoutedProviderRun {
                 provider: self.provider,
