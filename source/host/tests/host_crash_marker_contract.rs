@@ -1,6 +1,7 @@
 use std::cell::{Cell, RefCell};
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 use mahayana_host_runtime::extensions::telemetry::host_crash_marker::{
     DeleteIfUnchangedResult, FileHostCrashMarkerStore, ForwardHostCrashMarkerResult,
@@ -8,6 +9,8 @@ use mahayana_host_runtime::extensions::telemetry::host_crash_marker::{
     delete_if_unchanged, forward_host_crash_marker_with, host_crash_marker_metadata,
     parse_host_crash_marker,
 };
+use mahayana_host_runtime::extensions::telemetry::extension::forward_host_crash_marker_to_logs;
+use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
 
 fn signal_marker_raw() -> &'static str {
     r#"{"schemaVersion":1,"errorClass":"signal_exit","exitSignal":"SIGSEGV","startedAtMs":1000.2,"crashedAtMs":2400.7,"uptimeMs":1400.5}"#
@@ -198,4 +201,43 @@ fn forwarding_preserves_defer_parse_dedupe_and_changed_marker_semantics() {
         ForwardHostCrashMarkerResult::Pending
     );
     assert_eq!(changed.delete_calls.get(), 0);
+}
+
+
+#[test]
+fn production_telemetry_forwarder_persists_confirmed_crash_and_deletes_marker() {
+    let marker_path = temp_marker_path("production-forward");
+    let records_path = temp_marker_path("production-forward-records");
+    let _ = fs::remove_file(&marker_path);
+    let _ = fs::remove_file(&records_path);
+    fs::write(&marker_path, signal_marker_raw()).expect("write crash marker");
+
+    let service = HostTelemetryService::open(&records_path).expect("telemetry service");
+    let store = FileHostCrashMarkerStore::new(&marker_path);
+    let last_handled = Mutex::new(None);
+    assert_eq!(
+        forward_host_crash_marker_to_logs(&store, &service.logs, &last_handled),
+        ForwardHostCrashMarkerResult::Delivered
+    );
+    assert_eq!(store.read(), HostCrashMarkerRead::Absent);
+    assert_eq!(
+        last_handled.lock().expect("handled marker").as_deref(),
+        Some(signal_marker_raw())
+    );
+
+    let records = fs::read_to_string(&records_path).expect("telemetry records");
+    let record: serde_json::Value =
+        serde_json::from_str(records.lines().next().expect("crash record"))
+            .expect("crash telemetry JSON");
+    assert_eq!(record["channel"], "structured_log");
+    assert_eq!(record["event"], "sand.host.crash");
+    assert_eq!(record["payload"]["level"], "error");
+    assert_eq!(record["payload"]["metadata"]["kind"], "process_exit");
+    assert_eq!(record["payload"]["metadata"]["error_class"], "signal_exit");
+    assert_eq!(record["payload"]["metadata"]["error_code"], "SAND-E0001");
+    assert_eq!(record["payload"]["metadata"]["error_domain"], "registry");
+    assert_eq!(record["payload"]["metadata"]["error_retryable"], "false");
+
+    let _ = fs::remove_file(marker_path);
+    let _ = fs::remove_file(records_path);
 }
