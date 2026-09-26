@@ -1404,3 +1404,15 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The owner now covers explicit agent/user/project memory writes/removals with project-membership fencing, routine CRUD, workflow CRUD, profile/settings mutation, channel disconnect, project create/join/leave, and avatar install/clear through the existing canonical Host stores.
 - Added `source/host/tests/agent_state_contract.rs` for memory-scope routing/fencing and routine/workflow/profile/settings/channel/avatar behavior. The manifest is intentionally only `existing-needs-parity`; final status requires the shipping sand-state/update_state tool to delegate to this owner and an exact-HEAD CI pass.
 - Commits in this slice: `30c5fbc4ac267165a6e122f436307888408e37dc`, `1345de2e9705583e4bdbd1a1f0d1a298e6a0fab2`, `4b0efcc836e1bd960b4bdb4ef1355159945b1e30`, `7ca2f6e126d476f1d499915e647fda3b6adfd140`, `0c27b1e42f00c3fc02c589d39a75597aa08231f1`, `8a78c3890205e6f00f148844b4c5102955d487d0`, and `ca8ed60d25256eabc33c398e639acaf5855e7ea3`.
+
+
+### 2026-09-26 update_state production wiring
+
+- Implementation baseline was `279f166fe0a66399fb1f4fe1dc699a11b8f19bde`; production-wiring exact HEAD was `ad5b0832245c1106a22a6557c562de2987ada34a`.
+- Added `source/host/src/runner/tools/sand_state_tool.rs` as the Runner-owned `update_state` schema/router. It does not persist state itself: `SandStateWriter` delegates durable mutations to the Host-owned `source/host/src/extensions/memory/agent_state.rs`.
+- Shipping `TurnAgentComposition` now composes the state bridge, and `source/host/app/src/main.rs` constructs one `SandAgentState` for each routed agent turn from the canonical Memory service sand root.
+- Added `source/host/tests/sand_state_tool_contract.rs` covering tool advertisement/delegation, memory persistence, routine create + partial update preservation, and workflow persistence.
+- Exact-head Rust runtime run `36230057493`: `rust-host` job `108371404118` succeeded, including shipping Host compile, Coordinator, box daemon, full Host Runner cargo tests, attachments, Computer takeover and ConversationActor/CapabilityBroker contracts. The workflow's renderer job remains red only at the intentionally strict final architecture gate.
+- Exact-head Desktop Chat Parity run `36230057523`: Focused Electron chat E2E and Renderer typecheck/build both succeeded.
+- With those gates, `source/host/extensions/memory/agent-state.ts` and both Notifications rows are now final `implemented`. `source/host/runner/tools/sand-state-tool.ts` advances from `planned` to `existing-needs-parity`: remaining work is frozen auto-review/approval semantics for routine/workflow writes, listener post-save integration, full trigger validation, communicate activity projection, and box-path avatar reads.
+- Manifest after this slice: 1,815 implemented / 103 existing-needs-parity / 84 planned (187 not final).
