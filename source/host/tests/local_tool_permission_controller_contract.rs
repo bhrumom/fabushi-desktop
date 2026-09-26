@@ -1,0 +1,153 @@
+use std::fs;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+use mahayana_host_runtime::extensions::extension_ids_generated::HostExtensionId;
+use mahayana_host_runtime::extensions::local_tool_permission::extension::{
+    LOCAL_TOOL_PERMISSION_DEPENDENCIES, local_tool_permission_extension_id,
+    start_local_tool_permission_extension,
+};
+use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_controller::{
+    SAND_LOCAL_TOOLS_ASK_UNAVAILABLE_MESSAGE, SAND_LOCAL_TOOLS_DISABLED_MESSAGE,
+    SandLocalToolPermissionController, SandLocalToolRequest, SandLocalToolRequestStatus,
+    SandLocalToolScope,
+};
+use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_resolution::{
+    LocalToolPermissionAskStore, SandLocalToolResolution,
+};
+use mahayana_host_runtime::extensions::settings::settings_service::{
+    SandLocalToolPermission, SettingsService,
+};
+
+fn temp_settings(label: &str) -> std::path::PathBuf {
+    let suffix = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    std::env::temp_dir().join(format!(
+        "fabushi-local-tool-permission-{label}-{}-{suffix}.json",
+        std::process::id()
+    ))
+}
+
+#[test]
+fn extension_identity_and_standing_modes_match_frozen_contract() {
+    assert_eq!(
+        local_tool_permission_extension_id(),
+        HostExtensionId::LocalToolPermission
+    );
+    assert_eq!(
+        LOCAL_TOOL_PERMISSION_DEPENDENCIES,
+        &[
+            HostExtensionId::Settings,
+            HostExtensionId::Telemetry,
+            HostExtensionId::Transcript,
+        ]
+    );
+
+    let path = temp_settings("standing");
+    let settings = Arc::new(SettingsService::new(path.clone()));
+    let extension = start_local_tool_permission_extension(Arc::clone(&settings));
+    let scope = SandLocalToolScope {
+        agent_id: "agent-a".into(),
+        tool_call_id: Some("tool-a".into()),
+        action: Some("read-file".into()),
+        direction_epoch: None,
+    };
+    let request = SandLocalToolRequest::simple("read-file", "/tmp/a");
+
+    settings
+        .set_local_tool_permission(SandLocalToolPermission::Never)
+        .expect("never");
+    let denied = extension.authorize(Some(&scope), &request);
+    assert!(!denied.allowed);
+    assert_eq!(
+        denied.reason.as_deref(),
+        Some(SAND_LOCAL_TOOLS_DISABLED_MESSAGE)
+    );
+
+    settings
+        .set_local_tool_permission(SandLocalToolPermission::Always)
+        .expect("always");
+    assert!(extension.authorize(Some(&scope), &request).allowed);
+
+    settings
+        .set_local_tool_permission(SandLocalToolPermission::Ask)
+        .expect("ask");
+    let denied = extension.authorize(Some(&scope), &request);
+    assert_eq!(
+        denied.reason.as_deref(),
+        Some(SAND_LOCAL_TOOLS_ASK_UNAVAILABLE_MESSAGE)
+    );
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn ask_resolution_wakes_waiter_and_retains_one_time_approval_until_scope_completes() {
+    let path = temp_settings("ask");
+    let settings = Arc::new(SettingsService::new(path.clone()));
+    let controller = Arc::new(SandLocalToolPermissionController::with_options(
+        Arc::clone(&settings),
+        1_000,
+        Arc::new(|| 10_000),
+        Arc::new(|| "approval-1".to_string()),
+    ));
+    controller.bind_ask_surfaces(Arc::new(|_| true));
+    controller.bind_live_computer_check(Arc::new(|_| true));
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let events_sink = Arc::clone(&events);
+    controller.bind_event_sink(Some(Arc::new(move |event| {
+        events_sink.lock().expect("events").push(event);
+    })));
+
+    let scope = SandLocalToolScope {
+        agent_id: "agent-a".into(),
+        tool_call_id: Some("tool-a".into()),
+        action: Some("read-file".into()),
+        direction_epoch: None,
+    };
+    let request = SandLocalToolRequest::simple("read-file", "/tmp/a");
+    let worker_controller = Arc::clone(&controller);
+    let worker_scope = scope.clone();
+    let worker_request = request.clone();
+    let worker = thread::spawn(move || {
+        worker_controller.authorize(Some(&worker_scope), &worker_request)
+    });
+
+    let pending = (0..100)
+        .find_map(|_| {
+            let pending = controller.get_pending_request_for_agent("agent-a");
+            if pending.is_none() {
+                thread::sleep(Duration::from_millis(2));
+            }
+            pending
+        })
+        .expect("pending ask");
+    assert_eq!(pending.id, "approval-1");
+    assert_eq!(pending.status, SandLocalToolRequestStatus::Pending);
+    assert!(controller.resolve_request(
+        &pending.id,
+        SandLocalToolResolution::AllowOnce
+    ));
+    let decision = worker.join().expect("worker");
+    assert!(decision.allowed);
+    assert_eq!(decision.approval_id.as_deref(), Some("approval-1"));
+    assert!(controller.was_settled("approval-1"));
+    assert_eq!(controller.live_approval_ids(), vec!["approval-1"]);
+
+    let covered = controller.authorize(Some(&scope), &request);
+    assert!(covered.allowed);
+    assert_eq!(covered.approval_id.as_deref(), Some("approval-1"));
+
+    controller.complete_scope(Some(&scope));
+    assert!(controller.live_approval_ids().is_empty());
+    assert!(
+        events
+            .lock()
+            .expect("events")
+            .iter()
+            .any(|event| event.status == SandLocalToolRequestStatus::Allowed)
+    );
+    let _ = fs::remove_file(path);
+}

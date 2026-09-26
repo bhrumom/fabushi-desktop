@@ -21,6 +21,7 @@ use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
 };
 use mahayana_host_runtime::extensions::memory::agent_state::SandAgentState;
 use mahayana_host_runtime::extensions::local_exec::extension::start_local_exec_extension;
+use mahayana_host_runtime::extensions::local_tool_permission::extension::start_local_tool_permission_extension;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult,
     HandoffTelemetry, HandoffTrigger, PendingHandoff, ScreenshotPayload, decide_box_hand_back,
@@ -2958,6 +2959,9 @@ fn main() {
         ));
     let gateway_events = GatewayEventHub::default();
     let settings_extension = start_settings_extension();
+    let local_tool_permission_extension = Arc::new(
+        start_local_tool_permission_extension(Arc::clone(&settings_extension)),
+    );
     let mut wallpaper_extension = start_wallpaper_extension(
         Arc::clone(&settings_extension),
         Arc::new(|message| eprintln!("mahayana-host-wallpaper {message}")),
@@ -3145,6 +3149,10 @@ fn main() {
     };
     let gateway_started_at = started_at_ms();
     let local_exec_extension = Arc::new(start_local_exec_extension());
+    let local_exec_live_bridge = local_exec_extension.bridge();
+    local_tool_permission_extension.bind_live_computer_check(Arc::new(move |_| {
+        local_exec_live_bridge.check_live_computer_for_ask()
+    }));
     let routed_tool_relay = Arc::new(CoordinatorToolRelay::new(gateway_events.clone()));
     let transcript_runtime = transcript_manager.transcript_runtime();
     match load_initial_transcript_resiliently(|| {

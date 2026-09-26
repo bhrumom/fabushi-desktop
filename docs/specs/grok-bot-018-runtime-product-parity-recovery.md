@@ -1527,3 +1527,14 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added `source/host/tests/gateway_local_exec_sand_box_contract.rs` with real provider channels: it proves upload/download frame shape and bytes, gate actions, approval propagation, user-computer selection, terminals-folder projection, oversized-file rejection and blocked-gate fail-closed behavior.
 - This mapping advances only to `existing-needs-parity`. Generated `ExecClientMessage`/`ExecClientControlMessage` decoding, `RemoteResourceAccessor`, live LocalToolPermission UI/controller binding, and the Runner ExternalShell/Read/Copy tool cutover still block final parity.
 - Manifest becomes **1,821 implemented / 106 existing-needs-parity / 75 planned** (181 non-final).
+
+
+### 2026-09-26 Local Tool Permission owner and Local Exec liveness binding
+
+- Starting exact HEAD: `abda6c7ce019d959d01bcf315b5ef1afad4b7ab6`.
+- Added `source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs`: canonical SettingsService-backed Always/Ask/Never policy, scoped one-time approvals, pending request coalescing/waiting, TTL expiry, allow-once/deny/always/never resolution, settled-id idempotence, approval lifetime, begin-turn invalidation, target-size fencing and resource-path approval reuse.
+- The controller implements the already-ported `LocalToolPermissionAskStore`, so the frozen stale/idempotent resolution boundary is no longer isolated from the real permission owner.
+- Added `source/host/src/extensions/local_tool_permission/extension.rs` with the frozen Settings/Telemetry/Transcript dependency declaration. Shipping Host starts this owner from the same SettingsService used by Session, and binds its live-computer predicate to the production Local Exec bridge.
+- Contract coverage proves standing Never/Always/Ask behavior, exact dependency identity, a real blocked waiter resolved by allow-once, approval reuse and scope retirement.
+- Both mappings advance only from `planned` to `existing-needs-parity`. Final still requires the full refusal-direction/saturation memory, preparatory-action rules, transcript ask-card + boot-sweep lifecycle, stranded-retirement telemetry, approval-retired Host event propagation and shipping `resolveLocalToolPermission` Gateway command.
+- Manifest becomes **1,821 implemented / 108 existing-needs-parity / 73 planned** (181 non-final).

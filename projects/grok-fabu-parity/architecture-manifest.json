@@ -12198,24 +12198,40 @@
       "targetPath": "source/host/src/extensions/local_tool_permission/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "0b0b6625728ea8044d4907aa5f89b5cba1934886",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/local_tool_permission/extension.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/settings/settings_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/local_tool_permission_controller_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Shipping Host now starts a LocalToolPermission extension owner from the canonical SettingsService and binds its live-computer predicate to the production Local Exec bridge. The frozen Settings+Telemetry+Transcript dependency declaration is preserved. Final remains withheld for transcript ask-card creation/boot sweep, stranded-retirement telemetry, approval-retired host-event fanout and complete production resolveLocalToolPermission Gateway wiring."
     },
     {
       "referencePath": "source/host/extensions/local-tool-permission/local-tool-permission-controller.ts",
       "targetPath": "source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "3eb5497d7e699db6d1098a8426aaddbd68c1a7c5",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/settings/settings_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/local_tool_permission_controller_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns settings-backed Always/Ask/Never decisions, scoped one-time approvals, pending ask coalescing/waiting, TTL expiry, allow-once/deny/always/never settlement, approval lifetime, begin-turn invalidation, target-size fencing, ask/live-computer gates and the existing LocalToolPermissionAskStore resolution interface. Final remains withheld for the frozen refusal-direction memory/saturation rules, preparatory-action fencing, complete resource attachment semantics and exact transcript widget lifecycle."
     },
     {
       "referencePath": "source/host/extensions/local-tool-permission/local-tool-permission-resolution.ts",
