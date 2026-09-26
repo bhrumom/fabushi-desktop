@@ -215,6 +215,8 @@ jobs:
         run: node scripts/check-grok-architecture.mjs
       - name: Typecheck and build renderer
         run: npm --prefix desktop run build:renderer
+      - name: Verify co-staged desktop runtime
+        run: npm --prefix desktop run check:desktop-runtime
       - name: Enforce built desktop bundle boundary
         run: node desktop/scripts/check-desktop-bundle.mjs
       - name: Check Grok final architecture gate
