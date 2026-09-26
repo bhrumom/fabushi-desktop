@@ -2,12 +2,15 @@ use std::fs;
 use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use serde_json::json;
+
 use mahayana_host_runtime::agents::agent_profile::{
     get_sand_profile_path, read_sand_profile_file,
 };
 use mahayana_host_runtime::agents::settings_file::{
     get_sand_settings_path, read_sand_settings_file,
 };
+use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::extensions::memory::agent_state::{
     MemoryScope, MemoryTier, SandAgentState,
 };
@@ -106,6 +109,22 @@ fn owns_profile_settings_channel_and_avatar_mutations() {
         .with_avatar_changed(Arc::new(move || {
             callback_count_for_state.fetch_add(1, Ordering::SeqCst);
         }));
+
+    let routine = state.create_automation(&AutomationSpec {
+        name: "Morning brief".into(),
+        prompt: "Summarize important changes".into(),
+        trigger: json!({"type":"cron","schedule":"0 9 * * *"}),
+        is_enabled: Some(true),
+    });
+    assert!(routine.ok, "{}", routine.message);
+
+    let workflow = state.write_workflow(
+        None,
+        "Deploy checklist",
+        Some("Release steps"),
+        "# Deploy\nVerify the package.",
+    );
+    assert!(workflow.ok, "{}", workflow.message);
 
     assert!(state.update_profile(Some("Builder"), Some("Ships releases")).ok);
     let stored_profile = read_sand_profile_file(get_sand_profile_path(
