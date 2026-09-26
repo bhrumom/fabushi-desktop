@@ -14,7 +14,7 @@ import {
   getSandProductionRootDir,
   resolveSandDataRootOverride,
   SAND_DATA_ROOT_ENV,
-} from "../../host/host-paths.js";
+} from "../../shared/node/sand-data-root.js";
 import { isSandHostProcess } from "../../host/host-lock.js";
 import { findSystemErrno } from "../../shared/system-errno.js";
 
