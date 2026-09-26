@@ -20,6 +20,7 @@ use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
     AgentWakeRequest, ProductionAgentToAgentMessaging,
 };
 use mahayana_host_runtime::extensions::memory::agent_state::SandAgentState;
+use mahayana_host_runtime::extensions::local_exec::extension::start_local_exec_extension;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult,
     HandoffTelemetry, HandoffTrigger, PendingHandoff, ScreenshotPayload, decide_box_hand_back,
@@ -3143,6 +3144,7 @@ fn main() {
         }
     };
     let gateway_started_at = started_at_ms();
+    let local_exec_extension = Arc::new(start_local_exec_extension());
     let routed_tool_relay = Arc::new(CoordinatorToolRelay::new(gateway_events.clone()));
     let transcript_runtime = transcript_manager.transcript_runtime();
     match load_initial_transcript_resiliently(|| {
@@ -3196,7 +3198,7 @@ fn main() {
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: gateway_api.clone(),
         events: gateway_events.clone(),
-        local_exec: None,
+        local_exec: Some(local_exec_extension.gateway_bridge()),
         webauthn: Some(production_extensions.webauthn_proxy.gateway_bridge()),
         config: gateway_config.clone(),
         started_at: gateway_started_at,

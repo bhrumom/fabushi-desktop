@@ -1507,3 +1507,14 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Shipping `UnifiedGatewayApi` holds the same `Arc<HostSecretsExtension>` started against ForeverBox, so the externally reachable methods and startup/persisted-apply lifecycle share one production owner rather than a parallel adapter.
 - `source/host/tests/secrets_extension_contract.rs` now pins the exact frozen method names, status projection, invalid-value rejection, and unknown-method fallthrough in addition to the existing validation/persistence/retry/reload contracts.
 - Only `source/host/extensions/secrets/extension.ts` advances to final `implemented`. Manifest becomes 1,821 implemented / 103 existing-needs-parity / 78 planned (181 non-final). The PR remains draft; exact-HEAD Rust/Coordinator/Runner, Desktop Chat Parity, and strict architecture results remain authoritative, and the known legacy-root cutover is still required before the strict gate can pass.
+
+
+### 2026-09-26 Local Exec provider transport production cutover
+
+- Starting exact HEAD: `afb2f21862be6d5d560c07fba623373536df48f0`.
+- The shipping Rust Gateway already implemented the authenticated frozen endpoints `/local-exec/requests` and `/local-exec/responses`, but production passed `local_exec: None`, so a desktop local-exec provider could never actually attach to the Rust Host.
+- Added `source/host/src/extensions/local_exec/local_exec_bridge.rs` as the Host-owned provider transport: registration/welcome, hello metadata, heartbeat liveness, supervised + variant provider ranking, multiple-computer projection, request/response correlation, cancellation and approval-retirement fanout.
+- Added `source/host/src/extensions/local_exec/extension.rs` with the frozen `LocalToolPermission + Telemetry` dependency declaration and a GatewayBridgeHub adapter. Shipping `source/host/app/src/main.rs` now starts this owner and supplies `Some(local_exec_extension.gateway_bridge())` to `GatewayServerDeps`.
+- Added `source/host/tests/local_exec_bridge_contract.rs` covering rank/variant rules, provider registration, hello/liveness, default computer identity, request/response correlation, cancel and retire-approval transport.
+- This deliberately does not claim full Local Exec parity. `gateway-local-exec-sand-box.ts` and `production.ts` remain planned, while `extension.ts` and `local-exec-bridge.ts` advance only to `existing-needs-parity`. Remaining work is generated ExecClient codecs/RemoteResourceAccessor, permission-authorized exec/upload/download, complete refusal/failure telemetry and binding the live LocalToolPermission controller.
+- Manifest after this slice: **1,821 implemented / 105 existing-needs-parity / 76 planned** (181 non-final). Non-final count is unchanged because this slice converts two planned mappings into real production-backed partial mappings rather than falsely finalizing them.
