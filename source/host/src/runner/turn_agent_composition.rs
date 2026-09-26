@@ -25,6 +25,7 @@ use super::tools::sand_agent_management_tools::{
     AgentManagementSink, AgentManagementToolBridge,
 };
 use super::tools::sand_spotlight_tools::SpotlightedRoutedToolBridge;
+use super::tools::sand_state_tool::{SandStateToolBridge, SandStateWriter};
 
 /// Shipping Runner composition for one provider-backed turn.
 ///
@@ -46,6 +47,7 @@ pub struct TurnAgentComposition {
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
+    state_writer: Option<Arc<dyn SandStateWriter>>,
     cloud_agent_tool: Option<CloudAgentToolDependencies>,
     spotlight_enabled: bool,
     action_audit: Option<RoutedMcpAuditConfig>,
@@ -72,6 +74,7 @@ impl TurnAgentComposition {
             send_message_sink: None,
             reaction_sink: None,
             agent_management_sink: None,
+            state_writer: None,
             cloud_agent_tool: None,
             spotlight_enabled: false,
             action_audit: None,
@@ -141,6 +144,18 @@ impl TurnAgentComposition {
 
     pub fn has_agent_management_sink(&self) -> bool {
         self.agent_management_sink.is_some()
+    }
+
+    pub fn with_state_writer(
+        mut self,
+        state: Arc<dyn SandStateWriter>,
+    ) -> Self {
+        self.state_writer = Some(state);
+        self
+    }
+
+    pub fn has_state_writer(&self) -> bool {
+        self.state_writer.is_some()
     }
 
     pub fn with_cloud_agent_tool(
@@ -224,6 +239,13 @@ impl TurnAgentComposition {
             Some(sink) => Arc::new(AgentManagementToolBridge::new(
                 bridge,
                 Arc::clone(sink),
+            )),
+            None => bridge,
+        };
+        let bridge: Arc<dyn RoutedToolBridge> = match &self.state_writer {
+            Some(state) => Arc::new(SandStateToolBridge::new(
+                bridge,
+                Arc::clone(state),
             )),
             None => bridge,
         };
