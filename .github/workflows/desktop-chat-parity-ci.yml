@@ -52,6 +52,8 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
+      - name: Build Grok-shaped Electron runtime
+        run: npm run build:electron
       - name: Enforce Agent workspace architecture boundary
         run: node scripts/check-agent-workspace-boundary.mjs
       - run: npm run typecheck
@@ -109,6 +111,8 @@ jobs:
           done
           echo "Electron runtime installation failed after 3 attempts" >&2
           exit 1
+      - name: Build Grok-shaped Electron runtime
+        run: npm run build:electron
       - name: Validate production Renderer bridge contracts
         run: |
           node --test electron/coordinator-renderer-port.test.cjs electron/production-renderer-bridge.test.cjs electron/update-state.test.cjs
