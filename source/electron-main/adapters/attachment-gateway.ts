@@ -9,9 +9,8 @@ import {
   isWithinDesktopAttachmentStaging,
   resolveImageAttachment,
 } from "../attachments/attachment-manager.js";
-import { fetchLinkMetadata } from "../../host/extensions/attachments/attachments-service.js";
 import { resolveDefaultDownloadPath, resolveSuggestedDownloadName } from "../downloads/download-path.js";
-import { boundPreviewImageDataUrl } from "../../host/extensions/attachments/link-preview-image-bounds.js";
+import { boundLinkPreviewImageDataUrl } from "../../shared/media/link-preview-image-bounds.js";
 import { buildSandMediaUrl } from "../media/media-protocol.js";
 import type { ElectronProductionAdapterBindings } from "../production-adapters.js";
 import type { ProductionServiceContext } from "../main-production-services.js";
@@ -102,8 +101,17 @@ export function createProductionAttachmentGatewayBinding(
           readPortableDimensions: (buffer) => readWebpOrHeicDimensions(buffer),
           servableImageMimeFromPath: (value) => servableImageMimeFromPath(value) ?? null,
         }),
-        fetchLinkMetadata: ({ cacheDir, url }) => fetchLinkMetadata(cacheDir, url),
-        boundPreviewImage: (dataUrl, target, resize) => boundPreviewImageDataUrl(
+        fetchLinkMetadata: async ({ cacheDir, url }) => {
+          const fetchLinkMetadata = context.coordinatorLegs.legs.fetchLinkMetadata;
+          if (typeof fetchLinkMetadata !== "function") {
+            throw new Error("Coordinator link-metadata port is unavailable.");
+          }
+          const result = await fetchLinkMetadata({ cacheDir, url });
+          return typeof result === "object" && result != null && !Array.isArray(result)
+            ? result as Record<string, unknown> & { imageDataUrl?: string | null; faviconDataUrl?: string | null }
+            : null;
+        },
+        boundPreviewImage: (dataUrl, target, resize) => boundLinkPreviewImageDataUrl(
           dataUrl ?? null,
           target,
           (value, dimensions, encoding) => resize(
