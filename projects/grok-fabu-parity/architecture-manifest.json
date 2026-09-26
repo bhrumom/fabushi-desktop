@@ -12510,12 +12510,26 @@
       "targetPath": "source/host/src/extensions/memory/agent_state.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "fb08a86f03dc8819e11c452574c7a58fecd6165f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/memory/agent_state.rs",
+        "source/host/src/extensions/memory/memory_service.rs",
+        "source/host/src/extensions/memory/project_membership.rs",
+        "source/host/src/automations/automation_store.rs",
+        "source/host/src/workflows/workflow_store.rs",
+        "source/host/src/agents/agent_profile.rs",
+        "source/host/src/agents/settings_file.rs",
+        "source/host/src/agents/agent_avatar.rs",
+        "source/host/src/extensions/session/channel_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_state_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Memory extension now owns the frozen agent-state mutation surface: agent/user/project memory shards with membership fencing, routine CRUD, workflow CRUD, profile/settings writes, channel disconnect, project create/join/leave, and validated avatar install/clear, reusing canonical Host stores instead of parallel persistence. Final remains withheld until the shipping sand-state/update_state tool delegates to this owner and exact-head CI verifies the contract."
     },
     {
       "referencePath": "source/host/extensions/memory/extension.ts",
@@ -38761,5 +38775,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-26T08:05:00Z"
+  "generatedAt": "2026-09-26T08:24:00Z"
 }
