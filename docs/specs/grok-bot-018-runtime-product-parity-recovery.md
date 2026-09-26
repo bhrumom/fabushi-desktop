@@ -1358,3 +1358,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Corrected semantic drift: `.ico` is a standard image; HEIC/HEIF are only client-servable native image formats and are not accepted by `imageMimeFromPath`; frozen video mapping is only m4v/mov/mp4/ogv/webm.
 - CloudAgent file URLs now receive POSIX-style lexical normalization before the `/workspace` boundary check, so `file:///workspace/../...` is refused instead of reaching the box reader.
 - Channel attachment is now final in the manifest with shared-media and behavior contracts. CloudAgent image loading remains non-final only because the production `cloud-agent-tool` owner has not yet wired the loader to the canonical box reader.
+
+
+### 2026-09-26 CloudAgent request-composition cutover
+
+- Ported the frozen CloudAgent request-composition layer to Rust as a pure Host-owned module. It now owns requested-model/max-mode parameters, selected-image user messages, conversation actions, repository normalization/sanitization, saved-environment primary-repo policy, repo-config projection and private-worker routing labels.
+- Added contract coverage for scp-style Git remotes, credential-stripping normalization, short `owner/repo` references, secondary-repo rejection, model-params-without-model rejection, image context projection, pool labels and named-machine shared-assignment policy.
+- This module is final independently; network RPC, model-catalog retrieval, completion polling and Host extension lifecycle remain tracked by their own CloudAgent manifest rows.

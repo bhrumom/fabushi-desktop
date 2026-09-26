@@ -11198,12 +11198,19 @@
       "targetPath": "source/host/src/extensions/cloud_agents/cloud_agent_request_composition.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "1ff9be104a8adf2fa80c11a5c44a394b8f6da0f2",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cloud_agents/cloud_agent_request_composition.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/cloud_agent_request_composition_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Final pure Rust composition port: requested-model/max-mode parameter validation, image-bearing user-message/conversation-action projection, HTTPS/SSH/scp-like repo normalization, saved-environment primary-repo enforcement, start repo-config projection and private-worker pool/machine routing labels match the frozen module. Production network/service composition remains tracked separately by cloud-agents-service.ts and extension.ts."
     },
     {
       "referencePath": "source/host/extensions/cloud-agents/cloud-agents-service.ts",
