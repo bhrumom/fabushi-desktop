@@ -1208,6 +1208,7 @@ fn is_authentication_destination(url: &Url) -> bool {
         "authenticate",
         "authorize",
         "login",
+        "oauth",
         "saml",
         "sign-in",
         "sign_in",
