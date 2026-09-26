@@ -125,13 +125,39 @@ pub(crate) fn send_cursor_unary(
     timeout_ms: u64,
     ghost_mode: &str,
 ) -> Result<Vec<u8>, CursorBackendError> {
+    let request_id = Uuid::new_v4().to_string();
+    send_cursor_unary_with_request_id(
+        backend_url,
+        access_token,
+        machine_id,
+        path,
+        body,
+        Some(timeout_ms),
+        ghost_mode,
+        &request_id,
+    )
+}
+
+pub(crate) fn send_cursor_unary_with_request_id(
+    backend_url: &str,
+    access_token: &str,
+    machine_id: &str,
+    path: &str,
+    body: &[u8],
+    timeout_ms: Option<u64>,
+    ghost_mode: &str,
+    request_id: &str,
+) -> Result<Vec<u8>, CursorBackendError> {
     let base = Url::parse(backend_url)
         .map_err(|error| CursorBackendError::InvalidBackendUrl(error.to_string()))?;
     let url = base
         .join(path)
         .map_err(|error| CursorBackendError::InvalidBackendUrl(error.to_string()))?;
-    let client = Client::builder()
-        .timeout(Duration::from_millis(timeout_ms))
+    let mut builder = Client::builder();
+    if let Some(timeout_ms) = timeout_ms {
+        builder = builder.timeout(Duration::from_millis(timeout_ms));
+    }
+    let client = builder
         .build()
         .map_err(|error| CursorBackendError::Transport(error.to_string()))?;
     let response = client
@@ -147,7 +173,7 @@ pub(crate) fn send_cursor_unary(
         .header("x-cursor-client-version", sand_client_version())
         .header("x-sand-box-namespace", sand_box_namespace())
         .header("x-ghost-mode", ghost_mode)
-        .header("x-request-id", Uuid::new_v4().to_string())
+        .header("x-request-id", request_id)
         .body(body.to_vec())
         .send()
         .map_err(|error| CursorBackendError::Transport(error.to_string()))?;

@@ -10296,13 +10296,15 @@
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/attachments/generate_image_service.rs"
+        "source/host/src/extensions/attachments/generate_image_service.rs",
+        "source/host/src/cursor_backend.rs"
       ],
       "testEvidence": [
         "source/host/tests/generate_image_service_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/generate_image_cursor_backend_contract.rs"
       ],
-      "notes": "Rust Host service now preserves generated-image base64 decoding, byte persistence, MIME forwarding, returned media path/original base64 and fail-closed persistence semantics. Final remains withheld for the frozen authenticated Cursor generate-image backend construction, model selection/request-id projection and production Attachments extension wiring."
+      "notes": "Rust Host service preserves generated-image base64 decoding, byte persistence, MIME forwarding, returned media path/original base64 and fail-closed persistence semantics. The canonical production backend now constructs the frozen aiserver.v1 RunGenerateImage protobuf, uses Host Auth access-token/machine-id, privacy-derived ghost mode and standard Cursor headers, selects SAND_AGENT_MODEL or grok-4.5, forces maxMode, projects reference images, emits the exact x-request-id through an observer and preserves model-restricted errors. Final remains withheld only until the production Attachments extension owns this backend/service and its media-store persistence dependency."
     },
     {
       "referencePath": "source/host/extensions/attachments/link-preview-image-bounds.ts",
@@ -38725,5 +38727,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-26T07:30:00Z"
+  "generatedAt": "2026-09-26T07:34:00Z"
 }
