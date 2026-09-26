@@ -12109,12 +12109,19 @@
       "targetPath": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "0201ff36f64344e4157162114c007d35b759d19a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+        "source/host/src/extensions/local_exec/local_exec_bridge.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns the real GatewayLocalExecSandBox adaptation for provider state, active/selected computers, terminals-folder projection, max-file fencing, permission-gate authorization seams, approval ids, upload/download base64 frames, file/error settlement and user-computer resolution over the production local-exec bridge. It remains non-final until the live LocalToolPermission controller is bound, generated ExecClient stream management/RemoteResourceAccessor is ported, and Runner ExternalShell/Read/file-transfer surfaces consume this sandbox."
     },
     {
       "referencePath": "source/host/extensions/local-exec/local-exec-bridge.ts",
