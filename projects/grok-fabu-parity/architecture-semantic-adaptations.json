@@ -84,6 +84,200 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Preserves the frozen Grok 0.18 TipTap composer structure while adapting the shipping scope-switch transaction fence to the real ProseMirror browser-input contract. In the shipping Electron renderer, ordinary contenteditable typing is not guaranteed to carry transaction.getMeta(\"uiEvent\"), so the frozen fence could keep accepting DOM edits while suppressing every onChange after opening a newly materialized Agent: the prompt appeared on screen but the React draft remained empty and the Send message action never rendered. The adaptation keeps stale pre-scope transactions fenced, releases ownership on the browser beforeinput event before TipTap creates the real user-edit transaction, and explicitly releases the same fence for voice/dictation insertText commands. It does not alter Agent identity, draft persistence, submission, or Coordinator/Host ownership; focused Electron acceptance proves a pure-text turn reaches the canonical recovered composer and shipping Mahayana path."
+    },
+    {
+      "referencePath": "source/electron-main/adapters/attachment-gateway.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "cbd9411d15f6659eef5490790dedc6e948642dca",
+      "behavioralEvidence": [
+        "source/electron-main/adapters/attachment-gateway.ts",
+        "source/shared/media/link-preview-image-bounds.ts",
+        "source/shared/rpc/coordinator-main.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves Grok attachment-gateway behavior while removing a forbidden Electron-main dependency on the legacy TypeScript Host attachment service. Link metadata now crosses the existing Coordinator main leg, and bounded preview-image handling lives in shared media code. This keeps Electron Main, Coordinator and Host as independent Grok-shaped processes while retaining the same attachment/link-preview contract."
+    },
+    {
+      "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "8005abbb15071ea958a7d7966290895edd2fc5f2",
+      "behavioralEvidence": [
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves Grok MCP/OAuth composition while moving the shared Fabushi data-root resolver out of the legacy Host TypeScript tree. Electron Main no longer imports Host implementation code merely to locate persistent data, preserving the Host process boundary without changing MCP OAuth behavior."
+    },
+    {
+      "referencePath": "source/electron-main/attachments/attachment-manager.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "0d055b7d65c49911deb18ff08af2caa1639d93f7",
+      "behavioralEvidence": [
+        "source/electron-main/attachments/attachment-manager.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Keeps the frozen Grok attachment manager semantics while sourcing data-root and path reanchoring from the shared Node boundary rather than legacy Host TypeScript. This is a dependency-direction adaptation only; attachment lifecycle and path semantics remain owned by Electron Main."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/production-root-auxiliary-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "3afe596fea71772b463454d3350c8841d9a3335a",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/production-root-auxiliary-provider.ts",
+        "source/shared/node/sand-data-root.ts",
+        "source/node-agent-coordinator/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves Grok Electron-main Coordinator auxiliary wiring while resolving the Fabushi data directory through shared Node infrastructure instead of importing legacy Host TypeScript. The Coordinator itself remains the independent Rust Mahayana process; this adaptation only cleans the Electron-side dependency edge."
+    },
+    {
+      "referencePath": "source/electron-main/dev/dev-box-recreate-plane.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "193f53527195afee77c3863ad7a8242cd59c58f0",
+      "behavioralEvidence": [
+        "source/electron-main/dev/dev-box-recreate-plane.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves Grok development box-recreate behavior while moving the data-root dependency to the shared Node layer. This prevents the development control plane from retaining a second legacy Host runtime dependency."
+    },
+    {
+      "referencePath": "source/electron-main/media/media-protocol.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c8b23b825833995f7d6979df65006fe92723a47c",
+      "behavioralEvidence": [
+        "source/electron-main/media/media-protocol.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Keeps Grok media-protocol behavior and changes only the path-reanchoring dependency from legacy Host TypeScript to the shared data-root utility, preserving Electron Main ownership of privileged media protocol handling."
+    },
+    {
+      "referencePath": "source/electron-main/production-binding-providers.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "17af9206914a82adaf72a446304b028bc8730a83",
+      "behavioralEvidence": [
+        "source/electron-main/production-binding-providers.ts",
+        "source/electron-main/local-exec/local-exec-daemon-protocol.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/local-exec/local-exec-daemon-protocol.test.ts",
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok production binding graph while cutting two legacy Host-TypeScript imports: local-exec daemon protocol ownership is now in Electron Main and the data-root resolver is shared. The actual local-exec supervision still belongs to Mahayana Coordinator, so this adaptation strengthens rather than collapses the Grok process boundary."
+    },
+    {
+      "referencePath": "source/electron-main/startup/desktop-user-data-bootstrap.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "95b67e98e09038a32935b4d51f9cf41173986fa2",
+      "behavioralEvidence": [
+        "source/electron-main/startup/desktop-user-data-bootstrap.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves Grok desktop user-data bootstrap semantics while moving Fabushi data-root helpers from legacy Host TypeScript into the shared Node layer, so Electron startup no longer depends on a parallel Host implementation."
+    },
+    {
+      "referencePath": "source/electron-main/startup/startup-data-root-migration.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "7ebfb05b0870a546617b2a69b6f49cc550dc4166",
+      "behavioralEvidence": [
+        "source/electron-main/startup/startup-data-root-migration.ts",
+        "source/electron-main/startup/host-process-identity.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves Grok startup data-root migration behavior while replacing legacy Host path/lock imports with shared data-root utilities and an Electron-main host-process identity seam. This lets migration safely recognize the shipping Mahayana Host without retaining the old Host runtime implementation."
+    },
+    {
+      "referencePath": "source/host/local-exec/local-tool-approvals.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "6073ccbc46298057200f287e4a01bfab30b54adf",
+      "behavioralEvidence": [
+        "source/host/local-exec/local-tool-approvals.ts",
+        "source/shared/node/sand-data-root.ts",
+        "source/node-agent-coordinator/src/local_exec/supervisor.rs"
+      ],
+      "testEvidence": [
+        "source/node-agent-coordinator/tests/local_exec_shipping_contract.rs",
+        "source/node-agent-coordinator/tests/local_exec_supervisor_runtime.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Keeps Grok local-tool approval persistence semantics while moving the common data-root lookup to shared Node infrastructure. The shipping local-exec lifecycle is supervised by the independent Rust Coordinator; this TypeScript compatibility module no longer owns or imports a Host runtime path."
+    },
+    {
+      "referencePath": "source/shared/node/cursor-backend/cursor-inference.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "296eeb02b7b0bc37256fc0d89b5c215d7cd1d501",
+      "behavioralEvidence": [
+        "source/shared/node/cursor-backend/cursor-inference.ts",
+        "source/shared/node/sand-data-root.ts",
+        "source/node-agent-coordinator/src/inference_router.rs",
+        "source/host/src/runner_production_bridge.rs"
+      ],
+      "testEvidence": [
+        "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
+        "source/node-agent-coordinator/tests/inference_router_attachments.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the Cursor backend path but deliberately removes the legacy in-process TypeScript provider-session fallback. Any non-Cursor provider must route through Mahayana Coordinator and the independent Host/Runner pipeline, enforcing the required Grok Coordinator/Host/Runner fault and responsibility boundaries rather than keeping a second inference runtime."
+    },
+    {
+      "referencePath": "source/shared/rpc/coordinator-main.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "6d156a974818eee8d7166697ac3ec7b821140705",
+      "behavioralEvidence": [
+        "source/shared/rpc/coordinator-main.ts",
+        "source/electron-main/adapters/attachment-gateway.ts",
+        "source/node-agent-coordinator/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Extends the frozen Coordinator-main RPC contract with fetchLinkMetadata so Electron attachment previews cross the Coordinator boundary instead of calling legacy Host TypeScript directly. Request/reply ownership and transport remain on the existing Coordinator protocol; no parallel channel is introduced."
     }
   ]
 }
