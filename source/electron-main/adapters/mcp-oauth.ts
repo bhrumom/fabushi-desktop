@@ -6,7 +6,7 @@ import { fetchTeamPluginPopularity } from "../mcp/mcp-team-popularity.js";
 import { createProductionMcpOAuthLoopbackFactory } from "../mcp/mcp-oauth-loopback-provider.js";
 import type { ElectronProductionAdapterBindings } from "../production-adapters.js";
 import type { ProductionDisposable, ProductionMcpService, ProductionServiceContext } from "../main-production-services.js";
-import { getSandRootDir } from "../../host/host-paths.js";
+import { getSandRootDir } from "../../shared/node/sand-data-root.js";
 import { delay } from "../../shared/node/async.js";
 import { cleanupLegacyMcpAuthCredentials } from "../../shared/node/mcp/mcp-auth-cleanup.js";
 import { parseAllowedExternalUrl } from "../../shared/external-url-policy.js";
