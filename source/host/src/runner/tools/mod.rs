@@ -30,3 +30,5 @@ pub mod turn_toolset;
 pub mod sand_mcp_management_tools;
 
 pub mod sand_browser_driver_source;
+
+pub mod sand_browser_tools;
