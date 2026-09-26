@@ -15,13 +15,14 @@
     "build:renderer": "tsc --noEmit && vite build && node scripts/check-desktop-bundle.mjs",
     "build:host": "cargo build --release --manifest-path ../source/host/app/Cargo.toml --bin mahayana-app-host && cargo build --release --manifest-path ../source/node-agent-coordinator/Cargo.toml && cargo build --release --manifest-path ../source/box-exec-daemon/Cargo.toml --bin box-exec-daemon && node scripts/stage-host.mjs release",
     "build:host:ci": "cargo build --profile ci --manifest-path ../source/host/app/Cargo.toml --bin mahayana-app-host && cargo build --profile ci --manifest-path ../source/node-agent-coordinator/Cargo.toml && cargo build --profile ci --manifest-path ../source/box-exec-daemon/Cargo.toml --bin box-exec-daemon && node scripts/stage-host.mjs ci",
-    "build": "npm run build:host && npm run build:electron && npm run build:renderer",
-    "package": "npm run build:host && npm run build:electron && npm run build:renderer && electron-builder",
+    "build": "npm run build:host && npm run build:electron && npm run build:renderer && npm run check:desktop-runtime",
+    "package": "npm run build:host && npm run build:electron && npm run build:renderer && npm run check:desktop-runtime && electron-builder",
     "test:credential-gateway": "node --test electron/credential-gateway.test.cjs",
     "test:e2e": "playwright test",
     "test:openbot-parity": "node scripts/assert-openbot-parity.mjs",
-    "start": "npm run build:electron && electron .",
-    "build:electron": "node scripts/build-electron-runtime.mjs"
+    "start": "npm run build:electron && npm run build:renderer && npm run check:desktop-runtime && electron .",
+    "build:electron": "node scripts/build-electron-runtime.mjs",
+    "check:desktop-runtime": "node scripts/check-electron-runtime-bundle.mjs"
   },
   "dependencies": {
     "@bufbuild/protobuf": "1.10.1",
