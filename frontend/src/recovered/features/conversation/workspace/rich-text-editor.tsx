@@ -739,6 +739,14 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
           // creates the corresponding transaction so onUpdate can persist it.
           scopeFence.current = null;
           return false;
+        },
+        input: () => {
+          // Programmatic browser drivers and some IME/contenteditable paths can
+          // surface the committed DOM input without a separately observable
+          // beforeinput callback. It is still a user-owned edit, so release the
+          // stale-scope fence before ProseMirror flushes the DOM change.
+          scopeFence.current = null;
+          return false;
         }
       },
       handleKeyDown: (_view, event) => {
