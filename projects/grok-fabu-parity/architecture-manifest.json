@@ -13952,17 +13952,26 @@
       "targetPath": "source/host/src/extensions/telemetry/host_crash_marker.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "1025d75ceee69342f04f4361d5c9a8865443abd5",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": [],
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/host_crash_marker.rs",
+        "source/host/src/extensions/telemetry/extension.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/src/host_paths.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_crash_marker_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
       "evidence": [
         "source/host/tests/host_crash_marker_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host owns frozen crash-marker parsing, metadata, file-store read/delete, unchanged-delete fencing, forwarded dedupe and delivery/defer/pending settlement. Final parity still requires production Host startup/crash telemetry composition to invoke this boundary."
+      "notes": "Final Rust Host crash-marker parity: canonical .sand-host-crash.json path, frozen parsing/metadata/delete-if-unchanged/dedupe/defer/pending semantics, production Telemetry extension startup ownership, immediate forwarding plus bounded 5-minute retry lifecycle, durable sand.host.crash structured-log emission with SAND-E0001/registry/non-retryable tags, and successful marker deletion after confirmed persistence. Exact HEAD ad55380002e3b8eb56499aa1bbe25feb85227136 passed shipping Host compile, independent Coordinator/box supervision and full Host Runner cargo tests in Rust runtime run 36233942302; Desktop Chat Parity run 36233942301 passed renderer build and the Grok Agent shell/Mahayana chat regression.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/telemetry/host-diagnostic-telemetry.ts",
@@ -20980,7 +20989,7 @@
       "targetPath": "source/host/src/extensions/session/production_agent_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "265d68aad68bd7196687d9db3a7ebb7904ba1fc8",
       "architecturalRole": "package/agent-kv",
       "processOrPackage": "mahayana-host",
@@ -21002,7 +21011,7 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust ProductionAgentStore is the live AgentStore2 owner. It now exposes the full frozen typed metadata key surface and subscriptions; SHA-256 content-addressed checkpoint persistence with metadata advancement; fail-closed tryResetFromDb; reverse getLastRequestIdFromConversation; lenient getFullConversation hydration that skips missing referenced blobs like the frozen API; inline/ref subagent state resolution with ref override, inline fallback, missing-ref failure, and child conversation hydration; and the shipping Runner/transcript-mirror checkpoint adapter. Implementation is complete at this checkpoint; keep existing-needs-parity until the exact-HEAD Rust gate passes the expanded contracts."
+      "notes": "Final Rust ProductionAgentStore parity: live AgentStore2 owner with typed metadata/subscriptions, content-addressed checkpoint persistence, fail-closed DB reset, reverse latest request-id recovery, frozen-compatible lenient full-conversation hydration, inline/ref subagent state resolution with override/fallback/missing-ref fencing, and the shipping Runner/transcript-mirror checkpoint path. Exact implementation HEAD 45de56763f1885701e16f255bbe69f440ea4140a passed shipping Host compile, independent Coordinator/box supervision, full Host Runner cargo tests and downstream Mahayana contracts in Rust runtime run 36233783915; superset HEAD ad55380002e3b8eb56499aa1bbe25feb85227136 passed the same rust-host chain in run 36233942302."
     },
     {
       "referencePath": "source/packages/agent-kv/blob-not-found-error.ts",
