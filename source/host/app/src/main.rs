@@ -12,10 +12,15 @@ use mahayana_host_runtime::extensions::attachments::attachments_service::Attachm
 use mahayana_host_runtime::extensions::attachments::extension::start_attachments_extension;
 use mahayana_host_runtime::extensions::auto_review::auto_review_service::AutoReviewService;
 use mahayana_host_runtime::extensions::auto_review::extension::{
-    HostAutoReviewExtension, no_op_auto_review_telemetry_sink,
-    no_op_auto_review_update_sink, start_auto_review_extension,
+    HostAutoReviewExtension, start_auto_review_extension,
 };
-use mahayana_host_runtime::runner::sand_auto_review::SandAutoReviewResolution;
+use mahayana_host_runtime::extensions::telemetry::auto_review_approval_telemetry::{
+    AutoReviewApprovalReport, auto_review_approval_telemetry,
+};
+use mahayana_host_runtime::runner::sand_auto_review::{
+    SandAutoReviewApprovalStatus, SandAutoReviewEvent, SandAutoReviewExpiryCause,
+    SandAutoReviewResolution,
+};
 use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
 use mahayana_host_runtime::production_binding_providers::production_secrets_log;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
@@ -3184,13 +3189,87 @@ fn main() {
     );
     let session_workers = session_extension.store();
     let session_handoff = session_extension.handoff_service();
+    let auto_review_update_events = gateway_events.clone();
+    let auto_review_update_sessions = Arc::clone(&session_workers);
+    let auto_review_update_sink = Arc::new(move |agent_id: &str, update: serde_json::Value| {
+        let request_id = update
+            .get("requestId")
+            .or_else(|| update.pointer("/message/approval/requestId"))
+            .and_then(serde_json::Value::as_str);
+        let Some(request_id) = request_id else {
+            return;
+        };
+        let Ok(entries) = auto_review_update_sessions.read_agent_transcript_entries(agent_id) else {
+            return;
+        };
+        let Some(entry) = entries.into_iter().find(|entry| {
+            entry.get("id").and_then(serde_json::Value::as_str) == Some(request_id)
+        }) else {
+            return;
+        };
+        let event_type = if update.get("type").and_then(serde_json::Value::as_str)
+            == Some("send-message")
+        {
+            "appended"
+        } else {
+            "updated"
+        };
+        auto_review_update_events.publish(serde_json::json!({
+            "channel": "transcript",
+            "payload": {
+                "type": event_type,
+                "agentId": agent_id,
+                "entry": entry,
+            }
+        }));
+    });
+    let auto_review_logs = host_telemetry.logs.clone();
+    let auto_review_telemetry_sink = Arc::new(move |event: &SandAutoReviewEvent| {
+        let (event_type, approval, cause) = match event {
+            SandAutoReviewEvent::Created(approval) => ("created", approval, None),
+            SandAutoReviewEvent::Resolved(approval) => ("resolved", approval, None),
+            SandAutoReviewEvent::Expired { approval, cause } => (
+                "expired",
+                approval,
+                Some(match cause {
+                    SandAutoReviewExpiryCause::Ttl => "ttl",
+                    SandAutoReviewExpiryCause::Cancelled => "cancelled",
+                    SandAutoReviewExpiryCause::UserRedirect => "user_redirect",
+                    SandAutoReviewExpiryCause::SettingsChange => "settings_change",
+                    SandAutoReviewExpiryCause::SessionEnd => "session_end",
+                    SandAutoReviewExpiryCause::Quiesce => "quiesce",
+                    SandAutoReviewExpiryCause::Other(value) => value.as_str(),
+                }.to_string()),
+            ),
+        };
+        let status = match approval.status {
+            SandAutoReviewApprovalStatus::Pending => "pending",
+            SandAutoReviewApprovalStatus::Approved => "approved",
+            SandAutoReviewApprovalStatus::Denied => "denied",
+            SandAutoReviewApprovalStatus::Expired => "expired",
+        };
+        let now_ms = started_at_ms();
+        let report = AutoReviewApprovalReport {
+            event_type: event_type.to_string(),
+            conversation_id: approval.agent_id.clone(),
+            approval_id: approval.id.clone(),
+            surface: approval.surface.key().to_string(),
+            status: status.to_string(),
+            age_ms: now_ms.saturating_sub(approval.created_at_ms) as f64,
+            ttl_ms: approval
+                .expires_at_ms
+                .map(|expires_at_ms| expires_at_ms.saturating_sub(approval.created_at_ms) as f64),
+            cause,
+        };
+        let _ = auto_review_logs.report_projection(&auto_review_approval_telemetry(&report));
+    });
     let auto_review_extension = Arc::new(start_auto_review_extension(
         Arc::clone(&session_workers),
         Arc::clone(&production_extensions.experiments),
         Arc::clone(&settings_extension),
         format!("host-{}", uuid::Uuid::new_v4()),
-        no_op_auto_review_update_sink(),
-        no_op_auto_review_telemetry_sink(),
+        auto_review_update_sink,
+        auto_review_telemetry_sink,
     ));
     let transcript_event_hub = gateway_events.clone();
     let transcript_extension = start_transcript_extension(
