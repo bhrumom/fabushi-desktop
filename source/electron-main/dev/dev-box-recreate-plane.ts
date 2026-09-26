@@ -5,7 +5,7 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { getSandRootDir } from "../../host/host-paths.js";
+import { getSandRootDir } from "../../shared/node/sand-data-root.js";
 import { isDevControlsEnabled } from "./dev-controls-gate.js";
 import type { BoxConnectionInfo } from "../../shared/node/egress-tunnel/box-connection.js";
 import type { RecreateResult } from "../box/box-recreate-commands.js";
