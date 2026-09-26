@@ -9582,18 +9582,22 @@
       "targetPath": "source/host/src/automations/automation_trigger.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "ab7a9b2c4da3c1eec8626179c5ef0e861b9db377",
       "architecturalRole": "host/automations",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/automations/automation_trigger.rs"
+        "source/host/src/automations/automation_trigger.rs",
+        "source/host/src/extensions/automations/sand_trigger_hub.rs",
+        "source/host/src/extensions/automations/backend_relay_source.rs"
       ],
       "testEvidence": [
+        "source/host/tests/automation_trigger_matching_contract.rs",
+        "source/host/tests/automations_trigger_foundations_contract.rs",
         "source/host/tests/automation_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust production slice parses/canonicalizes cron, Slack, GitHub, Teams, Linear, Sentry, PagerDuty and group trigger storage shapes, including length/dedup/CI-branch/user-allowlist rules. Final is withheld for the full event-admission/matching/context-rendering surface."
+      "notes": "Final audited Rust port: every frozen automation-trigger export is represented in the Host owner—stored-trigger parse/serialize, identity, Slack scope and event matching, GitHub event/user/CI-branch admission, Teams/Linear/Sentry/PagerDuty listener filters, group trigger matching, event descriptions and escaped trigger context blocks. Shipping SandTriggerHub and BackendRelaySource consume the same matcher; contracts cover direct platform matching, group fire admission and durable store round-trip."
     },
     {
       "referencePath": "source/host/automations/automation.ts",

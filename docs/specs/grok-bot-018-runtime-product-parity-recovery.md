@@ -1317,3 +1317,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Integration coverage proves stable cache reuse, invalidation after content change, missing-file eviction, internal/external watcher delivery and helper-script refresh. The frozen `workflow-library.ts` and `stat-keyed-parse-cache.ts` rows are now final `implemented`.
 - `workflow-store.ts` deliberately remains non-final: managed/plugin skill aggregation/watchers and published-plugin editing are still separate unrecovered responsibilities.
 
+### 2026-09-26 automation-trigger final audit
+
+- Starting exact HEAD: `c887d1116d350c37edba9a75505e3af9dfcf4cb0`.
+- Re-audited all frozen `automation-trigger.ts` exports against the current Rust Host. Parse/serialize/identity, Slack matching, GitHub actor/owner/CI-branch admission, Teams/Linear/Sentry/PagerDuty filters, group matching, human event descriptions and escaped event-context projection are all present in the canonical `automation_trigger.rs` owner.
+- Shipping `SandTriggerHub` and `BackendRelaySource` consume these canonical matchers; matching and trigger-foundation contracts cover direct and grouped admission plus store round-trip.
+- This mapping is now final `implemented`. The neighboring `automation.ts` row remains non-final because its frozen system-prompt/wake-batch surface is still incomplete.
+
