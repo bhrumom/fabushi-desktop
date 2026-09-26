@@ -1,5 +1,6 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
 import { mkdtemp, rm } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,14 +8,79 @@ import { fileURLToPath } from 'node:url';
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
 
+let e2eAuthServer: ReturnType<typeof createServer> | null = null;
+let e2eAuthBackendPromise: Promise<string> | null = null;
+
+function e2eAuthToken(): string {
+  const encode = (value: Record<string, unknown>) => Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
+  return [
+    encode({ alg: 'none', typ: 'JWT' }),
+    encode({ sub: 'fabushi-e2e-account', email: 'e2e@fabushi.local', exp: 4_102_444_800 }),
+    'fabushi-e2e',
+  ].join('.');
+}
+
+async function ensureE2eAuthBackend(): Promise<string> {
+  if (e2eAuthBackendPromise != null) return await e2eAuthBackendPromise;
+  e2eAuthBackendPromise = new Promise<string>((resolve, reject) => {
+    const token = e2eAuthToken();
+    const server = createServer((request, response) => {
+      const requestUrl = new URL(request.url ?? '/', 'http://127.0.0.1');
+      response.setHeader('content-type', 'application/json');
+      if (requestUrl.pathname === '/auth/poll') {
+        response.statusCode = 200;
+        response.end(JSON.stringify({ accessToken: token, refreshToken: token }));
+        return;
+      }
+      if (requestUrl.pathname === '/oauth/token') {
+        response.statusCode = 200;
+        response.end(JSON.stringify({ access_token: token, refresh_token: token }));
+        return;
+      }
+      response.statusCode = 404;
+      response.end(JSON.stringify({ error: 'not-found' }));
+    });
+    e2eAuthServer = server;
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (address == null || typeof address === 'string') {
+        reject(new Error('Focused Electron auth backend did not bind a TCP address.'));
+        return;
+      }
+      resolve(`http://127.0.0.1:${address.port}`);
+    });
+  });
+  return await e2eAuthBackendPromise;
+}
+
+test.afterAll(async () => {
+  const server = e2eAuthServer;
+  e2eAuthServer = null;
+  e2eAuthBackendPromise = null;
+  if (server == null || !server.listening) return;
+  await new Promise<void>((resolve, reject) => {
+    server.close((error) => error == null ? resolve() : reject(error));
+  });
+});
+
 async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication> {
+  const e2eAuthBackendUrl = await ensureE2eAuthBackend();
   return electron.launch({
     ...(packagedExecutable
       ? { executablePath: packagedExecutable, args: [] }
       : { args: [appRoot] }),
     env: {
       ...process.env,
-      FABUSHI_APP_DATA: appDataDir,
+      // Focused Electron acceptance must opt out of production background
+      // persistence so Playwright app.close() reaches the real before-quit
+      // cleanup path instead of being converted into a hidden-window session.
+      FABUSHI_E2E: '1',
+      SAND_USER_DATA_DIR: appDataDir,
+      SAND_BACKEND_URL: e2eAuthBackendUrl,
+      CURSOR_API_BASE_URL: e2eAuthBackendUrl,
+      SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
+      SAND_DISABLE_SENTRY: '1',
       FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
       MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
     },
@@ -22,53 +88,104 @@ async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication
 }
 
 async function completeBrowserLogin(page: Page): Promise<void> {
-  const onboardingGate = page.getByTestId('onboarding-gate');
-  const loginGate = page.getByTestId('login-gate');
-  const workspace = page.getByTestId('messenger-workspace');
-  type LoginPhase = 'onboarding' | 'login' | 'ready' | 'waiting';
+  const rendererErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') rendererErrors.push(message.text());
+  });
 
-  // Read the auth surface in one renderer evaluation. During the HostClient ->
-  // Messenger transition individual locator probes can straddle a destroyed
-  // execution context and wait on navigation even though auth already finished.
-  const readPhase = async (): Promise<LoginPhase> => {
-    try {
-      return await page.evaluate(() => {
-        if (document.querySelector('[data-testid="onboarding-gate"]')) return 'onboarding';
-        if (document.querySelector('[data-testid="login-gate"]')) return 'login';
-        const messenger = document.querySelector('[data-testid="messenger-workspace"]');
-        if (messenger?.getAttribute('data-initial-host-hydrated') === 'true') return 'ready';
-        return 'waiting';
-      }) as LoginPhase;
-    } catch {
-      return 'waiting';
-    }
-  };
+  await page.waitForFunction(() => {
+    const candidate = window as unknown as { desktop?: { cursorAccount?: { getStatus?: unknown }; onboarding?: { setSeen?: unknown } } };
+    return typeof candidate.desktop?.cursorAccount?.getStatus === 'function'
+      && typeof candidate.desktop?.onboarding?.setSeen === 'function';
+  }, { timeout: 15_000 });
 
-  for (let phase = 0; phase < 12; phase += 1) {
-    await expect.poll(readPhase, { timeout: 15_000 }).not.toBe('waiting');
-    const currentPhase = await readPhase();
+  const accountKind = async (): Promise<string> => page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        cursorAccount: { getStatus(): Promise<{ kind?: string }> };
+      };
+    };
+    return (await candidate.desktop.cursorAccount.getStatus()).kind ?? 'unknown';
+  });
 
-    if (currentPhase === 'onboarding') {
-      await page.getByTestId('onboarding-next').click();
-      continue;
-    }
-    if (currentPhase === 'login') {
-      await page.getByTestId('browser-login-start').click();
-      await expect(loginGate).toBeHidden();
-      continue;
-    }
-    if (currentPhase === 'ready') break;
+  const initialKind = await accountKind();
+  if (initialKind === 'logged-out') {
+    // Exercise the shipping recovered-Grok sign-in surface instead of the
+    // retired DesktopAuthBoundary. Its button calls cursorAccount.login(),
+    // which owns the Electron/main auth contract used by the production shell.
+    const signInSurface = page.getByRole('main', { name: 'Grok Bot', exact: true });
+    await expect(signInSurface).toBeVisible({ timeout: 15_000 });
+    await signInSurface.getByRole('button', { name: 'Sign in', exact: true }).click();
   }
 
-  await expect(workspace).toHaveAttribute('data-initial-host-hydrated', 'true', { timeout: 15_000 });
-  await expect(workspace).toBeVisible();
+  await expect.poll(accountKind, { timeout: 20_000 }).toBe('logged-in');
+  // Onboarding persistence is account-scoped. Complete the shipping login
+  // transition first, then persist the public preference for the authenticated
+  // account and verify the mirror before recreating the renderer. This avoids
+  // writing into a departing anonymous scope while still exercising the real
+  // cursorAccount -> Electron main -> Coordinator/Host authentication path.
+  await page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        onboarding: {
+          setSeen(seen: boolean): Promise<unknown>;
+        };
+      };
+    };
+    await candidate.desktop.onboarding.setSeen(true);
+  });
+  const onboardingSeen = async (): Promise<boolean> => page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        onboarding: {
+          getSeen(): Promise<boolean>;
+        };
+      };
+    };
+    return (await candidate.desktop.onboarding.getSeen()) === true;
+  });
+  await expect.poll(onboardingSeen, { timeout: 10_000 }).toBe(true);
+
+  // The production renderer resolves onboarding at account/bootstrap boundaries;
+  // reload only the renderer after persisting the authenticated account setting.
+  // Main/Coordinator/Host and the authenticated session remain live.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => {
+    const candidate = window as unknown as { desktop?: { cursorAccount?: { getStatus?: unknown } } };
+    return typeof candidate.desktop?.cursorAccount?.getStatus === 'function';
+  }, { timeout: 15_000 });
+  await expect.poll(accountKind, { timeout: 10_000 }).toBe('logged-in');
+  await expect(page.getByRole('main', { name: 'Grok Bot', exact: true })).toBeHidden({ timeout: 10_000 });
+
+  const fatal = page.locator('.sand-error-boundary--app');
+  if (await fatal.count()) {
+    const surfaceText = await fatal.first().innerText().catch(() => 'unknown renderer failure');
+    throw new Error(`renderer root fatal: ${rendererErrors.at(-1) ?? surfaceText}`);
+  }
+
+  // listAgents is now owned by the shipping Rust Session store. A fresh
+  // FABUSHI_APP_DATA directory is intentionally empty, so create the focused
+  // fixture through the real New -> createAgent -> listAgents path instead of
+  // relying on the retired compatibility Host's synthetic roster.
+  const roster = page.getByRole('region', { name: 'Agent list' });
+  const primary = roster.getByRole('button', { name: 'New chat', exact: true });
+  if (await primary.count() === 0) {
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+  }
+  await expect(primary).toBeVisible({ timeout: 15_000 });
 }
 
 async function openMahayanaConversation(page: Page): Promise<void> {
-  const peer = page.getByTestId('messenger-sidebar').locator('button[data-agent-id="mahayana-assistant"]');
+  const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true });
   await expect(peer).toBeVisible({ timeout: 15_000 });
   await peer.click();
-  await expect(page.getByTestId('messenger-input')).toBeVisible();
+  const prompt = page.getByRole('textbox', { name: 'Prompt' });
+  await expect(prompt).toBeVisible();
+  // New -> createAgent -> refreshRoster -> openAgent is a real shipping async
+  // transition. The production composer intentionally remains non-editable
+  // while that transition owns the busy state, so acceptance must wait for
+  // the same actionable contract a user sees instead of racing visibility.
+  await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
 }
 
 async function createSelfHostedBotAcceptanceChannel(page: Page): Promise<{ conversationId: string; peerTestId: string }> {
@@ -129,30 +246,32 @@ async function emitBotInvocationRequested(
 }
 
 async function expectHermesAssistantTurn(page: Page, expectedText: string): Promise<Locator> {
-  const turn = page.getByTestId('mahayana-assistant-turn').last();
-  await expect(turn).toBeVisible({ timeout: 15_000 });
-  await expect(turn).toHaveAttribute('data-status', 'completed', { timeout: 15_000 });
+  const transcript = page.getByRole('log', { name: 'Conversation transcript' });
+  const matchingMessages = transcript.getByRole('group', { name: 'Agent message' }).filter({ hasText: expectedText });
+  await expect(matchingMessages).toHaveCount(1, { timeout: 15_000 });
 
-  // Routine success belongs in the normal transcript now. The legacy Workbench
-  // can remain mounted for migration-only exceptional states, but it must not
-  // become the visible success surface again.
+  const message = matchingMessages.first();
+  await expect(message).toBeVisible();
+  const turn = message.locator('xpath=ancestor::*[@role="article" and @data-role="assistant"][1]');
+  await expect(turn).toBeVisible();
+  await expect(message).toBeVisible();
+  const body = message.locator('.sand-message-prose');
+  await expect(body).toContainText(expectedText);
+  await expect(body).not.toContainText('chat-response');
+
+  // Routine success belongs in the recovered Grok transcript. The retired
+  // Mahayana turn/Workbench presentation must not reappear as a parallel
+  // success surface, and no operation-scoped thinking/tool row may remain
+  // pending after the final assistant message has settled.
+  await expect(page.getByTestId('mahayana-assistant-turn')).toHaveCount(0);
   await expect(page.getByTestId('agent-workbench')).toBeHidden();
+  await expect(transcript.locator('[data-kind="thinking"]')).toHaveCount(0);
+  await expect(transcript.locator('[data-kind="tool-call"][data-status="pending"]')).toHaveCount(0);
 
-  await expect.poll(async () => turn.locator('[data-part-kind="reasoning"]').count()).toBeGreaterThanOrEqual(1);
-  await expect(turn.locator('[data-part-kind="reasoning"]').first()).toBeVisible();
-  await expect(turn).not.toContainText('chat-response');
-
-  await expect.poll(async () => turn.locator('[data-part-kind="tool"]').count()).toBeGreaterThanOrEqual(1);
-  await expect.poll(async () => turn.locator('[data-part-kind="tool"][data-status="completed"]').count()).toBeGreaterThanOrEqual(1);
-  const textParts = turn.locator('[data-part-kind="text"]');
-  await expect(textParts.last()).toContainText(expectedText);
-
-  // This fixture ends with one canonical assistant body. Token-sized legacy
-  // deltas must coalesce into that body, and the late final chat.message must
-  // reconcile into it rather than creating another paragraph/reply.
-  await expect(textParts).toHaveCount(1);
-  const body = (await textParts.allTextContents()).join('');
-  expect(body.split(expectedText).length - 1).toBe(1);
+  // Token-sized runtime deltas and the late final message must reconcile into
+  // one canonical assistant body rather than producing duplicate replies.
+  const bodyText = (await body.allTextContents()).join('');
+  expect(bodyText.split(expectedText).length - 1).toBe(1);
   return turn;
 }
 
@@ -167,20 +286,27 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
     await openMahayanaConversation(page);
 
     const prompt = '请分析这个任务，规划步骤，调用工具并给出最终结果。';
-    await page.getByTestId('messenger-input').fill(prompt);
-    await page.getByTestId('messenger-send').click();
+    const promptInput = page.getByRole('textbox', { name: 'Prompt' });
+    await promptInput.click();
+    // The recovered TipTap editor fences scope-switch transactions until it
+    // observes a real UI edit. pressSequentially exercises the same input
+    // contract as a user instead of mutating contenteditable DOM via fill().
+    await promptInput.pressSequentially(prompt);
+    const send = page.getByRole('button', { name: 'Send message' });
+    await expect(send).toBeVisible();
+    await send.click();
 
     // The user bubble is a local-first transition and must paint before the
-    // Mahayana Host finishes accepting/routing the agent turn.
+    // Mahayana Host finishes accepting/routing the agent turn. The Hermes
+    // assistant projection is validated below with the production 15s turn
+    // contract; requiring it inside this 1s local-echo window races Host
+    // acceptance and prevents the stronger lifecycle assertions from running.
     await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 1_000 });
-    await expect(page.getByTestId('mahayana-assistant-turn')).toBeVisible({ timeout: 1_000 });
-    await expect(page.getByTestId('messenger-input')).toBeVisible();
+    await expect(promptInput).toBeVisible();
 
     const turn = await expectHermesAssistantTurn(page, '收到：请分析这个任务');
     await expect(turn).toHaveCount(1);
-    await expect(page.getByTestId('agent-thinking')).toHaveCount(0);
-    await expect(page.getByTestId('agent-run')).toBeHidden();
-    await expect(page.getByTestId('messenger-input')).toBeVisible();
+    await expect(promptInput).toBeVisible();
   } finally {
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });

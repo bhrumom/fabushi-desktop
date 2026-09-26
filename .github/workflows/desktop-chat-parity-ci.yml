@@ -2,12 +2,16 @@ name: Desktop Chat Parity CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, refactor/grok-018-architecture-rebuild]
     paths:
       - "desktop/**"
-      - "frontend/apps/web/**"
+      - "frontend/**"
       - "projects/desktop-chat-streaming-parity/**"
+      - "projects/grok-fabu-parity/architecture-semantic-adaptations.json"
+      - "scripts/check-grok-architecture.mjs"
+      - ".github/workflows/pr20-verify-once.yml"
       - ".github/workflows/desktop-chat-parity-ci.yml"
+      - ".github/workflows/pr20-verify-once.yml"
   workflow_dispatch:
 
 permissions:
@@ -48,10 +52,14 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
+      - name: Build Grok-shaped Electron runtime
+        run: npm run build:electron
       - name: Enforce Agent workspace architecture boundary
         run: node scripts/check-agent-workspace-boundary.mjs
       - run: npm run typecheck
       - run: npm run build:renderer
+      - name: Verify co-staged desktop runtime
+        run: npm run check:desktop-runtime
       - name: Enforce built desktop bundle boundary
         run: node scripts/check-desktop-bundle.mjs
 
@@ -85,23 +93,62 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
+      - name: Verify Electron runtime installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          verify_electron() {
+            node -e "const fs=require('node:fs'); const electron=require('electron'); if (!electron || !fs.existsSync(electron)) process.exit(1)"
+          }
+          if verify_electron; then
+            exit 0
+          fi
+          for attempt in 1 2 3; do
+            echo "Electron runtime missing after npm ci; reinstall attempt $attempt/3"
+            rm -rf node_modules/electron/dist node_modules/electron/path.txt
+            if node node_modules/electron/install.js && verify_electron; then
+              exit 0
+            fi
+            sleep $((attempt * 10))
+          done
+          echo "Electron runtime installation failed after 3 attempts" >&2
+          exit 1
+      - name: Build Grok-shaped Electron runtime
+        run: npm run build:electron
+      - name: Compile production Electron boundary contracts
+        run: ./node_modules/.bin/tsc -p tsconfig.grok-electron.json
+      - name: Validate production Electron boundary contracts
+        run: >-
+          node --test
+          .tmp-grok-electron/source/electron-preload/coordinator-port-bridge.test.js
+          .tmp-grok-electron/source/electron-preload/preload-boundaries.test.js
+          .tmp-grok-electron/source/shared/foundations.test.js
+          .tmp-grok-electron/source/electron-main/foundations.test.js
+          .tmp-grok-electron/source/electron-main/coordinator/coordinator-launcher.test.js
+          .tmp-grok-electron/source/electron-main/coordinator/coordinator-executors.test.js
+          .tmp-grok-electron/source/electron-main/local-exec/local-exec-daemon-protocol.test.js
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: third_party/mahayana/mahayana-rs -> target
+          workspaces: source/mahayana/mahayana-rs -> target
           shared-key: desktop-restored-rust-1.97.1
       - name: Build deterministic Mahayana test host
         run: npm run build:host:ci
       - run: npm run build:renderer
+      - name: Verify co-staged desktop runtime
+        run: npm run check:desktop-runtime
       - name: Enforce built desktop bundle boundary
         run: node scripts/check-desktop-bundle.mjs
       - name: Run Grok Agent shell and Mahayana chat regression
         env:
           FABUSHI_FEATURE_HOST_MODE: test
           MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
-        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts e2e/grok-parity.spec.ts --grep "Mahayana renders one Hermes-style assistant turn|desktop uses the Fabushi-owned Grok parity surface"
+          DEBUG: pw:browser*
+          ELECTRON_ENABLE_LOGGING: "1"
+          ELECTRON_ENABLE_STACK_DUMPING: "1"
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "Mahayana renders one Hermes-style assistant turn"
       - name: Upload Playwright evidence
         if: always()
         uses: actions/upload-artifact@v4

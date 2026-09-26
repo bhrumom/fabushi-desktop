@@ -1,0 +1,72 @@
+name: Grok Rust parity finalize
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - refactor/grok-018-architecture-rebuild
+    paths:
+      - 'source/host/src/runner/**'
+      - 'source/host/tests/**'
+      - 'source/host/Cargo.toml'
+      - 'scripts/finalize-rust-parity.mjs'
+      - '.github/workflows/grok-rust-parity-finalize.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: grok-rust-parity-finalize
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Bind input HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "Input HEAD: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: grok-rust-parity-1.97.1
+      - name: Test Mahayana Runner parity contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path source/host/Cargo.toml
+      - name: Finalize only tested Rust manifest rows
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/finalize-rust-parity.mjs
+      - name: Recheck architecture inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/check-grok-architecture.mjs
+      - name: Commit tested manifest evidence to PR 20 branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet projects/grok-fabu-parity/architecture-manifest.json; then
+            echo "No curated Rust rows remain to finalize." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add projects/grok-fabu-parity/architecture-manifest.json
+          git commit -m "test(architecture): finalize tested Rust runner parity"
+          git push origin HEAD:refactor/grok-018-architecture-rebuild
+          echo "Committed HEAD: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"

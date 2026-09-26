@@ -4,10 +4,10 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const desktopRoot = path.resolve(scriptDir, '..');
-const distRoot = path.join(desktopRoot, 'dist');
+const distRoot = path.join(desktopRoot, 'dist', 'renderer');
 
 if (!fs.existsSync(distRoot)) {
-  console.error('Desktop renderer dist is missing; run vite build before the bundle boundary check.');
+  console.error('Desktop renderer dist/renderer is missing; run vite build before the bundle boundary check.');
   process.exit(1);
 }
 

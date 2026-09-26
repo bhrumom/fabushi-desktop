@@ -2,7 +2,7 @@
 
 Status: active  
 Owner: Fabushi desktop / Agent runtime  
-Last updated: 2026-09-22  
+Last updated: 2026-09-23  
 Related project: `projects/grok-fabu-parity`  
 Related task / issue / PR: 2026-09-22 packaged-app regression report; spec PR created from canonical main `20644cf5aa2f5777cc350ece32edeb0cb90f88d7`
 
@@ -95,11 +95,13 @@ Any older `IMPLEMENTED` or `COMPLETE` label in `projects/grok-fabu-parity/PARITY
 
 The target is to rebuild Fabushi desktop so that its **overall architecture, process boundaries, module ownership, protocols, runtime state machines, failure semantics, folder/domain structure, and observable product behavior are equivalent to Grok Bot 0.18** at the frozen reference baseline `b-nnett/grok-bot-0.18-reconstructed@a9f633e09d49a85829b8236331b9e21f7e612634`.
 
-The implementation must proceed module by module across the Grok Bot code tree, but **language parity is not a requirement**. The architectural role of each Grok module is normative; the implementation language is selected by technical fit.
+The implementation must proceed module by module across the Grok Bot code tree, but **language parity is not a requirement and one-to-one physical file copying is not a requirement**. The architectural role and observable product effect of each Grok module are normative; the implementation language and exact target-file granularity are selected by technical fit.
+
+The canonical migration rule is: **per-source-file audit/disposition + per-product-responsibility desktop implementation**. Every frozen Grok source file must be accounted for in the architecture manifest, but the Fabushi target tree does not need the same file count. One Grok file may split across multiple Fabushi files, and multiple Grok files may converge into one implementation module, provided no Grok architectural boundary or product responsibility is collapsed or lost.
 
 Required principles:
 
-- every source-bearing Grok module must have a tracked Fabushi counterpart, or an explicit evidence-backed `not-applicable` classification;
+- every source-bearing Grok module must be individually audited and dispositioned, while every product-relevant responsibility must have a real Fabushi desktop implementation, an evidenced existing equivalent, or an explicit evidence-backed platform/non-code `not-applicable` classification;
 - the **relative source/domain folder architecture must mirror Grok Bot**, preserving the same major boundaries such as `frontend/`, `source/electron-main/`, `source/electron-preload/`, `source/node-agent-coordinator/`, `source/host/`, `source/shared/`, and `source/packages/`;
 - Mahayana may and should implement the **Grok Node Agent Coordinator architectural role** where Rust is a strong fit. The fact that Grok names the folder `node-agent-coordinator` does not require Node as the implementation language;
 - the coordinator/host split must remain real even if both are implemented in Rust: Coordinator, Host, Runner, renderer bridge, MCP routing, local execution, persistence, and native capabilities must not be collapsed into one opaque monolith;
@@ -108,13 +110,16 @@ Required principles:
 - Fabushi code, services, compatibility layers, product surfaces, or background processes that have no Grok counterpart must be removed from the canonical desktop implementation unless this spec explicitly approves a Fabushi-specific extension boundary;
 - the final shipped desktop application must not retain a second parallel legacy Fabushi runtime beside the Grok-shaped architecture;
 - Fabushi branding, service endpoints, signing identity, account implementation details, and approved native capabilities may differ through narrow adapters, but those differences must not create a different desktop orchestration architecture;
-- ordinary chat, Agents, creation flow, Plugins/connectors/MCP, process lifecycle, retry/recovery, power behavior, and UI interaction must match the approved Grok reference behavior.
+- ordinary chat, Agents, creation flow, Plugins/connectors/MCP, process lifecycle, retry/recovery, power behavior, and UI interaction must match the approved Grok reference behavior;
+- no-op mirror files, placeholder counterparts, or manifest-only status changes are not parity evidence; every completed mapping must demonstrate production wiring and the corresponding desktop product effect.
 
 The desired end state is therefore: **Grok Bot 0.18’s architecture and product behavior under Fabushi identity, implemented with the best-fit language at each boundary, with Mahayana serving as the Rust implementation of Grok-equivalent coordinator/host/runtime roles where appropriate.**
 
 ## 3. Non-goals / out of scope
 
 - Keeping the current Fabushi desktop architecture merely because it already exists.
+- Requiring every Grok source file to become a unique Fabushi target file merely to match file counts.
+- Creating no-op, placeholder, or empty compatibility files solely to satisfy a one-to-one source-tree mapping.
 - Requiring every Grok TypeScript/JavaScript file to become Rust when TypeScript/React is objectively the better implementation boundary for Electron or browser UI.
 - Requiring Grok’s `node-agent-coordinator` to remain Node. The folder/domain name is architectural provenance; Mahayana may implement that role in Rust.
 - Collapsing Coordinator + Host + Runner + renderer state into one Mahayana binary simply because Rust can implement all of them.
@@ -178,9 +183,9 @@ The desired end state is therefore: **Grok Bot 0.18’s architecture and product
 ### Architecture / Grok-equivalent structure with best-fit languages
 
 - **ARCH-001 — Frozen Grok source baseline.** All structural comparisons and parity decisions use `b-nnett/grok-bot-0.18-reconstructed@a9f633e09d49a85829b8236331b9e21f7e612634`. A baseline change requires a spec update and a new complete mapping.
-- **ARCH-002 — Complete module inventory.** Generate and check in a machine-readable architecture manifest covering every source-bearing Grok path. Each row records the Grok path/blob SHA, architectural role, Fabushi target path, implementation language, owning process/crate/package, status, and behavioral evidence. No source module may be silently skipped.
-- **ARCH-003 — Folder/domain parity.** The canonical Fabushi source tree must mirror Grok Bot’s major relative domain hierarchy and nested feature ownership: `frontend/`, `source/electron-main/`, `source/electron-preload/`, `source/node-agent-coordinator/`, `source/host/`, `source/shared/`, and `source/packages/`. File extensions may differ by implementation language.
-- **ARCH-004 — Module-by-module counterpart.** Each executable Grok module must map to one or more explicit Fabushi implementation modules that preserve its responsibility, input/output contract, state machine, failure behavior, process ownership, and dependency direction. A many-to-one mapping is allowed only when it does not collapse a reference architectural boundary and is justified in the manifest.
+- **ARCH-002 — Complete module inventory.** Generate and check in a machine-readable architecture manifest covering every source-bearing Grok path. Each row records the Grok path/blob SHA, source responsibility, desktop-visible effect, platform delta, Fabushi target path(s) or explicit disposition, implementation language, owning process/crate/package, status, replacement behavior where applicable, and behavioral/test evidence. No source module may be silently skipped. Manifest completeness is an audit requirement, not a target-file-count requirement.
+- **ARCH-003 — Folder/domain parity.** The canonical Fabushi source tree must preserve Grok Bot’s major relative domain hierarchy and nested feature ownership: `frontend/`, `source/electron-main/`, `source/electron-preload/`, `source/node-agent-coordinator/`, `source/host/`, `source/shared/`, and `source/packages/`. File extensions and internal file granularity may differ by implementation language when ownership and dependency direction remain equivalent.
+- **ARCH-004 — Module-by-module responsibility mapping.** Each executable Grok module must map to one or more explicit Fabushi implementation modules, or to an evidenced existing equivalent, that preserve its responsibility, input/output contract, state machine, failure behavior, process ownership, dependency direction, and observable desktop effect. Many-to-one and one-to-many mappings are allowed when they do not collapse a reference architectural boundary and are justified in the manifest.
 - **ARCH-005 — Best-fit language policy.** Architecture is normative; language is an implementation choice. Default targets are:
   - `frontend/**` -> React + TypeScript for DOM/UI/state projection;
   - `source/electron-main/**` -> TypeScript for Electron-native APIs, with Rust services behind typed IPC where appropriate;
@@ -198,7 +203,7 @@ The desired end state is therefore: **Grok Bot 0.18’s architecture and product
 - **ARCH-012 — State-ownership parity.** Submission, operation/run identity, transcript/checkpoint, retry/cancel, connector state, account state, process lifecycle, and renderer projection ownership must follow the corresponding Grok architecture rather than current Fabushi compatibility behavior.
 - **ARCH-013 — Remove non-Grok code.** Any shipping Fabushi subsystem without a reference counterpart or approved extension must be deleted after required data migration. Git history is the archive; a parallel legacy implementation is not allowed to remain enabled or compiled into the production path.
 - **ARCH-014 — No shadow architecture.** After cutover there is exactly one canonical implementation for each reference subsystem. Migration adapters must have explicit removal criteria and fail the final architecture gate if still required for normal operation.
-- **ARCH-015 — Automated architecture gate.** CI compares the frozen Grok inventory against the Fabushi architecture manifest and canonical tree. Completion requires zero unmapped executable reference modules, zero unauthorized extra shipping modules, and zero unjustified boundary collapses.
+- **ARCH-015 — Automated architecture gate.** CI compares the frozen Grok inventory against the Fabushi architecture manifest and canonical tree. Completion requires zero unclassified reference modules, zero required product responsibilities without a real production implementation/equivalent, zero unauthorized extra shipping modules, and zero unjustified boundary collapses. The gate must not require equal source/target file counts.
 - **ARCH-016 — Language substitution test.** A language change is accepted only if contract tests demonstrate equivalent behavior and the change does not alter the reference process/module boundary. “Implemented in Rust” is never by itself evidence of parity.
 - **ARCH-017 — Migration safety.** User data needed by the retained Grok-equivalent product must be migrated before legacy paths are deleted. Data belonging only to removed Fabushi-only features may be exported/backed up, but the feature implementation itself does not remain in the shipping architecture.
 
@@ -557,16 +562,22 @@ A machine-readable manifest is mandatory. Minimum fields:
 reference_path
 reference_blob_sha
 reference_role
+desktop_effect
+platform_delta
 target_path
+related_target_paths
 target_language
 target_process_or_package
 status
+replacement_behavior
 behavioral_evidence
 test_evidence
 notes
 ```
 
-Allowed final statuses are `implemented`, `not-applicable-noncode`, and `removed-extra`. `pending`, `compatibility-only`, or `unmapped` blocks completion.
+Allowed final statuses are `implemented`, `equivalent`, `not-applicable-platform`, `not-applicable-noncode`, and `removed-extra`. `pending`, `compatibility-only`, or `unmapped` blocks completion.
+
+`not-applicable-platform` applies only when the reference implementation mechanism genuinely has no desktop-platform counterpart for the supported Fabushi target. It may not be used to drop a still-required user-visible Grok capability. If the product effect still matters, `replacement_behavior` is mandatory.
 
 ## 9. Constraints and non-functional requirements
 
@@ -652,7 +663,7 @@ The implementation and tests must cover:
 
 ### Phase 0 — Freeze and enumerate Grok 0.18
 
-Generate the complete source/module inventory from `a9f633e09d49a85829b8236331b9e21f7e612634`. Establish the architecture manifest before implementation. Every source-bearing Grok module gets a row; every current Fabushi shipping module is classified as mapped-to-Grok, approved extension, or extra-to-remove.
+Generate the complete source/module inventory from `a9f633e09d49a85829b8236331b9e21f7e612634`. Establish the architecture manifest before implementation. Every source-bearing Grok module gets a row describing its responsibility, desktop effect, platform delta, and target/disposition; every current Fabushi shipping module is classified as mapped-to-Grok, approved extension, or extra-to-remove. The inventory is an exhaustive audit index, not a requirement to create one Fabushi file per Grok file.
 
 ### Phase 1 — Create the mirrored architectural tree
 
@@ -848,8 +859,8 @@ On the packaged candidate:
 - **AC-06:** Latency artifacts meet PERF-001 through PERF-005 and report p50/p95, not only eventual completion.
 - **AC-07:** Plugins/connectors/MCP reproduce the mapped Grok catalog/auth/account/server/tool behavior in the packaged app.
 - **AC-08:** The approved New/+ reference journey is reproduced and verified by side-by-side video/screenshots.
-- **AC-09:** The complete frozen Grok source/module inventory has an architecture-manifest row; there are zero silently skipped executable modules.
-- **AC-10:** Every executable Grok module has an implemented Fabushi counterpart or explicitly justified non-code/platform exception; final manifest has no `pending`, `compatibility-only`, or `unmapped` rows.
+- **AC-09:** The complete frozen Grok source/module inventory has exactly one architecture-manifest row per reference item; there are zero silently skipped executable modules. This is an audit-completeness criterion, not a one-to-one target-file criterion.
+- **AC-10:** Every product-relevant Grok responsibility has a real production-wired Fabushi desktop implementation or evidenced existing equivalent; platform/non-code exceptions are explicitly justified and cannot remove a still-required product effect. Final manifest has no `pending`, `compatibility-only`, or `unmapped` rows.
 - **AC-11:** The canonical Fabushi domain/folder architecture mirrors Grok’s major boundaries and passes the automated architecture gate.
 - **AC-12:** Mahayana Coordinator implements the Grok `node-agent-coordinator` architectural role with independent protocol, supervision, cancellation, reconnect/resync, routing, and crash-settlement tests.
 - **AC-13:** Mahayana Coordinator and Mahayana Host/Runner remain distinct ownership boundaries; Host restart/recovery does not require renderer-side operation guessing.
@@ -860,7 +871,8 @@ On the packaged candidate:
 - **AC-18:** No credentials/secrets appear in renderer state, logs, traces, or evidence bundles.
 - **AC-19:** Required retained user data survives migration; data for removed Fabushi-only features has an explicit export/backup decision.
 - **AC-20:** Exact-HEAD GitHub Actions tests, signed packaged acceptance, merge SHA, and canonical-main release are all separately recorded.
-- **AC-21:** A final mapping report lists every Grok reference module, its Fabushi target, implementation language, owning process/package, and test evidence, plus every deleted Fabushi-only source path.
+- **AC-21:** A final mapping report lists every Grok reference module, its responsibility/effect, Fabushi target path(s) or reviewed disposition, implementation language, owning process/package, replacement behavior where applicable, and test evidence, plus every deleted Fabushi-only source path.
+- **AC-22 — Grok Bot desktop effect:** The exact packaged app demonstrates the same core Agent product effect as the approved Grok Bot 0.18 reference: a durable user turn progresses through acceptance → preparing/thinking → real tool/MCP/Runner activity when invoked → live tool state → continued inference → incremental transcript streaming → terminal completion/failure. Renderer reload, Coordinator reconnect, or temporary network loss during an active durable run must resynchronize that same run without silent loss or duplicate execution when the reference architecture would keep the run alive. Platform differences must be explicit adaptations, not unacknowledged feature reduction.
 
 ## 14. Release / migration / rollback
 
@@ -976,8 +988,602 @@ The evidence must make it possible to answer “where did this turn spend time?�
 | ARCH-001..017 | blocked | Current Fabushi tree/process model is not yet Grok-equivalent; Mahayana Coordinator, Host/Runner boundary parity, architecture manifest, language-fit decisions, removal, and structural gates remain incomplete. |
 | POWER-001..009 | blocked | Process-level measurement and demand-driven lifecycle work not yet completed. |
 | OBS-001..005 | blocked | Required parity evidence bundle not yet produced. |
-| AC-01..21 | blocked | This document defines the recovery gate; no implementation completion is claimed. |
+| AC-01..22 | blocked | This document defines the recovery gate; no implementation completion is claimed. |
 
 Allowed statuses: `passed`, `blocked`, `not-applicable`.
 
 Implementation must update this compliance table with exact commit/workflow/artifact evidence before any claim that Grok parity is complete.
+
+
+### 2026-09-24 exact-HEAD recovery note
+
+- PR #20 HEAD `64f8fb78c1e3309ddf18fb7839fd66ac0aa81dda` remains draft.
+- Architecture manifest at this SHA: 1700 implemented, 261 planned, 41 existing-needs-parity.
+- Forbidden legacy roots `desktop/src`, `desktop/electron`, `frontend/apps/web`, and `third_party/mahayana` are still present.
+- Exact-HEAD workflow runs `35937158440` (Rust desktop runtime) and `35937158480` (Desktop Chat Parity CI) both ended `action_required` before any job was created, so they are not test evidence.
+- This documentation-only commit exists solely to retrigger both exact-HEAD workflows under the active PR branch; it does not advance any compliance item to passed.
+
+### 2026-09-25 shipping Agent checkpoint cutover
+
+- Starting exact HEAD for this slice: \`2e027d98bce470266f1f7f554c0214fea7b868b1\`.
+- The shipping \`runner.startRoutedProvider\` path now prepares a Runner-owned Agent-state checkpoint sink before launching the turn. A provider-success result is not allowed to settle \`completed\` until the sink succeeds.
+- The checkpoint projection uses canonical frozen \`agent.v1\` wire field numbers for \`UserMessage\`, \`ConversationStep(assistant_message)\`, \`AgentConversationTurnStructure\`, \`ConversationTurnStructure\` and \`ConversationStateStructure.turns\`. Content-addressed user/step/turn blobs are written first; the prior root wire image is preserved byte-for-byte and a legal repeated field 8 is appended.
+- Persistence uses the existing production transaction boundary: routed transcript mirror prepare -> \`ProductionAgentStore\` durable checkpoint/latestRootBlobId advance -> mirror commit. The \`sand_new_transcript_journal\` experiment controls journal vs legacy routing exactly at the shipping path.
+- This is intentionally not full SandAgentRunner parity. Generated tool-call state, complete Agent resources/subagents/computer state, canonical generated Rust tool JSON bindings and broader settle/profile/memory semantics remain non-final and must stay represented as \`existing-needs-parity\`/planned rows.
+
+### 2026-09-25 atomic generated-Agent confirmation watermark
+
+- Direct user turns no longer advance Agent \`latestRootBlobId\` and the transcript recovery watermark as two independent writes.
+- After content-addressed checkpoint blobs are written, the long-lived \`SandAgentDb\` owner opens one \`BEGIN IMMEDIATE\` transaction, verifies the expected prior root and addressed user entry, advances \`latestRootBlobId\`, and writes \`confirmed: true\` on that exact durable user transcript entry before commit.
+- The turn-scoped durable checkpoint wrapper is used only when the shipping run carries a real \`messageId\`; background/redrive turns without an addressed transcript message retain the normal AgentStore checkpoint path.
+- Contract coverage proves both success and the failure invariant: a missing addressed user entry rejects the durable checkpoint and does not advance the Agent root.
+
+
+
+### 2026-09-25 box-exec close and Runner transient-retry recovery
+
+- Exact implementation commits in this slice: `5d1c786bfcf5ad6232ae64c817f58e0a23af3e81`, `261c24661ddb096b0bd10f06e688154efed4b652`, and `530a0b2ff4ac883f617b7fc93c2a434d3eae5fc8`.
+- The independent box-exec daemon now routes 401/405 responses through the same graceful write-half shutdown as successful Connect/HTTP responses, removing the Darwin ECONNRESET race that failed the exact-HEAD daemon contract. The disconnect/process-group contract now records the real shell PID with `$$` instead of the literal `$`, so it actually verifies process termination.
+- The shipping Runner transient classifier now covers the frozen Grok transport/deadline token families used by bounded retry, with executable cargo coverage in `source/host/tests/runner_contract.rs`.
+- On exact SHA `5d1c786bfcf5ad6232ae64c817f58e0a23af3e81`, the Rust workflow had already passed the independent Mahayana Coordinator contract, independent Grok box-exec daemon contract, shipping Host build, and box-exec supervisor before later commits moved HEAD. Those runs are slice evidence only, not final completion evidence.
+- Final parity remains blocked: the strict architecture gate is still skipped while the architecture manifest contains non-final rows, and exact-HEAD workflows must be re-established on the latest branch HEAD after this note.
+
+### 2026-09-25 production automation status reminder cutover
+
+- Starting exact HEAD for this slice: `34704c8ae296ce2b62094bd749098e972a34c254`.
+- The frozen Grok `source/host/automations/automation-status-reminder.ts` responsibility is now implemented in `source/host/src/automations/automation_status_reminder.rs`: it reads the immutable per-Agent automation definitions, applies the UI cap, resolves the user's current timezone, renders live run status, and excludes the currently firing routine's in-flight run from its own authoritative status snapshot.
+- Shipping `runner.startRoutedProvider` now opens the production Agent automation store and injects that snapshot as system context before the Runner starts. The firing identity comes from the canonical `automationWake.id`; Renderer and Coordinator do not own or synthesize this status.
+- `source/host/tests/automation_status_reminder_contract.rs` covers live-running, firing-run filtering, settled success, empty-store and explicit cleared-snapshot behavior. The architecture manifest advances this one frozen module from `planned` to `implemented` only because production wiring and executable test evidence are present.
+- The previous exact-HEAD rerun already proved the independent Coordinator, box-exec daemon and Host box-exec supervisor gates after the accepted-socket fix; final architecture completion remains blocked until all other non-final manifest rows and forbidden legacy runtime roots are removed.
+
+### 2026-09-25 automation transcript runtime audit closure
+
+- Starting exact HEAD for this audit: `bc7a0e7e8de0e43691fd3d96e4f648d5ec0b96e0`.
+- Five frozen transcript/automation rows had remained `planned` even though their Rust implementations, production AutomationRuntime wiring and executable integration contracts were already present. They were individually re-audited against the frozen Grok modules rather than bulk-promoted from filename existence.
+- Finalized rows: `automation-event-fires.ts`, `automation-run-path.ts`, `automation-runtime.ts`, `automation-spend-guard-runtime.ts`, and `sand-automation-spend-guard.ts`.
+- The evidence covers event debounce/coalescing and bounded drop reporting; durable run begin/finish and duplicate suppression; shipping CRUD/manual/background dispatch; unread/spend-guard nudge/pause/snooze/opt-out persistence; and run-now production routing through the Host-owned AutomationRuntime.
+- This audit changes status only where implementation and tests already prove production ownership; it does not infer parity for the remaining missing Host extension targets.
+
+### 2026-09-25 watched-directory production cutover
+
+- Starting exact HEAD: `7e1fbb1f8a601c98354e40ae66107f742c1aacc4`.
+- Added the Host-owned `source/host/src/watched_directory.rs` primitive using the crate's existing native `notify` dependency: recursive filesystem events and explicit atomic writes converge on one debounced callback generation, and stop/dispose cancels pending delivery without introducing polling.
+- `FileMemoryStore` now owns this primitive, writes profile/log state through its atomic writer and exposes the same on-change boundary for external edits. This makes the frozen `source/host/watched-directory.ts` responsibility part of the production Memory path rather than a detached mirror.
+- `source/host/tests/watched_directory_contract.rs` covers sorted directory discovery plus notification from both internal atomic writes and external filesystem writes. The watched-directory manifest row advances to `implemented`; the broader memory-service row remains non-final for synthesis origin/tombstone/shared-memory responsibilities.
+
+### 2026-09-25 project-membership production ownership
+
+- Starting exact HEAD: `b26f67753c5b2187ee0c3d8f562369b018dbeb91`.
+- Ported the frozen `source/host/extensions/memory/project-membership.ts` contract to Rust: `projects.json` is path-safe filtered, sorted and atomically persisted; join/leave are idempotent; pruning removes missing projects without accepting traversal-like slugs.
+- Production wiring is explicit: the Host MemoryService creates the membership owner and `ProductionSessionWorkers::compose_materialized_session` places it on every shipping `ProductionMaterializedSession`. This establishes one per-Agent ownership source for the upcoming project-memory/agent-state cutover rather than a detached compatibility object.
+- `source/host/tests/project_membership_contract.rs` covers malformed input, safe-slug filtering, deterministic persistence, join/leave/prune and creation through real shipping Session materialization. The frozen project-membership row is now `implemented`.
+
+### 2026-09-25 post-turn memory runtime cutover
+
+- Starting exact HEAD: `d11d12b8019c5558a3a81f924b6f4e1e886039bb`.
+- Added `source/host/src/runner/turn_memory.rs` with the frozen extraction and episode responsibilities: recent/archive memory context, add/remove application, durable pending episode turns in the Agent DB, configured episode interval, episode summary persistence and the dreaming/evidence branch that clears stale episode state.
+- Shipping `runner.startRoutedProvider` now invokes memory maintenance only after a successful visible memorable turn and before publishing renderer-visible completion. The memory inference request has no tools and uses the already selected routed provider; failures remain opportunistic and do not overturn the user's completed turn.
+- `source/host/tests/turn_memory_contract.rs` proves deduplicated extraction, six-turn episode summarization/clear and evidence-mode bypass. The manifest moves `turn-memory.ts` from `planned` to `existing-needs-parity`, not final, because the production Memory synthesis bridge and frozen auxiliary agent-message collector still need to be wired.
+
+### 2026-09-25 post-turn memory compile blocker closure
+
+- Exact failing HEAD `644c922c9e1e4a7eda2f22b2f9441ed3dee91268` reached the real shipping Host compile gate and exposed five local type/trait errors only: the watched-directory wrapper lacked a `Debug` projection required by `FileMemoryStore`, and the durable Agent DB represents episode timestamps as `f64` while `sand_memory::EpisodeTurn` / markdown persistence use `i64`.
+- The fix is deliberately behavior-neutral: `WatchedDirectory` now has a manual debug view that does not require debug-printing callback/watcher internals, Agent DB writes preserve millisecond values as `f64`, and episode prompt/persistence projection converts finite in-range values back to `i64` with the turn timestamp as the invalid-value fallback.
+- No parity status is advanced by this compile repair; exact-HEAD CI must re-prove the shipping Host and Runner contracts.
+
+### 2026-09-25 turn-memory contract fixture closure
+
+- Exact HEAD `bc8ca31029342fb6314754487174e4913936affa` passed the shipping Host build, independent Coordinator, independent box-exec daemon and shipping box-exec supervisor. The first Runner-suite failure was compile-only in the new `turn_memory_contract`: its persisted Agent DB `EpisodeTurn.ts` fixture used integer `1` instead of the canonical `f64` timestamp.
+- The fixture now uses `1.0`; production code is unchanged. This commit advances no parity status and exists only to let the exact-HEAD Runner suite execute the intended behavior assertions.
+
+
+
+### 2026-09-25 Runner auto-review secret-redaction deadlock closure
+
+- Exact HEAD `43eeab1d17f320bcc0f16b990b41be487ce8e28a` passed Desktop Chat Parity and the Rust job's shipping Host build, independent Mahayana Coordinator contract, independent box-exec daemon contract, and shipping box-exec supervisor before the Runner suite stalled.
+- The first real Runner blocker was `sand_auto_review_summaries_contract::automation_cloud_and_subagent_summaries_match_frozen_wording`: the Rust inline-secret redactor repeatedly rediscovered an already-redacted `token=…` assignment and replaced the ellipsis with itself forever, unlike the frozen Grok regex replacement.
+- `source/host/src/runner/sand_auto_review_summaries.rs` now advances a byte-safe scan cursor after each replacement and continues past non-assignment keyword occurrences; the contract adds two same-key assignments in one prompt to prove forward progress and complete redaction.
+- No architecture-manifest status is advanced by this commit. The mapped `source/host/runner/sand-auto-review-summaries.ts` entry remains `existing-needs-parity` until a fresh exact-HEAD Rust runtime run passes the Runner contract and downstream architecture gates.
+
+
+### 2026-09-25 Runner Auto Review specialized parity slice
+
+- Baseline for this slice: `e558b5a1eecfff1b14dadba2d90bfd8908b7fade`.
+- Added the seven missing Grok Runner Auto Review responsibility modules under `source/host/src/runner/**`: automation writes, browser actions, cloud-agent actions/lifecycle, computer actions, shell approval binding enrichment, subagent actions, and shell/MCP escalation providers.
+- These modules reuse the existing Mahayana Runner `SandAutoReviewController`, classifier decision model, fingerprinting, summaries, expiry policy, and pending approval lifecycle. They do not create a second approval runtime.
+- The specialized contract `source/host/tests/sand_auto_review_specialized_contract.rs` covers off/shadow/enforce classification, approval resolution, browser/computer display binding, cloud image hashing and lifecycle fail-closed behavior, subagent risk targets, shared shell/MCP escalation, package-script definition hashing, and classifier abort propagation.
+- `scripts/finalize-rust-parity.mjs` may promote only these seven previously-planned rows after the full Host cargo suite succeeds and the target/test files both exist. Existing-needs-parity core Auto Review rows remain manual-review-only.
+
+
+### 2026-09-25 subagent runtime and adapter Rust ownership slice
+
+- Starting from exact HEAD `01a3071aa960b78c1d954ba126c8018d84c4ee0b`, the frozen `source/host/runner/subagent-runtime.ts` and `agent-adapters.ts` planned rows now have concrete Rust targets instead of placeholder mappings.
+- `subagent_runtime.rs` owns request-id/lineage generation, background task admission, pending-wake metadata, steer continuation, abort settlement, running/subagent projection, retained outline and computer-use usage/audit aggregation.
+- `agent_adapters.rs` owns request-context projection, single-computer-use admission, resume/running fences, launch-review settlement, background dispatch metadata and the text/thinking/usage/tool forwarding contract including unresolved shell/read/await detection.
+- `subagent_runtime_adapter_contract.rs` pins request identity, steer-vs-abort semantics, empty-output fallback, computer-use usage/audit projection, resume/window fencing, fail-closed request-context completeness and forwarding behavior.
+- Both manifest rows move only from `planned` to `existing-needs-parity`; they are intentionally not final until generated Agent proto/session wiring and live Host callbacks replace the remaining adapter-neutral projections.
+
+
+### 2026-09-25 computer-use coordination ownership slice
+
+- Exact baseline: `32efadcd140dcdace9252bb88aee25f8967bd662`, where PR-triggered Rust desktop runtime and Desktop Chat Parity are both green and the push-only failure remains the expected final architecture gate.
+- Added `source/host/src/runner/computer_use.rs` as the Runner-owned Rust port of the frozen coordination state: reentrant single desktop-window allocation, preparation lifecycle, fail-soft prewarm diagnostics, action-audit counting via the existing `sand_action_audit` mapping, turn-usage aggregation, model-id collapse and lazy navigation-probe ownership.
+- `source/host/tests/computer_use_coordination_contract.rs` independently covers the single-controller invariant, preparation cleanup/failure classification, usage aggregation, mixed-model semantics, audit filtering and no-auditor navigation behavior.
+- The manifest row advances only from `planned` to `existing-needs-parity`. Generated computer/shell resource accessors, real remote box prewarm and concrete navigation-probe execution remain mandatory before finalization.
+
+
+### 2026-09-25 communicate/listener Runner tool foundation
+
+- Added Rust ports for the two smallest frozen Runner tool foundations: `communicate-tool.ts` and `listener-connect-cards.ts`.
+- The communicate port preserves Sand marker JSON, executing partial envelopes, success/error completion encoding, render fallback and exception conversion without inventing a second tool protocol.
+- The listener-card port preserves ordered platform probing, fail-soft connectivity lookup, one card per disconnected platform, display-name rendering and the frozen resumed-automatically user guidance.
+- `runner_communicate_listener_contract.rs` pins both surfaces. Both manifest rows advance only to `existing-needs-parity`: generated CommunicateUpdate/ToolCall proto wiring and live Automation listener/transcript production wiring remain required.
+
+
+### 2026-09-25 subagent management tool ownership slice
+
+- `sand-subagent-management-tools.ts` now has a Rust target that reads and mutates the existing `SubagentRuntime`; there is no parallel subagent registry.
+- The port preserves frozen elapsed-time rounding, compact and detailed status text, recent activity/transcript projection, not-running guidance, steer-review denial, MessageSubagent continuation and StopSubagent confirmation.
+- `sand_subagent_management_tools_contract.rs` proves the management surface against a live Rust `SubagentRuntime` fixture.
+- The row advances only to `existing-needs-parity`; final requires registration through generated communicate tools and live `reviewSteer` / toolCallId / InteractionHandler production wiring.
+
+
+### 2026-09-25 file-transfer Runner tool ownership slice
+
+- `sand-file-transfer-tools.ts` now maps to a real Rust tool module that delegates byte movement to the existing `box::box_transfer::transfer_file_between_boxes`; no duplicate transport was introduced.
+- The port covers connected/default computer resolution, offline/unknown diagnostics, box-preparing fencing, default `/workspace/uploads/<basename>` ingress, workspace path normalization, reverse transfer defaults and frozen binary-size labels.
+- `sand_file_transfer_tools_contract.rs` uses in-memory TransferBox implementations to prove verbatim binary ingress and egress.
+- The row advances only to `existing-needs-parity`; live UserComputer registry ownership plus generated communicate-tool registration through Runner prompt glue remain required.
+
+
+### 2026-09-25 Runner prompt-glue ownership slice
+
+- Added `runner_prompt_glue.rs` as the single Rust Runner join for the already-real prompt collector projection, file-transfer controller and MCP large-output spill policy.
+- The glue intentionally reuses `prompt_collector_glue.rs`, `sand_file_transfer_tools.rs` and `large_output_spill.rs`; it does not copy their logic into Host/app.
+- `runner_prompt_glue_contract.rs` proves durable user-message/attachment projection and enabled-vs-disabled MCP spill through the same glue owner.
+- The row advances only to `existing-needs-parity`; frozen live getters for MCP/custom instructions/discovery, automation/profile/video/browser/remote-box state, shell watch and generated Agent factory construction remain required.
+
+
+### 2026-09-25 subagent management contract fixture correction
+
+- The first full-cargo failure after the subagent-management slice was test-only: the fixture expected `elapsedLabel(61_000ms)` to render `1m 1s`, but the frozen Grok implementation deliberately keeps all rounded durations below 90 seconds in seconds.
+- The contract now expects `61s`. Production code and manifest status are unchanged.
+
+
+### 2026-09-25 Rust 2024 box-module path correction
+
+- Exact HEAD `a5bf42a133871b130782f35078d92273b4c00db2` reached the full cargo compile and failed before behavior tests because Rust 2024 reserves `box` as a keyword in module paths.
+- The new file-transfer and prompt-glue source/tests now use the repository's required raw identifier path `r#box` (including `ports::r#box`). No runtime behavior or architecture status changed.
+
+
+### 2026-09-25 file-transfer contract Debug fixture correction
+
+- After the Rust 2024 raw-identifier fix, the next cargo failure was test-only: `unwrap_err()` requires the success value to implement `Debug`, while the in-memory `MemoryBox` fixture only derived `Default`.
+- The fixture now derives `Debug`; production file-transfer/prompt-glue code and manifest status are unchanged.
+
+
+### 2026-09-25 shell-terminal-watch ownership slice
+
+- Starting from green full-cargo HEAD `d543327189f51b9145c18baabb42072f7a6e2bd9`, added a Rust Runner port of the frozen terminal-watch decision core.
+- The module reuses existing `background_work` footer/time limits, `conversation_state` queued-message selection, hidden prompt markers and `system_prompt` message addressing.
+- Independent contracts cover text/binary/not-found terminal reads, success/stream-error/missing/permission/300-minute timeout settlement, hidden/group watermark filtering, cache invalidation, fail-closed unreadable turns and rich-text queued-message prepend projection.
+- The row advances only to `existing-needs-parity`; generated Read executor/local-tool scope, real box readiness/path, Agent proto blob decoding and the asynchronous polling owner remain required before final.
+
+
+### 2026-09-25 remote-box Runner resource ownership slice
+
+- Baseline `5d71b7e20906cc7640fa55cb2373a35714b98a7b` passed the full Rust parity cargo suite for shell-terminal-watch.
+- Added `remote_box_resources.rs` as the Runner-owned decision layer for frozen remote-resource behavior: prepared/cached connection reuse, terminal-folder publication, fail-closed preparing and connection errors, retryable cache invalidation, no-monitor recovery, shell/background barrier-audit-navigation ordering, read/shell/computer execution plans and smart-mode classifier registration.
+- `remote_box_resources_contract.rs` pins connection caching/retry, timeout/crash vs generic error messages, no-monitor invalidation, exact side-effect ordering and classifier gate conditions.
+- The row advances only to `existing-needs-parity`; generated RegistryResourceAccessor executors, async connection-promise coalescing, real AutoReview/NavigationProbe/Host audit callbacks and executor delegation remain required.
+
+
+### 2026-09-25 Computer tool and Host dependency projection slice
+
+- Baseline `f7583daf7e833d603981b914e5767d42bc7f67a2` passed the full remote-box cargo contract job.
+- Added `sand_computer_tool.rs` for Runner-owned action/schema semantics and `host_computer_tool_dependencies.rs` for the separate Host projection boundary; these responsibilities are intentionally not merged.
+- Runner coverage includes drag/click/wait/follow-up validation, enforce-mode description and safe-follow-up restrictions, protocol action defaults, reported pointer position, automatic final screenshot, result rendering and screenshot persistence.
+- Host coverage includes strict generated-action conversion, generated result normalization, approval→audit→shell-execute ordering and ensureReady→window lookup ordering.
+- `computer_tool_projection_contract.rs` independently pins both layers. Both manifest rows advance only to `existing-needs-parity`; canonical generated proto executors, live resource accessor/AutoReview/display state and shipping first-party tool registration remain required.
+
+
+### 2026-09-25 Rust Secrets owner and State Backstop service slice
+
+- Baseline \`1093730d4fca351b3fa1103c8dd5c6939428451d\` had 1,761 implemented / 93 existing-needs-parity / 148 planned frozen modules and green exact-HEAD Desktop Chat Parity plus Rust desktop runtime; the strict final gate remained skipped because PR #20 is still draft.
+- \`9b54364c769ee4fb8108d1d435a52325b6ce093b\` ports the frozen Secrets service to a Rust Host owner: box-secret validation, UTF-16 size accounting, deterministic redaction-name projection, mode-0600 atomic persistence, startup restore, generation-aware background apply, bounded retry/backoff and status projection. The shipping Host starts it against the existing ForeverBox environment-control path and stops it before ForeverBox teardown.
+- The Secrets service manifest row is implemented with \`secrets_extension_contract.rs\`; the extension remains existing-needs-parity until the frozen external set/getStatus command surface is traced and wired instead of inventing a new RPC.
+- The State Backstop service now has a Rust owner for \`state/store.db\` snapshot/readback, 64 MiB cap, per-agent debounce/dispose behavior and \`SAND_STATE_S3_BACKSTOP\` gate semantics. Its extension remains existing-needs-parity because the production Box Store Sync object-store provider is still a planned responsibility; no fake provider or second storage runtime is introduced.
+
+
+### 2026-09-25 Client-side Tool V2 producer and Box Store hydration closure
+
+- Re-audited PR #20 at exact HEAD `4824665f8cc8f5d2d895b2787c23497f0480100b`: 1,779 implemented / 96 existing-needs-parity / 127 planned before this slice; shipping Host, independent Coordinator and box-exec daemon gates were green while the remaining Host/Runner gates continued.
+- Added a Rust `ClientSideToolV2Producer` that preserves the frozen Host ordering/lifecycle contract and emits the exact shared `protobuf-base64` envelope consumed by `source/shared/rpc/client-side-tool-v2-transport.ts`. It owns stable epoch, per-agent sequence, open-call/result fencing, unknown-result drop and reset behavior.
+- The already-present Rust Box Store hydration port was not rewritten; it now has an independent contract covering normal/legacy completeness evidence, handoff manifest path matching, atomic mode-0600 marker persistence, directory sync and removal. Its manifest row is advanced only after that evidence.
+
+
+### 2026-09-25 Chrome session stage evidence closure
+
+- Audited the pre-existing Rust `chrome_session_stage.rs` against the frozen Grok module rather than reimplementing it. Added contract coverage for exact DB relative-path projection and mode preservation, retry destination pre-clean, busy/locked raw-copy fallback, non-busy skip/report behavior, raw-copy failure reporting, and staging cleanup.
+- The manifest row advances from planned to implemented only after this behavioral evidence; the wider Box Store Sync extension/service remains non-final.
+
+
+### 2026-09-25 Client-side Tool V2 projection inventory closure
+
+- Ported the frozen ClientSideToolV2/Agent ToolCall inventory and explicit projection policy to Rust. Supported mappings are allowlisted; SendMessage, approval cards and Await remain ordinary-transcript-only exactly as frozen; unrecovered Agent oneofs and ClientSide variants remain fail-closed.
+- Contract coverage verifies every projected source/target belongs to the frozen shipped unions and that unrecovered entries cannot silently become projected.
+
+
+### 2026-09-25 Host roster, upgrade marker and cloud transcript helpers
+
+- Ported Host roster bookkeeping to Rust with frozen active-agent fallback, live-running/busy calculation, newly-running disk-pressure enrollment, stopped-agent snapshot scheduling and source-map materialization semantics.
+- Ported Host upgrade marker parsing, timing metadata and idempotent forwarding/deletion lifecycle; deferred emits do not retire markers, parse errors do, and callback failures are isolated after successful emit.
+- Ported cloud-agent transcript dump path/write/format/augmentation behavior with byte-accurate size reporting and fail-soft watch augmentation.
+
+
+### 2026-09-25 Host bundle source and MCP plugin skill cache
+
+- Ported Host Upgrade bundle-source semantics to Rust: override normalization, frozen S3 paths, strict lowercase git-SHA validation, version TTL cache, fail-soft latest lookup, fail-closed tarball fetch and lazy resolved source.
+- Ported MCP plugin-skill cache to Rust with frozen safe-id/absolute-path validation, legacy field defaults, positive user/team IDs, auth-block fallback, pretty JSON atomic replace and agent-readable 0755/0644 permissions.
+
+
+### 2026-09-26 Action Audit / Automations evidence reconciliation
+
+- Re-read PR #20 at exact HEAD `7c82dd0fe0e7b060fc0b8c9045424004034d796a`; exact-HEAD Desktop Chat Parity CI run `36186038197` and Rust desktop runtime run `36186038184` were both green.
+- Reconciled nine stale `planned` rows whose Rust targets already exist on the implementation branch. The Action Audit backend and the Automations relay/watcher/integration/cloud-sync/cloud-trigger/fire-consumer/trigger-hub/extension owners now carry concrete behavioral/test evidence and move only to `existing-needs-parity`, not final.
+- No row was marked `implemented`: generated Dashboard audit sending, authenticated automation backend clients, notify/poll scheduling, durable fire ack/completion semantics, live Host dependency composition and production transcript/session callbacks remain explicit blockers.
+
+
+### 2026-09-26 channel attachment Host ownership slice
+
+- Added `source/host/src/connectors/channel_attachment.rs` and the `connectors` Host module for frozen `source/host/connectors/channel-attachment.ts` responsibility.
+- The Rust owner preserves HTTP(S) URL pass-through, local/file URL resolution, data-root reanchoring, regular-file and 50 MiB upload fences, byte reads, basename projection and image/video/generic MIME selection.
+- `channel_attachment_contract.rs` covers remote URL/image detection, file URL and plain-path uploads, MIME projection, directory/empty/oversize rejection and unsupported schemes.
+- The manifest row advances only to `existing-needs-parity`; final waits on canonical shared media-MIME reuse and full exact-HEAD CI evidence.
+
+
+### 2026-09-26 Cloud Agent image loading slice
+
+- Added Rust `cloud_agent_images.rs` under the existing Host cloud-agents boundary rather than merging it into the Cloud Agent tool/API owner.
+- The port enforces file:// input, agent attachments/assets containment, /workspace-only box reads, image-only MIME gating, unreadable/refused distinctions and the frozen 25 MiB attachment limit.
+- `cloud_agent_images_contract.rs` covers host media roots, box reads, non-file/non-image rejection, outside-root refusal, unreadable box paths and both host/box oversize rejection.
+- The row advances only to `existing-needs-parity`; final waits on exact shared media MIME/error helper reuse and live CloudAgent-tool production wiring.
+
+
+### 2026-09-26 MCP state executor slice
+
+- Added Rust `ports/mcp_state_executor.rs` for the frozen MCP-state projection responsibility, reusing the shipping `RoutedToolDefinition` instead of creating a second tool inventory.
+- The executor preserves first-seen provider ordering, groups tools per provider, exposes each server as `connected`, and retains description/input-schema data; provider errors remain fail-closed.
+- `mcp_state_executor_contract.rs` covers multi-provider grouping/order, schema projection, empty success and provider failure propagation.
+- The row advances only to `existing-needs-parity`; final waits on generated `agent.v1` result types and production executor/tool registration.
+
+
+### 2026-09-26 generated-image persistence service slice
+
+- Added Rust `extensions/attachments/generate_image_service.rs` as the Host-owned post-generation persistence boundary.
+- The service decodes backend base64, persists exact bytes with MIME, returns the saved path plus original base64 and fails closed on invalid data or missing persistence.
+- `generate_image_service_contract.rs` proves byte/MIME preservation and failure behavior.
+- The row remains `existing-needs-parity` until authenticated Cursor image generation, model/request-id projection and production Attachments-extension wiring are connected.
+
+
+### 2026-09-26 mobile push notifier slice
+
+- Added Rust `extensions/notifications/mobile_push_notifier.rs` with the frozen notification lifecycle: baseline seeding, pre-seed buffering, focus freshness, done/needs-input transitions, message-id duplicate suppression, per-kind throttle and forget/reset behavior.
+- Delivery errors are deliberately non-fatal, matching the fire-and-forget notification surface.
+- `mobile_push_notifier_contract.rs` proves buffered needs-input delivery, new-message gating, focused-window suppression, stale-focus delivery and forget behavior.
+- The row advances only to `existing-needs-parity`; final waits on canonical shared notification helpers plus authenticated GrokBotService/Host event wiring.
+
+
+### 2026-09-26 Host crash-marker ownership slice
+
+- Starting from exact implementation HEAD `7ea96551789c9b80bc281e70a5ec219b84069026`, restored the frozen Host crash-marker boundary in Rust rather than folding it into Coordinator or renderer telemetry.
+- The module owns strict schema/error-class/signal/timestamp parsing, frozen metadata projection, file-store read/delete outcomes, compare-before-delete race fencing, forwarded-marker dedupe and deferred/pending/delivered/parse-error settlement.
+- `source/host/tests/host_crash_marker_contract.rs` independently covers valid/invalid marker variants, rounded metadata, file-store lifecycle, changed-marker fencing and forwarding failure/dedupe behavior.
+- The manifest row advances only to `existing-needs-parity`; final status still requires production Host startup/crash telemetry composition to invoke this owner and exact-HEAD CI evidence.
+
+
+### 2026-09-26 Host event-loop telemetry decision slice
+
+- From exact HEAD `fe4fed178bce03e81a2c078ea18fcbac6601ef15`, ported the frozen event-loop pressure/heartbeat decision and telemetry projection into the Rust Host telemetry boundary.
+- The contract preserves the 50 ms p95 pressure threshold, five-window heartbeat cadence, pressure precedence, rounded p50/p95/max values and three-decimal utilization projection; a zero custom heartbeat is handled fail-safe rather than allowing a Rust modulo panic.
+- `event_loop_telemetry_contract.rs` covers defaults, overrides, precedence and projection. The row advances only to `existing-needs-parity`: production still needs a Host-owned delay/utilization sampler and lifecycle wiring equivalent to Node's perf-hooks monitor.
+
+
+### 2026-09-26 Turn telemetry mapper ownership slice
+
+- From exact HEAD `0d7369cad7fdb689ebfbc7616a10fbac2fe8995f`, ported the frozen turn telemetry mapping boundary into Rust Host: interrupt, await, retry, user-message received, closing-send nudge, TTFT, turn usage and computer-use usage.
+- The owner preserves event names/levels, optional-field omission, token schema v2, total-input behavior, retry error-type bounding, retry/TTFT/duration rounding and computer-use error severity.
+- `turn_telemetry_mappers_contract.rs` covers all projection families. The manifest row advances only to `existing-needs-parity`; final requires shipping Runner/Transcript/Computer call sites to route through this owner rather than parallel mappings.
+
+
+### 2026-09-26 Desktop health forwarder ownership slice
+
+- From exact HEAD `1bdb19535587086c82117e3fe21cfcc7fb3c0a7e`, ported the frozen desktop-health normalization/aggregation/forwarding decision boundary into Rust Host.
+- The owner validates component scopes/kinds, normalizes bounded down reasons and restart counts, preserves first-seen duplicate merge order, computes healthy/degraded/crashloop metadata, and forwards on revision change or heartbeat with absent/parse/skipped/emitted settlement.
+- `desktop_health_forwarder_contract.rs` covers normalization, duplicate merge, invalid snapshots, metadata, heartbeat/revision decisions and forwarding state. The row remains `existing-needs-parity` until the production Host health-file reader and telemetry emitter are composed against it.
+
+### 2026-09-25 automation-store final watcher cutover
+
+- Starting exact HEAD: `0acbbe87bfe8985dd4369d97da5dfc79adf7089e`.
+- `FileAutomationStore` now uses the Host-owned native `WatchedDirectory` for its root, atomic config/run writes, external filesystem edits, debounced callbacks and removal notifications instead of the prior callback-only shim.
+- Authored cron schedules are normalized before durable storage, and the frozen definition-only `recordRunDefinition` / `finishRunDefinition` paths are present so cloud/backend reconciliation can mutate run state without synthesizing `nextRunAt`.
+- The automation-store contract now exercises internal atomic notifications, direct external file edits, schedule normalization and definition-only next-run suppression. Together with the existing timezone/cron/trigger/run-history coverage and shipping Session factory wiring, the frozen `automation-store.ts` manifest row is final `implemented`.
+
+### 2026-09-26 workflow library watcher/cache finalization
+
+- Starting exact HEAD: `41e6a0c30a8ab7f7eb40bd98e705605a69fef7b3`.
+- Replaced the workflow library's callback-only invalidation with the shared native `WatchedDirectory`; atomic writes, removes, direct external SKILL.md edits and helper-script directory changes now converge on the frozen 50 ms debounced boundary.
+- Completed `StatKeyedParseCache` parity for missing-path eviction, stat-error parse fallback, injectable time, inode/mtime-ns/size identity, bounded FIFO eviction and the two-second racy-mtime bypass. `GlobalWorkflowLibrary::get` now consumes one module-level cache keyed by both the workflow file and containing folder, matching helper-script invalidation behavior.
+- Integration coverage proves stable cache reuse, invalidation after content change, missing-file eviction, internal/external watcher delivery and helper-script refresh. The frozen `workflow-library.ts` and `stat-keyed-parse-cache.ts` rows are now final `implemented`.
+- `workflow-store.ts` deliberately remains non-final: managed/plugin skill aggregation/watchers and published-plugin editing are still separate unrecovered responsibilities.
+
+### 2026-09-26 automation-trigger final audit
+
+- Starting exact HEAD: `c887d1116d350c37edba9a75505e3af9dfcf4cb0`.
+- Re-audited all frozen `automation-trigger.ts` exports against the current Rust Host. Parse/serialize/identity, Slack matching, GitHub actor/owner/CI-branch admission, Teams/Linear/Sentry/PagerDuty filters, group matching, human event descriptions and escaped event-context projection are all present in the canonical `automation_trigger.rs` owner.
+- Shipping `SandTriggerHub` and `BackendRelaySource` consume these canonical matchers; matching and trigger-foundation contracts cover direct and grouped admission plus store round-trip.
+- This mapping is now final `implemented`. The neighboring `automation.ts` row remains non-final because its frozen system-prompt/wake-batch surface is still incomplete.
+
+### 2026-09-26 canonical automation wake projection
+
+- Starting exact HEAD: `af184f02f51f7f493b8c10a88e54b1dfa50e1462`.
+- Reworked the shipping AutomationRunPath wake projection to consume the finalized canonical trigger helpers instead of serializing generic `<event_data>` blocks. Event runs now use source-specific escaped context blocks and human trigger summaries, preserve the 25-event cap, and provide the frozen group-seed projection.
+- Added a timezone-aware wake-prompt variant; the production fire path resolves the Agent automation store's live user timezone before formatting fired/started timestamps.
+- Contracts now cover source-specific GitHub event context, human batch summaries, untrusted XML escaping, event clamping, group seeds and timezone rendering. The broader frozen `automation.ts` row remains non-final until its routines capability system prompt is production-wired.
+
+### 2026-09-26 routine notice ownership correction
+
+- Restored the frozen `routineNoticeWakeLines` responsibility to `routine_notices.rs` and removed the duplicate notice strings from `AutomationRunPath`.
+- The shipping fire path still computes/marks one-shot notice IDs before execution, but wake text now comes from the canonical notices owner. This repairs evidence behind the already-final routine-notices mapping rather than merely changing its status.
+
+
+
+### 2026-09-26 automation capability prompt production cutover
+
+- Closed the frozen `source/host/automations/automation.ts` semantic gap without copying reference source text: `automation.rs` now owns the routines capability guidance and the reference guidance/status constants, while existing Rust owners continue to own wake rendering, status reminders, timestamp rendering, persistence and trigger matching.
+- The shipping routed-provider path opens the Agent-owned `FileAutomationStore`, renders the current routines capability prompt with the resolved user timezone and durable automation location, and appends it through `system_prompt_assembly` before provider execution. Renderer state is not used to reconstruct routine policy.
+- Added `automation_prompt_contract.rs` covering schedule/listener/lifecycle guidance, enabled/paused current-routine projection, timezone/location context, and idempotent injection into the canonical system message. Existing wake/status/store contracts remain part of the manifest evidence.
+
+
+### 2026-09-26 action-audit production cutover
+
+- Closed the frozen action-audit backend/extension mappings in Rust. The Host now encodes the Dashboard `SandAuditEvent` oneof and `RecordSandAuditEventsRequest` wire contract, uses the existing authenticated Cursor unary transport with the live Auth token/machine id, and keeps the existing bounded durable outbox/backoff behavior.
+- `ActionAuditExtension` now composes Auth + `sand_action_audit_logs` Experiments + structured Telemetry around one `SandActionAuditor` owner. Runner MCP audit records are still observable on the Host event hub, but now also flow into that owner for local JSONL and feature-gated backend delivery.
+- Added a backend contract test for the Dashboard endpoint, repeated-event request envelope and all four frozen action oneof families.
+
+
+### 2026-09-26 shared media inventory cutover
+
+- Added a single Rust Host media-semantic owner mirroring frozen Grok 0.18 media extensions and attachment limits. Channel attachments and CloudAgent image loading no longer carry private approximate MIME tables.
+- Corrected semantic drift: `.ico` is a standard image; HEIC/HEIF are only client-servable native image formats and are not accepted by `imageMimeFromPath`; frozen video mapping is only m4v/mov/mp4/ogv/webm.
+- CloudAgent file URLs now receive POSIX-style lexical normalization before the `/workspace` boundary check, so `file:///workspace/../...` is refused instead of reaching the box reader.
+- Channel attachment is now final in the manifest with shared-media and behavior contracts. CloudAgent image loading remains non-final only because the production `cloud-agent-tool` owner has not yet wired the loader to the canonical box reader.
+
+
+### 2026-09-26 CloudAgent request-composition cutover
+
+- Ported the frozen CloudAgent request-composition layer to Rust as a pure Host-owned module. It now owns requested-model/max-mode parameters, selected-image user messages, conversation actions, repository normalization/sanitization, saved-environment primary-repo policy, repo-config projection and private-worker routing labels.
+- Added contract coverage for scp-style Git remotes, credential-stripping normalization, short `owner/repo` references, secondary-repo rejection, model-params-without-model rejection, image context projection, pool labels and named-machine shared-assignment policy.
+- This module is final independently; network RPC, model-catalog retrieval, completion polling and Host extension lifecycle remain tracked by their own CloudAgent manifest rows.
+
+
+### 2026-09-26 CloudAgent model-catalog fetch cutover
+
+- Added a real Rust `AiService/AvailableModels` Host client on the existing authenticated Cursor unary transport. The request encodes exactly the frozen CloudAgent catalog flags: model parameters on, Markdown off, USER_AVAILABLE scope.
+- Added a generated-wire decoder for the subset consumed by the frozen model catalog: model id/display name/aliases, boolean and enum parameter definitions/values, and parameter variants.
+- Added byte-level request and response contract tests. Model-catalog fetch is final independently; the five-minute catalog cache and CloudAgent manager/extension lifecycle remain owned by their separate poll-loop/service/extension mappings.
+
+
+### 2026-09-26 CloudAgent poll/cache cutover
+
+- Ported the frozen CloudAgent polling/cache layer to Rust: status normalization, included-limit projection, watch result/diff formatting, saved-environment id/name resolution and environment-list hints.
+- Added the five-minute model-catalog cache, five-minute fail-open team-admin policy cache with background refresh, and completion polling with 10s cadence, 30s RPC timeout, five-hour max wait, three-minute restart grace and rate-limit retry+jitter.
+- Polling is exposed behind injected clock/sleep/fetch boundaries so deterministic contracts can cover restart/rate-limit/terminal behavior while the production CloudAgent manager remains responsible for running it off the request lane.
+
+
+### 2026-09-26 CloudAgent manager service cutover
+
+- Added the real Rust `SandCloudAgentManager` and `CursorCloudAgentBackend` instead of a test-only CloudAgent API. All BackgroundComposer/Dashboard calls reuse the canonical Host Cursor transport with access token, machine checksum, client metadata, Sand namespace and ghost-mode headers.
+- Added a minimal generated-wire-compatible `prost` boundary pinned to the frozen Grok message field numbers for launch, follow-up, list/get, lifecycle management, artifacts, transcript payloads, PR state, optimized diffs, saved environments, teams and team-admin policy. Unknown generated fields remain safely ignored.
+- The manager now owns frozen launch/reply request composition, private-worker team resolution, saved-environment routing, model-catalog cache, completion polling, team-admin policy, managed CloudAgent IDs, file-change capping, live PR state and transcript-dump retrieval.
+- `cloud_agents_service_contract.rs` plus the wire/request/poll/model catalog contracts passed the complete Host Runner suite on exact HEAD `1c26d31ad8bd6f26b68fd7e34c8b9ca1481e80de`; shipping Host and independent Mahayana Coordinator also passed. The service mapping is therefore final. Host extension startup, ConversationMessage trace conversion, CloudAgent first-party Runner tool registration and raw box I/O remain separate non-final mappings.
+
+
+### 2026-09-26 CloudAgent Host extension and Runner tool production cutover
+
+- Added a single Rust `CloudAgentsExtension` owner around the production `SandCloudAgentManager`; Host startup binds real Auth/backend dependencies, prefetches team-admin policy, and threads the same manager through direct, group-member and automation routed turns.
+- Added the first-party Runner `CloudAgent` tool with the frozen action surface: launch/list/models/get/dump/watch/reply/rename/cancel/archive/unarchive/delete/list_artifacts. Destructive confirmation, cancellation, model validation, saved/private-worker environments and managed-id fencing are preserved.
+- Launch/reply image inputs now reach the already-audited `load_cloud_agent_images` implementation in the shipping path. `/workspace` bytes come from the existing ForeverBox Runner Read port and must be binary data; dump output uses the existing Box Write port.
+- The generated CloudAgent conversation-to-trace converter remains an explicit production Host adapter, matching frozen `ProductionExtensionHostAdapters`. The current binding fails closed for dump instead of inventing a trace shape. Auto-review and reviving cloud-agent watcher ownership are also still explicit non-final dependencies, so the CloudAgent tool/extension rows remain `existing-needs-parity`; the image-loader row is now final.
+
+
+### 2026-09-26 Memory agent-state ownership slice
+
+- Starting implementation HEAD: `646e2620e010a5e2f9dc4658ad96735c97c4ac6e`.
+- Added canonical user/project memory shard path helpers in `source/host/src/extensions/memory/memory_service.rs` and restored `source/host/extensions/memory/agent-state.ts` as a Rust Memory-extension owner at `source/host/src/extensions/memory/agent_state.rs` rather than extending the Runner placeholder.
+- The owner now covers explicit agent/user/project memory writes/removals with project-membership fencing, routine CRUD, workflow CRUD, profile/settings mutation, channel disconnect, project create/join/leave, and avatar install/clear through the existing canonical Host stores.
+- Added `source/host/tests/agent_state_contract.rs` for memory-scope routing/fencing and routine/workflow/profile/settings/channel/avatar behavior. The manifest is intentionally only `existing-needs-parity`; final status requires the shipping sand-state/update_state tool to delegate to this owner and an exact-HEAD CI pass.
+- Commits in this slice: `30c5fbc4ac267165a6e122f436307888408e37dc`, `1345de2e9705583e4bdbd1a1f0d1a298e6a0fab2`, `4b0efcc836e1bd960b4bdb4ef1355159945b1e30`, `7ca2f6e126d476f1d499915e647fda3b6adfd140`, `0c27b1e42f00c3fc02c589d39a75597aa08231f1`, `8a78c3890205e6f00f148844b4c5102955d487d0`, and `ca8ed60d25256eabc33c398e639acaf5855e7ea3`.
+
+
+### 2026-09-26 update_state production wiring
+
+- Implementation baseline was `279f166fe0a66399fb1f4fe1dc699a11b8f19bde`; production-wiring exact HEAD was `ad5b0832245c1106a22a6557c562de2987ada34a`.
+- Added `source/host/src/runner/tools/sand_state_tool.rs` as the Runner-owned `update_state` schema/router. It does not persist state itself: `SandStateWriter` delegates durable mutations to the Host-owned `source/host/src/extensions/memory/agent_state.rs`.
+- Shipping `TurnAgentComposition` now composes the state bridge, and `source/host/app/src/main.rs` constructs one `SandAgentState` for each routed agent turn from the canonical Memory service sand root.
+- Added `source/host/tests/sand_state_tool_contract.rs` covering tool advertisement/delegation, memory persistence, routine create + partial update preservation, and workflow persistence.
+- Exact-head Rust runtime run `36230057493`: `rust-host` job `108371404118` succeeded, including shipping Host compile, Coordinator, box daemon, full Host Runner cargo tests, attachments, Computer takeover and ConversationActor/CapabilityBroker contracts. The workflow's renderer job remains red only at the intentionally strict final architecture gate.
+- Exact-head Desktop Chat Parity run `36230057523`: Focused Electron chat E2E and Renderer typecheck/build both succeeded.
+- With those gates, `source/host/extensions/memory/agent-state.ts` and both Notifications rows are now final `implemented`. `source/host/runner/tools/sand-state-tool.ts` advances from `planned` to `existing-needs-parity`: remaining work is frozen auto-review/approval semantics for routine/workflow writes, listener post-save integration, full trigger validation, communicate activity projection, and box-path avatar reads.
+- Manifest after this slice: 1,815 implemented / 103 existing-needs-parity / 84 planned (187 not final).
+
+
+### 2026-09-26 browser production wiring
+
+- Browser production-wiring exact HEAD: `51496cb3fcba95b98a06a54ee32905979a62efd8`.
+- The frozen Grok browser driver v2 payload remains JavaScript inside the Rust Runner owner because Playwright/CDP executes inside the box Node runtime. Rust owns upload, per-turn registration, Host resource routing, validation and result projection.
+- Added a narrow Host `RunnerBoxResourcePort::browser_window_index` seam. `ForeverBoxRunnerResourcePort` resolves the real per-agent window only after `ensure_ready(agent_id)`; the default port fails closed.
+- Added `ProductionBrowserToolExecutor`: it uploads the frozen driver through the Host write port, launches it through the Host shell port, redirects its marker output to a box result file, reads/parses that file through the Host read port, and retrieves screenshot bytes through the same port. Runner never owns ForeverBox lifecycle or transport credentials.
+- Shipping `TurnToolset`, `TurnAgentComposition`, `ProductionRunnerCompositionInput` and `source/host/app/src/main.rs` now project this executor into real provider turns.
+- Exact-head Rust runtime run `36232610771`: rust-host job `108378519115` succeeded, including shipping Host compile, full Host Runner cargo tests and subsequent Mahayana contracts. Desktop Chat Parity run `36232610733` succeeded for both Focused Electron chat E2E and Renderer typecheck/build.
+- `sand-browser-driver-source.ts` is final `implemented`. `sand-browser-tools.ts` remains `existing-needs-parity` until frozen browser Auto-review preflight/capture-review-state, navigation-audit callback and screenshot persistImage callback are bound to the shipping executor.
+
+
+### 2026-09-26 Coordinator OAuth retry CI stabilization
+
+- Exact HEAD `61191947a34ec9e8a4d4bf11aa6cfba2f31ee641` kept Desktop Chat Parity green, but Rust desktop runtime run `36232906010` failed the independent shipping Coordinator production protocol at the MCP OAuth callback: the fake Host gateway intentionally returned one transient HTTP 503, while the callback surfaced HTTP 500 instead of completing on the bounded second attempt.
+- The Coordinator implementation itself was unchanged from the previously independently verified Coordinator checkpoint; the failure was isolated to the production-protocol fake gateway on macOS. Its listener is intentionally non-blocking for shutdown polling, while accepted sockets could inherit non-blocking mode and race the retry request before the client finished writing it.
+- Exact implementation HEAD `59e2b02c16c696bf75e22677b7430994c84153e6` normalizes each accepted fake-gateway HTTP socket back to blocking mode before applying the existing two-second read/write timeouts, matching the already-required loopback/box-exec test transport discipline.
+- OAuth semantics and acceptance criteria were not weakened: the fake gateway still returns one transient 503; the shipping Coordinator must still retry exactly once, complete successfully, and preserve the assertion that `oauth_completion_attempts() == 2`.
+- Exact-HEAD verification runs were triggered: Desktop Chat Parity `36233439852` and Rust desktop runtime `36233439856`. Their final results remain authoritative before advancing any additional manifest row or merge claim.
+
+
+### 2026-09-26 AgentStore and Host crash-marker finalization
+
+- AgentStore production implementation is complete. The shipping Rust `ProductionAgentStore` now owns the frozen AgentStore2 surface rather than the byte-retained TypeScript reference copy: typed metadata and subscriptions, content-addressed checkpoint/root advancement, fail-closed DB reset, reverse last-request recovery, lenient full-conversation hydration, inline/ref subagent resolution, and the Runner/transcript-mirror checkpoint adapter all share the canonical Session/AgentDb/blob owners.
+- Exact implementation HEAD `45de56763f1885701e16f255bbe69f440ea4140a` passed shipping Host compile, the independent Mahayana Coordinator contract, box daemon/supervisor, full Host Runner cargo tests, prompt attachment, Computer takeover and ConversationActor/CapabilityBroker in Rust runtime run `36233783915`. Superset exact HEAD `ad55380002e3b8eb56499aa1bbe25feb85227136` passed the same rust-host chain in run `36233942302`.
+- Host crash-marker production ownership is now inside the Rust Telemetry extension. It uses the canonical `.sand-host-crash.json` path, immediately attempts forwarding, retries non-terminal outcomes on the frozen five-minute cadence, persists `sand.host.crash` through the existing structured-log sink with `SAND-E0001` / `registry` / non-retryable tags, and only deletes an unchanged marker after confirmed persistence.
+- `source/host/tests/host_crash_marker_contract.rs` now proves real file-store -> production telemetry JSONL -> delete behavior in addition to parser/race/dedupe/defer coverage. Exact HEAD `ad55380002e3b8eb56499aa1bbe25feb85227136` passed the complete rust-host job in run `36233942302`; Desktop Chat Parity run `36233942301` passed renderer typecheck/build and the Grok Agent shell/Mahayana chat regression.
+- Accordingly `source/packages/agent-kv/agent-store.ts` and `source/host/extensions/telemetry/host-crash-marker.ts` advance to final `implemented`. No unrelated row is promoted. Manifest after this evidence update: 1818 implemented / 104 existing-needs-parity / 80 planned.
+- The PR remains draft. The strict architecture gate still has non-final Host/Runner/extension rows plus the six known legacy production-root blockers; this finalization is not a merge, packaged-acceptance, or release claim.
+
+
+### 2026-09-26 Desktop health telemetry production cutover
+
+- Starting from exact HEAD `dc75982509f0f72d284f1541f1b1ac7520700fe8`, the frozen Grok desktop-health lifecycle was audited against the Rust Telemetry extension instead of promoting the existing decision helper on code presence alone.
+- Production Host now owns the same source and cadence as Grok 0.18: `/tmp/sand-supervisor/desktop-health.json`, an immediate startup read, 30-second polling, revision-change forwarding, and a five-minute same-revision heartbeat. `SAND_DISABLE_TELEMETRY=1` disables the poller without moving health polling back into the renderer.
+- The existing Rust parser/normalizer remains the single decision owner. The new production bridge persists its projection through `HostStructuredLogTelemetry` as `sand.box.desktop_health`, and the poller is stopped/joined with `HostTelemetryExtension` lifecycle.
+- `host_telemetry_service_contract.rs` now proves file -> frozen forward decision -> durable structured-log JSONL, including degraded metadata, same-revision suppression and heartbeat re-emission. The existing `desktop_health_forwarder_contract.rs` continues to cover component/down-reason normalization, merge/clamping and forward decisions.
+- Only `source/host/extensions/telemetry/desktop-health-forwarder.ts` advances to final `implemented`; no adjacent TelemetryService/event-loop/transport row is promoted. Manifest for this commit is 1819 implemented / 103 existing-needs-parity / 80 planned.
+- PR #20 remains draft. The new exact HEAD must pass shipping Host/Coordinator/Runner and Desktop Chat Parity; the strict architecture gate is still expected to remain red on the other non-final rows and legacy-root blockers.
+
+
+### 2026-09-26 canonical telemetry port production binding
+
+- Starting from exact HEAD `e858424df9bd4d687b1d7b3f3eca37239624f33a`, the frozen telemetry port was audited against shipping structured-log construction. The Rust port already owned the complete frozen taxonomy, error-detail helpers, no-op surface and `SAND_BOX_*` identity normalization, but production HostTelemetryService did not consume that identity owner.
+- Shipping `HostTelemetryService::open` now resolves box identity exclusively through `ports::telemetry::resolve_sand_box_identity_tags`; structured-log projections merge those identity tags before event metadata, preserving the frozen `{ ...identityTags, ...metadata }` precedence. Empty identity values are filtered and event-local keys remain authoritative.
+- A deterministic `open_with_identity_tags` seam verifies the production merge without mutating process environment in parallel tests. `host_telemetry_service_contract.rs` proves identity propagation, empty-value removal and event-key override; `ports_telemetry_contract.rs` continues to pin environment trimming/taxonomies/no-op behavior.
+- Only `source/host/ports/telemetry.ts` advances to final `implemented`. HostTelemetryService, structured-log transport, event-loop sampling and backend transport stay independently non-final. Manifest for this commit is 1820 implemented / 102 existing-needs-parity / 80 planned.
+- PR #20 remains draft; exact-HEAD Host/Coordinator/Runner, Desktop Chat Parity and strict architecture results remain authoritative.
+
+
+### 2026-09-26 production binding providers owner
+
+- Starting from exact HEAD `3c9ef840e9043efb18ef4c580593fbc3c59e0092`, the smallest remaining planned Host construction module, `source/host/production-binding-providers.ts`, was audited against frozen Grok 0.18 before implementation.
+- Added `source/host/src/production_binding_providers.rs`. Its StateBackstop runtime uses the canonical Sand agents root and the existing SQLite checkpoint owner before reading `store.db`, preserving the frozen production binding without duplicating storage logic. Secrets uses the Rust Host-native context adaptation through the same production-binding module, and shipping Host main now consumes it rather than an anonymous logger closure.
+- The CloudAgent converter placeholder was also moved out of main into this canonical owner. It intentionally remains fail-closed: frozen `NO_PREAMBLE` trace conversion requires the full generated `aiserver.v1.ConversationMessage` and nested `ClientSideToolV2Result` oneof values; the current Rust tree does not yet contain those canonical generated bindings, so opaque bytes/base64 are not accepted as parity.
+- `production_binding_providers_contract.rs` verifies canonical agents-root selection, real WAL-capable SQLite checkpoint/read/reopen behavior, missing-db behavior, and the fail-closed CloudAgent generated-binding fence.
+- This mapping advances only from `planned` to `existing-needs-parity`, not final. Manifest is now 1820 implemented / 103 existing-needs-parity / 79 planned. Remaining final blockers are the generated CloudAgent trace adapter and live StateBackstop BoxStore/SourceMap production composition.
+
+
+### 2026-09-26 production binding canonical-root contract correction
+
+- Exact HEAD `c7e713987bc28a508972f6412bf4f06b7dfdced5` exposed a contract bug, not a shipping root bug: `production_binding_providers_contract.rs` hard-coded `~/.sand/agents`, but frozen Grok 0.18 delegates `getSandAgentsRootDir(home)` to `getSandRootDir(home)`. The frozen packaged root is `~/.grokbot/agents`; dev/lab roots follow the Sand variant, and explicit data-root/user-data overrides remain authoritative.
+- The production provider already delegates to Rust `get_sand_agents_root_dir`, matching the frozen construction boundary. The contract now compares against that canonical resolver instead of inventing a second root convention.
+- No shipping path, manifest status, StateBackstop semantics, or data migration behavior changed in this correction. The next exact-HEAD Rust run remains authoritative for the production binding provider row.
+
+
+### 2026-09-26 Grok-shaped production Host extension owner
+
+- Starting from exact HEAD `05ff75c470561bc428c6958f6cabb57eae84bf72`, the Rust Host's live production extension construction was still embedded in `source/host/app/src/main.rs` even though frozen Grok owns this responsibility in `source/host/host-production-extensions.ts`.
+- Added `source/host/src/host_production_extensions.rs` and moved the real shipping construction for Auth, Experiments, ActionAudit, CloudAgents, NotifyBus, Memory, ManagedSetup, SourceMap, Trays, BoxLifecycle, WebAuthnProxy and BrowserUa behind that owner. `app/main.rs` now consumes the module instead of defining a parallel production graph.
+- The existing 35-slot `HOST_EXTENSION_ORDER` remains the canonical frozen registry table. `host_production_extensions_contract.rs` proves the current shipping subset is duplicate-free, occupies only frozen slots, and keeps the production owner Send+Sync.
+- This is intentionally not a fake 35/35 registry. `source/host/host-production-extensions.ts` advances only from `planned` to `existing-needs-parity`; the missing ContentSearch/CrossUserSharing/StateBackstop production composition/Inference/LocalExec/LocalToolPermission/MCP/BoxStoreSync/HostUpgrade/AutoReview/CodebaseTelemetry/TeachRecording declarations and production extras remain explicit blockers.
+- Manifest after this cutover: 1820 implemented / 104 existing-needs-parity / 78 planned. Strict non-final row count is unchanged; this commit reduces planned architecture debt and removes a real `main.rs` ownership violation without promoting incomplete slots.
+
+
+### 2026-09-26 production Host extension owner compile repair
+
+- Exact HEAD `5e37c999688f5cdf950d3430d99c6e08cdda20db` reached the shipping Mahayana Host compile and exposed one extraction-only regression: `ActionAuditExtension` is still a live Runner dependency type in `app/main.rs`, but its import was removed when the production extension constructor moved to `host_production_extensions.rs`.
+- Restored that type import and scoped `ProductionBrowserUaLog` / `ProductionHostExtensions` imports to `#[cfg(test)]`, since those names are only used by the Send+Sync boundary tests in the app target.
+- No production ownership, manifest status, gateway behavior or extension lifecycle changed. The new exact HEAD must rerun the same shipping Host/Coordinator/Runner and Desktop Chat gates.
+
+
+### 2026-09-26 Secrets external gateway finalization
+
+- Implementation baseline: `4ec8c7f4e83ce45f233c5bad1d1ff1743fe2b9b2`.
+- Traced the frozen Grok Host API instead of inventing a Rust RPC name: `source/host/host-gateway-api.ts` exposes exactly `setBoxSecrets` and `getBoxSecretsStatus` from the Secrets extension.
+- The Rust Secrets owner now owns decoding/encoding for those two methods. `setBoxSecrets` preserves validation as a bad-request failure; `getBoxSecretsStatus` returns the frozen `keys`, `isApplied`, and `lastAppliedAtMs` shape. Unknown methods remain unclaimed for normal Host dispatch.
+- Shipping `UnifiedGatewayApi` holds the same `Arc<HostSecretsExtension>` started against ForeverBox, so the externally reachable methods and startup/persisted-apply lifecycle share one production owner rather than a parallel adapter.
+- `source/host/tests/secrets_extension_contract.rs` now pins the exact frozen method names, status projection, invalid-value rejection, and unknown-method fallthrough in addition to the existing validation/persistence/retry/reload contracts.
+- Only `source/host/extensions/secrets/extension.ts` advances to final `implemented`. Manifest becomes 1,821 implemented / 103 existing-needs-parity / 78 planned (181 non-final). The PR remains draft; exact-HEAD Rust/Coordinator/Runner, Desktop Chat Parity, and strict architecture results remain authoritative, and the known legacy-root cutover is still required before the strict gate can pass.
+
+
+### 2026-09-26 Local Exec provider transport production cutover
+
+- Starting exact HEAD: `afb2f21862be6d5d560c07fba623373536df48f0`.
+- The shipping Rust Gateway already implemented the authenticated frozen endpoints `/local-exec/requests` and `/local-exec/responses`, but production passed `local_exec: None`, so a desktop local-exec provider could never actually attach to the Rust Host.
+- Added `source/host/src/extensions/local_exec/local_exec_bridge.rs` as the Host-owned provider transport: registration/welcome, hello metadata, heartbeat liveness, supervised + variant provider ranking, multiple-computer projection, request/response correlation, cancellation and approval-retirement fanout.
+- Added `source/host/src/extensions/local_exec/extension.rs` with the frozen `LocalToolPermission + Telemetry` dependency declaration and a GatewayBridgeHub adapter. Shipping `source/host/app/src/main.rs` now starts this owner and supplies `Some(local_exec_extension.gateway_bridge())` to `GatewayServerDeps`.
+- Added `source/host/tests/local_exec_bridge_contract.rs` covering rank/variant rules, provider registration, hello/liveness, default computer identity, request/response correlation, cancel and retire-approval transport.
+- This deliberately does not claim full Local Exec parity. `gateway-local-exec-sand-box.ts` and `production.ts` remain planned, while `extension.ts` and `local-exec-bridge.ts` advance only to `existing-needs-parity`. Remaining work is generated ExecClient codecs/RemoteResourceAccessor, permission-authorized exec/upload/download, complete refusal/failure telemetry and binding the live LocalToolPermission controller.
+- Manifest after this slice: **1,821 implemented / 105 existing-needs-parity / 76 planned** (181 non-final). Non-final count is unchanged because this slice converts two planned mappings into real production-backed partial mappings rather than falsely finalizing them.
+
+
+### 2026-09-26 Local Exec SandBox/file-transfer owner
+
+- Starting exact HEAD: `6f2dcc533223eacfa5c139babf511e2d4282f23a`; the preceding Local Exec slice had already passed the shipping Mahayana Host compile on its exact-head Rust run before this commit was created.
+- Added `source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs`. The Rust Host now owns the reference-shaped active/selected-computer adapter, provider run state, terminals-folder fallback, 100 MiB single-file fence, permission-gate seam, approval-id propagation, base64 upload/download frames, file/file-error settlement and per-computer box resolution.
+- Added `source/host/tests/gateway_local_exec_sand_box_contract.rs` with real provider channels: it proves upload/download frame shape and bytes, gate actions, approval propagation, user-computer selection, terminals-folder projection, oversized-file rejection and blocked-gate fail-closed behavior.
+- This mapping advances only to `existing-needs-parity`. Generated `ExecClientMessage`/`ExecClientControlMessage` decoding, `RemoteResourceAccessor`, live LocalToolPermission UI/controller binding, and the Runner ExternalShell/Read/Copy tool cutover still block final parity.
+- Manifest becomes **1,821 implemented / 106 existing-needs-parity / 75 planned** (181 non-final).
+
+
+### 2026-09-26 Local Tool Permission owner and Local Exec liveness binding
+
+- Starting exact HEAD: `abda6c7ce019d959d01bcf315b5ef1afad4b7ab6`.
+- Added `source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs`: canonical SettingsService-backed Always/Ask/Never policy, scoped one-time approvals, pending request coalescing/waiting, TTL expiry, allow-once/deny/always/never resolution, settled-id idempotence, approval lifetime, begin-turn invalidation, target-size fencing and resource-path approval reuse.
+- The controller implements the already-ported `LocalToolPermissionAskStore`, so the frozen stale/idempotent resolution boundary is no longer isolated from the real permission owner.
+- Added `source/host/src/extensions/local_tool_permission/extension.rs` with the frozen Settings/Telemetry/Transcript dependency declaration. Shipping Host starts this owner from the same SettingsService used by Session, and binds its live-computer predicate to the production Local Exec bridge.
+- Contract coverage proves standing Never/Always/Ask behavior, exact dependency identity, a real blocked waiter resolved by allow-once, approval reuse and scope retirement.
+- Both mappings advance only from `planned` to `existing-needs-parity`. Final still requires the full refusal-direction/saturation memory, preparatory-action rules, transcript ask-card + boot-sweep lifecycle, stranded-retirement telemetry, approval-retired Host event propagation and shipping `resolveLocalToolPermission` Gateway command.
+- Manifest becomes **1,821 implemented / 108 existing-needs-parity / 73 planned** (181 non-final).
+
+
+### 2026-09-26 Local Exec production codec ownership
+
+- Starting exact HEAD: `573cf4995af12f3b90422f45852fbcc005a6806c`, whose Rust Host, independent Coordinator, Runner contracts and Desktop Chat Parity are green; only the strict architecture gate remains red.
+- Added `source/host/src/extensions/local_exec/production.rs` as the Rust owner corresponding to frozen `source/host/extensions/local-exec/production.ts`.
+- The owner preserves the production boundary that the reference module is responsible for: tolerant object-shaped Exec client JSON, control projection for `throw` and `streamClose`, unknown/heartbeat non-terminal handling, and a package-owned remote-resource accessor wrapper.
+- Added `source/host/tests/local_exec_production_codec_contract.rs` covering unknown-field tolerance, throw/stack projection, stream close, unknown control handling, oneof conflict rejection and accessor ownership.
+- This row advances only from `planned` to `existing-needs-parity`. The repository currently ships TypeScript-generated `source/packages/proto/generated/agent/v1/exec_pb.ts` but no canonical Rust-generated `ExecClientMessage`/`ExecClientControlMessage`; therefore exact generated `fromJson(..., ignoreUnknownFields: true)` semantics and live GatewayLocalExecManager consumption remain explicit blockers.
+- Manifest becomes **1,821 implemented / 109 existing-needs-parity / 72 planned** (181 non-final).
+
+
+### 2026-09-26 Local Tool Permission controller policy hardening
+
+- Starting exact HEAD: `1cc12beef74968b6f554585d0cb24c1cc576276c`.
+- Ported the remaining safety-critical frozen controller policy that was still absent from the first Rust owner: refusal-direction memory, hashed refusal keys, bounded per-agent saturation, forgotten-agent fencing, standing-grant direction epochs, preparatory-action rejection, approval retirement callbacks and permission-change settlement.
+- Added contract coverage proving a denied action cannot be retried in the same direction, forgotten tasks stay fenced, preparatory access cannot bypass the action the user is actually being asked to approve, and one-time approval retirement is observable when scope ends.
+- The controller intentionally remains `existing-needs-parity`: AbortSignal-equivalent cancellation for individual joined waiters and the exact multi-listener subscription API are still controller-level gaps. Transcript ask cards, boot sweep and Gateway resolution remain extension-level gaps.
+
+
+### 2026-09-26 Local Tool Permission controller finalization
+
+- Starting exact HEAD: `49291e0009dc3d47bd8027601e337bd9538a5471`.
+- Completed the controller-owned frozen behavior rather than conflating it with extension wiring: joined-waiter cancellation now mirrors AbortSignal semantics (one waiter can cancel without cancelling another; the last cancelled waiter retires the pending ask), created/settled events support multiple disposable subscribers, production request ids use the frozen 64-hex shape, and target-size checks use JavaScript-equivalent UTF-16 units.
+- Corrected failure ordering to match the frozen controller: existing approval coverage wins before target-size fencing; ask-surface/live-computer checks precede preparatory/size failures; standing-grant direction fencing remains before ask creation.
+- Added contracts for joined cancellation, subscription lifecycle, UTF-16 sizing and the prior refusal/forgotten/preparatory/retirement behavior.
+- `source/host/extensions/local-tool-permission/local-tool-permission-controller.ts` advances to final `implemented`. The separate extension mapping deliberately remains non-final for transcript ask-card creation, boot sweep, stranded-retirement telemetry, approval-retired Host event fanout and Gateway `resolveLocalToolPermission` production wiring.
+- Manifest becomes **1,822 implemented / 108 existing-needs-parity / 72 planned** (180 non-final).
+
+
+### 2026-09-26 Transcript WidgetResponses durable LocalToolPermission slice
+
+- Starting exact HEAD: `fa0540492f71bbca39fd43f99f7fc572675c7794`.
+- Added `source/host/src/extensions/transcript/widget_responses.rs` backed by the shipping `ProductionSessionWorkers`/AgentDb owners.
+- The Rust slice now performs frozen LocalToolPermission stale-card retirement, distinguishes a newly retired card from an already-settled durable card, fences by agent/entry/request ids, and performs the fail-soft boot sweep across all durable agents with `ifPendingBeforeMs`.
+- Added SQLite-backed contract coverage proving durable `pending -> expired` mutation, stale-resolution idempotence and cutoff-aware multi-agent startup cleanup.
+- `widget-responses.ts` advances only to `existing-needs-parity`; generic widgets, AutoReview, secret submission, reactions, spend guard and active-session/roster projection remain explicit responsibilities.
+- Manifest becomes **1,822 implemented / 109 existing-needs-parity / 71 planned** (180 non-final).
+
+
+### 2026-09-26 LocalToolPermission extension + HostRunnerComposition surface cutover
+
+- Starting exact HEAD: `34632c697ab2950d0ea2202fcb34b8a567cbba8e`; Desktop Chat Parity is green and the Rust run has shipping Host, Coordinator, box-daemon and platform-worker checks green, with only the strict architecture gate expected red while the Runner suite completes.
+- Added `source/host/src/host_runner_composition.rs` to restore the frozen ownership boundary used by `host-runner-composition.ts`: direct runner sessions own a LocalToolPermission controller subscription, created/settled events project into durable transcript cards, group-member turns do not expose approval surfaces, and run settlement removes the surface.
+- Shipping Host now binds `bindAskSurfaces` to that composition and `bindLiveComputerCheck` to Local Exec. Agent deletion forgets permission state; approval retirement publishes `local-tool-permission.approval-retired`.
+- `HostLocalToolPermissionExtension` now owns the remaining frozen extension responsibilities: durable transcript binding, background-ready stale-card sweep, `resolveAsk` through the already-final resolution module, stranded-retirement telemetry and `notePermissionChanged`.
+- `resolveLocalToolPermission` is now a first-class Rust `UnifiedGatewayApi` method rather than falling through to the compatibility Host lane; `setHostSettings` still delegates its broad settings payload but now invokes the canonical permission-change settlement hook when `localToolPermission` changes.
+- `source/host/extensions/local-tool-permission/extension.ts` advances to **implemented**. `source/host/host-runner-composition.ts` advances only to **existing-needs-parity** because its non-permission runner/mirror/memory responsibilities remain open.
+- Manifest becomes **1,823 implemented / 109 existing-needs-parity / 70 planned** (179 non-final).
