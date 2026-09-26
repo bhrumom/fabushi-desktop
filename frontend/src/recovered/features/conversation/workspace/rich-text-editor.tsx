@@ -716,6 +716,7 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
   const previousExternalContent = useRef({ prompt, richText });
   const clearFence = useRef<{ generation: number; before: string } | null>(null);
   const scopeFence = useRef<{ scopeKey: string; before: string } | null>(null);
+  const emittedChangeSerial = useRef(0);
   const observedScopeKey = useRef(scopeKey);
   const observedClearGeneration = useRef(clearGeneration);
   const editor = useEditor({
@@ -740,12 +741,41 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
           scopeFence.current = null;
           return false;
         },
-        input: () => {
+        input: (view) => {
           // Programmatic browser drivers and some IME/contenteditable paths can
-          // surface the committed DOM input without a separately observable
-          // beforeinput callback. It is still a user-owned edit, so release the
-          // stale-scope fence before ProseMirror flushes the DOM change.
+          // commit the DOM before ProseMirror has emitted the corresponding
+          // transaction. Release the stale Agent-scope fence immediately, then
+          // rescue the canonical change only when onUpdate did not already emit
+          // it. This keeps visible DOM, TipTap state and persisted draft aligned
+          // without duplicating ordinary keyboard transactions.
+          const fenced = scopeFence.current;
           scopeFence.current = null;
+          if (fenced != null) {
+            const scopeAtInput = observedScopeKey.current;
+            const clearGenerationAtInput = observedClearGeneration.current;
+            const serialAtInput = emittedChangeSerial.current;
+            const domTextAtInput = (view.dom as HTMLElement).innerText.replace(/\r\n?/g, "\n");
+            window.setTimeout(() => {
+              if (
+                observedScopeKey.current !== scopeAtInput
+                || observedClearGeneration.current !== clearGenerationAtInput
+                || emittedChangeSerial.current !== serialAtInput
+              ) return;
+
+              const stateJson = JSON.stringify(view.state.doc.toJSON());
+              const stateText = serializePromptNode(view.state.doc);
+              const stateStillFenced = stateJson === fenced.before;
+              const nextPrompt = stateStillFenced && domTextAtInput !== stateText ? domTextAtInput : stateText;
+              const nextJson = stateStillFenced && domTextAtInput !== stateText
+                ? JSON.stringify(promptEditorContent(nextPrompt))
+                : stateJson;
+              emittedChangeSerial.current += 1;
+              callbacks.current.onChange({
+                prompt: nextPrompt,
+                ...(nextPrompt.length === 0 ? {} : { richText: nextJson })
+              });
+            }, 0);
+          }
           return false;
         }
       },
@@ -793,6 +823,7 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
       if (scopeFence.current != null) return;
       const text = promptEditorText(current);
       const json = current.isEmpty ? undefined : JSON.stringify(current.getJSON());
+      emittedChangeSerial.current += 1;
       callbacks.current.onChange({ prompt: text, ...(json == null ? {} : { richText: json }) });
     }
   });

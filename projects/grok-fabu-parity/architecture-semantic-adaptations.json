@@ -73,7 +73,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "597ccedc5401a3762fca10c7ca2206fff362bc2b",
+      "targetBlobSha": "63115522354aaf9893b156e5e1097a888abee01e",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
         "frontend/src/recovered/features/conversation/workspace/composer.tsx"
@@ -81,9 +81,10 @@
       "testEvidence": [
         "desktop/e2e/mahayana-agent-workbench.spec.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop/e2e/grok-parity.spec.ts"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 TipTap composer structure while adapting the shipping scope-switch transaction fence to the real ProseMirror browser-input contract. In the shipping Electron renderer, ordinary contenteditable typing is not guaranteed to carry transaction.getMeta(\"uiEvent\"), so the frozen fence could keep accepting DOM edits while suppressing every onChange after opening a newly materialized Agent: the prompt appeared on screen but the React draft remained empty and the Send message action never rendered. The adaptation keeps stale pre-scope transactions fenced, releases ownership on the browser beforeinput event before TipTap creates the real user-edit transaction, and explicitly releases the same fence for voice/dictation insertText commands. It does not alter Agent identity, draft persistence, submission, or Coordinator/Host ownership; focused Electron acceptance proves a pure-text turn reaches the canonical recovered composer and shipping Mahayana path."
+      "rationale": "The frozen TipTap composer is preserved semantically, with only Fabushi ownership boundaries around local persistence and voice input. Agent switches fence queued transactions from the previous scope. Browser beforeinput releases the fence before ordinary edits; committed DOM input also performs a one-shot canonical-state rescue when ProseMirror has already reconciled the DOM without emitting an accepted onUpdate, preventing visible prompt text from diverging from the persisted Agent-scoped draft. Programmatic voice/dictation insertion explicitly releases the same fence before insertText. The focused Electron parity E2E reads the real client-persistence slice and guards this ownership boundary."
     },
     {
       "referencePath": "source/electron-main/adapters/attachment-gateway.ts",
