@@ -4,6 +4,9 @@ use std::sync::Arc;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider,
 };
+use crate::cloud_agents::cloud_agent_tool::{
+    CloudAgentToolBridge, CloudAgentToolDependencies,
+};
 
 use super::box_tool_access::{RunnerBoxResourcePort, RunnerBoxToolBridge};
 use super::production_turn_run_shell_adapter::{
@@ -43,6 +46,7 @@ pub struct TurnAgentComposition {
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
+    cloud_agent_tool: Option<CloudAgentToolDependencies>,
     spotlight_enabled: bool,
     action_audit: Option<RoutedMcpAuditConfig>,
     observation: Option<TurnObservationHandle>,
@@ -68,6 +72,7 @@ impl TurnAgentComposition {
             send_message_sink: None,
             reaction_sink: None,
             agent_management_sink: None,
+            cloud_agent_tool: None,
             spotlight_enabled: false,
             action_audit: None,
             observation: None,
@@ -136,6 +141,18 @@ impl TurnAgentComposition {
 
     pub fn has_agent_management_sink(&self) -> bool {
         self.agent_management_sink.is_some()
+    }
+
+    pub fn with_cloud_agent_tool(
+        mut self,
+        deps: CloudAgentToolDependencies,
+    ) -> Self {
+        self.cloud_agent_tool = Some(deps);
+        self
+    }
+
+    pub fn has_cloud_agent_tool(&self) -> bool {
+        self.cloud_agent_tool.is_some()
     }
 
     pub fn with_spotlight_enabled(mut self, enabled: bool) -> Self {
@@ -207,6 +224,13 @@ impl TurnAgentComposition {
             Some(sink) => Arc::new(AgentManagementToolBridge::new(
                 bridge,
                 Arc::clone(sink),
+            )),
+            None => bridge,
+        };
+        let bridge: Arc<dyn RoutedToolBridge> = match &self.cloud_agent_tool {
+            Some(deps) => Arc::new(CloudAgentToolBridge::new(
+                bridge,
+                deps.clone(),
             )),
             None => bridge,
         };

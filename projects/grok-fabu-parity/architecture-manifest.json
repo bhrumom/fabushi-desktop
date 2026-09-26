@@ -10049,32 +10049,50 @@
       "targetPath": "source/host/src/cloud_agents/cloud_agent_images.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "ff98922b8684ee9b6ef996647fec8e506eefb2a2",
       "architecturalRole": "host/cloud-agents",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/cloud_agents/cloud_agent_images.rs",
-        "source/host/src/media_mime.rs"
+        "source/host/src/cloud_agents/cloud_agent_tool.rs",
+        "source/host/src/media_mime.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/cloud_agent_images_contract.rs",
         "source/host/tests/media_mime_contract.rs",
+        "source/host/tests/cloud_agent_tool_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host port now reuses the exact frozen image MIME inventory and 25 MiB attachment limit, preserves frozen user-facing failure text, file:// validation, agent media-root containment and /workspace box reads, and lexically normalizes box paths before the workspace boundary check so /workspace/../ traversal is refused. Final remains withheld only until production CloudAgent tool composition calls this loader with the canonical box reader."
+      "notes": "Final Rust adaptation: the exact frozen image MIME inventory, 25 MiB limit, agent media-root containment, normalized /workspace boundary and traversal refusal are now consumed by the shipping first-party CloudAgent tool. Box images use the existing ForeverBox Runner Read port and require binary data; local agent media remains Host-owned. Contracts cover MIME/boundary behavior and the production tool surface.",
+      "parityMode": "rust-adaptation"
     },
     {
       "referencePath": "source/host/cloud-agents/cloud-agent-tool.ts",
       "targetPath": "source/host/src/cloud_agents/cloud_agent_tool.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "77b6a1682a06efe7a5f3e3c71a5d63555d304796",
       "architecturalRole": "host/cloud-agents",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/cloud_agents/cloud_agent_tool.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner_production_bridge.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/cloud_agents/cloud_agents_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/cloud_agent_tool_contract.rs",
+        "source/host/tests/cloud_agents_service_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs",
+        "source/host/tests/cloud_agent_images_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust Runner now registers CloudAgent as a first-party RoutedToolBridge and production-wires launch/list/models/get/dump/watch/reply/rename/cancel/archive/unarchive/delete/list_artifacts against the single Host SandCloudAgentManager. launch/reply consume the canonical image loader through the live ForeverBox binary Read port; dump writes through the live Box Write port; destructive confirmation, model validation, managed-id fencing and cancellation are preserved. Final remains withheld for the frozen production Auto-review callback, reviving cloud-agent watcher/quiet-origin ownership, and the generated ConversationMessage-to-trace adapter used by dump."
     },
     {
       "referencePath": "source/host/cloud-agents/cloud-agent-transcript-dump.ts",
@@ -11253,12 +11271,23 @@
       "targetPath": "source/host/src/extensions/cloud_agents/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "acd264586bc6a2f16d81ae0b8bfc8e5c60ac78c0",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cloud_agents/extension.rs",
+        "source/host/src/extensions/cloud_agents/cloud_agents_service.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/cloud_agents_service_contract.rs",
+        "source/host/tests/cloud_agent_model_catalog_contract.rs",
+        "source/host/tests/cloud_agent_poll_loop_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Shipping Host now owns one CloudAgentsExtension over the production SandCloudAgentManager, real Auth/backend transport and team-admin prefetch, and injects that same manager into every direct/group/automation routed Runner composition. Drop disposes the manager once through an Arc-owned inner owner. Final remains withheld only for the external generated ConversationMessage-to-trace adapter and exact Host extension-registry lifecycle binding; transcript dump fails closed rather than fabricating trace data until that adapter is provided."
     },
     {
       "referencePath": "source/host/extensions/cloud-agents/model-catalog-fetch.ts",

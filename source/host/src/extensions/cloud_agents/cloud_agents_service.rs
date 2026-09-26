@@ -861,6 +861,13 @@ impl SandCloudAgentManager {
             .contains(bc_id)
     }
 
+    pub fn forget_managed_id(&self, bc_id: &str) {
+        self.launched_ids
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(bc_id);
+    }
+
     pub fn resolve_private_worker_team_id(
         &self,
         environment: Option<&CloudAgentEnvironment>,

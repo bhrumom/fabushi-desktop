@@ -515,3 +515,16 @@ fn helper_projection_caps_diffs_and_normalizes_dev_null() {
     assert_eq!(cloud_agent_url("bc-x"), "https://cursor.com/agents/bc-x");
     assert_eq!(MAX_CLOUD_AGENT_FILES, 300);
 }
+
+
+#[test]
+fn managed_id_lifecycle_forgets_deleted_agents() {
+    let service = manager(Arc::new(FakeBackend::new()));
+    assert!(!service.is_managed_id("bc-managed"));
+    service.remember_managed_id("bc-managed");
+    assert!(service.is_managed_id("bc-managed"));
+    assert!(service.launched_ids_snapshot().contains("bc-managed"));
+    service.forget_managed_id("bc-managed");
+    assert!(!service.is_managed_id("bc-managed"));
+    assert!(!service.launched_ids_snapshot().contains("bc-managed"));
+}

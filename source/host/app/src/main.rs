@@ -15,6 +15,10 @@ use mahayana_host_runtime::extensions::action_audit::action_audit_service::{Audi
 use mahayana_host_runtime::extensions::action_audit::extension::{
     ActionAuditExtension, start_action_audit_extension,
 };
+use mahayana_host_runtime::extensions::cloud_agents::extension::{
+    CloudAgentsExtension, start_cloud_agents_extension,
+};
+use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
 use mahayana_host_runtime::extensions::experiments::{
     HostExperimentsExtension, start_host_experiments_extension,
 };
@@ -160,6 +164,8 @@ use mahayana_host_runtime::runner::turn_observation::{
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedToolBridge, RunnerRequestContextSource,
 };
+use mahayana_host_runtime::runner::box_tool_access::RunnerBoxResourcePort;
+use mahayana_host_runtime::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
 use mahayana_host_runtime::runner::coordinator_tool_relay::{
     CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
     RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
@@ -254,6 +260,7 @@ struct ProductionHostExtensions {
     box_lifecycle: Arc<BoxLifecycleService<ProductionBoxLifecycleClient<HostAuthExtension>>>,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     action_audit: ActionAuditExtension,
+    cloud_agents: CloudAgentsExtension,
 }
 
 fn start_production_host_extensions(
@@ -282,6 +289,16 @@ fn start_production_host_extensions(
         Arc::clone(&auth),
         Arc::clone(&experiments),
         telemetry_logs,
+    );
+    let cloud_agents = start_cloud_agents_extension(
+        backend_url.clone(),
+        Arc::clone(&auth),
+        Arc::new(|_conversation: &[Vec<u8>]| {
+            Err(
+                "CloudAgent transcript dump is unavailable until the generated ConversationMessage trace adapter is bound by the production Host"
+                    .to_string(),
+            )
+        }),
     );
     let notify_bus = start_notify_bus_extension(
         Arc::clone(&auth),
@@ -326,6 +343,7 @@ fn start_production_host_extensions(
         box_lifecycle,
         webauthn_proxy,
         action_audit,
+        cloud_agents,
     })
 }
 
@@ -758,6 +776,7 @@ struct UnifiedGatewayApi {
     transcript_manager: Arc<TranscriptManager>,
     telemetry_logs: HostStructuredLogTelemetry,
     production_action_auditor: ActionAuditExtension,
+    cloud_agents: Arc<SandCloudAgentManager>,
 }
 
 #[derive(Clone)]
@@ -777,6 +796,7 @@ struct LocalRoutedRunnerDeps {
     trays: Arc<HostTraysExtension>,
     telemetry_logs: HostStructuredLogTelemetry,
     production_action_auditor: ActionAuditExtension,
+    cloud_agents: Arc<SandCloudAgentManager>,
 }
 
 impl UnifiedGatewayApi {
@@ -797,6 +817,7 @@ impl UnifiedGatewayApi {
             trays: Arc::clone(&self.trays),
             telemetry_logs: self.telemetry_logs.clone(),
             production_action_auditor: self.production_action_auditor.clone(),
+            cloud_agents: Arc::clone(&self.cloud_agents),
         }
     }
 
@@ -950,6 +971,7 @@ fn run_local_group_member_turn(
         deps.trays,
         deps.telemetry_logs,
         deps.production_action_auditor,
+        deps.cloud_agents,
         runner_args,
     )
     .map_err(|error| error.to_string())?;
@@ -1108,6 +1130,7 @@ fn run_local_automation_turn(
         deps.trays,
         deps.telemetry_logs,
         deps.production_action_auditor,
+        deps.cloud_agents,
         runner_args,
     )
     .map_err(|error| error.to_string())?;
@@ -1463,6 +1486,7 @@ fn start_routed_provider_task(
     trays: Arc<HostTraysExtension>,
     telemetry_logs: HostStructuredLogTelemetry,
     production_action_auditor: ActionAuditExtension,
+    cloud_agents: Arc<SandCloudAgentManager>,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
@@ -1675,6 +1699,15 @@ fn start_routed_provider_task(
     let worker_is_ack_redrive = is_ack_redrive;
     let worker_memory_store = memory_store.clone();
     let worker_turn_hidden = turn_hidden;
+    let cloud_agent_dir = session_workers
+        .session_db_path(&agent_id)
+        .map_err(GatewayCommandError::Internal)?
+        .parent()
+        .map(Path::to_path_buf)
+        .ok_or_else(|| GatewayCommandError::Internal(
+            format!("agent database path has no parent for {agent_id}")
+        ))?;
+    let worker_cloud_agents = Arc::clone(&cloud_agents);
     let spawn_error_agent_id = agent_id.clone();
     let spawn = thread::Builder::new()
         .name(format!("mahayana-runner-provider-{agent_id}"))
@@ -1699,10 +1732,19 @@ fn start_routed_provider_task(
                 transcript_runtime: Arc::clone(&worker_transcript_runtime),
                 agent_id: agent_id.clone(),
             });
-            let box_resources = Arc::new(ForeverBoxRunnerResourcePort::new(
-                Arc::clone(&forever_box),
-                agent_id.clone(),
-            ));
+            let box_resources: Arc<dyn RunnerBoxResourcePort> =
+                Arc::new(ForeverBoxRunnerResourcePort::new(
+                    Arc::clone(&forever_box),
+                    agent_id.clone(),
+                ));
+            let cloud_agent_tool = CloudAgentToolDependencies {
+                manager: Arc::clone(&worker_cloud_agents),
+                agent_dir: cloud_agent_dir,
+                box_resources: Arc::clone(&box_resources),
+                cancellation: worker_cancellation.clone(),
+                review: None,
+                watch: None,
+            };
             let delta_events = worker_events.clone();
             let delta_stream_id = stream_id.clone();
             let delta_runtime = Arc::clone(&worker_transcript_runtime);
@@ -1840,6 +1882,7 @@ fn start_routed_provider_task(
                     box_resources: Some(box_resources),
                     send_message_sink: Some(send_message_sink),
                     reaction_sink: Some(reaction_sink),
+                    cloud_agent_tool: Some(cloud_agent_tool),
                     action_audit: Some(ProductionActionAuditInput {
                         agent_id: agent_id.clone(),
                         turn_id: Some(stream_id.clone()),
@@ -2452,6 +2495,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.trays),
                 self.telemetry_logs.clone(),
                 self.production_action_auditor.clone(),
+                Arc::clone(&self.cloud_agents),
                 args,
             );
         }
@@ -3205,6 +3249,7 @@ fn main() {
             transcript_manager: Arc::clone(&transcript_manager),
             telemetry_logs: host_telemetry.logs.clone(),
             production_action_auditor: production_extensions.action_audit.clone(),
+            cloud_agents: production_extensions.cloud_agents.service(),
         });
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: gateway_api.clone(),

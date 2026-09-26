@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::extensions::inference::provider_session::RoutedProvider;
+use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
 use crate::runner::box_tool_access::RunnerBoxResourcePort;
 use crate::runner::production_turn_run_shell_adapter::{
     ProviderRetryEvent, ProviderRetryReport, RoutedProviderCheckpointStore,
@@ -38,6 +39,7 @@ pub struct ProductionRunnerCompositionInput {
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     pub send_message_sink: Option<Arc<dyn SendMessageSink>>,
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
+    pub cloud_agent_tool: Option<CloudAgentToolDependencies>,
     pub spotlight_enabled: bool,
     pub action_audit: Option<ProductionActionAuditInput>,
     pub observation: Option<TurnObservationHandle>,
@@ -72,6 +74,9 @@ pub fn create_production_runner_composition(
     }
     if let Some(reaction_sink) = input.reaction_sink {
         composition = composition.with_reaction_sink(reaction_sink);
+    }
+    if let Some(cloud_agent_tool) = input.cloud_agent_tool {
+        composition = composition.with_cloud_agent_tool(cloud_agent_tool);
     }
     if let Some(send_message_sink) = input.send_message_sink {
         composition = composition.with_send_message_sink(send_message_sink);
