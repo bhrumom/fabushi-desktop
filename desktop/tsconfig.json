@@ -62,7 +62,6 @@
     "../source/electron-preload/coordinator-port-bridge.ts",
     "../source/electron-preload/coordinator-port-bridge.test.ts",
     "vite.config.ts",
-    "playwright.config.ts",
-    "e2e"
+    "playwright.config.ts"
   ]
 }

@@ -173,10 +173,8 @@ jobs:
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
       - name: Build Grok-shaped Electron runtime
         run: npm --prefix desktop run build:electron
-      - name: Check Electron Host boundary
-        run: |
-          node --test desktop/electron/host-process.test.cjs desktop/electron/update-state.test.cjs
-          node --test --test-name-pattern="desktop update bridge projects legacy" desktop/electron/native-capability-handlers.test.cjs
+      - name: Check production architecture boundary
+        run: node desktop/scripts/check-agent-workspace-boundary.mjs
       - name: Compile Grok Electron boundary contracts
         run: ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.grok-electron.json
       - name: Test Grok Electron boundary contracts

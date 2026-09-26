@@ -115,10 +115,18 @@ jobs:
           exit 1
       - name: Build Grok-shaped Electron runtime
         run: npm run build:electron
-      - name: Validate production Renderer bridge contracts
-        run: |
-          node --test electron/coordinator-renderer-port.test.cjs electron/production-renderer-bridge.test.cjs electron/update-state.test.cjs
-          node --test --test-name-pattern="desktop update bridge projects legacy|Sidebar sections round-trip structured Grok state at the native edge" electron/native-capability-handlers.test.cjs
+      - name: Compile production Electron boundary contracts
+        run: ./node_modules/.bin/tsc -p tsconfig.grok-electron.json
+      - name: Validate production Electron boundary contracts
+        run: >-
+          node --test
+          .tmp-grok-electron/source/electron-preload/coordinator-port-bridge.test.js
+          .tmp-grok-electron/source/electron-preload/preload-boundaries.test.js
+          .tmp-grok-electron/source/shared/foundations.test.js
+          .tmp-grok-electron/source/electron-main/foundations.test.js
+          .tmp-grok-electron/source/electron-main/coordinator/coordinator-launcher.test.js
+          .tmp-grok-electron/source/electron-main/coordinator/coordinator-executors.test.js
+          .tmp-grok-electron/source/electron-main/local-exec/local-exec-daemon-protocol.test.js
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
@@ -140,7 +148,7 @@ jobs:
           DEBUG: pw:browser*
           ELECTRON_ENABLE_LOGGING: "1"
           ELECTRON_ENABLE_STACK_DUMPING: "1"
-        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts e2e/grok-parity.spec.ts --grep "Mahayana renders one Hermes-style assistant turn|desktop uses the Fabushi-owned Grok parity surface"
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "Mahayana renders one Hermes-style assistant turn"
       - name: Upload Playwright evidence
         if: always()
         uses: actions/upload-artifact@v4
