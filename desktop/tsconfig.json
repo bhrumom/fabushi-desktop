@@ -55,7 +55,6 @@
     "allowImportingTsExtensions": true
   },
   "include": [
-    "src",
     "../frontend/src/env.d.ts",
     "../frontend/src/main.tsx",
     "../frontend/src/production/**/*.tsx",
