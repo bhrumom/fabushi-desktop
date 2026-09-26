@@ -16130,12 +16130,27 @@
       "targetPath": "source/host/src/host_production_extensions.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "5b7e5f88bfac33540a4d89336a6e042d02a675f8",
       "architecturalRole": "host/host-production-extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/host_production_extensions.rs",
+        "source/host/src/extensions/registry.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_production_extensions_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "evidence": [
+        "source/host/tests/host_production_extensions_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust Host now has a Grok-shaped host_production_extensions owner instead of keeping the live production extension subset in app/main.rs. It centralizes the currently shipping Auth, Experiments, ActionAudit, CloudAgents, NotifyBus, Memory, ManagedSetup, SourceMap, Trays, BoxLifecycle, WebAuthnProxy and BrowserUa construction, while the 35-slot HOST_EXTENSION_ORDER remains the canonical frozen table. The shipping app consumes this owner directly. Final parity remains withheld until every frozen registry slot has a real production declaration/extras binding, including the still-missing ContentSearch, CrossUserSharing, StateBackstop production composition, Inference, LocalExec, LocalToolPermission, MCP, BoxStoreSync, HostUpgrade, AutoReview, CodebaseTelemetry and TeachRecording owners; no no-op slot is synthesized."
     },
     {
       "referencePath": "source/host/host-request-context.ts",

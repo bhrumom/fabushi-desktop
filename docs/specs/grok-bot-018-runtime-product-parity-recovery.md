@@ -1481,3 +1481,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Exact HEAD `c7e713987bc28a508972f6412bf4f06b7dfdced5` exposed a contract bug, not a shipping root bug: `production_binding_providers_contract.rs` hard-coded `~/.sand/agents`, but frozen Grok 0.18 delegates `getSandAgentsRootDir(home)` to `getSandRootDir(home)`. The frozen packaged root is `~/.grokbot/agents`; dev/lab roots follow the Sand variant, and explicit data-root/user-data overrides remain authoritative.
 - The production provider already delegates to Rust `get_sand_agents_root_dir`, matching the frozen construction boundary. The contract now compares against that canonical resolver instead of inventing a second root convention.
 - No shipping path, manifest status, StateBackstop semantics, or data migration behavior changed in this correction. The next exact-HEAD Rust run remains authoritative for the production binding provider row.
+
+
+### 2026-09-26 Grok-shaped production Host extension owner
+
+- Starting from exact HEAD `05ff75c470561bc428c6958f6cabb57eae84bf72`, the Rust Host's live production extension construction was still embedded in `source/host/app/src/main.rs` even though frozen Grok owns this responsibility in `source/host/host-production-extensions.ts`.
+- Added `source/host/src/host_production_extensions.rs` and moved the real shipping construction for Auth, Experiments, ActionAudit, CloudAgents, NotifyBus, Memory, ManagedSetup, SourceMap, Trays, BoxLifecycle, WebAuthnProxy and BrowserUa behind that owner. `app/main.rs` now consumes the module instead of defining a parallel production graph.
+- The existing 35-slot `HOST_EXTENSION_ORDER` remains the canonical frozen registry table. `host_production_extensions_contract.rs` proves the current shipping subset is duplicate-free, occupies only frozen slots, and keeps the production owner Send+Sync.
+- This is intentionally not a fake 35/35 registry. `source/host/host-production-extensions.ts` advances only from `planned` to `existing-needs-parity`; the missing ContentSearch/CrossUserSharing/StateBackstop production composition/Inference/LocalExec/LocalToolPermission/MCP/BoxStoreSync/HostUpgrade/AutoReview/CodebaseTelemetry/TeachRecording declarations and production extras remain explicit blockers.
+- Manifest after this cutover: 1820 implemented / 104 existing-needs-parity / 78 planned. Strict non-final row count is unchanged; this commit reduces planned architecture debt and removes a real `main.rs` ownership violation without promoting incomplete slots.
