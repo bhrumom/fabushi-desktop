@@ -16627,12 +16627,27 @@
       "targetPath": "source/host/src/production_binding_providers.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "7a0c2741ab2d0517098da9255c23baf75665db6b",
       "architecturalRole": "host/production-binding-providers",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/production_binding_providers.rs",
+        "source/host/src/extensions/state_backstop/state_backstop_service.rs",
+        "source/host/src/storage/agent_paths.rs",
+        "source/host/src/storage/store_db.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/production_binding_providers_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "evidence": [
+        "source/host/tests/production_binding_providers_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust production-binding owner now centralizes the frozen construction responsibilities that are platform-complete: Secrets uses a Host-native production context/log binding instead of an anonymous main.rs closure, and StateBackstop exposes the canonical Sand agents root plus checkpoint-before-read store.db runtime using the single storage owners. Shipping CloudAgents also consumes the binding module, but its converter deliberately remains fail-closed because canonical generated aiserver.v1 ConversationMessage/ClientSideToolV2Result Rust bindings are not yet present; opaque protobuf bytes are not treated as a trace. Final remains withheld until the complete NO_PREAMBLE ConversationMessage-to-trace adapter is generated/ported and production StateBackstop composition consumes the runtime with live BoxStore/SourceMap dependencies."
     },
     {
       "referencePath": "source/host/runner-context-production-provider.ts",

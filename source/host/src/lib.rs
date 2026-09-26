@@ -16,6 +16,7 @@ pub mod gateway_server;
 pub mod host_event_bus;
 pub mod runner;
 pub mod runner_production_bridge;
+pub mod production_binding_providers;
 
 pub use runner::{
     AttemptCheckpoint, AttemptProgress, CheckpointBoundary, CompletedAwaitOutcome,

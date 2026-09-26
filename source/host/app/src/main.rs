@@ -21,6 +21,9 @@ use mahayana_host_runtime::extensions::cloud_agents::extension::{
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
 use mahayana_host_runtime::extensions::attachments::extension::start_attachments_extension;
 use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
+use mahayana_host_runtime::production_binding_providers::{
+    production_cloud_agent_trace_converter, production_secrets_log,
+};
 use mahayana_host_runtime::extensions::experiments::{
     HostExperimentsExtension, start_host_experiments_extension,
 };
@@ -303,12 +306,7 @@ fn start_production_host_extensions(
     let cloud_agents = start_cloud_agents_extension(
         backend_url.clone(),
         Arc::clone(&auth),
-        Arc::new(|_conversation: &[Vec<u8>]| {
-            Err(
-                "CloudAgent transcript dump is unavailable until the generated ConversationMessage trace adapter is bound by the production Host"
-                    .to_string(),
-            )
-        }),
+        production_cloud_agent_trace_converter(),
     );
     let notify_bus = start_notify_bus_extension(
         Arc::clone(&auth),
@@ -3081,7 +3079,7 @@ fn main() {
     let attachments_service = attachments_extension.service();
     let secrets_extension = start_secrets_extension(
         Arc::clone(&forever_box),
-        Arc::new(|message| eprintln!("mahayana-host-secrets {message}")),
+        production_secrets_log(),
     );
     let runner_request_context: Arc<dyn RunnerRequestContextSource> =
         Arc::new(ProductionRunnerRequestContextSource::new(

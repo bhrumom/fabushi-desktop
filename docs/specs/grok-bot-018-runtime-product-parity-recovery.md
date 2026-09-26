@@ -1465,3 +1465,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - A deterministic `open_with_identity_tags` seam verifies the production merge without mutating process environment in parallel tests. `host_telemetry_service_contract.rs` proves identity propagation, empty-value removal and event-key override; `ports_telemetry_contract.rs` continues to pin environment trimming/taxonomies/no-op behavior.
 - Only `source/host/ports/telemetry.ts` advances to final `implemented`. HostTelemetryService, structured-log transport, event-loop sampling and backend transport stay independently non-final. Manifest for this commit is 1820 implemented / 102 existing-needs-parity / 80 planned.
 - PR #20 remains draft; exact-HEAD Host/Coordinator/Runner, Desktop Chat Parity and strict architecture results remain authoritative.
+
+
+### 2026-09-26 production binding providers owner
+
+- Starting from exact HEAD `3c9ef840e9043efb18ef4c580593fbc3c59e0092`, the smallest remaining planned Host construction module, `source/host/production-binding-providers.ts`, was audited against frozen Grok 0.18 before implementation.
+- Added `source/host/src/production_binding_providers.rs`. Its StateBackstop runtime uses the canonical Sand agents root and the existing SQLite checkpoint owner before reading `store.db`, preserving the frozen production binding without duplicating storage logic. Secrets uses the Rust Host-native context adaptation through the same production-binding module, and shipping Host main now consumes it rather than an anonymous logger closure.
+- The CloudAgent converter placeholder was also moved out of main into this canonical owner. It intentionally remains fail-closed: frozen `NO_PREAMBLE` trace conversion requires the full generated `aiserver.v1.ConversationMessage` and nested `ClientSideToolV2Result` oneof values; the current Rust tree does not yet contain those canonical generated bindings, so opaque bytes/base64 are not accepted as parity.
+- `production_binding_providers_contract.rs` verifies canonical agents-root selection, real WAL-capable SQLite checkpoint/read/reopen behavior, missing-db behavior, and the fail-closed CloudAgent generated-binding fence.
+- This mapping advances only from `planned` to `existing-needs-parity`, not final. Manifest is now 1820 implemented / 103 existing-needs-parity / 79 planned. Remaining final blockers are the generated CloudAgent trace adapter and live StateBackstop BoxStore/SourceMap production composition.
