@@ -23,7 +23,7 @@
       "referencePath": "frontend/src/production/model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "444e930ce9053c1c4df6715f4241a37d9f328011",
+      "targetBlobSha": "a0700444f6d9c629a34a718df3a4d4c8bc8d5b4e",
       "behavioralEvidence": [
         "frontend/src/production/model.ts",
         "frontend/src/production/coordinator-client.ts"
