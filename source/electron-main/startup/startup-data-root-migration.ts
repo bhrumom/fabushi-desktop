@@ -15,7 +15,7 @@ import {
   resolveSandDataRootOverride,
   SAND_DATA_ROOT_ENV,
 } from "../../shared/node/sand-data-root.js";
-import { isSandHostProcess } from "../../host/host-lock.js";
+import { isSandHostProcess } from "./host-process-identity.js";
 import { findSystemErrno } from "../../shared/system-errno.js";
 
 export const DATA_ROOT_MARKER_FILENAME = ".grokbot-data-root-v1";
