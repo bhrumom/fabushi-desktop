@@ -304,6 +304,82 @@ impl SessionConversationState {
         }))
     }
 
+    /// Lenient hydration used by the frozen AgentStore2 API. Missing referenced
+    /// blobs are skipped instead of invalidating the whole conversation; recovery
+    /// and readiness callers continue to use the strict resolver above.
+    pub fn resolve_conversation_state_bytes_lenient(
+        &self,
+        pool: Arc<AgentWorkerPool<ProductionAgentStoreWorkerBackend>>,
+        agent_id: &str,
+        db_path: &Path,
+        blob_db_path: &Path,
+        root_blob: &[u8],
+    ) -> Result<ResolvedConversationState, SessionConversationStateError> {
+        let structure = parse_conversation_state_structure(root_blob)
+            .ok_or_else(|| SessionConversationStateError::Blob(
+                "conversation root blob is not a ConversationStateStructure".into(),
+            ))?;
+
+        let mut turns = Vec::with_capacity(structure.turns.len());
+        for (turn_index, turn_id) in structure.turns.iter().enumerate() {
+            let Some(turn_blob) = block_on_blob(
+                Arc::clone(&pool),
+                agent_id,
+                blob_db_path,
+                db_path,
+                turn_id,
+            )? else {
+                continue;
+            };
+            if let Some(turn) = decode_outline_turn(
+                &pool,
+                agent_id,
+                db_path,
+                blob_db_path,
+                turn_index,
+                &turn_blob,
+            )? {
+                turns.push(turn);
+            }
+        }
+
+        let mut todos = Vec::with_capacity(structure.todos.len());
+        for todo_id in &structure.todos {
+            let Some(todo_blob) = block_on_blob(
+                Arc::clone(&pool),
+                agent_id,
+                blob_db_path,
+                db_path,
+                todo_id,
+            )? else {
+                continue;
+            };
+            if let Some(todo) = decode_todo_item(&todo_blob) {
+                todos.push(todo);
+            }
+        }
+
+        let summary = match structure.summary.as_deref() {
+            Some(summary_id) if !summary_id.is_empty() => {
+                block_on_blob(
+                    Arc::clone(&pool),
+                    agent_id,
+                    blob_db_path,
+                    db_path,
+                    summary_id,
+                )?
+                .map(|blob| first_string_field(&blob, 1).unwrap_or_default())
+            }
+            _ => None,
+        };
+
+        Ok(ResolvedConversationState {
+            turns,
+            todos,
+            summary,
+        })
+    }
+
     pub fn read_agent_outline_turns(
         &self,
         pool: Arc<AgentWorkerPool<ProductionAgentStoreWorkerBackend>>,
