@@ -1,5 +1,5 @@
-use std::fs;use std::time::{SystemTime,UNIX_EPOCH};
-use mahayana_host_runtime::workflows::stat_keyed_parse_cache::mtime_tick_could_still_hide_an_edit;
+use std::fs;use std::sync::{Arc,mpsc,atomic::{AtomicUsize,Ordering}};use std::time::{Duration,SystemTime,UNIX_EPOCH};
+use mahayana_host_runtime::workflows::stat_keyed_parse_cache::{StatKeyedParseCache,mtime_tick_could_still_hide_an_edit};
 use mahayana_host_runtime::workflows::workflow_library::{GlobalWorkflowLibrary,LEGACY_WORKFLOW_FILENAME,WORKFLOW_FILENAME,WorkflowSpec,WorkflowTrigger,parse_workflow_file,serialize_workflow_file};
 use mahayana_host_runtime::workflows::workflow_store::{FileWorkflowStore,agent_has_workflows};
 fn root(label:&str)->std::path::PathBuf{let n=SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();std::env::temp_dir().join(format!("fabushi-workflow-{label}-{}-{n}",std::process::id()))}
@@ -94,4 +94,44 @@ fn local_skill_discovery_and_port_match_frozen_sources() {
         .all(|workflow| workflow.source_ref.as_deref().is_some()));
 
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn workflow_library_watches_external_and_atomic_edits(){
+ let root=root("watch-library");let library=GlobalWorkflowLibrary::new(&root);let(tx,rx)=mpsc::channel();
+ library.set_on_change(Some(Arc::new(move||{let _=tx.send(());})));
+ let spec=WorkflowSpec{name:"Watched".into(),description:"first".into(),body:"Body one".into(),trigger:None,source_ref:None};
+ let record=library.create(&spec).unwrap().unwrap();
+ rx.recv_timeout(Duration::from_secs(3)).expect("atomic library notification");
+ assert_eq!(library.get(&record.id).unwrap().body,"Body one");
+ while rx.try_recv().is_ok(){}
+ let path=library.path(&record.id);
+ fs::write(&path,"---\nname: Watched\ndescription: external\n---\nBody two\n").unwrap();
+ rx.recv_timeout(Duration::from_secs(3)).expect("external library notification");
+ let updated=library.get(&record.id).unwrap();
+ assert_eq!(updated.description,"external");assert_eq!(updated.body,"Body two");
+ while rx.try_recv().is_ok(){}
+ fs::write(library.folder(&record.id).join("helper.py"),"print('ok')").unwrap();
+ rx.recv_timeout(Duration::from_secs(3)).expect("helper directory notification");
+ assert_eq!(library.get(&record.id).unwrap().helper_scripts,vec!["helper.py"]);
+ library.set_on_change(None);let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn stat_parse_cache_reuses_stable_fingerprints_and_invalidates_changes(){
+ let root=root("stat-cache");fs::create_dir_all(&root).unwrap();let path=root.join("value.txt");fs::write(&path,"one").unwrap();
+ let parses=Arc::new(AtomicUsize::new(0));let cache=StatKeyedParseCache::with_now_ms(2,Arc::new(||u128::MAX));
+ let p=Arc::clone(&parses);let first=cache.read(std::slice::from_ref(&path),move||{p.fetch_add(1,Ordering::SeqCst);fs::read_to_string(&path).unwrap()}).unwrap();
+ assert_eq!(first,"one");
+ let p=Arc::clone(&parses);let path2=path.clone();let second=cache.read(std::slice::from_ref(&path2),move||{p.fetch_add(1,Ordering::SeqCst);fs::read_to_string(&path2).unwrap()}).unwrap();
+ assert_eq!(second,"one");assert_eq!(parses.load(Ordering::SeqCst),1);
+ fs::write(&path,"two-two").unwrap();
+ let p=Arc::clone(&parses);let path3=path.clone();let third=cache.read(std::slice::from_ref(&path3),move||{p.fetch_add(1,Ordering::SeqCst);fs::read_to_string(&path3).unwrap()}).unwrap();
+ assert_eq!(third,"two-two");assert_eq!(parses.load(Ordering::SeqCst),2);
+ fs::remove_file(&path).unwrap();
+ let p=Arc::clone(&parses);let path4=path.clone();
+ assert!(cache.read(std::slice::from_ref(&path4),move||{p.fetch_add(1,Ordering::SeqCst);"missing".to_string()}).is_none());
+ assert_eq!(parses.load(Ordering::SeqCst),2);
+ let _=fs::remove_dir_all(root);
 }

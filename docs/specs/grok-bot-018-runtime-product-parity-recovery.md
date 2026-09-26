@@ -1309,3 +1309,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Authored cron schedules are normalized before durable storage, and the frozen definition-only `recordRunDefinition` / `finishRunDefinition` paths are present so cloud/backend reconciliation can mutate run state without synthesizing `nextRunAt`.
 - The automation-store contract now exercises internal atomic notifications, direct external file edits, schedule normalization and definition-only next-run suppression. Together with the existing timezone/cron/trigger/run-history coverage and shipping Session factory wiring, the frozen `automation-store.ts` manifest row is final `implemented`.
 
+### 2026-09-26 workflow library watcher/cache finalization
+
+- Starting exact HEAD: `41e6a0c30a8ab7f7eb40bd98e705605a69fef7b3`.
+- Replaced the workflow library's callback-only invalidation with the shared native `WatchedDirectory`; atomic writes, removes, direct external SKILL.md edits and helper-script directory changes now converge on the frozen 50 ms debounced boundary.
+- Completed `StatKeyedParseCache` parity for missing-path eviction, stat-error parse fallback, injectable time, inode/mtime-ns/size identity, bounded FIFO eviction and the two-second racy-mtime bypass. `GlobalWorkflowLibrary::get` now consumes one module-level cache keyed by both the workflow file and containing folder, matching helper-script invalidation behavior.
+- Integration coverage proves stable cache reuse, invalidation after content change, missing-file eviction, internal/external watcher delivery and helper-script refresh. The frozen `workflow-library.ts` and `stat-keyed-parse-cache.ts` rows are now final `implemented`.
+- `workflow-store.ts` deliberately remains non-final: managed/plugin skill aggregation/watchers and published-plugin editing are still separate unrecovered responsibilities.
+

@@ -18574,40 +18574,44 @@
       "targetPath": "source/host/src/workflows/stat_keyed_parse_cache.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "a7d80b257cfe457e9d081cff39a60ec86776c995",
       "architecturalRole": "host/workflows",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/workflows/stat_keyed_parse_cache.rs"
+        "source/host/src/workflows/stat_keyed_parse_cache.rs",
+        "source/host/src/workflows/workflow_library.rs"
       ],
       "testEvidence": [
         "source/host/tests/workflow_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust stat-keyed parse cache implements inode/mtime/size fingerprints, bounded FIFO capacity and the frozen two-second racy-mtime bypass. It remains non-final until the shipping workflow/plugin/managed parsers actually consume this cache rather than bypassing it."
+      "notes": "Final Rust port: inode/mtime-ns/size fingerprints, bounded FIFO eviction, missing-path invalidation, stat-error parse fallback, injectable nowMs and the frozen two-second racy-mtime bypass are implemented. Shipping GlobalWorkflowLibrary::get consumes the cache using both SKILL.md and containing-folder stat identities, so helper-script edits invalidate the same production parse path."
     },
     {
       "referencePath": "source/host/workflows/workflow-library.ts",
       "targetPath": "source/host/src/workflows/workflow_library.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "5316b8e40c067bb722339a124aab5c94c6a509eb",
       "architecturalRole": "host/workflows",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/workflows/workflow_library.rs",
+        "source/host/src/workflows/stat_keyed_parse_cache.rs",
+        "source/host/src/watched_directory.rs",
         "source/host/src/extensions/session/session_store_factories.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "testEvidence": [
         "source/host/tests/workflow_store_contract.rs",
+        "source/host/tests/watched_directory_contract.rs",
         "source/host/tests/session_store_factories_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust global SKILL.md library owns frozen frontmatter/source/trigger parsing and serialization, helper-script discovery, unique ids, atomic CRUD and legacy workflow.md rename. Shipping Session constructs the library through FileWorkflowStore. Final is withheld for live filesystem watcher/debounce and stat-cache-backed parse invalidation."
+      "notes": "Final Rust port: the global SKILL.md library preserves frozen frontmatter/source/trigger parsing and serialization, helper discovery, unique ids, legacy workflow.md rename and CRUD. It now uses the shared native WatchedDirectory for debounced internal/external changes and the frozen module-level StatKeyedParseCache keyed by both SKILL.md and folder metadata, including racy-mtime behavior. Shipping Session constructs this library through FileWorkflowStore."
     },
     {
       "referencePath": "source/host/workflows/workflow-store.ts",
@@ -18628,7 +18632,9 @@
         "source/host/src/extensions/session/session_roster.rs",
         "source/host/src/automations/automation_schedule.rs",
         "source/host/src/extensions/settings/settings_service.rs",
-        "source/host/src/extensions/session/agent_session.rs"
+        "source/host/src/extensions/session/agent_session.rs",
+        "source/host/src/watched_directory.rs",
+        "source/host/src/workflows/stat_keyed_parse_cache.rs"
       ],
       "testEvidence": [
         "source/host/tests/workflow_store_contract.rs",
@@ -18639,9 +18645,10 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/automation_schedule_contract.rs",
         "source/host/tests/settings_service_contract.rs",
-        "source/host/tests/agent_session_contract.rs"
+        "source/host/tests/agent_session_contract.rs",
+        "source/host/tests/watched_directory_contract.rs"
       ],
-      "notes": "Rust FileWorkflowStore owns user workflow + automation projection, per-agent enablement, CRUD, Markdown/live-source import and legacy per-agent migration. Its embedded automation store now receives the live Session timezone resolver so triggered workflows derive timezone-aware nextRunAt. Final is withheld for managed/plugin skill cache aggregation/watchers, published-plugin editing and local-skill port completeness. Frozen portLocalSkills parity is now implemented with deduped cwd/home CLAUDE.md, AGENTS.md, .claude/CLAUDE.md and cwd .cursor/rules .md/.mdc discovery, delegating each source to live-source import. Managed/plugin cache aggregation/watchers and published-plugin editing remain non-final."
+      "notes": "Rust FileWorkflowStore owns user workflow + automation projection, per-agent enablement, CRUD, Markdown/live-source import and legacy per-agent migration. Its embedded automation store now receives the live Session timezone resolver so triggered workflows derive timezone-aware nextRunAt. Final is withheld for managed/plugin skill cache aggregation/watchers, published-plugin editing and local-skill port completeness. Frozen portLocalSkills parity is now implemented with deduped cwd/home CLAUDE.md, AGENTS.md, .claude/CLAUDE.md and cwd .cursor/rules .md/.mdc discovery, delegating each source to live-source import. Managed/plugin cache aggregation/watchers and published-plugin editing remain non-final. Global workflow watching/debounce and stat-cache-backed parse invalidation are now production-wired; this row remains non-final specifically for managed/plugin skill aggregation/watchers and published-plugin editing."
     },
     {
       "referencePath": "source/internal/host-extensions.ts",
