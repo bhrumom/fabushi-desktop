@@ -7,6 +7,7 @@
 //! the legacy third_party desktop Host binary directly.
 
 use mahayana_host_runtime::extensions::action_audit::action_audit_service::{AuditAction, AuditRecord};
+use mahayana_host_runtime::extensions::action_audit::extension::ActionAuditExtension;
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
 use mahayana_host_runtime::extensions::attachments::extension::start_attachments_extension;
 use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
@@ -86,8 +87,11 @@ use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostSt
 use mahayana_host_runtime::extensions::experiments::HostExperimentsExtension;
 use mahayana_host_runtime::extensions::trays::extension::HostTraysExtension;
 use mahayana_host_runtime::host_production_extensions::{
-    ProductionBrowserUaLog, ProductionHostExtensions,
     start_production_browser_ua, start_production_host_extensions,
+};
+#[cfg(test)]
+use mahayana_host_runtime::host_production_extensions::{
+    ProductionBrowserUaLog, ProductionHostExtensions,
 };
 use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::turn_empty_delivery_telemetry;
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::{

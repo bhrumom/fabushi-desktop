@@ -1490,3 +1490,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The existing 35-slot `HOST_EXTENSION_ORDER` remains the canonical frozen registry table. `host_production_extensions_contract.rs` proves the current shipping subset is duplicate-free, occupies only frozen slots, and keeps the production owner Send+Sync.
 - This is intentionally not a fake 35/35 registry. `source/host/host-production-extensions.ts` advances only from `planned` to `existing-needs-parity`; the missing ContentSearch/CrossUserSharing/StateBackstop production composition/Inference/LocalExec/LocalToolPermission/MCP/BoxStoreSync/HostUpgrade/AutoReview/CodebaseTelemetry/TeachRecording declarations and production extras remain explicit blockers.
 - Manifest after this cutover: 1820 implemented / 104 existing-needs-parity / 78 planned. Strict non-final row count is unchanged; this commit reduces planned architecture debt and removes a real `main.rs` ownership violation without promoting incomplete slots.
+
+
+### 2026-09-26 production Host extension owner compile repair
+
+- Exact HEAD `5e37c999688f5cdf950d3430d99c6e08cdda20db` reached the shipping Mahayana Host compile and exposed one extraction-only regression: `ActionAuditExtension` is still a live Runner dependency type in `app/main.rs`, but its import was removed when the production extension constructor moved to `host_production_extensions.rs`.
+- Restored that type import and scoped `ProductionBrowserUaLog` / `ProductionHostExtensions` imports to `#[cfg(test)]`, since those names are only used by the Send+Sync boundary tests in the app target.
+- No production ownership, manifest status, gateway behavior or extension lifecycle changed. The new exact HEAD must rerun the same shipping Host/Coordinator/Runner and Desktop Chat gates.
