@@ -9604,19 +9604,27 @@
       "targetPath": "source/host/src/automations/automation.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "12b721bdee3da8324bec3cd43b6988303847a527",
       "architecturalRole": "host/automations",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/automations/automation.rs",
-        "source/host/src/automations/automation_store.rs"
+        "source/host/src/automations/automation_store.rs",
+        "source/host/src/automations/automation_status_reminder.rs",
+        "source/host/src/extensions/transcript/automation_run_path.rs",
+        "source/host/src/runner/system_prompt_assembly.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
+        "source/host/tests/automation_prompt_contract.rs",
+        "source/host/tests/automation_status_reminder_contract.rs",
+        "source/host/tests/automation_run_path_contract.rs",
         "source/host/tests/automation_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust production automation model owns name/prompt normalization, slug ids, run/status caps and trigger descriptions used by FileAutomationStore. Final is withheld for full system-prompt/wake/status rendering and schedule timestamp formatting."
+      "notes": "Final semantic Rust port: automation.rs owns the routines capability guidance plus reference guidance/status constants; FileAutomationStore owns durable definitions; the shipping routed-provider path injects the Agent-owned routines guidance with the live automation location and resolved timezone before provider execution; existing Rust owners provide wake/event rendering, status reminders and timezone timestamps. Contract evidence covers capability guidance, current enabled/paused routine projection, production system-message injection, wake/event safety, runtime status and durable store behavior.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/automations/listener-integrations.ts",

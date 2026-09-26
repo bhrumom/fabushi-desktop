@@ -142,7 +142,7 @@ use mahayana_host_runtime::runner::turn_memory::{
     TurnExchange, TurnMemoryMode, run_turn_memory_with,
 };
 use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt_section;
-use mahayana_host_runtime::runner::system_prompt_assembly::append_memory_system_prompt;
+use mahayana_host_runtime::runner::system_prompt_assembly::{append_automations_system_prompt, append_memory_system_prompt};
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
     create_production_runner_composition,
@@ -1524,6 +1524,15 @@ fn start_routed_provider_task(
         .map_err(|error| GatewayCommandError::Internal(format!(
             "could not open production automation store for {agent_id}: {error}"
         )))?;
+    let automation_location = automation_store.get_location().to_string_lossy().into_owned();
+    let automation_time_zone = automation_store.resolved_user_time_zone();
+    let automation_definitions = automation_store.list_definitions();
+    append_automations_system_prompt(
+        &mut provider_messages,
+        &automation_definitions,
+        Some(&automation_location),
+        automation_time_zone.as_deref(),
+    );
     let firing_automation_id = args
         .get("automationWake")
         .and_then(serde_json::Value::as_object)

@@ -1336,3 +1336,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Restored the frozen `routineNoticeWakeLines` responsibility to `routine_notices.rs` and removed the duplicate notice strings from `AutomationRunPath`.
 - The shipping fire path still computes/marks one-shot notice IDs before execution, but wake text now comes from the canonical notices owner. This repairs evidence behind the already-final routine-notices mapping rather than merely changing its status.
 
+
+
+### 2026-09-26 automation capability prompt production cutover
+
+- Closed the frozen `source/host/automations/automation.ts` semantic gap without copying reference source text: `automation.rs` now owns the routines capability guidance and the reference guidance/status constants, while existing Rust owners continue to own wake rendering, status reminders, timestamp rendering, persistence and trigger matching.
+- The shipping routed-provider path opens the Agent-owned `FileAutomationStore`, renders the current routines capability prompt with the resolved user timezone and durable automation location, and appends it through `system_prompt_assembly` before provider execution. Renderer state is not used to reconstruct routine policy.
+- Added `automation_prompt_contract.rs` covering schedule/listener/lifecycle guidance, enabled/paused current-routine projection, timezone/location context, and idempotent injection into the canonical system message. Existing wake/status/store contracts remain part of the manifest evidence.

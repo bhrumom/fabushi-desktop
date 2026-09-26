@@ -1,6 +1,7 @@
 use serde_json::Value;
 
 use crate::host_request_context::HostRequestContext;
+use crate::automations::automation::{AutomationRecord, render_automations_system_prompt};
 use crate::extensions::inference::provider_session::ProviderMessage;
 use crate::extensions::memory::memory_service::MemoryRecall;
 
@@ -87,6 +88,40 @@ fn render_team_rules(rules: Option<&[Value]>) -> Option<String> {
             rendered.join("\n\n")
         )
     })
+}
+
+
+pub fn append_automations_system_prompt(
+    messages: &mut Vec<ProviderMessage>,
+    automations: &[AutomationRecord],
+    location: Option<&str>,
+    time_zone: Option<&str>,
+) {
+    let prompt = render_automations_system_prompt(automations, location, time_zone);
+    if prompt.is_empty() {
+        return;
+    }
+    if messages.iter().any(|message| {
+        message.role == "system"
+            && (message.content.starts_with("## Routines\n")
+                || message.content.contains("\n\n## Routines\n"))
+    }) {
+        return;
+    }
+    if let Some(system) = messages.iter_mut().find(|message| message.role == "system") {
+        if !system.content.trim().is_empty() {
+            system.content.push_str("\n\n");
+        }
+        system.content.push_str(&prompt);
+    } else {
+        messages.insert(
+            0,
+            ProviderMessage {
+                role: "system".into(),
+                content: prompt,
+            },
+        );
+    }
 }
 
 

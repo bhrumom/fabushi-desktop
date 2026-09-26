@@ -1,10 +1,9 @@
 use chrono::{Local, TimeZone, Utc};
 use chrono_tz::Tz;
 
-use super::automation::{AUTOMATION_UI_LIMIT, AutomationRecord, AutomationRun};
+use super::automation::{AUTOMATION_STATUS_PROMPT_MARKER, AUTOMATION_UI_LIMIT, AutomationRecord, AutomationRun};
 use super::automation_store::FileAutomationStore;
 
-pub const AUTOMATION_STATUS_PROMPT_MARKER: &str = "<automation_status>";
 
 pub fn render_automation_cleared_status_reminder() -> String {
     [
