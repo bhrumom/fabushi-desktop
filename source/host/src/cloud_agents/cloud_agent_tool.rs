@@ -377,9 +377,9 @@ fn launch_action(
         watch(&result.bc_id, false);
     }
     let followup = if deps.watch.is_some() {
-        "You're revived automatically when it finishes, so keep working and don't poll it — use "reply" to send a follow-up, or "get" if you need its status sooner."
+        r#"You're revived automatically when it finishes, so keep working and don't poll it — use "reply" to send a follow-up, or "get" if you need its status sooner."#
     } else {
-        "Use action "get" with this agent_id to check status, or "reply" to send a follow-up."
+        r#"Use action "get" with this agent_id to check status, or "reply" to send a follow-up."#
     };
     let pr = if matches!(environment, Some(CloudAgentEnvironment::Machine { .. })) {
         " It opens a PR when done only if the worker can push to the repo."
@@ -424,7 +424,7 @@ fn list_action(
         return Ok(if scope == "all" {
             "No cloud agents found.".into()
         } else {
-            "No cloud agents launched via this tool yet. Use scope: "all" to list every cloud agent on the account.".into()
+            r#"No cloud agents launched via this tool yet. Use scope: "all" to list every cloud agent on the account."#.into()
         });
     }
     let mut lines = vec![if scope == "all" {
@@ -477,7 +477,7 @@ fn dump_action(
     let id = required_trimmed(object, "agent_id", "dump")?;
     if !deps.manager.is_managed_id(id) {
         return Ok(format!(
-            "dump is limited to cloud agents you launched, watched, or replied to this session (not {id}). Use action "watch" with {id} first to manage it, or read its changes from its branch via `gh pr diff` / `gh api`."
+            r#"dump is limited to cloud agents you launched, watched, or replied to this session (not {id}). Use action "watch" with {id} first to manage it, or read its changes from its branch via `gh pr diff` / `gh api`."#
         ));
     }
     let Some(dump) = deps
@@ -520,7 +520,7 @@ fn watch_action(
     let id = required_trimmed(object, "agent_id", "watch")?;
     let Some(watch) = deps.watch.as_ref() else {
         return Ok(format!(
-            "Watching isn't available here. Use action "get" with {id} to check its status."
+            r#"Watching isn't available here. Use action "get" with {id} to check its status."#
         ));
     };
     watch(id, false);
@@ -593,7 +593,7 @@ fn reply_action(
         if deps.watch.is_some() {
             "You're revived automatically when this follow-up finishes, so keep working and don't poll it."
         } else {
-            "Use "get" to check status."
+            r#"Use "get" to check status."#
         }
     ))
 }
@@ -608,7 +608,7 @@ fn rename_action(
         .rename(id, title)
         .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
     Ok(format!(
-        "Renamed {id} to "{title}". The new title shows everywhere the agent appears (cursor.com, the IDE sidebar, mobile)."
+        r#"Renamed {id} to "{title}". The new title shows everywhere the agent appears (cursor.com, the IDE sidebar, mobile)."#
     ))
 }
 
