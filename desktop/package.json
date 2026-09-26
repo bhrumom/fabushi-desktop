@@ -7,7 +7,7 @@
   "desktopName": "com.ombhrum.fabushi",
   "private": true,
   "type": "module",
-  "main": "electron/bootstrap.cjs",
+  "main": "dist/electron-main/main.cjs",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 1420",
     "prebuild:renderer": "node scripts/prepare-desktop-window-branding.mjs",
@@ -20,7 +20,7 @@
     "test:credential-gateway": "node --test electron/credential-gateway.test.cjs",
     "test:e2e": "playwright test",
     "test:openbot-parity": "node scripts/assert-openbot-parity.mjs",
-    "start": "electron .",
+    "start": "npm run build:electron && electron .",
     "build:electron": "node scripts/build-electron-runtime.mjs"
   },
   "dependencies": {
@@ -80,7 +80,6 @@
     },
     "files": [
       "dist/**",
-      "electron/**",
       "package.json"
     ],
     "extraResources": [
