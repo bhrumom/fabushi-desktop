@@ -17,7 +17,7 @@ import { accountCacheScope, getConfiguredBackendUrl } from "../cursor-token.js";
 import { SAND_BOX_NAMESPACE_HEADER, SAND_CLIENT_TYPE, getSandBoxNamespace, getSandClientVersion } from "../sand-client-metadata.js";
 import { createSandRpcTracingInterceptor } from "./rpc-tracing.js";
 import { SandSettingsStore } from "../settings/sand-settings-store.js";
-import { getSandRootDir } from "../../../host/host-paths.js";
+import { getSandRootDir } from "../sand-data-root.js";
 import { createProviderPromptSession } from "../../../host/extensions/inference/provider-session.js";
 
 export const PRIVACY_MODE_CACHE_MAX_AGE_MS = 5 * 60_000;
