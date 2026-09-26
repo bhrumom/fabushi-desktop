@@ -7,6 +7,9 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 };
 use mahayana_host_runtime::extensions::memory::agent_state::SandAgentState;
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
+use mahayana_host_runtime::runner::tools::sand_browser_tools::{
+    BrowserDriverOutput, BrowserToolExecutor, BrowserToolSpec,
+};
 use mahayana_host_runtime::runner::tools::sand_state_tool::{
     SAND_UPDATE_STATE_TOOL_NAME, SandStateWriter,
 };
@@ -35,6 +38,23 @@ impl RoutedToolBridge for BaseBridge {
         _tool_call_id: &str,
     ) -> Result<Value, ProviderSessionError> {
         Ok(json!({"content":[{"type":"text","text":"base result"}]}))
+    }
+}
+
+struct FakeBrowserExecutor;
+
+impl BrowserToolExecutor for FakeBrowserExecutor {
+    fn execute(
+        &self,
+        spec: &BrowserToolSpec,
+        _args: &serde_json::Map<String, Value>,
+        tool_call_id: &str,
+    ) -> Result<BrowserDriverOutput, ProviderSessionError> {
+        Ok(BrowserDriverOutput {
+            text: format!("{}:{tool_call_id}", spec.op),
+            image_b64: None,
+            is_error: false,
+        })
     }
 }
 
@@ -107,4 +127,34 @@ fn turn_toolset_spotlight_fence_preserves_tool_inventory() {
         .and_then(Value::as_str)
         .expect("fenced text");
     assert_eq!(text, "base result");
+}
+
+
+#[test]
+fn turn_toolset_composes_browser_capability_without_hiding_base_tools() {
+    let browser: Arc<dyn BrowserToolExecutor> = Arc::new(FakeBrowserExecutor);
+    let bridge = build_turn_toolset(
+        Arc::new(BaseBridge),
+        TurnToolsetDependencies {
+            browser_executor: Some(browser),
+            ..TurnToolsetDependencies::default()
+        },
+    );
+
+    let tools = bridge.list_tools().expect("tools");
+    let navigate = tools
+        .iter()
+        .find(|tool| tool.name == "browser_navigate")
+        .expect("browser_navigate");
+    assert!(tools.iter().any(|tool| tool.name == "base_tool"));
+
+    let result = bridge
+        .call_tool(
+            navigate,
+            json!({"url":"https://example.com"}),
+            "tool-browser",
+        )
+        .expect("browser result");
+    assert_eq!(result["text"], "navigate:tool-browser");
+    assert_eq!(result["isError"], false);
 }
