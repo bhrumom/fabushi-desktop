@@ -3,7 +3,7 @@ import {
   resolveSandUserDataDir,
   SAND_DATA_ROOT_ENV,
   SAND_USER_DATA_DIR_ENV,
-} from "../../host/host-paths.js";
+} from "../../shared/node/sand-data-root.js";
 import { applyStartupDataRootMigration, resolveExistingSandProductionRootDir, type DataRootSettlement } from "./startup-data-root-migration.js";
 import { applyWindowsUserDataMigration, isWindowsUpdatedLaunch } from "./windows-user-data-migration.js";
 
