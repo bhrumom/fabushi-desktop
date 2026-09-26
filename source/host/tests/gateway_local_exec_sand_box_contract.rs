@@ -103,6 +103,14 @@ fn upload_and_download_enforce_gate_and_use_frozen_frames() {
         }]
     }));
     upload.join().expect("upload thread").expect("upload");
+    // The frozen bridge sends a terminal cancel from request cleanup even
+    // after a successful file response. Consume and verify that lifecycle
+    // frame before the next independent request.
+    let upload_cancel = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("upload cleanup cancel");
+    assert_eq!(upload_cancel["kind"], "cancel");
+    assert_eq!(upload_cancel["requestId"], upload_frame["requestId"]);
 
     let download_box = sandbox.clone();
     let download = thread::spawn(move || {
