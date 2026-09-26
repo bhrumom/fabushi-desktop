@@ -1566,3 +1566,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added contracts for joined cancellation, subscription lifecycle, UTF-16 sizing and the prior refusal/forgotten/preparatory/retirement behavior.
 - `source/host/extensions/local-tool-permission/local-tool-permission-controller.ts` advances to final `implemented`. The separate extension mapping deliberately remains non-final for transcript ask-card creation, boot sweep, stranded-retirement telemetry, approval-retired Host event fanout and Gateway `resolveLocalToolPermission` production wiring.
 - Manifest becomes **1,822 implemented / 108 existing-needs-parity / 72 planned** (180 non-final).
+
+
+### 2026-09-26 Transcript WidgetResponses durable LocalToolPermission slice
+
+- Starting exact HEAD: `fa0540492f71bbca39fd43f99f7fc572675c7794`.
+- Added `source/host/src/extensions/transcript/widget_responses.rs` backed by the shipping `ProductionSessionWorkers`/AgentDb owners.
+- The Rust slice now performs frozen LocalToolPermission stale-card retirement, distinguishes a newly retired card from an already-settled durable card, fences by agent/entry/request ids, and performs the fail-soft boot sweep across all durable agents with `ifPendingBeforeMs`.
+- Added SQLite-backed contract coverage proving durable `pending -> expired` mutation, stale-resolution idempotence and cutoff-aware multi-agent startup cleanup.
+- `widget-responses.ts` advances only to `existing-needs-parity`; generic widgets, AutoReview, secret submission, reactions, spend guard and active-session/roster projection remain explicit responsibilities.
+- Manifest becomes **1,822 implemented / 109 existing-needs-parity / 71 planned** (180 non-final).

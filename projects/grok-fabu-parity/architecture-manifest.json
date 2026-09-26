@@ -15634,12 +15634,20 @@
       "targetPath": "source/host/src/extensions/transcript/widget_responses.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "24732616830d9873fd904df6c7a4a6fdc68a1118",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/widget_responses.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/agent_db.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/widget_responses_local_tool_permission_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Transcript now owns the durable LocalToolPermission subset of frozen WidgetResponses: stale-card retirement, already-settled detection, exact agent/entry/request fencing, and best-effort boot sweep across durable agent DBs with ifPendingBeforeMs support. Final remains withheld for the rest of WidgetResponses: generic widget answers/dismissal, AutoReview cards, secret submission, reactions, skipped-question collection, active-session live projection/roster emission and spend-guard integration."
     },
     {
       "referencePath": "source/host/extensions/transcript/workflow-commands.ts",
