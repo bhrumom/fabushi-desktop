@@ -1587,6 +1587,23 @@ impl AttachmentsService {
                         None => Value::Null,
                     }
                 }),
+            "fetchLinkMetadata" => {
+                let cache_dir = args
+                    .get("cacheDir")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "fetchLinkMetadata.cacheDir must be a string".to_string());
+                let url = args
+                    .get("url")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "fetchLinkMetadata.url must be a string".to_string());
+                cache_dir.and_then(|cache_dir| {
+                    url.map(|url| {
+                        fetch_link_metadata(Path::new(cache_dir), url)
+                            .and_then(|metadata| serde_json::to_value(metadata).ok())
+                            .unwrap_or(Value::Null)
+                    })
+                })
+            }
             "readAttachmentChunk" => args
                 .get("path")
                 .and_then(Value::as_str)
