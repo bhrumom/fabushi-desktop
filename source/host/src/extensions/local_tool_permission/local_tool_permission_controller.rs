@@ -875,14 +875,14 @@ impl SandLocalToolPermissionController {
                 return decision;
             }
 
-            let decision = pending
+            let decision_guard = pending
                 .decision
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            if let Some(decision) = decision.clone() {
-                drop(decision);
+            if let Some(settled_decision) = decision_guard.clone() {
+                drop(decision_guard);
                 self.leave_waiter(pending);
-                return decision;
+                return settled_decision;
             }
 
             let request = pending
@@ -896,7 +896,7 @@ impl SandLocalToolPermissionController {
                 .saturating_sub(started.elapsed().as_millis().try_into().unwrap_or(u64::MAX));
             let remaining = logical_remaining.min(wall_remaining);
             if remaining == 0 {
-                drop(decision);
+                drop(decision_guard);
                 self.leave_waiter(pending);
                 let expired = denied(SAND_LOCAL_TOOLS_ASK_EXPIRED_MESSAGE);
                 self.settle_pending(
@@ -913,14 +913,14 @@ impl SandLocalToolPermissionController {
             } else {
                 remaining
             };
-            let (decision, _) = pending
+            let (decision_guard, _) = pending
                 .wake
-                .wait_timeout(decision, Duration::from_millis(wait_ms))
+                .wait_timeout(decision_guard, Duration::from_millis(wait_ms))
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            if let Some(decision) = decision.clone() {
-                drop(decision);
+            if let Some(settled_decision) = decision_guard.clone() {
+                drop(decision_guard);
                 self.leave_waiter(pending);
-                return decision;
+                return settled_decision;
             }
         }
     }
