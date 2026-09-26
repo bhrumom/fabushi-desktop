@@ -196,6 +196,12 @@ mod unix {
         oauth_completion_attempts: &AtomicUsize,
         webauthn_batches: &Mutex<Vec<Value>>,
     ) -> io::Result<()> {
+        // The fake gateway listener is non-blocking so its accept loop can poll for
+        // shutdown. Accepted sockets may inherit that mode on macOS, making the
+        // first read/write in a retry race with the client and fail spuriously.
+        // Normalize each accepted HTTP exchange to blocking mode; the explicit
+        // timeouts below still bound the test and preserve production semantics.
+        stream.set_nonblocking(false)?;
         stream.set_read_timeout(Some(Duration::from_secs(2)))?;
         stream.set_write_timeout(Some(Duration::from_secs(2)))?;
 
