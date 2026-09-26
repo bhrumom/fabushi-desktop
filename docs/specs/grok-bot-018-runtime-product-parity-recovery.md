@@ -1548,3 +1548,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added `source/host/tests/local_exec_production_codec_contract.rs` covering unknown-field tolerance, throw/stack projection, stream close, unknown control handling, oneof conflict rejection and accessor ownership.
 - This row advances only from `planned` to `existing-needs-parity`. The repository currently ships TypeScript-generated `source/packages/proto/generated/agent/v1/exec_pb.ts` but no canonical Rust-generated `ExecClientMessage`/`ExecClientControlMessage`; therefore exact generated `fromJson(..., ignoreUnknownFields: true)` semantics and live GatewayLocalExecManager consumption remain explicit blockers.
 - Manifest becomes **1,821 implemented / 109 existing-needs-parity / 72 planned** (181 non-final).
+
+
+### 2026-09-26 Local Tool Permission controller policy hardening
+
+- Starting exact HEAD: `1cc12beef74968b6f554585d0cb24c1cc576276c`.
+- Ported the remaining safety-critical frozen controller policy that was still absent from the first Rust owner: refusal-direction memory, hashed refusal keys, bounded per-agent saturation, forgotten-agent fencing, standing-grant direction epochs, preparatory-action rejection, approval retirement callbacks and permission-change settlement.
+- Added contract coverage proving a denied action cannot be retried in the same direction, forgotten tasks stay fenced, preparatory access cannot bypass the action the user is actually being asked to approve, and one-time approval retirement is observable when scope ends.
+- The controller intentionally remains `existing-needs-parity`: AbortSignal-equivalent cancellation for individual joined waiters and the exact multi-listener subscription API are still controller-level gaps. Transcript ask cards, boot sweep and Gateway resolution remain extension-level gaps.

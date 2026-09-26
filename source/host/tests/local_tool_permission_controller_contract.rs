@@ -9,9 +9,10 @@ use mahayana_host_runtime::extensions::local_tool_permission::extension::{
     start_local_tool_permission_extension,
 };
 use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_controller::{
-    SAND_LOCAL_TOOLS_ASK_UNAVAILABLE_MESSAGE, SAND_LOCAL_TOOLS_DISABLED_MESSAGE,
-    SandLocalToolPermissionController, SandLocalToolRequest, SandLocalToolRequestStatus,
-    SandLocalToolScope,
+    SAND_LOCAL_TOOLS_ABANDONED_MESSAGE, SAND_LOCAL_TOOLS_ASK_UNAVAILABLE_MESSAGE,
+    SAND_LOCAL_TOOLS_DISABLED_MESSAGE, SAND_LOCAL_TOOLS_PREPARATORY_MESSAGE,
+    SAND_LOCAL_TOOLS_STALE_TASK_MESSAGE, SandLocalToolPermissionController,
+    SandLocalToolRequest, SandLocalToolRequestStatus, SandLocalToolScope,
 };
 use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_resolution::{
     LocalToolPermissionAskStore, SandLocalToolResolution,
@@ -149,5 +150,96 @@ fn ask_resolution_wakes_waiter_and_retains_one_time_approval_until_scope_complet
             .iter()
             .any(|event| event.status == SandLocalToolRequestStatus::Allowed)
     );
+    let _ = fs::remove_file(path);
+}
+
+
+#[test]
+fn denied_action_is_remembered_and_forgotten_agent_is_fenced() {
+    let path = temp_settings("refusal-memory");
+    let settings = Arc::new(SettingsService::new(path.clone()));
+    let controller = Arc::new(SandLocalToolPermissionController::with_options(
+        Arc::clone(&settings),
+        1_000,
+        Arc::new(|| 1_000),
+        Arc::new(|| "ask-refusal".to_string()),
+    ));
+    controller.bind_ask_surfaces(Arc::new(|_| true));
+    controller.bind_live_computer_check(Arc::new(|_| true));
+    let scope = SandLocalToolScope {
+        agent_id: "agent-r".into(),
+        tool_call_id: Some("tool-r".into()),
+        action: Some("read-file".into()),
+        direction_epoch: Some(0),
+    };
+    let request = SandLocalToolRequest::simple("read-file", "/tmp/refused");
+    let worker_controller = Arc::clone(&controller);
+    let worker_scope = scope.clone();
+    let worker_request = request.clone();
+    let worker = thread::spawn(move || worker_controller.authorize(Some(&worker_scope), &worker_request));
+    let pending = (0..100).find_map(|_| {
+        let value = controller.get_pending_request_for_agent("agent-r");
+        if value.is_none() { thread::sleep(Duration::from_millis(2)); }
+        value
+    }).expect("pending");
+    assert!(controller.resolve_request(&pending.id, SandLocalToolResolution::Deny));
+    assert!(!worker.join().expect("worker").allowed);
+    assert_eq!(controller.remembered_refusal_count(), 1);
+    assert_eq!(
+        controller.authorize(Some(&scope), &request).reason.as_deref(),
+        Some(SAND_LOCAL_TOOLS_ABANDONED_MESSAGE)
+    );
+    controller.forget_agent("agent-r");
+    assert_eq!(
+        controller.authorize(Some(&scope), &request).reason.as_deref(),
+        Some(SAND_LOCAL_TOOLS_STALE_TASK_MESSAGE)
+    );
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn preparatory_action_is_fenced_and_scope_retirement_is_observable() {
+    let path = temp_settings("preparatory");
+    let settings = Arc::new(SettingsService::new(path.clone()));
+    let controller = Arc::new(SandLocalToolPermissionController::with_options(
+        Arc::clone(&settings),
+        1_000,
+        Arc::new(|| 2_000),
+        Arc::new(|| "approval-prep".to_string()),
+    ));
+    controller.bind_ask_surfaces(Arc::new(|_| true));
+    controller.bind_live_computer_check(Arc::new(|_| true));
+    let scope = SandLocalToolScope {
+        agent_id: "agent-p".into(),
+        tool_call_id: Some("tool-p".into()),
+        action: Some("run-command".into()),
+        direction_epoch: None,
+    };
+    let read = SandLocalToolRequest::simple("read-file", "/tmp/a");
+    assert_eq!(
+        controller.authorize(Some(&scope), &read).reason.as_deref(),
+        Some(SAND_LOCAL_TOOLS_PREPARATORY_MESSAGE)
+    );
+
+    let retired = Arc::new(Mutex::new(Vec::new()));
+    let retired_sink = Arc::clone(&retired);
+    controller.bind_approval_retired_sink(Some(Arc::new(move |id| {
+        retired_sink.lock().expect("retired").push(id.to_string());
+    })));
+
+    let command = SandLocalToolRequest::simple("run-command", "echo hi");
+    let worker_controller = Arc::clone(&controller);
+    let worker_scope = scope.clone();
+    let worker_command = command.clone();
+    let worker = thread::spawn(move || worker_controller.authorize(Some(&worker_scope), &worker_command));
+    let pending = (0..100).find_map(|_| {
+        let value = controller.get_pending_request_for_agent("agent-p");
+        if value.is_none() { thread::sleep(Duration::from_millis(2)); }
+        value
+    }).expect("pending");
+    assert!(controller.resolve_request(&pending.id, SandLocalToolResolution::AllowOnce));
+    assert!(worker.join().expect("worker").allowed);
+    controller.complete_scope(Some(&scope));
+    assert_eq!(retired.lock().expect("retired").as_slice(), &["approval-prep"]);
     let _ = fs::remove_file(path);
 }
