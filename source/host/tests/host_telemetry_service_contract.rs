@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -175,6 +176,49 @@ fn desktop_health_file_forwards_through_shipping_structured_log_with_frozen_hear
             "primary/xvfb=oom"
         );
     }
+
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn shipping_structured_logs_consume_canonical_box_identity_tags_with_event_precedence() {
+    let root = temp_root();
+    let service = HostTelemetryService::open_with_identity_tags(
+        root.join("identity-events.jsonl"),
+        BTreeMap::from([
+            ("auth_id".to_string(), "box-auth".to_string()),
+            ("box_store_id".to_string(), "store-a".to_string()),
+            ("cluster".to_string(), "cluster-a".to_string()),
+            ("empty".to_string(), String::new()),
+        ]),
+    )
+    .expect("telemetry service");
+
+    service
+        .logs
+        .report_projection(
+            &mahayana_host_runtime::extensions::telemetry::HostTelemetryProjection {
+                level: Some("info"),
+                event: Some("sand.identity.contract"),
+                metadata: BTreeMap::from([
+                    ("auth_id".to_string(), "event-auth".to_string()),
+                    ("detail".to_string(), "ok".to_string()),
+                ]),
+            },
+        )
+        .expect("identity-tagged structured log");
+
+    let text = fs::read_to_string(service.records_path()).expect("identity jsonl");
+    let record: PersistedHostTelemetryRecord =
+        serde_json::from_str(text.lines().next().expect("identity record"))
+            .expect("identity record json");
+    assert_eq!(record.event, "sand.identity.contract");
+    assert_eq!(record.payload["metadata"]["auth_id"], "event-auth");
+    assert_eq!(record.payload["metadata"]["box_store_id"], "store-a");
+    assert_eq!(record.payload["metadata"]["cluster"], "cluster-a");
+    assert_eq!(record.payload["metadata"]["detail"], "ok");
+    assert!(record.payload["metadata"].get("empty").is_none());
 
     let _ = fs::remove_dir_all(root);
 }

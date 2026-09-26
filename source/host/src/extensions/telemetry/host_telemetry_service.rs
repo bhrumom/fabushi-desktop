@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -5,6 +6,8 @@ use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+
+use crate::ports::telemetry::resolve_sand_box_identity_tags;
 
 use super::HostTelemetryProjection;
 use super::analytics_service::product_analytics_event;
@@ -56,16 +59,19 @@ impl JsonlHostTelemetrySink {
 #[derive(Clone)]
 pub struct HostStructuredLogTelemetry {
     sink: Arc<JsonlHostTelemetrySink>,
+    identity_tags: Arc<BTreeMap<String, String>>,
 }
 
 impl HostStructuredLogTelemetry {
     pub fn report_projection(&self, projection: &HostTelemetryProjection) -> io::Result<()> {
+        let mut metadata = self.identity_tags.as_ref().clone();
+        metadata.extend(projection.metadata.clone());
         self.sink.emit(&PersistedHostTelemetryRecord {
             channel: "structured_log".into(),
             event: projection.event.unwrap_or("sand.host.telemetry").to_string(),
             payload: json!({
                 "level": projection.level.unwrap_or("info"),
-                "metadata": projection.metadata,
+                "metadata": metadata,
             }),
         })
     }
@@ -109,10 +115,23 @@ pub struct HostTelemetryService {
 
 impl HostTelemetryService {
     pub fn open(records_path: impl Into<PathBuf>) -> io::Result<Self> {
+        Self::open_with_identity_tags(
+            records_path,
+            resolve_sand_box_identity_tags(),
+        )
+    }
+
+    pub fn open_with_identity_tags(
+        records_path: impl Into<PathBuf>,
+        mut identity_tags: BTreeMap<String, String>,
+    ) -> io::Result<Self> {
+        identity_tags.retain(|_, value| !value.is_empty());
         let sink = Arc::new(JsonlHostTelemetrySink::open(records_path)?);
+        let identity_tags = Arc::new(identity_tags);
         Ok(Self {
             logs: HostStructuredLogTelemetry {
                 sink: Arc::clone(&sink),
+                identity_tags,
             },
             analytics: HostProductAnalytics {
                 sink: Arc::clone(&sink),

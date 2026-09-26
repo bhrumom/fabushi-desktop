@@ -1456,3 +1456,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `host_telemetry_service_contract.rs` now proves file -> frozen forward decision -> durable structured-log JSONL, including degraded metadata, same-revision suppression and heartbeat re-emission. The existing `desktop_health_forwarder_contract.rs` continues to cover component/down-reason normalization, merge/clamping and forward decisions.
 - Only `source/host/extensions/telemetry/desktop-health-forwarder.ts` advances to final `implemented`; no adjacent TelemetryService/event-loop/transport row is promoted. Manifest for this commit is 1819 implemented / 103 existing-needs-parity / 80 planned.
 - PR #20 remains draft. The new exact HEAD must pass shipping Host/Coordinator/Runner and Desktop Chat Parity; the strict architecture gate is still expected to remain red on the other non-final rows and legacy-root blockers.
+
+
+### 2026-09-26 canonical telemetry port production binding
+
+- Starting from exact HEAD `e858424df9bd4d687b1d7b3f3eca37239624f33a`, the frozen telemetry port was audited against shipping structured-log construction. The Rust port already owned the complete frozen taxonomy, error-detail helpers, no-op surface and `SAND_BOX_*` identity normalization, but production HostTelemetryService did not consume that identity owner.
+- Shipping `HostTelemetryService::open` now resolves box identity exclusively through `ports::telemetry::resolve_sand_box_identity_tags`; structured-log projections merge those identity tags before event metadata, preserving the frozen `{ ...identityTags, ...metadata }` precedence. Empty identity values are filtered and event-local keys remain authoritative.
+- A deterministic `open_with_identity_tags` seam verifies the production merge without mutating process environment in parallel tests. `host_telemetry_service_contract.rs` proves identity propagation, empty-value removal and event-key override; `ports_telemetry_contract.rs` continues to pin environment trimming/taxonomies/no-op behavior.
+- Only `source/host/ports/telemetry.ts` advances to final `implemented`. HostTelemetryService, structured-log transport, event-loop sampling and backend transport stay independently non-final. Manifest for this commit is 1820 implemented / 102 existing-needs-parity / 80 planned.
+- PR #20 remains draft; exact-HEAD Host/Coordinator/Runner, Desktop Chat Parity and strict architecture results remain authoritative.

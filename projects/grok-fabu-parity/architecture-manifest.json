@@ -16542,20 +16542,27 @@
       "targetPath": "source/host/src/ports/telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "fac9a9f31d29865d4b713b6ac7053958e1f49d73",
       "architecturalRole": "host/ports",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/ports/telemetry.rs",
-        "source/host/src/ports/mod.rs"
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/src/extensions/telemetry/extension.rs"
       ],
       "testEvidence": [
         "source/host/tests/ports_telemetry_contract.rs",
+        "source/host/tests/host_telemetry_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port of the frozen telemetry port now owns all literal lifecycle/restart/crash/boot taxonomies, environment identity-tag normalization, error detail projection and the exact no-op telemetry/turn method surface. Final is withheld until HostTelemetryService/analytics production composition consumes this port instead of parallel ad-hoc telemetry wiring."
+      "notes": "Final Rust telemetry-port parity: the frozen lifecycle/restart/crash/boot taxonomies, error detail projection, no-op telemetry surface and canonical SAND_BOX_* identity normalization remain owned by ports::telemetry. Shipping HostTelemetryService now consumes resolve_sand_box_identity_tags() when constructing structured-log telemetry instead of maintaining parallel environment mapping. Identity tags are cleaned once, merged into every structured projection, and event metadata overrides identity keys exactly like the frozen {...identityTags, ...metadata} transport semantics. Product analytics remains a separate owner as in the frozen service; no adjacent TelemetryService row is promoted.",
+      "evidence": [
+        "source/host/tests/ports_telemetry_contract.rs",
+        "source/host/tests/host_telemetry_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/host/ports/transport.ts",
