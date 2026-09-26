@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -8,8 +9,9 @@ use crate::agent_isolation::{
     ProductionAgentStoreWorkerBackend, WorkerBlobStore,
 };
 use crate::transcript_mirror::conversation_state_binary::{
-    ConversationTurnStructureFields, decode_conversation_state_recovery_fields,
-    decode_conversation_turn_structure_fields,
+    ConversationTurnStructureFields, SubagentPersistedStateFields,
+    decode_conversation_state_recovery_fields, decode_conversation_turn_structure_fields,
+    decode_subagent_persisted_state_fields,
 };
 
 use super::agent_db::{AgentDbSubscription, SandAgentDb};
@@ -57,6 +59,14 @@ pub type ProductionMetadataListener =
 
 pub type ProductionWorkerBlobStore =
     WorkerBlobStore<ProductionAgentStoreWorkerBackend>;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ProductionResolvedSubagentState {
+    pub conversation_state: ResolvedConversationState,
+    pub created_timestamp_ms: u64,
+    pub last_used_timestamp_ms: u64,
+    pub subagent_type: Option<Vec<u8>>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 struct ProductionAgentCheckpointState {
@@ -161,24 +171,101 @@ impl ProductionAgentStore {
         Ok(None)
     }
 
-    /// Shipping equivalent of AgentStore2.getFullConversation. Resolution stays
-    /// on the production SessionConversationState owner so checkpoint, transcript
-    /// and UI reads share one blob/database interpretation.
+    /// Shipping equivalent of AgentStore2.getFullConversation. It hydrates the
+    /// store's current in-memory checkpoint leniently, matching the frozen API's
+    /// skip-missing-blob behavior while reusing the production session decoder.
     pub fn get_full_conversation(&self) -> Result<ResolvedConversationState, String> {
-        let resolver = SessionConversationState::new(self.db.busy_timeout_ms());
-        resolver
-            .read_agent_conversation_state(
+        let Some(checkpoint) = self.latest_checkpoint_bytes() else {
+            return Ok(ResolvedConversationState {
+                turns: Vec::new(),
+                todos: Vec::new(),
+                summary: None,
+            });
+        };
+        SessionConversationState::new(self.db.busy_timeout_ms())
+            .resolve_conversation_state_bytes_lenient(
                 Arc::clone(&self.blob_store.pool),
                 &self.agent_id,
                 self.db.db_path(),
                 &self.blob_db_path,
+                &checkpoint,
             )
-            .map(|state| state.unwrap_or(ResolvedConversationState {
-                turns: Vec::new(),
-                todos: Vec::new(),
-                summary: None,
-            }))
             .map_err(|error| error.to_string())
+    }
+
+    /// Frozen AgentStore2.getFullConversationWithSubagents semantics. Inline
+    /// persisted states are the fallback; valid ref blobs override them. A
+    /// missing ref is fatal only when no inline entry exists for that subagent.
+    pub fn get_full_conversation_with_subagents(
+        &self,
+    ) -> Result<
+        (
+            ResolvedConversationState,
+            BTreeMap<String, ProductionResolvedSubagentState>,
+        ),
+        String,
+    > {
+        let conversation_state = self.get_full_conversation()?;
+        let checkpoint = self.latest_checkpoint_bytes().unwrap_or_default();
+        let structure = decode_conversation_state_recovery_fields(&checkpoint)
+            .map_err(|error| format!("invalid ConversationStateStructure checkpoint: {error}"))?;
+
+        let mut persisted = BTreeMap::<String, SubagentPersistedStateFields>::new();
+        for (subagent_id, bytes) in structure.subagent_states {
+            persisted.insert(
+                subagent_id,
+                decode_subagent_persisted_state_fields(&bytes)
+                    .map_err(|error| format!("invalid inline subagent state: {error}"))?,
+            );
+        }
+
+        let mut missing = Vec::new();
+        for (subagent_id, blob_id) in structure.subagent_state_refs {
+            match self.get_blob(&blob_id)? {
+                Some(bytes) => {
+                    persisted.insert(
+                        subagent_id,
+                        decode_subagent_persisted_state_fields(&bytes)
+                            .map_err(|error| format!("invalid referenced subagent state: {error}"))?,
+                    );
+                }
+                None if persisted.contains_key(&subagent_id) => {}
+                None => missing.push(encode_hex(&blob_id)),
+            }
+        }
+        if !missing.is_empty() {
+            return Err(format!(
+                "subagent state ref blob not found: {}",
+                missing.join(",")
+            ));
+        }
+
+        let resolver = SessionConversationState::new(self.db.busy_timeout_ms());
+        let mut subagent_states = BTreeMap::new();
+        for (subagent_id, state) in persisted {
+            let Some(root_blob) = state.conversation_state else {
+                continue;
+            };
+            let resolved = resolver
+                .resolve_conversation_state_bytes_lenient(
+                    Arc::clone(&self.blob_store.pool),
+                    &self.agent_id,
+                    self.db.db_path(),
+                    &self.blob_db_path,
+                    &root_blob,
+                )
+                .map_err(|error| error.to_string())?;
+            subagent_states.insert(
+                subagent_id,
+                ProductionResolvedSubagentState {
+                    conversation_state: resolved,
+                    created_timestamp_ms: state.created_timestamp_ms,
+                    last_used_timestamp_ms: state.last_used_timestamp_ms,
+                    subagent_type: state.subagent_type,
+                },
+            );
+        }
+        Ok((conversation_state, subagent_states))
     }
 
     /// Frozen AgentStore2.tryResetFromDb semantics: bad metadata, missing blob,
