@@ -80,7 +80,7 @@ fn browser_envelope_and_driver_result_round_trip_frozen_shapes() {
     );
 
     let response = parse_driver_response(
-        "diagnostic\n__SAND_BROWSER_RESULT__{\"ok\":true,\"summary\":\"Clicked\",\"url\":\"https://example.com\",\"screenshot\":true}\n",
+        "diagnostic\n__SAND_BROWSER_RESULT__{\"ok\":true,\"summary\":\"Clicked\",\"url\":\"https://example.com\",\"screenshot\":true}\nafter-result diagnostic\n",
     ).expect("driver response");
     assert!(response.ok);
     assert_eq!(response.summary.as_deref(), Some("Clicked"));
