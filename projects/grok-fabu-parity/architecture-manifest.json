@@ -10055,14 +10055,14 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/cloud_agents/cloud_agent_images.rs",
-        "source/host/src/cloud_agents/mod.rs",
-        "source/host/src/attachment_paths.rs"
+        "source/host/src/media_mime.rs"
       ],
       "testEvidence": [
         "source/host/tests/cloud_agent_images_contract.rs",
+        "source/host/tests/media_mime_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host port now owns file:// validation, agent media-root containment, /workspace box reads, image MIME gating, unreadable/refused classification and the frozen 25 MiB image limit. Final remains withheld for exact shared media MIME inventory/error-text reuse and production CloudAgent tool composition with the canonical box reader."
+      "notes": "Rust Host port now reuses the exact frozen image MIME inventory and 25 MiB attachment limit, preserves frozen user-facing failure text, file:// validation, agent media-root containment and /workspace box reads, and lexically normalizes box paths before the workspace boundary check so /workspace/../ traversal is refused. Final remains withheld only until production CloudAgent tool composition calls this loader with the canonical box reader."
     },
     {
       "referencePath": "source/host/cloud-agents/cloud-agent-tool.ts",
@@ -10100,20 +10100,21 @@
       "targetPath": "source/host/src/connectors/channel_attachment.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "eca78f645baee02089b599fd542f58121ce07702",
       "architecturalRole": "host/connectors",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/connectors/channel_attachment.rs",
-        "source/host/src/connectors/mod.rs",
-        "source/host/src/host_paths.rs"
+        "source/host/src/media_mime.rs"
       ],
       "testEvidence": [
         "source/host/tests/channel_attachment_contract.rs",
+        "source/host/tests/media_mime_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host port now owns remote HTTP(S) URL pass-through, file:// and plain local-path resolution, Fabushi data-root reanchoring, regular-file/zero-byte/50 MiB fail-closed checks, byte loading, filename projection and image/video/generic MIME classification. Final remains withheld until the shared frozen media MIME extension inventory is centralized/reused instead of locally mirrored and exact-head CI proves the new contract in the full Host suite."
+      "notes": "Final Rust adaptation: remote HTTP(S) pass-through, file/plain-path resolution, Fabushi data-root reanchoring, regular-file/zero-byte/50 MiB fail-closed checks, byte loading and basename projection now reuse one frozen Grok media-extension inventory. imageMimeFromPath intentionally excludes HEIC/HEIF while preserving ICO, and video MIME support is exactly m4v/mov/mp4/ogv/webm; contracts pin the frozen edge cases.",
+      "parityMode": "rust-adaptation"
     },
     {
       "referencePath": "source/host/durable-file-policy.ts",

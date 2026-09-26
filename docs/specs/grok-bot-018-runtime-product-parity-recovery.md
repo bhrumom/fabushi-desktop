@@ -1350,3 +1350,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Closed the frozen action-audit backend/extension mappings in Rust. The Host now encodes the Dashboard `SandAuditEvent` oneof and `RecordSandAuditEventsRequest` wire contract, uses the existing authenticated Cursor unary transport with the live Auth token/machine id, and keeps the existing bounded durable outbox/backoff behavior.
 - `ActionAuditExtension` now composes Auth + `sand_action_audit_logs` Experiments + structured Telemetry around one `SandActionAuditor` owner. Runner MCP audit records are still observable on the Host event hub, but now also flow into that owner for local JSONL and feature-gated backend delivery.
 - Added a backend contract test for the Dashboard endpoint, repeated-event request envelope and all four frozen action oneof families.
+
+
+### 2026-09-26 shared media inventory cutover
+
+- Added a single Rust Host media-semantic owner mirroring frozen Grok 0.18 media extensions and attachment limits. Channel attachments and CloudAgent image loading no longer carry private approximate MIME tables.
+- Corrected semantic drift: `.ico` is a standard image; HEIC/HEIF are only client-servable native image formats and are not accepted by `imageMimeFromPath`; frozen video mapping is only m4v/mov/mp4/ogv/webm.
+- CloudAgent file URLs now receive POSIX-style lexical normalization before the `/workspace` boundary check, so `file:///workspace/../...` is refused instead of reaching the box reader.
+- Channel attachment is now final in the manifest with shared-media and behavior contracts. CloudAgent image loading remains non-final only because the production `cloud-agent-tool` owner has not yet wired the loader to the canonical box reader.

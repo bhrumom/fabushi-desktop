@@ -4,47 +4,20 @@ use std::path::{Path, PathBuf};
 use url::Url;
 
 use crate::host_paths::reanchor_sand_path;
+use crate::media_mime::{image_mime_from_path, video_mime_from_path};
 
 pub const CHANNEL_ATTACHMENT_MAX_UPLOAD_BYTES: u64 = 50 * 1024 * 1024;
 pub const GENERIC_BINARY_MIME: &str = "application/octet-stream";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ResolvedChannelAttachment {
-    Url {
-        is_image: bool,
-        url: String,
-    },
+    Url { is_image: bool, url: String },
     Upload {
         is_image: bool,
         bytes: Vec<u8>,
         filename: String,
         mime: String,
     },
-}
-
-fn image_mime_from_path(path: &Path) -> Option<&'static str> {
-    match path.extension()?.to_string_lossy().to_ascii_lowercase().as_str() {
-        "png" => Some("image/png"),
-        "jpg" | "jpeg" => Some("image/jpeg"),
-        "gif" => Some("image/gif"),
-        "webp" => Some("image/webp"),
-        "bmp" => Some("image/bmp"),
-        "avif" => Some("image/avif"),
-        "heic" | "heif" => Some("image/heic"),
-        "svg" => Some("image/svg+xml"),
-        _ => None,
-    }
-}
-
-fn video_mime_from_path(path: &Path) -> Option<&'static str> {
-    match path.extension()?.to_string_lossy().to_ascii_lowercase().as_str() {
-        "mp4" | "m4v" => Some("video/mp4"),
-        "mov" => Some("video/quicktime"),
-        "webm" => Some("video/webm"),
-        "mkv" => Some("video/x-matroska"),
-        "avi" => Some("video/x-msvideo"),
-        _ => None,
-    }
 }
 
 pub fn to_local_channel_attachment_path(raw: &str) -> Option<PathBuf> {
@@ -60,18 +33,15 @@ pub fn to_local_channel_attachment_path(raw: &str) -> Option<PathBuf> {
 }
 
 pub fn url_looks_like_image(raw: &str) -> bool {
-    let Ok(parsed) = Url::parse(raw) else {
-        return false;
-    };
+    let Ok(parsed) = Url::parse(raw) else { return false; };
     image_mime_from_path(Path::new(parsed.path())).is_some()
 }
 
 pub fn resolve_channel_attachment(raw_url: Option<&str>) -> Option<ResolvedChannelAttachment> {
-    let raw_url = raw_url?.trim();
+    let raw_url = raw_url?;
     if raw_url.is_empty() {
         return None;
     }
-
     if let Ok(parsed) = Url::parse(raw_url) {
         if matches!(parsed.scheme(), "http" | "https") {
             return Some(ResolvedChannelAttachment::Url {
@@ -84,7 +54,10 @@ pub fn resolve_channel_attachment(raw_url: Option<&str>) -> Option<ResolvedChann
     let local_path = to_local_channel_attachment_path(raw_url)?;
     let resolved = reanchor_sand_path(&local_path);
     let metadata = fs::metadata(&resolved).ok()?;
-    if !metadata.is_file() || metadata.len() == 0 || metadata.len() > CHANNEL_ATTACHMENT_MAX_UPLOAD_BYTES {
+    if !metadata.is_file()
+        || metadata.len() == 0
+        || metadata.len() > CHANNEL_ATTACHMENT_MAX_UPLOAD_BYTES
+    {
         return None;
     }
 

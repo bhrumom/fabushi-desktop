@@ -46,6 +46,7 @@ pub mod workflows;
 pub mod watched_directory;
 pub mod groups;
 pub mod attachment_paths;
+pub mod media_mime;
 pub mod ports;
 pub mod durable_file_policy;
 pub mod sand_user_identity;

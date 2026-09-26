@@ -81,3 +81,44 @@ fn empty_directory_zero_and_oversize_local_inputs_fail_closed() {
 
     fs::remove_dir_all(root).unwrap();
 }
+
+
+#[test]
+fn frozen_shared_media_inventory_drives_channel_classification() {
+    assert!(url_looks_like_image("https://example.com/favicon.ICO"));
+    assert!(!url_looks_like_image("https://example.com/photo.heic"));
+
+    let root = scratch("media-inventory");
+    fs::create_dir_all(&root).unwrap();
+
+    let heif = root.join("native.heif");
+    fs::write(&heif, b"native").unwrap();
+    match resolve_channel_attachment(heif.to_str()).unwrap() {
+        ResolvedChannelAttachment::Upload { is_image, mime, .. } => {
+            assert!(!is_image);
+            assert_eq!(mime, GENERIC_BINARY_MIME);
+        }
+        other => panic!("unexpected attachment: {other:?}"),
+    }
+
+    let ogv = root.join("clip.ogv");
+    fs::write(&ogv, b"video").unwrap();
+    match resolve_channel_attachment(ogv.to_str()).unwrap() {
+        ResolvedChannelAttachment::Upload { is_image, mime, .. } => {
+            assert!(!is_image);
+            assert_eq!(mime, "video/ogg");
+        }
+        other => panic!("unexpected attachment: {other:?}"),
+    }
+
+    let mkv = root.join("clip.mkv");
+    fs::write(&mkv, b"video").unwrap();
+    match resolve_channel_attachment(mkv.to_str()).unwrap() {
+        ResolvedChannelAttachment::Upload { mime, .. } => {
+            assert_eq!(mime, GENERIC_BINARY_MIME);
+        }
+        other => panic!("unexpected attachment: {other:?}"),
+    }
+
+    fs::remove_dir_all(root).unwrap();
+}

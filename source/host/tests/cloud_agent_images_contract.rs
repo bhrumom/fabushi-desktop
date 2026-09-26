@@ -87,3 +87,34 @@ fn enforces_the_frozen_25_mib_image_limit_for_host_and_box_reads() {
 
     fs::remove_dir_all(agent).unwrap();
 }
+
+
+#[test]
+fn frozen_image_inventory_and_workspace_normalization_are_fail_closed() {
+    let agent = scratch("inventory");
+    fs::create_dir_all(get_agent_assets_dir(&agent)).unwrap();
+
+    let mut reader = |_path: &str| Ok(b"box".to_vec());
+    let ico = load_cloud_agent_images(
+        &["file:///workspace/favicon.ico".into()],
+        &agent,
+        Some(&mut reader),
+    ).unwrap();
+    assert_eq!(ico[0].mime_type, "image/x-icon");
+
+    let heic = load_cloud_agent_images(
+        &["file:///workspace/native.heic".into()],
+        &agent,
+        Some(&mut reader),
+    ).unwrap_err();
+    assert!(matches!(heic, CloudAgentImagesError::NotImage(_)));
+
+    let traversal = load_cloud_agent_images(
+        &["file:///workspace/../secret.png".into()],
+        &agent,
+        Some(&mut reader),
+    ).unwrap_err();
+    assert!(matches!(traversal, CloudAgentImagesError::Refused(_)));
+
+    let _ = fs::remove_dir_all(agent);
+}
