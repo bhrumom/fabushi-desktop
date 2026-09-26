@@ -60,10 +60,10 @@ pub fn build_turn_toolset(
         Some(deps) => Arc::new(CloudAgentToolBridge::new(bridge, deps)),
         None => bridge,
     };
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.send_message_sink {
+    let bridge: Arc<dyn RoutedToolBridge> = match &dependencies.send_message_sink {
         Some(sink) => Arc::new(BoxHelpToolBridge::new(
             bridge,
-            Arc::clone(&sink),
+            Arc::clone(sink),
             dependencies.cancellation.clone(),
         )),
         None => bridge,
