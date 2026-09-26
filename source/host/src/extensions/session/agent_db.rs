@@ -272,6 +272,10 @@ impl SandAgentDb {
         &self.db_path
     }
 
+    pub fn busy_timeout_ms(&self) -> u64 {
+        self.options.recovery.busy_timeout_ms
+    }
+
     pub fn is_closed(&self) -> bool {
         self.closed.load(Ordering::Acquire)
     }
