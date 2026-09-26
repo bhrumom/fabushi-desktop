@@ -25,5 +25,9 @@ export default defineConfig({
     strictPort: true,
     fs: { allow: [path.resolve(here, '..')] },
   },
-  build: { sourcemap: true },
+  build: {
+    outDir: 'dist/renderer',
+    emptyOutDir: true,
+    sourcemap: true,
+  },
 });
