@@ -1,7 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createInterface } from "node:readline";
 import { join, resolve } from "node:path";
-import { parentPort } from "electron";
 
 type CarrierChannel =
   | "coordinator-control"
@@ -19,6 +18,13 @@ type TransferPort = {
   on(event: "close", listener: () => void): void;
   start(): void;
   close(): void;
+};
+
+type UtilityProcessParentPort = {
+  once(
+    event: "message",
+    listener: (event: { readonly data: unknown; readonly ports?: readonly TransferPort[] }) => void,
+  ): void;
 };
 
 const CHANNELS: readonly CarrierChannel[] = [
@@ -56,8 +62,12 @@ function isEnvelope(value: unknown): value is CarrierEnvelope {
   return CHANNELS.includes(record.channel as CarrierChannel) && "frame" in record;
 }
 
-if (parentPort == null) {
-  throw new Error("Rust Coordinator carrier requires Electron utilityProcess parentPort.");
+const utilityParentPort = (process as typeof process & {
+  readonly parentPort?: UtilityProcessParentPort | null;
+}).parentPort;
+
+if (utilityParentPort == null) {
+  throw new Error("Rust Coordinator carrier requires Electron utilityProcess process.parentPort.");
 }
 
 let child: ChildProcessWithoutNullStreams | undefined;
@@ -76,7 +86,7 @@ const close = (code = 0): void => {
   process.exitCode = code;
 };
 
-parentPort.once("message", (event: { readonly data: unknown; readonly ports?: readonly TransferPort[] }) => {
+utilityParentPort.once("message", (event) => {
   const bootstrap = event.data as { readonly bootstrap?: unknown } | null;
   const transferred = event.ports ?? [];
   if (bootstrap == null || typeof bootstrap !== "object" || bootstrap.bootstrap == null) {
