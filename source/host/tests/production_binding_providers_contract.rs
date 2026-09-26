@@ -5,6 +5,7 @@ use mahayana_host_runtime::production_binding_providers::{
     create_production_state_backstop_runtime_with,
     production_cloud_agent_trace_converter,
 };
+use mahayana_host_runtime::storage::agent_paths::get_sand_agents_root_dir;
 use rusqlite::Connection;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -22,10 +23,11 @@ fn temp_root(label: &str) -> std::path::PathBuf {
 fn production_state_backstop_binding_uses_canonical_agents_root_and_checkpointed_read() {
     let home = temp_root("backstop");
     let runtime = create_production_state_backstop_runtime_with(Some(&home), 500);
+    let expected_agents_root = get_sand_agents_root_dir(Some(&home));
     assert_eq!(
         runtime.agents_root_dir,
-        home.join(".sand").join("agents"),
-        "production binding must use the canonical Sand agents root"
+        expected_agents_root,
+        "production binding must delegate to the canonical Sand agents-root resolver"
     );
 
     let agent_dir = runtime.agents_root_dir.join("agent-a");

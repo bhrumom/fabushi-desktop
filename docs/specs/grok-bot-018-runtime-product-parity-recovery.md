@@ -1474,3 +1474,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The CloudAgent converter placeholder was also moved out of main into this canonical owner. It intentionally remains fail-closed: frozen `NO_PREAMBLE` trace conversion requires the full generated `aiserver.v1.ConversationMessage` and nested `ClientSideToolV2Result` oneof values; the current Rust tree does not yet contain those canonical generated bindings, so opaque bytes/base64 are not accepted as parity.
 - `production_binding_providers_contract.rs` verifies canonical agents-root selection, real WAL-capable SQLite checkpoint/read/reopen behavior, missing-db behavior, and the fail-closed CloudAgent generated-binding fence.
 - This mapping advances only from `planned` to `existing-needs-parity`, not final. Manifest is now 1820 implemented / 103 existing-needs-parity / 79 planned. Remaining final blockers are the generated CloudAgent trace adapter and live StateBackstop BoxStore/SourceMap production composition.
+
+
+### 2026-09-26 production binding canonical-root contract correction
+
+- Exact HEAD `c7e713987bc28a508972f6412bf4f06b7dfdced5` exposed a contract bug, not a shipping root bug: `production_binding_providers_contract.rs` hard-coded `~/.sand/agents`, but frozen Grok 0.18 delegates `getSandAgentsRootDir(home)` to `getSandRootDir(home)`. The frozen packaged root is `~/.grokbot/agents`; dev/lab roots follow the Sand variant, and explicit data-root/user-data overrides remain authoritative.
+- The production provider already delegates to Rust `get_sand_agents_root_dir`, matching the frozen construction boundary. The contract now compares against that canonical resolver instead of inventing a second root convention.
+- No shipping path, manifest status, StateBackstop semantics, or data migration behavior changed in this correction. The next exact-HEAD Rust run remains authoritative for the production binding provider row.
