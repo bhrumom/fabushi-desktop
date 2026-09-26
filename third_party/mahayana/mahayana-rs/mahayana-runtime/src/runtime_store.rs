@@ -957,15 +957,19 @@ fn parse_turn_state(value: &str) -> Result<TurnState, RuntimeStoreError> {
 mod tests {
     use super::*;
     use mahayana_core::IntentId;
+    use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    static NEXT_TEMP_STORE_ID: AtomicU64 = AtomicU64::new(1);
 
     fn temp_store() -> (std::path::PathBuf, RuntimeStore) {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_nanos();
+        let sequence = NEXT_TEMP_STORE_ID.fetch_add(1, Ordering::Relaxed);
         let path = std::env::temp_dir().join(format!(
-            "mahayana-runtime-store-{}-{nonce}",
+            "mahayana-runtime-store-{}-{nonce}-{sequence}",
             std::process::id()
         ));
         let store = RuntimeStore::open(Some(&path)).expect("open runtime store");
