@@ -18036,12 +18036,27 @@
       "targetPath": "source/host/src/runner/tools/turn_toolset.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "dae94ac7441372d7f40f418d7f0a6e6d38d3d383",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/turn_toolset.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner/tools/sand_state_tool.rs",
+        "source/host/src/runner/tools/send_message_tool.rs",
+        "source/host/src/runner/tools/sand_reaction_tool.rs",
+        "source/host/src/runner/tools/sand_agent_management_tools.rs",
+        "source/host/src/runner/box_tool_access.rs",
+        "source/host/src/cloud_agents/cloud_agent_tool.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/turn_toolset_contract.rs",
+        "source/host/tests/sand_state_tool_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust Runner now owns a real per-turn toolset composition boundary: box resources, ReactToMessage, SendToAgent/CreateAgent/UpdateAgent, update_state, CloudAgent, RequestBoxHelp, SendMessage and Spotlight fencing are assembled in one owner and shipping TurnAgentComposition delegates to it. Exact-head d876d6df148373929354c8b6caadc62aac8ad214 passed rust-host job 108372568066 and Desktop Chat Parity run 36230469090. Final remains withheld because the frozen module also owns generated Agent task/read/shell/await/computer/browser/file-transfer/MCP-management/dynamic-MCP/subagent/static-context/auto-review/local-permission composition and those surfaces are not yet fully centralized here."
     },
     {
       "referencePath": "source/host/runner/transient-stream-error.ts",
@@ -38788,5 +38803,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-26T08:39:00Z"
+  "generatedAt": "2026-09-26T08:41:30Z"
 }
