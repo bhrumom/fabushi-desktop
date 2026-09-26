@@ -195,7 +195,23 @@ impl SessionConversationState {
         .ok_or_else(|| SessionConversationStateError::Blob(
             "latest conversation root blob is missing".into(),
         ))?;
-        let structure = parse_conversation_state_structure(&root_blob)
+        self.resolve_conversation_state_bytes(
+            pool,
+            agent_id,
+            db_path,
+            blob_db_path,
+            &root_blob,
+        )
+    }
+
+    pub fn resolve_conversation_state_bytes(
+        &self,
+        pool: Arc<AgentWorkerPool<ProductionAgentStoreWorkerBackend>>,
+        agent_id: &str,
+        db_path: &Path,
+        blob_db_path: &Path,
+        root_blob: &[u8],
+    ) -> Result<Option<ResolvedConversationState>, SessionConversationStateError> {
             .ok_or_else(|| SessionConversationStateError::Blob(
                 "latest conversation root blob is not a ConversationStateStructure".into(),
             ))?;
