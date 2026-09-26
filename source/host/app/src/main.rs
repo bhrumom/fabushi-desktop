@@ -776,6 +776,7 @@ struct LocalRoutedRunnerDeps {
     session_handoff: BoxHandoffService,
     trays: Arc<HostTraysExtension>,
     telemetry_logs: HostStructuredLogTelemetry,
+    production_action_auditor: ActionAuditExtension,
 }
 
 impl UnifiedGatewayApi {
@@ -948,6 +949,7 @@ fn run_local_group_member_turn(
         deps.session_handoff,
         deps.trays,
         deps.telemetry_logs,
+        deps.production_action_auditor,
         runner_args,
     )
     .map_err(|error| error.to_string())?;
@@ -1105,6 +1107,7 @@ fn run_local_automation_turn(
         deps.session_handoff,
         deps.trays,
         deps.telemetry_logs,
+        deps.production_action_auditor,
         runner_args,
     )
     .map_err(|error| error.to_string())?;
@@ -2448,6 +2451,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.session_handoff.clone(),
                 Arc::clone(&self.trays),
                 self.telemetry_logs.clone(),
+                self.production_action_auditor.clone(),
                 args,
             );
         }
