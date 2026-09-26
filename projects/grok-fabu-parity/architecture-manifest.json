@@ -11225,12 +11225,28 @@
       "targetPath": "source/host/src/extensions/cloud_agents/cloud_agents_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "764d3bcedab2508b413cfa747b6869f8c47562d7",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cloud_agents/cloud_agents_service.rs",
+        "source/host/src/extensions/cloud_agents/cloud_agent_wire.rs",
+        "source/host/src/extensions/cloud_agents/cloud_agent_request_composition.rs",
+        "source/host/src/extensions/cloud_agents/cloud_agent_poll_loop.rs",
+        "source/host/src/extensions/cloud_agents/model_catalog_fetch.rs",
+        "source/host/src/cursor_backend.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/cloud_agents_service_contract.rs",
+        "source/host/tests/cloud_agent_wire_contract.rs",
+        "source/host/tests/cloud_agent_request_composition_contract.rs",
+        "source/host/tests/cloud_agent_poll_loop_contract.rs",
+        "source/host/tests/cloud_agent_model_catalog_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Final Rust Host adaptation: one SandCloudAgentManager owns the frozen BackgroundComposer/Dashboard surface (launch/list/get/reply/rename/cancel/archive/unarchive/delete/artifacts/transcript/info/diff/live-PR), saved-environment and private-worker team routing, completion polling, team-admin policy and model catalog caching. Production CursorCloudAgentBackend reuses the canonical authenticated cursor_backend transport (Bearer/checksum/client metadata/ghost-mode) and a generated-wire-compatible prost boundary pinned to frozen field numbers. ConversationMessage-to-trace conversion remains an injected Host collaborator exactly as in the frozen service and is tracked by the CloudAgents extension/tool production composition rows, not by this manager row. Exact-HEAD 1c26d31ad8bd6f26b68fd7e34c8b9ca1481e80de passed shipping Host, independent Coordinator and complete Host Runner contracts."
     },
     {
       "referencePath": "source/host/extensions/cloud-agents/extension.ts",

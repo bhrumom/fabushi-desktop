@@ -1379,3 +1379,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Ported the frozen CloudAgent polling/cache layer to Rust: status normalization, included-limit projection, watch result/diff formatting, saved-environment id/name resolution and environment-list hints.
 - Added the five-minute model-catalog cache, five-minute fail-open team-admin policy cache with background refresh, and completion polling with 10s cadence, 30s RPC timeout, five-hour max wait, three-minute restart grace and rate-limit retry+jitter.
 - Polling is exposed behind injected clock/sleep/fetch boundaries so deterministic contracts can cover restart/rate-limit/terminal behavior while the production CloudAgent manager remains responsible for running it off the request lane.
+
+
+### 2026-09-26 CloudAgent manager service cutover
+
+- Added the real Rust `SandCloudAgentManager` and `CursorCloudAgentBackend` instead of a test-only CloudAgent API. All BackgroundComposer/Dashboard calls reuse the canonical Host Cursor transport with access token, machine checksum, client metadata, Sand namespace and ghost-mode headers.
+- Added a minimal generated-wire-compatible `prost` boundary pinned to the frozen Grok message field numbers for launch, follow-up, list/get, lifecycle management, artifacts, transcript payloads, PR state, optimized diffs, saved environments, teams and team-admin policy. Unknown generated fields remain safely ignored.
+- The manager now owns frozen launch/reply request composition, private-worker team resolution, saved-environment routing, model-catalog cache, completion polling, team-admin policy, managed CloudAgent IDs, file-change capping, live PR state and transcript-dump retrieval.
+- `cloud_agents_service_contract.rs` plus the wire/request/poll/model catalog contracts passed the complete Host Runner suite on exact HEAD `1c26d31ad8bd6f26b68fd7e34c8b9ca1481e80de`; shipping Host and independent Mahayana Coordinator also passed. The service mapping is therefore final. Host extension startup, ConversationMessage trace conversion, CloudAgent first-party Runner tool registration and raw box I/O remain separate non-final mappings.
