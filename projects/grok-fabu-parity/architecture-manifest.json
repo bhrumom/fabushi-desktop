@@ -10328,7 +10328,7 @@
       "targetPath": "source/host/src/extensions/attachments/safe_link_preview_fetch.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "96ad6e2616f70368132eb46f23b745948ccf4e66",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10339,14 +10339,14 @@
         "source/host/tests/safe_link_preview_fetch_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust port implements the frozen HTTPS-only URL policy, credential/custom-port rejection, non-public hostname suffixes, IPv4/IPv6 reserved blocklist, all-answer DNS rebinding defense, 3s DNS deadline, pinned direct TLS connection, redirect revalidation, no-proxy transport, 8s request deadline, identity encoding, byte limits and explicit truncation. Awaiting exact-HEAD Host test verification before module-level final status."
+      "notes": "Rust port implements the frozen HTTPS-only URL policy, credential/custom-port rejection, non-public hostname suffixes, IPv4/IPv6 reserved blocklist, all-answer DNS rebinding defense, 3s DNS deadline, pinned direct TLS connection, redirect revalidation, no-proxy transport, 8s request deadline, identity encoding, byte limits and explicit truncation. Module-level final status is backed by source/host/tests/safe_link_preview_fetch_contract.rs and descendant exact-HEAD 3bf582fb1eacd59dc4d9f4120e572583d9bd2a7f, where the complete Rust desktop runtime rust-host job passed."
     },
     {
       "referencePath": "source/host/extensions/attachments/video-playback-rendition.ts",
       "targetPath": "source/host/src/extensions/attachments/video_playback_rendition.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "6be71fbde2517b773b1da316c31958bf77dd69ff",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10357,7 +10357,7 @@
         "source/host/tests/video_playback_rendition_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust port implements the frozen ffprobe HEVC decision, ffmpeg H.264/AAC rendition command, 120s tool deadline, two-transcode global limit, content-version cache key, eight-entry LRU, shared in-flight resolution, reader-safe eviction, source fallback and 30s failed-resolution retry. Awaiting exact-HEAD Host test verification before module-level final status."
+      "notes": "Rust port implements the frozen ffprobe HEVC decision, ffmpeg H.264/AAC rendition command, 120s tool deadline, two-transcode global limit, content-version cache key, eight-entry LRU, shared in-flight resolution, reader-safe eviction, source fallback and 30s failed-resolution retry. Module-level final status is backed by source/host/tests/video_playback_rendition_contract.rs and descendant exact-HEAD 3bf582fb1eacd59dc4d9f4120e572583d9bd2a7f, where the complete Rust desktop runtime rust-host job passed."
     },
     {
       "referencePath": "source/host/extensions/auth/auth-service.ts",
@@ -38725,5 +38725,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-26T06:42:00Z"
+  "generatedAt": "2026-09-26T07:30:00Z"
 }
