@@ -17725,15 +17725,21 @@
       "behavioralEvidence": [
         "source/host/src/runner/tools/sand_browser_tools.rs",
         "source/host/src/runner/tools/sand_browser_driver_source.rs",
+        "source/host/src/runner/tools/turn_toolset.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/extensions/forever_box/runner_tools.rs",
+        "source/host/app/src/main.rs",
         "source/host/src/runner/sand_browser_auto_review.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_browser_tools_contract.rs",
         "source/host/tests/browser_driver_source_contract.rs",
+        "source/host/tests/turn_toolset_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Runner now owns the frozen browser-tool semantic core: envelope/result parsing, bounded screenshot cache, browser-review action projection, 15 first-party browser tool definitions and schemas, per-display CDP/view/screenshot request construction, driver shell command projection and a typed SandBrowserToolBridge. Exact-head 2502416fe03f9744ce36b8947239acd08bd3e74d passed rust-host job 108376132567 and Desktop Chat Parity run 36231765469. Final remains withheld until a shipping BrowserToolExecutor binds real box upload/download/shell execution, display/window resolution, screenshot persistence, SandBrowserAutoReview preflight/navigation state and TurnToolset registration."
+      "notes": "Rust Runner now owns the frozen browser-tool semantic and production execution path: envelope/result parsing, bounded screenshot cache, review-action projection, 15 first-party browser tool schemas, per-display CDP/view/screenshot request construction, frozen JS driver upload, Host-owned ForeverBox window resolution, box shell execution, result/screenshot reads, TurnToolset registration and shipping Host injection. Exact-head 51496cb3fcba95b98a06a54ee32905979a62efd8 passed rust-host job 108378519115 and Desktop Chat Parity run 36232610733. Final remains withheld for the frozen SandBrowserAutoReview preflight/capture-review-state binding, onPossibleNavigation audit callback and screenshot persistImage callback."
     },
     {
       "referencePath": "source/host/runner/tools/sand-browser-use-subagent.ts",
@@ -18082,7 +18088,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Runner now owns a real per-turn toolset composition boundary: box resources, ReactToMessage, SendToAgent/CreateAgent/UpdateAgent, update_state, CloudAgent, RequestBoxHelp, SendMessage and Spotlight fencing are assembled in one owner and shipping TurnAgentComposition delegates to it. Exact-head d876d6df148373929354c8b6caadc62aac8ad214 passed rust-host job 108372568066 and Desktop Chat Parity run 36230469090. Final remains withheld because the frozen module also owns generated Agent task/read/shell/await/computer/browser/file-transfer/MCP-management/dynamic-MCP/subagent/static-context/auto-review/local-permission composition and those surfaces are not yet fully centralized here."
+      "notes": "Rust Runner owns a real per-turn toolset composition boundary. Shipping composition now includes box resources, browser tools, ReactToMessage, SendToAgent/CreateAgent/UpdateAgent, update_state, CloudAgent, RequestBoxHelp, SendMessage and Spotlight fencing. Browser production composition is exact-head verified at 51496cb3fcba95b98a06a54ee32905979a62efd8 via rust-host job 108378519115 and Desktop Chat Parity run 36232610733. Final remains withheld because the frozen module also owns generated Agent task/read/shell/await/computer/file-transfer/MCP-management/dynamic-MCP/subagent/static-context/auto-review/local-permission composition and those surfaces are not yet fully centralized here."
     },
     {
       "referencePath": "source/host/runner/transient-stream-error.ts",
@@ -38829,5 +38835,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-26T09:17:00Z"
+  "generatedAt": "2026-09-26T09:27:00Z"
 }
