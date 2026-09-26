@@ -157,6 +157,9 @@ use mahayana_host_runtime::runner::turn_memory::{
 };
 use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt_section;
 use mahayana_host_runtime::runner::tools::sand_state_tool::SandStateWriter;
+use mahayana_host_runtime::runner::tools::sand_browser_tools::{
+    BrowserToolExecutor, ProductionBrowserToolExecutor,
+};
 use mahayana_host_runtime::runner::system_prompt_assembly::{append_automations_system_prompt, append_memory_system_prompt};
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
@@ -1758,6 +1761,12 @@ fn start_routed_provider_task(
                     Arc::clone(&forever_box),
                     agent_id.clone(),
                 ));
+            let browser_executor: Arc<dyn BrowserToolExecutor> = Arc::new(
+                ProductionBrowserToolExecutor::new(
+                    Arc::clone(&box_resources),
+                    agent_id.clone(),
+                ),
+            );
             let cloud_agent_tool = CloudAgentToolDependencies {
                 manager: Arc::clone(&worker_cloud_agents),
                 agent_dir: cloud_agent_dir,
@@ -1901,6 +1910,7 @@ fn start_routed_provider_task(
                     retry_report_sink: Some(retry_report_sink),
                     spotlight_enabled,
                     box_resources: Some(box_resources),
+                    browser_executor: Some(browser_executor),
                     send_message_sink: Some(send_message_sink),
                     reaction_sink: Some(reaction_sink),
                     cloud_agent_tool: Some(cloud_agent_tool),
