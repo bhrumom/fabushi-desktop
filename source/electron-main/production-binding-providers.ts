@@ -4,7 +4,7 @@ import { createGetOrCreateMachineId } from "./account/cursor-machine-id.js";
 import {
   getLocalExecDaemonDiscoveryPath,
   readLocalExecDaemonDiscovery,
-} from "../host/local-exec/local-exec-daemon-protocol.js";
+} from "./local-exec/local-exec-daemon-protocol.js";
 import { getSandRootDir } from "../shared/node/sand-data-root.js";
 import type {
   ElectronProductionAdapterBindings,
