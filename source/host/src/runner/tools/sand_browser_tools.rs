@@ -68,7 +68,9 @@ pub fn to_driver_response(parsed: &Map<String, Value>) -> BrowserDriverResponse 
 
 pub fn parse_driver_response(stdout: &str) -> Option<BrowserDriverResponse> {
     for line in stdout.lines().rev() {
-        let marker_index = line.find(SAND_BROWSER_RESULT_MARKER)?;
+        let Some(marker_index) = line.find(SAND_BROWSER_RESULT_MARKER) else {
+            continue;
+        };
         let raw = &line[marker_index + SAND_BROWSER_RESULT_MARKER.len()..];
         let parsed: Value = serde_json::from_str(raw).ok()?;
         let object = parsed.as_object()?;
