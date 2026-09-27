@@ -1,8 +1,7 @@
 use std::fs;
 
 use mahayana_host_runtime::extensions::memory::memory_service::{
-    FileMemoryStore, MemoryKind, MemoryOrigin, SynthesisApplyResult,
-    SynthesisChange,
+    FileMemoryStore, MemoryKind, MemoryOrigin, SynthesisApplyResult, SynthesisChange,
 };
 
 fn temp_store() -> (std::path::PathBuf, FileMemoryStore) {
@@ -19,7 +18,11 @@ fn temp_store() -> (std::path::PathBuf, FileMemoryStore) {
 fn explicit_memories_are_protected_from_synthesis_updates_and_removals() {
     let (root, store) = temp_store();
     let explicit = store
-        .add_memory("Prefers concise replies", 1_700_000_000_000, MemoryKind::Profile)
+        .add_memory(
+            "Prefers concise replies",
+            1_700_000_000_000,
+            MemoryKind::Profile,
+        )
         .unwrap()
         .unwrap();
     let snapshot = store.prepare_synthesis();
@@ -89,7 +92,10 @@ fn synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review() 
         SynthesisApplyResult::Committed
     );
     let updated = store.prepare_synthesis();
-    assert_eq!(updated.memories[0].content, "Project Apollo design is in review");
+    assert_eq!(
+        updated.memories[0].content,
+        "Project Apollo design is in review"
+    );
 
     let id = updated.memories[0].id.clone();
     assert_eq!(

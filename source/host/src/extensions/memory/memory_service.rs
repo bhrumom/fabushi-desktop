@@ -7,8 +7,8 @@ use chrono::{DateTime, NaiveDate, Utc};
 use sha1::{Digest, Sha1};
 use sha2::Sha256;
 
-use crate::watched_directory::{ChangeListener, WatchedDirectory};
 use super::project_membership::AgentProjectMembership;
+use crate::watched_directory::{ChangeListener, WatchedDirectory};
 
 pub const MEMORY_DIRNAME: &str = "memory";
 pub const PROFILE_FILENAME: &str = "profile.md";
@@ -70,9 +70,18 @@ pub struct SynthesisMemory {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SynthesisChange {
-    Create { content: String, kind: MemoryKind },
-    Update { id: String, content: String, kind: MemoryKind },
-    Remove { id: String },
+    Create {
+        content: String,
+        kind: MemoryKind,
+    },
+    Update {
+        id: String,
+        content: String,
+        kind: MemoryKind,
+    },
+    Remove {
+        id: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -229,16 +238,24 @@ impl FileMemoryStore {
 
         let path = match kind {
             MemoryKind::Profile => self.profile_file.clone(),
-            MemoryKind::Log => self
-                .log_dir
-                .join(format!("{}.md", format_memory_date(created_at).chars().take(7).collect::<String>())),
+            MemoryKind::Log => self.log_dir.join(format!(
+                "{}.md",
+                format_memory_date(created_at)
+                    .chars()
+                    .take(7)
+                    .collect::<String>()
+            )),
         };
         let raw = fs::read_to_string(&path).unwrap_or_default();
         let header = match kind {
             MemoryKind::Profile => PROFILE_HEADER,
             MemoryKind::Log => LOG_HEADER,
         };
-        let mut next = if raw.is_empty() { header.to_string() } else { raw };
+        let mut next = if raw.is_empty() {
+            header.to_string()
+        } else {
+            raw
+        };
         if !next.ends_with('\n') {
             next.push('\n');
         }
@@ -277,7 +294,8 @@ impl FileMemoryStore {
             return Ok(false);
         }
         lines.remove(fact.line);
-        self.dir.write_file_atomic(&fact.path, lines.join("\n").as_bytes())?;
+        self.dir
+            .write_file_atomic(&fact.path, lines.join("\n").as_bytes())?;
         if self.synthesis_metadata_enabled {
             self.clear_origins(&fact.record.content)?;
             self.mark_tombstone(&fact.record.content)?;
@@ -301,7 +319,8 @@ impl FileMemoryStore {
             Err(error) if error.kind() == io::ErrorKind::NotFound => {}
             Err(error) => return Err(error),
         }
-        self.dir.write_file_atomic(&self.profile_file, PROFILE_HEADER.as_bytes())
+        self.dir
+            .write_file_atomic(&self.profile_file, PROFILE_HEADER.as_bytes())
     }
 
     pub fn prepare_synthesis(&self) -> SynthesisSnapshot {
@@ -329,7 +348,10 @@ impl FileMemoryStore {
                 origin: fact.origin,
             })
             .collect();
-        SynthesisSnapshot { fingerprint, memories }
+        SynthesisSnapshot {
+            fingerprint,
+            memories,
+        }
     }
 
     pub fn apply_synthesis(
@@ -409,9 +431,14 @@ impl FileMemoryStore {
 
     pub fn mark_temporal_review(&self, now_ms: i64) -> io::Result<()> {
         let next = now_ms.saturating_add(MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS);
-        self.dir
-            .write_file_atomic(&self.refresh_file, format!("{next}
-").as_bytes())
+        self.dir.write_file_atomic(
+            &self.refresh_file,
+            format!(
+                "{next}
+"
+            )
+            .as_bytes(),
+        )
     }
 
     fn read_synthesis_state(&self) -> (String, Vec<SynthesisStoredFact>) {
@@ -434,8 +461,7 @@ impl FileMemoryStore {
             hasher.update([0]);
             hasher.update(raw.as_bytes());
             hasher.update([0]);
-            for (line, text) in raw.split('
-').enumerate() {
+            for (line, text) in raw.split('\n').enumerate() {
                 let Some(fact) = parse_fact_line(text, kind) else {
                     continue;
                 };
@@ -477,9 +503,15 @@ impl FileMemoryStore {
     }
 
     fn memory_origin(&self, content: &str) -> MemoryOrigin {
-        if self.metadata_path(content, MemoryOrigin::Explicit).is_file() {
+        if self
+            .metadata_path(content, MemoryOrigin::Explicit)
+            .is_file()
+        {
             MemoryOrigin::Explicit
-        } else if self.metadata_path(content, MemoryOrigin::Synthesis).is_file() {
+        } else if self
+            .metadata_path(content, MemoryOrigin::Synthesis)
+            .is_file()
+        {
             MemoryOrigin::Synthesis
         } else {
             MemoryOrigin::Legacy
@@ -524,24 +556,17 @@ impl FileMemoryStore {
 
     fn remove_fact_for_synthesis(&self, fact: &SynthesisStoredFact) -> io::Result<()> {
         let raw = fs::read_to_string(&fact.path).unwrap_or_default();
-        let mut lines = raw.split('
-').map(ToOwned::to_owned).collect::<Vec<_>>();
+        let mut lines = raw.split('\n').map(ToOwned::to_owned).collect::<Vec<_>>();
         if fact.line >= lines.len() {
             return Ok(());
         }
         lines.remove(fact.line);
         self.dir
-            .write_file_atomic(&fact.path, lines.join("
-").as_bytes())?;
+            .write_file_atomic(&fact.path, lines.join("\n").as_bytes())?;
         self.clear_origins(&fact.record.content)
     }
 
-    fn add_synthesized(
-        &self,
-        content: &str,
-        created_at: i64,
-        kind: MemoryKind,
-    ) -> io::Result<()> {
+    fn add_synthesized(&self, content: &str, created_at: i64, kind: MemoryKind) -> io::Result<()> {
         if self
             .facts()
             .iter()
@@ -551,24 +576,29 @@ impl FileMemoryStore {
         }
         let path = match kind {
             MemoryKind::Profile => self.profile_file.clone(),
-            MemoryKind::Log => self
-                .log_dir
-                .join(format!("{}.md", format_memory_date(created_at).chars().take(7).collect::<String>())),
+            MemoryKind::Log => self.log_dir.join(format!(
+                "{}.md",
+                format_memory_date(created_at)
+                    .chars()
+                    .take(7)
+                    .collect::<String>()
+            )),
         };
         let raw = fs::read_to_string(&path).unwrap_or_default();
         let header = match kind {
             MemoryKind::Profile => PROFILE_HEADER,
             MemoryKind::Log => LOG_HEADER,
         };
-        let mut next = if raw.is_empty() { header.to_string() } else { raw };
-        if !next.ends_with('
-') {
-            next.push('
-');
+        let mut next = if raw.is_empty() {
+            header.to_string()
+        } else {
+            raw
+        };
+        if !next.ends_with('\n') {
+            next.push('\n');
         }
         next.push_str(&serialize_fact_line(content, created_at));
-        next.push('
-');
+        next.push('\n');
         self.dir.write_file_atomic(&path, next.as_bytes())?;
         self.clear_origins(content)?;
         self.mark_origin(content, MemoryOrigin::Synthesis)
@@ -576,16 +606,17 @@ impl FileMemoryStore {
 
     fn facts(&self) -> Vec<StoredMemoryFact> {
         let mut facts = Vec::new();
-        append_facts_from_file(
-            &mut facts,
-            &self.profile_file,
-            MemoryKind::Profile,
-        );
+        append_facts_from_file(&mut facts, &self.profile_file, MemoryKind::Profile);
 
         let mut log_paths = match fs::read_dir(&self.log_dir) {
             Ok(entries) => entries
                 .filter_map(Result::ok)
-                .filter(|entry| entry.file_type().map(|kind| kind.is_file()).unwrap_or(false))
+                .filter(|entry| {
+                    entry
+                        .file_type()
+                        .map(|kind| kind.is_file())
+                        .unwrap_or(false)
+                })
                 .map(|entry| entry.path())
                 .filter(|path| path.extension().and_then(|value| value.to_str()) == Some("md"))
                 .collect::<Vec<_>>(),
@@ -615,10 +646,7 @@ impl MemoryService {
         FileMemoryStore::new(get_agent_memory_dir(agent_dir))
     }
 
-    pub fn create_project_membership(
-        &self,
-        agent_dir: impl AsRef<Path>,
-    ) -> AgentProjectMembership {
+    pub fn create_project_membership(&self, agent_dir: impl AsRef<Path>) -> AgentProjectMembership {
         AgentProjectMembership::new(agent_dir.as_ref())
     }
 
@@ -689,9 +717,7 @@ pub fn parse_facts(raw: &str, kind: MemoryKind) -> Vec<MemoryFact> {
 pub fn agent_memory_has_content(agent_dir: impl AsRef<Path>) -> bool {
     let memory_dir = get_agent_memory_dir(agent_dir);
     let profile_path = memory_dir.join(PROFILE_FILENAME);
-    if read_valid_facts(&profile_path, MemoryKind::Profile)
-        .is_some_and(|facts| !facts.is_empty())
-    {
+    if read_valid_facts(&profile_path, MemoryKind::Profile).is_some_and(|facts| !facts.is_empty()) {
         return true;
     }
 
@@ -701,25 +727,19 @@ pub fn agent_memory_has_content(agent_dir: impl AsRef<Path>) -> bool {
     };
     entries
         .filter_map(Result::ok)
-        .filter(|entry| entry.file_type().map(|kind| kind.is_file()).unwrap_or(false))
         .filter(|entry| {
             entry
-                .path()
-                .extension()
-                .and_then(|value| value.to_str())
-                == Some("md")
+                .file_type()
+                .map(|kind| kind.is_file())
+                .unwrap_or(false)
         })
+        .filter(|entry| entry.path().extension().and_then(|value| value.to_str()) == Some("md"))
         .any(|entry| {
-            read_valid_facts(&entry.path(), MemoryKind::Log)
-                .is_some_and(|facts| !facts.is_empty())
+            read_valid_facts(&entry.path(), MemoryKind::Log).is_some_and(|facts| !facts.is_empty())
         })
 }
 
-fn append_facts_from_file(
-    output: &mut Vec<StoredMemoryFact>,
-    path: &Path,
-    kind: MemoryKind,
-) {
+fn append_facts_from_file(output: &mut Vec<StoredMemoryFact>, path: &Path, kind: MemoryKind) {
     let Ok(raw) = fs::read_to_string(path) else {
         return;
     };
@@ -770,7 +790,10 @@ fn parse_fact_line(line: &str, kind: MemoryKind) -> Option<MemoryFact> {
 
 fn parse_memory_date_ms(value: &str) -> Option<i64> {
     let date = NaiveDate::parse_from_str(value, "%Y-%m-%d").ok()?;
-    date.and_hms_opt(0, 0, 0)?.and_utc().timestamp_millis().into()
+    date.and_hms_opt(0, 0, 0)?
+        .and_utc()
+        .timestamp_millis()
+        .into()
 }
 
 fn valid_memory_date(value: &str) -> bool {
@@ -785,10 +808,7 @@ pub fn get_user_memory_shards_dir(sand_root: impl AsRef<Path>) -> PathBuf {
     get_user_memory_dir(sand_root).join("agents")
 }
 
-pub fn get_user_memory_shard_dir(
-    sand_root: impl AsRef<Path>,
-    agent_id: &str,
-) -> PathBuf {
+pub fn get_user_memory_shard_dir(sand_root: impl AsRef<Path>, agent_id: &str) -> PathBuf {
     get_user_memory_shards_dir(sand_root).join(agent_id)
 }
 
@@ -796,18 +816,14 @@ pub fn get_projects_root_dir(sand_root: impl AsRef<Path>) -> PathBuf {
     sand_root.as_ref().join("projects")
 }
 
-pub fn get_project_dir(
-    sand_root: impl AsRef<Path>,
-    slug: &str,
-) -> PathBuf {
+pub fn get_project_dir(sand_root: impl AsRef<Path>, slug: &str) -> PathBuf {
     get_projects_root_dir(sand_root).join(slug)
 }
 
-pub fn get_project_memory_shards_dir(
-    sand_root: impl AsRef<Path>,
-    slug: &str,
-) -> PathBuf {
-    get_project_dir(sand_root, slug).join("memory").join("agents")
+pub fn get_project_memory_shards_dir(sand_root: impl AsRef<Path>, slug: &str) -> PathBuf {
+    get_project_dir(sand_root, slug)
+        .join("memory")
+        .join("agents")
 }
 
 pub fn get_project_memory_shard_dir(
@@ -818,10 +834,7 @@ pub fn get_project_memory_shard_dir(
     get_project_memory_shards_dir(sand_root, slug).join(agent_id)
 }
 
-pub fn project_dir_exists(
-    sand_root: impl AsRef<Path>,
-    slug: &str,
-) -> bool {
+pub fn project_dir_exists(sand_root: impl AsRef<Path>, slug: &str) -> bool {
     fs::metadata(get_project_dir(sand_root, slug))
         .map(|metadata| metadata.is_dir())
         .unwrap_or(false)
