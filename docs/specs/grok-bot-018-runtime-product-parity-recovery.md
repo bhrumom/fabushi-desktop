@@ -2044,3 +2044,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `SandXuserSharingService` now owns an explicit bound entry-publisher slot and exposes a weak `SandXuserManagerDelegate` with `is_enabled` plus ordered `publish_room_entry`, matching the frozen Transcript delegate boundary without moving Transcript responsibilities into the sharing service.
 - Focused contracts cover human-message projection, local-agent projection, remote-agent suppression, attachment filtering/base64 inlining, server timestamp restamp, ordered delegate publication and disabled-state fencing.
 - No architecture-manifest row is promoted to final in this checkpoint. The strict remainder deliberately stays at **147**: production Host still lacks the live Transcript/Attachments adapter and the current Rust sharing service has not yet integrated the frozen remote-turn, departure-obligation and full room-materialization responsibilities. This checkpoint narrows that blocker without hiding it.
+
+
+### 2026-09-27 Cross-user remote-turn protocol checkpoint
+
+- Re-read frozen Grok Bot 0.18 `xuser-remote-turns.ts` at reference `a9f633e09d49a85829b8236331b9e21f7e612634` before replacing the shallow Rust helper.
+- `source/host/src/extensions/cross_user_sharing/xuser_remote_turns.rs` now owns the frozen inbound admission rules, durable nonce-dedupe port, per-room/member 10-minute / 30-turn budget, shared-room guardrail prompt construction, deleted-agent cleanup, two-message result cap, outbound `sand-remote:<owner>/<agent>` routing, relay-drain wake, 600-second result deadline and 10-minute unreachable-member backoff.
+- `source/host/src/extensions/cross_user_sharing/xuser_turn_dedupe_store.rs` now exposes a typed `XuserTurnDedupe` port implemented by both durable and in-memory stores, preserving the CrossUserSharing / persistence boundary.
+- Added `source/host/tests/xuser_remote_turns_contract.rs` covering inbound membership + dedupe + settlement, outbound wire identity + nonce settlement, and the windowed budget owner.
+- This checkpoint does **not** promote the remote-turn manifest row to final. Production Host composition still must bind the live sharing service to Transcript/Runner, Attachments, departure obligations and room materialization. The strict remainder therefore intentionally remains **147** until that production wiring exists and exact-HEAD CI is green.

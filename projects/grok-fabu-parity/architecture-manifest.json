@@ -11946,17 +11946,19 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/cross_user_sharing/xuser_remote_turns.rs",
-        "source/host/src/extensions/cross_user_sharing/mod.rs"
+        "source/host/src/extensions/cross_user_sharing/mod.rs",
+        "source/host/src/groups/xuser.rs"
       ],
       "testEvidence": [
         "source/host/tests/xuser_service_contract.rs",
         "source/host/tests/xuser_durable_stores_contract.rs",
         "source/host/tests/xuser_sharing_environment_contract.rs",
         "source/host/tests/xuser_wire_normalization_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/xuser_remote_turns_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
+      "notes": "Rust Host now owns the frozen remote-turn protocol core: inbound room/host/self-member admission, durable nonce dedupe, per-room/member 10-minute/30-turn budget, shared-room guardrail prompt construction, deleted-agent cleanup, two-message turn-result settlement, outbound sand-remote identity projection, relay drain, 600-second deadline and 10-minute unreachable-member backoff. Final remains withheld until production Host composition binds this owner to the live CrossUserSharing service, Transcript manager/Runner execution and room materialization path, then exact-HEAD CI proves the integrated path."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-room-tombstone-store.ts",
@@ -12059,10 +12061,11 @@
       ],
       "testEvidence": [
         "source/host/tests/xuser_durable_stores_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/xuser_remote_turns_contract.rs"
       ],
       "parityMode": "rust-adaptation",
-      "notes": "Rust ports durable nonce TTL dedupe, permissive parsing, prune-before-check, cache and atomic part-file replacement."
+      "notes": "Rust ports durable nonce TTL dedupe, permissive parsing, prune-before-check, cache and atomic part-file replacement. The store now implements the typed XuserTurnDedupe port consumed by the frozen remote-turn owner without creating a second runtime."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-wire-normalization.ts",
