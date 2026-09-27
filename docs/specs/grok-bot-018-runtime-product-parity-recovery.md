@@ -1879,3 +1879,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added `source/host/tests/auto_review_production_wiring_contract.rs` to pin the shipping composition and cleanup path. Exact-HEAD `cargo check` for the shipping Mahayana Host, independent Mahayana Coordinator contract, box-exec-daemon contracts, and the full `cargo test --manifest-path source/host/Cargo.toml` Host/Runner suite all passed on GitHub Actions run `36308944148` through the Host/Runner test step.
 - `source/host/extensions/auto-review/sand-auto-review-awaiting.ts` is promoted to **implemented**: its frozen ordering/duplicate/fallback/clear behavior was already covered by focused contracts, and its last Host-start + live-Runner-controller blockers are now closed.
 - Other Auto-review rows remain non-final on purpose. The remaining work is real: browser/computer/shell/MCP/subagent/automation preflights still need complete production binding, and backend classifier cancellation still lacks Grok-equivalent `ctx.signal` abort semantics. CloudAgent remains non-final for watcher/quiet-origin ownership and generated trace projection.
+
+
+### 2026-09-27 Box Store Sync planned-owner closure
+
+- Exact starting implementation HEAD: `4ce50719a55dd0d20f2acbc640d3727c704e38b3`.
+- Added Rust Mahayana Host owners for the 12 remaining planned Box Store Sync reference modules: agent-store files, copy-in, object-store, download safety/budget, manifest/revision, pack pipeline, sync service policy, sync evaluation, transfer accounting/glob/root dedupe, multipart planning, DB bundle capture trace, and DB capture outcome classification.
+- Added `source/host/tests/box_store_sync_planned_contract.rs` covering traversal/reserved-path rejection, conditional-write status, read batching/etag state, copy-in defaults/exit semantics, scoped local object-store IO, restore/symlink escape fencing, byte budget, manifest conflict/revision semantics, pack/path selection, glob/root dedupe, multipart hashing/partitioning, flush evaluation, and DB-capture failure priority.
+- The 12 manifest rows move only from `planned` to `existing-needs-parity`; no row is claimed `implemented` until the shipping Box Store Sync service composes the new owners with backend/presign transport, downloader/transfer, manifest persistence, pack lifecycle and DB capture end-to-end.

@@ -10800,36 +10800,54 @@
       "targetPath": "source/host/src/extensions/box_store_sync/agent_store_sand_files.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "e2dd1245f9ab16c768bea9f226a1670fbd6f44f9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/agent_store_sand_files.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-copy-in.ts",
       "targetPath": "source/host/src/extensions/box_store_sync/box_copy_in.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "776ceded57f623d2b46de525172377e82c2caedd",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_copy_in.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-object-store.ts",
       "targetPath": "source/host/src/extensions/box_store_sync/box_object_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "2a2ad27f9cd293e649765a84cf0fdafd0fabc28e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_object_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-diagnostics.ts",
@@ -10855,12 +10873,18 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_download.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "135b33e665620542e037ed26345cfd4f89f07917",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_store_download.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-hydration.ts",
@@ -10906,24 +10930,36 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_manifest.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "7661d583192777113e193450f7374a49ea35ba74",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_store_manifest.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-pack-pipeline.ts",
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_pack_pipeline.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "0326591da982dd77abe04789134ad6d3ce236ec8",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_store_pack_pipeline.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-pack.ts",
@@ -10968,36 +11004,54 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_sync_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "d6cb55dafcfbe9e0f86d8142ae874090272741bd",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_store_sync_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-sync.ts",
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_sync.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "4ec48ab3045b3633cfc4b502798bac001381dac2",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_store_sync.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-transfer.ts",
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_transfer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "94244a12d0046863ae77800b62de6a3d0b4c7440",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_store_transfer.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-vacuum-worker.ts",
@@ -11142,12 +11196,18 @@
       "targetPath": "source/host/src/extensions/box_store_sync/sand_box_store_files.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "aff11474d43f0fd0319aa08f6e5d8c895b8a1c6a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/sand_box_store_files.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/sqlite-snapshot.ts",
@@ -11174,24 +11234,36 @@
       "targetPath": "source/host/src/extensions/box_store_sync/store_db_bundle_capture.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "aa66d7baeca1fc9b9a6f30f6e832c29f773b207c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/store_db_bundle_capture.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/store-db-capture.ts",
       "targetPath": "source/host/src/extensions/box_store_sync/store_db_capture.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "828b34465ac44c64720075134a6b47b8f842674f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/store_db_capture.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/store-db-snapshot-upload.ts",
