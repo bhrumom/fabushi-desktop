@@ -1,4 +1,5 @@
 pub mod extension;
+pub mod production;
 pub mod xuser_departure_obligations;
 pub mod xuser_entry_publisher;
 pub mod xuser_pending_departure_store;
