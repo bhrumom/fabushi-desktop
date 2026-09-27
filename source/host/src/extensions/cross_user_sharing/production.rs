@@ -396,7 +396,7 @@ impl ProductionCrossUserRuntime {
         let host = Arc::new(ProductionXuserHost {
             relay: Arc::clone(&relay),
             service: Arc::downgrade(&service),
-            shared_rooms,
+            shared_rooms: Arc::clone(&shared_rooms),
             attachments,
             run_remote_requested_turn,
             run_shared_room_turn,
