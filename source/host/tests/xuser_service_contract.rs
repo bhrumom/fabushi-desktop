@@ -360,7 +360,7 @@ fn sharing_service_routes_live_room_events_through_transcript_manager_seam() {
                 "roomId":"room-live",
                 "name":"Live",
                 "hostAuthId":"self-auth",
-                "members":[]
+                "members":[{"authId":"peer","name":"Peer"}]
             }
         }))
         .unwrap());
@@ -387,7 +387,12 @@ fn sharing_service_routes_live_room_events_through_transcript_manager_seam() {
     assert!(svc
         .handle_event(&serde_json::json!({
             "kind":"room-typing",
-            "user":{"roomId":"room-live","authId":"peer"},
+            "user":{
+                "roomId":"room-live",
+                "authId":"peer",
+                "name":"Peer",
+                "expiresAtMs": 4102444800000.0
+            },
             "isTyping":true
         }))
         .unwrap());
