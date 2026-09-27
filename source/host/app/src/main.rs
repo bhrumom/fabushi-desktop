@@ -222,8 +222,8 @@ use mahayana_host_runtime::runner::tools::sand_agent_management_tools::{
 };
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
-    GatewayApi, GatewayCommandError, GatewayCommandReport, GatewayEventHub, GatewayHealth,
-    GatewayServerDeps, start_gateway_server,
+    GatewayApi, GatewayCommandContext, GatewayCommandError, GatewayCommandReport,
+    GatewayEventHub, GatewayHealth, GatewayServerDeps, start_gateway_server,
 };
 use mahayana_host_runtime::host_gateway_api::{
     CreateAgentNonceLedger, sanitize_create_agent_args,
@@ -941,6 +941,7 @@ fn run_local_group_member_turn(
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.host_runner_composition,
+        None,
         runner_args,
     )
     .map_err(|error| error.to_string())?;
@@ -1104,6 +1105,7 @@ fn run_local_automation_turn(
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.host_runner_composition,
+        None,
         runner_args,
     )
     .map_err(|error| error.to_string())?;
@@ -1601,6 +1603,7 @@ fn start_routed_provider_task(
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     host_runner_composition: Arc<HostRunnerComposition>,
+    gateway_context: Option<GatewayCommandContext>,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
@@ -1832,6 +1835,7 @@ fn start_routed_provider_task(
     let worker_is_ack_redrive = is_ack_redrive;
     let worker_memory_store = memory_store.clone();
     let worker_turn_hidden = turn_hidden;
+    let worker_gateway_context = gateway_context;
     let state_sand_root = session_workers
         .memory_service()
         .agents_root_dir()
@@ -1878,6 +1882,17 @@ fn start_routed_provider_task(
             let await_conversation_id = agent_id.clone();
             let ttft_telemetry_logs = worker_telemetry_logs.clone();
             let ttft_conversation_id = agent_id.clone();
+            let ttft_trace_id = worker_gateway_context
+                .as_ref()
+                .and_then(|context| context.trace_id.clone())
+                .unwrap_or_default();
+            let ttft_span_id = worker_gateway_context
+                .as_ref()
+                .and_then(|context| context.span_id.clone())
+                .unwrap_or_default();
+            let ttft_dispatch_started = worker_gateway_context
+                .as_ref()
+                .map(|context| context.dispatch_started);
             let runner_started_at_ms = started_at_ms();
             if let Ok(mut observation) = observation.lock() {
                 observation.set_first_token_handler(Arc::new(move |event| {
@@ -1909,8 +1924,8 @@ fn start_routed_provider_task(
                             .and_then(serde_json::Value::as_str)
                             .unwrap_or_default()
                             .to_string(),
-                        trace_id: String::new(),
-                        span_id: String::new(),
+                        trace_id: ttft_trace_id.clone(),
+                        span_id: ttft_span_id.clone(),
                     });
                     if let Err(error) = ttft_telemetry_logs.report_projection(&projection) {
                         eprintln!(
@@ -1994,10 +2009,12 @@ fn start_routed_provider_task(
             let mut on_text_delta = move |delta: &str, accumulated: &str| {
                 if !delta.is_empty() {
                     if let Ok(mut observation) = delta_observation.lock() {
+                        let observed_perf_ms = ttft_dispatch_started
+                            .map(|started| started.elapsed().as_secs_f64() * 1_000.0);
                         let _ = observation.observe_first_token(
                             "text",
-                            None,
-                            None,
+                            observed_perf_ms.map(|_| 0.0),
+                            observed_perf_ms,
                             Some(provider.as_str()),
                             turn_input.options.is_fork,
                         );
@@ -2881,6 +2898,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.production_action_auditor.clone(),
                 Arc::clone(&self.cloud_agents),
                 Arc::clone(&self.host_runner_composition),
+                None,
                 args,
             );
         }
@@ -3284,6 +3302,41 @@ impl GatewayApi for UnifiedGatewayApi {
             "runningTurns": summary.running_turns,
             "resumeAgentIds": self.transcript_runtime.upgrade_resume_agent_ids(),
         }))
+    }
+
+    fn call_with_context(
+        &self,
+        method: &str,
+        args: serde_json::Value,
+        context: &GatewayCommandContext,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        if method == RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD {
+            return start_routed_provider_task(
+                Arc::clone(&self.routed_tool_relay),
+                self.events.clone(),
+                self.host_tx.clone(),
+                self.data_dir.clone(),
+                Arc::clone(&self.request_context),
+                Arc::clone(&self.auth),
+                Arc::clone(&self.auto_review),
+                Arc::clone(&self.experiments),
+                Arc::clone(&self.settings),
+                Arc::clone(&self.session_workers),
+                Arc::clone(&self.runner_registry),
+                Arc::clone(&self.ack_obligations),
+                Arc::clone(&self.transcript_runtime),
+                Arc::clone(&self.forever_box),
+                self.session_handoff.clone(),
+                Arc::clone(&self.trays),
+                self.telemetry_logs.clone(),
+                self.production_action_auditor.clone(),
+                Arc::clone(&self.cloud_agents),
+                Arc::clone(&self.host_runner_composition),
+                Some(context.clone()),
+                args,
+            );
+        }
+        self.call(method, args)
     }
 
     fn on_command_complete(&self, report: GatewayCommandReport) {

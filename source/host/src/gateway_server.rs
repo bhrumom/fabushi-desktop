@@ -108,8 +108,26 @@ pub struct GatewayCommandReport {
     pub errno: Option<String>,
 }
 
+#[derive(Debug, Clone)]
+pub struct GatewayCommandContext {
+    pub request_id: Option<String>,
+    pub traceparent: Option<String>,
+    pub trace_id: Option<String>,
+    pub span_id: Option<String>,
+    pub dispatch_started: Instant,
+}
+
 pub trait GatewayApi: Send + Sync + 'static {
     fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError>;
+
+    fn call_with_context(
+        &self,
+        method: &str,
+        args: Value,
+        _context: &GatewayCommandContext,
+    ) -> Result<Value, GatewayCommandError> {
+        self.call(method, args)
+    }
 
     fn on_command_complete(&self, _report: GatewayCommandReport) {}
 
@@ -672,6 +690,40 @@ fn valid_traceparent(value: &str) -> bool {
     !trace_id.bytes().all(|byte| byte == b'0') && !parent_id.bytes().all(|byte| byte == b'0')
 }
 
+fn gateway_command_context(
+    request: &HttpRequest,
+    dispatch_started: Instant,
+) -> GatewayCommandContext {
+    let request_id = request
+        .headers
+        .get(GATEWAY_REQUEST_ID_HEADER)
+        .filter(|value| !value.is_empty())
+        .cloned();
+    let traceparent = request
+        .headers
+        .get(GATEWAY_TRACEPARENT_HEADER)
+        .filter(|value| valid_traceparent(value))
+        .cloned();
+    let (trace_id, span_id) = traceparent
+        .as_deref()
+        .and_then(|value| {
+            let mut parts = value.split('-');
+            let _version = parts.next()?;
+            let trace_id = parts.next()?.to_string();
+            let span_id = parts.next()?.to_string();
+            Some((trace_id, span_id))
+        })
+        .map(|(trace_id, span_id)| (Some(trace_id), Some(span_id)))
+        .unwrap_or((None, None));
+    GatewayCommandContext {
+        request_id,
+        traceparent,
+        trace_id,
+        span_id,
+        dispatch_started,
+    }
+}
+
 fn command_report(
     request: &HttpRequest,
     method: &str,
@@ -1092,7 +1144,8 @@ fn handle_connection(
         }
     };
     let started = Instant::now();
-    match deps.api.call(method, args) {
+    let command_context = gateway_command_context(&request, started);
+    match deps.api.call_with_context(method, args, &command_context) {
         Ok(value) => {
             deps.api
                 .on_command_complete(command_report(&request, method, started, 200, None, None));
