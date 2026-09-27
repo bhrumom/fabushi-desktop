@@ -63,7 +63,7 @@ impl RunnerBoxResourcePort for ProductionBoxPort {
     ) -> Result<Value, ProviderSessionError> {
         let path = request.path.clone();
         self.reads.lock().expect("reads").push(request);
-        if path.contains("/review-state-") {
+        if path.contains("/sand-browser-review-state-") {
             return Ok(json!({
                 "kind":"success",
                 "output":{
@@ -283,7 +283,7 @@ fn browser_review_state_uses_host_box_probe_and_view_mapping() {
     let shells = port.shells.lock().expect("shells");
     assert!(shells.iter().any(|request| {
         request.command.contains("http://127.0.0.1:9226/json/list")
-            && request.command.contains("review-state-browserreview1.json")
+            && request.command.contains("/tmp/sand-browser-review-state-browserreview1.json")
     }));
 }
 

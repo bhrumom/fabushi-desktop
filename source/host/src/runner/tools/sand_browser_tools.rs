@@ -163,8 +163,9 @@ pub fn capture_browser_review_state(
         ProviderSessionError::Tool("Browser Auto-review display number is out of range".into())
     })?;
     let review_key = sanitize_for_box_path(tool_call_id);
-    let probe_path =
-        format!("{SAND_BROWSER_DRIVER_BOX_DIR}/review-state-{review_key}.json");
+    // Auto-review runs before the browser driver upload path, so the probe
+    // scratch file must not depend on SAND_BROWSER_DRIVER_BOX_DIR existing yet.
+    let probe_path = format!("/tmp/sand-browser-review-state-{review_key}.json");
     let probe = navigation_probe_command(display_number);
     let shell_result = box_resources.execute_shell(RunnerBoxShellRequest {
         command: format!("{probe} > {probe_path}"),
