@@ -314,7 +314,9 @@ fn privacy_backend_error(error: CursorBackendError) -> PrivacyLookupError {
     let retryable = match &error {
         CursorBackendError::Transport(_) => true,
         CursorBackendError::HttpStatus { status, .. } => *status == 503 || *status == 504,
-        CursorBackendError::InvalidBackendUrl(_) | CursorBackendError::InvalidProto(_) => false,
+        CursorBackendError::InvalidBackendUrl(_)
+        | CursorBackendError::InvalidProto(_)
+        | CursorBackendError::Cancelled(_) => false,
     };
     PrivacyLookupError::new(error.to_string(), retryable)
 }
