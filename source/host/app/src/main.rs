@@ -3857,8 +3857,21 @@ fn main() {
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {
         cancel_runner: Some({
             let runner_registry = Arc::clone(&runner_registry);
+            let transcript_runtime = Arc::clone(&transcript_runtime);
+            let telemetry_logs = telemetry_logs.clone();
             Arc::new(move |agent_id| {
-                let _ = runner_registry.cancel_agent(agent_id, "agent deleted");
+                let was_in_flight = transcript_runtime.is_agent_running(agent_id);
+                let had_active_run =
+                    runner_registry.cancel_agent(agent_id, "agent deleted") > 0;
+                let projection = turn_interrupt_telemetry(&TurnInterruptFields {
+                    conversation_id: agent_id.to_string(),
+                    reason: "agent_deleted".into(),
+                    had_active_run,
+                    was_in_flight,
+                });
+                telemetry_logs
+                    .report_projection(&projection)
+                    .map_err(|error| error.to_string())?;
                 Ok(())
             })
         }),
