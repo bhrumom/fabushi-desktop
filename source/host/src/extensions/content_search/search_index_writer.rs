@@ -589,29 +589,25 @@ impl SandSearchIndexWriter {
         if !self.ensure_store(id) {
             return Ok(());
         }
-        let rows = {
+        let rows_result = {
             let Some(store) = self.store_connections.get(id) else {
                 return Ok(());
             };
-            let mut statement = match store.prepare(
-                "SELECT seq, entry FROM transcript_entries ORDER BY seq",
-            ) {
-                Ok(statement) => statement,
-                Err(_) => {
-                    self.evict(id);
-                    return Ok(());
-                }
-            };
-            let mapped = match statement.query_map([], |row| {
-                Ok((row.get::<_, i64>(0).ok(), row.get::<_, String>(1).ok()))
-            }) {
-                Ok(mapped) => mapped,
-                Err(_) => {
-                    self.evict(id);
-                    return Ok(());
-                }
-            };
-            mapped.filter_map(Result::ok).collect::<Vec<_>>()
+            (|| -> rusqlite::Result<Vec<(Option<i64>, Option<String>)>> {
+                let mut statement =
+                    store.prepare("SELECT seq, entry FROM transcript_entries ORDER BY seq")?;
+                let mapped = statement.query_map([], |row| {
+                    Ok((row.get::<_, i64>(0).ok(), row.get::<_, String>(1).ok()))
+                })?;
+                mapped.collect()
+            })()
+        };
+        let rows = match rows_result {
+            Ok(rows) => rows,
+            Err(_) => {
+                self.evict(id);
+                return Ok(());
+            }
         };
 
         let mut max_seq = 0i64;
