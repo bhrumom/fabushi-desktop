@@ -10921,12 +10921,19 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_pack.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "d241c8bece469fa3dd3e270b957e8b8403fe3c02",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_store_pack.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_pack_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Mahayana Host owns the frozen BoxStore pack primitive: bounded index/retired parsing, member/range/aggregate caps, gzip pack building with source SHA/size revalidation and abort cleanup, bounded concurrent extraction with admission permits and mismatch accounting, SHA/size verification before blob admission, deterministic maintenance planning for kept/retired/survivor/new members, vmtime advancement/deferred tails, and SAND_BOX_STORE_PACKS flag semantics. This is the independent pack primitive; higher-level pack pipeline/service wiring remains tracked separately."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-sync-error.ts",

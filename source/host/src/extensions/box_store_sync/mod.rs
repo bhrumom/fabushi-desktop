@@ -12,3 +12,4 @@ pub mod box_store_hydration;
 pub mod chrome_session_watcher;
 pub mod extension;
 pub mod store_db_snapshot_upload;
+pub mod box_store_pack;
