@@ -7,8 +7,9 @@ use std::time::Duration;
 use flate2::read::GzDecoder;
 use mahayana_host_runtime::gateway_config::{GatewayServerConfig, GatewayTlsConfig};
 use mahayana_host_runtime::gateway_server::{
-    GatewayApi, GatewayBridgeHub, GatewayCommandError, GatewayCommandReport, GatewayEventHub, GatewayHealth,
-    GatewayServerDeps, start_gateway_server,
+    GatewayApi, GatewayBridgeHub, GatewayCommandContext, GatewayCommandError,
+    GatewayCommandReport, GatewayEventHub, GatewayHealth, GatewayServerDeps,
+    start_gateway_server,
 };
 use rcgen::generate_simple_self_signed;
 use rustls::pki_types::ServerName;
@@ -66,6 +67,7 @@ impl GatewayApi for TestApi {
 #[derive(Clone, Default)]
 struct ReportingApi {
     reports: Arc<Mutex<Vec<(String, GatewayCommandReport)>>>,
+    contexts: Arc<Mutex<Vec<(Option<String>, Option<String>, Option<String>, Option<String>)>>>,
 }
 
 impl GatewayApi for ReportingApi {
@@ -77,6 +79,24 @@ impl GatewayApi for ReportingApi {
             return Ok(args);
         }
         Err(GatewayCommandError::UnknownMethod(method.to_string()))
+    }
+
+    fn call_with_context(
+        &self,
+        method: &str,
+        args: Value,
+        context: &GatewayCommandContext,
+    ) -> Result<Value, GatewayCommandError> {
+        self.contexts
+            .lock()
+            .expect("context lock")
+            .push((
+                context.request_id.clone(),
+                context.traceparent.clone(),
+                context.trace_id.clone(),
+                context.span_id.clone(),
+            ));
+        self.call(method, args)
     }
 
     fn on_command_complete(&self, report: GatewayCommandReport) {
@@ -767,6 +787,7 @@ fn gateway_events_negotiate_gzip_for_sse_streams() {
 fn gateway_command_telemetry_preserves_request_trace_and_server_error_semantics() {
     let api = ReportingApi::default();
     let reports = Arc::clone(&api.reports);
+    let contexts = Arc::clone(&api.contexts);
     let server = start_gateway_server(GatewayServerDeps {
         api: Arc::new(api),
         events: GatewayEventHub::default(),
@@ -797,6 +818,21 @@ fn gateway_command_telemetry_preserves_request_trace_and_server_error_semantics(
         ),
     );
     assert!(failed.starts_with("HTTP/1.1 500 Internal Server Error"), "{failed}");
+
+    let contexts = contexts.lock().expect("read contexts");
+    assert_eq!(contexts.len(), 2);
+    assert_eq!(contexts[0].0.as_deref(), Some("request-ok"));
+    assert_eq!(contexts[0].1.as_deref(), Some(valid_traceparent));
+    assert_eq!(
+        contexts[0].2.as_deref(),
+        Some("4bf92f3577b34da6a3ce929d0e0e4736")
+    );
+    assert_eq!(contexts[0].3.as_deref(), Some("00f067aa0ba902b7"));
+    assert_eq!(contexts[1].0.as_deref(), Some("request-fail"));
+    assert_eq!(contexts[1].1, None);
+    assert_eq!(contexts[1].2, None);
+    assert_eq!(contexts[1].3, None);
+    drop(contexts);
 
     let reports = reports.lock().expect("read reports");
     assert_eq!(reports.len(), 2);
