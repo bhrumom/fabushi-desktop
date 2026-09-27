@@ -17614,14 +17614,22 @@
       "behavioralEvidence": [
         "source/host/src/runner/host_computer_tool_dependencies.rs",
         "source/host/src/runner/tools/sand_computer_tool.rs",
-        "source/host/src/box/box_shell_command.rs"
+        "source/host/src/box/box_shell_command.rs",
+        "source/host/src/runner/box_tool_access.rs",
+        "source/host/src/extensions/forever_box/runner_tools.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner_production_bridge.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/computer_tool_projection_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/turn_toolset_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust now owns the Host-to-Runner Computer dependency projection core: strict protocol-action field validation, generated action/argument/result normalization, mandatory shell approval+audit-before-execute ordering and ensure-ready-before-window identity lookup. Final remains withheld until canonical generated ComputerUse/Shell protobuf executors, live resource accessor, persisted-image callback, browser file transfer and Auto-review options are bound in shipping Host composition."
+      "notes": "Rust now owns the Host-to-Runner Computer dependency path through production: strict action/result projection, exact ComputerUse protobuf field encoding/decoding, Host-owned ForeverBox resource execution, live Computer Auto-review/display-state capture, screenshot persistence and first-party tool injection. Exact-head f53b5c40b759186d1ad96c0470b1aef93c7b5aec passed full Host/Runner cargo tests in rust-host job 108697895190 (run 36346965682) and Desktop Chat Parity run 36346965680. Final remains withheld for the canonical generated ComputerUse/Shell resource package cutover, frozen browser-file-transfer dependency projection, InteractionHandler cancellation/state metadata and computer-action audit callback."
     },
     {
       "referencePath": "source/host/runner/inactive-turn-agent-stream.ts",
@@ -17840,7 +17848,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust ports the frozen MCP audit status envelope, noisy CDP target parsing, navigation URL normalization/probe command and computer-use audit-kind mapping. The shipping TurnAgentComposition now wraps the real routed MCP bridge with AuditedRoutedToolBridge and Host publishes correlated agent/turn MCP audit records through the production Gateway event hub. Final remains withheld until browser navigation probing and computer-use action auditing are wired to the shipping generated resource/computer owner and MCP transport resolution is sourced from the live connector registry instead of the current fail-closed 'unknown' transport."
+      "notes": "Rust ports the frozen MCP audit envelope, noisy CDP target parsing, navigation URL normalization/probe command and computer-use audit-kind mapping. Shipping TurnAgentComposition wraps routed MCP with AuditedRoutedToolBridge, Host publishes correlated agent/turn MCP audit records, and Browser onPossibleNavigation now invokes the production navigation probe/audit path. Final remains withheld for Computer onComputerAction/session audit wiring and live connector-registry MCP transport resolution instead of the current fail-closed 'unknown' transport."
     },
     {
       "referencePath": "source/host/runner/sand-agent-profile-prompt.ts",
@@ -18468,7 +18476,7 @@
       "targetPath": "source/host/src/runner/tools/sand_browser_tools.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f2a16c950614c41fb1c93d65b76d34460f58f817",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -18479,7 +18487,8 @@
         "source/host/src/runner/turn_agent_composition.rs",
         "source/host/src/extensions/forever_box/runner_tools.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/runner/sand_browser_auto_review.rs"
+        "source/host/src/runner/sand_browser_auto_review.rs",
+        "source/host/src/runner/sand_action_audit.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_browser_tools_contract.rs",
@@ -18487,9 +18496,11 @@
         "source/host/tests/turn_toolset_contract.rs",
         "source/host/tests/runner_production_bridge_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/sand_action_audit_contract.rs"
       ],
-      "notes": "Rust Runner now owns the frozen browser-tool semantic and production execution path: envelope/result parsing, bounded screenshot cache, review-action projection, 15 first-party browser tool schemas, per-display CDP/view/screenshot request construction, frozen JS driver upload, Host-owned ForeverBox window resolution, box shell execution, result/screenshot reads, TurnToolset registration and shipping Host injection. Exact-head 51496cb3fcba95b98a06a54ee32905979a62efd8 passed rust-host job 108378519115 and Desktop Chat Parity run 36232610733. Final remains withheld for the frozen SandBrowserAutoReview preflight/capture-review-state binding, onPossibleNavigation audit callback and screenshot persistImage callback."
+      "notes": "Rust Runner owns the frozen browser-tool production path end to end: 15 first-party schemas, frozen driver upload, Host-owned ForeverBox window/shell transport, result and screenshot reads, SandBrowserAutoReview preflight with live review-state capture, possible-navigation audit callback, agent-media screenshot persistence, TurnToolset registration and shipping Host injection. Exact-head f7c127bf65c60a346bdc95a7556fed599129a2ed passed rust-host job 108695673844 (run 36346167020) and Desktop Chat Parity jobs 108695674618/108695674762 (run 36346166995), including full Host Runner cargo tests and focused Electron chat regression.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/runner/tools/sand-browser-use-subagent.ts",
@@ -18521,14 +18532,24 @@
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/tools/sand_computer_tool.rs",
-        "source/host/src/runner/sand_computer_auto_review.rs"
+        "source/host/src/runner/sand_computer_auto_review.rs",
+        "source/host/src/runner/host_computer_tool_dependencies.rs",
+        "source/host/src/runner/box_tool_access.rs",
+        "source/host/src/extensions/forever_box/runner_tools.rs",
+        "source/host/src/runner/tools/turn_toolset.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner_production_bridge.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/computer_tool_projection_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/turn_toolset_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Runner now owns the frozen Computer/Screenshot tool semantic core: action validation/defaults, enforce-mode description/follow-up restrictions, drag path resolution, protocol action projection, reported pointer position, automatic final screenshot, outcome rendering and persisted screenshot decoding. Final remains withheld until generated tool schemas/InteractionHandler, async executor invocation, live Auto-review preflight/display-state capture, abort/state/workspace metadata and production first-party tool registration use this module."
+      "notes": "Rust Runner now owns the shipping Computer/Screenshot path: frozen action validation/defaults, enforce-mode description/follow-up restrictions, drag/protocol projection, automatic final screenshot, first-party schemas/registration, real Host-owned ForeverBox ComputerUse protobuf transport, live Computer Auto-review with display-state capture and workspace context, and agent-media screenshot persistence. Exact-head f53b5c40b759186d1ad96c0470b1aef93c7b5aec passed full Host/Runner cargo tests in rust-host job 108697895190 (run 36346965682) and focused Electron chat E2E run 36346965680. Final remains withheld for the frozen generated InteractionHandler/tool-call surface, tool-call AbortSignal/stateHandler projection, role-aware Computer-vs-Screenshot exposure, onComputerAction audit callback, and replacement of local wire structs with the canonical generated proto resource when that generated package is cut over."
     },
     {
       "referencePath": "source/host/runner/tools/sand-computer-use-subagent.ts",
@@ -18831,15 +18852,19 @@
         "source/host/src/runner/tools/sand_reaction_tool.rs",
         "source/host/src/runner/tools/sand_agent_management_tools.rs",
         "source/host/src/runner/box_tool_access.rs",
-        "source/host/src/cloud_agents/cloud_agent_tool.rs"
+        "source/host/src/cloud_agents/cloud_agent_tool.rs",
+        "source/host/src/runner/tools/sand_computer_tool.rs",
+        "source/host/src/runner/host_computer_tool_dependencies.rs",
+        "source/host/src/extensions/forever_box/runner_tools.rs"
       ],
       "testEvidence": [
         "source/host/tests/turn_toolset_contract.rs",
         "source/host/tests/sand_state_tool_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/computer_tool_projection_contract.rs"
       ],
-      "notes": "Rust Runner owns a real per-turn toolset composition boundary. Shipping composition now includes box resources, browser tools, ReactToMessage, SendToAgent/CreateAgent/UpdateAgent, update_state, CloudAgent, RequestBoxHelp, SendMessage and Spotlight fencing. Browser production composition is exact-head verified at 51496cb3fcba95b98a06a54ee32905979a62efd8 via rust-host job 108378519115 and Desktop Chat Parity run 36232610733. Final remains withheld because the frozen module also owns generated Agent task/read/shell/await/computer/file-transfer/MCP-management/dynamic-MCP/subagent/static-context/auto-review/local-permission composition and those surfaces are not yet fully centralized here."
+      "notes": "Rust Runner owns a real per-turn first-party/delegated toolset boundary. Shipping composition now includes box resources, Browser, Computer/Screenshot, ReactToMessage, SendToAgent/CreateAgent/UpdateAgent, update_state, CloudAgent, RequestBoxHelp, SendMessage and Spotlight fencing. Browser is final with exact-head f7c127bf65c60a346bdc95a7556fed599129a2ed evidence; Computer production composition is exact-head verified at f53b5c40b759186d1ad96c0470b1aef93c7b5aec via rust-host job 108697895190 and Desktop Chat Parity run 36346965680. Final remains withheld because frozen TurnToolset also centralizes generated Agent task/read/shell/await/file-transfer/MCP-management/dynamic-MCP/subagent/static-context/auto-review/local-permission composition and those surfaces are not yet fully centralized here."
     },
     {
       "referencePath": "source/host/runner/transient-stream-error.ts",
