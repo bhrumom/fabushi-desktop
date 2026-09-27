@@ -501,6 +501,10 @@ impl SandLocalToolPermissionController {
             "{}\0{}\0{}\0{}",
             scope.agent_id, tool_call_id, request.action, request.target
         );
+        // Compute the epoch before taking the controller state lock below. Calling
+        // scope_epoch() while that lock is held would try to acquire the same
+        // non-reentrant mutex again and deadlock the first permission request.
+        let direction_epoch = self.scope_epoch(scope);
         let (pending, created) = {
             let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
             if let Some(existing) = state.pending_by_key.get(&key) {
@@ -529,7 +533,7 @@ impl SandLocalToolPermissionController {
                     tool_call_id: tool_call_id.to_string(),
                     resource_path: normalize_resource_path(request.resource_path.as_deref()),
                     outlives_scope: request.outlives_scope,
-                    direction_epoch: self.scope_epoch(scope),
+                    direction_epoch,
                     waiter_count: Mutex::new(0),
                 });
                 let created = pending
