@@ -1760,3 +1760,14 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - mcp_service_contract passed **4/4** after that repair.
 - The row advances from planned to existing-needs-parity; final remains blocked on mcp/production.ts binding the authenticated Dashboard/plugin-manager, ForeverBox/CapableBox execution, Settings/Experiments and Telemetry adapters.
 - Manifest becomes **1,833 implemented / 128 existing-needs-parity / 41 planned** (**169 non-final**).
+
+
+### 2026-09-27 Agent content-search semantic leaf
+
+- Exact starting HEAD: `ac82d4a876a88eb4aea9724d199c9a92af78bee5`.
+- Re-read frozen `source/host/extensions/content-search/agent-content-search.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `content_search/agent_content_search.rs` as a pure Host semantic leaf, preserving the frozen 5-per-agent / 50-total limits, searchable entry projection, whitespace-flattened case-insensitive matching, 30/60 snippet window, hidden peer-message suppression, newest-first ordering, role defaults and timestamp defaults.
+- Added `agent_content_search_contract` covering entry projection, snippet normalization/windowing, reverse ordering, hidden-peer filtering, role/timestamp projection and empty/zero-limit behavior.
+- This row is promoted directly from `planned` to `implemented` because it is a side-effect-free helper with no independent lifecycle or production binding to leave unresolved; the search-index DB/service/worker/writer remain separate mapped rows.
+- Manifest after this leaf: **1,834 implemented / 128 existing-needs-parity / 40 planned** (**168 non-final**).
+- Exact-HEAD validation is required through `cargo test --manifest-path source/host/Cargo.toml` and the Rust desktop runtime workflow before treating the commit as CI-green.

@@ -11561,12 +11561,19 @@
       "targetPath": "source/host/src/extensions/content_search/agent_content_search.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "d152799527247e632bb8d3884a88188ab509634c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/content_search/agent_content_search.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_content_search_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Pure Grok content-search semantic helper is fully ported to Rust: searchable transcript text projection, whitespace-normalized case-insensitive snippets with the frozen 30/60 window, newest-first filtering, hidden peer-message suppression, role/timestamp projection, and 5/50 limits. This leaf has no independent process lifecycle; search-index/service ownership remains mapped separately."
     },
     {
       "referencePath": "source/host/extensions/content-search/extension.ts",
