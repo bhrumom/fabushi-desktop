@@ -131,7 +131,7 @@ pub struct CsnapsCodebaseTelemetryAdapter {
     upload_poll_interval: Duration,
     polling: Mutex<Option<JoinHandle<()>>>,
     stop: Arc<(Mutex<bool>, Condvar)>,
-    closed: AtomicBool,
+    closed: Arc<AtomicBool>,
     terminal_failure: Arc<Mutex<Option<CsnapsAdapterError>>>,
     terminal_monitor: Mutex<Option<JoinHandle<()>>>,
 }
@@ -193,7 +193,7 @@ impl CsnapsCodebaseTelemetryAdapter {
             upload_poll_interval,
             polling: Mutex::new(None),
             stop: Arc::new((Mutex::new(false), Condvar::new())),
-            closed: AtomicBool::new(false),
+            closed: Arc::new(AtomicBool::new(false)),
             terminal_failure: Arc::new(Mutex::new(None)),
             terminal_monitor: Mutex::new(None),
         });
@@ -334,14 +334,16 @@ impl CsnapsCodebaseTelemetryAdapter {
         }
     }
 
-    fn start_upload_polling(self: &Arc<Self>) {
+    fn start_upload_polling(&self) {
         let mut slot = self.polling.lock().unwrap_or_else(|poison| poison.into_inner());
         if slot.is_some() || self.closed.load(Ordering::Acquire) {
             return;
         }
-        let weak = Arc::downgrade(self);
         let interval = self.upload_poll_interval;
         let stop = Arc::clone(&self.stop);
+        let closed = Arc::clone(&self.closed);
+        let csnaps = Arc::clone(&self.csnaps);
+        let upload_credentials = Arc::clone(&self.upload_credentials);
         *slot = thread::Builder::new()
             .name("codebase-telemetry-upload-poll".into())
             .spawn(move || loop {
@@ -350,32 +352,22 @@ impl CsnapsCodebaseTelemetryAdapter {
                 let (guard, waited) = wake
                     .wait_timeout(guard, interval)
                     .unwrap_or_else(|poison| poison.into_inner());
-                if *guard {
+                if *guard || closed.load(Ordering::Acquire) {
                     break;
                 }
                 drop(guard);
                 if !waited.timed_out() {
                     continue;
                 }
-                let Some(adapter) = weak.upgrade() else {
-                    break;
+                let Ok(credentials) = upload_credentials() else {
+                    continue;
                 };
-                adapter.trigger_upload();
+                if closed.load(Ordering::Acquire) {
+                    break;
+                }
+                let _ = csnaps.trigger_upload(credentials);
             })
             .ok();
-    }
-
-    fn trigger_upload(&self) {
-        if self.closed.load(Ordering::Acquire) {
-            return;
-        }
-        let Ok(credentials) = (self.upload_credentials)() else {
-            return;
-        };
-        if self.closed.load(Ordering::Acquire) {
-            return;
-        }
-        let _ = self.csnaps.trigger_upload(credentials);
     }
 
     fn start_terminal_monitor(self: &Arc<Self>) {
