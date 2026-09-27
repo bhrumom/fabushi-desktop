@@ -4,6 +4,7 @@ use crate::host_request_context::HostRequestContext;
 use crate::automations::automation::{AutomationRecord, render_automations_system_prompt};
 use crate::extensions::inference::provider_session::ProviderMessage;
 use crate::extensions::memory::memory_service::MemoryRecall;
+use crate::sand_multitask::SAND_MULTITASK_PROMPT_SECTION;
 
 use super::system_prompt::{
     SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, build_sand_base_system_prompt,
@@ -16,14 +17,22 @@ pub fn render_request_context_system_prompt(
     context: &HostRequestContext,
     rules: Option<&[Value]>,
 ) -> String {
-    // CloudAgent is not yet part of the production Rust TurnAgentComposition.
-    // Select the frozen disabled variant instead of advertising a tool the
-    // shipping Runner cannot actually execute. The exact enabled variant is
-    // available from system_prompt.rs for the later CloudAgent cutover.
-    let mut sections = vec![
-        build_sand_base_system_prompt(false).to_string(),
-        SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION.to_string(),
-    ];
+    render_request_context_system_prompt_with_capabilities(context, rules, false, false)
+}
+
+pub fn render_request_context_system_prompt_with_capabilities(
+    context: &HostRequestContext,
+    rules: Option<&[Value]>,
+    cloud_agents_enabled: bool,
+    multitask_enabled: bool,
+) -> String {
+    let mut sections = vec![build_sand_base_system_prompt(cloud_agents_enabled).to_string()];
+    if !cloud_agents_enabled {
+        sections.push(SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION.to_string());
+    }
+    if multitask_enabled {
+        sections.push(SAND_MULTITASK_PROMPT_SECTION.to_string());
+    }
 
     if let Some(time_zone) = context
         .time_zone
