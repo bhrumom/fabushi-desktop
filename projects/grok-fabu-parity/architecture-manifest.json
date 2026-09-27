@@ -15589,21 +15589,23 @@
       "targetPath": "source/host/src/extensions/transcript/roster_search.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "4cc9ef9af442b3a47aa653ddeaa22d65b2d45df9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/roster_search.rs",
         "source/host/src/extensions/session/gateway.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/content_search/extension.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/roster_search_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust production slice implements the frozen linear roster-search fallback: normalized query, newest-first per-agent scan, hidden outbound-peer exclusion, 5 matches per agent, 30/60 snippet windows, timestamp fallback to AgentSummary.updatedAt, global timestamp sort/limit. Shipping Session Gateway now dispatches searchAgents against durable agent transcripts. Final is withheld until the Grok content-search index fast path and searchMedia filtering are implemented and production-wired."
+      "notes": "Final Rust production composition: roster search preserves the frozen durable-transcript linear fallback, while the shipping Host retains the real ProductionContentSearchExtension and injects it into Session Gateway dispatch. searchAgents consumes the ready SQLite/FTS5 index fast path with stale-agent filtering and falls back to canonical transcript scanning when the index is unavailable; searchMedia consumes the same production index, filters deleted agents, preserves attachment metadata/kind projection, and uses the extension's frozen result limits. Focused gateway contracts prove both indexed message and media surfaces; Host compilation proves the production owner is retained instead of being started and discarded."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-lifecycle.ts",

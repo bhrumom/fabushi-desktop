@@ -70,6 +70,7 @@ use mahayana_host_runtime::extensions::notifications::extension::{
 use mahayana_host_runtime::extensions::wallpaper::extension::start_wallpaper_extension;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
+    dispatch_production_session_gateway_call_with_content_search,
     persist_accepted_send_prompt_context,
 };
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
@@ -122,7 +123,9 @@ use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use mahayana_host_runtime::extensions::experiments::HostExperimentsExtension;
-use mahayana_host_runtime::extensions::content_search::extension::start_production_content_search_extension;
+use mahayana_host_runtime::extensions::content_search::extension::{
+    ProductionContentSearchExtension, start_production_content_search_extension,
+};
 use mahayana_host_runtime::extensions::trays::extension::HostTraysExtension;
 use mahayana_host_runtime::host_production_extensions::{
     start_production_browser_ua, start_production_host_extensions,
@@ -701,6 +704,7 @@ struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
     auth: Arc<HostAuthExtension>,
     experiments: Arc<HostExperimentsExtension>,
+    content_search: Arc<ProductionContentSearchExtension>,
     events: GatewayEventHub,
     routed_tool_relay: Arc<CoordinatorToolRelay>,
     data_dir: PathBuf,
@@ -2657,7 +2661,12 @@ impl GatewayApi for UnifiedGatewayApi {
             return result;
         }
         if let Some(result) =
-            dispatch_production_session_gateway_call(&self.session_workers, method, &args)
+            dispatch_production_session_gateway_call_with_content_search(
+                &self.session_workers,
+                Some(self.content_search.as_ref()),
+                method,
+                &args,
+            )
         {
             let mut value = result.map_err(|error| match error {
                 SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
@@ -3773,7 +3782,7 @@ fn main() {
     }
     let transcript_manager = transcript_extension.manager();
     let content_search_logs = host_telemetry.logs.clone();
-    let _content_search_extension = start_production_content_search_extension(
+    let content_search_extension = Arc::new(start_production_content_search_extension(
         Arc::clone(&production_extensions.experiments),
         Arc::new(move |health| {
             let payload = serde_json::json!({
@@ -3784,7 +3793,7 @@ fn main() {
             });
             let _ = content_search_logs.report_search_index_health(&payload);
         }),
-    );
+    ));
     let permission_widget_responses =
         Arc::new(WidgetResponses::new(Arc::clone(&session_workers)));
     let stranded_permission_logs = host_telemetry.logs.clone();
@@ -3965,6 +3974,7 @@ fn main() {
             host_tx: host_tx.clone(),
             auth: Arc::clone(&production_extensions.auth),
             experiments: Arc::clone(&production_extensions.experiments),
+            content_search: Arc::clone(&content_search_extension),
             events: gateway_events.clone(),
             routed_tool_relay: Arc::clone(&routed_tool_relay),
             data_dir: app_data_dir.clone(),

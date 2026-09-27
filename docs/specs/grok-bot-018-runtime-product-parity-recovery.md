@@ -2018,3 +2018,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Implementation/test commits: `3b8ac9fca8d64d027599d00eba14831b8f525c03`, `7619d19822647bdb23fca3efd02345223c61b13c`; manifest closure commit `df8d23293a18c49130d623a9abefc2f9ae12e051`.
 - The prior exact-HEAD Host compile failure in the agent-deletion telemetry composition was also a startup-scope bug rather than an architectural blocker: `dd7fb1b7fdaa16ecefb28ae52c038857d0457088` resolves Transcript and telemetry dependencies from owners already constructed at that point in Host startup, preserving the same deletion telemetry semantics without forward local-variable references.
 
+
+### 2026-09-27 roster search indexed production closure
+
+- Continued from exact parent `b917981d4308adaff87f29b40811c9cda9244d7f`, where ContentSearch itself was already final but Transcript roster search still reached only the linear durable-transcript fallback in shipping Gateway composition.
+- The shipping Host now retains the real `ProductionContentSearchExtension` as an owned dependency of `UnifiedGatewayApi` instead of starting it into an underscore-only lifetime holder. Session Gateway dispatch receives that exact owner through `dispatch_production_session_gateway_call_with_content_search`; no second search runtime or compatibility index is introduced.
+- `searchAgents` now uses the ready SQLite/FTS5 index fast path, filters stale/deleted agent ids, preserves newest-first result limiting, and falls back to the canonical durable transcript scan when the index is not ready. `searchMedia` is now reachable through the same shipping Gateway and preserves file name, extension, MIME, attachment kind, timestamp and dimensions while filtering stale agents.
+- `source/host/tests/roster_search_contract.rs` adds a focused production-Gateway contract for both indexed message search and media search, including stale-agent filtering. This closes the frozen `source/host/extensions/transcript/roster-search.ts` mapping without changing Coordinator/Host/Runner boundaries.
+- The architecture manifest moves only that row from `existing-needs-parity` to `implemented`; the strict remainder becomes 147. Other Host/Runner rows remain non-final until their own production dependencies and exact behavior are wired.

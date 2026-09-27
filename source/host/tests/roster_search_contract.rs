@@ -3,10 +3,16 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
-use mahayana_host_runtime::extensions::session::gateway::dispatch_production_session_gateway_call;
+use mahayana_host_runtime::extensions::content_search::search_index_db::{
+    AttachmentKind, MediaSearchResult, MessageSearchResult,
+};
+use mahayana_host_runtime::extensions::session::gateway::{
+    dispatch_production_session_gateway_call,
+    dispatch_production_session_gateway_call_with_content_search,
+};
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::roster_search::{
-    AGENT_CONTENT_SEARCH_MAX_MATCHES_PER_AGENT, build_content_snippet,
+    AGENT_CONTENT_SEARCH_MAX_MATCHES_PER_AGENT, RosterContentSearch, build_content_snippet,
     find_agent_content_matches, search_agents_linear,
 };
 use serde_json::json;
@@ -99,6 +105,109 @@ fn production_search_agents_scans_real_session_transcripts_and_gateway_dispatche
     .expect("gateway search");
     assert_eq!(gateway.as_array().map(Vec::len), Some(2));
     assert_eq!(gateway[0]["entryId"], "first-new");
+
+    session.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+struct FakeIndexedRosterSearch {
+    agent_id: String,
+}
+
+impl RosterContentSearch for FakeIndexedRosterSearch {
+    fn is_search_ready(&self) -> bool { true }
+    fn max_matches_per_agent(&self) -> usize { 5 }
+    fn max_results(&self) -> usize { 50 }
+
+    fn search_messages(&self, query: &str, _limit: usize) -> Option<Vec<MessageSearchResult>> {
+        assert_eq!(query, "needle");
+        Some(vec![
+            MessageSearchResult {
+                agent_id: self.agent_id.clone(),
+                entry_id: "indexed-message".into(),
+                role: "assistant".into(),
+                timestamp_ms: 900,
+                snippet: "indexed needle result".into(),
+            },
+            MessageSearchResult {
+                agent_id: "deleted-agent".into(),
+                entry_id: "stale-message".into(),
+                role: "assistant".into(),
+                timestamp_ms: 1000,
+                snippet: "must be filtered".into(),
+            },
+        ])
+    }
+
+    fn search_media(&self, query: &str, _limit: usize) -> Option<Vec<MediaSearchResult>> {
+        assert_eq!(query, "needle");
+        Some(vec![
+            MediaSearchResult {
+                agent_id: self.agent_id.clone(),
+                entry_id: "indexed-media".into(),
+                file_name: "needle.png".into(),
+                ext: "png".into(),
+                mime: Some("image/png".into()),
+                kind: AttachmentKind::Image,
+                timestamp_ms: 901,
+                width: Some(640),
+                height: Some(480),
+            },
+            MediaSearchResult {
+                agent_id: "deleted-agent".into(),
+                entry_id: "stale-media".into(),
+                file_name: "stale.png".into(),
+                ext: "png".into(),
+                mime: Some("image/png".into()),
+                kind: AttachmentKind::Image,
+                timestamp_ms: 1001,
+                width: None,
+                height: None,
+            },
+        ])
+    }
+}
+
+#[test]
+fn production_gateway_consumes_ready_content_search_for_indexed_messages_and_media() {
+    let root = temp_root("indexed-gateway");
+    let session = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let agent = session
+        .materialize_new_session(Some(&profile("Indexed")), "user", None)
+        .expect("indexed agent");
+    let indexed = FakeIndexedRosterSearch {
+        agent_id: agent.id.clone(),
+    };
+
+    let messages = dispatch_production_session_gateway_call_with_content_search(
+        &session,
+        Some(&indexed),
+        "searchAgents",
+        &json!({"query":" needle ","limit":10}),
+    )
+    .expect("searchAgents method")
+    .expect("indexed searchAgents");
+    assert_eq!(messages.as_array().map(Vec::len), Some(1));
+    assert_eq!(messages[0]["agentId"], agent.id);
+    assert_eq!(messages[0]["entryId"], "indexed-message");
+    assert_eq!(messages[0]["snippet"], "indexed needle result");
+
+    let media = dispatch_production_session_gateway_call_with_content_search(
+        &session,
+        Some(&indexed),
+        "searchMedia",
+        &json!({"query":"needle","limit":10}),
+    )
+    .expect("searchMedia method")
+    .expect("indexed searchMedia");
+    assert_eq!(media.as_array().map(Vec::len), Some(1));
+    assert_eq!(media[0]["agentId"], agent.id);
+    assert_eq!(media[0]["entryId"], "indexed-media");
+    assert_eq!(media[0]["fileName"], "needle.png");
+    assert_eq!(media[0]["kind"], "image");
+    assert_eq!(media[0]["width"], 640);
+    assert_eq!(media[0]["height"], 480);
 
     session.shutdown();
     let _ = fs::remove_dir_all(root);
