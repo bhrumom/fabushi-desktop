@@ -15,6 +15,9 @@ fn shipping_host_wires_user_message_and_watchdog_interrupt_turn_telemetry() {
         "turn_usage_telemetry(&TurnUsageFields",
         "observation.set_first_token_handler(",
         "ttft_telemetry(&TtftFields",
+        "reason: \"agent_deleted\".into()",
+        "let was_in_flight = transcript_runtime.is_agent_running(agent_id)",
+        "runner_registry.cancel_agent(agent_id, \"agent deleted\") > 0",
     ] {
         assert!(
             SHIPPING_HOST.contains(needle),
