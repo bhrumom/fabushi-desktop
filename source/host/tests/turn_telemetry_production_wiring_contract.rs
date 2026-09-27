@@ -1,4 +1,5 @@
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+const TRANSCRIPT_RUNTIME: &str = include_str!("../src/extensions/transcript/production_runtime.rs");
 
 #[test]
 fn shipping_host_wires_user_message_and_watchdog_interrupt_turn_telemetry() {
@@ -10,7 +11,6 @@ fn shipping_host_wires_user_message_and_watchdog_interrupt_turn_telemetry() {
         "reason: \"watchdog\".into()",
         "watchdog_transcript_runtime.is_agent_running(&event.agent_id)",
         "interrupt_wedged_run_for_watchdog(&event.agent_id)",
-        "state.lifecycle.track_turn_request_id(agent_id, operation_id)",
         "worker_transcript_runtime.settle_turn_usage(",
         "turn_usage_telemetry(&TurnUsageFields",
     ] {
@@ -19,4 +19,9 @@ fn shipping_host_wires_user_message_and_watchdog_interrupt_turn_telemetry() {
             "shipping Host must preserve frozen turn telemetry wiring: {needle}"
         );
     }
+
+    assert!(
+        TRANSCRIPT_RUNTIME.contains("state.lifecycle.track_turn_request_id(agent_id, operation_id)"),
+        "Transcript runtime must own per-turn request-id tracking"
+    );
 }
