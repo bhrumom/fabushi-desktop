@@ -1190,6 +1190,10 @@ impl ProductionTranscriptRuntime {
         self.lock_state().pipeline.current_turn_epoch(agent_id)
     }
 
+    pub fn next_turn_epoch(&self, agent_id: &str) -> u64 {
+        self.lock_state().pipeline.next_turn_epoch(agent_id)
+    }
+
     pub fn in_flight_run_count(&self, agent_id: &str) -> u64 {
         self.lock_state().lifecycle.in_flight_count(agent_id)
     }
