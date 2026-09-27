@@ -20,6 +20,9 @@ use crate::extensions::browser_ua::{
 use crate::extensions::cloud_agents::extension::{
     CloudAgentsExtension, start_cloud_agents_extension,
 };
+use crate::extensions::codebase_telemetry::extension::{
+    CodebaseTelemetryExtension, start_codebase_telemetry_extension,
+};
 use crate::extensions::experiments::{
     HostExperimentsExtension, start_host_experiments_extension,
 };
@@ -44,6 +47,7 @@ use crate::extensions::trays::extension::{
 use crate::extensions::webauthn_proxy::extension::{
     HostWebAuthnProxyExtension, start_webauthn_proxy_extension,
 };
+use crate::host_event_bus::SandHostEventBus;
 use crate::production_binding_providers::production_cloud_agent_trace_converter;
 
 /// Grok-shaped owner for the production extension subset that is already
@@ -55,6 +59,7 @@ use crate::production_binding_providers::production_cloud_agent_trace_converter;
 pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Auth,
     HostExtensionId::Experiments,
+    HostExtensionId::CodebaseTelemetry,
     HostExtensionId::ActionAudit,
     HostExtensionId::CloudAgents,
     HostExtensionId::NotifyBus,
@@ -91,6 +96,7 @@ pub fn start_production_browser_ua(
 pub struct ProductionHostExtensions {
     pub auth: Arc<HostAuthExtension>,
     pub experiments: Arc<HostExperimentsExtension>,
+    pub codebase_telemetry: CodebaseTelemetryExtension,
     pub notify_bus: HostNotifyBusExtension,
     pub memory: HostMemoryExtension,
     pub managed_setup: Arc<ManagedSetupExtension>,
@@ -106,6 +112,7 @@ pub struct ProductionHostExtensions {
 pub fn start_production_host_extensions(
     app_data_dir: &Path,
     telemetry_logs: HostStructuredLogTelemetry,
+    events: SandHostEventBus,
 ) -> Result<ProductionHostExtensions, String> {
     let auth_options = HostAuthServiceOptions::production(|message| {
         eprintln!("mahayana-host-auth {message}");
@@ -124,6 +131,13 @@ pub fn start_production_host_extensions(
         .map_err(|error| error.to_string())?,
     );
     let experiments = Arc::new(start_host_experiments_extension());
+    let codebase_telemetry = start_codebase_telemetry_extension(
+        Arc::clone(&auth),
+        Arc::clone(&experiments),
+        events,
+        app_data_dir,
+        backend_url.clone(),
+    )?;
     let action_audit = start_action_audit_extension(
         backend_url.clone(),
         Arc::clone(&auth),
@@ -172,6 +186,7 @@ pub fn start_production_host_extensions(
     Ok(ProductionHostExtensions {
         auth,
         experiments,
+        codebase_telemetry,
         notify_bus,
         memory,
         managed_setup,

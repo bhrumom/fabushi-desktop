@@ -26,6 +26,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert_eq!(HOST_EXTENSION_ORDER.len(), 35);
     assert!(shipping.contains(&HostExtensionId::Auth));
     assert!(shipping.contains(&HostExtensionId::BrowserUa));
+    assert!(shipping.contains(&HostExtensionId::CodebaseTelemetry));
     assert!(shipping.contains(&HostExtensionId::CloudAgents));
     assert!(shipping.contains(&HostExtensionId::WebauthnProxy));
 }
