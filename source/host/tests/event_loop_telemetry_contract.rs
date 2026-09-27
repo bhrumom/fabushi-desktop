@@ -1,6 +1,10 @@
+use std::sync::{Arc, mpsc};
+use std::time::Duration;
+
 use mahayana_host_runtime::extensions::telemetry::event_loop_telemetry::{
-    EventLoopTrigger, EventLoopWindowReport, HEARTBEAT_EVERY_N_WINDOWS, PRESSURE_P95_MS,
-    WindowEmitArgs, event_loop_window_telemetry, resolve_window_emit,
+    EventLoopTelemetryConfig, EventLoopTelemetryRuntime, EventLoopTrigger, EventLoopWindowReport,
+    HEARTBEAT_EVERY_N_WINDOWS, PRESSURE_P95_MS, WindowEmitArgs, event_loop_window_telemetry,
+    resolve_window_emit,
 };
 
 #[test]
@@ -84,4 +88,33 @@ fn telemetry_projection_preserves_levels_rounding_and_utilization_precision() {
         window_ms: 60_000,
     });
     assert_eq!(heartbeat.level, Some("info"));
+}
+
+
+#[test]
+fn production_sampler_emits_window_metrics_and_disposes() {
+    let (tx, rx) = mpsc::channel();
+    let runtime = EventLoopTelemetryRuntime::start_with_config(
+        EventLoopTelemetryConfig {
+            resolution_ms: 5,
+            window_ms: 40,
+            pressure_p95_ms: f64::MAX,
+            heartbeat_every_n_windows: 1,
+        },
+        Arc::new(move |report| {
+            let _ = tx.send(report);
+        }),
+    );
+
+    let report = rx
+        .recv_timeout(Duration::from_secs(2))
+        .expect("production sampler should emit the first heartbeat window");
+    assert_eq!(report.trigger, EventLoopTrigger::Heartbeat);
+    assert!(report.window_ms >= 40);
+    assert!(report.p50_ms >= 0.0);
+    assert!(report.p95_ms >= report.p50_ms);
+    assert!(report.max_ms >= report.p95_ms);
+    assert!((0.0..=1.0).contains(&report.utilization));
+
+    drop(runtime);
 }
