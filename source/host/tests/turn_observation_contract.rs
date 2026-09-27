@@ -81,6 +81,11 @@ fn first_token_is_one_shot_and_snapshot_uses_turn_start() {
             sink_events.lock().unwrap().push(event);
         })),
     );
+    let first_token_events = Arc::new(Mutex::new(Vec::new()));
+    let first_token_sink_events = Arc::clone(&first_token_events);
+    observation.set_first_token_handler(Arc::new(move |event| {
+        first_token_sink_events.lock().unwrap().push(event);
+    }));
     observation.turn_started(100);
     assert!(observation.observe_first_token(
         "text",
@@ -97,6 +102,13 @@ fn first_token_is_one_shot_and_snapshot_uses_turn_start() {
         false,
     ));
     assert_eq!(observation.snapshot(175).elapsed_ms, 75);
+    let first_token_events = first_token_events.lock().unwrap();
+    assert_eq!(first_token_events.len(), 1);
+    assert_eq!(first_token_events[0]["chunkType"], "text");
+    assert_eq!(first_token_events[0]["ttftMs"], 15.0);
+    assert_eq!(first_token_events[0]["skew"], false);
+    assert_eq!(first_token_events[0]["modelId"], "model-a");
+    drop(first_token_events);
     assert_eq!(
         events
             .lock()
