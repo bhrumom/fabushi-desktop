@@ -11828,70 +11828,79 @@
       "targetPath": "source/host/src/extensions/cross_user_sharing/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "7fb1c185c58a7ba035d55c48cccb028aa0c2ca3e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/cross_user_sharing/extension.rs",
-        "source/host/src/extensions/cross_user_sharing/mod.rs"
+        "source/host/src/extensions/cross_user_sharing/mod.rs",
+        "source/host/src/extensions/cross_user_sharing/production.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/xuser_service_contract.rs",
         "source/host/tests/xuser_durable_stores_contract.rs",
         "source/host/tests/xuser_sharing_environment_contract.rs",
         "source/host/tests/xuser_wire_normalization_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/xuser_remote_turns_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
+      "notes": "Implemented. Shipping ProductionCrossUserRuntime composes the frozen CrossUserSharing boundary from Auth, Attachments, Experiments, NotifyBus and Transcript-owned SharedRooms; binds the live sharing manager, publisher, relay and remote-turn owner; and exposes the frozen sharing command surface through the shipping Host gateway. Exact-head Rust CI owns the contract verification."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-departure-obligations.ts",
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_departure_obligations.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "d316dd61510c8f236cbde235ea0a210e4a71a415",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/cross_user_sharing/xuser_departure_obligations.rs",
-        "source/host/src/extensions/cross_user_sharing/mod.rs"
+        "source/host/src/extensions/cross_user_sharing/mod.rs",
+        "source/host/src/extensions/cross_user_sharing/production.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/xuser_service_contract.rs",
         "source/host/tests/xuser_durable_stores_contract.rs",
         "source/host/tests/xuser_sharing_environment_contract.rs",
         "source/host/tests/xuser_wire_normalization_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/xuser_remote_turns_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
+      "notes": "Implemented. Shipping CrossUser runtime owns durable pending departures and room tombstones, drains them through the live relay with typed 404 settlement, fences abandoned rooms, and the shipping Host records departure obligations before agent deletion. Focused service/durable-store contracts cover recovery and settlement."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-entry-publisher.ts",
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_entry_publisher.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "9a1b8c7025e20e0c46bcf93795273027d426bd4d",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/cross_user_sharing/xuser_entry_publisher.rs",
         "source/host/src/extensions/cross_user_sharing/mod.rs",
-        "source/host/src/extensions/cross_user_sharing/xuser_sharing_service.rs"
+        "source/host/src/extensions/cross_user_sharing/xuser_sharing_service.rs",
+        "source/host/src/extensions/cross_user_sharing/production.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/xuser_service_contract.rs",
         "source/host/tests/xuser_durable_stores_contract.rs",
         "source/host/tests/xuser_sharing_environment_contract.rs",
         "source/host/tests/xuser_wire_normalization_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/xuser_remote_turns_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust owner now preserves the frozen per-room ordered publication chain, human/agent projection rules, remote-agent echo suppression, attachment image inlining limits and server timestamp restamp behavior. SandXuserSharingService also exposes the frozen manager-delegate publish seam. Final remains withheld until production Host composition binds the live Transcript and Attachments adapters into this publisher and exact-HEAD CI proves that wiring."
+      "notes": "Implemented. ProductionXuserHost binds the frozen ordered room-entry publisher to live Transcript-owned SharedRooms restamping plus AttachmentsService image resolution, while SandXuserSharingService owns the publisher delegate. Focused contracts cover projection, attachment limits and restamp behavior."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-pending-departure-store.ts",
@@ -11917,37 +11926,15 @@
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_relay.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "0f85f8c0074c4acd173f66ff6912f47ae93320a9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/cross_user_sharing/xuser_relay.rs",
-        "source/host/src/extensions/cross_user_sharing/mod.rs"
-      ],
-      "testEvidence": [
-        "source/host/tests/xuser_service_contract.rs",
-        "source/host/tests/xuser_durable_stores_contract.rs",
-        "source/host/tests/xuser_sharing_environment_contract.rs",
-        "source/host/tests/xuser_wire_normalization_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
-      ],
-      "parityMode": "rust-port",
-      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
-    },
-    {
-      "referencePath": "source/host/extensions/cross-user-sharing/xuser-remote-turns.ts",
-      "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_remote_turns.rs",
-      "targetLanguage": "rust",
-      "owner": "mahayana-host",
-      "status": "existing-needs-parity",
-      "referenceBlobSha": "08b90a9b14eeed9917e2385d27659241619d2df9",
-      "architecturalRole": "host/extensions",
-      "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [
-        "source/host/src/extensions/cross_user_sharing/xuser_remote_turns.rs",
         "source/host/src/extensions/cross_user_sharing/mod.rs",
-        "source/host/src/groups/xuser.rs"
+        "source/host/src/extensions/cross_user_sharing/production.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/xuser_service_contract.rs",
@@ -11958,7 +11945,34 @@
         "source/host/tests/xuser_remote_turns_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host now owns the frozen remote-turn protocol core: inbound room/host/self-member admission, durable nonce dedupe, per-room/member 10-minute/30-turn budget, shared-room guardrail prompt construction, deleted-agent cleanup, two-message turn-result settlement, outbound sand-remote identity projection, relay drain, 600-second deadline and 10-minute unreachable-member backoff. Final remains withheld until production Host composition binds this owner to the live CrossUserSharing service, Transcript manager/Runner execution and room materialization path, then exact-HEAD CI proves the integrated path."
+      "notes": "Implemented. ProductionCrossUserRuntime owns the authenticated Reqwest relay transport/runtime, NotifyBus connectivity/safety gates, typed relay failures, event routing into the sharing service and remote-turn owner, and durable departure settlement. Focused relay/service contracts and shipping composition provide evidence."
+    },
+    {
+      "referencePath": "source/host/extensions/cross-user-sharing/xuser-remote-turns.ts",
+      "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_remote_turns.rs",
+      "targetLanguage": "rust",
+      "owner": "mahayana-host",
+      "status": "implemented",
+      "referenceBlobSha": "08b90a9b14eeed9917e2385d27659241619d2df9",
+      "architecturalRole": "host/extensions",
+      "processOrPackage": "mahayana-host",
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_remote_turns.rs",
+        "source/host/src/extensions/cross_user_sharing/mod.rs",
+        "source/host/src/groups/xuser.rs",
+        "source/host/src/extensions/cross_user_sharing/production.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_service_contract.rs",
+        "source/host/tests/xuser_durable_stores_contract.rs",
+        "source/host/tests/xuser_sharing_environment_contract.rs",
+        "source/host/tests/xuser_wire_normalization_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/xuser_remote_turns_contract.rs"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Implemented. Shipping production composition binds SandXuserRemoteTurns to Transcript-owned SharedRooms and the canonical Host Runner: inbound requested turns execute through the routed Runner, hosted shared-room posts use canonical group fanout, remote members use the remote executor, and nonce/budget/deadline/two-message settlement contracts are covered."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-room-tombstone-store.ts",
@@ -12005,47 +12019,53 @@
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_sharing_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "736f1dada6c64957b926e15efb26383eeb6af480",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/cross_user_sharing/xuser_sharing_service.rs",
         "source/host/src/extensions/cross_user_sharing/mod.rs",
-        "source/host/src/extensions/cross_user_sharing/xuser_entry_publisher.rs"
+        "source/host/src/extensions/cross_user_sharing/xuser_entry_publisher.rs",
+        "source/host/src/extensions/cross_user_sharing/production.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/xuser_service_contract.rs",
         "source/host/tests/xuser_durable_stores_contract.rs",
         "source/host/tests/xuser_sharing_environment_contract.rs",
         "source/host/tests/xuser_wire_normalization_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/xuser_remote_turns_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust sharing service now owns relay lifecycle/state plus a real frozen-shaped manager delegate seam for ordered room-entry publication through SandXuserEntryPublisher. Final remains withheld because production Host composition still must bind Auth identity, Attachments resolution, NotifyBus, Transcript manager/materialization, departure obligations and remote-turn execution into the live service before exact-HEAD CI can prove end-to-end wiring."
+      "notes": "Implemented. Shipping ProductionCrossUserRuntime binds the live SandXuserSharingService to Auth identity, Attachments, NotifyBus, Transcript-owned SharedRooms, durable departures, entry publishing, remote turns and the authenticated relay; room commands are routed through the shipping Host gateway and live relay events materialize through the Transcript seam."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-state-reconcile.ts",
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_state_reconcile.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b433f3b821a96f924471c6cfd4e5aa1c8b9152b3",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/cross_user_sharing/xuser_state_reconcile.rs",
-        "source/host/src/extensions/cross_user_sharing/mod.rs"
+        "source/host/src/extensions/cross_user_sharing/mod.rs",
+        "source/host/src/extensions/cross_user_sharing/production.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/xuser_service_contract.rs",
         "source/host/tests/xuser_durable_stores_contract.rs",
         "source/host/tests/xuser_sharing_environment_contract.rs",
         "source/host/tests/xuser_wire_normalization_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/xuser_remote_turns_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
+      "notes": "Implemented. The live sharing service uses the production XuserSharingManager to reconcile room registry state into Transcript-owned hosted/mirror SharedRooms, revoke missing rooms, preserve room identity/profile/avatar projection and honor durable abandoned-room fencing. Focused reconcile/service contracts cover the state transition rules."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-turn-dedupe-store.ts",
@@ -16049,18 +16069,24 @@
       "targetPath": "source/host/src/extensions/transcript/shared_rooms.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "476cf14eb896f7a71b50e42a684b86851bd052b4",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/transcript/shared_rooms.rs"
+        "source/host/src/extensions/transcript/shared_rooms.rs",
+        "source/host/src/extensions/cross_user_sharing/production.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/transcript_manager.rs"
       ],
       "testEvidence": [
         "source/host/tests/remaining_planned_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/xuser_service_contract.rs",
+        "source/host/tests/xuser_remote_turns_contract.rs",
+        "source/host/tests/shared_rooms_production_contract.rs"
       ],
-      "notes": "Rust Mahayana Host now has a concrete owner for the frozen module's deterministic policy/state boundary and focused contract evidence. This row is intentionally non-final until the shipping Host/Transcript/Telemetry composition consumes the owner end-to-end with the generated/external adapters required by the frozen Grok graph."
+      "notes": "Implemented. TranscriptManager owns exactly one production SharedRooms service backed by ProductionSessionWorkers. Shipping CrossUser composition consumes that owner for hosted/mirror room materialization, canonical room selection, transcript notices/entries/restamping, relay event application and canonical Runner fanout; production SharedRooms contracts cover ownership and persistence."
     },
     {
       "referencePath": "source/host/extensions/transcript/transcript-entry-ids.ts",
