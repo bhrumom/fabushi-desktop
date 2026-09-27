@@ -11,7 +11,7 @@ use super::box_store_manifest::count_store_db_manifest_entries;
 use super::box_store_manifest_format::{
     BOX_STORE_MANIFEST_REL_PATH, BoxStoreManifestEntry, parse_box_store_manifest,
 };
-use crate::box::box_store_backend_policy::{
+use crate::r#box::box_store_backend_policy::{
     is_box_store_copy_in_enabled, resolve_box_store_backend_policy,
 };
 
