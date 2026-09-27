@@ -211,6 +211,28 @@ impl ProductionTranscriptRuntime {
         self.upgrade_resume_store.as_ref()
     }
 
+    /// Frozen SandHost health reads this live set instead of projecting a
+    /// permanently-idle default through the gateway.
+    pub fn live_running_agent_ids(&self) -> Vec<String> {
+        let mut ids = self.lock_state().lifecycle.running_agent_ids();
+        ids.sort();
+        ids
+    }
+
+    /// Pending durable wakes count as background work for Host health.
+    pub fn has_carryable_pending_wake(&self) -> bool {
+        self.pending_wake_store
+            .as_ref()
+            .is_some_and(|store| !store.list_pending().is_empty())
+    }
+
+    pub fn active_agent_id(
+        &self,
+        sessions: &Arc<ProductionSessionWorkers>,
+    ) -> Option<String> {
+        self.session_runtime.active_agent_id(sessions)
+    }
+
     pub fn quiesce_for_upgrade(&self) -> UpgradeQuiesceSummary {
         let running = {
             let state = self.lock_state();
