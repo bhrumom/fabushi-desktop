@@ -214,7 +214,12 @@ impl ProductionTranscriptRuntime {
     /// Frozen SandHost health reads this live set instead of projecting a
     /// permanently-idle default through the gateway.
     pub fn live_running_agent_ids(&self) -> Vec<String> {
-        let mut ids = self.lock_state().lifecycle.running_agent_ids();
+        let mut ids = self
+            .lock_state()
+            .lifecycle
+            .running_agent_ids()
+            .into_iter()
+            .collect::<Vec<_>>();
         ids.sort();
         ids
     }
