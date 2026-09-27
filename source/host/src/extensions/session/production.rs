@@ -1399,8 +1399,4 @@ impl ProductionSessionWorkers {
         }
         futures::executor::block_on(self.pool.close_all());
     }
-
-    pub fn agents_root(&self) -> &Path {
-        &self.agents_root
-    }
 }
