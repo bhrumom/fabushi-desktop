@@ -133,7 +133,9 @@ use mahayana_host_runtime::host_production_extensions::{
 };
 use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::turn_empty_delivery_telemetry;
 use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
-    TurnAwaitFields, TurnRetryFields, turn_await_telemetry, turn_retry_telemetry,
+    TurnAwaitFields, TurnInterruptFields, TurnRetryFields, UserMessageReceivedFields,
+    turn_await_telemetry, turn_interrupt_telemetry, turn_retry_telemetry,
+    user_message_received_telemetry,
 };
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::{
     AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
@@ -2830,10 +2832,22 @@ impl GatewayApi for UnifiedGatewayApi {
             let runner_args = shape_send_prompt_media_args(&args);
             let watchdog_registry = Arc::clone(&self.runner_registry);
             let watchdog_ack_obligations = Arc::clone(&self.ack_obligations);
+            let watchdog_transcript_runtime = Arc::clone(&self.transcript_runtime);
             let watchdog_events = self.events.clone();
             let watchdog_logs = self.telemetry_logs.clone();
+            let user_message_logs = self.telemetry_logs.clone();
             let accepted_logs = self.telemetry_logs.clone();
             let dequeued_logs = self.telemetry_logs.clone();
+            let send_agent_id = durable_args
+                .get("agentId")
+                .or_else(|| durable_args.get("id"))
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned);
+            let send_was_in_flight = send_agent_id
+                .as_deref()
+                .is_some_and(|agent_id| self.transcript_runtime.is_agent_running(agent_id));
             let send_ack_guard = Mutex::new(None);
             let send_result = self
                 .transcript_runtime
@@ -2857,24 +2871,32 @@ impl GatewayApi for UnifiedGatewayApi {
                         .map_err(map_session_send_error)?;
                         if accepted.get("accepted").and_then(serde_json::Value::as_bool)
                             == Some(true)
-                            && durable_args
-                                .get("skipAckObligation")
-                                .and_then(serde_json::Value::as_bool)
-                                != Some(true)
                         {
-                            let agent_id = durable_args
-                                .get("agentId")
-                                .or_else(|| durable_args.get("id"))
-                                .and_then(serde_json::Value::as_str)
-                                .map(str::trim)
-                                .filter(|value| !value.is_empty());
-                            if let Some(agent_id) = agent_id {
+                            if let Some(agent_id) = send_agent_id.as_deref() {
                                 let direct_local = self
                                     .session_workers
                                     .summarize_agent_by_id(agent_id, None)
                                     .map_err(ProductionSendError::Internal)?
                                     .is_some_and(|summary| !summary.is_group);
                                 if direct_local {
+                                    let projection = user_message_received_telemetry(
+                                        &UserMessageReceivedFields {
+                                            conversation_id: agent_id.to_string(),
+                                            was_in_flight: send_was_in_flight,
+                                        },
+                                    );
+                                    if let Err(error) = user_message_logs.report_projection(&projection) {
+                                        eprintln!(
+                                            "mahayana-host user_message_received_telemetry_failed agent={agent_id} error={error}"
+                                        );
+                                    }
+                                }
+                                if direct_local
+                                    && durable_args
+                                        .get("skipAckObligation")
+                                        .and_then(serde_json::Value::as_bool)
+                                        != Some(true)
+                                {
                                     let accepted_at_ms = started_at_ms() as f64;
                                     let guard = self.ack_obligations.arm_send_guard(
                                         agent_id,
@@ -2899,6 +2921,8 @@ impl GatewayApi for UnifiedGatewayApi {
                         Ok(persisted)
                     },
                     move |event| {
+                        let was_in_flight = event.stage == WatchdogStage::Trip
+                            && watchdog_transcript_runtime.is_agent_running(&event.agent_id);
                         let interrupted = if event.stage == WatchdogStage::Trip {
                             let interrupted = watchdog_registry
                                 .interrupt_wedged_run_for_watchdog(&event.agent_id);
@@ -2906,6 +2930,18 @@ impl GatewayApi for UnifiedGatewayApi {
                                 let _ = watchdog_ack_obligations.record_interrupt(
                                     &event.agent_id,
                                     started_at_ms() as f64,
+                                );
+                            }
+                            let projection = turn_interrupt_telemetry(&TurnInterruptFields {
+                                conversation_id: event.agent_id.clone(),
+                                reason: "watchdog".into(),
+                                had_active_run: interrupted,
+                                was_in_flight,
+                            });
+                            if let Err(error) = watchdog_logs.report_projection(&projection) {
+                                eprintln!(
+                                    "mahayana-host turn_interrupt_telemetry_failed agent={} error={error}",
+                                    event.agent_id
                                 );
                             }
                             interrupted
