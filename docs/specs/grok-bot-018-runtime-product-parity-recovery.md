@@ -1688,3 +1688,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `host_tracing_contract` passed **4/4** on the exact working tree.
 - The row advances from `planned` to `existing-needs-parity`; final remains blocked on a real production OTLP exporter/provider backend and production Host signal/lifecycle wiring.
 - Manifest becomes **1,833 implemented / 121 existing-needs-parity / 48 planned** (**169 non-final**).
+
+
+### 2026-09-27 MCP legacy live-reference retirement slice
+
+- Exact starting HEAD: `b19cb30cffa2be22d045180e2c4c391ab540bdd3`.
+- Re-read frozen `mcp/legacy-live-references.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `legacy_live_references.rs` using the real `PluginSkillsCache` and `GlobalWorkflowLibrary`: GitHub blob URL normalization, skill-tail matching, materialized source selection and selective pointer-workflow retirement.
+- `legacy_live_references_contract` passed **3/3**.
+- The row advances from `planned` to `existing-needs-parity`; final remains blocked on marketplace/auth sweep invocation from production MCP/plugin-skills composition.
+- Manifest becomes **1,833 implemented / 122 existing-needs-parity / 47 planned** (**169 non-final**).

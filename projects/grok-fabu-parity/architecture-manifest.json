@@ -12634,12 +12634,20 @@
       "targetPath": "source/host/src/extensions/mcp/legacy_live_references.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "f55730f804b6b80b2d13b734e25619c8d92796db",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/mcp/legacy_live_references.rs",
+        "source/host/src/extensions/mcp/plugin_skills_cache.rs",
+        "source/host/src/workflows/workflow_library.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/legacy_live_references_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns frozen legacy live-reference identification, GitHub blob URL normalization, plugin+skill-tail materialization matching, cache projection, and selective GlobalWorkflowLibrary retirement. Final remains withheld until MCP production/plugin-skills composition drives the marketplace/auth sweep at startup/refresh."
     },
     {
       "referencePath": "source/host/extensions/mcp/mcp-service.ts",
