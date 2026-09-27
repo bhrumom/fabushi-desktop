@@ -116,13 +116,13 @@ fn cursor_mock_script_accepts_send_message_and_strict_tool_calls() {
     assert!(parse_sand_mock_script(r#"{"toolCalls":[{"toolName":"","args":{}}]}"#).is_none());
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct RecordingSettings {
-    provider: Mutex<Option<RoutedProvider>>,
-    usage: Mutex<Vec<(RoutedProvider, InferenceUsage)>>,
+    provider: Arc<Mutex<Option<RoutedProvider>>>,
+    usage: Arc<Mutex<Vec<(RoutedProvider, InferenceUsage)>>>,
 }
 
-impl InferenceSettings for Arc<RecordingSettings> {
+impl InferenceSettings for RecordingSettings {
     fn inference_provider(&self) -> RoutedProvider {
         self.provider.lock().unwrap().unwrap_or(RoutedProvider::Cursor)
     }
@@ -140,7 +140,7 @@ fn inference_service_keeps_cursor_out_of_local_provider_router_and_records_usage
         InferenceRoute::Routed(RoutedProvider::Codex)
     );
 
-    let settings = Arc::new(RecordingSettings::default());
+    let settings = RecordingSettings::default();
     *settings.provider.lock().unwrap() = Some(RoutedProvider::OpenRouter);
     let service = HostInferenceService::new(settings.clone());
     assert_eq!(
