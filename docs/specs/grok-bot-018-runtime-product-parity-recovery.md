@@ -2118,3 +2118,18 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Shipping CloudAgent Auto-review now supplies its real per-stream `RoutedProviderCancellation` to that executor. The focused backend contract holds the server socket open after cancellation and requires the call to abort promptly, proving the request is not merely waiting for transport failure.
 - The architecture-manifest row intentionally remains `existing-needs-parity`: Browser, Computer, Shell, MCP, Subagent and Automation preflight owners still need production wiring through the same AutoReview controller/executor before this cluster can be finalized.
 
+
+
+### 2026-09-28 Automations suspend/resume connect-watch regression correction
+
+- Starting implementation HEAD `50a6e25bb4552151527e37fad435915eb347b8eb` exposed a real exact-HEAD failure in `automations_extension_runtime_contract`: after non-destructive `suspend_wakes()` / `resume_wakes()`, the listener reconnect callback was expected but the Rust watcher had never observed the pre-suspend disconnected state.
+- Frozen Grok `ListenerConnectWatcher.watch()` immediately schedules `tick()` after registering a pending watch. The Rust deterministic seam intentionally does not yet own the production polling timer, so the focused contract now performs that eager poll before suspension and verifies the same disconnect-before-reconnect arming semantics.
+- The correction landed as `06cc475b52963850a2f208e61375970ebd4d3af2` (`test(automations): mirror eager connect-watch tick before suspend`). This does not promote the Automations extension or watcher rows: the real polling-policy owner, live Transcript `resumeAfterListenerConnect` callback, authenticated listener reads, relay backend, cloud sync and fire-consumer backend protocol remain explicit blockers.
+- The independent Mahayana Coordinator contract remained green before and after this correction; the failure was in Host Automations behavior, not a Coordinator architecture boundary.
+
+### 2026-09-28 Frozen multitask prompt semantic restoration
+
+- Re-audited frozen `source/host/sand-multitask.ts` against the shipping Rust `source/host/src/sand_multitask.rs` and found the production-injected `SAND_MULTITASK_PROMPT_SECTION` was an abbreviated paraphrase rather than the frozen Grok 0.18 contract.
+- Commit `56f25afa96ad45411ae37b6818bd58f253bef41c` restores the complete frozen prompt semantics used by the real Runner system-prompt assembly, including strict short-turn delivery, Task/executor dispatch threshold, parallel stream ownership, resume-context requirements, executor SendMessage prohibition, TodoWrite reconciliation, invisible-machinery wording and group-room behavior.
+- Commit `d6930484fde506a9857a9258ee789e2dfff6abba` extends `sand_multitask_contract.rs` so those clauses cannot silently regress back to an abbreviated prompt.
+- The `sand-multitask.ts` manifest row intentionally remains `existing-needs-parity`: the production Runner still needs to bind `create_sand_executor_subagent_config()` into the live subagent registry and replace the live TodoWrite description with `SAND_MULTITASK_TODO_DESCRIPTION`. No status is promoted merely for restoring prompt text.
