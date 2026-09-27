@@ -18,6 +18,11 @@ use crate::groups::remote_room_store::RemoteRoomMember;
 use crate::host_paths::get_sand_root_dir;
 
 use super::extension::CrossUserSharingExtension;
+use super::xuser_departure_obligations::{
+    SandXuserDepartureObligations, XuserDepartureRelay,
+};
+use super::xuser_pending_departure_store::SandXuserPendingDepartureStore;
+use super::xuser_room_tombstone_store::SandXuserRoomTombstoneStore;
 use super::xuser_entry_publisher::{
     ResolvedXuserAttachment, SandXuserEntryPublisher, XuserEntryPublisherHost,
 };
@@ -50,6 +55,9 @@ pub struct ProductionCrossUserRuntime {
     extension: Arc<CrossUserSharingExtension>,
     service: Arc<SandXuserSharingService>,
     remote_turns: Arc<SandXuserRemoteTurns>,
+    shared_rooms: Arc<SharedRooms>,
+    departures: SandXuserDepartureObligations,
+    departure_relay: Arc<ProductionDepartureRelay>,
     auth: Arc<HostAuthExtension>,
     auth_renewal_subscription: u64,
     notify_bus: HostNotifyBusExtension,
@@ -63,6 +71,21 @@ struct ProductionXuserHost {
     run_remote_requested_turn: RemoteRequestedTurnRunner,
     run_shared_room_turn: SharedRoomTurnRunner,
     remote_turns: Arc<Mutex<Weak<SandXuserRemoteTurns>>>,
+    departures: SandXuserDepartureObligations,
+}
+
+struct ProductionDepartureRelay {
+    relay: Arc<SandXuserRelayClient>,
+}
+
+impl XuserDepartureRelay for ProductionDepartureRelay {
+    fn leave_room(&self, room_id: &str) -> Result<(), String> {
+        self.relay.leave_room(room_id).map(|_| ())
+    }
+
+    fn remove_deleted_agent(&self, agent_id: &str) -> Result<(), String> {
+        self.relay.remove_deleted_agent(agent_id).map(|_| ())
+    }
 }
 
 impl ProductionXuserHost {
@@ -157,6 +180,12 @@ impl XuserSharingManager for ProductionXuserHost {
         let Some(self_auth_id) = self_auth_id else {
             return Ok(());
         };
+        if self
+            .departures
+            .is_room_abandoned(&room.room_id, Some(self_auth_id))
+        {
+            return Ok(());
+        }
         if room.host_auth_id == self_auth_id {
             let local_member_ids = room
                 .members
@@ -349,6 +378,14 @@ impl ProductionCrossUserRuntime {
             transport,
         ));
         let service = Arc::new(SandXuserSharingService::new(Arc::clone(&relay)));
+        let sand_root = get_sand_root_dir();
+        let departures = SandXuserDepartureObligations::new(
+            Arc::new(SandXuserPendingDepartureStore::new(&sand_root)),
+            Arc::new(SandXuserRoomTombstoneStore::new(&sand_root)),
+        );
+        let departure_relay = Arc::new(ProductionDepartureRelay {
+            relay: Arc::clone(&relay),
+        });
         service.set_self_auth_id(
             auth.peek_access_token()
                 .as_deref()
@@ -364,13 +401,14 @@ impl ProductionCrossUserRuntime {
             run_remote_requested_turn,
             run_shared_room_turn,
             remote_turns: Arc::clone(&remote_turns_slot),
+            departures: departures.clone(),
         });
         let remote_host: Arc<dyn RemoteTurnsHost> = host.clone();
         let manager_host: Arc<dyn XuserSharingManager> = host.clone();
         let publisher_host: Arc<dyn XuserEntryPublisherHost> = host;
         service.bind_manager(manager_host);
         let dedupe: Arc<dyn XuserTurnDedupe> = Arc::new(SandXuserTurnDedupeStore::new(
-            &get_sand_root_dir(),
+            &sand_root,
             XUSER_TURN_DEDUPE_TTL_MS,
             Box::new(now_ms),
         ));
@@ -443,6 +481,9 @@ impl ProductionCrossUserRuntime {
             extension,
             service,
             remote_turns,
+            shared_rooms,
+            departures,
+            departure_relay,
             auth,
             auth_renewal_subscription,
             notify_bus,
@@ -454,7 +495,22 @@ impl ProductionCrossUserRuntime {
         experiments: Arc<HostExperimentsExtension>,
     ) -> Result<(), String> {
         self.extension
-            .start_background_work(experiments, self.notify_bus.clone())
+            .start_background_work(experiments, self.notify_bus.clone())?;
+        if self.is_enabled() {
+            let _ = self.departures.drain(self.departure_relay.as_ref());
+            let state = self.service.get_state();
+            let registry_room_ids = state
+                .rooms
+                .iter()
+                .map(|room| room.room_id.clone())
+                .collect::<std::collections::BTreeSet<_>>();
+            self.departures.prune_tombstones_for_registry(
+                now_ms(),
+                &registry_room_ids,
+                state.self_auth_id.as_deref(),
+            );
+        }
+        Ok(())
     }
 
     pub fn is_enabled(&self) -> bool {
@@ -478,6 +534,44 @@ impl ProductionCrossUserRuntime {
                 &request.new_messages,
             ))
         }))
+    }
+
+    pub fn note_agent_deleted(&self, agent_id: &str) -> Result<(), String> {
+        if !self.is_enabled() {
+            return Ok(());
+        }
+        let state = self.service.get_state();
+        let owner_auth_id = state.self_auth_id.clone();
+        if let Some(room_id) = self.shared_rooms.get_shared_room_id_for_agent(agent_id) {
+            let bound = self.shared_rooms.list_bound_room_agents(&room_id)?;
+            if bound.iter().all(|bound_id| bound_id == agent_id) {
+                self.departures.record_leave(
+                    owner_auth_id,
+                    room_id.clone(),
+                    agent_id.to_string(),
+                    now_ms(),
+                );
+                let _ = self.shared_rooms.mark_mirror_room_revoked(&room_id);
+                let _ = self.departures.drain(self.departure_relay.as_ref());
+                let _ = self.service.reconcile_share_state();
+            }
+            return Ok(());
+        }
+        if let Some(owner_auth_id) = owner_auth_id {
+            let is_member = state.rooms.iter().any(|room| {
+                room.members.iter().any(|member| {
+                    member.auth_id == owner_auth_id
+                        && member.agent_id.as_deref() == Some(agent_id)
+                })
+            });
+            if is_member {
+                self.departures
+                    .record_agent_removal(Some(owner_auth_id), agent_id.to_string());
+                let _ = self.departures.drain(self.departure_relay.as_ref());
+                let _ = self.service.reconcile_share_state();
+            }
+        }
+        Ok(())
     }
 
     pub fn service(&self) -> Arc<SandXuserSharingService> {
