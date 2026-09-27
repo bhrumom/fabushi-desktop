@@ -11,6 +11,7 @@ use crate::extensions::auth::credential_renewer::get_configured_backend_url;
 use crate::extensions::auth::extension::HostAuthExtension;
 use crate::extensions::experiments::HostExperimentsExtension;
 use crate::extensions::notify_bus::extension::HostNotifyBusExtension;
+use crate::extensions::transcript::group_chat_orchestrator::GroupMemberTurnRequest;
 use crate::extensions::transcript::send_group_fanout::GroupMemberTurnExecutor;
 use crate::extensions::transcript::shared_rooms::SharedRooms;
 use crate::groups::group_store::RemoteGroupMember;
@@ -325,7 +326,7 @@ impl XuserSharingManager for ProductionXuserHost {
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .upgrade()
             .map(|turns| {
-                Arc::new(move |request| {
+                Arc::new(move |request: GroupMemberTurnRequest| {
                     let Some(shared_room_id) = request.shared_room_id.as_deref() else {
                         return Ok(Vec::new());
                     };
