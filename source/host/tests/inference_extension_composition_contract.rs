@@ -59,7 +59,7 @@ impl CursorWebBackend for FakeBackend {
         assert_eq!(request.explanation.as_deref(), Some("parity"));
         assert_eq!(request.model_id, "grok-4.5");
         Ok(WebSearchResponse {
-            answer: "answer".into(),
+            answer: Some("answer".into()),
             documents: vec![WebDocument {
                 url: "https://example.invalid".into(),
                 title: "doc".into(),
