@@ -1855,3 +1855,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Rust runtime run `36303809965` for exact HEAD `fb1ce257ba93a82a8cfba07cc92df8129b78c977` passed shipping Host compilation, independent Coordinator, box-exec daemon, and Host box-exec supervision, then failed inside the full Host test suite on the pre-existing content-search production contract.
 - Failure was `production_mutation_projection_is_typed_and_fails_closed`: frozen TS semantics allow an upserted `IndexEntry` with absent `id` to deserialize as an empty id, while the Rust struct required the field and caused projection to fail closed too early.
 - Fixed narrowly by giving `IndexEntry.id` a serde default. No Cross-user Sharing behavior or Coordinator/Host/Runner boundary was changed by this repair.
+
+
+### 2026-09-27 Host box-store-sync chrome-session watcher slice
+
+- Implemented the frozen `source/host/extensions/box-store-sync/chrome-session-watcher.ts` behavior as the Rust Host owner at `source/host/src/extensions/box_store_sync/chrome_session_watcher.rs`.
+- Preserved session-db prefix filtering, null-filename mtime fallback, debounce coalescing, callback-failure isolation, idempotent start/stop, and a real non-recursive filesystem watcher using the existing Host `notify` dependency.
+- Added `source/host/tests/chrome_session_watcher_contract.rs` covering frozen filename semantics, mtime fallback, debounce/stop disposal, and real filesystem delivery.
+- Manifest moves this row from `planned` to `existing-needs-parity`, not `implemented`: final parity still requires the planned box-store-sync production extension to compose the watcher into the live sync trigger path. This deliberately avoids claiming parity from a class/module name alone.
