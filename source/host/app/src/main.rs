@@ -1683,6 +1683,8 @@ fn start_routed_provider_task(
         });
     }
     let spotlight_enabled = experiments.check_feature_gate("sand_spotlight");
+    let multitask_enabled =
+        !is_group_member_turn && experiments.check_feature_gate("sand_multitask");
     if spotlight_enabled {
         provider_messages.push(ProviderMessage {
             role: "system".into(),
@@ -2022,6 +2024,7 @@ fn start_routed_provider_task(
                     send_message_sink: Some(send_message_sink),
                     reaction_sink: Some(reaction_sink),
                     cloud_agent_tool: Some(cloud_agent_tool),
+                    multitask_enabled,
                     action_audit: Some(ProductionActionAuditInput {
                         agent_id: agent_id.clone(),
                         turn_id: Some(stream_id.clone()),
