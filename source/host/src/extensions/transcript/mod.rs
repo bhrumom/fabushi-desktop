@@ -12,6 +12,7 @@ pub mod send_group_fanout;
 pub mod sand_ack_obligation_store;
 pub mod sand_pending_wake_store;
 pub mod pending_wake_rearm;
+pub mod completion_revivals;
 pub mod sand_upgrade_resume_store;
 pub mod upgrade_recreate_resume;
 pub mod ack_obligations;
