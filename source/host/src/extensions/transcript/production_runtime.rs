@@ -996,6 +996,7 @@ impl ProductionTranscriptRuntime {
                     (agent_id.as_deref(), operation_id.as_deref())
                 {
                     state.lifecycle.record_request_id(agent_id, operation_id);
+                    state.lifecycle.track_turn_request_id(agent_id, operation_id);
                 }
             }
         }
@@ -1217,6 +1218,14 @@ impl ProductionTranscriptRuntime {
 
     pub fn is_agent_running(&self, agent_id: &str) -> bool {
         self.lock_state().lifecycle.is_running(agent_id)
+    }
+
+    pub fn settle_turn_usage(
+        &self,
+        agent_id: &str,
+        source: &str,
+    ) -> super::run_lifecycle::TurnUsageReport {
+        self.lock_state().lifecycle.settle_turn_usage(agent_id, source)
     }
 
     fn lock_state(&self) -> std::sync::MutexGuard<'_, RuntimeState> {

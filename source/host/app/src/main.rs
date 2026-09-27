@@ -133,9 +133,9 @@ use mahayana_host_runtime::host_production_extensions::{
 };
 use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::turn_empty_delivery_telemetry;
 use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
-    TurnAwaitFields, TurnInterruptFields, TurnRetryFields, UserMessageReceivedFields,
-    turn_await_telemetry, turn_interrupt_telemetry, turn_retry_telemetry,
-    user_message_received_telemetry,
+    TurnAwaitFields, TurnInterruptFields, TurnRetryFields, TurnUsageFields,
+    UserMessageReceivedFields, turn_await_telemetry, turn_interrupt_telemetry,
+    turn_retry_telemetry, turn_usage_telemetry, user_message_received_telemetry,
 };
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::{
     AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
@@ -2216,6 +2216,25 @@ fn start_routed_provider_task(
             // the run: otherwise the UI can render the final assistant turn
             // while the registry/live session still owns the provider, and an
             // immediate app quit races that cleanup path.
+            let usage_report = worker_transcript_runtime.settle_turn_usage(
+                &agent_id,
+                worker_request_source.as_deref().unwrap_or("turn"),
+            );
+            let usage_projection = turn_usage_telemetry(&TurnUsageFields {
+                conversation_id: usage_report.agent_id.clone(),
+                source: usage_report.source,
+                request_id: usage_report.request_id,
+                request_id_count: u64::try_from(usage_report.request_id_count)
+                    .unwrap_or(u64::MAX),
+                turn_ended_seq: usage_report.turn_ended_seq,
+                usage: None,
+            });
+            if let Err(error) = worker_telemetry_logs.report_projection(&usage_projection) {
+                eprintln!(
+                    "mahayana-host turn_usage_telemetry_failed agent={} error={error}",
+                    agent_id
+                );
+            }
             worker_transcript_runtime.track_runner_activity_update(
                 &agent_id,
                 &ActivityUpdate::TurnEnded,

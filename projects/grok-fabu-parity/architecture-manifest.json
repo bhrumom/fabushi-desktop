@@ -14920,7 +14920,7 @@
         "source/host/tests/turn_telemetry_mappers_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host owns the frozen turn interrupt/await/retry/user-message/closing-send/TTFT/turn-usage/computer-use telemetry projections and bounded retry error type. Shipping retry and await call sites route through the canonical mappers; real direct-local SendBegin::Dispatch now emits user_message_received with lifecycle-derived was_in_flight, and queue-watchdog Trip emits turn_interrupt reason=watchdog with pre-interrupt lifecycle state and actual cancellation result. Final parity remains withheld until the other frozen interrupt sources plus closing-send/TTFT/turn-usage/computer-use shipping call sites route through this owner and exact-HEAD CI proves the completed surface."
+      "notes": "Rust Host owns the frozen turn interrupt/await/retry/user-message/closing-send/TTFT/turn-usage/computer-use telemetry projections and bounded retry error type. Shipping retry, await, direct-local user-message and watchdog interrupt call sites route through canonical mappers. Accepted provider operation IDs now enter the Transcript turn request-id set, and routed-provider terminal settlement emits turn_usage with source/request-id-count/turn-ended-seq through the production structured-log sink. Final parity remains withheld for the other frozen interrupt sources, closing-send, TTFT, computer-use usage and real provider token-usage propagation before exact-HEAD finalization."
     },
     {
       "referencePath": "source/host/extensions/telemetry/webauthn-proxy-telemetry.ts",
