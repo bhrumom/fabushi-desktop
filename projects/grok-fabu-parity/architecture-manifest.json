@@ -14920,7 +14920,7 @@
         "source/host/tests/turn_telemetry_mappers_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host owns the frozen turn interrupt/await/retry/user-message/closing-send/TTFT/turn-usage/computer-use telemetry projections and bounded retry error type. Final parity requires all shipping turn/Runner call sites to route through this owner."
+      "notes": "Rust Host owns the frozen turn interrupt/await/retry/user-message/closing-send/TTFT/turn-usage/computer-use telemetry projections and bounded retry error type. Shipping routed-provider retry/exhausted/ineligible outcomes now preserve typed error_type/error_code/cause at the Runner boundary and emit through turn_retry_telemetry into the production structured-log sink. Final parity remains withheld until the interrupt/await/user-message/closing-send/TTFT/turn-usage/computer-use shipping call sites also route through this owner and exact-HEAD CI proves the completed surface."
     },
     {
       "referencePath": "source/host/extensions/telemetry/webauthn-proxy-telemetry.ts",

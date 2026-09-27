@@ -273,6 +273,9 @@ fn production_turn_adapter_reports_retried_then_exhausted_without_false_retry_ac
     assert_eq!(reports[0].outcome, ProviderRetryOutcome::Retried);
     assert_eq!(reports[0].attempt, 1);
     assert_eq!(reports[0].max_attempts, 2);
+    assert_eq!(reports[0].error_type, "TransportError");
+    assert_eq!(reports[0].error_code, "SAND-E0406");
+    assert!(reports[0].cause.contains("connection reset"));
     assert_eq!(reports[1].outcome, ProviderRetryOutcome::Exhausted);
     assert_eq!(reports[1].attempt, 2);
     assert_eq!(reports[1].max_attempts, 2);

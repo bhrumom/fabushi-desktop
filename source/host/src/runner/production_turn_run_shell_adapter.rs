@@ -66,6 +66,9 @@ pub struct ProviderRetryReport {
     pub server_paced: bool,
     pub resume_from_checkpoint: bool,
     pub watchdog_expired: bool,
+    pub error_type: String,
+    pub error_code: String,
+    pub cause: String,
     pub error: String,
 }
 
@@ -304,6 +307,9 @@ impl ProductionTurnRunShellAdapter {
                         server_paced: false,
                         resume_from_checkpoint: accepted_resume.is_some(),
                         watchdog_expired,
+                        error_type: retry_error_type(error, watchdog_expired).into(),
+                        error_code: retry_error_code(transient.kind).into(),
+                        cause: error.to_string(),
                         error: error.to_string(),
                     });
                 }
@@ -321,6 +327,9 @@ impl ProductionTurnRunShellAdapter {
             server_paced,
             resume_from_checkpoint,
             watchdog_expired,
+            error_type: retry_error_type(error, watchdog_expired).into(),
+            error_code: retry_error_code(transient.kind).into(),
+            cause: error.to_string(),
             error: error.to_string(),
         });
         on_retry(&ProviderRetryEvent {
@@ -400,6 +409,36 @@ fn sleep_with_cancellation(
         thread::sleep(remaining.min(Duration::from_millis(10)));
     }
     Ok(())
+}
+
+fn retry_error_type(
+    error: &ProviderSessionError,
+    watchdog_expired: bool,
+) -> &'static str {
+    if watchdog_expired {
+        return "FirstTokenStallError";
+    }
+    match error {
+        ProviderSessionError::Cancelled(_) => "CancelledError",
+        ProviderSessionError::Authentication(_) => "AuthenticationError",
+        ProviderSessionError::Configuration(_) => "ConfigurationError",
+        ProviderSessionError::Protocol(_) => "ProtocolError",
+        ProviderSessionError::Tool(_) => "ToolError",
+        ProviderSessionError::Transport(_) => "TransportError",
+    }
+}
+
+fn retry_error_code(kind: StreamFailureKind) -> &'static str {
+    match kind {
+        StreamFailureKind::Capacity | StreamFailureKind::RateLimit => "SAND-E0401",
+        StreamFailureKind::Timeout
+        | StreamFailureKind::Transport
+        | StreamFailureKind::Server => "SAND-E0406",
+        StreamFailureKind::Authentication
+        | StreamFailureKind::InvalidRequest
+        | StreamFailureKind::Protocol => "SAND-E0405",
+        StreamFailureKind::Cancelled | StreamFailureKind::Unknown => "SAND-E0407",
+    }
 }
 
 fn classify_provider_failure(

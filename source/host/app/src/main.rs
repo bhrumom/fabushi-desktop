@@ -132,6 +132,9 @@ use mahayana_host_runtime::host_production_extensions::{
     ProductionBrowserUaLog, ProductionHostExtensions,
 };
 use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::turn_empty_delivery_telemetry;
+use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
+    TurnRetryFields, turn_retry_telemetry,
+};
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::{
     AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
 };
@@ -1973,14 +1976,16 @@ fn start_routed_provider_task(
                     );
                 });
             let retry_observation = Arc::clone(&observation);
+            let retry_telemetry_logs = worker_telemetry_logs.clone();
+            let retry_conversation_id = agent_id.clone();
             let retry_report_sink: Arc<dyn Fn(&ProviderRetryReport) + Send + Sync> =
                 Arc::new(move |report: &ProviderRetryReport| {
+                    let outcome = match report.outcome {
+                        ProviderRetryOutcome::Retried => "retried",
+                        ProviderRetryOutcome::Exhausted => "exhausted",
+                        ProviderRetryOutcome::GaveUpIneligible => "gave_up_ineligible",
+                    };
                     if let Ok(observation) = retry_observation.lock() {
-                        let outcome = match report.outcome {
-                            ProviderRetryOutcome::Retried => "retried",
-                            ProviderRetryOutcome::Exhausted => "exhausted",
-                            ProviderRetryOutcome::GaveUpIneligible => "gave_up_ineligible",
-                        };
                         observation.report_turn_retry(serde_json::json!({
                             "outcome": outcome,
                             "attempt": report.attempt,
@@ -1991,6 +1996,23 @@ fn start_routed_provider_task(
                             "watchdogExpired": report.watchdog_expired,
                             "error": report.error,
                         }));
+                    }
+                    let projection = turn_retry_telemetry(&TurnRetryFields {
+                        conversation_id: retry_conversation_id.clone(),
+                        outcome: outcome.into(),
+                        attempt: u64::from(report.attempt),
+                        max_attempts: u64::from(report.max_attempts),
+                        error_type: report.error_type.clone(),
+                        error_code: report.error_code.clone(),
+                        cause: report.cause.clone(),
+                        delay_ms: report.delay_ms.map(|value| value as f64),
+                        server_paced: Some(report.server_paced),
+                    });
+                    if let Err(error) = retry_telemetry_logs.report_projection(&projection) {
+                        eprintln!(
+                            "mahayana-host turn_retry_telemetry_failed agent={} error={error}",
+                            retry_conversation_id
+                        );
                     }
                 });
             let audit_events = worker_events.clone();
