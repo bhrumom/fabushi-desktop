@@ -113,3 +113,52 @@ fn extension_listener_and_cloud_sync_wiring_share_the_same_runtime_owner() {
     runtime.stop();
     assert!(runtime.desired_cloud_triggers(&scheduled,|_,_|true).is_empty());
 }
+
+
+#[test]
+fn extension_suspend_resume_wakes_is_non_destructive_and_idempotent() {
+    let scheduled=vec![ScheduledAutomation{
+        agent_id:"agent".into(),
+        automation_id:"routine".into(),
+        is_enabled:true,
+        trigger:parse_stored_trigger(&json!({
+            "type":"slack","channel":"#eng","match":{"kind":"keyword","keyword":"deploy"}
+        })).unwrap(),
+    }];
+    let mut runtime=AutomationExtensionRuntime::with_source_kinds(vec!["slack".into()]);
+    runtime.reconcile(&scheduled,true,|_,_|true);
+    runtime.watcher_mut().watch("agent","slack",0);
+    runtime.set_listener_connected("slack",false);
+    assert!(runtime.source("slack").unwrap().is_started());
+
+    runtime.suspend_wakes();
+    runtime.suspend_wakes();
+    assert!(runtime.wakes_suspended());
+    assert!(!runtime.source("slack").unwrap().is_started());
+    assert_eq!(runtime.ingest_event(
+        &scheduled,
+        json!({"source":"slack","channel":"eng","text":"deploy"}),
+        true,false,|_,_|true
+    ),0);
+    assert!(runtime.poll_listener_connections(10).is_empty());
+
+    runtime.resume_wakes();
+    runtime.resume_wakes();
+    assert!(!runtime.wakes_suspended());
+    assert!(runtime.source("slack").unwrap().is_started());
+    runtime.set_listener_connected("slack",true);
+    assert_eq!(
+        runtime.poll_listener_connections(20),
+        vec![("agent".to_string(),"slack".to_string())]
+    );
+    assert_eq!(runtime.ingest_event(
+        &scheduled,
+        json!({"source":"slack","channel":"eng","text":"deploy"}),
+        true,false,|_,_|true
+    ),1);
+
+    runtime.stop();
+    runtime.resume_wakes();
+    assert!(runtime.wakes_suspended());
+    assert!(!runtime.source("slack").unwrap().is_started());
+}

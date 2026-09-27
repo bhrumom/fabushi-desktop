@@ -15,6 +15,7 @@ pub struct AutomationExtensionRuntime {
     watcher: ListenerConnectWatcher,
     integrations: ListenerIntegrations,
     consumer: SandAutomationFireConsumer,
+    suspended: bool,
     stopped: bool,
 }
 
@@ -28,6 +29,7 @@ impl AutomationExtensionRuntime {
             watcher: ListenerConnectWatcher::default(),
             integrations: ListenerIntegrations::default(),
             consumer: SandAutomationFireConsumer::default(),
+            suspended: false,
             stopped: false,
         }
     }
@@ -63,8 +65,37 @@ impl AutomationExtensionRuntime {
         desired_cloud_triggers(scheduled, should_sync)
     }
 
+    pub fn suspend_wakes(&mut self) {
+        if self.stopped || self.suspended {
+            return;
+        }
+        self.suspended = true;
+        self.watcher.suspend();
+        for source in self.sources.values_mut() {
+            source.stop();
+        }
+    }
+
+    pub fn resume_wakes(&mut self) {
+        if self.stopped || !self.suspended {
+            return;
+        }
+        self.suspended = false;
+        self.watcher.resume();
+        for source in self.sources.values_mut() {
+            if !source.listeners().is_empty() {
+                source.start();
+            }
+        }
+    }
+
+    pub fn wakes_suspended(&self) -> bool {
+        self.suspended
+    }
+
     pub fn stop(&mut self) {
         self.stopped = true;
+        self.suspended = true;
         self.watcher.dispose();
         for source in self.sources.values_mut() {
             source.stop();
@@ -78,7 +109,7 @@ impl AutomationExtensionRuntime {
         ready: bool,
         should_schedule_locally: impl Fn(&str, &ScheduledAutomation) -> bool,
     ) {
-        let desired = if ready && !self.stopped {
+        let desired = if ready && !self.stopped && !self.suspended {
             desired_listeners_by_kind(scheduled, should_schedule_locally)
         } else {
             BTreeMap::new()
@@ -104,7 +135,7 @@ impl AutomationExtensionRuntime {
         platform_matched: bool,
         should_schedule_locally: impl Fn(&str, &ScheduledAutomation) -> bool,
     ) -> usize {
-        if self.stopped || !ready {
+        if self.stopped || self.suspended || !ready {
             return 0;
         }
         let Some(kind) = event.get("source").and_then(Value::as_str) else {
