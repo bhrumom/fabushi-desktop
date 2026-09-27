@@ -1782,3 +1782,14 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added `search_index_db_contract` covering schema/pragmas/version/reconcile state, NFKC/quoting/cap behavior, message ranking/per-Agent cap/timestamp fallback, and media recent/FTS/kind semantics.
 - This DB module advances directly from `planned` to `implemented`; service/worker/writer remain independently non-final and must consume this owner rather than creating a parallel index path.
 - Manifest after this owner: **1,835 implemented / 128 existing-needs-parity / 39 planned** (**167 non-final**).
+
+
+### 2026-09-27 Content-search writer / reconciliation owner
+
+- Exact starting HEAD: `0b82fd0a46091d49b668243c5dbfdc3381c6cb14`.
+- Re-read frozen `source/host/extensions/content-search/search-index-writer.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `search_index_writer.rs` over the single Rust SQLite owner. It ports message/notice/send-message text projection, non-Agent peer-message exclusion, 20k body cap, JS-style numeric rounding, attachment filename fallback/URL decoding, image/video/audio MIME projection, attachment classification, `store.db` fingerprint caching, transactional upsert/delete/clear, transcript `reindexAgent`, stale-agent reconciliation and incremental vacuum.
+- `SearchIndexJob` is now a typed serde-tagged contract shared by the upcoming worker/service layers instead of inventing a second job protocol.
+- Added `search_index_writer_contract` covering message/media projection, body/timestamp/dimension normalization, URL filename decode, MIME/kind classification, store fingerprint reindex, stale-agent reconciliation, delete/clear and job dispatch.
+- This row advances from `planned` to `implemented`; worker/service remain separately mapped and must call this canonical writer.
+- Manifest after this owner: **1,836 implemented / 128 existing-needs-parity / 38 planned** (**166 non-final**).

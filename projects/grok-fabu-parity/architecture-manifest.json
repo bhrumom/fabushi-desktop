@@ -11643,12 +11643,21 @@
       "targetPath": "source/host/src/extensions/content_search/search_index_writer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "d57f802ca452358623f291537981c7fa14e87c20",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/content_search/search_index_writer.rs",
+        "source/host/src/extensions/content_search/search_index_db.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/search_index_writer_contract.rs",
+        "source/host/tests/search_index_db_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust writer owns the frozen search-index mutation/rebuild path over the single rusqlite DB owner: message/media projection, peer-message filtering, JS-style whole-number coercion, 20k body cap, URL/file-name decoding, MIME/attachment classification, store.db read-only fingerprint cache, transactional upsert/delete/clear, reindex from transcript_entries, stale-agent reconciliation, reconcile marker and incremental vacuum."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/extension.ts",
