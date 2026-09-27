@@ -259,7 +259,8 @@ pub fn start_production_content_search_extension_with_paths(
         report,
     ));
 
-    let mutation_subscription = Arc::new(Mutex::new(None));
+    let mutation_subscription: Arc<Mutex<Option<RawTranscriptMutationSubscription>>> =
+        Arc::new(Mutex::new(None));
     let apply_gate: Arc<dyn Fn() + Send + Sync> = {
         let service = Arc::clone(&service);
         let experiments = Arc::clone(&experiments);

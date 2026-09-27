@@ -1824,3 +1824,14 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added a production contract that toggles the real Experiments override, publishes a real global transcript mutation, waits for the independent index worker, queries the concrete FTS reader, then verifies the disabled gate is truly unsubscribed.
 - The extension manifest row deliberately remains **existing-needs-parity**: no production caller on this branch currently publishes the five frozen mutation forms (`entries-upserted`, `entry-deleted`, `conversation-cleared`, `agent-removed`, `agent-needs-reindex`) into `transcript_mutation_events`. Marking the extension final before producer wiring would be a false green.
 - Manifest totals therefore remain **1838 implemented / 128 existing-needs-parity / 36 planned** (**164 non-final**) until the producer side is wired and exact-HEAD tests prove it.
+
+
+### 2026-09-27 Content-search producer audit correction and finalization
+
+- Re-audited the frozen producer sites instead of relying on branch code-search indexing. The current Rust branch already preserves all five mutation producers at the frozen ownership points:
+  - `SandAgentDb`: committed append/batch/update -> `entries-upserted`; committed delete -> `entry-deleted`; committed conversation clear -> `conversation-cleared`.
+  - `SandAgentSessionStore::delete_session`: durable directory deletion -> `agent-removed`.
+  - `ProductionAgentLifecycle`: clone/mint commit -> `agent-needs-reindex`.
+- Therefore the previous note saying the producer side was absent was conservative but incorrect. With production Experiments, mutation subscription, Service/Worker/Writer/DB, telemetry and Host lifetime now connected, `content-search/extension.ts` is promoted from `existing-needs-parity` to **implemented**.
+- Fixed the first exact-HEAD compile blocker from run `36303412610`: explicitly typed the production mutation subscription as `Option<RawTranscriptMutationSubscription>` (Rust E0282).
+- Manifest after finalizing this extension: **1,839 implemented / 127 existing-needs-parity / 36 planned** (**163 non-final**).

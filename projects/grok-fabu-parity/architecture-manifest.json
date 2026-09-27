@@ -11580,24 +11580,34 @@
       "targetPath": "source/host/src/extensions/content_search/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "bf4b665ead15283a1c6166151b50ce6c178546e2",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/content_search/extension.rs",
         "source/host/src/extensions/content_search/search_index_service.rs",
-        "source/host/app/src/main.rs",
+        "source/host/src/extensions/content_search/search_index_worker.rs",
+        "source/host/src/extensions/content_search/search_index_writer.rs",
+        "source/host/src/extensions/content_search/search_index_db.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/agent_session.rs",
+        "source/host/src/extensions/transcript/agent_lifecycle.rs",
         "source/host/src/transcript_mutation_events.rs",
         "source/host/src/extensions/experiments/extension.rs",
-        "source/host/src/extensions/telemetry/host_telemetry_service.rs"
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/content_search_extension_contract.rs",
         "source/host/tests/content_search_production_extension_contract.rs",
+        "source/host/tests/agent_db_mutation_production_contract.rs",
+        "source/host/tests/agent_lifecycle_contract.rs",
+        "source/host/tests/agent_session_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Shipping Host now starts a concrete ProductionContentSearchExtension over the real HostExperimentsExtension, global transcript-mutation bus, canonical SandSearchIndexService/Worker/Writer/DB stack, frozen Sand root/agents paths, and dedicated sand.search_index_health telemetry sink. Gate changes attach/detach the real bus and drop disposes both subscriptions plus the service. Final remains withheld because the shipping transcript persistence paths do not yet publish the five frozen content-search mutation kinds onto transcript_mutation_events; the subscriber is real but the producer side is not yet production-complete."
+      "notes": "Final Rust production composition: shipping Host starts the concrete ContentSearch extension over the real Experiments gate, global transcript-mutation bus, canonical Service -> independent Worker -> Writer -> SQLite/FTS5 stack, frozen Sand paths and dedicated search-index health telemetry. Frozen producer sites are already present at the authoritative Rust owners: SandAgentDb publishes entries-upserted/entry-deleted/conversation-cleared after committed persistence, SandAgentSessionStore publishes agent-removed after durable directory deletion, and ProductionAgentLifecycle publishes agent-needs-reindex after clone/mint. Gate disable unsubscribes the real bus; drop removes experiment + mutation subscriptions and drains/disposes Service.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/content-search/search-index-db.ts",
