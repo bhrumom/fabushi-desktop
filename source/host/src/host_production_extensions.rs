@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -37,6 +38,8 @@ use crate::extensions::notify_bus::extension::{
 };
 use crate::extensions::source_map::extension::start_source_map_extension;
 use crate::extensions::source_map::source_map_service::SandSourceMap;
+use crate::extensions::settings::extension::start_settings_extension;
+use crate::extensions::settings::settings_service::{SettingsService, SettingsSubscription};
 use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use crate::extensions::telemetry::webauthn_proxy_telemetry::{
     WebAuthnProxyReport, webauthn_proxy_telemetry,
@@ -58,6 +61,7 @@ use crate::production_binding_providers::production_cloud_agent_trace_converter;
 /// until their real production owners exist.
 pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Auth,
+    HostExtensionId::Settings,
     HostExtensionId::Experiments,
     HostExtensionId::CodebaseTelemetry,
     HostExtensionId::ActionAudit,
@@ -86,7 +90,9 @@ pub fn start_production_browser_ua(
 ) -> BrowserUaExtensionRuntime {
     start_browser_ua_extension(
         auth,
+        settings,
         experiments,
+        _settings_feature_override_subscription: settings_feature_override_subscription,
         Arc::new(ProductionBrowserUaLog),
         None,
         None,
@@ -95,7 +101,10 @@ pub fn start_production_browser_ua(
 
 pub struct ProductionHostExtensions {
     pub auth: Arc<HostAuthExtension>,
+    pub settings: Arc<SettingsService>,
     pub experiments: Arc<HostExperimentsExtension>,
+    _settings_feature_override_subscription:
+        SettingsSubscription<dyn Fn(BTreeMap<String, bool>) + Send + Sync + 'static>,
     pub codebase_telemetry: CodebaseTelemetryExtension,
     pub notify_bus: HostNotifyBusExtension,
     pub memory: HostMemoryExtension,
@@ -130,7 +139,13 @@ pub fn start_production_host_extensions(
         )
         .map_err(|error| error.to_string())?,
     );
+    let settings = start_settings_extension();
     let experiments = Arc::new(start_host_experiments_extension());
+    let experiments_for_settings = Arc::clone(&experiments);
+    let settings_feature_override_subscription =
+        settings.subscribe_to_feature_flag_overrides(Arc::new(move |overrides| {
+            experiments_for_settings.replace_feature_flag_overrides(overrides);
+        }));
     let codebase_telemetry = start_codebase_telemetry_extension(
         Arc::clone(&auth),
         Arc::clone(&experiments),
