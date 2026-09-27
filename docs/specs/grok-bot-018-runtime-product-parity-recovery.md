@@ -1596,3 +1596,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The slice preserves frozen Grok request/model projection, web-fetch success/error/no-result normalization, inference readiness semantics, model-experiment listener fanout, shared auth identity, request-id forwarding and the production factory boundary without creating a second inference runtime.
 - The corresponding frozen rows `cursor-web-tools.ts`, `extension.ts`, and `production.ts` advance only from `planned` to `existing-needs-parity`. Final status remains blocked on authenticated Cursor backend/generated AiService bindings, `inference-service`/`cursor-session` production wiring, and Host production-extension registry composition.
 - Manifest after this slice: **1,825 implemented / 112 existing-needs-parity / 65 planned** (**177 non-final**). This is not a final parity, merge, packaged-acceptance, or release claim.
+
+
+### 2026-09-27 inference session and labeling slice
+
+- Added Rust-owned `cursor_session`, `inference_service`, and `sand_labeling` semantic cores plus `source/host/tests/inference_session_labeling_contract.rs`.
+- `cursor_session` now preserves the frozen Grok model precedence (experiment/default/env/subagent/computer/browser), the exact Grok 4.5 and computer-use defaults, and strict mock-script parsing without routing Cursor through the local non-Cursor provider runtime.
+- `inference_service` preserves the Cursor-vs-routed-provider ownership split and provider usage projection. `sand_labeling` preserves previous-request lineage, per-request dedupe, summarization exclusion and post-turn admission rules.
+- The three mappings advance only from `planned` to `existing-needs-parity`. Remaining blockers are live authenticated Cursor prompt transport, privacy/media integration, generated inference/labeling protobuf bindings, core-message conversion, diagnostics and production Host extension-registry wiring.
+- Manifest after this slice: **1,825 implemented / 115 existing-needs-parity / 62 planned** (**177 non-final**). The strict final architecture gate must remain red until those and the other non-final rows are actually closed.
