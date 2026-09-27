@@ -129,6 +129,10 @@ fn extension_suspend_resume_wakes_is_non_destructive_and_idempotent() {
     runtime.reconcile(&scheduled,true,|_,_|true);
     runtime.watcher_mut().watch("agent","slack",0);
     runtime.set_listener_connected("slack",false);
+    // Frozen ListenerConnectWatcher eagerly ticks when watch() is registered. The Rust
+    // port uses an explicit poll seam until the real polling-policy owner is wired, so
+    // arm the observed disconnect before suspending and then verify resume is non-destructive.
+    assert!(runtime.poll_listener_connections(5).is_empty());
     assert!(runtime.source("slack").unwrap().is_started());
 
     runtime.suspend_wakes();
