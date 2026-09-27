@@ -9597,7 +9597,7 @@
         "source/host/tests/automation_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Final audited Rust port: every frozen automation-trigger export is represented in the Host owner—stored-trigger parse/serialize, identity, Slack scope and event matching, GitHub event/user/CI-branch admission, Teams/Linear/Sentry/PagerDuty listener filters, group trigger matching, event descriptions and escaped trigger context blocks. Shipping SandTriggerHub and BackendRelaySource consume the same matcher; contracts cover direct platform matching, group fire admission and durable store round-trip."
+      "notes": "Final audited Rust port: every frozen automation-trigger export is represented in the Host owner\u2014stored-trigger parse/serialize, identity, Slack scope and event matching, GitHub event/user/CI-branch admission, Teams/Linear/Sentry/PagerDuty listener filters, group trigger matching, event descriptions and escaped trigger context blocks. Shipping SandTriggerHub and BackendRelaySource consume the same matcher; contracts cover direct platform matching, group fire admission and durable store round-trip."
     },
     {
       "referencePath": "source/host/automations/automation.ts",
@@ -11520,12 +11520,22 @@
       "targetPath": "source/host/src/extensions/codebase_telemetry/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "7f993aa2ee70c0137637645e6c2755c661f303cb",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/codebase_telemetry/extension.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/codebase_telemetry_extension_contract.rs",
+        "source/host/tests/host_production_extensions_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Frozen Grok Codebase Telemetry extension is now production-composed as an independent Host extension: Auth+Experiments dependency declaration, csnaps capability gate with no-op unavailable API, frozen telemetry paths, upload metadata/checksum/privacy headers, privacy/adapter/host/service construction, one shared Gateway/Host event bus, production extension registry ownership, and bounded lifecycle. Exact-HEAD Rust runtime bfad04b4870967099f4c2e18e785f2ffb61e74df passed shipping Host compilation, independent Coordinator and box-exec gates, and the full Host/Runner Cargo test gate."
     },
     {
       "referencePath": "source/host/extensions/codebase-telemetry/privacy-mode.ts",
@@ -13710,7 +13720,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Frozen Session store-factory contract is fully mapped in Rust: dbPath→agentDir automation/channel paths, agentDir→sandRoot global workflow path, unavailable NO_SESSION_MEMORY semantics, and resolveUserTimeZone forwarding into both automation and workflow stores. Shipping Host SettingsService supplies the live resolver through ProductionSessionWorkers."
+      "notes": "Frozen Session store-factory contract is fully mapped in Rust: dbPath\u2192agentDir automation/channel paths, agentDir\u2192sandRoot global workflow path, unavailable NO_SESSION_MEMORY semantics, and resolveUserTimeZone forwarding into both automation and workflow stores. Shipping Host SettingsService supplies the live resolver through ProductionSessionWorkers."
     },
     {
       "referencePath": "source/host/extensions/session/session-summaries.ts",

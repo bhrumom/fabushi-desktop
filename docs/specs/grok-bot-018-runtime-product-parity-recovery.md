@@ -1628,3 +1628,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The full Host/Runner Cargo test gate passes with the new contracts for privacy-mode, codebase-telemetry-adapter, codebase-telemetry-host, codebase-telemetry-service, and the deterministic csnaps response-ID validator.
 - The implementation preserves the frozen Grok separation instead of collapsing telemetry into one Rust subsystem: protocol -> process -> privacy-mode -> adapter -> host -> service. Auth/Experiments stay dependencies of the host input layer; adapter restart remains owned by the service.
 - The architecture manifest advances only the four evidence-backed rows above. source/host/extensions/codebase-telemetry/extension.ts remains planned until its capability gate and production composition are wired and tested.
+
+
+### 2026-09-27 Codebase Telemetry production extension closure
+
+- Exact tested HEAD bfad04b4870967099f4c2e18e785f2ffb61e74df closes frozen source/host/extensions/codebase-telemetry/extension.ts as a production Host extension.
+- Production composition now owns the same shared SandHostEventBus used by the Gateway, so transcript run-start/run-end telemetry does not depend on a parallel event source.
+- The extension preserves the frozen Auth + Experiments dependency boundary, csnaps capability/no-op fallback, codebase UUID and snapshot paths, upload headers/checksum/privacy metadata, and independent privacy -> adapter -> host -> service lifecycle.
+- Rust desktop runtime run 36300024477 passed shipping Host compilation, the independent Mahayana Coordinator contract, box-exec contracts, and the full Host/Runner Cargo test gate on this exact HEAD.
