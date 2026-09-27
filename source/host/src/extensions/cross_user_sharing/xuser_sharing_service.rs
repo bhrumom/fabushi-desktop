@@ -30,6 +30,9 @@ pub trait XuserSharingManager: Send + Sync {
     fn find_room_agent_id(&self, _room_id: &str) -> Result<Option<String>, String> {
         Ok(None)
     }
+    fn is_room_abandoned(&self, _room_id: &str, _self_auth_id: Option<&str>) -> bool {
+        false
+    }
     fn install_room(&self, room: &XuserRoom, self_auth_id: Option<&str>) -> Result<(), String>;
     fn mark_mirror_room_revoked(&self, room_id: &str) -> Result<(), String>;
     fn post_shared_room_guest_message(&self, event: &Value) -> Result<(), String>;
@@ -206,7 +209,22 @@ impl SandXuserSharingService {
             .self_auth_id = id
     }
     pub fn get_state(&self) -> SandSharingState {
-        self.state.lock().unwrap_or_else(|p| p.into_inner()).clone()
+        let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner()).clone();
+        if !state.is_enabled {
+            return SandSharingState::default();
+        }
+        let now_ms = system_now_ms();
+        let self_auth_id = state.self_auth_id.as_deref();
+        state.typing_users.retain(|user| {
+            let expires_at_ms = user
+                .get("expiresAtMs")
+                .and_then(Value::as_f64)
+                .filter(|value| value.is_finite())
+                .unwrap_or_default();
+            let auth_id = user.get("authId").and_then(Value::as_str);
+            expires_at_ms > now_ms && auth_id != self_auth_id
+        });
+        state
     }
     pub fn reconcile_share_state(&self) -> Result<SandSharingState, String> {
         let current = self.get_state();
@@ -504,15 +522,37 @@ impl SandXuserSharingService {
                 let Some(request) = event.get("request").filter(|value| value.is_object()) else {
                     return Ok(true);
                 };
-                let request_id = request.get("requestId").and_then(Value::as_str);
+                let Some(request_id) = request.get("requestId").and_then(Value::as_str) else {
+                    return Ok(true);
+                };
                 let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
-                if request_id.is_none_or(|id| {
-                    !state.pending_join_requests.iter().any(|current| {
-                        current.get("requestId").and_then(Value::as_str) == Some(id)
-                    })
+                if state.pending_join_requests.iter().any(|current| {
+                    current.get("requestId").and_then(Value::as_str) == Some(request_id)
                 }) {
-                    state.pending_join_requests.push(request.clone());
+                    return Ok(true);
                 }
+                let requester_name = clamp_guest_name(
+                    request
+                        .get("requesterName")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default(),
+                );
+                let mut normalized = serde_json::json!({
+                    "requestId": request_id,
+                    "roomId": request.get("roomId").and_then(Value::as_str).unwrap_or_default(),
+                    "roomName": request.get("roomName").and_then(Value::as_str).unwrap_or("Shared room"),
+                    "requesterAuthId": request.get("requesterAuthId").and_then(Value::as_str).unwrap_or_default(),
+                    "requesterName": requester_name,
+                    "createdAtMs": request.get("createdAtMs").and_then(Value::as_f64).filter(|value| value.is_finite()).unwrap_or_else(system_now_ms),
+                });
+                if let Some(avatar_url) = request
+                    .get("requesterAvatarUrl")
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.is_empty())
+                {
+                    normalized["requesterAvatarUrl"] = Value::String(avatar_url.to_string());
+                }
+                state.pending_join_requests.push(normalized);
                 Ok(true)
             }
             Some("room-join-decision") => {
@@ -535,7 +575,26 @@ impl SandXuserSharingService {
                 };
                 let room_id = user.get("roomId").and_then(Value::as_str).unwrap_or_default();
                 let auth_id = user.get("authId").and_then(Value::as_str).unwrap_or_default();
-                if room_id.is_empty() || auth_id.is_empty() {
+                let name = user.get("name").and_then(Value::as_str).unwrap_or_default();
+                let expires_at_ms = user
+                    .get("expiresAtMs")
+                    .and_then(Value::as_f64)
+                    .filter(|value| value.is_finite())
+                    .unwrap_or_default();
+                if room_id.is_empty() || auth_id.is_empty() || name.is_empty() {
+                    return Ok(true);
+                }
+                let state_snapshot = self.get_state();
+                let is_human_member = state_snapshot
+                    .rooms
+                    .iter()
+                    .find(|room| room.room_id == room_id)
+                    .is_some_and(|room| {
+                        room.members.iter().any(|member| {
+                            member.auth_id == auth_id && member.agent_id.is_none()
+                        })
+                    });
+                if !is_human_member {
                     return Ok(true);
                 }
                 let key_matches = |value: &Value| {
@@ -544,24 +603,73 @@ impl SandXuserSharingService {
                 };
                 let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
                 state.typing_users.retain(|value| !key_matches(value));
-                if event.get("isTyping").and_then(Value::as_bool) == Some(true) {
-                    state.typing_users.push(user.clone());
+                if event.get("isTyping").and_then(Value::as_bool) == Some(true)
+                    && expires_at_ms > system_now_ms()
+                {
+                    let mut normalized = serde_json::json!({
+                        "roomId": room_id,
+                        "authId": auth_id,
+                        "name": clamp_guest_name(name),
+                        "expiresAtMs": expires_at_ms,
+                    });
+                    if let Some(avatar_url) = user
+                        .get("avatarUrl")
+                        .and_then(Value::as_str)
+                        .filter(|value| !value.is_empty())
+                    {
+                        normalized["avatarUrl"] = Value::String(avatar_url.to_string());
+                    }
+                    state.typing_users.push(normalized);
                 }
                 Ok(true)
             }
             Some("room-post") => {
-                if let Some(manager) = self.manager() {
-                    manager.post_shared_room_guest_message(event)?;
+                let Some(room_id) = event.get("roomId").and_then(Value::as_str) else {
+                    return Ok(true);
+                };
+                let Some(author_auth_id) = event.get("authorAuthId").and_then(Value::as_str) else {
+                    return Ok(true);
+                };
+                let Some(manager) = self.manager() else {
+                    return Ok(true);
+                };
+                let self_auth_id = self.get_state().self_auth_id;
+                if manager.is_room_abandoned(room_id, self_auth_id.as_deref()) {
+                    return Ok(true);
                 }
+                let mut normalized = serde_json::json!({
+                    "kind": "room-post",
+                    "roomId": room_id,
+                    "authorAuthId": author_auth_id,
+                    "authorName": clamp_guest_name(
+                        event.get("authorName").and_then(Value::as_str).unwrap_or_default()
+                    ),
+                    "text": event.get("text").and_then(Value::as_str).unwrap_or_default(),
+                    "images": event.get("images").cloned().unwrap_or_else(|| Value::Array(Vec::new())),
+                });
+                if let Some(timestamp_ms) = event
+                    .get("timestampMs")
+                    .and_then(Value::as_f64)
+                    .filter(|value| value.is_finite())
+                {
+                    normalized["timestampMs"] = serde_json::json!(timestamp_ms);
+                }
+                manager.post_shared_room_guest_message(&normalized)?;
                 Ok(true)
             }
             Some("room-entry") => {
+                let Some(room_id) = event.get("roomId").and_then(Value::as_str) else {
+                    return Ok(true);
+                };
                 let Some(self_auth_id) = self.get_state().self_auth_id else {
                     return Ok(false);
                 };
                 let Some(manager) = self.manager() else {
                     return Ok(false);
                 };
+                if manager.is_room_abandoned(room_id, Some(&self_auth_id)) {
+                    return Ok(true);
+                }
                 manager.append_mirror_room_entry(event, &self_auth_id)
             }
             Some("member-left") | Some("room-ended") => {
@@ -600,4 +708,25 @@ impl SandXuserSharingService {
         }
         Ok(())
     }
+}
+
+fn clamp_guest_name(value: &str) -> String {
+    let one_line = value
+        .replace(['\r', '\n'], " ")
+        .trim()
+        .chars()
+        .take(120)
+        .collect::<String>();
+    if one_line.is_empty() {
+        "Someone".into()
+    } else {
+        one_line
+    }
+}
+
+fn system_now_ms() -> f64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as f64
 }
