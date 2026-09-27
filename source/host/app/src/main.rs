@@ -206,8 +206,13 @@ use mahayana_host_runtime::runner::tools::sand_agent_management_tools::{
 };
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
-    GatewayApi, GatewayCommandError, GatewayCommandReport, GatewayEventHub, GatewayServerDeps, start_gateway_server,
+    GatewayApi, GatewayCommandError, GatewayCommandReport, GatewayEventHub, GatewayHealth,
+    GatewayServerDeps, start_gateway_server,
 };
+use mahayana_host_runtime::host_gateway_api::{
+    CreateAgentNonceLedger, is_sand_agent_purpose, sanitize_template_id,
+};
+use mahayana_host_runtime::sand_host::compute_host_health;
 use mahayana_host_runtime::host_discovery::{
     GatewayDiscoveryInfo, clear_gateway_discovery, write_gateway_discovery,
 };
@@ -706,6 +711,8 @@ struct UnifiedGatewayApi {
     local_tool_permission: Arc<HostLocalToolPermissionExtension>,
     auto_review: Arc<HostAutoReviewExtension>,
     host_runner_composition: Arc<HostRunnerComposition>,
+    create_agent_nonces: Mutex<CreateAgentNonceLedger<serde_json::Value>>,
+    last_busy_at_ms: Mutex<u64>,
 }
 
 #[derive(Clone)]
@@ -2262,6 +2269,46 @@ impl GatewayApi for UnifiedGatewayApi {
         method: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+        if method == "createAgent" {
+            let mut projected = args;
+            if let Some(object) = projected.as_object_mut() {
+                if object
+                    .get("purpose")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|purpose| !is_sand_agent_purpose(purpose))
+                {
+                    object.remove("purpose");
+                }
+                if object
+                    .get("templateId")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|template_id| sanitize_template_id(template_id).is_none())
+                {
+                    object.remove("templateId");
+                }
+            }
+
+            let nonce = projected
+                .get("clientNonce")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_string);
+            if let Some(nonce) = nonce {
+                let mut ledger = self
+                    .create_agent_nonces
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                if let Some(cached) = ledger.get(&nonce).cloned() {
+                    return Ok(cached);
+                }
+                let minted = call_host_lane(&self.host_tx, method, projected)?;
+                ledger.insert(nonce, minted.clone());
+                return Ok(minted);
+            }
+            return call_host_lane(&self.host_tx, method, projected);
+        }
+
         if let Some(result) = dispatch_secrets_gateway_call(&self.secrets, method, &args) {
             return result.map_err(map_secrets_gateway_error);
         }
@@ -2958,6 +3005,36 @@ impl GatewayApi for UnifiedGatewayApi {
             return Ok(result);
         }
         call_host_lane(&self.host_tx, method, args)
+    }
+
+    fn health(&self) -> GatewayHealth {
+        let running_agent_ids = self.transcript_runtime.live_running_agent_ids();
+        let awaiting_approval_agent_ids =
+            self.auto_review.service().agent_ids_with_pending_approvals();
+        let active_agent_id = self
+            .transcript_runtime
+            .active_agent_id(&self.session_workers);
+        let has_other_background_work =
+            self.transcript_runtime.has_carryable_pending_wake();
+        let mut last_busy_at_ms = self
+            .last_busy_at_ms
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let health = compute_host_health(
+            running_agent_ids,
+            awaiting_approval_agent_ids,
+            has_other_background_work,
+            active_agent_id,
+            started_at_ms(),
+            *last_busy_at_ms,
+        );
+        *last_busy_at_ms = health.last_busy_at_ms;
+        GatewayHealth {
+            is_busy: health.is_busy,
+            busy_only_awaiting_approval: Some(health.busy_only_awaiting_approval),
+            active_agent_id: health.active_agent_id,
+            last_busy_at_ms: Some(health.last_busy_at_ms),
+        }
     }
 
     fn prepare_for_upgrade(&self) -> Result<serde_json::Value, GatewayCommandError> {
@@ -3704,6 +3781,8 @@ fn main() {
             local_tool_permission: Arc::clone(&local_tool_permission_extension),
             auto_review: Arc::clone(&auto_review_extension),
             host_runner_composition: Arc::clone(&host_runner_composition),
+            create_agent_nonces: Mutex::new(CreateAgentNonceLedger::default()),
+            last_busy_at_ms: Mutex::new(gateway_started_at),
         });
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: gateway_api.clone(),
