@@ -124,6 +124,34 @@ pub fn merge_provider_token_usage(
     }
 }
 
+pub fn provider_token_usage_from_openrouter_event(
+    event: &Value,
+) -> Option<ProviderTokenUsage> {
+    let usage = event.get("usage")?.as_object()?;
+    Some(ProviderTokenUsage {
+        input_tokens: usage
+            .get("prompt_tokens")
+            .and_then(Value::as_u64)
+            .unwrap_or_default(),
+        output_tokens: usage
+            .get("completion_tokens")
+            .and_then(Value::as_u64)
+            .unwrap_or_default(),
+        cache_read_tokens: usage
+            .get("prompt_tokens_details")
+            .and_then(Value::as_object)
+            .and_then(|details| details.get("cached_tokens"))
+            .and_then(Value::as_u64)
+            .unwrap_or_default(),
+        cache_write_tokens: 0,
+        reasoning_tokens: usage
+            .get("completion_tokens_details")
+            .and_then(Value::as_object)
+            .and_then(|details| details.get("reasoning_tokens"))
+            .and_then(Value::as_u64),
+    })
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct RoutedToolDefinition {
     pub name: String,
@@ -1065,11 +1093,12 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
                         checkpoint.clone(),
                     ))
                 };
-            run_openrouter_provider_text_with_lifecycle(
+            run_openrouter_provider_text_with_lifecycle_reporting_usage(
                 messages,
                 options,
                 resume,
                 &mut openrouter_checkpoint,
+                on_usage,
             )
         }
         RoutedProvider::ClaudeCode => {
@@ -1273,6 +1302,39 @@ pub fn run_openrouter_with_transport(
         &OpenRouterCheckpoint,
     ) -> Result<(), ProviderSessionError>,
 ) -> Result<String, ProviderSessionError> {
+    let mut ignore_usage = |_usage: ProviderTokenUsage| {};
+    run_openrouter_with_transport_reporting_usage(
+        transport,
+        model,
+        messages,
+        tools,
+        execute_tool,
+        on_text_delta,
+        should_cancel,
+        resume_from,
+        on_checkpoint,
+        &mut ignore_usage,
+    )
+}
+
+pub fn run_openrouter_with_transport_reporting_usage(
+    transport: &mut dyn OpenRouterTransport,
+    model: &str,
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&OpenRouterCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &OpenRouterCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+) -> Result<String, ProviderSessionError> {
     let tool_index = tools
         .iter()
         .map(|tool| (tool.name.clone(), tool))
@@ -1332,6 +1394,7 @@ pub fn run_openrouter_with_transport(
             "model": model,
             "messages": conversation,
             "stream": true,
+            "usage": { "include": true },
         });
         if !declared_tools.is_empty() {
             request["tools"] = Value::Array(declared_tools.clone());
@@ -1341,6 +1404,7 @@ pub fn run_openrouter_with_transport(
         let mut partial_calls =
             BTreeMap::<usize, PartialOpenRouterToolCall>::new();
         let mut step_text = String::new();
+        let mut step_usage = None::<ProviderTokenUsage>;
         transport.stream_response(
             &request,
             &mut |event| {
@@ -1353,6 +1417,9 @@ pub fn run_openrouter_with_transport(
                     return Err(ProviderSessionError::Protocol(format!(
                         "OpenRouter stream failed: {error}"
                     )));
+                }
+                if let Some(usage) = provider_token_usage_from_openrouter_event(event) {
+                    step_usage = Some(usage);
                 }
                 let Some(delta) = event
                     .get("choices")
@@ -1405,6 +1472,9 @@ pub fn run_openrouter_with_transport(
             },
             should_cancel,
         )?;
+        if let Some(usage) = step_usage {
+            on_usage(usage);
+        }
 
         if partial_calls.is_empty() {
             return Ok(text);
@@ -1510,6 +1580,25 @@ fn run_openrouter_provider_text_with_lifecycle(
         &OpenRouterCheckpoint,
     ) -> Result<(), ProviderSessionError>,
 ) -> Result<String, ProviderSessionError> {
+    let mut ignore_usage = |_usage: ProviderTokenUsage| {};
+    run_openrouter_provider_text_with_lifecycle_reporting_usage(
+        messages,
+        options,
+        resume_from,
+        on_checkpoint,
+        &mut ignore_usage,
+    )
+}
+
+fn run_openrouter_provider_text_with_lifecycle_reporting_usage(
+    messages: &[ProviderMessage],
+    options: &mut RoutedProviderOptions<'_>,
+    resume_from: Option<&OpenRouterCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &OpenRouterCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+) -> Result<String, ProviderSessionError> {
     let api_key = openrouter_api_key(options.data_dir)?;
     let model = env::var("SAND_OPENROUTER_MODEL")
         .ok()
@@ -1521,7 +1610,7 @@ fn run_openrouter_provider_text_with_lifecycle(
     let execute_tool = &mut *options.execute_tool;
     let on_text_delta = &mut *options.on_text_delta;
     let mut transport = OpenRouterHttpTransport::new(api_key)?;
-    run_openrouter_with_transport(
+    run_openrouter_with_transport_reporting_usage(
         &mut transport,
         &model,
         messages,
@@ -1531,6 +1620,7 @@ fn run_openrouter_provider_text_with_lifecycle(
         should_cancel,
         resume_from,
         on_checkpoint,
+        on_usage,
     )
 }
 
