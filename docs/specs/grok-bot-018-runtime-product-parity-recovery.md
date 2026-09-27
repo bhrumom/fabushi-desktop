@@ -2026,3 +2026,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `searchAgents` now uses the ready SQLite/FTS5 index fast path, filters stale/deleted agent ids, preserves newest-first result limiting, and falls back to the canonical durable transcript scan when the index is not ready. `searchMedia` is now reachable through the same shipping Gateway and preserves file name, extension, MIME, attachment kind, timestamp and dimensions while filtering stale agents.
 - `source/host/tests/roster_search_contract.rs` adds a focused production-Gateway contract for both indexed message search and media search, including stale-agent filtering. This closes the frozen `source/host/extensions/transcript/roster-search.ts` mapping without changing Coordinator/Host/Runner boundaries.
 - The architecture manifest moves only that row from `existing-needs-parity` to `implemented`; the strict remainder becomes 147. Other Host/Runner rows remain non-final until their own production dependencies and exact behavior are wired.
+
+
+### 2026-09-27 Host Local Exec architecture-gate correction
+
+- Exact-head Desktop Chat Parity run `36326026178` failed only in `Enforce Agent workspace architecture boundary` with `Shipping Host must own Local Exec extension composition`.
+- Production Host composition already starts the consolidated Grok-shaped Host extension bundle through `start_production_host_extensions(...)`, owns `production_extensions.local_exec`, derives its live bridge, and exposes `local_exec_extension.gateway_bridge()` only through `GatewayServerDeps.local_exec`.
+- The failed boundary check still required the retired literal call `start_local_exec_extension(...)`. Restoring that call would create duplicate composition and violate the single canonical Host ownership model.
+- Commit `34d3ef075453ba558ffc1f2ab6e366aa538a3329` updates the architecture gate to verify the current production composition and Gateway bridge instead of the obsolete constructor spelling. No production runtime behavior was weakened or moved across Coordinator/Host/Runner boundaries.
+- Focused Electron chat E2E in the same prior exact-head run passed. A new exact-head CI run for the corrected commit is still required before this gate can be marked passed.
