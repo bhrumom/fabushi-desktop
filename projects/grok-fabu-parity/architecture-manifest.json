@@ -18998,14 +18998,15 @@
       "behavioralEvidence": [
         "source/host/src/sand_host.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/extensions/transcript/production_runtime.rs"
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/remaining_planned_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/sand_host_production_wiring_contract.rs"
       ],
-      "notes": "Shipping GatewayApi health now consumes the Rust SandHost health owner with live running-agent ids, durable pending-wake background work, Auto-review pending approvals, active-agent projection and approval-only lastBusyAt fencing. This removes the previous default-idle production projection. Final remains withheld for frozen background-shell/mid-drain revival sources and confirmed box-ready telemetry/marker retry lifecycle."
+      "notes": "Shipping GatewayApi health consumes the Rust SandHost health owner with live running-agent ids, durable pending-wake background work, Auto-review pending approvals, active-agent projection and approval-only lastBusyAt fencing. Shipping startup also restores frozen box-ready reporting after gateway discovery: boot-id marker dedupe, asynchronous confirmed telemetry, 3 attempts with 30s retry, and marker write only after delivery. Final remains withheld for frozen running-subagent/background-shell/mid-drain revival busy sources."
     },
     {
       "referencePath": "source/host/sand-multitask.ts",
