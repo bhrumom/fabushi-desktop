@@ -13,6 +13,8 @@ fn shipping_host_wires_user_message_and_watchdog_interrupt_turn_telemetry() {
         "interrupt_wedged_run_for_watchdog(&event.agent_id)",
         "worker_transcript_runtime.settle_turn_usage(",
         "turn_usage_telemetry(&TurnUsageFields",
+        "observation.set_first_token_handler(",
+        "ttft_telemetry(&TtftFields",
     ] {
         assert!(
             SHIPPING_HOST.contains(needle),
