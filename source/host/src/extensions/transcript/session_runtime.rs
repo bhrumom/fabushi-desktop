@@ -222,6 +222,13 @@ impl SessionRuntime {
             .and_then(|state| state.focused_at_ms)
     }
 
+    pub fn active_agent_id(
+        &self,
+        sessions: &Arc<ProductionSessionWorkers>,
+    ) -> Option<String> {
+        SandAgentSessionStore::new(Arc::clone(sessions)).read_active_agent_id()
+    }
+
     pub fn set_window_focused(
         &self,
         sessions: &Arc<ProductionSessionWorkers>,
