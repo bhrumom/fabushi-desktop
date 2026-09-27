@@ -296,3 +296,34 @@ fn host_settings_switch_scope_before_applying_same_update_and_normalizes_invalid
     assert!(host.get("hasSeenOnboarding").is_none());
     let _ = fs::remove_file(path);
 }
+
+
+#[test]
+fn frozen_notification_and_default_auto_review_persistence_are_normalized() {
+    let path = temp_path("normalization");
+    fs::write(
+        &path,
+        r#"{"version":1,"notifications":{"isEnabled":true,"extra":"drop"},"autoReviewInstructions":{"isEnabled":false,"allowInstructions":["x"],"blockInstructions":[]}}"#,
+    )
+    .expect("seed settings");
+    let service = SettingsService::new(&path);
+
+    let notifications = service.get_notification_config();
+    assert_eq!(notifications["isEnabled"], false);
+    let persisted: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&path).expect("settings text"))
+            .expect("settings json");
+    assert_eq!(
+        persisted["notifications"],
+        serde_json::json!({"isEnabled": false})
+    );
+
+    assert!(service
+        .set_auto_review_instructions(&SandAutoReviewInstructions::default())
+        .expect("clear default auto review override"));
+    let persisted: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&path).expect("settings text"))
+            .expect("settings json");
+    assert!(persisted.get("autoReviewInstructions").is_none());
+    let _ = fs::remove_file(path);
+}
