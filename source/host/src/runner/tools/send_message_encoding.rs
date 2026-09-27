@@ -1,10 +1,17 @@
 use serde_json::{Value, json};
 
+use crate::runner::agent_v1_wire::{
+    AgentToolCall, SendMessageArgs, SendMessageAttachment, SendMessageText,
+    SendMessageToolCall, agent_tool_call, send_message_args,
+};
+
 use super::sand_permission_request::summarize_permission_request;
 use super::sand_secret_request::summarize_secret_request;
 
-fn text(content: String) -> Value {
-    json!({"message": {"case": "text", "value": {"content": content}}})
+fn wire_text(content: String) -> SendMessageArgs {
+    SendMessageArgs {
+        message: Some(send_message_args::Message::Text(SendMessageText { content })),
+    }
 }
 
 pub fn encode_markdown_image_destination(url: &str) -> String {
@@ -67,30 +74,38 @@ fn summarize_widget(widget: Option<&Value>) -> String {
     if labels.is_empty() { prompt.to_string() } else { format!("{prompt} — {labels}") }
 }
 
-pub fn encode_send_message(message: &Value) -> Result<Value, String> {
+pub fn create_send_message_tool_call(tool_call: SendMessageToolCall) -> AgentToolCall {
+    AgentToolCall {
+        tool: Some(agent_tool_call::Tool::SendMessageToolCall(tool_call)),
+        tool_call_id: None,
+        started_at_ms: None,
+        completed_at_ms: None,
+    }
+}
+
+pub fn encode_send_message_wire(message: &Value) -> Result<SendMessageArgs, String> {
     let message_type = message
         .get("type")
         .and_then(Value::as_str)
         .ok_or_else(|| "SendMessage message requires type".to_string())?;
     match message_type {
-        "text" => Ok(text(encode_text_content(
+        "text" => Ok(wire_text(encode_text_content(
             message.get("content").and_then(Value::as_str).unwrap_or_default(),
             message.get("images").and_then(Value::as_array).map(Vec::as_slice),
         ))),
-        "attachment" => Ok(json!({
-            "message": {
-                "case": "attachment",
-                "value": {
-                    "url": message.get("url").and_then(Value::as_str).unwrap_or_default(),
-                    "alt": message.get("alt").and_then(Value::as_str)
-                }
-            }
-        })),
-        "widget" => Ok(text(summarize_widget(message.get("widget")))),
+        "attachment" => Ok(SendMessageArgs {
+            message: Some(send_message_args::Message::Attachment(
+                SendMessageAttachment {
+                    url: message.get("url").and_then(Value::as_str).unwrap_or_default().to_string(),
+                    alt: message.get("alt").and_then(Value::as_str).map(str::to_string),
+                },
+            )),
+        }),
+        "widget" => Ok(wire_text(summarize_widget(message.get("widget")))),
         "cursor-agent" => {
             let bc_id = message.get("bcId").and_then(Value::as_str).unwrap_or_default();
             let title = message.get("title").and_then(Value::as_str).map(str::trim).filter(|value| !value.is_empty());
-            Ok(text(match title {
+            Ok(wire_text(match title {
                 Some(title) => format!("Referenced Cursor cloud agent {bc_id} ({title})"),
                 None => format!("Referenced Cursor cloud agent {bc_id}"),
             }))
@@ -102,18 +117,18 @@ pub fn encode_send_message(message: &Value) -> Result<Value, String> {
                 .and_then(|value| value.get("label"))
                 .and_then(Value::as_str)
                 .unwrap_or_default();
-            Ok(text(summarize_secret_request(label)))
+            Ok(wire_text(summarize_secret_request(label)))
         }
         "permission-request" => {
             let permission = message.get("permission").unwrap_or(&Value::Null);
-            Ok(text(summarize_permission_request(
+            Ok(wire_text(summarize_permission_request(
                 permission.get("title").and_then(Value::as_str).unwrap_or_default(),
                 permission.get("reason").and_then(Value::as_str).unwrap_or_default(),
             )))
         }
         "auto-review-approval" => {
             let approval = message.get("approval").unwrap_or(&Value::Null);
-            Ok(text(format!(
+            Ok(wire_text(format!(
                 "Auto-review requested approval for: {}. Status: {}.",
                 approval.get("summary").and_then(Value::as_str).unwrap_or_default(),
                 approval.get("status").and_then(Value::as_str).unwrap_or_default(),
@@ -121,7 +136,7 @@ pub fn encode_send_message(message: &Value) -> Result<Value, String> {
         }
         "local-tool-permission" => {
             let ask = message.get("ask").unwrap_or(&Value::Null);
-            Ok(text(format!(
+            Ok(wire_text(format!(
                 "Asked the user for permission to use their computer ({}: {}). Status: {}.",
                 ask.get("action").and_then(Value::as_str).unwrap_or_default(),
                 ask.get("target").and_then(Value::as_str).unwrap_or_default(),
@@ -130,7 +145,7 @@ pub fn encode_send_message(message: &Value) -> Result<Value, String> {
         }
         "connector" => {
             let connector = message.get("connector").and_then(Value::as_str).unwrap_or_default();
-            Ok(text(if message.get("variant").and_then(Value::as_str) == Some("connected") {
+            Ok(wire_text(if message.get("variant").and_then(Value::as_str) == Some("connected") {
                 format!("Confirmed the {connector} connector is connected")
             } else {
                 format!("Asked the user to connect the {connector} connector")
@@ -140,9 +155,9 @@ pub fn encode_send_message(message: &Value) -> Result<Value, String> {
             let connectors = message.get("connectors").and_then(Value::as_array)
                 .map(|items| items.iter().filter_map(Value::as_str).collect::<Vec<_>>().join(", "))
                 .unwrap_or_default();
-            Ok(text(format!("Asked the user to connect: {connectors}")))
+            Ok(wire_text(format!("Asked the user to connect: {connectors}")))
         }
-        "listener-connect" => Ok(text(format!(
+        "listener-connect" => Ok(wire_text(format!(
             "Asked the user to connect {} for listener routines",
             if message.get("platform").and_then(Value::as_str) == Some("slack") { "Slack" } else { "GitHub" }
         ))),
@@ -156,7 +171,7 @@ pub fn encode_send_message(message: &Value) -> Result<Value, String> {
                 .map(|items| items.iter().filter_map(Value::as_str).collect::<Vec<_>>().join(", "));
             let subject = draft.get("subject").and_then(Value::as_str).unwrap_or_default();
             let body = draft.get("body").and_then(Value::as_str).unwrap_or_default();
-            Ok(text(format!(
+            Ok(wire_text(format!(
                 "Draft email{}\nTo: {}{}\nSubject: {}\n\n{}",
                 from.map(|value| format!("\nFrom: {value}")).unwrap_or_default(),
                 to,
@@ -171,7 +186,7 @@ pub fn encode_send_message(message: &Value) -> Result<Value, String> {
             let target = draft.get("target").and_then(Value::as_str).unwrap_or_default();
             let thread = draft.get("thread").and_then(Value::as_str).unwrap_or("New message");
             let body = draft.get("body").and_then(Value::as_str).unwrap_or_default();
-            Ok(text(format!(
+            Ok(wire_text(format!(
                 "Draft Slack message{} to {}\nThread: {}\n\n{}",
                 workspace.map(|value| format!(" in {value}")).unwrap_or_default(),
                 target,
@@ -181,6 +196,22 @@ pub fn encode_send_message(message: &Value) -> Result<Value, String> {
         }
         other => Err(format!("Unsupported send-message type: {other}")),
     }
+}
+
+fn send_message_args_to_json(args: &SendMessageArgs) -> Value {
+    match args.message.as_ref() {
+        Some(send_message_args::Message::Text(text)) => {
+            json!({"message":{"case":"text","value":{"content":text.content}}})
+        }
+        Some(send_message_args::Message::Attachment(attachment)) => {
+            json!({"message":{"case":"attachment","value":{"url":attachment.url,"alt":attachment.alt}}})
+        }
+        None => json!({"message":{"case":null,"value":null}}),
+    }
+}
+
+pub fn encode_send_message(message: &Value) -> Result<Value, String> {
+    encode_send_message_wire(message).map(|args| send_message_args_to_json(&args))
 }
 
 pub fn is_box_root_path(path: &str) -> bool {

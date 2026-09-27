@@ -1,3 +1,4 @@
+pub mod agent_v1_wire;
 pub mod tools;
 pub mod video_container;
 pub mod site_visit_tracking;

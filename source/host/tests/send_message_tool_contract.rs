@@ -8,8 +8,9 @@ use mahayana_host_runtime::attachment_paths::{
     AgentMediaKind, persist_agent_media_bytes,
 };
 use mahayana_host_runtime::runner::tools::send_message_encoding::{
-    encode_markdown_image_destination, encode_send_message, encode_text_content,
-    image_mime_from_path, resolve_box_media_attachment,
+    create_send_message_tool_call, encode_markdown_image_destination, encode_send_message,
+    encode_send_message_wire, encode_text_content, image_mime_from_path,
+    resolve_box_media_attachment,
 };
 use mahayana_host_runtime::runner::tools::send_message_schema::{
     parse_send_message_input, refine_send_message, send_message_input_schema,
@@ -20,6 +21,10 @@ use mahayana_host_runtime::runner::tools::send_message_tool::{
     SAND_SEND_MESSAGE_TOOL_NAME, SendMessageSink, SendMessageToolBridge,
 };
 use serde_json::{Value, json};
+use prost::Message as _;
+use mahayana_host_runtime::runner::agent_v1_wire::{
+    AgentToolCall, SendMessageToolCall, agent_tool_call,
+};
 
 struct Delegate;
 
@@ -237,6 +242,41 @@ fn encoding_preserves_frozen_text_markdown_and_summary_projection() {
         .expect("encode")["message"]["value"]["content"],
         "Legacy permission request (no longer actionable): Files — Read a report"
     );
+}
+
+#[test]
+fn send_message_uses_frozen_agent_v1_wire_types_and_tool_call_tag() {
+    let args = encode_send_message_wire(&json!({
+        "type":"text",
+        "content":"hello"
+    }))
+    .expect("wire encode");
+
+    assert_eq!(
+        args.encode_to_vec(),
+        vec![0x0a, 0x07, 0x0a, 0x05, b'h', b'e', b'l', b'l', b'o']
+    );
+
+    let wrapped = create_send_message_tool_call(SendMessageToolCall {
+        args: Some(args.clone()),
+        result: None,
+    });
+    let bytes = wrapped.encode_to_vec();
+
+    assert_eq!(
+        &bytes[..2],
+        &[0xba, 0x03],
+        "agent.v1.ToolCall send_message_tool_call must use frozen tag 55"
+    );
+
+    let decoded = AgentToolCall::decode(bytes.as_slice()).expect("decode frozen wire");
+    match decoded.tool {
+        Some(agent_tool_call::Tool::SendMessageToolCall(call)) => {
+            assert_eq!(call.args, Some(args));
+            assert!(call.result.is_none());
+        }
+        _ => panic!("unexpected tool-call oneof"),
+    }
 }
 
 #[test]
