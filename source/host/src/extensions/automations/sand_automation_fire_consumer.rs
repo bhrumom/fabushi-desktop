@@ -20,21 +20,33 @@ pub struct AutomationFireFailure {
 pub struct SandAutomationFireConsumer {
     queue: VecDeque<AutomationFireEnvelope>,
     firing: bool,
+    stopped: bool,
 }
 
 impl SandAutomationFireConsumer {
+    pub fn start(&mut self) {
+        self.stopped = false;
+    }
+
+    pub fn stop(&mut self) {
+        self.stopped = true;
+    }
+
     pub fn enqueue(&mut self, envelope: AutomationFireEnvelope) {
-        self.queue.push_back(envelope);
+        if !self.stopped {
+            self.queue.push_back(envelope);
+        }
     }
 
     pub fn is_firing(&self) -> bool { self.firing }
+    pub fn is_stopped(&self) -> bool { self.stopped }
     pub fn pending_len(&self) -> usize { self.queue.len() }
 
     pub fn drain(
         &mut self,
         mut fire: impl FnMut(&AutomationFireEnvelope) -> Result<(), String>,
     ) -> Vec<AutomationFireFailure> {
-        if self.firing {
+        if self.firing || self.stopped {
             return Vec::new();
         }
         self.firing = true;

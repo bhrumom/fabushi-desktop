@@ -70,6 +70,7 @@ impl AutomationExtensionRuntime {
             return;
         }
         self.suspended = true;
+        self.consumer.stop();
         self.watcher.suspend();
         for source in self.sources.values_mut() {
             source.stop();
@@ -81,6 +82,7 @@ impl AutomationExtensionRuntime {
             return;
         }
         self.suspended = false;
+        self.consumer.start();
         self.watcher.resume();
         for source in self.sources.values_mut() {
             if !source.listeners().is_empty() {
@@ -96,6 +98,7 @@ impl AutomationExtensionRuntime {
     pub fn stop(&mut self) {
         self.stopped = true;
         self.suspended = true;
+        self.consumer.stop();
         self.watcher.dispose();
         for source in self.sources.values_mut() {
             source.stop();
@@ -172,6 +175,10 @@ impl AutomationExtensionRuntime {
         fire: impl FnMut(&AutomationFireEnvelope) -> Result<(), String>,
     ) -> Vec<AutomationFireFailure> {
         self.consumer.drain(fire)
+    }
+
+    pub fn fire_consumer(&self) -> &SandAutomationFireConsumer {
+        &self.consumer
     }
 
     pub fn source(&self, kind: &str) -> Option<&BackendRelaySource> {

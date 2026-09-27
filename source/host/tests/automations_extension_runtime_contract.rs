@@ -162,3 +162,46 @@ fn extension_suspend_resume_wakes_is_non_destructive_and_idempotent() {
     assert!(runtime.wakes_suspended());
     assert!(!runtime.source("slack").unwrap().is_started());
 }
+
+
+#[test]
+fn fire_consumer_stop_start_preserves_owed_work_without_accepting_new_work() {
+    let mut consumer=SandAutomationFireConsumer::default();
+    consumer.enqueue(AutomationFireEnvelope{
+        agent_id:"a".into(),automation_id:"before".into(),event:json!({"source":"slack"})
+    });
+    consumer.stop();
+    consumer.enqueue(AutomationFireEnvelope{
+        agent_id:"b".into(),automation_id:"while-stopped".into(),event:json!({"source":"slack"})
+    });
+    assert!(consumer.is_stopped());
+    assert_eq!(consumer.pending_len(),1);
+    let mut seen=Vec::new();
+    assert!(consumer.drain(|fire|{
+        seen.push(fire.automation_id.clone());
+        Ok(())
+    }).is_empty());
+    assert!(seen.is_empty());
+    assert_eq!(consumer.pending_len(),1);
+
+    consumer.start();
+    assert!(!consumer.is_stopped());
+    assert!(consumer.drain(|fire|{
+        seen.push(fire.automation_id.clone());
+        Ok(())
+    }).is_empty());
+    assert_eq!(seen,vec!["before"]);
+    assert_eq!(consumer.pending_len(),0);
+}
+
+#[test]
+fn extension_suspend_resume_stops_and_restarts_fire_consumer() {
+    let mut runtime=AutomationExtensionRuntime::with_source_kinds(vec!["slack".into()]);
+    assert!(!runtime.fire_consumer().is_stopped());
+    runtime.suspend_wakes();
+    assert!(runtime.fire_consumer().is_stopped());
+    runtime.resume_wakes();
+    assert!(!runtime.fire_consumer().is_stopped());
+    runtime.stop();
+    assert!(runtime.fire_consumer().is_stopped());
+}
