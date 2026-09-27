@@ -6,7 +6,10 @@ use reqwest::blocking::Client;
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use serde_json::Value;
 use std::collections::BTreeSet;
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, mpsc};
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
 pub const XUSER_RELAY_POLL_INTERVAL_MS: u64 = 4_000;
 pub const XUSER_RELAY_ERROR_BACKOFF_MS: u64 = 30_000;
@@ -249,11 +252,15 @@ impl SandXuserRelayRuntime {
         state.backoff_until_ms = 0;
     }
 
-    pub fn request_drain(&self) -> Result<bool, String> {
+    pub fn record_notify(&self) {
         self.gate
             .lock()
             .unwrap_or_else(|p| p.into_inner())
             .record_notify();
+    }
+
+    pub fn request_drain(&self) -> Result<bool, String> {
+        self.record_notify();
         self.tick()
     }
 
@@ -341,6 +348,118 @@ impl SandXuserRelayRuntime {
             .unwrap_or_else(|p| p.into_inner())
             .record_poll();
         Ok(true)
+    }
+}
+
+
+pub struct SandXuserRelayDriver {
+    runtime: Arc<SandXuserRelayRuntime>,
+    stopped: Arc<AtomicBool>,
+    wake_tx: Mutex<Option<mpsc::Sender<()>>>,
+    worker: Mutex<Option<JoinHandle<()>>>,
+}
+
+impl SandXuserRelayDriver {
+    pub fn new(runtime: Arc<SandXuserRelayRuntime>) -> Self {
+        Self {
+            runtime,
+            stopped: Arc::new(AtomicBool::new(true)),
+            wake_tx: Mutex::new(None),
+            worker: Mutex::new(None),
+        }
+    }
+
+    pub fn runtime(&self) -> Arc<SandXuserRelayRuntime> {
+        Arc::clone(&self.runtime)
+    }
+
+    pub fn start(&self) {
+        let mut worker = self.worker.lock().unwrap_or_else(|p| p.into_inner());
+        if worker.is_some() {
+            return;
+        }
+        self.stopped.store(false, Ordering::Release);
+        self.runtime.start();
+
+        let (wake_tx, wake_rx) = mpsc::channel();
+        *self.wake_tx.lock().unwrap_or_else(|p| p.into_inner()) = Some(wake_tx);
+
+        let runtime = Arc::clone(&self.runtime);
+        let stopped = Arc::clone(&self.stopped);
+        *worker = thread::Builder::new()
+            .name("sand-xuser-relay".into())
+            .spawn(move || {
+                while !stopped.load(Ordering::Acquire) {
+                    if let Err(error) = runtime.tick() {
+                        eprintln!("[sand:sharing] relay poll failed: {error}");
+                    }
+                    if stopped.load(Ordering::Acquire) {
+                        break;
+                    }
+                    match wake_rx.recv_timeout(Duration::from_millis(XUSER_RELAY_POLL_INTERVAL_MS)) {
+                        Ok(()) | Err(mpsc::RecvTimeoutError::Timeout) => {}
+                        Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                    }
+                }
+            })
+            .ok();
+    }
+
+    pub fn request_drain(&self) {
+        self.runtime.record_notify();
+        if let Some(wake) = self
+            .wake_tx
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .as_ref()
+        {
+            let _ = wake.send(());
+        }
+    }
+
+    pub fn stop(&self) {
+        self.stopped.store(true, Ordering::Release);
+        if let Some(wake) = self
+            .wake_tx
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .take()
+        {
+            let _ = wake.send(());
+        }
+        if let Some(worker) = self
+            .worker
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .take()
+        {
+            let _ = worker.join();
+        }
+        self.runtime.stop();
+    }
+
+    pub fn is_started(&self) -> bool {
+        self.worker
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .is_some()
+    }
+}
+
+impl Drop for SandXuserRelayDriver {
+    fn drop(&mut self) {
+        self.stopped.store(true, Ordering::Release);
+        if let Ok(slot) = self.wake_tx.get_mut() {
+            if let Some(wake) = slot.take() {
+                let _ = wake.send(());
+            }
+        }
+        if let Ok(slot) = self.worker.get_mut() {
+            if let Some(worker) = slot.take() {
+                let _ = worker.join();
+            }
+        }
+        self.runtime.stop();
     }
 }
 
