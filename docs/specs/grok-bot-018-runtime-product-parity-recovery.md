@@ -1587,3 +1587,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `resolveLocalToolPermission` is now a first-class Rust `UnifiedGatewayApi` method rather than falling through to the compatibility Host lane; `setHostSettings` still delegates its broad settings payload but now invokes the canonical permission-change settlement hook when `localToolPermission` changes.
 - `source/host/extensions/local-tool-permission/extension.ts` advances to **implemented**. `source/host/host-runner-composition.ts` advances only to **existing-needs-parity** because its non-permission runner/mirror/memory responsibilities remain open.
 - Manifest becomes **1,823 implemented / 109 existing-needs-parity / 70 planned** (179 non-final).
+
+
+### 2026-09-27 inference extension composition slice
+
+- Exact implementation baseline before this slice: `88526432473a0245d37577412486874dd2329299`. At that SHA Desktop Chat Parity passed; the Rust Host, independent Mahayana Coordinator, Runner, box daemon, Computer takeover and ConversationActor/CapabilityBroker jobs all passed. The Rust workflow was red only at the strict final architecture gate because non-final manifest rows remained.
+- Added Rust-owned `source/host/src/extensions/inference/cursor_web_tools.rs`, `extension.rs`, and `production.rs`, exported from the inference module, plus `source/host/tests/inference_extension_composition_contract.rs`.
+- The slice preserves frozen Grok request/model projection, web-fetch success/error/no-result normalization, inference readiness semantics, model-experiment listener fanout, shared auth identity, request-id forwarding and the production factory boundary without creating a second inference runtime.
+- The corresponding frozen rows `cursor-web-tools.ts`, `extension.ts`, and `production.ts` advance only from `planned` to `existing-needs-parity`. Final status remains blocked on authenticated Cursor backend/generated AiService bindings, `inference-service`/`cursor-session` production wiring, and Host production-extension registry composition.
+- Manifest after this slice: **1,825 implemented / 112 existing-needs-parity / 65 planned** (**177 non-final**). This is not a final parity, merge, packaged-acceptance, or release claim.
