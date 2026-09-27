@@ -23,7 +23,7 @@ use crate::runner::production_turn_run_shell_adapter::{
     ProductionTurnRunShellAdapter, ProviderRetryEvent, ProviderRetryReport,
     RoutedProviderAttemptExecutor, RoutedProviderCheckpointStore,
 };
-use crate::runner::system_prompt_assembly::render_request_context_system_prompt;
+use crate::runner::system_prompt_assembly::render_request_context_system_prompt_with_capabilities;
 use crate::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout;
 
 pub const ROUTED_MCP_PROTOCOL_VERSION: &str = "2025-03-26";
@@ -339,6 +339,8 @@ pub struct RoutedProviderRun<'a> {
     pub checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     pub retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
     pub retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
+    pub cloud_agents_enabled: bool,
+    pub multitask_enabled: bool,
 }
 
 pub fn run_routed_provider_in_runner(
@@ -353,9 +355,11 @@ pub fn run_routed_provider_in_runner(
         ));
     }
 
-    let system_prompt = render_request_context_system_prompt(
+    let system_prompt = render_request_context_system_prompt_with_capabilities(
         &run.request_context.context,
         run.request_context.rules.as_deref(),
+        run.cloud_agents_enabled,
+        run.multitask_enabled,
     );
     let mut provider_messages = Vec::with_capacity(run.messages.len() + usize::from(!system_prompt.is_empty()));
     if !system_prompt.is_empty() {
