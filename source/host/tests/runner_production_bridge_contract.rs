@@ -73,6 +73,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
             send_message_sink: None,
             reaction_sink: None,
             cloud_agent_tool: None,
+            multitask_enabled: true,
             action_audit: None,
             observation: None,
         },
@@ -88,6 +89,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
     assert!(!composition.has_send_message_sink());
     assert!(!composition.has_reaction_sink());
     assert!(!composition.has_cloud_agent_tool());
+    assert!(composition.has_multitask_enabled());
     assert!(!composition.has_action_audit());
     assert!(composition.has_spotlight_enabled());
 }
