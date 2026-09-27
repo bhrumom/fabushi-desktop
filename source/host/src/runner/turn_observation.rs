@@ -45,6 +45,7 @@ pub struct TurnObservation {
     conversation_id: String,
     event_sink: Option<TurnObservationEventSink>,
     turn_await_sink: Option<TurnObservationEventSink>,
+    first_token_sink: Option<TurnObservationEventSink>,
     turn_started_at_ms: u64,
     last_tool: Option<String>,
     recent_activity: Vec<String>,
@@ -65,6 +66,7 @@ impl TurnObservation {
             conversation_id: conversation_id.into(),
             event_sink,
             turn_await_sink: None,
+            first_token_sink: None,
             turn_started_at_ms: now_ms(),
             last_tool: None,
             recent_activity: Vec::new(),
@@ -204,6 +206,9 @@ impl TurnObservation {
                 target.insert(key.clone(), value.clone());
             }
         }
+        if let Some(sink) = self.first_token_sink.as_ref() {
+            sink(event.clone());
+        }
         self.emit(event);
         true
     }
@@ -259,6 +264,10 @@ impl TurnObservation {
 
     pub fn set_turn_await_handler(&mut self, handler: TurnObservationEventSink) {
         self.turn_await_sink = Some(handler);
+    }
+
+    pub fn set_first_token_handler(&mut self, handler: TurnObservationEventSink) {
+        self.first_token_sink = Some(handler);
     }
 
     pub fn observe_communicate_tool_call(
