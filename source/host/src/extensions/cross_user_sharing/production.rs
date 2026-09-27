@@ -35,6 +35,9 @@ use super::xuser_turn_dedupe_store::{
 
 pub type RemoteRequestedTurnRunner =
     Arc<dyn Fn(&str, &str, &str) -> Result<Vec<String>, String> + Send + Sync>;
+pub type SharedRoomTurnRunner = Arc<
+    dyn Fn(&str, Option<GroupMemberTurnExecutor>) -> Result<(), String> + Send + Sync,
+>;
 
 /// Shipping CrossUserSharing owner.
 ///
@@ -58,6 +61,8 @@ struct ProductionXuserHost {
     shared_rooms: Arc<SharedRooms>,
     attachments: Arc<AttachmentsService>,
     run_remote_requested_turn: RemoteRequestedTurnRunner,
+    run_shared_room_turn: SharedRoomTurnRunner,
+    remote_turns: Arc<Mutex<Weak<SandXuserRemoteTurns>>>,
 }
 
 impl ProductionXuserHost {
@@ -240,9 +245,29 @@ impl XuserSharingManager for ProductionXuserHost {
     }
 
     fn post_shared_room_guest_message(&self, event: &Value) -> Result<(), String> {
-        self.shared_rooms
-            .post_shared_room_guest_message(event)
-            .map(|_| ())
+        let Some(room_agent_id) = self.shared_rooms.post_shared_room_guest_message(event)? else {
+            return Ok(());
+        };
+        let remote_executor = self
+            .remote_turns
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .upgrade()
+            .map(|turns| {
+                Arc::new(move |request| {
+                    let Some(shared_room_id) = request.shared_room_id.as_deref() else {
+                        return Ok(Vec::new());
+                    };
+                    Ok(turns.run_remote_member_turn(
+                        &request.member,
+                        shared_room_id,
+                        &request.group,
+                        &request.peers,
+                        &request.new_messages,
+                    ))
+                }) as GroupMemberTurnExecutor
+            });
+        (self.run_shared_room_turn)(&room_agent_id, remote_executor)
     }
 
     fn append_mirror_room_entry(
@@ -308,6 +333,7 @@ impl ProductionCrossUserRuntime {
         attachments: Arc<AttachmentsService>,
         shared_rooms: Arc<SharedRooms>,
         run_remote_requested_turn: RemoteRequestedTurnRunner,
+        run_shared_room_turn: SharedRoomTurnRunner,
     ) -> Result<Arc<Self>, String> {
         let backend_url = get_configured_backend_url().map_err(|error| error.to_string())?;
         let token_auth = Arc::clone(&auth);
@@ -329,12 +355,15 @@ impl ProductionCrossUserRuntime {
                 .and_then(jwt_subject_from_access_token),
         );
 
+        let remote_turns_slot = Arc::new(Mutex::new(Weak::<SandXuserRemoteTurns>::new()));
         let host = Arc::new(ProductionXuserHost {
             relay: Arc::clone(&relay),
             service: Arc::downgrade(&service),
             shared_rooms,
             attachments,
             run_remote_requested_turn,
+            run_shared_room_turn,
+            remote_turns: Arc::clone(&remote_turns_slot),
         });
         let remote_host: Arc<dyn RemoteTurnsHost> = host.clone();
         let manager_host: Arc<dyn XuserSharingManager> = host.clone();
@@ -351,9 +380,8 @@ impl ProductionCrossUserRuntime {
         )));
 
         // The relay owns polling/ack/backoff. Event dispatch stays inside the
-        // CrossUserSharing boundary and fails closed for event kinds that have
-        // not yet been promoted to the production composition.
-        let remote_turns_slot = Arc::new(Mutex::new(Weak::<SandXuserRemoteTurns>::new()));
+        // CrossUserSharing boundary and delegates room state to Transcript-owned
+        // SharedRooms while turn execution remains on the canonical Host Runner.
         *remote_turns_slot
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner()) =
