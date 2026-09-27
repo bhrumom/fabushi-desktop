@@ -1613,3 +1613,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The Rust process owner preserves the reference boundaries: environment-cleared child spawn, ping/initialize handshake, framed stdin/stdout transport, monotonic request IDs, strict response-ID correlation, per-operation deadlines, terminal failure propagation, apply/snapshot/upload/flush methods, and bounded shutdown/termination.
 - `source/host/tests/csnaps_process_contract.rs` adds executable fake-process coverage for the normal operation sequence, unknown request IDs, request timeout termination, and exit-description semantics. The architecture manifest advances only this module from `planned` to `implemented`; adapter/service/extension/privacy/process integration remain independently gated.
 - Local Cargo execution on the attached VPS is blocked by a full root filesystem before dependency unpacking; therefore GitHub Actions exact-HEAD Rust runtime is the authoritative compile/test gate for this slice.
+
+
+### 2026-09-27 csnaps capability audit closure and process-test repair
+
+- source/host/extensions/codebase-telemetry/csnaps-capability.ts was re-audited against the frozen Grok file at a9f633e09d49a85829b8236331b9e21f7e612634. The existing Rust leaf and executable contract already preserve the trimmed SAND_CSNAPS_BIN override, host-bundle default path, and missing / not-file / not-executable availability states, so this row advances from existing-needs-parity to implemented without inventing new behavior.
+- Exact-HEAD Rust run 36298649184 proved the shipping Host compiles and the independent Coordinator/box-exec gates pass, then exposed one test-only blocker in the new csnaps-process contract: the test referenced undeclared tempfile. The test now uses the crate's existing uuid dependency plus std::env::temp_dir, avoiding a new dependency while retaining isolated executable fixtures.
+- This audit/repair does not promote the remaining codebase-telemetry adapter, host, service, privacy-mode, or extension rows; those remain independently gated.

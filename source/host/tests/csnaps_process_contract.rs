@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::PathBuf;
 use std::time::Duration;
 
 use mahayana_host_runtime::extensions::codebase_telemetry::csnaps_process::{
@@ -7,10 +8,14 @@ use mahayana_host_runtime::extensions::codebase_telemetry::csnaps_process::{
 use serde_json::{Map, json};
 
 #[cfg(unix)]
-fn fake_csnaps(script_body: &str) -> tempfile::TempDir {
+fn fake_csnaps(script_body: &str) -> PathBuf {
     use std::os::unix::fs::PermissionsExt;
-    let dir = tempfile::tempdir().expect("tempdir");
-    let path = dir.path().join("csnaps");
+    let dir = std::env::temp_dir().join(format!(
+        "fabushi-csnaps-process-{}",
+        uuid::Uuid::new_v4().simple()
+    ));
+    fs::create_dir_all(&dir).expect("tempdir");
+    let path = dir.join("csnaps");
     fs::write(&path, format!("#!/usr/bin/env python3\n{script_body}\n")).expect("script");
     let mut permissions = fs::metadata(&path).expect("metadata").permissions();
     permissions.set_mode(0o755);
@@ -57,7 +62,7 @@ while True:
 fn process_spawns_handshakes_routes_operations_and_closes() {
     let dir = fake_csnaps(SERVER);
     let spawned = CsnapsProcess::spawn(
-        dir.path().join("csnaps"),
+        dir.join("csnaps"),
         Map::new(),
         CsnapsDeadlines::default(),
     ).expect("spawn");
@@ -74,6 +79,7 @@ fn process_spawns_handshakes_routes_operations_and_closes() {
     spawned.handle.trigger_upload(Map::from_iter([("authToken".into(), json!("redacted"))])).expect("upload");
     spawned.handle.flush_pending_uploads(Map::new()).expect("flush");
     spawned.handle.close().expect("close");
+    let _ = fs::remove_dir_all(dir);
 }
 
 #[cfg(unix)]
@@ -93,7 +99,7 @@ req=read_frame()
 send({"id":req["id"]+1,"ok":True,"result":{}})
 "#);
     let err = CsnapsProcess::spawn(
-        dir.path().join("csnaps"),
+        dir.join("csnaps"),
         Map::new(),
         CsnapsDeadlines {
             ping: Duration::from_secs(1),
@@ -101,6 +107,7 @@ send({"id":req["id"]+1,"ok":True,"result":{}})
         },
     ).expect_err("unknown id must fail");
     assert!(err.to_string().contains("unknown request ID"));
+    let _ = fs::remove_dir_all(dir);
 }
 
 #[cfg(unix)]
@@ -115,7 +122,7 @@ if h:
 time.sleep(5)
 "#);
     let err = CsnapsProcess::spawn(
-        dir.path().join("csnaps"),
+        dir.join("csnaps"),
         Map::new(),
         CsnapsDeadlines {
             ping: Duration::from_millis(50),
@@ -124,6 +131,7 @@ time.sleep(5)
         },
     ).expect_err("timeout must fail");
     assert!(err.to_string().contains("timed out"));
+    let _ = fs::remove_dir_all(dir);
 }
 
 #[test]
