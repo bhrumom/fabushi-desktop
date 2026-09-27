@@ -11880,7 +11880,8 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/cross_user_sharing/xuser_entry_publisher.rs",
-        "source/host/src/extensions/cross_user_sharing/mod.rs"
+        "source/host/src/extensions/cross_user_sharing/mod.rs",
+        "source/host/src/extensions/cross_user_sharing/xuser_sharing_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/xuser_service_contract.rs",
@@ -11890,7 +11891,7 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
+      "notes": "Rust owner now preserves the frozen per-room ordered publication chain, human/agent projection rules, remote-agent echo suppression, attachment image inlining limits and server timestamp restamp behavior. SandXuserSharingService also exposes the frozen manager-delegate publish seam. Final remains withheld until production Host composition binds the live Transcript and Attachments adapters into this publisher and exact-HEAD CI proves that wiring."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-pending-departure-store.ts",
@@ -12008,7 +12009,8 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/cross_user_sharing/xuser_sharing_service.rs",
-        "source/host/src/extensions/cross_user_sharing/mod.rs"
+        "source/host/src/extensions/cross_user_sharing/mod.rs",
+        "source/host/src/extensions/cross_user_sharing/xuser_entry_publisher.rs"
       ],
       "testEvidence": [
         "source/host/tests/xuser_service_contract.rs",
@@ -12018,7 +12020,7 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
+      "notes": "Rust sharing service now owns relay lifecycle/state plus a real frozen-shaped manager delegate seam for ordered room-entry publication through SandXuserEntryPublisher. Final remains withheld because production Host composition still must bind Auth identity, Attachments resolution, NotifyBus, Transcript manager/materialization, departure obligations and remote-turn execution into the live service before exact-HEAD CI can prove end-to-end wiring."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-state-reconcile.ts",
