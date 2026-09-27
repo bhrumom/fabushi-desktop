@@ -11,6 +11,7 @@ use super::automation_runtime::AutomationRuntime;
 use super::async_task_union::AsyncTask;
 use super::production_runtime::{ProductionSendError, ProductionTranscriptRuntime};
 use super::runner_registry::TranscriptRunnerRegistry;
+use super::shared_rooms::SharedRooms;
 
 /// Production composition root for the Grok Transcript extension.
 ///
@@ -24,6 +25,7 @@ pub struct TranscriptManager {
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
     automation_runtime: Arc<AutomationRuntime>,
+    shared_rooms: Arc<SharedRooms>,
     disposed: AtomicBool,
 }
 
@@ -34,12 +36,14 @@ impl TranscriptManager {
     ) -> Self {
         let root_dir = root_dir.as_ref();
         let automation_runtime = Arc::new(AutomationRuntime::new(Arc::clone(&session_workers)));
+        let shared_rooms = Arc::new(SharedRooms::new(Arc::clone(&session_workers)));
         Self {
             session_workers,
             transcript_runtime: Arc::new(ProductionTranscriptRuntime::new(Some(root_dir))),
             runner_registry: Arc::new(TranscriptRunnerRegistry::default()),
             ack_obligations: Arc::new(AckObligations::new(root_dir)),
             automation_runtime,
+            shared_rooms,
             disposed: AtomicBool::new(false),
         }
     }
@@ -62,6 +66,10 @@ impl TranscriptManager {
 
     pub fn automation_runtime(&self) -> Arc<AutomationRuntime> {
         Arc::clone(&self.automation_runtime)
+    }
+
+    pub fn shared_rooms(&self) -> Arc<SharedRooms> {
+        Arc::clone(&self.shared_rooms)
     }
 
     pub fn prompt_acceptance_status(
