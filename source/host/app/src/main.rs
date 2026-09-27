@@ -1683,8 +1683,11 @@ fn start_routed_provider_task(
         });
     }
     let spotlight_enabled = experiments.check_feature_gate("sand_spotlight");
-    let multitask_enabled =
-        !is_group_member_turn && experiments.check_feature_gate("sand_multitask");
+    let multitask_enabled = !args
+        .get("groupMemberTurn")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false)
+        && experiments.check_feature_gate("sand_multitask");
     if spotlight_enabled {
         provider_messages.push(ProviderMessage {
             role: "system".into(),
