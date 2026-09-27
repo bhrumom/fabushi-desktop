@@ -12685,12 +12685,19 @@
       "targetPath": "source/host/src/extensions/mcp/plugin_skills.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "7a3e11bfd40f73b45398c87f5621e60305950017",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/mcp/plugin_skills.rs",
+        "source/host/src/extensions/mcp/plugin_skills_cache.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/plugin_skills_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns the frozen plugin-skill projection/cache service core: stable plugin/skill IDs, publisher/team facts, auth-block de-duplication, listed/indexed cache pruning, preservation of listed-but-temporarily-unloaded records, serialized sync passes and sync telemetry. Final remains withheld until production binds the authenticated Dashboard/marketplace loader, sparse clone/auth configuration, startup/auth-change/daily scheduling and legacy-reference sweep."
     },
     {
       "referencePath": "source/host/extensions/mcp/production.ts",

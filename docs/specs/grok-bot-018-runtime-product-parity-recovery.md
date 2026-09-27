@@ -1698,3 +1698,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `legacy_live_references_contract` passed **3/3**.
 - The row advances from `planned` to `existing-needs-parity`; final remains blocked on marketplace/auth sweep invocation from production MCP/plugin-skills composition.
 - Manifest becomes **1,833 implemented / 122 existing-needs-parity / 47 planned** (**169 non-final**).
+
+
+### 2026-09-27 MCP plugin-skills service-core slice
+
+- Exact starting HEAD: `0d5ad9797ec7762f2899ba45930e141c060c645d`.
+- Re-read frozen `mcp/plugin-skills.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `plugin_skills.rs`: plugin/skill projection, stable duplicate-safe IDs, publisher/team facts, auth-block classification/de-duplication, listed/indexed cache pruning, prior-listed record preservation, serialized sync passes, real `PluginSkillsCache` writes and sync telemetry.
+- `plugin_skills_contract` passed **4/4**.
+- The row advances from `planned` to `existing-needs-parity`; final remains blocked on the authenticated Dashboard/marketplace loader plus startup/auth-change/daily production scheduling and legacy-reference sweep invocation.
+- Manifest becomes **1,833 implemented / 123 existing-needs-parity / 46 planned** (**169 non-final**).
