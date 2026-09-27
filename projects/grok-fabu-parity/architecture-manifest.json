@@ -11475,12 +11475,19 @@
       "targetPath": "source/host/src/extensions/codebase_telemetry/csnaps_protocol.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "137497f84f813767baee3c4cdb64c36ce351dcb1",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/codebase_telemetry/csnaps_protocol.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/csnaps_protocol_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Frozen Grok csnaps protocol is ported as an independent Rust Host leaf: 1 MiB big-endian framing, fragmented-response decoder, JS-safe non-negative request IDs, strict success/error envelopes and error-code set, exact operation-result shapes, lower-case UUID v4 validation, and number-typed kind/environment fields. Exact-HEAD shipping Host cargo check and source/host cargo tests pass. This final status is scoped to csnaps-protocol only; csnaps process/service/adapter remain separately gated."
     },
     {
       "referencePath": "source/host/extensions/codebase-telemetry/extension.ts",
