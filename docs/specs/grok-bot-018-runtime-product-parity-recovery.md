@@ -1656,3 +1656,14 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `host_bundle_upgrade_contract` passed **4/4** on the exact working tree.
 - The manifest row advances from `planned` to `existing-needs-parity`, not final, because `host-upgrade-service` and the extension still need production peer/wake composition.
 - Manifest becomes **1,833 implemented / 117 existing-needs-parity / 52 planned** (**169 non-final**).
+
+
+### 2026-09-27 Host upgrade service + extension slice
+
+- Exact starting HEAD: `f7bbb07c3a5d245bbaa67b719d5044f6f731e734`.
+- Re-read frozen `host-upgrade-service.ts` and `host-upgrade/extension.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `host_upgrade_service.rs`: manual/idle update settlement, in-flight fencing, local/latest version state, Automations→CrossUserSharing→Transcript prepare ordering, interrupted-turn resume, marker forwarding, failed-swap restage, and idle-watch staged-version de-duplication.
+- Added Rust `host_upgrade/extension.rs`: frozen extension identity/dependencies, auto-update env policy, watch interval/jitter parsing, idempotent marker store, and explicit service/config owner.
+- Exact-tree contracts passed together: `host_bundle_upgrade_contract` **4/4**, `host_upgrade_service_contract` **4/4**, `host_upgrade_extension_contract` **3/3**.
+- Both rows advance from `planned` to `existing-needs-parity`; final remains blocked on production registry peer adapters plus real marker/update polling wake composition.
+- Manifest becomes **1,833 implemented / 119 existing-needs-parity / 50 planned** (**169 non-final**).

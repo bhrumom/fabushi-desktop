@@ -11966,12 +11966,21 @@
       "targetPath": "source/host/src/extensions/host_upgrade/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "6db8f7bea825ebf6c3cc502426708808c5046ef8",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/host_upgrade/extension.rs",
+        "source/host/src/extensions/host_upgrade/host_bundle_upgrade.rs",
+        "source/host/src/extensions/host_upgrade/host_upgrade_marker.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_upgrade_extension_contract.rs",
+        "source/host/tests/host_upgrade_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns the frozen host-upgrade extension identity/dependency set, auto-update environment policy, watch interval/jitter policy, idempotent file marker store and HostUpgradeService lifetime/configuration. Final remains withheld until production Host composition registers the extension with real peer adapters and marker/update polling wake ownership."
     },
     {
       "referencePath": "source/host/extensions/host-upgrade/host-bundle-source.ts",
@@ -12036,12 +12045,21 @@
       "targetPath": "source/host/src/extensions/host_upgrade/host_upgrade_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "05cde6eef931ef0e775c2b89d279eab347d80b0c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/host_upgrade/host_upgrade_service.rs",
+        "source/host/src/extensions/host_upgrade/host_bundle_upgrade.rs",
+        "source/host/src/extensions/host_upgrade/host_upgrade_marker.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_upgrade_service_contract.rs",
+        "source/host/tests/host_bundle_upgrade_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns manual/idle update state, bundle in-flight fencing, local/latest version state, automation/share/transcript upgrade preparation and resume, marker forwarding, failed-swap restage and idle-watch de-duplication. Final remains withheld until the production extension registry supplies the real Automations/CrossUserSharing/Telemetry/Transcript peer adapters and scheduling policies."
     },
     {
       "referencePath": "source/host/extensions/inference/codex-direct-responses.ts",
