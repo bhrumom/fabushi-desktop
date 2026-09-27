@@ -2094,3 +2094,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The prior manifest blocker is no longer true: production `dispatch_local_group_send` now constructs this exact orchestrator for the shipping Host path. Local members execute through the real Routed Runner; shared/remote members use the CrossUser remote executor through the same orchestrator.
 - Focused `group_chat_orchestrator_contract.rs` and `send_group_fanout_contract.rs` pin bounds, pass filtering, epoch cancellation, frozen prompt projection and shared/remote execution without a second group runtime.
 - Only this orchestrator row is advanced to `implemented`. `group-chat-glue.ts` and `send-group-fanout.ts` remain non-final because they still have separately documented frozen-behavior gaps.
+
+### 2026-09-28 Group Chat adjacent blocker correction
+
+- Re-audited frozen `group-chat-glue.ts` and `send-group-fanout.ts` after the production CrossUser/shared-room wiring landed.
+- Their old manifest notes incorrectly still listed remote/shared-room delegation itself as missing. Shipping Host now passes `cross_user.remote_executor()` into the single `dispatch_local_group_send` / `GroupChatOrchestrator` path, and shared-room relay-triggered turns reuse the same path.
+- Neither row is promoted. `group-chat-glue.ts` still lacks frozen Cursor member execution, streaming preview cleanup/finalization, reactions, three-attempt DM-preemption redrive, and full trace/activity semantics. `send-group-fanout.ts` still needs the frozen mirror-room send/attachment contract, canonical user-entry publication ordering, Cursor-native execution, and the remaining glue-owned redrive/reaction/preview behavior.
+- This correction keeps the strict ledger pointed at real work instead of an already-closed remote-delegate blocker.

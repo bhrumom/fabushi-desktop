@@ -15427,7 +15427,9 @@
         "source/host/src/extensions/session/agent_session.rs",
         "source/host/src/groups/group_store.rs",
         "source/host/src/groups/group_chat.rs",
+        "source/host/src/extensions/transcript/group_chat_orchestrator.rs",
         "source/host/src/extensions/transcript/send_group_fanout.rs",
+        "source/host/src/extensions/cross_user_sharing/production.rs",
         "source/host/app/src/main.rs"
       ],
       "testEvidence": [
@@ -15439,7 +15441,7 @@
         "source/host/tests/routed_send_acceptance_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Rust Session Gateway owns createGroup/setGroupMembers and group config. Local non-Cursor group sends are now production-wired through GroupChatOrchestrator into real per-member SandAgentRunner turns with durable room SendMessage projection and direct-DM cancellation. Final remains withheld for Cursor member-run parity, remote/shared-room delegates, shared-room guardrails/publication, streaming preview/reactions, and three-attempt DM-preemption redrive parity."
+      "notes": "Shipping Rust Session Gateway owns createGroup/setGroupMembers and group config. Production room turns now consume the canonical GroupChatOrchestrator; local non-Cursor members execute through the real Routed Runner, and shared/remote members use the production CrossUser remote executor through that same orchestrator. This closes the former remote/shared-room delegate blocker. The row remains non-final because frozen GroupChatGlue still requires Cursor member-run parity, streaming preview lifecycle, reactions, three-attempt direct-message preemption/redrive behavior, activity/trace lifecycle parity, and the full shared-room guardrail/publication behavior at this owner boundary."
     },
     {
       "referencePath": "source/host/extensions/transcript/group-chat-orchestrator.ts",
@@ -15882,6 +15884,8 @@
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/send_group_fanout.rs",
         "source/host/src/extensions/transcript/group_chat_orchestrator.rs",
+        "source/host/src/extensions/transcript/shared_rooms.rs",
+        "source/host/src/extensions/cross_user_sharing/production.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/app/src/main.rs",
         "source/host/src/extensions/transcript/production_runtime.rs"
@@ -15894,7 +15898,7 @@
         "source/host/tests/routed_send_acceptance_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Production Rust local-group fanout now runs on the shipping Host path for non-Cursor providers: the outer room send owns the room turn epoch, each local member gets a real Host routed turn lease marked groupMemberTurn, the existing SandAgentRunner/TurnAgentComposition executes the member with frozen group system+turn prompts, direct user admission cancels active group-member streams, and only new SendMessage(text) tool outputs are durably posted back to the room transcript. Cursor stays on the compatibility path; remote/shared-room fanout remains deferred. Final requires Cursor-native group member execution, remote/shared-room fanout/publication, and frozen redrive/reaction/stream-preview semantics."
+      "notes": "Production Rust group fanout runs on the shipping Host path for non-Cursor providers: the outer room send owns the room epoch, local members get real groupMemberTurn Routed Runner leases, and shared/remote members are routed through the live CrossUser remote executor using the same GroupChatOrchestrator. The former shared/remote deferral blocker is closed when that executor is present, and no parallel group runtime is created. The row remains non-final because the frozen dispatchMirrorOrGroupSend contract still needs complete mirror-room send semantics (text/image/non-image attachment validation and acceptance), canonical user-entry publication ordering, Cursor-native member execution, and the frozen redrive/reaction/stream-preview semantics owned by the broader GroupChatGlue path."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-message-shaping.ts",
