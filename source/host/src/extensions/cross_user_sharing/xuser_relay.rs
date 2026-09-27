@@ -42,7 +42,11 @@ pub struct ReqwestXuserRelayTransport {
 impl ReqwestXuserRelayTransport {
     pub fn new() -> Result<Self, String> {
         Ok(Self {
-            client: Client::builder().build().map_err(|e| e.to_string())?,
+            client: Client::builder()
+                .connect_timeout(Duration::from_secs(15))
+                .timeout(Duration::from_secs(30))
+                .build()
+                .map_err(|e| e.to_string())?,
         })
     }
 }
@@ -105,8 +109,17 @@ impl SandXuserRelayClient {
             transport,
         }
     }
-    fn call(&self, method: &str, path: &str, body: Option<&Value>) -> Result<Value, String> {
-        let token = (self.access_token)()?;
+
+    fn call_raw(
+        &self,
+        method: &str,
+        path: &str,
+        body: Option<&Value>,
+    ) -> Result<Value, SandXuserRelayHttpError> {
+        let token = (self.access_token)().map_err(|_| SandXuserRelayHttpError {
+            status: 0,
+            path: path.into(),
+        })?;
         self.transport
             .request(
                 method,
@@ -114,8 +127,17 @@ impl SandXuserRelayClient {
                 &token,
                 body,
             )
-            .map_err(|e| describe_relay_error(&e))
+            .map_err(|mut error| {
+                error.path = path.into();
+                error
+            })
     }
+
+    fn call(&self, method: &str, path: &str, body: Option<&Value>) -> Result<Value, String> {
+        self.call_raw(method, path, body)
+            .map_err(|error| describe_relay_error(&error))
+    }
+
     pub fn poll(&self, ack_ids: &[String]) -> Result<Value, String> {
         self.call(
             "POST",
@@ -123,57 +145,155 @@ impl SandXuserRelayClient {
             Some(&serde_json::json!({ "ackIds": ack_ids })),
         )
     }
+
     pub fn fetch_share_state(&self) -> Result<Value, String> {
         self.call("POST", "/sand/share-state", Some(&serde_json::json!({})))
     }
+
     pub fn send(&self, payload: &Value) -> Result<Value, String> {
-        self.call("POST", "/sand/xuser/send", Some(payload))
+        let result = self.call("POST", "/sand/xuser/send", Some(payload))?;
+        Ok(result
+            .get("timestampMs")
+            .and_then(Value::as_f64)
+            .filter(|value| value.is_finite())
+            .map(|value| serde_json::json!({ "timestampMs": value }))
+            .unwrap_or_else(|| serde_json::json!({})))
     }
+
     pub fn create_room(&self, payload: &Value) -> Result<Value, String> {
         self.call("POST", "/sand/share-rooms", Some(payload))
     }
+
     pub fn create_room_from_agent(&self, payload: &Value) -> Result<Value, String> {
-        self.call("POST", "/sand/share-rooms/from-agent", Some(payload))
+        Ok(match self.call_raw("POST", "/sand/share-rooms/from-agent", Some(payload)) {
+            Ok(result) => project_room_invite_result(&result),
+            Err(error) => serde_json::json!({
+                "status": "error",
+                "message": describe_relay_error(&error),
+            }),
+        })
     }
+
     pub fn create_room_invite(&self, room_id: &str) -> Result<Value, String> {
-        self.call(
-            "POST",
-            "/sand/share-rooms/invite-links",
-            Some(&serde_json::json!({ "roomId": room_id })),
-        )
+        let body = serde_json::json!({ "roomId": room_id });
+        Ok(match self.call_raw("POST", "/sand/share-rooms/invite-links", Some(&body)) {
+            Ok(result) => project_room_invite_result(&result),
+            Err(error) => serde_json::json!({
+                "status": "error",
+                "message": describe_relay_error(&error),
+            }),
+        })
     }
+
     pub fn join_room(&self, link: &str) -> Result<Value, String> {
-        self.call(
-            "POST",
-            "/sand/share-rooms/join",
-            Some(&serde_json::json!({ "link": link })),
-        )
+        let body = serde_json::json!({ "link": link });
+        Ok(match self.call_raw("POST", "/sand/share-rooms/join", Some(&body)) {
+            Ok(result) => project_join_room_result(&result),
+            Err(error) => serde_json::json!({
+                "status": "error",
+                "message": describe_relay_error(&error),
+            }),
+        })
     }
+
     pub fn respond_to_join_request(&self, payload: &Value) -> Result<Value, String> {
         self.call("POST", "/sand/share-rooms/join/respond", Some(payload))
     }
+
     pub fn add_own_agent(&self, payload: &Value) -> Result<Value, String> {
         self.call("POST", "/sand/share-rooms/agents/add", Some(payload))
     }
+
     pub fn set_room_picture(&self, payload: &Value) -> Result<Value, String> {
         self.call("POST", "/sand/share-rooms/picture", Some(payload))
     }
+
     pub fn remove_own_agent(&self, payload: &Value) -> Result<Value, String> {
         self.call("POST", "/sand/share-rooms/agents/remove", Some(payload))
     }
-    pub fn leave_room(&self, room_id: &str) -> Result<Value, String> {
-        self.call(
-            "POST",
-            "/sand/share-rooms/leave",
-            Some(&serde_json::json!({ "roomId": room_id })),
-        )
+
+    pub fn leave_room_with_target(
+        &self,
+        room_id: &str,
+        target_auth_id: Option<&str>,
+    ) -> Result<Value, String> {
+        let mut body = serde_json::json!({ "roomId": room_id });
+        if let Some(target_auth_id) = target_auth_id {
+            body["targetAuthId"] = Value::String(target_auth_id.into());
+        }
+        self.call("POST", "/sand/share-rooms/leave", Some(&body))
     }
+
+    pub fn leave_room(&self, room_id: &str) -> Result<Value, String> {
+        self.leave_room_with_target(room_id, None)
+    }
+
     pub fn remove_deleted_agent(&self, agent_id: &str) -> Result<Value, String> {
         self.call(
             "POST",
             "/sand/share-rooms/agents/remove-deleted",
             Some(&serde_json::json!({ "agentId": agent_id })),
         )
+    }
+}
+
+fn project_room_invite_result(result: &Value) -> Value {
+    let room_id = result
+        .get("room")
+        .and_then(Value::as_object)
+        .and_then(|room| room.get("roomId"))
+        .and_then(Value::as_str);
+    let share_url = result.get("shareUrl").and_then(Value::as_str);
+    let expires_at_ms = result.get("expiresAtMs").and_then(Value::as_f64);
+    match (room_id, share_url, expires_at_ms) {
+        (Some(room_id), Some(share_url), Some(expires_at_ms)) if expires_at_ms.is_finite() => {
+            serde_json::json!({
+                "status": "ok",
+                "shareUrl": share_url,
+                "expiresAtMs": expires_at_ms,
+                "roomId": room_id,
+            })
+        }
+        _ => serde_json::json!({
+            "status": "error",
+            "message": "Unexpected response.",
+        }),
+    }
+}
+
+fn project_join_room_result(result: &Value) -> Value {
+    match result.get("status").and_then(Value::as_str) {
+        Some("pending") => serde_json::json!({
+            "status": "pending",
+            "roomName": result
+                .get("roomName")
+                .and_then(Value::as_str)
+                .unwrap_or("the shared room"),
+        }),
+        Some("already-member") => {
+            let room = result.get("room").and_then(Value::as_object);
+            let mut projected = serde_json::json!({
+                "status": "already-member",
+                "roomName": room
+                    .and_then(|room| room.get("name"))
+                    .and_then(Value::as_str)
+                    .unwrap_or("the shared room"),
+            });
+            if let Some(room_id) = room
+                .and_then(|room| room.get("roomId"))
+                .and_then(Value::as_str)
+            {
+                projected["roomId"] = Value::String(room_id.into());
+            }
+            projected
+        }
+        Some(status @ ("invalid" | "denied" | "rate-limited")) => {
+            serde_json::json!({ "status": status })
+        }
+        _ => serde_json::json!({
+            "status": "error",
+            "message": "Unexpected response.",
+        }),
     }
 }
 
