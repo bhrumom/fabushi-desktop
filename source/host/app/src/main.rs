@@ -7,6 +7,9 @@
 //! the legacy third_party desktop Host binary directly.
 
 use mahayana_host_runtime::extensions::action_audit::action_audit_service::{AuditAction, AuditRecord};
+use mahayana_host_runtime::extensions::box_store_sync::box_copy_in::{
+    BOX_COPY_IN_ARG, execute_box_copy_in_from_env,
+};
 use mahayana_host_runtime::extensions::action_audit::extension::ActionAuditExtension;
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
 use mahayana_host_runtime::extensions::attachments::extension::start_attachments_extension;
@@ -3310,6 +3313,12 @@ fn drain_ready_runtime_events(
 }
 
 fn main() {
+    if std::env::args().any(|arg| arg == BOX_COPY_IN_ARG) {
+        let environment = std::env::vars().collect::<BTreeMap<_, _>>();
+        let exit_code = execute_box_copy_in_from_env(&environment, Path::new("/"));
+        std::process::exit(exit_code);
+    }
+
     let _process_crash_guard =
         mahayana_host_runtime::process_crash_guard::install_process_crash_guards(
             "sand-host",

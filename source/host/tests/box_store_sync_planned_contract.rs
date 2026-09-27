@@ -2,13 +2,17 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use sha2::{Digest, Sha256};
+
 use mahayana_host_runtime::extensions::box_store_sync::agent_store_sand_files::{
     AgentStoreMutableWriteEtags, PRESIGN_READ_BATCH_MAX, batch_read_paths,
     is_conditional_write_rejection, normalize_rel_path,
 };
 use mahayana_host_runtime::extensions::box_store_sync::box_copy_in::{
+    BOX_COPY_IN_EXIT_FAILED, BOX_COPY_IN_EXIT_HYDRATED, BOX_COPY_IN_EXIT_NOOP,
     COPY_IN_HYDRATE_ATTEMPTS, CopyInMeteredOutcome, CopyInOutcome,
-    classify_copy_in_metered_outcome, empty, outcome_to_exit_code, resolve_copy_in_attempts,
+    classify_copy_in_metered_outcome, empty, execute_box_copy_in_from_env, outcome_to_exit_code,
+    resolve_copy_in_attempts, run_local_box_copy_in,
 };
 use mahayana_host_runtime::extensions::box_store_sync::box_object_store::{
     BoxObjectStore, LocalFsObjectStore, is_under_prefix,
@@ -88,6 +92,57 @@ fn copy_in_resolution_preserves_frozen_defaults_and_exit_semantics() {
         classify_copy_in_metered_outcome(&noop),
         CopyInMeteredOutcome::Empty
     );
+}
+
+
+
+#[test]
+fn shipping_copy_in_bootstrap_restores_local_store_and_fails_closed_for_remote() {
+    let root = temp_root("copy-in-shipping");
+    let object_root = root.join("objects");
+    let target_root = root.join("target");
+    let store = LocalFsObjectStore::new(object_root.join("store-a"));
+    let payload = b"durable-agent-store";
+    let sha = format!("{:x}", Sha256::digest(payload));
+    store.put(&format!("blobs/{sha}"), payload).expect("seed blob");
+    let manifest = serde_json::json!({
+        "version": 2, "updatedAtMs": 1, "writerWindowId": "test", "fullyHydrated": true,
+        "entries": { "home/box/sand-data/agents/agent-a/store.db": {
+            "kind": "file", "sha": sha, "size": payload.len(), "mode": 384
+        }}
+    });
+    store.put("manifest.json", &serde_json::to_vec(&manifest).unwrap()).expect("seed manifest");
+    let mut env = BTreeMap::from([
+        ("SAND_BOX_STORE_COPY_IN".to_string(), "1".to_string()),
+        ("SAND_BOX_STORE_ID".to_string(), "store-a".to_string()),
+        ("SAND_BOX_STORE_LOCAL_DIR".to_string(), object_root.to_string_lossy().into_owned()),
+    ]);
+    assert_eq!(execute_box_copy_in_from_env(&env, &target_root), BOX_COPY_IN_EXIT_HYDRATED);
+    assert_eq!(fs::read(target_root.join("home/box/sand-data/agents/agent-a/store.db")).unwrap(), payload);
+    env.remove("SAND_BOX_STORE_LOCAL_DIR");
+    assert_eq!(execute_box_copy_in_from_env(&env, &target_root), BOX_COPY_IN_EXIT_FAILED);
+    env.insert("SAND_BOX_STORE_COPY_IN".into(), "0".into());
+    assert_eq!(execute_box_copy_in_from_env(&env, &target_root), BOX_COPY_IN_EXIT_NOOP);
+}
+
+#[test]
+fn local_copy_in_rejects_corrupt_blob_instead_of_claiming_hydration() {
+    let root = temp_root("copy-in-corrupt");
+    let store = LocalFsObjectStore::new(root.join("objects"));
+    let expected = b"expected";
+    let sha = format!("{:x}", Sha256::digest(expected));
+    store.put(&format!("blobs/{sha}"), b"corrupt!").unwrap();
+    let manifest = serde_json::json!({
+        "version": 2, "updatedAtMs": 1, "fullyHydrated": true,
+        "entries": { "home/box/data.txt": {
+            "kind": "file", "sha": sha, "size": expected.len(), "mode": 384
+        }}
+    });
+    store.put("manifest.json", &serde_json::to_vec(&manifest).unwrap()).unwrap();
+    let result = run_local_box_copy_in(&store, &root.join("target"));
+    assert_eq!(result.outcome, CopyInOutcome::Failed);
+    assert_eq!(result.verified, 0);
+    assert!(!result.failures.is_empty());
 }
 
 #[test]
