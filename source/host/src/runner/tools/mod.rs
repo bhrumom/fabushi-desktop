@@ -25,6 +25,7 @@ pub mod sand_file_transfer_tools;
 pub mod sand_computer_tool;
 
 pub mod sand_state_tool;
+pub mod sand_multitask_todo_tool;
 pub mod turn_toolset;
 
 pub mod sand_mcp_management_tools;

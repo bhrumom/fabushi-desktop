@@ -25,6 +25,7 @@ use super::tools::sand_reaction_tool::ReactionSink;
 use super::tools::sand_agent_management_tools::AgentManagementSink;
 use super::tools::sand_browser_tools::BrowserToolExecutor;
 use super::tools::sand_state_tool::SandStateWriter;
+use super::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use super::tools::turn_toolset::{
     TurnToolsetDependencies, build_turn_toolset, fence_turn_toolset,
 };
@@ -52,6 +53,7 @@ pub struct TurnAgentComposition {
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     state_writer: Option<Arc<dyn SandStateWriter>>,
+    multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
     cloud_agent_tool: Option<CloudAgentToolDependencies>,
     multitask_enabled: bool,
     spotlight_enabled: bool,
@@ -82,6 +84,7 @@ impl TurnAgentComposition {
             reaction_sink: None,
             agent_management_sink: None,
             state_writer: None,
+            multitask_todo_state: None,
             cloud_agent_tool: None,
             multitask_enabled: false,
             spotlight_enabled: false,
@@ -186,6 +189,18 @@ impl TurnAgentComposition {
         self.state_writer.is_some()
     }
 
+    pub fn with_multitask_todo_state(
+        mut self,
+        state: Arc<dyn MultitaskTodoState>,
+    ) -> Self {
+        self.multitask_todo_state = Some(state);
+        self
+    }
+
+    pub fn has_multitask_todo_state(&self) -> bool {
+        self.multitask_todo_state.is_some()
+    }
+
     pub fn with_cloud_agent_tool(
         mut self,
         deps: CloudAgentToolDependencies,
@@ -268,6 +283,8 @@ impl TurnAgentComposition {
                 reaction_sink: self.reaction_sink.clone(),
                 agent_management_sink: self.agent_management_sink.clone(),
                 state_writer: self.state_writer.clone(),
+                multitask_enabled: self.multitask_enabled,
+                multitask_todo_state: self.multitask_todo_state.clone(),
                 cloud_agent_tool: self.cloud_agent_tool.clone(),
             },
         );

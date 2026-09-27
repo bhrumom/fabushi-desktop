@@ -16,6 +16,9 @@ use super::sand_browser_tools::{BrowserToolExecutor, SandBrowserToolBridge};
 use super::sand_reaction_tool::{ReactionSink, ReactionToolBridge};
 use super::sand_spotlight_tools::SpotlightedRoutedToolBridge;
 use super::sand_state_tool::{SandStateToolBridge, SandStateWriter};
+use super::sand_multitask_todo_tool::{
+    MultitaskTodoState, SandMultitaskTodoToolBridge,
+};
 use super::send_message_tool::{SendMessageSink, SendMessageToolBridge};
 
 /// Per-turn Runner tool dependency projection.
@@ -32,6 +35,8 @@ pub struct TurnToolsetDependencies {
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
     pub agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     pub state_writer: Option<Arc<dyn SandStateWriter>>,
+    pub multitask_enabled: bool,
+    pub multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
     pub cloud_agent_tool: Option<CloudAgentToolDependencies>,
 }
 
@@ -61,6 +66,14 @@ pub fn build_turn_toolset(
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.state_writer {
         Some(state) => Arc::new(SandStateToolBridge::new(bridge, state)),
         None => bridge,
+    };
+    let bridge: Arc<dyn RoutedToolBridge> = if dependencies.multitask_enabled {
+        match dependencies.multitask_todo_state {
+            Some(state) => Arc::new(SandMultitaskTodoToolBridge::new(bridge, state)),
+            None => bridge,
+        }
+    } else {
+        bridge
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.cloud_agent_tool {
         Some(deps) => Arc::new(CloudAgentToolBridge::new(bridge, deps)),

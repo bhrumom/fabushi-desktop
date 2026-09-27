@@ -180,6 +180,7 @@ use mahayana_host_runtime::runner::turn_memory::{
 };
 use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt_section;
 use mahayana_host_runtime::runner::tools::sand_state_tool::SandStateWriter;
+use mahayana_host_runtime::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BrowserToolExecutor, ProductionBrowserToolExecutor,
 };
@@ -1857,6 +1858,17 @@ fn start_routed_provider_task(
                 "could not create production agent-state owner for {agent_id}: {error}"
             )))?,
     );
+    let multitask_todo_state: Option<Arc<dyn MultitaskTodoState>> = if multitask_enabled {
+        Some(
+            session_workers
+                .open_agent_db_owner(&agent_id)
+                .map_err(|error| GatewayCommandError::Internal(format!(
+                    "could not open production multitask todo state for {agent_id}: {error}"
+                )))?,
+        )
+    } else {
+        None
+    };
     let cloud_agent_dir = session_workers
         .session_db_path(&agent_id)
         .map_err(GatewayCommandError::Internal)?
@@ -2175,7 +2187,7 @@ fn start_routed_provider_task(
                         *stored = Some(merge_provider_token_usage(stored.take(), usage));
                     }
                 });
-            let composition = create_production_runner_composition(
+            let mut composition = create_production_runner_composition(
                 ProductionRunnerCompositionInput {
                     provider,
                     bridge,
@@ -2202,6 +2214,9 @@ fn start_routed_provider_task(
             )
             .with_agent_management_sink(agent_management_sink)
             .with_state_writer(state_writer);
+            if let Some(todo_state) = multitask_todo_state {
+                composition = composition.with_multitask_todo_state(todo_state);
+            }
             let owner = ProductionTurnAgentOwner::new(composition)
                 .with_agent_state_checkpoint_sink(agent_state_checkpoint_sink);
             let mut runner = SandAgentRunner::new(owner);
