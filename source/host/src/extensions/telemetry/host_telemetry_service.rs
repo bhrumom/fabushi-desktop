@@ -97,6 +97,18 @@ impl HostStructuredLogTelemetry {
             payload: diagnostic.clone(),
         })
     }
+
+    pub fn report_box_boot_stage_confirmed(&self, stage: &str, duration_ms: u64) -> bool {
+        let mut metadata = BTreeMap::new();
+        metadata.insert("stage".into(), stage.to_string());
+        metadata.insert("duration_ms".into(), duration_ms.to_string());
+        self.report_projection(&HostTelemetryProjection {
+            level: Some("info"),
+            event: Some("sand.box.boot_stage_confirmed"),
+            metadata,
+        })
+        .is_ok()
+    }
 }
 
 #[derive(Clone)]
