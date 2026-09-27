@@ -14453,7 +14453,7 @@
       "targetPath": "source/host/src/extensions/telemetry/event_loop_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "1ad776b5951d0befee087ef1510d3fd1509161b9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -14463,13 +14463,15 @@
       ],
       "testEvidence": [
         "source/host/tests/event_loop_telemetry_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "evidence": [
         "source/host/tests/event_loop_telemetry_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Host now owns the frozen window/pressure/heartbeat projection plus a production lifecycle sampler. Because the Mahayana Host has no Node event loop, the platform-fit Rust implementation samples scheduler overrun at the frozen 20ms cadence and normalized process CPU occupancy, aggregates p50/p95/max over the frozen 60s window, emits pressure/heartbeat through the shipping Host Telemetry extension, and stops with the extension lifecycle. A focused live-window contract was added. Status remains existing-needs-parity until exact-HEAD Rust Host verification for commit 10807c4a010a65dd43ff3348c3bdb8101ea8dd52 passes; no bulk status promotion is performed."
+      "notes": "Rust Host owns the frozen event-loop telemetry responsibility with a platform-fit lifecycle sampler: 20ms scheduler-overrun sampling, normalized process CPU occupancy, frozen 60s aggregation window, p50/p95/max scheduler metrics, 50ms p95 pressure threshold, five-window heartbeat policy, structured Host telemetry emission, and deterministic stop with the extension lifecycle. The focused live-window contract is production-wired through the shipping Telemetry extension. Exact-HEAD verification at 77965135a9d41a50981354f7a9a7a807ad0699ba passed the Rust Host shipping build, independent Coordinator, independent Runner, prompt attachment, Computer takeover, ConversationActor/CapabilityBroker ownership, and Desktop Chat Parity E2E (runs 36314429799 and 36314429842)."
     },
     {
       "referencePath": "source/host/extensions/telemetry/experiments-diagnostic-telemetry.ts",

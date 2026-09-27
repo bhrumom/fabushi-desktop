@@ -1924,3 +1924,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Implementation commits: `3e98e35b4d21ee7b1f16580f1041809ab68501c2`, `3b2830e8b39eb37e6cd66fcea7f3c4597a97a68e`, `10807c4a010a65dd43ff3348c3bdb8101ea8dd52`.
 - Exact-HEAD verification was started automatically as Rust desktop runtime run `36314356518` and Desktop Chat Parity run `36314356528`. At this checkpoint the Rust Host job is still executing, so the manifest row intentionally remains `existing-needs-parity`; no incomplete CI is represented as a pass.
 - Architecture inventory before this slice remains 2,002 frozen source-bearing modules with 155 non-final rows, all under the independent Mahayana Host/Runner domains. Coordinator module-level parity is already independently evidenced; global strict cutover, legacy-root removal, packaged acceptance, merge, and release remain separate blockers.
+
+### 2026-09-27 Event-loop telemetry exact-HEAD finalization
+
+- Exact verified implementation HEAD: `77965135a9d41a50981354f7a9a7a807ad0699ba`.
+- The Rust Mahayana Host event-loop telemetry owner is production-wired through the shipping Telemetry extension with the frozen 20 ms cadence, 60 s aggregation window, 50 ms p95 pressure threshold, five-window heartbeat policy, scheduler-overrun p50/p95/max, normalized process CPU occupancy, structured telemetry emission, and deterministic disposal.
+- Exact-HEAD Rust desktop runtime run `36314429799` passed shipping Host build, independent Mahayana Coordinator, box-exec, independent Mahayana Runner, prompt attachment, Computer takeover, and ConversationActor/CapabilityBroker ownership steps; its renderer job failed only at the intentionally strict final architecture gate because other manifest rows remain non-final.
+- Exact-HEAD Desktop Chat Parity run `36314429842` passed both renderer build and Focused Electron chat E2E.
+- Therefore `source/host/extensions/telemetry/event-loop-telemetry.ts` advances from `existing-needs-parity` to `implemented`; no unrelated row is bulk-promoted.
+- Architecture inventory becomes **1,848 implemented / 154 existing-needs-parity / 0 planned** (**154 non-final**).
