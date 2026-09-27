@@ -18,6 +18,18 @@ pub struct SandSharingState {
 }
 
 pub trait XuserSharingManager: Send + Sync {
+    fn get_agent_display_profile(
+        &self,
+        _agent_id: &str,
+    ) -> Result<Option<(String, String)>, String> {
+        Ok(None)
+    }
+    fn get_agent_avatar_data_url(&self, _agent_id: &str) -> Result<Option<String>, String> {
+        Ok(None)
+    }
+    fn find_room_agent_id(&self, _room_id: &str) -> Result<Option<String>, String> {
+        Ok(None)
+    }
     fn install_room(&self, room: &XuserRoom, self_auth_id: Option<&str>) -> Result<(), String>;
     fn mark_mirror_room_revoked(&self, room_id: &str) -> Result<(), String>;
     fn post_shared_room_guest_message(&self, event: &Value) -> Result<(), String>;
@@ -66,6 +78,7 @@ pub struct SandXuserSharingService {
     entry_publisher: Mutex<Option<Arc<SandXuserEntryPublisher>>>,
     manager: Mutex<Option<Arc<dyn XuserSharingManager>>>,
     state: Mutex<SandSharingState>,
+    room_mint_lock: Mutex<()>,
     started: AtomicBool,
 }
 impl SandXuserSharingService {
@@ -76,6 +89,7 @@ impl SandXuserSharingService {
             entry_publisher: Mutex::new(None),
             manager: Mutex::new(None),
             state: Mutex::new(SandSharingState::default()),
+            room_mint_lock: Mutex::new(()),
             started: AtomicBool::new(false),
         }
     }
@@ -230,11 +244,60 @@ impl SandXuserSharingService {
         Ok(self.get_state())
     }
     pub fn create_room_from_agent(&self, agent_id: &str) -> Result<Value, String> {
-        if !self.get_state().is_enabled {
-            return Err("Sharing isn't enabled for your account.".into());
+        let current = self.get_state();
+        if !current.is_enabled {
+            return Ok(serde_json::json!({
+                "status": "error",
+                "message": "Sharing isn't enabled."
+            }));
         }
-        self.relay
-            .create_room_from_agent(&serde_json::json!({"agentId":agent_id}))
+        let _mint_guard = self
+            .room_mint_lock
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let Some(manager) = self.manager() else {
+            return Ok(serde_json::json!({
+                "status": "error",
+                "message": "That agent no longer exists."
+            }));
+        };
+        let Some((agent_name, _description)) = manager.get_agent_display_profile(agent_id)? else {
+            return Ok(serde_json::json!({
+                "status": "error",
+                "message": "That agent no longer exists."
+            }));
+        };
+        if let Some(self_auth_id) = current.self_auth_id.as_deref() {
+            if let Some(existing_room_id) = current.rooms.iter().find_map(|room| {
+                if room.host_auth_id != self_auth_id {
+                    return None;
+                }
+                let agent_members = room
+                    .members
+                    .iter()
+                    .filter(|member| member.agent_id.is_some())
+                    .collect::<Vec<_>>();
+                (agent_members.len() == 1
+                    && agent_members[0].auth_id == self_auth_id
+                    && agent_members[0].agent_id.as_deref() == Some(agent_id))
+                .then_some(room.room_id.as_str())
+            }) {
+                return self.relay.create_room_invite(existing_room_id);
+            }
+        }
+        let avatar_data_url = manager.get_agent_avatar_data_url(agent_id)?;
+        let mut payload = serde_json::json!({
+            "agentId": agent_id,
+            "agentName": agent_name,
+        });
+        if let Some(avatar_data_url) = avatar_data_url {
+            payload["avatarDataUrl"] = Value::String(avatar_data_url);
+        }
+        let result = self.relay.create_room_from_agent(&payload)?;
+        if result.get("status").and_then(Value::as_str) == Some("ok") {
+            let _ = self.reconcile_share_state();
+        }
+        Ok(result)
     }
 
 
@@ -301,7 +364,25 @@ impl SandXuserSharingService {
                 "message": "Sign in to create shared groups."
             }));
         }
-        let result = self.relay.create_room(payload)?;
+        let mut payload = payload.clone();
+        if let Some(manager) = self.manager() {
+            if let Some(agents) = payload.get_mut("agents").and_then(Value::as_array_mut) {
+                for agent in agents {
+                    let Some(agent_id) = agent.get("agentId").and_then(Value::as_str) else {
+                        continue;
+                    };
+                    if let Some(avatar_data_url) = manager.get_agent_avatar_data_url(agent_id)? {
+                        if let Some(object) = agent.as_object_mut() {
+                            object.insert(
+                                "avatarDataUrl".into(),
+                                Value::String(avatar_data_url),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        let result = self.relay.create_room(&payload)?;
         if result.get("status").and_then(Value::as_str) != Some("created") {
             return Ok(serde_json::json!({
                 "status": "error",
@@ -317,14 +398,37 @@ impl SandXuserSharingService {
         let parsed: XuserRoom = serde_json::from_value(room.clone()).map_err(|e| e.to_string())?;
         let room_id = parsed.room_id.clone();
         self.install_room(parsed)?;
-        Ok(serde_json::json!({ "status": "ok", "roomId": room_id }))
+        let local_room_agent_id = self
+            .manager()
+            .map(|manager| manager.find_room_agent_id(&room_id))
+            .transpose()?
+            .flatten();
+        Ok(serde_json::json!({
+            "status": "ok",
+            "roomId": room_id,
+            "localRoomAgentId": local_room_agent_id,
+        }))
     }
 
     pub fn add_own_agent(&self, payload: &Value) -> Result<SandSharingState, String> {
         if !self.get_state().is_enabled {
             return Ok(self.get_state());
         }
-        let result = self.relay.add_own_agent(payload)?;
+        let mut payload = payload.clone();
+        if let (Some(manager), Some(agent_id)) = (
+            self.manager(),
+            payload.get("agentId").and_then(Value::as_str).map(str::to_string),
+        ) {
+            if let Some(avatar_data_url) = manager.get_agent_avatar_data_url(&agent_id)? {
+                if let Some(object) = payload.as_object_mut() {
+                    object.insert(
+                        "avatarDataUrl".into(),
+                        Value::String(avatar_data_url),
+                    );
+                }
+            }
+        }
+        let result = self.relay.add_own_agent(&payload)?;
         if let Some(room) = result.get("room") {
             self.install_room_value(room)?;
         }
