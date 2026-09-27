@@ -4,7 +4,7 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::box_store_sync::chrome_session_watcher::ChromeSessionWatcher;
 
@@ -17,6 +17,21 @@ fn root(label: &str) -> std::path::PathBuf {
         "fabushi-chrome-session-watcher-{label}-{}-{nonce}",
         std::process::id()
     ))
+}
+
+fn wait_for_count(count: &AtomicUsize, expected: usize, timeout: Duration) {
+    let deadline = Instant::now() + timeout;
+    while Instant::now() < deadline {
+        if count.load(Ordering::Acquire) == expected {
+            return;
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    assert_eq!(
+        count.load(Ordering::Acquire),
+        expected,
+        "callback count did not reach the expected value before timeout"
+    );
 }
 
 #[test]
@@ -62,8 +77,7 @@ fn null_filename_only_triggers_after_a_session_db_mtime_change() {
     thread::sleep(Duration::from_millis(20));
     fs::write(root.join("Cookies"), b"two-two").expect("mutate");
     watcher.handle_fs_event(None);
-    thread::sleep(Duration::from_millis(20));
-    assert_eq!(count.load(Ordering::Acquire), 1);
+    wait_for_count(&count, 1, Duration::from_secs(2));
 
     let _ = fs::remove_dir_all(root);
 }
@@ -87,13 +101,14 @@ fn matching_events_debounce_and_stop_disposes_pending_delivery() {
     watcher.handle_fs_event(Some("Cookies"));
     watcher.handle_fs_event(Some("Cookies-wal"));
     watcher.handle_fs_event(Some("History"));
+    wait_for_count(&count, 1, Duration::from_secs(2));
     thread::sleep(Duration::from_millis(80));
-    assert_eq!(count.load(Ordering::Acquire), 1);
+    assert_eq!(count.load(Ordering::Acquire), 1, "debounced events must coalesce");
 
     watcher.handle_fs_event(Some("Cookies-shm"));
     watcher.stop();
     thread::sleep(Duration::from_millis(80));
-    assert_eq!(count.load(Ordering::Acquire), 1);
+    assert_eq!(count.load(Ordering::Acquire), 1, "stop must cancel pending delivery");
     assert!(watcher.is_stopped());
 
     let _ = fs::remove_dir_all(root);
@@ -117,13 +132,7 @@ fn start_arms_a_real_non_recursive_watch_when_directory_exists() {
     watcher.start();
     fs::write(root.join("Cookies"), b"event").expect("write");
 
-    for _ in 0..40 {
-        if count.load(Ordering::Acquire) > 0 {
-            break;
-        }
-        thread::sleep(Duration::from_millis(25));
-    }
-    assert!(count.load(Ordering::Acquire) > 0, "watch event was not delivered");
+    wait_for_count(&count, 1, Duration::from_secs(2));
 
     watcher.stop();
     let _ = fs::remove_dir_all(root);
