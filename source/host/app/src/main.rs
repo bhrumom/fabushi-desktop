@@ -2302,11 +2302,29 @@ impl GatewayApi for UnifiedGatewayApi {
                 if let Some(cached) = ledger.get(&nonce).cloned() {
                     return Ok(cached);
                 }
-                let minted = call_host_lane(&self.host_tx, method, projected)?;
+                let minted = dispatch_production_session_gateway_call(
+                    &self.session_workers,
+                    method,
+                    &projected,
+                )
+                .ok_or_else(|| GatewayCommandError::UnknownMethod(method.to_string()))?
+                .map_err(|error| match error {
+                    SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
+                    SessionGatewayError::Internal(message) => GatewayCommandError::Internal(message),
+                })?;
                 ledger.insert(nonce, minted.clone());
                 return Ok(minted);
             }
-            return call_host_lane(&self.host_tx, method, projected);
+            return dispatch_production_session_gateway_call(
+                &self.session_workers,
+                method,
+                &projected,
+            )
+            .ok_or_else(|| GatewayCommandError::UnknownMethod(method.to_string()))?
+            .map_err(|error| match error {
+                SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
+                SessionGatewayError::Internal(message) => GatewayCommandError::Internal(message),
+            });
         }
 
         if let Some(result) = dispatch_secrets_gateway_call(&self.secrets, method, &args) {
