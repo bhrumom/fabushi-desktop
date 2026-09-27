@@ -4,6 +4,10 @@ use std::sync::Arc;
 use serde::Serialize;
 use serde_json::Value;
 
+use crate::extensions::content_search::extension::ProductionContentSearchExtension;
+use crate::extensions::content_search::search_index_db::{
+    AttachmentKind, MediaSearchResult, MessageSearchResult,
+};
 use crate::extensions::session::production::ProductionSessionWorkers;
 
 pub const AGENT_CONTENT_SEARCH_MAX_MATCHES_PER_AGENT: usize = 5;
@@ -20,6 +24,50 @@ pub struct TranscriptSearchResult {
     pub role: String,
     pub timestamp_ms: f64,
     pub snippet: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RosterMediaSearchResult {
+    pub agent_id: String,
+    pub entry_id: String,
+    pub file_name: String,
+    pub ext: String,
+    pub mime: Option<String>,
+    pub kind: String,
+    pub timestamp_ms: i64,
+    pub width: Option<i64>,
+    pub height: Option<i64>,
+}
+
+pub trait RosterContentSearch: Send + Sync {
+    fn is_search_ready(&self) -> bool;
+    fn max_matches_per_agent(&self) -> usize;
+    fn max_results(&self) -> usize;
+    fn search_messages(&self, query: &str, limit: usize) -> Option<Vec<MessageSearchResult>>;
+    fn search_media(&self, query: &str, limit: usize) -> Option<Vec<MediaSearchResult>>;
+}
+
+impl RosterContentSearch for ProductionContentSearchExtension {
+    fn is_search_ready(&self) -> bool {
+        ProductionContentSearchExtension::is_search_ready(self)
+    }
+
+    fn max_matches_per_agent(&self) -> usize {
+        ProductionContentSearchExtension::max_matches_per_agent(self)
+    }
+
+    fn max_results(&self) -> usize {
+        ProductionContentSearchExtension::max_results(self)
+    }
+
+    fn search_messages(&self, query: &str, limit: usize) -> Option<Vec<MessageSearchResult>> {
+        ProductionContentSearchExtension::search_messages(self, query, limit)
+    }
+
+    fn search_media(&self, query: &str, limit: usize) -> Option<Vec<MediaSearchResult>> {
+        ProductionContentSearchExtension::search_media(self, query, limit)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -126,6 +174,101 @@ pub fn find_agent_content_matches(
         });
     }
     matches
+}
+
+pub fn search_agents(
+    session: &Arc<ProductionSessionWorkers>,
+    content_search: Option<&dyn RosterContentSearch>,
+    query: &str,
+    limit: usize,
+) -> Result<Vec<TranscriptSearchResult>, String> {
+    let normalized = query.trim().to_lowercase();
+    if normalized.is_empty() || limit == 0 {
+        return Ok(Vec::new());
+    }
+    if let Some(content_search) = content_search.filter(|search| search.is_search_ready()) {
+        let indexed_limit = limit.saturating_add(content_search.max_matches_per_agent());
+        if let Some(indexed) = content_search.search_messages(&normalized, indexed_limit) {
+            let existing_agent_ids = session
+                .list_agent_summaries(None)?
+                .into_iter()
+                .map(|agent| agent.id)
+                .collect::<std::collections::HashSet<_>>();
+            let mut results = indexed
+                .into_iter()
+                .filter(|matched| existing_agent_ids.contains(&matched.agent_id))
+                .map(|matched| TranscriptSearchResult {
+                    agent_id: matched.agent_id,
+                    entry_id: matched.entry_id,
+                    role: matched.role,
+                    timestamp_ms: matched.timestamp_ms as f64,
+                    snippet: matched.snippet,
+                })
+                .collect::<Vec<_>>();
+            results.sort_by(|left, right| {
+                right
+                    .timestamp_ms
+                    .partial_cmp(&left.timestamp_ms)
+                    .unwrap_or(Ordering::Equal)
+            });
+            results.truncate(limit);
+            return Ok(results);
+        }
+    }
+    search_agents_linear(session, &normalized, limit)
+}
+
+pub fn search_media(
+    session: &Arc<ProductionSessionWorkers>,
+    content_search: Option<&dyn RosterContentSearch>,
+    query: &str,
+    limit: usize,
+) -> Result<Vec<RosterMediaSearchResult>, String> {
+    if limit == 0 {
+        return Ok(Vec::new());
+    }
+    let Some(content_search) = content_search.filter(|search| search.is_search_ready()) else {
+        return Ok(Vec::new());
+    };
+    let Some(indexed) = content_search.search_media(query.trim(), limit) else {
+        return Ok(Vec::new());
+    };
+    let existing_agent_ids = session
+        .list_agent_summaries(None)?
+        .into_iter()
+        .map(|agent| agent.id)
+        .collect::<std::collections::HashSet<_>>();
+    Ok(indexed
+        .into_iter()
+        .filter(|matched| existing_agent_ids.contains(&matched.agent_id))
+        .map(|matched| RosterMediaSearchResult {
+            agent_id: matched.agent_id,
+            entry_id: matched.entry_id,
+            file_name: matched.file_name,
+            ext: matched.ext,
+            mime: matched.mime,
+            kind: attachment_kind_name(matched.kind).to_string(),
+            timestamp_ms: matched.timestamp_ms,
+            width: matched.width,
+            height: matched.height,
+        })
+        .collect())
+}
+
+fn attachment_kind_name(kind: AttachmentKind) -> &'static str {
+    match kind {
+        AttachmentKind::Image => "image",
+        AttachmentKind::Video => "video",
+        AttachmentKind::Audio => "audio",
+        AttachmentKind::Pdf => "pdf",
+        AttachmentKind::Markdown => "markdown",
+        AttachmentKind::Table => "table",
+        AttachmentKind::Json => "json",
+        AttachmentKind::Text => "text",
+        AttachmentKind::Document => "document",
+        AttachmentKind::Archive => "archive",
+        AttachmentKind::File => "file",
+    }
 }
 
 pub fn search_agents_linear(
