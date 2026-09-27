@@ -3,14 +3,16 @@ use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::thread;
 
 use sha2::{Digest, Sha256};
 
 use super::box_store_manifest_format::{
     BOX_STORE_BLOBS_PREFIX, BoxStoreManifestEntry,
 };
-use super::sqlite_snapshot::sqlite_vacuum_into_default;
+use super::box_store_vacuum_worker::{
+    BoxStoreVacuumJob, spawn_box_store_vacuum_job,
+};
+use crate::storage::store_db::DB_BUSY_TIMEOUT_MS;
 
 pub type BoxManifestMap = BTreeMap<String, BoxStoreManifestEntry>;
 
@@ -199,15 +201,22 @@ impl StoreDbSnapshotUpload {
         src_path: &Path,
         dest_path: &Path,
     ) -> Result<(), String> {
-        let src = src_path.to_path_buf();
-        let dest = dest_path.to_path_buf();
-        let worker = thread::Builder::new()
-            .name("box-store-vacuum".into())
-            .spawn(move || sqlite_vacuum_into_default(&src, &dest).map_err(|error| error.to_string()))
-            .map_err(|error| format!("vacuum worker unavailable: {error}"))?;
-        worker
+        let worker = spawn_box_store_vacuum_job(BoxStoreVacuumJob {
+            src_path: src_path.to_path_buf(),
+            dest_path: dest_path.to_path_buf(),
+            busy_timeout_ms: DB_BUSY_TIMEOUT_MS,
+        })
+        .map_err(|error| format!("vacuum worker unavailable: {error}"))?;
+        let result = worker
             .join()
-            .map_err(|_| "vacuum worker panicked before completing".to_string())?
+            .map_err(|_| "vacuum worker panicked before completing".to_string())?;
+        if result.ok {
+            Ok(())
+        } else {
+            Err(result
+                .message
+                .unwrap_or_else(|| "vacuum worker failed without a diagnostic".to_string()))
+        }
     }
 
     pub fn discard_snapshot_temp(&self, tmp_path: &Path, label: &str) {
