@@ -14141,7 +14141,8 @@
         "source/host/tests/teach_recording_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Mahayana Host now owns the frozen teach-recording service state machine: private-monitor ffmpeg/x11grab capture, PID/cmdline ownership fencing, 15-minute cap stop, HMAC-SHA256 signed pending queues with constant-time verification/quarantine, save/discard finalization, crash recovery and idempotent learning-prompt redelivery. The service is independently injectable/testable through a Box shell runtime port. Shipping Host registration remains intentionally tracked by the separate teach-recording extension row until production composition starts it."
+      "notes": "Rust Mahayana Host now owns the frozen teach-recording service state machine: private-monitor ffmpeg/x11grab capture, PID/cmdline ownership fencing, 15-minute cap stop, HMAC-SHA256 signed pending queues with constant-time verification/quarantine, save/discard finalization, crash recovery and idempotent learning-prompt redelivery. The service is independently injectable/testable through a Box shell runtime port. Shipping Host registration remains intentionally tracked by the separate teach-recording extension row until production composition starts it.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/telemetry/analytics-service.ts",
@@ -15179,12 +15180,19 @@
       "targetPath": "source/host/src/extensions/transcript/completion_revivals.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "99f0d7c26ca4768042286839ed932aaada5226bd",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/completion_revivals.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/completion_revivals_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Mahayana Host owns the frozen completion-revival state machine behind an explicit runtime port: subagent dedupe, cursor-agent/cloud wake settlement, shell completion queues, quiet-origin prompt shaping/silence semantics, background-lane execution, aborted/quiesced/error settlement, upgrade-resume marking and telemetry projection are independently contract-tested. Higher-level Transcript/background-wakes production composition remains tracked by its own manifest rows."
     },
     {
       "referencePath": "source/host/extensions/transcript/extension.ts",
@@ -15288,12 +15296,19 @@
       "targetPath": "source/host/src/extensions/transcript/pending_wake_rearm.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "b0afa7a830fbf34e27db6ba36924f96e9d210b91",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/pending_wake_rearm.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/pending_wake_rearm_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Mahayana Host owns the frozen durable pending-wake rearm service behind an explicit runtime port: 48-hour stale pruning, agent-gone/group-session fences, cloud-watch idempotence, shell/background wake rearm, recreate-interrupted shell notice delivery, lost-subagent revival, durable retry on failure, settlement/disarm telemetry and queue admission are contract-tested. Higher-level Transcript/background-wakes production composition remains tracked separately."
     },
     {
       "referencePath": "source/host/extensions/transcript/profile-watch.ts",
