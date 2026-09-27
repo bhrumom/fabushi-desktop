@@ -627,9 +627,6 @@ impl SandXuserSharingService {
                 let Some(room_id) = event.get("roomId").and_then(Value::as_str) else {
                     return Ok(true);
                 };
-                let Some(author_auth_id) = event.get("authorAuthId").and_then(Value::as_str) else {
-                    return Ok(true);
-                };
                 let Some(manager) = self.manager() else {
                     return Ok(true);
                 };
@@ -637,6 +634,10 @@ impl SandXuserSharingService {
                 if manager.is_room_abandoned(room_id, self_auth_id.as_deref()) {
                     return Ok(true);
                 }
+                let author_auth_id = event
+                    .get("authorAuthId")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
                 let mut normalized = serde_json::json!({
                     "kind": "room-post",
                     "roomId": room_id,
