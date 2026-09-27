@@ -37,6 +37,10 @@ impl TranscriptRunnerRegistry {
         self.routed_provider_tasks.cancel(stream_id, reason)
     }
 
+    pub fn agent_id_for_stream(&self, stream_id: &str) -> Option<String> {
+        self.routed_provider_tasks.agent_id_for_stream(stream_id)
+    }
+
     pub fn interrupt_wedged_run_for_watchdog(&self, agent_id: &str) -> bool {
         self.routed_provider_tasks
             .cancel_agent(agent_id, RUN_WATCHDOG_INTERRUPT_REASON)
