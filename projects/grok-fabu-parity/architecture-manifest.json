@@ -10082,7 +10082,9 @@
         "source/host/src/runner/turn_agent_composition.rs",
         "source/host/src/runner_production_bridge.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/extensions/cloud_agents/cloud_agents_service.rs"
+        "source/host/src/extensions/cloud_agents/cloud_agents_service.rs",
+        "source/host/src/runner/system_prompt_assembly.rs",
+        "source/host/src/runner/routed_provider_runtime.rs"
       ],
       "testEvidence": [
         "source/host/tests/cloud_agent_tool_contract.rs",
@@ -10090,10 +10092,11 @@
         "source/host/tests/runner_production_bridge_contract.rs",
         "source/host/tests/cloud_agent_images_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/auto_review_production_wiring_contract.rs"
+        "source/host/tests/auto_review_production_wiring_contract.rs",
+        "source/host/tests/system_prompt_contract.rs"
       ],
       "parityMode": "rust-adaptation",
-      "notes": "Rust Runner registers CloudAgent as a first-party RoutedToolBridge and production-wires launch/list/models/get/dump/watch/reply/rename/cancel/archive/unarchive/delete/list_artifacts against the single Host SandCloudAgentManager. launch/reply consume the canonical image loader through the live ForeverBox binary Read port; dump writes through the live Box Write port; destructive confirmation, model validation, managed-id fencing and cancellation are preserved. The frozen production Auto-review callback is now wired to the same per-turn controller/backend classifier. Final remains withheld for reviving cloud-agent watcher/quiet-origin ownership and the generated ConversationMessage-to-trace adapter used by dump."
+      "notes": "Rust Runner registers CloudAgent as a first-party RoutedToolBridge and production-wires launch/list/models/get/dump/watch/reply/rename/cancel/archive/unarchive/delete/list_artifacts against the single Host SandCloudAgentManager. launch/reply consume the canonical image loader through the live ForeverBox binary Read port; dump writes through the live Box Write port; destructive confirmation, model validation, managed-id fencing and cancellation are preserved. The frozen production Auto-review callback is now wired to the same per-turn controller/backend classifier. Final remains withheld for reviving cloud-agent watcher/quiet-origin ownership and the generated ConversationMessage-to-trace adapter used by dump. Shipping provider prompt capability projection now follows the actual first-party CloudAgent tool: turns with the tool receive the enabled frozen system-prompt variant instead of the stale team-disabled variant. Final remains withheld for reviving cloud-agent watcher/quiet-origin ownership and the generated ConversationMessage-to-trace adapter used by dump."
     },
     {
       "referencePath": "source/host/cloud-agents/cloud-agent-transcript-dump.ts",
@@ -19020,14 +19023,21 @@
       "behavioralEvidence": [
         "source/host/src/sand_multitask.rs",
         "source/host/src/runner/tools/sand_browser_use_subagent.rs",
-        "source/host/src/runner/tools/sand_computer_use_subagent.rs"
+        "source/host/src/runner/tools/sand_computer_use_subagent.rs",
+        "source/host/src/runner/system_prompt_assembly.rs",
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner_production_bridge.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_multitask_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/system_prompt_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host owner now preserves frozen multitask env-gate semantics, builtin executor subagent configuration, durable todo guidance and multitask prompt contract by reusing the existing single SandSubagentType model. Final remains withheld until the production Runner composition actually injects the executor config/todo description/prompt section into live turns."
+      "notes": "Rust Host preserves the frozen multitask env/gate semantics, builtin executor config, durable todo guidance and prompt contract. The shipping Host now projects the sand_multitask experiment per turn, disables it for group-member turns, carries it as an immutable Runner capability, and injects SAND_MULTITASK_PROMPT_SECTION into the actual provider system prompt. Final remains withheld because the current Rust toolset still does not replace/generalize the live subagent registry with the builtin executor config or install the multitask-specific TodoWrite description."
     },
     {
       "referencePath": "source/host/sand-quiet-work-origin.ts",
