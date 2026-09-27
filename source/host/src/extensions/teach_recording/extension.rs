@@ -90,7 +90,8 @@ pub fn load_teach_queue_key(sand_root: Option<&Path>) -> io::Result<[u8; 32]> {
         }
     };
     load_teach_queue_key_with(root, |buffer| {
-        getrandom::fill(buffer).map_err(io::Error::other)
+        getrandom::fill(buffer)
+            .map_err(|error| io::Error::new(io::ErrorKind::Other, error.to_string()))
     })
 }
 
