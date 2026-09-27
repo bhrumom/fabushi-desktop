@@ -3877,8 +3877,8 @@ fn main() {
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {
         cancel_runner: Some({
             let runner_registry = Arc::clone(&runner_registry);
-            let transcript_runtime = Arc::clone(&transcript_runtime);
-            let telemetry_logs = telemetry_logs.clone();
+            let transcript_runtime = transcript_manager.transcript_runtime();
+            let telemetry_logs = host_telemetry.logs.clone();
             Arc::new(move |agent_id| {
                 let was_in_flight = transcript_runtime.is_agent_running(agent_id);
                 let had_active_run =
