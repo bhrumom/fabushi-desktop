@@ -15,6 +15,7 @@ pub type AgentDeletionHook = Arc<dyn Fn(&str) -> Result<(), String> + Send + Syn
 pub struct AgentDeletionRuntimeDeps {
     pub cancel_runner: Option<AgentDeletionHook>,
     pub forget_ack: Option<AgentDeletionHook>,
+    pub sharing_departure: Option<AgentDeletionHook>,
     pub release_box: Option<AgentDeletionHook>,
     pub forget_handoff: Option<AgentDeletionHook>,
 }
@@ -26,6 +27,9 @@ impl AgentDeletionRuntimeDeps {
         }
         if let Some(forget_ack) = self.forget_ack.as_ref() {
             forget_ack(agent_id)?;
+        }
+        if let Some(sharing_departure) = self.sharing_departure.as_ref() {
+            sharing_departure(agent_id)?;
         }
         Ok(())
     }
