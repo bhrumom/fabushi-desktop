@@ -15446,21 +15446,25 @@
       "targetPath": "source/host/src/extensions/transcript/group_chat_orchestrator.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "af4a80b60607ee9964ab279d642d58c73b90d54b",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/group_chat_orchestrator.rs",
-        "source/host/src/groups/group_chat.rs"
+        "source/host/src/groups/group_chat.rs",
+        "source/host/src/extensions/transcript/send_group_fanout.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/group_chat_orchestrator_contract.rs",
         "source/host/tests/group_chat_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/send_group_fanout_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust ports the frozen bounded, epoch-cancellable round-robin orchestrator including mention responders, shared-room history window, pass filtering, per-turn and total message caps and member prompt construction. Kept existing-needs-parity until group-chat-glue wires real Session member pinning, Runner execution, transcript writes and remote-member projection."
+      "notes": "Complete Rust port of the frozen bounded, epoch-cancellable round-robin orchestrator. It preserves responder selection, shared-room history window, frozen group/member prompt construction, pass filtering, per-turn/total caps and finalize semantics. Shipping dispatch_local_group_send now instantiates this exact owner for production local and shared/remote room turns, with local members entering the Routed Runner and remote members using the CrossUser executor through the same orchestrator. Focused contracts pin bounds, pass filtering, epoch cancellation, prompt projection and shared remote routing."
     },
     {
       "referencePath": "source/host/extensions/transcript/inline-image-materialization.ts",
