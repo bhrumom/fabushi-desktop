@@ -14293,12 +14293,19 @@
       "targetPath": "source/host/src/extensions/telemetry/host_tracing.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "55c618dd8aaf36309a23d45cf5f84221d7c02df3",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/host_tracing.rs",
+        "source/host/src/extensions/telemetry/send_trace_sampler.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_tracing_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns the frozen host-tracing lifecycle contract behind platform-fit exporter/provider boundaries: token-refresh delegate replacement, fail-closed export, Grok-compatible trace URL/base headers/resource attributes, singleton initialization, flush and idempotent shutdown. Final remains withheld until a real production OTLP exporter/provider backend and Host signal/lifecycle composition bind these owners."
     },
     {
       "referencePath": "source/host/extensions/telemetry/journal-outcome-telemetry.ts",

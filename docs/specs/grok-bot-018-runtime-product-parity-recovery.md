@@ -1677,3 +1677,14 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `pressure_cpu_profiler_contract` passed **3/3** on the exact working tree.
 - The row advances from `planned` to `existing-needs-parity`; final remains blocked on a real production cross-platform sampling backend plus production pressure/tick lifecycle wiring.
 - Manifest becomes **1,833 implemented / 120 existing-needs-parity / 49 planned** (**169 non-final**).
+
+
+### 2026-09-27 Host tracing backend-boundary slice
+
+- Exact starting HEAD: `549621b6bd26f8525ebc49ee50ef9cc4e1427786`.
+- Re-read frozen `telemetry/host-tracing.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `host_tracing.rs` with token-refresh exporter replacement, previous-delegate continuity when a token temporarily disappears, fail-closed export, Grok-compatible trace URL/base headers/resource attributes, provider registration/flush/shutdown, idempotent disposal and singleton initialization.
+- The OpenTelemetry SDK itself stays behind `SpanExporter` / `HostTracerProvider` boundaries instead of forcing a Node-specific SDK into Rust.
+- `host_tracing_contract` passed **4/4** on the exact working tree.
+- The row advances from `planned` to `existing-needs-parity`; final remains blocked on a real production OTLP exporter/provider backend and production Host signal/lifecycle wiring.
+- Manifest becomes **1,833 implemented / 121 existing-needs-parity / 48 planned** (**169 non-final**).
