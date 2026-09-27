@@ -187,6 +187,29 @@ impl RemoteTurnsHost for ProductionXuserHost {
 }
 
 impl XuserSharingManager for ProductionXuserHost {
+    fn get_agent_display_profile(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<(String, String)>, String> {
+        self.shared_rooms
+            .sessions()
+            .summarize_agent_by_id(agent_id, None)
+            .map(|summary| summary.map(|summary| (summary.name, summary.description)))
+    }
+
+    fn get_agent_avatar_data_url(&self, agent_id: &str) -> Result<Option<String>, String> {
+        let avatar = self
+            .shared_rooms
+            .sessions()
+            .summarize_agent_by_id(agent_id, None)?
+            .and_then(|summary| summary.avatar_data_url);
+        Ok(avatar.filter(|value| is_publishable_share_avatar_data_url(value)))
+    }
+
+    fn find_room_agent_id(&self, room_id: &str) -> Result<Option<String>, String> {
+        self.shared_rooms.resolve_canonical_room_agent(room_id)
+    }
+
     fn install_room(
         &self,
         room: &super::xuser_state_reconcile::XuserRoom,
@@ -754,6 +777,32 @@ impl ProductionCrossUserRuntime {
             .service()
             .unsubscribe_from_renewal(self.auth_renewal_subscription);
     }
+}
+
+const SAND_SHARE_AVATAR_DATA_URL_MAX_LENGTH: usize = 200_000;
+
+fn is_publishable_share_avatar_data_url(value: &str) -> bool {
+    if value.len() > SAND_SHARE_AVATAR_DATA_URL_MAX_LENGTH {
+        return false;
+    }
+    const PREFIXES: [&str; 4] = [
+        "data:image/png;base64,",
+        "data:image/jpeg;base64,",
+        "data:image/webp;base64,",
+        "data:image/gif;base64,",
+    ];
+    let Some(payload) = PREFIXES
+        .iter()
+        .find_map(|prefix| value.strip_prefix(prefix))
+    else {
+        return false;
+    };
+    !payload.is_empty()
+        && payload
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'/' | b'='))
+        && !payload.trim_end_matches('=').contains('=')
+        && payload.len().saturating_sub(payload.trim_end_matches('=').len()) <= 2
 }
 
 fn sharing_state_value(state: &super::xuser_sharing_service::SandSharingState) -> Value {
