@@ -1418,7 +1418,7 @@ pub fn run_openrouter_with_transport_reporting_usage(
                         "OpenRouter stream failed: {error}"
                     )));
                 }
-                if let Some(usage) = provider_token_usage_from_openrouter_event(event) {
+                if let Some(usage) = provider_token_usage_from_openrouter_event(&event) {
                     step_usage = Some(usage);
                 }
                 let Some(delta) = event
