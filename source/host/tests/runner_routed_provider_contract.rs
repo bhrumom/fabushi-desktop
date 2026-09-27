@@ -117,6 +117,11 @@ fn transcript_runner_registry_cancels_all_streams_for_deleted_agent_with_reason(
     let second = registry.register_routed_provider("agent-a", "delete-a-2").expect("a2");
     let other = registry.register_routed_provider("agent-b", "delete-b").expect("b");
 
+    assert_eq!(
+        registry.agent_id_for_stream("delete-a-1").as_deref(),
+        Some("agent-a")
+    );
+    assert_eq!(registry.agent_id_for_stream("missing"), None);
     assert_eq!(registry.cancel_agent("agent-a", "agent deleted"), 2);
     assert!(first.is_cancelled());
     assert!(second.is_cancelled());
@@ -125,6 +130,7 @@ fn transcript_runner_registry_cancels_all_streams_for_deleted_agent_with_reason(
     assert!(!other.is_cancelled());
 
     registry.finish_routed_provider("delete-a-1");
+    assert_eq!(registry.agent_id_for_stream("delete-a-1"), None);
     registry.finish_routed_provider("delete-a-2");
     registry.finish_routed_provider("delete-b");
 }
