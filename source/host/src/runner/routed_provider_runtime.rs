@@ -140,6 +140,13 @@ impl RoutedProviderTaskRegistry {
             .is_some_and(|task| task.cancellation.cancel(reason))
     }
 
+    pub fn agent_id_for_stream(&self, stream_id: &str) -> Option<String> {
+        self.active
+            .lock()
+            .ok()
+            .and_then(|active| active.get(stream_id).and_then(|task| task.agent_id.clone()))
+    }
+
     pub fn cancel_agent(&self, agent_id: &str, reason: impl Into<String>) -> usize {
         let reason = reason.into();
         let cancellations = self
