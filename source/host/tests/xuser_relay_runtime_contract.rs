@@ -172,8 +172,12 @@ fn relay_uses_frozen_grok_endpoint_family() {
     let transport = Arc::new(FakeTransport::new(vec![
         Ok(json!({ "rooms": [] })),
         Ok(json!({ "timestampMs": 42 })),
-        Ok(json!({ "roomId": "room-a" })),
-        Ok(json!({ "status": "pending" })),
+        Ok(json!({
+            "shareUrl": "https://share.example/room-a",
+            "expiresAtMs": 12345,
+            "room": { "roomId": "room-a" }
+        })),
+        Ok(json!({ "status": "pending", "roomName": "Shared" })),
     ]));
     let client = SandXuserRelayClient::new(
         "https://example.invalid".into(),
@@ -182,11 +186,19 @@ fn relay_uses_frozen_grok_endpoint_family() {
     );
 
     client.fetch_share_state().unwrap();
-    client.send(&json!({ "kind": "entry" })).unwrap();
-    client
+    let sent = client.send(&json!({ "kind": "entry" })).unwrap();
+    assert_eq!(sent["timestampMs"], 42.0);
+
+    let created = client
         .create_room_from_agent(&json!({ "agentId": "agent-a" }))
         .unwrap();
-    client.join_room("invite").unwrap();
+    assert_eq!(created["status"], "ok");
+    assert_eq!(created["roomId"], "room-a");
+    assert_eq!(created["shareUrl"], "https://share.example/room-a");
+
+    let joined = client.join_room("invite").unwrap();
+    assert_eq!(joined["status"], "pending");
+    assert_eq!(joined["roomName"], "Shared");
 
     let requests = transport.requests.lock().unwrap();
     assert!(requests[0].url.ends_with("/sand/share-state"));
@@ -233,4 +245,41 @@ fn relay_driver_owns_polling_wakeup_and_clean_stop() {
 
     driver.stop();
     assert!(!driver.is_started());
+}
+
+#[test]
+fn relay_projects_frozen_join_and_error_responses() {
+    let transport = Arc::new(FakeTransport::new(vec![
+        Ok(json!({
+            "status": "already-member",
+            "room": { "roomId": "room-a", "name": "Room A" }
+        })),
+        Ok(json!({ "status": "denied" })),
+        Err(SandXuserRelayHttpError {
+            status: 403,
+            path: "/sand/share-rooms/from-agent".into(),
+        }),
+    ]));
+    let client = SandXuserRelayClient::new(
+        "https://example.invalid".into(),
+        Arc::new(|| Ok("token".into())),
+        Arc::clone(&transport) as Arc<dyn XuserRelayTransport>,
+    );
+
+    let member = client.join_room("invite-a").unwrap();
+    assert_eq!(member["status"], "already-member");
+    assert_eq!(member["roomName"], "Room A");
+    assert_eq!(member["roomId"], "room-a");
+
+    let denied = client.join_room("invite-b").unwrap();
+    assert_eq!(denied, json!({ "status": "denied" }));
+
+    let blocked = client
+        .create_room_from_agent(&json!({ "agentId": "agent-a" }))
+        .unwrap();
+    assert_eq!(blocked["status"], "error");
+    assert_eq!(
+        blocked["message"],
+        "Sharing isn't enabled for your account."
+    );
 }
