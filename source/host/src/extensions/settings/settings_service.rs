@@ -565,6 +565,24 @@ impl SettingsService {
         if previous.as_deref() == Some(account_scope) {
             return Ok(false);
         }
+
+        let seen = settings.get("hasSeenOnboarding").and_then(Value::as_bool);
+        let seen_owner = settings
+            .get("hasSeenOnboardingAccountScope")
+            .and_then(Value::as_str)
+            .map(str::to_string);
+        settings.remove("hasSeenOnboarding");
+        settings.remove("hasSeenOnboardingAccountScope");
+        if let Some(seen) = seen {
+            if previous.is_none() || seen_owner.as_deref() == Some(account_scope) {
+                settings.insert("hasSeenOnboarding".into(), Value::Bool(seen));
+                settings.insert(
+                    "hasSeenOnboardingAccountScope".into(),
+                    Value::String(account_scope.into()),
+                );
+            }
+        }
+
         if previous.is_some() {
             clear_account_sensitive_settings(&mut settings);
         }
@@ -576,6 +594,7 @@ impl SettingsService {
         self.notify_changes(vec!["mcpCustomInstructionsAccountScope".into()]);
         Ok(true)
     }
+
     pub fn clear_account_scope(&self) -> Result<bool, String> {
         let mut settings = self.load();
         let before = settings.clone();
@@ -734,7 +753,28 @@ impl SettingsService {
         self.load().get("hasSeenOnboarding").and_then(Value::as_bool)
     }
     pub fn set_has_seen_onboarding(&self, value: bool) -> Result<bool, String> {
-        self.set_json_field("hasSeenOnboarding", Some(Value::Bool(value)))
+        let mut settings = self.load();
+        let scope = settings
+            .get("mcpCustomInstructionsAccountScope")
+            .and_then(Value::as_str)
+            .map(str::to_string);
+        let mut changed =
+            settings.get("hasSeenOnboarding").and_then(Value::as_bool) != Some(value);
+        settings.insert("hasSeenOnboarding".into(), Value::Bool(value));
+        settings.remove("hasSeenOnboardingAccountScope");
+        if let Some(scope) = scope {
+            settings.insert(
+                "hasSeenOnboardingAccountScope".into(),
+                Value::String(scope),
+            );
+            changed = true;
+        }
+        if !changed {
+            return Ok(false);
+        }
+        self.persist(&settings).map_err(|error| error.to_string())?;
+        self.notify_changes(vec!["hasSeenOnboarding".into()]);
+        Ok(true)
     }
 
     pub fn get_inference_provider(&self) -> String {
@@ -892,6 +932,30 @@ impl SettingsService {
 
         settings.insert("notifications".into(), json!({ "isEnabled": false }));
 
+        if let Some(value) = update.get("mcpCustomInstructionsAccountScope") {
+            match value {
+                Value::Null => {
+                    settings.remove("mcpCustomInstructionsAccountScope");
+                    clear_account_sensitive_settings(&mut settings);
+                }
+                Value::String(scope) if !scope.trim().is_empty() => {
+                    let previous = settings
+                        .get("mcpCustomInstructionsAccountScope")
+                        .and_then(Value::as_str)
+                        .map(str::to_string);
+                    if previous.as_deref() != Some(scope.trim()) {
+                        if previous.is_some() {
+                            clear_account_sensitive_settings(&mut settings);
+                        }
+                        settings.insert(
+                            "mcpCustomInstructionsAccountScope".into(),
+                            Value::String(scope.trim().into()),
+                        );
+                    }
+                }
+                _ => {}
+            }
+        }
         if let Some(value) = update.get("mcpCustomInstructions") {
             settings.insert(
                 "mcpCustomInstructions".into(),
@@ -920,21 +984,6 @@ impl SettingsService {
                         .collect(),
                 ),
             );
-        }
-        if let Some(value) = update.get("mcpCustomInstructionsAccountScope") {
-            match value {
-                Value::Null => {
-                    settings.remove("mcpCustomInstructionsAccountScope");
-                    clear_account_sensitive_settings(&mut settings);
-                }
-                Value::String(scope) if !scope.trim().is_empty() => {
-                    settings.insert(
-                        "mcpCustomInstructionsAccountScope".into(),
-                        Value::String(scope.trim().into()),
-                    );
-                }
-                _ => {}
-            }
         }
         for field in ["userTimeZone", "userTimeZoneOverride"] {
             if let Some(Value::String(zone)) = update.get(field) {
@@ -974,13 +1023,13 @@ impl SettingsService {
                 }),
             );
         }
-        if let Some(Value::String(value)) = update.get("localToolPermission") {
-            if SandLocalToolPermission::parse(value).is_some() {
-                settings.insert(
-                    "localToolPermission".into(),
-                    Value::String(value.clone()),
-                );
-            }
+        if let Some(value) = update.get("localToolPermission") {
+            let normalized =
+                normalize_sand_local_tool_permission(value.as_str());
+            settings.insert(
+                "localToolPermission".into(),
+                Value::String(normalized.as_str().into()),
+            );
         }
         if let Some(Value::Bool(value)) = update.get("webauthnProxyEnabled") {
             settings.insert("webauthnProxyEnabled".into(), Value::Bool(*value));
