@@ -1863,3 +1863,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Preserved session-db prefix filtering, null-filename mtime fallback, debounce coalescing, callback-failure isolation, idempotent start/stop, and a real non-recursive filesystem watcher using the existing Host `notify` dependency.
 - Added `source/host/tests/chrome_session_watcher_contract.rs` covering frozen filename semantics, mtime fallback, debounce/stop disposal, and real filesystem delivery.
 - Manifest moves this row from `planned` to `existing-needs-parity`, not `implemented`: final parity still requires the planned box-store-sync production extension to compose the watcher into the live sync trigger path. This deliberately avoids claiming parity from a class/module name alone.
+
+### 2026-09-27 MCP production composition evidence slice
+
+- Audited frozen `source/host/extensions/mcp/production.ts` at blob `f6e50b2474adcebb33dbb52291c7be5d5256f0a9` against the existing Rust Mahayana Host owner.
+- Confirmed `source/host/src/extensions/mcp/production.rs` already owns the recovered production Dashboard publish RPC paths/client, Host auth-renewal adapter, real plugin-skills polling lifecycle, and production skill-publish construction; added `source/host/tests/mcp_production_contract.rs` to pin the frozen Dashboard RPC paths plus immediate polling/stop/idempotent-dispose behavior.
+- The architecture row advances only from `planned` to `existing-needs-parity`. It is deliberately not marked `implemented`: the frozen production extras still require shipping composition for the installed-plugin loader, MCP service factory, legacy auth cleanup, legacy live-reference sweep, telemetry callbacks, and Host extension-registry wiring.
+- Local full Rust compilation was not used as proof because the repository policy keeps heavy builds in GitHub Actions. The attempted narrow Cargo test began compiling the full Host dependency graph and was stopped; exact-HEAD Rust desktop runtime CI remains authoritative after push.

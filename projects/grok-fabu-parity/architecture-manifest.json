@@ -12904,12 +12904,19 @@
       "targetPath": "source/host/src/extensions/mcp/production.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "f6e50b2474adcebb33dbb52291c7be5d5256f0a9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/mcp/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/mcp_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Mahayana Host now owns the recovered production MCP publish RPC client, authenticated renewal adapter, real plugin-skills polling lifecycle, and skill-publish construction. This advances the frozen production.ts mapping from planned to existing-needs-parity; it is intentionally not marked implemented until the full production extras composition (plugin loader/service/legacy cleanup+sweep) is wired through the shipping Host extension registry."
     },
     {
       "referencePath": "source/host/extensions/mcp/skill-publish.ts",
