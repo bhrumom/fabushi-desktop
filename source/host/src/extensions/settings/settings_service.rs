@@ -558,38 +558,14 @@ impl SettingsService {
             return self.clear_account_scope();
         }
         let mut settings = self.load();
-        let previous = settings
+        if settings
             .get("mcpCustomInstructionsAccountScope")
             .and_then(Value::as_str)
-            .map(str::to_string);
-        if previous.as_deref() == Some(account_scope) {
+            == Some(account_scope)
+        {
             return Ok(false);
         }
-
-        let seen = settings.get("hasSeenOnboarding").and_then(Value::as_bool);
-        let seen_owner = settings
-            .get("hasSeenOnboardingAccountScope")
-            .and_then(Value::as_str)
-            .map(str::to_string);
-        settings.remove("hasSeenOnboarding");
-        settings.remove("hasSeenOnboardingAccountScope");
-        if let Some(seen) = seen {
-            if previous.is_none() || seen_owner.as_deref() == Some(account_scope) {
-                settings.insert("hasSeenOnboarding".into(), Value::Bool(seen));
-                settings.insert(
-                    "hasSeenOnboardingAccountScope".into(),
-                    Value::String(account_scope.into()),
-                );
-            }
-        }
-
-        if previous.is_some() {
-            clear_account_sensitive_settings(&mut settings);
-        }
-        settings.insert(
-            "mcpCustomInstructionsAccountScope".into(),
-            Value::String(account_scope.into()),
-        );
+        apply_account_scope(&mut settings, account_scope);
         self.persist(&settings).map_err(|error| error.to_string())?;
         self.notify_changes(vec!["mcpCustomInstructionsAccountScope".into()]);
         Ok(true)
@@ -939,18 +915,12 @@ impl SettingsService {
                     clear_account_sensitive_settings(&mut settings);
                 }
                 Value::String(scope) if !scope.trim().is_empty() => {
-                    let previous = settings
+                    if settings
                         .get("mcpCustomInstructionsAccountScope")
                         .and_then(Value::as_str)
-                        .map(str::to_string);
-                    if previous.as_deref() != Some(scope.trim()) {
-                        if previous.is_some() {
-                            clear_account_sensitive_settings(&mut settings);
-                        }
-                        settings.insert(
-                            "mcpCustomInstructionsAccountScope".into(),
-                            Value::String(scope.trim().into()),
-                        );
+                        != Some(scope.trim())
+                    {
+                        apply_account_scope(&mut settings, scope.trim());
                     }
                 }
                 _ => {}
@@ -1256,6 +1226,38 @@ fn string_list_map_value(values: BTreeMap<String, Vec<String>>) -> Value {
             .collect(),
     )
 }
+fn apply_account_scope(settings: &mut Map<String, Value>, account_scope: &str) {
+    let previous_scope = settings
+        .get("mcpCustomInstructionsAccountScope")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let seen = settings.get("hasSeenOnboarding").and_then(Value::as_bool);
+    let seen_owner = settings
+        .get("hasSeenOnboardingAccountScope")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+
+    settings.remove("hasSeenOnboarding");
+    settings.remove("hasSeenOnboardingAccountScope");
+    if let Some(seen) = seen {
+        if seen_owner.as_deref().is_none() || seen_owner.as_deref() == Some(account_scope) {
+            settings.insert("hasSeenOnboarding".into(), Value::Bool(seen));
+            settings.insert(
+                "hasSeenOnboardingAccountScope".into(),
+                Value::String(account_scope.into()),
+            );
+        }
+    }
+
+    if previous_scope.is_some() && previous_scope.as_deref() != Some(account_scope) {
+        clear_account_sensitive_settings(settings);
+    }
+    settings.insert(
+        "mcpCustomInstructionsAccountScope".into(),
+        Value::String(account_scope.into()),
+    );
+}
+
 fn clear_account_sensitive_settings(settings: &mut Map<String, Value>) {
     for field in [
         "autoReviewInstructions",
