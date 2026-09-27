@@ -11619,12 +11619,24 @@
       "targetPath": "source/host/src/extensions/content_search/search_index_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "181b1f2427e75907f41234eaf5a7a38b2e379ab5",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/content_search/search_index_service.rs",
+        "source/host/src/extensions/content_search/search_index_worker.rs",
+        "source/host/src/extensions/content_search/search_index_writer.rs",
+        "source/host/src/extensions/content_search/search_index_db.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/search_index_service_contract.rs",
+        "source/host/tests/search_index_worker_contract.rs",
+        "source/host/tests/search_index_writer_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust SearchIndexService is the supervisor above the distinct worker/writer fault boundary. It owns reader DB open/migration/readiness, serial job dispatch, mutation projection, bounded corruption rebuilds, worker respawns, failed-job reconcile/retry, schema mismatch recreation, health reporting and bounded dispose drain. Worker writes remain isolated through the typed SearchIndexJobPort."
     },
     {
       "referencePath": "source/host/extensions/content-search/search-index-worker.ts",

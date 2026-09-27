@@ -1803,3 +1803,14 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added `search_index_worker_contract` covering request correlation + persisted execution, idempotent termination/fail-closed post behavior, and corruption-code classification.
 - This row advances from `planned` to `implemented`; SearchIndexService remains separately mapped and will supervise this worker rather than absorb it.
 - Manifest after this boundary: **1,837 implemented / 128 existing-needs-parity / 37 planned** (**165 non-final**).
+
+
+### 2026-09-27 Content-search service supervisor
+
+- Exact starting HEAD: `f9ffe6bd62aed541e8048dd42d935296a843ce66`.
+- Re-read frozen `source/host/extensions/content-search/search-index-service.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `search_index_service.rs` as the supervisor **above** the independent Worker/Writer boundary. It owns reader-DB open/migration, fresh-vs-nonfresh schema stamping/recreation, readiness, mutation-to-job routing, serial dispatch, bounded corruption rebuilds, bounded worker respawns, bounded failed-job reconcile/retry, health events and the 2-second dispose drain.
+- Worker writes remain behind `SearchIndexJobPort`; Service does not absorb Writer or use its reader connection for writes.
+- Added `search_index_service_contract` covering fresh start/reconcile/mutation/search/dispose, worker-unavailable respawn without index rebuild, corruption-triggered index rebuild + reconcile, and nonfresh schema mismatch recreation. Frozen retry/rebuild limits are asserted.
+- This row advances from `planned` to `implemented`. The content-search implementation set is now complete at module level; the separately mapped extension remains non-final until its production mutation/gate/telemetry adapters are bound to this concrete service in the shipping Host.
+- Manifest after this supervisor: **1,838 implemented / 128 existing-needs-parity / 36 planned** (**164 non-final**).
