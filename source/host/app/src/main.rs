@@ -33,6 +33,7 @@ use mahayana_host_runtime::runner::sand_auto_review_summaries::CloudLifecycleAct
 use mahayana_host_runtime::runner::sand_browser_auto_review::run_sand_browser_auto_review_preflight;
 use mahayana_host_runtime::runner::sand_computer_auto_review::{
     BoxIdentity, SAND_COMPUTER_AUTO_REVIEW_CLASSIFIER_ERROR_REASON,
+    run_sand_computer_auto_review_preflight,
 };
 use mahayana_host_runtime::runner::sand_cloud_agent_auto_review::{
     CloudAgentReviewImage, CloudAgentReviewOutcome,
@@ -189,6 +190,11 @@ use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BrowserAutoReviewCallback, BrowserPersistImageCallback, BrowserPossibleNavigationCallback,
     BrowserToolExecutor, ProductionBrowserToolExecutor, capture_browser_review_state,
     to_browser_review_action,
+};
+use mahayana_host_runtime::runner::host_computer_tool_dependencies::ProductionComputerToolExecutor;
+use mahayana_host_runtime::runner::tools::sand_computer_tool::{
+    ComputerAutoReviewCallback, ComputerPersistImageCallback, ComputerToolExecutor,
+    to_exact_action_value, validate_computer_action,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{append_automations_system_prompt, append_memory_system_prompt};
 use mahayana_host_runtime::runner_production_bridge::{
@@ -2004,6 +2010,82 @@ fn start_routed_provider_task(
                     agent_id.clone(),
                 ));
             let browser_media_sessions = Arc::clone(&worker_sessions);
+            let computer_media_sessions = Arc::clone(&worker_sessions);
+            let computer_review_box = Arc::clone(&box_resources);
+            let computer_review_auth = Arc::clone(&worker_auth);
+            let computer_review_auto_review = Arc::clone(&worker_auto_review);
+            let computer_review_controller = Arc::clone(&worker_auto_review_controller);
+            let computer_review_cancellation = worker_cancellation.clone();
+            let computer_review_agent_id = agent_id.clone();
+            let computer_review_request_source = auto_review_request_source.clone();
+            let computer_review_context = auto_review_context
+                .iter()
+                .map(|message| {
+                    serde_json::json!({
+                        "role": message.role,
+                        "content": message.content,
+                    })
+                })
+                .collect::<Vec<_>>();
+            let computer_review_workspace_paths = vec!["/workspace".to_string()];
+            let computer_auto_review: ComputerAutoReviewCallback =
+                Arc::new(move |args, tool_call_id| {
+                    let mode = computer_review_auto_review.current_modes().computer;
+                    validate_computer_action(args, Some(mode))
+                        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                    let initial_display = computer_review_box.browser_window_index()?;
+                    let box_identity = BoxIdentity {
+                        box_id: std::env::var("SAND_BOX_HOST")
+                            .ok()
+                            .filter(|value| !value.trim().is_empty())
+                            .unwrap_or_else(|| "127.0.0.1".into()),
+                        window_generation: format!(
+                            "{}:{}",
+                            computer_review_agent_id,
+                            initial_display
+                        ),
+                    };
+                    let exact_action = to_exact_action_value(args);
+                    let classifier_cancellation = computer_review_cancellation.clone();
+                    let mut classifier =
+                        create_sand_backend_smart_mode_classifier_executor_with_cancellation(
+                            Arc::clone(&computer_review_auth),
+                            Arc::new(move || classifier_cancellation.is_cancelled()),
+                        )
+                        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                    run_sand_computer_auto_review_preflight(
+                        mode,
+                        &exact_action,
+                        args.description.as_deref(),
+                        &box_identity,
+                        &computer_review_agent_id,
+                        &computer_review_request_source,
+                        Some(computer_review_controller.as_ref()),
+                        || {
+                            capture_browser_review_state(
+                                computer_review_box.as_ref(),
+                                initial_display,
+                                None,
+                                tool_call_id,
+                            )
+                            .map(|state| state.display_state_identity)
+                            .map_err(|error| error.to_string())
+                        },
+                        |risk_target, classifier_mode| {
+                            run_sand_auto_review_classifier(
+                                &mut classifier,
+                                tool_call_id,
+                                &computer_review_agent_id,
+                                classifier_mode,
+                                || risk_target.clone(),
+                                || Ok(computer_review_context.clone()),
+                                &computer_review_workspace_paths,
+                                SAND_COMPUTER_AUTO_REVIEW_CLASSIFIER_ERROR_REASON,
+                            )
+                        },
+                    )
+                    .map_err(|error| ProviderSessionError::Tool(error.to_string()))
+                });
             let browser_review_box = Arc::clone(&box_resources);
             let browser_review_auth = Arc::clone(&worker_auth);
             let browser_review_auto_review = Arc::clone(&worker_auto_review);
@@ -2341,6 +2423,31 @@ fn start_routed_provider_task(
                 .with_persist_image_callback(browser_persist_image)
                 .with_possible_navigation_callback(browser_possible_navigation),
             );
+            let computer_media_agent_id = agent_id.clone();
+            let computer_persist_image: ComputerPersistImageCallback = Arc::new(
+                move |bytes, mime| {
+                    if mime != "image/webp" {
+                        return None;
+                    }
+                    let db_path = computer_media_sessions
+                        .session_db_path(&computer_media_agent_id)
+                        .ok()?;
+                    let agent_dir = db_path.parent()?;
+                    let path = persist_agent_media_bytes(
+                        agent_dir,
+                        "computer-screenshot.webp",
+                        bytes,
+                        AgentMediaKind::Image,
+                    )
+                    .ok()?;
+                    file_url_for_path(path)
+                },
+            );
+            let computer_executor: Arc<dyn ComputerToolExecutor> = Arc::new(
+                ProductionComputerToolExecutor::new(Arc::clone(&box_resources))
+                    .with_auto_review_callback(computer_auto_review)
+                    .with_persist_image_callback(computer_persist_image),
+            );
             let worker_provider_usage = Arc::new(Mutex::new(None::<ProviderTokenUsage>));
             let usage_store = Arc::clone(&worker_provider_usage);
             let usage_settings = Arc::clone(&settings);
@@ -2376,6 +2483,7 @@ fn start_routed_provider_task(
                     spotlight_enabled,
                     box_resources: Some(box_resources),
                     browser_executor: Some(browser_executor),
+                    computer_executor: Some(computer_executor),
                     send_message_sink: Some(send_message_sink),
                     reaction_sink: Some(reaction_sink),
                     cloud_agent_tool: Some(cloud_agent_tool),

@@ -1,15 +1,24 @@
 use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
+
+use mahayana_host_runtime::extensions::inference::provider_session::ProviderSessionError;
+use mahayana_host_runtime::runner::box_tool_access::{
+    RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest, RunnerBoxWriteRequest,
+};
+use serde_json::Value;
 
 use mahayana_host_runtime::r#box::box_shell_command::HostShellArgsInput;
 use mahayana_host_runtime::runner::host_computer_tool_dependencies::{
     ComputerProjectionError, GeneratedComputerAction, GeneratedComputerUseResult,
-    execute_host_shell, from_generated_computer_use_result,
-    resolve_browser_window_index, to_generated_computer_use_args,
+    ProductionComputerToolExecutor, decode_generated_computer_use_result,
+    encode_generated_computer_use_args, execute_host_shell,
+    from_generated_computer_use_result, resolve_browser_window_index,
+    to_generated_computer_use_args,
 };
 use mahayana_host_runtime::runner::sand_auto_review::SandAutoReviewMode;
 use mahayana_host_runtime::runner::tools::sand_computer_tool::{
-    ComputerActionArgs, ComputerActionName, ComputerCoordinate, ComputerUseResult,
-    MouseButtonInput, ReportedComputerAction, ScrollDirectionInput,
+    ComputerActionArgs, ComputerActionName, ComputerCoordinate, ComputerToolExecutor,
+    ComputerUseResult, MouseButtonInput, ReportedComputerAction, ScrollDirectionInput,
     build_computer_action_sequence, describe_outcome, drag_path,
     persist_computer_screenshot, reported_batch_position, to_action,
     validate_computer_action,
@@ -211,5 +220,122 @@ fn browser_identity_projection_waits_for_box_before_window_lookup() {
     assert_eq!(
         order.into_inner(),
         vec!["ready:box-7", "window:box-7"]
+    );
+}
+
+
+#[derive(Default)]
+struct ComputerTransportPort {
+    requests: Mutex<Vec<Vec<u8>>>,
+}
+
+impl RunnerBoxResourcePort for ComputerTransportPort {
+    fn execute_shell(
+        &self,
+        _request: RunnerBoxShellRequest,
+    ) -> Result<Value, ProviderSessionError> {
+        Err(ProviderSessionError::Tool("unused shell".into()))
+    }
+
+    fn execute_read(
+        &self,
+        _request: RunnerBoxReadRequest,
+    ) -> Result<Value, ProviderSessionError> {
+        Err(ProviderSessionError::Tool("unused read".into()))
+    }
+
+    fn execute_write(
+        &self,
+        _request: RunnerBoxWriteRequest,
+    ) -> Result<(), ProviderSessionError> {
+        Err(ProviderSessionError::Tool("unused write".into()))
+    }
+
+    fn execute_computer_use_protobuf(
+        &self,
+        protobuf_args: Vec<u8>,
+    ) -> Result<Vec<u8>, ProviderSessionError> {
+        self.requests.lock().expect("requests").push(protobuf_args);
+        // ComputerUseResult { success: ComputerUseSuccess { screenshot: "AQID" } }
+        Ok(vec![0x0a, 0x06, 0x1a, 0x04, b'A', b'Q', b'I', b'D'])
+    }
+}
+
+#[test]
+fn generated_computer_protobuf_matches_frozen_wire_contract() {
+    let mut click = ComputerActionArgs::simple(ComputerActionName::Click);
+    click.x = Some(7);
+    click.y = Some(9);
+    let action = to_action(&click).expect("click");
+    let generated = to_generated_computer_use_args(
+        "tool-wire",
+        &[action],
+        Some(true),
+        Some("click target"),
+    )
+    .expect("generated");
+    let encoded = encode_generated_computer_use_args(&generated).expect("encode");
+    assert!(!encoded.is_empty());
+    assert_eq!(encoded[0], 0x0a, "tool_call_id must remain field 1");
+
+    let decoded = decode_generated_computer_use_result(&[
+        0x0a, 0x0c,
+        0x1a, 0x03, b'a', b'b', b'c',
+        0x32, 0x05, 0x08, 0x01, 0x10, 0x02, 0x00,
+    ]);
+    assert!(decoded.is_err(), "trailing malformed coordinate bytes must fail closed");
+
+    let decoded = decode_generated_computer_use_result(&[
+        0x0a, 0x0b,
+        0x1a, 0x03, b'a', b'b', b'c',
+        0x32, 0x04, 0x08, 0x01, 0x10, 0x02,
+    ])
+    .expect("decode success");
+    assert!(matches!(
+        decoded,
+        GeneratedComputerUseResult::Success {
+            screenshot: Some(ref screenshot),
+            cursor_position: Some(ComputerCoordinate { x: 1, y: 2 }),
+        } if screenshot == "abc"
+    ));
+}
+
+#[test]
+fn production_computer_executor_uses_host_box_transport_and_persists_screenshot() {
+    let port = Arc::new(ComputerTransportPort::default());
+    let persist_calls = Arc::new(Mutex::new(Vec::<(Vec<u8>, String)>::new()));
+    let persist_capture = Arc::clone(&persist_calls);
+    let executor = ProductionComputerToolExecutor::new(
+        Arc::clone(&port) as Arc<dyn RunnerBoxResourcePort>,
+    )
+    .with_persist_image_callback(Arc::new(move |bytes, mime| {
+        persist_capture
+            .lock()
+            .expect("persist")
+            .push((bytes.to_vec(), mime.to_string()));
+        Some("file:///saved-computer.webp".into())
+    }));
+
+    let result = executor
+        .execute(
+            &ComputerActionArgs::simple(ComputerActionName::Screenshot),
+            "tool-live",
+        )
+        .expect("computer execute");
+
+    let requests = port.requests.lock().expect("requests");
+    assert_eq!(requests.len(), 1);
+    assert!(!requests[0].is_empty());
+    drop(requests);
+
+    assert!(matches!(
+        result,
+        ComputerUseResult::Success(ref success)
+            if success.screenshot.as_deref() == Some("AQID")
+                && success.screenshot_path.as_deref() == Some("file:///saved-computer.webp")
+    ));
+    assert_eq!(
+        persist_calls.lock().expect("persist").as_slice(),
+        &[(vec![1, 2, 3], "image/webp".into())]
     );
 }

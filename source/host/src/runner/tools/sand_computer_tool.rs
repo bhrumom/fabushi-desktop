@@ -1,6 +1,13 @@
+use std::sync::Arc;
+
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
-use serde_json::{Value, json};
+use serde_json::{Map, Value, json};
+
+use crate::extensions::inference::provider_session::{
+    ProviderSessionError, RoutedToolDefinition,
+};
+use crate::runner::routed_provider_runtime::RoutedToolBridge;
 
 use crate::runner::sand_auto_review::{
     SandAutoReviewMode,
@@ -421,4 +428,247 @@ where
         success.screenshot_path = Some(path);
     }
     Ok(())
+}
+
+
+pub type ComputerAutoReviewCallback = Arc<
+    dyn Fn(&ComputerActionArgs, &str) -> Result<(), ProviderSessionError> + Send + Sync,
+>;
+pub type ComputerPersistImageCallback =
+    Arc<dyn Fn(&[u8], &str) -> Option<String> + Send + Sync>;
+
+pub trait ComputerToolExecutor: Send + Sync {
+    fn execute(
+        &self,
+        args: &ComputerActionArgs,
+        tool_call_id: &str,
+    ) -> Result<ComputerUseResult, ProviderSessionError>;
+}
+
+pub fn to_exact_action_value(args: &ComputerActionArgs) -> Value {
+    let mut object = Map::new();
+    object.insert("action".into(), Value::String(args.action.as_str().into()));
+    if let Some(x) = args.x { object.insert("x".into(), Value::from(x)); }
+    if let Some(y) = args.y { object.insert("y".into(), Value::from(y)); }
+    if let Some(x2) = args.x2 { object.insert("x2".into(), Value::from(x2)); }
+    if let Some(y2) = args.y2 { object.insert("y2".into(), Value::from(y2)); }
+    if !args.path.is_empty() {
+        object.insert("path".into(), Value::Array(args.path.iter()
+            .map(|point| json!({"x":point.x,"y":point.y}))
+            .collect()));
+    }
+    if let Some(text) = args.text.as_ref() { object.insert("text".into(), Value::String(text.clone())); }
+    if let Some(key) = args.key.as_ref() { object.insert("key".into(), Value::String(key.clone())); }
+    if let Some(button) = args.button { object.insert("button".into(), Value::String(button.user_name().into())); }
+    if let Some(count) = args.count { object.insert("count".into(), Value::from(count)); }
+    if let Some(direction) = args.direction {
+        let direction = match direction {
+            ScrollDirectionInput::Up => "up",
+            ScrollDirectionInput::Down => "down",
+            ScrollDirectionInput::Left => "left",
+            ScrollDirectionInput::Right => "right",
+        };
+        object.insert("direction".into(), Value::String(direction.into()));
+    }
+    if let Some(amount) = args.amount { object.insert("amount".into(), Value::from(amount)); }
+    if let Some(duration_ms) = args.duration_ms { object.insert("durationMs".into(), Value::from(duration_ms)); }
+    Value::Object(object)
+}
+
+fn parse_i64(object: &Map<String, Value>, key: &str) -> Result<Option<i64>, ProviderSessionError> {
+    match object.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(value) => value.as_i64().map(Some).ok_or_else(|| {
+            ProviderSessionError::Tool(format!("Computer {key} must be an integer"))
+        }),
+    }
+}
+
+fn parse_action_name(value: &str) -> Result<ComputerActionName, ProviderSessionError> {
+    match value {
+        "screenshot" => Ok(ComputerActionName::Screenshot),
+        "click" => Ok(ComputerActionName::Click),
+        "move" => Ok(ComputerActionName::Move),
+        "drag" => Ok(ComputerActionName::Drag),
+        "type" => Ok(ComputerActionName::Type),
+        "key" => Ok(ComputerActionName::Key),
+        "scroll" => Ok(ComputerActionName::Scroll),
+        "wait" => Ok(ComputerActionName::Wait),
+        other => Err(ProviderSessionError::Tool(format!(
+            "Computer action is unsupported: {other}"
+        ))),
+    }
+}
+
+fn parse_computer_action(
+    value: &Value,
+    allow_followups: bool,
+) -> Result<ComputerActionArgs, ProviderSessionError> {
+    let object = value.as_object().ok_or_else(|| {
+        ProviderSessionError::Tool("Computer arguments must be an object".into())
+    })?;
+    let action = object
+        .get("action")
+        .and_then(Value::as_str)
+        .ok_or_else(|| ProviderSessionError::Tool("Computer action is required".into()))
+        .and_then(parse_action_name)?;
+    let mut args = ComputerActionArgs::simple(action);
+    args.x = parse_i64(object, "x")?;
+    args.y = parse_i64(object, "y")?;
+    args.x2 = parse_i64(object, "x2")?;
+    args.y2 = parse_i64(object, "y2")?;
+    if let Some(path) = object.get("path").and_then(Value::as_array) {
+        args.path = path
+            .iter()
+            .map(|point| {
+                let point = point.as_object().ok_or_else(|| {
+                    ProviderSessionError::Tool("Computer drag path point must be an object".into())
+                })?;
+                Ok(ComputerCoordinate {
+                    x: parse_i64(point, "x")?.ok_or_else(|| {
+                        ProviderSessionError::Tool("Computer drag path x is required".into())
+                    })?,
+                    y: parse_i64(point, "y")?.ok_or_else(|| {
+                        ProviderSessionError::Tool("Computer drag path y is required".into())
+                    })?,
+                })
+            })
+            .collect::<Result<Vec<_>, ProviderSessionError>>()?;
+    }
+    args.text = object.get("text").and_then(Value::as_str).map(str::to_string);
+    args.key = object.get("key").and_then(Value::as_str).map(str::to_string);
+    args.description = object.get("description").and_then(Value::as_str).map(str::to_string);
+    args.button = match object.get("button").and_then(Value::as_str) {
+        None => None,
+        Some("left") => Some(MouseButtonInput::Left),
+        Some("right") => Some(MouseButtonInput::Right),
+        Some("middle") => Some(MouseButtonInput::Middle),
+        Some(other) => return Err(ProviderSessionError::Tool(format!("Computer button is unsupported: {other}"))),
+    };
+    args.count = match parse_i64(object, "count")? {
+        None => None,
+        Some(value) => Some(u8::try_from(value).map_err(|_| {
+            ProviderSessionError::Tool("Computer count is out of range".into())
+        })?),
+    };
+    args.direction = match object.get("direction").and_then(Value::as_str) {
+        None => None,
+        Some("up") => Some(ScrollDirectionInput::Up),
+        Some("down") => Some(ScrollDirectionInput::Down),
+        Some("left") => Some(ScrollDirectionInput::Left),
+        Some("right") => Some(ScrollDirectionInput::Right),
+        Some(other) => return Err(ProviderSessionError::Tool(format!("Computer direction is unsupported: {other}"))),
+    };
+    args.amount = parse_i64(object, "amount")?;
+    args.duration_ms = match parse_i64(object, "durationMs")? {
+        None => None,
+        Some(value) => Some(u64::try_from(value).map_err(|_| {
+            ProviderSessionError::Tool("Computer durationMs must be non-negative".into())
+        })?),
+    };
+    if allow_followups {
+        if let Some(followups) = object.get("then").and_then(Value::as_array) {
+            args.then_actions = followups
+                .iter()
+                .map(|followup| parse_computer_action(followup, false))
+                .collect::<Result<Vec<_>, _>>()?;
+        }
+    } else if object.get("then").is_some() {
+        return Err(ProviderSessionError::Tool(
+            "Computer nested then actions are not supported".into(),
+        ));
+    }
+    Ok(args)
+}
+
+pub fn computer_tool_definitions() -> Vec<RoutedToolDefinition> {
+    vec![
+        RoutedToolDefinition {
+            name: "Computer".into(),
+            provider_identifier: "fabushi-runner".into(),
+            tool_name: "Computer".into(),
+            description: Some("Interact with the box desktop using mouse, keyboard, scrolling, waits, and an automatic final screenshot.".into()),
+            input_schema: json!({
+                "type":"object",
+                "additionalProperties":false,
+                "required":["action"],
+                "properties":{
+                    "action":{"type":"string","enum":["screenshot","click","move","drag","type","key","scroll","wait"]},
+                    "x":{"type":"integer"},"y":{"type":"integer"},
+                    "x2":{"type":"integer"},"y2":{"type":"integer"},
+                    "path":{"type":"array","items":{"type":"object","required":["x","y"],"properties":{"x":{"type":"integer"},"y":{"type":"integer"}}}},
+                    "text":{"type":"string"},"key":{"type":"string"},
+                    "button":{"type":"string","enum":["left","right","middle"]},
+                    "count":{"type":"integer","minimum":1,"maximum":3},
+                    "direction":{"type":"string","enum":["up","down","left","right"]},
+                    "amount":{"type":"integer"},
+                    "durationMs":{"type":"integer","minimum":0,"maximum":SAND_COMPUTER_MAX_WAIT_MS},
+                    "description":{"type":"string"},
+                    "then":{"type":"array","minItems":1,"maxItems":SAND_COMPUTER_MAX_FOLLOW_UP_ACTIONS,"items":{"type":"object"}}
+                }
+            }),
+        },
+        RoutedToolDefinition {
+            name: "Screenshot".into(),
+            provider_identifier: "fabushi-runner".into(),
+            tool_name: "Screenshot".into(),
+            description: Some("Capture the current box desktop screenshot.".into()),
+            input_schema: json!({"type":"object","additionalProperties":false,"properties":{}}),
+        },
+    ]
+}
+
+pub struct SandComputerToolBridge {
+    delegate: Arc<dyn RoutedToolBridge>,
+    executor: Arc<dyn ComputerToolExecutor>,
+}
+
+impl SandComputerToolBridge {
+    pub fn new(
+        delegate: Arc<dyn RoutedToolBridge>,
+        executor: Arc<dyn ComputerToolExecutor>,
+    ) -> Self {
+        Self { delegate, executor }
+    }
+}
+
+impl RoutedToolBridge for SandComputerToolBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        let definitions = computer_tool_definitions();
+        let names = definitions.iter().map(|tool| tool.name.as_str()).collect::<Vec<_>>();
+        let mut delegated = self.delegate.list_tools()?;
+        delegated.retain(|tool| {
+            !names.contains(&tool.name.as_str()) && !names.contains(&tool.tool_name.as_str())
+        });
+        let mut tools = definitions;
+        tools.extend(delegated);
+        Ok(tools)
+    }
+
+    fn call_tool(
+        &self,
+        tool: &RoutedToolDefinition,
+        args: Value,
+        tool_call_id: &str,
+    ) -> Result<Value, ProviderSessionError> {
+        let effective = if matches!(tool.name.as_str(), "Computer" | "Screenshot") {
+            tool.name.as_str()
+        } else {
+            tool.tool_name.as_str()
+        };
+        let (action, screenshot) = match effective {
+            "Screenshot" => (ComputerActionArgs::simple(ComputerActionName::Screenshot), true),
+            "Computer" => (parse_computer_action(&args, true)?, false),
+            _ => return self.delegate.call_tool(tool, args, tool_call_id),
+        };
+        let result = self.executor.execute(&action, tool_call_id)?;
+        let screenshot_path = match &result {
+            ComputerUseResult::Success(success) => success.screenshot_path.clone(),
+            _ => None,
+        };
+        Ok(json!({
+            "content": describe_outcome(&result, screenshot),
+            "screenshotPath": screenshot_path,
+        }))
+    }
 }

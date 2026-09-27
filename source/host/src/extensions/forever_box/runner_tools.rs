@@ -161,6 +161,18 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
         })
     }
 
+    fn execute_computer_use_protobuf(
+        &self,
+        protobuf_args: Vec<u8>,
+    ) -> Result<Vec<u8>, ProviderSessionError> {
+        let mut accessor = self.production_accessor()?;
+        accessor
+            .execute_computer_use_protobuf(&(), protobuf_args)
+            .map_err(|error| {
+                ProviderSessionError::Tool(format!("Computer use failed: {error}"))
+            })
+    }
+
     fn browser_window_index(&self) -> Result<u32, ProviderSessionError> {
         self.service
             .box_()

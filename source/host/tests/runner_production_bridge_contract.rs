@@ -71,6 +71,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
             spotlight_enabled: true,
             box_resources: None,
             browser_executor: None,
+            computer_executor: None,
             send_message_sink: None,
             reaction_sink: None,
             cloud_agent_tool: None,
@@ -87,6 +88,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
     assert_eq!(cancellation.reason().as_deref(), Some("contract"));
     assert!(!composition.has_box_resources());
     assert!(!composition.has_browser_executor());
+    assert!(!composition.has_computer_executor());
     assert!(!composition.has_send_message_sink());
     assert!(!composition.has_reaction_sink());
     assert!(!composition.has_cloud_agent_tool());

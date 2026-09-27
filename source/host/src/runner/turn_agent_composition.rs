@@ -24,6 +24,7 @@ use super::tools::send_message_tool::SendMessageSink;
 use super::tools::sand_reaction_tool::ReactionSink;
 use super::tools::sand_agent_management_tools::AgentManagementSink;
 use super::tools::sand_browser_tools::BrowserToolExecutor;
+use super::tools::sand_computer_tool::ComputerToolExecutor;
 use super::tools::sand_state_tool::SandStateWriter;
 use super::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use super::tools::turn_toolset::{
@@ -49,6 +50,7 @@ pub struct TurnAgentComposition {
     usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
     box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
+    computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
@@ -80,6 +82,7 @@ impl TurnAgentComposition {
             usage_sink: None,
             box_resources: None,
             browser_executor: None,
+            computer_executor: None,
             send_message_sink: None,
             reaction_sink: None,
             agent_management_sink: None,
@@ -139,6 +142,18 @@ impl TurnAgentComposition {
 
     pub fn has_browser_executor(&self) -> bool {
         self.browser_executor.is_some()
+    }
+
+    pub fn with_computer_executor(
+        mut self,
+        executor: Arc<dyn ComputerToolExecutor>,
+    ) -> Self {
+        self.computer_executor = Some(executor);
+        self
+    }
+
+    pub fn has_computer_executor(&self) -> bool {
+        self.computer_executor.is_some()
     }
 
     pub fn with_send_message_sink(
@@ -279,6 +294,7 @@ impl TurnAgentComposition {
                 cancellation: self.cancellation.clone(),
                 box_resources: self.box_resources.clone(),
                 browser_executor: self.browser_executor.clone(),
+                computer_executor: self.computer_executor.clone(),
                 send_message_sink: self.send_message_sink.clone(),
                 reaction_sink: self.reaction_sink.clone(),
                 agent_management_sink: self.agent_management_sink.clone(),

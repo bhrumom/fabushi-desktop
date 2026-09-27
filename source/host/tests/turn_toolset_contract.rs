@@ -10,6 +10,10 @@ use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BrowserDriverOutput, BrowserToolExecutor, BrowserToolSpec,
 };
+use mahayana_host_runtime::runner::tools::sand_computer_tool::{
+    ComputerActionArgs, ComputerCoordinate, ComputerToolExecutor, ComputerUseResult,
+    ComputerUseSuccess,
+};
 use mahayana_host_runtime::runner::tools::sand_state_tool::{
     SAND_UPDATE_STATE_TOOL_NAME, SandStateWriter,
 };
@@ -38,6 +42,25 @@ impl RoutedToolBridge for BaseBridge {
         _tool_call_id: &str,
     ) -> Result<Value, ProviderSessionError> {
         Ok(json!({"content":[{"type":"text","text":"base result"}]}))
+    }
+}
+
+struct FakeComputerExecutor;
+
+impl ComputerToolExecutor for FakeComputerExecutor {
+    fn execute(
+        &self,
+        args: &ComputerActionArgs,
+        tool_call_id: &str,
+    ) -> Result<ComputerUseResult, ProviderSessionError> {
+        Ok(ComputerUseResult::Success(ComputerUseSuccess {
+            screenshot: None,
+            screenshot_path: Some(format!("file:///computer-{tool_call_id}.webp")),
+            cursor_position: Some(ComputerCoordinate {
+                x: if args.action.as_str() == "click" { 10 } else { 0 },
+                y: 20,
+            }),
+        }))
     }
 }
 
@@ -157,4 +180,46 @@ fn turn_toolset_composes_browser_capability_without_hiding_base_tools() {
         .expect("browser result");
     assert_eq!(result["text"], "navigate:tool-browser");
     assert_eq!(result["isError"], false);
+}
+
+
+#[test]
+fn turn_toolset_composes_computer_and_screenshot_capabilities_without_hiding_base_tools() {
+    let computer: Arc<dyn ComputerToolExecutor> = Arc::new(FakeComputerExecutor);
+    let bridge = build_turn_toolset(
+        Arc::new(BaseBridge),
+        TurnToolsetDependencies {
+            computer_executor: Some(computer),
+            ..TurnToolsetDependencies::default()
+        },
+    );
+
+    let tools = bridge.list_tools().expect("tools");
+    let computer = tools
+        .iter()
+        .find(|tool| tool.name == "Computer")
+        .expect("Computer");
+    let screenshot = tools
+        .iter()
+        .find(|tool| tool.name == "Screenshot")
+        .expect("Screenshot");
+    assert!(tools.iter().any(|tool| tool.name == "base_tool"));
+
+    let result = bridge
+        .call_tool(
+            computer,
+            json!({"action":"click","x":10,"y":20}),
+            "tool-computer",
+        )
+        .expect("computer result");
+    assert_eq!(result["screenshotPath"], "file:///computer-tool-computer.webp");
+    assert!(result["content"].as_str().is_some_and(|text| text.contains("Computer action ran")));
+
+    let screenshot_result = bridge
+        .call_tool(screenshot, json!({}), "tool-screenshot")
+        .expect("screenshot result");
+    assert_eq!(
+        screenshot_result["screenshotPath"],
+        "file:///computer-tool-screenshot.webp"
+    );
 }

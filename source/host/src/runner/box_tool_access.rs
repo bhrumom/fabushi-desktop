@@ -58,6 +58,18 @@ pub trait RunnerBoxResourcePort: Send + Sync {
         request: RunnerBoxWriteRequest,
     ) -> Result<(), ProviderSessionError>;
 
+    /// Execute the generated Grok ComputerUse protobuf through the Host-owned
+    /// box transport. Runner owns the tool contract; Host owns the remote
+    /// resource and lifecycle.
+    fn execute_computer_use_protobuf(
+        &self,
+        _protobuf_args: Vec<u8>,
+    ) -> Result<Vec<u8>, ProviderSessionError> {
+        Err(ProviderSessionError::Tool(
+            "Box computer-use resource is not available for this agent".into(),
+        ))
+    }
+
     /// Resolve the Host-owned browser window assigned to this agent.
     ///
     /// The default fails closed so non-desktop box ports do not accidentally
