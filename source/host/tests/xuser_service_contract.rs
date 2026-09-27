@@ -273,6 +273,146 @@ fn sharing_service_create_add_remove_leave_and_deleted_agent_use_relay_owner() {
 }
 
 
+
+#[derive(Default)]
+struct FakeSharingManager {
+    installed: Mutex<Vec<String>>,
+    revoked: Mutex<Vec<String>>,
+    posts: Mutex<Vec<String>>,
+    mirror_entries: Mutex<Vec<String>>,
+}
+
+impl XuserSharingManager for FakeSharingManager {
+    fn install_room(&self, room: &XuserRoom, _: Option<&str>) -> Result<(), String> {
+        self.installed.lock().unwrap().push(room.room_id.clone());
+        Ok(())
+    }
+
+    fn mark_mirror_room_revoked(&self, room_id: &str) -> Result<(), String> {
+        self.revoked.lock().unwrap().push(room_id.to_string());
+        Ok(())
+    }
+
+    fn post_shared_room_guest_message(&self, event: &serde_json::Value) -> Result<(), String> {
+        self.posts.lock().unwrap().push(
+            event
+                .get("roomId")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_string(),
+        );
+        Ok(())
+    }
+
+    fn append_mirror_room_entry(
+        &self,
+        event: &serde_json::Value,
+        _: &str,
+    ) -> Result<bool, String> {
+        self.mirror_entries.lock().unwrap().push(
+            event
+                .get("roomId")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_string(),
+        );
+        Ok(true)
+    }
+}
+
+#[test]
+fn sharing_service_routes_live_room_events_through_transcript_manager_seam() {
+    let svc = service(serde_json::json!({
+        "pendingJoinRequests": [],
+        "rooms": []
+    }));
+    svc.set_enabled(true);
+    svc.set_self_auth_id(Some("self-auth".into()));
+    let manager = Arc::new(FakeSharingManager::default());
+    svc.bind_manager(manager.clone() as Arc<dyn XuserSharingManager>);
+
+    assert!(svc
+        .handle_event(&serde_json::json!({
+            "kind":"room-upsert",
+            "room":{
+                "roomId":"room-live",
+                "name":"Live",
+                "hostAuthId":"self-auth",
+                "members":[]
+            }
+        }))
+        .unwrap());
+    assert_eq!(*manager.installed.lock().unwrap(), vec!["room-live"]);
+
+    assert!(svc
+        .handle_event(&serde_json::json!({
+            "kind":"room-post",
+            "roomId":"room-live",
+            "text":"hello"
+        }))
+        .unwrap());
+    assert_eq!(*manager.posts.lock().unwrap(), vec!["room-live"]);
+
+    assert!(svc
+        .handle_event(&serde_json::json!({
+            "kind":"room-entry",
+            "roomId":"room-live",
+            "entry":{"entryId":"entry-1","kind":"human-message","text":"hi"}
+        }))
+        .unwrap());
+    assert_eq!(*manager.mirror_entries.lock().unwrap(), vec!["room-live"]);
+
+    assert!(svc
+        .handle_event(&serde_json::json!({
+            "kind":"room-typing",
+            "user":{"roomId":"room-live","authId":"peer"},
+            "isTyping":true
+        }))
+        .unwrap());
+    assert_eq!(svc.get_state().typing_users.len(), 1);
+
+    assert!(svc
+        .handle_event(&serde_json::json!({
+            "kind":"room-ended",
+            "roomId":"room-live"
+        }))
+        .unwrap());
+    assert_eq!(*manager.revoked.lock().unwrap(), vec!["room-live"]);
+}
+
+#[test]
+fn sharing_service_reconcile_materializes_registry_and_revokes_missing_rooms() {
+    let svc = service(serde_json::json!({
+        "pendingJoinRequests": [],
+        "rooms":[{
+            "roomId":"new-room",
+            "name":"New",
+            "hostAuthId":"self-auth",
+            "members":[]
+        }]
+    }));
+    svc.set_enabled(true);
+    svc.set_self_auth_id(Some("self-auth".into()));
+    let manager = Arc::new(FakeSharingManager::default());
+    svc.bind_manager(manager.clone() as Arc<dyn XuserSharingManager>);
+
+    svc.handle_event(&serde_json::json!({
+        "kind":"room-upsert",
+        "room":{
+            "roomId":"old-room",
+            "name":"Old",
+            "hostAuthId":"self-auth",
+            "members":[]
+        }
+    }))
+    .unwrap();
+    manager.installed.lock().unwrap().clear();
+
+    svc.reconcile_share_state().unwrap();
+    assert_eq!(*manager.revoked.lock().unwrap(), vec!["old-room"]);
+    assert_eq!(*manager.installed.lock().unwrap(), vec!["new-room"]);
+}
+
 struct FakePublisherHost {
     enabled: bool,
     self_auth_id: Option<String>,
