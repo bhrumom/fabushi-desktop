@@ -11971,21 +11971,21 @@
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_sharing_environment.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "edf17b551a38007239394a5909f8f09960fd670f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/cross_user_sharing/xuser_sharing_environment.rs",
-        "source/host/src/extensions/cross_user_sharing/mod.rs",
-        "source/host/src/extensions/mod.rs"
+        "source/host/src/extensions/cross_user_sharing/extension.rs"
       ],
       "testEvidence": [
         "source/host/tests/xuser_sharing_environment_contract.rs",
+        "source/host/tests/xuser_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port preserves packaged/dev gating, explicit dev opt-in, production-origin comparison, deliberate production opt-in and fail-closed malformed backend URLs. Final remains withheld until the production cross-user-sharing extension consumes this gate before acquiring relay/listener ownership."
+      "notes": "Frozen packaged/dev gating, explicit development opt-in, production-origin comparison, deliberate production opt-in and malformed-URL fail-closed behavior are Rust-owned. CrossUserSharingExtension consumes this canonical gate before feature-gate enablement can start the sharing service; focused contracts prove disallowed dev hosts remain disabled and allowed hosts acquire service lifecycle only after the gate passes. Parent exact HEAD 1b066e7d34c14611dd7d7d7bea28687bdc8221c7 passed the complete Mahayana Host Runner cargo suite. Auth, Attachments, NotifyBus and Transcript delegate production composition remains separately tracked by the other cross-user-sharing rows."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-sharing-service.ts",
