@@ -75,6 +75,28 @@ fn relay_errors_keep_frozen_user_messages() {
     );
 }
 #[test]
+fn relay_departure_raw_surface_preserves_http_status() {
+    let transport = Arc::new(FakeTransport {
+        requests: Mutex::new(vec![]),
+        value: serde_json::json!({}),
+        status: 404,
+    });
+    let relay = SandXuserRelayClient::new(
+        "https://example.invalid".into(),
+        Arc::new(|| Ok("token".into())),
+        Arc::clone(&transport) as Arc<dyn XuserRelayTransport>,
+    );
+    let leave = relay
+        .leave_room_with_target_raw("room-gone", None)
+        .expect_err("404 must remain typed");
+    assert_eq!(leave.status, 404);
+    let remove = relay
+        .remove_deleted_agent_raw("agent-gone")
+        .expect_err("404 must remain typed");
+    assert_eq!(remove.status, 404);
+}
+
+#[test]
 fn remote_ids_and_publish_payload_are_fail_closed() {
     assert_eq!(
         parse_remote_agent_id("sand-remote:owner/agent"),
