@@ -80,11 +80,19 @@ struct ProductionDepartureRelay {
 
 impl XuserDepartureRelay for ProductionDepartureRelay {
     fn leave_room(&self, room_id: &str) -> Result<(), String> {
-        self.relay.leave_room(room_id).map(|_| ())
+        match self.relay.leave_room_with_target_raw(room_id, None) {
+            Ok(_) => Ok(()),
+            Err(error) if error.status == 404 => Ok(()),
+            Err(error) => Err(error.to_string()),
+        }
     }
 
     fn remove_deleted_agent(&self, agent_id: &str) -> Result<(), String> {
-        self.relay.remove_deleted_agent(agent_id).map(|_| ())
+        match self.relay.remove_deleted_agent_raw(agent_id) {
+            Ok(_) => Ok(()),
+            Err(error) if error.status == 404 => Ok(()),
+            Err(error) => Err(error.to_string()),
+        }
     }
 }
 
