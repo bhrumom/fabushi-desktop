@@ -59,7 +59,6 @@ use mahayana_host_runtime::extensions::session::box_handoff_service::{
     HandoffTelemetry, HandoffTrigger, PendingHandoff, ScreenshotPayload, decide_box_hand_back,
 };
 use mahayana_host_runtime::extensions::session::extension::start_session_extension;
-use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
 use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
 use mahayana_host_runtime::extensions::secrets::extension::{
     HostSecretsExtension, SecretsGatewayError, dispatch_secrets_gateway_call,
@@ -3705,7 +3704,7 @@ fn main() {
             Arc::clone(production_extensions.managed_setup.team_rules()),
             app_data_dir.join("transcripts"),
         ));
-    let settings_extension = start_settings_extension();
+    let settings_extension = Arc::clone(&production_extensions.settings);
     let local_tool_permission_extension = Arc::new(
         start_local_tool_permission_extension(Arc::clone(&settings_extension)),
     );
