@@ -1,7 +1,10 @@
 use mahayana_host_runtime::host_gateway_api::{
     CREATE_AGENT_NONCE_LEDGER_CAP, CreateAgentNonceLedger, sanitize_create_agent_args,
 };
-use mahayana_host_runtime::sand_host::compute_host_health;
+use mahayana_host_runtime::sand_host::{
+    BOX_READY_REPORT_ATTEMPTS, BOX_READY_REPORT_RETRY_MS, BOX_READY_STAGE_MARKER_PATH,
+    box_ready_duration_ms, compute_host_health, should_report_box_ready,
+};
 use serde_json::json;
 
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
@@ -74,4 +77,28 @@ fn shipping_create_agent_path_consumes_nonce_and_input_policy() {
             .and_then(serde_json::Value::as_u64),
         Some((CREATE_AGENT_NONCE_LEDGER_CAP + 2) as u64),
     );
+}
+
+#[test]
+fn shipping_host_reports_box_ready_only_after_gateway_discovery() {
+    let discovery = SHIPPING_HOST.find("write_gateway_discovery(").unwrap();
+    let ready = SHIPPING_HOST
+        .find("should_report_box_ready(")
+        .expect("shipping Host must wire frozen box-ready report");
+    assert!(discovery < ready);
+    assert!(SHIPPING_HOST.contains("report_box_boot_stage_confirmed"));
+    assert!(SHIPPING_HOST.contains("BOX_READY_REPORT_ATTEMPTS"));
+    assert!(SHIPPING_HOST.contains("BOX_READY_REPORT_RETRY_MS"));
+    assert!(SHIPPING_HOST.contains("BOX_READY_STAGE_MARKER_PATH"));
+
+    assert_eq!(BOX_READY_REPORT_ATTEMPTS, 3);
+    assert_eq!(BOX_READY_REPORT_RETRY_MS, 30_000);
+    assert_eq!(BOX_READY_STAGE_MARKER_PATH, "/tmp/sand-box-ready-stage");
+    assert!(should_report_box_ready(Some("boot-a"), Some(100), None));
+    assert!(!should_report_box_ready(
+        Some("boot-a"),
+        Some(100),
+        Some("boot-a"),
+    ));
+    assert_eq!(box_ready_duration_ms(250, 100), 150);
 }
