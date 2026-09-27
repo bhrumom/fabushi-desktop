@@ -271,3 +271,212 @@ fn sharing_service_create_add_remove_leave_and_deleted_agent_use_relay_owner() {
     deleted.note_agent_deleted("agent-a").unwrap();
     assert!(deleted_transport.requests.lock().unwrap().iter().any(|url| url.ends_with("/sand/share-rooms/agents/remove-deleted")));
 }
+
+
+struct FakePublisherHost {
+    enabled: bool,
+    self_auth_id: Option<String>,
+    now_ms: u64,
+    attachments: Mutex<BTreeMap<String, ResolvedXuserAttachment>>,
+    sent: Mutex<Vec<serde_json::Value>>,
+    restamped: Mutex<Vec<(String, String, f64)>>,
+}
+
+impl XuserEntryPublisherHost for FakePublisherHost {
+    fn relay_send(&self, payload: &serde_json::Value) -> Result<serde_json::Value, String> {
+        self.sent.lock().unwrap().push(payload.clone());
+        Ok(serde_json::json!({ "timestampMs": 4321 }))
+    }
+
+    fn restamp_room_entry(
+        &self,
+        room_id: &str,
+        entry_id: &str,
+        timestamp_ms: f64,
+    ) -> Result<(), String> {
+        self.restamped.lock().unwrap().push((
+            room_id.to_string(),
+            entry_id.to_string(),
+            timestamp_ms,
+        ));
+        Ok(())
+    }
+
+    fn now_ms(&self) -> u64 {
+        self.now_ms
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn self_auth_id(&self) -> Option<String> {
+        self.self_auth_id.clone()
+    }
+
+    fn resolve_attachment(
+        &self,
+        url: &str,
+    ) -> Result<Option<ResolvedXuserAttachment>, String> {
+        Ok(self.attachments.lock().unwrap().get(url).cloned())
+    }
+}
+
+fn publisher_fixture() -> (Arc<FakePublisherHost>, Arc<SandXuserEntryPublisher>) {
+    let host = Arc::new(FakePublisherHost {
+        enabled: true,
+        self_auth_id: Some("self-auth".into()),
+        now_ms: 1234,
+        attachments: Mutex::new(BTreeMap::from([
+            (
+                "attachment://ok".into(),
+                ResolvedXuserAttachment {
+                    data: vec![1, 2, 3],
+                    mime_type: "image/png".into(),
+                },
+            ),
+            (
+                "attachment://not-image".into(),
+                ResolvedXuserAttachment {
+                    data: b"plain".to_vec(),
+                    mime_type: "text/plain".into(),
+                },
+            ),
+            (
+                "attachment://too-large".into(),
+                ResolvedXuserAttachment {
+                    data: vec![0; SAND_SHARED_ROOM_IMAGE_BYTES_MAX + 1],
+                    mime_type: "image/png".into(),
+                },
+            ),
+        ])),
+        sent: Mutex::new(Vec::new()),
+        restamped: Mutex::new(Vec::new()),
+    });
+    let publisher_host: Arc<dyn XuserEntryPublisherHost> = host.clone();
+    let publisher = Arc::new(SandXuserEntryPublisher::new(publisher_host));
+    (host, publisher)
+}
+
+#[test]
+fn entry_publisher_preserves_frozen_projection_attachment_and_restamp_contract() {
+    let (host, publisher) = publisher_fixture();
+
+    publisher
+        .publish_entry(
+            "room-a",
+            &serde_json::json!({
+                "id": "human-1",
+                "kind": "message",
+                "role": "user",
+                "content": "hello",
+                "clientNonce": "nonce-1",
+                "images": [
+                    {"url":"attachment://ok","alt":"ok"},
+                    {"url":"attachment://not-image"},
+                    {"url":"attachment://too-large"}
+                ]
+            }),
+        )
+        .unwrap();
+
+    let sent = host.sent.lock().unwrap();
+    assert_eq!(sent.len(), 1);
+    assert_eq!(sent[0]["kind"], "room-entry");
+    assert_eq!(sent[0]["roomId"], "room-a");
+    assert_eq!(sent[0]["entry"]["kind"], "human-message");
+    assert_eq!(sent[0]["entry"]["authorAuthId"], "self-auth");
+    assert_eq!(sent[0]["entry"]["authorName"], "Host");
+    assert_eq!(sent[0]["entry"]["clientNonce"], "nonce-1");
+    assert_eq!(sent[0]["entry"]["timestampMs"].as_f64(), Some(1234.0));
+    let images = sent[0]["entry"]["images"].as_array().unwrap();
+    assert_eq!(images.len(), 1);
+    assert_eq!(images[0]["base64"], "AQID");
+    assert_eq!(images[0]["mediaType"], "image/png");
+    assert_eq!(images[0]["alt"], "ok");
+    drop(sent);
+
+    assert_eq!(
+        *host.restamped.lock().unwrap(),
+        vec![("room-a".into(), "human-1".into(), 4321.0)]
+    );
+
+    publisher
+        .publish_entry(
+            "room-a",
+            &serde_json::json!({
+                "id": "remote-agent",
+                "kind": "send-message",
+                "message": {"type":"text","content":"must not echo"},
+                "author": {"id":"sand-remote:owner/agent","name":"Remote"}
+            }),
+        )
+        .unwrap();
+    assert_eq!(host.sent.lock().unwrap().len(), 1);
+
+    publisher
+        .publish_entry(
+            "room-a",
+            &serde_json::json!({
+                "id": "local-agent",
+                "kind": "send-message",
+                "message": {"type":"text","content":"local answer"},
+                "author": {"id":"agent-local","name":"Local Agent"},
+                "timestampMs": 2222
+            }),
+        )
+        .unwrap();
+    let sent = host.sent.lock().unwrap();
+    assert_eq!(sent.len(), 2);
+    assert_eq!(sent[1]["entry"]["kind"], "agent-message");
+    assert_eq!(sent[1]["entry"]["agentOwnerAuthId"], "self-auth");
+    assert_eq!(sent[1]["entry"]["agentId"], "agent-local");
+    assert_eq!(sent[1]["entry"]["timestampMs"].as_f64(), Some(2222.0));
+}
+
+#[test]
+fn manager_delegate_serializes_room_publications_through_bound_publisher() {
+    let (host, publisher) = publisher_fixture();
+    let svc = service(serde_json::json!({}));
+    svc.set_enabled(true);
+    svc.bind_entry_publisher(Arc::clone(&publisher));
+
+    let delegate = svc.build_manager_delegate();
+    assert!(delegate.is_enabled());
+    for (id, content) in [("delegate-1", "first"), ("delegate-2", "second")] {
+        delegate
+            .publish_room_entry(
+                "room-delegate",
+                &serde_json::json!({
+                    "id": id,
+                    "kind": "message",
+                    "role": "user",
+                    "content": content
+                }),
+            )
+            .unwrap();
+    }
+    publisher.flush_room("room-delegate").unwrap();
+
+    let sent = host.sent.lock().unwrap();
+    assert_eq!(sent.len(), 2);
+    assert_eq!(sent[0]["entry"]["entryId"], "delegate-1");
+    assert_eq!(sent[1]["entry"]["entryId"], "delegate-2");
+    drop(sent);
+
+    svc.set_enabled(false);
+    assert!(!delegate.is_enabled());
+    delegate
+        .publish_room_entry(
+            "room-delegate",
+            &serde_json::json!({
+                "id": "disabled",
+                "kind": "message",
+                "role": "user",
+                "content": "must not publish"
+            }),
+        )
+        .unwrap();
+    publisher.flush_room("room-delegate").unwrap();
+    assert_eq!(host.sent.lock().unwrap().len(), 2);
+}
