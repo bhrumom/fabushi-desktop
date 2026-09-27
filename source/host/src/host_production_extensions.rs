@@ -90,9 +90,7 @@ pub fn start_production_browser_ua(
 ) -> BrowserUaExtensionRuntime {
     start_browser_ua_extension(
         auth,
-        settings,
         experiments,
-        _settings_feature_override_subscription: settings_feature_override_subscription,
         Arc::new(ProductionBrowserUaLog),
         None,
         None,
@@ -200,7 +198,9 @@ pub fn start_production_host_extensions(
 
     Ok(ProductionHostExtensions {
         auth,
+        settings,
         experiments,
+        _settings_feature_override_subscription: settings_feature_override_subscription,
         codebase_telemetry,
         notify_bus,
         memory,
