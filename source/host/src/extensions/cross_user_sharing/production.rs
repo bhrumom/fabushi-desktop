@@ -104,9 +104,13 @@ impl RemoteTurnsHost for ProductionXuserHost {
         agent_id: &str,
     ) -> Result<Option<AgentDisplayProfile>, String> {
         self.shared_rooms
-            .get_agent_display_profile(agent_id)
-            .map(|profile| {
-                profile.map(|(name, description)| AgentDisplayProfile { name, description })
+            .sessions()
+            .summarize_agent_by_id(agent_id, None)
+            .map(|summary| {
+                summary.map(|summary| AgentDisplayProfile {
+                    name: summary.name,
+                    description: summary.description,
+                })
             })
     }
 
