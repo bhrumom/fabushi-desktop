@@ -1646,3 +1646,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Local exact-tree contracts passed: `memory_synthesis_service_contract` **4/4** and `memory_synthesis_store_contract` **3/3**. The sparse working copy first lacked generated `agent/v1` protobuf sources; the missing tracked directory was added to sparse checkout before the successful compile.
 - This row advances only from `planned` to `existing-needs-parity`. Final parity is still blocked on the real inference PromptExecutor synthesis/verification stages, background debounce + hourly polling, enforceable 90-second deadline/cancellation, telemetry reporting, and the shipping post-turn `recordTurn` hook.
 - Manifest becomes **1,833 implemented / 116 existing-needs-parity / 53 planned** (**169 non-final**). The strict final architecture gate must remain red.
+
+
+### 2026-09-27 Host bundle upgrade core slice
+
+- Exact starting HEAD: `9afd559285466ae3b02e42e366607fadde803c71`.
+- Re-read frozen `host-bundle-upgrade.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `host_bundle_upgrade.rs` with supervisor command construction, atomic bundle/command staging, update availability, sanitized swap-veto acknowledgements, bounded failed-swap restaging, crash-loop fencing, one-shot failure telemetry state, and frozen initial/next watch jitter functions.
+- `host_bundle_upgrade_contract` passed **4/4** on the exact working tree.
+- The manifest row advances from `planned` to `existing-needs-parity`, not final, because `host-upgrade-service` and the extension still need production peer/wake composition.
+- Manifest becomes **1,833 implemented / 117 existing-needs-parity / 52 planned** (**169 non-final**).
