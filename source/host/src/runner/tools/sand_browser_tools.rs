@@ -370,10 +370,16 @@ impl BrowserDriverError {
     }
 }
 
+pub type BrowserPersistImageCallback = Arc<dyn Fn(&[u8], &str) + Send + Sync>;
+pub type BrowserPossibleNavigationCallback =
+    Arc<dyn Fn(&BrowserDriverResponse) + Send + Sync>;
+
 #[derive(Clone)]
 pub struct ProductionBrowserToolExecutor {
     box_resources: Arc<dyn RunnerBoxResourcePort>,
     default_view_id: String,
+    persist_image: Option<BrowserPersistImageCallback>,
+    on_possible_navigation: Option<BrowserPossibleNavigationCallback>,
 }
 
 impl ProductionBrowserToolExecutor {
@@ -384,7 +390,25 @@ impl ProductionBrowserToolExecutor {
         Self {
             box_resources,
             default_view_id: default_view_id.into(),
+            persist_image: None,
+            on_possible_navigation: None,
         }
+    }
+
+    pub fn with_persist_image_callback(
+        mut self,
+        callback: BrowserPersistImageCallback,
+    ) -> Self {
+        self.persist_image = Some(callback);
+        self
+    }
+
+    pub fn with_possible_navigation_callback(
+        mut self,
+        callback: BrowserPossibleNavigationCallback,
+    ) -> Self {
+        self.on_possible_navigation = Some(callback);
+        self
     }
 
     fn ensure_driver_uploaded(&self, tool_call_id: &str) -> Result<(), ProviderSessionError> {
@@ -530,18 +554,30 @@ impl BrowserToolExecutor for ProductionBrowserToolExecutor {
 
         let image_b64 = if response.ok && response.screenshot == Some(true) {
             match invocation.screenshot_path.as_deref() {
-                Some(path) => self
-                    .read_binary_file(
+                Some(path) => {
+                    let bytes = self.read_binary_file(
                         path,
                         &format!("{tool_call_id}:browser-driver-screenshot"),
-                    )?
-                    .map(|bytes| base64::engine::general_purpose::STANDARD.encode(bytes)),
+                    )?;
+                    bytes.map(|bytes| {
+                        if let Some(persist_image) = self.persist_image.as_ref() {
+                            persist_image(&bytes, "image/png");
+                        }
+                        base64::engine::general_purpose::STANDARD.encode(bytes)
+                    })
+                }
                 None => None,
             }
         } else {
             None
         };
-        Ok(render_driver_response(&response, image_b64))
+        let output = render_driver_response(&response, image_b64);
+        if spec.can_navigate && !output.is_error {
+            if let Some(on_possible_navigation) = self.on_possible_navigation.as_ref() {
+                on_possible_navigation(&response);
+            }
+        }
+        Ok(output)
     }
 }
 

@@ -182,7 +182,8 @@ use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt
 use mahayana_host_runtime::runner::tools::sand_state_tool::SandStateWriter;
 use mahayana_host_runtime::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
-    BrowserToolExecutor, ProductionBrowserToolExecutor,
+    BrowserPersistImageCallback, BrowserPossibleNavigationCallback, BrowserToolExecutor,
+    ProductionBrowserToolExecutor,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{append_automations_system_prompt, append_memory_system_prompt};
 use mahayana_host_runtime::runner_production_bridge::{
@@ -190,7 +191,7 @@ use mahayana_host_runtime::runner_production_bridge::{
     create_production_runner_composition,
 };
 use mahayana_host_runtime::runner::sand_action_audit::{
-    ActionAuditRecord, ActionAuditSink,
+    ActionAuditRecord, ActionAuditSink, normalize_navigation_url,
 };
 use mahayana_host_runtime::runner::turn_observation::{
     TurnObservation, TurnObservationHandle,
@@ -1997,12 +1998,7 @@ fn start_routed_provider_task(
                     Arc::clone(&forever_box),
                     agent_id.clone(),
                 ));
-            let browser_executor: Arc<dyn BrowserToolExecutor> = Arc::new(
-                ProductionBrowserToolExecutor::new(
-                    Arc::clone(&box_resources),
-                    agent_id.clone(),
-                ),
-            );
+            let browser_media_sessions = Arc::clone(&worker_sessions);
             let cloud_agent_review = build_cloud_agent_auto_review_hook(
                 Arc::clone(&worker_auth),
                 Arc::clone(&worker_auto_review),
@@ -2164,6 +2160,94 @@ fn start_routed_provider_task(
                         ),
                     }
                 },
+            );
+            let browser_media_agent_id = agent_id.clone();
+            let browser_persist_image: BrowserPersistImageCallback = Arc::new(
+                move |bytes, mime| {
+                    if mime != "image/png" {
+                        return;
+                    }
+                    let Ok(db_path) =
+                        browser_media_sessions.session_db_path(&browser_media_agent_id)
+                    else {
+                        eprintln!(
+                            "mahayana-host browser_screenshot_persist_failed agent={} error=session-db-unavailable",
+                            browser_media_agent_id
+                        );
+                        return;
+                    };
+                    let Some(agent_dir) = db_path.parent() else {
+                        eprintln!(
+                            "mahayana-host browser_screenshot_persist_failed agent={} error=agent-dir-unavailable",
+                            browser_media_agent_id
+                        );
+                        return;
+                    };
+                    if let Err(error) = persist_agent_media_bytes(
+                        agent_dir,
+                        "browser-screenshot.png",
+                        bytes,
+                        AgentMediaKind::Image,
+                    ) {
+                        eprintln!(
+                            "mahayana-host browser_screenshot_persist_failed agent={} error={error}",
+                            browser_media_agent_id
+                        );
+                    }
+                },
+            );
+            let browser_navigation_urls =
+                Arc::new(Mutex::new(BTreeMap::<String, String>::new()));
+            let browser_navigation_urls_sink = Arc::clone(&browser_navigation_urls);
+            let browser_navigation_audit = Arc::clone(&action_audit_sink);
+            let browser_navigation_agent_id = agent_id.clone();
+            let browser_navigation_turn_id = stream_id.clone();
+            let browser_possible_navigation: BrowserPossibleNavigationCallback =
+                Arc::new(move |response| {
+                    let Some(url) = response
+                        .url
+                        .as_deref()
+                        .and_then(normalize_navigation_url)
+                    else {
+                        return;
+                    };
+                    let view_id = response
+                        .view_id
+                        .as_deref()
+                        .unwrap_or("default")
+                        .to_string();
+                    let should_record =
+                        if let Ok(mut urls) = browser_navigation_urls_sink.lock() {
+                            if urls.get(&view_id).is_some_and(|prior| prior == &url) {
+                                false
+                            } else {
+                                urls.insert(view_id, url.clone());
+                                true
+                            }
+                        } else {
+                            false
+                        };
+                    if !should_record {
+                        return;
+                    }
+                    browser_navigation_audit.record(ActionAuditRecord {
+                        occurred_at_ms: started_at_ms(),
+                        agent_id: browser_navigation_agent_id.clone(),
+                        turn_id: Some(browser_navigation_turn_id.clone()),
+                        action: serde_json::json!({
+                            "kind": "browserNavigation",
+                            "url": url,
+                            "pageTitle": response.title.as_deref().unwrap_or_default(),
+                        }),
+                    });
+                });
+            let browser_executor: Arc<dyn BrowserToolExecutor> = Arc::new(
+                ProductionBrowserToolExecutor::new(
+                    Arc::clone(&box_resources),
+                    agent_id.clone(),
+                )
+                .with_persist_image_callback(browser_persist_image)
+                .with_possible_navigation_callback(browser_possible_navigation),
             );
             let worker_provider_usage = Arc::new(Mutex::new(None::<ProviderTokenUsage>));
             let usage_store = Arc::clone(&worker_provider_usage);

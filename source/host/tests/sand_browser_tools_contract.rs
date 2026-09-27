@@ -251,7 +251,26 @@ fn screenshot_cache_returns_stashed_image_once() {
 fn production_browser_executor_uses_only_host_box_port() {
     let port = Arc::new(ProductionBoxPort::default());
     let resources: Arc<dyn RunnerBoxResourcePort> = port.clone();
-    let executor = ProductionBrowserToolExecutor::new(resources, "agent-browser");
+    let persisted_images = Arc::new(Mutex::new(Vec::<(Vec<u8>, String)>::new()));
+    let persisted_images_sink = Arc::clone(&persisted_images);
+    let navigation_events = Arc::new(Mutex::new(Vec::<(String, String)>::new()));
+    let navigation_events_sink = Arc::clone(&navigation_events);
+    let executor = ProductionBrowserToolExecutor::new(resources, "agent-browser")
+        .with_persist_image_callback(Arc::new(move |bytes, mime| {
+            persisted_images_sink
+                .lock()
+                .expect("persisted images")
+                .push((bytes.to_vec(), mime.to_string()));
+        }))
+        .with_possible_navigation_callback(Arc::new(move |response| {
+            navigation_events_sink
+                .lock()
+                .expect("navigation events")
+                .push((
+                    response.url.clone().unwrap_or_default(),
+                    response.title.clone().unwrap_or_default(),
+                ));
+        }));
     let spec = browser_tool_specs()
         .into_iter()
         .find(|spec| spec.name == "browser_navigate")
@@ -269,6 +288,14 @@ fn production_browser_executor_uses_only_host_box_port() {
     assert!(output.text.contains("Opened page"));
     assert!(output.text.contains("https://example.com"));
     assert!(output.image_b64.as_deref().is_some_and(|value| !value.is_empty()));
+    assert_eq!(
+        persisted_images.lock().expect("persisted images").as_slice(),
+        &[(vec![137, 80, 78, 71], "image/png".to_string())]
+    );
+    assert_eq!(
+        navigation_events.lock().expect("navigation events").as_slice(),
+        &[("https://example.com".to_string(), "Example".to_string())]
+    );
 
     let writes = port.writes.lock().expect("writes");
     assert_eq!(writes.len(), 1);
