@@ -12011,24 +12011,36 @@
       "targetPath": "source/host/src/extensions/inference/cursor_web_tools.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "93940a71771562f35b502f0c13eede862f187cdd",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/inference/cursor_web_tools.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/inference_extension_composition_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns frozen web-search request/model projection and web-fetch success/error/missing-result normalization behind a typed CursorWebBackend port. Final remains withheld until authenticated Cursor backend transport and generated AiService request/response bindings are wired into the shipping backend factory."
     },
     {
       "referencePath": "source/host/extensions/inference/extension.ts",
       "targetPath": "source/host/src/extensions/inference/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "d8c4a00d2d577631a0b742ed97b1f09048a545da",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/inference/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/inference_extension_composition_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns the inference extension readiness rule (mock response or cached access token) and model-experiment listener fanout while preserving a distinct AgentInferenceOwner port. Final remains withheld until the production Host extension registry starts this runtime and exposes web-search/web-fetch through the canonical extension surface."
     },
     {
       "referencePath": "source/host/extensions/inference/inference-service.ts",
@@ -12047,12 +12059,18 @@
       "targetPath": "source/host/src/extensions/inference/production.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "98c39d4a3d20cb92d0454c528c493a5bf1e9b7d5",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/inference/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/inference_extension_composition_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns the frozen production composition seam: one auth identity is injected into the Host inference port and Cursor web backend factories; request-id observers and model-experiment callbacks are forwarded without renderer ownership. Final remains withheld until inference-service/cursor-session and the authenticated Cursor backend factory are production-wired."
     },
     {
       "referencePath": "source/host/extensions/inference/provider-session.ts",
