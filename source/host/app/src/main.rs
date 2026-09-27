@@ -849,6 +849,7 @@ impl UnifiedGatewayApi {
             agent_id,
             epoch,
             executor,
+            None,
         )
         .map_err(ProductionSendError::Internal)?
         {

@@ -39,6 +39,7 @@ struct LocalGroupFanoutDeps {
     expected_epoch: u64,
     config: SandGroupConfig,
     executor: GroupMemberTurnExecutor,
+    remote_executor: Option<GroupMemberTurnExecutor>,
     posted_messages: Arc<Mutex<usize>>,
     member_failures: Arc<Mutex<Vec<(String, String)>>>,
     post_error: Arc<Mutex<Option<String>>>,
@@ -87,6 +88,25 @@ impl GroupOrchestratorDeps for LocalGroupFanoutDeps {
     ) -> futures::future::BoxFuture<'a, Vec<GroupMember>> {
         let mut members = Vec::new();
         for id in ids {
+            if id.starts_with("sand-remote:") {
+                if self.remote_executor.is_some() {
+                    if let Some(remote) = self
+                        .config
+                        .remote_members
+                        .as_deref()
+                        .unwrap_or_default()
+                        .iter()
+                        .find(|remote| remote_member_id(remote) == *id)
+                    {
+                        members.push(GroupMember {
+                            id: id.clone(),
+                            name: remote.name.clone(),
+                            description: String::new(),
+                        });
+                    }
+                }
+                continue;
+            }
             let Ok(Some(summary)) = self.sessions.summarize_agent_by_id(id, None) else {
                 continue;
             };
@@ -119,7 +139,12 @@ impl GroupOrchestratorDeps for LocalGroupFanoutDeps {
         request: GroupMemberTurnRequest,
     ) -> futures::future::BoxFuture<'a, Vec<String>> {
         let member_id = request.member.id.clone();
-        let output = match (self.executor)(request) {
+        let executor = if member_id.starts_with("sand-remote:") {
+            self.remote_executor.as_ref().unwrap_or(&self.executor)
+        } else {
+            &self.executor
+        };
+        let output = match executor(request) {
             Ok(messages) => messages,
             Err(error) => {
                 if let Ok(mut failures) = self.member_failures.lock() {
@@ -142,7 +167,16 @@ impl GroupOrchestratorDeps for LocalGroupFanoutDeps {
     fn finalize_member_turn(&self, _member: &GroupMember) {}
 
     fn is_shared_room(&self) -> bool {
-        false
+        self.config.shared_room_id.is_some()
+            || self
+                .config
+                .remote_members
+                .as_ref()
+                .is_some_and(|members| !members.is_empty())
+    }
+
+    fn shared_room_id(&self) -> Option<String> {
+        self.config.shared_room_id.clone()
     }
 }
 
@@ -152,6 +186,7 @@ pub fn dispatch_local_group_send(
     room_id: &str,
     expected_epoch: u64,
     executor: GroupMemberTurnExecutor,
+    remote_executor: Option<GroupMemberTurnExecutor>,
 ) -> Result<LocalGroupFanoutDisposition, String> {
     let db_path = sessions.session_db_path(room_id)?;
     let agent_dir = db_path
@@ -165,7 +200,7 @@ pub fn dispatch_local_group_send(
         .as_ref()
         .map(Vec::len)
         .unwrap_or_default();
-    if config.shared_room_id.is_some() || remote_member_count > 0 {
+    if (config.shared_room_id.is_some() || remote_member_count > 0) && remote_executor.is_none() {
         return Ok(LocalGroupFanoutDisposition::DeferredRemote {
             shared_room_id: config.shared_room_id,
             remote_member_count,
@@ -199,11 +234,22 @@ pub fn dispatch_local_group_send(
         expected_epoch,
         config: config.clone(),
         executor,
+        remote_executor,
         posted_messages: Arc::clone(&posted_messages),
         member_failures: Arc::clone(&member_failures),
         post_error: Arc::clone(&post_error),
     };
-    let member_ids = deps.config.member_ids.clone();
+    let mut member_ids = deps.config.member_ids.clone();
+    if deps.remote_executor.is_some() {
+        member_ids.extend(
+            deps.config
+                .remote_members
+                .as_deref()
+                .unwrap_or_default()
+                .iter()
+                .map(remote_member_id),
+        );
+    }
     futures::executor::block_on(
         GroupChatOrchestrator::new(deps).run(&group, &member_ids),
     );
@@ -214,6 +260,13 @@ pub fn dispatch_local_group_send(
         posted_messages: posted_messages.lock().map(|value| *value).unwrap_or_default(),
         member_failures: member_failures.lock().map(|value| value.clone()).unwrap_or_default(),
     })
+}
+
+fn remote_member_id(member: &crate::groups::group_store::RemoteGroupMember) -> String {
+    let owner =
+        url::form_urlencoded::byte_serialize(member.owner_auth_id.as_bytes()).collect::<String>();
+    let agent = url::form_urlencoded::byte_serialize(member.agent_id.as_bytes()).collect::<String>();
+    format!("sand-remote:{owner}/{agent}")
 }
 
 fn transcript_entry_to_group_message(entry: Value) -> Option<GroupMessage> {

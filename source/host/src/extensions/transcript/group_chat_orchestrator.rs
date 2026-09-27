@@ -12,6 +12,10 @@ pub struct GroupMemberTurnRequest {
     pub member: GroupMember,
     pub system_prompt: String,
     pub prompt: String,
+    pub group: GroupDescription,
+    pub peers: Vec<GroupMember>,
+    pub new_messages: Vec<GroupMessage>,
+    pub shared_room_id: Option<String>,
 }
 
 pub trait GroupOrchestratorDeps: Send + Sync {
@@ -26,6 +30,9 @@ pub trait GroupOrchestratorDeps: Send + Sync {
     fn finalize_member_turn(&self, _member: &GroupMember) {}
     fn is_shared_room(&self) -> bool {
         false
+    }
+    fn shared_room_id(&self) -> Option<String> {
+        None
     }
 }
 
@@ -123,6 +130,10 @@ where
                     self.deps.is_shared_room(),
                 ),
                 prompt: build_group_turn_prompt(member, group, &peers, new_messages),
+                group: group.clone(),
+                peers: peers.clone(),
+                new_messages: new_messages.to_vec(),
+                shared_room_id: self.deps.shared_room_id(),
             })
             .await;
 
