@@ -49,7 +49,9 @@ use crate::extensions::source_map::extension::start_source_map_extension;
 use crate::extensions::source_map::source_map_service::SandSourceMap;
 use crate::extensions::settings::extension::start_settings_extension;
 use crate::extensions::settings::settings_service::{SettingsService, SettingsSubscription};
-use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
+use crate::extensions::telemetry::extension::{
+    HostTelemetryExtension, start_host_telemetry_extension,
+};
 use crate::extensions::telemetry::webauthn_proxy_telemetry::{
     WebAuthnProxyReport, webauthn_proxy_telemetry,
 };
@@ -70,6 +72,7 @@ use crate::production_binding_providers::production_cloud_agent_trace_converter;
 /// until their real production owners exist.
 pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Auth,
+    HostExtensionId::Telemetry,
     HostExtensionId::ContentSearch,
     HostExtensionId::Settings,
     HostExtensionId::Experiments,
@@ -110,6 +113,7 @@ pub fn start_production_browser_ua(
 }
 
 pub struct ProductionHostExtensions {
+    pub telemetry: HostTelemetryExtension,
     pub auth: Arc<HostAuthExtension>,
     pub settings: Arc<SettingsService>,
     pub experiments: Arc<HostExperimentsExtension>,
@@ -133,9 +137,11 @@ pub struct ProductionHostExtensions {
 
 pub fn start_production_host_extensions(
     app_data_dir: &Path,
-    telemetry_logs: HostStructuredLogTelemetry,
     events: SandHostEventBus,
 ) -> Result<ProductionHostExtensions, String> {
+    let telemetry = start_host_telemetry_extension(app_data_dir)
+        .map_err(|error| error.to_string())?;
+    let telemetry_logs = telemetry.logs.clone();
     let auth_options = HostAuthServiceOptions::production(|message| {
         eprintln!("mahayana-host-auth {message}");
     })
@@ -227,6 +233,7 @@ pub fn start_production_host_extensions(
     )));
 
     Ok(ProductionHostExtensions {
+        telemetry,
         auth,
         settings,
         experiments,

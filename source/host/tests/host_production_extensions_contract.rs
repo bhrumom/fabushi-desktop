@@ -29,6 +29,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert!(shipping.contains(&HostExtensionId::BrowserUa));
     assert!(shipping.contains(&HostExtensionId::CodebaseTelemetry));
     assert!(shipping.contains(&HostExtensionId::ContentSearch));
+    assert!(shipping.contains(&HostExtensionId::Telemetry));
     assert!(shipping.contains(&HostExtensionId::LocalToolPermission));
     assert!(shipping.contains(&HostExtensionId::LocalExec));
     assert!(shipping.contains(&HostExtensionId::CloudAgents));

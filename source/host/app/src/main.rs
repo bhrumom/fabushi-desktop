@@ -141,7 +141,6 @@ use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::{
     AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
 };
-use mahayana_host_runtime::extensions::telemetry::extension::start_host_telemetry_extension;
 use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
 use mahayana_host_runtime::extensions::transcript::turn_runtime::classify_agent_error;
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
@@ -3652,17 +3651,9 @@ fn main() {
             }
         };
 
-    let host_telemetry = match start_host_telemetry_extension(&app_data_dir) {
-        Ok(telemetry) => telemetry,
-        Err(error) => {
-            eprintln!("failed to start Mahayana Host telemetry extension: {error}");
-            return;
-        }
-    };
     let gateway_events = GatewayEventHub::default();
     let production_extensions = match start_production_host_extensions(
         &app_data_dir,
-        host_telemetry.logs.clone(),
         gateway_events.clone(),
     ) {
         Ok(extensions) => extensions,
@@ -3671,6 +3662,7 @@ fn main() {
             return;
         }
     };
+    let host_telemetry = production_extensions.telemetry.clone();
     let browser_ua_runtime = start_production_browser_ua(
         Arc::clone(&production_extensions.auth),
         Arc::clone(&production_extensions.experiments),
