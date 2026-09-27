@@ -3,6 +3,13 @@ use mahayana_host_runtime::extensions::cross_user_sharing::xuser_entry_publisher
 use mahayana_host_runtime::extensions::cross_user_sharing::xuser_relay::*;
 use mahayana_host_runtime::extensions::cross_user_sharing::xuser_sharing_service::*;
 use mahayana_host_runtime::extensions::cross_user_sharing::xuser_state_reconcile::*;
+use mahayana_host_runtime::extensions::experiments::{
+    HostExperimentsExtension, HostExperimentsOptions,
+};
+use mahayana_host_runtime::extensions::notify_bus::extension::{
+    NotifyBusExtensionOptions, start_notify_bus_extension_with_options,
+};
+use mahayana_host_runtime::extensions::notify_bus::notify_bus_client::NotifyBusTiming;
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -132,4 +139,61 @@ fn enabled_service_reconciles_backend_state() {
     let s = svc.reconcile_share_state().unwrap();
     assert_eq!(s.rooms.len(), 1);
     assert_eq!(s.pending_join_requests.len(), 1);
+}
+
+#[test]
+fn extension_tracks_multiplayer_gate_and_owns_service_lifecycle() {
+    let svc = service(serde_json::json!({
+        "rooms": [],
+        "pendingJoinRequests": []
+    }));
+    let mut env = BTreeMap::new();
+    env.insert("SAND_DEV_XUSER_SHARING".into(), "1".into());
+
+    let extension = Arc::new(CrossUserSharingExtension::new(
+        Arc::clone(&svc),
+        "https://dev.example.invalid",
+        &env,
+    ));
+    let experiments = Arc::new(HostExperimentsExtension::new(
+        HostExperimentsOptions {
+            is_dev_build: true,
+            env_gate_overrides: Some("sand_multiplayer=true".into()),
+        },
+    ));
+    let notify_bus = start_notify_bus_extension_with_options(
+        Arc::clone(&experiments)
+            as Arc<dyn mahayana_host_runtime::extensions::notify_bus::extension::NotifyBusExperimentsApi>,
+        NotifyBusExtensionOptions {
+            get_backend_url: Arc::new(|| Ok("https://example.invalid".into())),
+            get_access_token: Arc::new(|_| Ok("token".into())),
+            now_ms: Arc::new(|| 1_000),
+            timing: NotifyBusTiming::default(),
+            log: Arc::new(|_| {}),
+        },
+    )
+    .unwrap();
+
+    extension
+        .start_background_work(Arc::clone(&experiments), notify_bus.clone())
+        .unwrap();
+    assert!(extension.is_enabled());
+    assert!(svc.is_started());
+
+    experiments.replace_feature_flag_overrides(BTreeMap::from([
+        ("sand_multiplayer".into(), false),
+    ]));
+    assert!(!extension.is_enabled());
+    assert!(!svc.is_started());
+
+    experiments.replace_feature_flag_overrides(BTreeMap::from([
+        ("sand_multiplayer".into(), true),
+    ]));
+    assert!(extension.is_enabled());
+    assert!(svc.is_started());
+
+    extension.prepare_for_upgrade();
+    assert!(!svc.is_started());
+    extension.stop();
+    notify_bus.stop();
 }
