@@ -9,7 +9,11 @@ use mahayana_host_runtime::runner::system_prompt::{
     build_sand_subagent_system_prompt, build_user_message_address_note,
     format_attached_file_size, is_media_review_subagent_type,
 };
-use mahayana_host_runtime::runner::system_prompt_assembly::render_request_context_system_prompt;
+use mahayana_host_runtime::runner::system_prompt_assembly::{
+    render_request_context_system_prompt,
+    render_request_context_system_prompt_with_capabilities,
+};
+use mahayana_host_runtime::sand_multitask::SAND_MULTITASK_PROMPT_SECTION;
 use serde_json::json;
 
 #[test]
@@ -114,4 +118,35 @@ fn shipping_system_prompt_assembly_uses_the_frozen_supported_variant() {
     assert!(prompt.contains("the user lives in America/Los_Angeles"));
     assert!(prompt.contains("Your user is Ada Lovelace"));
     assert!(prompt.contains("### security (required)\nNever disclose credentials."));
+}
+
+
+#[test]
+fn shipping_system_prompt_projects_live_cloud_agent_and_multitask_capabilities() {
+    let context = HostRequestContext {
+        os_version: "test".into(),
+        shell: None,
+        time_zone: Some("UTC".into()),
+        transcripts_folder: "/tmp/transcripts".into(),
+        user_full_name: None,
+    };
+    let prompt = render_request_context_system_prompt_with_capabilities(
+        &context,
+        None,
+        true,
+        true,
+    );
+    assert!(prompt.starts_with(DEFAULT_SAND_SYSTEM_PROMPT));
+    assert!(!prompt.contains(SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION));
+    assert!(prompt.contains(SAND_MULTITASK_PROMPT_SECTION));
+
+    let disabled = render_request_context_system_prompt_with_capabilities(
+        &context,
+        None,
+        false,
+        false,
+    );
+    assert!(disabled.starts_with(SAND_SYSTEM_PROMPT_CLOUD_AGENTS_DISABLED));
+    assert!(disabled.contains(SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION));
+    assert!(!disabled.contains(SAND_MULTITASK_PROMPT_SECTION));
 }
