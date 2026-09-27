@@ -43,7 +43,7 @@ fn deletion_runtime_runs_owner_hooks_around_durable_session_delete() {
         AgentDeletionRuntimeDeps {
             cancel_runner: Some(hook("runner", Arc::clone(&calls))),
             forget_ack: Some(hook("ack", Arc::clone(&calls))),
-            sharing_departure: None,
+            sharing_departure: Some(hook("sharing", Arc::clone(&calls))),
             release_box: Some(hook("box", Arc::clone(&calls))),
             forget_handoff: Some(hook("handoff", Arc::clone(&calls))),
         },
@@ -54,6 +54,7 @@ fn deletion_runtime_runs_owner_hooks_around_durable_session_delete() {
     let expected = vec![
         format!("runner:{}", record.id),
         format!("ack:{}", record.id),
+        format!("sharing:{}", record.id),
         format!("box:{}", record.id),
         format!("handoff:{}", record.id),
     ];
