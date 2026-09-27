@@ -38,7 +38,9 @@ impl XuserRelayTransport for FakeTransport {
         }
     }
 }
-fn service(value: serde_json::Value) -> Arc<SandXuserSharingService> {
+fn service_with_transport(
+    value: serde_json::Value,
+) -> (Arc<SandXuserSharingService>, Arc<FakeTransport>) {
     let t = Arc::new(FakeTransport {
         requests: Mutex::new(vec![]),
         value,
@@ -47,9 +49,13 @@ fn service(value: serde_json::Value) -> Arc<SandXuserSharingService> {
     let relay = Arc::new(SandXuserRelayClient::new(
         "https://example.invalid".into(),
         Arc::new(|| Ok("token".into())),
-        t,
+        Arc::clone(&t) as Arc<dyn XuserRelayTransport>,
     ));
-    Arc::new(SandXuserSharingService::new(relay))
+    (Arc::new(SandXuserSharingService::new(relay)), t)
+}
+
+fn service(value: serde_json::Value) -> Arc<SandXuserSharingService> {
+    service_with_transport(value).0
 }
 #[test]
 fn relay_errors_keep_frozen_user_messages() {
@@ -196,4 +202,72 @@ fn extension_tracks_multiplayer_gate_and_owns_service_lifecycle() {
     assert!(!svc.is_started());
     extension.stop();
     notify_bus.stop();
+}
+
+
+#[test]
+fn sharing_service_exposes_frozen_room_invite_and_typing_relay_surface() {
+    let (svc, transport) = service_with_transport(serde_json::json!({
+        "room": {"roomId":"room-a"},
+        "shareUrl":"https://share.invalid/a",
+        "expiresAtMs":1234
+    }));
+    svc.set_enabled(true);
+    let invite = svc.create_room_invite("room-a").unwrap();
+    assert_eq!(invite["status"], "ok");
+    assert_eq!(invite["roomId"], "room-a");
+    assert!(transport.requests.lock().unwrap().iter().any(|url| url.ends_with("/sand/share-rooms/invite-links")));
+
+    let (typing, typing_transport) = service_with_transport(serde_json::json!({}));
+    typing.set_enabled(true);
+    typing.set_room_typing("room-a", true).unwrap();
+    assert!(typing_transport.requests.lock().unwrap().iter().any(|url| url.ends_with("/sand/xuser/send")));
+}
+
+#[test]
+fn sharing_service_join_request_settlement_updates_local_room_state() {
+    let svc = service(serde_json::json!({
+        "status":"approved",
+        "room": {"roomId":"room-b","name":"Room B","hostAuthId":"me","members":[]}
+    }));
+    svc.set_enabled(true);
+    svc.set_self_auth_id(Some("me".into()));
+    // Seed a pending request through the canonical reconcile path using a dedicated service.
+    // The settlement assertion below focuses on the service-owned local room install.
+    let state = svc.respond_to_join_request(&serde_json::json!({"requestId":"req-b"})).unwrap();
+    assert_eq!(state.rooms.len(), 1);
+    assert_eq!(state.rooms[0].room_id, "room-b");
+}
+
+#[test]
+fn sharing_service_create_add_remove_leave_and_deleted_agent_use_relay_owner() {
+    let room = serde_json::json!({"roomId":"room-c","name":"Room C","hostAuthId":"me","members":[]});
+    let (create, create_transport) = service_with_transport(serde_json::json!({
+        "status":"created",
+        "room": room.clone()
+    }));
+    create.set_enabled(true);
+    create.set_self_auth_id(Some("me".into()));
+    let created = create.create_shared_room(&serde_json::json!({"agents":[]})).unwrap();
+    assert_eq!(created["status"], "ok");
+    assert_eq!(created["roomId"], "room-c");
+    assert_eq!(create.get_state().rooms.len(), 1);
+    assert!(create_transport.requests.lock().unwrap().iter().any(|url| url.ends_with("/sand/share-rooms")));
+
+    let (add, add_transport) = service_with_transport(serde_json::json!({"room": room.clone()}));
+    add.set_enabled(true);
+    add.add_own_agent(&serde_json::json!({"roomId":"room-c","agentId":"agent-a"})).unwrap();
+    assert_eq!(add.get_state().rooms.len(), 1);
+    assert!(add_transport.requests.lock().unwrap().iter().any(|url| url.ends_with("/sand/share-rooms/agents/add")));
+
+    let (remove, remove_transport) = service_with_transport(serde_json::json!({"room": room.clone()}));
+    remove.set_enabled(true);
+    remove.remove_own_agent("room-c", "agent-a").unwrap();
+    assert_eq!(remove.get_state().rooms.len(), 1);
+    assert!(remove_transport.requests.lock().unwrap().iter().any(|url| url.ends_with("/sand/share-rooms/agents/remove")));
+
+    let (deleted, deleted_transport) = service_with_transport(serde_json::json!({}));
+    deleted.set_enabled(true);
+    deleted.note_agent_deleted("agent-a").unwrap();
+    assert!(deleted_transport.requests.lock().unwrap().iter().any(|url| url.ends_with("/sand/share-rooms/agents/remove-deleted")));
 }
