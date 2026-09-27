@@ -11999,12 +11999,18 @@
       "targetPath": "source/host/src/extensions/inference/cursor_session.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "f222a0e40ef002aadc19244b98aadbb2286ae738",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/inference/cursor_session.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/inference_session_labeling_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns the frozen cursor-session model-selection precedence, default/computer/browser/subagent selection semantics and strict SAND_AGENT_MOCK_RESPONSE script parsing. Final remains withheld until the live authenticated Cursor prompt-session transport, privacy/media provider, generated inference reason/lineage bindings and labeling wrapper are composed on the shipping Host path."
     },
     {
       "referencePath": "source/host/extensions/inference/cursor-web-tools.ts",
@@ -12047,12 +12053,18 @@
       "targetPath": "source/host/src/extensions/inference/inference_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "3343f59d9386b4b129fe075fb02de984298866d8",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/inference/inference_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/inference_session_labeling_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns the frozen inference provider route split that keeps Cursor on the Host/Gateway path, routes non-Cursor providers through the independent provider runtime and records sanitized provider usage. Final remains withheld until live settings/experiments/auth and Cursor session construction are bound through the production inference extension."
     },
     {
       "referencePath": "source/host/extensions/inference/production.ts",
@@ -12105,12 +12117,18 @@
       "targetPath": "source/host/src/extensions/inference/sand_labeling.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "30f7a4784a7cd337a34903062f93f3bb6bf386bd",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/inference/sand_labeling.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/inference_session_labeling_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns frozen follow-up request lineage/deduplication, summarization skipping and post-turn labeling admission semantics. Final remains withheld until generated InferenceService request codecs, core-message-to-proto conversion, diagnostic emission and authenticated labeling backend calls are production-wired."
     },
     {
       "referencePath": "source/host/extensions/inference/sand-model-experiment.ts",
