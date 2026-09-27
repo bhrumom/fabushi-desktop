@@ -369,12 +369,16 @@ impl SettingsService {
                     .collect(),
             ))),
         };
-        let next = json!({
-            "isEnabled": normalized.is_enabled,
-            "allowInstructions": normalized.allow_instructions,
-            "blockInstructions": normalized.block_instructions
-        });
-        self.set_json_field("autoReviewInstructions", Some(next))
+        if normalized == SandAutoReviewInstructions::default() {
+            self.set_json_field("autoReviewInstructions", None)
+        } else {
+            let next = json!({
+                "isEnabled": normalized.is_enabled,
+                "allowInstructions": normalized.allow_instructions,
+                "blockInstructions": normalized.block_instructions
+            });
+            self.set_json_field("autoReviewInstructions", Some(next))
+        }
     }
 
     pub fn get_local_tool_permission_choice(&self) -> SandLocalToolPermission {
@@ -806,6 +810,12 @@ impl SettingsService {
     }
 
     pub fn get_notification_config(&self) -> Value {
+        let mut settings = self.load();
+        let stored = json!({ "isEnabled": false });
+        if settings.get("notifications") != Some(&stored) {
+            settings.insert("notifications".into(), stored);
+            let _ = self.persist(&settings);
+        }
         disabled_notification_config()
     }
     pub fn set_notification_config(&self, _input: &Value) -> Result<bool, String> {
