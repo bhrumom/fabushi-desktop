@@ -70,6 +70,6 @@ impl SandXuserSharingService {
             return Err("Sharing isn't enabled for your account.".into());
         }
         self.relay
-            .create_room(&serde_json::json!({"agentId":agent_id}))
+            .create_room_from_agent(&serde_json::json!({"agentId":agent_id}))
     }
 }
