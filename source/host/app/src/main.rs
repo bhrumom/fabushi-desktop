@@ -2010,7 +2010,7 @@ fn start_routed_provider_task(
                 if !delta.is_empty() {
                     if let Ok(mut observation) = delta_observation.lock() {
                         let observed_perf_ms = ttft_dispatch_started
-                            .map(|started| started.elapsed().as_secs_f64() * 1_000.0);
+                            .map(|dispatch_started| dispatch_started.elapsed().as_secs_f64() * 1_000.0);
                         let _ = observation.observe_first_token(
                             "text",
                             observed_perf_ms.map(|_| 0.0),
