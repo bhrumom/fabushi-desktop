@@ -43,6 +43,7 @@ fn deletion_runtime_runs_owner_hooks_around_durable_session_delete() {
         AgentDeletionRuntimeDeps {
             cancel_runner: Some(hook("runner", Arc::clone(&calls))),
             forget_ack: Some(hook("ack", Arc::clone(&calls))),
+            sharing_departure: None,
             release_box: Some(hook("box", Arc::clone(&calls))),
             forget_handoff: Some(hook("handoff", Arc::clone(&calls))),
         },
