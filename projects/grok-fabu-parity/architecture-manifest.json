@@ -14135,22 +14135,24 @@
       "targetPath": "source/host/src/extensions/settings/settings_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "160658a5b81320d002fd76e53f988b2f52ffc703",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/settings/settings_service.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/host_production_extensions.rs"
       ],
       "testEvidence": [
         "source/host/tests/settings_service_contract.rs",
         "source/host/tests/session_store_factories_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/host_production_extensions_contract.rs"
       ],
-      "notes": "Real Rust production slice of frozen SettingsService: canonical settings.json ownership, IANA timezone validation, detected/override precedence, atomic unknown-field-preserving persistence, effective-timezone subscriptions and generic change notifications. Shipping Host starts the settings owner and injects a live resolver into Session automation/workflow stores. Final is withheld for the remaining notification/MCP/model/auto-review/local-permission/WebAuthn/sidebar/account-scope/inference usage fields and listeners."
+      "notes": "Final frozen SettingsService parity: Rust owns canonical settings.json persistence, disabled-notification normalization, MCP legacy/server-id instructions and disabled-tools/account-scope semantics, timezone, agent/computer-use model selection, auto-review, local-permission ceiling, WebAuthn, pinned/sidebar/onboarding state, feature-override subscriptions, and inference provider/usage. ProductionHostExtensions starts Settings before Experiments and retains the live Settings→Experiments feature-override subscription. Exact-HEAD Rust Host cargo check, full source/host cargo test, independent Coordinator contract, renderer architecture inventory/typecheck/build and production boundary checks provide the final evidence."
     },
     {
       "referencePath": "source/host/extensions/source-map/extension.ts",
