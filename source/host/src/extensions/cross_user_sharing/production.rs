@@ -713,9 +713,9 @@ impl ProductionCrossUserRuntime {
                     )));
                 };
                 if self.is_enabled() {
-                    self.service
-                        .set_room_typing(&room_id, is_typing)
-                        .map_err(CrossUserGatewayError::Internal)?;
+                    if let Err(error) = self.service.set_room_typing(&room_id, is_typing) {
+                        return Some(Err(CrossUserGatewayError::Internal(error)));
+                    }
                 }
                 Ok(Value::Null)
             }
