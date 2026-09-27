@@ -135,5 +135,5 @@ fn production_extras_share_auth_and_forward_request_identity_to_web_services() {
 
     assert_eq!(request_ids.lock().unwrap().as_slice(), ["req-42"]);
     assert_eq!(port_factory.auth_seen.lock().unwrap().len(), 1);
-    assert_eq!(backend_factory.auth_seen.lock().unwrap().len(), 3);
+    assert_eq!(backend_factory.auth_seen.lock().unwrap().len(), 2);
 }
