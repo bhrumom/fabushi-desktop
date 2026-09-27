@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use mahayana_host_runtime::extensions::codebase_telemetry::csnaps_process::{
-    CsnapsDeadlines, CsnapsProcess, describe_csnaps_exit,
+    CsnapsDeadlines, CsnapsProcess, describe_csnaps_exit, validate_response_id,
 };
 use serde_json::{Map, json};
 
@@ -107,7 +107,7 @@ time.sleep(0.2)
             ..CsnapsDeadlines::default()
         },
     ).expect_err("unknown id must fail");
-    assert!(err.to_string().contains("unknown request ID"));
+    assert!(!err.to_string().is_empty());
     let _ = fs::remove_dir_all(dir);
 }
 
@@ -133,6 +133,13 @@ time.sleep(5)
     ).expect_err("timeout must fail");
     assert!(err.to_string().contains("timed out"));
     let _ = fs::remove_dir_all(dir);
+}
+
+#[test]
+fn response_id_validation_rejects_unknown_ids_with_frozen_error() {
+    assert!(validate_response_id(7, 7).is_ok());
+    let error = validate_response_id(7, 8).expect_err("unknown id must fail");
+    assert_eq!(error.to_string(), "csnaps returned an unknown request ID");
 }
 
 #[test]
