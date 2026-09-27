@@ -1849,3 +1849,9 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added the Grok `sand-multitask.ts` Rust owner at `source/host/src/sand_multitask.rs`, reusing the existing Runner `SandSubagentType` model rather than creating a second subagent type system.
 - Preserved the frozen env-override truthiness, the single builtin `executor` subagent contract, todo-queue guidance and multitask prompt boundary; added `sand_multitask_contract.rs`.
 - Manifest advances this row from `planned` to `existing-needs-parity` only. Final requires the production Runner composition to inject the executor config/todo description/prompt section into live turns and exact-HEAD CI evidence.
+
+### 2026-09-27 exact-HEAD Host-suite repair after cross-user slice
+
+- Rust runtime run `36303809965` for exact HEAD `fb1ce257ba93a82a8cfba07cc92df8129b78c977` passed shipping Host compilation, independent Coordinator, box-exec daemon, and Host box-exec supervision, then failed inside the full Host test suite on the pre-existing content-search production contract.
+- Failure was `production_mutation_projection_is_typed_and_fails_closed`: frozen TS semantics allow an upserted `IndexEntry` with absent `id` to deserialize as an empty id, while the Rust struct required the field and caused projection to fail closed too early.
+- Fixed narrowly by giving `IndexEntry.id` a serde default. No Cross-user Sharing behavior or Coordinator/Host/Runner boundary was changed by this repair.

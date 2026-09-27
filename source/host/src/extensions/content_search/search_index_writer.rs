@@ -31,6 +31,7 @@ pub struct IndexMessageValue {
 
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 pub struct IndexEntry {
+    #[serde(default)]
     pub id: String,
     pub kind: String,
     #[serde(rename = "timestampMs")]
