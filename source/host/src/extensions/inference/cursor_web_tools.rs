@@ -28,7 +28,7 @@ pub struct WebSearchRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WebSearchResponse {
-    pub answer: String,
+    pub answer: Option<String>,
     pub documents: Vec<WebDocument>,
 }
 
@@ -205,7 +205,7 @@ impl CursorWebBackend for ProductionCursorWebBackend {
         let response = ProtoRunWebSearchResponse::decode(bytes.as_slice())
             .map_err(|error| format!("Web search returned an invalid protobuf response: {error}"))?;
         Ok(WebSearchResponse {
-            answer: response.answer.unwrap_or_default(),
+            answer: response.answer,
             documents: response
                 .documents
                 .into_iter()

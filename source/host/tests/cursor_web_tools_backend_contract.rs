@@ -7,6 +7,8 @@ use std::time::Duration;
 use prost::Message;
 
 use mahayana_host_runtime::cursor_backend::clear_sand_privacy_mode_cache_for_testing;
+static WEB_BACKEND_TEST_LOCK: Mutex<()> = Mutex::new(());
+
 use mahayana_host_runtime::extensions::inference::cursor_web_tools::{
     CursorWebAuth, CursorWebBackend, CursorWebBackendOptions, ProductionCursorWebBackend,
     RUN_WEB_FETCH_PATH, RUN_WEB_SEARCH_PATH, WebFetchResponse, WebSearchRequest,
@@ -146,6 +148,7 @@ fn header_value(headers: &str, wanted: &str) -> Option<String> {
 
 #[test]
 fn production_cursor_web_backend_uses_frozen_proto_auth_privacy_and_request_id_contract() {
+    let _guard = WEB_BACKEND_TEST_LOCK.lock().unwrap();
     clear_sand_privacy_mode_cache_for_testing();
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
     let port = listener.local_addr().unwrap().port();
@@ -188,7 +191,7 @@ fn production_cursor_web_backend_uses_frozen_proto_auth_privacy_and_request_id_c
         explanation: Some("parity".into()),
         model_id: "grok-4.5".into(),
     }).expect("search");
-    assert_eq!(search_response.answer, "answer");
+    assert_eq!(search_response.answer.as_deref(), Some("answer"));
     assert_eq!(search_response.documents[0].title, "Example");
 
     let fetch_response = backend.run_web_fetch("https://example.invalid/page").expect("fetch");
@@ -231,6 +234,7 @@ fn production_cursor_web_backend_uses_frozen_proto_auth_privacy_and_request_id_c
 
 #[test]
 fn production_cursor_web_backend_maps_error_and_missing_fetch_results() {
+    let _guard = WEB_BACKEND_TEST_LOCK.lock().unwrap();
     clear_sand_privacy_mode_cache_for_testing();
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
     let port = listener.local_addr().unwrap().port();

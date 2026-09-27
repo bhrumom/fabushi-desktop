@@ -120,7 +120,7 @@ fn production_extras_share_auth_and_forward_request_identity_to_web_services() {
         })),
     );
     let response = search.search("Grok architecture", Some("parity".into())).expect("search");
-    assert_eq!(response.answer, "answer");
+    assert_eq!(response.answer.as_deref(), Some("answer"));
     assert_eq!(response.documents.len(), 1);
 
     let fetch = extras.create_web_fetch(None);
