@@ -212,7 +212,10 @@ use mahayana_host_runtime::gateway_server::{
 use mahayana_host_runtime::host_gateway_api::{
     CreateAgentNonceLedger, sanitize_create_agent_args,
 };
-use mahayana_host_runtime::sand_host::compute_host_health;
+use mahayana_host_runtime::sand_host::{
+    BOX_READY_REPORT_ATTEMPTS, BOX_READY_REPORT_RETRY_MS, BOX_READY_STAGE_MARKER_PATH,
+    box_ready_duration_ms, compute_host_health, should_report_box_ready,
+};
 use mahayana_host_runtime::host_discovery::{
     GatewayDiscoveryInfo, clear_gateway_discovery, write_gateway_discovery,
 };
@@ -3832,6 +3835,38 @@ fn main() {
             gateway_discovery_path.display()
         );
         return;
+    }
+
+    let ready_boot_id = std::env::var("SAND_BOX_BOOT_ID")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty());
+    let ready_boot_started_at_ms = std::env::var("SAND_BOX_BOOT_STARTED_AT_MS")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok());
+    let ready_marker = fs::read_to_string(BOX_READY_STAGE_MARKER_PATH).ok();
+    if should_report_box_ready(
+        ready_boot_id.as_deref(),
+        ready_boot_started_at_ms,
+        ready_marker.as_deref(),
+    ) {
+        if let (Some(boot_id), Some(boot_started_at_ms)) =
+            (ready_boot_id, ready_boot_started_at_ms)
+        {
+            let ready_logs = host_telemetry.logs.clone();
+            let _box_ready_worker = thread::spawn(move || {
+                let duration_ms = box_ready_duration_ms(started_at_ms(), boot_started_at_ms);
+                for attempt in 1..=BOX_READY_REPORT_ATTEMPTS {
+                    if ready_logs.report_box_boot_stage_confirmed("ready", duration_ms) {
+                        let _ = fs::write(BOX_READY_STAGE_MARKER_PATH, &boot_id);
+                        return;
+                    }
+                    if attempt < BOX_READY_REPORT_ATTEMPTS {
+                        thread::sleep(Duration::from_millis(BOX_READY_REPORT_RETRY_MS));
+                    }
+                }
+            });
+        }
     }
 
     let shutdown_complete = Arc::new(AtomicBool::new(false));
