@@ -11028,12 +11028,17 @@
       "targetPath": "source/host/src/extensions/box_store_sync/chrome_session_watcher.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "a858b63cd831a17d336220b97293da0eb8382c7a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/chrome_session_watcher.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/chrome_session_watcher_contract.rs"
+      ],
+      "notes": "Rust Host owner preserves the frozen session-db prefix filter, null-filename mtime fallback, debounced delivery, callback-failure isolation, idempotent lifecycle, and real non-recursive filesystem watching. Final implemented status remains blocked on production box-store-sync extension composition wiring this watcher into the live sync trigger path."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/extension.ts",
