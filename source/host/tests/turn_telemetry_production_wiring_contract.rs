@@ -18,6 +18,10 @@ fn shipping_host_wires_frozen_turn_telemetry_sources() {
         "reason: \"agent_deleted\".into()",
         "let was_in_flight = transcript_runtime.is_agent_running(agent_id)",
         "runner_registry.cancel_agent(agent_id, \"agent deleted\") > 0",
+        "self.runner_registry.agent_id_for_stream(stream_id)",
+        "reason.to_ascii_lowercase().contains(\"superseded\")",
+        "reason: \"superseded\".into()",
+        "had_active_run: cancelled",
     ] {
         assert!(
             SHIPPING_HOST.contains(needle),
