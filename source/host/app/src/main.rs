@@ -3095,9 +3095,11 @@ fn main() {
             return;
         }
     };
+    let gateway_events = GatewayEventHub::default();
     let production_extensions = match start_production_host_extensions(
         &app_data_dir,
         host_telemetry.logs.clone(),
+        gateway_events.clone(),
     ) {
         Ok(extensions) => extensions,
         Err(error) => {
@@ -3135,7 +3137,6 @@ fn main() {
             Arc::clone(production_extensions.managed_setup.team_rules()),
             app_data_dir.join("transcripts"),
         ));
-    let gateway_events = GatewayEventHub::default();
     let settings_extension = start_settings_extension();
     let local_tool_permission_extension = Arc::new(
         start_local_tool_permission_extension(Arc::clone(&settings_extension)),
