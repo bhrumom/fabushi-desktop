@@ -10089,10 +10089,11 @@
         "source/host/tests/cloud_agents_service_contract.rs",
         "source/host/tests/runner_production_bridge_contract.rs",
         "source/host/tests/cloud_agent_images_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/auto_review_production_wiring_contract.rs"
       ],
       "parityMode": "rust-adaptation",
-      "notes": "Rust Runner now registers CloudAgent as a first-party RoutedToolBridge and production-wires launch/list/models/get/dump/watch/reply/rename/cancel/archive/unarchive/delete/list_artifacts against the single Host SandCloudAgentManager. launch/reply consume the canonical image loader through the live ForeverBox binary Read port; dump writes through the live Box Write port; destructive confirmation, model validation, managed-id fencing and cancellation are preserved. Final remains withheld for the frozen production Auto-review callback, reviving cloud-agent watcher/quiet-origin ownership, and the generated ConversationMessage-to-trace adapter used by dump."
+      "notes": "Rust Runner registers CloudAgent as a first-party RoutedToolBridge and production-wires launch/list/models/get/dump/watch/reply/rename/cancel/archive/unarchive/delete/list_artifacts against the single Host SandCloudAgentManager. launch/reply consume the canonical image loader through the live ForeverBox binary Read port; dump writes through the live Box Write port; destructive confirmation, model validation, managed-id fencing and cancellation are preserved. The frozen production Auto-review callback is now wired to the same per-turn controller/backend classifier. Final remains withheld for reviving cloud-agent watcher/quiet-origin ownership and the generated ConversationMessage-to-trace adapter used by dump."
     },
     {
       "referencePath": "source/host/cloud-agents/cloud-agent-transcript-dump.ts",
@@ -10485,17 +10486,19 @@
         "source/host/src/extensions/auto_review/sand_auto_review_awaiting.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/settings/settings_service.rs",
-        "source/host/src/runner/sand_auto_review.rs"
+        "source/host/src/runner/sand_auto_review.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/auto_review_service_contract.rs",
         "source/host/tests/sand_auto_review_contract.rs",
         "source/host/tests/sand_auto_review_awaiting_contract.rs",
         "source/host/tests/settings_service_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/auto_review_production_wiring_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host service now owns per-agent controller binding, durable approval-card projection, durable awaiting-user state, duplicate settlement memory, stale-card retirement, boot stale sweep, mode projection, update sink, and telemetry sink. Final remains withheld until the shipping Host entrypoint registers this extension and the real backend smart-mode classifier plus Runner tool preflights are wired end-to-end."
+      "notes": "Rust Host service owns per-agent controller binding, durable approval-card projection, durable awaiting-user state, duplicate settlement memory, stale-card retirement, boot stale sweep, mode projection, update sink, and telemetry sink. Shipping Host registration and live Runner controller binding are now production-wired and exact-HEAD tested. Final remains withheld until the remaining browser/computer/shell/MCP/subagent/automation preflight owners all consume this controller end-to-end."
     },
     {
       "referencePath": "source/host/extensions/auto-review/extension.ts",
@@ -10512,22 +10515,24 @@
         "source/host/src/extensions/settings/settings_service.rs",
         "source/host/src/extensions/experiments/extension.rs",
         "source/host/src/extensions/extension_ids.generated.rs",
-        "source/host/src/extensions/registry.rs"
+        "source/host/src/extensions/registry.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/auto_review_service_contract.rs",
         "source/host/tests/settings_service_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/auto_review_production_wiring_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host extension declares the frozen Auth/Experiments/Settings/Telemetry/Transcript dependency boundary and reads persisted auto-review enablement plus local mode override. Final remains withheld until production Host registration/start-stop, renderer approval RPC/update delivery, classifier backend wiring, and Runner preflight composition are shipping."
+      "notes": "Rust Host extension declares the frozen Auth/Experiments/Settings/Telemetry/Transcript dependency boundary, reads persisted auto-review enablement plus local mode override, and is started by the shipping Host. Renderer approval RPC/update delivery and live CloudAgent preflight composition now use the same controller. Final remains withheld until the remaining browser/computer/shell/MCP/subagent/automation preflights are production-wired."
     },
     {
       "referencePath": "source/host/extensions/auto-review/sand-auto-review-awaiting.ts",
       "targetPath": "source/host/src/extensions/auto_review/sand_auto_review_awaiting.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "bfb05fdbf6c9f41eec6db3394d4db5dbe5eab8cc",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10536,16 +10541,18 @@
         "source/host/src/extensions/auto_review/auto_review_service.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/session/agent_db_serde.rs",
-        "source/host/src/runner/sand_auto_review.rs"
+        "source/host/src/runner/sand_auto_review.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_auto_review_awaiting_contract.rs",
         "source/host/tests/auto_review_service_contract.rs",
         "source/host/tests/session_production_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/auto_review_production_wiring_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port preserves frozen awaiting-card ordering and now has a durable ProductionSessionWorkers sink consumed by AutoReviewService. Final remains withheld until AutoReviewExtension is started by the shipping Host entrypoint and the live Runner path binds its controller."
+      "notes": "Rust port preserves frozen awaiting-card ordering with a durable ProductionSessionWorkers sink consumed by AutoReviewService. Shipping Host starts AutoReviewExtension, every routed Runner turn now binds the same per-Agent controller, and both normal terminal settlement and thread-spawn failure retire it. Exact-HEAD Host tests, including auto_review_production_wiring_contract, prove the live binding."
     },
     {
       "referencePath": "source/host/extensions/auto-review/sand-backend-smart-mode-classifier-exec.ts",
@@ -10560,15 +10567,17 @@
         "source/host/src/extensions/auto_review/sand_backend_smart_mode_classifier_exec.rs",
         "source/host/src/cursor_backend.rs",
         "source/host/src/extensions/auth/extension.rs",
-        "source/host/src/runner/sand_auto_review_classifier_run.rs"
+        "source/host/src/runner/sand_auto_review_classifier_run.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_backend_smart_mode_classifier_exec_contract.rs",
         "source/host/tests/sand_auto_review_classifier_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/auto_review_production_wiring_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host now implements the frozen Dashboard ClassifySandAutoReview protobuf projection, Auth/machine-id-backed Cursor transport, ghost-mode header resolution, enforce-mode default, backend result decoding, and the host-local toolCallId privacy boundary. Exact-HEAD source/host cargo tests pass. Final remains withheld because the shipping Runner composition does not yet bind AutoReviewService/create this executor per turn, and the Rust backend call does not yet expose Grok-equivalent ctx.signal cancellation through the classifier interface."
+      "notes": "Rust Host implements the frozen Dashboard ClassifySandAutoReview protobuf projection, Auth/machine-id-backed Cursor transport, ghost-mode header resolution, enforce-mode default, backend result decoding, and the host-local toolCallId privacy boundary. Shipping Runner now constructs this executor for CloudAgent launch/reply review using the live AutoReview controller. Final remains withheld because classifier cancellation does not yet expose Grok-equivalent ctx.signal abort semantics and the remaining preflight surfaces are not all production-wired."
     },
     {
       "referencePath": "source/host/extensions/automations/backend-relay-source.ts",
