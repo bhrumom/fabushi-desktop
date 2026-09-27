@@ -221,9 +221,19 @@ requirePattern(
   /start_gateway_server\s*\(/,
 );
 requirePattern(
+  "Shipping Host must start production Host extensions",
+  host,
+  /start_production_host_extensions\s*\(/,
+);
+requirePattern(
   "Shipping Host must own Local Exec extension composition",
   host,
-  /start_local_exec_extension\s*\(/,
+  /production_extensions\.local_exec/,
+);
+requirePattern(
+  "Shipping Host must expose Local Exec only through the Host Gateway bridge",
+  host,
+  /local_exec:\s*Some\(local_exec_extension\.gateway_bridge\(\)\)/,
 );
 forbidPattern(
   "Shipping Host must not absorb the Coordinator renderer-port server",
