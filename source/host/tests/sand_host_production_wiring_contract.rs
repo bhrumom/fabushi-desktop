@@ -1,5 +1,5 @@
 use mahayana_host_runtime::host_gateway_api::{
-    CREATE_AGENT_NONCE_LEDGER_CAP, CreateAgentNonceLedger,
+    CREATE_AGENT_NONCE_LEDGER_CAP, CreateAgentNonceLedger, sanitize_create_agent_args,
 };
 use mahayana_host_runtime::sand_host::compute_host_health;
 use serde_json::json;
@@ -50,9 +50,16 @@ fn health_keeps_approval_only_waits_from_refreshing_busy_clock() {
 #[test]
 fn shipping_create_agent_path_consumes_nonce_and_input_policy() {
     assert!(SHIPPING_HOST.contains(r#"method == "createAgent""#));
-    assert!(SHIPPING_HOST.contains("is_sand_agent_purpose"));
-    assert!(SHIPPING_HOST.contains("sanitize_template_id"));
+    assert!(SHIPPING_HOST.contains("sanitize_create_agent_args"));
     assert!(SHIPPING_HOST.contains("create_agent_nonces"));
+
+    let sanitized = sanitize_create_agent_args(&json!({
+        "name": "Agent",
+        "purpose": "not-sand",
+        "templateId": "../escape"
+    }));
+    assert!(sanitized.get("purpose").is_none());
+    assert!(sanitized.get("templateId").is_none());
 
     let mut ledger = CreateAgentNonceLedger::default();
     for index in 0..(CREATE_AGENT_NONCE_LEDGER_CAP + 3) {
