@@ -44,6 +44,13 @@ pub type SharedRoomTurnRunner = Arc<
     dyn Fn(&str, Option<GroupMemberTurnExecutor>) -> Result<(), String> + Send + Sync,
 >;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CrossUserGatewayError {
+    BadRequest(String),
+    Internal(String),
+}
+
+
 /// Shipping CrossUserSharing owner.
 ///
 /// This deliberately composes the frozen Grok dependency direction:
@@ -582,6 +589,159 @@ impl ProductionCrossUserRuntime {
         Ok(())
     }
 
+
+    pub fn call_gateway(
+        &self,
+        method: &str,
+        args: &Value,
+    ) -> Option<Result<Value, CrossUserGatewayError>> {
+        let disabled_error = || {
+            Ok(serde_json::json!({
+                "status": "error",
+                "message": super::extension::SHARING_DISABLED_MESSAGE,
+            }))
+        };
+        let state = || sharing_state_value(&self.service.get_state());
+        let required = |name: &str| {
+            args.get(name)
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_string)
+                .ok_or_else(|| {
+                    CrossUserGatewayError::BadRequest(format!(
+                        "{method} requires {name}"
+                    ))
+                })
+        };
+        Some(match method {
+            "getSharingState" => Ok(state()),
+            "createRoomFromAgent" => {
+                let agent_id = match required("agentId") {
+                    Ok(value) => value,
+                    Err(error) => return Some(Err(error)),
+                };
+                if !self.is_enabled() {
+                    disabled_error()
+                } else {
+                    self.service
+                        .create_room_from_agent(&agent_id)
+                        .map_err(CrossUserGatewayError::Internal)
+                }
+            }
+            "createRoomInvite" => {
+                let room_id = match required("roomId") {
+                    Ok(value) => value,
+                    Err(error) => return Some(Err(error)),
+                };
+                if !self.is_enabled() {
+                    disabled_error()
+                } else {
+                    self.service
+                        .create_room_invite(&room_id)
+                        .map_err(CrossUserGatewayError::Internal)
+                }
+            }
+            "joinSharedRoom" => {
+                let link = match required("link") {
+                    Ok(value) => value,
+                    Err(error) => return Some(Err(error)),
+                };
+                if !self.is_enabled() {
+                    disabled_error()
+                } else {
+                    self.service
+                        .join_room(&link)
+                        .map_err(CrossUserGatewayError::Internal)
+                }
+            }
+            "respondToRoomJoinRequest" => {
+                if !self.is_enabled() {
+                    Ok(state())
+                } else {
+                    self.service
+                        .respond_to_join_request(args)
+                        .map(|value| sharing_state_value(&value))
+                        .map_err(CrossUserGatewayError::Internal)
+                }
+            }
+            "createSharedRoom" => {
+                if !self.is_enabled() {
+                    disabled_error()
+                } else {
+                    self.service
+                        .create_shared_room(args)
+                        .map_err(CrossUserGatewayError::Internal)
+                }
+            }
+            "addOwnAgentToSharedRoom" => {
+                if !self.is_enabled() {
+                    Ok(state())
+                } else {
+                    self.service
+                        .add_own_agent(args)
+                        .map(|value| sharing_state_value(&value))
+                        .map_err(CrossUserGatewayError::Internal)
+                }
+            }
+            "removeOwnAgentFromSharedRoom" => {
+                let room_id = match required("roomId") {
+                    Ok(value) => value,
+                    Err(error) => return Some(Err(error)),
+                };
+                let agent_id = match required("agentId") {
+                    Ok(value) => value,
+                    Err(error) => return Some(Err(error)),
+                };
+                if !self.is_enabled() {
+                    Ok(state())
+                } else {
+                    self.service
+                        .remove_own_agent(&room_id, &agent_id)
+                        .map(|value| sharing_state_value(&value))
+                        .map_err(CrossUserGatewayError::Internal)
+                }
+            }
+            "setSharedRoomTyping" => {
+                let room_id = match required("roomId") {
+                    Ok(value) => value,
+                    Err(error) => return Some(Err(error)),
+                };
+                let Some(is_typing) = args.get("isTyping").and_then(Value::as_bool) else {
+                    return Some(Err(CrossUserGatewayError::BadRequest(
+                        "setSharedRoomTyping requires isTyping".into(),
+                    )));
+                };
+                if self.is_enabled() {
+                    self.service
+                        .set_room_typing(&room_id, is_typing)
+                        .map_err(CrossUserGatewayError::Internal)?;
+                }
+                Ok(Value::Null)
+            }
+            "leaveSharedRoom" => {
+                let room_id = match required("roomId") {
+                    Ok(value) => value,
+                    Err(error) => return Some(Err(error)),
+                };
+                let target_auth_id = args
+                    .get("targetAuthId")
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty());
+                if !self.is_enabled() {
+                    Ok(state())
+                } else {
+                    self.service
+                        .leave_shared_room(&room_id, target_auth_id)
+                        .map(|value| sharing_state_value(&value))
+                        .map_err(CrossUserGatewayError::Internal)
+                }
+            }
+            _ => return None,
+        })
+    }
+
     pub fn service(&self) -> Arc<SandXuserSharingService> {
         Arc::clone(&self.service)
     }
@@ -594,6 +754,16 @@ impl ProductionCrossUserRuntime {
             .service()
             .unsubscribe_from_renewal(self.auth_renewal_subscription);
     }
+}
+
+fn sharing_state_value(state: &super::xuser_sharing_service::SandSharingState) -> Value {
+    serde_json::json!({
+        "isEnabled": state.is_enabled,
+        "selfAuthId": state.self_auth_id,
+        "pendingJoinRequests": state.pending_join_requests,
+        "rooms": state.rooms,
+        "typingUsers": state.typing_users,
+    })
 }
 
 pub fn jwt_subject_from_access_token(token: &str) -> Option<String> {
