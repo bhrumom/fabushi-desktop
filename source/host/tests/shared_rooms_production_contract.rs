@@ -1,4 +1,7 @@
 use std::fs;
+
+use base64::Engine as _;
+use base64::engine::general_purpose::STANDARD;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -12,6 +15,7 @@ use mahayana_host_runtime::groups::remote_room_store::{
     RemoteRoomMember, read_sand_remote_room_config,
 };
 use serde_json::json;
+use url::Url;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -197,6 +201,119 @@ fn mirror_room_materializes_remote_binding_filters_self_and_can_be_revoked() {
     let revoked = read_sand_remote_room_config(sessions.agents_root().join(&room_agent))
         .expect("revoked binding");
     assert_eq!(revoked.is_revoked, Some(true));
+
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn shared_room_ingress_materializes_inline_images_on_shipping_transcript_paths() {
+    let root = temp_root("inline-images");
+    fs::create_dir_all(&root).expect("root");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let manager = TranscriptManager::new(&root, Arc::clone(&sessions));
+    let rooms = manager.shared_rooms();
+
+    let hosted_agent = rooms
+        .ensure_hosted_shared_room(
+            "room-images-hosted",
+            "Hosted images",
+            &[],
+            &[],
+            true,
+        )
+        .expect("ensure hosted")
+        .expect("hosted room agent");
+    rooms
+        .post_shared_room_guest_message(&json!({
+            "roomId": "room-images-hosted",
+            "text": "guest image",
+            "authorAuthId": "remote-human",
+            "authorName": "Remote human",
+            "images": [{
+                "base64": STANDARD.encode(b"hosted-image"),
+                "mediaType": "image/png",
+                "alt": "Hosted"
+            }]
+        }))
+        .expect("post hosted guest image");
+
+    let hosted_entry = sessions
+        .read_agent_transcript_entries(&hosted_agent)
+        .expect("hosted transcript")
+        .into_iter()
+        .find(|entry| entry.get("content").and_then(serde_json::Value::as_str) == Some("guest image"))
+        .expect("hosted image entry");
+    let hosted_url = hosted_entry["images"][0]["url"]
+        .as_str()
+        .expect("hosted image url");
+    let hosted_path = Url::parse(hosted_url)
+        .expect("hosted file url")
+        .to_file_path()
+        .expect("hosted file path");
+    assert_eq!(fs::read(&hosted_path).expect("hosted image bytes"), b"hosted-image");
+    assert_eq!(
+        hosted_path
+            .parent()
+            .and_then(|value| value.file_name())
+            .and_then(|value| value.to_str()),
+        Some("xuser-attachments")
+    );
+    assert_eq!(hosted_entry["images"][0]["alt"], "Hosted");
+
+    let mirror_agent = rooms
+        .ensure_mirror_room(
+            "room-images-mirror",
+            "Mirror images",
+            "remote-host",
+            "Remote host",
+            None,
+            &[],
+            "self",
+        )
+        .expect("mirror room");
+    assert!(rooms
+        .append_mirror_room_entry(
+            &json!({
+                "roomId": "room-images-mirror",
+                "entry": {
+                    "kind": "agent-message",
+                    "entryId": "remote-entry-image",
+                    "agentOwnerAuthId": "remote-owner",
+                    "agentId": "remote-agent",
+                    "authorName": "Remote agent",
+                    "text": "mirror image",
+                    "timestampMs": 42.0,
+                    "images": [{
+                        "base64": STANDARD.encode(b"mirror-image"),
+                        "mediaType": "image/webp",
+                        "alt": "Mirror"
+                    }]
+                }
+            }),
+            "self",
+        )
+        .expect("append mirror image"));
+
+    let mirror_entry = sessions
+        .read_agent_transcript_entries(&mirror_agent)
+        .expect("mirror transcript")
+        .into_iter()
+        .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some("xu-remote-entry-image"))
+        .expect("mirror image entry");
+    let mirror_url = mirror_entry["message"]["images"][0]["url"]
+        .as_str()
+        .expect("mirror image url");
+    let mirror_path = Url::parse(mirror_url)
+        .expect("mirror file url")
+        .to_file_path()
+        .expect("mirror file path");
+    assert_eq!(fs::read(&mirror_path).expect("mirror image bytes"), b"mirror-image");
+    assert!(mirror_path.to_string_lossy().ends_with(".webp"));
+    assert_eq!(mirror_entry["message"]["images"][0]["alt"], "Mirror");
 
     let _ = fs::remove_dir_all(root);
 }

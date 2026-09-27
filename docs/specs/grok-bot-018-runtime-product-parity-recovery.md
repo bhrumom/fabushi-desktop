@@ -2101,3 +2101,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Their old manifest notes incorrectly still listed remote/shared-room delegation itself as missing. Shipping Host now passes `cross_user.remote_executor()` into the single `dispatch_local_group_send` / `GroupChatOrchestrator` path, and shared-room relay-triggered turns reuse the same path.
 - Neither row is promoted. `group-chat-glue.ts` still lacks frozen Cursor member execution, streaming preview cleanup/finalization, reactions, three-attempt DM-preemption redrive, and full trace/activity semantics. `send-group-fanout.ts` still needs the frozen mirror-room send/attachment contract, canonical user-entry publication ordering, Cursor-native execution, and the remaining glue-owned redrive/reaction/preview behavior.
 - This correction keeps the strict ledger pointed at real work instead of an already-closed remote-delegate blocker.
+
+
+### 2026-09-28 Inline shared-room image materialization production closure
+
+- Re-audited frozen `source/host/extensions/transcript/inline-image-materialization.ts` against the current shipping CrossUser/SharedRooms path.
+- The previous manifest blocker is closed: `TranscriptManager` owns one production `SharedRooms` service, and both `post_shared_room_guest_message` (hosted-room inbound human messages) and `append_mirror_room_entry` (mirror-room inbound human/agent messages) call the canonical Rust `materialize_inline_images` owner before durable transcript append.
+- The focused `shared_rooms_production_contract.rs` now verifies both production ingress paths end-to-end: inline base64 bytes are written under the agent's `xuser-attachments` directory, projected as file URLs, preserve MIME-derived extension and alt text, and those URLs are the ones persisted into the canonical transcript entry.
+- Only the frozen `inline-image-materialization.ts` mapping advances from `existing-needs-parity` to `implemented`. No adjacent CrossUser, Group Chat, or Transcript rows are promoted by this change.
