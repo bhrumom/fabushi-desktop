@@ -19,3 +19,25 @@ fn shipping_host_reuses_the_production_settings_owner() {
         "shipping Host must not create a second Settings runtime owner"
     );
 }
+
+
+#[test]
+fn shipping_host_reuses_content_search_local_permission_and_local_exec_owners() {
+    for needle in [
+        "let content_search = Arc::new(start_production_content_search_extension(",
+        "let local_tool_permission = Arc::new(start_local_tool_permission_extension(Arc::clone(&settings)));",
+        "let local_exec = Arc::new(start_local_exec_extension());",
+    ] {
+        assert!(PRODUCTION_EXTENSIONS.contains(needle), "production extension composition must own {needle}");
+    }
+    for needle in [
+        "Arc::clone(&production_extensions.content_search)",
+        "Arc::clone(&production_extensions.local_tool_permission)",
+        "Arc::clone(&production_extensions.local_exec)",
+    ] {
+        assert!(SHIPPING_HOST.contains(needle), "shipping Host must reuse production owner {needle}");
+    }
+    assert_eq!(SHIPPING_HOST.matches("start_production_content_search_extension(").count(), 0);
+    assert_eq!(SHIPPING_HOST.matches("start_local_tool_permission_extension(").count(), 0);
+    assert_eq!(SHIPPING_HOST.matches("start_local_exec_extension(").count(), 0);
+}

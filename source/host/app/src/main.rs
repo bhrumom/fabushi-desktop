@@ -45,9 +45,8 @@ use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
 };
 use mahayana_host_runtime::extensions::memory::agent_state::SandAgentState;
 use mahayana_host_runtime::extensions::telemetry::HostTelemetryProjection;
-use mahayana_host_runtime::extensions::local_exec::extension::start_local_exec_extension;
 use mahayana_host_runtime::extensions::local_tool_permission::extension::{
-    HostLocalToolPermissionExtension, start_local_tool_permission_extension,
+    HostLocalToolPermissionExtension,
 };
 use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_resolution::{
     LocalToolPermissionResolutionArgs, SandLocalToolPermissionResolutionError,
@@ -123,9 +122,7 @@ use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use mahayana_host_runtime::extensions::experiments::HostExperimentsExtension;
-use mahayana_host_runtime::extensions::content_search::extension::{
-    ProductionContentSearchExtension, start_production_content_search_extension,
-};
+use mahayana_host_runtime::extensions::content_search::extension::ProductionContentSearchExtension;
 use mahayana_host_runtime::extensions::trays::extension::HostTraysExtension;
 use mahayana_host_runtime::host_production_extensions::{
     start_production_browser_ua, start_production_host_extensions,
@@ -3705,9 +3702,8 @@ fn main() {
             app_data_dir.join("transcripts"),
         ));
     let settings_extension = Arc::clone(&production_extensions.settings);
-    let local_tool_permission_extension = Arc::new(
-        start_local_tool_permission_extension(Arc::clone(&settings_extension)),
-    );
+    let local_tool_permission_extension =
+        Arc::clone(&production_extensions.local_tool_permission);
     let mut wallpaper_extension = start_wallpaper_extension(
         Arc::clone(&settings_extension),
         Arc::new(|message| eprintln!("mahayana-host-wallpaper {message}")),
@@ -3878,19 +3874,7 @@ fn main() {
         );
     }
     let transcript_manager = transcript_extension.manager();
-    let content_search_logs = host_telemetry.logs.clone();
-    let content_search_extension = Arc::new(start_production_content_search_extension(
-        Arc::clone(&production_extensions.experiments),
-        Arc::new(move |health| {
-            let payload = serde_json::json!({
-                "kind": health.kind,
-                "stage": health.stage,
-                "count": health.count,
-                "errorClass": health.error_class,
-            });
-            let _ = content_search_logs.report_search_index_health(&payload);
-        }),
-    ));
+    let content_search_extension = Arc::clone(&production_extensions.content_search);
     let permission_widget_responses =
         Arc::new(WidgetResponses::new(Arc::clone(&session_workers)));
     let stranded_permission_logs = host_telemetry.logs.clone();
@@ -4034,7 +4018,7 @@ fn main() {
         }
     };
     let gateway_started_at = started_at_ms();
-    let local_exec_extension = Arc::new(start_local_exec_extension());
+    let local_exec_extension = Arc::clone(&production_extensions.local_exec);
     let local_exec_live_bridge = local_exec_extension.bridge();
     local_tool_permission_extension.bind_live_computer_check(Arc::new(move |_| {
         local_exec_live_bridge.check_live_computer_for_ask()

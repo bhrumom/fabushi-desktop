@@ -21,6 +21,9 @@ use crate::extensions::browser_ua::{
 use crate::extensions::cloud_agents::extension::{
     CloudAgentsExtension, start_cloud_agents_extension,
 };
+use crate::extensions::content_search::extension::{
+    ProductionContentSearchExtension, start_production_content_search_extension,
+};
 use crate::extensions::codebase_telemetry::extension::{
     CodebaseTelemetryExtension, start_codebase_telemetry_extension,
 };
@@ -30,6 +33,12 @@ use crate::extensions::experiments::{
 use crate::extensions::extension_ids_generated::HostExtensionId;
 use crate::extensions::managed_setup::extension::{
     ManagedSetupExtension, start_managed_setup_extension,
+};
+use crate::extensions::local_exec::extension::{
+    HostLocalExecExtension, start_local_exec_extension,
+};
+use crate::extensions::local_tool_permission::extension::{
+    HostLocalToolPermissionExtension, start_local_tool_permission_extension,
 };
 use crate::extensions::memory::extension::HostMemoryExtension;
 use crate::extensions::memory::production::start_production_memory_extension;
@@ -61,6 +70,7 @@ use crate::production_binding_providers::production_cloud_agent_trace_converter;
 /// until their real production owners exist.
 pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Auth,
+    HostExtensionId::ContentSearch,
     HostExtensionId::Settings,
     HostExtensionId::Experiments,
     HostExtensionId::CodebaseTelemetry,
@@ -74,6 +84,8 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::BoxLifecycle,
     HostExtensionId::WebauthnProxy,
     HostExtensionId::BrowserUa,
+    HostExtensionId::LocalToolPermission,
+    HostExtensionId::LocalExec,
 ];
 
 pub struct ProductionBrowserUaLog;
@@ -101,6 +113,9 @@ pub struct ProductionHostExtensions {
     pub auth: Arc<HostAuthExtension>,
     pub settings: Arc<SettingsService>,
     pub experiments: Arc<HostExperimentsExtension>,
+    pub content_search: Arc<ProductionContentSearchExtension>,
+    pub local_tool_permission: Arc<HostLocalToolPermissionExtension>,
+    pub local_exec: Arc<HostLocalExecExtension>,
     _settings_feature_override_subscription:
         SettingsSubscription<dyn Fn(BTreeMap<String, bool>) + Send + Sync + 'static>,
     pub codebase_telemetry: CodebaseTelemetryExtension,
@@ -139,6 +154,21 @@ pub fn start_production_host_extensions(
     );
     let settings = start_settings_extension();
     let experiments = Arc::new(start_host_experiments_extension());
+    let content_search_logs = telemetry_logs.clone();
+    let content_search = Arc::new(start_production_content_search_extension(
+        Arc::clone(&experiments),
+        Arc::new(move |health| {
+            let payload = serde_json::json!({
+                "kind": health.kind,
+                "stage": health.stage,
+                "count": health.count,
+                "errorClass": health.error_class,
+            });
+            let _ = content_search_logs.report_search_index_health(&payload);
+        }),
+    ));
+    let local_tool_permission = Arc::new(start_local_tool_permission_extension(Arc::clone(&settings)));
+    let local_exec = Arc::new(start_local_exec_extension());
     let experiments_for_settings = Arc::clone(&experiments);
     let settings_feature_override_subscription =
         settings.subscribe_to_feature_flag_overrides(Arc::new(move |overrides| {
@@ -200,6 +230,9 @@ pub fn start_production_host_extensions(
         auth,
         settings,
         experiments,
+        content_search,
+        local_tool_permission,
+        local_exec,
         _settings_feature_override_subscription: settings_feature_override_subscription,
         codebase_telemetry,
         notify_bus,
