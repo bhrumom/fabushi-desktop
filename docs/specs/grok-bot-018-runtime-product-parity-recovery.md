@@ -1605,3 +1605,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `inference_service` preserves the Cursor-vs-routed-provider ownership split and provider usage projection. `sand_labeling` preserves previous-request lineage, per-request dedupe, summarization exclusion and post-turn admission rules.
 - The three mappings advance only from `planned` to `existing-needs-parity`. Remaining blockers are live authenticated Cursor prompt transport, privacy/media integration, generated inference/labeling protobuf bindings, core-message conversion, diagnostics and production Host extension-registry wiring.
 - Manifest after this slice: **1,825 implemented / 115 existing-needs-parity / 62 planned** (**177 non-final**). The strict final architecture gate must remain red until those and the other non-final rows are actually closed.
+
+### 2026-09-27 csnaps process parity closure
+
+- Exact starting HEAD for this slice: `a5e825321736b318275f1b1d51a592ead1838056`.
+- The frozen Grok `source/host/extensions/codebase-telemetry/csnaps-process.ts` responsibility is now implemented as the independent Host leaf `source/host/src/extensions/codebase_telemetry/csnaps_process.rs` rather than being folded into the protocol or service layers.
+- The Rust process owner preserves the reference boundaries: environment-cleared child spawn, ping/initialize handshake, framed stdin/stdout transport, monotonic request IDs, strict response-ID correlation, per-operation deadlines, terminal failure propagation, apply/snapshot/upload/flush methods, and bounded shutdown/termination.
+- `source/host/tests/csnaps_process_contract.rs` adds executable fake-process coverage for the normal operation sequence, unknown request IDs, request timeout termination, and exit-description semantics. The architecture manifest advances only this module from `planned` to `implemented`; adapter/service/extension/privacy/process integration remain independently gated.
+- Local Cargo execution on the attached VPS is blocked by a full root filesystem before dependency unpacking; therefore GitHub Actions exact-HEAD Rust runtime is the authoritative compile/test gate for this slice.

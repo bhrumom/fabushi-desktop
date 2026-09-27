@@ -11463,12 +11463,19 @@
       "targetPath": "source/host/src/extensions/codebase_telemetry/csnaps_process.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "947746e9c18ee05cb1ba23a14d2f5b78acb529b5",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/codebase_telemetry/csnaps_process.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/csnaps_process_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Frozen Grok csnaps process is ported as a distinct Rust Host leaf: env-cleared child spawn, ping+initialize handshake, big-endian framed request routing, monotonic request IDs, strict response correlation, operation deadlines, fail-closed terminal error propagation, apply/snapshot/upload/flush operations, graceful shutdown with forced termination fallback, and deterministic exit descriptions. Contract tests exercise handshake/operations, unknown IDs, deadline termination, and close semantics."
     },
     {
       "referencePath": "source/host/extensions/codebase-telemetry/csnaps-protocol.ts",
