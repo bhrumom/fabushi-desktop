@@ -60,6 +60,7 @@ use mahayana_host_runtime::extensions::session::box_handoff_service::{
 };
 use mahayana_host_runtime::extensions::session::extension::start_session_extension;
 use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
+use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
 use mahayana_host_runtime::extensions::secrets::extension::{
     HostSecretsExtension, SecretsGatewayError, dispatch_secrets_gateway_call,
     start_secrets_extension,
@@ -708,6 +709,7 @@ struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
     auth: Arc<HostAuthExtension>,
     experiments: Arc<HostExperimentsExtension>,
+    settings: Arc<SettingsService>,
     content_search: Arc<ProductionContentSearchExtension>,
     events: GatewayEventHub,
     routed_tool_relay: Arc<CoordinatorToolRelay>,
@@ -744,6 +746,7 @@ struct LocalRoutedRunnerDeps {
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
     experiments: Arc<HostExperimentsExtension>,
+    settings: Arc<SettingsService>,
     session_workers: Arc<ProductionSessionWorkers>,
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
@@ -768,6 +771,7 @@ impl UnifiedGatewayApi {
             data_dir: self.data_dir.clone(),
             request_context: Arc::clone(&self.request_context),
             experiments: Arc::clone(&self.experiments),
+            settings: Arc::clone(&self.settings),
             session_workers: Arc::clone(&self.session_workers),
             runner_registry: Arc::clone(&self.runner_registry),
             ack_obligations: Arc::clone(&self.ack_obligations),
@@ -925,6 +929,7 @@ fn run_local_group_member_turn(
         deps.auth,
         deps.auto_review,
         deps.experiments,
+        deps.settings,
         Arc::clone(&deps.session_workers),
         Arc::clone(&deps.runner_registry),
         deps.ack_obligations,
@@ -1087,6 +1092,7 @@ fn run_local_automation_turn(
         deps.auth,
         deps.auto_review,
         deps.experiments,
+        deps.settings,
         Arc::clone(&deps.session_workers),
         Arc::clone(&deps.runner_registry),
         deps.ack_obligations,
@@ -1583,6 +1589,7 @@ fn start_routed_provider_task(
     auth: Arc<HostAuthExtension>,
     auto_review: Arc<HostAutoReviewExtension>,
     experiments: Arc<HostExperimentsExtension>,
+    settings: Arc<SettingsService>,
     session_workers: Arc<ProductionSessionWorkers>,
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
@@ -2124,8 +2131,22 @@ fn start_routed_provider_task(
             );
             let worker_provider_usage = Arc::new(Mutex::new(None::<ProviderTokenUsage>));
             let usage_store = Arc::clone(&worker_provider_usage);
+            let usage_settings = Arc::clone(&settings);
+            let usage_provider = provider;
             let usage_sink: Arc<dyn Fn(ProviderTokenUsage) + Send + Sync> =
                 Arc::new(move |usage| {
+                    if let Err(error) = usage_settings.record_inference_usage(
+                        usage_provider.as_str(),
+                        Some(usage.input_tokens as f64),
+                        Some(usage.output_tokens as f64),
+                        Some(usage.cache_read_tokens as f64),
+                        Some(usage.cache_write_tokens as f64),
+                    ) {
+                        eprintln!(
+                            "mahayana-host inference_usage_persist_failed provider={} error={error}",
+                            usage_provider.as_str(),
+                        );
+                    }
                     if let Ok(mut stored) = usage_store.lock() {
                         *stored = Some(merge_provider_token_usage(stored.take(), usage));
                     }
@@ -2848,6 +2869,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.auth),
                 Arc::clone(&self.auto_review),
                 Arc::clone(&self.experiments),
+                Arc::clone(&self.settings),
                 Arc::clone(&self.session_workers),
                 Arc::clone(&self.runner_registry),
                 Arc::clone(&self.ack_obligations),
@@ -3997,6 +4019,7 @@ fn main() {
             host_tx: host_tx.clone(),
             auth: Arc::clone(&production_extensions.auth),
             experiments: Arc::clone(&production_extensions.experiments),
+            settings: Arc::clone(&settings_extension),
             content_search: Arc::clone(&content_search_extension),
             events: gateway_events.clone(),
             routed_tool_relay: Arc::clone(&routed_tool_relay),
