@@ -11631,12 +11631,22 @@
       "targetPath": "source/host/src/extensions/content_search/search_index_worker.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "a741cd36d6486ab3dbc83111a585b4970c87ed53",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/content_search/search_index_worker.rs",
+        "source/host/src/extensions/content_search/search_index_writer.rs",
+        "source/host/src/extensions/content_search/search_index_db.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/search_index_worker_contract.rs",
+        "source/host/tests/search_index_writer_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Host preserves the frozen search-index worker fault boundary as a named OS thread with typed request/response channels, request-id correlation, canonical writer ownership, schema startup, fail-closed post/termination behavior, and SQLite corruption classification. The worker remains distinct from the service and writer rather than being folded into one ContentSearch object."
     },
     {
       "referencePath": "source/host/extensions/content-search/search-index-writer.ts",

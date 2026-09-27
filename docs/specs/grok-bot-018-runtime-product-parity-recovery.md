@@ -1793,3 +1793,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added `search_index_writer_contract` covering message/media projection, body/timestamp/dimension normalization, URL filename decode, MIME/kind classification, store fingerprint reindex, stale-agent reconciliation, delete/clear and job dispatch.
 - This row advances from `planned` to `implemented`; worker/service remain separately mapped and must call this canonical writer.
 - Manifest after this owner: **1,836 implemented / 128 existing-needs-parity / 38 planned** (**166 non-final**).
+
+
+### 2026-09-27 Content-search worker fault boundary
+
+- Exact starting HEAD: `5979c4b532dd2bbdaa6def2bc27d3e75e0484532`.
+- Re-read frozen `source/host/extensions/content-search/search-index-worker.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `search_index_worker.rs` as a **separate named OS-thread fault boundary**, not a method on SearchIndexService. Startup owns a distinct DB connection + canonical Writer, ensures schema, correlates typed request IDs, returns structured success/failure, classifies SQLite corrupt/not-a-database errors, and closes Writer/DB on stop.
+- Added `search_index_worker_contract` covering request correlation + persisted execution, idempotent termination/fail-closed post behavior, and corruption-code classification.
+- This row advances from `planned` to `implemented`; SearchIndexService remains separately mapped and will supervise this worker rather than absorb it.
+- Manifest after this boundary: **1,837 implemented / 128 existing-needs-parity / 37 planned** (**165 non-final**).
