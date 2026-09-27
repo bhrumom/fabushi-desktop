@@ -1667,3 +1667,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Exact-tree contracts passed together: `host_bundle_upgrade_contract` **4/4**, `host_upgrade_service_contract` **4/4**, `host_upgrade_extension_contract` **3/3**.
 - Both rows advance from `planned` to `existing-needs-parity`; final remains blocked on production registry peer adapters plus real marker/update polling wake composition.
 - Manifest becomes **1,833 implemented / 119 existing-needs-parity / 50 planned** (**169 non-final**).
+
+
+### 2026-09-27 Pressure CPU profiler state-machine slice
+
+- Exact starting HEAD: `d7e4b3a907964bbce519f2ee5f3e2d3ce5b511ed`.
+- Re-read frozen `telemetry/pressure-cpu-profiler.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `pressure_cpu_profiler.rs` with sustained-pressure admission, minimum capture interval, capture deadline, dynamic knob overrides, bounded retention, profile write/callback, and idempotent disposal behind a `CpuProfilerBackend` boundary.
+- `pressure_cpu_profiler_contract` passed **3/3** on the exact working tree.
+- The row advances from `planned` to `existing-needs-parity`; final remains blocked on a real production cross-platform sampling backend plus production pressure/tick lifecycle wiring.
+- Manifest becomes **1,833 implemented / 120 existing-needs-parity / 49 planned** (**169 non-final**).

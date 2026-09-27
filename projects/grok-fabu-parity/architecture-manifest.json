@@ -14405,12 +14405,18 @@
       "targetPath": "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "dd253148c51ff74f6c10e42e9b068a18eeb5105e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/pressure_cpu_profiler_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns the frozen pressure-profile state machine: sustained-pressure admission, minimum capture interval, capture duration, live knob overrides, retention pruning, profile write and dispose semantics behind a CpuProfilerBackend boundary. Final remains withheld until a real cross-platform production CPU-profiler backend is bound and the production pressure/tick telemetry lifecycle invokes this owner."
     },
     {
       "referencePath": "source/host/extensions/telemetry/queue-telemetry-mappers.ts",
