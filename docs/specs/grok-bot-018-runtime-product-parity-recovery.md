@@ -1750,3 +1750,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `mcp_extension_contract` passed **3/3** after that repair.
 - The row advances from `planned` to `existing-needs-parity`; final remains blocked on production Auth/Experiments/ForeverBox/Settings/Telemetry adapters plus the real `McpHostService`.
 - Combined manifest after preserving all concurrent slices: **1,833 implemented / 127 existing-needs-parity / 42 planned** (**169 non-final**).
+
+### 2026-09-27 MCP service semantic-owner slice
+
+- Exact starting HEAD: a2862f927f7febaddc845c91a41361ad4e36386a.
+- Re-read frozen source/host/extensions/mcp/mcp-service.ts at Grok baseline a9f633e09d49a85829b8236331b9e21f7e612634.
+- Added Rust mcp_service.rs as the service owner above box_mcp_exec and plugin_skills: installed server/plugin projections, effective-install attribution, forced catalog refresh fallback, install/uninstall Skill + legacy-reference coordination, kick-only Box discovery and terminal status follow-up fanout, auth/server subscriptions, external-auth forwarding and idempotent disposal.
+- A first implementation used a raw pointer only for unsubscribe lifetime. It was rejected before commit and replaced with Arc<Mutex<ServiceState>>; the committed implementation contains no unsafe subscription path.
+- mcp_service_contract passed **4/4** after that repair.
+- The row advances from planned to existing-needs-parity; final remains blocked on mcp/production.ts binding the authenticated Dashboard/plugin-manager, ForeverBox/CapableBox execution, Settings/Experiments and Telemetry adapters.
+- Manifest becomes **1,833 implemented / 128 existing-needs-parity / 41 planned** (**169 non-final**).

@@ -12678,12 +12678,20 @@
       "targetPath": "source/host/src/extensions/mcp/mcp_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "93399693a169d6ce3914b42b8fd885acc5a9ca42",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/mcp/mcp_service.rs",
+        "source/host/src/extensions/mcp/plugin_skills.rs",
+        "source/host/src/extensions/mcp/box_mcp_exec.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/mcp_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns the frozen MCP service semantic boundary: installed server and plugin projection, effective-install attribution, detail force-refresh fallback, install/uninstall plugin-skill/live-reference coordination, Box kick-only discovery plus terminal follow-up fanout, auth-completion/server-update listeners, external-auth completion forwarding and idempotent disposal. Listener state is Arc-owned with no unsafe raw pointers. Final remains withheld until production.rs supplies authenticated Dashboard/plugin-manager, ForeverBox/CapableBox execution, settings/experiments and telemetry adapters."
     },
     {
       "referencePath": "source/host/extensions/mcp/plugin-skills-cache.ts",
