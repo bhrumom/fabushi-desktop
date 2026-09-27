@@ -78,7 +78,8 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
 use mahayana_host_runtime::extensions::transcript::group_chat_glue::GroupChatGlue;
 use mahayana_host_runtime::extensions::transcript::group_chat_orchestrator::GroupMemberTurnRequest;
 use mahayana_host_runtime::extensions::cross_user_sharing::production::{
-    ProductionCrossUserRuntime, RemoteRequestedTurnRunner, SharedRoomTurnRunner,
+    CrossUserGatewayError, ProductionCrossUserRuntime, RemoteRequestedTurnRunner,
+    SharedRoomTurnRunner,
 };
 use mahayana_host_runtime::groups::group_chat::{GroupDescription, GroupMember};
 use mahayana_host_runtime::extensions::transcript::send_group_fanout::{
@@ -2509,6 +2510,16 @@ impl GatewayApi for UnifiedGatewayApi {
 
         if let Some(result) = dispatch_secrets_gateway_call(&self.secrets, method, &args) {
             return result.map_err(map_secrets_gateway_error);
+        }
+        if let Some(result) = self.cross_user.call_gateway(method, &args) {
+            return result.map_err(|error| match error {
+                CrossUserGatewayError::BadRequest(message) => {
+                    GatewayCommandError::BadRequest(message)
+                }
+                CrossUserGatewayError::Internal(message) => {
+                    GatewayCommandError::Internal(message)
+                }
+            });
         }
         if method == "isAgentNetworkEnabled" {
             return Ok(serde_json::Value::Bool(
