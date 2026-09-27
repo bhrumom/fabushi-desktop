@@ -14457,13 +14457,19 @@
       "referenceBlobSha": "1ad776b5951d0befee087ef1510d3fd1509161b9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": [],
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/event_loop_telemetry.rs",
+        "source/host/src/extensions/telemetry/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/event_loop_telemetry_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
       "evidence": [
         "source/host/tests/event_loop_telemetry_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host owns frozen event-loop emission thresholds and telemetry projection. Final parity still requires a production event-loop delay/utilization sampler wired to Host lifecycle without reintroducing renderer polling."
+      "notes": "Rust Host now owns the frozen window/pressure/heartbeat projection plus a production lifecycle sampler. Because the Mahayana Host has no Node event loop, the platform-fit Rust implementation samples scheduler overrun at the frozen 20ms cadence and normalized process CPU occupancy, aggregates p50/p95/max over the frozen 60s window, emits pressure/heartbeat through the shipping Host Telemetry extension, and stops with the extension lifecycle. A focused live-window contract was added. Status remains existing-needs-parity until exact-HEAD Rust Host verification for commit 10807c4a010a65dd43ff3348c3bdb8101ea8dd52 passes; no bulk status promotion is performed."
     },
     {
       "referencePath": "source/host/extensions/telemetry/experiments-diagnostic-telemetry.ts",
