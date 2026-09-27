@@ -14,6 +14,18 @@ pub struct SandSharingState {
     pub self_auth_id: Option<String>,
     pub pending_join_requests: Vec<Value>,
     pub rooms: Vec<XuserRoom>,
+    pub typing_users: Vec<Value>,
+}
+
+pub trait XuserSharingManager: Send + Sync {
+    fn install_room(&self, room: &XuserRoom, self_auth_id: Option<&str>) -> Result<(), String>;
+    fn mark_mirror_room_revoked(&self, room_id: &str) -> Result<(), String>;
+    fn post_shared_room_guest_message(&self, event: &Value) -> Result<(), String>;
+    fn append_mirror_room_entry(
+        &self,
+        event: &Value,
+        self_auth_id: &str,
+    ) -> Result<bool, String>;
 }
 
 #[derive(Clone)]
@@ -52,6 +64,7 @@ pub struct SandXuserSharingService {
     relay: Arc<SandXuserRelayClient>,
     relay_driver: Mutex<Option<Arc<SandXuserRelayDriver>>>,
     entry_publisher: Mutex<Option<Arc<SandXuserEntryPublisher>>>,
+    manager: Mutex<Option<Arc<dyn XuserSharingManager>>>,
     state: Mutex<SandSharingState>,
     started: AtomicBool,
 }
@@ -61,6 +74,7 @@ impl SandXuserSharingService {
             relay,
             relay_driver: Mutex::new(None),
             entry_publisher: Mutex::new(None),
+            manager: Mutex::new(None),
             state: Mutex::new(SandSharingState::default()),
             started: AtomicBool::new(false),
         }
@@ -79,6 +93,21 @@ impl SandXuserSharingService {
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(publisher);
     }
 
+    pub fn bind_manager(&self, manager: Arc<dyn XuserSharingManager>) {
+        *self
+            .manager
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(manager);
+    }
+
+    fn manager(&self) -> Option<Arc<dyn XuserSharingManager>> {
+        self.manager
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+            .cloned()
+    }
+
     pub fn build_manager_delegate(self: &Arc<Self>) -> SandXuserManagerDelegate {
         SandXuserManagerDelegate {
             service: Arc::downgrade(self),
@@ -92,6 +121,7 @@ impl SandXuserSharingService {
             if !enabled {
                 s.pending_join_requests.clear();
                 s.rooms.clear();
+                s.typing_users.clear();
             }
         }
         if !enabled {
@@ -182,10 +212,22 @@ impl SandXuserSharingService {
         )
         .map_err(|e| e.to_string())?;
         let result = reconcile_rooms(&current.rooms, remote, current.self_auth_id.as_deref());
-        let mut s = self.state.lock().unwrap_or_else(|p| p.into_inner());
-        s.pending_join_requests = pending;
-        s.rooms = result.rooms;
-        Ok(s.clone())
+        let rooms = result.rooms.clone();
+        let revoked_room_ids = result.revoked_room_ids.clone();
+        {
+            let mut s = self.state.lock().unwrap_or_else(|p| p.into_inner());
+            s.pending_join_requests = pending;
+            s.rooms = result.rooms;
+        }
+        if let Some(manager) = self.manager() {
+            for room_id in revoked_room_ids {
+                manager.mark_mirror_room_revoked(&room_id)?;
+            }
+            for room in &rooms {
+                manager.install_room(room, current.self_auth_id.as_deref())?;
+            }
+        }
+        Ok(self.get_state())
     }
     pub fn create_room_from_agent(&self, agent_id: &str) -> Result<Value, String> {
         if !self.get_state().is_enabled {
@@ -274,7 +316,7 @@ impl SandXuserSharingService {
         };
         let parsed: XuserRoom = serde_json::from_value(room.clone()).map_err(|e| e.to_string())?;
         let room_id = parsed.room_id.clone();
-        self.install_room(parsed);
+        self.install_room(parsed)?;
         Ok(serde_json::json!({ "status": "ok", "roomId": room_id }))
     }
 
@@ -349,16 +391,109 @@ impl SandXuserSharingService {
         self.stop();
     }
 
-    fn install_room_value(&self, room: &Value) -> Result<(), String> {
-        let parsed: XuserRoom = serde_json::from_value(room.clone()).map_err(|e| e.to_string())?;
-        self.install_room(parsed);
-        Ok(())
+    pub fn handle_event(&self, event: &Value) -> Result<bool, String> {
+        if !self.get_state().is_enabled {
+            return Ok(true);
+        }
+        match event.get("kind").and_then(Value::as_str) {
+            Some("room-join-request") => {
+                let Some(request) = event.get("request").filter(|value| value.is_object()) else {
+                    return Ok(true);
+                };
+                let request_id = request.get("requestId").and_then(Value::as_str);
+                let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
+                if request_id.is_none_or(|id| {
+                    !state.pending_join_requests.iter().any(|current| {
+                        current.get("requestId").and_then(Value::as_str) == Some(id)
+                    })
+                }) {
+                    state.pending_join_requests.push(request.clone());
+                }
+                Ok(true)
+            }
+            Some("room-join-decision") => {
+                if event.get("isApproved").and_then(Value::as_bool) == Some(true) {
+                    if let Some(room) = event.get("room") {
+                        self.install_room_value(room)?;
+                    }
+                }
+                Ok(true)
+            }
+            Some("room-upsert") => {
+                if let Some(room) = event.get("room") {
+                    self.install_room_value(room)?;
+                }
+                Ok(true)
+            }
+            Some("room-typing") => {
+                let Some(user) = event.get("user").filter(|value| value.is_object()) else {
+                    return Ok(true);
+                };
+                let room_id = user.get("roomId").and_then(Value::as_str).unwrap_or_default();
+                let auth_id = user.get("authId").and_then(Value::as_str).unwrap_or_default();
+                if room_id.is_empty() || auth_id.is_empty() {
+                    return Ok(true);
+                }
+                let key_matches = |value: &Value| {
+                    value.get("roomId").and_then(Value::as_str) == Some(room_id)
+                        && value.get("authId").and_then(Value::as_str) == Some(auth_id)
+                };
+                let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
+                state.typing_users.retain(|value| !key_matches(value));
+                if event.get("isTyping").and_then(Value::as_bool) == Some(true) {
+                    state.typing_users.push(user.clone());
+                }
+                Ok(true)
+            }
+            Some("room-post") => {
+                if let Some(manager) = self.manager() {
+                    manager.post_shared_room_guest_message(event)?;
+                }
+                Ok(true)
+            }
+            Some("room-entry") => {
+                let Some(self_auth_id) = self.get_state().self_auth_id else {
+                    return Ok(false);
+                };
+                let Some(manager) = self.manager() else {
+                    return Ok(false);
+                };
+                manager.append_mirror_room_entry(event, &self_auth_id)
+            }
+            Some("member-left") | Some("room-ended") => {
+                if let Some(room_id) = event.get("roomId").and_then(Value::as_str) {
+                    if let Some(manager) = self.manager() {
+                        manager.mark_mirror_room_revoked(room_id)?;
+                    }
+                    self.state
+                        .lock()
+                        .unwrap_or_else(|p| p.into_inner())
+                        .rooms
+                        .retain(|room| room.room_id != room_id);
+                    let _ = self.reconcile_share_state();
+                }
+                Ok(true)
+            }
+            _ => Ok(true),
+        }
     }
 
-    fn install_room(&self, room: XuserRoom) {
-        let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
-        state.rooms.retain(|current| current.room_id != room.room_id);
-        state.rooms.push(room);
-        state.rooms.sort_by(|left, right| left.room_id.cmp(&right.room_id));
+    pub fn install_room_value(&self, room: &Value) -> Result<(), String> {
+        let parsed: XuserRoom = serde_json::from_value(room.clone()).map_err(|e| e.to_string())?;
+        self.install_room(parsed)
+    }
+
+    fn install_room(&self, room: XuserRoom) -> Result<(), String> {
+        let self_auth_id = self.get_state().self_auth_id;
+        {
+            let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
+            state.rooms.retain(|current| current.room_id != room.room_id);
+            state.rooms.push(room.clone());
+            state.rooms.sort_by(|left, right| left.room_id.cmp(&right.room_id));
+        }
+        if let Some(manager) = self.manager() {
+            manager.install_room(&room, self_auth_id.as_deref())?;
+        }
+        Ok(())
     }
 }
