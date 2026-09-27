@@ -215,10 +215,10 @@ impl SandXuserRelayRuntime {
         let gate_now = Arc::clone(&now_ms);
         let gate_connected = Arc::clone(&is_notify_connected);
         let gate_safety_poll = Arc::clone(&is_notify_safety_poll_enabled);
-        let gate = NotifyDrainGate::new(
-            Box::new(move || gate_now()),
-            Box::new(move || gate_connected()),
-            Box::new(move || gate_safety_poll()),
+        let gate: RelayNotifyGate = NotifyDrainGate::new(
+            Box::new(move || gate_now()) as RelayGateClock,
+            Box::new(move || gate_connected()) as RelayGateBool,
+            Box::new(move || gate_safety_poll()) as RelayGateBool,
         );
         Self {
             client,
