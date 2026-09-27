@@ -16,13 +16,16 @@ use super::codebase_telemetry_adapter::{
     AdapterCloseResult, CsnapsAdapterError, CsnapsCodebaseTelemetryAdapter,
 };
 use super::codebase_telemetry_host::{
-    AuthListener, AuthSubscription, SandCodebaseTelemetryHost,
+    AuthListener, SandCodebaseTelemetryHost,
 };
 use super::privacy_mode::TelemetryAuth;
 
+pub trait ServiceSubscription: Send {}
+impl<T: Send> ServiceSubscription for T {}
+
 pub trait CodebaseTelemetryHostApi: Send + Sync {
     fn auth(&self) -> Option<TelemetryAuth>;
-    fn subscribe_auth(&self, listener: AuthListener) -> AuthSubscription;
+    fn subscribe_auth(&self, listener: AuthListener) -> Box<dyn ServiceSubscription>;
     fn desired_codebases(&self) -> Vec<Value>;
     fn create_adapter(
         &self,
@@ -36,8 +39,8 @@ impl CodebaseTelemetryHostApi for SandCodebaseTelemetryHost {
         SandCodebaseTelemetryHost::auth(self)
     }
 
-    fn subscribe_auth(&self, listener: AuthListener) -> AuthSubscription {
-        SandCodebaseTelemetryHost::subscribe_auth(self, listener)
+    fn subscribe_auth(&self, listener: AuthListener) -> Box<dyn ServiceSubscription> {
+        Box::new(SandCodebaseTelemetryHost::subscribe_auth(self, listener))
     }
 
     fn desired_codebases(&self) -> Vec<Value> {
@@ -75,7 +78,7 @@ pub struct CodebaseTelemetryService {
     restart_delay: Duration,
     shutdown_deadline: Duration,
     logger: ServiceLog,
-    auth_subscription: Mutex<Option<AuthSubscription>>,
+    auth_subscription: Mutex<Option<Box<dyn ServiceSubscription>>>,
     event_subscriptions: Mutex<Vec<HostEventSubscription>>,
 }
 
