@@ -1,0 +1,139 @@
+use std::sync::{Arc, Mutex};
+
+use mahayana_host_runtime::extensions::inference::cursor_web_tools::{
+    CursorWebBackend, WebDocument, WebFetchResponse, WebSearchRequest, WebSearchResponse,
+};
+use mahayana_host_runtime::extensions::inference::extension::{
+    AgentInferenceOwner, InferenceExtensionRuntime,
+};
+use mahayana_host_runtime::extensions::inference::production::{
+    CursorWebBackendFactory, InferenceAuth, InferencePortFactory, InferenceProductionExtras,
+    ModelExperimentApplied, RequestIdObserver,
+};
+
+struct FakeAuth;
+impl InferenceAuth for FakeAuth {
+    fn access_token(&self) -> Result<String, String> { Ok("token-a".into()) }
+    fn machine_id(&self) -> String { "machine-a".into() }
+}
+
+struct FakeOwner;
+impl AgentInferenceOwner for FakeOwner {}
+
+#[derive(Default)]
+struct FakePortFactory {
+    auth_seen: Mutex<Vec<(String, String)>>,
+}
+impl InferencePortFactory for FakePortFactory {
+    fn create_host_inference(
+        &self,
+        auth: Arc<dyn InferenceAuth>,
+        on_model_experiment_applied: ModelExperimentApplied,
+    ) -> Arc<dyn AgentInferenceOwner> {
+        self.auth_seen.lock().unwrap().push((auth.access_token().unwrap(), auth.machine_id()));
+        on_model_experiment_applied();
+        Arc::new(FakeOwner)
+    }
+}
+
+#[derive(Default)]
+struct FakeBackendFactory {
+    auth_seen: Mutex<Vec<(String, String)>>,
+}
+impl CursorWebBackendFactory for FakeBackendFactory {
+    fn create_backend(
+        &self,
+        auth: Arc<dyn InferenceAuth>,
+        on_request_id: Option<RequestIdObserver>,
+    ) -> Arc<dyn CursorWebBackend> {
+        self.auth_seen.lock().unwrap().push((auth.access_token().unwrap(), auth.machine_id()));
+        if let Some(observer) = on_request_id { observer("req-42"); }
+        Arc::new(FakeBackend)
+    }
+}
+
+struct FakeBackend;
+impl CursorWebBackend for FakeBackend {
+    fn run_web_search(&self, request: WebSearchRequest) -> Result<WebSearchResponse, String> {
+        assert_eq!(request.search_term, "Grok architecture");
+        assert_eq!(request.explanation.as_deref(), Some("parity"));
+        assert_eq!(request.model_id, "grok-4.5");
+        Ok(WebSearchResponse {
+            answer: "answer".into(),
+            documents: vec![WebDocument {
+                url: "https://example.invalid".into(),
+                title: "doc".into(),
+                text: "body".into(),
+            }],
+        })
+    }
+
+    fn run_web_fetch(&self, url: &str) -> Result<WebFetchResponse, String> {
+        match url {
+            "https://ok.invalid" => Ok(WebFetchResponse::Success { content: "page".into() }),
+            "https://timeout.invalid" => Ok(WebFetchResponse::Error {
+                error: "timeout".into(),
+                is_timeout: Some(true),
+            }),
+            _ => Ok(WebFetchResponse::MissingResult),
+        }
+    }
+}
+
+#[test]
+fn inference_extension_readiness_and_experiment_notifications_match_frozen_boundary() {
+    let runtime = InferenceExtensionRuntime::new(FakeOwner, Arc::new(|| Some("token".to_string())));
+    assert!(runtime.is_ready(false));
+
+    let offline = InferenceExtensionRuntime::new(FakeOwner, Arc::new(|| None));
+    assert!(!offline.is_ready(false));
+    assert!(offline.is_ready(true));
+
+    let applied = Arc::new(Mutex::new(0usize));
+    let counter = Arc::clone(&applied);
+    runtime.on_model_experiment_applied(Arc::new(move || *counter.lock().unwrap() += 1));
+    runtime.notify_model_experiment_applied();
+    assert_eq!(*applied.lock().unwrap(), 1);
+}
+
+#[test]
+fn production_extras_share_auth_and_forward_request_identity_to_web_services() {
+    let port_factory = Arc::new(FakePortFactory::default());
+    let backend_factory = Arc::new(FakeBackendFactory::default());
+    let extras = InferenceProductionExtras::new(
+        Arc::new(FakeAuth),
+        port_factory.clone(),
+        backend_factory.clone(),
+    );
+
+    let applied = Arc::new(Mutex::new(0usize));
+    let applied_counter = Arc::clone(&applied);
+    let _port = extras.create_port(Arc::new(move || *applied_counter.lock().unwrap() += 1));
+    assert_eq!(*applied.lock().unwrap(), 1);
+
+    let request_ids = Arc::new(Mutex::new(Vec::<String>::new()));
+    let request_ids_sink = Arc::clone(&request_ids);
+    let search = extras.create_web_search(
+        "grok-4.5",
+        Some(Arc::new(move |request_id| {
+            request_ids_sink.lock().unwrap().push(request_id.to_string())
+        })),
+    );
+    let response = search.search("Grok architecture", Some("parity".into())).expect("search");
+    assert_eq!(response.answer, "answer");
+    assert_eq!(response.documents.len(), 1);
+
+    let fetch = extras.create_web_fetch(None);
+    assert_eq!(fetch.fetch("https://ok.invalid").unwrap().content.as_deref(), Some("page"));
+    let timeout = fetch.fetch("https://timeout.invalid").unwrap();
+    assert_eq!(timeout.error.as_deref(), Some("timeout"));
+    assert_eq!(timeout.is_timeout, Some(true));
+    assert_eq!(
+        fetch.fetch("https://missing.invalid").unwrap().error.as_deref(),
+        Some("Web fetch returned no result.")
+    );
+
+    assert_eq!(request_ids.lock().unwrap().as_slice(), ["req-42"]);
+    assert_eq!(port_factory.auth_seen.lock().unwrap().len(), 1);
+    assert_eq!(backend_factory.auth_seen.lock().unwrap().len(), 3);
+}
