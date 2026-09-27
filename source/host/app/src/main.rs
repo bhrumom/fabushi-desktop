@@ -254,7 +254,7 @@ use std::fs;
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{
-    Arc, Mutex, mpsc,
+    Arc, Mutex, Weak, mpsc,
     atomic::{AtomicBool, Ordering},
 };
 use signal_hook::consts::signal::{SIGINT, SIGTERM};
@@ -3962,6 +3962,8 @@ fn main() {
         permission_surface_owner.can_ask_local_tool_permission(agent_id)
     }));
     let ack_obligations = transcript_manager.ack_obligations();
+    let cross_user_deletion_slot =
+        Arc::new(Mutex::new(Weak::<ProductionCrossUserRuntime>::new()));
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {
         cancel_runner: Some({
             let runner_registry = Arc::clone(&runner_registry);
@@ -3989,6 +3991,19 @@ fn main() {
                 let _ = ack_obligations
                     .forget_agent(agent_id)
                     .map_err(|error| error.to_string())?;
+                Ok(())
+            })
+        }),
+        sharing_departure: Some({
+            let slot = Arc::clone(&cross_user_deletion_slot);
+            Arc::new(move |agent_id| {
+                let runtime = slot
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .upgrade();
+                if let Some(runtime) = runtime {
+                    runtime.note_agent_deleted(agent_id)?;
+                }
                 Ok(())
             })
         }),
@@ -4150,6 +4165,11 @@ fn main() {
             return;
         }
     };
+
+    *cross_user_deletion_slot
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) =
+        Arc::downgrade(&cross_user);
 
     let gateway_api = Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
