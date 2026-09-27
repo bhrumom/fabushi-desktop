@@ -18,7 +18,7 @@ use crate::extensions::transcript::send_message_shaping::{
 };
 use crate::extensions::transcript::send_thread_stamping::resolve_send_reply_threading;
 use crate::extensions::transcript::roster_search::{
-    AGENT_CONTENT_SEARCH_MAX_RESULTS, search_agents_linear,
+    AGENT_CONTENT_SEARCH_MAX_RESULTS, RosterContentSearch, search_agents, search_media,
 };
 use crate::extensions::transcript::transcript_entry_ids::{
     TranscriptEntryIdKind, next_entry_id,
@@ -237,6 +237,15 @@ pub fn dispatch_production_session_gateway_call(
     method: &str,
     args: &Value,
 ) -> Option<Result<Value, SessionGatewayError>> {
+    dispatch_production_session_gateway_call_with_content_search(session, None, method, args)
+}
+
+pub fn dispatch_production_session_gateway_call_with_content_search(
+    session: &Arc<ProductionSessionWorkers>,
+    content_search: Option<&dyn RosterContentSearch>,
+    method: &str,
+    args: &Value,
+) -> Option<Result<Value, SessionGatewayError>> {
     let store = SandAgentSessionStore::new(Arc::clone(session));
     let result = match method {
         "countAgents" => session
@@ -252,8 +261,26 @@ pub fn dispatch_production_session_gateway_call(
                 .get("limit")
                 .and_then(Value::as_u64)
                 .and_then(|value| usize::try_from(value).ok())
-                .unwrap_or(AGENT_CONTENT_SEARCH_MAX_RESULTS);
-            search_agents_linear(session, query.unwrap_or_default(), limit)
+                .unwrap_or_else(|| {
+                    content_search
+                        .map(RosterContentSearch::max_results)
+                        .unwrap_or(AGENT_CONTENT_SEARCH_MAX_RESULTS)
+                });
+            search_agents(session, content_search, query.unwrap_or_default(), limit)
+                .and_then(|matches| serde_json::to_value(matches).map_err(|error| error.to_string()))
+                .map_err(SessionGatewayError::internal)
+        }),
+        "searchMedia" => optional_string(args, "query").and_then(|query| {
+            let limit = args
+                .get("limit")
+                .and_then(Value::as_u64)
+                .and_then(|value| usize::try_from(value).ok())
+                .unwrap_or_else(|| {
+                    content_search
+                        .map(RosterContentSearch::max_results)
+                        .unwrap_or(AGENT_CONTENT_SEARCH_MAX_RESULTS)
+                });
+            search_media(session, content_search, query.unwrap_or_default(), limit)
                 .and_then(|matches| serde_json::to_value(matches).map_err(|error| error.to_string()))
                 .map_err(SessionGatewayError::internal)
         }),
