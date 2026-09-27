@@ -18816,12 +18816,21 @@
       "targetPath": "source/host/src/sand_multitask.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "cca77f0573c483405927c716b30a7b162f3660b7",
       "architecturalRole": "host/sand-multitask",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/sand_multitask.rs",
+        "source/host/src/runner/tools/sand_browser_use_subagent.rs",
+        "source/host/src/runner/tools/sand_computer_use_subagent.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_multitask_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Host owner now preserves frozen multitask env-gate semantics, builtin executor subagent configuration, durable todo guidance and multitask prompt contract by reusing the existing single SandSubagentType model. Final remains withheld until the production Runner composition actually injects the executor config/todo description/prompt section into live turns."
     },
     {
       "referencePath": "source/host/sand-quiet-work-origin.ts",

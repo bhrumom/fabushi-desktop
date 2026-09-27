@@ -1843,3 +1843,9 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added `xuser_service_contract.rs` to cover frozen user-facing relay error semantics, fail-closed remote-agent/entry shaping, room add/revoke reconciliation, dev/production environment gating, feature-gate activation, and backend-state reconciliation.
 - These seven manifest rows advance only from `planned` to `existing-needs-parity`. They are intentionally **not** final: production Host composition still needs to bind live Auth, Attachments, NotifyBus and Transcript delegates and exact-HEAD CI must prove the shipping extension wiring. No status is advanced merely because a target file now exists.
 - Coordinator/Host/Runner boundaries are unchanged; this work belongs only to the Mahayana Host extension layer.
+
+### 2026-09-27 multitask owner slice
+
+- Added the Grok `sand-multitask.ts` Rust owner at `source/host/src/sand_multitask.rs`, reusing the existing Runner `SandSubagentType` model rather than creating a second subagent type system.
+- Preserved the frozen env-override truthiness, the single builtin `executor` subagent contract, todo-queue guidance and multitask prompt boundary; added `sand_multitask_contract.rs`.
+- Manifest advances this row from `planned` to `existing-needs-parity` only. Final requires the production Runner composition to inject the executor config/todo description/prompt section into live turns and exact-HEAD CI evidence.

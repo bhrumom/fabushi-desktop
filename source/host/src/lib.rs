@@ -70,3 +70,5 @@ pub mod cloud_agents;
 
 pub mod connectors;
 pub mod send_trace_host;
+
+pub mod sand_multitask;
