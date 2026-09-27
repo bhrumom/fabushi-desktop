@@ -1,7 +1,12 @@
+use crate::extensions::auth::credential_renewer::{
+    SAND_CLIENT_TYPE, sand_box_namespace, sand_client_version,
+};
+use crate::notify_drain_gate::NotifyDrainGate;
 use reqwest::blocking::Client;
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use serde_json::Value;
-use std::sync::Arc;
+use std::collections::BTreeSet;
+use std::sync::{Arc, Mutex};
 
 pub const XUSER_RELAY_POLL_INTERVAL_MS: u64 = 4_000;
 pub const XUSER_RELAY_ERROR_BACKOFF_MS: u64 = 30_000;
@@ -53,7 +58,10 @@ impl XuserRelayTransport for ReqwestXuserRelayTransport {
             _ => self.client.post(url),
         }
         .header(AUTHORIZATION, format!("Bearer {token}"))
-        .header(CONTENT_TYPE, "application/json");
+        .header(CONTENT_TYPE, "application/json")
+        .header("x-cursor-client-type", SAND_CLIENT_TYPE)
+        .header("x-cursor-client-version", sand_client_version())
+        .header("x-sand-box-namespace", sand_box_namespace());
         if let Some(body) = body {
             req = req.json(body);
         }
@@ -105,28 +113,229 @@ impl SandXuserRelayClient {
             )
             .map_err(|e| describe_relay_error(&e))
     }
+    pub fn poll(&self, ack_ids: &[String]) -> Result<Value, String> {
+        self.call(
+            "POST",
+            "/sand/xuser/poll",
+            Some(&serde_json::json!({ "ackIds": ack_ids })),
+        )
+    }
     pub fn fetch_share_state(&self) -> Result<Value, String> {
-        self.call("GET", "/api/sand/xuser/state", None)
+        self.call("POST", "/sand/share-state", Some(&serde_json::json!({})))
     }
     pub fn send(&self, payload: &Value) -> Result<Value, String> {
-        self.call("POST", "/api/sand/xuser/relay", Some(payload))
+        self.call("POST", "/sand/xuser/send", Some(payload))
     }
     pub fn create_room(&self, payload: &Value) -> Result<Value, String> {
-        self.call("POST", "/api/sand/xuser/rooms", Some(payload))
+        self.call("POST", "/sand/share-rooms", Some(payload))
+    }
+    pub fn create_room_from_agent(&self, payload: &Value) -> Result<Value, String> {
+        self.call("POST", "/sand/share-rooms/from-agent", Some(payload))
+    }
+    pub fn create_room_invite(&self, room_id: &str) -> Result<Value, String> {
+        self.call(
+            "POST",
+            "/sand/share-rooms/invite-links",
+            Some(&serde_json::json!({ "roomId": room_id })),
+        )
+    }
+    pub fn join_room(&self, link: &str) -> Result<Value, String> {
+        self.call(
+            "POST",
+            "/sand/share-rooms/join",
+            Some(&serde_json::json!({ "link": link })),
+        )
+    }
+    pub fn respond_to_join_request(&self, payload: &Value) -> Result<Value, String> {
+        self.call("POST", "/sand/share-rooms/join/respond", Some(payload))
+    }
+    pub fn add_own_agent(&self, payload: &Value) -> Result<Value, String> {
+        self.call("POST", "/sand/share-rooms/agents/add", Some(payload))
+    }
+    pub fn set_room_picture(&self, payload: &Value) -> Result<Value, String> {
+        self.call("POST", "/sand/share-rooms/picture", Some(payload))
+    }
+    pub fn remove_own_agent(&self, payload: &Value) -> Result<Value, String> {
+        self.call("POST", "/sand/share-rooms/agents/remove", Some(payload))
     }
     pub fn leave_room(&self, room_id: &str) -> Result<Value, String> {
         self.call(
             "POST",
-            &format!("/api/sand/xuser/rooms/{room_id}/leave"),
-            Some(&serde_json::json!({})),
+            "/sand/share-rooms/leave",
+            Some(&serde_json::json!({ "roomId": room_id })),
         )
     }
     pub fn remove_deleted_agent(&self, agent_id: &str) -> Result<Value, String> {
         self.call(
             "POST",
-            "/api/sand/xuser/remove-agent",
-            Some(&serde_json::json!({"agentId":agent_id})),
+            "/sand/share-rooms/agents/remove-deleted",
+            Some(&serde_json::json!({ "agentId": agent_id })),
         )
+    }
+}
+
+type RelayClock = Arc<dyn Fn() -> u64 + Send + Sync>;
+type RelayBool = Arc<dyn Fn() -> bool + Send + Sync>;
+type RelayNotifyGate = NotifyDrainGate<RelayClock, RelayBool, RelayBool>;
+pub type XuserRelayEventHandler =
+    Arc<dyn Fn(&Value) -> Result<bool, String> + Send + Sync>;
+
+#[derive(Debug, Default)]
+struct RelayRuntimeState {
+    started: bool,
+    is_ticking: bool,
+    backoff_until_ms: u64,
+    pending_ack_ids: Vec<String>,
+}
+
+/// Frozen Grok relay state machine without owning a second Host runtime.
+///
+/// The production owner may drive `tick` from the canonical Host scheduling
+/// policy and `request_drain` from NotifyBus. This type owns only the relay
+/// admission/ack/backoff semantics and remains inside the CrossUserSharing
+/// extension boundary.
+pub struct SandXuserRelayRuntime {
+    client: Arc<SandXuserRelayClient>,
+    on_event: XuserRelayEventHandler,
+    now_ms: RelayClock,
+    gate: Mutex<RelayNotifyGate>,
+    state: Mutex<RelayRuntimeState>,
+}
+
+impl SandXuserRelayRuntime {
+    pub fn new(
+        client: Arc<SandXuserRelayClient>,
+        on_event: XuserRelayEventHandler,
+        now_ms: RelayClock,
+        is_notify_connected: RelayBool,
+        is_notify_safety_poll_enabled: RelayBool,
+    ) -> Self {
+        let gate = NotifyDrainGate::new(
+            Arc::clone(&now_ms),
+            is_notify_connected,
+            is_notify_safety_poll_enabled,
+        );
+        Self {
+            client,
+            on_event,
+            now_ms,
+            gate: Mutex::new(gate),
+            state: Mutex::new(RelayRuntimeState::default()),
+        }
+    }
+
+    pub fn start(&self) {
+        let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
+        if state.started {
+            return;
+        }
+        state.started = true;
+        drop(state);
+        self.gate
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .reset();
+    }
+
+    pub fn stop(&self) {
+        let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
+        state.started = false;
+        state.is_ticking = false;
+        state.backoff_until_ms = 0;
+    }
+
+    pub fn request_drain(&self) -> Result<bool, String> {
+        self.gate
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .record_notify();
+        self.tick()
+    }
+
+    pub fn pending_ack_ids(&self) -> Vec<String> {
+        self.state
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .pending_ack_ids
+            .clone()
+    }
+
+    pub fn backoff_until_ms(&self) -> u64 {
+        self.state
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .backoff_until_ms
+    }
+
+    pub fn tick(&self) -> Result<bool, String> {
+        let now = (self.now_ms)();
+        let pending = {
+            let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
+            if !state.started || state.is_ticking || now < state.backoff_until_ms {
+                return Ok(false);
+            }
+            let should_drain = self
+                .gate
+                .lock()
+                .unwrap_or_else(|p| p.into_inner())
+                .should_drain(!state.pending_ack_ids.is_empty());
+            if !should_drain {
+                return Ok(false);
+            }
+            state.is_ticking = true;
+            state.pending_ack_ids.clone()
+        };
+
+        let result = self.client.poll(&pending);
+        let payload = match result {
+            Ok(payload) => payload,
+            Err(error) => {
+                let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
+                state.is_ticking = false;
+                state.backoff_until_ms = now.saturating_add(XUSER_RELAY_ERROR_BACKOFF_MS);
+                return Err(error);
+            }
+        };
+
+        let previously_acked = pending.iter().cloned().collect::<BTreeSet<_>>();
+        let mut next_ack_ids = Vec::new();
+        let mut next_ack_set = BTreeSet::new();
+        if let Some(events) = payload.get("events").and_then(Value::as_array) {
+            for event in events {
+                let Some(record) = event.as_object() else {
+                    continue;
+                };
+                let Some(id) = record.get("id").and_then(Value::as_str) else {
+                    continue;
+                };
+                if record.get("kind").and_then(Value::as_str).is_none() {
+                    continue;
+                }
+                if previously_acked.contains(id) || next_ack_set.contains(id) {
+                    if next_ack_set.insert(id.to_string()) {
+                        next_ack_ids.push(id.to_string());
+                    }
+                    continue;
+                }
+                if (self.on_event)(event).unwrap_or(false)
+                    && next_ack_set.insert(id.to_string())
+                {
+                    next_ack_ids.push(id.to_string());
+                }
+            }
+        }
+
+        {
+            let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
+            state.pending_ack_ids = next_ack_ids;
+            state.is_ticking = false;
+            state.backoff_until_ms = 0;
+        }
+        self.gate
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .record_poll();
+        Ok(true)
     }
 }
 
