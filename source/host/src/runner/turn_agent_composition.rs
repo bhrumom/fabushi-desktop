@@ -52,6 +52,7 @@ pub struct TurnAgentComposition {
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     state_writer: Option<Arc<dyn SandStateWriter>>,
     cloud_agent_tool: Option<CloudAgentToolDependencies>,
+    multitask_enabled: bool,
     spotlight_enabled: bool,
     action_audit: Option<RoutedMcpAuditConfig>,
     observation: Option<TurnObservationHandle>,
@@ -80,6 +81,7 @@ impl TurnAgentComposition {
             agent_management_sink: None,
             state_writer: None,
             cloud_agent_tool: None,
+            multitask_enabled: false,
             spotlight_enabled: false,
             action_audit: None,
             observation: None,
@@ -186,6 +188,15 @@ impl TurnAgentComposition {
         self.cloud_agent_tool.is_some()
     }
 
+    pub fn with_multitask_enabled(mut self, enabled: bool) -> Self {
+        self.multitask_enabled = enabled;
+        self
+    }
+
+    pub fn has_multitask_enabled(&self) -> bool {
+        self.multitask_enabled
+    }
+
     pub fn with_spotlight_enabled(mut self, enabled: bool) -> Self {
         self.spotlight_enabled = enabled;
         self
@@ -276,6 +287,8 @@ impl TurnAgentComposition {
                 checkpoint_store: Arc::clone(&self.checkpoint_store),
                 retry_sink: self.retry_sink.clone(),
                 retry_report_sink: self.retry_report_sink.clone(),
+                cloud_agents_enabled: self.cloud_agent_tool.is_some(),
+                multitask_enabled: self.multitask_enabled,
             },
             on_text_delta,
         )
