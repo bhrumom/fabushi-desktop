@@ -5,3 +5,4 @@ pub mod csnaps_process;
 pub mod privacy_mode;
 pub mod codebase_telemetry_adapter;
 pub mod codebase_telemetry_host;
+pub mod codebase_telemetry_service;
