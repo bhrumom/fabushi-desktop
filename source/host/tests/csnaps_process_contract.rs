@@ -86,7 +86,7 @@ fn process_spawns_handshakes_routes_operations_and_closes() {
 #[test]
 fn unknown_response_id_is_terminal_and_fails_closed() {
     let dir = fake_csnaps(r#"
-import json, struct, sys
+import json, struct, sys, time
 def read_frame():
     h=sys.stdin.buffer.read(4)
     if not h: return None
@@ -97,6 +97,7 @@ def send(v):
     sys.stdout.buffer.write(struct.pack(">I",len(d))+d); sys.stdout.buffer.flush()
 req=read_frame()
 send({"id":req["id"]+1,"ok":True,"result":{}})
+time.sleep(0.2)
 "#);
     let err = CsnapsProcess::spawn(
         dir.join("csnaps"),
