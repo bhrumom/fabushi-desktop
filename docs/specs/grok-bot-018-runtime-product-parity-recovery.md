@@ -1708,3 +1708,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `plugin_skills_contract` passed **4/4**.
 - The row advances from `planned` to `existing-needs-parity`; final remains blocked on the authenticated Dashboard/marketplace loader plus startup/auth-change/daily production scheduling and legacy-reference sweep invocation.
 - Manifest becomes **1,833 implemented / 123 existing-needs-parity / 46 planned** (**169 non-final**).
+
+
+### 2026-09-27 MCP Box execution boundary slice
+
+- Exact starting HEAD: `58e3e94b87b5dc147b8b7891ea4de8898a861376`.
+- Re-read frozen `mcp/box-mcp-exec.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `box_mcp_exec.rs` over the existing MCP state-executor shape: load forwarding, filtered/all-server discovery, server/tool/clientKey projection, and tool execution errors settled as terminal error results.
+- `box_mcp_exec_contract` passed **3/3**.
+- The row advances from `planned` to `existing-needs-parity`; final remains blocked on the production ForeverBox/CapableBox resource accessor plus generated `McpArgs/McpResult` execution/diagnostic wiring.
+- Manifest becomes **1,833 implemented / 124 existing-needs-parity / 45 planned** (**169 non-final**).
