@@ -33,8 +33,193 @@ pub struct AgentRunErrorDescription {
     pub actions: Vec<Value>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct BackendConnectErrorEnvelope {
+    pub message: String,
+    pub code: Option<u16>,
+    pub details: Vec<Value>,
+    pub cause: Option<Box<BackendConnectErrorEnvelope>>,
+    pub errors: Vec<BackendConnectErrorEnvelope>,
+}
+
+fn backend_connect_error_from_value(
+    value: &Value,
+    fallback_message: &str,
+) -> Option<BackendConnectErrorEnvelope> {
+    let value = value.get("error").unwrap_or(value);
+    let object = value.as_object()?;
+    let message = object
+        .get("message")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(fallback_message)
+        .to_string();
+    let code = object.get("code").and_then(|value| {
+        value
+            .as_u64()
+            .and_then(|value| u16::try_from(value).ok())
+            .or_else(|| value.as_str().and_then(|value| value.parse::<u16>().ok()))
+    });
+    let mut details = object
+        .get("details")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    if details.is_empty()
+        && ["title", "detail", "buttons", "additionalInfo"]
+            .iter()
+            .any(|key| object.contains_key(*key))
+    {
+        details.push(json!({"details": value.clone()}));
+    }
+    let cause = object
+        .get("cause")
+        .and_then(|cause| backend_connect_error_from_value(cause, "backend cause"))
+        .map(Box::new);
+    let errors = object
+        .get("errors")
+        .and_then(Value::as_array)
+        .map(|errors| {
+            errors
+                .iter()
+                .filter_map(|error| {
+                    backend_connect_error_from_value(error, "backend aggregate error")
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    if details.is_empty() && cause.is_none() && errors.is_empty()
+        && !object.contains_key("message") && !object.contains_key("code")
+    {
+        return None;
+    }
+    Some(BackendConnectErrorEnvelope {
+        message,
+        code,
+        details,
+        cause,
+        errors,
+    })
+}
+
+pub fn parse_backend_connect_error(
+    message: &str,
+) -> Option<BackendConnectErrorEnvelope> {
+    for (index, ch) in message.char_indices() {
+        if ch != '{' {
+            continue;
+        }
+        let candidate = &message[index..];
+        let mut values = serde_json::Deserializer::from_str(candidate)
+            .into_iter::<Value>();
+        let Some(Ok(value)) = values.next() else {
+            continue;
+        };
+        if let Some(error) = backend_connect_error_from_value(&value, message) {
+            return Some(error);
+        }
+    }
+    None
+}
+
+fn walk_backend_connect_error<'a>(
+    error: &'a BackendConnectErrorEnvelope,
+    first: &mut Option<&'a BackendConnectErrorEnvelope>,
+) -> Option<&'a BackendConnectErrorEnvelope> {
+    if !error.details.is_empty() {
+        return Some(error);
+    }
+    if first.is_none() {
+        *first = Some(error);
+    }
+    if let Some(cause) = error.cause.as_deref() {
+        if let Some(found) = walk_backend_connect_error(cause, first) {
+            return Some(found);
+        }
+    }
+    for inner in &error.errors {
+        if let Some(found) = walk_backend_connect_error(inner, first) {
+            return Some(found);
+        }
+    }
+    None
+}
+
+pub fn find_backend_connect_error(
+    error: &BackendConnectErrorEnvelope,
+    require_details: bool,
+) -> Option<&BackendConnectErrorEnvelope> {
+    let mut first = None;
+    walk_backend_connect_error(error, &mut first)
+        .or_else(|| if require_details { None } else { first })
+}
+
+fn backend_detail_from_value(value: &Value) -> Option<BackendDetail> {
+    let value = value.get("details").unwrap_or(value);
+    let object = value.as_object()?;
+    let title = object
+        .get("title")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let detail = object
+        .get("detail")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let buttons = object
+        .get("buttons")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let additional_info = object
+        .get("additionalInfo")
+        .and_then(Value::as_object)
+        .map(|info| BackendAdditionalInfo {
+            rate_limit_reason: info
+                .get("rateLimitReason")
+                .and_then(Value::as_str)
+                .map(str::to_string),
+            next_reset_at: info
+                .get("nextResetAt")
+                .and_then(Value::as_str)
+                .map(str::to_string),
+        });
+    if title.is_none() && detail.is_none() && buttons.is_empty() && additional_info.is_none() {
+        None
+    } else {
+        Some(BackendDetail {
+            title,
+            detail,
+            buttons,
+            additional_info,
+        })
+    }
+}
+
+pub fn backend_detail_from_error_message(message: &str) -> Option<BackendDetail> {
+    let root = parse_backend_connect_error(message)?;
+    find_backend_connect_error(&root, true)?
+        .details
+        .first()
+        .and_then(backend_detail_from_value)
+}
+
+pub fn get_backend_error_detail_message(message: &str) -> Option<String> {
+    let detail = backend_detail_from_error_message(message)?;
+    let title = detail.title.as_deref().map(str::trim).unwrap_or("");
+    let body = detail.detail.as_deref().map(str::trim).unwrap_or("");
+    if title.is_empty() {
+        return (!body.is_empty()).then(|| body.to_string());
+    }
+    if body.is_empty() || body == title {
+        Some(title.to_string())
+    } else {
+        Some(format!("{title}\n\n{body}"))
+    }
+}
+
 pub fn format_agent_run_error(message: &str) -> String {
-    message.to_string()
+    get_backend_error_detail_message(message).unwrap_or_else(|| message.to_string())
 }
 
 pub fn format_sand_usage_reset_in(next_reset_at: &str, now_ms: i64) -> Option<String> {
@@ -204,7 +389,9 @@ pub fn provider_failure_tray(
     message: &str,
     now_ms: i64,
 ) -> PushErrorOptions {
-    let described = describe_agent_run_error(message, None, now_ms);
+    let formatted = format_agent_run_error(message);
+    let detail = backend_detail_from_error_message(message);
+    let described = describe_agent_run_error(&formatted, detail.as_ref(), now_ms);
     PushErrorOptions {
         agent_id: Some(agent_id.to_string()),
         title: described

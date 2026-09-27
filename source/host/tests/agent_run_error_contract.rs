@@ -1,11 +1,63 @@
 use mahayana_host_runtime::extensions::transcript::agent_run_error::{
-    AgentRunErrorDescription, BackendAdditionalInfo, BackendDetail, checkout_deep_control_url,
-    describe_agent_run_error, format_sand_usage_reset_in, map_error_detail_buttons,
-    provider_failure_tray, with_relative_sand_included_limit_reset,
+    AgentRunErrorDescription, BackendAdditionalInfo, BackendDetail,
+    backend_detail_from_error_message, checkout_deep_control_url,
+    describe_agent_run_error, find_backend_connect_error, format_agent_run_error,
+    format_sand_usage_reset_in, get_backend_error_detail_message,
+    map_error_detail_buttons, parse_backend_connect_error, provider_failure_tray,
+    with_relative_sand_included_limit_reset,
 };
 use serde_json::json;
 
 const NOW: i64 = 1_700_000_000_000;
+
+#[test]
+fn serialized_backend_connect_error_walk_prefers_nested_detailed_error() {
+    let reset = chrono::DateTime::from_timestamp_millis(NOW + 3_600_000)
+        .expect("reset")
+        .to_rfc3339();
+    let message = format!(
+        "OpenRouter request failed (429): {{\"error\":{{\"message\":\"outer\",\"code\":429,\"cause\":{{\"message\":\"cause without details\"}},\"errors\":[{{\"message\":\"detailed backend\",\"details\":[{{\"details\":{{\"title\":\"Limit reached\",\"detail\":\"Included usage exhausted. It resets at tomorrow.\",\"buttons\":[{{\"label\":\"\",\"action\":{{\"case\":\"switchModel\",\"value\":{{}}}}}}],\"additionalInfo\":{{\"rateLimitReason\":\"sand_included_limit\",\"nextResetAt\":\"{}\"}}}}}}]}}]}}}}.",
+        reset
+    );
+    let root = parse_backend_connect_error(&message).expect("serialized connect error");
+    assert_eq!(root.code, Some(429));
+    assert_eq!(
+        find_backend_connect_error(&root, true)
+            .expect("detailed nested error")
+            .message,
+        "detailed backend"
+    );
+    assert_eq!(
+        get_backend_error_detail_message(&message).as_deref(),
+        Some("Limit reached\n\nIncluded usage exhausted. It resets at tomorrow.")
+    );
+    assert_eq!(
+        format_agent_run_error(&message),
+        "Limit reached\n\nIncluded usage exhausted. It resets at tomorrow."
+    );
+    let detail = backend_detail_from_error_message(&message).expect("backend detail");
+    assert_eq!(detail.title.as_deref(), Some("Limit reached"));
+
+    let tray = provider_failure_tray("agent-a", &message, NOW);
+    assert_eq!(tray.title, "Limit reached");
+    assert_eq!(tray.detail, "Included usage exhausted. It resets in 1 hour.");
+    assert_eq!(tray.actions, vec![json!({"kind":"switch-model"})]);
+    assert_eq!(tray.raw_detail.as_deref(), Some(message.as_str()));
+}
+
+#[test]
+fn serialized_backend_connect_error_can_fall_back_to_first_detail_less_error() {
+    let message = "provider failed: {\"error\":{\"message\":\"outer\",\"code\":503,\"cause\":{\"message\":\"inner\"}}}.";
+    let root = parse_backend_connect_error(message).expect("connect error");
+    assert!(find_backend_connect_error(&root, true).is_none());
+    assert_eq!(
+        find_backend_connect_error(&root, false)
+            .expect("first connect error")
+            .message,
+        "outer"
+    );
+    assert_eq!(format_agent_run_error(message), message);
+}
 
 #[test]
 fn usage_reset_formatting_matches_frozen_thresholds() {
