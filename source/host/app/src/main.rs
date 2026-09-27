@@ -210,7 +210,7 @@ use mahayana_host_runtime::gateway_server::{
     GatewayServerDeps, start_gateway_server,
 };
 use mahayana_host_runtime::host_gateway_api::{
-    CreateAgentNonceLedger, is_sand_agent_purpose, sanitize_template_id,
+    CreateAgentNonceLedger, sanitize_create_agent_args,
 };
 use mahayana_host_runtime::sand_host::compute_host_health;
 use mahayana_host_runtime::host_discovery::{
@@ -2270,23 +2270,7 @@ impl GatewayApi for UnifiedGatewayApi {
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
         if method == "createAgent" {
-            let mut projected = args;
-            if let Some(object) = projected.as_object_mut() {
-                if object
-                    .get("purpose")
-                    .and_then(serde_json::Value::as_str)
-                    .is_some_and(|purpose| !is_sand_agent_purpose(purpose))
-                {
-                    object.remove("purpose");
-                }
-                if object
-                    .get("templateId")
-                    .and_then(serde_json::Value::as_str)
-                    .is_some_and(|template_id| sanitize_template_id(template_id).is_none())
-                {
-                    object.remove("templateId");
-                }
-            }
+            let projected = sanitize_create_agent_args(&args);
 
             let nonce = projected
                 .get("clientNonce")
