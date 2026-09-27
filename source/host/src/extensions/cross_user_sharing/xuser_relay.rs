@@ -212,28 +212,45 @@ impl SandXuserRelayClient {
         self.call("POST", "/sand/share-rooms/agents/remove", Some(payload))
     }
 
+    pub fn leave_room_with_target_raw(
+        &self,
+        room_id: &str,
+        target_auth_id: Option<&str>,
+    ) -> Result<Value, SandXuserRelayHttpError> {
+        let mut body = serde_json::json!({ "roomId": room_id });
+        if let Some(target_auth_id) = target_auth_id {
+            body["targetAuthId"] = Value::String(target_auth_id.into());
+        }
+        self.call_raw("POST", "/sand/share-rooms/leave", Some(&body))
+    }
+
     pub fn leave_room_with_target(
         &self,
         room_id: &str,
         target_auth_id: Option<&str>,
     ) -> Result<Value, String> {
-        let mut body = serde_json::json!({ "roomId": room_id });
-        if let Some(target_auth_id) = target_auth_id {
-            body["targetAuthId"] = Value::String(target_auth_id.into());
-        }
-        self.call("POST", "/sand/share-rooms/leave", Some(&body))
+        self.leave_room_with_target_raw(room_id, target_auth_id)
+            .map_err(|error| describe_relay_error(&error))
     }
 
     pub fn leave_room(&self, room_id: &str) -> Result<Value, String> {
         self.leave_room_with_target(room_id, None)
     }
 
-    pub fn remove_deleted_agent(&self, agent_id: &str) -> Result<Value, String> {
-        self.call(
+    pub fn remove_deleted_agent_raw(
+        &self,
+        agent_id: &str,
+    ) -> Result<Value, SandXuserRelayHttpError> {
+        self.call_raw(
             "POST",
             "/sand/share-rooms/agents/remove-deleted",
             Some(&serde_json::json!({ "agentId": agent_id })),
         )
+    }
+
+    pub fn remove_deleted_agent(&self, agent_id: &str) -> Result<Value, String> {
+        self.remove_deleted_agent_raw(agent_id)
+            .map_err(|error| describe_relay_error(&error))
     }
 }
 
