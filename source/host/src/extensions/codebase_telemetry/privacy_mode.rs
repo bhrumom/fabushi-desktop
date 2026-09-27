@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Condvar, Mutex, Weak};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::cursor_backend::{fetch_sand_privacy_mode, CursorBackendError, SandPrivacyMode};
 
@@ -269,14 +269,32 @@ fn lookup_with_deadline(
     auth: TelemetryAuth,
     timeout: Duration,
 ) -> Result<SandPrivacyMode, PrivacyLookupError> {
+    // Measure the deadline before spawning the loader. On a saturated runner the
+    // current thread can be descheduled after spawn while the lookup completes;
+    // starting recv_timeout only after that stall would incorrectly accept a
+    // result that already exceeded the contract deadline.
+    let started = Instant::now();
     let (send, receive) = mpsc::sync_channel(1);
     let _ = thread::Builder::new()
         .name("codebase-telemetry-privacy-lookup".into())
         .spawn(move || { let _ = send.send(loader(auth)); });
-    match receive.recv_timeout(timeout) {
-        Ok(result) => result,
-        Err(mpsc::RecvTimeoutError::Timeout) => Err(PrivacyLookupError::new("privacy mode lookup deadline exceeded", true)),
-        Err(mpsc::RecvTimeoutError::Disconnected) => Err(PrivacyLookupError::new("privacy mode lookup worker stopped", true)),
+    let remaining = timeout.saturating_sub(started.elapsed());
+    if remaining.is_zero() {
+        return Err(PrivacyLookupError::new(
+            "privacy mode lookup deadline exceeded",
+            true,
+        ));
+    }
+    match receive.recv_timeout(remaining) {
+        Ok(result) if started.elapsed() <= timeout => result,
+        Ok(_) | Err(mpsc::RecvTimeoutError::Timeout) => Err(PrivacyLookupError::new(
+            "privacy mode lookup deadline exceeded",
+            true,
+        )),
+        Err(mpsc::RecvTimeoutError::Disconnected) => Err(PrivacyLookupError::new(
+            "privacy mode lookup worker stopped",
+            true,
+        )),
     }
 }
 
