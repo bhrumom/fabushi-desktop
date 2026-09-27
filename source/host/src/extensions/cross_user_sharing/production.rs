@@ -13,6 +13,8 @@ use crate::extensions::experiments::HostExperimentsExtension;
 use crate::extensions::notify_bus::extension::HostNotifyBusExtension;
 use crate::extensions::transcript::send_group_fanout::GroupMemberTurnExecutor;
 use crate::extensions::transcript::shared_rooms::SharedRooms;
+use crate::groups::group_store::RemoteGroupMember;
+use crate::groups::remote_room_store::RemoteRoomMember;
 use crate::host_paths::get_sand_root_dir;
 
 use super::extension::CrossUserSharingExtension;
@@ -26,7 +28,7 @@ use super::xuser_relay::{
 use super::xuser_remote_turns::{
     AgentDisplayProfile, RemoteTurnsHost, SandXuserRemoteTurns,
 };
-use super::xuser_sharing_service::SandXuserSharingService;
+use super::xuser_sharing_service::{SandXuserSharingService, XuserSharingManager};
 use super::xuser_turn_dedupe_store::{
     SandXuserTurnDedupeStore, XUSER_TURN_DEDUPE_TTL_MS, XuserTurnDedupe,
 };
@@ -141,6 +143,118 @@ impl RemoteTurnsHost for ProductionXuserHost {
     }
 }
 
+impl XuserSharingManager for ProductionXuserHost {
+    fn install_room(
+        &self,
+        room: &super::xuser_state_reconcile::XuserRoom,
+        self_auth_id: Option<&str>,
+    ) -> Result<(), String> {
+        let Some(self_auth_id) = self_auth_id else {
+            return Ok(());
+        };
+        if room.host_auth_id == self_auth_id {
+            let local_member_ids = room
+                .members
+                .iter()
+                .filter(|member| member.auth_id == self_auth_id)
+                .filter_map(|member| member.agent_id.clone())
+                .collect::<Vec<_>>();
+            let remote_members = room
+                .members
+                .iter()
+                .filter(|member| member.auth_id != self_auth_id)
+                .filter_map(|member| {
+                    Some(RemoteGroupMember {
+                        owner_auth_id: member.auth_id.clone(),
+                        agent_id: member.agent_id.clone()?,
+                        name: member
+                            .name
+                            .clone()
+                            .filter(|value| !value.trim().is_empty())
+                            .unwrap_or_else(|| "Agent".into()),
+                        avatar_data_url: None,
+                    })
+                })
+                .collect::<Vec<_>>();
+            self.shared_rooms
+                .ensure_hosted_shared_room(
+                    &room.room_id,
+                    &room.name,
+                    &local_member_ids,
+                    &remote_members,
+                    true,
+                )
+                .map(|_| ())
+        } else {
+            let host_name = room
+                .members
+                .iter()
+                .find(|member| {
+                    member.auth_id == room.host_auth_id && member.agent_id.is_none()
+                })
+                .and_then(|member| member.name.clone())
+                .filter(|value| !value.trim().is_empty())
+                .unwrap_or_else(|| "The host".into());
+            let members = room
+                .members
+                .iter()
+                .filter(|member| member.auth_id != self_auth_id)
+                .map(|member| RemoteRoomMember {
+                    kind: if member.agent_id.is_some() {
+                        "agent".into()
+                    } else {
+                        "human".into()
+                    },
+                    auth_id: member.auth_id.clone(),
+                    agent_id: member.agent_id.clone().unwrap_or_default(),
+                    display_name: member
+                        .name
+                        .clone()
+                        .filter(|value| !value.trim().is_empty())
+                        .unwrap_or_else(|| {
+                            if member.agent_id.is_some() {
+                                "Agent".into()
+                            } else {
+                                "Someone".into()
+                            }
+                        }),
+                    avatar_url: None,
+                })
+                .collect::<Vec<_>>();
+            self.shared_rooms
+                .ensure_mirror_room(
+                    &room.room_id,
+                    &room.name,
+                    &room.host_auth_id,
+                    &host_name,
+                    None,
+                    &members,
+                    self_auth_id,
+                )
+                .map(|_| ())
+        }
+    }
+
+    fn mark_mirror_room_revoked(&self, room_id: &str) -> Result<(), String> {
+        self.shared_rooms.mark_mirror_room_revoked(room_id)
+    }
+
+    fn post_shared_room_guest_message(&self, event: &Value) -> Result<(), String> {
+        self.shared_rooms
+            .post_shared_room_guest_message(event)
+            .map(|_| ())
+    }
+
+    fn append_mirror_room_entry(
+        &self,
+        event: &Value,
+        self_auth_id: &str,
+    ) -> Result<bool, String> {
+        self.shared_rooms
+            .append_mirror_room_entry(event, self_auth_id)
+    }
+}
+
 impl XuserEntryPublisherHost for ProductionXuserHost {
     fn relay_send(&self, payload: &Value) -> Result<Value, String> {
         self.relay.send(payload)
@@ -223,7 +337,9 @@ impl ProductionCrossUserRuntime {
             run_remote_requested_turn,
         });
         let remote_host: Arc<dyn RemoteTurnsHost> = host.clone();
+        let manager_host: Arc<dyn XuserSharingManager> = host.clone();
         let publisher_host: Arc<dyn XuserEntryPublisherHost> = host;
+        service.bind_manager(manager_host);
         let dedupe: Arc<dyn XuserTurnDedupe> = Arc::new(SandXuserTurnDedupeStore::new(
             &get_sand_root_dir(),
             XUSER_TURN_DEDUPE_TTL_MS,
@@ -243,6 +359,7 @@ impl ProductionCrossUserRuntime {
             .unwrap_or_else(|poisoned| poisoned.into_inner()) =
             Arc::downgrade(&remote_turns);
         let relay_turns = Arc::clone(&remote_turns_slot);
+        let relay_service = Arc::downgrade(&service);
         let on_event: XuserRelayEventHandler = Arc::new(move |event| {
             let Some(turns) = relay_turns
                 .lock()
@@ -251,11 +368,16 @@ impl ProductionCrossUserRuntime {
             else {
                 return Ok(false);
             };
-            Ok(match event.get("kind").and_then(Value::as_str) {
-                Some("turn-request") => turns.handle_turn_request(event),
-                Some("turn-result") => turns.handle_turn_result(event),
-                _ => false,
-            })
+            match event.get("kind").and_then(Value::as_str) {
+                Some("turn-request") => Ok(turns.handle_turn_request(event)),
+                Some("turn-result") => Ok(turns.handle_turn_result(event)),
+                _ => {
+                    let Some(service) = relay_service.upgrade() else {
+                        return Ok(false);
+                    };
+                    service.handle_event(event)
+                }
+            }
         });
         let notify_connected = notify_bus.clone();
         let notify_safety = notify_bus.clone();
