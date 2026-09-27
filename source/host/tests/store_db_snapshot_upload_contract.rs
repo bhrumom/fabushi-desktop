@@ -224,6 +224,10 @@ fn native_vacuum_runs_off_thread_and_temp_cleanup_is_idempotent() {
     }
 
     service.run_vacuum_off_thread(&src, &dest).unwrap();
+    let missing_error = service
+        .run_vacuum_off_thread(&root.join("missing.db"), &root.join("missing-out.db"))
+        .expect_err("worker failure should propagate");
+    assert!(!missing_error.is_empty());
     let db = rusqlite::Connection::open(&dest).unwrap();
     let value: String = db.query_row("SELECT v FROM t", [], |row| row.get(0)).unwrap();
     assert_eq!(value, "ok");
