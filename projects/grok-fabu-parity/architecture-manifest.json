@@ -10552,12 +10552,23 @@
       "targetPath": "source/host/src/extensions/auto_review/sand_backend_smart_mode_classifier_exec.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "750b804a10723ffb27e5ab43f1ef3fa5373f9683",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/auto_review/sand_backend_smart_mode_classifier_exec.rs",
+        "source/host/src/cursor_backend.rs",
+        "source/host/src/extensions/auth/extension.rs",
+        "source/host/src/runner/sand_auto_review_classifier_run.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_backend_smart_mode_classifier_exec_contract.rs",
+        "source/host/tests/sand_auto_review_classifier_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Host now implements the frozen Dashboard ClassifySandAutoReview protobuf projection, Auth/machine-id-backed Cursor transport, ghost-mode header resolution, enforce-mode default, backend result decoding, and the host-local toolCallId privacy boundary. Exact-HEAD source/host cargo tests pass. Final remains withheld because the shipping Runner composition does not yet bind AutoReviewService/create this executor per turn, and the Rust backend call does not yet expose Grok-equivalent ctx.signal cancellation through the classifier interface."
     },
     {
       "referencePath": "source/host/extensions/automations/backend-relay-source.ts",
