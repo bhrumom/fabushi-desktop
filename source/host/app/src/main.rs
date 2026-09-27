@@ -78,7 +78,7 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
 use mahayana_host_runtime::extensions::transcript::group_chat_glue::GroupChatGlue;
 use mahayana_host_runtime::extensions::transcript::group_chat_orchestrator::GroupMemberTurnRequest;
 use mahayana_host_runtime::extensions::cross_user_sharing::production::{
-    ProductionCrossUserRuntime, RemoteRequestedTurnRunner,
+    ProductionCrossUserRuntime, RemoteRequestedTurnRunner, SharedRoomTurnRunner,
 };
 use mahayana_host_runtime::groups::group_chat::{GroupDescription, GroupMember};
 use mahayana_host_runtime::extensions::transcript::send_group_fanout::{
@@ -4072,12 +4072,14 @@ fn main() {
         host_runner_composition: Arc::clone(&host_runner_composition),
     };
     let cross_user_settings_path = app_data_dir.join("settings.json");
+    let remote_requested_runner_deps = cross_user_runner_deps.clone();
+    let remote_requested_settings_path = cross_user_settings_path.clone();
     let run_remote_requested_turn: RemoteRequestedTurnRunner = Arc::new(
         move |agent_id, system_prompt, prompt| {
-            let provider = configured_routed_provider(&cross_user_settings_path)
+            let provider = configured_routed_provider(&remote_requested_settings_path)
                 .ok_or_else(|| "no routed provider configured for shared-room turn".to_string())?;
             run_local_group_member_turn(
-                cross_user_runner_deps.clone(),
+                remote_requested_runner_deps.clone(),
                 provider,
                 GroupMemberTurnRequest {
                     member: GroupMember {
@@ -4098,12 +4100,49 @@ fn main() {
             )
         },
     );
+    let shared_room_runner_deps = cross_user_runner_deps;
+    let shared_room_settings_path = cross_user_settings_path;
+    let shared_room_sessions = Arc::clone(&session_workers);
+    let shared_room_runtime = Arc::clone(&transcript_runtime);
+    let run_shared_room_turn: SharedRoomTurnRunner = Arc::new(
+        move |room_agent_id, remote_executor| {
+            let provider = configured_routed_provider(&shared_room_settings_path)
+                .ok_or_else(|| "no routed provider configured for shared-room fanout".to_string())?;
+            if provider == RoutedProvider::Cursor {
+                return Err(
+                    "Cursor shared-room fanout remains on the compatibility path".to_string(),
+                );
+            }
+            let deps = shared_room_runner_deps.clone();
+            let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
+                run_local_group_member_turn(deps.clone(), provider, request)
+            });
+            let epoch = shared_room_runtime.next_turn_epoch(room_agent_id);
+            match dispatch_local_group_send(
+                Arc::clone(&shared_room_sessions),
+                Arc::clone(&shared_room_runtime),
+                room_agent_id,
+                epoch,
+                executor,
+                remote_executor,
+            )? {
+                LocalGroupFanoutDisposition::NotGroup => Err(format!(
+                    "shared-room relay target is not a group: {room_agent_id}"
+                )),
+                LocalGroupFanoutDisposition::DeferredRemote { .. } => Err(
+                    "shared-room relay fanout is still missing a remote executor".to_string(),
+                ),
+                LocalGroupFanoutDisposition::Completed { .. } => Ok(()),
+            }
+        },
+    );
     let cross_user = match ProductionCrossUserRuntime::new(
         Arc::clone(&production_extensions.auth),
         production_extensions.notify_bus.clone(),
         Arc::clone(&attachments_service),
         transcript_manager.shared_rooms(),
         run_remote_requested_turn,
+        run_shared_room_turn,
     ) {
         Ok(runtime) => runtime,
         Err(error) => {
