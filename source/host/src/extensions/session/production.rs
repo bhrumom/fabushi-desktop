@@ -238,6 +238,10 @@ impl ProductionSessionWorkers {
         (self.user_time_zone_resolver)()
     }
 
+    pub fn agents_root(&self) -> &Path {
+        &self.agents_root
+    }
+
     pub fn session_db_path(&self, agent_id: &str) -> Result<PathBuf, String> {
         get_agent_db_path(&self.agents_root, agent_id).map_err(|error| error.to_string())
     }
