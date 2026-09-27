@@ -16,6 +16,10 @@ use super::routed_provider_runtime::{
 };
 use super::sand_action_audit::{AuditedRoutedToolBridge, RoutedMcpAuditConfig};
 use super::turn_observation::{ObservedRoutedToolBridge, TurnObservationHandle};
+use super::tools::communicate_tool::{
+    CommunicateInteractionSink, CommunicateRoutedToolBridge,
+    TurnObservationCommunicateSink,
+};
 use super::tools::send_message_tool::SendMessageSink;
 use super::tools::sand_reaction_tool::ReactionSink;
 use super::tools::sand_agent_management_tools::AgentManagementSink;
@@ -246,6 +250,13 @@ impl TurnAgentComposition {
                 cloud_agent_tool: self.cloud_agent_tool.clone(),
             },
         );
+        let communicate_sink: Option<Arc<dyn CommunicateInteractionSink>> =
+            self.observation.as_ref().map(|observation| {
+                Arc::new(TurnObservationCommunicateSink::new(Arc::clone(observation)))
+                    as Arc<dyn CommunicateInteractionSink>
+            });
+        let bridge: Arc<dyn RoutedToolBridge> =
+            Arc::new(CommunicateRoutedToolBridge::new(bridge, communicate_sink));
         let bridge: Arc<dyn RoutedToolBridge> = match &self.observation {
             Some(observation) => Arc::new(ObservedRoutedToolBridge::new(
                 bridge,

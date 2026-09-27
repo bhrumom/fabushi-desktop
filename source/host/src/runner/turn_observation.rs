@@ -255,6 +255,24 @@ impl TurnObservation {
         }));
     }
 
+    pub fn observe_communicate_tool_call(
+        &self,
+        phase: &str,
+        tool_name: &str,
+        tool_call_id: &str,
+        wire: &[u8],
+    ) {
+        self.emit(json!({
+            "type": "agent-tool-call",
+            "agentId": self.conversation_id,
+            "phase": phase,
+            "tool": tool_name,
+            "toolCallId": tool_call_id,
+            "encoding": "agent.v1.protobuf",
+            "wire": wire,
+        }));
+    }
+
     pub fn observe_await_tool_call(
         &mut self,
         started: bool,
