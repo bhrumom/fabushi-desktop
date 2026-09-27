@@ -1904,3 +1904,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The production `/health` path no longer falls through to `GatewayApi::default()`. It now derives live running Agents, active Agent, durable pending wakes and Auto-review approval waits through the canonical Rust `sand_host` owner and preserves the frozen approval-only `lastBusyAtMs` behavior.
 - Added `source/host/tests/sand_host_production_wiring_contract.rs` so source-level production composition and deterministic policy are checked together.
 - The confirmed box-ready lifecycle is now shipping: after gateway discovery the Host reads `SAND_BOX_BOOT_ID` / `SAND_BOX_BOOT_STARTED_AT_MS`, suppresses duplicate boot ids with `/tmp/sand-box-ready-stage`, reports `ready` asynchronously, retries up to 3 times at 30 seconds, and writes the marker only after confirmed telemetry delivery. `sand-host.ts` remains non-final only because frozen background-shell / running-subagent / mid-drain revival busy sources are not all yet projected into health; no manifest status is promoted merely because an owner exists.
+
+
+### 2026-09-27 live Runner capability prompt projection
+
+- The routed-provider system prompt now consumes an immutable per-turn capability snapshot instead of hard-coding the CloudAgent-disabled variant.
+- When the production `CloudAgentToolBridge` is present, the provider receives the enabled frozen Grok base prompt; when absent, the existing disabled prompt and warning remain fail-closed.
+- The Host now evaluates the frozen `sand_multitask` feature gate for ordinary turns, disables multitask for group-member turns, carries that decision through `ProductionRunnerCompositionInput` / `TurnAgentComposition`, and appends `SAND_MULTITASK_PROMPT_SECTION` to the actual provider system prompt.
+- `sand-multitask.ts` intentionally remains `existing-needs-parity`: the current Rust Runner still lacks the frozen per-turn executor subagent-config replacement and multitask-specific TodoWrite description injection. This slice does not mark the row final until those live tool surfaces exist.
