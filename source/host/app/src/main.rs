@@ -77,6 +77,10 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
 };
 use mahayana_host_runtime::extensions::transcript::group_chat_glue::GroupChatGlue;
 use mahayana_host_runtime::extensions::transcript::group_chat_orchestrator::GroupMemberTurnRequest;
+use mahayana_host_runtime::extensions::cross_user_sharing::production::{
+    ProductionCrossUserRuntime, RemoteRequestedTurnRunner,
+};
+use mahayana_host_runtime::groups::group_chat::{GroupDescription, GroupMember};
 use mahayana_host_runtime::extensions::transcript::send_group_fanout::{
     GroupMemberTurnExecutor, LocalGroupFanoutDisposition, collect_new_member_send_messages,
     dispatch_local_group_send,
@@ -727,6 +731,7 @@ struct UnifiedGatewayApi {
     local_tool_permission: Arc<HostLocalToolPermissionExtension>,
     auto_review: Arc<HostAutoReviewExtension>,
     host_runner_composition: Arc<HostRunnerComposition>,
+    cross_user: Arc<ProductionCrossUserRuntime>,
     create_agent_nonces: Mutex<CreateAgentNonceLedger<serde_json::Value>>,
     last_busy_at_ms: Mutex<u64>,
 }
@@ -849,7 +854,7 @@ impl UnifiedGatewayApi {
             agent_id,
             epoch,
             executor,
-            None,
+            self.cross_user.remote_executor(),
         )
         .map_err(ProductionSendError::Internal)?
         {
@@ -4044,6 +4049,69 @@ fn main() {
             return;
         }
     }
+    let cross_user_runner_deps = LocalRoutedRunnerDeps {
+        routed_tool_relay: Arc::clone(&routed_tool_relay),
+        auth: Arc::clone(&production_extensions.auth),
+        auto_review: Arc::clone(&auto_review_extension),
+        events: gateway_events.clone(),
+        host_tx: host_tx.clone(),
+        data_dir: app_data_dir.clone(),
+        request_context: Arc::clone(&runner_request_context),
+        experiments: Arc::clone(&production_extensions.experiments),
+        settings: Arc::clone(&settings_extension),
+        session_workers: Arc::clone(&session_workers),
+        runner_registry: Arc::clone(&runner_registry),
+        ack_obligations: Arc::clone(&ack_obligations),
+        transcript_runtime: Arc::clone(&transcript_runtime),
+        forever_box: Arc::clone(&forever_box),
+        session_handoff: session_handoff.clone(),
+        trays: Arc::clone(&production_extensions.trays),
+        telemetry_logs: host_telemetry.logs.clone(),
+        production_action_auditor: production_extensions.action_audit.clone(),
+        cloud_agents: production_extensions.cloud_agents.service(),
+        host_runner_composition: Arc::clone(&host_runner_composition),
+    };
+    let cross_user_settings_path = app_data_dir.join("settings.json");
+    let run_remote_requested_turn: RemoteRequestedTurnRunner = Arc::new(
+        move |agent_id, system_prompt, prompt| {
+            let provider = configured_routed_provider(&cross_user_settings_path)
+                .ok_or_else(|| "no routed provider configured for shared-room turn".to_string())?;
+            run_local_group_member_turn(
+                cross_user_runner_deps.clone(),
+                provider,
+                GroupMemberTurnRequest {
+                    member: GroupMember {
+                        id: agent_id.to_string(),
+                        name: agent_id.to_string(),
+                        description: String::new(),
+                    },
+                    system_prompt: system_prompt.to_string(),
+                    prompt: prompt.to_string(),
+                    group: GroupDescription {
+                        name: "Shared room".into(),
+                        description: String::new(),
+                    },
+                    peers: Vec::new(),
+                    new_messages: Vec::new(),
+                    shared_room_id: None,
+                },
+            )
+        },
+    );
+    let cross_user = match ProductionCrossUserRuntime::new(
+        Arc::clone(&production_extensions.auth),
+        production_extensions.notify_bus.clone(),
+        Arc::clone(&attachments_service),
+        transcript_manager.shared_rooms(),
+        run_remote_requested_turn,
+    ) {
+        Ok(runtime) => runtime,
+        Err(error) => {
+            eprintln!("failed to initialize production CrossUserSharing: {error}");
+            return;
+        }
+    };
+
     let gateway_api = Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
             auth: Arc::clone(&production_extensions.auth),
@@ -4053,7 +4121,7 @@ fn main() {
             events: gateway_events.clone(),
             routed_tool_relay: Arc::clone(&routed_tool_relay),
             data_dir: app_data_dir.clone(),
-            request_context: runner_request_context,
+            request_context: Arc::clone(&runner_request_context),
             session_workers: Arc::clone(&session_workers),
             runner_registry: Arc::clone(&runner_registry),
             ack_obligations: Arc::clone(&ack_obligations),
@@ -4071,6 +4139,7 @@ fn main() {
             local_tool_permission: Arc::clone(&local_tool_permission_extension),
             auto_review: Arc::clone(&auto_review_extension),
             host_runner_composition: Arc::clone(&host_runner_composition),
+            cross_user: Arc::clone(&cross_user),
             create_agent_nonces: Mutex::new(CreateAgentNonceLedger::default()),
             last_busy_at_ms: Mutex::new(gateway_started_at),
         });
@@ -4167,6 +4236,11 @@ fn main() {
     };
 
     production_extensions.notify_bus.mark_background_work_ready();
+    if let Err(error) =
+        cross_user.start_background_work(Arc::clone(&production_extensions.experiments))
+    {
+        eprintln!("[sand-host] CrossUserSharing background work failed: {error}");
+    }
     let _ = local_tool_permission_extension.background_work_ready();
 
     // Runtime events travel as unsolicited JSON frames. The event worker blocks
@@ -4260,6 +4334,7 @@ fn main() {
     drop(gateway_server);
     runner_registry.cancel_all("Mahayana Host shutting down");
     routed_tool_relay.cancel_all("Mahayana Host shutting down");
+    cross_user.stop();
     production_extensions.notify_bus.stop();
     session_extension.shutdown();
     wallpaper_extension.stop();
