@@ -3,6 +3,8 @@ use serde_json::{json, Value};
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 
 #[derive(Clone)]
 struct RecordedRequest {
@@ -191,4 +193,44 @@ fn relay_uses_frozen_grok_endpoint_family() {
     assert!(requests[1].url.ends_with("/sand/xuser/send"));
     assert!(requests[2].url.ends_with("/sand/share-rooms/from-agent"));
     assert!(requests[3].url.ends_with("/sand/share-rooms/join"));
+}
+
+#[test]
+fn relay_driver_owns_polling_wakeup_and_clean_stop() {
+    let transport = Arc::new(FakeTransport::new(vec![
+        Ok(json!({ "events": [] })),
+        Ok(json!({ "events": [] })),
+    ]));
+    let now = Arc::new(AtomicU64::new(1_000));
+    let runtime = Arc::new(runtime(
+        Arc::clone(&transport),
+        now,
+        Arc::new(AtomicBool::new(false)),
+        Arc::new(AtomicBool::new(true)),
+        Arc::new(Mutex::new(Vec::new())),
+    ));
+    let driver = SandXuserRelayDriver::new(runtime);
+
+    driver.start();
+    for _ in 0..100 {
+        if !transport.requests.lock().unwrap().is_empty() {
+            break;
+        }
+        thread::sleep(Duration::from_millis(5));
+    }
+    assert!(driver.is_started());
+    assert!(!transport.requests.lock().unwrap().is_empty());
+
+    let before = transport.requests.lock().unwrap().len();
+    driver.request_drain();
+    for _ in 0..100 {
+        if transport.requests.lock().unwrap().len() > before {
+            break;
+        }
+        thread::sleep(Duration::from_millis(5));
+    }
+    assert!(transport.requests.lock().unwrap().len() > before);
+
+    driver.stop();
+    assert!(!driver.is_started());
 }
