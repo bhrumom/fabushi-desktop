@@ -1900,7 +1900,7 @@ Implementation must update this compliance table with exact commit/workflow/arti
 ### 2026-09-27 shipping SandHost/Gateway policy wiring
 
 - Slice starting HEAD: `3630fceda4a7cabf0232cc1bbdb5468cc97b55b3`; prerequisite runtime exposure commits: `c2fda99d2c4cc671f1bd2f2836f99cbaf611877b` and `fdabeba77f5bf78d3dc92afd41bc31b767a989e7`.
-- Shipping `UnifiedGatewayApi` now consumes the Rust `host_gateway_api` create-Agent policy: bounded client-nonce dedupe, approved Sand purpose filtering, and template-id validation before the real Host-lane mint.
+- Shipping `UnifiedGatewayApi` now consumes the Rust `host_gateway_api` create-Agent policy: bounded client-nonce dedupe, approved Sand purpose filtering, and template-id validation around the canonical Rust ProductionSession gateway mint.
 - The production `/health` path no longer falls through to `GatewayApi::default()`. It now derives live running Agents, active Agent, durable pending wakes and Auto-review approval waits through the canonical Rust `sand_host` owner and preserves the frozen approval-only `lastBusyAtMs` behavior.
 - Added `source/host/tests/sand_host_production_wiring_contract.rs` so source-level production composition and deterministic policy are checked together.
 - These mappings remain non-final until the remaining frozen background-shell/mid-drain sources and box-ready confirmed telemetry lifecycle are wired; no manifest status is promoted merely because an owner exists.
