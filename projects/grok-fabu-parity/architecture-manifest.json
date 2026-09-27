@@ -11573,12 +11573,20 @@
       "targetPath": "source/host/src/extensions/content_search/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "bf4b665ead15283a1c6166151b50ce6c178546e2",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/content_search/extension.rs",
+        "source/host/src/extensions/extension_ids.generated.rs",
+        "source/host/src/extensions/registry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/content_search_extension_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now owns the frozen content-search extension lifecycle boundary: sand_global_search gate application, mutation subscription attach/detach without duplicate subscriptions, index start, API readiness/limits/search forwarding, gate subscription cleanup and index disposal. Final remains withheld until the separately mapped Rust agent-content-search, search-index DB/service/worker/writer modules exist and production Host composition binds the real transcript mutation source, experiments gate and telemetry health reporter."
     },
     {
       "referencePath": "source/host/extensions/content-search/search-index-db.ts",

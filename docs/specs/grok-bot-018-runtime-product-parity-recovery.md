@@ -1728,3 +1728,14 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added `teach_recording_extension_contract` for key parsing/persistence/permissions, non-regeneration of valid keys, dependency/cap wiring, pending recovery and idempotent Host-owned service disposal.
 - The row advances from `planned` to `existing-needs-parity`; final remains blocked on the separately-owned Rust `teach-recording-service` recording/queue state machine and production Host composition.
 - Manifest becomes **1,833 implemented / 125 existing-needs-parity / 44 planned** (**169 non-final**).
+
+
+### 2026-09-27 Content search extension boundary slice
+
+- Exact starting HEAD: `6e1608b72c7043226d8b176efd9f52fc6cc197f7`.
+- Re-read frozen `source/host/extensions/content-search/extension.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634` (reference blob `bf4b665ead15283a1c6166151b50ce6c178546e2`).
+- Added Rust `content_search/extension.rs` as the Grok-shaped composition owner only: `sand_global_search` gate application, mutation subscription attach/detach, duplicate-subscription suppression, index start, API forwarding/limits and deterministic cleanup.
+- Added `content_search_extension_contract` covering disabled startup, enable/disable/re-enable, mutation forwarding, search API forwarding, constants and disposal.
+- Index DB/service/worker/writer remain independent mapped modules and are not hidden behind the extension port.
+- The row advances from `planned` to `existing-needs-parity`; final remains blocked on those real Rust index owners plus production Host composition.
+- Manifest becomes **1,833 implemented / 126 existing-needs-parity / 43 planned** (**169 non-final**).

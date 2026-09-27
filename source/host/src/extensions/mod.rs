@@ -55,3 +55,5 @@ pub mod automations;
 pub mod notifications;
 
 pub mod teach_recording;
+
+pub mod content_search;
