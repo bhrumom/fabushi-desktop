@@ -183,7 +183,18 @@ where
     let decision = classify(&risk_target, "enforce")
         .map_err(|error| SandBrowserAutoReviewBlockedError(format!("{error:?}")))?;
     let (reason, proposed_rule) = match decision {
-        AutoReviewClassifierDecision::Allow => return Ok(()),
+        AutoReviewClassifierDecision::Allow => {
+            let next = capture_review_state().map_err(SandBrowserAutoReviewBlockedError)?;
+            if next.display_state_identity != initial_state.display_state_identity {
+                if let Some(controller) = controller {
+                    controller.report_display_recheck_failed(Some(agent_id));
+                }
+                return Err(SandBrowserAutoReviewBlockedError(
+                    "The page changed after review; take a fresh browser_snapshot and retry the action.".into(),
+                ));
+            }
+            return Ok(());
+        }
         AutoReviewClassifierDecision::Reject { reason } => {
             return Err(SandBrowserAutoReviewBlockedError(reason));
         }
@@ -238,7 +249,7 @@ where
             if next.display_state_identity != initial_state.display_state_identity {
                 controller.report_display_recheck_failed(Some(agent_id));
                 return Err(SandBrowserAutoReviewBlockedError(
-                    "Browser display changed while approval was pending; retry the action.".into(),
+                    "The page changed after review; take a fresh browser_snapshot and retry the action.".into(),
                 ));
             }
             Ok(())

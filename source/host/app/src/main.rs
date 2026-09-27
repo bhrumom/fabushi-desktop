@@ -30,6 +30,10 @@ use mahayana_host_runtime::runner::sand_auto_review::{
 };
 use mahayana_host_runtime::runner::sand_auto_review_classifier_run::run_sand_auto_review_classifier;
 use mahayana_host_runtime::runner::sand_auto_review_summaries::CloudLifecycleAction;
+use mahayana_host_runtime::runner::sand_browser_auto_review::run_sand_browser_auto_review_preflight;
+use mahayana_host_runtime::runner::sand_computer_auto_review::{
+    BoxIdentity, SAND_COMPUTER_AUTO_REVIEW_CLASSIFIER_ERROR_REASON,
+};
 use mahayana_host_runtime::runner::sand_cloud_agent_auto_review::{
     CloudAgentReviewImage, CloudAgentReviewOutcome,
     SAND_CLOUD_AGENT_CLASSIFIER_ERROR_REASON,
@@ -182,8 +186,9 @@ use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt
 use mahayana_host_runtime::runner::tools::sand_state_tool::SandStateWriter;
 use mahayana_host_runtime::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
-    BrowserPersistImageCallback, BrowserPossibleNavigationCallback, BrowserToolExecutor,
-    ProductionBrowserToolExecutor,
+    BrowserAutoReviewCallback, BrowserPersistImageCallback, BrowserPossibleNavigationCallback,
+    BrowserToolExecutor, ProductionBrowserToolExecutor, capture_browser_review_state,
+    to_browser_review_action,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{append_automations_system_prompt, append_memory_system_prompt};
 use mahayana_host_runtime::runner_production_bridge::{
@@ -1999,6 +2004,92 @@ fn start_routed_provider_task(
                     agent_id.clone(),
                 ));
             let browser_media_sessions = Arc::clone(&worker_sessions);
+            let browser_review_box = Arc::clone(&box_resources);
+            let browser_review_auth = Arc::clone(&worker_auth);
+            let browser_review_auto_review = Arc::clone(&worker_auto_review);
+            let browser_review_controller = Arc::clone(&worker_auto_review_controller);
+            let browser_review_cancellation = worker_cancellation.clone();
+            let browser_review_agent_id = agent_id.clone();
+            let browser_review_request_source = auto_review_request_source.clone();
+            let browser_review_context = auto_review_context
+                .iter()
+                .map(|message| {
+                    serde_json::json!({
+                        "role": message.role,
+                        "content": message.content,
+                    })
+                })
+                .collect::<Vec<_>>();
+            let browser_auto_review: BrowserAutoReviewCallback =
+                Arc::new(move |spec, args, tool_call_id| {
+                    let mode = browser_review_auto_review.current_modes().computer;
+                    let initial_display = browser_review_box.browser_window_index()?;
+                    let exact_action = serde_json::to_value(to_browser_review_action(
+                        spec.op,
+                        args,
+                        &browser_review_agent_id,
+                    ))
+                    .map_err(|error| {
+                        ProviderSessionError::Tool(format!(
+                            "Browser Auto-review action projection failed: {error}"
+                        ))
+                    })?;
+                    let view_id = exact_action
+                        .get("viewId")
+                        .and_then(serde_json::Value::as_str)
+                        .map(str::to_string);
+                    let box_identity = BoxIdentity {
+                        box_id: std::env::var("SAND_BOX_HOST")
+                            .ok()
+                            .filter(|value| !value.trim().is_empty())
+                            .unwrap_or_else(|| "127.0.0.1".into()),
+                        window_generation: format!(
+                            "{}:{}",
+                            browser_review_agent_id,
+                            initial_display
+                        ),
+                    };
+                    let classifier_cancellation = browser_review_cancellation.clone();
+                    let mut classifier =
+                        create_sand_backend_smart_mode_classifier_executor_with_cancellation(
+                            Arc::clone(&browser_review_auth),
+                            Arc::new(move || classifier_cancellation.is_cancelled()),
+                        )
+                        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                    run_sand_browser_auto_review_preflight(
+                        mode,
+                        &exact_action,
+                        &box_identity,
+                        &browser_review_agent_id,
+                        &browser_review_request_source,
+                        Some(browser_review_controller.as_ref()),
+                        || {
+                            let display = browser_review_box
+                                .browser_window_index()
+                                .map_err(|error| error.to_string())?;
+                            capture_browser_review_state(
+                                browser_review_box.as_ref(),
+                                display,
+                                view_id.as_deref(),
+                                tool_call_id,
+                            )
+                            .map_err(|error| error.to_string())
+                        },
+                        |risk_target, classifier_mode| {
+                            run_sand_auto_review_classifier(
+                                &mut classifier,
+                                tool_call_id,
+                                &browser_review_agent_id,
+                                classifier_mode,
+                                || risk_target.clone(),
+                                || Ok(browser_review_context.clone()),
+                                &[],
+                                SAND_COMPUTER_AUTO_REVIEW_CLASSIFIER_ERROR_REASON,
+                            )
+                        },
+                    )
+                    .map_err(|error| ProviderSessionError::Tool(error.to_string()))
+                });
             let cloud_agent_review = build_cloud_agent_auto_review_hook(
                 Arc::clone(&worker_auth),
                 Arc::clone(&worker_auto_review),
@@ -2246,6 +2337,7 @@ fn start_routed_provider_task(
                     Arc::clone(&box_resources),
                     agent_id.clone(),
                 )
+                .with_auto_review_callback(browser_auto_review)
                 .with_persist_image_callback(browser_persist_image)
                 .with_possible_navigation_callback(browser_possible_navigation),
             );

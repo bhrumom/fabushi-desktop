@@ -160,6 +160,7 @@ fn computer_and_browser_preflight_bind_approval_to_display_state() {
     )
     .expect("canonical browser target");
     assert_eq!(canonical["exact_action"]["element"], "Settings");
+    let mut browser_state_captures = 0usize;
     run_sand_browser_auto_review_preflight(
         SandAutoReviewMode::Enforce,
         &json!({"op":"click","element":"Settings"}),
@@ -167,13 +168,20 @@ fn computer_and_browser_preflight_bind_approval_to_display_state() {
         "agent-a",
         "turn",
         Some(&controller),
-        || Ok(state.clone()),
+        || {
+            browser_state_captures += 1;
+            Ok(state.clone())
+        },
         |target, _| {
             assert_eq!(target["action"], "sand_computer");
             Ok(AutoReviewClassifierDecision::Allow)
         },
     )
     .expect("allowed browser click");
+    assert_eq!(
+        browser_state_captures, 2,
+        "frozen browser Auto-review rechecks page identity even after classifier allow"
+    );
 }
 
 #[test]

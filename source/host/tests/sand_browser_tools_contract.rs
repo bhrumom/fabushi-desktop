@@ -11,7 +11,7 @@ use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BOX_CDP_PORT_BASE, BrowserDriverOutput, BrowserEnvelope, BrowserToolExecutor,
     BrowserToolSpec, ProductionBrowserToolExecutor, SandBrowserToolBridge,
-    browser_tool_specs,
+    browser_tool_specs, capture_browser_review_state,
     build_browser_driver_invocation, decode_envelope, encode_envelope,
     parse_driver_response, sanitize_for_box_path, stash_screenshot,
     take_stashed_screenshot, to_browser_review_action,
@@ -63,6 +63,24 @@ impl RunnerBoxResourcePort for ProductionBoxPort {
     ) -> Result<Value, ProviderSessionError> {
         let path = request.path.clone();
         self.reads.lock().expect("reads").push(request);
+        if path.contains("/review-state-") {
+            return Ok(json!({
+                "kind":"success",
+                "output":{
+                    "kind":"content",
+                    "content":"driver log\n[{\"id\":\"target-a\",\"type\":\"page\",\"url\":\"https://example.com/settings?tab=1\"}]\n"
+                }
+            }));
+        }
+        if path.ends_with("/views-4.json") {
+            return Ok(json!({
+                "kind":"success",
+                "output":{
+                    "kind":"content",
+                    "content":"{\"views\":{\"agent-browser\":\"target-a\"},\"urls\":{\"agent-browser\":\"https://fallback.example/\"}}"
+                }
+            }));
+        }
         if path.contains("/result-") {
             return Ok(json!({
                 "kind":"success",
@@ -248,14 +266,50 @@ fn screenshot_cache_returns_stashed_image_once() {
 
 
 #[test]
+fn browser_review_state_uses_host_box_probe_and_view_mapping() {
+    let port = ProductionBoxPort::default();
+    let state = capture_browser_review_state(
+        &port,
+        4,
+        Some("agent-browser"),
+        "browser/review:1",
+    )
+    .expect("browser review state");
+    assert_eq!(state.display_state_identity.len(), 64);
+    assert_eq!(
+        state.target_page_url.as_deref(),
+        Some("https://example.com/settings")
+    );
+    let shells = port.shells.lock().expect("shells");
+    assert!(shells.iter().any(|request| {
+        request.command.contains("http://127.0.0.1:9226/json/list")
+            && request.command.contains("review-state-browserreview1.json")
+    }));
+}
+
+#[test]
 fn production_browser_executor_uses_only_host_box_port() {
     let port = Arc::new(ProductionBoxPort::default());
     let resources: Arc<dyn RunnerBoxResourcePort> = port.clone();
+    let auto_reviews = Arc::new(Mutex::new(Vec::<String>::new()));
+    let auto_reviews_sink = Arc::clone(&auto_reviews);
     let persisted_images = Arc::new(Mutex::new(Vec::<(Vec<u8>, String)>::new()));
     let persisted_images_sink = Arc::clone(&persisted_images);
     let navigation_events = Arc::new(Mutex::new(Vec::<(String, String)>::new()));
     let navigation_events_sink = Arc::clone(&navigation_events);
     let executor = ProductionBrowserToolExecutor::new(resources, "agent-browser")
+        .with_auto_review_callback(Arc::new(move |spec, args, tool_call_id| {
+            assert_eq!(spec.name, "browser_navigate");
+            assert_eq!(
+                args.get("url").and_then(Value::as_str),
+                Some("https://example.com")
+            );
+            auto_reviews_sink
+                .lock()
+                .expect("auto reviews")
+                .push(tool_call_id.to_string());
+            Ok(())
+        }))
         .with_persist_image_callback(Arc::new(move |bytes, mime| {
             persisted_images_sink
                 .lock()
@@ -285,6 +339,10 @@ fn production_browser_executor_uses_only_host_box_port() {
         .expect("browser output");
 
     assert!(!output.is_error);
+    assert_eq!(
+        auto_reviews.lock().expect("auto reviews").as_slice(),
+        &["browser/call:1".to_string()]
+    );
     assert!(output.text.contains("Opened page"));
     assert!(output.text.contains("https://example.com"));
     assert!(output.image_b64.as_deref().is_some_and(|value| !value.is_empty()));

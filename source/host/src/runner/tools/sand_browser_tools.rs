@@ -4,6 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use serde_json::{Map, Value, json};
 
 use crate::extensions::inference::provider_session::{
@@ -14,6 +15,11 @@ use crate::runner::box_tool_access::{
     RunnerBoxWriteRequest,
 };
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
+use crate::runner::sand_action_audit::{
+    navigation_probe_command, normalize_navigation_url, parse_navigation_probe_output,
+};
+use crate::runner::sand_browser_auto_review::SandBrowserReviewState;
+use crate::runner::sand_computer_auto_review::SAND_COMPUTER_PAGE_STATE_CHROME_UNREACHABLE;
 
 use super::sand_browser_driver_source::{
     SAND_BROWSER_DRIVER_BOX_DIR, SAND_BROWSER_DRIVER_BOX_PATH,
@@ -81,6 +87,152 @@ pub fn parse_driver_response(stdout: &str) -> Option<BrowserDriverResponse> {
         return Some(to_driver_response(object));
     }
     None
+}
+
+fn read_browser_review_text(
+    box_resources: &dyn RunnerBoxResourcePort,
+    path: &str,
+    tool_call_id: &str,
+) -> Result<Option<String>, ProviderSessionError> {
+    let result = box_resources.execute_read(RunnerBoxReadRequest {
+        path: path.to_string(),
+        tool_call_id: tool_call_id.to_string(),
+        offset: None,
+        limit: None,
+        encoding_hint: Some("utf8".into()),
+    })?;
+    match result.get("kind").and_then(Value::as_str) {
+        Some("success") => Ok(result
+            .pointer("/output/content")
+            .and_then(Value::as_str)
+            .map(str::to_string)),
+        Some("fileNotFound") => Ok(None),
+        Some(kind) => Err(ProviderSessionError::Tool(format!(
+            "Browser Auto-review could not read {path} ({kind})"
+        ))),
+        None => Err(ProviderSessionError::Tool(format!(
+            "Browser Auto-review received an invalid read response for {path}"
+        ))),
+    }
+}
+
+fn resolve_browser_target_page_url(
+    probe_stdout: &str,
+    state_json: &str,
+    view_id: &str,
+) -> Option<String> {
+    let parsed = serde_json::from_str::<Value>(state_json).ok();
+    let views = parsed
+        .as_ref()
+        .and_then(|value| value.get("views"))
+        .and_then(Value::as_object);
+    let urls = parsed
+        .as_ref()
+        .and_then(|value| value.get("urls"))
+        .and_then(Value::as_object);
+    if let Some(target_id) = views
+        .and_then(|views| views.get(view_id))
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+    {
+        if let Some(url) = parse_navigation_probe_output(probe_stdout)
+            .iter()
+            .find(|target| {
+                target.get("type").and_then(Value::as_str) == Some("page")
+                    && target.get("id").and_then(Value::as_str) == Some(target_id)
+            })
+            .and_then(|target| target.get("url"))
+            .and_then(Value::as_str)
+            .and_then(normalize_navigation_url)
+        {
+            return Some(url);
+        }
+    }
+    urls.and_then(|urls| urls.get(view_id))
+        .and_then(Value::as_str)
+        .and_then(normalize_navigation_url)
+}
+
+pub fn capture_browser_review_state(
+    box_resources: &dyn RunnerBoxResourcePort,
+    display_number: u32,
+    view_id: Option<&str>,
+    tool_call_id: &str,
+) -> Result<SandBrowserReviewState, ProviderSessionError> {
+    let display_number = u16::try_from(display_number).map_err(|_| {
+        ProviderSessionError::Tool("Browser Auto-review display number is out of range".into())
+    })?;
+    let review_key = sanitize_for_box_path(tool_call_id);
+    let probe_path =
+        format!("{SAND_BROWSER_DRIVER_BOX_DIR}/review-state-{review_key}.json");
+    let probe = navigation_probe_command(display_number);
+    let shell_result = box_resources.execute_shell(RunnerBoxShellRequest {
+        command: format!("{probe} > {probe_path}"),
+        working_directory: "/workspace".into(),
+        tool_call_id: format!("{tool_call_id}:auto-review-state"),
+    })?;
+    if shell_result.get("kind").and_then(Value::as_str) != Some("success") {
+        return Err(ProviderSessionError::Tool(
+            "Browser Auto-review could not capture the current page state.".into(),
+        ));
+    }
+    if shell_result
+        .get("exitCode")
+        .and_then(Value::as_i64)
+        .unwrap_or(-1)
+        != 0
+    {
+        return Ok(SandBrowserReviewState {
+            display_state_identity: SAND_COMPUTER_PAGE_STATE_CHROME_UNREACHABLE.into(),
+            target_page_url: None,
+        });
+    }
+    let probe_stdout = read_browser_review_text(
+        box_resources,
+        &probe_path,
+        &format!("{tool_call_id}:auto-review-probe"),
+    )?
+    .ok_or_else(|| {
+        ProviderSessionError::Tool(
+            "Browser Auto-review could not capture the current page state.".into(),
+        )
+    })?;
+    let state_path =
+        format!("{SAND_BROWSER_DRIVER_BOX_DIR}/views-{display_number}.json");
+    let state_json = read_browser_review_text(
+        box_resources,
+        &state_path,
+        &format!("{tool_call_id}:auto-review-views"),
+    )?
+    .unwrap_or_default();
+
+    let mut page_identity = parse_navigation_probe_output(&probe_stdout)
+        .into_iter()
+        .filter_map(|target| {
+            if target.get("type").and_then(Value::as_str) != Some("page") {
+                return None;
+            }
+            let id = target.get("id").and_then(Value::as_str)?;
+            let url = target
+                .get("url")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .trim();
+            Some(format!("{id}\t{url}"))
+        })
+        .collect::<Vec<_>>();
+    page_identity.sort();
+    let mut hash = Sha256::new();
+    hash.update(page_identity.join("\n").as_bytes());
+    let display_state_identity = format!("{:x}", hash.finalize());
+    let target_page_url = view_id.and_then(|view_id| {
+        resolve_browser_target_page_url(&probe_stdout, &state_json, view_id)
+    });
+
+    Ok(SandBrowserReviewState {
+        display_state_identity,
+        target_page_url,
+    })
 }
 
 pub fn sanitize_for_box_path(value: &str) -> String {
@@ -370,6 +522,11 @@ impl BrowserDriverError {
     }
 }
 
+pub type BrowserAutoReviewCallback = Arc<
+    dyn Fn(&BrowserToolSpec, &Map<String, Value>, &str) -> Result<(), ProviderSessionError>
+        + Send
+        + Sync,
+>;
 pub type BrowserPersistImageCallback = Arc<dyn Fn(&[u8], &str) + Send + Sync>;
 pub type BrowserPossibleNavigationCallback =
     Arc<dyn Fn(&BrowserDriverResponse) + Send + Sync>;
@@ -378,6 +535,7 @@ pub type BrowserPossibleNavigationCallback =
 pub struct ProductionBrowserToolExecutor {
     box_resources: Arc<dyn RunnerBoxResourcePort>,
     default_view_id: String,
+    auto_review: Option<BrowserAutoReviewCallback>,
     persist_image: Option<BrowserPersistImageCallback>,
     on_possible_navigation: Option<BrowserPossibleNavigationCallback>,
 }
@@ -390,9 +548,18 @@ impl ProductionBrowserToolExecutor {
         Self {
             box_resources,
             default_view_id: default_view_id.into(),
+            auto_review: None,
             persist_image: None,
             on_possible_navigation: None,
         }
+    }
+
+    pub fn with_auto_review_callback(
+        mut self,
+        callback: BrowserAutoReviewCallback,
+    ) -> Self {
+        self.auto_review = Some(callback);
+        self
     }
 
     pub fn with_persist_image_callback(
@@ -516,6 +683,9 @@ impl BrowserToolExecutor for ProductionBrowserToolExecutor {
         args: &Map<String, Value>,
         tool_call_id: &str,
     ) -> Result<BrowserDriverOutput, ProviderSessionError> {
+        if let Some(auto_review) = self.auto_review.as_ref() {
+            auto_review(spec, args, tool_call_id)?;
+        }
         self.ensure_driver_uploaded(tool_call_id)?;
         let window_index = self.box_resources.browser_window_index()?;
         let invocation = build_browser_driver_invocation(
