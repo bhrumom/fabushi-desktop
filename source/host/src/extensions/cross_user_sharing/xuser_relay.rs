@@ -176,7 +176,9 @@ impl SandXuserRelayClient {
 
 type RelayClock = Arc<dyn Fn() -> u64 + Send + Sync>;
 type RelayBool = Arc<dyn Fn() -> bool + Send + Sync>;
-type RelayNotifyGate = NotifyDrainGate<RelayClock, RelayBool, RelayBool>;
+type RelayGateClock = Box<dyn Fn() -> u64 + Send + Sync>;
+type RelayGateBool = Box<dyn Fn() -> bool + Send + Sync>;
+type RelayNotifyGate = NotifyDrainGate<RelayGateClock, RelayGateBool, RelayGateBool>;
 pub type XuserRelayEventHandler =
     Arc<dyn Fn(&Value) -> Result<bool, String> + Send + Sync>;
 
@@ -210,10 +212,13 @@ impl SandXuserRelayRuntime {
         is_notify_connected: RelayBool,
         is_notify_safety_poll_enabled: RelayBool,
     ) -> Self {
+        let gate_now = Arc::clone(&now_ms);
+        let gate_connected = Arc::clone(&is_notify_connected);
+        let gate_safety_poll = Arc::clone(&is_notify_safety_poll_enabled);
         let gate = NotifyDrainGate::new(
-            Arc::clone(&now_ms),
-            is_notify_connected,
-            is_notify_safety_poll_enabled,
+            Box::new(move || gate_now()),
+            Box::new(move || gate_connected()),
+            Box::new(move || gate_safety_poll()),
         );
         Self {
             client,
