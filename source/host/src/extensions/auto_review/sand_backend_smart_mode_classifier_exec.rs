@@ -7,7 +7,8 @@ use serde_json::Value;
 use thiserror::Error;
 
 use crate::cursor_backend::{
-    CursorBackendError, resolve_sand_ghost_mode_header, send_cursor_unary,
+    CursorBackendError, CursorRequestCancellation, resolve_sand_ghost_mode_header,
+    send_cursor_unary_cancellable,
 };
 use crate::extensions::auth::credential_renewer::get_configured_backend_url;
 use crate::extensions::auth::extension::HostAuthExtension;
@@ -49,11 +50,22 @@ pub enum SandSmartModeClassifierError {
 
 pub struct SandBackendSmartModeClassifierExecutor {
     options: SandBackendSmartModeClassifierOptions,
+    cancellation: CursorRequestCancellation,
 }
 
 impl SandBackendSmartModeClassifierExecutor {
     pub fn new(options: SandBackendSmartModeClassifierOptions) -> Self {
-        Self { options }
+        Self::with_cancellation(options, Arc::new(|| false))
+    }
+
+    pub fn with_cancellation(
+        options: SandBackendSmartModeClassifierOptions,
+        cancellation: CursorRequestCancellation,
+    ) -> Self {
+        Self {
+            options,
+            cancellation,
+        }
     }
 
     pub fn production(
@@ -76,6 +88,32 @@ impl SandBackendSmartModeClassifierExecutor {
                     .map_err(|error| error.to_string())
             }),
         }))
+    }
+
+    pub fn production_with_cancellation(
+        auth: Arc<HostAuthExtension>,
+        cancellation: CursorRequestCancellation,
+    ) -> Result<Self, SandSmartModeClassifierError> {
+        let backend_url = get_configured_backend_url()
+            .map_err(|error| SandSmartModeClassifierError::Configuration(error.to_string()))?;
+        let token_auth = Arc::clone(&auth);
+        let machine_auth = Arc::clone(&auth);
+        Ok(Self::with_cancellation(
+            SandBackendSmartModeClassifierOptions {
+                backend_url,
+                get_access_token: Arc::new(move || {
+                    token_auth
+                        .get_access_token()
+                        .map_err(|error| error.to_string())
+                }),
+                get_machine_id: Arc::new(move || {
+                    machine_auth
+                        .get_machine_id()
+                        .map_err(|error| error.to_string())
+                }),
+            },
+            cancellation,
+        ))
     }
 
     pub fn execute_projected<Target, ConversationMessage>(
@@ -128,7 +166,7 @@ impl SandBackendSmartModeClassifierExecutor {
             &access_token,
             &machine_id,
         );
-        let response = send_cursor_unary(
+        let response = send_cursor_unary_cancellable(
             &self.options.backend_url,
             &access_token,
             &machine_id,
@@ -136,6 +174,7 @@ impl SandBackendSmartModeClassifierExecutor {
             &body,
             SAND_AUTO_REVIEW_CLASSIFIER_TIMEOUT_MS,
             ghost_mode,
+            Arc::clone(&self.cancellation),
         )?;
         let response = ClassifySandAutoReviewResponseWire::decode(response.as_slice())
             .map_err(|error| {
@@ -158,6 +197,16 @@ pub fn create_sand_backend_smart_mode_classifier_executor(
     SandBackendSmartModeClassifierExecutor::production(auth)
 }
 
+pub fn create_sand_backend_smart_mode_classifier_executor_with_cancellation(
+    auth: Arc<HostAuthExtension>,
+    cancellation: CursorRequestCancellation,
+) -> Result<SandBackendSmartModeClassifierExecutor, SandSmartModeClassifierError> {
+    SandBackendSmartModeClassifierExecutor::production_with_cancellation(
+        auth,
+        cancellation,
+    )
+}
+
 impl<Target, ConversationMessage>
     SandAutoReviewClassifierExecutor<Target, ConversationMessage>
     for SandBackendSmartModeClassifierExecutor
@@ -169,8 +218,13 @@ where
         &mut self,
         request: AutoReviewClassifierRequest<'_, Target, ConversationMessage>,
     ) -> Result<SmartModeClassifierResult, AutoReviewClassifierError> {
-        self.execute_projected(request)
-            .map_err(|error| AutoReviewClassifierError::Failed(error.to_string()))
+        match self.execute_projected(request) {
+            Ok(result) => Ok(result),
+            Err(SandSmartModeClassifierError::Backend(
+                CursorBackendError::Cancelled(reason),
+            )) => Err(AutoReviewClassifierError::Aborted(reason)),
+            Err(error) => Err(AutoReviewClassifierError::Failed(error.to_string())),
+        }
     }
 }
 

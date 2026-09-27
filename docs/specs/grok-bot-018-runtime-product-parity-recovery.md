@@ -2109,3 +2109,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The previous manifest blocker is closed: `TranscriptManager` owns one production `SharedRooms` service, and both `post_shared_room_guest_message` (hosted-room inbound human messages) and `append_mirror_room_entry` (mirror-room inbound human/agent messages) call the canonical Rust `materialize_inline_images` owner before durable transcript append.
 - The focused `shared_rooms_production_contract.rs` now verifies both production ingress paths end-to-end: inline base64 bytes are written under the agent's `xuser-attachments` directory, projected as file URLs, preserve MIME-derived extension and alt text, and those URLs are the ones persisted into the canonical transcript entry.
 - Only the frozen `inline-image-materialization.ts` mapping advances from `existing-needs-parity` to `implemented`. No adjacent CrossUser, Group Chat, or Transcript rows are promoted by this change.
+
+### 2026-09-28 Auto-review classifier in-flight cancellation parity
+
+- Starting exact HEAD: `c05b7d12d7af72458bfd1a1ca20ee535a2fa7d2f`.
+- The Rust Cursor backend now has a cancellable unary transport for the Auto-review classifier. The live Runner cancellation token races both response-header and response-body reads so cancellation drops the in-flight HTTP future rather than waiting for the 10-second classifier timeout.
+- `SandBackendSmartModeClassifierExecutor` maps transport cancellation to `AutoReviewClassifierError::Aborted`, preserving Grok's `ctx.signal` semantics instead of converting cancellation into a classifier rejection.
+- Shipping CloudAgent Auto-review now supplies its real per-stream `RoutedProviderCancellation` to that executor. The focused backend contract holds the server socket open after cancellation and requires the call to abort promptly, proving the request is not merely waiting for transport failure.
+- The architecture-manifest row intentionally remains `existing-needs-parity`: Browser, Computer, Shell, MCP, Subagent and Automation preflight owners still need production wiring through the same AutoReview controller/executor before this cluster can be finalized.
+

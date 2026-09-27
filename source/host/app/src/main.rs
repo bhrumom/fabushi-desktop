@@ -17,7 +17,9 @@ use mahayana_host_runtime::extensions::auto_review::auto_review_service::AutoRev
 use mahayana_host_runtime::extensions::auto_review::extension::{
     HostAutoReviewExtension, start_auto_review_extension,
 };
-use mahayana_host_runtime::extensions::auto_review::sand_backend_smart_mode_classifier_exec::create_sand_backend_smart_mode_classifier_executor;
+use mahayana_host_runtime::extensions::auto_review::sand_backend_smart_mode_classifier_exec::{
+    create_sand_backend_smart_mode_classifier_executor_with_cancellation,
+};
 use mahayana_host_runtime::extensions::auth::extension::HostAuthExtension;
 use mahayana_host_runtime::extensions::telemetry::auto_review_approval_telemetry::{
     AutoReviewApprovalReport, auto_review_approval_telemetry,
@@ -1501,10 +1503,13 @@ fn build_cloud_agent_auto_review_hook(
             ) else {
                 return Ok(None);
             };
-            let mut classifier = create_sand_backend_smart_mode_classifier_executor(
-                Arc::clone(&auth),
-            )
-            .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+            let classifier_cancellation = cancellation.clone();
+            let mut classifier =
+                create_sand_backend_smart_mode_classifier_executor_with_cancellation(
+                    Arc::clone(&auth),
+                    Arc::new(move || classifier_cancellation.is_cancelled()),
+                )
+                .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
             let classifier_context = conversation_context
                 .iter()
                 .map(|message| {

@@ -1,9 +1,11 @@
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
+use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use reqwest::blocking::Client;
+use reqwest::Client as AsyncClient;
+use reqwest::blocking::Client as BlockingClient;
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -52,6 +54,8 @@ pub enum CursorBackendError {
     InvalidBackendUrl(String),
     #[error("Cursor backend transport failed: {0}")]
     Transport(String),
+    #[error("Cursor backend request cancelled: {0}")]
+    Cancelled(String),
     #[error("Cursor backend returned HTTP {status}: {body}")]
     HttpStatus { status: u16, body: String },
     #[error("Cursor backend protobuf response was invalid: {0}")]
@@ -138,6 +142,143 @@ pub(crate) fn send_cursor_unary(
     )
 }
 
+
+pub(crate) type CursorRequestCancellation =
+    Arc<dyn Fn() -> bool + Send + Sync + 'static>;
+
+pub(crate) fn send_cursor_unary_cancellable(
+    backend_url: &str,
+    access_token: &str,
+    machine_id: &str,
+    path: &str,
+    body: &[u8],
+    timeout_ms: u64,
+    ghost_mode: &str,
+    cancellation: CursorRequestCancellation,
+) -> Result<Vec<u8>, CursorBackendError> {
+    if cancellation() {
+        return Err(CursorBackendError::Cancelled(
+            "request was cancelled before dispatch".into(),
+        ));
+    }
+
+    let backend_url = backend_url.to_string();
+    let access_token = access_token.to_string();
+    let machine_id = machine_id.to_string();
+    let path = path.to_string();
+    let body = body.to_vec();
+    let ghost_mode = ghost_mode.to_string();
+    let request_id = Uuid::new_v4().to_string();
+
+    thread::Builder::new()
+        .name("cursor-unary-cancellable".into())
+        .spawn(move || {
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .map_err(|error| CursorBackendError::Transport(error.to_string()))?;
+            runtime.block_on(async move {
+                send_cursor_unary_async_with_request_id(
+                    &backend_url,
+                    &access_token,
+                    &machine_id,
+                    &path,
+                    &body,
+                    timeout_ms,
+                    &ghost_mode,
+                    &request_id,
+                    cancellation,
+                )
+                .await
+            })
+        })
+        .map_err(|error| CursorBackendError::Transport(error.to_string()))?
+        .join()
+        .map_err(|_| {
+            CursorBackendError::Transport(
+                "cancellable Cursor backend worker panicked".into(),
+            )
+        })?
+}
+
+async fn send_cursor_unary_async_with_request_id(
+    backend_url: &str,
+    access_token: &str,
+    machine_id: &str,
+    path: &str,
+    body: &[u8],
+    timeout_ms: u64,
+    ghost_mode: &str,
+    request_id: &str,
+    cancellation: CursorRequestCancellation,
+) -> Result<Vec<u8>, CursorBackendError> {
+    let base = Url::parse(backend_url)
+        .map_err(|error| CursorBackendError::InvalidBackendUrl(error.to_string()))?;
+    let url = base
+        .join(path)
+        .map_err(|error| CursorBackendError::InvalidBackendUrl(error.to_string()))?;
+    let client = AsyncClient::builder()
+        .timeout(Duration::from_millis(timeout_ms))
+        .build()
+        .map_err(|error| CursorBackendError::Transport(error.to_string()))?;
+    let request = client
+        .post(url)
+        .header(CONTENT_TYPE, "application/proto")
+        .header("connect-protocol-version", "1")
+        .header(AUTHORIZATION, format!("Bearer {access_token}"))
+        .header(
+            "x-cursor-checksum",
+            create_cursor_checksum(machine_id, system_now_ms()),
+        )
+        .header("x-cursor-client-type", SAND_CLIENT_TYPE)
+        .header("x-cursor-client-version", sand_client_version())
+        .header("x-sand-box-namespace", sand_box_namespace())
+        .header("x-ghost-mode", ghost_mode)
+        .header("x-request-id", request_id)
+        .body(body.to_vec())
+        .send();
+
+    tokio::pin!(request);
+    let response = tokio::select! {
+        result = &mut request => {
+            result.map_err(|error| CursorBackendError::Transport(error.to_string()))?
+        }
+        _ = wait_for_cursor_cancellation(Arc::clone(&cancellation)) => {
+            return Err(CursorBackendError::Cancelled(
+                "request was cancelled while waiting for response headers".into(),
+            ));
+        }
+    };
+    let status = response.status();
+    let response_body = response.bytes();
+    tokio::pin!(response_body);
+    let bytes = tokio::select! {
+        result = &mut response_body => {
+            result
+                .map_err(|error| CursorBackendError::Transport(error.to_string()))?
+                .to_vec()
+        }
+        _ = wait_for_cursor_cancellation(cancellation) => {
+            return Err(CursorBackendError::Cancelled(
+                "request was cancelled while reading response body".into(),
+            ));
+        }
+    };
+    if !status.is_success() {
+        return Err(CursorBackendError::HttpStatus {
+            status: status.as_u16(),
+            body: String::from_utf8_lossy(&bytes).chars().take(512).collect(),
+        });
+    }
+    Ok(bytes)
+}
+
+async fn wait_for_cursor_cancellation(cancellation: CursorRequestCancellation) {
+    while !cancellation() {
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+}
+
 pub(crate) fn send_cursor_unary_with_request_id(
     backend_url: &str,
     access_token: &str,
@@ -153,7 +294,7 @@ pub(crate) fn send_cursor_unary_with_request_id(
     let url = base
         .join(path)
         .map_err(|error| CursorBackendError::InvalidBackendUrl(error.to_string()))?;
-    let mut builder = Client::builder();
+    let mut builder = BlockingClient::builder();
     if let Some(timeout_ms) = timeout_ms {
         builder = builder.timeout(Duration::from_millis(timeout_ms));
     }

@@ -1,8 +1,12 @@
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+    mpsc,
+};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use prost::Message;
 use serde_json::json;
@@ -295,3 +299,75 @@ fn backend_classifier_defaults_mode_and_rejects_missing_result() {
     let request = RequestProbe::decode(body).expect("classifier request protobuf");
     assert_eq!(request.mode.as_deref(), Some("enforce"));
 }
+
+#[test]
+fn backend_classifier_aborts_in_flight_request_when_runner_is_cancelled() {
+    clear_sand_privacy_mode_cache_for_testing();
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind backend");
+    let port = listener.local_addr().expect("backend address").port();
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let server_cancelled = Arc::clone(&cancelled);
+    let (started_tx, started_rx) = mpsc::channel();
+
+    let server = thread::spawn(move || {
+        let _privacy = serve(&listener, &[0x08, 0x03]);
+        let (mut stream, _) = listener.accept().expect("accept classifier request");
+        let request = read_request(&mut stream);
+        started_tx.send(()).expect("signal request started");
+        while !server_cancelled.load(Ordering::Acquire) {
+            thread::sleep(Duration::from_millis(5));
+        }
+        thread::sleep(Duration::from_millis(150));
+        request
+    });
+
+    let cancellation_for_executor = Arc::clone(&cancelled);
+    let backend_url = format!("http://127.0.0.1:{port}");
+    let mut executor = SandBackendSmartModeClassifierExecutor::with_cancellation(
+        SandBackendSmartModeClassifierOptions {
+            backend_url,
+            get_access_token: Arc::new(|| Ok("access-token-cancel".into())),
+            get_machine_id: Arc::new(|| Ok("machine-cancel".into())),
+        },
+        Arc::new(move || cancellation_for_executor.load(Ordering::Acquire)),
+    );
+
+    let cancellation_for_thread = Arc::clone(&cancelled);
+    let canceller = thread::spawn(move || {
+        started_rx
+            .recv_timeout(Duration::from_secs(2))
+            .expect("classifier request should start");
+        cancellation_for_thread.store(true, Ordering::Release);
+    });
+
+    let started = Instant::now();
+    let error = executor
+        .execute(AutoReviewClassifierRequest {
+            tool_call_id: "cancelled-local-only",
+            parent_conversation_id: "conversation-cancel",
+            mode: "enforce",
+            target: json!({"action": "cloud_agent", "arguments": {}}),
+            conversation_context: Vec::<serde_json::Value>::new(),
+            workspace_paths: &[],
+            suppress_tool_call_id_logging: true,
+            max_attempts: 1,
+        })
+        .expect_err("in-flight classifier must abort");
+
+    assert!(
+        matches!(error, AutoReviewClassifierError::Aborted(_)),
+        "unexpected classifier cancellation result: {error:?}"
+    );
+    assert!(
+        started.elapsed() < Duration::from_secs(2),
+        "classifier cancellation waited for the 10s transport timeout"
+    );
+
+    canceller.join().expect("canceller");
+    let classify = server.join().expect("server");
+    let (headers, _) = split_request(&classify);
+    assert!(headers.starts_with(&format!(
+        "POST {DASHBOARD_CLASSIFY_SAND_AUTO_REVIEW_PATH} HTTP/1.1\r\n"
+    )));
+}
+
