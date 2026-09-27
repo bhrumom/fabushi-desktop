@@ -11045,12 +11045,23 @@
       "targetPath": "source/host/src/extensions/box_store_sync/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "83e958543205e3f2e84b44223ff751ace3a8cc53",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/extension.rs",
+        "source/host/src/extensions/box_store_sync/box_store_diagnostics.rs",
+        "source/host/src/extensions/box_store_sync/chrome_session_stage.rs",
+        "source/host/src/extensions/extension_ids.generated.rs",
+        "source/host/src/extensions/registry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_sync_extension_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Mahayana Host owns the frozen BoxStoreSync extension composition boundary independently from the still-planned service: canonical extension ID/dependencies (auth, MCP, source-map, telemetry), process-global diagnostics pin/unpin, polling/debounce/retry policy constants, canonical-write-conflict versus chrome-stage retry predicates, service factory injection, start-before-API exposure and Host-lifecycle disposal are contract-tested. The large box-store-sync service and object/capture/transfer modules remain separate manifest rows and are not implied complete by this extension."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/files.ts",
@@ -11171,12 +11182,21 @@
       "targetPath": "source/host/src/extensions/box_store_sync/store_db_snapshot_upload.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "3c239fad1f095bff00a5b02ffb9acdf632f49036",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/store_db_snapshot_upload.rs",
+        "source/host/src/extensions/box_store_sync/box_store_manifest_format.rs",
+        "source/host/src/extensions/box_store_sync/sqlite_snapshot.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/store_db_snapshot_upload_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Mahayana Host owns the frozen DB snapshot-upload state machine: stat/oversize capture fencing, memory versus streaming SHA-256 at the large-object threshold, unchanged manifest detection with mode refresh, content-addressed blobs/<sha> uploads, file streaming, upload duration/failure-phase accounting, manifest mutation only after successful upload, idempotent temp cleanup and off-thread SQLite VACUUM. The frozen Node worker-thread bundle is translated to a named native Rust worker thread, preserving the independent failure boundary while using the most appropriate implementation language."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/workspace-ignore.ts",
