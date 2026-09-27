@@ -18,6 +18,9 @@ use super::host_crash_marker::{
 use super::host_telemetry_service::{
     HostProductAnalytics, HostStructuredLogTelemetry, HostTelemetryService,
 };
+use super::event_loop_telemetry::{
+    EventLoopTelemetryRuntime, event_loop_window_telemetry,
+};
 
 pub const TELEMETRY_EXTENSION_ID: &str = "telemetry";
 pub const HOST_CRASH_MARKER_FORWARD_INTERVAL: Duration = Duration::from_secs(5 * 60);
@@ -236,6 +239,7 @@ pub struct HostTelemetryExtension {
     records_path: PathBuf,
     crash_marker_forwarder: Arc<HostCrashMarkerForwarder>,
     _desktop_health_forwarder: Option<Arc<DesktopHealthForwarder>>,
+    _event_loop_telemetry: Option<Arc<EventLoopTelemetryRuntime>>,
 }
 
 impl HostTelemetryExtension {
@@ -252,14 +256,22 @@ pub fn start_host_telemetry_extension(
     )?;
     let crash_marker_forwarder =
         Arc::new(HostCrashMarkerForwarder::start(service.logs.clone()));
-    let desktop_health_forwarder =
-        (std::env::var("SAND_DISABLE_TELEMETRY").as_deref() != Ok("1"))
-            .then(|| Arc::new(DesktopHealthForwarder::start(service.logs.clone())));
+    let telemetry_enabled =
+        std::env::var("SAND_DISABLE_TELEMETRY").as_deref() != Ok("1");
+    let desktop_health_forwarder = telemetry_enabled
+        .then(|| Arc::new(DesktopHealthForwarder::start(service.logs.clone())));
+    let event_loop_telemetry = telemetry_enabled.then(|| {
+        let logs = service.logs.clone();
+        Arc::new(EventLoopTelemetryRuntime::start(Arc::new(move |report| {
+            let _ = logs.report_projection(&event_loop_window_telemetry(report));
+        })))
+    });
     Ok(HostTelemetryExtension {
         logs: service.logs.clone(),
         analytics: service.analytics.clone(),
         records_path: service.records_path().to_path_buf(),
         crash_marker_forwarder,
         _desktop_health_forwarder: desktop_health_forwarder,
+        _event_loop_telemetry: event_loop_telemetry,
     })
 }
