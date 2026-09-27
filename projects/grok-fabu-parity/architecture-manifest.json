@@ -11700,36 +11700,69 @@
       "targetPath": "source/host/src/extensions/cross_user_sharing/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "7fb1c185c58a7ba035d55c48cccb028aa0c2ca3e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/extension.rs",
+        "source/host/src/extensions/cross_user_sharing/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_service_contract.rs",
+        "source/host/tests/xuser_durable_stores_contract.rs",
+        "source/host/tests/xuser_sharing_environment_contract.rs",
+        "source/host/tests/xuser_wire_normalization_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-departure-obligations.ts",
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_departure_obligations.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "d316dd61510c8f236cbde235ea0a210e4a71a415",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_departure_obligations.rs",
+        "source/host/src/extensions/cross_user_sharing/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_service_contract.rs",
+        "source/host/tests/xuser_durable_stores_contract.rs",
+        "source/host/tests/xuser_sharing_environment_contract.rs",
+        "source/host/tests/xuser_wire_normalization_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-entry-publisher.ts",
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_entry_publisher.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "9a1b8c7025e20e0c46bcf93795273027d426bd4d",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_entry_publisher.rs",
+        "source/host/src/extensions/cross_user_sharing/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_service_contract.rs",
+        "source/host/tests/xuser_durable_stores_contract.rs",
+        "source/host/tests/xuser_sharing_environment_contract.rs",
+        "source/host/tests/xuser_wire_normalization_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-pending-departure-store.ts",
@@ -11755,24 +11788,46 @@
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_relay.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "0f85f8c0074c4acd173f66ff6912f47ae93320a9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_relay.rs",
+        "source/host/src/extensions/cross_user_sharing/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_service_contract.rs",
+        "source/host/tests/xuser_durable_stores_contract.rs",
+        "source/host/tests/xuser_sharing_environment_contract.rs",
+        "source/host/tests/xuser_wire_normalization_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-remote-turns.ts",
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_remote_turns.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "08b90a9b14eeed9917e2385d27659241619d2df9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_remote_turns.rs",
+        "source/host/src/extensions/cross_user_sharing/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_service_contract.rs",
+        "source/host/tests/xuser_durable_stores_contract.rs",
+        "source/host/tests/xuser_sharing_environment_contract.rs",
+        "source/host/tests/xuser_wire_normalization_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-room-tombstone-store.ts",
@@ -11819,24 +11874,46 @@
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_sharing_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "736f1dada6c64957b926e15efb26383eeb6af480",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_sharing_service.rs",
+        "source/host/src/extensions/cross_user_sharing/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_service_contract.rs",
+        "source/host/tests/xuser_durable_stores_contract.rs",
+        "source/host/tests/xuser_sharing_environment_contract.rs",
+        "source/host/tests/xuser_wire_normalization_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-state-reconcile.ts",
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_state_reconcile.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "b433f3b821a96f924471c6cfd4e5aa1c8b9152b3",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_state_reconcile.rs",
+        "source/host/src/extensions/cross_user_sharing/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_service_contract.rs",
+        "source/host/tests/xuser_durable_stores_contract.rs",
+        "source/host/tests/xuser_sharing_environment_contract.rs",
+        "source/host/tests/xuser_wire_normalization_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust owner now exists for the frozen cross-user sharing responsibility and is covered by focused relay/state/environment/durable-store contracts. Final remains withheld until production Host composition binds Auth, Attachments, NotifyBus and Transcript delegates to the live sharing extension and exact-HEAD CI proves that wiring."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-turn-dedupe-store.ts",

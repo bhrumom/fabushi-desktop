@@ -1835,3 +1835,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Therefore the previous note saying the producer side was absent was conservative but incorrect. With production Experiments, mutation subscription, Service/Worker/Writer/DB, telemetry and Host lifetime now connected, `content-search/extension.ts` is promoted from `existing-needs-parity` to **implemented**.
 - Fixed the first exact-HEAD compile blocker from run `36303412610`: explicitly typed the production mutation subscription as `Option<RawTranscriptMutationSubscription>` (Rust E0282).
 - Manifest after finalizing this extension: **1,839 implemented / 127 existing-needs-parity / 36 planned** (**163 non-final**).
+
+### 2026-09-27 cross-user sharing Rust ownership slice
+
+- Continued only on implementation PR #20 / `refactor/grok-018-architecture-rebuild`; no parallel runtime or replacement branch was introduced. Starting implementation HEAD for this slice was `4c38d91d963f79db8b84f17814223782402676d5`.
+- Added Rust Host owners for the seven previously `planned` frozen Cross-user Sharing modules: extension gating, durable departure obligations, entry publication shaping, authenticated relay transport/error semantics, remote-turn admission budgeting, sharing service state, and state reconciliation. Existing durable turn-dedupe/tombstone/pending-departure/environment/wire-normalization owners remain the single persistence/normalization path.
+- Added `xuser_service_contract.rs` to cover frozen user-facing relay error semantics, fail-closed remote-agent/entry shaping, room add/revoke reconciliation, dev/production environment gating, feature-gate activation, and backend-state reconciliation.
+- These seven manifest rows advance only from `planned` to `existing-needs-parity`. They are intentionally **not** final: production Host composition still needs to bind live Auth, Attachments, NotifyBus and Transcript delegates and exact-HEAD CI must prove the shipping extension wiring. No status is advanced merely because a target file now exists.
+- Coordinator/Host/Runner boundaries are unchanged; this work belongs only to the Mahayana Host extension layer.
