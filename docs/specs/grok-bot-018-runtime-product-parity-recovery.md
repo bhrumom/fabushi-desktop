@@ -1636,3 +1636,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Production composition now owns the same shared SandHostEventBus used by the Gateway, so transcript run-start/run-end telemetry does not depend on a parallel event source.
 - The extension preserves the frozen Auth + Experiments dependency boundary, csnaps capability/no-op fallback, codebase UUID and snapshot paths, upload headers/checksum/privacy metadata, and independent privacy -> adapter -> host -> service lifecycle.
 - Rust desktop runtime run 36300024477 passed shipping Host compilation, the independent Mahayana Coordinator contract, box-exec contracts, and the full Host/Runner Cargo test gate on this exact HEAD.
+
+
+### 2026-09-27 Memory synthesis semantic-core slice
+
+- Exact starting HEAD: `92513d4534727f0d90c0ec1d57b28a1864e711a4`.
+- Re-read frozen `source/host/extensions/memory/memory-synthesis-service.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634` and completed the Rust service contract around the synthesis-safe FileMemoryStore introduced by the preceding commit.
+- `memory_synthesis_service.rs` now owns the frozen bounded pending-agent/evidence queues, strict JSON/change validation, evidence/clock fencing, explicit-memory protection, proposal verification, bounded retry, stale requeue, temporal-review admission and target settlement.
+- Local exact-tree contracts passed: `memory_synthesis_service_contract` **4/4** and `memory_synthesis_store_contract` **3/3**. The sparse working copy first lacked generated `agent/v1` protobuf sources; the missing tracked directory was added to sparse checkout before the successful compile.
+- This row advances only from `planned` to `existing-needs-parity`. Final parity is still blocked on the real inference PromptExecutor synthesis/verification stages, background debounce + hourly polling, enforceable 90-second deadline/cancellation, telemetry reporting, and the shipping post-turn `recordTurn` hook.
+- Manifest becomes **1,833 implemented / 116 existing-needs-parity / 53 planned** (**169 non-final**). The strict final architecture gate must remain red.

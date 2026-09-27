@@ -12770,12 +12770,20 @@
       "targetPath": "source/host/src/extensions/memory/memory_synthesis_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "bd19d94ca12956e607612338dee5a2a3ad81a540",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/memory/memory_synthesis_service.rs",
+        "source/host/src/extensions/memory/memory_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/memory_synthesis_service_contract.rs",
+        "source/host/tests/memory_synthesis_store_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns the frozen synthesis core: bounded per-agent evidence, strict proposal parsing, known-evidence/clock fencing, explicit-memory protection, proposal verification, retry bounds, stale requeue semantics, temporal-review admission and commit through the synthesis-safe FileMemoryStore. Final remains withheld because the shipping Memory extension does not yet bind the real inference PromptExecutor stages, background debounce/poll lifecycle, enforceable 90s deadline/cancellation, telemetry reporting, and post-turn production recordTurn hook."
     },
     {
       "referencePath": "source/host/extensions/memory/production.ts",
