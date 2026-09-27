@@ -2867,7 +2867,27 @@ impl GatewayApi for UnifiedGatewayApi {
                 .and_then(serde_json::Value::as_str)
                 .filter(|value| !value.trim().is_empty())
                 .unwrap_or("Runner provider request cancelled");
+            let cancelled_agent_id = self.runner_registry.agent_id_for_stream(stream_id);
+            let was_in_flight = cancelled_agent_id
+                .as_deref()
+                .is_some_and(|agent_id| self.transcript_runtime.is_agent_running(agent_id));
             let cancelled = self.runner_registry.cancel_stream(stream_id, reason);
+            if reason.to_ascii_lowercase().contains("superseded") {
+                if let Some(agent_id) = cancelled_agent_id.as_deref() {
+                    let projection = turn_interrupt_telemetry(&TurnInterruptFields {
+                        conversation_id: agent_id.to_string(),
+                        reason: "superseded".into(),
+                        had_active_run: cancelled,
+                        was_in_flight,
+                    });
+                    if let Err(error) = self.telemetry_logs.report_projection(&projection) {
+                        eprintln!(
+                            "mahayana-host superseded_turn_interrupt_telemetry_failed agent={} error={error}",
+                            agent_id
+                        );
+                    }
+                }
+            }
             if cancelled {
                 self.events.publish(serde_json::json!({
                     "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
