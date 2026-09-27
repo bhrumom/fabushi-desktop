@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::telemetry::desktop_health_forwarder::DesktopHealthForwardResult;
@@ -17,13 +18,16 @@ use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
 };
 use serde_json::json;
 
+static TEMP_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
 fn temp_root() -> std::path::PathBuf {
     let suffix = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
+    let sequence = TEMP_ROOT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
     std::env::temp_dir().join(format!(
-        "fabushi-host-telemetry-{}-{suffix}",
+        "fabushi-host-telemetry-{}-{suffix}-{sequence}",
         std::process::id()
     ))
 }
