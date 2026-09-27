@@ -14130,12 +14130,18 @@
       "targetPath": "source/host/src/extensions/teach_recording/teach_recording_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "090cf454979816afe36d9253decc119a3ef9dab3",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/teach_recording/teach_recording_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/teach_recording_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now owns the frozen teach-recording service state machine: private-monitor ffmpeg/x11grab capture, PID/cmdline ownership fencing, 15-minute cap stop, HMAC-SHA256 signed pending queues with constant-time verification/quarantine, save/discard finalization, crash recovery and idempotent learning-prompt redelivery. The service is independently injectable/testable through a Box shell runtime port. Shipping Host registration remains intentionally tracked by the separate teach-recording extension row until production composition starts it."
     },
     {
       "referencePath": "source/host/extensions/telemetry/analytics-service.ts",
