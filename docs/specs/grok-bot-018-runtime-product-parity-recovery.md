@@ -1912,3 +1912,15 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - When the production `CloudAgentToolBridge` is present, the provider receives the enabled frozen Grok base prompt; when absent, the existing disabled prompt and warning remain fail-closed.
 - The Host now evaluates the frozen `sand_multitask` feature gate for ordinary turns, disables multitask for group-member turns, carries that decision through `ProductionRunnerCompositionInput` / `TurnAgentComposition`, and appends `SAND_MULTITASK_PROMPT_SECTION` to the actual provider system prompt.
 - `sand-multitask.ts` intentionally remains `existing-needs-parity`: the current Rust Runner still lacks the frozen per-turn executor subagent-config replacement and multitask-specific TodoWrite description injection. This slice does not mark the row final until those live tool surfaces exist.
+
+
+### 2026-09-27 event-loop telemetry production-wiring checkpoint
+
+- Continued implementation on PR #20 (`refactor/grok-018-architecture-rebuild`); PR #19 remains the merged spec-only change.
+- Frozen Grok `source/host/extensions/telemetry/event-loop-telemetry.ts` was re-audited against the Rust Host owner. The prior Rust owner only preserved trigger/projection logic and therefore correctly remained non-final.
+- Added a production Rust sampler in `source/host/src/extensions/telemetry/event_loop_telemetry.rs`: scheduler-overrun samples at the frozen 20ms cadence, p50/p95/max aggregation, normalized process CPU occupancy, frozen 60s window / 50ms pressure threshold / five-window heartbeat policy, dedicated low-frequency worker ownership, and deterministic disposal.
+- Wired the sampler through `source/host/src/extensions/telemetry/extension.rs` so production Host telemetry owns start/stop and all reports use the existing structured-log sink. This is a platform-fit adaptation for the Rust Host rather than introducing a Node event-loop runtime.
+- Extended `source/host/tests/event_loop_telemetry_contract.rs` with a live short-window sampler contract in addition to the existing frozen trigger/projection assertions.
+- Implementation commits: `3e98e35b4d21ee7b1f16580f1041809ab68501c2`, `3b2830e8b39eb37e6cd66fcea7f3c4597a97a68e`, `10807c4a010a65dd43ff3348c3bdb8101ea8dd52`.
+- Exact-HEAD verification was started automatically as Rust desktop runtime run `36314356518` and Desktop Chat Parity run `36314356528`. At this checkpoint the Rust Host job is still executing, so the manifest row intentionally remains `existing-needs-parity`; no incomplete CI is represented as a pass.
+- Architecture inventory before this slice remains 2,002 frozen source-bearing modules with 155 non-final rows, all under the independent Mahayana Host/Runner domains. Coordinator module-level parity is already independently evidenced; global strict cutover, legacy-root removal, packaged acceptance, merge, and release remain separate blockers.
