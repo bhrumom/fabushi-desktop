@@ -11600,12 +11600,19 @@
       "targetPath": "source/host/src/extensions/content_search/search_index_db.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "87fb7081d1310e33c14f1a06f9d10df39957bb19",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/content_search/search_index_db.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/search_index_db_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust rusqlite owner fully ports the frozen search-index DB boundary: busy timeout/WAL/NORMAL/incremental-vacuum setup, STRICT tables + FTS5 external-content triggers, schema/reconcile markers, NFKC eight-term prefix queries, per-Agent message cap with timestamp fallback/snippets, recent/all media search, FTS filtering and attachment-kind fallback."
     },
     {
       "referencePath": "source/host/extensions/content-search/search-index-service.ts",

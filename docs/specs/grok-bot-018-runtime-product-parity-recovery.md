@@ -1771,3 +1771,14 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - This row is promoted directly from `planned` to `implemented` because it is a side-effect-free helper with no independent lifecycle or production binding to leave unresolved; the search-index DB/service/worker/writer remain separate mapped rows.
 - Manifest after this leaf: **1,834 implemented / 128 existing-needs-parity / 40 planned** (**168 non-final**).
 - Exact-HEAD validation is required through `cargo test --manifest-path source/host/Cargo.toml` and the Rust desktop runtime workflow before treating the commit as CI-green.
+
+
+### 2026-09-27 Content-search SQLite / FTS5 owner
+
+- Exact starting HEAD: `b43622b397a85d3b6db2a0242b9a52a7b0c1d61a`.
+- Re-read frozen `source/host/extensions/content-search/search-index-db.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `content_search/search_index_db.rs` using `rusqlite`: the frozen 5-second busy timeout, WAL/NORMAL/incremental-vacuum pragmas, STRICT message/media/meta/agent tables, external-content FTS5 tables and insert/update/delete triggers, schema version and reconcile markers.
+- Ported NFKC query normalization, maximum eight quoted prefix terms, message search with per-Agent five-result cap and zero-timestamp fallback, FTS snippet whitespace normalization, recent/all media search, filtered media search, nullable metadata and unknown attachment-kind fallback.
+- Added `search_index_db_contract` covering schema/pragmas/version/reconcile state, NFKC/quoting/cap behavior, message ranking/per-Agent cap/timestamp fallback, and media recent/FTS/kind semantics.
+- This DB module advances directly from `planned` to `implemented`; service/worker/writer remain independently non-final and must consume this owner rather than creating a parallel index path.
+- Manifest after this owner: **1,835 implemented / 128 existing-needs-parity / 39 planned** (**167 non-final**).
