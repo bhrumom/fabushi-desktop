@@ -11063,7 +11063,7 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_vacuum_worker.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "c09ccf00e266de0806956386a34bea53142eb6ad",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -11076,7 +11076,12 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production slice preserves the frozen isolated vacuum-worker responsibility using a named OS thread, typed job payload and structured success/error terminal result around sqlite_vacuum_into. It is exported and contract-tested. Final remains withheld until the production Box Store Sync service dispatches real snapshot jobs through this worker."
+      "notes": "Rust production owner preserves the frozen isolated vacuum-worker responsibility using a named OS thread, typed BoxStoreVacuumJob payload and structured BoxStoreVacuumResult around sqlite_vacuum_into. The already-implemented StoreDbSnapshotUpload production state machine now dispatches its real off-thread VACUUM capture through spawn_box_store_vacuum_job with the canonical store DB busy timeout, propagating worker terminal diagnostics to snapshot capture callers. The former duplicate ad-hoc thread + direct sqlite_vacuum_into_default path is removed.",
+      "evidence": [
+        "source/host/tests/sqlite_snapshot_contract.rs",
+        "source/host/tests/store_db_snapshot_upload_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/chrome-session-stage.ts",
@@ -11219,7 +11224,7 @@
       "targetPath": "source/host/src/extensions/box_store_sync/sqlite_snapshot.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "361f832e8276508291b42e368e83ec7bf871ca54",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -11232,7 +11237,12 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port now covers the frozen SQLite snapshot behavior: read-only VACUUM INTO with busy-timeout/destination quoting; three-attempt locked-copy; source main and sidecar staging; source-stability re-read; WAL checkpoint(TRUNCATE); journal_mode=DELETE; quick_check verification; structured operation/path/cause classification; close/cleanup behavior; and final failure reporting. Contract tests cover successful VACUUM, locked copy, source-change retries/final failure, cleanup, and isolated vacuum worker. Final remains withheld only until the production Box Store Sync service consumes this module for real store DB snapshot capture/upload."
+      "notes": "Rust production owner covers the frozen SQLite snapshot behavior: read-only VACUUM INTO with busy-timeout/destination quoting; three-attempt locked-copy; source main and sidecar staging; source-stability re-read; WAL checkpoint(TRUNCATE); journal_mode=DELETE; quick_check verification; structured operation/path/cause classification; close/cleanup behavior; and final failure reporting. The implemented StoreDbSnapshotUpload path now consumes this module through the isolated BoxStoreVacuumWorker for real DB snapshot capture before content-addressed upload, eliminating the former final composition blocker.",
+      "evidence": [
+        "source/host/tests/sqlite_snapshot_contract.rs",
+        "source/host/tests/store_db_snapshot_upload_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/store-db-bundle-capture.ts",
