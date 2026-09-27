@@ -1,6 +1,7 @@
-use super::xuser_relay::SandXuserRelayClient;
+use super::xuser_relay::{SandXuserRelayClient, SandXuserRelayDriver};
 use super::xuser_state_reconcile::{XuserRoom, reconcile_rooms};
 use serde_json::Value;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 pub const STATE_RECONCILE_INTERVAL_MS: u64 = 5 * 60_000;
@@ -16,22 +17,95 @@ pub struct SandSharingState {
 
 pub struct SandXuserSharingService {
     relay: Arc<SandXuserRelayClient>,
+    relay_driver: Mutex<Option<Arc<SandXuserRelayDriver>>>,
     state: Mutex<SandSharingState>,
+    started: AtomicBool,
 }
 impl SandXuserSharingService {
     pub fn new(relay: Arc<SandXuserRelayClient>) -> Self {
         Self {
             relay,
+            relay_driver: Mutex::new(None),
             state: Mutex::new(SandSharingState::default()),
+            started: AtomicBool::new(false),
         }
     }
-    pub fn set_enabled(&self, enabled: bool) {
-        let mut s = self.state.lock().unwrap_or_else(|p| p.into_inner());
-        s.is_enabled = enabled;
-        if !enabled {
-            s.pending_join_requests.clear();
-            s.rooms.clear();
+    pub fn bind_relay_driver(&self, driver: Arc<SandXuserRelayDriver>) {
+        let mut slot = self.relay_driver.lock().unwrap_or_else(|p| p.into_inner());
+        if let Some(previous) = slot.replace(driver) {
+            previous.stop();
         }
+    }
+
+    pub fn set_enabled(&self, enabled: bool) {
+        {
+            let mut s = self.state.lock().unwrap_or_else(|p| p.into_inner());
+            s.is_enabled = enabled;
+            if !enabled {
+                s.pending_join_requests.clear();
+                s.rooms.clear();
+            }
+        }
+        if !enabled {
+            self.stop();
+        }
+    }
+
+    pub fn start(&self) -> Result<SandSharingState, String> {
+        if !self.get_state().is_enabled {
+            return Ok(self.get_state());
+        }
+        if self.started.swap(true, Ordering::AcqRel) {
+            return Ok(self.get_state());
+        }
+        if let Err(error) = self.reconcile_share_state() {
+            self.started.store(false, Ordering::Release);
+            return Err(error);
+        }
+        if let Some(driver) = self
+            .relay_driver
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .as_ref()
+            .cloned()
+        {
+            driver.start();
+        }
+        Ok(self.get_state())
+    }
+
+    pub fn stop(&self) {
+        if !self.started.swap(false, Ordering::AcqRel) {
+            return;
+        }
+        if let Some(driver) = self
+            .relay_driver
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .as_ref()
+            .cloned()
+        {
+            driver.stop();
+        }
+    }
+
+    pub fn request_relay_drain(&self) {
+        if !self.started.load(Ordering::Acquire) {
+            return;
+        }
+        if let Some(driver) = self
+            .relay_driver
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .as_ref()
+            .cloned()
+        {
+            driver.request_drain();
+        }
+    }
+
+    pub fn is_started(&self) -> bool {
+        self.started.load(Ordering::Acquire)
     }
     pub fn set_self_auth_id(&self, id: Option<String>) {
         self.state
