@@ -102,3 +102,20 @@ fn shipping_host_reports_box_ready_only_after_gateway_discovery() {
     ));
     assert_eq!(box_ready_duration_ms(250, 100), 150);
 }
+
+#[test]
+fn shipping_host_copy_in_mode_precedes_long_lived_runtime_bootstrap() {
+    let copy_in = SHIPPING_HOST
+        .find("std::env::args().any(|arg| arg == BOX_COPY_IN_ARG)")
+        .expect("shipping Host must recognize frozen --box-copy-in mode");
+    let crash_guard = SHIPPING_HOST
+        .find("install_process_crash_guard")
+        .expect("shipping Host must install process crash guards");
+    let host_lock = SHIPPING_HOST
+        .find("let host_lock = match acquire_host_lock(")
+        .expect("shipping Host must acquire the single-host lock");
+    assert!(copy_in < crash_guard);
+    assert!(copy_in < host_lock);
+    assert!(SHIPPING_HOST.contains("execute_box_copy_in_from_env"));
+    assert!(SHIPPING_HOST.contains("std::process::exit(exit_code)"));
+}
