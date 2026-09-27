@@ -1814,3 +1814,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added `search_index_service_contract` covering fresh start/reconcile/mutation/search/dispose, worker-unavailable respawn without index rebuild, corruption-triggered index rebuild + reconcile, and nonfresh schema mismatch recreation. Frozen retry/rebuild limits are asserted.
 - This row advances from `planned` to `implemented`. The content-search implementation set is now complete at module level; the separately mapped extension remains non-final until its production mutation/gate/telemetry adapters are bound to this concrete service in the shipping Host.
 - Manifest after this supervisor: **1,838 implemented / 128 existing-needs-parity / 36 planned** (**164 non-final**).
+
+
+### 2026-09-27 Content-search production extension composition
+
+- Exact starting HEAD: `9d80e0e9ea60a6dc09fc1e13a40b7720c5ea68a5`.
+- Shipping Host now constructs `ProductionContentSearchExtension` after the real Transcript extension. The owner uses the frozen Sand root + agents-root paths, the real `HostExperimentsExtension` gate, the global `transcript_mutation_events` bus, the canonical Rust SearchIndex Service/Worker/Writer/DB chain, and a dedicated `sand.search_index_health` structured telemetry sink.
+- Gate transitions now attach/detach the actual global mutation subscription; drop removes the experiment listener, mutation listener and drains/disposes the index service.
+- Added a production contract that toggles the real Experiments override, publishes a real global transcript mutation, waits for the independent index worker, queries the concrete FTS reader, then verifies the disabled gate is truly unsubscribed.
+- The extension manifest row deliberately remains **existing-needs-parity**: no production caller on this branch currently publishes the five frozen mutation forms (`entries-upserted`, `entry-deleted`, `conversation-cleared`, `agent-removed`, `agent-needs-reindex`) into `transcript_mutation_events`. Marking the extension final before producer wiring would be a false green.
+- Manifest totals therefore remain **1838 implemented / 128 existing-needs-parity / 36 planned** (**164 non-final**) until the producer side is wired and exact-HEAD tests prove it.

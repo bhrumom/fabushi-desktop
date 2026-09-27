@@ -183,11 +183,23 @@ impl SandSearchIndexService {
         index_db_path: impl Into<PathBuf>,
         agents_root_dir: impl Into<PathBuf>,
     ) -> Self {
+        Self::new_with_reporter(
+            index_db_path,
+            agents_root_dir,
+            Arc::new(|_| {}),
+        )
+    }
+
+    pub fn new_with_reporter(
+        index_db_path: impl Into<PathBuf>,
+        agents_root_dir: impl Into<PathBuf>,
+        report: Arc<dyn Fn(SearchIndexHealth) + Send + Sync>,
+    ) -> Self {
         Self::new_with_factory(
             index_db_path,
             agents_root_dir,
             Arc::new(WorkerSearchIndexJobPort::create),
-            Arc::new(|_| {}),
+            report,
         )
     }
 

@@ -109,6 +109,7 @@ use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use mahayana_host_runtime::extensions::experiments::HostExperimentsExtension;
+use mahayana_host_runtime::extensions::content_search::extension::start_production_content_search_extension;
 use mahayana_host_runtime::extensions::trays::extension::HostTraysExtension;
 use mahayana_host_runtime::host_production_extensions::{
     start_production_browser_ua, start_production_host_extensions,
@@ -3311,6 +3312,19 @@ fn main() {
         );
     }
     let transcript_manager = transcript_extension.manager();
+    let content_search_logs = host_telemetry.logs.clone();
+    let _content_search_extension = start_production_content_search_extension(
+        Arc::clone(&production_extensions.experiments),
+        Arc::new(move |health| {
+            let payload = serde_json::json!({
+                "kind": health.kind,
+                "stage": health.stage,
+                "count": health.count,
+                "errorClass": health.error_class,
+            });
+            let _ = content_search_logs.report_search_index_health(&payload);
+        }),
+    );
     let permission_widget_responses =
         Arc::new(WidgetResponses::new(Arc::clone(&session_workers)));
     let stranded_permission_logs = host_telemetry.logs.clone();

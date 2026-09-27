@@ -82,6 +82,14 @@ impl HostStructuredLogTelemetry {
         self.report_projection(&projection)
     }
 
+    pub fn report_search_index_health(&self, report: &Value) -> io::Result<()> {
+        self.sink.emit(&PersistedHostTelemetryRecord {
+            channel: "structured_log".into(),
+            event: "sand.search_index_health".into(),
+            payload: report.clone(),
+        })
+    }
+
     pub fn report_host_extension_diagnostic(&self, diagnostic: &Value) -> io::Result<()> {
         self.sink.emit(&PersistedHostTelemetryRecord {
             channel: "structured_log".into(),

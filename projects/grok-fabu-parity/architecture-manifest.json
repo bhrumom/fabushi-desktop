@@ -11586,14 +11586,18 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/content_search/extension.rs",
-        "source/host/src/extensions/extension_ids.generated.rs",
-        "source/host/src/extensions/registry.rs"
+        "source/host/src/extensions/content_search/search_index_service.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/transcript_mutation_events.rs",
+        "source/host/src/extensions/experiments/extension.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/content_search_extension_contract.rs",
+        "source/host/tests/content_search_production_extension_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Mahayana Host now owns the frozen content-search extension lifecycle boundary: sand_global_search gate application, mutation subscription attach/detach without duplicate subscriptions, index start, API readiness/limits/search forwarding, gate subscription cleanup and index disposal. Final remains withheld until the separately mapped Rust agent-content-search, search-index DB/service/worker/writer modules exist and production Host composition binds the real transcript mutation source, experiments gate and telemetry health reporter."
+      "notes": "Shipping Host now starts a concrete ProductionContentSearchExtension over the real HostExperimentsExtension, global transcript-mutation bus, canonical SandSearchIndexService/Worker/Writer/DB stack, frozen Sand root/agents paths, and dedicated sand.search_index_health telemetry sink. Gate changes attach/detach the real bus and drop disposes both subscriptions plus the service. Final remains withheld because the shipping transcript persistence paths do not yet publish the five frozen content-search mutation kinds onto transcript_mutation_events; the subscriber is real but the producer side is not yet production-complete."
     },
     {
       "referencePath": "source/host/extensions/content-search/search-index-db.ts",
