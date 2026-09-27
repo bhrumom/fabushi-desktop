@@ -12638,12 +12638,20 @@
       "targetPath": "source/host/src/extensions/mcp/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "b9449811f6afc4d9c9becd61bf3cb8703b4714f7",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/mcp/extension.rs",
+        "source/host/src/extensions/mcp/plugin_skills.rs",
+        "source/host/src/extensions/mcp/legacy_live_references.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/mcp_extension_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns the frozen MCP extension lifecycle boundary: dependency identity, auth-gated plugin-skills startup, renewal/first-credential handling, startup-vs-refresh polling, startup-success legacy sweep hook, and idempotent poll/auth/plugin/service shutdown. Final remains withheld until production.rs supplies real Auth/Experiments/ForeverBox/Settings/Telemetry adapters and McpHostService."
     },
     {
       "referencePath": "source/host/extensions/mcp/legacy-live-references.ts",

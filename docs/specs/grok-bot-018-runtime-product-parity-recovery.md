@@ -1727,7 +1727,7 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added Rust `teach_recording/extension.rs` without collapsing it into the recording service: frozen dependency IDs, the versioned 32-byte queue-signature key contract, secure random generation, `0600` persistence on Unix, cap-delay composition, service-factory ports, best-effort pending recovery, API projection and Host-lifecycle disposal.
 - Added `teach_recording_extension_contract` for key parsing/persistence/permissions, non-regeneration of valid keys, dependency/cap wiring, pending recovery and idempotent Host-owned service disposal.
 - The row advances from `planned` to `existing-needs-parity`; final remains blocked on the separately-owned Rust `teach-recording-service` recording/queue state machine and production Host composition.
-- Manifest becomes **1,833 implemented / 125 existing-needs-parity / 44 planned** (**169 non-final**).
+- After the teach-recording slice the manifest was **1,833 implemented / 125 existing-needs-parity / 44 planned** (**169 non-final**).
 
 
 ### 2026-09-27 Content search extension boundary slice
@@ -1738,4 +1738,15 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added `content_search_extension_contract` covering disabled startup, enable/disable/re-enable, mutation forwarding, search API forwarding, constants and disposal.
 - Index DB/service/worker/writer remain independent mapped modules and are not hidden behind the extension port.
 - The row advances from `planned` to `existing-needs-parity`; final remains blocked on those real Rust index owners plus production Host composition.
-- Manifest becomes **1,833 implemented / 126 existing-needs-parity / 43 planned** (**169 non-final**).
+- After the content-search slice the manifest was **1,833 implemented / 126 existing-needs-parity / 43 planned** (**169 non-final**).
+
+
+### 2026-09-27 MCP extension lifecycle slice
+
+- Rebased onto concurrent exact HEAD `d7fd26eca27e6e0e5cb4b5de9cae545283596d2e`, preserving both Teach Recording and Content Search extension slices.
+- Re-read frozen `mcp/extension.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634`.
+- Added Rust `mcp/extension.rs` with the frozen dependency identity, auth-gated startup, renewal + first-credential handling, startup/refresh polling semantics, startup-success legacy-sweep hook and idempotent shutdown ordering.
+- A test-fixture self-deadlock was found during validation (listener invoked while holding the same auth-state mutex); the fixture was corrected without weakening runtime locking.
+- `mcp_extension_contract` passed **3/3** after that repair.
+- The row advances from `planned` to `existing-needs-parity`; final remains blocked on production Auth/Experiments/ForeverBox/Settings/Telemetry adapters plus the real `McpHostService`.
+- Combined manifest after preserving all concurrent slices: **1,833 implemented / 127 existing-needs-parity / 42 planned** (**169 non-final**).
