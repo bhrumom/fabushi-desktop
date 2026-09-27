@@ -5,9 +5,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
     OpenRouterCheckpoint, OpenRouterTransport, ProviderMessage,
-    ProviderSessionError, RoutedProvider, RoutedProviderOptions,
+    ProviderSessionError, ProviderTokenUsage, RoutedProvider, RoutedProviderOptions,
     RoutedToolDefinition, configured_routed_provider, decode_sse_stream,
-    run_openrouter_with_transport, run_routed_provider_text,
+    run_openrouter_with_transport, run_openrouter_with_transport_reporting_usage,
+    run_routed_provider_text,
 };
 use serde_json::{Value, json};
 
@@ -220,4 +221,56 @@ fn openrouter_resumes_only_from_an_accepted_tool_boundary_checkpoint() {
         message["role"] == "tool"
             && message["tool_call_id"] == "call-resume"
     }));
+}
+
+
+#[test]
+fn openrouter_reports_server_usage_without_estimating_tokens() {
+    let mut transport = FakeOpenRouterTransport {
+        responses: VecDeque::from([vec![
+            json!({"choices":[{"delta":{"content":"hello"}}]}),
+            json!({
+                "choices":[],
+                "usage":{
+                    "prompt_tokens":11,
+                    "completion_tokens":7,
+                    "prompt_tokens_details":{"cached_tokens":3},
+                    "completion_tokens_details":{"reasoning_tokens":2}
+                }
+            }),
+        ]]),
+        requests: Vec::new(),
+    };
+    let messages = vec![ProviderMessage {
+        role: "user".into(),
+        content: "hello".into(),
+    }];
+    let mut observed_usage = Vec::<ProviderTokenUsage>::new();
+    let output = run_openrouter_with_transport_reporting_usage(
+        &mut transport,
+        "openai/test",
+        &messages,
+        &[],
+        &mut |_tool, _args, _call_id| Ok(Value::Null),
+        &mut |_delta, _accumulated| {},
+        &|| false,
+        None,
+        &mut |_accepted| Ok(()),
+        &mut |usage| observed_usage.push(usage),
+    )
+    .expect("OpenRouter usage-reporting turn");
+
+    assert_eq!(output, "hello");
+    assert_eq!(transport.requests.len(), 1);
+    assert_eq!(transport.requests[0]["usage"]["include"], true);
+    assert_eq!(
+        observed_usage,
+        vec![ProviderTokenUsage {
+            input_tokens: 11,
+            output_tokens: 7,
+            cache_read_tokens: 3,
+            cache_write_tokens: 0,
+            reasoning_tokens: Some(2),
+        }]
+    );
 }
