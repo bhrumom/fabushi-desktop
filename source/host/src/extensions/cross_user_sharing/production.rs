@@ -210,6 +210,10 @@ impl XuserSharingManager for ProductionXuserHost {
         self.shared_rooms.resolve_canonical_room_agent(room_id)
     }
 
+    fn is_room_abandoned(&self, room_id: &str, self_auth_id: Option<&str>) -> bool {
+        self.departures.is_room_abandoned(room_id, self_auth_id)
+    }
+
     fn install_room(
         &self,
         room: &super::xuser_state_reconcile::XuserRoom,
