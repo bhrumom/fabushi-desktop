@@ -1,8 +1,9 @@
+use super::xuser_entry_publisher::SandXuserEntryPublisher;
 use super::xuser_relay::{SandXuserRelayClient, SandXuserRelayDriver};
 use super::xuser_state_reconcile::{XuserRoom, reconcile_rooms};
 use serde_json::Value;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 
 pub const STATE_RECONCILE_INTERVAL_MS: u64 = 5 * 60_000;
 pub const SELF_IDENTITY_RETRY_MS: u64 = 1_000;
@@ -15,9 +16,42 @@ pub struct SandSharingState {
     pub rooms: Vec<XuserRoom>,
 }
 
+#[derive(Clone)]
+pub struct SandXuserManagerDelegate {
+    service: Weak<SandXuserSharingService>,
+}
+
+impl SandXuserManagerDelegate {
+    pub fn is_enabled(&self) -> bool {
+        self.service
+            .upgrade()
+            .is_some_and(|service| service.get_state().is_enabled)
+    }
+
+    pub fn publish_room_entry(&self, room_id: &str, entry: &Value) -> Result<(), String> {
+        let Some(service) = self.service.upgrade() else {
+            return Ok(());
+        };
+        if !service.get_state().is_enabled {
+            return Ok(());
+        }
+        let publisher = service
+            .entry_publisher
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+            .cloned();
+        if let Some(publisher) = publisher {
+            publisher.enqueue_publish(room_id, entry)?;
+        }
+        Ok(())
+    }
+}
+
 pub struct SandXuserSharingService {
     relay: Arc<SandXuserRelayClient>,
     relay_driver: Mutex<Option<Arc<SandXuserRelayDriver>>>,
+    entry_publisher: Mutex<Option<Arc<SandXuserEntryPublisher>>>,
     state: Mutex<SandSharingState>,
     started: AtomicBool,
 }
@@ -26,6 +60,7 @@ impl SandXuserSharingService {
         Self {
             relay,
             relay_driver: Mutex::new(None),
+            entry_publisher: Mutex::new(None),
             state: Mutex::new(SandSharingState::default()),
             started: AtomicBool::new(false),
         }
@@ -34,6 +69,19 @@ impl SandXuserSharingService {
         let mut slot = self.relay_driver.lock().unwrap_or_else(|p| p.into_inner());
         if let Some(previous) = slot.replace(driver) {
             previous.stop();
+        }
+    }
+
+    pub fn bind_entry_publisher(&self, publisher: Arc<SandXuserEntryPublisher>) {
+        *self
+            .entry_publisher
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(publisher);
+    }
+
+    pub fn build_manager_delegate(self: &Arc<Self>) -> SandXuserManagerDelegate {
+        SandXuserManagerDelegate {
+            service: Arc::downgrade(self),
         }
     }
 
