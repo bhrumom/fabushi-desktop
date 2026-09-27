@@ -1,9 +1,11 @@
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, NaiveDate, Utc};
 use sha1::{Digest, Sha1};
+use sha2::Sha256;
 
 use crate::watched_directory::{ChangeListener, WatchedDirectory};
 use super::project_membership::AgentProjectMembership;
@@ -14,6 +16,14 @@ pub const LOG_DIRNAME: &str = "log";
 pub const MEMORY_CHANGE_DEBOUNCE_MS: u64 = 50;
 pub const MEMORY_PROFILE_PROMPT_LIMIT: usize = 100;
 pub const MEMORY_MAX_CONTENT_LENGTH: usize = 500;
+pub const MEMORY_SYNTHESIS_INPUT_LIMIT: usize = 512;
+pub const MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS: i64 = 86_400_000;
+
+const METADATA_DIRNAME: &str = ".dreaming";
+const EXPLICIT_DIRNAME: &str = "explicit";
+const SYNTHESIZED_DIRNAME: &str = "synthesized";
+const TOMBSTONE_DIRNAME: &str = "tombstones";
+const REFRESH_FILENAME: &str = "next-refresh-at";
 
 const FACT_PREFIX: &str = "- (";
 const PROFILE_HEADER: &str =
@@ -42,6 +52,42 @@ pub struct MemoryRecord {
     pub kind: MemoryKind,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MemoryOrigin {
+    Explicit,
+    Synthesis,
+    Legacy,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SynthesisMemory {
+    pub id: String,
+    pub content: String,
+    pub created_at: i64,
+    pub kind: MemoryKind,
+    pub origin: MemoryOrigin,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SynthesisChange {
+    Create { content: String, kind: MemoryKind },
+    Update { id: String, content: String, kind: MemoryKind },
+    Remove { id: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SynthesisSnapshot {
+    pub fingerprint: String,
+    pub memories: Vec<SynthesisMemory>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SynthesisApplyResult {
+    Committed,
+    Stale,
+    Invalid,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct MemoryRecall {
     pub profile: Vec<MemoryRecord>,
@@ -57,18 +103,45 @@ struct StoredMemoryFact {
 }
 
 #[derive(Debug, Clone)]
+struct SynthesisStoredFact {
+    record: MemoryRecord,
+    path: PathBuf,
+    line: usize,
+    order: usize,
+    origin: MemoryOrigin,
+}
+
+#[derive(Debug, Clone)]
 pub struct FileMemoryStore {
     dir: WatchedDirectory,
     profile_file: PathBuf,
     log_dir: PathBuf,
+    explicit_dir: PathBuf,
+    synthesized_dir: PathBuf,
+    tombstone_dir: PathBuf,
+    refresh_file: PathBuf,
+    synthesis_metadata_enabled: bool,
 }
 
 impl FileMemoryStore {
     pub fn new(memory_dir: impl Into<PathBuf>) -> Self {
+        Self::with_synthesis_metadata(memory_dir, false)
+    }
+
+    pub fn with_synthesis_metadata(
+        memory_dir: impl Into<PathBuf>,
+        synthesis_metadata_enabled: bool,
+    ) -> Self {
         let memory_dir = memory_dir.into();
+        let metadata = memory_dir.join(METADATA_DIRNAME);
         Self {
             profile_file: memory_dir.join(PROFILE_FILENAME),
             log_dir: memory_dir.join(LOG_DIRNAME),
+            explicit_dir: metadata.join(EXPLICIT_DIRNAME),
+            synthesized_dir: metadata.join(SYNTHESIZED_DIRNAME),
+            tombstone_dir: metadata.join(TOMBSTONE_DIRNAME),
+            refresh_file: metadata.join(REFRESH_FILENAME),
+            synthesis_metadata_enabled,
             dir: WatchedDirectory::new(memory_dir, MEMORY_CHANGE_DEBOUNCE_MS),
         }
     }
@@ -141,11 +214,16 @@ impl FileMemoryStore {
             return Ok(None);
         }
         let key = memory_dedupe_key(&normalized);
-        if self
+        if let Some(existing) = self
             .facts()
-            .iter()
-            .any(|fact| memory_dedupe_key(&fact.record.content) == key)
+            .into_iter()
+            .find(|fact| memory_dedupe_key(&fact.record.content) == key)
         {
+            if self.synthesis_metadata_enabled {
+                self.clear_tombstone(&existing.record.content)?;
+                self.clear_origins(&existing.record.content)?;
+                self.mark_origin(&existing.record.content, MemoryOrigin::Explicit)?;
+            }
             return Ok(None);
         }
 
@@ -167,6 +245,11 @@ impl FileMemoryStore {
         next.push_str(&serialize_fact_line(&normalized, created_at));
         next.push('\n');
         self.dir.write_file_atomic(&path, next.as_bytes())?;
+        if self.synthesis_metadata_enabled {
+            self.clear_tombstone(&normalized)?;
+            self.clear_origins(&normalized)?;
+            self.mark_origin(&normalized, MemoryOrigin::Explicit)?;
+        }
 
         Ok(Some(MemoryRecord {
             id: memory_id_for(&normalized),
@@ -195,12 +278,23 @@ impl FileMemoryStore {
         }
         lines.remove(fact.line);
         self.dir.write_file_atomic(&fact.path, lines.join("\n").as_bytes())?;
+        if self.synthesis_metadata_enabled {
+            self.clear_origins(&fact.record.content)?;
+            self.mark_tombstone(&fact.record.content)?;
+        }
         Ok(true)
     }
 
     pub fn clear_memories(&self) -> io::Result<()> {
-        if !self.has_memories() {
+        let facts = self.facts();
+        if facts.is_empty() {
             return Ok(());
+        }
+        if self.synthesis_metadata_enabled {
+            for fact in &facts {
+                self.clear_origins(&fact.record.content)?;
+                self.mark_tombstone(&fact.record.content)?;
+            }
         }
         match fs::remove_dir_all(&self.log_dir) {
             Ok(()) => {}
@@ -208,6 +302,276 @@ impl FileMemoryStore {
             Err(error) => return Err(error),
         }
         self.dir.write_file_atomic(&self.profile_file, PROFILE_HEADER.as_bytes())
+    }
+
+    pub fn prepare_synthesis(&self) -> SynthesisSnapshot {
+        let (fingerprint, mut facts) = self.read_synthesis_state();
+        facts.sort_by(|left, right| {
+            usize::from(right.origin == MemoryOrigin::Explicit)
+                .cmp(&usize::from(left.origin == MemoryOrigin::Explicit))
+                .then_with(|| {
+                    usize::from(right.record.kind == MemoryKind::Profile)
+                        .cmp(&usize::from(left.record.kind == MemoryKind::Profile))
+                })
+                .then_with(|| right.record.created_at.cmp(&left.record.created_at))
+                .then_with(|| right.order.cmp(&left.order))
+        });
+        let mut seen = HashSet::new();
+        let memories = facts
+            .into_iter()
+            .filter(|fact| seen.insert(fact.record.id.clone()))
+            .take(MEMORY_SYNTHESIS_INPUT_LIMIT)
+            .map(|fact| SynthesisMemory {
+                id: fact.record.id,
+                content: fact.record.content,
+                created_at: fact.record.created_at,
+                kind: fact.record.kind,
+                origin: fact.origin,
+            })
+            .collect();
+        SynthesisSnapshot { fingerprint, memories }
+    }
+
+    pub fn apply_synthesis(
+        &self,
+        snapshot: &SynthesisSnapshot,
+        changes: &[SynthesisChange],
+        now_ms: i64,
+    ) -> io::Result<SynthesisApplyResult> {
+        let (fingerprint, facts) = self.read_synthesis_state();
+        if fingerprint != snapshot.fingerprint {
+            return Ok(SynthesisApplyResult::Stale);
+        }
+        let allowed = snapshot
+            .memories
+            .iter()
+            .map(|memory| memory.id.clone())
+            .collect::<HashSet<_>>();
+        let by_id = facts
+            .into_iter()
+            .map(|fact| (fact.record.id.clone(), fact))
+            .collect::<HashMap<_, _>>();
+        let mut changed = HashSet::new();
+        for change in changes {
+            match change {
+                SynthesisChange::Create { content, kind } => {
+                    let content = normalize_memory_content(content);
+                    if content.is_empty() {
+                        return Ok(SynthesisApplyResult::Invalid);
+                    }
+                    if !self.is_tombstoned(&content) {
+                        self.add_synthesized(&content, now_ms, *kind)?;
+                    }
+                }
+                SynthesisChange::Update { id, content, kind } => {
+                    if !allowed.contains(id) || !changed.insert(id.clone()) {
+                        return Ok(SynthesisApplyResult::Invalid);
+                    }
+                    let Some(current) = by_id.get(id) else {
+                        return Ok(SynthesisApplyResult::Invalid);
+                    };
+                    if current.origin == MemoryOrigin::Explicit {
+                        return Ok(SynthesisApplyResult::Invalid);
+                    }
+                    let content = normalize_memory_content(content);
+                    if content.is_empty() {
+                        return Ok(SynthesisApplyResult::Invalid);
+                    }
+                    self.remove_fact_for_synthesis(current)?;
+                    if !self.is_tombstoned(&content) {
+                        self.add_synthesized(&content, now_ms, *kind)?;
+                    }
+                }
+                SynthesisChange::Remove { id } => {
+                    if !allowed.contains(id) || !changed.insert(id.clone()) {
+                        return Ok(SynthesisApplyResult::Invalid);
+                    }
+                    let Some(current) = by_id.get(id) else {
+                        return Ok(SynthesisApplyResult::Invalid);
+                    };
+                    if current.origin == MemoryOrigin::Explicit {
+                        return Ok(SynthesisApplyResult::Invalid);
+                    }
+                    self.remove_fact_for_synthesis(current)?;
+                }
+            }
+        }
+        self.mark_temporal_review(now_ms)?;
+        Ok(SynthesisApplyResult::Committed)
+    }
+
+    pub fn is_temporal_review_due(&self, now_ms: i64) -> bool {
+        let next = fs::read_to_string(&self.refresh_file)
+            .ok()
+            .and_then(|raw| raw.trim().parse::<i64>().ok());
+        next.is_none_or(|value| value <= now_ms)
+    }
+
+    pub fn mark_temporal_review(&self, now_ms: i64) -> io::Result<()> {
+        let next = now_ms.saturating_add(MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS);
+        self.dir
+            .write_file_atomic(&self.refresh_file, format!("{next}
+").as_bytes())
+    }
+
+    fn read_synthesis_state(&self) -> (String, Vec<SynthesisStoredFact>) {
+        let mut hasher = Sha256::new();
+        let mut output = Vec::new();
+        let mut files = vec![(self.profile_file.clone(), MemoryKind::Profile)];
+        let mut logs = match fs::read_dir(&self.log_dir) {
+            Ok(entries) => entries
+                .filter_map(Result::ok)
+                .map(|entry| entry.path())
+                .filter(|path| path.extension().and_then(|value| value.to_str()) == Some("md"))
+                .collect::<Vec<_>>(),
+            Err(_) => Vec::new(),
+        };
+        logs.sort();
+        files.extend(logs.into_iter().map(|path| (path, MemoryKind::Log)));
+        for (path, kind) in files {
+            let raw = fs::read_to_string(&path).unwrap_or_default();
+            hasher.update(path.to_string_lossy().as_bytes());
+            hasher.update([0]);
+            hasher.update(raw.as_bytes());
+            hasher.update([0]);
+            for (line, text) in raw.split('
+').enumerate() {
+                let Some(fact) = parse_fact_line(text, kind) else {
+                    continue;
+                };
+                let Some(created_at) = parse_memory_date_ms(&fact.date) else {
+                    continue;
+                };
+                let order = output.len();
+                let record = MemoryRecord {
+                    id: memory_id_for(&fact.content),
+                    content: fact.content,
+                    created_at,
+                    kind,
+                };
+                let origin = self.memory_origin(&record.content);
+                output.push(SynthesisStoredFact {
+                    record,
+                    path: path.clone(),
+                    line,
+                    order,
+                    origin,
+                });
+            }
+        }
+        let fingerprint = format!("{:x}", hasher.finalize());
+        (fingerprint, output)
+    }
+
+    fn metadata_path(&self, content: &str, origin: MemoryOrigin) -> PathBuf {
+        let dir = match origin {
+            MemoryOrigin::Explicit => &self.explicit_dir,
+            MemoryOrigin::Synthesis | MemoryOrigin::Legacy => &self.synthesized_dir,
+        };
+        dir.join(format!("{}.memory", memory_id_for(content)))
+    }
+
+    fn tombstone_path(&self, content: &str) -> PathBuf {
+        self.tombstone_dir
+            .join(format!("{}.deleted", memory_id_for(content)))
+    }
+
+    fn memory_origin(&self, content: &str) -> MemoryOrigin {
+        if self.metadata_path(content, MemoryOrigin::Explicit).is_file() {
+            MemoryOrigin::Explicit
+        } else if self.metadata_path(content, MemoryOrigin::Synthesis).is_file() {
+            MemoryOrigin::Synthesis
+        } else {
+            MemoryOrigin::Legacy
+        }
+    }
+
+    fn mark_origin(&self, content: &str, origin: MemoryOrigin) -> io::Result<()> {
+        if origin == MemoryOrigin::Legacy {
+            return Ok(());
+        }
+        self.dir
+            .write_file_atomic(&self.metadata_path(content, origin), b"")
+    }
+
+    fn clear_origins(&self, content: &str) -> io::Result<()> {
+        for origin in [MemoryOrigin::Explicit, MemoryOrigin::Synthesis] {
+            match fs::remove_file(self.metadata_path(content, origin)) {
+                Ok(()) => {}
+                Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+                Err(error) => return Err(error),
+            }
+        }
+        Ok(())
+    }
+
+    fn is_tombstoned(&self, content: &str) -> bool {
+        self.tombstone_path(content).is_file()
+    }
+
+    fn mark_tombstone(&self, content: &str) -> io::Result<()> {
+        self.dir
+            .write_file_atomic(&self.tombstone_path(content), b"")
+    }
+
+    fn clear_tombstone(&self, content: &str) -> io::Result<()> {
+        match fs::remove_file(self.tombstone_path(content)) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(error),
+        }
+    }
+
+    fn remove_fact_for_synthesis(&self, fact: &SynthesisStoredFact) -> io::Result<()> {
+        let raw = fs::read_to_string(&fact.path).unwrap_or_default();
+        let mut lines = raw.split('
+').map(ToOwned::to_owned).collect::<Vec<_>>();
+        if fact.line >= lines.len() {
+            return Ok(());
+        }
+        lines.remove(fact.line);
+        self.dir
+            .write_file_atomic(&fact.path, lines.join("
+").as_bytes())?;
+        self.clear_origins(&fact.record.content)
+    }
+
+    fn add_synthesized(
+        &self,
+        content: &str,
+        created_at: i64,
+        kind: MemoryKind,
+    ) -> io::Result<()> {
+        if self
+            .facts()
+            .iter()
+            .any(|fact| memory_dedupe_key(&fact.record.content) == memory_dedupe_key(content))
+        {
+            return Ok(());
+        }
+        let path = match kind {
+            MemoryKind::Profile => self.profile_file.clone(),
+            MemoryKind::Log => self
+                .log_dir
+                .join(format!("{}.md", format_memory_date(created_at).chars().take(7).collect::<String>())),
+        };
+        let raw = fs::read_to_string(&path).unwrap_or_default();
+        let header = match kind {
+            MemoryKind::Profile => PROFILE_HEADER,
+            MemoryKind::Log => LOG_HEADER,
+        };
+        let mut next = if raw.is_empty() { header.to_string() } else { raw };
+        if !next.ends_with('
+') {
+            next.push('
+');
+        }
+        next.push_str(&serialize_fact_line(content, created_at));
+        next.push('
+');
+        self.dir.write_file_atomic(&path, next.as_bytes())?;
+        self.clear_origins(content)?;
+        self.mark_origin(content, MemoryOrigin::Synthesis)
     }
 
     fn facts(&self) -> Vec<StoredMemoryFact> {
