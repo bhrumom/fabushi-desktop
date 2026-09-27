@@ -16675,7 +16675,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/sand_host_production_wiring_contract.rs"
       ],
-      "notes": "Shipping UnifiedGatewayApi now consumes the Rust Host Gateway policy owner for createAgent nonce dedupe (bounded to the frozen 64-entry cap), Sand-only purpose filtering and template-id validation before the real Host-lane mint. The broader frozen gateway method table still remains distributed across typed Rust Gateway/Session/extension dispatchers, so this row stays non-final until those remaining extension-owned methods are proven through the canonical registry."
+      "notes": "Shipping UnifiedGatewayApi now consumes the Rust Host Gateway policy owner for createAgent nonce dedupe (bounded to the frozen 64-entry cap), Sand-only purpose filtering and template-id validation around the canonical Rust ProductionSession gateway mint. The broader frozen gateway method table still remains distributed across typed Rust Gateway/Session/extension dispatchers, so this row stays non-final until those remaining extension-owned methods are proven through the canonical registry."
     },
     {
       "referencePath": "source/host/host-initial-transcript-load.ts",
