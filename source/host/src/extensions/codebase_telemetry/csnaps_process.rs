@@ -309,8 +309,7 @@ impl CsnapsProcess {
         match event {
             ReaderEvent::Terminal(error) => Err(error),
             ReaderEvent::Response(CsnapsResponse::Success { id: response_id, result }) => {
-                if response_id != id {
-                    let failure = CsnapsProcessError::new("csnaps returned an unknown request ID");
+                if let Err(failure) = validate_response_id(id, response_id) {
                     set_terminal(&self.terminal_error, failure.clone());
                     let _ = self.kill_after_failure();
                     return Err(failure);
@@ -319,8 +318,7 @@ impl CsnapsProcess {
                     .map_err(|error| CsnapsProcessError::new(error.to_string()))
             }
             ReaderEvent::Response(CsnapsResponse::Error { id: response_id, error }) => {
-                if response_id != id {
-                    let failure = CsnapsProcessError::new("csnaps returned an unknown request ID");
+                if let Err(failure) = validate_response_id(id, response_id) {
                     set_terminal(&self.terminal_error, failure.clone());
                     let _ = self.kill_after_failure();
                     return Err(failure);
@@ -366,6 +364,19 @@ impl CsnapsProcess {
             }
             thread::sleep(Duration::from_millis(10));
         }
+    }
+}
+
+pub fn validate_response_id(
+    expected: u64,
+    actual: u64,
+) -> Result<(), CsnapsProcessError> {
+    if expected == actual {
+        Ok(())
+    } else {
+        Err(CsnapsProcessError::new(
+            "csnaps returned an unknown request ID",
+        ))
     }
 }
 
