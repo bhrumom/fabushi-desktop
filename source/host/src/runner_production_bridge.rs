@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::extensions::inference::provider_session::RoutedProvider;
+use crate::extensions::inference::provider_session::{ProviderTokenUsage, RoutedProvider};
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
 use crate::runner::box_tool_access::RunnerBoxResourcePort;
 use crate::runner::production_turn_run_shell_adapter::{
@@ -37,6 +37,7 @@ pub struct ProductionRunnerCompositionInput {
     pub checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     pub retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
     pub retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
+    pub usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     pub browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     pub send_message_sink: Option<Arc<dyn SendMessageSink>>,
@@ -63,6 +64,9 @@ pub fn create_production_runner_composition(
     }
     if let Some(retry_report_sink) = input.retry_report_sink {
         composition = composition.with_retry_report_sink(retry_report_sink);
+    }
+    if let Some(usage_sink) = input.usage_sink {
+        composition = composition.with_usage_sink(usage_sink);
     }
     composition = composition
         .with_multitask_enabled(input.multitask_enabled)

@@ -136,9 +136,10 @@ use mahayana_host_runtime::host_production_extensions::{
 };
 use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::turn_empty_delivery_telemetry;
 use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
-    TtftFields, TurnAwaitFields, TurnInterruptFields, TurnRetryFields, TurnUsageFields,
-    UserMessageReceivedFields, ttft_telemetry, turn_await_telemetry, turn_interrupt_telemetry,
-    turn_retry_telemetry, turn_usage_telemetry, user_message_received_telemetry,
+    TokenUsage as TelemetryTokenUsage, TtftFields, TurnAwaitFields, TurnInterruptFields,
+    TurnRetryFields, TurnUsageFields, UserMessageReceivedFields, ttft_telemetry,
+    turn_await_telemetry, turn_interrupt_telemetry, turn_retry_telemetry,
+    turn_usage_telemetry, user_message_received_telemetry,
 };
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::{
     AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
@@ -192,6 +193,9 @@ use mahayana_host_runtime::runner::turn_observation::{
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSource,
+};
+use mahayana_host_runtime::extensions::inference::provider_session::{
+    ProviderTokenUsage, merge_provider_token_usage,
 };
 use mahayana_host_runtime::runner::box_tool_access::RunnerBoxResourcePort;
 use mahayana_host_runtime::cloud_agents::cloud_agent_tool::{CloudAgentReviewHook, CloudAgentToolDependencies};
@@ -2118,6 +2122,14 @@ fn start_routed_provider_task(
                     }
                 },
             );
+            let worker_provider_usage = Arc::new(Mutex::new(None::<ProviderTokenUsage>));
+            let usage_store = Arc::clone(&worker_provider_usage);
+            let usage_sink: Arc<dyn Fn(ProviderTokenUsage) + Send + Sync> =
+                Arc::new(move |usage| {
+                    if let Ok(mut stored) = usage_store.lock() {
+                        *stored = Some(merge_provider_token_usage(stored.take(), usage));
+                    }
+                });
             let composition = create_production_runner_composition(
                 ProductionRunnerCompositionInput {
                     provider,
@@ -2127,6 +2139,7 @@ fn start_routed_provider_task(
                     checkpoint_store,
                     retry_sink: Some(retry_sink),
                     retry_report_sink: Some(retry_report_sink),
+                    usage_sink: Some(usage_sink),
                     spotlight_enabled,
                     box_resources: Some(box_resources),
                     browser_executor: Some(browser_executor),
@@ -2272,7 +2285,17 @@ fn start_routed_provider_task(
                 request_id_count: u64::try_from(usage_report.request_id_count)
                     .unwrap_or(u64::MAX),
                 turn_ended_seq: usage_report.turn_ended_seq,
-                usage: None,
+                usage: worker_provider_usage
+                    .lock()
+                    .ok()
+                    .and_then(|usage| *usage)
+                    .map(|usage| TelemetryTokenUsage {
+                        input_tokens: usage.input_tokens,
+                        output_tokens: usage.output_tokens,
+                        cache_read_tokens: usage.cache_read_tokens,
+                        cache_write_tokens: usage.cache_write_tokens,
+                        reasoning_tokens: usage.reasoning_tokens,
+                    }),
             });
             if let Err(error) = worker_telemetry_logs.report_projection(&usage_projection) {
                 eprintln!(

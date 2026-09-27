@@ -15,8 +15,9 @@ use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use crate::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderCheckpoint,
-    RoutedProviderOptions, RoutedToolDefinition, run_routed_provider_text_with_lifecycle,
+    ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedProvider,
+    RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
+    run_routed_provider_text_with_lifecycle_reporting_usage,
 };
 use crate::host_request_context::HostRequestContext;
 use crate::runner::production_turn_run_shell_adapter::{
@@ -306,6 +307,7 @@ struct ProductionRoutedProviderAttemptExecutor<'a> {
         Value,
         &str,
     ) -> Result<Value, ProviderSessionError>,
+    usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
 }
 
 impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'_> {
@@ -326,12 +328,19 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
             on_text_delta,
             should_cancel,
         };
-        run_routed_provider_text_with_lifecycle(
+        let usage_sink = self.usage_sink.clone();
+        let mut on_usage = move |usage: ProviderTokenUsage| {
+            if let Some(sink) = usage_sink.as_ref() {
+                sink(usage);
+            }
+        };
+        run_routed_provider_text_with_lifecycle_reporting_usage(
             self.provider,
             self.messages,
             &mut options,
             resume_from,
             on_checkpoint,
+            &mut on_usage,
         )
     }
 }
@@ -346,6 +355,7 @@ pub struct RoutedProviderRun<'a> {
     pub checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     pub retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
     pub retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
+    pub usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
     pub cloud_agents_enabled: bool,
     pub multitask_enabled: bool,
 }
@@ -434,6 +444,7 @@ pub fn run_routed_provider_in_runner(
         tools: &direct_tools,
         mcp_server_url: mcp_url.as_deref(),
         execute_tool: &mut execute_tool,
+        usage_sink: run.usage_sink.clone(),
     };
     let retry_sink = run.retry_sink.clone();
     let mut on_retry = move |event: &ProviderRetryEvent| {

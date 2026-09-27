@@ -2,7 +2,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use crate::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, RoutedProvider,
+    ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedProvider,
 };
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
 
@@ -45,6 +45,7 @@ pub struct TurnAgentComposition {
     checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
     retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
+    usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
     box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
@@ -74,6 +75,7 @@ impl TurnAgentComposition {
             checkpoint_store,
             retry_sink: None,
             retry_report_sink: None,
+            usage_sink: None,
             box_resources: None,
             browser_executor: None,
             send_message_sink: None,
@@ -101,6 +103,14 @@ impl TurnAgentComposition {
         sink: Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>,
     ) -> Self {
         self.retry_report_sink = Some(sink);
+        self
+    }
+
+    pub fn with_usage_sink(
+        mut self,
+        sink: Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>,
+    ) -> Self {
+        self.usage_sink = Some(sink);
         self
     }
 
@@ -287,6 +297,7 @@ impl TurnAgentComposition {
                 checkpoint_store: Arc::clone(&self.checkpoint_store),
                 retry_sink: self.retry_sink.clone(),
                 retry_report_sink: self.retry_report_sink.clone(),
+                usage_sink: self.usage_sink.clone(),
                 cloud_agents_enabled: self.cloud_agent_tool.is_some(),
                 multitask_enabled: self.multitask_enabled,
             },

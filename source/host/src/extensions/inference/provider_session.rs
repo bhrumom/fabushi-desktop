@@ -22,7 +22,7 @@ use crate::host_paths::get_sand_root_dir;
 
 use super::codex_direct_responses::{
     CodexDirectCheckpoint, CodexDirectError, CodexDirectOptions, CodexDirectTool,
-    CodexDirectTransport, run_codex_direct_responses_with_cancel,
+    CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
     run_codex_direct_responses_with_lifecycle,
 };
 
@@ -80,6 +80,48 @@ impl RoutedProvider {
 pub struct ProviderMessage {
     pub role: String,
     pub content: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct ProviderTokenUsage {
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+    pub cache_read_tokens: u64,
+    pub cache_write_tokens: u64,
+    pub reasoning_tokens: Option<u64>,
+}
+
+impl From<CodexDirectUsage> for ProviderTokenUsage {
+    fn from(value: CodexDirectUsage) -> Self {
+        Self {
+            input_tokens: value.input_tokens,
+            output_tokens: value.output_tokens,
+            cache_read_tokens: value.cache_read_tokens,
+            cache_write_tokens: value.cache_write_tokens,
+            reasoning_tokens: None,
+        }
+    }
+}
+
+pub fn merge_provider_token_usage(
+    current: Option<ProviderTokenUsage>,
+    next: ProviderTokenUsage,
+) -> ProviderTokenUsage {
+    match current {
+        None => next,
+        Some(current) => ProviderTokenUsage {
+            input_tokens: current.input_tokens.saturating_add(next.input_tokens),
+            output_tokens: current.output_tokens.saturating_add(next.output_tokens),
+            cache_read_tokens: current.cache_read_tokens.saturating_add(next.cache_read_tokens),
+            cache_write_tokens: current.cache_write_tokens.saturating_add(next.cache_write_tokens),
+            reasoning_tokens: match (current.reasoning_tokens, next.reasoning_tokens) {
+                (None, None) => None,
+                (left, right) => Some(
+                    left.unwrap_or_default().saturating_add(right.unwrap_or_default()),
+                ),
+            },
+        },
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -830,6 +872,35 @@ pub fn run_codex_provider_text_with_lifecycle(
         &CodexDirectCheckpoint,
     ) -> Result<(), ProviderSessionError>,
 ) -> Result<String, ProviderSessionError> {
+    let mut ignore_usage = |_usage: ProviderTokenUsage| {};
+    run_codex_provider_text_with_lifecycle_reporting_usage(
+        messages,
+        tools,
+        execute_tool,
+        on_text_delta,
+        should_cancel,
+        resume_from,
+        on_checkpoint,
+        &mut ignore_usage,
+    )
+}
+
+pub fn run_codex_provider_text_with_lifecycle_reporting_usage(
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&CodexDirectCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &CodexDirectCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+) -> Result<String, ProviderSessionError> {
     let mut transport = CodexHttpTransport::new(&codex_home().join("auth.json"))?;
     let system_prompt = assembled_provider_system_prompt(messages);
     let mut request = CodexDirectOptions::new(
@@ -874,6 +945,7 @@ pub fn run_codex_provider_text_with_lifecycle(
         },
         should_cancel,
     )?;
+    on_usage(result.usage.into());
     Ok(result.text)
 }
 
@@ -916,6 +988,27 @@ pub fn run_routed_provider_text_with_lifecycle(
         &RoutedProviderCheckpoint,
     ) -> Result<(), ProviderSessionError>,
 ) -> Result<String, ProviderSessionError> {
+    let mut ignore_usage = |_usage: ProviderTokenUsage| {};
+    run_routed_provider_text_with_lifecycle_reporting_usage(
+        provider,
+        messages,
+        options,
+        resume_from,
+        on_checkpoint,
+        &mut ignore_usage,
+    )
+}
+
+pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
+    provider: RoutedProvider,
+    messages: &[ProviderMessage],
+    options: &mut RoutedProviderOptions<'_>,
+    resume_from: Option<&RoutedProviderCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &RoutedProviderCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+) -> Result<String, ProviderSessionError> {
     if (options.should_cancel)() {
         return Err(ProviderSessionError::Cancelled(
             "Runner cancelled before provider dispatch".into(),
@@ -948,7 +1041,7 @@ pub fn run_routed_provider_text_with_lifecycle(
                     checkpoint.clone(),
                 ))
             };
-            run_codex_provider_text_with_lifecycle(
+            run_codex_provider_text_with_lifecycle_reporting_usage(
                 messages,
                 options.tools,
                 options.execute_tool,
@@ -956,6 +1049,7 @@ pub fn run_routed_provider_text_with_lifecycle(
                 options.should_cancel,
                 resume,
                 &mut codex_checkpoint,
+                on_usage,
             )
         }
         RoutedProvider::OpenRouter => {
