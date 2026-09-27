@@ -44,6 +44,7 @@ struct PendingAwait {
 pub struct TurnObservation {
     conversation_id: String,
     event_sink: Option<TurnObservationEventSink>,
+    turn_await_sink: Option<TurnObservationEventSink>,
     turn_started_at_ms: u64,
     last_tool: Option<String>,
     recent_activity: Vec<String>,
@@ -63,6 +64,7 @@ impl TurnObservation {
         Self {
             conversation_id: conversation_id.into(),
             event_sink,
+            turn_await_sink: None,
             turn_started_at_ms: now_ms(),
             last_tool: None,
             recent_activity: Vec::new(),
@@ -255,6 +257,10 @@ impl TurnObservation {
         }));
     }
 
+    pub fn set_turn_await_handler(&mut self, handler: TurnObservationEventSink) {
+        self.turn_await_sink = Some(handler);
+    }
+
     pub fn observe_communicate_tool_call(
         &self,
         phase: &str,
@@ -314,6 +320,14 @@ impl TurnObservation {
         } else {
             "completed"
         };
+        let observation = json!({
+            "awaitIndex": index,
+            "blockUntilMs": block_until_ms,
+            "outcome": outcome,
+        });
+        if let Some(sink) = self.turn_await_sink.as_ref() {
+            sink(observation.clone());
+        }
         self.emit(json!({
             "type": "turn-await",
             "agentId": self.conversation_id,
@@ -330,6 +344,14 @@ impl TurnObservation {
         let outcome = if interrupted { "aborted" } else { "clean_stop" };
         let pending = self.pending_awaits.drain().collect::<Vec<_>>();
         for (_, item) in pending {
+            let observation = json!({
+                "awaitIndex": item.index,
+                "blockUntilMs": item.block_until_ms,
+                "outcome": outcome,
+            });
+            if let Some(sink) = self.turn_await_sink.as_ref() {
+                sink(observation.clone());
+            }
             self.emit(json!({
                 "type": "turn-await",
                 "agentId": self.conversation_id,

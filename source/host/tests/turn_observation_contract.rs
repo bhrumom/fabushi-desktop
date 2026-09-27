@@ -118,6 +118,14 @@ fn observed_bridge_wraps_success_failure_and_await_lifecycle() {
             sink_events.lock().unwrap().push(event);
         })),
     );
+    let await_events = Arc::new(Mutex::new(Vec::new()));
+    let await_sink_events = Arc::clone(&await_events);
+    observation
+        .lock()
+        .unwrap()
+        .set_turn_await_handler(Arc::new(move |event| {
+            await_sink_events.lock().unwrap().push(event);
+        }));
     let bridge = ObservedRoutedToolBridge::new(
         Arc::new(Delegate),
         Arc::clone(&observation),
@@ -147,4 +155,11 @@ fn observed_bridge_wraps_success_failure_and_await_lifecycle() {
     assert!(events.iter().any(|event| {
         event["type"] == "tool-completed" && event["failed"] == true
     }));
+    drop(events);
+
+    let await_events = await_events.lock().unwrap();
+    assert_eq!(await_events.len(), 1);
+    assert_eq!(await_events[0]["awaitIndex"], 1);
+    assert_eq!(await_events[0]["blockUntilMs"], 123);
+    assert_eq!(await_events[0]["outcome"], "completed");
 }

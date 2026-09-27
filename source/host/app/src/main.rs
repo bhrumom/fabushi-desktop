@@ -133,7 +133,7 @@ use mahayana_host_runtime::host_production_extensions::{
 };
 use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::turn_empty_delivery_telemetry;
 use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
-    TurnRetryFields, turn_retry_telemetry,
+    TurnAwaitFields, TurnRetryFields, turn_await_telemetry, turn_retry_telemetry,
 };
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::{
     AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
@@ -1857,8 +1857,42 @@ fn start_routed_provider_task(
                     }));
                 })),
             );
+            let await_telemetry_logs = worker_telemetry_logs.clone();
+            let await_conversation_id = agent_id.clone();
             let runner_started_at_ms = started_at_ms();
             if let Ok(mut observation) = observation.lock() {
+                observation.set_turn_await_handler(Arc::new(move |event| {
+                    let Some(await_index) = event
+                        .get("awaitIndex")
+                        .and_then(serde_json::Value::as_u64)
+                    else {
+                        return;
+                    };
+                    let Some(block_until_ms) = event
+                        .get("blockUntilMs")
+                        .and_then(serde_json::Value::as_u64)
+                    else {
+                        return;
+                    };
+                    let Some(outcome) = event
+                        .get("outcome")
+                        .and_then(serde_json::Value::as_str)
+                    else {
+                        return;
+                    };
+                    let projection = turn_await_telemetry(&TurnAwaitFields {
+                        conversation_id: await_conversation_id.clone(),
+                        block_until_ms,
+                        outcome: outcome.to_string(),
+                        await_index,
+                    });
+                    if let Err(error) = await_telemetry_logs.report_projection(&projection) {
+                        eprintln!(
+                            "mahayana-host turn_await_telemetry_failed agent={} error={error}",
+                            await_conversation_id
+                        );
+                    }
+                }));
                 observation.turn_started(runner_started_at_ms);
             }
             let bridge: Arc<dyn RoutedToolBridge> = Arc::new(CoordinatorRoutedToolBridge {
