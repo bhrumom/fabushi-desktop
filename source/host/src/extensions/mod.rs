@@ -53,3 +53,5 @@ pub mod mcp;
 pub mod automations;
 
 pub mod notifications;
+
+pub mod teach_recording;

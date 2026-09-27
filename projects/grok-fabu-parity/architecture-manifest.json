@@ -13945,12 +13945,20 @@
       "targetPath": "source/host/src/extensions/teach_recording/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "37a530d2bc60a8f090e69787b475bca03f0c917b",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/teach_recording/extension.rs",
+        "source/host/src/extensions/extension_ids.generated.rs",
+        "source/host/src/extensions/registry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/teach_recording_extension_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now owns the frozen teach-recording extension boundary: the generated registry ID/dependency set, versioned 32-byte queue-signature key parsing and 0600 persistence, cryptographic key generation, cap-delay composition, service-factory dependency injection, best-effort pending recovery, API projection, and Host-lifecycle disposal. Final remains withheld until the independent teach-recording-service Rust owner ports the ffmpeg/Box recording, signed pending queue, save/discard, recovery and learning-prompt state machine and production Host composition binds these ports."
     },
     {
       "referencePath": "source/host/extensions/teach-recording/teach-recording-service.ts",

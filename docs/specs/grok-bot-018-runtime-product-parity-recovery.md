@@ -1718,3 +1718,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `box_mcp_exec_contract` passed **3/3**.
 - The row advances from `planned` to `existing-needs-parity`; final remains blocked on the production ForeverBox/CapableBox resource accessor plus generated `McpArgs/McpResult` execution/diagnostic wiring.
 - Manifest becomes **1,833 implemented / 124 existing-needs-parity / 45 planned** (**169 non-final**).
+
+
+### 2026-09-27 Teach recording extension boundary slice
+
+- Exact starting HEAD: `e0a64fbb3ca6ae685f515387f93077a584f9a58a`.
+- Re-read frozen `source/host/extensions/teach-recording/extension.ts` at Grok baseline `a9f633e09d49a85829b8236331b9e21f7e612634` (reference blob `37a530d2bc60a8f090e69787b475bca03f0c917b`).
+- Added Rust `teach_recording/extension.rs` without collapsing it into the recording service: frozen dependency IDs, the versioned 32-byte queue-signature key contract, secure random generation, `0600` persistence on Unix, cap-delay composition, service-factory ports, best-effort pending recovery, API projection and Host-lifecycle disposal.
+- Added `teach_recording_extension_contract` for key parsing/persistence/permissions, non-regeneration of valid keys, dependency/cap wiring, pending recovery and idempotent Host-owned service disposal.
+- The row advances from `planned` to `existing-needs-parity`; final remains blocked on the separately-owned Rust `teach-recording-service` recording/queue state machine and production Host composition.
+- Manifest becomes **1,833 implemented / 125 existing-needs-parity / 44 planned** (**169 non-final**).
