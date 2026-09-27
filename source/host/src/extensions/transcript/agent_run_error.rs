@@ -77,7 +77,7 @@ fn backend_connect_error_from_value(
         .get("cause")
         .and_then(|cause| backend_connect_error_from_value(cause, "backend cause"))
         .map(Box::new);
-    let errors = object
+    let errors: Vec<BackendConnectErrorEnvelope> = object
         .get("errors")
         .and_then(Value::as_array)
         .map(|errors| {
