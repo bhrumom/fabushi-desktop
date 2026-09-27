@@ -14,12 +14,22 @@ use mahayana_host_runtime::extensions::auto_review::auto_review_service::AutoRev
 use mahayana_host_runtime::extensions::auto_review::extension::{
     HostAutoReviewExtension, start_auto_review_extension,
 };
+use mahayana_host_runtime::extensions::auto_review::sand_backend_smart_mode_classifier_exec::create_sand_backend_smart_mode_classifier_executor;
+use mahayana_host_runtime::extensions::auth::extension::HostAuthExtension;
 use mahayana_host_runtime::extensions::telemetry::auto_review_approval_telemetry::{
     AutoReviewApprovalReport, auto_review_approval_telemetry,
 };
 use mahayana_host_runtime::runner::sand_auto_review::{
     SandAutoReviewApprovalStatus, SandAutoReviewEvent, SandAutoReviewExpiryCause,
     SandAutoReviewResolution,
+};
+use mahayana_host_runtime::runner::sand_auto_review_classifier_run::run_sand_auto_review_classifier;
+use mahayana_host_runtime::runner::sand_auto_review_summaries::CloudLifecycleAction;
+use mahayana_host_runtime::runner::sand_cloud_agent_auto_review::{
+    CloudAgentReviewImage, CloudAgentReviewOutcome,
+    SAND_CLOUD_AGENT_CLASSIFIER_ERROR_REASON,
+    build_sand_cloud_agent_lifecycle_review_target, build_sand_cloud_agent_review_target,
+    review_sand_cloud_agent_action, review_sand_cloud_agent_lifecycle_action,
 };
 use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
 use mahayana_host_runtime::production_binding_providers::production_secrets_log;
@@ -170,10 +180,10 @@ use mahayana_host_runtime::runner::turn_observation::{
     TurnObservation, TurnObservationHandle,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
-    ProductionRoutedProviderCheckpointStore, RoutedToolBridge, RunnerRequestContextSource,
+    ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSource,
 };
 use mahayana_host_runtime::runner::box_tool_access::RunnerBoxResourcePort;
-use mahayana_host_runtime::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
+use mahayana_host_runtime::cloud_agents::cloud_agent_tool::{CloudAgentReviewHook, CloudAgentToolDependencies};
 use mahayana_host_runtime::runner::coordinator_tool_relay::{
     CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
     RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
@@ -673,6 +683,7 @@ impl Drop for RoutedTurnLeaseGuard {
 
 struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
+    auth: Arc<HostAuthExtension>,
     experiments: Arc<HostExperimentsExtension>,
     events: GatewayEventHub,
     routed_tool_relay: Arc<CoordinatorToolRelay>,
@@ -700,6 +711,8 @@ struct UnifiedGatewayApi {
 #[derive(Clone)]
 struct LocalRoutedRunnerDeps {
     routed_tool_relay: Arc<CoordinatorToolRelay>,
+    auth: Arc<HostAuthExtension>,
+    auto_review: Arc<HostAutoReviewExtension>,
     events: GatewayEventHub,
     host_tx: mpsc::Sender<HostLaneRequest>,
     data_dir: PathBuf,
@@ -722,6 +735,8 @@ impl UnifiedGatewayApi {
     fn local_routed_runner_deps(&self) -> LocalRoutedRunnerDeps {
         LocalRoutedRunnerDeps {
             routed_tool_relay: Arc::clone(&self.routed_tool_relay),
+            auth: Arc::clone(&self.auth),
+            auto_review: Arc::clone(&self.auto_review),
             events: self.events.clone(),
             host_tx: self.host_tx.clone(),
             data_dir: self.data_dir.clone(),
@@ -881,6 +896,8 @@ fn run_local_group_member_turn(
         deps.host_tx,
         deps.data_dir,
         deps.request_context,
+        deps.auth,
+        deps.auto_review,
         deps.experiments,
         Arc::clone(&deps.session_workers),
         Arc::clone(&deps.runner_registry),
@@ -1041,6 +1058,8 @@ fn run_local_automation_turn(
         deps.host_tx,
         deps.data_dir,
         deps.request_context,
+        deps.auth,
+        deps.auto_review,
         deps.experiments,
         Arc::clone(&deps.session_workers),
         Arc::clone(&deps.runner_registry),
@@ -1392,12 +1411,151 @@ fn decode_provider_messages(
     Ok(messages)
 }
 
+fn build_cloud_agent_auto_review_hook(
+    auth: Arc<HostAuthExtension>,
+    auto_review: Arc<HostAutoReviewExtension>,
+    controller: Arc<mahayana_host_runtime::runner::sand_auto_review::SandAutoReviewController>,
+    agent_id: String,
+    request_source: String,
+    cancellation: RoutedProviderCancellation,
+    conversation_context: Vec<ProviderMessage>,
+) -> CloudAgentReviewHook {
+    Arc::new(move |args, images, tool_call_id| {
+        let Some(object) = args.as_object() else {
+            return Ok(None);
+        };
+        let action = object
+            .get("action")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .unwrap_or_default();
+        if action.is_empty() {
+            return Ok(None);
+        }
+
+        let mode = auto_review.current_modes().cloud_agent;
+        let cancelled = || cancellation.is_cancelled();
+        if matches!(action, "launch" | "reply") {
+            let prompt = object
+                .get("prompt")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default();
+            let review_images = images
+                .iter()
+                .map(|image| CloudAgentReviewImage {
+                    name: Path::new(&image.path)
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .unwrap_or(&image.path)
+                        .to_string(),
+                    data: image.data.clone(),
+                })
+                .collect::<Vec<_>>();
+            let Some(target) = build_sand_cloud_agent_review_target(
+                action,
+                prompt,
+                object.get("agent_id").and_then(serde_json::Value::as_str),
+                &review_images,
+                object
+                    .get("interrupt")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false),
+                object.get("repo_url").and_then(serde_json::Value::as_str),
+                object.get("title").and_then(serde_json::Value::as_str),
+            ) else {
+                return Ok(None);
+            };
+            let mut classifier = create_sand_backend_smart_mode_classifier_executor(
+                Arc::clone(&auth),
+            )
+            .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+            let classifier_context = conversation_context
+                .iter()
+                .map(|message| {
+                    serde_json::json!({
+                        "role": message.role,
+                        "content": message.content,
+                    })
+                })
+                .collect::<Vec<_>>();
+            let outcome = review_sand_cloud_agent_action(
+                mode,
+                &target,
+                Some(controller.as_ref()),
+                &request_source,
+                cancelled,
+                |risk_target, classifier_mode| {
+                    run_sand_auto_review_classifier(
+                        &mut classifier,
+                        tool_call_id,
+                        &agent_id,
+                        classifier_mode,
+                        || risk_target.clone(),
+                        || Ok(classifier_context.clone()),
+                        &[],
+                        SAND_CLOUD_AGENT_CLASSIFIER_ERROR_REASON,
+                    )
+                },
+            )
+            .map_err(|error| ProviderSessionError::Tool(format!("{error:?}")))?;
+            return Ok(match outcome {
+                CloudAgentReviewOutcome::Allowed => None,
+                CloudAgentReviewOutcome::Blocked(reason) => Some(reason),
+                CloudAgentReviewOutcome::Cancelled => {
+                    Some("The cloud agent action was cancelled.".into())
+                }
+            });
+        }
+
+        let lifecycle = match action {
+            "rename" => Some(CloudLifecycleAction::Rename),
+            "cancel" => Some(CloudLifecycleAction::Cancel),
+            "archive" => Some(CloudLifecycleAction::Archive),
+            "unarchive" => Some(CloudLifecycleAction::Unarchive),
+            "delete" => Some(CloudLifecycleAction::Delete),
+            _ => None,
+        };
+        let Some(lifecycle) = lifecycle else {
+            return Ok(None);
+        };
+        let agent = object
+            .get("agent_id")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default();
+        let Some(target) = build_sand_cloud_agent_lifecycle_review_target(
+            action,
+            agent,
+            object.get("title").and_then(serde_json::Value::as_str),
+        ) else {
+            return Ok(None);
+        };
+        let outcome = review_sand_cloud_agent_lifecycle_action(
+            mode,
+            lifecycle,
+            &target,
+            Some(controller.as_ref()),
+            &request_source,
+            cancelled,
+        )
+        .map_err(|error| ProviderSessionError::Tool(format!("{error:?}")))?;
+        Ok(match outcome {
+            CloudAgentReviewOutcome::Allowed => None,
+            CloudAgentReviewOutcome::Blocked(reason) => Some(reason),
+            CloudAgentReviewOutcome::Cancelled => {
+                Some("The cloud agent action was cancelled.".into())
+            }
+        })
+    })
+}
+
 fn start_routed_provider_task(
     routed_tool_relay: Arc<CoordinatorToolRelay>,
     events: GatewayEventHub,
     host_tx: mpsc::Sender<HostLaneRequest>,
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
+    auth: Arc<HostAuthExtension>,
+    auto_review: Arc<HostAutoReviewExtension>,
     experiments: Arc<HostExperimentsExtension>,
     session_workers: Arc<ProductionSessionWorkers>,
     runner_registry: Arc<TranscriptRunnerRegistry>,
@@ -1601,6 +1759,16 @@ fn start_routed_provider_task(
     if !is_group_member_turn {
         host_runner_composition.bind_local_permission_surface(&agent_id);
     }
+    let approvals_resolvable = !matches!(
+        request_source.as_deref(),
+        Some("group-member" | "automation")
+    );
+    let auto_review_controller = auto_review.bind_runner(&agent_id, approvals_resolvable);
+    let auto_review_service = auto_review.service();
+    let auto_review_request_source = request_source
+        .clone()
+        .unwrap_or_else(|| "turn".to_string());
+    let auto_review_context = lifecycle_messages.clone();
     let checkpoint_store = Arc::new(
         ProductionRoutedProviderCheckpointStore::new(
             &data_dir,
@@ -1649,6 +1817,10 @@ fn start_routed_provider_task(
             format!("agent database path has no parent for {agent_id}")
         ))?;
     let worker_cloud_agents = Arc::clone(&cloud_agents);
+    let worker_auth = Arc::clone(&auth);
+    let worker_auto_review = Arc::clone(&auto_review);
+    let worker_auto_review_controller = Arc::clone(&auto_review_controller);
+    let spawn_error_auto_review = Arc::clone(&auto_review_service);
     let spawn_error_agent_id = agent_id.clone();
     let spawn = thread::Builder::new()
         .name(format!("mahayana-runner-provider-{agent_id}"))
@@ -1684,12 +1856,21 @@ fn start_routed_provider_task(
                     agent_id.clone(),
                 ),
             );
+            let cloud_agent_review = build_cloud_agent_auto_review_hook(
+                Arc::clone(&worker_auth),
+                Arc::clone(&worker_auto_review),
+                Arc::clone(&worker_auto_review_controller),
+                agent_id.clone(),
+                auto_review_request_source.clone(),
+                worker_cancellation.clone(),
+                auto_review_context.clone(),
+            );
             let cloud_agent_tool = CloudAgentToolDependencies {
                 manager: Arc::clone(&worker_cloud_agents),
                 agent_dir: cloud_agent_dir,
                 box_resources: Arc::clone(&box_resources),
                 cancellation: worker_cancellation.clone(),
-                review: None,
+                review: Some(cloud_agent_review),
                 watch: None,
             };
             let delta_events = worker_events.clone();
@@ -1965,6 +2146,10 @@ fn start_routed_provider_task(
             );
             worker_transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
             worker_registry.finish_routed_provider(&worker_stream_id);
+            auto_review_service.unbind_runner(
+                &agent_id,
+                SandAutoReviewExpiryCause::SessionEnd,
+            );
             if !is_group_member_turn {
                 worker_host_runner_composition.unbind_local_permission_surface(&agent_id);
             }
@@ -2047,6 +2232,10 @@ fn start_routed_provider_task(
             is_group_member_turn,
         );
         runner_registry.finish_routed_provider(&accepted_stream_id);
+        spawn_error_auto_review.unbind_runner(
+            &spawn_error_agent_id,
+            SandAutoReviewExpiryCause::SessionEnd,
+        );
         if !is_group_member_turn {
             host_runner_composition.unbind_local_permission_surface(&spawn_error_agent_id);
         }
@@ -2445,6 +2634,8 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.host_tx.clone(),
                 self.data_dir.clone(),
                 Arc::clone(&self.request_context),
+                Arc::clone(&self.auth),
+                Arc::clone(&self.auto_review),
                 Arc::clone(&self.experiments),
                 Arc::clone(&self.session_workers),
                 Arc::clone(&self.runner_registry),
@@ -3490,6 +3681,7 @@ fn main() {
     }
     let gateway_api = Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
+            auth: Arc::clone(&production_extensions.auth),
             experiments: Arc::clone(&production_extensions.experiments),
             events: gateway_events.clone(),
             routed_tool_relay: Arc::clone(&routed_tool_relay),
