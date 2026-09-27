@@ -6,6 +6,9 @@ use serde_json::{Value, json};
 
 use crate::agents::agent_profile::SandAgentProfile;
 use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::extensions::transcript::inline_image_materialization::{
+    InlineImage, materialize_inline_images,
+};
 use crate::groups::group_store::{
     GROUP_CONFIG_VERSION, RemoteGroupMember, SandGroupConfig, read_sand_group_config,
     write_sand_group_config,
@@ -294,6 +297,242 @@ impl SharedRooms {
             .is_some())
     }
 
+    pub fn post_shared_room_guest_message(
+        &self,
+        event: &Value,
+    ) -> Result<Option<String>, String> {
+        let Some(room_id) = event.get("roomId").and_then(Value::as_str) else {
+            return Ok(None);
+        };
+        let Some(agent_id) = self.resolve_canonical_room_agent(room_id)? else {
+            return Ok(None);
+        };
+        let dir = self.sessions.agents_root().join(&agent_id);
+        if read_sand_group_config(&dir).and_then(|config| config.shared_room_id).as_deref()
+            != Some(room_id)
+        {
+            return Ok(None);
+        }
+
+        let entries = self.sessions.read_agent_transcript_entries(&agent_id)?;
+        let client_nonce = event
+            .get("clientNonce")
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty());
+        if client_nonce.is_some_and(|nonce| {
+            entries.iter().any(|entry| {
+                entry.get("kind").and_then(Value::as_str) == Some("message")
+                    && entry.get("clientNonce").and_then(Value::as_str) == Some(nonce)
+            })
+        }) {
+            return Ok(Some(agent_id));
+        }
+
+        let text = normalize_group_message(
+            event.get("text").and_then(Value::as_str).unwrap_or_default(),
+            16_000,
+        )
+        .unwrap_or_default();
+        let inline_images = serde_json::from_value::<Vec<InlineImage>>(
+            event.get("images").cloned().unwrap_or_else(|| Value::Array(Vec::new())),
+        )
+        .unwrap_or_default();
+        let db_path = self.sessions.session_db_path(&agent_id)?;
+        let images = materialize_inline_images(&db_path, &inline_images);
+        if text.is_empty() && images.is_empty() {
+            return Ok(Some(agent_id));
+        }
+
+        let author_auth_id = event
+            .get("authorAuthId")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        let author_name = event
+            .get("authorName")
+            .and_then(Value::as_str)
+            .filter(|value| !value.trim().is_empty())
+            .unwrap_or("Someone");
+        let mut entry = json!({
+            "kind": "message",
+            "id": format!("user-message-xuser-{}", uuid::Uuid::new_v4()),
+            "role": "user",
+            "content": text,
+            "isStreaming": false,
+            "timestampMs": event.get("timestampMs").and_then(Value::as_f64).unwrap_or_else(now_ms),
+            "fromUser": {
+                "name": author_name,
+                "authId": author_auth_id,
+            },
+        });
+        if let Some(nonce) = client_nonce {
+            entry["clientNonce"] = Value::String(nonce.to_string());
+        }
+        if let Some(avatar_url) = event
+            .get("authorAvatarUrl")
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())
+        {
+            entry["fromUser"]["avatarUrl"] = Value::String(avatar_url.to_string());
+        }
+        if !images.is_empty() {
+            entry["images"] = serde_json::to_value(images).unwrap_or(Value::Array(Vec::new()));
+        }
+        self.sessions
+            .append_agent_transcript_entries(&agent_id, &[entry])?;
+        let _ = self.sessions.mark_agent_activity(&agent_id, now_ms());
+        Ok(Some(agent_id))
+    }
+
+    pub fn append_mirror_room_entry(
+        &self,
+        event: &Value,
+        self_auth_id: &str,
+    ) -> Result<bool, String> {
+        let Some(room_id) = event.get("roomId").and_then(Value::as_str) else {
+            return Ok(false);
+        };
+        let Some(wire) = event.get("entry").filter(|value| value.is_object()) else {
+            return Ok(false);
+        };
+        let Some(entry_id) = wire.get("entryId").and_then(Value::as_str) else {
+            return Ok(false);
+        };
+        let Some(agent_id) = self.resolve_canonical_room_agent(room_id)? else {
+            return Ok(false);
+        };
+        let dir = self.sessions.agents_root().join(&agent_id);
+        if read_sand_remote_room_config(&dir).is_none() {
+            return Ok(false);
+        }
+
+        let entries = self.sessions.read_agent_transcript_entries(&agent_id)?;
+        let local_id = format!("xu-{entry_id}");
+        if entries
+            .iter()
+            .any(|entry| entry.get("id").and_then(Value::as_str) == Some(local_id.as_str()))
+        {
+            return Ok(true);
+        }
+        let client_nonce = wire
+            .get("clientNonce")
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty());
+        if client_nonce.is_some_and(|nonce| {
+            entries.iter().any(|entry| {
+                entry.get("kind").and_then(Value::as_str) == Some("message")
+                    && entry.get("clientNonce").and_then(Value::as_str) == Some(nonce)
+            })
+        }) {
+            return Ok(true);
+        }
+
+        let inline_images = serde_json::from_value::<Vec<InlineImage>>(
+            wire.get("images").cloned().unwrap_or_else(|| Value::Array(Vec::new())),
+        )
+        .unwrap_or_default();
+        let db_path = self.sessions.session_db_path(&agent_id)?;
+        let images = materialize_inline_images(&db_path, &inline_images);
+        let timestamp_ms = wire
+            .get("timestampMs")
+            .and_then(Value::as_f64)
+            .unwrap_or_else(now_ms);
+        let text = wire
+            .get("text")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+
+        let mut entry = match wire.get("kind").and_then(Value::as_str) {
+            Some("human-message") => {
+                let author_auth_id = wire
+                    .get("authorAuthId")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                let author_name = wire
+                    .get("authorName")
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.trim().is_empty())
+                    .unwrap_or("Someone");
+                let mut value = json!({
+                    "kind": "message",
+                    "id": local_id,
+                    "role": "user",
+                    "content": text,
+                    "isStreaming": false,
+                    "timestampMs": timestamp_ms,
+                });
+                if author_auth_id != self_auth_id {
+                    value["fromUser"] = json!({
+                        "name": author_name,
+                        "authId": author_auth_id,
+                    });
+                    if let Some(avatar_url) = wire
+                        .get("authorAvatarUrl")
+                        .and_then(Value::as_str)
+                        .filter(|value| !value.is_empty())
+                    {
+                        value["fromUser"]["avatarUrl"] =
+                            Value::String(avatar_url.to_string());
+                    }
+                }
+                if let Some(nonce) = client_nonce {
+                    value["clientNonce"] = Value::String(nonce.to_string());
+                }
+                value
+            }
+            Some("agent-message") => {
+                let owner = wire
+                    .get("agentOwnerAuthId")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                let remote_agent = wire
+                    .get("agentId")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                let author_name = wire
+                    .get("authorName")
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.trim().is_empty())
+                    .unwrap_or("Agent");
+                json!({
+                    "kind": "send-message",
+                    "id": local_id,
+                    "message": {
+                        "type": "text",
+                        "content": text,
+                    },
+                    "timestampMs": timestamp_ms,
+                    "author": {
+                        "id": format!(
+                            "sand-remote:{}/{}",
+                            percent_encode_component(owner),
+                            percent_encode_component(remote_agent)
+                        ),
+                        "name": author_name,
+                    },
+                })
+            }
+            _ => return Ok(true),
+        };
+        if !images.is_empty() {
+            match entry.get("kind").and_then(Value::as_str) {
+                Some("message") => {
+                    entry["images"] =
+                        serde_json::to_value(&images).unwrap_or(Value::Array(Vec::new()));
+                }
+                Some("send-message") => {
+                    entry["message"]["images"] =
+                        serde_json::to_value(&images).unwrap_or(Value::Array(Vec::new()));
+                }
+                _ => {}
+            }
+        }
+        self.sessions
+            .append_agent_transcript_entries(&agent_id, &[entry])?;
+        let _ = self.sessions.mark_agent_activity(&agent_id, now_ms());
+        Ok(true)
+    }
+
     fn filter_local_member_ids(&self, requested: &[String]) -> Vec<String> {
         requested
             .iter()
@@ -335,6 +574,10 @@ fn merge_remote_member_avatars(
             })
             .collect(),
     )
+}
+
+fn percent_encode_component(value: &str) -> String {
+    url::form_urlencoded::byte_serialize(value.as_bytes()).collect()
 }
 
 fn now_ms() -> f64 {
