@@ -22,11 +22,19 @@ fn root(label: &str) -> PathBuf {
     path
 }
 
-#[derive(Default)]
 struct FakeClient {
     teams: Mutex<Result<Vec<SkillPublishTeam>, String>>,
     published: Mutex<Vec<PublishPluginInput>>,
     unpublished: Mutex<Vec<(String, i32)>>,
+}
+impl Default for FakeClient {
+    fn default() -> Self {
+        Self {
+            teams: Mutex::new(Ok(Vec::new())),
+            published: Mutex::new(Vec::new()),
+            unpublished: Mutex::new(Vec::new()),
+        }
+    }
 }
 impl FakeClient {
     fn with_teams(teams: Result<Vec<SkillPublishTeam>, String>) -> Self {
