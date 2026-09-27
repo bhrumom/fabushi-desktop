@@ -133,8 +133,8 @@ use mahayana_host_runtime::host_production_extensions::{
 };
 use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::turn_empty_delivery_telemetry;
 use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
-    TurnAwaitFields, TurnInterruptFields, TurnRetryFields, TurnUsageFields,
-    UserMessageReceivedFields, turn_await_telemetry, turn_interrupt_telemetry,
+    TtftFields, TurnAwaitFields, TurnInterruptFields, TurnRetryFields, TurnUsageFields,
+    UserMessageReceivedFields, ttft_telemetry, turn_await_telemetry, turn_interrupt_telemetry,
     turn_retry_telemetry, turn_usage_telemetry, user_message_received_telemetry,
 };
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::{
@@ -1861,8 +1861,49 @@ fn start_routed_provider_task(
             );
             let await_telemetry_logs = worker_telemetry_logs.clone();
             let await_conversation_id = agent_id.clone();
+            let ttft_telemetry_logs = worker_telemetry_logs.clone();
+            let ttft_conversation_id = agent_id.clone();
             let runner_started_at_ms = started_at_ms();
             if let Ok(mut observation) = observation.lock() {
+                observation.set_first_token_handler(Arc::new(move |event| {
+                    let Some(chunk_type) = event
+                        .get("chunkType")
+                        .and_then(serde_json::Value::as_str)
+                    else {
+                        return;
+                    };
+                    let projection = ttft_telemetry(&TtftFields {
+                        conversation_id: ttft_conversation_id.clone(),
+                        ttft_ms: event.get("ttftMs").and_then(serde_json::Value::as_f64),
+                        skew: event
+                            .get("skew")
+                            .and_then(serde_json::Value::as_bool)
+                            .unwrap_or(false),
+                        skew_reason: event
+                            .get("skewReason")
+                            .and_then(serde_json::Value::as_str)
+                            .unwrap_or_default()
+                            .to_string(),
+                        chunk_type: chunk_type.to_string(),
+                        is_fork: event
+                            .get("isFork")
+                            .and_then(serde_json::Value::as_bool)
+                            .unwrap_or(false),
+                        model_id: event
+                            .get("modelId")
+                            .and_then(serde_json::Value::as_str)
+                            .unwrap_or_default()
+                            .to_string(),
+                        trace_id: String::new(),
+                        span_id: String::new(),
+                    });
+                    if let Err(error) = ttft_telemetry_logs.report_projection(&projection) {
+                        eprintln!(
+                            "mahayana-host ttft_telemetry_failed agent={} error={error}",
+                            ttft_conversation_id
+                        );
+                    }
+                }));
                 observation.set_turn_await_handler(Arc::new(move |event| {
                     let Some(await_index) = event
                         .get("awaitIndex")
