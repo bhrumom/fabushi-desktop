@@ -19111,7 +19111,7 @@
         "source/host/tests/runner_production_bridge_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host preserves the frozen multitask env/gate semantics, builtin executor config, durable todo guidance and prompt contract. The shipping Host now projects the sand_multitask experiment per turn, disables it for group-member turns, carries it as an immutable Runner capability, and injects SAND_MULTITASK_PROMPT_SECTION into the actual provider system prompt. Final remains withheld because the current Rust toolset still does not replace/generalize the live subagent registry with the builtin executor config or install the multitask-specific TodoWrite description."
+      "notes": "Rust Host preserves the frozen multitask env/gate semantics, builtin executor config and durable todo guidance. The shipping Host projects the sand_multitask experiment per turn, disables it for group-member turns, carries it as an immutable Runner capability, and injects the full frozen Grok 0.18 SAND_MULTITASK_PROMPT_SECTION into the actual provider system prompt; exact-head contract tests now pin the executor Task, resume-context, TodoWrite, invisible-machinery and group-room clauses so an abridged prompt cannot pass. Final remains withheld because the current Rust toolset still does not replace/generalize the live subagent registry with the builtin executor config or install the multitask-specific TodoWrite description."
     },
     {
       "referencePath": "source/host/sand-quiet-work-origin.ts",
@@ -39614,5 +39614,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-28T01:20:00+08:00"
+  "generatedAt": "2026-09-28T02:45:00+08:00"
 }
