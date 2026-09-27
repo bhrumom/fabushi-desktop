@@ -1,10 +1,12 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::settings::settings_service::{
-    SAND_AUTO_REVIEW_INSTRUCTION_MAX_CHARS, SAND_AUTO_REVIEW_INSTRUCTION_MAX_ENTRIES,
-    SandAutoReviewInstructions, SettingsService, is_valid_iana_time_zone,
+    MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH, SAND_AUTO_REVIEW_INSTRUCTION_MAX_CHARS,
+    SAND_AUTO_REVIEW_INSTRUCTION_MAX_ENTRIES, SandAutoReviewInstructions,
+    SandLocalToolPermission, SettingsService, is_valid_iana_time_zone,
 };
 
 fn temp_path(label: &str) -> std::path::PathBuf {
@@ -123,5 +125,144 @@ fn auto_review_instructions_default_normalize_persist_and_notify() {
 
     let host = service.get_host_settings();
     assert_eq!(host["autoReviewInstructions"]["isEnabled"], false);
+    let _ = fs::remove_file(path);
+}
+
+
+#[test]
+fn frozen_mcp_settings_normalize_migrate_delete_and_account_scope() {
+    let path = temp_path("mcp");
+    let service = SettingsService::new(&path);
+    let oversized = "x".repeat(MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH + 32);
+
+    service
+        .set_mcp_custom_instructions(BTreeMap::from([
+            ("hex".into(), "".into()),
+            ("plain".into(), "".into()),
+            ("alpha".into(), oversized),
+        ]))
+        .expect("legacy instructions");
+    let legacy = service.get_mcp_custom_instructions();
+    assert_eq!(legacy.get("hex").map(String::as_str), Some(""));
+    assert!(!legacy.contains_key("plain"));
+    assert_eq!(
+        legacy.get("alpha").map(|value| value.chars().count()),
+        Some(MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH)
+    );
+
+    service
+        .set_mcp_custom_instructions(BTreeMap::from([(
+            "Legacy".into(),
+            "instruction".into(),
+        )]))
+        .expect("legacy seed");
+    assert!(service
+        .migrate_mcp_custom_instruction_to_server_id("11", "Legacy")
+        .expect("migrate"));
+    assert_eq!(
+        service
+            .get_raw_mcp_custom_instruction_by_server_id("11")
+            .as_deref(),
+        Some("instruction")
+    );
+    assert!(service
+        .delete_mcp_custom_instruction_by_server_id("11", "Legacy", true)
+        .expect("delete"));
+    assert!(service.get_raw_mcp_custom_instruction("Legacy").is_none());
+
+    service
+        .set_mcp_disabled_tools_by_server_id(BTreeMap::from([
+            (
+                "12".into(),
+                vec!["A".into(), "A".into(), "".into(), "B".into()],
+            ),
+            ("bad".into(), vec!["X".into()]),
+        ]))
+        .expect("disabled tools");
+    assert_eq!(
+        service.get_mcp_disabled_tools_by_server_id(),
+        BTreeMap::from([("12".into(), vec!["A".into(), "B".into()])])
+    );
+
+    service.scope_to_account("account-a").expect("initial scope");
+    service
+        .set_mcp_custom_instructions(BTreeMap::from([("x".into(), "y".into())]))
+        .expect("scoped mcp");
+    service
+        .set_local_tool_permission(SandLocalToolPermission::Always)
+        .expect("permission");
+    assert!(service.scope_to_account("account-b").expect("scope change"));
+    assert!(service.get_mcp_custom_instructions().is_empty());
+    assert_eq!(
+        service.get_local_tool_permission(),
+        SandLocalToolPermission::Ask
+    );
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn permission_ceiling_feature_override_and_inference_usage_match_frozen_contract() {
+    let path = temp_path("runtime");
+    let service = SettingsService::new(&path);
+    service
+        .set_local_tool_permission(SandLocalToolPermission::Always)
+        .expect("choice");
+    service
+        .set_local_tool_permission_ceiling(Some(SandLocalToolPermission::Ask))
+        .expect("ceiling");
+    assert_eq!(
+        service.get_local_tool_permission(),
+        SandLocalToolPermission::Ask
+    );
+
+    let observed = Arc::new(Mutex::new(Vec::<BTreeMap<String, bool>>::new()));
+    let sink = Arc::clone(&observed);
+    let _subscription =
+        service.subscribe_to_feature_flag_overrides(Arc::new(move |overrides| {
+            sink.lock().expect("feature overrides").push(overrides);
+        }));
+    service
+        .set_host_settings(&serde_json::json!({
+            "featureFlagOverrides": {
+                "sand_multitask": false,
+                "sand_spotlight": true
+            }
+        }))
+        .expect("host settings");
+    assert_eq!(
+        observed.lock().expect("feature overrides").as_slice(),
+        &[BTreeMap::from([
+            ("sand_multitask".into(), false),
+            ("sand_spotlight".into(), true),
+        ])]
+    );
+
+    assert_eq!(service.get_inference_provider(), "cursor");
+    assert!(service
+        .set_inference_provider("codex")
+        .expect("set provider"));
+    assert!(!service
+        .set_inference_provider("invalid")
+        .expect("reject provider"));
+    service
+        .record_inference_usage(
+            "codex",
+            Some(10.4),
+            Some(4.6),
+            Some(-1.0),
+            Some(f64::NAN),
+        )
+        .expect("record usage");
+    let usage = service.get_inference_router_usage();
+    assert_eq!(usage["providers"]["codex"]["requests"], 1);
+    assert_eq!(usage["providers"]["codex"]["inputTokens"], 10);
+    assert_eq!(usage["providers"]["codex"]["outputTokens"], 5);
+    assert_eq!(usage["providers"]["codex"]["cacheReadTokens"], 0);
+    assert_eq!(usage["providers"]["codex"]["cacheWriteTokens"], 0);
+    assert!(usage["providers"]["codex"]["lastUsedAt"].is_string());
+
+    let host = service.get_host_settings();
+    assert_eq!(host["notifications"]["isEnabled"], false);
+    assert_eq!(host["notifications"]["minIntervalMs"], 5000);
     let _ = fs::remove_file(path);
 }
