@@ -2,7 +2,7 @@ const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 const TRANSCRIPT_RUNTIME: &str = include_str!("../src/extensions/transcript/production_runtime.rs");
 
 #[test]
-fn shipping_host_wires_user_message_and_watchdog_interrupt_turn_telemetry() {
+fn shipping_host_wires_frozen_turn_telemetry_sources() {
     for needle in [
         "user_message_received_telemetry(",
         "send_was_in_flight",
