@@ -11,7 +11,7 @@ fn shipping_host_binds_one_auto_review_controller_per_routed_runner_turn() {
 fn shipping_cloud_agent_tool_uses_live_auto_review_hook() {
     assert!(SHIPPING_HOST.contains("build_cloud_agent_auto_review_hook("));
     assert!(SHIPPING_HOST.contains("review: Some(cloud_agent_review)"));
-    assert!(SHIPPING_HOST.contains("create_sand_backend_smart_mode_classifier_executor("));
+    assert!(SHIPPING_HOST.contains("create_sand_backend_smart_mode_classifier_executor_with_cancellation("));
     assert!(SHIPPING_HOST.contains("review_sand_cloud_agent_action("));
     assert!(SHIPPING_HOST.contains("review_sand_cloud_agent_lifecycle_action("));
 }
