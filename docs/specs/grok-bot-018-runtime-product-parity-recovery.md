@@ -2035,3 +2035,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The failed boundary check still required the retired literal call `start_local_exec_extension(...)`. Restoring that call would create duplicate composition and violate the single canonical Host ownership model.
 - Commit `34d3ef075453ba558ffc1f2ab6e366aa538a3329` updates the architecture gate to verify the current production composition and Gateway bridge instead of the obsolete constructor spelling. No production runtime behavior was weakened or moved across Coordinator/Host/Runner boundaries.
 - Focused Electron chat E2E in the same prior exact-head run passed. A new exact-head CI run for the corrected commit is still required before this gate can be marked passed.
+
+
+### 2026-09-27 Cross-user entry publisher parity checkpoint
+
+- Re-read frozen Grok Bot 0.18 `cross-user-sharing/extension.ts`, `xuser-entry-publisher.ts`, `xuser-remote-turns.ts`, `xuser-departure-obligations.ts` and `xuser-state-reconcile.ts` before changing Rust ownership.
+- The previous Rust `xuser_entry_publisher.rs` only exposed pure payload helpers. It now owns the frozen per-room ordered publication chain, user-vs-agent wire projection, remote-agent echo suppression, attachment resolution with image MIME and aggregate byte caps, server timestamp restamping and failure-isolated queued publishing.
+- `SandXuserSharingService` now owns an explicit bound entry-publisher slot and exposes a weak `SandXuserManagerDelegate` with `is_enabled` plus ordered `publish_room_entry`, matching the frozen Transcript delegate boundary without moving Transcript responsibilities into the sharing service.
+- Focused contracts cover human-message projection, local-agent projection, remote-agent suppression, attachment filtering/base64 inlining, server timestamp restamp, ordered delegate publication and disabled-state fencing.
+- No architecture-manifest row is promoted to final in this checkpoint. The strict remainder deliberately stays at **147**: production Host still lacks the live Transcript/Attachments adapter and the current Rust sharing service has not yet integrated the frozen remote-turn, departure-obligation and full room-materialization responsibilities. This checkpoint narrows that blocker without hiding it.
