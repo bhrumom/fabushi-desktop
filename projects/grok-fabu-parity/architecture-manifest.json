@@ -14367,12 +14367,18 @@
       "targetPath": "source/host/src/extensions/telemetry/box_log_shipper.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "5f7a2bc7023cd895d919d086e77e06bbef396178",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/box_log_shipper.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/remaining_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a concrete owner for the frozen module's deterministic policy/state boundary and focused contract evidence. This row is intentionally non-final until the shipping Host/Transcript/Telemetry composition consumes the owner end-to-end with the generated/external adapters required by the frozen Grok graph."
     },
     {
       "referencePath": "source/host/extensions/telemetry/conversation-gc-telemetry.ts",
@@ -15167,12 +15173,18 @@
       "targetPath": "source/host/src/extensions/transcript/background_wakes.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "fc3beec30512108f8bbb78a6c56205dac6e7e3c2",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/background_wakes.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/remaining_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a concrete owner for the frozen module's deterministic policy/state boundary and focused contract evidence. This row is intentionally non-final until the shipping Host/Transcript/Telemetry composition consumes the owner end-to-end with the generated/external adapters required by the frozen Grok graph."
     },
     {
       "referencePath": "source/host/extensions/transcript/box-handoff-resume.ts",
@@ -15291,12 +15303,18 @@
       "targetPath": "source/host/src/extensions/transcript/client_side_tool_v2_projection.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "b25e4b65213b5522cb9894ceefbd50b84069b18e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/client_side_tool_v2_projection.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/remaining_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a concrete owner for the frozen module's deterministic policy/state boundary and focused contract evidence. This row is intentionally non-final until the shipping Host/Transcript/Telemetry composition consumes the owner end-to-end with the generated/external adapters required by the frozen Grok graph."
     },
     {
       "referencePath": "source/host/extensions/transcript/completion-revivals.ts",
@@ -15528,12 +15546,18 @@
       "targetPath": "source/host/src/extensions/transcript/roster_projection.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "a4d7278bde1c246d9fcdee63f62b437538acb5a2",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/roster_projection.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/remaining_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a concrete owner for the frozen module's deterministic policy/state boundary and focused contract evidence. This row is intentionally non-final until the shipping Host/Transcript/Telemetry composition consumes the owner end-to-end with the generated/external adapters required by the frozen Grok graph."
     },
     {
       "referencePath": "source/host/extensions/transcript/roster-search.ts",
@@ -15993,12 +16017,18 @@
       "targetPath": "source/host/src/extensions/transcript/shared_rooms.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "476cf14eb896f7a71b50e42a684b86851bd052b4",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/shared_rooms.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/remaining_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a concrete owner for the frozen module's deterministic policy/state boundary and focused contract evidence. This row is intentionally non-final until the shipping Host/Transcript/Telemetry composition consumes the owner end-to-end with the generated/external adapters required by the frozen Grok graph."
     },
     {
       "referencePath": "source/host/extensions/transcript/transcript-entry-ids.ts",
@@ -16632,12 +16662,18 @@
       "targetPath": "source/host/src/host_gateway_api.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "1bf2f5eceae71355eb7f57f6b2a6aaee2e079f0b",
       "architecturalRole": "host/host-gateway-api",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/host_gateway_api.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/remaining_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a concrete owner for the frozen module's deterministic policy/state boundary and focused contract evidence. This row is intentionally non-final until the shipping Host/Transcript/Telemetry composition consumes the owner end-to-end with the generated/external adapters required by the frozen Grok graph."
     },
     {
       "referencePath": "source/host/host-initial-transcript-load.ts",
@@ -18953,12 +18989,18 @@
       "targetPath": "source/host/src/sand_host.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "f91142103c1055fa53b51cb6ea22f37313c4090e",
       "architecturalRole": "host/sand-host",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/sand_host.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/remaining_planned_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Mahayana Host now has a concrete owner for the frozen module's deterministic policy/state boundary and focused contract evidence. This row is intentionally non-final until the shipping Host/Transcript/Telemetry composition consumes the owner end-to-end with the generated/external adapters required by the frozen Grok graph."
     },
     {
       "referencePath": "source/host/sand-multitask.ts",

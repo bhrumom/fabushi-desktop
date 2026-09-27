@@ -53,3 +53,7 @@ pub mod client_side_tool_v2_producer;
 pub mod client_side_tool_v2_inventory;
 
 pub mod widget_responses;
+pub mod background_wakes;
+pub mod client_side_tool_v2_projection;
+pub mod roster_projection;
+pub mod shared_rooms;

@@ -1887,3 +1887,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added Rust Mahayana Host owners for the 12 remaining planned Box Store Sync reference modules: agent-store files, copy-in, object-store, download safety/budget, manifest/revision, pack pipeline, sync service policy, sync evaluation, transfer accounting/glob/root dedupe, multipart planning, DB bundle capture trace, and DB capture outcome classification.
 - Added `source/host/tests/box_store_sync_planned_contract.rs` covering traversal/reserved-path rejection, conditional-write status, read batching/etag state, copy-in defaults/exit semantics, scoped local object-store IO, restore/symlink escape fencing, byte budget, manifest conflict/revision semantics, pack/path selection, glob/root dedupe, multipart hashing/partitioning, flush evaluation, and DB-capture failure priority.
 - The 12 manifest rows move only from `planned` to `existing-needs-parity`; no row is claimed `implemented` until the shipping Box Store Sync service composes the new owners with backend/presign transport, downloader/transfer, manifest persistence, pack lifecycle and DB capture end-to-end.
+
+
+### 2026-09-27 remaining planned-owner closure
+
+- Exact starting HEAD for this slice: `1ab3fe54e3c8779958c411b465dcdd517e2e84fd`.
+- Added Rust owners for the seven remaining planned mappings: Telemetry box log shipping policy, Transcript background wakes, client-side tool v2 projection boundary, roster projection/coalescing, shared-room safety helpers, Host Gateway nonce/capability policy, and SandHost readiness/health policy.
+- Added `source/host/tests/remaining_planned_contract.rs` for log-shipping enable/error/source rules, wake dedupe/revival fencing, tool projection identity/phase behavior, outline coalescing, shared-room avatar/content/member gates, gateway template/purpose/nonce caps, and SandHost approval-only busy/readiness behavior.
+- Architecture manifest now has zero `planned` rows. These seven mappings intentionally remain `existing-needs-parity` until production composition and the generated/external portions of their frozen responsibilities are wired and exact-HEAD CI proves them.

@@ -47,3 +47,4 @@ pub mod desktop_health_forwarder;
 pub mod lifecycle_telemetry;
 pub mod pressure_cpu_profiler;
 pub mod host_tracing;
+pub mod box_log_shipper;
