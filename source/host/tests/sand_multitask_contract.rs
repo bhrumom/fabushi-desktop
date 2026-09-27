@@ -22,4 +22,9 @@ fn executor_config_uses_the_single_builtin_executor_type() {
     assert!(config.description.contains("background subagent"));
     assert!(SAND_MULTITASK_TODO_DESCRIPTION.contains("SEVERAL todos"));
     assert!(SAND_MULTITASK_PROMPT_SECTION.starts_with("## Multitasking"));
+    assert!(SAND_MULTITASK_PROMPT_SECTION.contains("this holds exactly as hard for the small jobs you do inline as for delegated ones"));
+    assert!(SAND_MULTITASK_PROMPT_SECTION.contains("call Task with subagent_type \"executor\""));
+    assert!(SAND_MULTITASK_PROMPT_SECTION.contains("The same goes for resuming one: resume does not carry over its context"));
+    assert!(SAND_MULTITASK_PROMPT_SECTION.contains("never tell the user you are \"dispatching\""));
+    assert!(SAND_MULTITASK_PROMPT_SECTION.ends_with("follow the room's instructions and do the work inline in your turn."));
 }
