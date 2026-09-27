@@ -1620,3 +1620,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - source/host/extensions/codebase-telemetry/csnaps-capability.ts was re-audited against the frozen Grok file at a9f633e09d49a85829b8236331b9e21f7e612634. The existing Rust leaf and executable contract already preserve the trimmed SAND_CSNAPS_BIN override, host-bundle default path, and missing / not-file / not-executable availability states, so this row advances from existing-needs-parity to implemented without inventing new behavior.
 - Exact-HEAD Rust run 36298649184 proved the shipping Host compiles and the independent Coordinator/box-exec gates pass, then exposed one test-only blocker in the new csnaps-process contract: the test referenced undeclared tempfile. The test now uses the crate's existing uuid dependency plus std::env::temp_dir, avoiding a new dependency while retaining isolated executable fixtures.
 - This audit/repair does not promote the remaining codebase-telemetry adapter, host, service, privacy-mode, or extension rows; those remain independently gated.
+
+
+### 2026-09-27 Codebase Telemetry layered Host closure
+
+- Exact tested HEAD c592e76af851678ca0eb24a7fe412dcb02d27b9b proves the new Codebase Telemetry layers compile inside the shipping Mahayana Host while the independent Mahayana Coordinator contract remains a separate passing gate.
+- The full Host/Runner Cargo test gate passes with the new contracts for privacy-mode, codebase-telemetry-adapter, codebase-telemetry-host, codebase-telemetry-service, and the deterministic csnaps response-ID validator.
+- The implementation preserves the frozen Grok separation instead of collapsing telemetry into one Rust subsystem: protocol -> process -> privacy-mode -> adapter -> host -> service. Auth/Experiments stay dependencies of the host input layer; adapter restart remains owned by the service.
+- The architecture manifest advances only the four evidence-backed rows above. source/host/extensions/codebase-telemetry/extension.ts remains planned until its capability gate and production composition are wired and tested.

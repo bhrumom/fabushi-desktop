@@ -9597,7 +9597,7 @@
         "source/host/tests/automation_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Final audited Rust port: every frozen automation-trigger export is represented in the Host owner—stored-trigger parse/serialize, identity, Slack scope and event matching, GitHub event/user/CI-branch admission, Teams/Linear/Sentry/PagerDuty listener filters, group trigger matching, event descriptions and escaped trigger context blocks. Shipping SandTriggerHub and BackendRelaySource consume the same matcher; contracts cover direct platform matching, group fire admission and durable store round-trip."
+      "notes": "Final audited Rust port: every frozen automation-trigger export is represented in the Host owner\u2014stored-trigger parse/serialize, identity, Slack scope and event matching, GitHub event/user/CI-branch admission, Teams/Linear/Sentry/PagerDuty listener filters, group trigger matching, event descriptions and escaped trigger context blocks. Shipping SandTriggerHub and BackendRelaySource consume the same matcher; contracts cover direct platform matching, group fire admission and durable store round-trip."
     },
     {
       "referencePath": "source/host/automations/automation.ts",
@@ -11406,36 +11406,57 @@
       "targetPath": "source/host/src/extensions/codebase_telemetry/codebase_telemetry_adapter.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "2451d34d5b482e166f9925b42314ce1da3d6f3f0",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/codebase_telemetry/codebase_telemetry_adapter.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/codebase_telemetry_adapter_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Frozen Grok adapter responsibility is implemented as a separate Rust Host leaf over the csnaps process: Sand codebase projection, required-codebase reconciliation, state publication, upload polling, snapshot/flush, terminal degradation and bounded cleanup. Exact-HEAD Rust runtime c592e76af851678ca0eb24a7fe412dcb02d27b9b passed the full Host/Runner cargo test gate."
     },
     {
       "referencePath": "source/host/extensions/codebase-telemetry/codebase-telemetry-host.ts",
       "targetPath": "source/host/src/extensions/codebase_telemetry/codebase_telemetry_host.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "285e1c4370882f76f3aca65b4f061ee06bf91928",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/codebase_telemetry/codebase_telemetry_host.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/codebase_telemetry_host_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Frozen Grok host boundary is implemented independently in Rust: JWT subject to TelemetryAuth, auth-renewal projection, privacy-mode auth synchronization, main feature-gate projection, frozen /workspace and /home/box desired codebases, and adapter factory ownership. Service restart orchestration remains outside this layer. Exact-HEAD Rust runtime c592e76af851678ca0eb24a7fe412dcb02d27b9b passed the full Host/Runner cargo test gate."
     },
     {
       "referencePath": "source/host/extensions/codebase-telemetry/codebase-telemetry-service.ts",
       "targetPath": "source/host/src/extensions/codebase_telemetry/codebase_telemetry_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "7aea3289012e91325ff1b0cbc9bbf3c07580bde4",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/codebase_telemetry/codebase_telemetry_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/codebase_telemetry_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Frozen Grok service orchestration is implemented as a distinct Rust owner: auth-driven adapter replacement, desired-codebase reconcile, transcript run-start/run-end snapshot triggers, flush API, terminal-failure delayed restart, generation guards, opaque Host subscription boundary, and bounded shutdown. Exact-HEAD Rust runtime c592e76af851678ca0eb24a7fe412dcb02d27b9b passed the full Host/Runner cargo test gate."
     },
     {
       "referencePath": "source/host/extensions/codebase-telemetry/csnaps-capability.ts",
@@ -11511,12 +11532,19 @@
       "targetPath": "source/host/src/extensions/codebase_telemetry/privacy_mode.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "44a416f2351448aa25880a80bd3812534b79733b",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/codebase_telemetry/privacy_mode.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/codebase_telemetry_privacy_mode_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Frozen Grok privacy-mode owner is implemented as an independent Rust Host leaf: privacy-safe Unspecified default, auth-generation stale-result suppression, lookup deadline, retry classification, refresh polling, subscription state, and disposal. Exact-HEAD Rust runtime c592e76af851678ca0eb24a7fe412dcb02d27b9b compiled the shipping Host and passed the full Host/Runner cargo test gate."
     },
     {
       "referencePath": "source/host/extensions/content-search/agent-content-search.ts",
@@ -13682,7 +13710,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Frozen Session store-factory contract is fully mapped in Rust: dbPath→agentDir automation/channel paths, agentDir→sandRoot global workflow path, unavailable NO_SESSION_MEMORY semantics, and resolveUserTimeZone forwarding into both automation and workflow stores. Shipping Host SettingsService supplies the live resolver through ProductionSessionWorkers."
+      "notes": "Frozen Session store-factory contract is fully mapped in Rust: dbPath\u2192agentDir automation/channel paths, agentDir\u2192sandRoot global workflow path, unavailable NO_SESSION_MEMORY semantics, and resolveUserTimeZone forwarding into both automation and workflow stores. Shipping Host SettingsService supplies the live resolver through ProductionSessionWorkers."
     },
     {
       "referencePath": "source/host/extensions/session/session-summaries.ts",
