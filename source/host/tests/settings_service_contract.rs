@@ -266,3 +266,33 @@ fn permission_ceiling_feature_override_and_inference_usage_match_frozen_contract
     assert_eq!(host["notifications"]["minIntervalMs"], 5000);
     let _ = fs::remove_file(path);
 }
+
+
+#[test]
+fn host_settings_switch_scope_before_applying_same_update_and_normalizes_invalid_permission() {
+    let path = temp_path("host-update-order");
+    let service = SettingsService::new(&path);
+    service.scope_to_account("account-a").expect("first scope");
+    service
+        .set_mcp_custom_instructions(BTreeMap::from([("old".into(), "old-value".into())]))
+        .expect("old instructions");
+    service
+        .set_has_seen_onboarding(true)
+        .expect("onboarding owner");
+
+    let host = service
+        .set_host_settings(&serde_json::json!({
+            "mcpCustomInstructionsAccountScope": "account-b",
+            "mcpCustomInstructions": { "new": "new-value" },
+            "localToolPermission": { "not": "a permission" }
+        }))
+        .expect("scoped update");
+
+    assert_eq!(
+        host["mcpCustomInstructions"],
+        serde_json::json!({ "new": "new-value" })
+    );
+    assert_eq!(host["localToolPermission"], "ask");
+    assert!(host.get("hasSeenOnboarding").is_none());
+    let _ = fs::remove_file(path);
+}
