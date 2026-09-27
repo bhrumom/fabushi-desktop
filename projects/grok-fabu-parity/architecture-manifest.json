@@ -16572,7 +16572,7 @@
       "targetPath": "source/host/src/groups/group_chat.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "09c150285a8d7c23695d4a16d4a4ceb5db360d6e",
       "architecturalRole": "host/groups",
       "processOrPackage": "mahayana-host",
@@ -16580,16 +16580,20 @@
         "source/host/src/groups/group_chat.rs",
         "source/host/src/extensions/transcript/group_chat_orchestrator.rs",
         "source/host/src/extensions/transcript/group_chat_glue.rs",
-        "source/host/src/extensions/session/gateway.rs"
+        "source/host/src/extensions/transcript/send_group_fanout.rs",
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/group_chat_contract.rs",
         "source/host/tests/group_chat_orchestrator_contract.rs",
+        "source/host/tests/send_group_fanout_contract.rs",
+        "source/host/tests/session_gateway_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/session_gateway_contract.rs"
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Complete Rust translation of frozen group-chat pure contract: caps, nesting guard, member-set semantics, mention parsing, responder selection, pass/prefix handling, redrive note, history formatting and group system/turn prompt construction. Consumed by the Rust bounded orchestrator. Kept existing-needs-parity until shipping group-chat glue/Gateway uses this owner for real room turns. Shipping createGroup/setGroupMembers now consume the Rust member-set/nesting helpers through the real Session Gateway; final still waits for room-turn prompt/orchestrator use on the shipping Runner path."
+      "notes": "Complete Rust translation of the frozen group-chat contract is consumed by the single production Transcript group orchestrator. Shipping local group sends instantiate GroupChatOrchestrator, build the frozen member system/turn prompts, admit local members through the real Routed Runner, durably post authored room messages, and route sand-remote/shared-room members through the CrossUser remote executor without creating a second group runtime. Exact parent 7a1fe73ee5b2453e19bdf85b814ca0df86eda153 passed the independent Host/Runner suite and Desktop Chat Parity; focused fanout contracts pin local and remote/shared-room production semantics."
     },
     {
       "referencePath": "source/host/groups/group-store.ts",
