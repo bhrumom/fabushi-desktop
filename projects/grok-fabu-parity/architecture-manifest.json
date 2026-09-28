@@ -11181,17 +11181,23 @@
       "targetPath": "source/host/src/extensions/box_store_sync/chrome_session_watcher.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "a858b63cd831a17d336220b97293da0eb8382c7a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/box_store_sync/chrome_session_watcher.rs"
+        "source/host/src/extensions/box_store_sync/chrome_session_watcher.rs",
+        "source/host/src/extensions/box_store_sync/production.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
-        "source/host/tests/chrome_session_watcher_contract.rs"
+        "source/host/tests/chrome_session_watcher_contract.rs",
+        "source/host/tests/box_store_sync_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host owner preserves the frozen session-db prefix filter, null-filename mtime fallback, debounced delivery, callback-failure isolation, idempotent lifecycle, and real non-recursive filesystem watching. Final implemented status remains blocked on production box-store-sync extension composition wiring this watcher into the live sync trigger path."
+      "notes": "Final: Rust Host preserves the frozen session-db prefix filter, null-filename mtime fallback, debounced delivery, callback-failure isolation, idempotent lifecycle, and real non-recursive filesystem watching. The shipping BoxStoreSync production owner now constructs ChromeSessionWatcher with the frozen database set and debounce policy, routes watcher callbacks into the live chrome-only snapshot cycle, and stops the watcher during Host extension disposal. Exact-head Rust desktop runtime run 36477895843 passed the complete rust-host job at 9af5563b8b202709a1dcf18c8a802feb76f7d819.",
+      "parityMode": "rust-adaptation"
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/extension.ts",
@@ -11379,20 +11385,22 @@
       "targetPath": "source/host/src/extensions/box_store_sync/workspace_ignore.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "21652cbc99d3003e17b129ca2206bd7ec3aea29f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/box_store_sync/workspace_ignore.rs",
-        "source/host/src/extensions/box_store_sync/mod.rs"
+        "source/host/src/extensions/box_store_sync/mod.rs",
+        "source/host/src/extensions/box_store_sync/production.rs"
       ],
       "testEvidence": [
         "source/host/tests/workspace_ignore_contract.rs",
+        "source/host/tests/box_store_sync_production_wiring_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port implements .sandignore parsing, frozen default patterns, anchored/unanchored glob, *, **, **/, ?, character classes, negation reach and safe directory-prune behavior without adding a second matcher runtime. Final remains withheld until production box-store workspace pack/copy paths consume it."
+      "notes": "Final: Rust port preserves .sandignore parsing, frozen default patterns, anchored/unanchored glob semantics, *, **, **/, ?, character classes, negation reach and safe directory-prune behavior without adding a second matcher runtime. The shipping BoxStoreSync production workspace cycle now loads this matcher, uses can_prune_dir while walking, and applies ignores to file transfer candidates before manifest mutation. Exact-head Rust desktop runtime run 36477895843 passed the complete rust-host job at 9af5563b8b202709a1dcf18c8a802feb76f7d819."
     },
     {
       "referencePath": "source/host/extensions/browser-ua/extension.ts",
