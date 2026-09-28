@@ -152,7 +152,7 @@ fn routine_writes_run_auto_review_before_state_mutation() {
     let bridge = SandStateToolBridge::new(Arc::new(DelegateBridge), writer)
         .with_routine_auto_review(Arc::new(|target, tool_call_id| {
             assert_eq!(target.operation, "create");
-            assert_eq!(target.name, "Reviewed routine");
+            assert_eq!(target.spec.name, "Reviewed routine");
             assert_eq!(tool_call_id, "tool-routine-reviewed");
             Err(ProviderSessionError::Tool("review denied".into()))
         }));
