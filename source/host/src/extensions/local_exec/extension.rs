@@ -4,6 +4,10 @@ use serde_json::Value;
 
 use crate::extensions::extension_ids_generated::HostExtensionId;
 use crate::gateway_server::{GatewayBridgeClose, GatewayBridgeHub};
+use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
+use crate::extensions::telemetry::local_exec_telemetry::{
+    LocalExecRefusalCause, LocalExecRefusedReport, local_exec_refused_telemetry,
+};
 
 use super::local_exec_bridge::{
     LocalExecComputer, LocalExecProviderRegistration, LocalExecProviderInfo,
@@ -27,6 +31,7 @@ pub fn local_exec_extension_id() -> HostExtensionId {
 #[derive(Clone)]
 pub struct HostLocalExecExtension {
     bridge: SandLocalExecBridge,
+    logs: HostStructuredLogTelemetry,
 }
 
 impl HostLocalExecExtension {
@@ -38,8 +43,27 @@ impl HostLocalExecExtension {
         self.bridge.submit_responses(batch);
     }
 
-    pub fn check_live_computer_for_ask(&self) -> bool {
-        self.bridge.check_live_computer_for_ask()
+    pub fn check_live_computer_for_ask(&self, agent_id: Option<&str>) -> bool {
+        if self.bridge.check_live_computer_for_ask() {
+            return true;
+        }
+
+        let provider_count = self.bridge.provider_count();
+        let report = LocalExecRefusedReport {
+            cause: if provider_count == 0 {
+                LocalExecRefusalCause::NoProviders
+            } else {
+                LocalExecRefusalCause::StaleHeartbeat
+            },
+            site: "ask_gate".into(),
+            conversation_id: agent_id.unwrap_or_default().to_string(),
+            provider_count: provider_count.try_into().unwrap_or(i64::MAX),
+            live_provider_count: 0,
+            ever_registered: self.bridge.ever_registered(),
+            empty_for_ms: None,
+        };
+        let _ = self.logs.report_projection(&local_exec_refused_telemetry(&report));
+        false
     }
 
     pub fn list_computers(&self) -> Vec<LocalExecComputer> {
@@ -75,8 +99,11 @@ impl HostLocalExecExtension {
     }
 }
 
-pub fn start_local_exec_extension() -> HostLocalExecExtension {
+pub fn start_local_exec_extension(
+    logs: HostStructuredLogTelemetry,
+) -> HostLocalExecExtension {
     HostLocalExecExtension {
         bridge: SandLocalExecBridge::production(),
+        logs,
     }
 }

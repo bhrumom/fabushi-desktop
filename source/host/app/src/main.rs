@@ -4347,9 +4347,9 @@ fn main() {
     };
     let gateway_started_at = started_at_ms();
     let local_exec_extension = Arc::clone(&production_extensions.local_exec);
-    let local_exec_live_bridge = local_exec_extension.bridge();
-    local_tool_permission_extension.bind_live_computer_check(Arc::new(move |_| {
-        local_exec_live_bridge.check_live_computer_for_ask()
+    let local_exec_ask_owner = Arc::clone(&local_exec_extension);
+    local_tool_permission_extension.bind_live_computer_check(Arc::new(move |agent_id| {
+        local_exec_ask_owner.check_live_computer_for_ask(Some(agent_id))
     }));
     let routed_tool_relay = Arc::new(CoordinatorToolRelay::new(gateway_events.clone()));
     let transcript_runtime = transcript_manager.transcript_runtime();

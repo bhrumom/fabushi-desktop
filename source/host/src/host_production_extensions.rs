@@ -174,7 +174,7 @@ pub fn start_production_host_extensions(
         }),
     ));
     let local_tool_permission = Arc::new(start_local_tool_permission_extension(Arc::clone(&settings)));
-    let local_exec = Arc::new(start_local_exec_extension());
+    let local_exec = Arc::new(start_local_exec_extension(telemetry.logs.clone()));
     let experiments_for_settings = Arc::clone(&experiments);
     let settings_feature_override_subscription =
         settings.subscribe_to_feature_flag_overrides(Arc::new(move |overrides| {
