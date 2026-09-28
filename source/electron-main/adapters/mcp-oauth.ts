@@ -266,6 +266,54 @@ export function createProductionMcpOAuthAdapter(
           if (typeof pluginId !== "string" || pluginId.trim().length === 0) throw new TypeError("Host MCP uninstall requires pluginId.");
           return await (await runtime.ensureMcpManager()).uninstallPlugin(pluginId);
         },
+        async addHostMcpServer(request) {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          if (typeof request?.name !== "string" || request.name.trim().length === 0 || typeof request?.configJson !== "string" || request.configJson.trim().length === 0) {
+            throw new TypeError("Host MCP add server requires name and configJson.");
+          }
+          return await (await runtime.ensureMcpManager()).addServer({ name: request.name, configJson: request.configJson });
+        },
+        async removeHostMcpServer(serverId) {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          if (typeof serverId !== "string" || serverId.trim().length === 0) throw new TypeError("Host MCP remove server requires serverId.");
+          return await (await runtime.ensureMcpManager()).removeServer(serverId);
+        },
+        async restartHostMcpServers() {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          return await (await runtime.ensureMcpManager()).reloadServers();
+        },
+        async setHostMcpInstructions(request) {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          if (typeof request?.serverId !== "string" || request.serverId.trim().length === 0 || typeof request?.instructions !== "string") {
+            throw new TypeError("Host MCP instructions require serverId and instructions.");
+          }
+          return await (await runtime.ensureMcpManager()).setServerCustomInstructions({ serverId: request.serverId, instructions: request.instructions });
+        },
+        async authenticateHostMcpServer(request) {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          if (typeof request?.serverId !== "string" || request.serverId.trim().length === 0 || typeof request?.accountKey !== "string" || request.accountKey.trim().length === 0) {
+            throw new TypeError("Host MCP authentication requires serverId and accountKey.");
+          }
+          return await (await runtime.ensureMcpManager()).authenticateServer(
+            request.serverId,
+            request.accountKey,
+            request.requestingAgentId ?? null,
+            request.forceReauth === true,
+            "host",
+          );
+        },
+        async logoutHostMcpAccount(request) {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          return await (await runtime.ensureMcpManager()).logoutAccount(request);
+        },
+        async removeHostMcpAccount(request) {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          return await (await runtime.ensureMcpManager()).removeAccount(request);
+        },
+        async renameHostMcpAccount(request) {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          return await (await runtime.ensureMcpManager()).renameAccount(request);
+        },
         async noteHostMcpAuthCompleted(request) {
           if (disposed) throw new Error("Electron production MCP adapter is disposed.");
           if (typeof request?.serverId !== "string" || request.serverId.trim().length === 0 || typeof request?.accountKey !== "string" || request.accountKey.trim().length === 0) {
