@@ -1547,6 +1547,21 @@ fn start_local_upgrade_resume_turn(
     .map_err(|error| error.to_string())
 }
 
+fn listener_connection_state_or_disconnected(
+    platform: &str,
+    result: Result<bool, String>,
+) -> bool {
+    match result {
+        Ok(connected) => connected,
+        Err(_) => {
+            eprintln!(
+                "[sand:listener-integrations] {platform} connection read degraded to disconnected"
+            );
+            false
+        }
+    }
+}
+
 fn listener_connect_resume_args(
     agent_id: &str,
     platform: &str,
@@ -3621,9 +3636,10 @@ impl GatewayApi for UnifiedGatewayApi {
                 ))?;
             let mut integrations = Vec::with_capacity(2);
             for platform in ["github", "slack"] {
-                let is_connected = lifecycle
-                    .is_platform_connected(platform)
-                    .map_err(GatewayCommandError::Internal)?;
+                let is_connected = listener_connection_state_or_disconnected(
+                    platform,
+                    lifecycle.is_platform_connected(platform),
+                );
                 integrations.push(serde_json::json!({
                     "platform": platform,
                     "isConnected": is_connected,
@@ -5873,6 +5889,18 @@ mod tests {
     }
 
 
+
+    #[test]
+    fn listener_integration_status_errors_degrade_to_disconnected() {
+        assert!(listener_connection_state_or_disconnected(
+            "github",
+            Ok(true)
+        ));
+        assert!(!listener_connection_state_or_disconnected(
+            "slack",
+            Err("temporary auth failure".into())
+        ));
+    }
 
     #[test]
     fn listener_gateway_methods_are_owned_by_production_automations_lifecycle() {
