@@ -25,12 +25,14 @@ pub type FireDispatch = Arc<
         + Send
         + Sync,
 >;
+pub type FirePollStateReader = Arc<dyn Fn() -> (bool, bool) + Send + Sync>;
 pub type ProductionLog = Arc<dyn Fn(&str) + Send + Sync>;
 
 struct WakeState {
     requested: Mutex<bool>,
     wake: Condvar,
     stopped: AtomicBool,
+    suspended: AtomicBool,
 }
 
 impl WakeState {
@@ -39,6 +41,7 @@ impl WakeState {
             requested: Mutex::new(true),
             wake: Condvar::new(),
             stopped: AtomicBool::new(false),
+            suspended: AtomicBool::new(false),
         }
     }
 
@@ -78,6 +81,7 @@ impl ProductionAutomationsBackendRuntime {
         listeners: RelayListeners,
         relay_sink: RelayEventSink,
         fire_dispatch: FireDispatch,
+        fire_poll_state: FirePollStateReader,
         log: ProductionLog,
     ) -> Arc<Self> {
         let runtime = Arc::new(Self {
@@ -125,6 +129,10 @@ impl ProductionAutomationsBackendRuntime {
                 if runtime.wake.stopped.load(Ordering::Acquire) {
                     break;
                 }
+                if runtime.wake.suspended.load(Ordering::Acquire) {
+                    runtime.wake.wait(Duration::from_secs(60 * 60));
+                    continue;
+                }
                 let now = now_ms();
                 let (slack, github) = listeners();
                 {
@@ -150,10 +158,13 @@ impl ProductionAutomationsBackendRuntime {
                         .fire
                         .lock()
                         .unwrap_or_else(|poisoned| poisoned.into_inner());
-                    let result = fire.tick(
+                    let (is_ready, has_server_schedulable) = fire_poll_state();
+                    let result = fire.tick_with_state(
                         now,
                         worker_notify_bus.is_connected(),
                         worker_notify_bus.is_safety_poll_enabled(),
+                        is_ready,
+                        has_server_schedulable,
                         |event| {
                             pending.push(event.clone());
                             true
@@ -209,6 +220,30 @@ impl ProductionAutomationsBackendRuntime {
             "github" => Some(relay.github_status.clone()),
             _ => None,
         }
+    }
+
+    pub fn suspend(&self) {
+        if self.wake.stopped.load(Ordering::Acquire) {
+            return;
+        }
+        self.wake.suspended.store(true, Ordering::Release);
+        self.fire
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .stop();
+        self.wake.request();
+    }
+
+    pub fn resume(&self) {
+        if self.wake.stopped.load(Ordering::Acquire) {
+            return;
+        }
+        self.fire
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .start();
+        self.wake.suspended.store(false, Ordering::Release);
+        self.wake.request();
     }
 
     pub fn request_reconcile(&self) {
