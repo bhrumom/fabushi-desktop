@@ -113,8 +113,8 @@ fn shipping_host_starts_box_store_sync_after_mcp_and_stops_it_before_mcp() {
 fn production_owner_wires_real_chrome_watcher_and_periodic_cycle() {
     let production = include_str!("../src/extensions/box_store_sync/production.rs");
     assert!(production.contains("ChromeSessionWatcher::with_logger"));
-    assert!(production.contains("run_local_cycle(true, false, false)"));
-    assert!(production.contains("run_local_cycle(false, include_store_dbs, true)"));
+    assert!(production.contains("run_local_cycle(true, false, false, false)"));
+    assert!(production.contains("run_local_cycle(false, include_store_dbs, true, include_packs)"));
     assert!(production.contains("stage_box_chrome_session()"));
     assert!(production.contains("sync_store_db_snapshots("));
     assert!(production.contains("StoreDbSnapshotUpload::new("));
