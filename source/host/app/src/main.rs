@@ -48,7 +48,7 @@ use mahayana_host_runtime::extensions::session::session_profile_files::AgentProf
 use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
-    AgentWakeRequest, ProductionAgentToAgentMessaging,
+    AgentWakeRequest, ProductionAgentToAgentMessaging, should_interrupt_priority_peer,
 };
 use mahayana_host_runtime::extensions::memory::agent_state::SandAgentState;
 use mahayana_host_runtime::extensions::telemetry::HostTelemetryProjection;
@@ -2282,6 +2282,7 @@ fn start_routed_provider_task(
             };
             let agent_wake_events = worker_events.clone();
             let priority_registry = Arc::clone(&worker_registry);
+            let priority_runtime = Arc::clone(&worker_transcript_runtime);
             let agent_messaging = Arc::new(ProductionAgentToAgentMessaging::new(
                 Arc::clone(&worker_sessions),
                 Arc::new(move |request: &AgentWakeRequest| {
@@ -2291,6 +2292,11 @@ fn start_routed_provider_task(
                     }));
                 }),
                 Some(Arc::new(move |target_agent_id: &str, reason: &str| {
+                    if !should_interrupt_priority_peer(
+                        priority_runtime.active_turn_lane(target_agent_id),
+                    ) {
+                        return 0;
+                    }
                     priority_registry.cancel_agent(target_agent_id, reason)
                 })),
             ));
