@@ -16,8 +16,9 @@ use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
 use crate::extensions::box_store_sync::box_object_store::{
-    BoxObjectStore, LocalFsObjectStore,
+    AgentStoreObjectStoreProvider, BoxObjectStore, BoxObjectStoreProvider, LocalFsObjectStore,
 };
+use crate::extensions::box_store_sync::agent_store_sand_files::AgentStoreClientDependencies;
 use crate::extensions::box_store_sync::box_store_pack::{
     BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACK_RETIRED_KEY, BOX_STORE_PACKS_PREFIX,
     PACK_INDEX_VERSION, PACK_MAX_MEMBER_SIZE_SUM, PACK_MEMBER_MAX_BYTES, PackEntry, PackIndex,
@@ -91,6 +92,7 @@ pub enum ProductionBoxStoreSyncMode {
         base_dir: PathBuf,
         store_id_override: Option<String>,
     },
+    AgentStore,
     UnsupportedRemote { backend: BoxStoreBackendKind },
     InvalidLocalConfiguration { reason: String },
 }
@@ -132,7 +134,10 @@ impl ProductionBoxStoreSyncApi {
         let agent_id = agent_id.trim();
         if agent_id.is_empty()
             || self.inner.stopped.load(Ordering::Acquire)
-            || !matches!(&self.inner.mode, ProductionBoxStoreSyncMode::LocalFs { .. })
+            || !matches!(
+                &self.inner.mode,
+                ProductionBoxStoreSyncMode::LocalFs { .. } | ProductionBoxStoreSyncMode::AgentStore
+            )
         {
             return false;
         }
@@ -173,7 +178,10 @@ impl ProductionBoxStoreSyncService {
         let env = std::env::vars().collect::<BTreeMap<_, _>>();
         let mode = resolve_production_box_store_sync_mode(&env);
         let backend = mode_name(&mode).to_string();
-        let enabled = matches!(mode, ProductionBoxStoreSyncMode::LocalFs { .. });
+        let enabled = matches!(
+            mode,
+            ProductionBoxStoreSyncMode::LocalFs { .. } | ProductionBoxStoreSyncMode::AgentStore
+        );
         Self {
             inner: Arc::new(ProductionBoxStoreSyncInner {
                 deps,
@@ -239,7 +247,8 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                     .diagnostic("startup", "invalid-local-configuration", false);
                 return;
             }
-            ProductionBoxStoreSyncMode::LocalFs { .. } => {}
+            ProductionBoxStoreSyncMode::LocalFs { .. }
+            | ProductionBoxStoreSyncMode::AgentStore => {}
         }
 
         let chrome_inner = Arc::clone(&self.inner);
@@ -310,8 +319,10 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                     .poller
                     .lock()
                     .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(handle);
-                self.inner.log("box-store sync local-fs production slice enabled");
-                self.inner.diagnostic("startup", "enabled-local-fs", true);
+                let backend = mode_name(&self.inner.mode);
+                self.inner.log(&format!("box-store sync {backend} production slice enabled"));
+                self.inner
+                    .diagnostic("startup", &format!("enabled-{backend}"), true);
             }
             Err(error) => {
                 self.inner.log(&format!("box-store poller failed to start: {error}"));
@@ -440,6 +451,56 @@ struct ProductionBoxStoreSyncInner {
 }
 
 impl ProductionBoxStoreSyncInner {
+    fn resolve_object_store(&self) -> Result<(String, Box<dyn BoxObjectStore>), String> {
+        let store_id = match &self.mode {
+            ProductionBoxStoreSyncMode::LocalFs {
+                store_id_override: Some(store_id),
+                ..
+            } => store_id.clone(),
+            ProductionBoxStoreSyncMode::LocalFs { .. } | ProductionBoxStoreSyncMode::AgentStore => {
+                (self.deps.resolve_store_id)()?
+            }
+            _ => return Err("box-store backend is not active".into()),
+        };
+
+        if !is_frozen_agent_store_source_id(&store_id) {
+            return Err(format!(
+                "resolved BoxStore source id is not a frozen AgentStore source id: {store_id}"
+            ));
+        }
+
+        match &self.mode {
+            ProductionBoxStoreSyncMode::LocalFs { base_dir, .. } => Ok((
+                store_id.clone(),
+                Box::new(LocalFsObjectStore::new(base_dir.join(&store_id))),
+            )),
+            ProductionBoxStoreSyncMode::AgentStore => {
+                let backend_url = self
+                    .deps
+                    .backend_url
+                    .clone()
+                    .ok_or_else(|| "AgentStore backend URL is not configured".to_string())?;
+                let get_access_token = self
+                    .deps
+                    .get_access_token
+                    .clone()
+                    .ok_or_else(|| "AgentStore auth token resolver is not configured".to_string())?;
+                let get_machine_id = self
+                    .deps
+                    .get_machine_id
+                    .clone()
+                    .ok_or_else(|| "AgentStore machine id resolver is not configured".to_string())?;
+                let provider = AgentStoreObjectStoreProvider::new(AgentStoreClientDependencies {
+                    backend_url,
+                    get_access_token,
+                    get_machine_id,
+                })?;
+                Ok((store_id.clone(), provider.for_store(&store_id)))
+            }
+            _ => Err("box-store backend is not active".into()),
+        }
+    }
+
     fn log(&self, message: &str) {
         (self.deps.log)(&format!("[box-store-sync] {message}"));
     }
@@ -481,24 +542,7 @@ impl ProductionBoxStoreSyncInner {
         if self.stopped.load(Ordering::Acquire) {
             return Err("stopped".into());
         }
-        let ProductionBoxStoreSyncMode::LocalFs {
-            base_dir,
-            store_id_override,
-        } = &self.mode
-        else {
-            return Err("local-fs backend is not active".into());
-        };
-        let store_id = match store_id_override {
-            Some(store_id) => store_id.clone(),
-            None => (self.deps.resolve_store_id)()?,
-        };
-        let normalized_store_id = crate::extensions::box_store_sync::agent_store_sand_files::normalize_rel_path(&store_id)
-            .map_err(|error| format!("resolved BoxStore source id is unsafe: {error}"))?;
-        if normalized_store_id != store_id {
-            return Err("resolved BoxStore source id must already be canonical".into());
-        }
-
-        let store = LocalFsObjectStore::new(base_dir.join(&store_id));
+        let (store_id, store) = self.resolve_object_store()?;
         let manifest_baseline = store.get(BOX_STORE_MANIFEST_REL_PATH)?;
         let mut manifest = parse_manifest_bytes(manifest_baseline.as_deref())?;
         let manifest_v2 = self
@@ -515,11 +559,11 @@ impl ProductionBoxStoreSyncInner {
         let mut categories = Vec::new();
 
         if chrome_only {
-            categories.push(sync_chrome_session(&store, &mut entries, manifest_v2)?);
+            categories.push(sync_chrome_session(store.as_ref(), &mut entries, manifest_v2)?);
         } else {
             let sand_root = get_sand_root_dir();
             categories.push(sync_tree_category(
-                &store,
+                store.as_ref(),
                 &mut entries,
                 &sand_root,
                 SAND_DATA_REL_PREFIX,
@@ -530,7 +574,7 @@ impl ProductionBoxStoreSyncInner {
             )?);
             if include_store_dbs {
                 categories.push(sync_store_db_snapshots(
-                    &store,
+                    store.as_ref(),
                     &store_id,
                     &mut entries,
                     &sand_root,
@@ -541,7 +585,7 @@ impl ProductionBoxStoreSyncInner {
             let workspace_ignore =
                 load_workspace_ignore(WORKSPACE_ROOT, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS);
             categories.push(sync_tree_category(
-                &store,
+                store.as_ref(),
                 &mut entries,
                 Path::new(WORKSPACE_ROOT),
                 WORKSPACE_REL_PREFIX,
@@ -551,7 +595,7 @@ impl ProductionBoxStoreSyncInner {
                 manifest_v2,
             )?);
             categories.push(sync_tree_category(
-                &store,
+                store.as_ref(),
                 &mut entries,
                 Path::new(CLI_CONFIG_ROOT),
                 CLI_CONFIG_REL_PREFIX,
@@ -563,7 +607,7 @@ impl ProductionBoxStoreSyncInner {
         }
 
         write_manifest_if_unchanged(
-            &store,
+            store.as_ref(),
             manifest_baseline.as_deref(),
             &entries,
             manifest_v2,
@@ -575,7 +619,7 @@ impl ProductionBoxStoreSyncInner {
                 self.env.get("SAND_BOX_STORE_PACKS").map(String::as_str),
             )
         {
-            let pack_summary = sync_local_packs(&store, &entries, || {
+            let pack_summary = sync_local_packs(store.as_ref(), &entries, || {
                 self.flush_waiters.load(Ordering::Acquire) > 0
             });
             if pack_summary.failures > 0 {
@@ -636,18 +680,7 @@ impl ProductionBoxStoreSyncInner {
         if self.stopped.load(Ordering::Acquire) {
             return Err("stopped".into());
         }
-        let ProductionBoxStoreSyncMode::LocalFs {
-            base_dir,
-            store_id_override,
-        } = &self.mode
-        else {
-            return Err("local-fs backend is not active".into());
-        };
-        let store_id = match store_id_override {
-            Some(store_id) => store_id.clone(),
-            None => (self.deps.resolve_store_id)()?,
-        };
-        let store = LocalFsObjectStore::new(base_dir.join(&store_id));
+        let (store_id, store) = self.resolve_object_store()?;
         let manifest_baseline = store.get(BOX_STORE_MANIFEST_REL_PATH)?;
         let mut parsed = parse_manifest_bytes(manifest_baseline.as_deref())?;
         let manifest_v2 = self
@@ -663,7 +696,7 @@ impl ProductionBoxStoreSyncInner {
             .unwrap_or_default();
         let entries_before = entries.clone();
         let summary = sync_store_db_snapshots(
-            &store,
+            store.as_ref(),
             &store_id,
             &mut entries,
             &get_sand_root_dir(),
@@ -672,7 +705,7 @@ impl ProductionBoxStoreSyncInner {
         )?;
         if entries != entries_before {
             write_manifest_if_unchanged(
-                &store,
+                store.as_ref(),
                 manifest_baseline.as_deref(),
                 &entries,
                 manifest_v2,
@@ -720,6 +753,7 @@ pub fn resolve_production_box_store_sync_mode(env: &BTreeMap<String, String>) ->
                 store_id_override,
             }
         }
+        BoxStoreBackendKind::AgentStore => ProductionBoxStoreSyncMode::AgentStore,
         backend => ProductionBoxStoreSyncMode::UnsupportedRemote { backend },
     }
 }
@@ -784,9 +818,10 @@ fn mode_name(mode: &ProductionBoxStoreSyncMode) -> &'static str {
     match mode {
         ProductionBoxStoreSyncMode::Disabled => "disabled",
         ProductionBoxStoreSyncMode::LocalFs { .. } => "local-fs",
+        ProductionBoxStoreSyncMode::AgentStore => "agent-store",
         ProductionBoxStoreSyncMode::UnsupportedRemote {
             backend: BoxStoreBackendKind::AgentStore,
-        } => "agent-store-unwired",
+        } => "agent-store-invalid",
         ProductionBoxStoreSyncMode::UnsupportedRemote {
             backend: BoxStoreBackendKind::SandBoxStoreV2,
         } => "sand-box-store-v2-unwired",
@@ -1759,7 +1794,7 @@ mod tests {
                 mode: 0o644,
             },
         );
-        write_manifest(&store, &first, true, "writer-a".into()).expect("seed manifest");
+        write_manifest(store.as_ref(), &first, true, "writer-a".into()).expect("seed manifest");
         let baseline = store
             .get(BOX_STORE_MANIFEST_REL_PATH)
             .expect("read baseline")
@@ -1774,11 +1809,11 @@ mod tests {
                 mode: 0o644,
             },
         );
-        write_manifest(&store, &concurrent, true, "writer-b".into())
+        write_manifest(store.as_ref(), &concurrent, true, "writer-b".into())
             .expect("concurrent manifest");
 
         let error = write_manifest_if_unchanged(
-            &store,
+            store.as_ref(),
             Some(&baseline),
             &first,
             true,
@@ -1787,7 +1822,7 @@ mod tests {
         .expect_err("stale writer must lose");
         assert!(error.contains("concurrent-write race"));
 
-        let persisted = load_manifest(&store)
+        let persisted = load_manifest(store.as_ref())
             .expect("load winning manifest")
             .expect("manifest exists");
         assert!(persisted.entries.contains_key("workspace/b.txt"));
@@ -1814,7 +1849,7 @@ mod tests {
         );
         let mut manifest = BoxManifestMap::new();
         let summary = sync_tree_category(
-            &store,
+            store.as_ref(),
             &mut manifest,
             &workspace,
             WORKSPACE_REL_PREFIX,
@@ -1843,9 +1878,9 @@ mod tests {
         };
         assert!(store_root.join(BOX_STORE_BLOBS_PREFIX).join(&sha).is_file());
 
-        write_manifest(&store, &manifest, true, "test-window".into())
+        write_manifest(store.as_ref(), &manifest, true, "test-window".into())
             .expect("write manifest");
-        let persisted = load_manifest(&store)
+        let persisted = load_manifest(store.as_ref())
             .expect("read manifest")
             .expect("manifest exists");
         assert_eq!(persisted.version, BOX_STORE_MANIFEST_VERSION);
@@ -1854,7 +1889,7 @@ mod tests {
 
         fs::remove_file(workspace.join("src/main.ts")).expect("remove source file");
         let summary = sync_tree_category(
-            &store,
+            store.as_ref(),
             &mut manifest,
             &workspace,
             WORKSPACE_REL_PREFIX,
@@ -1891,7 +1926,7 @@ mod tests {
         let store = LocalFsObjectStore::new(&store_root);
         let mut manifest = BoxManifestMap::new();
         let summary = sync_store_db_snapshots(
-            &store,
+            store.as_ref(),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -1916,7 +1951,7 @@ mod tests {
 
         fs::remove_file(&source_db).expect("remove source db");
         let summary = sync_store_db_snapshots(
-            &store,
+            store.as_ref(),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -1953,7 +1988,7 @@ mod tests {
         let store = LocalFsObjectStore::new(&store_root);
         let mut manifest = BoxManifestMap::new();
         let summary = sync_store_db_snapshots(
-            &store,
+            store.as_ref(),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -1995,7 +2030,7 @@ mod tests {
         let store = LocalFsObjectStore::new(&store_root);
         let mut manifest = BoxManifestMap::new();
         sync_store_db_snapshots(
-            &store,
+            store.as_ref(),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -2012,7 +2047,7 @@ mod tests {
                 .expect("mutate live db");
         }
         let summary = sync_store_db_snapshots(
-            &store,
+            store.as_ref(),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -2086,7 +2121,7 @@ mod tests {
             let store = LocalFsObjectStore::new(store_root);
             let mut manifest = BoxManifestMap::new();
             let summary = sync_tree_category(
-                &store,
+                store.as_ref(),
                 &mut manifest,
                 &workspace,
                 WORKSPACE_REL_PREFIX,

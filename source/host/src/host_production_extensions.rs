@@ -518,6 +518,8 @@ impl ProductionHostExtensions {
         let logs = self.telemetry.logs.clone();
         let diagnostic_logs = logs.clone();
         let source_map = Arc::clone(&self.source_map);
+        let token_auth = Arc::clone(&self.auth);
+        let machine_auth = Arc::clone(&self.auth);
         let extension = start_box_store_sync_extension(
             &ProductionBoxStoreSyncFactory,
             BoxStoreSyncExtensionDeps {
@@ -528,6 +530,13 @@ impl ProductionHostExtensions {
                         .map(|entry| entry.source_id)
                         .map_err(|error| error.to_string())
                 }),
+                backend_url: Some(self.backend_url.clone()),
+                get_access_token: Some(Arc::new(move || {
+                    token_auth.get_access_token().map_err(|error| error.to_string())
+                })),
+                get_machine_id: Some(Arc::new(move || {
+                    machine_auth.get_machine_id().map_err(|error| error.to_string())
+                })),
                 log: Arc::new(move |message| eprintln!("{message}")),
                 report_host_extension_diagnostic: Arc::new(move |diagnostic| {
                     let _ = diagnostic_logs.report_host_extension_diagnostic(

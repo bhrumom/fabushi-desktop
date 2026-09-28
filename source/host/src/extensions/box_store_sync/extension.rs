@@ -95,11 +95,18 @@ pub type DiagnosticReporter =
     Arc<dyn Fn(&Map<String, Value>) + Send + Sync + 'static>;
 pub type StoreIdResolver =
     Arc<dyn Fn() -> Result<String, String> + Send + Sync + 'static>;
+pub type AccessTokenResolver =
+    Arc<dyn Fn() -> Result<String, String> + Send + Sync + 'static>;
+pub type MachineIdResolver =
+    Arc<dyn Fn() -> Result<String, String> + Send + Sync + 'static>;
 
 #[derive(Clone)]
 pub struct BoxStoreSyncExtensionDeps {
     pub is_idle: Arc<dyn Fn() -> bool + Send + Sync>,
     pub resolve_store_id: StoreIdResolver,
+    pub backend_url: Option<String>,
+    pub get_access_token: Option<AccessTokenResolver>,
+    pub get_machine_id: Option<MachineIdResolver>,
     pub log: Arc<dyn Fn(&str) + Send + Sync>,
     pub report_host_extension_diagnostic: DiagnosticReporter,
     pub scheduling: BoxStoreScheduling,

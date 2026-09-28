@@ -56,10 +56,13 @@ fn production_mode_uses_source_map_when_local_store_id_is_not_overridden() {
     let host_extensions = include_str!("../src/host_production_extensions.rs");
     assert!(host_extensions.contains("get_or_create_box_store()"));
     assert!(host_extensions.contains("resolve_store_id:"));
+    assert!(host_extensions.contains("backend_url: Some(self.backend_url.clone())"));
+    assert!(host_extensions.contains("get_access_token: Some("));
+    assert!(host_extensions.contains("get_machine_id: Some("));
 }
 
 #[test]
-fn production_mode_refuses_unwired_remote_backends_instead_of_downgrading() {
+fn production_mode_wires_agent_store_but_keeps_unrecovered_v2_fail_closed() {
     let env = BTreeMap::from([
         ("SAND_BOX_STORE_SYNC".to_string(), "1".to_string()),
         ("SAND_BOX_STORE_BACKEND".to_string(), "v2".to_string()),
@@ -72,10 +75,10 @@ fn production_mode_refuses_unwired_remote_backends_instead_of_downgrading() {
     let env = BTreeMap::from([
         ("SAND_BOX_STORE_SYNC".to_string(), "1".to_string()),
     ]);
-    assert!(matches!(
+    assert_eq!(
         resolve_production_box_store_sync_mode(&env),
-        ProductionBoxStoreSyncMode::UnsupportedRemote { .. }
-    ));
+        ProductionBoxStoreSyncMode::AgentStore
+    );
 }
 
 #[test]
@@ -121,6 +124,8 @@ fn production_owner_wires_real_chrome_watcher_and_periodic_cycle() {
     assert!(production.contains("run_vacuum_off_thread(&source_path, &temp_path)"));
     assert!(production.contains("write_manifest("));
     assert!(production.contains("store.put_from_file(&blob_key, path)"));
+    assert!(production.contains("ProductionBoxStoreSyncMode::AgentStore"));
+    assert!(production.contains("AgentStoreObjectStoreProvider"));
     assert!(production.contains("remote-backend-not-wired"));
     assert!(production.contains("has_live_sand_agent_db_handle"));
     assert!(production.contains("run_store_db_debounce_loop"));

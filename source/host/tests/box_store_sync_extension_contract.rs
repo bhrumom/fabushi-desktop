@@ -142,6 +142,9 @@ fn extension_pins_diagnostics_starts_service_projects_api_and_disposes() {
         BoxStoreSyncExtensionDeps {
             is_idle: Arc::new(|| true),
             resolve_store_id: Arc::new(|| Ok("source-map-store".to_string())),
+            backend_url: None,
+            get_access_token: None,
+            get_machine_id: None,
             log,
             report_host_extension_diagnostic: reporter,
             scheduling: BoxStoreScheduling::default(),
