@@ -14,6 +14,7 @@ use super::listener_connect_watcher_production::{
 use super::listener_integrations::{
     PlatformConnectionReader, ProductionListenerIntegrations,
 };
+use super::backend_relay_source::RelayStatus;
 use super::production::{
     FireDispatch, ProductionAutomationsBackendRuntime, ProductionLog, RelayEventSink,
     RelayListeners,
@@ -90,6 +91,10 @@ impl ProductionAutomationsLifecycle {
         self.integrations
             .is_platform_connected(platform)
             .map_err(|error| error.to_string())
+    }
+
+    pub fn listener_source_status(&self, platform: &str) -> Option<RelayStatus> {
+        self.backend.listener_source_status(platform)
     }
 
     pub fn request_reconcile(&self) {

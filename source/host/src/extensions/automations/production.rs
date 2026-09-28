@@ -9,7 +9,7 @@ use crate::extensions::browser_ua::extension::StopSubscription;
 use crate::extensions::notify_bus::extension::HostNotifyBusExtension;
 use crate::extensions::notify_bus::notify_bus_client::SandNotifyTopic;
 
-use super::backend_relay_source::BackendRelayRuntime;
+use super::backend_relay_source::{BackendRelayRuntime, RelayStatus};
 use super::backend_transport::AutomationsBackendTransport;
 use super::sand_automation_fire_consumer::{
     AutomationFireBackendRuntime, BackendAutomationFire, FireCompletion,
@@ -197,6 +197,18 @@ impl ProductionAutomationsBackendRuntime {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(worker);
         runtime
+    }
+
+    pub fn listener_source_status(&self, platform: &str) -> Option<RelayStatus> {
+        let relay = self
+            .relay
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        match platform {
+            "slack" => Some(relay.slack_status.clone()),
+            "github" => Some(relay.github_status.clone()),
+            _ => None,
+        }
     }
 
     pub fn request_reconcile(&self) {

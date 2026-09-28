@@ -1,5 +1,7 @@
 use mahayana_host_runtime::automations::automation_trigger::parse_stored_trigger;
-use mahayana_host_runtime::extensions::automations::listener_integrations::ListenerIntegrations;
+use mahayana_host_runtime::extensions::automations::listener_integrations::{
+    ListenerIntegrations, count_listener_platforms, filter_listener_agent_channels,
+};
 use mahayana_host_runtime::extensions::automations::sand_automation_cloud_sync::desired_cloud_triggers;
 use mahayana_host_runtime::extensions::automations::sand_trigger_hub::ScheduledAutomation;
 use serde_json::json;
@@ -48,4 +50,39 @@ fn cloud_sync_projects_only_enabled_local_cloud_triggers_deterministically() {
     assert_eq!(desired.len(),1);
     assert_eq!(desired[0].agent_id,"a");
     assert_eq!(desired[0].trigger.case,"microsoftTeamsTrigger");
+}
+
+
+#[test]
+fn listener_integration_counts_enabled_routines_once_per_platform() {
+    let first = json!({
+        "type":"group",
+        "listeners":[
+            {"type":"slack","channel":"#eng","match":{"kind":"message"}},
+            {"type":"slack","channel":"#alerts","match":{"kind":"message"}},
+            {"type":"github","repo":"org/repo","events":["pr-opened"]}
+        ]
+    });
+    let disabled = json!({
+        "type":"github","repo":"org/disabled","events":["pr-opened"]
+    });
+    let counts = count_listener_platforms([
+        (true, &first),
+        (false, &disabled),
+    ]);
+    assert_eq!(counts["slack"], 1);
+    assert_eq!(counts["github"], 1);
+}
+
+#[test]
+fn listener_agent_channels_keep_only_shipping_listener_connectors() {
+    let channels = vec![
+        json!({"platform":"slack","label":"Slack","status":"configured"}),
+        json!({"platform":"github","label":"GitHub","status":"configured"}),
+        json!({"platform":"discord","label":"Discord","status":"configured"}),
+    ];
+    assert_eq!(
+        filter_listener_agent_channels(&channels),
+        vec![channels[0].clone(), channels[1].clone()]
+    );
 }

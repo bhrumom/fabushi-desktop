@@ -115,6 +115,7 @@ use mahayana_host_runtime::extensions::transcript::automation_runtime::{
 };
 use mahayana_host_runtime::automations::automation_status_reminder::create_automation_status_reminder;
 use mahayana_host_runtime::automations::automation_trigger::{trigger_matches_event, trigger_members};
+use mahayana_host_runtime::extensions::automations::listener_integrations::count_listener_platforms;
 use mahayana_host_runtime::extensions::automations::fire_delivery::{
     PreparedBackendFire, prepare_backend_fire,
 };
@@ -3634,16 +3635,53 @@ impl GatewayApi for UnifiedGatewayApi {
                 .ok_or_else(|| GatewayCommandError::Internal(
                     "production Automations lifecycle is not initialized".into(),
                 ))?;
+            let definitions = self
+                .transcript_manager
+                .automation_runtime()
+                .list_all_automation_definitions()
+                .map_err(GatewayCommandError::Internal)?;
+            let counts = count_listener_platforms(
+                definitions
+                    .iter()
+                    .map(|entry| (entry.automation.is_enabled, &entry.automation.trigger)),
+            );
             let mut integrations = Vec::with_capacity(2);
-            for platform in ["github", "slack"] {
+            for platform in ["slack", "github"] {
                 let is_connected = listener_connection_state_or_disconnected(
                     platform,
                     lifecycle.is_platform_connected(platform),
                 );
-                integrations.push(serde_json::json!({
-                    "platform": platform,
-                    "isConnected": is_connected,
-                }));
+                let status = lifecycle.listener_source_status(platform);
+                let mut integration = serde_json::Map::new();
+                integration.insert("platform".into(), serde_json::Value::String(platform.into()));
+                integration.insert("isConnected".into(), serde_json::Value::Bool(is_connected));
+                integration.insert(
+                    "state".into(),
+                    serde_json::Value::String(
+                        status
+                            .as_ref()
+                            .map(|status| status.state.as_str())
+                            .unwrap_or("idle")
+                            .to_string(),
+                    ),
+                );
+                integration.insert(
+                    "neededByCount".into(),
+                    serde_json::Value::Number(
+                        counts.get(platform).copied().unwrap_or_default().into(),
+                    ),
+                );
+                if let Some(detail) = status.as_ref().and_then(|status| status.detail.as_ref()) {
+                    integration.insert("detail".into(), serde_json::Value::String(detail.clone()));
+                }
+                if let Some(status) = status.as_ref().filter(|status| !status.scope_issues.is_empty()) {
+                    integration.insert(
+                        "scopeIssues".into(),
+                        serde_json::to_value(&status.scope_issues)
+                            .map_err(|error| GatewayCommandError::Internal(error.to_string()))?,
+                    );
+                }
+                integrations.push(serde_json::Value::Object(integration));
             }
             return Ok(serde_json::json!({ "integrations": integrations }));
         }
