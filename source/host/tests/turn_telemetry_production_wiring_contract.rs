@@ -1,4 +1,5 @@
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+const INFERENCE_PRODUCTION: &str = include_str!("../src/extensions/inference/production.rs");
 const TRANSCRIPT_RUNTIME: &str = include_str!("../src/extensions/transcript/production_runtime.rs");
 
 #[test]
@@ -17,9 +18,9 @@ fn shipping_host_wires_frozen_turn_telemetry_sources() {
         "merge_provider_token_usage",
         "usage_sink: Some(usage_sink)",
         "worker_provider_usage",
-        "record_inference_usage(",
-        "usage_provider.as_str()",
-        "inference_usage_persist_failed",
+        "usage_inference.record_usage(",
+        "InferenceUsage {",
+        "usage_provider",
         "TelemetryTokenUsage",
         "GatewayCommandContext",
         "call_with_context(",
@@ -39,6 +40,17 @@ fn shipping_host_wires_frozen_turn_telemetry_sources() {
         assert!(
             SHIPPING_HOST.contains(needle),
             "shipping Host must preserve frozen turn telemetry wiring: {needle}"
+        );
+    }
+
+    for needle in [
+        "self.settings.record_inference_usage(",
+        "provider.as_str()",
+        "inference_usage_persist_failed",
+    ] {
+        assert!(
+            INFERENCE_PRODUCTION.contains(needle),
+            "Host Inference owner must preserve routed-provider usage persistence: {needle}"
         );
     }
 
