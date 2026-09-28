@@ -16830,7 +16830,8 @@
       "behavioralEvidence": [
         "source/host/src/host_production_extensions.rs",
         "source/host/src/extensions/registry.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/inference/production.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_production_extensions_contract.rs",
@@ -16843,7 +16844,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Host now has a Grok-shaped host_production_extensions owner instead of keeping the live production extension subset in app/main.rs. It centralizes the currently shipping Auth, Experiments, ActionAudit, CloudAgents, NotifyBus, Memory, ManagedSetup, SourceMap, Trays, BoxLifecycle, WebAuthnProxy and BrowserUa construction, while the 35-slot HOST_EXTENSION_ORDER remains the canonical frozen table. The shipping app consumes this owner directly. Final parity remains withheld until every frozen registry slot has a real production declaration/extras binding, including the still-missing ContentSearch, CrossUserSharing, StateBackstop production composition, Inference, LocalExec, LocalToolPermission, MCP, BoxStoreSync, HostUpgrade, AutoReview, CodebaseTelemetry and TeachRecording owners; no no-op slot is synthesized."
+      "notes": "Rust Host has a Grok-shaped host_production_extensions owner and the shipping app consumes it directly. The canonical production subset now starts Auth, Telemetry, ContentSearch, Settings, Experiments, CodebaseTelemetry, ActionAudit, CloudAgents, NotifyBus, Memory, ManagedSetup, SourceMap, Trays, BoxLifecycle, WebauthnProxy, BrowserUa, LocalToolPermission, LocalExec and Inference while preserving the frozen 35-slot HOST_EXTENSION_ORDER. Final parity remains withheld until the remaining frozen slots are centralized with real production owners/extras bindings: Notifications, CrossUserSharing, StateBackstop, Attachments, ForeverBox, Secrets, TurnExecution, Transcript, Session, Automations, MCP, BoxStoreSync, HostUpgrade, AutoReview, TeachRecording and Wallpaper. Existing app/main.rs ownership is not counted as registry completion, and no no-op slot is synthesized."
     },
     {
       "referencePath": "source/host/host-request-context.ts",
