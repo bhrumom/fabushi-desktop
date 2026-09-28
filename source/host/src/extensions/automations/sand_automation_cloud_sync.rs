@@ -661,6 +661,17 @@ pub struct ReconcileOutcome {
     pub scheduling_authority_changed: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ShadowPruneReport {
+    pub agent_id: String,
+    pub automation_id: String,
+    pub outcome: String,
+    pub local_definition_state: String,
+    pub local_definition_count: usize,
+    pub desired_count: usize,
+    pub remote_shadow_count: usize,
+}
+
 pub struct SandAutomationCloudSync {
     client: Arc<dyn CloudSyncClient>,
     scheduling_evidence_by_agent: BTreeMap<String, SchedulingEvidence>,
@@ -668,6 +679,7 @@ pub struct SandAutomationCloudSync {
     last_successful_fingerprint_by_agent: BTreeMap<String, String>,
     failed_agent_ids: BTreeSet<String>,
     pending_agent_deletions: BTreeSet<String>,
+    shadow_prune_reports: Vec<ShadowPruneReport>,
 }
 
 impl SandAutomationCloudSync {
@@ -679,6 +691,7 @@ impl SandAutomationCloudSync {
             last_successful_fingerprint_by_agent: BTreeMap::new(),
             failed_agent_ids: BTreeSet::new(),
             pending_agent_deletions: BTreeSet::new(),
+            shadow_prune_reports: Vec::new(),
         }
     }
 
@@ -725,11 +738,17 @@ impl SandAutomationCloudSync {
             });
         }
         let desired_ids = desired_by_id.keys().cloned().collect::<BTreeSet<_>>();
-        let initial = self.client.list_sand_automations(agent_id)?;
+        let initial = match self.client.list_sand_automations(agent_id) {
+            Ok(initial) => initial,
+            Err(error) => {
+                self.record_failure(agent_id);
+                return Err(error);
+            }
+        };
         let remote = remote_shadow_automations_by_id(&initial);
         if is_converged(&remote, &desired_by_id) {
             let changed = self.publish_known(agent_id, &initial, desired_ids);
-            self.failed_agent_ids.remove(agent_id);
+            self.record_recovery(agent_id);
             self.last_successful_fingerprint_by_agent
                 .insert(agent_id.to_owned(), fingerprint.clone());
             return Ok(ReconcileOutcome {
@@ -745,10 +764,23 @@ impl SandAutomationCloudSync {
             }
             self.scheduling_evidence_by_agent
                 .insert(agent_id.to_owned(), SchedulingEvidence::Unknown);
-            if self.client.delete_sand_automation(&remote.automation_id).is_err() {
-                mutation_failed = true;
-                self.failed_agent_ids.insert(agent_id.to_owned());
-            }
+            let succeeded = match self.client.delete_sand_automation(&remote.automation_id) {
+                Ok(()) => true,
+                Err(_) => {
+                    mutation_failed = true;
+                    self.record_failure(agent_id);
+                    false
+                }
+            };
+            self.shadow_prune_reports.push(ShadowPruneReport {
+                agent_id: agent_id.to_owned(),
+                automation_id: automation_id.clone(),
+                outcome: if succeeded { "deleted".into() } else { "failed".into() },
+                local_definition_state: "loaded".into(),
+                local_definition_count: desired_by_id.len(),
+                desired_count: desired_by_id.len(),
+                remote_shadow_count: remote.len(),
+            });
         }
         for (automation_id, definition) in &desired_by_id {
             match remote.get(automation_id) {
@@ -764,7 +796,7 @@ impl SandAutomationCloudSync {
                         sand_automation_id: Some(automation_id.clone()),
                     }).is_err() {
                         mutation_failed = true;
-                        self.failed_agent_ids.insert(agent_id.to_owned());
+                        self.record_failure(agent_id);
                     }
                 }
                 Some(remote)
@@ -781,22 +813,28 @@ impl SandAutomationCloudSync {
                         automation_id: remote.automation_id.clone(),
                     }).is_err() {
                         mutation_failed = true;
-                        self.failed_agent_ids.insert(agent_id.to_owned());
+                        self.record_failure(agent_id);
                     }
                 }
                 _ => {}
             }
         }
 
-        let readback = self.client.list_sand_automations(agent_id)?;
+        let readback = match self.client.list_sand_automations(agent_id) {
+            Ok(readback) => readback,
+            Err(error) => {
+                self.record_failure(agent_id);
+                return Err(error);
+            }
+        };
         let changed = self.publish_known(agent_id, &readback, desired_ids);
         let converged = is_converged(&remote_shadow_automations_by_id(&readback), &desired_by_id);
         if converged {
-            self.failed_agent_ids.remove(agent_id);
+            self.record_recovery(agent_id);
             self.last_successful_fingerprint_by_agent
                 .insert(agent_id.to_owned(), fingerprint);
         } else if !mutation_failed {
-            self.failed_agent_ids.insert(agent_id.to_owned());
+            self.record_failure(agent_id);
         }
         Ok(ReconcileOutcome {
             converged,
@@ -806,7 +844,13 @@ impl SandAutomationCloudSync {
 
     pub fn delete_agent(&mut self, agent_id: &str) -> Result<ReconcileOutcome, SandConnectError> {
         self.pending_agent_deletions.insert(agent_id.to_owned());
-        let initial = self.client.list_sand_automations(agent_id)?;
+        let initial = match self.client.list_sand_automations(agent_id) {
+            Ok(initial) => initial,
+            Err(error) => {
+                self.record_failure(agent_id);
+                return Err(error);
+            }
+        };
         let remote = initial
             .workflows
             .iter()
@@ -817,18 +861,26 @@ impl SandAutomationCloudSync {
             self.scheduling_evidence_by_agent
                 .insert(agent_id.to_owned(), SchedulingEvidence::Unknown);
             if self.client.delete_sand_automation(&automation.automation_id).is_err() {
-                self.failed_agent_ids.insert(agent_id.to_owned());
+                self.record_failure(agent_id);
             }
         }
-        let readback = self.client.list_sand_automations(agent_id)?;
+        let readback = match self.client.list_sand_automations(agent_id) {
+            Ok(readback) => readback,
+            Err(error) => {
+                self.record_failure(agent_id);
+                return Err(error);
+            }
+        };
         let changed = self.publish_known(agent_id, &readback, BTreeSet::new());
         let converged = readback.workflows.iter().all(|entry| entry.workflow.is_none());
         if converged {
             self.pending_agent_deletions.remove(agent_id);
-            self.failed_agent_ids.remove(agent_id);
+            self.record_recovery(agent_id);
             self.scheduling_evidence_by_agent.remove(agent_id);
             self.last_authority_by_agent.remove(agent_id);
             self.last_successful_fingerprint_by_agent.remove(agent_id);
+        } else {
+            self.record_failure(agent_id);
         }
         Ok(ReconcileOutcome {
             converged,
@@ -855,6 +907,19 @@ impl SandAutomationCloudSync {
 
     pub fn failed_agent_ids(&self) -> &BTreeSet<String> {
         &self.failed_agent_ids
+    }
+
+    pub fn drain_shadow_prune_reports(&mut self) -> Vec<ShadowPruneReport> {
+        std::mem::take(&mut self.shadow_prune_reports)
+    }
+
+    fn record_failure(&mut self, agent_id: &str) {
+        self.failed_agent_ids.insert(agent_id.to_owned());
+        self.last_successful_fingerprint_by_agent.remove(agent_id);
+    }
+
+    fn record_recovery(&mut self, agent_id: &str) {
+        self.failed_agent_ids.remove(agent_id);
     }
 
     fn publish_known(
