@@ -12,7 +12,6 @@ use mahayana_host_runtime::extensions::box_store_sync::box_copy_in::{
 };
 use mahayana_host_runtime::extensions::action_audit::extension::ActionAuditExtension;
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
-use mahayana_host_runtime::extensions::auto_review::auto_review_service::AutoReviewService;
 use mahayana_host_runtime::extensions::auto_review::extension::{
     HostAutoReviewExtension, start_auto_review_extension,
 };
@@ -2128,7 +2127,10 @@ fn start_routed_provider_task(
                 Arc::new(move |args, tool_call_id| {
                     let mode = computer_review_auto_review.current_modes().computer;
                     validate_computer_action(args, Some(mode))
-                        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                        .map_err(|error| ProviderSessionError::Tool(match error {
+                        mahayana_host_runtime::runner::sand_auto_review_classifier_run::AutoReviewClassifierError::Aborted(reason)
+                        | mahayana_host_runtime::runner::sand_auto_review_classifier_run::AutoReviewClassifierError::Failed(reason) => reason,
+                    }))?;
                     let initial_display = computer_review_box.browser_window_index()?;
                     let box_identity = BoxIdentity {
                         box_id: std::env::var("SAND_BOX_HOST")
