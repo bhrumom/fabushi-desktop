@@ -1819,7 +1819,7 @@ mod tests {
                 mode: 0o644,
             },
         );
-        write_manifest(store.as_ref(), &first, true, "writer-a".into()).expect("seed manifest");
+        write_manifest(&store, &first, true, "writer-a".into()).expect("seed manifest");
         let baseline = store
             .get(BOX_STORE_MANIFEST_REL_PATH)
             .expect("read baseline")
@@ -1834,11 +1834,11 @@ mod tests {
                 mode: 0o644,
             },
         );
-        write_manifest(store.as_ref(), &concurrent, true, "writer-b".into())
+        write_manifest(&store, &concurrent, true, "writer-b".into())
             .expect("concurrent manifest");
 
         let error = write_manifest_if_unchanged(
-            store.as_ref(),
+            &store,
             Some(&baseline),
             &first,
             true,
@@ -1847,7 +1847,7 @@ mod tests {
         .expect_err("stale writer must lose");
         assert!(error.contains("concurrent-write race"));
 
-        let persisted = load_manifest(store.as_ref())
+        let persisted = load_manifest(&store)
             .expect("load winning manifest")
             .expect("manifest exists");
         assert!(persisted.entries.contains_key("workspace/b.txt"));
@@ -1874,7 +1874,7 @@ mod tests {
         );
         let mut manifest = BoxManifestMap::new();
         let summary = sync_tree_category(
-            store.as_ref(),
+            &store,
             &mut manifest,
             &workspace,
             WORKSPACE_REL_PREFIX,
@@ -1903,9 +1903,9 @@ mod tests {
         };
         assert!(store_root.join(BOX_STORE_BLOBS_PREFIX).join(&sha).is_file());
 
-        write_manifest(store.as_ref(), &manifest, true, "test-window".into())
+        write_manifest(&store, &manifest, true, "test-window".into())
             .expect("write manifest");
-        let persisted = load_manifest(store.as_ref())
+        let persisted = load_manifest(&store)
             .expect("read manifest")
             .expect("manifest exists");
         assert_eq!(persisted.version, BOX_STORE_MANIFEST_VERSION);
@@ -1914,7 +1914,7 @@ mod tests {
 
         fs::remove_file(workspace.join("src/main.ts")).expect("remove source file");
         let summary = sync_tree_category(
-            store.as_ref(),
+            &store,
             &mut manifest,
             &workspace,
             WORKSPACE_REL_PREFIX,
@@ -2146,7 +2146,7 @@ mod tests {
             let store = LocalFsObjectStore::new(store_root);
             let mut manifest = BoxManifestMap::new();
             let summary = sync_tree_category(
-                store.as_ref(),
+                &store,
                 &mut manifest,
                 &workspace,
                 WORKSPACE_REL_PREFIX,
