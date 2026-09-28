@@ -121,6 +121,23 @@ pub enum AgentStoreWriteOutcome {
     },
 }
 
+fn report_conflict_protection_downgraded(
+    has_conflict: bool,
+    headers: &HashMap<String, String>,
+) {
+    if has_conflict || presign_has_conditional_headers(headers) {
+        return;
+    }
+    let diagnostic = Map::from_iter([
+        ("extension".to_string(), Value::String("box_store".to_string())),
+        (
+            "kind".to_string(),
+            Value::String("conflict_protection_downgraded".to_string()),
+        ),
+    ]);
+    report_box_store_diagnostic(&diagnostic);
+}
+
 fn conflict_outcome(
     conflict_rel_path: Option<String>,
     base_etag: Option<String>,
@@ -446,6 +463,10 @@ impl AgentStoreClient {
                 "agent-store presign for {rel_path} carries a conditional header but no conflict instruction"
             ));
         }
+        report_conflict_protection_downgraded(
+            instruction.conflict.is_some(),
+            &instruction.headers,
+        );
         let mut response = self.put_bytes_once(&instruction.url, &instruction.headers, &sha, bytes)?;
         if response.status().as_u16() == 409 {
             response = self.put_bytes_once(&instruction.url, &instruction.headers, &sha, bytes)?;
@@ -571,6 +592,10 @@ impl AgentStoreClient {
             },
         )?;
         validate_presigned_url(&self.inner.deps.backend_url, &instruction.url, &rel_path)?;
+        report_conflict_protection_downgraded(
+            instruction.conflict.is_some(),
+            &instruction.headers,
+        );
         let mut response =
             self.put_file_once(&instruction.url, &instruction.headers, &sha, src_path, size)?;
         if response.status().as_u16() == 409 {
@@ -1242,6 +1267,22 @@ mod tests {
         assert_eq!(
             events[0].get("kind").and_then(Value::as_str),
             Some("write_conflict_preserved")
+        );
+        drop(events);
+
+        let downgrade_events = Arc::new(Mutex::new(Vec::<Map<String, Value>>::new()));
+        let captured = Arc::clone(&downgrade_events);
+        super::super::box_store_diagnostics::pin_box_store_diagnostics_reporter(Some(Arc::new(
+            move |event| captured.lock().expect("downgrade events").push(event.clone()),
+        )));
+        report_conflict_protection_downgraded(false, &HashMap::new());
+        report_conflict_protection_downgraded(true, &HashMap::new());
+        super::super::box_store_diagnostics::pin_box_store_diagnostics_reporter(None);
+        let downgrade_events = downgrade_events.lock().expect("downgrade events");
+        assert_eq!(downgrade_events.len(), 1);
+        assert_eq!(
+            downgrade_events[0].get("kind").and_then(Value::as_str),
+            Some("conflict_protection_downgraded")
         );
     }
 
