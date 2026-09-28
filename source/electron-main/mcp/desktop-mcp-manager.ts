@@ -21,7 +21,7 @@ import { createMcpToolsDiscovery } from "../../shared/node/mcp/tools-discovery.j
 export interface DesktopMcpManagerFacade {
   listServers(): Promise<unknown>;
   listEffectivePlugins(): Promise<unknown>;
-  getCatalog(getAccessToken: unknown): Promise<unknown>;
+  getCatalog(getAccessToken: unknown, options?: { readonly forceRefresh?: boolean }): Promise<unknown>;
   resolvePluginLogo(url: string): Promise<unknown>;
   installEntry(request: unknown, getAccessToken: unknown): Promise<unknown>;
   updatePluginInstall(request: unknown, getAccessToken: unknown): Promise<unknown>;
@@ -43,6 +43,7 @@ export interface DesktopMcpManagerFacade {
   }): Promise<unknown>;
   toggleMcpToolDisabled(request: unknown): Promise<unknown>;
   setAuthCompletionObserver(observer: (completion: unknown) => void): void;
+  noteAuthCompletedElsewhere(serverId: string, accountKey: string): unknown;
   dispose(): Promise<void> | void;
 }
 
@@ -131,7 +132,7 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
       return manager.listServers();
     },
     listEffectivePlugins: () => manager.listEffectivePlugins(),
-    getCatalog: (getAccessToken) => manager.getCatalog(getAccessToken),
+    getCatalog: (getAccessToken, options) => manager.getCatalog(getAccessToken, options),
     resolvePluginLogo: (url) => manager.resolvePluginLogo(url),
     installEntry: (request, getAccessToken) => manager.installEntry(request, getAccessToken),
     updatePluginInstall: (request, getAccessToken) => manager.updatePluginInstall(request, getAccessToken),
@@ -156,6 +157,7 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
     ),
     toggleMcpToolDisabled: (request) => manager.toggleMcpToolDisabled(request),
     setAuthCompletionObserver: (observer) => manager.setAuthCompletionObserver(observer),
+    noteAuthCompletedElsewhere: (serverId, accountKey) => manager.noteAuthCompletedElsewhere(serverId, accountKey),
     dispose: () => manager.dispose(),
   };
 }
