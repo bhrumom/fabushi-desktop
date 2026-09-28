@@ -381,3 +381,94 @@ fn same_thread_recursive_sync_fails_explicitly_instead_of_waiting_on_itself() {
     );
     assert!(service.state.lock().unwrap().pending.is_none());
 }
+
+struct ReadyAuth;
+impl super::super::extension::AuthRenewalPort for ReadyAuth {
+    fn peek_access_token(&self) -> Option<String> {
+        Some("fixture-ready".into())
+    }
+
+    fn subscribe_to_renewal(
+        &self,
+        _listener: Arc<dyn Fn(super::super::extension::AuthRenewalEvent) + Send + Sync>,
+    ) -> Box<dyn FnOnce() + Send> {
+        Box::new(|| {})
+    }
+}
+
+fn start_real_poll(
+    service: &Arc<SandPluginSkillsService>,
+    sweeps: &Arc<AtomicUsize>,
+) -> super::super::extension::PluginSkillsAuthenticatedStartup {
+    let sweeps = Arc::clone(sweeps);
+    super::super::extension::PluginSkillsAuthenticatedStartup::start(
+        Arc::new(ReadyAuth),
+        service.clone(),
+        Arc::new(
+            super::super::production::RealPluginSkillsPolling::with_interval(Duration::from_secs(
+                60,
+            )),
+        ),
+        Some(Arc::new(move || {
+            sweeps.fetch_add(1, Ordering::SeqCst);
+        })),
+    )
+}
+
+#[test]
+fn real_poll_shutdown_retires_a_queued_sync_before_joining_its_thread() {
+    let h = Harness::new();
+    let active = h.call("manual-refresh");
+    h.enter(1);
+    let sweeps = Arc::new(AtomicUsize::new(0));
+    let startup = start_real_poll(&h.service, &sweeps);
+    h.pending("startup");
+    let (tx, stopped) = mpsc::channel();
+    let stopping = thread::spawn(move || {
+        startup.dispose();
+        tx.send(()).unwrap();
+    });
+    // The queued poll must retire without waiting for the unrelated loader.
+    stopped
+        .recv_timeout(DEADLINE)
+        .expect("queued poll blocked shutdown");
+    stopping.join().unwrap();
+    active.assert_waiting();
+    h.assert_calls(1);
+    h.loaded("must-not-write");
+    assert!(active.finish().unwrap().is_empty());
+    assert!(h.service.current().is_empty());
+    assert_eq!(sweeps.load(Ordering::SeqCst), 0);
+    h.assert_calls(1);
+}
+
+#[test]
+fn real_poll_shutdown_fences_an_active_load_before_join_finishes() {
+    let h = Harness::new();
+    let sweeps = Arc::new(AtomicUsize::new(0));
+    let startup = start_real_poll(&h.service, &sweeps);
+    h.enter(1);
+    let (tx, stopped) = mpsc::channel();
+    let stopping = thread::spawn(move || {
+        startup.dispose();
+        tx.send(()).unwrap();
+    });
+    let until = Instant::now() + DEADLINE;
+    let mut state = h.service.state.lock().unwrap();
+    while !state.disposed {
+        let remaining = until
+            .checked_duration_since(Instant::now())
+            .expect("skills not disposed");
+        state = h.service.changed.wait_timeout(state, remaining).unwrap().0;
+    }
+    drop(state);
+    assert!(matches!(stopped.try_recv(), Err(TryRecvError::Empty)));
+    h.loaded("must-not-write");
+    stopped
+        .recv_timeout(DEADLINE)
+        .expect("active poll blocked shutdown");
+    stopping.join().unwrap();
+    assert!(h.service.current().is_empty());
+    assert_eq!(sweeps.load(Ordering::SeqCst), 0);
+    h.assert_calls(1);
+}

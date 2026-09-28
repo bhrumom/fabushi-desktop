@@ -180,6 +180,10 @@ impl PluginSkillsAuthenticatedStartup {
             state.disposed = true;
             state.polling.take()
         };
+        // Retire queued syncs before joining: the poll may be waiting behind
+        // a refresh owned by another thread. It must not start a new load just
+        // to let shutdown complete. An active load observes disposal on return.
+        self.plugin_skills.dispose();
         // The polling thread may need the state lock to finish its callback.
         // Joining it while holding that lock would deadlock Host shutdown.
         if let Some(mut polling) = polling {
@@ -193,7 +197,6 @@ impl PluginSkillsAuthenticatedStartup {
         if let Some(unsubscribe) = unsubscribe {
             unsubscribe();
         }
-        self.plugin_skills.dispose();
     }
 
     pub fn is_started(&self) -> bool {
