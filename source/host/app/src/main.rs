@@ -2878,6 +2878,7 @@ fn start_routed_provider_task(
                     browser_executor: Some(browser_executor),
                     computer_executor: Some(computer_executor),
                     file_transfer_executor: Some(file_transfer_executor),
+                    mcp_management_sink: None,
                     send_message_sink: Some(send_message_sink),
                     reaction_sink: Some(reaction_sink),
                     cloud_agent_tool: Some(cloud_agent_tool),
