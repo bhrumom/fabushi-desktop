@@ -19,6 +19,10 @@ use crate::extensions::box_store_sync::box_object_store::{
     AgentStoreObjectStoreProvider, BoxObjectStore, BoxObjectStoreProvider, LocalFsObjectStore,
 };
 use crate::extensions::box_store_sync::agent_store_sand_files::AgentStoreClientDependencies;
+use crate::extensions::box_store_sync::sand_box_store_files::SandBoxStoreServiceProvider;
+use crate::extensions::box_store_sync::sand_box_store_v2_client::{
+    SandBoxStoreV2Client, SandBoxStoreV2ClientDependencies,
+};
 use crate::extensions::box_store_sync::box_store_pack::{
     BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACK_RETIRED_KEY, BOX_STORE_PACKS_PREFIX,
     PACK_INDEX_VERSION, PACK_MAX_MEMBER_SIZE_SUM, PACK_MEMBER_MAX_BYTES, PackEntry, PackIndex,
@@ -93,6 +97,7 @@ pub enum ProductionBoxStoreSyncMode {
         store_id_override: Option<String>,
     },
     AgentStore,
+    SandBoxStoreV2,
     UnsupportedRemote { backend: BoxStoreBackendKind },
     InvalidLocalConfiguration { reason: String },
 }
@@ -140,7 +145,9 @@ impl ProductionBoxStoreSyncApi {
             || self.inner.stopped.load(Ordering::Acquire)
             || !matches!(
                 &self.inner.mode,
-                ProductionBoxStoreSyncMode::LocalFs { .. } | ProductionBoxStoreSyncMode::AgentStore
+                ProductionBoxStoreSyncMode::LocalFs { .. }
+                | ProductionBoxStoreSyncMode::AgentStore
+                | ProductionBoxStoreSyncMode::SandBoxStoreV2
             )
         {
             return false;
@@ -184,7 +191,9 @@ impl ProductionBoxStoreSyncService {
         let backend = mode_name(&mode).to_string();
         let enabled = matches!(
             mode,
-            ProductionBoxStoreSyncMode::LocalFs { .. } | ProductionBoxStoreSyncMode::AgentStore
+            ProductionBoxStoreSyncMode::LocalFs { .. }
+                | ProductionBoxStoreSyncMode::AgentStore
+                | ProductionBoxStoreSyncMode::SandBoxStoreV2
         );
         Self {
             inner: Arc::new(ProductionBoxStoreSyncInner {
@@ -197,6 +206,7 @@ impl ProductionBoxStoreSyncService {
                 store_db_wake: Condvar::new(),
                 agent_db_capture_queues: AgentDbCaptureQueues::default(),
                 agent_store_provider: Mutex::new(None),
+                sand_box_store_v2_provider: Mutex::new(None),
                 last_pack_sync: Mutex::new(None),
                 flush_waiters: AtomicUsize::new(0),
                 status: Mutex::new(ProductionBoxStoreSyncStatus {
@@ -253,7 +263,8 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                 return;
             }
             ProductionBoxStoreSyncMode::LocalFs { .. }
-            | ProductionBoxStoreSyncMode::AgentStore => {}
+            | ProductionBoxStoreSyncMode::AgentStore
+            | ProductionBoxStoreSyncMode::SandBoxStoreV2 => {}
         }
 
         let chrome_inner = Arc::clone(&self.inner);
@@ -451,6 +462,7 @@ struct ProductionBoxStoreSyncInner {
     store_db_wake: Condvar,
     agent_db_capture_queues: AgentDbCaptureQueues,
     agent_store_provider: Mutex<Option<AgentStoreObjectStoreProvider>>,
+    sand_box_store_v2_provider: Mutex<Option<SandBoxStoreServiceProvider>>,
     last_pack_sync: Mutex<Option<Instant>>,
     flush_waiters: AtomicUsize,
     status: Mutex<ProductionBoxStoreSyncStatus>,
@@ -463,7 +475,9 @@ impl ProductionBoxStoreSyncInner {
                 store_id_override: Some(store_id),
                 ..
             } => store_id.clone(),
-            ProductionBoxStoreSyncMode::LocalFs { .. } | ProductionBoxStoreSyncMode::AgentStore => {
+            ProductionBoxStoreSyncMode::LocalFs { .. }
+                | ProductionBoxStoreSyncMode::AgentStore
+                | ProductionBoxStoreSyncMode::SandBoxStoreV2 => {
                 (self.deps.resolve_store_id)()?
             }
             _ => return Err("box-store backend is not active".into()),
@@ -519,6 +533,43 @@ impl ProductionBoxStoreSyncInner {
                     slot.as_ref()
                         .cloned()
                         .ok_or_else(|| "AgentStore provider failed to initialize".to_string())?
+                };
+                Ok(provider.for_store(source_id).into())
+            }
+            ProductionBoxStoreSyncMode::SandBoxStoreV2 => {
+                let provider = {
+                    let mut slot = self
+                        .sand_box_store_v2_provider
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    if slot.is_none() {
+                        let backend_url = self
+                            .deps
+                            .backend_url
+                            .clone()
+                            .ok_or_else(|| "SandBoxStoreV2 backend URL is not configured".to_string())?;
+                        let get_access_token = self
+                            .deps
+                            .get_access_token
+                            .clone()
+                            .ok_or_else(|| "SandBoxStoreV2 auth token resolver is not configured".to_string())?;
+                        let get_machine_id = self
+                            .deps
+                            .get_machine_id
+                            .clone()
+                            .ok_or_else(|| "SandBoxStoreV2 machine id resolver is not configured".to_string())?;
+                        let client = Arc::new(SandBoxStoreV2Client::new(
+                            SandBoxStoreV2ClientDependencies {
+                                backend_url,
+                                get_access_token,
+                                get_machine_id,
+                            },
+                        ));
+                        *slot = Some(SandBoxStoreServiceProvider::new(client)?);
+                    }
+                    slot.as_ref()
+                        .cloned()
+                        .ok_or_else(|| "SandBoxStoreV2 provider failed to initialize".to_string())?
                 };
                 Ok(provider.for_store(source_id).into())
             }
@@ -778,8 +829,8 @@ pub fn resolve_production_box_store_sync_mode(env: &BTreeMap<String, String>) ->
                 store_id_override,
             }
         }
+        BoxStoreBackendKind::SandBoxStoreV2 => ProductionBoxStoreSyncMode::SandBoxStoreV2,
         BoxStoreBackendKind::AgentStore => ProductionBoxStoreSyncMode::AgentStore,
-        backend => ProductionBoxStoreSyncMode::UnsupportedRemote { backend },
     }
 }
 
@@ -844,12 +895,13 @@ fn mode_name(mode: &ProductionBoxStoreSyncMode) -> &'static str {
         ProductionBoxStoreSyncMode::Disabled => "disabled",
         ProductionBoxStoreSyncMode::LocalFs { .. } => "local-fs",
         ProductionBoxStoreSyncMode::AgentStore => "agent-store",
+        ProductionBoxStoreSyncMode::SandBoxStoreV2 => "sand-box-store-v2",
         ProductionBoxStoreSyncMode::UnsupportedRemote {
             backend: BoxStoreBackendKind::AgentStore,
         } => "agent-store-invalid",
         ProductionBoxStoreSyncMode::UnsupportedRemote {
             backend: BoxStoreBackendKind::SandBoxStoreV2,
-        } => "sand-box-store-v2-unwired",
+        } => "sand-box-store-v2-invalid",
         ProductionBoxStoreSyncMode::UnsupportedRemote {
             backend: BoxStoreBackendKind::LocalFs,
         } => "local-fs-unwired",
@@ -2162,4 +2214,21 @@ mod tests {
             fs::remove_dir_all(root).expect("cleanup temp root");
         }
     }
+
+    #[test]
+    fn v2_backend_resolves_to_live_production_mode() {
+        let env = BTreeMap::from([
+            ("SAND_BOX_STORE_SYNC".to_string(), "1".to_string()),
+            ("SAND_BOX_STORE_BACKEND".to_string(), "v2".to_string()),
+        ]);
+        assert_eq!(
+            resolve_production_box_store_sync_mode(&env),
+            ProductionBoxStoreSyncMode::SandBoxStoreV2
+        );
+        assert_eq!(
+            mode_name(&ProductionBoxStoreSyncMode::SandBoxStoreV2),
+            "sand-box-store-v2"
+        );
+    }
+
 }

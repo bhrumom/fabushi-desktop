@@ -23,6 +23,7 @@ pub mod box_store_sync_service;
 pub mod box_store_sync;
 pub mod box_store_transfer;
 pub mod sand_box_store_files;
+pub mod sand_box_store_v2_client;
 pub mod store_db_bundle_capture;
 pub mod store_db_capture;
 pub mod production;
