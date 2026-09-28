@@ -2986,17 +2986,28 @@ fn start_routed_provider_task(
     let worker_cloud_agents = Arc::clone(&cloud_agents);
     let worker_cloud_agent_watches = Arc::clone(&cloud_agent_watches);
     let cloud_agent_quiet_origin = args
-        .get("automationWake")
-        .and_then(serde_json::Value::as_object)
-        .and_then(|wake| {
-            let id = wake.get("id").and_then(serde_json::Value::as_str)?;
-            let name = wake.get("name").and_then(serde_json::Value::as_str)?;
-            Some(serde_json::json!({
-                "automation": {
-                    "id": id,
-                    "name": name,
-                }
-            }))
+        .get("quietOrigin")
+        .filter(|origin| origin.is_object())
+        .cloned()
+        .or_else(|| {
+            args.get("automationWake")
+                .and_then(serde_json::Value::as_object)
+                .and_then(|wake| {
+                    let id = wake.get("id").and_then(serde_json::Value::as_str)?;
+                    let name = wake.get("name").and_then(serde_json::Value::as_str)?;
+                    Some(serde_json::json!({
+                        "automation": {
+                            "id": id,
+                            "name": name,
+                        }
+                    }))
+                })
+        })
+        .or_else(|| {
+            args.get("isSilenceAllowed")
+                .and_then(serde_json::Value::as_bool)
+                .filter(|allowed| *allowed)
+                .map(|_| serde_json::json!({}))
         });
     let worker_auth = Arc::clone(&auth);
     let worker_auto_review = Arc::clone(&auto_review);
