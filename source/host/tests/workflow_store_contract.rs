@@ -135,3 +135,282 @@ fn stat_parse_cache_reuses_stable_fingerprints_and_invalidates_changes(){
  assert_eq!(parses.load(Ordering::SeqCst),2);
  let _=fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn managed_and_plugin_skills_are_aggregated_with_frozen_precedence() {
+    use mahayana_host_runtime::extensions::managed_setup::managed_skills_cache::{
+        ManagedSkill, get_managed_skills_dir, write_managed_skills_cache,
+    };
+    use mahayana_host_runtime::extensions::mcp::plugin_skills_cache::{
+        PluginSkillsCacheWriteIndex, get_plugin_skills_dir, write_plugin_skills_cache,
+    };
+
+    let root = root("managed-plugin-aggregation");
+    let agent = root.join("agents/a");
+    let global = root.join("workflows");
+    fs::create_dir_all(&agent).unwrap();
+
+    let managed_dir = get_managed_skills_dir(&root);
+    write_managed_skills_cache(
+        &managed_dir,
+        &[
+            ManagedSkill {
+                id: "managed-one".into(),
+                name: "Managed One".into(),
+                description: "managed description".into(),
+                body: "Managed body".into(),
+            },
+            ManagedSkill {
+                id: "user-wins".into(),
+                name: "Managed Shadow".into(),
+                description: String::new(),
+                body: "Should be shadowed".into(),
+            },
+        ],
+        1234.0,
+    )
+    .unwrap();
+
+    let plugin_dir = get_plugin_skills_dir(&root);
+    let own_skill_dir = root.join("plugins/own");
+    let foreign_skill_dir = root.join("plugins/foreign");
+    fs::create_dir_all(&own_skill_dir).unwrap();
+    fs::create_dir_all(&foreign_skill_dir).unwrap();
+    let own_path = own_skill_dir.join("SKILL.md");
+    let foreign_path = foreign_skill_dir.join("SKILL.md");
+    fs::write(
+        &own_path,
+        "---\nname: \"Own Plugin\"\ndescription: \"plugin desc\"\ndisable-model-invocation: true\ncustom-key: \"preserve-me\"\n---\nPlugin body\n",
+    )
+    .unwrap();
+    fs::write(own_skill_dir.join("helper.sh"), "echo helper").unwrap();
+    fs::write(
+        &foreign_path,
+        "---\nname: \"Foreign Plugin\"\n---\nForeign body\n",
+    )
+    .unwrap();
+
+    let skills = vec![
+        serde_json::json!({
+            "id":"plugin-own-1",
+            "pluginId":"plugin-own",
+            "pluginName":"Own",
+            "name":"Own Plugin",
+            "description":"plugin desc",
+            "filePath":own_path.to_string_lossy(),
+            "pluginVersion":"1",
+            "installPath":own_skill_dir.to_string_lossy(),
+            "skillRelativePath":"SKILL.md",
+            "publisherUserId":42
+        }),
+        serde_json::json!({
+            "id":"plugin-foreign-1",
+            "pluginId":"plugin-foreign",
+            "pluginName":"Foreign",
+            "name":"Foreign Plugin",
+            "description":"",
+            "filePath":foreign_path.to_string_lossy(),
+            "pluginVersion":"1",
+            "installPath":foreign_skill_dir.to_string_lossy(),
+            "skillRelativePath":"SKILL.md",
+            "publisherUserId":7
+        }),
+        serde_json::json!({
+            "id":"managed-one",
+            "pluginId":"plugin-shadowed",
+            "pluginName":"Shadowed",
+            "name":"Plugin Shadow",
+            "description":"",
+            "filePath":foreign_path.to_string_lossy(),
+            "pluginVersion":"1",
+            "installPath":foreign_skill_dir.to_string_lossy(),
+            "skillRelativePath":"SKILL.md",
+            "publisherUserId":42
+        }),
+    ];
+    write_plugin_skills_cache(
+        &plugin_dir,
+        &PluginSkillsCacheWriteIndex {
+            current_user_id: Some(Some(42)),
+            skills,
+            auth_blocked: None,
+        },
+        || 2345.0,
+    )
+    .unwrap();
+
+    let store = FileWorkflowStore::new(&agent, &global);
+    let user = store
+        .create(&WorkflowSpec {
+            name: "User Wins".into(),
+            description: String::new(),
+            body: "User body".into(),
+            trigger: None,
+            source_ref: None,
+        })
+        .unwrap()
+        .unwrap();
+    assert_eq!(user.id, "user-wins");
+
+    let all = store.list_all();
+    assert_eq!(all.iter().filter(|row| row.id == "user-wins").count(), 1);
+    assert_eq!(
+        all.iter().find(|row| row.id == "user-wins").unwrap().source,
+        "workflow"
+    );
+    assert_eq!(all.iter().filter(|row| row.id == "managed-one").count(), 1);
+    assert_eq!(
+        all.iter().find(|row| row.id == "managed-one").unwrap().source,
+        "managed"
+    );
+
+    let own = all.iter().find(|row| row.id == "plugin-own-1").unwrap();
+    assert_eq!(own.source, "plugin");
+    assert_eq!(own.plugin_id.as_deref(), Some("plugin-own"));
+    assert!(own.published_by_current_user);
+    assert!(own.disable_model_invocation);
+    assert_eq!(own.helper_scripts, vec!["helper.sh"]);
+
+    let foreign = all.iter().find(|row| row.id == "plugin-foreign-1").unwrap();
+    assert!(!foreign.published_by_current_user);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn only_current_user_plugin_skill_can_be_edited_and_frontmatter_is_preserved() {
+    use mahayana_host_runtime::extensions::mcp::plugin_skills_cache::{
+        PluginSkillsCacheWriteIndex, get_plugin_skills_dir, write_plugin_skills_cache,
+    };
+
+    let root = root("plugin-edit");
+    let agent = root.join("agents/a");
+    let global = root.join("workflows");
+    let plugin_dir = get_plugin_skills_dir(&root);
+    let own_dir = root.join("plugins/own");
+    let foreign_dir = root.join("plugins/foreign");
+    fs::create_dir_all(&own_dir).unwrap();
+    fs::create_dir_all(&foreign_dir).unwrap();
+    let own_path = own_dir.join("SKILL.md");
+    let foreign_path = foreign_dir.join("SKILL.md");
+    fs::write(
+        &own_path,
+        "---\nname: \"Owned\"\ndisable-model-invocation: true\ncustom-key: \"keep\"\n---\nOld body\n",
+    )
+    .unwrap();
+    fs::write(&foreign_path, "---\nname: \"Foreign\"\n---\nOld foreign\n").unwrap();
+
+    write_plugin_skills_cache(
+        &plugin_dir,
+        &PluginSkillsCacheWriteIndex {
+            current_user_id: Some(Some(99)),
+            skills: vec![
+                serde_json::json!({
+                    "id":"owned-skill-1","pluginId":"owned","pluginName":"Owned",
+                    "name":"Owned","description":"","filePath":own_path.to_string_lossy(),
+                    "pluginVersion":"1","installPath":own_dir.to_string_lossy(),
+                    "skillRelativePath":"SKILL.md","publisherUserId":99
+                }),
+                serde_json::json!({
+                    "id":"foreign-skill-1","pluginId":"foreign","pluginName":"Foreign",
+                    "name":"Foreign","description":"","filePath":foreign_path.to_string_lossy(),
+                    "pluginVersion":"1","installPath":foreign_dir.to_string_lossy(),
+                    "skillRelativePath":"SKILL.md","publisherUserId":5
+                }),
+            ],
+            auth_blocked: None,
+        },
+        || 1.0,
+    )
+    .unwrap();
+
+    let store = FileWorkflowStore::new(&agent, &global);
+    let updated = store
+        .update(
+            "owned-skill-1",
+            &WorkflowSpec {
+                name: "Owned Updated".into(),
+                description: "new desc".into(),
+                body: "New body".into(),
+                trigger: None,
+                source_ref: None,
+            },
+        )
+        .unwrap()
+        .unwrap();
+    assert_eq!(updated.name, "Owned Updated");
+    assert_eq!(updated.body, "New body");
+    let raw = fs::read_to_string(&own_path).unwrap();
+    assert!(raw.contains("disable-model-invocation: true"));
+    assert!(raw.contains("custom-key: \"keep\""));
+    assert!(raw.contains("New body"));
+
+    let denied = store
+        .update(
+            "foreign-skill-1",
+            &WorkflowSpec {
+                name: "Denied".into(),
+                description: String::new(),
+                body: "Denied body".into(),
+                trigger: None,
+                source_ref: None,
+            },
+        )
+        .unwrap();
+    assert!(denied.is_none());
+    assert!(fs::read_to_string(&foreign_path).unwrap().contains("Old foreign"));
+    assert!(!store.remove("owned-skill-1").unwrap());
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn workflow_store_watches_managed_and_plugin_skill_caches() {
+    use mahayana_host_runtime::extensions::managed_setup::managed_skills_cache::{
+        ManagedSkill, get_managed_skills_dir, write_managed_skills_cache,
+    };
+    use mahayana_host_runtime::extensions::mcp::plugin_skills_cache::{
+        PluginSkillsCacheWriteIndex, get_plugin_skills_dir, write_plugin_skills_cache,
+    };
+
+    let root = root("skill-watchers");
+    let agent = root.join("agents/a");
+    let global = root.join("workflows");
+    let store = FileWorkflowStore::new(&agent, &global);
+    let (tx, rx) = mpsc::channel();
+    store.set_on_change(Some(Arc::new(move || {
+        let _ = tx.send(());
+    })));
+
+    write_managed_skills_cache(
+        get_managed_skills_dir(&root),
+        &[ManagedSkill {
+            id: "managed-watch".into(),
+            name: "Managed Watch".into(),
+            description: String::new(),
+            body: "body".into(),
+        }],
+        1.0,
+    )
+    .unwrap();
+    rx.recv_timeout(Duration::from_secs(3))
+        .expect("managed cache watcher");
+
+    while rx.try_recv().is_ok() {}
+    write_plugin_skills_cache(
+        get_plugin_skills_dir(&root),
+        &PluginSkillsCacheWriteIndex {
+            current_user_id: Some(Some(1)),
+            skills: Vec::new(),
+            auth_blocked: None,
+        },
+        || 2.0,
+    )
+    .unwrap();
+    rx.recv_timeout(Duration::from_secs(3))
+        .expect("plugin cache watcher");
+
+    store.set_on_change(None);
+    let _ = fs::remove_dir_all(root);
+}
