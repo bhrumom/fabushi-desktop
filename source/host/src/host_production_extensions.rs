@@ -5,6 +5,9 @@ use std::sync::{Arc, Mutex};
 use crate::extensions::action_audit::extension::{
     ActionAuditExtension, start_action_audit_extension,
 };
+use crate::extensions::attachments::extension::{
+    HostAttachmentsExtension, start_attachments_extension,
+};
 use crate::extensions::auth::auth_service::HostAuthServiceOptions;
 use crate::extensions::auth::extension::{
     HostAuthExtension, start_host_auth_extension_with_options,
@@ -30,6 +33,10 @@ use crate::extensions::codebase_telemetry::extension::{
 use crate::extensions::experiments::{
     HostExperimentsExtension, start_host_experiments_extension,
 };
+use crate::extensions::forever_box::{
+    ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxService,
+    start_forever_box_extension,
+};
 use crate::extensions::extension_ids_generated::HostExtensionId;
 use crate::extensions::inference::production::{
     ProductionInferenceExtension, start_production_inference_extension,
@@ -50,6 +57,9 @@ use crate::extensions::notify_bus::extension::{
 };
 use crate::extensions::source_map::extension::start_source_map_extension;
 use crate::extensions::source_map::source_map_service::SandSourceMap;
+use crate::extensions::secrets::extension::{
+    HostSecretsExtension, start_secrets_extension,
+};
 use crate::extensions::settings::extension::start_settings_extension;
 use crate::extensions::settings::settings_service::{SettingsService, SettingsSubscription};
 use crate::extensions::telemetry::extension::{
@@ -68,7 +78,10 @@ use crate::extensions::wallpaper::extension::{
     HostWallpaperExtension, start_wallpaper_extension,
 };
 use crate::host_event_bus::SandHostEventBus;
-use crate::production_binding_providers::production_cloud_agent_trace_converter;
+use crate::production_binding_providers::{
+    production_cloud_agent_trace_converter, production_secrets_log,
+};
+use crate::r#box::production::ProductionBoxEnvironment;
 
 /// Grok-shaped owner for the production extension subset that is already
 /// shipping in the Rust Host.
@@ -97,6 +110,9 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::LocalExec,
     HostExtensionId::Inference,
     HostExtensionId::Wallpaper,
+    HostExtensionId::ForeverBox,
+    HostExtensionId::Attachments,
+    HostExtensionId::Secrets,
 ];
 
 pub struct ProductionBrowserUaLog;
@@ -279,4 +295,51 @@ pub fn start_production_host_extensions(
         action_audit,
         cloud_agents,
     })
+}
+
+
+/// Second production-extension stage. These frozen Grok slots require the
+/// platform Box environment, so they are composed only after the core Host
+/// extensions exist. Keeping this stage in the same composition module avoids
+/// giving app/main.rs a second extension registry.
+pub struct ProductionHostBoxExtensions {
+    pub forever_box: Arc<ForeverBoxService>,
+    pub attachments: HostAttachmentsExtension,
+    pub secrets: Arc<HostSecretsExtension>,
+}
+
+impl ProductionHostBoxExtensions {
+    pub fn stop(&self) {
+        self.secrets.stop();
+        self.forever_box.dispose();
+    }
+}
+
+pub fn start_production_host_box_extensions(
+    core: &ProductionHostExtensions,
+    environment: ProductionBoxEnvironment,
+) -> ProductionHostBoxExtensions {
+    let lifecycle: Arc<dyn ForeverBoxLifecycle> = core.box_lifecycle.clone();
+    let forever_box = start_forever_box_extension(
+        environment,
+        lifecycle,
+        ForeverBoxExtensionOptions::from_process_env(),
+    );
+    let attachment_logs = core.telemetry.logs.clone();
+    let attachments = start_attachments_extension(
+        Arc::clone(&core.auth),
+        Arc::clone(&forever_box),
+        Some(Arc::new(move |diagnostic| {
+            let _ = attachment_logs.report_host_extension_diagnostic(&diagnostic);
+        })),
+    );
+    let secrets = Arc::new(start_secrets_extension(
+        Arc::clone(&forever_box),
+        production_secrets_log(),
+    ));
+    ProductionHostBoxExtensions {
+        forever_box,
+        attachments,
+        secrets,
+    }
 }
