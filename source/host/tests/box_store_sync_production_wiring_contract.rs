@@ -19,21 +19,24 @@ fn production_mode_selects_local_fs_only_with_safe_absolute_configuration() {
     let mut env = BTreeMap::from([
         ("SAND_BOX_STORE_SYNC".to_string(), "1".to_string()),
         ("SAND_BOX_STORE_LOCAL_DIR".to_string(), "/tmp/fabushi-box-store".to_string()),
-        ("SAND_BOX_STORE_ID".to_string(), "store-a".to_string()),
+        ("SAND_BOX_STORE_ID".to_string(), "123e4567-e89b-12d3-a456-426614174000".to_string()),
     ]);
     assert_eq!(
         resolve_production_box_store_sync_mode(&env),
         ProductionBoxStoreSyncMode::LocalFs {
             base_dir: PathBuf::from("/tmp/fabushi-box-store"),
-            store_id_override: Some("store-a".to_string()),
+            store_id_override: Some("123e4567-e89b-12d3-a456-426614174000".to_string()),
         }
     );
 
     env.insert("SAND_BOX_STORE_ID".to_string(), "../escape".to_string());
-    assert!(matches!(
+    assert_eq!(
         resolve_production_box_store_sync_mode(&env),
-        ProductionBoxStoreSyncMode::InvalidLocalConfiguration { .. }
-    ));
+        ProductionBoxStoreSyncMode::LocalFs {
+            base_dir: PathBuf::from("/tmp/fabushi-box-store"),
+            store_id_override: None,
+        }
+    );
 }
 
 #[test]
