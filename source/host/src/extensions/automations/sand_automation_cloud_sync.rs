@@ -102,7 +102,7 @@ fn bool_value(value: &Value, key: &str) -> bool {
     value.get(key).and_then(Value::as_bool).unwrap_or(false)
 }
 
-fn is_server_schedulable(trigger_value: &Value) -> bool {
+pub fn is_server_schedulable(trigger_value: &Value) -> bool {
     !trigger_members(trigger_value).iter().any(|listener| {
         listener.get("type").and_then(Value::as_str) == Some("slack")
             && listener.get("channel").and_then(Value::as_str).is_some_and(|channel| channel.starts_with('@'))
