@@ -1,3 +1,4 @@
+use std::fs;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -6,7 +7,8 @@ use std::time::{Duration, Instant};
 use mahayana_host_runtime::extensions::mcp::extension::{PollingHandle, PollingPort};
 use mahayana_host_runtime::extensions::mcp::production::{
     DASHBOARD_GET_TEAMS_PATH, DASHBOARD_PUBLISH_PLUGIN_PATH, DASHBOARD_UNPUBLISH_PLUGIN_PATH,
-    RealPluginSkillsPolling,
+    LegacyMcpAuthCleanupOutcome, RealPluginSkillsPolling,
+    cleanup_legacy_mcp_auth_credentials, is_legacy_mcp_auth_file,
 };
 
 #[test]
@@ -57,4 +59,33 @@ fn production_polling_dispose_is_idempotent() {
     let mut handle = polling.start(Arc::new(|| {}));
     handle.dispose();
     handle.dispose();
+}
+
+
+#[test]
+fn legacy_mcp_auth_cleanup_matches_frozen_file_selection() {
+    assert!(is_legacy_mcp_auth_file("mcp-auth.json"));
+    assert!(is_legacy_mcp_auth_file("mcp-auth.json.backup"));
+    assert!(!is_legacy_mcp_auth_file("mcp-auth.jsonx"));
+
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-mcp-auth-cleanup-{}",
+        uuid::Uuid::new_v4()
+    ));
+    fs::create_dir_all(&root).unwrap();
+    fs::write(root.join("mcp-auth.json"), b"legacy").unwrap();
+    fs::write(root.join("mcp-auth.json.old"), b"legacy").unwrap();
+    fs::write(root.join("keep.json"), b"keep").unwrap();
+
+    let (outcome, removed) = cleanup_legacy_mcp_auth_credentials(&root);
+    assert_eq!(outcome, LegacyMcpAuthCleanupOutcome::Deleted);
+    assert_eq!(removed, 2);
+    assert!(!root.join("mcp-auth.json").exists());
+    assert!(!root.join("mcp-auth.json.old").exists());
+    assert!(root.join("keep.json").exists());
+
+    let (outcome, removed) = cleanup_legacy_mcp_auth_credentials(&root);
+    assert_eq!(outcome, LegacyMcpAuthCleanupOutcome::NotFound);
+    assert_eq!(removed, 0);
+    let _ = fs::remove_dir_all(root);
 }
