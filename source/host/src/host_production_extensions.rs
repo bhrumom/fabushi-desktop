@@ -31,6 +31,9 @@ use crate::extensions::experiments::{
     HostExperimentsExtension, start_host_experiments_extension,
 };
 use crate::extensions::extension_ids_generated::HostExtensionId;
+use crate::extensions::inference::production::{
+    ProductionInferenceExtension, start_production_inference_extension,
+};
 use crate::extensions::managed_setup::extension::{
     ManagedSetupExtension, start_managed_setup_extension,
 };
@@ -89,6 +92,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::BrowserUa,
     HostExtensionId::LocalToolPermission,
     HostExtensionId::LocalExec,
+    HostExtensionId::Inference,
 ];
 
 pub struct ProductionBrowserUaLog;
@@ -117,6 +121,7 @@ pub struct ProductionHostExtensions {
     pub auth: Arc<HostAuthExtension>,
     pub settings: Arc<SettingsService>,
     pub experiments: Arc<HostExperimentsExtension>,
+    pub inference: ProductionInferenceExtension,
     pub content_search: Arc<ProductionContentSearchExtension>,
     pub local_tool_permission: Arc<HostLocalToolPermissionExtension>,
     pub local_exec: Arc<HostLocalExecExtension>,
@@ -160,6 +165,11 @@ pub fn start_production_host_extensions(
     );
     let settings = start_settings_extension();
     let experiments = Arc::new(start_host_experiments_extension());
+    let inference = start_production_inference_extension(
+        Arc::clone(&auth),
+        Arc::clone(&experiments),
+        Arc::clone(&settings),
+    );
     let content_search_logs = telemetry_logs.clone();
     let content_search = Arc::new(start_production_content_search_extension(
         Arc::clone(&experiments),
@@ -237,6 +247,7 @@ pub fn start_production_host_extensions(
         auth,
         settings,
         experiments,
+        inference,
         content_search,
         local_tool_permission,
         local_exec,
