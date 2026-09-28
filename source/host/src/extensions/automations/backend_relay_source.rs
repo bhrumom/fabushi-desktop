@@ -246,7 +246,7 @@ impl BackendRelayRuntime {
             return Ok(0);
         }
 
-        let result = (|| {
+        let result: Result<usize, AutomationsBackendError> = (|| {
             self.ensure_registered(now_ms)?;
             if !notify_connected && !safety_poll_enabled && self.pending_ack_ids.is_empty() {
                 return Ok(0);
