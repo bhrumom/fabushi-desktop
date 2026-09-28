@@ -19,7 +19,7 @@ use crate::extensions::box_store_sync::box_object_store::{
     BoxObjectStore, LocalFsObjectStore,
 };
 use crate::extensions::box_store_sync::box_store_manifest::{
-    AGENT_STORE_DB_BASENAMES, BoxManifestMap,
+    AGENT_STORE_DB_BASENAMES, BoxManifestMap, set_manifest_entry,
 };
 use crate::extensions::box_store_sync::box_store_manifest_format::{
     BOX_STORE_BLOBS_PREFIX, BOX_STORE_LEGACY_MANIFEST_VERSION, BOX_STORE_MANIFEST_REL_PATH,
@@ -655,6 +655,7 @@ fn sync_store_db_snapshots(
     };
     let agents_root = sand_root.join("agents");
     let mut seen = HashSet::new();
+    let mut blocked_from_prune = HashSet::new();
     let mut walk_complete = true;
     let agent_dirs = match fs::read_dir(&agents_root) {
         Ok(entries) => Some(entries),
@@ -704,19 +705,47 @@ fn sync_store_db_snapshots(
                 walk_complete = false;
                 continue;
             }
+            let agent_dir = agent_entry.path();
+            let bundle_paths = AGENT_STORE_DB_BASENAMES
+                .iter()
+                .map(|basename| {
+                    format!("{SAND_DATA_REL_PREFIX}/agents/{agent_id}/{basename}")
+                })
+                .collect::<Vec<_>>();
 
+            if agent_has_pending_db_recovery(&agent_dir) {
+                summary.failures += 1;
+                blocked_from_prune.extend(bundle_paths);
+                continue;
+            }
+            let initial_identity = match agent_db_bundle_identity(&agent_dir) {
+                Ok(identity) => identity,
+                Err(error) => {
+                    eprintln!(
+                        "[box-store-sync] agent db bundle identity failed {agent_id}: {error}"
+                    );
+                    summary.metadata_failures += 1;
+                    blocked_from_prune.extend(bundle_paths);
+                    continue;
+                }
+            };
+
+            let mut staged_manifest = manifest.clone();
+            let mut bundle_ok = true;
+            let mut present_paths = HashSet::new();
             for basename in AGENT_STORE_DB_BASENAMES {
-                let source_path = agent_entry.path().join(basename);
+                let source_path = agent_dir.join(basename);
                 let metadata = match fs::metadata(&source_path) {
                     Ok(metadata) if metadata.is_file() => metadata,
                     Ok(_) => {
                         summary.metadata_failures += 1;
+                        bundle_ok = false;
                         continue;
                     }
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
                     Err(_) => {
                         summary.metadata_failures += 1;
-                        walk_complete = false;
+                        bundle_ok = false;
                         continue;
                     }
                 };
@@ -724,6 +753,7 @@ fn sync_store_db_snapshots(
                     "{SAND_DATA_REL_PREFIX}/agents/{agent_id}/{basename}"
                 );
                 seen.insert(rel_path.clone());
+                present_paths.insert(rel_path.clone());
                 summary.files_scanned += 1;
 
                 let temp_path = PathBuf::from(format!(
@@ -738,12 +768,13 @@ fn sync_store_db_snapshots(
                         "[box-store-sync] store.db snapshot capture failed {rel_path}: {error}"
                     );
                     summary.failures += 1;
+                    bundle_ok = false;
                     continue;
                 }
 
                 let result = uploader.upload_agent_db_snapshot(
                     store_id,
-                    manifest,
+                    &mut staged_manifest,
                     &rel_path,
                     &temp_path,
                     file_mode(&metadata),
@@ -757,8 +788,36 @@ fn sync_store_db_snapshots(
                             .saturating_add(result.bytes_uploaded);
                     }
                     SnapshotUploadOutcome::Unchanged => summary.skipped_unchanged += 1,
-                    SnapshotUploadOutcome::Oversize => summary.oversize += 1,
-                    SnapshotUploadOutcome::Error => summary.failures += 1,
+                    SnapshotUploadOutcome::Oversize => {
+                        summary.oversize += 1;
+                        bundle_ok = false;
+                    }
+                    SnapshotUploadOutcome::Error => {
+                        summary.failures += 1;
+                        bundle_ok = false;
+                    }
+                }
+            }
+
+            let final_identity = agent_db_bundle_identity(&agent_dir);
+            if final_identity.as_ref().ok() != Some(&initial_identity) {
+                summary.failures += 1;
+                bundle_ok = false;
+            }
+            if !bundle_ok {
+                blocked_from_prune.extend(bundle_paths);
+                continue;
+            }
+
+            for basename in AGENT_STORE_DB_BASENAMES {
+                let rel_path =
+                    format!("{SAND_DATA_REL_PREFIX}/agents/{agent_id}/{basename}");
+                if present_paths.contains(&rel_path) {
+                    if let Some(entry) = staged_manifest.get(&rel_path).cloned() {
+                        set_manifest_entry(manifest, &rel_path, entry);
+                    }
+                } else if manifest.remove(&rel_path).is_some() {
+                    summary.removed += 1;
                 }
             }
         }
@@ -771,6 +830,7 @@ fn sync_store_db_snapshots(
             .filter(|path| path.starts_with(&prefix))
             .filter(|path| is_agent_store_db_path(path))
             .filter(|path| !seen.contains(*path))
+            .filter(|path| !blocked_from_prune.contains(*path))
             .cloned()
             .collect::<Vec<_>>();
         for path in stale {
@@ -780,6 +840,58 @@ fn sync_store_db_snapshots(
     }
 
     Ok(summary)
+}
+
+fn agent_has_pending_db_recovery(agent_dir: &Path) -> bool {
+    let Ok(entries) = fs::read_dir(agent_dir) else {
+        return true;
+    };
+    entries.filter_map(Result::ok).any(|entry| {
+        let name = entry.file_name().to_string_lossy().to_string();
+        name == "conversation-blobs.db.pending"
+            || (name.starts_with("conversation-blobs.db.corrupt-")
+                && (name.ends_with(".intent") || name.ends_with(".pending")))
+    })
+}
+
+fn agent_db_bundle_identity(agent_dir: &Path) -> Result<String, String> {
+    let mut fields = Vec::new();
+    for basename in AGENT_STORE_DB_BASENAMES {
+        let path = agent_dir.join(basename);
+        match fs::metadata(&path) {
+            Ok(metadata) => {
+                let modified = metadata
+                    .modified()
+                    .ok()
+                    .and_then(|value| value.duration_since(UNIX_EPOCH).ok())
+                    .map(|value| value.as_nanos())
+                    .unwrap_or_default();
+                let wal_path = PathBuf::from(format!("{}-wal", path.display()));
+                let (wal_size, wal_modified) = match fs::metadata(&wal_path) {
+                    Ok(wal) => (
+                        wal.len(),
+                        wal.modified()
+                            .ok()
+                            .and_then(|value| value.duration_since(UNIX_EPOCH).ok())
+                            .map(|value| value.as_nanos())
+                            .unwrap_or_default(),
+                    ),
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => (0, 0),
+                    Err(error) => return Err(error.to_string()),
+                };
+                fields.push(format!(
+                    "{basename}:present:{}:{modified}:{}:{wal_size}:{wal_modified}",
+                    metadata.len(),
+                    file_mode(&metadata),
+                ));
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                fields.push(format!("{basename}:absent"));
+            }
+            Err(error) => return Err(error.to_string()),
+        }
+    }
+    Ok(fields.join("|"))
 }
 
 fn sync_tree_category(
@@ -1199,6 +1311,50 @@ mod tests {
         .expect("prune removed store.db");
         assert_eq!(summary.removed, 1);
         assert!(!manifest.contains_key(rel_path));
+
+        fs::remove_dir_all(root).expect("cleanup temp root");
+    }
+
+    #[test]
+    fn agent_db_bundle_does_not_publish_partial_manifest_on_capture_failure() {
+        let root = temp_root("store-db-bundle-failure");
+        let sand_root = root.join("sand-data");
+        let agent_dir = sand_root.join("agents/agent-a");
+        let store_root = root.join("store");
+        fs::create_dir_all(&agent_dir).expect("create agent dir");
+
+        let source_db = agent_dir.join("store.db");
+        {
+            let db = rusqlite::Connection::open(&source_db).expect("open source store.db");
+            db.execute_batch(
+                "CREATE TABLE state (id INTEGER PRIMARY KEY, value TEXT);
+                 INSERT INTO state(value) VALUES ('durable');",
+            )
+            .expect("seed source store.db");
+        }
+        fs::write(agent_dir.join("conversation-blobs.db"), b"not-a-sqlite-db")
+            .expect("write corrupt conversation blob db");
+
+        let store = LocalFsObjectStore::new(&store_root);
+        let mut manifest = BoxManifestMap::new();
+        let summary = sync_store_db_snapshots(
+            &store,
+            "store-a",
+            &mut manifest,
+            &sand_root,
+        )
+        .expect("run failing bundle snapshot");
+
+        assert!(summary.failures >= 1);
+        assert!(
+            !manifest.contains_key("home/box/sand-data/agents/agent-a/store.db"),
+            "a successful first DB must not publish a partial Agent DB bundle"
+        );
+        assert!(
+            !manifest.contains_key(
+                "home/box/sand-data/agents/agent-a/conversation-blobs.db"
+            )
+        );
 
         fs::remove_dir_all(root).expect("cleanup temp root");
     }
