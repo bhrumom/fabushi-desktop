@@ -10480,7 +10480,7 @@
       "targetPath": "source/host/src/extensions/auto_review/auto_review_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b977baf6c2ec2996654e6c31d5398bed9d9bd022",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10497,18 +10497,18 @@
         "source/host/tests/sand_auto_review_contract.rs",
         "source/host/tests/sand_auto_review_awaiting_contract.rs",
         "source/host/tests/settings_service_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/auto_review_production_wiring_contract.rs"
+        "source/host/tests/auto_review_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host service owns per-agent controller binding, durable approval-card projection, durable awaiting-user state, duplicate settlement memory, stale-card retirement, boot stale sweep, mode projection, update sink, and telemetry sink. Shipping Host registration and live Runner controller binding are now production-wired and exact-HEAD tested. Final remains withheld until the remaining browser/computer/shell/MCP/subagent/automation preflight owners all consume this controller end-to-end."
+      "notes": "Rust Host service owns the frozen per-agent controller binding, durable approval-card projection, durable awaiting-user state, duplicate settlement memory, stale-card retirement, boot stale sweep, mode projection, renderer update sink, and telemetry sink. The shipping Host starts this service and live Runner/browser/computer/cloud-agent consumers bind the same controller. Downstream Shell/MCP/Subagent/Automation preflight completeness is tracked by their own Runner/tool mappings and is not an ownership requirement of this service module."
     },
     {
       "referencePath": "source/host/extensions/auto-review/extension.ts",
       "targetPath": "source/host/src/extensions/auto_review/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "95280ba8db524dfe8be2047edd3ecb0bbb976a52",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10524,11 +10524,11 @@
       "testEvidence": [
         "source/host/tests/auto_review_service_contract.rs",
         "source/host/tests/settings_service_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/auto_review_production_wiring_contract.rs"
+        "source/host/tests/auto_review_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host extension declares the frozen Auth/Experiments/Settings/Telemetry/Transcript dependency boundary, reads persisted auto-review enablement plus local mode override, and is started by the shipping Host. Renderer approval RPC/update delivery and live CloudAgent preflight composition now use the same controller. Final remains withheld until the remaining browser/computer/shell/MCP/subagent/automation preflights are production-wired."
+      "notes": "Rust Host extension declares the frozen Auth/Experiments/Settings/Telemetry/Transcript dependency boundary, resolves persisted enablement plus local override, starts in the shipping Host, and exposes the shared service/controller to production Runner composition. Downstream preflight ownership remains in the corresponding Runner/tool modules rather than this extension."
     },
     {
       "referencePath": "source/host/extensions/auto-review/sand-auto-review-awaiting.ts",
@@ -10562,7 +10562,7 @@
       "targetPath": "source/host/src/extensions/auto_review/sand_backend_smart_mode_classifier_exec.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "750b804a10723ffb27e5ab43f1ef3fa5373f9683",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10576,11 +10576,11 @@
       "testEvidence": [
         "source/host/tests/sand_backend_smart_mode_classifier_exec_contract.rs",
         "source/host/tests/sand_auto_review_classifier_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/auto_review_production_wiring_contract.rs"
+        "source/host/tests/auto_review_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host implements the frozen Dashboard ClassifySandAutoReview protobuf projection, Auth/machine-id-backed Cursor transport, ghost-mode header resolution, enforce-mode default, backend result decoding, and the host-local toolCallId privacy boundary. The classifier HTTP request is now tied to the live Runner cancellation token: cancellation races both response-header and response-body reads, drops the in-flight async request, and maps to AutoReviewClassifierError::Aborted rather than a fail-closed classifier rejection, matching Grok ctx.signal behavior. Shipping CloudAgent launch/reply consumes this exact production executor. Final status remains withheld until the remaining Browser/Computer/Shell/MCP/Subagent/Automation preflight owners consume the same controller/executor end-to-end."
+      "notes": "Rust Host implements the frozen Dashboard ClassifySandAutoReview protobuf projection, Auth/machine-id-backed Cursor transport, ghost-mode header resolution, enforce/shadow invocation, backend result decoding, host-local toolCallId privacy boundary, and live Runner cancellation semantics across response-header/body reads. Shipping CloudAgent/Browser/Computer production preflights consume this executor; other tool consumers are independently tracked by their own mappings."
     },
     {
       "referencePath": "source/host/extensions/automations/backend-relay-source.ts",
