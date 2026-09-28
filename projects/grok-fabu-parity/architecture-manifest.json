@@ -12555,7 +12555,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/extensions_local_exec_contract.rs"
       ],
-      "notes": "Rust Host starts a LocalExec extension owner through the shipping production registry and exposes it through the authenticated Gateway local-exec channel. The live LocalToolPermission ask gate now calls the HostLocalExecExtension with the agent id, and no-provider/stale-provider refusals are persisted through the canonical sand.local_exec.refused telemetry projection instead of bypassing Host telemetry. The frozen dependency declaration and provider lifecycle API remain preserved. Final remains withheld until the generated ExecClient codec/RemoteResourceAccessor path, full provider hello/detach telemetry, permission-authorized GatewayLocalExecManager exec stream, and Runner ExternalShell/file-transfer consumers are production-bound."
+      "notes": "Rust Host starts a LocalExec extension owner through the shipping production registry and exposes it through the authenticated Gateway local-exec channel. The live LocalToolPermission ask gate uses HostLocalExecExtension liveness, canonical refusal telemetry is preserved, and Runner file transfer now consumes the live registry. Final remains withheld until the generated ExecClient codec/RemoteResourceAccessor path, full provider hello/detach telemetry, permission-authorized GatewayLocalExecManager exec stream, and ExternalShell/ExternalRead consumers are production-bound."
     },
     {
       "referencePath": "source/host/extensions/local-exec/gateway-local-exec-sand-box.ts",
@@ -12574,7 +12574,7 @@
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host now owns the real GatewayLocalExecSandBox adaptation for provider state, active/selected computers, terminals-folder projection, max-file fencing, permission-gate authorization seams, approval ids, upload/download base64 frames, file/error settlement and user-computer resolution over the production local-exec bridge. It remains non-final until the live LocalToolPermission controller is bound, generated ExecClient stream management/RemoteResourceAccessor is ported, and Runner ExternalShell/Read/file-transfer surfaces consume this sandbox."
+      "notes": "Rust Host owns the GatewayLocalExecSandBox adaptation for provider state, active/selected computers, terminals-folder projection, max-file fencing, LocalToolPermission authorization with toolCallId scope, approval ids, upload/download base64 frames, file/error settlement and user-computer resolution over the production local-exec bridge. Runner CopyToBox/CopyFromBox now consumes this live sandbox in the shipping provider path. This row remains non-final until the generated ExecClient stream management/RemoteResourceAccessor and the ExternalShell/ExternalRead execution surfaces consume the canonical manager path."
     },
     {
       "referencePath": "source/host/extensions/local-exec/local-exec-bridge.ts",
@@ -17827,7 +17827,7 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Runner now owns a single prompt-glue composition over the existing provider prompt projection, file-transfer controller and MCP large-output spill policy. This prevents Host-side reassembly of those concerns. Final remains withheld for live getter semantics covering MCP instructions/discovery, automation/profile/video/browser/remote-box state, shell-watch host, user-computer registry and the generated Agent prompt collector factory."
+      "notes": "Rust Runner owns a single prompt-glue composition over the existing provider prompt projection, file-transfer controller and MCP large-output spill policy. The file-transfer slice is now production-bound through live LocalExec user-computer lookup and the shipping Runner toolset at exact implementation HEAD 35b8102488cb52397ab8d748a8a48be12dcae4d2. This row remains non-final for the other frozen live getter semantics: MCP instructions/discovery, automation/profile/video/browser/remote-box state, shell-watch host, and the generated Agent prompt collector factory."
     },
     {
       "referencePath": "source/host/runner/sand-action-audit.ts",
@@ -18578,20 +18578,25 @@
       "targetPath": "source/host/src/runner/tools/sand_file_transfer_tools.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "ee818530ad3a5a48aae22b5967e64c2724943151",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/tools/sand_file_transfer_tools.rs",
-        "source/host/src/box/box_transfer.rs"
+        "source/host/src/box/box_transfer.rs",
+        "source/host/src/runner/host_file_transfer_dependencies.rs",
+        "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+        "source/host/src/runner/tools/turn_toolset.rs",
+        "source/host/src/runner_production_bridge.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_file_transfer_tools_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Runner now owns the frozen file-transfer behavior on top of the existing box transfer primitive: connected-computer resolution with offline diagnostics, preparing-box fail-closed behavior, workspace/uploads path resolution, verbatim CopyToBox/CopyFromBox byte transfer, default filenames and binary-size formatting. Final remains withheld until the live UserComputer registry and generated communicate-tool registration create this controller from Runner prompt glue."
+      "notes": "Rust Runner now owns the frozen file-transfer behavior and the shipping production route. CopyToBox/CopyFromBox are registered through the per-turn RoutedToolBridge, the Agent box and user-computer box are distinct TransferBox implementations, and each invocation rebuilds the controller from the live Host LocalExec computer registry. The current toolCallId and agent id cross the Host/Runner boundary into LocalToolPermission before LocalExec upload/download, while the Agent side stays on the production ForeverBox owner. Exact implementation HEAD 35b8102488cb52397ab8d748a8a48be12dcae4d2 passed the Grok-aligned shipping Mahayana Host compile, independent Coordinator contract, and full source/host Runner test suite in Rust desktop runtime run 36366997942."
     },
     {
       "referencePath": "source/host/runner/tools/sand-mcp-management-tools.ts",
