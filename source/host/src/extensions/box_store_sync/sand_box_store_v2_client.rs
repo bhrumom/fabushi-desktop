@@ -156,11 +156,12 @@ impl SandBoxStoreServiceClient for SandBoxStoreV2Client {
             .iter()
             .map(completion_to_proto)
             .collect::<Result<Vec<_>, _>>()?;
+        let completion_count = completions.len();
         let response: CompleteSandBoxStoreMultipartWritesResponseProto = self.rpc(
             COMPLETE_MULTIPART_WRITES_PATH,
             CompleteSandBoxStoreMultipartWritesRequestProto { completions },
         )?;
-        indexed_completion_outcomes(response.results, completions.len())
+        indexed_completion_outcomes(response.results, completion_count)
     }
 
     fn abort_multipart_writes(
