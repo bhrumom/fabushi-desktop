@@ -2,6 +2,10 @@ use std::collections::BTreeSet;
 
 use mahayana_host_runtime::extensions::extension_ids_generated::HostExtensionId;
 use mahayana_host_runtime::extensions::registry::HOST_EXTENSION_ORDER;
+use mahayana_host_runtime::extensions::inference::extension::{
+    INFERENCE_DEPENDENCIES, inference_extension_id,
+};
+use mahayana_host_runtime::extensions::inference::production::ProductionInferenceExtension;
 use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, ProductionBrowserUaLog,
     ProductionHostExtensions,
@@ -34,6 +38,16 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert!(shipping.contains(&HostExtensionId::LocalExec));
     assert!(shipping.contains(&HostExtensionId::CloudAgents));
     assert!(shipping.contains(&HostExtensionId::WebauthnProxy));
+    assert!(shipping.contains(&HostExtensionId::Inference));
+    assert_eq!(inference_extension_id(), HostExtensionId::Inference);
+    assert_eq!(
+        INFERENCE_DEPENDENCIES,
+        &[
+            HostExtensionId::Auth,
+            HostExtensionId::Experiments,
+            HostExtensionId::Settings,
+        ]
+    );
 }
 
 #[test]
@@ -41,4 +55,5 @@ fn shipping_production_extension_owner_remains_send_sync() {
     fn assert_send_sync<T: Send + Sync>() {}
     assert_send_sync::<ProductionHostExtensions>();
     assert_send_sync::<ProductionBrowserUaLog>();
+    assert_send_sync::<ProductionInferenceExtension>();
 }
