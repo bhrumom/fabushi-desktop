@@ -10,6 +10,7 @@ pub mod connect_unary;
 pub mod production;
 pub mod extension;
 pub mod listener_integrations;
+pub mod automations_proto;
 pub mod sand_automation_cloud_sync;
 
 pub mod production_lifecycle;
