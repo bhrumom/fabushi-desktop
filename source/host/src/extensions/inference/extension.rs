@@ -1,5 +1,17 @@
 use std::sync::{Arc, Mutex};
 
+use crate::extensions::extension_ids_generated::HostExtensionId;
+
+pub const INFERENCE_DEPENDENCIES: &[HostExtensionId] = &[
+    HostExtensionId::Auth,
+    HostExtensionId::Experiments,
+    HostExtensionId::Settings,
+];
+
+pub fn inference_extension_id() -> HostExtensionId {
+    HostExtensionId::Inference
+}
+
 pub trait AgentInferenceOwner: Send + Sync {}
 
 pub type ModelExperimentListener = Arc<dyn Fn() + Send + Sync>;
