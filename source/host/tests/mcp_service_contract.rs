@@ -82,6 +82,42 @@ impl McpManagerBackend for Backend {
     ) -> Result<Vec<McpServerSummary>, String> {
         Ok(vec![server("connected")])
     }
+    fn add_server(&self, _name: &str, _config_json: &str) -> Result<Vec<McpServerSummary>, String> {
+        Ok(vec![server("connected")])
+    }
+    fn remove_server(&self, _server_id: &str) -> Result<(bool, Option<String>, Vec<McpServerSummary>), String> {
+        Ok((true, None, Vec::new()))
+    }
+    fn restart_servers(&self) -> Result<Vec<McpServerSummary>, String> {
+        Ok(vec![server("connected")])
+    }
+    fn set_server_custom_instructions(&self, _server_id: &str, instructions: &str) -> Result<Vec<McpServerSummary>, String> {
+        let mut updated = server("connected");
+        updated.custom_instructions = instructions.to_string();
+        Ok(vec![updated])
+    }
+    fn authenticate_server(
+        &self,
+        _server_id: &str,
+        _account_key: &str,
+        _requesting_agent_id: Option<&str>,
+        force_reauth: bool,
+    ) -> Result<Value, String> {
+        Ok(json!({
+            "status": if force_reauth { "started" } else { "already-authenticated" },
+            "serverName": "Calendar",
+            "authorizationUrl": if force_reauth { Some("https://auth") } else { None::<&str> },
+        }))
+    }
+    fn logout_account(&self, _server_id: &str, _account_key: &str) -> Result<Vec<McpServerSummary>, String> {
+        Ok(vec![server("needsAuth")])
+    }
+    fn remove_account(&self, _server_id: &str, _account_key: &str) -> Result<Vec<McpServerSummary>, String> {
+        Ok(Vec::new())
+    }
+    fn rename_account(&self, _server_id: &str, _account_key: &str, _new_account_key: &str) -> Result<Vec<McpServerSummary>, String> {
+        Ok(vec![server("connected")])
+    }
     fn list_box_servers(
         &self,
         ids: &[String],
@@ -219,4 +255,28 @@ fn service_dispose_is_idempotent_and_blocks_late_listener_delivery() {
         backend_state.lock().unwrap().notes,
         vec![("s".into(), "a".into())]
     );
+}
+
+
+#[test]
+fn full_lifecycle_surface_matches_frozen_grok_management_semantics() {
+    let backend_state = Arc::new(Mutex::new(BackendState::default()));
+    let service = McpHostService::new(Arc::new(Backend(backend_state)), None);
+
+    assert_eq!(service.add_server("custom", r#"{"url":"https://example.test/mcp"}"#).unwrap().len(), 1);
+    let removed = service.remove_server("s1").unwrap();
+    assert_eq!(removed["removed"], true);
+    assert_eq!(removed["servers"].as_array().unwrap().len(), 0);
+    assert_eq!(service.restart_servers().unwrap().len(), 1);
+    assert_eq!(
+        service.set_server_custom_instructions("s1", "reply in threads").unwrap()[0]["customInstructions"],
+        "reply in threads"
+    );
+    assert_eq!(
+        service.authenticate_server("s1", "default", Some("agent-a"), true).unwrap()["kind"],
+        "started"
+    );
+    assert_eq!(service.logout_account("s1", "default").unwrap()[0]["status"], "needsAuth");
+    assert!(service.remove_account("s1", "default").unwrap().is_empty());
+    assert_eq!(service.rename_account("s1", "default", "work").unwrap().len(), 1);
 }
