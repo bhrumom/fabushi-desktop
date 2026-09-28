@@ -11,10 +11,12 @@ use reqwest::header::{CONTENT_LENGTH, ETAG, HeaderName, HeaderValue, RANGE};
 use reqwest::redirect::Policy;
 use sha2::{Digest, Sha256};
 use url::Url;
+use serde_json::{Map, Value};
 
 use crate::cursor_backend::{
     CursorBackendError, resolve_sand_ghost_mode_header, send_cursor_unary_with_headers,
 };
+use super::box_store_diagnostics::report_box_store_diagnostic;
 
 pub const PRESIGN_READ_BATCH_MAX: usize = 500;
 pub const AGENT_STORE_RPC_TIMEOUT_MS: u64 = 60_000;
@@ -117,6 +119,24 @@ pub enum AgentStoreWriteOutcome {
         conflict_rel_path: Option<String>,
         base_etag: Option<String>,
     },
+}
+
+fn conflict_outcome(
+    conflict_rel_path: Option<String>,
+    base_etag: Option<String>,
+) -> AgentStoreWriteOutcome {
+    let diagnostic = Map::from_iter([
+        ("extension".to_string(), Value::String("box_store".to_string())),
+        (
+            "kind".to_string(),
+            Value::String("write_conflict_preserved".to_string()),
+        ),
+    ]);
+    report_box_store_diagnostic(&diagnostic);
+    AgentStoreWriteOutcome::Conflict {
+        conflict_rel_path,
+        base_etag,
+    }
 }
 
 #[derive(Clone, PartialEq, Message)]
@@ -483,13 +503,13 @@ impl AgentStoreClient {
                             conflict_response.status().as_u16()
                         ));
                     }
-                    return Ok(AgentStoreWriteOutcome::Conflict {
-                        conflict_rel_path: Some(refreshed_conflict.rel_path),
-                        base_etag: match precondition {
+                    return Ok(conflict_outcome(
+                        Some(refreshed_conflict.rel_path),
+                        match precondition {
                             AgentStoreWritePrecondition::BaseEtag(value) => Some(value),
                             AgentStoreWritePrecondition::ExpectAbsent => None,
                         },
-                    });
+                    ));
                 }
                 if !conflict_response.status().is_success() {
                     return Err(format!(
@@ -497,21 +517,21 @@ impl AgentStoreClient {
                         conflict_response.status().as_u16()
                     ));
                 }
-                return Ok(AgentStoreWriteOutcome::Conflict {
-                    conflict_rel_path: Some(conflict.rel_path),
-                    base_etag: match precondition {
+                return Ok(conflict_outcome(
+                    Some(conflict.rel_path),
+                    match precondition {
                         AgentStoreWritePrecondition::BaseEtag(value) => Some(value),
                         AgentStoreWritePrecondition::ExpectAbsent => None,
                     },
-                });
+                ));
             }
-            return Ok(AgentStoreWriteOutcome::Conflict {
-                conflict_rel_path: None,
-                base_etag: match precondition {
+            return Ok(conflict_outcome(
+                None,
+                match precondition {
                     AgentStoreWritePrecondition::BaseEtag(value) => Some(value),
                     AgentStoreWritePrecondition::ExpectAbsent => None,
                 },
-            });
+            ));
         }
         if !response.status().is_success() {
             return Err(format!(
@@ -1193,6 +1213,37 @@ fn now_ms() -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn conflict_outcome_reports_frozen_preservation_diagnostic() {
+        use std::sync::{Arc, Mutex};
+
+        let events = Arc::new(Mutex::new(Vec::<Map<String, Value>>::new()));
+        let captured = Arc::clone(&events);
+        super::super::box_store_diagnostics::pin_box_store_diagnostics_reporter(Some(Arc::new(
+            move |event| captured.lock().expect("events").push(event.clone()),
+        )));
+        let outcome = conflict_outcome(Some("conflicts/object".into()), Some("etag-a".into()));
+        super::super::box_store_diagnostics::pin_box_store_diagnostics_reporter(None);
+
+        assert!(matches!(
+            outcome,
+            AgentStoreWriteOutcome::Conflict {
+                conflict_rel_path: Some(_),
+                base_etag: Some(_)
+            }
+        ));
+        let events = events.lock().expect("events");
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0].get("extension").and_then(Value::as_str),
+            Some("box_store")
+        );
+        assert_eq!(
+            events[0].get("kind").and_then(Value::as_str),
+            Some("write_conflict_preserved")
+        );
+    }
 
     #[test]
     fn mint_target_matches_recovered_local_and_cloud_source_kinds() {
