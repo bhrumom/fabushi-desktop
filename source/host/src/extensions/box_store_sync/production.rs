@@ -430,17 +430,8 @@ pub fn resolve_production_box_store_sync_mode(env: &BTreeMap<String, String>) ->
                 .get(SAND_BOX_STORE_ID_ENV)
                 .map(String::as_str)
                 .map(str::trim)
-                .filter(|value| !value.is_empty())
+                .filter(|value| is_frozen_agent_store_source_id(value))
                 .map(str::to_string);
-            if let Some(store_id) = store_id_override.as_deref() {
-                let normalized =
-                    crate::extensions::box_store_sync::agent_store_sand_files::normalize_rel_path(store_id);
-                if normalized.as_deref() != Ok(store_id) {
-                    return ProductionBoxStoreSyncMode::InvalidLocalConfiguration {
-                        reason: "SAND_BOX_STORE_ID must be a canonical safe relative source id".into(),
-                    };
-                }
-            }
             ProductionBoxStoreSyncMode::LocalFs {
                 base_dir,
                 store_id_override,
@@ -448,6 +439,47 @@ pub fn resolve_production_box_store_sync_mode(env: &BTreeMap<String, String>) ->
         }
         backend => ProductionBoxStoreSyncMode::UnsupportedRemote { backend },
     }
+}
+
+fn is_frozen_agent_store_source_id(value: &str) -> bool {
+    fn valid_uuid(value: &str) -> bool {
+        let bytes = value.as_bytes();
+        if bytes.len() != 36
+            || bytes[8] != b'-'
+            || bytes[13] != b'-'
+            || bytes[18] != b'-'
+            || bytes[23] != b'-'
+        {
+            return false;
+        }
+        if !matches!(bytes[14], b'1'..=b'5') {
+            return false;
+        }
+        if !matches!(bytes[19].to_ascii_lowercase(), b'8' | b'9' | b'a' | b'b') {
+            return false;
+        }
+        bytes.iter().enumerate().all(|(index, byte)| {
+            matches!(index, 8 | 13 | 18 | 23) || byte.is_ascii_hexdigit()
+        })
+    }
+
+    if valid_uuid(value) {
+        return true;
+    }
+    let Some(rest) = value.strip_prefix("bc-").or_else(|| value.strip_prefix("BC-")) else {
+        return false;
+    };
+    if rest.len() == 36 {
+        return valid_uuid(rest);
+    }
+    let Some((prefix, uuid)) = rest.rsplit_once('-') else {
+        return false;
+    };
+    !prefix.is_empty()
+        && prefix
+            .bytes()
+            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
+        && valid_uuid(uuid)
 }
 
 fn mode_name(mode: &ProductionBoxStoreSyncMode) -> &'static str {
