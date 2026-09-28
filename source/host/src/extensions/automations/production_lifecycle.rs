@@ -152,7 +152,7 @@ impl ProductionAutomationsLifecycle {
         let fire_poll_error: FirePollErrorSink = Arc::new(move |error| {
             let sand_error = match error {
                 AutomationsBackendError::Status { status, .. } => {
-                    SandErrorValue::new("SAND-E0103").with_number("httpStatus", f64::from(status))
+                    SandErrorValue::new("SAND-E0103").with_number("httpStatus", f64::from(*status))
                 }
                 _ => SandErrorValue::new("SAND-E0108"),
             };
