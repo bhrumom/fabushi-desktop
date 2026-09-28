@@ -82,6 +82,13 @@ use mahayana_host_runtime::extensions::session::gateway::{
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
+use mahayana_host_runtime::extensions::transcript::completion_revivals::{
+    CompletionRevivalRuntimePort, CompletionRevivals, RevivalExecution, RevivalReport,
+    SubagentCompletion,
+};
+use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
+    DurablePendingWakeMarker, PendingWakeKind, coerce_quiet_origin,
+};
 use mahayana_host_runtime::extensions::transcript::group_chat_glue::GroupChatGlue;
 use mahayana_host_runtime::extensions::transcript::group_chat_orchestrator::GroupMemberTurnRequest;
 use mahayana_host_runtime::extensions::cross_user_sharing::production::{
@@ -153,6 +160,9 @@ use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
     queue_accepted_telemetry, queue_dequeued_telemetry, queue_watchdog_telemetry,
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
+use mahayana_host_runtime::extensions::telemetry::revival_telemetry_mappers::{
+    SubagentRevivalReport, subagent_revival_telemetry,
+};
 use mahayana_host_runtime::extensions::experiments::HostExperimentsExtension;
 use mahayana_host_runtime::extensions::content_search::extension::ProductionContentSearchExtension;
 use mahayana_host_runtime::extensions::trays::extension::HostTraysExtension;
@@ -253,6 +263,9 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 };
 use mahayana_host_runtime::runner::box_tool_access::RunnerBoxResourcePort;
 use mahayana_host_runtime::cloud_agents::cloud_agent_tool::{CloudAgentReviewHook, CloudAgentToolDependencies};
+use mahayana_host_runtime::runner::background_work::{
+    CloudAgentWatchOptions, RunnerCloudAgentWatches,
+};
 use mahayana_host_runtime::runner::coordinator_tool_relay::{
     CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
     RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
@@ -848,6 +861,7 @@ struct UnifiedGatewayApi {
     telemetry_logs: HostStructuredLogTelemetry,
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
+    cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
     secrets: Arc<HostSecretsExtension>,
     local_tool_permission: Arc<HostLocalToolPermissionExtension>,
     auto_review: Arc<HostAutoReviewExtension>,
@@ -884,8 +898,123 @@ struct LocalRoutedRunnerDeps {
     telemetry_logs: HostStructuredLogTelemetry,
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
+    cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
     host_runner_composition: Arc<HostRunnerComposition>,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
+}
+
+#[derive(Clone)]
+struct ProductionCompletionRevivalRuntime {
+    gateway: Arc<Mutex<Weak<UnifiedGatewayApi>>>,
+}
+
+impl ProductionCompletionRevivalRuntime {
+    fn gateway(&self) -> Option<Arc<UnifiedGatewayApi>> {
+        self.gateway
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .upgrade()
+    }
+}
+
+impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
+    fn can_execute(&self) -> bool {
+        let Some(gateway) = self.gateway() else {
+            return false;
+        };
+        configured_routed_provider(&gateway.data_dir.join("settings.json"))
+            .is_some_and(|provider| provider != RoutedProvider::Cursor)
+    }
+
+    fn is_agent_deleted(&self, agent_id: &str) -> bool {
+        self.gateway().is_none_or(|gateway| {
+            gateway
+                .transcript_runtime
+                .session_runtime()
+                .is_agent_gone(&gateway.session_workers, agent_id)
+        })
+    }
+
+    fn is_agent_gone(&self, agent_id: &str) -> bool {
+        self.is_agent_deleted(agent_id)
+    }
+
+    fn clear_pending_wake(&self, agent_id: &str, kind: PendingWakeKind, work_id: &str) {
+        let Some(gateway) = self.gateway() else {
+            return;
+        };
+        if let Some(store) = gateway.transcript_runtime.pending_wake_store() {
+            let _ = store.clear_one(agent_id, kind, work_id);
+        }
+        gateway.emit_async_tasks_for_agent(agent_id);
+    }
+
+    fn run_background_revival(
+        &self,
+        agent_id: &str,
+        source: &str,
+        prompt: &str,
+        is_silence_allowed: bool,
+        auto_review_epoch: &str,
+    ) -> Result<RevivalExecution, String> {
+        let gateway = self
+            .gateway()
+            .ok_or_else(|| "Host gateway is not ready for background revival".to_string())?;
+        let provider = configured_routed_provider(&gateway.data_dir.join("settings.json"))
+            .filter(|provider| *provider != RoutedProvider::Cursor)
+            .ok_or_else(|| "no Rust routed provider configured for background revival".to_string())?;
+        run_local_background_revival_turn(
+            gateway.local_routed_runner_deps(),
+            provider,
+            agent_id,
+            source,
+            prompt,
+            is_silence_allowed,
+            auto_review_epoch,
+        )
+    }
+
+    fn mark_resume_pending_for_quiesced_revival(&self, agent_id: &str) {
+        let Some(gateway) = self.gateway() else {
+            return;
+        };
+        if let Some(store) = gateway.transcript_runtime.upgrade_resume_store() {
+            let _ = store.mark_pending(UpgradeResumeMarker {
+                agent_id: agent_id.to_string(),
+                marked_at_ms: started_at_ms() as f64,
+                source: Some("background-revival".into()),
+                automation_id: None,
+                automation_run_id: None,
+            });
+        }
+    }
+
+    fn report_revival(&self, report: RevivalReport) {
+        let Some(gateway) = self.gateway() else {
+            return;
+        };
+        let projection = subagent_revival_telemetry(&SubagentRevivalReport {
+            parent_agent_id: report.agent_id,
+            outcome: report.outcome,
+            completion_count: i64::try_from(report.completion_count).unwrap_or(i64::MAX),
+            subagent_type: report.subagent_type,
+            subagent_agent_id: report.subagent_agent_id,
+            reason: report.reason,
+            sent_message_count: report
+                .sent_message_count
+                .map(|count| i64::try_from(count).unwrap_or(i64::MAX)),
+            is_quiet_origin: Some(report.is_quiet_origin),
+        });
+        if let Err(error) = gateway.telemetry_logs.report_projection(&projection) {
+            eprintln!("mahayana-host background_revival_telemetry_failed error={error}");
+        }
+    }
+
+    fn report_revival_error(&self, agent_id: &str, title: &str, error: &str) {
+        eprintln!(
+            "mahayana-host background_revival_failed agent={agent_id} title={title} error={error}"
+        );
+    }
 }
 
 impl UnifiedGatewayApi {
@@ -914,9 +1043,21 @@ impl UnifiedGatewayApi {
             telemetry_logs: self.telemetry_logs.clone(),
             production_action_auditor: self.production_action_auditor.clone(),
             cloud_agents: Arc::clone(&self.cloud_agents),
+            cloud_agent_watches: Arc::clone(&self.cloud_agent_watches),
             host_runner_composition: Arc::clone(&self.host_runner_composition),
             automations_lifecycle: Arc::clone(&self.automations_lifecycle),
         }
+    }
+
+    fn emit_async_tasks_for_agent(&self, agent_id: &str) {
+        let tasks = self.transcript_runtime.get_async_tasks(agent_id, &[]);
+        self.events.publish(serde_json::json!({
+            "channel": "async-tasks",
+            "payload": {
+                "parentAgentId": agent_id,
+                "tasks": tasks,
+            }
+        }));
     }
 
     fn refresh_production_automations(&self) {
@@ -1458,6 +1599,7 @@ fn run_local_group_member_turn(
         deps.telemetry_logs,
         deps.production_action_auditor,
         deps.cloud_agents,
+        deps.cloud_agent_watches,
         deps.host_runner_composition,
         Arc::clone(&deps.automations_lifecycle),
         None,
@@ -1616,6 +1758,7 @@ fn start_local_upgrade_resume_turn(
         deps.telemetry_logs,
         deps.production_action_auditor,
         deps.cloud_agents,
+        deps.cloud_agent_watches,
         deps.host_runner_composition,
         Arc::clone(&deps.automations_lifecycle),
         None,
@@ -1784,6 +1927,7 @@ fn run_local_automation_turn(
         deps.telemetry_logs,
         deps.production_action_auditor,
         deps.cloud_agents,
+        deps.cloud_agent_watches,
         deps.host_runner_composition,
         Arc::clone(&deps.automations_lifecycle),
         None,
@@ -1814,6 +1958,142 @@ fn run_local_automation_turn(
             Err(mpsc::RecvTimeoutError::Timeout) => continue,
             Err(mpsc::RecvTimeoutError::Disconnected) => {
                 return Err("Host event bus disconnected during automation turn".into());
+            }
+        }
+    }
+}
+
+fn run_local_background_revival_turn(
+    deps: LocalRoutedRunnerDeps,
+    provider: RoutedProvider,
+    agent_id: &str,
+    source: &str,
+    prompt: &str,
+    is_silence_allowed: bool,
+    auto_review_epoch: &str,
+) -> Result<RevivalExecution, String> {
+    if provider == RoutedProvider::Cursor {
+        return Err("Cursor background revival remains on the compatibility path".into());
+    }
+    let stream_id = format!("background-revival-{}", uuid::Uuid::new_v4());
+    let client_nonce = format!(
+        "background-revival:{}:{}",
+        agent_id,
+        uuid::Uuid::new_v4()
+    );
+    let before = deps
+        .session_workers
+        .read_agent_transcript_entries(agent_id)
+        .unwrap_or_default();
+    let admission_args = serde_json::json!({
+        "agentId": agent_id,
+        "prompt": prompt,
+        "clientNonce": client_nonce,
+        "streamId": stream_id,
+        "appendUserMessage": false,
+        "hidden": true,
+        "requestSource": source,
+        "skipAckObligation": true,
+    });
+    deps.transcript_runtime
+        .accept_routed_send(&admission_args, |_| {
+            Ok::<_, ProductionSendError>(PersistedSendContext::default())
+        })
+        .map_err(|error| error.to_string())?;
+
+    let receiver = deps.events.subscribe();
+    let runner_args = serde_json::json!({
+        "provider": provider.as_str(),
+        "agentId": agent_id,
+        "streamId": stream_id,
+        "requestSource": source,
+        "hidden": true,
+        "isSilenceAllowed": is_silence_allowed,
+        "autoReviewEpoch": auto_review_epoch,
+        "messages": [{
+            "role": "user",
+            "content": prompt,
+        }],
+    });
+    start_routed_provider_task(
+        deps.routed_tool_relay,
+        deps.mcp_service,
+        deps.events.clone(),
+        deps.host_tx,
+        deps.data_dir,
+        deps.request_context,
+        deps.auth,
+        deps.auto_review,
+        deps.experiments,
+        deps.settings,
+        deps.inference,
+        Arc::clone(&deps.session_workers),
+        Arc::clone(&deps.runner_registry),
+        deps.ack_obligations,
+        deps.transcript_runtime,
+        deps.forever_box,
+        deps.local_exec,
+        deps.local_tool_permission,
+        deps.session_handoff,
+        deps.trays,
+        deps.telemetry_logs,
+        deps.production_action_auditor,
+        deps.cloud_agents,
+        deps.cloud_agent_watches,
+        deps.host_runner_composition,
+        Arc::clone(&deps.automations_lifecycle),
+        None,
+        runner_args,
+    )
+    .map_err(|error| error.to_string())?;
+
+    let deadline = Instant::now() + Duration::from_secs(30 * 60);
+    loop {
+        let now = Instant::now();
+        if now >= deadline {
+            let _ = deps
+                .runner_registry
+                .cancel_stream(&stream_id, "background revival timed out");
+            return Ok(RevivalExecution {
+                aborted: true,
+                quiesced_for_upgrade: false,
+                sent_message_count: 0,
+            });
+        }
+        let wait = deadline
+            .saturating_duration_since(now)
+            .min(Duration::from_millis(250));
+        match receiver.recv_timeout(wait) {
+            Ok(event) => {
+                let Some(result) = automation_terminal_from_event(&event, &stream_id) else {
+                    continue;
+                };
+                match result {
+                    Ok(AutomationExecutionResult::Completed) => {
+                        let after = deps
+                            .session_workers
+                            .read_agent_transcript_entries(agent_id)
+                            .unwrap_or_default();
+                        return Ok(RevivalExecution {
+                            aborted: false,
+                            quiesced_for_upgrade: false,
+                            sent_message_count: collect_new_member_send_messages(&before, &after)
+                                .len(),
+                        });
+                    }
+                    Ok(AutomationExecutionResult::Interrupted { .. }) => {
+                        return Ok(RevivalExecution {
+                            aborted: true,
+                            quiesced_for_upgrade: false,
+                            sent_message_count: 0,
+                        });
+                    }
+                    Err(error) => return Err(error),
+                }
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) => continue,
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                return Err("Host event bus disconnected during background revival".into());
             }
         }
     }
@@ -2290,6 +2570,7 @@ fn start_routed_provider_task(
     telemetry_logs: HostStructuredLogTelemetry,
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
+    cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
     host_runner_composition: Arc<HostRunnerComposition>,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
     gateway_context: Option<GatewayCommandContext>,
@@ -2592,6 +2873,20 @@ fn start_routed_provider_task(
             format!("agent database path has no parent for {agent_id}")
         ))?;
     let worker_cloud_agents = Arc::clone(&cloud_agents);
+    let worker_cloud_agent_watches = Arc::clone(&cloud_agent_watches);
+    let cloud_agent_quiet_origin = args
+        .get("automationWake")
+        .and_then(serde_json::Value::as_object)
+        .and_then(|wake| {
+            let id = wake.get("id").and_then(serde_json::Value::as_str)?;
+            let name = wake.get("name").and_then(serde_json::Value::as_str)?;
+            Some(serde_json::json!({
+                "automation": {
+                    "id": id,
+                    "name": name,
+                }
+            }))
+        });
     let worker_auth = Arc::clone(&auth);
     let worker_auto_review = Arc::clone(&auto_review);
     let worker_auto_review_controller = Arc::clone(&auto_review_controller);
@@ -2940,13 +3235,26 @@ fn start_routed_provider_task(
                 worker_cancellation.clone(),
                 auto_review_context.clone(),
             );
+            let cloud_watch_parent_agent_id = agent_id.clone();
+            let cloud_watch_owner = Arc::clone(&worker_cloud_agent_watches);
+            let cloud_watch_quiet_origin = cloud_agent_quiet_origin.clone();
+            let cloud_agent_watch = Arc::new(move |bc_id: &str, after_followup: bool| {
+                let _ = cloud_watch_owner.watch_cloud_agent(
+                    &cloud_watch_parent_agent_id,
+                    bc_id,
+                    CloudAgentWatchOptions::new(
+                        cloud_watch_quiet_origin.clone(),
+                        after_followup,
+                    ),
+                );
+            });
             let cloud_agent_tool = CloudAgentToolDependencies {
                 manager: Arc::clone(&worker_cloud_agents),
                 agent_dir: cloud_agent_dir,
                 box_resources: Arc::clone(&box_resources),
                 cancellation: worker_cancellation.clone(),
                 review: Some(cloud_agent_review),
-                watch: None,
+                watch: Some(cloud_agent_watch),
             };
             let delta_events = worker_events.clone();
             let delta_stream_id = stream_id.clone();
@@ -4246,6 +4554,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.telemetry_logs.clone(),
                 self.production_action_auditor.clone(),
                 Arc::clone(&self.cloud_agents),
+                Arc::clone(&self.cloud_agent_watches),
                 Arc::clone(&self.host_runner_composition),
                 Arc::clone(&self.automations_lifecycle),
                 None,
@@ -4688,6 +4997,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.telemetry_logs.clone(),
                 self.production_action_auditor.clone(),
                 Arc::clone(&self.cloud_agents),
+                Arc::clone(&self.cloud_agent_watches),
                 Arc::clone(&self.host_runner_composition),
                 Arc::clone(&self.automations_lifecycle),
                 Some(context.clone()),
@@ -5425,6 +5735,85 @@ fn main() {
     }
     let automations_lifecycle_slot =
         Arc::new(Mutex::new(Weak::<ProductionAutomationsLifecycle>::new()));
+    let cloud_agent_completion_gateway_slot =
+        Arc::new(Mutex::new(Weak::<UnifiedGatewayApi>::new()));
+    let completion_revivals = Arc::new(CompletionRevivals::new(Arc::new(
+        ProductionCompletionRevivalRuntime {
+            gateway: Arc::clone(&cloud_agent_completion_gateway_slot),
+        },
+    )));
+    let cloud_watch_manager = production_extensions.cloud_agents.service();
+    let cloud_watch_pending_store = transcript_runtime.pending_wake_store().cloned();
+    let cloud_watch_pending_events = gateway_events.clone();
+    let cloud_watch_settled = Arc::clone(&completion_revivals);
+    let cloud_watch_async_runtime = Arc::clone(&transcript_runtime);
+    let cloud_watch_async_events = gateway_events.clone();
+    let cloud_agent_watches = Arc::new(RunnerCloudAgentWatches::new(
+        Arc::new(move |bc_id, wait_for_restart| {
+            let result = cloud_watch_manager.await_completion(bc_id, wait_for_restart);
+            mahayana_host_runtime::runner::background_work::CloudAgentWatchOutcome {
+                status: result.status.to_string(),
+                text: result.text,
+            }
+        }),
+        cloud_watch_pending_store.map(|store| {
+            Arc::new(move |pending: &mahayana_host_runtime::runner::background_work::CloudAgentPendingWatch| {
+                let quiet_origin = pending
+                    .quiet_origin
+                    .as_ref()
+                    .and_then(coerce_quiet_origin);
+                let written = store.mark_pending(DurablePendingWakeMarker {
+                    agent_id: pending.parent_agent_id.clone(),
+                    kind: PendingWakeKind::CloudAgent,
+                    work_id: pending.work_id.clone(),
+                    marked_at_ms: started_at_ms() as f64,
+                    quiet_origin,
+                    title: Some(pending.title.clone()),
+                    subagent_type: Some("cursor-agent".into()),
+                    interrupted_by_recreate: false,
+                });
+                if !written {
+                    eprintln!(
+                        "mahayana-host pending_cloud_agent_wake_persist_failed agent={} work={}",
+                        pending.parent_agent_id, pending.work_id
+                    );
+                }
+                cloud_watch_pending_events.publish(serde_json::json!({
+                    "channel": "pending-wake",
+                    "payload": {
+                        "agentId": pending.parent_agent_id,
+                        "kind": "cloud-agent",
+                        "workId": pending.work_id,
+                        "outcome": if written { "persisted" } else { "persist_failed" },
+                    }
+                }));
+            }) as mahayana_host_runtime::runner::background_work::CloudAgentPendingCallback
+        }),
+        Some(Arc::new(move |completion| {
+            cloud_watch_settled.handle_background_subagent_completion(SubagentCompletion {
+                parent_agent_id: completion.parent_agent_id,
+                subagent_agent_id: completion.work_id,
+                title: completion.title,
+                subagent_type: "cursor-agent".into(),
+                status: completion.status,
+                result: completion.result,
+                quiet_origin: completion
+                    .quiet_origin
+                    .as_ref()
+                    .and_then(coerce_quiet_origin),
+            });
+        })),
+        Some(Arc::new(move |agent_id| {
+            let tasks = cloud_watch_async_runtime.get_async_tasks(agent_id, &[]);
+            cloud_watch_async_events.publish(serde_json::json!({
+                "channel": "async-tasks",
+                "payload": {
+                    "parentAgentId": agent_id,
+                    "tasks": tasks,
+                }
+            }));
+        })),
+    ));
     let cross_user_runner_deps = LocalRoutedRunnerDeps {
         routed_tool_relay: Arc::clone(&routed_tool_relay),
         mcp_service: Arc::clone(&mcp_service),
@@ -5449,6 +5838,7 @@ fn main() {
         telemetry_logs: host_telemetry.logs.clone(),
         production_action_auditor: production_extensions.action_audit.clone(),
         cloud_agents: production_extensions.cloud_agents.service(),
+        cloud_agent_watches: Arc::clone(&cloud_agent_watches),
         host_runner_composition: Arc::clone(&host_runner_composition),
         automations_lifecycle: Arc::clone(&automations_lifecycle_slot),
     };
@@ -5613,6 +6003,7 @@ fn main() {
             telemetry_logs: host_telemetry.logs.clone(),
             production_action_auditor: production_extensions.action_audit.clone(),
             cloud_agents: production_extensions.cloud_agents.service(),
+            cloud_agent_watches: Arc::clone(&cloud_agent_watches),
             secrets: Arc::clone(&secrets_extension),
             local_tool_permission: Arc::clone(&local_tool_permission_extension),
             auto_review: Arc::clone(&auto_review_extension),
@@ -5624,6 +6015,9 @@ fn main() {
             last_busy_at_ms: Mutex::new(gateway_started_at),
         });
     *host_upgrade_gateway_slot
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) = Arc::downgrade(&gateway_api);
+    *cloud_agent_completion_gateway_slot
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) = Arc::downgrade(&gateway_api);
 
