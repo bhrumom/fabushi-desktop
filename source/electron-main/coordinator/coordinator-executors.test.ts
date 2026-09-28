@@ -7,6 +7,12 @@ const EXPECTED_CONTROL_METHODS = [
   "resolveGatewayConnection",
   "listRoutedMcpTools",
   "executeRoutedMcpTool",
+  "listHostMcpServers",
+  "listHostMcpCatalog",
+  "listHostEffectiveMcpPlugins",
+  "installHostMcpPlugin",
+  "uninstallHostMcpPlugin",
+  "noteHostMcpAuthCompleted",
   "mintLocalExecDaemonCredential",
   "requestWebAuthnConsent",
   "requestWebAuthnPin",
@@ -77,6 +83,30 @@ function makeDependencies(calls: string[]) {
       calls.push("mcp-call");
       return { request };
     },
+    async listHostMcpServers() {
+      calls.push("mcp-host-servers");
+      return { servers: [{ id: "7" }] };
+    },
+    async listHostMcpCatalog(options: { readonly forceRefresh?: boolean }) {
+      calls.push(`mcp-host-catalog:${options.forceRefresh === true}`);
+      return [{ id: "plugin-7" }];
+    },
+    async listHostEffectiveMcpPlugins() {
+      calls.push("mcp-host-effective");
+      return [{ pluginId: "7" }];
+    },
+    async installHostMcpPlugin(request: unknown) {
+      calls.push("mcp-host-install");
+      return { request };
+    },
+    async uninstallHostMcpPlugin(pluginId: string) {
+      calls.push(`mcp-host-uninstall:${pluginId}`);
+      return { removed: true };
+    },
+    async noteHostMcpAuthCompleted(request: { readonly serverId: string; readonly accountKey: string }) {
+      calls.push(`mcp-host-auth:${request.serverId}:${request.accountKey}`);
+      return { noted: true };
+    },
   };
 }
 
@@ -98,6 +128,12 @@ test("control executor routes gateway, MCP, WebAuthn, and telemetry without abso
   assert.deepEqual(await executors.executeRoutedMcpTool({ id: 7 }), {
     request: { id: 7 },
   });
+  assert.deepEqual(await executors.listHostMcpServers(), { servers: [{ id: "7" }] });
+  assert.deepEqual(await executors.listHostMcpCatalog({ forceRefresh: true }), [{ id: "plugin-7" }]);
+  assert.deepEqual(await executors.listHostEffectiveMcpPlugins(), [{ pluginId: "7" }]);
+  assert.deepEqual(await executors.installHostMcpPlugin({ entryId: "7" }), { request: { entryId: "7" } });
+  assert.deepEqual(await executors.uninstallHostMcpPlugin({ pluginId: "7" }), { removed: true });
+  assert.deepEqual(await executors.noteHostMcpAuthCompleted({ serverId: "server-7", accountKey: "default" }), { noted: true });
   assert.deepEqual(await executors.requestWebAuthnConsent({
     origin: "https://example.test",
     rpId: "example.test",
@@ -133,6 +169,12 @@ test("control executor routes gateway, MCP, WebAuthn, and telemetry without abso
     "credential",
     "mcp-list",
     "mcp-call",
+    "mcp-host-servers",
+    "mcp-host-catalog:true",
+    "mcp-host-effective",
+    "mcp-host-install",
+    "mcp-host-uninstall:7",
+    "mcp-host-auth:server-7:default",
     "consent",
     "pin",
     "status:Touch your security key now",
@@ -162,4 +204,10 @@ test("MCP control methods fail closed when routing is not configured", async () 
     executors.executeRoutedMcpTool({}),
     /Desktop MCP routing is unavailable/,
   );
+  await assert.rejects(executors.listHostMcpServers(), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.listHostMcpCatalog({}), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.listHostEffectiveMcpPlugins(), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.installHostMcpPlugin({}), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.uninstallHostMcpPlugin({ pluginId: "7" }), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.noteHostMcpAuthCompleted({ serverId: "7", accountKey: "default" }), /Desktop MCP lifecycle routing is unavailable/);
 });
