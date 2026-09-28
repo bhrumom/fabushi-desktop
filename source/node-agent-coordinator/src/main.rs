@@ -938,9 +938,15 @@ fn enqueue_agent_inbound_wake(
     args: Value,
 ) -> Result<(), Failure> {
     let provider = routed_inference_provider(state, &agent_id);
+    let urgent = args
+        .get("agentWake")
+        .and_then(Value::as_object)
+        .and_then(|wake| wake.get("priority"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let worker_state = Arc::clone(state);
     let queue_key = agent_id.clone();
-    state.inference_queue.enqueue(&queue_key, move || {
+    let task = move || {
         if provider == InferenceProvider::Cursor {
             if let Err(error) = dispatch_gateway_value(&worker_state, "sendPrompt", args) {
                 eprintln!(
@@ -955,7 +961,12 @@ fn enqueue_agent_inbound_wake(
                 record_inference_error(&worker_state, provider, &agent_id, &error);
             }
         }
-    })
+    };
+    if urgent {
+        state.inference_queue.enqueue_urgent(&queue_key, task)
+    } else {
+        state.inference_queue.enqueue(&queue_key, task)
+    }
 }
 
 fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
@@ -2249,9 +2260,10 @@ fn enqueue_inference_request(
         .get("clientNonce")
         .and_then(Value::as_str)
         .map(str::to_string);
+    let direct_user_send = is_direct_user_send(&args);
     let worker_state = Arc::clone(state);
     let worker_args = args;
-    let enqueue = state.inference_queue.enqueue(&queue_key, move || {
+    let task = move || {
         if let Err(error) =
             execute_local_inference(Arc::clone(&worker_state), provider, worker_args)
         {
@@ -2259,7 +2271,12 @@ fn enqueue_inference_request(
                 record_inference_error(&worker_state, provider, &agent_id, &error);
             }
         }
-    });
+    };
+    let enqueue = if direct_user_send {
+        state.inference_queue.enqueue_urgent(&queue_key, task)
+    } else {
+        state.inference_queue.enqueue(&queue_key, task)
+    };
     match enqueue {
         Ok(()) => {
             let mut value = json!({

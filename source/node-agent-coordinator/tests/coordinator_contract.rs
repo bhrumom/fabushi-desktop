@@ -1869,6 +1869,19 @@ fn inference_router_serializes_each_agent_but_allows_parallel_agents() {
         "same-agent second task must wait for the first task"
     );
 
+    queue
+        .enqueue_urgent("agent-a", {
+            let same_tx = same_tx.clone();
+            move || {
+                same_tx.send("urgent").expect("urgent");
+            }
+        })
+        .expect("urgent enqueue");
+    assert!(
+        same_rx.recv_timeout(Duration::from_millis(75)).is_err(),
+        "same-agent urgent task must not overlap the active task"
+    );
+
     let (other_tx, other_rx) = mpsc::channel::<&'static str>();
     queue
         .enqueue("agent-b", move || {
@@ -1886,6 +1899,10 @@ fn inference_router_serializes_each_agent_but_allows_parallel_agents() {
     assert_eq!(
         same_rx.recv_timeout(Duration::from_secs(1)).expect("first ends"),
         "first-end"
+    );
+    assert_eq!(
+        same_rx.recv_timeout(Duration::from_secs(1)).expect("urgent runs"),
+        "urgent"
     );
     assert_eq!(
         same_rx.recv_timeout(Duration::from_secs(1)).expect("second runs"),

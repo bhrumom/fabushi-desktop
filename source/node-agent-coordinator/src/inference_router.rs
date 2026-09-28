@@ -3,6 +3,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Mutex, mpsc};
+use std::sync::mpsc::{RecvTimeoutError, Sender};
+use std::time::Duration;
 use std::thread;
 
 use serde::{Deserialize, Serialize};
@@ -569,19 +571,47 @@ pub struct InferenceRoute {
 
 type InferenceTask = Box<dyn FnOnce() + Send + 'static>;
 
+#[derive(Clone)]
+struct InferenceTaskWorker {
+    urgent: Sender<InferenceTask>,
+    normal: Sender<InferenceTask>,
+}
+
+fn run_inference_task(task: InferenceTask) {
+    let _ = catch_unwind(AssertUnwindSafe(task));
+}
+
 #[derive(Default)]
 pub struct InferenceTaskQueue {
-    workers: Mutex<HashMap<String, mpsc::Sender<InferenceTask>>>,
+    workers: Mutex<HashMap<String, InferenceTaskWorker>>,
 }
 
 impl InferenceTaskQueue {
-    fn spawn_worker(agent_id: &str) -> Result<mpsc::Sender<InferenceTask>, Failure> {
-        let (sender, receiver) = mpsc::channel::<InferenceTask>();
+    fn spawn_worker(agent_id: &str) -> Result<InferenceTaskWorker, Failure> {
+        let (urgent_tx, urgent_rx) = mpsc::channel::<InferenceTask>();
+        let (normal_tx, normal_rx) = mpsc::channel::<InferenceTask>();
         thread::Builder::new()
             .name(format!("inference-router-{agent_id}"))
-            .spawn(move || {
-                while let Ok(task) = receiver.recv() {
-                    let _ = catch_unwind(AssertUnwindSafe(task));
+            .spawn(move || loop {
+                while let Ok(task) = urgent_rx.try_recv() {
+                    run_inference_task(task);
+                }
+                match normal_rx.recv_timeout(Duration::from_millis(10)) {
+                    Ok(normal_task) => {
+                        while let Ok(task) = urgent_rx.try_recv() {
+                            run_inference_task(task);
+                        }
+                        run_inference_task(normal_task);
+                    }
+                    Err(RecvTimeoutError::Timeout) => continue,
+                    Err(RecvTimeoutError::Disconnected) => {
+                        while let Ok(task) = urgent_rx.try_recv() {
+                            run_inference_task(task);
+                        }
+                        if matches!(urgent_rx.try_recv(), Err(mpsc::TryRecvError::Disconnected)) {
+                            break;
+                        }
+                    }
                 }
             })
             .map_err(|error| {
@@ -590,13 +620,29 @@ impl InferenceTaskQueue {
                     format!("could not start inference queue worker: {error}"),
                 )
             })?;
-        Ok(sender)
+        Ok(InferenceTaskWorker { urgent: urgent_tx, normal: normal_tx })
     }
 
     pub fn enqueue<F>(&self, agent_id: &str, task: F) -> Result<(), Failure>
     where
         F: FnOnce() + Send + 'static,
     {
+        self.enqueue_lane(agent_id, false, Box::new(task))
+    }
+
+    pub fn enqueue_urgent<F>(&self, agent_id: &str, task: F) -> Result<(), Failure>
+    where
+        F: FnOnce() + Send + 'static,
+    {
+        self.enqueue_lane(agent_id, true, Box::new(task))
+    }
+
+    fn enqueue_lane(
+        &self,
+        agent_id: &str,
+        urgent: bool,
+        mut task: InferenceTask,
+    ) -> Result<(), Failure> {
         let agent_id = agent_id.trim();
         if agent_id.is_empty() {
             return Err(Failure::new(
@@ -604,7 +650,6 @@ impl InferenceTaskQueue {
                 "local inference routing requires a non-empty agentId",
             ));
         }
-        let mut task: InferenceTask = Box::new(task);
         let mut workers = self.workers.lock().map_err(|_| {
             Failure::new(
                 "INFERENCE_QUEUE_LOCK_FAILED",
@@ -612,7 +657,8 @@ impl InferenceTaskQueue {
             )
         })?;
 
-        if let Some(sender) = workers.get(agent_id) {
+        if let Some(worker) = workers.get(agent_id) {
+            let sender = if urgent { &worker.urgent } else { &worker.normal };
             match sender.send(task) {
                 Ok(()) => return Ok(()),
                 Err(error) => {
@@ -622,14 +668,15 @@ impl InferenceTaskQueue {
             }
         }
 
-        let sender = Self::spawn_worker(agent_id)?;
+        let worker = Self::spawn_worker(agent_id)?;
+        let sender = if urgent { &worker.urgent } else { &worker.normal };
         sender.send(task).map_err(|error| {
             Failure::new(
                 "INFERENCE_QUEUE_DISCONNECTED",
                 format!("inference queue worker stopped before enqueue: {error}"),
             )
         })?;
-        workers.insert(agent_id.to_string(), sender);
+        workers.insert(agent_id.to_string(), worker);
         Ok(())
     }
 
