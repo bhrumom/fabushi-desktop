@@ -816,3 +816,126 @@ fn sleep_interruptibly(stopped: &AtomicBool, total_ms: u64) -> bool {
     }
     !stopped.load(Ordering::Acquire)
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_root(label: &str) -> PathBuf {
+        let path = std::env::temp_dir().join(format!(
+            "fabushi-box-store-production-{label}-{}",
+            uuid::Uuid::new_v4().simple()
+        ));
+        fs::create_dir_all(&path).expect("create temp root");
+        path
+    }
+
+    #[test]
+    fn local_snapshot_round_trips_blob_manifest_ignore_and_pruning() {
+        let root = temp_root("snapshot");
+        let workspace = root.join("workspace");
+        let store_root = root.join("store");
+        fs::create_dir_all(workspace.join("src")).expect("create source dir");
+        fs::create_dir_all(workspace.join("node_modules/pkg")).expect("create ignored dir");
+        fs::write(workspace.join("src/main.ts"), b"export const value = 42;\n")
+            .expect("write source file");
+        fs::write(workspace.join("node_modules/pkg/index.js"), b"ignored")
+            .expect("write ignored file");
+
+        let store = LocalFsObjectStore::new(store_root.clone());
+        let ignore = load_workspace_ignore(
+            &workspace,
+            SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS,
+        );
+        let mut manifest = BoxManifestMap::new();
+        let summary = sync_tree_category(
+            &store,
+            &mut manifest,
+            &workspace,
+            WORKSPACE_REL_PREFIX,
+            "workspace",
+            &[],
+            Some(&ignore),
+            true,
+        )
+        .expect("snapshot workspace");
+
+        assert_eq!(summary.failures, 0);
+        assert_eq!(summary.metadata_failures, 0);
+        assert_eq!(summary.files_uploaded, 1);
+        assert!(manifest.contains_key("workspace/src/main.ts"));
+        assert!(!manifest.contains_key("workspace/node_modules/pkg/index.js"));
+
+        let entry = manifest
+            .get("workspace/src/main.ts")
+            .expect("source manifest entry");
+        let sha = match entry {
+            BoxStoreManifestEntry::File { sha, size, mode: _ } => {
+                assert_eq!(*size, b"export const value = 42;\n".len() as u64);
+                sha.clone()
+            }
+            other => panic!("expected v2 file entry, got {other:?}"),
+        };
+        assert!(store_root.join(BOX_STORE_BLOBS_PREFIX).join(&sha).is_file());
+
+        write_manifest(&store, &manifest, true, "test-window".into())
+            .expect("write manifest");
+        let persisted = load_manifest(&store)
+            .expect("read manifest")
+            .expect("manifest exists");
+        assert_eq!(persisted.version, BOX_STORE_MANIFEST_VERSION);
+        assert_eq!(persisted.writer_window_id.as_deref(), Some("test-window"));
+        assert_eq!(persisted.entries, manifest);
+
+        fs::remove_file(workspace.join("src/main.ts")).expect("remove source file");
+        let summary = sync_tree_category(
+            &store,
+            &mut manifest,
+            &workspace,
+            WORKSPACE_REL_PREFIX,
+            "workspace",
+            &[],
+            Some(&ignore),
+            true,
+        )
+        .expect("snapshot pruned workspace");
+        assert_eq!(summary.removed, 1);
+        assert!(!manifest.contains_key("workspace/src/main.ts"));
+
+        fs::remove_dir_all(root).expect("cleanup temp root");
+    }
+
+    #[test]
+    fn manifest_v1_fails_closed_for_symlink_semantics() {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::symlink;
+
+            let root = temp_root("symlink");
+            let workspace = root.join("workspace");
+            let store_root = root.join("store");
+            fs::create_dir_all(&workspace).expect("create workspace");
+            fs::write(workspace.join("target.txt"), b"target").expect("write target");
+            symlink("target.txt", workspace.join("link.txt")).expect("create symlink");
+
+            let store = LocalFsObjectStore::new(store_root);
+            let mut manifest = BoxManifestMap::new();
+            let summary = sync_tree_category(
+                &store,
+                &mut manifest,
+                &workspace,
+                WORKSPACE_REL_PREFIX,
+                "workspace",
+                &[],
+                None,
+                false,
+            )
+            .expect("snapshot v1 workspace");
+
+            assert!(summary.failures >= 1);
+            assert!(!manifest.contains_key("workspace/link.txt"));
+            fs::remove_dir_all(root).expect("cleanup temp root");
+        }
+    }
+}
