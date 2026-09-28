@@ -850,7 +850,7 @@ struct UnifiedGatewayApi {
     host_runner_composition: Arc<HostRunnerComposition>,
     cross_user: Arc<ProductionCrossUserRuntime>,
     host_upgrade: Arc<ProductionHostUpgradeExtension>,
-    automations_lifecycle: Mutex<Weak<ProductionAutomationsLifecycle>>,
+    automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
     create_agent_nonces: Mutex<CreateAgentNonceLedger<serde_json::Value>>,
     last_busy_at_ms: Mutex<u64>,
 }
@@ -881,7 +881,7 @@ struct LocalRoutedRunnerDeps {
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     host_runner_composition: Arc<HostRunnerComposition>,
-    automations_lifecycle: Option<Arc<ProductionAutomationsLifecycle>>,
+    automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
 }
 
 impl UnifiedGatewayApi {
@@ -911,11 +911,7 @@ impl UnifiedGatewayApi {
             production_action_auditor: self.production_action_auditor.clone(),
             cloud_agents: Arc::clone(&self.cloud_agents),
             host_runner_composition: Arc::clone(&self.host_runner_composition),
-            automations_lifecycle: self
-                .automations_lifecycle
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .upgrade(),
+            automations_lifecycle: Arc::clone(&self.automations_lifecycle),
         }
     }
 
@@ -1385,7 +1381,7 @@ fn run_local_group_member_turn(
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.host_runner_composition,
-        deps.automations_lifecycle,
+        Arc::clone(&deps.automations_lifecycle),
         None,
         runner_args,
     )
@@ -1543,7 +1539,7 @@ fn start_local_upgrade_resume_turn(
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.host_runner_composition,
-        deps.automations_lifecycle,
+        Arc::clone(&deps.automations_lifecycle),
         None,
         runner_args,
     )
@@ -1696,7 +1692,7 @@ fn run_local_automation_turn(
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.host_runner_composition,
-        deps.automations_lifecycle,
+        Arc::clone(&deps.automations_lifecycle),
         None,
         runner_args,
     )
@@ -2202,7 +2198,7 @@ fn start_routed_provider_task(
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     host_runner_composition: Arc<HostRunnerComposition>,
-    automations_lifecycle: Option<Arc<ProductionAutomationsLifecycle>>,
+    automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
     gateway_context: Option<GatewayCommandContext>,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
@@ -2934,8 +2930,11 @@ fn start_routed_provider_task(
                 },
             );
             let routine_post_write: Option<RoutinePostWriteCallback> =
-                automations_lifecycle.as_ref().map(|lifecycle| {
-                    let lifecycle = Arc::clone(lifecycle);
+                automations_lifecycle
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .upgrade()
+                    .map(|lifecycle| {
                     let sink = Arc::clone(&send_message_sink);
                     let callback_agent_id = agent_id.clone();
                     Arc::new(move |target: &mahayana_host_runtime::runner::sand_automation_auto_review::AutomationWriteTarget, tool_call_id: &str| {
@@ -2966,20 +2965,21 @@ fn start_routed_provider_task(
                             },
                         );
                         for card in surfaced.cards {
+                            let platform = card.platform.clone();
                             let card_tool_call_id =
-                                format!("{tool_call_id}:listener:{}", card.platform);
+                                format!("{tool_call_id}:listener:{platform}");
                             sink.send_message(
                                 serde_json::json!({
                                     "type": card.message_type,
-                                    "platform": card.platform,
+                                    "platform": platform,
                                     "reason": card.reason,
                                 }),
-                                started_at_ms() as u64,
+                                started_at_ms(),
                                 &card_tool_call_id,
                             )?;
                             lifecycle.watch_listener_connection(
                                 callback_agent_id.clone(),
-                                card.platform,
+                                platform,
                             );
                         }
                         Ok(())
@@ -4111,10 +4111,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.production_action_auditor.clone(),
                 Arc::clone(&self.cloud_agents),
                 Arc::clone(&self.host_runner_composition),
-                self.automations_lifecycle
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .upgrade(),
+                Arc::clone(&self.automations_lifecycle),
                 None,
                 args,
             );
@@ -4556,10 +4553,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.production_action_auditor.clone(),
                 Arc::clone(&self.cloud_agents),
                 Arc::clone(&self.host_runner_composition),
-                self.automations_lifecycle
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .upgrade(),
+                Arc::clone(&self.automations_lifecycle),
                 Some(context.clone()),
                 args,
             );
@@ -5293,6 +5287,8 @@ fn main() {
             return;
         }
     }
+    let automations_lifecycle_slot =
+        Arc::new(Mutex::new(Weak::<ProductionAutomationsLifecycle>::new()));
     let cross_user_runner_deps = LocalRoutedRunnerDeps {
         routed_tool_relay: Arc::clone(&routed_tool_relay),
         mcp_service: Arc::clone(&mcp_service),
@@ -5318,6 +5314,7 @@ fn main() {
         production_action_auditor: production_extensions.action_audit.clone(),
         cloud_agents: production_extensions.cloud_agents.service(),
         host_runner_composition: Arc::clone(&host_runner_composition),
+        automations_lifecycle: Arc::clone(&automations_lifecycle_slot),
     };
     let cross_user_settings_path = app_data_dir.join("settings.json");
     let remote_requested_runner_deps = cross_user_runner_deps.clone();
@@ -5478,7 +5475,7 @@ fn main() {
             host_runner_composition: Arc::clone(&host_runner_composition),
             cross_user: Arc::clone(&cross_user),
             host_upgrade: Arc::clone(&host_upgrade),
-            automations_lifecycle: Mutex::new(Weak::new()),
+            automations_lifecycle: Arc::clone(&automations_lifecycle_slot),
             create_agent_nonces: Mutex::new(CreateAgentNonceLedger::default()),
             last_busy_at_ms: Mutex::new(gateway_started_at),
         });
