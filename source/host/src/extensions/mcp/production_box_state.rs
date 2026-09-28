@@ -3,6 +3,7 @@ use super::mcp_service::BoxServerStatus;
 use prost::{Message, Oneof};
 use std::sync::Mutex;
 
+pub const MCP_TOOL_EXEC_FIELD_NUMBER: u32 = 11;
 pub const MCP_STATE_EXEC_FIELD_NUMBER: u32 = 36;
 
 #[derive(Clone, PartialEq, Message)]
@@ -162,4 +163,49 @@ mod tests {
         assert_eq!(servers[0].status, "connected");
         assert_eq!(servers[0].tool_count, 2);
     }
+}
+
+
+pub fn decode_hex_payload(raw: &str) -> Result<Vec<u8>, String> {
+    let raw = raw.trim();
+    if raw.len() % 2 != 0 {
+        return Err("Box MCP protobuf hex payload must have even length".into());
+    }
+    raw.as_bytes()
+        .chunks_exact(2)
+        .map(|pair| {
+            let high = (pair[0] as char)
+                .to_digit(16)
+                .ok_or_else(|| "Box MCP protobuf payload contains non-hex data".to_string())?;
+            let low = (pair[1] as char)
+                .to_digit(16)
+                .ok_or_else(|| "Box MCP protobuf payload contains non-hex data".to_string())?;
+            Ok(((high << 4) | low) as u8)
+        })
+        .collect()
+}
+
+pub fn encode_hex_payload(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut output = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        output.push(HEX[(byte >> 4) as usize] as char);
+        output.push(HEX[(byte & 0x0f) as usize] as char);
+    }
+    output
+}
+
+pub fn execute_box_mcp_raw(
+    accessor: &mut ProductionBoxResourceAccessor,
+    field_number: u32,
+    payload_hex: &str,
+) -> Result<String, String> {
+    if !matches!(field_number, MCP_TOOL_EXEC_FIELD_NUMBER | MCP_STATE_EXEC_FIELD_NUMBER) {
+        return Err(format!("unsupported Box MCP ExecService field {field_number}"));
+    }
+    let payload = decode_hex_payload(payload_hex)?;
+    let response = accessor
+        .execute_raw_resource(&(), field_number, payload)
+        .map_err(|error| error.to_string())?;
+    Ok(encode_hex_payload(&response))
 }
