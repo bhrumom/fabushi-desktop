@@ -8,6 +8,7 @@ use crate::agents::agent_messaging::{
     AgentAddress, AgentMessageImage, build_agent_inbound_wake_prompt, clamp_agent_message,
 };
 use crate::extensions::session::production::ProductionSessionWorkers;
+use super::run_scheduler::RunLane;
 use super::transcript_entry_ids::{TranscriptEntryIdKind, next_entry_id};
 
 pub const PRIORITY_AGENT_MESSAGE_INTERRUPT_REASON: &str = "superseded by a priority agent message";
@@ -45,6 +46,10 @@ pub struct AgentWakeRequest {
 
 pub type AgentWakeSink = Arc<dyn Fn(&AgentWakeRequest) + Send + Sync + 'static>;
 pub type PriorityInterruptSink = Arc<dyn Fn(&str, &str) -> usize + Send + Sync + 'static>;
+
+pub fn should_interrupt_priority_peer(active_lane: Option<RunLane>) -> bool {
+    active_lane != Some(RunLane::User)
+}
 
 pub fn partition_agent_inbound<T: Clone>(messages: &[T], is_priority: impl Fn(&T) -> bool) -> (Vec<T>, Vec<T>) {
     let mut priority = Vec::new();
