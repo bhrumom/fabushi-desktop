@@ -423,6 +423,12 @@ export function createProductionCoordinatorAdapter<
         getRpcTraceWindowTraceparent: ports.telemetry.getRpcTraceWindowTraceparent,
         listRoutedMcpTools: () => context.requireMcp().listRoutedTools(),
         executeRoutedMcpTool: (request) => context.requireMcp().executeRoutedTool(request),
+        listHostMcpServers: () => context.requireMcp().listHostMcpServers(),
+        listHostMcpCatalog: (options) => context.requireMcp().listHostMcpCatalog(options),
+        listHostEffectiveMcpPlugins: () => context.requireMcp().listHostEffectiveMcpPlugins(),
+        installHostMcpPlugin: (request) => context.requireMcp().installHostMcpPlugin(request),
+        uninstallHostMcpPlugin: (pluginId) => context.requireMcp().uninstallHostMcpPlugin(pluginId),
+        noteHostMcpAuthCompleted: (request) => context.requireMcp().noteHostMcpAuthCompleted(request),
         native: ports.localExecNative,
       });
       const createRuntime = () =>
