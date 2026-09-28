@@ -131,6 +131,14 @@ impl HostStructuredLogTelemetry {
         })
     }
 
+    pub fn report_automation_shadow_prune(&self, report: &Value) -> io::Result<()> {
+        self.sink.emit(&PersistedHostTelemetryRecord {
+            channel: "structured_log".into(),
+            event: "sand.automation_shadow_prune".into(),
+            payload: report.clone(),
+        })
+    }
+
     pub fn report_box_boot_stage_confirmed(&self, stage: &str, duration_ms: u64) -> bool {
         let mut metadata = BTreeMap::new();
         metadata.insert("stage".into(), stage.to_string());
