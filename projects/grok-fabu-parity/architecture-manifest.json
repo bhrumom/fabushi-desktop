@@ -11270,38 +11270,45 @@
       "targetPath": "source/host/src/extensions/box_store_sync/request_coalescer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "6c5d901629755333bba49632a51fe104284f5aae",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/box_store_sync/request_coalescer.rs",
-        "source/host/src/extensions/box_store_sync/mod.rs"
+        "source/host/src/extensions/box_store_sync/sand_box_store_files.rs",
+        "source/host/src/extensions/box_store_sync/sand_box_store_v2_client.rs"
       ],
       "testEvidence": [
         "source/host/tests/request_coalescer_contract.rs",
+        "source/host/src/extensions/box_store_sync/sand_box_store_files.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port owns max-batch draining, conflict-key deferral, exact result-count validation, optional split-on-error individual retry and fail-closed worker settlement. Final remains withheld until production box-store transfer/upload requests use this coalescer."
+      "notes": "Rust port owns frozen max-batch draining, conflict-key deferral, exact result-count validation, split-on-InvalidArgument retry and fail-closed settlement. The production SandBoxStoreV2 object-store now routes write-presign requests through this coalescer, including same-relPath serialization and batched InvalidArgument split-to-individual behavior."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/sand-box-store-files.ts",
       "targetPath": "source/host/src/extensions/box_store_sync/sand_box_store_files.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "aff11474d43f0fd0319aa08f6e5d8c895b8a1c6a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/box_store_sync/sand_box_store_files.rs"
+        "source/host/src/extensions/box_store_sync/sand_box_store_files.rs",
+        "source/host/src/extensions/box_store_sync/sand_box_store_v2_client.rs",
+        "source/host/src/extensions/box_store_sync/production.rs"
       ],
       "testEvidence": [
-        "source/host/tests/box_store_sync_planned_contract.rs",
+        "source/host/src/extensions/box_store_sync/sand_box_store_files.rs",
+        "source/host/src/extensions/box_store_sync/sand_box_store_v2_client.rs",
+        "source/host/tests/request_coalescer_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
+      "notes": "Rust Mahayana Host now ships the frozen SandBoxStoreV2 object-store behavior and the recovered aiserver.v1.GrokBotService Connect client. Evidence covers presign read/write/stat/list RPCs, 64-item write coalescing, 500-read batching, prefetch freshness, mutable ETag/CAS, content-addressed writes, 409 retry/412 already-present, streaming file PUTs, 64 MiB multipart threshold, 128 MiB parts, ETag collection, completion retry/precondition semantics, best-effort abort, append-only deletion rejection and fail-closed file-change detection. ProductionBoxStoreSyncMode::SandBoxStoreV2 constructs this provider with Host auth/machine-id transport.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/sqlite-snapshot.ts",
@@ -39848,5 +39855,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-28T16:27:00+08:00"
+  "generatedAt": "2026-09-29T06:40:00+08:00"
 }
