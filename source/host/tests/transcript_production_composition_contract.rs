@@ -401,6 +401,65 @@ fn ack_redrive_send_uses_background_lane_and_source() {
 
 
 #[test]
+fn agent_inbound_send_uses_agent_lane_and_source() {
+    let root = temp_root("agent-inbound-lane");
+    let runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+
+    let worker_runtime = Arc::clone(&runtime);
+    let worker = thread::spawn(move || {
+        let args = serde_json::json!({
+            "agentId": "agent-peer",
+            "prompt": "[agent] peer wake",
+            "clientNonce": "agent-inbound:agent-peer:run-1",
+            "requestSource": "agent-inbound",
+            "appendUserMessage": false,
+            "hidden": true,
+            "skipAckObligation": true,
+            "agentWake": {
+                "sourceAgentId": "agent-source",
+                "priority": true
+            }
+        });
+        worker_runtime.execute_send_with_watchdog(
+            &args,
+            || {
+                entered_tx.send(()).expect("signal agent inbound dispatch");
+                release_rx.recv().expect("release agent inbound dispatch");
+                Ok(serde_json::json!({
+                    "accepted": true,
+                    "operationId": "op-agent-inbound"
+                }))
+            },
+            |_| Ok(None),
+            |_| false,
+        )
+    });
+
+    entered_rx
+        .recv_timeout(Duration::from_secs(5))
+        .expect("agent inbound dispatch entered");
+    assert_eq!(
+        runtime.active_turn_lane("agent-peer"),
+        Some(RunLane::Agent)
+    );
+    assert_eq!(
+        runtime.active_turn_source("agent-peer").as_deref(),
+        Some("agent-inbound")
+    );
+
+    release_tx.send(()).expect("release agent inbound");
+    assert_eq!(
+        worker.join().expect("agent inbound worker").expect("agent inbound result")["operationId"],
+        "op-agent-inbound"
+    );
+    assert!(runtime.is_turn_dispatch_idle("agent-peer"));
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
 fn automation_send_uses_background_lane_and_source() {
     let root = temp_root("automation-lane");
     let runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
