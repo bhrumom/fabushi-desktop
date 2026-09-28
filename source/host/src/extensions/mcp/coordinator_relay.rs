@@ -20,6 +20,14 @@ pub const MCP_LIST_CATALOG_METHOD: &str = "listHostMcpCatalog";
 pub const MCP_LIST_EFFECTIVE_PLUGINS_METHOD: &str = "listHostEffectiveMcpPlugins";
 pub const MCP_INSTALL_PLUGIN_METHOD: &str = "installHostMcpPlugin";
 pub const MCP_UNINSTALL_PLUGIN_METHOD: &str = "uninstallHostMcpPlugin";
+pub const MCP_ADD_SERVER_METHOD: &str = "addHostMcpServer";
+pub const MCP_REMOVE_SERVER_METHOD: &str = "removeHostMcpServer";
+pub const MCP_RESTART_SERVERS_METHOD: &str = "restartHostMcpServers";
+pub const MCP_SET_INSTRUCTIONS_METHOD: &str = "setHostMcpInstructions";
+pub const MCP_AUTHENTICATE_SERVER_METHOD: &str = "authenticateHostMcpServer";
+pub const MCP_LOGOUT_ACCOUNT_METHOD: &str = "logoutHostMcpAccount";
+pub const MCP_REMOVE_ACCOUNT_METHOD: &str = "removeHostMcpAccount";
+pub const MCP_RENAME_ACCOUNT_METHOD: &str = "renameHostMcpAccount";
 pub const MCP_NOTE_AUTH_COMPLETED_METHOD: &str = "noteHostMcpAuthCompleted";
 
 const DEFAULT_MCP_LIFECYCLE_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
@@ -48,6 +56,14 @@ pub fn is_host_mcp_lifecycle_method(method: &str) -> bool {
             | MCP_LIST_EFFECTIVE_PLUGINS_METHOD
             | MCP_INSTALL_PLUGIN_METHOD
             | MCP_UNINSTALL_PLUGIN_METHOD
+            | MCP_ADD_SERVER_METHOD
+            | MCP_REMOVE_SERVER_METHOD
+            | MCP_RESTART_SERVERS_METHOD
+            | MCP_SET_INSTRUCTIONS_METHOD
+            | MCP_AUTHENTICATE_SERVER_METHOD
+            | MCP_LOGOUT_ACCOUNT_METHOD
+            | MCP_REMOVE_ACCOUNT_METHOD
+            | MCP_RENAME_ACCOUNT_METHOD
             | MCP_NOTE_AUTH_COMPLETED_METHOD
     )
 }
@@ -346,6 +362,84 @@ impl McpManagerBackend for CoordinatorMcpManagerBackend {
     ) -> Result<Vec<McpServerSummary>, String> {
         self.relay
             .request(MCP_INSTALL_PLUGIN_METHOD, json!({"entryId": plugin_id, "values": values}))
+            .map_err(|error| error.to_string())
+            .and_then(decode_mcp_server_state)
+    }
+
+    fn add_server(&self, name: &str, config_json: &str) -> Result<Vec<McpServerSummary>, String> {
+        self.relay
+            .request(MCP_ADD_SERVER_METHOD, json!({"name": name, "configJson": config_json}))
+            .map_err(|error| error.to_string())
+            .and_then(decode_mcp_server_state)
+    }
+
+    fn remove_server(&self, server_id: &str) -> Result<(bool, Option<String>, Vec<McpServerSummary>), String> {
+        let result = self.relay
+            .request(MCP_REMOVE_SERVER_METHOD, json!({"serverId": server_id}))
+            .map_err(|error| error.to_string())?;
+        let removed = result.get("removed").and_then(Value::as_bool).unwrap_or(false);
+        let reason = optional_string(&result, "reason");
+        let servers = result
+            .get("state")
+            .cloned()
+            .or_else(|| result.get("servers").map(|servers| json!({"servers": servers})))
+            .ok_or_else(|| "desktop MCP owner removeServer response requires state".to_string())
+            .and_then(decode_mcp_server_state)?;
+        Ok((removed, reason, servers))
+    }
+
+    fn restart_servers(&self) -> Result<Vec<McpServerSummary>, String> {
+        self.relay
+            .request(MCP_RESTART_SERVERS_METHOD, json!({}))
+            .map_err(|error| error.to_string())
+            .and_then(decode_mcp_server_state)
+    }
+
+    fn set_server_custom_instructions(&self, server_id: &str, instructions: &str) -> Result<Vec<McpServerSummary>, String> {
+        self.relay
+            .request(MCP_SET_INSTRUCTIONS_METHOD, json!({"serverId": server_id, "instructions": instructions}))
+            .map_err(|error| error.to_string())
+            .and_then(decode_mcp_server_state)
+    }
+
+    fn authenticate_server(
+        &self,
+        server_id: &str,
+        account_key: &str,
+        requesting_agent_id: Option<&str>,
+        force_reauth: bool,
+    ) -> Result<Value, String> {
+        self.relay
+            .request(MCP_AUTHENTICATE_SERVER_METHOD, json!({
+                "serverId": server_id,
+                "accountKey": account_key,
+                "requestingAgentId": requesting_agent_id,
+                "forceReauth": force_reauth,
+            }))
+            .map_err(|error| error.to_string())
+    }
+
+    fn logout_account(&self, server_id: &str, account_key: &str) -> Result<Vec<McpServerSummary>, String> {
+        self.relay
+            .request(MCP_LOGOUT_ACCOUNT_METHOD, json!({"serverId": server_id, "accountKey": account_key}))
+            .map_err(|error| error.to_string())
+            .and_then(decode_mcp_server_state)
+    }
+
+    fn remove_account(&self, server_id: &str, account_key: &str) -> Result<Vec<McpServerSummary>, String> {
+        self.relay
+            .request(MCP_REMOVE_ACCOUNT_METHOD, json!({"serverId": server_id, "accountKey": account_key}))
+            .map_err(|error| error.to_string())
+            .and_then(decode_mcp_server_state)
+    }
+
+    fn rename_account(&self, server_id: &str, account_key: &str, new_account_key: &str) -> Result<Vec<McpServerSummary>, String> {
+        self.relay
+            .request(MCP_RENAME_ACCOUNT_METHOD, json!({
+                "serverId": server_id,
+                "accountKey": account_key,
+                "newAccountKey": new_account_key,
+            }))
             .map_err(|error| error.to_string())
             .and_then(decode_mcp_server_state)
     }
