@@ -16,7 +16,10 @@ use crate::extensions::auth::user_full_name_service::production_user_full_name_f
 use crate::extensions::automations::listener_connect_watcher_production::ListenerConnectedCallback;
 use crate::extensions::automations::production::{FireDispatch, ProductionLog, RelayEventSink, RelayListeners};
 use crate::extensions::automations::listener_integrations::AgentChannelsReader;
-use crate::extensions::automations::production_lifecycle::ProductionAutomationsLifecycle;
+use crate::extensions::automations::production_lifecycle::{
+    CloudAgentIdsReader, CloudDefinitionsReader, CloudTimeZoneReader,
+    ProductionAutomationsLifecycle,
+};
 use crate::extensions::box_lifecycle::box_lifecycle_service::BoxLifecycleService;
 use crate::extensions::box_lifecycle::extension::start_box_lifecycle_extension;
 use crate::extensions::box_lifecycle::production::{
@@ -338,6 +341,9 @@ impl ProductionHostExtensions {
         fire_dispatch: FireDispatch,
         on_connected: ListenerConnectedCallback,
         agent_channels: AgentChannelsReader,
+        cloud_definitions: CloudDefinitionsReader,
+        cloud_agent_ids: CloudAgentIdsReader,
+        cloud_time_zone: CloudTimeZoneReader,
         log: ProductionLog,
     ) -> Result<Arc<ProductionAutomationsLifecycle>, String> {
         let mut slot = self
@@ -356,6 +362,9 @@ impl ProductionHostExtensions {
             fire_dispatch,
             on_connected,
             agent_channels,
+            cloud_definitions,
+            cloud_agent_ids,
+            cloud_time_zone,
             log,
         )?;
         *slot = Some(Arc::clone(&runtime));
