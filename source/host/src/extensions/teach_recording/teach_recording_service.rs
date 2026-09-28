@@ -25,7 +25,7 @@ pub const TEACH_QUEUES_DIR: &str = "/workspace/teach-sessions/queues";
 pub const LEARN_SKILL_NAME: &str = "learn-from-demonstration";
 pub const TEACH_PRIVATE_MONITOR_MESSAGE: &str =
     "Teach recording requires a private desktop monitor.";
-pub const SAND_TEACH_MAX_DURATION_MS: u64 = 15 * 60_000;
+pub const SAND_TEACH_MAX_DURATION_MS: u64 = 10 * 60_000;
 pub const SAND_BOX_FIRST_FORK_WINDOW_INDEX: u32 = 2;
 pub const SAND_MONITOR_WIDTH: u32 = 1280;
 pub const SAND_MONITOR_HEIGHT: u32 = 800;
