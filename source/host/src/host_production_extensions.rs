@@ -44,6 +44,22 @@ use crate::extensions::inference::production::{
 use crate::extensions::managed_setup::extension::{
     ManagedSetupExtension, start_managed_setup_extension,
 };
+use crate::extensions::mcp::coordinator_relay::{
+    CoordinatorMcpLifecycleRelay, CoordinatorPluginSkillsLoader,
+};
+use crate::extensions::mcp::extension::{
+    AuthRenewalPort, McpExtensionRuntime, McpPluginSkillsService,
+    PluginSkillsAuthenticatedStartup, PollingPort,
+};
+use crate::extensions::mcp::mcp_service::{
+    McpHostService, McpManagerBackend, PluginSkillsPort,
+};
+use crate::extensions::mcp::plugin_skills::{
+    PluginSkillsLoader, SandPluginSkillsService,
+};
+use crate::extensions::mcp::production::{
+    RealPluginSkillsPolling, create_production_skill_publish,
+};
 use crate::extensions::local_exec::extension::{
     HostLocalExecExtension, start_local_exec_extension,
 };
@@ -101,6 +117,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::NotifyBus,
     HostExtensionId::Memory,
     HostExtensionId::ManagedSetup,
+    HostExtensionId::Mcp,
     HostExtensionId::SourceMap,
     HostExtensionId::Trays,
     HostExtensionId::BoxLifecycle,
@@ -160,6 +177,8 @@ pub struct ProductionHostExtensions {
     pub webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     pub action_audit: ActionAuditExtension,
     pub cloud_agents: CloudAgentsExtension,
+    backend_url: String,
+    mcp: Mutex<Option<McpExtensionRuntime>>,
 }
 
 pub fn start_production_host_extensions(
@@ -246,7 +265,7 @@ pub fn start_production_host_extensions(
     .map_err(|error| error.to_string())?;
     let memory = start_production_memory_extension();
     let managed_setup = start_managed_setup_extension(
-        backend_url,
+        backend_url.clone(),
         Arc::clone(&auth),
         app_data_dir,
     );
@@ -294,7 +313,63 @@ pub fn start_production_host_extensions(
         webauthn_proxy,
         action_audit,
         cloud_agents,
+        backend_url,
+        mcp: Mutex::new(None),
     })
+}
+
+
+impl ProductionHostExtensions {
+    pub fn start_mcp(
+        &self,
+        sand_root_dir: &Path,
+        relay: Arc<CoordinatorMcpLifecycleRelay>,
+        backend: Arc<dyn McpManagerBackend>,
+    ) -> Result<Arc<McpHostService>, String> {
+        let mut slot = self.mcp.lock().map_err(|_| "production MCP runtime lock poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("production MCP runtime is already started".into());
+        }
+
+        let loader: Arc<dyn PluginSkillsLoader> =
+            Arc::new(CoordinatorPluginSkillsLoader::new(relay));
+        let plugin_skills = Arc::new(SandPluginSkillsService::new(
+            sand_root_dir.to_path_buf(),
+            loader,
+        ));
+        let plugin_port: Arc<dyn PluginSkillsPort> = plugin_skills.clone();
+        let service = Arc::new(McpHostService::new(backend, Some(plugin_port)));
+        let auth: Arc<dyn AuthRenewalPort> = self.auth.clone();
+        let plugin_runtime: Arc<dyn McpPluginSkillsService> = plugin_skills.clone();
+        let polling: Arc<dyn PollingPort> = Arc::new(RealPluginSkillsPolling::daily());
+        let startup = PluginSkillsAuthenticatedStartup::start(
+            auth,
+            plugin_runtime,
+            polling,
+            None,
+        );
+        let skill_publish = Arc::new(create_production_skill_publish(
+            sand_root_dir.to_path_buf(),
+            self.backend_url.clone(),
+            Arc::clone(&self.auth),
+            plugin_skills,
+        ));
+        *slot = Some(McpExtensionRuntime::new(
+            startup,
+            service.clone(),
+            skill_publish,
+        ));
+        Ok(service)
+    }
+
+    pub fn stop_mcp(&self) -> Result<(), String> {
+        let runtime = self
+            .mcp
+            .lock()
+            .map_err(|_| "production MCP runtime lock poisoned".to_string())?
+            .take();
+        runtime.map(|runtime| runtime.stop()).unwrap_or(Ok(()))
+    }
 }
 
 
