@@ -6,7 +6,7 @@ use super::mcp_service::{
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::{
-    Mutex,
+    Arc, Mutex,
     atomic::{AtomicBool, AtomicU64, Ordering},
     mpsc::{self, RecvTimeoutError, SyncSender},
 };
