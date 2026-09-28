@@ -11040,7 +11040,7 @@
         "source/host/tests/box_copy_in_pack_contract.rs",
         "source/host/tests/box_store_sync_production_wiring_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "notes": "Final Rust adaptation is production-wired without promoting unrelated remote Box Store rows. Shipping ProductionBoxStoreSync runs frozen-style pack maintenance only on idle periodic cycles when SAND_BOX_STORE_PACKS is enabled, yields to flush waiters, sweeps stale temp files, revalidates source sha/size while building, uploads packs under content-addressed pack ids, updates retired tombstones before the canonical pack index, best-effort deletes retired packs, and isolates pack-round failures from an already committed manifest. Shipping box-copy-in restores eligible bulk-small files from packs with bounded extraction, size/SHA verification and loose-blob fallback on pack miss/corruption. Exact-HEAD 914630a52fcd27a9ba0bdfc158423d1aea30d33d passed the complete rust-host and platform-worker jobs in Rust desktop runtime run 36485941303; Desktop Chat Parity run 36485941442 passed. Authenticated remote AgentStore/SandBoxStoreV2 provider transport remains independently non-final and is not implied by this row."
     },
