@@ -111,6 +111,18 @@ impl SandAgentState {
         self.workflows.automations.unique_id(name)
     }
 
+    pub fn automation_records(&self) -> Vec<AutomationRecord> {
+        self.workflows.automations.list()
+    }
+
+    pub fn workflow_records(&self) -> Vec<crate::workflows::workflow_store::WorkflowRecord> {
+        self.workflows
+            .list()
+            .into_iter()
+            .filter(|workflow| workflow.source != "automation")
+            .collect()
+    }
+
     pub fn create_automation(&self, spec: &AutomationSpec) -> StateWriteResult {
         match self.workflows.automations.upsert(spec, (self.now)() as f64) {
             Ok(Some(record)) => automation_result("Saved", &record),

@@ -177,3 +177,96 @@ fn routine_writes_run_auto_review_before_state_mutation() {
     assert!(state.automation_record("reviewed-routine").is_none());
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn pause_resume_and_delete_do_not_enter_routine_auto_review() {
+    let root = temp_root("routine-nonreview-actions");
+    let state = Arc::new(SandAgentState::new(&root, "agent-nonreview").expect("state"));
+    let created = state.create_automation(&mahayana_host_runtime::automations::automation::AutomationSpec {
+        name: "Daily".into(),
+        prompt: "Summarize".into(),
+        trigger: json!({"type":"cron","schedule":"0 8 * * *"}),
+        is_enabled: Some(true),
+    });
+    assert!(created.ok);
+    let writer: Arc<dyn SandStateWriter> = state.clone();
+    let bridge = SandStateToolBridge::new(Arc::new(DelegateBridge), writer)
+        .with_routine_auto_review(Arc::new(|_, _| {
+            Err(ProviderSessionError::Tool("review should not run".into()))
+        }));
+    let tool = bridge
+        .list_tools()
+        .expect("tools")
+        .into_iter()
+        .find(|tool| tool.name == SAND_UPDATE_STATE_TOOL_NAME)
+        .expect("update_state");
+    bridge.call_tool(
+        &tool,
+        json!({"target":"routine","action":"pause","id":"daily"}),
+        "tool-pause",
+    ).expect("pause bypasses auto-review");
+    bridge.call_tool(
+        &tool,
+        json!({"target":"routine","action":"resume","id":"daily"}),
+        "tool-resume",
+    ).expect("resume bypasses auto-review");
+    bridge.call_tool(
+        &tool,
+        json!({"target":"routine","action":"delete","id":"daily"}),
+        "tool-delete",
+    ).expect("delete bypasses auto-review");
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn workflow_body_write_is_reviewed_only_when_a_routine_references_it() {
+    let root = temp_root("workflow-routine-review");
+    let state = Arc::new(SandAgentState::new(&root, "agent-workflow-review").expect("state"));
+    assert!(state.write_workflow(
+        None,
+        "Release Playbook",
+        Some("Release steps"),
+        "old body",
+    ).ok);
+    assert!(state.create_automation(&mahayana_host_runtime::automations::automation::AutomationSpec {
+        name: "Release watcher".into(),
+        prompt: "Follow the Release Playbook when CI passes".into(),
+        trigger: json!({"type":"cron","schedule":"0 8 * * *"}),
+        is_enabled: Some(true),
+    }).ok);
+    let writer: Arc<dyn SandStateWriter> = state.clone();
+    let bridge = SandStateToolBridge::new(Arc::new(DelegateBridge), writer)
+        .with_routine_auto_review(Arc::new(|target, tool_call_id| {
+            assert_eq!(tool_call_id, "tool-workflow");
+            assert_eq!(target.operation, "workflow_body");
+            assert_eq!(target.spec.name, "Release Playbook");
+            assert_eq!(target.referenced_workflows.len(), 1);
+            assert_eq!(target.referencing_routines.len(), 1);
+            assert_eq!(
+                target.referencing_routines[0].prompt.as_deref(),
+                Some("Follow the Release Playbook when CI passes")
+            );
+            Err(ProviderSessionError::Tool("review denied".into()))
+        }));
+    let tool = bridge
+        .list_tools()
+        .expect("tools")
+        .into_iter()
+        .find(|tool| tool.name == SAND_UPDATE_STATE_TOOL_NAME)
+        .expect("update_state");
+    let error = bridge.call_tool(
+        &tool,
+        json!({
+            "target":"workflow",
+            "action":"write",
+            "id":"release-playbook",
+            "name":"Release Playbook",
+            "description":"Release steps",
+            "body":"new body"
+        }),
+        "tool-workflow",
+    ).expect_err("referenced workflow write must be reviewed");
+    assert!(error.to_string().contains("review denied"));
+    let _ = fs::remove_dir_all(root);
+}

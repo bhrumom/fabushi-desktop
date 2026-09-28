@@ -4,6 +4,8 @@ use std::sync::Arc;
 use serde_json::{Map, Value, json};
 
 use crate::automations::automation::{AutomationRecord, AutomationSpec};
+use crate::workflows::workflow_library::slugify_workflow_name;
+use crate::workflows::workflow_store::WorkflowRecord;
 use crate::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
@@ -23,6 +25,8 @@ pub type RoutineAutoReviewCallback = Arc<
 
 pub trait SandStateWriter: Send + Sync {
     fn automation_record(&self, id: &str) -> Option<AutomationRecord>;
+    fn automation_records(&self) -> Vec<AutomationRecord>;
+    fn workflow_records(&self) -> Vec<WorkflowRecord>;
     fn next_automation_id(&self, name: &str) -> String;
     fn write_memory(
         &self,
@@ -71,6 +75,14 @@ pub trait SandStateWriter: Send + Sync {
 impl SandStateWriter for SandAgentState {
     fn automation_record(&self, id: &str) -> Option<AutomationRecord> {
         self.automation_record(id)
+    }
+
+    fn automation_records(&self) -> Vec<AutomationRecord> {
+        self.automation_records()
+    }
+
+    fn workflow_records(&self) -> Vec<WorkflowRecord> {
+        self.workflow_records()
     }
 
     fn next_automation_id(&self, name: &str) -> String {
@@ -268,6 +280,29 @@ fn update_state_definition() -> RoutedToolDefinition {
     }
 }
 
+fn prompt_references_workflow(prompt: &str, workflow: &WorkflowRecord) -> bool {
+    let prompt = prompt.to_ascii_lowercase();
+    prompt.contains(&workflow.id.to_ascii_lowercase())
+        || prompt.contains(&workflow.name.to_ascii_lowercase())
+}
+
+fn referenced_workflows(
+    prompt: &str,
+    state: &dyn SandStateWriter,
+) -> Vec<crate::runner::sand_automation_auto_review::AutomationReference> {
+    state
+        .workflow_records()
+        .into_iter()
+        .filter(|workflow| prompt_references_workflow(prompt, workflow))
+        .map(|workflow| crate::runner::sand_automation_auto_review::AutomationReference {
+            id: workflow.id,
+            name: workflow.name,
+            body: Some(workflow.body),
+            prompt: None,
+        })
+        .collect()
+}
+
 pub fn automation_review_target(
     args: &Value,
     state: &dyn SandStateWriter,
@@ -275,65 +310,114 @@ pub fn automation_review_target(
     let object = args.as_object().ok_or_else(|| tool_error(
         "update_state arguments must be an object",
     ))?;
-    if required_string(object, "target")? != "routine" {
-        return Ok(None);
-    }
+    let target = required_string(object, "target")?;
     let action = required_string(object, "action")?;
-    let (operation, id, spec, existing_enabled) = match action {
-        "create" => {
-            let spec = automation_spec(object, None)?;
-            let id = state.next_automation_id(&spec.name);
-            ("create", id, spec, None)
+
+    if target == "routine" {
+        let (operation, id, spec, existing_enabled) = match action {
+            "create" => {
+                let spec = automation_spec(object, None)?;
+                let id = state.next_automation_id(&spec.name);
+                ("create", id, spec, None)
+            }
+            "update" => {
+                let id = required_string(object, "id")?;
+                let existing = state.automation_record(id).ok_or_else(|| tool_error(
+                    format!("no routine with folder \"{id}\" exists"),
+                ))?;
+                let enabled = existing.is_enabled;
+                (
+                    "update",
+                    existing.id.clone(),
+                    automation_spec(object, Some(&existing))?,
+                    Some(enabled),
+                )
+            }
+            // Frozen sand-state-tool does not AutoReview pause/resume/delete;
+            // only create/update writes are classified.
+            _ => return Ok(None),
+        };
+        let is_enabled = spec.is_enabled.or(existing_enabled).unwrap_or(true);
+        let workflows = referenced_workflows(&spec.prompt, state);
+        return Ok(Some(AutomationWriteTarget {
+            operation: operation.to_string(),
+            id,
+            spec: AutomationWriteSpec {
+                name: spec.name,
+                prompt: spec.prompt,
+                trigger: spec.trigger,
+                is_enabled,
+            },
+            referenced_workflows: workflows,
+            referencing_routines: Vec::new(),
+        }));
+    }
+
+    if target == "workflow" && action == "write" {
+        let id = optional_string(object, "id")?;
+        let name = required_string(object, "name")?;
+        let body = required_string(object, "body")?;
+        let existing = id.and_then(|id| {
+            state
+                .workflow_records()
+                .into_iter()
+                .find(|workflow| workflow.id == id)
+        });
+        let workflow_id = id
+            .map(ToOwned::to_owned)
+            .or_else(|| existing.as_ref().map(|workflow| workflow.id.clone()))
+            .unwrap_or_else(|| slugify_workflow_name(name));
+        let mut mentions = vec![(workflow_id.clone(), name.to_string())];
+        if let Some(existing) = &existing {
+            if existing.name != name {
+                mentions.push((existing.id.clone(), existing.name.clone()));
+            }
         }
-        "update" => {
-            let id = required_string(object, "id")?;
-            let existing = state.automation_record(id).ok_or_else(|| tool_error(
-                format!("no routine with folder \"{id}\" exists"),
-            ))?;
-            let enabled = existing.is_enabled;
-            (
-                "update",
-                existing.id.clone(),
-                automation_spec(object, Some(&existing))?,
-                Some(enabled),
-            )
-        }
-        "pause" | "resume" | "delete" => {
-            let id = required_string(object, "id")?;
-            let existing = state.automation_record(id).ok_or_else(|| tool_error(
-                format!("no routine with folder \"{id}\" exists"),
-            ))?;
-            let enabled = match action {
-                "pause" => false,
-                "resume" => true,
-                _ => existing.is_enabled,
-            };
-            let spec = AutomationSpec {
-                name: existing.name,
-                prompt: existing.prompt,
-                trigger: existing.trigger,
-                is_enabled: Some(enabled),
-            };
-            (action, existing.id, spec, Some(enabled))
-        }
-        _ => return Ok(None),
-    };
-    let is_enabled = spec
-        .is_enabled
-        .or(existing_enabled)
-        .unwrap_or(true);
-    Ok(Some(AutomationWriteTarget {
-        operation: operation.to_string(),
-        id,
-        spec: AutomationWriteSpec {
-            name: spec.name,
-            prompt: spec.prompt,
-            trigger: spec.trigger,
-            is_enabled,
-        },
-        referenced_workflows: Vec::new(),
-        referencing_routines: Vec::new(),
-    }))
+        let referencing = state
+            .automation_records()
+            .into_iter()
+            .filter(|routine| {
+                let prompt = routine.prompt.to_ascii_lowercase();
+                mentions.iter().any(|(id, name)| {
+                    prompt.contains(&id.to_ascii_lowercase())
+                        || prompt.contains(&name.to_ascii_lowercase())
+                })
+            })
+            .collect::<Vec<_>>();
+        let Some(anchor) = referencing.first() else {
+            return Ok(None);
+        };
+        let enabled = referencing.iter().any(|routine| routine.is_enabled);
+        return Ok(Some(AutomationWriteTarget {
+            operation: "workflow_body".into(),
+            id: id.map(ToOwned::to_owned).unwrap_or(workflow_id.clone()),
+            spec: AutomationWriteSpec {
+                name: name.to_string(),
+                prompt: body.to_string(),
+                trigger: anchor.trigger.clone(),
+                is_enabled: enabled,
+            },
+            referenced_workflows: vec![
+                crate::runner::sand_automation_auto_review::AutomationReference {
+                    id: workflow_id,
+                    name: name.to_string(),
+                    body: Some(body.to_string()),
+                    prompt: None,
+                },
+            ],
+            referencing_routines: referencing
+                .into_iter()
+                .map(|routine| crate::runner::sand_automation_auto_review::AutomationReference {
+                    id: routine.id,
+                    name: routine.name,
+                    body: None,
+                    prompt: Some(routine.prompt),
+                })
+                .collect(),
+        }));
+    }
+
+    Ok(None)
 }
 
 pub fn apply_state_update(
