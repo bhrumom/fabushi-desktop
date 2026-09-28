@@ -10,10 +10,6 @@ import { loadFromMarketplaceSource } from "../../packages/cursor-plugins/loader.
 import { buildOriginTokenGitConfig } from "../../packages/cursor-plugins/origin-git-auth.js";
 import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
 import {
-  GetEffectiveUserPluginsRequest,
-  GetMeRequest,
-} from "../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
-import {
   createSandCursorBackendClient,
   getSandInferenceBackendUrl,
 } from "../../shared/node/cursor-backend/cursor-inference.js";
@@ -167,7 +163,7 @@ export function createHostPluginSkillsLoader(
     if (currentUserId != null) return currentUserId;
     try {
       const response = await dashboard.getMe(
-        new GetMeRequest(),
+        {},
         { timeoutMs: HOST_PLUGIN_SKILLS_CURRENT_USER_TIMEOUT_MS },
       );
       currentUserId = positiveNumber(response?.userId);
@@ -190,7 +186,7 @@ export function createHostPluginSkillsLoader(
     const client = createBackendMarketplaceClient(
       async () => {
         const response = await dashboard.getEffectiveUserPlugins(
-          new GetEffectiveUserPluginsRequest(),
+          {},
           { timeoutMs: HOST_PLUGIN_SKILLS_EFFECTIVE_PLUGINS_TIMEOUT_MS },
         );
         publisherFacts = publisherFactsFromListing(response);
