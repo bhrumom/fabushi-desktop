@@ -10,7 +10,7 @@ use crate::extensions::notify_bus::extension::HostNotifyBusExtension;
 use crate::extensions::notify_bus::notify_bus_client::SandNotifyTopic;
 
 use super::backend_relay_source::{BackendRelayRuntime, RelayStatus};
-use super::backend_transport::AutomationsBackendTransport;
+use super::backend_transport::{AutomationsBackendError, AutomationsBackendTransport};
 use super::sand_automation_fire_consumer::{
     AutomationFireBackendRuntime, BackendAutomationFire, FireCompletion,
 };
@@ -26,6 +26,7 @@ pub type FireDispatch = Arc<
         + Sync,
 >;
 pub type FirePollStateReader = Arc<dyn Fn() -> (bool, bool) + Send + Sync>;
+pub type FirePollErrorSink = Arc<dyn Fn(&AutomationsBackendError) + Send + Sync>;
 pub type ProductionLog = Arc<dyn Fn(&str) + Send + Sync>;
 
 struct WakeState {
@@ -82,6 +83,7 @@ impl ProductionAutomationsBackendRuntime {
         relay_sink: RelayEventSink,
         fire_dispatch: FireDispatch,
         fire_poll_state: FirePollStateReader,
+        fire_poll_error: FirePollErrorSink,
         log: ProductionLog,
     ) -> Arc<Self> {
         let runtime = Arc::new(Self {
@@ -171,6 +173,7 @@ impl ProductionAutomationsBackendRuntime {
                         },
                     );
                     if let Err(error) = result {
+                        fire_poll_error(&error);
                         log(&format!("[sand:automations] fire poll failed: {error}"));
                     }
                 }
