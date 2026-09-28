@@ -2862,7 +2862,7 @@ fn start_routed_provider_task(
                 ProductionRunnerCompositionInput {
                     provider,
                     bridge,
-                    cursor_auth: Some(Arc::clone(&auth)),
+                    cursor_auth: Some(auth.clone()),
                     request_context: resolved_request_context,
                     cancellation,
                     checkpoint_store,
@@ -2947,7 +2947,7 @@ fn start_routed_provider_task(
                                     let should_cancel = || memory_cancellation.is_cancelled();
                                     let mut options = RoutedProviderOptions {
                                         data_dir: &data_dir,
-                                        cursor_auth: Some(Arc::clone(&auth)),
+                                        cursor_auth: Some(auth.clone()),
                                         tools: &[],
                                         mcp_server_url: None,
                                         execute_tool: &mut reject_tool,
