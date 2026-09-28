@@ -2,10 +2,11 @@ use std::fs;
 use std::path::PathBuf;
 
 use mahayana_host_runtime::extensions::box_store_sync::box_copy_in::{
-    CopyInOutcome, run_local_box_copy_in,
+    BOX_COPY_IN_EXIT_HYDRATED, CopyInOutcome, execute_box_copy_in_from_env_with_provider_dependencies,
+    run_local_box_copy_in,
 };
 use mahayana_host_runtime::extensions::box_store_sync::box_object_store::{
-    BoxObjectStore, LocalFsObjectStore,
+    BoxObjectStore, BoxObjectStoreProviderDependencies, LocalFsObjectStore,
 };
 use mahayana_host_runtime::extensions::box_store_sync::box_store_manifest_format::{
     BOX_STORE_MANIFEST_REL_PATH,
@@ -217,6 +218,61 @@ fn missing_pack_object_falls_back_to_loose_blobs() {
             bytes
         );
     }
+
+    fs::remove_dir_all(root).expect("cleanup");
+}
+
+
+#[test]
+fn shipping_copy_in_composes_through_canonical_object_store_provider() {
+    let root = temp_root("provider-composition");
+    let store_root = root.join("store-root");
+    let target_root = root.join("target");
+    let store_id = "agentStore:copy-in-provider";
+    fs::create_dir_all(&target_root).expect("create target");
+    let store = LocalFsObjectStore::new(store_root.join(store_id));
+
+    let bytes = b"provider-composed-copy-in\n".to_vec();
+    let sha = sha256_hex(&bytes);
+    store
+        .put(&format!("blobs/{sha}"), &bytes)
+        .expect("write blob");
+    store
+        .put(
+            BOX_STORE_MANIFEST_REL_PATH,
+            serde_json::to_vec(&serde_json::json!({
+                "version": 2,
+                "updatedAtMs": 1,
+                "writerWindowId": "provider-composition",
+                "entries": {
+                    "workspace/provider.txt": {
+                        "kind": "file",
+                        "sha": sha,
+                        "size": bytes.len(),
+                        "mode": 0o600
+                    }
+                }
+            }))
+            .expect("serialize manifest")
+            .as_slice(),
+        )
+        .expect("write manifest");
+
+    let environment = std::collections::BTreeMap::from([
+        ("SAND_BOX_STORE_COPY_IN".to_string(), "1".to_string()),
+        ("SAND_BOX_STORE_LOCAL_DIR".to_string(), store_root.to_string_lossy().into_owned()),
+        ("SAND_BOX_STORE_ID".to_string(), store_id.to_string()),
+    ]);
+    let exit = execute_box_copy_in_from_env_with_provider_dependencies(
+        &environment,
+        &target_root,
+        BoxObjectStoreProviderDependencies::default(),
+    );
+    assert_eq!(exit, BOX_COPY_IN_EXIT_HYDRATED);
+    assert_eq!(
+        fs::read(target_root.join("workspace/provider.txt")).expect("restored file"),
+        bytes
+    );
 
     fs::remove_dir_all(root).expect("cleanup");
 }

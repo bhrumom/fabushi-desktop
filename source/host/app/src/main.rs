@@ -8,7 +8,7 @@
 
 use mahayana_host_runtime::extensions::action_audit::action_audit_service::{AuditAction, AuditRecord};
 use mahayana_host_runtime::extensions::box_store_sync::box_copy_in::{
-    BOX_COPY_IN_ARG, execute_box_copy_in_from_env,
+    BOX_COPY_IN_ARG, execute_production_box_copy_in_from_env,
 };
 use mahayana_host_runtime::extensions::box_store_sync::production::ProductionBoxStoreSyncApi;
 use mahayana_host_runtime::extensions::action_audit::extension::ActionAuditExtension;
@@ -5397,7 +5397,7 @@ fn drain_ready_runtime_events(
 fn main() {
     if std::env::args().any(|arg| arg == BOX_COPY_IN_ARG) {
         let environment = std::env::vars().collect::<BTreeMap<_, _>>();
-        let exit_code = execute_box_copy_in_from_env(&environment, Path::new("/"));
+        let exit_code = execute_production_box_copy_in_from_env(&environment, Path::new("/"));
         std::process::exit(exit_code);
     }
 

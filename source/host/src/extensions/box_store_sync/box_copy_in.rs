@@ -1,13 +1,16 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use sha2::{Digest, Sha256};
 
 use super::agent_store_sand_files::normalize_rel_path;
-use super::box_object_store::{BoxObjectStore, LocalFsObjectStore};
+use super::box_object_store::{
+    BoxObjectStore, BoxObjectStoreProvider, BoxObjectStoreProviderDependencies,
+    resolve_box_object_store_provider,
+};
 use super::box_store_download::{
     is_critical_rel_path, resolve_restore_destination, symlink_target_stays_within_root,
 };
@@ -23,6 +26,8 @@ use super::box_store_manifest::count_store_db_manifest_entries;
 use super::box_store_manifest_format::{
     BOX_STORE_MANIFEST_REL_PATH, BoxStoreManifestEntry, parse_box_store_manifest,
 };
+use crate::extensions::auth::auth_service::HostAuthService;
+use crate::extensions::auth::credential_renewer::get_configured_backend_url;
 use crate::r#box::box_store_backend_policy::{
     is_box_store_copy_in_enabled, resolve_box_store_backend_policy,
 };
@@ -167,17 +172,82 @@ pub fn execute_box_copy_in_from_env(
     environment: &BTreeMap<String, String>,
     target_root: &Path,
 ) -> i32 {
+    execute_box_copy_in_from_env_with_provider_dependencies(
+        environment,
+        target_root,
+        BoxObjectStoreProviderDependencies::default(),
+    )
+}
+
+/// Shipping copy-in entrypoint. LocalFS requires no authentication; remote
+/// AgentStore/SandBoxStoreV2 reuse the canonical Host auth and machine-id
+/// owners plus the same BoxObjectStore provider resolver used by the long-lived
+/// production sync service.
+pub fn execute_production_box_copy_in_from_env(
+    environment: &BTreeMap<String, String>,
+    target_root: &Path,
+) -> i32 {
     if !is_box_store_copy_in_enabled(environment) {
         return BOX_COPY_IN_EXIT_NOOP;
     }
-
     let policy = resolve_box_store_backend_policy(environment);
-    let Some(local_dir) = policy.local_dir else {
-        eprintln!(
-            "[box-copy-in] remote object-store adapter is not production-wired; refusing to start Host"
-        );
-        return BOX_COPY_IN_EXIT_FAILED;
+    let deps = if policy.local_dir.is_some() {
+        BoxObjectStoreProviderDependencies::default()
+    } else {
+        let backend_url = match get_configured_backend_url() {
+            Ok(url) => url,
+            Err(error) => {
+                eprintln!("[box-copy-in] invalid production backend URL: {error}");
+                return BOX_COPY_IN_EXIT_FAILED;
+            }
+        };
+        let auth = match HostAuthService::production(|message| {
+            eprintln!("[box-copy-in][auth] {message}");
+        }) {
+            Ok(auth) => Arc::new(auth),
+            Err(error) => {
+                eprintln!("[box-copy-in] failed to initialize production auth: {error}");
+                return BOX_COPY_IN_EXIT_FAILED;
+            }
+        };
+        let token_auth = Arc::clone(&auth);
+        let machine_auth = Arc::clone(&auth);
+        BoxObjectStoreProviderDependencies {
+            backend_url: Some(backend_url),
+            get_access_token: Some(Arc::new(move || {
+                token_auth.get_access_token().map_err(|error| error.to_string())
+            })),
+            get_machine_id: Some(Arc::new(move || {
+                machine_auth.get_machine_id().map_err(|error| error.to_string())
+            })),
+        }
     };
+    execute_box_copy_in_from_env_with_provider_dependencies(environment, target_root, deps)
+}
+
+pub fn execute_box_copy_in_from_env_with_provider_dependencies(
+    environment: &BTreeMap<String, String>,
+    target_root: &Path,
+    deps: BoxObjectStoreProviderDependencies,
+) -> i32 {
+    if !is_box_store_copy_in_enabled(environment) {
+        return BOX_COPY_IN_EXIT_NOOP;
+    }
+    let provider = match resolve_box_object_store_provider(environment, deps) {
+        Ok(provider) => provider,
+        Err(error) => {
+            eprintln!("[box-copy-in] object-store provider unavailable: {error}");
+            return BOX_COPY_IN_EXIT_FAILED;
+        }
+    };
+    execute_box_copy_in_with_provider(environment, target_root, provider.as_ref())
+}
+
+pub fn execute_box_copy_in_with_provider(
+    environment: &BTreeMap<String, String>,
+    target_root: &Path,
+    provider: &dyn BoxObjectStoreProvider,
+) -> i32 {
     let Some(store_id) = environment
         .get("SAND_BOX_STORE_ID")
         .map(|value| value.trim())
@@ -193,8 +263,8 @@ pub fn execute_box_copy_in_from_env(
             return BOX_COPY_IN_EXIT_FAILED;
         }
     };
-    let store = LocalFsObjectStore::new(local_dir.join(store_id));
-    match run_local_box_copy_in(&store, target_root) {
+    let store = provider.for_store(&store_id);
+    match run_local_box_copy_in(store.as_ref(), target_root) {
         result @ CopyInResult { outcome: CopyInOutcome::Hydrated, .. }
         | result @ CopyInResult { outcome: CopyInOutcome::Noop, .. } => {
             eprintln!(
