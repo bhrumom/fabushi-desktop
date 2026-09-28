@@ -712,7 +712,7 @@ impl ProductionBoxStoreSyncInner {
             .unwrap_or_default();
         let entries_before = entries.clone();
         let summary = sync_store_db_snapshots(
-            Arc::clone(&store),
+            store.clone(),
             &store_id,
             &mut entries,
             &get_sand_root_dir(),
@@ -1939,10 +1939,10 @@ mod tests {
             .expect("seed source store.db");
         }
 
-        let store = LocalFsObjectStore::new(&store_root);
+        let store = Arc::new(LocalFsObjectStore::new(&store_root));
         let mut manifest = BoxManifestMap::new();
         let summary = sync_store_db_snapshots(
-            Arc::clone(&store),
+            store.clone(),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -1967,7 +1967,7 @@ mod tests {
 
         fs::remove_file(&source_db).expect("remove source db");
         let summary = sync_store_db_snapshots(
-            Arc::clone(&store),
+            store.clone(),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -2001,10 +2001,10 @@ mod tests {
         fs::write(agent_dir.join("conversation-blobs.db"), b"not-a-sqlite-db")
             .expect("write corrupt conversation blob db");
 
-        let store = LocalFsObjectStore::new(&store_root);
+        let store = Arc::new(LocalFsObjectStore::new(&store_root));
         let mut manifest = BoxManifestMap::new();
         let summary = sync_store_db_snapshots(
-            Arc::clone(&store),
+            store.clone(),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -2043,10 +2043,10 @@ mod tests {
             )
             .expect("seed store.db");
         }
-        let store = LocalFsObjectStore::new(&store_root);
+        let store = Arc::new(LocalFsObjectStore::new(&store_root));
         let mut manifest = BoxManifestMap::new();
         sync_store_db_snapshots(
-            Arc::clone(&store),
+            store.clone(),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -2063,7 +2063,7 @@ mod tests {
                 .expect("mutate live db");
         }
         let summary = sync_store_db_snapshots(
-            Arc::clone(&store),
+            store.clone(),
             "store-a",
             &mut manifest,
             &sand_root,
