@@ -21,6 +21,7 @@ const common = {
   platform: "node",
   target: "node24",
   format: "cjs",
+  mainFields: ["module", "main"],
   sourcemap: true,
   logLevel: "info",
   absWorkingDir: desktopRoot,
