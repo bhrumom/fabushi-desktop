@@ -2245,3 +2245,12 @@ Before any Automations manifest row may advance from `existing-needs-parity`, th
 - **AUTOMATIONS-PROD-006** — focused executable contracts must cover lifecycle start/stop, watcher-to-resume callback, stable fire preparation/terminal completion mapping, and shipping composition boundaries. Exact-HEAD Host/Runner CI is required before any status promotion.
 
 This slice does **not** make cloud reconciliation final. `sand-automation-cloud-sync` remains non-final until the Rust Host owns authenticated remote list/create/update/delete convergence, definition revision/hash identity, scheduling-authority decisions, agent-delete cleanup, failure/recovery surfacing and production reconcile triggers equivalent to frozen Grok 0.18.
+
+
+### 2026-09-29 Automations listener-connect shipping cutover
+
+- Exact implementation HEAD `3778261d319a0b2c6d3155b4bfc00494b1b1115c` preserves the frozen interactive watcher boundary: routine/background reconciliation does not arm integration watches; only a live Runner listener-connect card for a disconnected Slack/GitHub platform does.
+- Production integration-state reads now fail soft to `isConnected=false` instead of failing the complete listener-integrations RPC on transient auth/network errors (`60bf83fba7ec2a37d3cd783b2019df845d19c887`).
+- The production watcher now parks its polling owner while suspended or idle, matching the frozen PollingPolicy disposal semantics, and resumes the existing pending watches without creating a second Automations runtime (`3778261d319a0b2c6d3155b4bfc00494b1b1115c`).
+- Exact-HEAD Desktop Chat Parity run `36460788553` passed both Renderer and Focused Electron chat E2E jobs. Rust desktop runtime run `36460788535` passed the shipping Host build, independent Coordinator contract, box-exec contracts, platform Worker, and the full independent Mahayana Host Runner `cargo test --manifest-path source/host/Cargo.toml`; its Renderer job remains red only at the intentional strict final architecture gate while non-final mappings still exist.
+- The frozen `source/host/extensions/automations/listener-connect-watcher.ts` row is therefore final `implemented`. `listener-integrations.ts` intentionally remains `existing-needs-parity`: source-status/scope projection, enabled-routine `neededByCount`, and Session-owned Agent-channel filtering still must be exposed through the shipping Automations Host surface.

@@ -10634,20 +10634,26 @@
       "targetPath": "source/host/src/extensions/automations/listener_connect_watcher.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b13e226d5ee3ba5d20a6ae2bd5b9fd0d9c49845a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/automations/listener_connect_watcher.rs",
-        "source/host/src/extensions/automations/extension.rs"
+        "source/host/src/extensions/automations/extension.rs",
+        "source/host/src/extensions/automations/listener_connect_watcher_production.rs",
+        "source/host/src/extensions/automations/production_lifecycle.rs",
+        "source/host/src/runner/tools/listener_connect_cards.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/automations_trigger_foundations_contract.rs",
         "source/host/tests/automations_extension_runtime_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/automations_listener_watcher_production_contract.rs",
+        "source/host/tests/sand_state_tool_contract.rs"
       ],
-      "notes": "Rust ListenerConnectWatcher preserves disconnect-before-reconnect arming, expiry, suspend/resume and disposal semantics and is owned by AutomationExtensionRuntime. Final remains withheld for the frozen polling-policy timer owner and live transcript resumeAfterListenerConnect production callback."
+      "notes": "Rust ListenerConnectWatcher preserves the frozen 15-minute expiry, replacement, disconnect-before-reconnect arming, suspend/resume, and disposal semantics. ProductionListenerConnectWatcher owns wake-driven 5-second polling and parks while suspended or idle; ProductionAutomationsLifecycle owns singleton startup plus explicit stop/join. Shipping Runner code arms the watcher only after it has surfaced a listener-connect card for a currently disconnected Slack/GitHub integration, never from background automation reconciliation. The connected edge calls the Transcript-owned hidden handoff-resume path with appendUserMessage=false and a unique client nonce."
     },
     {
       "referencePath": "source/host/extensions/automations/listener-integrations.ts",
