@@ -11342,7 +11342,7 @@
         "source/host/tests/box_store_sync_planned_contract.rs",
         "source/host/tests/box_store_sync_production_wiring_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "notes": "Finalized at implementation commit e02639400ab1de509a689df1886ffd004a6df06a: the shipping Mahayana Host composes frozen StoreDb capture lifecycle semantics end to end for LocalFs snapshot-out. Periodic sweeps include StoreDb only while Host is idle and fail-safe skip live Agent DB handles; turn settlement schedules the frozen 5-second per-Agent debounce only after the live DB owner retires; captures for the same Agent are serialized; bundle identity includes the shipping StoreDb write generation; pre/post bundle identity, staged manifest publication, canonical manifest conditional-write fencing, recovery-marker refusal and all-or-nothing bundle publication remain in the production path. Exact-HEAD evidence is Desktop Chat Parity run 36482629600 and Rust desktop runtime run 36482629412. Remote AgentStore/SandBoxStoreV2 remains a separate Box Store backend blocker and is not represented as a StoreDb-capture lifecycle blocker."
     },
@@ -11365,7 +11365,7 @@
         "source/host/tests/box_store_sync_planned_contract.rs",
         "source/host/tests/box_store_sync_production_wiring_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "notes": "Finalized at implementation commit e02639400ab1de509a689df1886ffd004a6df06a: the shipping Mahayana Host composes frozen StoreDb capture lifecycle semantics end to end for LocalFs snapshot-out. Periodic sweeps include StoreDb only while Host is idle and fail-safe skip live Agent DB handles; turn settlement schedules the frozen 5-second per-Agent debounce only after the live DB owner retires; captures for the same Agent are serialized; bundle identity includes the shipping StoreDb write generation; pre/post bundle identity, staged manifest publication, canonical manifest conditional-write fencing, recovery-marker refusal and all-or-nothing bundle publication remain in the production path. Exact-HEAD evidence is Desktop Chat Parity run 36482629600 and Rust desktop runtime run 36482629412. Remote AgentStore/SandBoxStoreV2 remains a separate Box Store backend blocker and is not represented as a StoreDb-capture lifecycle blocker."
     },
