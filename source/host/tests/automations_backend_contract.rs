@@ -208,6 +208,50 @@ fn fire_runtime_polls_delivers_reports_and_acks_on_next_poll() {
 }
 
 #[test]
+fn fire_runtime_does_not_poll_until_run_execution_is_ready() {
+    let transport = MockTransport::with_responses(vec![
+        Ok(json!({"events":[]})),
+    ]);
+    let mut runtime = AutomationFireBackendRuntime::new(transport.clone());
+
+    let count = runtime
+        .tick_with_state(100, true, true, false, true, |_| true)
+        .expect("not-ready tick");
+    assert_eq!(count, 0);
+    assert!(transport.calls().is_empty());
+
+    runtime
+        .tick_with_state(101, true, true, true, true, |_| true)
+        .expect("ready tick");
+    assert_eq!(transport.calls().len(), 1);
+}
+
+#[test]
+fn fire_runtime_drains_once_while_no_server_schedulable_routines_exist() {
+    let transport = MockTransport::with_responses(vec![
+        Ok(json!({"events":[]})),
+        Ok(json!({"events":[]})),
+    ]);
+    let mut runtime = AutomationFireBackendRuntime::new(transport.clone());
+
+    runtime
+        .tick_with_state(100, true, true, true, false, |_| true)
+        .expect("initial drain");
+    assert_eq!(transport.calls().len(), 1);
+
+    runtime
+        .tick_with_state(101, true, true, true, false, |_| true)
+        .expect("suppressed empty drain");
+    assert_eq!(transport.calls().len(), 1);
+
+    runtime.start();
+    runtime
+        .tick_with_state(102, true, true, true, false, |_| true)
+        .expect("config-reset drain");
+    assert_eq!(transport.calls().len(), 2);
+}
+
+#[test]
 fn fire_runtime_treats_completion_conflict_as_reported_and_honors_next_poll_delay() {
     let transport = MockTransport::with_responses(vec![
         Ok(json!({"events":[{
