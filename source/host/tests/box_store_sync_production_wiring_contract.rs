@@ -113,8 +113,8 @@ fn shipping_host_starts_box_store_sync_after_mcp_and_stops_it_before_mcp() {
 fn production_owner_wires_real_chrome_watcher_and_periodic_cycle() {
     let production = include_str!("../src/extensions/box_store_sync/production.rs");
     assert!(production.contains("ChromeSessionWatcher::with_logger"));
-    assert!(production.contains("run_local_cycle(true)"));
-    assert!(production.contains("run_local_cycle(false)"));
+    assert!(production.contains("run_local_cycle(true, false, false)"));
+    assert!(production.contains("run_local_cycle(false, include_store_dbs, true)"));
     assert!(production.contains("stage_box_chrome_session()"));
     assert!(production.contains("sync_store_db_snapshots("));
     assert!(production.contains("StoreDbSnapshotUpload::new("));
@@ -122,4 +122,21 @@ fn production_owner_wires_real_chrome_watcher_and_periodic_cycle() {
     assert!(production.contains("write_manifest("));
     assert!(production.contains("store.put_from_file(&blob_key, path)"));
     assert!(production.contains("remote-backend-not-wired"));
+    assert!(production.contains("has_live_sand_agent_db_handle"));
+    assert!(production.contains("run_store_db_debounce_loop"));
+    assert!(production.contains("AgentDbCaptureQueues"));
+    assert!(production.contains("get_sand_agent_db_write_generation"));
+
+    let shipping_main = include_str!("../app/src/main.rs");
+    assert!(shipping_main.contains("schedule_store_db_snapshot(&agent_id)"));
+    let retire = shipping_main
+        .find("retire_idle_live_session(&worker_retire_sessions, &agent_id)")
+        .expect("live Agent DB session retirement");
+    let schedule = shipping_main
+        .find("schedule_store_db_snapshot(&agent_id)")
+        .expect("turn-end store.db scheduling");
+    assert!(
+        retire < schedule,
+        "turn-end capture must be scheduled only after the live Agent DB owner retires"
+    );
 }

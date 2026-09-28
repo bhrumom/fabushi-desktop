@@ -31,7 +31,7 @@ use crate::extensions::box_store_sync::extension::{
     start_box_store_sync_extension,
 };
 use crate::extensions::box_store_sync::production::{
-    ProductionBoxStoreSyncFactory, ProductionBoxStoreSyncService,
+    ProductionBoxStoreSyncApi, ProductionBoxStoreSyncFactory, ProductionBoxStoreSyncService,
 };
 use crate::extensions::browser_ua::{
     BrowserUaExtensionRuntime, BrowserUaHostLog, start_browser_ua_extension,
@@ -539,6 +539,14 @@ impl ProductionHostExtensions {
         );
         *slot = Some(extension);
         Ok(())
+    }
+
+    pub fn box_store_sync_api(&self) -> Result<Option<ProductionBoxStoreSyncApi>, String> {
+        let slot = self
+            .box_store_sync
+            .lock()
+            .map_err(|_| "production BoxStoreSync runtime lock poisoned".to_string())?;
+        Ok(slot.as_ref().map(|extension| extension.api()))
     }
 
     pub fn stop_box_store_sync(&self) -> Result<(), String> {

@@ -3,11 +3,11 @@ use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{
-    Arc, Mutex,
+    Arc, Condvar, Mutex,
     atomic::{AtomicBool, Ordering},
 };
 use std::thread::{self, JoinHandle};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
@@ -47,6 +47,10 @@ use crate::host_paths::get_sand_root_dir;
 use crate::r#box::box_store_backend_policy::{
     BoxStoreBackendKind, is_box_store_sync_enabled, resolve_box_store_backend_policy,
 };
+use crate::storage::store_db::{
+    get_sand_agent_db_write_generation, has_live_sand_agent_db_handle,
+};
+use crate::extensions::box_store_sync::store_db_bundle_capture::AgentDbCaptureQueues;
 
 const SAND_BOX_STORE_ID_ENV: &str = "SAND_BOX_STORE_ID";
 const WORKSPACE_ROOT: &str = "/workspace";
@@ -107,8 +111,30 @@ impl ProductionBoxStoreSyncApi {
     }
 
     pub fn snapshot_local_now(&self) -> Result<ProductionBoxStoreSyncStatus, String> {
-        self.inner.run_local_cycle(false)?;
+        self.inner.run_local_cycle(false, true, false)?;
         Ok(self.status())
+    }
+
+    pub fn schedule_store_db_snapshot(&self, agent_id: &str) -> bool {
+        let agent_id = agent_id.trim();
+        if agent_id.is_empty()
+            || self.inner.stopped.load(Ordering::Acquire)
+            || !matches!(&self.inner.mode, ProductionBoxStoreSyncMode::LocalFs { .. })
+        {
+            return false;
+        }
+        let delay = Duration::from_millis(
+            self.inner.deps.scheduling.store_db_debounce.delay_ms.max(1),
+        );
+        let mut queue = self
+            .inner
+            .store_db_debounce
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        queue.schedule(agent_id.to_string(), Instant::now() + delay);
+        drop(queue);
+        self.inner.store_db_wake.notify_one();
+        true
     }
 }
 
@@ -126,6 +152,7 @@ pub struct ProductionBoxStoreSyncService {
     inner: Arc<ProductionBoxStoreSyncInner>,
     watcher: Mutex<Option<ChromeSessionWatcher>>,
     poller: Mutex<Option<JoinHandle<()>>>,
+    store_db_worker: Mutex<Option<JoinHandle<()>>>,
 }
 
 impl ProductionBoxStoreSyncService {
@@ -141,6 +168,9 @@ impl ProductionBoxStoreSyncService {
                 mode,
                 stopped: AtomicBool::new(false),
                 cycle_lock: Mutex::new(()),
+                store_db_debounce: Mutex::new(StoreDbDebounceQueue::default()),
+                store_db_wake: Condvar::new(),
+                agent_db_capture_queues: AgentDbCaptureQueues::default(),
                 status: Mutex::new(ProductionBoxStoreSyncStatus {
                     enabled,
                     backend,
@@ -149,6 +179,7 @@ impl ProductionBoxStoreSyncService {
             }),
             watcher: Mutex::new(None),
             poller: Mutex::new(None),
+            store_db_worker: Mutex::new(None),
         }
     }
 
@@ -202,7 +233,7 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
             CHROME_SESSION_DB_NAMES.iter().copied(),
             self.inner.deps.scheduling.chrome_session_debounce.delay_ms,
             Arc::new(move || {
-                if let Err(error) = chrome_inner.run_local_cycle(true) {
+                if let Err(error) = chrome_inner.run_local_cycle(true, false, false) {
                     chrome_inner.log(&format!(
                         "chrome-session snapshot rejected: {error}"
                     ));
@@ -220,6 +251,24 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(watcher);
 
+        let store_db_inner = Arc::clone(&self.inner);
+        match thread::Builder::new()
+            .name("box-store-db-debounce".into())
+            .spawn(move || run_store_db_debounce_loop(store_db_inner))
+        {
+            Ok(handle) => {
+                *self
+                    .store_db_worker
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(handle);
+            }
+            Err(error) => {
+                self.inner.log(&format!("store.db debounce worker failed to start: {error}"));
+                self.inner
+                    .diagnostic("startup", "store-db-debounce-worker-start-failed", false);
+            }
+        }
+
         let poll_inner = Arc::clone(&self.inner);
         let interval_ms = self.inner.deps.scheduling.polling.interval_ms.max(1);
         let handle = thread::Builder::new()
@@ -229,7 +278,10 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                     if !sleep_interruptibly(&poll_inner.stopped, interval_ms) {
                         break;
                     }
-                    if let Err(error) = poll_inner.run_local_cycle(false) {
+                    let include_store_dbs = (poll_inner.deps.is_idle)();
+                    if let Err(error) =
+                        poll_inner.run_local_cycle(false, include_store_dbs, true)
+                    {
                         poll_inner.log(&format!("periodic snapshot rejected: {error}"));
                         poll_inner.diagnostic("periodic", &error, false);
                     }
@@ -255,6 +307,7 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
         if self.inner.stopped.swap(true, Ordering::AcqRel) {
             return;
         }
+        self.inner.store_db_wake.notify_all();
         if let Some(watcher) = self
             .watcher
             .lock()
@@ -271,6 +324,87 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
         {
             let _ = handle.join();
         }
+        if let Some(handle) = self
+            .store_db_worker
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take()
+        {
+            let _ = handle.join();
+        }
+    }
+}
+
+#[derive(Default)]
+struct StoreDbDebounceQueue {
+    pending: BTreeMap<String, Instant>,
+}
+
+impl StoreDbDebounceQueue {
+    fn schedule(&mut self, agent_id: String, deadline: Instant) {
+        self.pending.insert(agent_id, deadline);
+    }
+
+    fn take_due(&mut self, now: Instant) -> Vec<String> {
+        let due = self
+            .pending
+            .iter()
+            .filter(|(_, deadline)| **deadline <= now)
+            .map(|(agent_id, _)| agent_id.clone())
+            .collect::<Vec<_>>();
+        for agent_id in &due {
+            self.pending.remove(agent_id);
+        }
+        due
+    }
+
+    fn next_deadline(&self) -> Option<Instant> {
+        self.pending.values().min().copied()
+    }
+}
+
+fn run_store_db_debounce_loop(inner: Arc<ProductionBoxStoreSyncInner>) {
+    loop {
+        let due = {
+            let mut queue = inner
+                .store_db_debounce
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            loop {
+                if inner.stopped.load(Ordering::Acquire) {
+                    return;
+                }
+                let now = Instant::now();
+                let due = queue.take_due(now);
+                if !due.is_empty() {
+                    break due;
+                }
+                queue = if let Some(deadline) = queue.next_deadline() {
+                    let wait = deadline.saturating_duration_since(now);
+                    let (queue, _) = inner
+                        .store_db_wake
+                        .wait_timeout(queue, wait)
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    queue
+                } else {
+                    inner
+                        .store_db_wake
+                        .wait(queue)
+                        .unwrap_or_else(|poisoned| poisoned.into_inner())
+                };
+            }
+        };
+        for agent_id in due {
+            if inner.stopped.load(Ordering::Acquire) {
+                return;
+            }
+            if let Err(error) = inner.run_local_agent_db_snapshot(&agent_id) {
+                inner.log(&format!(
+                    "turn-end store.db snapshot rejected for {agent_id}: {error}"
+                ));
+                inner.diagnostic("store-db-turn-end", &error, false);
+            }
+        }
     }
 }
 
@@ -280,6 +414,9 @@ struct ProductionBoxStoreSyncInner {
     mode: ProductionBoxStoreSyncMode,
     stopped: AtomicBool,
     cycle_lock: Mutex<()>,
+    store_db_debounce: Mutex<StoreDbDebounceQueue>,
+    store_db_wake: Condvar,
+    agent_db_capture_queues: AgentDbCaptureQueues,
     status: Mutex<ProductionBoxStoreSyncStatus>,
 }
 
@@ -298,7 +435,12 @@ impl ProductionBoxStoreSyncInner {
         (self.deps.report_host_extension_diagnostic)(&diagnostic);
     }
 
-    fn run_local_cycle(&self, chrome_only: bool) -> Result<(), String> {
+    fn run_local_cycle(
+        &self,
+        chrome_only: bool,
+        include_store_dbs: bool,
+        skip_live_handle_store_dbs: bool,
+    ) -> Result<(), String> {
         let _cycle = self
             .cycle_lock
             .lock()
@@ -353,12 +495,16 @@ impl ProductionBoxStoreSyncInner {
                 None,
                 manifest_v2,
             )?);
-            categories.push(sync_store_db_snapshots(
-                &store,
-                &store_id,
-                &mut entries,
-                &sand_root,
-            )?);
+            if include_store_dbs {
+                categories.push(sync_store_db_snapshots(
+                    &store,
+                    &store_id,
+                    &mut entries,
+                    &sand_root,
+                    skip_live_handle_store_dbs,
+                    None,
+                )?);
+            }
             let workspace_ignore =
                 load_workspace_ignore(WORKSPACE_ROOT, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS);
             categories.push(sync_tree_category(
@@ -423,6 +569,80 @@ impl ProductionBoxStoreSyncInner {
             ok,
         );
         Ok(())
+    }
+
+    fn run_local_agent_db_snapshot(&self, agent_id: &str) -> Result<(), String> {
+        self.agent_db_capture_queues.run_serialized(agent_id, || {
+            self.run_local_agent_db_snapshot_unqueued(agent_id)
+        })
+    }
+
+    fn run_local_agent_db_snapshot_unqueued(&self, agent_id: &str) -> Result<(), String> {
+        let _cycle = self
+            .cycle_lock
+            .lock()
+            .map_err(|_| "box-store sync cycle lock poisoned".to_string())?;
+        if self.stopped.load(Ordering::Acquire) {
+            return Err("stopped".into());
+        }
+        let ProductionBoxStoreSyncMode::LocalFs {
+            base_dir,
+            store_id_override,
+        } = &self.mode
+        else {
+            return Err("local-fs backend is not active".into());
+        };
+        let store_id = match store_id_override {
+            Some(store_id) => store_id.clone(),
+            None => (self.deps.resolve_store_id)()?,
+        };
+        let store = LocalFsObjectStore::new(base_dir.join(&store_id));
+        let manifest_baseline = store.get(BOX_STORE_MANIFEST_REL_PATH)?;
+        let mut parsed = parse_manifest_bytes(manifest_baseline.as_deref())?;
+        let manifest_v2 = self
+            .env
+            .get(SAND_MANIFEST_V2_ENV)
+            .is_some_and(|value| value == "1")
+            || parsed
+                .as_ref()
+                .is_some_and(|value| value.version == BOX_STORE_MANIFEST_VERSION);
+        let mut entries = parsed
+            .take()
+            .map(|value| value.entries)
+            .unwrap_or_default();
+        let entries_before = entries.clone();
+        let summary = sync_store_db_snapshots(
+            &store,
+            &store_id,
+            &mut entries,
+            &get_sand_root_dir(),
+            false,
+            Some(agent_id),
+        )?;
+        if entries != entries_before {
+            write_manifest_if_unchanged(
+                &store,
+                manifest_baseline.as_deref(),
+                &entries,
+                manifest_v2,
+                format!("mahayana-host-{}", std::process::id()),
+            )?;
+        }
+        let failures = summary.failures + summary.oversize + summary.metadata_failures;
+        self.log(&format!(
+            "turn-end store.db {agent_id}: {} file(s) / {}B uploaded, {} failure(s)",
+            summary.files_uploaded, summary.bytes_uploaded, failures
+        ));
+        self.diagnostic(
+            "store-db-turn-end",
+            if failures == 0 { "ok" } else { "category-failures" },
+            failures == 0,
+        );
+        if failures == 0 {
+            Ok(())
+        } else {
+            Err(format!("store.db capture had {failures} failure(s)"))
+        }
     }
 }
 
@@ -678,6 +898,8 @@ fn sync_store_db_snapshots(
     store_id: &str,
     manifest: &mut BoxManifestMap,
     sand_root: &Path,
+    skip_live_handles: bool,
+    only_agent_id: Option<&str>,
 ) -> Result<CategoryTransferSummary, String> {
     let mut summary = CategoryTransferSummary {
         name: "store.db".into(),
@@ -735,6 +957,9 @@ fn sync_store_db_snapshots(
                 walk_complete = false;
                 continue;
             }
+            if only_agent_id.is_some_and(|target| target != agent_id) {
+                continue;
+            }
             let agent_dir = agent_entry.path();
             let bundle_paths = AGENT_STORE_DB_BASENAMES
                 .iter()
@@ -743,6 +968,12 @@ fn sync_store_db_snapshots(
                 })
                 .collect::<Vec<_>>();
 
+            if skip_live_handles
+                && has_live_sand_agent_db_handle(&agent_dir.join("store.db"))
+            {
+                blocked_from_prune.extend(bundle_paths);
+                continue;
+            }
             if agent_has_pending_db_recovery(&agent_dir) {
                 summary.failures += 1;
                 blocked_from_prune.extend(bundle_paths);
@@ -853,7 +1084,7 @@ fn sync_store_db_snapshots(
         }
     }
 
-    if walk_complete {
+    if walk_complete && only_agent_id.is_none() {
         let prefix = format!("{SAND_DATA_REL_PREFIX}/agents/");
         let stale = manifest
             .keys()
@@ -909,8 +1140,13 @@ fn agent_db_bundle_identity(agent_dir: &Path) -> Result<String, String> {
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => (0, 0),
                     Err(error) => return Err(error.to_string()),
                 };
+                let write_generation = if basename == "store.db" {
+                    get_sand_agent_db_write_generation(&path)
+                } else {
+                    0
+                };
                 fields.push(format!(
-                    "{basename}:present:{}:{modified}:{}:{wal_size}:{wal_modified}",
+                    "{basename}:present:{write_generation}:{}:{modified}:{}:{wal_size}:{wal_modified}",
                     metadata.len(),
                     file_mode(&metadata),
                 ));
@@ -1363,6 +1599,8 @@ mod tests {
             "store-a",
             &mut manifest,
             &sand_root,
+            false,
+            None,
         )
         .expect("snapshot store.db");
 
@@ -1386,6 +1624,8 @@ mod tests {
             "store-a",
             &mut manifest,
             &sand_root,
+            false,
+            None,
         )
         .expect("prune removed store.db");
         assert_eq!(summary.removed, 1);
@@ -1421,6 +1661,8 @@ mod tests {
             "store-a",
             &mut manifest,
             &sand_root,
+            false,
+            None,
         )
         .expect("run failing bundle snapshot");
 
@@ -1436,6 +1678,100 @@ mod tests {
         );
 
         fs::remove_dir_all(root).expect("cleanup temp root");
+    }
+
+    #[test]
+    fn store_db_periodic_sweep_skips_live_handle_without_pruning() {
+        let root = temp_root("store-db-live-handle");
+        let sand_root = root.join("sand-data");
+        let agent_dir = sand_root.join("agents/agent-a");
+        let store_root = root.join("store");
+        fs::create_dir_all(&agent_dir).expect("create agent dir");
+        let source_db = agent_dir.join("store.db");
+        {
+            let db = rusqlite::Connection::open(&source_db).expect("open store.db");
+            db.execute_batch(
+                "CREATE TABLE state (id INTEGER PRIMARY KEY, value TEXT);
+                 INSERT INTO state(value) VALUES ('first');",
+            )
+            .expect("seed store.db");
+        }
+        let store = LocalFsObjectStore::new(&store_root);
+        let mut manifest = BoxManifestMap::new();
+        sync_store_db_snapshots(
+            &store,
+            "store-a",
+            &mut manifest,
+            &sand_root,
+            false,
+            None,
+        )
+        .expect("initial capture");
+        let baseline = manifest.clone();
+
+        crate::storage::store_db::register_live_db_handle(&source_db);
+        {
+            let db = rusqlite::Connection::open(&source_db).expect("reopen store.db");
+            db.execute("INSERT INTO state(value) VALUES ('second')", [])
+                .expect("mutate live db");
+        }
+        let summary = sync_store_db_snapshots(
+            &store,
+            "store-a",
+            &mut manifest,
+            &sand_root,
+            true,
+            None,
+        )
+        .expect("live-handle sweep");
+        crate::storage::store_db::release_live_db_handle(&source_db);
+
+        assert_eq!(summary.files_scanned, 0);
+        assert_eq!(summary.files_uploaded, 0);
+        assert_eq!(manifest, baseline, "live Agent DB must remain durable but untouched");
+        fs::remove_dir_all(root).expect("cleanup");
+    }
+
+    #[test]
+    fn store_db_bundle_identity_fences_shipping_write_generation() {
+        let root = temp_root("store-db-generation");
+        let agent_dir = root.join("agents/agent-a");
+        fs::create_dir_all(&agent_dir).expect("create agent dir");
+        let source_db = agent_dir.join("store.db");
+        fs::write(&source_db, b"sqlite-placeholder").expect("seed store.db");
+
+        let before = agent_db_bundle_identity(&agent_dir).expect("identity before");
+        crate::storage::store_db::bump_db_write_generation(&source_db);
+        let after = agent_db_bundle_identity(&agent_dir).expect("identity after");
+        crate::storage::store_db::delete_sand_agent_db_write_generation(&source_db);
+
+        assert_ne!(before, after, "a shipping DB mutation must invalidate capture identity");
+        fs::remove_dir_all(root).expect("cleanup");
+    }
+
+    #[test]
+    fn store_db_debounce_queue_coalesces_per_agent_and_requeues_after_fire() {
+        let now = Instant::now();
+        let mut queue = StoreDbDebounceQueue::default();
+        queue.schedule("agent-a".into(), now + Duration::from_millis(50));
+        queue.schedule("agent-a".into(), now + Duration::from_millis(100));
+        queue.schedule("agent-b".into(), now + Duration::from_millis(75));
+
+        assert!(queue.take_due(now + Duration::from_millis(60)).is_empty());
+        assert_eq!(
+            queue.take_due(now + Duration::from_millis(80)),
+            vec!["agent-b".to_string()]
+        );
+        assert_eq!(
+            queue.take_due(now + Duration::from_millis(120)),
+            vec!["agent-a".to_string()]
+        );
+
+        queue.schedule("agent-a".into(), now + Duration::from_millis(150));
+        assert_eq!(
+            queue.take_due(now + Duration::from_millis(160)),
+            vec!["agent-a".to_string()]
+        );
     }
 
     #[test]

@@ -10,6 +10,7 @@ use mahayana_host_runtime::extensions::action_audit::action_audit_service::{Audi
 use mahayana_host_runtime::extensions::box_store_sync::box_copy_in::{
     BOX_COPY_IN_ARG, execute_box_copy_in_from_env,
 };
+use mahayana_host_runtime::extensions::box_store_sync::production::ProductionBoxStoreSyncApi;
 use mahayana_host_runtime::extensions::action_audit::extension::ActionAuditExtension;
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
 use mahayana_host_runtime::extensions::auto_review::extension::{
@@ -869,6 +870,7 @@ struct UnifiedGatewayApi {
     local_tool_permission: Arc<HostLocalToolPermissionExtension>,
     auto_review: Arc<HostAutoReviewExtension>,
     host_runner_composition: Arc<HostRunnerComposition>,
+    box_store_sync: ProductionBoxStoreSyncApi,
     cross_user: Arc<ProductionCrossUserRuntime>,
     host_upgrade: Arc<ProductionHostUpgradeExtension>,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
@@ -903,6 +905,7 @@ struct LocalRoutedRunnerDeps {
     cloud_agents: Arc<SandCloudAgentManager>,
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
     host_runner_composition: Arc<HostRunnerComposition>,
+    box_store_sync: ProductionBoxStoreSyncApi,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
 }
 
@@ -1156,6 +1159,7 @@ impl UnifiedGatewayApi {
             cloud_agents: Arc::clone(&self.cloud_agents),
             cloud_agent_watches: Arc::clone(&self.cloud_agent_watches),
             host_runner_composition: Arc::clone(&self.host_runner_composition),
+            box_store_sync: self.box_store_sync.clone(),
             automations_lifecycle: Arc::clone(&self.automations_lifecycle),
         }
     }
@@ -1712,6 +1716,7 @@ fn run_local_group_member_turn(
         deps.cloud_agents,
         deps.cloud_agent_watches,
         deps.host_runner_composition,
+        deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
         None,
         runner_args,
@@ -1871,6 +1876,7 @@ fn start_local_upgrade_resume_turn(
         deps.cloud_agents,
         deps.cloud_agent_watches,
         deps.host_runner_composition,
+        deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
         None,
         runner_args,
@@ -2040,6 +2046,7 @@ fn run_local_automation_turn(
         deps.cloud_agents,
         deps.cloud_agent_watches,
         deps.host_runner_composition,
+        deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
         None,
         runner_args,
@@ -2152,6 +2159,7 @@ fn run_local_background_revival_turn(
         deps.cloud_agents,
         deps.cloud_agent_watches,
         deps.host_runner_composition,
+        deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
         None,
         runner_args,
@@ -2683,6 +2691,7 @@ fn start_routed_provider_task(
     cloud_agents: Arc<SandCloudAgentManager>,
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
     host_runner_composition: Arc<HostRunnerComposition>,
+    box_store_sync: ProductionBoxStoreSyncApi,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
     gateway_context: Option<GatewayCommandContext>,
     args: serde_json::Value,
@@ -2985,6 +2994,7 @@ fn start_routed_provider_task(
         ))?;
     let worker_cloud_agents = Arc::clone(&cloud_agents);
     let worker_cloud_agent_watches = Arc::clone(&cloud_agent_watches);
+    let worker_box_store_sync = box_store_sync.clone();
     let cloud_agent_quiet_origin = args
         .get("quietOrigin")
         .filter(|origin| origin.is_object())
@@ -3937,6 +3947,7 @@ fn start_routed_provider_task(
             worker_routed_turn_lease.settle();
             let _ = worker_transcript_runtime
                 .retire_idle_live_session(&worker_retire_sessions, &agent_id);
+            let _ = worker_box_store_sync.schedule_store_db_snapshot(&agent_id);
 
             if waiting_user {
                 worker_events.publish(serde_json::json!({
@@ -4678,6 +4689,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.cloud_agents),
                 Arc::clone(&self.cloud_agent_watches),
                 Arc::clone(&self.host_runner_composition),
+                self.box_store_sync.clone(),
                 Arc::clone(&self.automations_lifecycle),
                 None,
                 args,
@@ -5121,6 +5133,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.cloud_agents),
                 Arc::clone(&self.cloud_agent_watches),
                 Arc::clone(&self.host_runner_composition),
+                self.box_store_sync.clone(),
                 Arc::clone(&self.automations_lifecycle),
                 Some(context.clone()),
                 args,
@@ -5837,6 +5850,17 @@ fn main() {
         eprintln!("failed to start production BoxStoreSync extension: {error}");
         return;
     }
+    let box_store_sync_api = match production_extensions.box_store_sync_api() {
+        Ok(Some(api)) => api,
+        Ok(None) => {
+            eprintln!("production BoxStoreSync started without an API");
+            return;
+        }
+        Err(error) => {
+            eprintln!("failed to access production BoxStoreSync API: {error}");
+            return;
+        }
+    };
     match load_initial_transcript_resiliently(|| {
         ensure_initial_transcript_loaded(&session_workers, transcript_runtime.session_runtime())
     }) {
@@ -5970,6 +5994,7 @@ fn main() {
         cloud_agents: production_extensions.cloud_agents.service(),
         cloud_agent_watches: Arc::clone(&cloud_agent_watches),
         host_runner_composition: Arc::clone(&host_runner_composition),
+        box_store_sync: box_store_sync_api.clone(),
         automations_lifecycle: Arc::clone(&automations_lifecycle_slot),
     };
     let cross_user_settings_path = app_data_dir.join("settings.json");
@@ -6138,6 +6163,7 @@ fn main() {
             local_tool_permission: Arc::clone(&local_tool_permission_extension),
             auto_review: Arc::clone(&auto_review_extension),
             host_runner_composition: Arc::clone(&host_runner_composition),
+            box_store_sync: box_store_sync_api.clone(),
             cross_user: Arc::clone(&cross_user),
             host_upgrade: Arc::clone(&host_upgrade),
             automations_lifecycle: Arc::clone(&automations_lifecycle_slot),
