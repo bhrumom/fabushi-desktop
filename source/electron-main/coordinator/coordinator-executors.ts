@@ -119,6 +119,14 @@ export interface CoordinatorControlExecutorDependencies {
   readonly listHostEffectiveMcpPlugins?: () => Promise<unknown>;
   readonly installHostMcpPlugin?: (request: unknown) => Promise<unknown>;
   readonly uninstallHostMcpPlugin?: (pluginId: string) => Promise<unknown>;
+  readonly addHostMcpServer?: (request: { readonly name: string; readonly configJson: string }) => Promise<unknown>;
+  readonly removeHostMcpServer?: (serverId: string) => Promise<unknown>;
+  readonly restartHostMcpServers?: () => Promise<unknown>;
+  readonly setHostMcpInstructions?: (request: { readonly serverId: string; readonly instructions: string }) => Promise<unknown>;
+  readonly authenticateHostMcpServer?: (request: { readonly serverId: string; readonly accountKey: string; readonly requestingAgentId?: string | null; readonly forceReauth?: boolean }) => Promise<unknown>;
+  readonly logoutHostMcpAccount?: (request: { readonly serverId: string; readonly accountKey: string }) => Promise<unknown>;
+  readonly removeHostMcpAccount?: (request: { readonly serverId: string; readonly accountKey: string }) => Promise<unknown>;
+  readonly renameHostMcpAccount?: (request: { readonly serverId: string; readonly accountKey: string; readonly newAccountKey: string }) => Promise<unknown>;
   readonly noteHostMcpAuthCompleted?: (request: { readonly serverId: string; readonly accountKey: string }) => Promise<unknown>;
   readonly readLocalExecDaemonDiscovery?: () => Promise<LocalExecDiscovery | null>;
   readonly clearLocalExecDaemonDiscoveryIfMatches?: (expected: LocalExecDiscovery) => Promise<boolean>;
@@ -496,6 +504,54 @@ export function createCoordinatorControlExecutors(
       if (dependencies.uninstallHostMcpPlugin == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
       if (typeof request?.pluginId !== "string" || request.pluginId.trim().length === 0) throw new TypeError("uninstallHostMcpPlugin requires pluginId.");
       return await dependencies.uninstallHostMcpPlugin(request.pluginId);
+    },
+    addHostMcpServer: async (request: { readonly name?: unknown; readonly configJson?: unknown }) => {
+      if (dependencies.addHostMcpServer == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      if (typeof request?.name !== "string" || request.name.trim().length === 0 || typeof request?.configJson !== "string" || request.configJson.trim().length === 0) {
+        throw new TypeError("addHostMcpServer requires name and configJson.");
+      }
+      return await dependencies.addHostMcpServer({ name: request.name, configJson: request.configJson });
+    },
+    removeHostMcpServer: async (request: { readonly serverId?: unknown }) => {
+      if (dependencies.removeHostMcpServer == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      if (typeof request?.serverId !== "string" || request.serverId.trim().length === 0) throw new TypeError("removeHostMcpServer requires serverId.");
+      return await dependencies.removeHostMcpServer(request.serverId);
+    },
+    restartHostMcpServers: async () => {
+      if (dependencies.restartHostMcpServers == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      return await dependencies.restartHostMcpServers();
+    },
+    setHostMcpInstructions: async (request: { readonly serverId?: unknown; readonly instructions?: unknown }) => {
+      if (dependencies.setHostMcpInstructions == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      if (typeof request?.serverId !== "string" || request.serverId.trim().length === 0 || typeof request?.instructions !== "string") throw new TypeError("setHostMcpInstructions requires serverId and instructions.");
+      return await dependencies.setHostMcpInstructions({ serverId: request.serverId, instructions: request.instructions });
+    },
+    authenticateHostMcpServer: async (request: { readonly serverId?: unknown; readonly accountKey?: unknown; readonly requestingAgentId?: unknown; readonly forceReauth?: unknown }) => {
+      if (dependencies.authenticateHostMcpServer == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      if (typeof request?.serverId !== "string" || request.serverId.trim().length === 0 || typeof request?.accountKey !== "string" || request.accountKey.trim().length === 0) throw new TypeError("authenticateHostMcpServer requires serverId and accountKey.");
+      if (request.requestingAgentId != null && typeof request.requestingAgentId !== "string") throw new TypeError("authenticateHostMcpServer requestingAgentId must be a string.");
+      if (request.forceReauth != null && typeof request.forceReauth !== "boolean") throw new TypeError("authenticateHostMcpServer forceReauth must be boolean.");
+      return await dependencies.authenticateHostMcpServer({
+        serverId: request.serverId,
+        accountKey: request.accountKey,
+        ...(typeof request.requestingAgentId === "string" ? { requestingAgentId: request.requestingAgentId } : {}),
+        ...(typeof request.forceReauth === "boolean" ? { forceReauth: request.forceReauth } : {}),
+      });
+    },
+    logoutHostMcpAccount: async (request: { readonly serverId?: unknown; readonly accountKey?: unknown }) => {
+      if (dependencies.logoutHostMcpAccount == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      if (typeof request?.serverId !== "string" || request.serverId.trim().length === 0 || typeof request?.accountKey !== "string" || request.accountKey.trim().length === 0) throw new TypeError("logoutHostMcpAccount requires serverId and accountKey.");
+      return await dependencies.logoutHostMcpAccount({ serverId: request.serverId, accountKey: request.accountKey });
+    },
+    removeHostMcpAccount: async (request: { readonly serverId?: unknown; readonly accountKey?: unknown }) => {
+      if (dependencies.removeHostMcpAccount == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      if (typeof request?.serverId !== "string" || request.serverId.trim().length === 0 || typeof request?.accountKey !== "string" || request.accountKey.trim().length === 0) throw new TypeError("removeHostMcpAccount requires serverId and accountKey.");
+      return await dependencies.removeHostMcpAccount({ serverId: request.serverId, accountKey: request.accountKey });
+    },
+    renameHostMcpAccount: async (request: { readonly serverId?: unknown; readonly accountKey?: unknown; readonly newAccountKey?: unknown }) => {
+      if (dependencies.renameHostMcpAccount == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      if (typeof request?.serverId !== "string" || request.serverId.trim().length === 0 || typeof request?.accountKey !== "string" || request.accountKey.trim().length === 0 || typeof request?.newAccountKey !== "string" || request.newAccountKey.trim().length === 0) throw new TypeError("renameHostMcpAccount requires serverId, accountKey, and newAccountKey.");
+      return await dependencies.renameHostMcpAccount({ serverId: request.serverId, accountKey: request.accountKey, newAccountKey: request.newAccountKey });
     },
     noteHostMcpAuthCompleted: async (request: { readonly serverId?: unknown; readonly accountKey?: unknown }) => {
       if (dependencies.noteHostMcpAuthCompleted == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
