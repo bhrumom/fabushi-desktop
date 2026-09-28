@@ -8,6 +8,14 @@ pub const MCP_LIST_CATALOG_METHOD: &str = "listHostMcpCatalog";
 pub const MCP_LIST_EFFECTIVE_PLUGINS_METHOD: &str = "listHostEffectiveMcpPlugins";
 pub const MCP_INSTALL_PLUGIN_METHOD: &str = "installHostMcpPlugin";
 pub const MCP_UNINSTALL_PLUGIN_METHOD: &str = "uninstallHostMcpPlugin";
+pub const MCP_ADD_SERVER_METHOD: &str = "addHostMcpServer";
+pub const MCP_REMOVE_SERVER_METHOD: &str = "removeHostMcpServer";
+pub const MCP_RESTART_SERVERS_METHOD: &str = "restartHostMcpServers";
+pub const MCP_SET_INSTRUCTIONS_METHOD: &str = "setHostMcpInstructions";
+pub const MCP_AUTHENTICATE_SERVER_METHOD: &str = "authenticateHostMcpServer";
+pub const MCP_LOGOUT_ACCOUNT_METHOD: &str = "logoutHostMcpAccount";
+pub const MCP_REMOVE_ACCOUNT_METHOD: &str = "removeHostMcpAccount";
+pub const MCP_RENAME_ACCOUNT_METHOD: &str = "renameHostMcpAccount";
 pub const MCP_NOTE_AUTH_COMPLETED_METHOD: &str = "noteHostMcpAuthCompleted";
 
 #[derive(Debug, Clone, PartialEq)]
@@ -25,6 +33,14 @@ pub fn is_host_mcp_lifecycle_method(method: &str) -> bool {
             | MCP_LIST_EFFECTIVE_PLUGINS_METHOD
             | MCP_INSTALL_PLUGIN_METHOD
             | MCP_UNINSTALL_PLUGIN_METHOD
+            | MCP_ADD_SERVER_METHOD
+            | MCP_REMOVE_SERVER_METHOD
+            | MCP_RESTART_SERVERS_METHOD
+            | MCP_SET_INSTRUCTIONS_METHOD
+            | MCP_AUTHENTICATE_SERVER_METHOD
+            | MCP_LOGOUT_ACCOUNT_METHOD
+            | MCP_REMOVE_ACCOUNT_METHOD
+            | MCP_RENAME_ACCOUNT_METHOD
             | MCP_NOTE_AUTH_COMPLETED_METHOD
     )
 }
