@@ -50,11 +50,18 @@ pub fn resolve_local_path_for_rel_path(
     Some(best.abs_root.join(suffix))
 }
 
-pub fn should_restore_from_pack(member_count: usize, packed_bytes: u64, loose_bytes: u64) -> bool {
-    if member_count < PACK_RESTORE_MIN_MEMBERS {
+pub fn should_restore_from_pack(
+    member_count: usize,
+    usable_compressed_bytes: u64,
+    usable_uncompressed_bytes: u64,
+    pack_bytes: u64,
+) -> bool {
+    if member_count < PACK_RESTORE_MIN_MEMBERS
+        && usable_uncompressed_bytes < PACK_BUILD_MIN_BYTES
+    {
         return false;
     }
-    packed_bytes.saturating_mul(PACK_RESTORE_MIN_BYTE_SHARE) <= loose_bytes
+    usable_compressed_bytes.saturating_mul(PACK_RESTORE_MIN_BYTE_SHARE) >= pack_bytes
 }
 
 pub fn should_build_pack(member_count: usize, total_bytes: u64) -> bool {

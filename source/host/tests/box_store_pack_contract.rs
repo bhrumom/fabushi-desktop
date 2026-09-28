@@ -3,6 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+use mahayana_host_runtime::extensions::box_store_sync::box_store_pack_pipeline::should_restore_from_pack;
 use mahayana_host_runtime::extensions::box_store_sync::box_store_pack::{
     PACK_INDEX_VERSION, PACK_MEMBER_MAX_BYTES, PackEntry, PackExtractionSink, PackIndex,
     PackMember, PackSource, build_pack_file, extract_pack_members, is_box_store_pack_build_enabled,
@@ -213,4 +214,13 @@ fn maintenance_keeps_live_packs_retires_partial_packs_and_defers_small_tail() {
     );
     assert!(small.new_packs.is_empty());
     assert_eq!(small.deferred_members, 1);
+}
+
+
+#[test]
+fn pack_restore_heuristic_matches_frozen_bulk_small_contract() {
+    assert!(!should_restore_from_pack(15, 10, 1024, 80));
+    assert!(should_restore_from_pack(16, 10, 1024, 80));
+    assert!(should_restore_from_pack(1, 10, 4 * 1024 * 1024, 80));
+    assert!(!should_restore_from_pack(16, 9, 1024, 80));
 }
