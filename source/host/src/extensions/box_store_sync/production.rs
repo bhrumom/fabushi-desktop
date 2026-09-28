@@ -1783,6 +1783,7 @@ fn sleep_interruptibly(stopped: &AtomicBool, total_ms: u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::extensions::box_store_sync::box_object_store::LocalFsObjectStore;
 
     fn temp_root(label: &str) -> PathBuf {
         let path = std::env::temp_dir().join(format!(
