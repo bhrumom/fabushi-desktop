@@ -6,6 +6,7 @@ use futures::StreamExt;
 use prost::Message;
 use prost_types::{ListValue, Struct, Value as ProtoValue, value::Kind};
 use reqwest::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use url::Url;
 use uuid::Uuid;
@@ -45,6 +46,40 @@ impl CursorInferenceAuth for HostAuthExtension {
     fn machine_id(&self) -> Result<String, String> {
         self.get_machine_id().map_err(|error| error.to_string())
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CursorCheckpointToolCall {
+    pub tool_call_id: String,
+    pub tool_name: String,
+    pub args: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum CursorCheckpointMessage {
+    Text {
+        role: String,
+        text: String,
+    },
+    AssistantTool {
+        text: String,
+        tool_calls: Vec<CursorCheckpointToolCall>,
+    },
+    ToolResult {
+        tool_call_id: String,
+        tool_name: String,
+        result: Value,
+        is_error: bool,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CursorCheckpoint {
+    pub conversation: Vec<CursorCheckpointMessage>,
+    pub text: String,
+    pub completed_steps: usize,
+    pub tool_calls_completed: usize,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -407,28 +442,76 @@ fn json_object_to_proto(value: &Value) -> Struct {
     }
 }
 
-fn provider_message_to_proto(message: &ProviderMessage) -> InferenceCoreMessage {
-    let role = match message.role.as_str() {
+fn role_number(role: &str) -> i32 {
+    match role {
         "user" => 1,
         "assistant" => 2,
         "tool" => 3,
         "system" => 4,
         _ => 0,
-    };
-    InferenceCoreMessage {
-        role,
-        content: Some(inference_core_message::Content::Text(message.content.clone())),
-        tool_calls: Vec::new(),
     }
 }
 
-pub fn encode_cursor_inference_request(
-    messages: &[ProviderMessage],
+fn provider_message_to_checkpoint(message: &ProviderMessage) -> CursorCheckpointMessage {
+    CursorCheckpointMessage::Text {
+        role: message.role.clone(),
+        text: message.content.clone(),
+    }
+}
+
+fn checkpoint_message_to_proto(message: &CursorCheckpointMessage) -> InferenceCoreMessage {
+    match message {
+        CursorCheckpointMessage::Text { role, text } => InferenceCoreMessage {
+            role: role_number(role),
+            content: Some(inference_core_message::Content::Text(text.clone())),
+            tool_calls: Vec::new(),
+        },
+        CursorCheckpointMessage::AssistantTool { text, tool_calls } => InferenceCoreMessage {
+            role: 2,
+            content: (!text.is_empty()).then(|| {
+                inference_core_message::Content::Text(text.clone())
+            }),
+            tool_calls: tool_calls
+                .iter()
+                .map(|call| InferenceToolCall {
+                    tool_call_id: call.tool_call_id.clone(),
+                    tool_name: call.tool_name.clone(),
+                    args: serde_json::from_str::<Value>(&call.args)
+                        .ok()
+                        .map(|value| json_object_to_proto(&value)),
+                    raw_tool_call_args: Some(call.args.clone()),
+                })
+                .collect(),
+        },
+        CursorCheckpointMessage::ToolResult {
+            tool_call_id,
+            tool_name,
+            result,
+            is_error,
+        } => InferenceCoreMessage {
+            role: 3,
+            content: Some(inference_core_message::Content::ToolContent(
+                InferenceToolResultContent {
+                    parts: vec![InferenceToolResultPart {
+                        tool_call_id: tool_call_id.clone(),
+                        tool_name: tool_name.clone(),
+                        result: Some(json_to_proto(result)),
+                        is_error: *is_error,
+                    }],
+                },
+            )),
+            tool_calls: Vec::new(),
+        },
+    }
+}
+
+fn encode_cursor_conversation_request(
+    conversation: &[CursorCheckpointMessage],
     tools: &[RoutedToolDefinition],
 ) -> Result<Vec<u8>, ProviderSessionError> {
     let model = sand_default_model_selection();
     let request = InferenceStreamRequest {
-        messages: messages.iter().map(provider_message_to_proto).collect(),
+        messages: conversation.iter().map(checkpoint_message_to_proto).collect(),
         tools: tools
             .iter()
             .map(|tool| InferenceAgentTool {
@@ -459,6 +542,27 @@ pub fn encode_cursor_inference_request(
     Ok(encode_connect_envelope(&payload))
 }
 
+pub fn encode_cursor_inference_request(
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+) -> Result<Vec<u8>, ProviderSessionError> {
+    let conversation = messages
+        .iter()
+        .map(provider_message_to_checkpoint)
+        .collect::<Vec<_>>();
+    encode_cursor_conversation_request(&conversation, tools)
+}
+
+pub trait CursorInferenceStreamTransport {
+    fn stream_conversation(
+        &self,
+        conversation: &[CursorCheckpointMessage],
+        tools: &[RoutedToolDefinition],
+        should_cancel: &dyn Fn() -> bool,
+        on_event: &mut dyn FnMut(CursorInferenceEvent) -> Result<(), ProviderSessionError>,
+    ) -> Result<(), ProviderSessionError>;
+}
+
 pub struct CursorInferenceTransport {
     auth: Arc<dyn CursorInferenceAuth>,
 }
@@ -471,6 +575,20 @@ impl CursorInferenceTransport {
     pub fn stream(
         &self,
         messages: &[ProviderMessage],
+        tools: &[RoutedToolDefinition],
+        should_cancel: &dyn Fn() -> bool,
+        on_event: &mut dyn FnMut(CursorInferenceEvent) -> Result<(), ProviderSessionError>,
+    ) -> Result<(), ProviderSessionError> {
+        let conversation = messages
+            .iter()
+            .map(provider_message_to_checkpoint)
+            .collect::<Vec<_>>();
+        self.stream_conversation(&conversation, tools, should_cancel, on_event)
+    }
+
+    pub fn stream_conversation(
+        &self,
+        conversation: &[CursorCheckpointMessage],
         tools: &[RoutedToolDefinition],
         should_cancel: &dyn Fn() -> bool,
         on_event: &mut dyn FnMut(CursorInferenceEvent) -> Result<(), ProviderSessionError>,
@@ -490,7 +608,7 @@ impl CursorInferenceTransport {
             &machine_id,
         );
         let request_id = Uuid::new_v4().to_string();
-        let body = encode_cursor_inference_request(messages, tools)?;
+        let body = encode_cursor_conversation_request(conversation, tools)?;
 
         let base = Url::parse(&backend_url)
             .map_err(|error| ProviderSessionError::Configuration(error.to_string()))?;
@@ -565,6 +683,222 @@ impl CursorInferenceTransport {
             Ok(())
         })
     }
+}
+
+impl CursorInferenceStreamTransport for CursorInferenceTransport {
+    fn stream_conversation(
+        &self,
+        conversation: &[CursorCheckpointMessage],
+        tools: &[RoutedToolDefinition],
+        should_cancel: &dyn Fn() -> bool,
+        on_event: &mut dyn FnMut(CursorInferenceEvent) -> Result<(), ProviderSessionError>,
+    ) -> Result<(), ProviderSessionError> {
+        CursorInferenceTransport::stream_conversation(
+            self,
+            conversation,
+            tools,
+            should_cancel,
+            on_event,
+        )
+    }
+}
+
+#[derive(Debug, Default)]
+struct PartialCursorToolCall {
+    tool_call_id: String,
+    tool_name: String,
+    args: String,
+    complete: bool,
+}
+
+fn cursor_tool_call_key(
+    call_id: &str,
+    tool_index: Option<i32>,
+    ordinal: usize,
+) -> String {
+    if !call_id.is_empty() {
+        return format!("id:{call_id}");
+    }
+    if let Some(index) = tool_index {
+        return format!("index:{index}");
+    }
+    format!("ordinal:{ordinal}")
+}
+
+pub fn run_cursor_with_transport_reporting_usage(
+    transport: &dyn CursorInferenceStreamTransport,
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&CursorCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(&CursorCheckpoint) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+) -> Result<String, ProviderSessionError> {
+    let tool_index = tools
+        .iter()
+        .map(|tool| (tool.name.clone(), tool))
+        .collect::<BTreeMap<_, _>>();
+    let (mut conversation, mut text, mut completed_steps, mut tool_calls_completed) =
+        match resume_from {
+            Some(checkpoint) => (
+                checkpoint.conversation.clone(),
+                checkpoint.text.clone(),
+                checkpoint.completed_steps,
+                checkpoint.tool_calls_completed,
+            ),
+            None => (
+                messages
+                    .iter()
+                    .map(provider_message_to_checkpoint)
+                    .collect::<Vec<_>>(),
+                String::new(),
+                0,
+                0,
+            ),
+        };
+
+    if completed_steps >= 8 {
+        return Err(ProviderSessionError::Protocol(
+            "Cursor resume checkpoint already exhausted Fabushi's 8-step tool limit.".into(),
+        ));
+    }
+
+    for _step in completed_steps..8 {
+        if should_cancel() {
+            return Err(ProviderSessionError::Cancelled(
+                "Runner cancelled Cursor inference before provider step".into(),
+            ));
+        }
+
+        let mut partial_calls = BTreeMap::<String, PartialCursorToolCall>::new();
+        let mut step_text = String::new();
+        transport.stream_conversation(
+            &conversation,
+            tools,
+            should_cancel,
+            &mut |event| {
+                match event {
+                    CursorInferenceEvent::TextDelta(delta) => {
+                        step_text.push_str(&delta);
+                        text.push_str(&delta);
+                        on_text_delta(&delta, &text);
+                    }
+                    CursorInferenceEvent::ThinkingDelta { .. } => {}
+                    CursorInferenceEvent::Usage(usage) => on_usage(usage),
+                    CursorInferenceEvent::Finished => {}
+                    CursorInferenceEvent::ToolCall {
+                        tool_call_id,
+                        tool_name,
+                        args,
+                        complete,
+                        tool_index,
+                    } => {
+                        let key = cursor_tool_call_key(
+                            &tool_call_id,
+                            tool_index,
+                            partial_calls.len(),
+                        );
+                        let partial = partial_calls.entry(key).or_default();
+                        if !tool_call_id.is_empty() {
+                            partial.tool_call_id = tool_call_id;
+                        }
+                        if !tool_name.is_empty() {
+                            partial.tool_name = tool_name;
+                        }
+                        if !args.is_empty() {
+                            if complete {
+                                partial.args = args;
+                            } else {
+                                partial.args.push_str(&args);
+                            }
+                        }
+                        partial.complete |= complete;
+                    }
+                }
+                Ok(())
+            },
+        )?;
+
+        let calls = partial_calls
+            .into_values()
+            .filter(|call| call.complete)
+            .map(|mut call| {
+                if call.tool_call_id.is_empty() {
+                    call.tool_call_id = Uuid::new_v4().to_string();
+                }
+                call
+            })
+            .collect::<Vec<_>>();
+        if calls.is_empty() {
+            return Ok(text);
+        }
+
+        let checkpoint_calls = calls
+            .iter()
+            .map(|call| CursorCheckpointToolCall {
+                tool_call_id: call.tool_call_id.clone(),
+                tool_name: call.tool_name.clone(),
+                args: call.args.clone(),
+            })
+            .collect::<Vec<_>>();
+        conversation.push(CursorCheckpointMessage::AssistantTool {
+            text: step_text,
+            tool_calls: checkpoint_calls,
+        });
+
+        let calls_in_step = calls.len();
+        for call in calls {
+            if should_cancel() {
+                return Err(ProviderSessionError::Cancelled(
+                    "Runner cancelled before Cursor tool execution".into(),
+                ));
+            }
+            let (result, is_error) = match tool_index.get(&call.tool_name).copied() {
+                None => (
+                    json!({
+                        "error": format!("Unknown Fabushi tool: {}", call.tool_name)
+                    }),
+                    true,
+                ),
+                Some(tool) => {
+                    let args = serde_json::from_str::<Value>(&call.args)
+                        .unwrap_or_else(|_| json!({}));
+                    match execute_tool(tool, args, &call.tool_call_id) {
+                        Ok(value) => (value, false),
+                        Err(error) => (
+                            json!({ "error": error.to_string() }),
+                            true,
+                        ),
+                    }
+                }
+            };
+            conversation.push(CursorCheckpointMessage::ToolResult {
+                tool_call_id: call.tool_call_id,
+                tool_name: call.tool_name,
+                result,
+                is_error,
+            });
+        }
+
+        completed_steps = completed_steps.saturating_add(1);
+        tool_calls_completed = tool_calls_completed.saturating_add(calls_in_step);
+        on_checkpoint(&CursorCheckpoint {
+            conversation: conversation.clone(),
+            text: text.clone(),
+            completed_steps,
+            tool_calls_completed,
+        })?;
+    }
+
+    Err(ProviderSessionError::Protocol(
+        "Cursor inference exceeded Fabushi's 8-step tool limit.".into(),
+    ))
 }
 
 pub fn cursor_tool_result_message(

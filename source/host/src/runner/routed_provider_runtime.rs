@@ -14,6 +14,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
+use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedProvider,
     RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
@@ -302,6 +303,7 @@ struct ProductionRoutedProviderAttemptExecutor<'a> {
     messages: &'a [ProviderMessage],
     tools: &'a [RoutedToolDefinition],
     mcp_server_url: Option<&'a str>,
+    cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     execute_tool: &'a mut dyn FnMut(
         &RoutedToolDefinition,
         Value,
@@ -322,6 +324,7 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
     ) -> Result<String, ProviderSessionError> {
         let mut options = RoutedProviderOptions {
             data_dir: self.data_dir,
+            cursor_auth: self.cursor_auth.clone(),
             tools: self.tools,
             mcp_server_url: self.mcp_server_url,
             execute_tool: &mut *self.execute_tool,
@@ -350,6 +353,7 @@ pub struct RoutedProviderRun<'a> {
     pub data_dir: &'a Path,
     pub messages: &'a [ProviderMessage],
     pub bridge: Arc<dyn RoutedToolBridge>,
+    pub cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     pub request_context: RunnerRequestContextSnapshot,
     pub cancellation: RoutedProviderCancellation,
     pub checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
@@ -365,12 +369,6 @@ pub fn run_routed_provider_in_runner(
     on_text_delta: &mut dyn FnMut(&str, &str),
 ) -> Result<String, ProviderSessionError> {
     run.cancellation.check()?;
-    if run.provider == RoutedProvider::Cursor {
-        return Err(ProviderSessionError::Configuration(
-            "Cursor inference is owned by the Host gateway and cannot enter the local Runner provider path."
-                .into(),
-        ));
-    }
 
     let system_prompt = render_request_context_system_prompt_with_capabilities(
         &run.request_context.context,
@@ -443,6 +441,7 @@ pub fn run_routed_provider_in_runner(
         messages: &provider_messages,
         tools: &direct_tools,
         mcp_server_url: mcp_url.as_deref(),
+        cursor_auth: run.cursor_auth.clone(),
         execute_tool: &mut execute_tool,
         usage_sink: run.usage_sink.clone(),
     };

@@ -1,6 +1,7 @@
 use std::path::Path;
 use std::sync::Arc;
 
+use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedProvider,
 };
@@ -43,6 +44,7 @@ use super::tools::turn_toolset::{
 pub struct TurnAgentComposition {
     provider: RoutedProvider,
     bridge: Arc<dyn RoutedToolBridge>,
+    cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     request_context: RunnerRequestContextSnapshot,
     cancellation: RoutedProviderCancellation,
     checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
@@ -77,6 +79,7 @@ impl TurnAgentComposition {
         Self {
             provider,
             bridge,
+            cursor_auth: None,
             request_context,
             cancellation,
             checkpoint_store,
@@ -99,6 +102,14 @@ impl TurnAgentComposition {
             action_audit: None,
             observation: None,
         }
+    }
+
+    pub fn with_cursor_auth(
+        mut self,
+        cursor_auth: Arc<dyn CursorInferenceAuth>,
+    ) -> Self {
+        self.cursor_auth = Some(cursor_auth);
+        self
     }
 
     pub fn with_retry_sink(
@@ -357,6 +368,7 @@ impl TurnAgentComposition {
                 data_dir,
                 messages,
                 bridge,
+                cursor_auth: self.cursor_auth.clone(),
                 request_context: self.request_context.clone(),
                 cancellation: self.cancellation.clone(),
                 checkpoint_store: Arc::clone(&self.checkpoint_store),

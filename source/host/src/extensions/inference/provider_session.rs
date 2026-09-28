@@ -5,6 +5,7 @@ use std::future::Future;
 use std::io::{BufRead, BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
@@ -20,6 +21,10 @@ use uuid::Uuid;
 
 use crate::host_paths::get_sand_root_dir;
 
+use super::cursor_inference_transport::{
+    CursorCheckpoint, CursorInferenceAuth, CursorInferenceTransport,
+    run_cursor_with_transport_reporting_usage,
+};
 use super::codex_direct_responses::{
     CodexDirectCheckpoint, CodexDirectError, CodexDirectOptions, CodexDirectTool,
     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
@@ -164,6 +169,7 @@ pub struct RoutedToolDefinition {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "provider", content = "checkpoint", rename_all = "kebab-case")]
 pub enum RoutedProviderCheckpoint {
+    Cursor(CursorCheckpoint),
     Codex(CodexDirectCheckpoint),
     OpenRouter(OpenRouterCheckpoint),
 }
@@ -171,6 +177,7 @@ pub enum RoutedProviderCheckpoint {
 impl RoutedProviderCheckpoint {
     pub fn emitted_text_bytes(&self) -> usize {
         match self {
+            Self::Cursor(checkpoint) => checkpoint.text.len(),
             Self::Codex(checkpoint) => checkpoint.text.len(),
             Self::OpenRouter(checkpoint) => checkpoint.text.len(),
         }
@@ -178,6 +185,7 @@ impl RoutedProviderCheckpoint {
 
     pub fn tool_calls_completed(&self) -> usize {
         match self {
+            Self::Cursor(checkpoint) => checkpoint.tool_calls_completed,
             Self::Codex(checkpoint) => checkpoint.tool_calls_completed,
             Self::OpenRouter(checkpoint) => checkpoint.tool_calls_completed,
         }
@@ -185,6 +193,7 @@ impl RoutedProviderCheckpoint {
 
     pub fn provider(&self) -> RoutedProvider {
         match self {
+            Self::Cursor(_) => RoutedProvider::Cursor,
             Self::Codex(_) => RoutedProvider::Codex,
             Self::OpenRouter(_) => RoutedProvider::OpenRouter,
         }
@@ -980,6 +989,7 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage(
 
 pub struct RoutedProviderOptions<'a> {
     pub data_dir: &'a Path,
+    pub cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     pub tools: &'a [RoutedToolDefinition],
     pub mcp_server_url: Option<&'a str>,
     pub execute_tool: &'a mut dyn FnMut(
@@ -1053,10 +1063,32 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
     }
 
     let result = match provider {
-        RoutedProvider::Cursor => Err(ProviderSessionError::Configuration(
-            "Cursor inference is owned by the Host/Gateway path and must not enter the local provider router."
-                .into(),
-        )),
+        RoutedProvider::Cursor => {
+            let auth = options.cursor_auth.clone().ok_or_else(|| {
+                ProviderSessionError::Configuration(
+                    "Cursor inference requires the typed Host auth binding.".into(),
+                )
+            })?;
+            let resume = match resume_from {
+                Some(RoutedProviderCheckpoint::Cursor(checkpoint)) => Some(checkpoint),
+                _ => None,
+            };
+            let transport = CursorInferenceTransport::new(auth);
+            let mut cursor_checkpoint = |checkpoint: &CursorCheckpoint| {
+                on_checkpoint(&RoutedProviderCheckpoint::Cursor(checkpoint.clone()))
+            };
+            run_cursor_with_transport_reporting_usage(
+                &transport,
+                messages,
+                options.tools,
+                options.execute_tool,
+                options.on_text_delta,
+                options.should_cancel,
+                resume,
+                &mut cursor_checkpoint,
+                on_usage,
+            )
+        }
         RoutedProvider::Codex => {
             let resume = match resume_from {
                 Some(RoutedProviderCheckpoint::Codex(checkpoint)) => {

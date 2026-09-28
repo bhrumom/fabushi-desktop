@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{ProviderTokenUsage, RoutedProvider};
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
 use crate::runner::box_tool_access::RunnerBoxResourcePort;
@@ -34,6 +35,7 @@ pub struct ProductionActionAuditInput {
 pub struct ProductionRunnerCompositionInput {
     pub provider: RoutedProvider,
     pub bridge: Arc<dyn RoutedToolBridge>,
+    pub cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     pub request_context: RunnerRequestContextSnapshot,
     pub cancellation: RoutedProviderCancellation,
     pub checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
@@ -63,6 +65,9 @@ pub fn create_production_runner_composition(
         input.cancellation,
         input.checkpoint_store,
     );
+    if let Some(cursor_auth) = input.cursor_auth {
+        composition = composition.with_cursor_auth(cursor_auth);
+    }
     if let Some(retry_sink) = input.retry_sink {
         composition = composition.with_retry_sink(retry_sink);
     }
