@@ -7,6 +7,7 @@ use std::thread::ThreadId;
 use serde::Deserialize;
 use serde_json::Value;
 
+use super::legacy_live_references::remove_workflow_live_references;
 use super::plugin_skills_cache::{
     PluginAuthBlock, PluginSkillRecord, PluginSkillsCache, PluginSkillsCacheWriteIndex,
     get_plugin_skills_dir, get_plugins_root_dir, read_plugin_skills_cache,
@@ -396,6 +397,10 @@ impl SandPluginSkillsService {
         self.current_index()
             .map(|index| index.auth_blocked)
             .unwrap_or_default()
+    }
+
+    pub fn remove_live_references(&self, source_urls: &[String]) {
+        let _ = remove_workflow_live_references(&self.sand_root_dir, source_urls);
     }
 
     pub fn dispose(&self) {
