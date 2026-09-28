@@ -62,6 +62,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
         ProductionRunnerCompositionInput {
             provider: RoutedProvider::OpenRouter,
             bridge: Arc::new(EmptyBridge),
+            cursor_auth: None,
             request_context: request_context(),
             cancellation: cancellation.clone(),
             checkpoint_store: Arc::new(MemoryCheckpointStore),
