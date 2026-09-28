@@ -25,7 +25,7 @@ fn production_mode_selects_local_fs_only_with_safe_absolute_configuration() {
         resolve_production_box_store_sync_mode(&env),
         ProductionBoxStoreSyncMode::LocalFs {
             base_dir: PathBuf::from("/tmp/fabushi-box-store"),
-            store_id: "store-a".to_string(),
+            store_id_override: Some("store-a".to_string()),
         }
     );
 
@@ -34,6 +34,25 @@ fn production_mode_selects_local_fs_only_with_safe_absolute_configuration() {
         resolve_production_box_store_sync_mode(&env),
         ProductionBoxStoreSyncMode::InvalidLocalConfiguration { .. }
     ));
+}
+
+#[test]
+fn production_mode_uses_source_map_when_local_store_id_is_not_overridden() {
+    let env = BTreeMap::from([
+        ("SAND_BOX_STORE_SYNC".to_string(), "1".to_string()),
+        ("SAND_BOX_STORE_LOCAL_DIR".to_string(), "/tmp/fabushi-box-store".to_string()),
+    ]);
+    assert_eq!(
+        resolve_production_box_store_sync_mode(&env),
+        ProductionBoxStoreSyncMode::LocalFs {
+            base_dir: PathBuf::from("/tmp/fabushi-box-store"),
+            store_id_override: None,
+        }
+    );
+
+    let host_extensions = include_str!("../src/host_production_extensions.rs");
+    assert!(host_extensions.contains("get_or_create_box_store()"));
+    assert!(host_extensions.contains("resolve_store_id:"));
 }
 
 #[test]
