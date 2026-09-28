@@ -26,7 +26,7 @@ fn shipping_host_reuses_content_search_local_permission_and_local_exec_owners() 
     for needle in [
         "let content_search = Arc::new(start_production_content_search_extension(",
         "let local_tool_permission = Arc::new(start_local_tool_permission_extension(Arc::clone(&settings)));",
-        "let local_exec = Arc::new(start_local_exec_extension());",
+        "let local_exec = Arc::new(start_local_exec_extension(telemetry.logs.clone()));",
     ] {
         assert!(PRODUCTION_EXTENSIONS.contains(needle), "production extension composition must own {needle}");
     }
