@@ -10912,18 +10912,24 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_object_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "2a2ad27f9cd293e649765a84cf0fdafd0fabc28e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/box_store_sync/box_object_store.rs"
+        "source/host/src/extensions/box_store_sync/box_object_store.rs",
+        "source/host/src/extensions/box_store_sync/production.rs",
+        "source/host/src/extensions/box_store_sync/agent_store_sand_files.rs",
+        "source/host/src/extensions/box_store_sync/sand_box_store_files.rs",
+        "source/host/src/extensions/box_store_sync/sand_box_store_v2_client.rs"
       ],
       "testEvidence": [
+        "source/host/src/extensions/box_store_sync/box_object_store.rs",
         "source/host/tests/box_store_sync_planned_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
+      "notes": "Rust Mahayana Host now owns the frozen BoxObjectStore/Provider boundary for LocalFS, AgentStore and SandBoxStoreV2, including the provider resolver that selects the backend from the canonical BoxStore backend policy. Shipping production consumes this resolver instead of duplicating backend/provider construction. Local conditional CAS, scoped object-store round trips, append-only remote stores, SandBoxStoreV2 construction and fail-closed missing remote auth are covered by focused contracts; exact-head shipping Host compilation passed before this manifest-only closure.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-diagnostics.ts",
@@ -39855,5 +39861,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-29T06:40:00+08:00"
+  "generatedAt": "2026-09-29T06:45:00+08:00"
 }
