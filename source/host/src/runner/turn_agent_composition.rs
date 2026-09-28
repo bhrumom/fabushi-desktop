@@ -26,7 +26,7 @@ use super::tools::sand_agent_management_tools::AgentManagementSink;
 use super::tools::sand_browser_tools::BrowserToolExecutor;
 use super::tools::sand_computer_tool::ComputerToolExecutor;
 use super::tools::sand_file_transfer_tools::FileTransferExecutor;
-use super::tools::sand_state_tool::SandStateWriter;
+use super::tools::sand_state_tool::{RoutineAutoReviewCallback, SandStateWriter};
 use super::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use super::tools::turn_toolset::{
     TurnToolsetDependencies, build_turn_toolset, fence_turn_toolset,
@@ -57,6 +57,7 @@ pub struct TurnAgentComposition {
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     state_writer: Option<Arc<dyn SandStateWriter>>,
+    routine_auto_review: Option<RoutineAutoReviewCallback>,
     multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
     cloud_agent_tool: Option<CloudAgentToolDependencies>,
     multitask_enabled: bool,
@@ -90,6 +91,7 @@ impl TurnAgentComposition {
             reaction_sink: None,
             agent_management_sink: None,
             state_writer: None,
+            routine_auto_review: None,
             multitask_todo_state: None,
             cloud_agent_tool: None,
             multitask_enabled: false,
@@ -220,6 +222,18 @@ impl TurnAgentComposition {
         self.state_writer.is_some()
     }
 
+    pub fn with_routine_auto_review(
+        mut self,
+        review: RoutineAutoReviewCallback,
+    ) -> Self {
+        self.routine_auto_review = Some(review);
+        self
+    }
+
+    pub fn has_routine_auto_review(&self) -> bool {
+        self.routine_auto_review.is_some()
+    }
+
     pub fn with_multitask_todo_state(
         mut self,
         state: Arc<dyn MultitaskTodoState>,
@@ -316,6 +330,7 @@ impl TurnAgentComposition {
                 reaction_sink: self.reaction_sink.clone(),
                 agent_management_sink: self.agent_management_sink.clone(),
                 state_writer: self.state_writer.clone(),
+                routine_auto_review: self.routine_auto_review.clone(),
                 multitask_enabled: self.multitask_enabled,
                 multitask_todo_state: self.multitask_todo_state.clone(),
                 cloud_agent_tool: self.cloud_agent_tool.clone(),

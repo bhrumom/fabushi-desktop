@@ -11,8 +11,13 @@ use crate::extensions::memory::agent_state::{
     MemoryScope, MemoryTier, SandAgentState, StateWriteResult,
 };
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
+use crate::runner::sand_automation_auto_review::AutomationWriteTarget;
 
 pub const SAND_UPDATE_STATE_TOOL_NAME: &str = "update_state";
+
+pub type RoutineAutoReviewCallback = Arc<
+    dyn Fn(&AutomationWriteTarget, &str) -> Result<(), ProviderSessionError> + Send + Sync,
+>;
 
 pub trait SandStateWriter: Send + Sync {
     fn automation_record(&self, id: &str) -> Option<AutomationRecord>;
@@ -159,6 +164,7 @@ impl SandStateWriter for SandAgentState {
 pub struct SandStateToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
     state: Arc<dyn SandStateWriter>,
+    routine_auto_review: Option<RoutineAutoReviewCallback>,
 }
 
 impl SandStateToolBridge {
@@ -166,7 +172,19 @@ impl SandStateToolBridge {
         delegate: Arc<dyn RoutedToolBridge>,
         state: Arc<dyn SandStateWriter>,
     ) -> Self {
-        Self { delegate, state }
+        Self {
+            delegate,
+            state,
+            routine_auto_review: None,
+        }
+    }
+
+    pub fn with_routine_auto_review(
+        mut self,
+        review: RoutineAutoReviewCallback,
+    ) -> Self {
+        self.routine_auto_review = Some(review);
+        self
     }
 }
 
@@ -191,6 +209,11 @@ impl RoutedToolBridge for SandStateToolBridge {
             && tool.tool_name != SAND_UPDATE_STATE_TOOL_NAME
         {
             return self.delegate.call_tool(tool, args, tool_call_id);
+        }
+        if let Some(review) = &self.routine_auto_review {
+            if let Some(target) = automation_review_target(&args, self.state.as_ref())? {
+                review(&target, tool_call_id)?;
+            }
         }
         let outcome = apply_state_update(&args, self.state.as_ref())?;
         Ok(Value::String(if outcome.ok {
@@ -236,6 +259,65 @@ fn update_state_definition() -> RoutedToolDefinition {
             }
         }),
     }
+}
+
+pub fn automation_review_target(
+    args: &Value,
+    state: &dyn SandStateWriter,
+) -> Result<Option<AutomationWriteTarget>, ProviderSessionError> {
+    let object = args.as_object().ok_or_else(|| tool_error(
+        "update_state arguments must be an object",
+    ))?;
+    if required_string(object, "target")? != "routine" {
+        return Ok(None);
+    }
+    let action = required_string(object, "action")?;
+    let (operation, spec) = match action {
+        "create" => ("create", automation_spec(object, None)?),
+        "update" => {
+            let id = required_string(object, "id")?;
+            let existing = state.automation_record(id).ok_or_else(|| tool_error(
+                format!("no routine with folder \"{id}\" exists"),
+            ))?;
+            ("update", automation_spec(object, Some(&existing))?)
+        }
+        "pause" | "resume" | "delete" => {
+            let id = required_string(object, "id")?;
+            let existing = state.automation_record(id).ok_or_else(|| tool_error(
+                format!("no routine with folder \"{id}\" exists"),
+            ))?;
+            let mut spec = AutomationSpec {
+                name: existing.name,
+                prompt: existing.prompt,
+                trigger: existing.trigger,
+                is_enabled: Some(existing.is_enabled),
+            };
+            if action == "pause" {
+                spec.is_enabled = Some(false);
+            } else if action == "resume" {
+                spec.is_enabled = Some(true);
+            }
+            (action, spec)
+        }
+        _ => return Ok(None),
+    };
+    let trigger_description = if let Some(schedule) = spec
+        .trigger
+        .get("schedule")
+        .and_then(Value::as_str)
+    {
+        schedule.to_string()
+    } else {
+        serde_json::to_string(&spec.trigger).unwrap_or_else(|_| "unknown trigger".into())
+    };
+    Ok(Some(AutomationWriteTarget {
+        operation: operation.to_string(),
+        name: spec.name,
+        trigger_description,
+        prompt: spec.prompt,
+        is_enabled: spec.is_enabled,
+        referencing_routines: Vec::new(),
+    }))
 }
 
 pub fn apply_state_update(

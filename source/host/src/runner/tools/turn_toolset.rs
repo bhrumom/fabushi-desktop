@@ -17,7 +17,9 @@ use super::sand_computer_tool::{ComputerToolExecutor, SandComputerToolBridge};
 use super::sand_file_transfer_tools::{FileTransferExecutor, SandFileTransferToolBridge};
 use super::sand_reaction_tool::{ReactionSink, ReactionToolBridge};
 use super::sand_spotlight_tools::SpotlightedRoutedToolBridge;
-use super::sand_state_tool::{SandStateToolBridge, SandStateWriter};
+use super::sand_state_tool::{
+    RoutineAutoReviewCallback, SandStateToolBridge, SandStateWriter,
+};
 use super::sand_multitask_todo_tool::{
     MultitaskTodoState, SandMultitaskTodoToolBridge,
 };
@@ -39,6 +41,7 @@ pub struct TurnToolsetDependencies {
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
     pub agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     pub state_writer: Option<Arc<dyn SandStateWriter>>,
+    pub routine_auto_review: Option<RoutineAutoReviewCallback>,
     pub multitask_enabled: bool,
     pub multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
     pub cloud_agent_tool: Option<CloudAgentToolDependencies>,
@@ -76,7 +79,13 @@ pub fn build_turn_toolset(
         None => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.state_writer {
-        Some(state) => Arc::new(SandStateToolBridge::new(bridge, state)),
+        Some(state) => {
+            let state_bridge = SandStateToolBridge::new(bridge, state);
+            match dependencies.routine_auto_review {
+                Some(review) => Arc::new(state_bridge.with_routine_auto_review(review)),
+                None => Arc::new(state_bridge),
+            }
+        }
         None => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> = if dependencies.multitask_enabled {

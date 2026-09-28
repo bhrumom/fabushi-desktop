@@ -142,3 +142,38 @@ fn update_state_bridge_routes_memory_routines_and_workflows_to_host_owner() {
 
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn routine_writes_run_auto_review_before_state_mutation() {
+    let root = temp_root("routine-review");
+    let state = Arc::new(SandAgentState::new(&root, "agent-review").expect("state"));
+    let writer: Arc<dyn SandStateWriter> = state.clone();
+    let bridge = SandStateToolBridge::new(Arc::new(DelegateBridge), writer)
+        .with_routine_auto_review(Arc::new(|target, tool_call_id| {
+            assert_eq!(target.operation, "create");
+            assert_eq!(target.name, "Reviewed routine");
+            assert_eq!(tool_call_id, "tool-routine-reviewed");
+            Err(ProviderSessionError::Tool("review denied".into()))
+        }));
+    let tool = bridge
+        .list_tools()
+        .expect("tools")
+        .into_iter()
+        .find(|tool| tool.name == SAND_UPDATE_STATE_TOOL_NAME)
+        .expect("update_state");
+    let error = bridge.call_tool(
+        &tool,
+        json!({
+            "target":"routine",
+            "action":"create",
+            "name":"Reviewed routine",
+            "prompt":"Do something",
+            "schedule":"0 8 * * *"
+        }),
+        "tool-routine-reviewed",
+    ).expect_err("review must block write");
+    assert!(error.to_string().contains("review denied"));
+    assert!(state.automation_record("reviewed-routine").is_none());
+    let _ = fs::remove_dir_all(root);
+}
