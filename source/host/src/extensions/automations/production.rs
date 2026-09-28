@@ -254,7 +254,7 @@ impl ProductionAutomationsBackendRuntime {
         self.fire
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .request_drain();
+            .reset_poll_delay();
         self.wake.request();
     }
 
