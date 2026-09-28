@@ -12930,20 +12930,23 @@
       "targetPath": "source/host/src/extensions/mcp/box_mcp_exec.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "cec995ac5af4072145c29d1b955b0fe9d52ea1ef",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/mcp/box_mcp_exec.rs",
-        "source/host/src/ports/mcp_state_executor.rs",
-        "source/host/src/box/box_capabilities.rs"
+        "source/host/src/extensions/mcp/production_box_state.rs",
+        "source/host/app/src/main.rs",
+        "source/electron-main/mcp/desktop-mcp-manager.ts"
       ],
       "testEvidence": [
         "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs",
+        "source/host/src/extensions/mcp/production_box_state.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host now owns the frozen Box MCP execution boundary: server-load forwarding, state-tool discovery projection/filtering, clientKey identity, and fail-closed tool execution settlement behind a typed BoxMcpExecBackend. Final remains withheld until the production ForeverBox/CapableBox resource accessor binds generated McpArgs/McpResult execution and diagnostics recording."
+      "notes": "Implemented. Rust Host owns the frozen Box MCP execution boundary and production wiring: server-load forwarding, generated McpStateExecArgs state discovery through ForeverBox field 36, generated McpArgs/McpResult tool execution through ForeverBox field 11, server/tool identity projection including clientKey, and fail-closed settlement. Electron remains the single MCP manager owner and only serializes/deserializes the frozen generated protobufs; Host forwards opaque protobuf bytes through ProductionBoxResourceAccessor instead of introducing a second manager."
     },
     {
       "referencePath": "source/host/extensions/mcp/extension.ts",
