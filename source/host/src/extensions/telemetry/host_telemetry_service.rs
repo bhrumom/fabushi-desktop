@@ -82,6 +82,39 @@ impl HostStructuredLogTelemetry {
         self.report_projection(&projection)
     }
 
+    pub fn report_teach_recording_cap_stop_failed(&self, report: &Value) -> io::Result<()> {
+        let mut metadata = BTreeMap::new();
+        if let Some(error_class) = report.get("errorClass").and_then(Value::as_str) {
+            metadata.insert("error_class".into(), error_class.to_string());
+        }
+        self.report_projection(&HostTelemetryProjection {
+            level: Some("warn"),
+            event: Some("sand.teach.cap_stop_failed"),
+            metadata,
+        })
+    }
+
+    pub fn report_teach_recording_start_failed(&self, report: &Value) -> io::Result<()> {
+        let mut metadata = BTreeMap::new();
+        if let Some(kind) = report.get("kind").and_then(Value::as_str) {
+            metadata.insert("kind".into(), kind.to_string());
+        }
+        if let Some(error_class) = report.get("errorClass").and_then(Value::as_str) {
+            metadata.insert("error_class".into(), error_class.to_string());
+        }
+        if let Some(window_index) = report.get("windowIndex").and_then(Value::as_u64) {
+            metadata.insert("window_index".into(), window_index.to_string());
+        }
+        if let Some(entry_point) = report.get("entryPoint").and_then(Value::as_str) {
+            metadata.insert("entry_point".into(), entry_point.to_string());
+        }
+        self.report_projection(&HostTelemetryProjection {
+            level: Some("warn"),
+            event: Some("sand.teach.recording_start_failed"),
+            metadata,
+        })
+    }
+
     pub fn report_search_index_health(&self, report: &Value) -> io::Result<()> {
         self.sink.emit(&PersistedHostTelemetryRecord {
             channel: "structured_log".into(),
