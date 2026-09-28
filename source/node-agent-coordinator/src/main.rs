@@ -938,13 +938,18 @@ fn enqueue_agent_inbound_wake(
     args: Value,
 ) -> Result<(), Failure> {
     let provider = routed_inference_provider(state, &agent_id);
-    if provider == InferenceProvider::Cursor {
-        dispatch_gateway_value(state, "sendPrompt", args)?;
-        return Ok(());
-    }
     let worker_state = Arc::clone(state);
     let queue_key = agent_id.clone();
     state.inference_queue.enqueue(&queue_key, move || {
+        if provider == InferenceProvider::Cursor {
+            if let Err(error) = dispatch_gateway_value(&worker_state, "sendPrompt", args) {
+                eprintln!(
+                    "Cursor agent inbound wake failed agent={}: {}: {}",
+                    agent_id, error.code, error.message
+                );
+            }
+            return;
+        }
         if let Err(error) = execute_local_inference(Arc::clone(&worker_state), provider, args) {
             if error.code != "INFERENCE_PROVIDER_CANCELLED" {
                 record_inference_error(&worker_state, provider, &agent_id, &error);
