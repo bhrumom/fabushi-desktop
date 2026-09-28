@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use serde_json::Value;
 
@@ -300,4 +300,256 @@ pub fn format_steer_prompt(message: &str) -> String {
         "Take this into account and continue your task from where you are — do not start over.",
     ]
     .join("\n\n")
+}
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct CloudAgentWatchOptions {
+    pub quiet_origin: Option<Value>,
+    pub after_followup: bool,
+}
+
+impl CloudAgentWatchOptions {
+    pub fn new(quiet_origin: Option<Value>, after_followup: bool) -> Self {
+        Self {
+            quiet_origin,
+            after_followup,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct CloudAgentPendingWatch {
+    pub parent_agent_id: String,
+    pub work_id: String,
+    pub title: String,
+    pub quiet_origin: Option<Value>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct CloudAgentWatchOutcome {
+    pub status: String,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct CloudAgentBackgroundCompletion {
+    pub parent_agent_id: String,
+    pub work_id: String,
+    pub title: String,
+    pub status: String,
+    pub result: String,
+    pub quiet_origin: Option<Value>,
+}
+
+pub type CloudAgentAwaitCallback =
+    Arc<dyn Fn(&str, bool) -> CloudAgentWatchOutcome + Send + Sync>;
+pub type CloudAgentPendingCallback =
+    Arc<dyn Fn(&CloudAgentPendingWatch) + Send + Sync>;
+pub type CloudAgentSettledCallback =
+    Arc<dyn Fn(CloudAgentBackgroundCompletion) + Send + Sync>;
+pub type CloudAgentAsyncTasksChangedCallback = Arc<dyn Fn(&str) + Send + Sync>;
+
+#[derive(Debug, Clone)]
+struct ArmedCloudAgentWatch {
+    generation: u64,
+    parent_agent_id: String,
+    work_id: String,
+    title: String,
+    quiet_origin: Option<Value>,
+}
+
+#[derive(Default)]
+struct CloudAgentWatchState {
+    next_generation: u64,
+    armed: HashMap<String, ArmedCloudAgentWatch>,
+}
+
+#[derive(Clone)]
+pub struct RunnerCloudAgentWatches {
+    state: Arc<Mutex<CloudAgentWatchState>>,
+    await_completion: CloudAgentAwaitCallback,
+    on_pending: Option<CloudAgentPendingCallback>,
+    on_settled: Option<CloudAgentSettledCallback>,
+    on_async_tasks_changed: Option<CloudAgentAsyncTasksChangedCallback>,
+}
+
+impl RunnerCloudAgentWatches {
+    pub fn new(
+        await_completion: CloudAgentAwaitCallback,
+        on_pending: Option<CloudAgentPendingCallback>,
+        on_settled: Option<CloudAgentSettledCallback>,
+        on_async_tasks_changed: Option<CloudAgentAsyncTasksChangedCallback>,
+    ) -> Self {
+        Self {
+            state: Arc::new(Mutex::new(CloudAgentWatchState::default())),
+            await_completion,
+            on_pending,
+            on_settled,
+            on_async_tasks_changed,
+        }
+    }
+
+    pub fn watch_cloud_agent(
+        &self,
+        parent_agent_id: &str,
+        bc_id: &str,
+        options: CloudAgentWatchOptions,
+    ) -> bool {
+        let parent_agent_id = parent_agent_id.trim();
+        let bc_id = bc_id.trim();
+        if parent_agent_id.is_empty() || bc_id.is_empty() {
+            return false;
+        }
+
+        let key = cloud_agent_watch_key(parent_agent_id, bc_id);
+        let armed = {
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if state.armed.contains_key(&key) {
+                return false;
+            }
+            state.next_generation = state.next_generation.saturating_add(1);
+            let armed = ArmedCloudAgentWatch {
+                generation: state.next_generation,
+                parent_agent_id: parent_agent_id.to_string(),
+                work_id: bc_id.to_string(),
+                title: format!("Cloud agent {bc_id}"),
+                quiet_origin: options.quiet_origin.clone(),
+            };
+            state.armed.insert(key.clone(), armed.clone());
+            armed
+        };
+
+        if let Some(callback) = self.on_pending.as_ref() {
+            callback(&CloudAgentPendingWatch {
+                parent_agent_id: armed.parent_agent_id.clone(),
+                work_id: armed.work_id.clone(),
+                title: armed.title.clone(),
+                quiet_origin: armed.quiet_origin.clone(),
+            });
+        }
+        self.emit_async_tasks_changed(parent_agent_id);
+
+        let state = Arc::clone(&self.state);
+        let await_completion = Arc::clone(&self.await_completion);
+        let on_settled = self.on_settled.clone();
+        let on_async_tasks_changed = self.on_async_tasks_changed.clone();
+        let after_followup = options.after_followup;
+        let generation = armed.generation;
+        let parent_agent_id = armed.parent_agent_id.clone();
+        let work_id = armed.work_id.clone();
+        let title = armed.title.clone();
+        let quiet_origin = armed.quiet_origin.clone();
+
+        let _ = std::thread::Builder::new()
+            .name(format!("mahayana-cloud-agent-watch-{work_id}"))
+            .spawn(move || {
+                let outcome = await_completion(&work_id, after_followup);
+                let still_owned = {
+                    let mut state = state
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    let owned = state
+                        .armed
+                        .get(&key)
+                        .is_some_and(|current| current.generation == generation);
+                    if owned {
+                        state.armed.remove(&key);
+                    }
+                    owned
+                };
+                if !still_owned {
+                    return;
+                }
+                if let Some(callback) = on_async_tasks_changed.as_ref() {
+                    callback(&parent_agent_id);
+                }
+                if let Some(callback) = on_settled.as_ref() {
+                    callback(CloudAgentBackgroundCompletion {
+                        parent_agent_id,
+                        work_id,
+                        title,
+                        status: if outcome.status == "error" {
+                            "error".into()
+                        } else {
+                            "completed".into()
+                        },
+                        result: if outcome.text.trim().is_empty() {
+                            "(the cloud agent finished without producing any output)".into()
+                        } else {
+                            outcome.text.trim().to_string()
+                        },
+                        quiet_origin,
+                    });
+                }
+            });
+        true
+    }
+
+    pub fn is_cloud_watch_armed(&self, parent_agent_id: &str, bc_id: &str) -> bool {
+        self.state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .armed
+            .contains_key(&cloud_agent_watch_key(parent_agent_id.trim(), bc_id.trim()))
+    }
+
+    pub fn pending_cloud_agent_watch_ids(&self, parent_agent_id: &str) -> Vec<String> {
+        let mut ids = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .armed
+            .values()
+            .filter(|watch| watch.parent_agent_id == parent_agent_id)
+            .map(|watch| watch.work_id.clone())
+            .collect::<Vec<_>>();
+        ids.sort();
+        ids
+    }
+
+    pub fn cancel_cloud_watch(&self, parent_agent_id: &str, bc_id: &str) -> bool {
+        let removed = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .armed
+            .remove(&cloud_agent_watch_key(parent_agent_id.trim(), bc_id.trim()))
+            .is_some();
+        if removed {
+            self.emit_async_tasks_changed(parent_agent_id);
+        }
+        removed
+    }
+
+    pub fn dispose_parent(&self, parent_agent_id: &str) -> usize {
+        let removed = {
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            let before = state.armed.len();
+            state
+                .armed
+                .retain(|_, watch| watch.parent_agent_id != parent_agent_id);
+            before.saturating_sub(state.armed.len())
+        };
+        if removed > 0 {
+            self.emit_async_tasks_changed(parent_agent_id);
+        }
+        removed
+    }
+
+    fn emit_async_tasks_changed(&self, parent_agent_id: &str) {
+        if let Some(callback) = self.on_async_tasks_changed.as_ref() {
+            callback(parent_agent_id);
+        }
+    }
+}
+
+fn cloud_agent_watch_key(parent_agent_id: &str, bc_id: &str) -> String {
+    format!("{parent_agent_id}\0{bc_id}")
 }
