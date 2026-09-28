@@ -78,11 +78,13 @@ impl PluginSkillsAuthenticatedStartup {
             let polling = Arc::clone(&polling);
             let on_startup_sync_succeeded = on_startup_sync_succeeded.clone();
             Arc::new(move || {
-                let mut guard = state.lock().expect("mcp startup state poisoned");
-                if guard.started || guard.disposed {
-                    return;
+                {
+                    let mut guard = state.lock().expect("mcp startup state poisoned");
+                    if guard.started || guard.disposed {
+                        return;
+                    }
+                    guard.started = true;
                 }
-                guard.started = true;
                 let state_for_poll = Arc::clone(&state);
                 let plugin_for_poll = Arc::clone(&plugin_skills);
                 let on_startup = on_startup_sync_succeeded.clone();
@@ -113,7 +115,19 @@ impl PluginSkillsAuthenticatedStartup {
                         }
                     }
                 });
-                guard.polling = Some(polling.start(callback));
+                // A polling adapter may invoke its callback before returning.
+                // Do not hold the state lock across that external call.
+                let mut handle = Some(polling.start(callback));
+                {
+                    let mut guard = state.lock().expect("mcp startup state poisoned");
+                    if !guard.disposed {
+                        guard.polling = handle.take();
+                    }
+                }
+                // Stop may have won while the polling adapter was starting.
+                if let Some(mut handle) = handle {
+                    handle.dispose();
+                }
             })
         };
 
@@ -158,22 +172,25 @@ impl PluginSkillsAuthenticatedStartup {
     }
 
     pub fn dispose(&self) {
-        {
+        let polling = {
             let mut state = self.state.lock().expect("mcp startup state poisoned");
             if state.disposed {
                 return;
             }
             state.disposed = true;
-            if let Some(mut polling) = state.polling.take() {
-                polling.dispose();
-            }
+            state.polling.take()
+        };
+        // The polling thread may need the state lock to finish its callback.
+        // Joining it while holding that lock would deadlock Host shutdown.
+        if let Some(mut polling) = polling {
+            polling.dispose();
         }
-        if let Some(unsubscribe) = self
+        let unsubscribe = self
             .unsubscribe
             .lock()
             .expect("mcp startup unsubscribe poisoned")
-            .take()
-        {
+            .take();
+        if let Some(unsubscribe) = unsubscribe {
             unsubscribe();
         }
         self.plugin_skills.dispose();
@@ -210,11 +227,13 @@ impl McpExtensionRuntime {
     }
 
     pub fn stop(&self) -> Result<(), String> {
-        let mut stopped = self.stopped.lock().expect("mcp extension state poisoned");
-        if *stopped {
-            return Ok(());
+        {
+            let mut stopped = self.stopped.lock().expect("mcp extension state poisoned");
+            if *stopped {
+                return Ok(());
+            }
+            *stopped = true;
         }
-        *stopped = true;
         self.startup.dispose();
         self.service.dispose()
     }
