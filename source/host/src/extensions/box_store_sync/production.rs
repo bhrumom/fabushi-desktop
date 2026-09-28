@@ -4,7 +4,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{
     Arc, Condvar, Mutex,
-    atomic::{AtomicBool, Ordering},
+    atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -120,7 +120,10 @@ impl ProductionBoxStoreSyncApi {
     }
 
     pub fn snapshot_local_now(&self) -> Result<ProductionBoxStoreSyncStatus, String> {
-        self.inner.run_local_cycle(false, true, false, false)?;
+        self.inner.flush_waiters.fetch_add(1, Ordering::AcqRel);
+        let result = self.inner.run_local_cycle(false, true, false, false);
+        self.inner.flush_waiters.fetch_sub(1, Ordering::AcqRel);
+        result?;
         Ok(self.status())
     }
 
@@ -181,6 +184,7 @@ impl ProductionBoxStoreSyncService {
                 store_db_wake: Condvar::new(),
                 agent_db_capture_queues: AgentDbCaptureQueues::default(),
                 last_pack_sync: Mutex::new(None),
+                flush_waiters: AtomicUsize::new(0),
                 status: Mutex::new(ProductionBoxStoreSyncStatus {
                     enabled,
                     backend,
@@ -430,6 +434,7 @@ struct ProductionBoxStoreSyncInner {
     store_db_wake: Condvar,
     agent_db_capture_queues: AgentDbCaptureQueues,
     last_pack_sync: Mutex<Option<Instant>>,
+    flush_waiters: AtomicUsize,
     status: Mutex<ProductionBoxStoreSyncStatus>,
 }
 
@@ -569,7 +574,9 @@ impl ProductionBoxStoreSyncInner {
                 self.env.get("SAND_BOX_STORE_PACKS").map(String::as_str),
             )
         {
-            categories.push(sync_local_packs(&store, &entries)?);
+            categories.push(sync_local_packs(&store, &entries, || {
+                self.flush_waiters.load(Ordering::Acquire) > 0
+            })?);
             *self
                 .last_pack_sync
                 .lock()
@@ -971,10 +978,14 @@ fn sweep_pack_temp_dir(dir: &Path) {
     }
 }
 
-fn sync_local_packs(
+fn sync_local_packs<F>(
     store: &LocalFsObjectStore,
     manifest: &BoxManifestMap,
-) -> Result<CategoryTransferSummary, String> {
+    should_abort: F,
+) -> Result<CategoryTransferSummary, String>
+where
+    F: Fn() -> bool,
+{
     let mut summary = CategoryTransferSummary {
         name: "packs".into(),
         ..CategoryTransferSummary::default()
@@ -996,7 +1007,7 @@ fn sync_local_packs(
         let Some(abs_path) = resolve_pack_source_path(rel_path) else {
             continue;
         };
-        let Ok(metadata) = fs::metadata(&abs_path) else {
+        let Ok(metadata) = fs::symlink_metadata(&abs_path) else {
             continue;
         };
         if !metadata.is_file() || metadata.len() != size {
@@ -1032,6 +1043,9 @@ fn sync_local_packs(
     let mut built_packs = Vec::<PackEntry>::new();
 
     for (group_index, planned) in plan.new_packs.iter().enumerate() {
+        if should_abort() {
+            return Ok(summary);
+        }
         let sources = planned
             .iter()
             .filter_map(|member| {
@@ -1051,11 +1065,11 @@ fn sync_local_packs(
             "build-{}-{nonce}-{group_index}",
             std::process::id()
         ));
-        let built = match build_pack_file(&tmp_path, &sources, || false) {
+        let built = match build_pack_file(&tmp_path, &sources, || should_abort()) {
             Ok(Some(value)) => value,
             Ok(None) => {
                 let _ = fs::remove_file(&tmp_path);
-                continue;
+                return Ok(summary);
             }
             Err(error) => {
                 let _ = fs::remove_file(&tmp_path);
@@ -1085,6 +1099,9 @@ fn sync_local_packs(
         });
     }
 
+    if should_abort() {
+        return Ok(summary);
+    }
     if built_packs.is_empty() && plan.retired_pack_ids.is_empty() {
         return Ok(summary);
     }
