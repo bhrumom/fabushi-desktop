@@ -12,7 +12,7 @@ use mahayana_host_runtime::extensions::box_store_sync::box_store_manifest_format
 };
 use mahayana_host_runtime::extensions::box_store_sync::box_store_pack::{
     BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACKS_PREFIX, PACK_INDEX_VERSION, PackEntry, PackIndex,
-    PackSource, build_pack_file, serialize_pack_index, sha256_hex,
+    PackMember, PackSource, build_pack_file, serialize_pack_index, sha256_hex,
 };
 
 fn temp_root(label: &str) -> PathBuf {
@@ -128,6 +128,94 @@ fn local_copy_in_hydrates_bulk_small_files_from_pack_without_loose_blobs() {
                 0o600
             );
         }
+    }
+
+    fs::remove_dir_all(root).expect("cleanup");
+}
+
+
+#[test]
+fn missing_pack_object_falls_back_to_loose_blobs() {
+    let root = temp_root("missing-pack-fallback");
+    let store = LocalFsObjectStore::new(root.join("store"));
+    let target_root = root.join("target");
+    fs::create_dir_all(&target_root).expect("create target");
+
+    let mut manifest_entries = serde_json::Map::new();
+    let mut members = Vec::new();
+    let mut expected = Vec::new();
+    for index in 0..16_u64 {
+        let rel_path = format!("workspace/fallback-{index}.txt");
+        let bytes = format!("fallback-member-{index}\n").into_bytes();
+        let sha = sha256_hex(&bytes);
+        store
+            .put(&format!("blobs/{sha}"), &bytes)
+            .expect("store loose blob");
+        manifest_entries.insert(
+            rel_path.clone(),
+            serde_json::json!({
+                "kind": "file",
+                "sha": sha,
+                "size": bytes.len(),
+                "mode": 0o600,
+            }),
+        );
+        members.push(PackMember {
+            sha: sha.clone(),
+            size: bytes.len() as u64,
+            offset: index,
+            clen: 1,
+            vmtime: index + 1,
+        });
+        expected.push((rel_path, bytes));
+    }
+
+    let index = PackIndex {
+        version: PACK_INDEX_VERSION,
+        max_vmtime: 16,
+        packs: vec![PackEntry {
+            id: "intentionally-missing-pack".into(),
+            bytes: 16,
+            members,
+        }],
+    };
+    store
+        .put(
+            BOX_STORE_PACK_INDEX_KEY,
+            serialize_pack_index(&index).expect("serialize index").as_bytes(),
+        )
+        .expect("store pack index");
+    store
+        .put(
+            BOX_STORE_MANIFEST_REL_PATH,
+            serde_json::to_vec(&serde_json::json!({
+                "version": 2,
+                "updatedAtMs": 1,
+                "writerWindowId": "test",
+                "entries": manifest_entries,
+            }))
+            .expect("serialize manifest")
+            .as_slice(),
+        )
+        .expect("store manifest");
+
+    assert!(
+        store
+            .get(&format!("{BOX_STORE_PACKS_PREFIX}/intentionally-missing-pack"))
+            .expect("probe missing pack")
+            .is_none()
+    );
+
+    let result = run_local_box_copy_in(&store, &target_root);
+    assert_eq!(result.outcome, CopyInOutcome::Hydrated);
+    assert_eq!(result.files, 16);
+    assert_eq!(result.verified, 16);
+    assert!(result.failures.is_empty());
+    for (rel_path, bytes) in expected {
+        assert_eq!(
+            fs::read(target_root.join(rel_path)).expect("read fallback file"),
+            bytes
+        );
     }
 
     fs::remove_dir_all(root).expect("cleanup");
