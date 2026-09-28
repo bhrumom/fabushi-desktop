@@ -11328,36 +11328,46 @@
       "targetPath": "source/host/src/extensions/box_store_sync/store_db_bundle_capture.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "aa66d7baeca1fc9b9a6f30f6e832c29f773b207c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/box_store_sync/store_db_bundle_capture.rs"
+        "source/host/src/extensions/box_store_sync/store_db_bundle_capture.rs",
+        "source/host/src/extensions/box_store_sync/production.rs",
+        "source/host/src/storage/store_db.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/box_store_sync_planned_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/box_store_sync_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity.yml"
       ],
-      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
+      "notes": "Finalized at implementation commit e02639400ab1de509a689df1886ffd004a6df06a: the shipping Mahayana Host composes frozen StoreDb capture lifecycle semantics end to end for LocalFs snapshot-out. Periodic sweeps include StoreDb only while Host is idle and fail-safe skip live Agent DB handles; turn settlement schedules the frozen 5-second per-Agent debounce only after the live DB owner retires; captures for the same Agent are serialized; bundle identity includes the shipping StoreDb write generation; pre/post bundle identity, staged manifest publication, canonical manifest conditional-write fencing, recovery-marker refusal and all-or-nothing bundle publication remain in the production path. Exact-HEAD evidence is Desktop Chat Parity run 36482629600 and Rust desktop runtime run 36482629412. Remote AgentStore/SandBoxStoreV2 remains a separate Box Store backend blocker and is not represented as a StoreDb-capture lifecycle blocker."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/store-db-capture.ts",
       "targetPath": "source/host/src/extensions/box_store_sync/store_db_capture.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "828b34465ac44c64720075134a6b47b8f842674f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/box_store_sync/store_db_capture.rs"
+        "source/host/src/extensions/box_store_sync/store_db_capture.rs",
+        "source/host/src/extensions/box_store_sync/production.rs",
+        "source/host/src/storage/store_db.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/box_store_sync_planned_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/box_store_sync_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity.yml"
       ],
-      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
+      "notes": "Finalized at implementation commit e02639400ab1de509a689df1886ffd004a6df06a: the shipping Mahayana Host composes frozen StoreDb capture lifecycle semantics end to end for LocalFs snapshot-out. Periodic sweeps include StoreDb only while Host is idle and fail-safe skip live Agent DB handles; turn settlement schedules the frozen 5-second per-Agent debounce only after the live DB owner retires; captures for the same Agent are serialized; bundle identity includes the shipping StoreDb write generation; pre/post bundle identity, staged manifest publication, canonical manifest conditional-write fencing, recovery-marker refusal and all-or-nothing bundle publication remain in the production path. Exact-HEAD evidence is Desktop Chat Parity run 36482629600 and Rust desktop runtime run 36482629412. Remote AgentStore/SandBoxStoreV2 remains a separate Box Store backend blocker and is not represented as a StoreDb-capture lifecycle blocker."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/store-db-snapshot-upload.ts",
