@@ -24,8 +24,8 @@ use super::listener_integrations::{
 };
 use super::backend_relay_source::RelayStatus;
 use super::production::{
-    FireDispatch, ProductionAutomationsBackendRuntime, ProductionLog, RelayEventSink,
-    RelayListeners,
+    FireDispatch, FirePollStateReader, ProductionAutomationsBackendRuntime, ProductionLog,
+    RelayEventSink, RelayListeners,
 };
 use super::sand_automation_cloud_sync::{
     CloudSyncClient, ProductionCloudSyncClient, SandAutomationCloudSync,
@@ -107,6 +107,7 @@ pub struct ProductionAutomationsLifecycle {
     cloud_wake: mpsc::Sender<()>,
     cloud_worker: Mutex<Option<JoinHandle<()>>>,
     cloud_auth_stop: Mutex<Option<StopSubscription>>,
+    suspended: Arc<AtomicBool>,
     stopped: Arc<AtomicBool>,
 }
 
@@ -124,6 +125,7 @@ impl ProductionAutomationsLifecycle {
         cloud_definitions: CloudDefinitionsReader,
         cloud_agent_ids: CloudAgentIdsReader,
         cloud_time_zone: CloudTimeZoneReader,
+        fire_poll_state: FirePollStateReader,
         trays: Arc<HostTraysExtension>,
         telemetry_logs: HostStructuredLogTelemetry,
         log: ProductionLog,
@@ -147,6 +149,7 @@ impl ProductionAutomationsLifecycle {
             listeners,
             relay_sink,
             fire_dispatch,
+            fire_poll_state,
             Arc::clone(&log),
         );
 
@@ -154,6 +157,7 @@ impl ProductionAutomationsLifecycle {
             Arc::new(ProductionCloudSyncClient::new(connect));
         let cloud = Arc::new(Mutex::new(SandAutomationCloudSync::new(cloud_client)));
         let cloud_delete_requests = Arc::new(Mutex::new(BTreeSet::<String>::new()));
+        let suspended = Arc::new(AtomicBool::new(false));
         let stopped = Arc::new(AtomicBool::new(false));
         let (cloud_wake, cloud_rx) = mpsc::channel::<()>();
 
@@ -161,6 +165,7 @@ impl ProductionAutomationsLifecycle {
         let worker_delete_requests = Arc::clone(&cloud_delete_requests);
         let worker_backend = Arc::clone(&backend);
         let worker_auth = Arc::clone(&auth);
+        let worker_suspended = Arc::clone(&suspended);
         let worker_stopped = Arc::clone(&stopped);
         let worker_log = Arc::clone(&log);
         let worker_trays = Arc::clone(&trays);
@@ -178,6 +183,9 @@ impl ProductionAutomationsLifecycle {
                     while cloud_rx.try_recv().is_ok() {}
                     if worker_stopped.load(Ordering::Acquire) {
                         break;
+                    }
+                    if worker_suspended.load(Ordering::Acquire) {
+                        continue;
                     }
                     if worker_auth.peek_access_token().is_none() {
                         continue;
@@ -340,6 +348,7 @@ impl ProductionAutomationsLifecycle {
             cloud_wake,
             cloud_worker: Mutex::new(Some(worker)),
             cloud_auth_stop: Mutex::new(Some(cloud_auth_stop)),
+            suspended,
             stopped,
         });
         let _ = lifecycle.cloud_wake.send(());
@@ -397,8 +406,31 @@ impl ProductionAutomationsLifecycle {
         let _ = self.cloud_wake.send(());
     }
 
+    pub fn suspend_wakes(&self) {
+        if self.stopped.load(Ordering::Acquire) || self.suspended.swap(true, Ordering::AcqRel) {
+            return;
+        }
+        self.watcher.suspend();
+        self.backend.suspend();
+        let _ = self.cloud_wake.send(());
+    }
+
+    pub fn resume_wakes(&self) {
+        if self.stopped.load(Ordering::Acquire) || !self.suspended.swap(false, Ordering::AcqRel) {
+            return;
+        }
+        self.watcher.resume();
+        self.backend.resume();
+        self.backend.request_reconcile();
+        let _ = self.cloud_wake.send(());
+    }
+
+    pub fn is_suspended(&self) -> bool {
+        self.suspended.load(Ordering::Acquire)
+    }
+
     pub fn request_reconcile(&self) {
-        if !self.stopped.load(Ordering::Acquire) {
+        if !self.stopped.load(Ordering::Acquire) && !self.suspended.load(Ordering::Acquire) {
             self.backend.request_reconcile();
             let _ = self.cloud_wake.send(());
         }
