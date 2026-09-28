@@ -303,7 +303,7 @@ fn routine_post_write_runs_only_after_successful_routine_write() {
             "action":"create",
             "name":"Listener routine",
             "prompt":"Watch Slack",
-            "trigger":{"type":"slack","channel":"C1"}
+            "trigger":{"type":"slack","channel":"#alerts","match":{"kind":"message"}}
         }),
         "tool-listener",
     ).expect("successful write");
