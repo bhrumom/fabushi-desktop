@@ -20,11 +20,12 @@ use crate::extensions::box_store_sync::box_object_store::{
 };
 use crate::extensions::box_store_sync::box_store_pack::{
     BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACK_RETIRED_KEY, BOX_STORE_PACKS_PREFIX,
-    PACK_BUILD_MIN_BYTES, PACK_BUILD_MIN_MEMBERS, PACK_INDEX_VERSION,
-    PACK_MAX_MEMBER_SIZE_SUM, PACK_MEMBER_MAX_BYTES, PACK_TMP_DIR_NAME, PACK_TMP_MAX_AGE_MS,
-    PackEntry, PackIndex, PackSource, build_pack_file, is_box_store_pack_build_enabled,
-    parse_pack_index, parse_pack_retired, plan_pack_maintenance, serialize_pack_index,
-    serialize_pack_retired,
+    PACK_INDEX_VERSION, PACK_MAX_MEMBER_SIZE_SUM, PACK_MEMBER_MAX_BYTES, PackEntry, PackIndex,
+    PackSource, build_pack_file, is_box_store_pack_build_enabled, parse_pack_index,
+    parse_pack_retired, plan_pack_maintenance, serialize_pack_index, serialize_pack_retired,
+};
+use crate::extensions::box_store_sync::box_store_pack_pipeline::{
+    PACK_BUILD_MIN_BYTES, PACK_BUILD_MIN_MEMBERS, PACK_TMP_DIR_NAME, PACK_TMP_MAX_AGE_MS,
 };
 use crate::extensions::box_store_sync::box_store_manifest::{
     AGENT_STORE_DB_BASENAMES, BoxManifestMap, set_manifest_entry,
