@@ -14404,19 +14404,22 @@
       "targetPath": "source/host/src/extensions/state_backstop/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "c5fbb1eb4ebffd709849f5c8e836ce84322ee4f7",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/state_backstop/extension.rs"
+        "source/host/src/extensions/state_backstop/extension.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/src/production_binding_providers.rs"
       ],
       "testEvidence": [
         "source/host/tests/state_backstop_contract.rs",
+        "source/host/tests/host_production_extensions_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-adaptation",
-      "notes": "Extension dependency/gate/API semantics are ported. Final parity is blocked on the still-planned Box Store Sync production object-store provider and shipping Host composition; it is intentionally not marked implemented."
+      "notes": "Final Rust adaptation: frozen gate/dependency/API semantics are preserved, and the shipping ProductionHostExtensions now composes StateBackstop only after BoxStoreSync, resolves per-agent source IDs through SourceMap, injects the BoxStoreSync object_store_for(source_id) provider, uses the production store.db reader/runtime, and stops StateBackstop before BoxStoreSync. The exact parent HEAD b564e23ceb738738f1a1c98c32ca12800f0279be passed the Grok-aligned shipping Host check in Rust desktop runtime run 36490619021 after the production-composition contract was made rustfmt-stable."
     },
     {
       "referencePath": "source/host/extensions/state-backstop/state-backstop-service.ts",
