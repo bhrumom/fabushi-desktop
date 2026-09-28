@@ -83,6 +83,18 @@ pub fn collect_materialized_skill_source_urls(
         .collect()
 }
 
+pub fn sweep_legacy_plugin_skill_references(
+    sand_root_dir: &Path,
+    catalog: &[PluginCatalogEntry],
+) -> usize {
+    let materialized = materialized_plugin_skills_from_cache(sand_root_dir);
+    if materialized.is_empty() {
+        return 0;
+    }
+    let source_urls = collect_materialized_skill_source_urls(catalog, &materialized);
+    remove_workflow_live_references(sand_root_dir, &source_urls)
+}
+
 pub fn remove_workflow_live_references(sand_root_dir: &Path, source_urls: &[String]) -> usize {
     if source_urls.is_empty() {
         return 0;
