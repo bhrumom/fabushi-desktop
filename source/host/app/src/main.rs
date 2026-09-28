@@ -121,7 +121,7 @@ use mahayana_host_runtime::extensions::automations::fire_delivery::{
 };
 use mahayana_host_runtime::extensions::automations::production_lifecycle::ProductionAutomationsLifecycle;
 use mahayana_host_runtime::extensions::automations::sand_automation_cloud_sync::{
-    ScheduledCloudAutomation, is_server_schedulable,
+    ScheduledCloudAutomation, is_server_schedulable, sand_cloud_definition,
 };
 use mahayana_host_runtime::extensions::automations::sand_automation_fire_consumer::{
     BackendAutomationFire, FireCompletion,
@@ -1040,7 +1040,22 @@ impl UnifiedGatewayApi {
         let Ok(entries) = runtime.list_all_automations() else {
             return false;
         };
-        match prepare_backend_fire(&entries, &fire, |_| None) {
+        let definition_time_zone = self.session_workers.resolve_user_time_zone();
+        match prepare_backend_fire(&entries, &fire, |entry| {
+            let cloud = ScheduledCloudAutomation {
+                id: entry.automation.id.clone(),
+                name: entry.automation.name.clone(),
+                prompt: entry.automation.prompt.clone(),
+                is_enabled: entry.automation.is_enabled,
+                trigger: entry.automation.trigger.clone(),
+            };
+            sand_cloud_definition(
+                &entry.agent_id,
+                &cloud,
+                definition_time_zone.as_deref(),
+            )
+            .map(|definition| definition.hash)
+        }) {
             PreparedBackendFire::Complete {
                 completion: terminal,
                 ..
