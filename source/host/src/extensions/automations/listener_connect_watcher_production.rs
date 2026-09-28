@@ -87,7 +87,7 @@ impl ProductionListenerConnectWatcher {
                         .watcher
                         .lock()
                         .unwrap_or_else(|poisoned| poisoned.into_inner());
-                    !watcher.pending().is_empty()
+                    !watcher.is_suspended() && !watcher.pending().is_empty()
                 };
                 if pending {
                     let connected = {

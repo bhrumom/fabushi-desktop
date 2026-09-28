@@ -70,6 +70,10 @@ impl ListenerConnectWatcher {
         self.pending.clear();
     }
 
+    pub fn is_suspended(&self) -> bool {
+        self.suspended
+    }
+
     pub fn pending(&self) -> &BTreeMap<String, PendingWatch> {
         &self.pending
     }

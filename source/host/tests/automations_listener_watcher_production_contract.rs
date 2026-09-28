@@ -68,3 +68,13 @@ fn production_watcher_does_not_resume_when_already_connected() {
     assert_eq!(watcher.pending_len(), 0);
     watcher.stop();
 }
+
+
+#[test]
+fn production_watcher_suspension_parks_polling_owner() {
+    let source = include_str!("../src/extensions/automations/listener_connect_watcher_production.rs");
+    assert!(
+        source.contains("!watcher.is_suspended() && !watcher.pending().is_empty()"),
+        "suspended listener watches must park the production polling owner"
+    );
+}
