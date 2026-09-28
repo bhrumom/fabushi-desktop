@@ -241,8 +241,12 @@ use mahayana_host_runtime::runner::coordinator_tool_relay::{
     RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
 };
 use mahayana_host_runtime::extensions::mcp::coordinator_relay::{
-    CoordinatorMcpLifecycleRelay, MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
+    BoxServerStatusLoader, CoordinatorMcpLifecycleRelay, CoordinatorMcpManagerBackend,
+    MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
 };
+use mahayana_host_runtime::extensions::mcp::mcp_service::McpHostService;
+use mahayana_host_runtime::extensions::mcp::production_box_state::ProductionBoxMcpStateLoader;
+use mahayana_host_runtime::runner::tools::mcp_host_service_management_sink::McpHostServiceManagementSink;
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
 use mahayana_host_runtime::attachment_paths::{
     AgentMediaKind, file_url_for_path, persist_agent_media_bytes,
@@ -806,6 +810,7 @@ struct UnifiedGatewayApi {
     events: GatewayEventHub,
     routed_tool_relay: Arc<CoordinatorToolRelay>,
     mcp_lifecycle_relay: Arc<CoordinatorMcpLifecycleRelay>,
+    mcp_service: Arc<McpHostService>,
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
     session_workers: Arc<ProductionSessionWorkers>,
@@ -836,6 +841,7 @@ struct UnifiedGatewayApi {
 #[derive(Clone)]
 struct LocalRoutedRunnerDeps {
     routed_tool_relay: Arc<CoordinatorToolRelay>,
+    mcp_service: Arc<McpHostService>,
     auth: Arc<HostAuthExtension>,
     auto_review: Arc<HostAutoReviewExtension>,
     events: GatewayEventHub,
@@ -864,6 +870,7 @@ impl UnifiedGatewayApi {
     fn local_routed_runner_deps(&self) -> LocalRoutedRunnerDeps {
         LocalRoutedRunnerDeps {
             routed_tool_relay: Arc::clone(&self.routed_tool_relay),
+            mcp_service: Arc::clone(&self.mcp_service),
             auth: Arc::clone(&self.auth),
             auto_review: Arc::clone(&self.auto_review),
             events: self.events.clone(),
@@ -1118,6 +1125,7 @@ fn run_local_group_member_turn(
     });
     start_routed_provider_task(
         deps.routed_tool_relay,
+        deps.mcp_service,
         deps.events.clone(),
         deps.host_tx,
         deps.data_dir,
@@ -1274,6 +1282,7 @@ fn start_local_upgrade_resume_turn(
 
     start_routed_provider_task(
         deps.routed_tool_relay,
+        deps.mcp_service,
         deps.events.clone(),
         deps.host_tx,
         deps.data_dir,
@@ -1388,6 +1397,7 @@ fn run_local_automation_turn(
     });
     start_routed_provider_task(
         deps.routed_tool_relay,
+        deps.mcp_service,
         deps.events.clone(),
         deps.host_tx,
         deps.data_dir,
@@ -1892,6 +1902,7 @@ fn build_cloud_agent_auto_review_hook(
 
 fn start_routed_provider_task(
     routed_tool_relay: Arc<CoordinatorToolRelay>,
+    mcp_service: Arc<McpHostService>,
     events: GatewayEventHub,
     host_tx: mpsc::Sender<HostLaneRequest>,
     data_dir: PathBuf,
@@ -2164,6 +2175,7 @@ fn start_routed_provider_task(
     let accepted_stream_id = stream_id.clone();
     let worker_stream_id = stream_id.clone();
     let worker_registry = Arc::clone(&runner_registry);
+    let worker_mcp_service = Arc::clone(&mcp_service);
     let worker_host_runner_composition = Arc::clone(&host_runner_composition);
     let worker_cancellation = cancellation.clone();
     let worker_sessions = Arc::clone(&session_workers);
@@ -2878,7 +2890,11 @@ fn start_routed_provider_task(
                     browser_executor: Some(browser_executor),
                     computer_executor: Some(computer_executor),
                     file_transfer_executor: Some(file_transfer_executor),
-                    mcp_management_sink: None,
+                    mcp_management_sink: Some(Arc::new(McpHostServiceManagementSink::new(
+                        Arc::clone(&worker_mcp_service),
+                        Some(agent_id.clone()),
+                        true,
+                    ))),
                     send_message_sink: Some(send_message_sink),
                     reaction_sink: Some(reaction_sink),
                     cloud_agent_tool: Some(cloud_agent_tool),
@@ -3656,6 +3672,7 @@ impl GatewayApi for UnifiedGatewayApi {
         if method == RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD {
             return start_routed_provider_task(
                 Arc::clone(&self.routed_tool_relay),
+                Arc::clone(&self.mcp_service),
                 self.events.clone(),
                 self.host_tx.clone(),
                 self.data_dir.clone(),
@@ -4096,6 +4113,7 @@ impl GatewayApi for UnifiedGatewayApi {
         if method == RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD {
             return start_routed_provider_task(
                 Arc::clone(&self.routed_tool_relay),
+                Arc::clone(&self.mcp_service),
                 self.events.clone(),
                 self.host_tx.clone(),
                 self.data_dir.clone(),
@@ -4802,6 +4820,16 @@ fn main() {
     }));
     let routed_tool_relay = Arc::new(CoordinatorToolRelay::new(gateway_events.clone()));
     let mcp_lifecycle_relay = Arc::new(CoordinatorMcpLifecycleRelay::new(gateway_events.clone()));
+    let box_mcp_owner = Arc::clone(&forever_box);
+    let box_status_loader: BoxServerStatusLoader = Arc::new(move |ids, kick_only| {
+        let accessor = box_mcp_owner.mcp_resource_accessor()?;
+        ProductionBoxMcpStateLoader::new(accessor).list_servers(ids, kick_only)
+    });
+    let mcp_manager_backend = Arc::new(CoordinatorMcpManagerBackend::new(
+        Arc::clone(&mcp_lifecycle_relay),
+        box_status_loader,
+    ));
+    let mcp_service = Arc::new(McpHostService::new(mcp_manager_backend, None));
     let transcript_runtime = transcript_manager.transcript_runtime();
     match load_initial_transcript_resiliently(|| {
         ensure_initial_transcript_loaded(&session_workers, transcript_runtime.session_runtime())
@@ -4831,6 +4859,7 @@ fn main() {
     }
     let cross_user_runner_deps = LocalRoutedRunnerDeps {
         routed_tool_relay: Arc::clone(&routed_tool_relay),
+        mcp_service: Arc::clone(&mcp_service),
         auth: Arc::clone(&production_extensions.auth),
         auto_review: Arc::clone(&auto_review_extension),
         events: gateway_events.clone(),
@@ -4989,6 +5018,7 @@ fn main() {
             events: gateway_events.clone(),
             routed_tool_relay: Arc::clone(&routed_tool_relay),
             mcp_lifecycle_relay: Arc::clone(&mcp_lifecycle_relay),
+            mcp_service: Arc::clone(&mcp_service),
             data_dir: app_data_dir.clone(),
             request_context: Arc::clone(&runner_request_context),
             session_workers: Arc::clone(&session_workers),
