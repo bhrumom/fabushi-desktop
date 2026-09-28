@@ -1,10 +1,17 @@
+use std::collections::HashMap;
 use std::fs::{self, OpenOptions};
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
+
+use sha2::{Digest, Sha256};
 
 use fs2::FileExt;
 
-use super::agent_store_sand_files::normalize_rel_path;
+use super::agent_store_sand_files::{
+    AgentStoreClient, AgentStoreClientDependencies, AgentStoreReadObject,
+    AgentStoreWriteOutcome, AgentStoreWritePrecondition, normalize_rel_path,
+};
 
 pub trait BoxObjectStore: Send + Sync {
     fn get(&self, key: &str) -> Result<Option<Vec<u8>>, String>;
@@ -36,6 +43,214 @@ pub trait BoxObjectStore: Send + Sync {
 
 pub trait BoxObjectStoreProvider: Send + Sync {
     fn for_store(&self, store_id: &str) -> Box<dyn BoxObjectStore>;
+}
+
+#[derive(Clone)]
+pub struct AgentStoreObjectStoreProvider {
+    client: AgentStoreClient,
+}
+
+impl AgentStoreObjectStoreProvider {
+    pub fn new(deps: AgentStoreClientDependencies) -> Result<Self, String> {
+        Ok(Self {
+            client: AgentStoreClient::new(deps)?,
+        })
+    }
+}
+
+impl BoxObjectStoreProvider for AgentStoreObjectStoreProvider {
+    fn for_store(&self, store_id: &str) -> Box<dyn BoxObjectStore> {
+        Box::new(AgentStoreObjectStore::new(
+            self.client.clone(),
+            store_id.to_string(),
+        ))
+    }
+}
+
+#[derive(Debug, Clone)]
+enum AgentStoreBaseline {
+    Absent,
+    Present { etag: String, digest: [u8; 32] },
+}
+
+pub struct AgentStoreObjectStore {
+    client: AgentStoreClient,
+    source_id: String,
+    baselines: Mutex<HashMap<String, AgentStoreBaseline>>,
+}
+
+impl AgentStoreObjectStore {
+    pub fn new(client: AgentStoreClient, source_id: String) -> Self {
+        Self {
+            client,
+            source_id,
+            baselines: Mutex::new(HashMap::new()),
+        }
+    }
+
+    fn remember_read(&self, key: &str, object: Option<&AgentStoreReadObject>) {
+        let baseline = match object {
+            None => Some(AgentStoreBaseline::Absent),
+            Some(object) => object.etag.as_ref().map(|etag| AgentStoreBaseline::Present {
+                etag: etag.clone(),
+                digest: Sha256::digest(&object.bytes).into(),
+            }),
+        };
+        let mut baselines = self
+            .baselines
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        match baseline {
+            Some(baseline) => {
+                baselines.insert(key.to_string(), baseline);
+            }
+            None => {
+                baselines.remove(key);
+            }
+        }
+    }
+
+    fn baseline_for_expected(
+        &self,
+        key: &str,
+        expected: Option<&[u8]>,
+    ) -> Option<AgentStoreWritePrecondition> {
+        let baselines = self
+            .baselines
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        match (baselines.get(key), expected) {
+            (Some(AgentStoreBaseline::Absent), None) => {
+                Some(AgentStoreWritePrecondition::ExpectAbsent)
+            }
+            (Some(AgentStoreBaseline::Present { etag, digest }), Some(expected))
+                if *digest == <[u8; 32]>::from(Sha256::digest(expected)) =>
+            {
+                Some(AgentStoreWritePrecondition::BaseEtag(etag.clone()))
+            }
+            _ => None,
+        }
+    }
+
+    fn probe_precondition(&self, key: &str) -> Result<AgentStoreWritePrecondition, String> {
+        let object = self.client.get_object(&self.source_id, key)?;
+        self.remember_read(key, object.as_ref());
+        match object {
+            None => Ok(AgentStoreWritePrecondition::ExpectAbsent),
+            Some(object) => object
+                .etag
+                .filter(|etag| !etag.is_empty())
+                .map(AgentStoreWritePrecondition::BaseEtag)
+                .ok_or_else(|| {
+                    format!(
+                        "agent-store write for {key} has no usable baseline: object exists but GET carried no etag"
+                    )
+                }),
+        }
+    }
+
+    fn remember_write(&self, key: &str, bytes: &[u8], outcome: &AgentStoreWriteOutcome) {
+        let mut baselines = self
+            .baselines
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        match outcome {
+            AgentStoreWriteOutcome::Written { etag: Some(etag) } => {
+                baselines.insert(
+                    key.to_string(),
+                    AgentStoreBaseline::Present {
+                        etag: etag.clone(),
+                        digest: Sha256::digest(bytes).into(),
+                    },
+                );
+            }
+            _ => {
+                baselines.remove(key);
+            }
+        }
+    }
+}
+
+impl BoxObjectStore for AgentStoreObjectStore {
+    fn get(&self, key: &str) -> Result<Option<Vec<u8>>, String> {
+        let object = self.client.get_object(&self.source_id, key)?;
+        self.remember_read(key, object.as_ref());
+        Ok(object.map(|object| object.bytes))
+    }
+
+    fn put(&self, key: &str, bytes: &[u8]) -> Result<(), String> {
+        let precondition = self.probe_precondition(key)?;
+        let outcome = self
+            .client
+            .put_bytes(&self.source_id, key, bytes, precondition)?;
+        self.remember_write(key, bytes, &outcome);
+        match outcome {
+            AgentStoreWriteOutcome::Written { .. } => Ok(()),
+            AgentStoreWriteOutcome::AlreadyPresent => Ok(()),
+            AgentStoreWriteOutcome::Conflict {
+                conflict_rel_path, ..
+            } => Err(match conflict_rel_path {
+                Some(path) => format!(
+                    "agent-store write for {key} lost a concurrent-write race; content preserved at {path}"
+                ),
+                None => format!(
+                    "agent-store write for {key} lost a concurrent-write race"
+                ),
+            }),
+        }
+    }
+
+    fn put_if_unchanged(
+        &self,
+        key: &str,
+        expected: Option<&[u8]>,
+        bytes: &[u8],
+    ) -> Result<bool, String> {
+        let Some(precondition) = self.baseline_for_expected(key, expected) else {
+            return Ok(false);
+        };
+        let outcome = self
+            .client
+            .put_bytes(&self.source_id, key, bytes, precondition)?;
+        self.remember_write(key, bytes, &outcome);
+        Ok(matches!(
+            outcome,
+            AgentStoreWriteOutcome::Written { .. } | AgentStoreWriteOutcome::AlreadyPresent
+        ))
+    }
+
+    fn get_to_file(
+        &self,
+        key: &str,
+        dest_path: &Path,
+        max_bytes: Option<u64>,
+    ) -> Result<Option<u64>, String> {
+        self.client
+            .get_object_to_file(&self.source_id, key, dest_path, max_bytes)
+    }
+
+    fn put_from_file(&self, key: &str, src_path: &Path) -> Result<(), String> {
+        match self
+            .client
+            .put_file_content_addressed(&self.source_id, key, src_path)?
+        {
+            AgentStoreWriteOutcome::Written { .. }
+            | AgentStoreWriteOutcome::AlreadyPresent => Ok(()),
+            AgentStoreWriteOutcome::Conflict { .. } => Err(format!(
+                "content-addressed agent-store write unexpectedly conflicted for {key}"
+            )),
+        }
+    }
+
+    fn list(&self, prefix: &str) -> Result<Vec<String>, String> {
+        self.client.list_objects(&self.source_id, prefix)
+    }
+
+    fn delete(&self, key: &str) -> Result<(), String> {
+        Err(format!(
+            "AgentStoreObjectStore is append-only; cannot delete {key}"
+        ))
+    }
 }
 
 #[derive(Debug, Clone)]

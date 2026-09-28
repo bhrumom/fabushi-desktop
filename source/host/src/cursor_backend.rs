@@ -6,7 +6,7 @@ use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use reqwest::Client as AsyncClient;
 use reqwest::blocking::Client as BlockingClient;
-use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
+use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, HeaderName, HeaderValue};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -142,6 +142,67 @@ pub(crate) fn send_cursor_unary(
     )
 }
 
+
+
+pub(crate) fn send_cursor_unary_with_headers(
+    backend_url: &str,
+    access_token: &str,
+    machine_id: &str,
+    path: &str,
+    body: &[u8],
+    timeout_ms: u64,
+    ghost_mode: &str,
+    extra_headers: &[(String, String)],
+) -> Result<Vec<u8>, CursorBackendError> {
+    let base = Url::parse(backend_url)
+        .map_err(|error| CursorBackendError::InvalidBackendUrl(error.to_string()))?;
+    let url = base
+        .join(path)
+        .map_err(|error| CursorBackendError::InvalidBackendUrl(error.to_string()))?;
+    let client = BlockingClient::builder()
+        .timeout(Duration::from_millis(timeout_ms))
+        .build()
+        .map_err(|error| CursorBackendError::Transport(error.to_string()))?;
+    let mut request = client
+        .post(url)
+        .header(CONTENT_TYPE, "application/proto")
+        .header("connect-protocol-version", "1")
+        .header(AUTHORIZATION, format!("Bearer {access_token}"))
+        .header(
+            "x-cursor-checksum",
+            create_cursor_checksum(machine_id, system_now_ms()),
+        )
+        .header("x-cursor-client-type", SAND_CLIENT_TYPE)
+        .header("x-cursor-client-version", sand_client_version())
+        .header("x-sand-box-namespace", sand_box_namespace())
+        .header("x-ghost-mode", ghost_mode)
+        .header("x-request-id", Uuid::new_v4().to_string());
+
+    for (name, value) in extra_headers {
+        let name = HeaderName::from_bytes(name.as_bytes())
+            .map_err(|error| CursorBackendError::Transport(error.to_string()))?;
+        let value = HeaderValue::from_str(value)
+            .map_err(|error| CursorBackendError::Transport(error.to_string()))?;
+        request = request.header(name, value);
+    }
+
+    let response = request
+        .body(body.to_vec())
+        .send()
+        .map_err(|error| CursorBackendError::Transport(error.to_string()))?;
+    let status = response.status();
+    let bytes = response
+        .bytes()
+        .map_err(|error| CursorBackendError::Transport(error.to_string()))?
+        .to_vec();
+    if !status.is_success() {
+        return Err(CursorBackendError::HttpStatus {
+            status: status.as_u16(),
+            body: String::from_utf8_lossy(&bytes).chars().take(512).collect(),
+        });
+    }
+    Ok(bytes)
+}
 
 pub(crate) type CursorRequestCancellation =
     Arc<dyn Fn() -> bool + Send + Sync + 'static>;
