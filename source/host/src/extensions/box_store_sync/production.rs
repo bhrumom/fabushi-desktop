@@ -192,6 +192,7 @@ impl ProductionBoxStoreSyncService {
                 store_db_debounce: Mutex::new(StoreDbDebounceQueue::default()),
                 store_db_wake: Condvar::new(),
                 agent_db_capture_queues: AgentDbCaptureQueues::default(),
+                agent_store_provider: Mutex::new(None),
                 last_pack_sync: Mutex::new(None),
                 flush_waiters: AtomicUsize::new(0),
                 status: Mutex::new(ProductionBoxStoreSyncStatus {
@@ -445,6 +446,7 @@ struct ProductionBoxStoreSyncInner {
     store_db_debounce: Mutex<StoreDbDebounceQueue>,
     store_db_wake: Condvar,
     agent_db_capture_queues: AgentDbCaptureQueues,
+    agent_store_provider: Mutex<Option<AgentStoreObjectStoreProvider>>,
     last_pack_sync: Mutex<Option<Instant>>,
     flush_waiters: AtomicUsize,
     status: Mutex<ProductionBoxStoreSyncStatus>,
@@ -475,26 +477,39 @@ impl ProductionBoxStoreSyncInner {
                 Box::new(LocalFsObjectStore::new(base_dir.join(&store_id))),
             )),
             ProductionBoxStoreSyncMode::AgentStore => {
-                let backend_url = self
-                    .deps
-                    .backend_url
-                    .clone()
-                    .ok_or_else(|| "AgentStore backend URL is not configured".to_string())?;
-                let get_access_token = self
-                    .deps
-                    .get_access_token
-                    .clone()
-                    .ok_or_else(|| "AgentStore auth token resolver is not configured".to_string())?;
-                let get_machine_id = self
-                    .deps
-                    .get_machine_id
-                    .clone()
-                    .ok_or_else(|| "AgentStore machine id resolver is not configured".to_string())?;
-                let provider = AgentStoreObjectStoreProvider::new(AgentStoreClientDependencies {
-                    backend_url,
-                    get_access_token,
-                    get_machine_id,
-                })?;
+                let provider = {
+                    let mut slot = self
+                        .agent_store_provider
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    if slot.is_none() {
+                        let backend_url = self
+                            .deps
+                            .backend_url
+                            .clone()
+                            .ok_or_else(|| "AgentStore backend URL is not configured".to_string())?;
+                        let get_access_token = self
+                            .deps
+                            .get_access_token
+                            .clone()
+                            .ok_or_else(|| "AgentStore auth token resolver is not configured".to_string())?;
+                        let get_machine_id = self
+                            .deps
+                            .get_machine_id
+                            .clone()
+                            .ok_or_else(|| "AgentStore machine id resolver is not configured".to_string())?;
+                        *slot = Some(AgentStoreObjectStoreProvider::new(
+                            AgentStoreClientDependencies {
+                                backend_url,
+                                get_access_token,
+                                get_machine_id,
+                            },
+                        )?);
+                    }
+                    slot.as_ref()
+                        .cloned()
+                        .ok_or_else(|| "AgentStore provider failed to initialize".to_string())?
+                };
                 Ok((store_id.clone(), provider.for_store(&store_id)))
             }
             _ => Err("box-store backend is not active".into()),
