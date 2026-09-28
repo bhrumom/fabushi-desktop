@@ -11,6 +11,7 @@ pub mod gateway;
 pub mod inference_router;
 pub mod local_exec;
 pub mod mcp;
+pub mod mcp_lifecycle_relay;
 pub mod oauth;
 pub mod protocol;
 pub mod renderer_port_server;
