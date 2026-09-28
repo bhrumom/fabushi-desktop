@@ -18358,19 +18358,21 @@
       "targetPath": "source/host/src/runner/tools/communicate_tool.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "53813c008054da214ea775881b591fa4fa8a7cb1",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
-        "source/host/src/runner/tools/communicate_tool.rs"
+        "source/host/src/runner/tools/communicate_tool.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner/agent_v1_wire.rs"
       ],
       "testEvidence": [
         "source/host/tests/runner_communicate_listener_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust now owns the frozen communicate-tool envelope semantics: Sand marker JSON, executing partial wrapper, empty wrapper, success/error args and result envelopes, terminal completion wrapper, render fallback and exception-to-error conversion. Final remains withheld until canonical generated CommunicateUpdate*/ToolCall protobuf bindings and InteractionHandler executeToolCall lifecycle are the shipping representation."
+      "notes": "Rust Runner owns the frozen communicate-tool envelope and the shipping interaction lifecycle. CommunicateRoutedToolBridge is installed by TurnAgentComposition around the real per-turn toolset and emits canonical agent.v1 AgentToolCall / CommunicateUpdate protobuf wire for initial and completed phases, preserving toolCallId and started/completed timestamps for success and error settlement. The focused contract decodes the wire, pins frozen communicate_update_tool_call tag 48, and proves non-communicate tools bypass the wrapper. Exact implementation HEAD 35b8102488cb52397ab8d748a8a48be12dcae4d2 passed the full source/host Runner test suite in Rust desktop runtime run 36366997942."
     },
     {
       "referencePath": "source/host/runner/tools/listener-connect-cards.ts",
