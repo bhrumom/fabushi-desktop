@@ -15,7 +15,6 @@ use super::extension::{
     AuthRenewalEvent, AuthRenewalPort, McpHostServicePort, McpPluginSkillsService,
     PollingHandle, PollingPort,
 };
-use super::legacy_live_references::remove_workflow_live_references;
 use super::mcp_service::{McpHostService, PluginSkillsPort};
 use super::plugin_skills::{
     PLUGIN_SKILLS_REFRESH_INTERVAL_MS, SandPluginSkillsService,
@@ -246,7 +245,7 @@ impl PluginSkillsPort for SandPluginSkillsService {
     }
 
     fn remove_live_references(&self, source_urls: &[String]) {
-        let _ = remove_workflow_live_references(&self.sand_root_dir, source_urls);
+        SandPluginSkillsService::remove_live_references(self, source_urls);
     }
 }
 
