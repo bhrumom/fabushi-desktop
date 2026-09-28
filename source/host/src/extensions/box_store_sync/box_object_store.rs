@@ -1,12 +1,28 @@
-use std::fs;
+use std::fs::{self, OpenOptions};
 use std::io;
 use std::path::{Path, PathBuf};
+
+use fs2::FileExt;
 
 use super::agent_store_sand_files::normalize_rel_path;
 
 pub trait BoxObjectStore: Send + Sync {
     fn get(&self, key: &str) -> Result<Option<Vec<u8>>, String>;
     fn put(&self, key: &str, bytes: &[u8]) -> Result<(), String>;
+
+    fn put_if_unchanged(
+        &self,
+        key: &str,
+        expected: Option<&[u8]>,
+        bytes: &[u8],
+    ) -> Result<bool, String> {
+        if self.get(key)?.as_deref() != expected {
+            return Ok(false);
+        }
+        self.put(key, bytes)?;
+        Ok(true)
+    }
+
     fn get_to_file(
         &self,
         key: &str,
@@ -78,6 +94,57 @@ impl BoxObjectStore for LocalFsObjectStore {
             fs::create_dir_all(parent).map_err(|error| error.to_string())?;
         }
         fs::write(path, bytes).map_err(|error| error.to_string())
+    }
+
+    fn put_if_unchanged(
+        &self,
+        key: &str,
+        expected: Option<&[u8]>,
+        bytes: &[u8],
+    ) -> Result<bool, String> {
+        let path = self.path_for(key)?;
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+        }
+
+        let mut lock_os = path.as_os_str().to_os_string();
+        lock_os.push(".lock");
+        let lock_path = PathBuf::from(lock_os);
+        let lock = OpenOptions::new()
+            .create(true)
+            .read(true)
+            .write(true)
+            .open(&lock_path)
+            .map_err(|error| error.to_string())?;
+        lock.lock_exclusive().map_err(|error| error.to_string())?;
+
+        let current = match fs::read(&path) {
+            Ok(value) => Some(value),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => None,
+            Err(error) => {
+                let _ = FileExt::unlock(&lock);
+                return Err(error.to_string());
+            }
+        };
+        if current.as_deref() != expected {
+            let _ = FileExt::unlock(&lock);
+            return Ok(false);
+        }
+
+        let mut temp_os = path.as_os_str().to_os_string();
+        temp_os.push(".conditional-write.tmp");
+        let temp_path = PathBuf::from(temp_os);
+        let result = (|| -> Result<(), String> {
+            fs::write(&temp_path, bytes).map_err(|error| error.to_string())?;
+            fs::rename(&temp_path, &path).map_err(|error| error.to_string())
+        })();
+        if result.is_err() {
+            let _ = fs::remove_file(&temp_path);
+        }
+        let unlock = FileExt::unlock(&lock).map_err(|error| error.to_string());
+        result?;
+        unlock?;
+        Ok(true)
     }
 
     fn get_to_file(
@@ -159,4 +226,36 @@ fn walk_files(root: &Path, dir: &Path, out: &mut Vec<String>) -> io::Result<()> 
         }
     }
     Ok(())
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn local_fs_conditional_put_rejects_stale_manifest_baseline() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-box-object-store-cas-{}",
+            uuid::Uuid::new_v4().simple()
+        ));
+        let store = LocalFsObjectStore::new(&root);
+        let key = "manifest.json";
+
+        assert!(store.put_if_unchanged(key, None, b"v1").expect("create v1"));
+        let baseline = store.get(key).expect("read v1").expect("v1 exists");
+
+        store.put(key, b"concurrent-v2").expect("concurrent writer");
+        assert!(
+            !store
+                .put_if_unchanged(key, Some(&baseline), b"stale-v3")
+                .expect("conditional stale write")
+        );
+        assert_eq!(
+            store.get(key).expect("read winner").as_deref(),
+            Some(b"concurrent-v2".as_slice())
+        );
+
+        fs::remove_dir_all(root).expect("cleanup");
+    }
 }
