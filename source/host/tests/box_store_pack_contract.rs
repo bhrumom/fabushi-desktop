@@ -34,6 +34,8 @@ fn schema_parser_enforces_version_ranges_and_gzip_expansion_bounds() {
         }],
     };
     let raw = serialize_pack_index(&valid).unwrap();
+    assert!(raw.contains("\"maxVmtime\":7"));
+    assert!(!raw.contains("max_vmtime"));
     assert_eq!(parse_pack_index(&raw), Some(valid.clone()));
 
     let mut invalid = valid;

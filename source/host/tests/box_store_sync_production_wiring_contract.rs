@@ -126,6 +126,11 @@ fn production_owner_wires_real_chrome_watcher_and_periodic_cycle() {
     assert!(production.contains("run_store_db_debounce_loop"));
     assert!(production.contains("AgentDbCaptureQueues"));
     assert!(production.contains("get_sand_agent_db_write_generation"));
+    assert!(production.contains("sync_local_packs"));
+    assert!(production.contains("PACK_TMP_DIR_NAME"));
+    assert!(production.contains("BOX_STORE_PACK_RETIRED_KEY"));
+    assert!(production.contains("BOX_STORE_PACK_INDEX_KEY"));
+    assert!(production.contains("idle && poll_inner.pack_sync_due()"));
 
     let shipping_main = include_str!("../app/src/main.rs");
     assert!(shipping_main.contains("schedule_store_db_snapshot(&agent_id)"));

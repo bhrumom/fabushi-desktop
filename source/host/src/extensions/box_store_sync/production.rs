@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -18,6 +18,14 @@ use sha2::{Digest, Sha256};
 use crate::extensions::box_store_sync::box_object_store::{
     BoxObjectStore, LocalFsObjectStore,
 };
+use crate::extensions::box_store_sync::box_store_pack::{
+    BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACK_RETIRED_KEY, BOX_STORE_PACKS_PREFIX,
+    PACK_BUILD_MIN_BYTES, PACK_BUILD_MIN_MEMBERS, PACK_INDEX_VERSION,
+    PACK_MAX_MEMBER_SIZE_SUM, PACK_MEMBER_MAX_BYTES, PACK_TMP_DIR_NAME, PACK_TMP_MAX_AGE_MS,
+    PackEntry, PackIndex, PackSource, build_pack_file, is_box_store_pack_build_enabled,
+    parse_pack_index, parse_pack_retired, plan_pack_maintenance, serialize_pack_index,
+    serialize_pack_retired,
+};
 use crate::extensions::box_store_sync::box_store_manifest::{
     AGENT_STORE_DB_BASENAMES, BoxManifestMap, set_manifest_entry,
 };
@@ -30,6 +38,7 @@ use crate::extensions::box_store_sync::box_store_transfer::{
     BOX_STORE_SNAPSHOT_TMP_SUFFIX, CategoryTransferSummary, glob_matches_path,
 };
 use crate::extensions::box_store_sync::box_store_sync::LARGE_OBJECT_THRESHOLD_BYTES;
+use crate::extensions::box_store_sync::box_store_sync_service::BOX_STORE_CHROME_INTERVAL_MS;
 use crate::extensions::box_store_sync::store_db_snapshot_upload::{
     SnapshotUploadOutcome, StoreDbSnapshotRuntimePort, StoreDbSnapshotUpload,
 };
@@ -111,7 +120,7 @@ impl ProductionBoxStoreSyncApi {
     }
 
     pub fn snapshot_local_now(&self) -> Result<ProductionBoxStoreSyncStatus, String> {
-        self.inner.run_local_cycle(false, true, false)?;
+        self.inner.run_local_cycle(false, true, false, false)?;
         Ok(self.status())
     }
 
@@ -171,6 +180,7 @@ impl ProductionBoxStoreSyncService {
                 store_db_debounce: Mutex::new(StoreDbDebounceQueue::default()),
                 store_db_wake: Condvar::new(),
                 agent_db_capture_queues: AgentDbCaptureQueues::default(),
+                last_pack_sync: Mutex::new(None),
                 status: Mutex::new(ProductionBoxStoreSyncStatus {
                     enabled,
                     backend,
@@ -233,7 +243,7 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
             CHROME_SESSION_DB_NAMES.iter().copied(),
             self.inner.deps.scheduling.chrome_session_debounce.delay_ms,
             Arc::new(move || {
-                if let Err(error) = chrome_inner.run_local_cycle(true, false, false) {
+                if let Err(error) = chrome_inner.run_local_cycle(true, false, false, false) {
                     chrome_inner.log(&format!(
                         "chrome-session snapshot rejected: {error}"
                     ));
@@ -278,9 +288,11 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                     if !sleep_interruptibly(&poll_inner.stopped, interval_ms) {
                         break;
                     }
-                    let include_store_dbs = (poll_inner.deps.is_idle)();
+                    let idle = (poll_inner.deps.is_idle)();
+                    let include_store_dbs = idle;
+                    let include_packs = idle && poll_inner.pack_sync_due();
                     if let Err(error) =
-                        poll_inner.run_local_cycle(false, include_store_dbs, true)
+                        poll_inner.run_local_cycle(false, include_store_dbs, true, include_packs)
                     {
                         poll_inner.log(&format!("periodic snapshot rejected: {error}"));
                         poll_inner.diagnostic("periodic", &error, false);
@@ -417,6 +429,7 @@ struct ProductionBoxStoreSyncInner {
     store_db_debounce: Mutex<StoreDbDebounceQueue>,
     store_db_wake: Condvar,
     agent_db_capture_queues: AgentDbCaptureQueues,
+    last_pack_sync: Mutex<Option<Instant>>,
     status: Mutex<ProductionBoxStoreSyncStatus>,
 }
 
@@ -435,11 +448,25 @@ impl ProductionBoxStoreSyncInner {
         (self.deps.report_host_extension_diagnostic)(&diagnostic);
     }
 
+    fn pack_sync_due(&self) -> bool {
+        let last = self
+            .last_pack_sync
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        match *last {
+            None => true,
+            Some(observed) => {
+                observed.elapsed() >= Duration::from_millis(BOX_STORE_CHROME_INTERVAL_MS)
+            }
+        }
+    }
+
     fn run_local_cycle(
         &self,
         chrome_only: bool,
         include_store_dbs: bool,
         skip_live_handle_store_dbs: bool,
+        include_packs: bool,
     ) -> Result<(), String> {
         let _cycle = self
             .cycle_lock
@@ -536,6 +563,18 @@ impl ProductionBoxStoreSyncInner {
             manifest_v2,
             format!("mahayana-host-{}", std::process::id()),
         )?;
+
+        if include_packs
+            && is_box_store_pack_build_enabled(
+                self.env.get("SAND_BOX_STORE_PACKS").map(String::as_str),
+            )
+        {
+            categories.push(sync_local_packs(&store, &entries)?);
+            *self
+                .last_pack_sync
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(Instant::now());
+        }
 
         let files_uploaded = categories.iter().map(|value| value.files_uploaded).sum();
         let bytes_uploaded = categories.iter().map(|value| value.bytes_uploaded).sum();
@@ -891,6 +930,237 @@ impl StoreDbSnapshotRuntimePort for LocalFsStoreDbSnapshotRuntime {
     ) -> Result<(), String> {
         self.store.put_from_file(key, path)
     }
+}
+
+
+fn resolve_pack_source_path(rel_path: &str) -> Option<PathBuf> {
+    for (prefix, root) in [
+        (SAND_DATA_REL_PREFIX, get_sand_root_dir()),
+        (WORKSPACE_REL_PREFIX, PathBuf::from(WORKSPACE_ROOT)),
+        (CLI_CONFIG_REL_PREFIX, PathBuf::from(CLI_CONFIG_ROOT)),
+    ] {
+        if rel_path == prefix {
+            return Some(root);
+        }
+        if let Some(suffix) = rel_path.strip_prefix(&format!("{prefix}/")) {
+            return Some(root.join(suffix));
+        }
+    }
+    None
+}
+
+fn sweep_pack_temp_dir(dir: &Path) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+    let now = SystemTime::now();
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Ok(metadata) = entry.metadata() else {
+            continue;
+        };
+        let Ok(modified) = metadata.modified() else {
+            continue;
+        };
+        if now
+            .duration_since(modified)
+            .is_ok_and(|age| age.as_millis() as u64 > PACK_TMP_MAX_AGE_MS)
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+}
+
+fn sync_local_packs(
+    store: &LocalFsObjectStore,
+    manifest: &BoxManifestMap,
+) -> Result<CategoryTransferSummary, String> {
+    let mut summary = CategoryTransferSummary {
+        name: "packs".into(),
+        ..CategoryTransferSummary::default()
+    };
+    let mut live = HashMap::<String, u64>::new();
+    let mut eligible = HashMap::<String, u64>::new();
+    let mut local_by_sha = HashMap::<String, PathBuf>::new();
+
+    for (rel_path, entry) in manifest {
+        let (sha, size) = match entry {
+            BoxStoreManifestEntry::LegacyFile { sha, size }
+            | BoxStoreManifestEntry::File { sha, size, .. } => (sha, *size),
+            BoxStoreManifestEntry::Symlink { .. } => continue,
+        };
+        live.insert(sha.clone(), size);
+        if size >= PACK_MEMBER_MAX_BYTES || eligible.contains_key(sha) {
+            continue;
+        }
+        let Some(abs_path) = resolve_pack_source_path(rel_path) else {
+            continue;
+        };
+        let Ok(metadata) = fs::metadata(&abs_path) else {
+            continue;
+        };
+        if !metadata.is_file() || metadata.len() != size {
+            continue;
+        }
+        eligible.insert(sha.clone(), size);
+        local_by_sha.insert(sha.clone(), abs_path);
+    }
+
+    let raw_index = store.get(BOX_STORE_PACK_INDEX_KEY)?;
+    let index = raw_index
+        .as_deref()
+        .and_then(|raw| std::str::from_utf8(raw).ok())
+        .and_then(parse_pack_index);
+    let plan = plan_pack_maintenance(
+        index.as_ref(),
+        &live,
+        &eligible,
+        PACK_MAX_MEMBER_SIZE_SUM,
+        PACK_BUILD_MIN_MEMBERS,
+        PACK_BUILD_MIN_BYTES,
+    );
+    summary.skipped_unchanged = plan.kept_packs.len();
+    summary.removed = plan.retired_pack_ids.len();
+    summary.files_scanned = plan.new_packs.len();
+    if plan.new_packs.is_empty() && plan.retired_pack_ids.is_empty() {
+        return Ok(summary);
+    }
+
+    let tmp_dir = std::env::temp_dir().join(PACK_TMP_DIR_NAME);
+    fs::create_dir_all(&tmp_dir).map_err(|error| error.to_string())?;
+    sweep_pack_temp_dir(&tmp_dir);
+    let mut built_packs = Vec::<PackEntry>::new();
+
+    for (group_index, planned) in plan.new_packs.iter().enumerate() {
+        let sources = planned
+            .iter()
+            .filter_map(|member| {
+                local_by_sha.get(&member.sha).map(|abs_path| PackSource {
+                    abs_path: abs_path.clone(),
+                    sha: member.sha.clone(),
+                    size: member.size,
+                    vmtime: member.vmtime,
+                })
+            })
+            .collect::<Vec<_>>();
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|duration| duration.as_nanos())
+            .unwrap_or_default();
+        let tmp_path = tmp_dir.join(format!(
+            "build-{}-{nonce}-{group_index}",
+            std::process::id()
+        ));
+        let built = match build_pack_file(&tmp_path, &sources, || false) {
+            Ok(Some(value)) => value,
+            Ok(None) => {
+                let _ = fs::remove_file(&tmp_path);
+                continue;
+            }
+            Err(error) => {
+                let _ = fs::remove_file(&tmp_path);
+                return Err(error);
+            }
+        };
+        let built_size_sum = built.members.iter().map(|member| member.size).sum::<u64>();
+        if built.members.is_empty()
+            || (built.members.len() < PACK_BUILD_MIN_MEMBERS
+                && built_size_sum < PACK_BUILD_MIN_BYTES)
+        {
+            let _ = fs::remove_file(&tmp_path);
+            continue;
+        }
+
+        let pack_id = sha256_file(&tmp_path)?;
+        let key = format!("{BOX_STORE_PACKS_PREFIX}/{pack_id}");
+        let upload = store.put_from_file(&key, &tmp_path);
+        let _ = fs::remove_file(&tmp_path);
+        upload?;
+        summary.files_uploaded += 1;
+        summary.bytes_uploaded = summary.bytes_uploaded.saturating_add(built.file_bytes);
+        built_packs.push(PackEntry {
+            id: pack_id,
+            bytes: built.file_bytes,
+            members: built.members,
+        });
+    }
+
+    if built_packs.is_empty() && plan.retired_pack_ids.is_empty() {
+        return Ok(summary);
+    }
+
+    let max_built_vmtime = built_packs
+        .iter()
+        .flat_map(|pack| pack.members.iter().map(|member| member.vmtime))
+        .max()
+        .unwrap_or(0);
+    let next_index = PackIndex {
+        version: PACK_INDEX_VERSION,
+        max_vmtime: index
+            .as_ref()
+            .map(|index| index.max_vmtime)
+            .unwrap_or(0)
+            .max(max_built_vmtime),
+        packs: plan
+            .kept_packs
+            .iter()
+            .cloned()
+            .chain(built_packs)
+            .collect(),
+    };
+    let referenced = next_index
+        .packs
+        .iter()
+        .map(|pack| pack.id.as_str())
+        .collect::<HashSet<_>>();
+    let retiring = plan
+        .retired_pack_ids
+        .iter()
+        .filter(|id| !referenced.contains(id.as_str()))
+        .cloned()
+        .collect::<Vec<_>>();
+
+    let raw_retired = store.get(BOX_STORE_PACK_RETIRED_KEY)?;
+    let existing_retired = match raw_retired.as_deref() {
+        None => Vec::new(),
+        Some(raw) => {
+            let text = match std::str::from_utf8(raw) {
+                Ok(value) => value,
+                Err(_) if retiring.is_empty() => "",
+                Err(_) => {
+                    summary.failures += 1;
+                    return Ok(summary);
+                }
+            };
+            match parse_pack_retired(text) {
+                Some(value) => value,
+                None if retiring.is_empty() => Vec::new(),
+                None => {
+                    summary.failures += 1;
+                    return Ok(summary);
+                }
+            }
+        }
+    };
+    let mut merged_retired = existing_retired.clone();
+    for pack_id in &retiring {
+        if !merged_retired.contains(pack_id) {
+            merged_retired.push(pack_id.clone());
+        }
+    }
+    merged_retired.retain(|id| !referenced.contains(id.as_str()));
+    if merged_retired != existing_retired {
+        let bytes = serialize_pack_retired(&merged_retired)
+            .map_err(|error| error.to_string())?;
+        store.put(BOX_STORE_PACK_RETIRED_KEY, bytes.as_bytes())?;
+    }
+
+    let index_bytes = serialize_pack_index(&next_index).map_err(|error| error.to_string())?;
+    store.put(BOX_STORE_PACK_INDEX_KEY, index_bytes.as_bytes())?;
+    for pack_id in retiring {
+        let _ = store.delete(&format!("{BOX_STORE_PACKS_PREFIX}/{pack_id}"));
+    }
+    Ok(summary)
 }
 
 fn sync_store_db_snapshots(
