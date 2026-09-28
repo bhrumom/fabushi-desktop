@@ -33,7 +33,7 @@ use mahayana_node_agent_coordinator::inference_router::{
     InferenceStreamSupersede, InferenceTaskQueue, InferenceTranscriptFile,
     RunnerInferenceEvent, StoredEntry, StoredRole, is_direct_user_send,
     parse_host_routed_prompt_acceptance, parse_runner_inference_event,
-    should_append_user_message,
+    prepare_agent_inbound_wake_routes, should_append_user_message,
     parse_send_prompt_attachments,
     prepare_workflow_run_now_route, project_runner_turn_context, project_transcript_entry,
     CoordinatorWorkflowRunNowRoute,
@@ -932,6 +932,27 @@ fn replay_tool_events(state: &Arc<CoordinatorState>) {
     }
 }
 
+fn enqueue_agent_inbound_wake(
+    state: &Arc<CoordinatorState>,
+    agent_id: String,
+    args: Value,
+) -> Result<(), Failure> {
+    let provider = routed_inference_provider(state, &agent_id);
+    if provider == InferenceProvider::Cursor {
+        dispatch_gateway_value(state, "sendPrompt", args)?;
+        return Ok(());
+    }
+    let worker_state = Arc::clone(state);
+    let queue_key = agent_id.clone();
+    state.inference_queue.enqueue(&queue_key, move || {
+        if let Err(error) = execute_local_inference(Arc::clone(&worker_state), provider, args) {
+            if error.code != "INFERENCE_PROVIDER_CANCELLED" {
+                record_inference_error(&worker_state, provider, &agent_id, &error);
+            }
+        }
+    })
+}
+
 fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
     let (channel, family, payload) = match (
         value.get("channel").and_then(Value::as_str),
@@ -949,6 +970,30 @@ fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
     let now_ms = coordinator_now_ms();
     if let Ok(mut gateway) = state.gateway_client.lock() {
         let _ = gateway.accept_event(now_ms, channel.clone(), payload.clone());
+    }
+
+    if channel == "agent-inbound-wake-request" {
+        match prepare_agent_inbound_wake_routes(&payload) {
+            Ok(routes) => {
+                for route in routes {
+                    if let Err(failure) = enqueue_agent_inbound_wake(
+                        state,
+                        route.agent_id.clone(),
+                        route.send_args,
+                    ) {
+                        eprintln!(
+                            "agent inbound wake could not enqueue agent={}: {}: {}",
+                            route.agent_id, failure.code, failure.message
+                        );
+                    }
+                }
+            }
+            Err(failure) => eprintln!(
+                "agent inbound wake rejected: {}: {}",
+                failure.code, failure.message
+            ),
+        }
+        return;
     }
 
     if channel == RUNNER_TOOL_REQUEST_EVENT_CHANNEL {

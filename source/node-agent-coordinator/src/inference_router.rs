@@ -359,7 +359,100 @@ pub fn should_append_user_message(send_args: &Value) -> bool {
 pub fn is_direct_user_send(send_args: &Value) -> bool {
     let automation = send_args.get("automationWake");
     let group = send_args.get("groupContext");
-    automation.is_none_or(Value::is_null) && group.is_none_or(Value::is_null)
+    let agent_wake = send_args.get("agentWake");
+    automation.is_none_or(Value::is_null)
+        && group.is_none_or(Value::is_null)
+        && agent_wake.is_none_or(Value::is_null)
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct CoordinatorAgentWakeRoute {
+    pub agent_id: String,
+    pub send_args: Value,
+}
+
+pub fn prepare_agent_inbound_wake_routes(
+    payload: &Value,
+) -> Result<Vec<CoordinatorAgentWakeRoute>, Failure> {
+    let payload = payload.as_object().ok_or_else(|| {
+        Failure::new(
+            "INFERENCE_AGENT_WAKE_INVALID",
+            "agent inbound wake payload must be an object",
+        )
+    })?;
+    let required = |field: &str| {
+        payload
+            .get(field)
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+            .ok_or_else(|| {
+                Failure::new(
+                    "INFERENCE_AGENT_WAKE_INVALID",
+                    format!("agent inbound wake is missing {field}"),
+                )
+            })
+    };
+    let target_agent_id = required("agentId")?;
+    let source_agent_id = required("sourceAgentId")?;
+    let prompt = required("prompt")?;
+    let priority = payload
+        .get("priority")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let member_ids = match payload.get("memberIds") {
+        None | Some(Value::Null) => Vec::new(),
+        Some(Value::Array(values)) => {
+            let mut seen = std::collections::BTreeSet::new();
+            values
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .filter(|value| seen.insert((*value).to_string()))
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        }
+        Some(_) => {
+            return Err(Failure::new(
+                "INFERENCE_AGENT_WAKE_INVALID",
+                "agent inbound wake memberIds must be an array",
+            ));
+        }
+    };
+    let is_group = !member_ids.is_empty();
+    let targets = if is_group {
+        member_ids
+    } else {
+        vec![target_agent_id.clone()]
+    };
+    Ok(targets
+        .into_iter()
+        .map(|agent_id| {
+            let mut send_args = serde_json::json!({
+                "agentId": agent_id,
+                "prompt": prompt.clone(),
+                "_runnerPrompt": prompt.clone(),
+                "appendUserMessage": false,
+                "hidden": true,
+                "requestSource": "agent-inbound",
+                "skipAckObligation": true,
+                "agentWake": {
+                    "sourceAgentId": source_agent_id.clone(),
+                    "priority": priority,
+                },
+            });
+            if is_group {
+                send_args["groupContext"] = serde_json::json!({
+                    "groupId": target_agent_id.clone(),
+                    "sourceAgentId": source_agent_id.clone(),
+                    "backgroundWake": true,
+                });
+            }
+            CoordinatorAgentWakeRoute { agent_id, send_args }
+        })
+        .collect())
 }
 
 

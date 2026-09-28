@@ -8,7 +8,7 @@ use mahayana_node_agent_coordinator::inference_router::{
     configured_inference_provider, host_transcript_method, is_direct_user_send,
     should_append_user_message,
     parse_host_routed_prompt_acceptance, parse_runner_inference_event,
-    prepare_workflow_run_now_route, project_runner_turn_context,
+    prepare_agent_inbound_wake_routes, prepare_workflow_run_now_route, project_runner_turn_context,
 };
 use serde_json::json;
 
@@ -156,6 +156,53 @@ fn only_direct_user_sends_supersede_the_active_provider_turn() {
         "prompt":"group",
         "groupContext":{"groupId":"g-1"}
     })));
+    assert!(!is_direct_user_send(&json!({
+        "prompt":"agent wake",
+        "agentWake":{"sourceAgentId":"agent-b"}
+    })));
+}
+
+#[test]
+fn agent_inbound_wake_routes_one_to_one_and_group_members_without_user_echo() {
+    let direct = prepare_agent_inbound_wake_routes(&json!({
+        "agentId":"agent-b",
+        "sourceAgentId":"agent-a",
+        "prompt":"hidden inbound prompt",
+        "priority":true,
+        "memberIds":[]
+    }))
+    .expect("direct wake");
+    assert_eq!(direct.len(), 1);
+    assert_eq!(direct[0].agent_id, "agent-b");
+    assert_eq!(direct[0].send_args["appendUserMessage"], false);
+    assert_eq!(direct[0].send_args["hidden"], true);
+    assert_eq!(direct[0].send_args["requestSource"], "agent-inbound");
+    assert_eq!(direct[0].send_args["agentWake"]["sourceAgentId"], "agent-a");
+    assert_eq!(direct[0].send_args["agentWake"]["priority"], true);
+    assert!(direct[0].send_args.get("groupContext").is_none());
+
+    let group = prepare_agent_inbound_wake_routes(&json!({
+        "agentId":"group-1",
+        "sourceAgentId":"agent-a",
+        "prompt":"group wake",
+        "priority":false,
+        "memberIds":["member-1","member-2","member-1",""]
+    }))
+    .expect("group wake");
+    assert_eq!(group.iter().map(|route| route.agent_id.as_str()).collect::<Vec<_>>(), vec!["member-1", "member-2"]);
+    for route in group {
+        assert_eq!(route.send_args["appendUserMessage"], false);
+        assert_eq!(route.send_args["groupContext"]["groupId"], "group-1");
+        assert_eq!(route.send_args["groupContext"]["sourceAgentId"], "agent-a");
+        assert_eq!(route.send_args["groupContext"]["backgroundWake"], true);
+        assert!(!is_direct_user_send(&route.send_args));
+    }
+
+    assert!(prepare_agent_inbound_wake_routes(&json!({
+        "agentId":"agent-b",
+        "sourceAgentId":"agent-a",
+        "prompt":""
+    })).is_err());
 }
 
 #[test]
