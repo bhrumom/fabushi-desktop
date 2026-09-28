@@ -933,6 +933,17 @@ impl UnifiedGatewayApi {
         }
     }
 
+    fn delete_production_automation_schedules(&self, agent_id: &str) {
+        let lifecycle = self
+            .automations_lifecycle
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .upgrade();
+        if let Some(lifecycle) = lifecycle {
+            lifecycle.delete_agent_schedules(agent_id);
+        }
+    }
+
     fn resume_after_listener_connect(&self, agent_id: &str, platform: &str) -> Result<(), String> {
         let nonce = format!(
             "listener-connect-resume:{agent_id}:{platform}:{}",
@@ -3995,6 +4006,7 @@ impl GatewayApi for UnifiedGatewayApi {
                                 .mark_agent_deleted(agent_id);
                             self.transcript_manager.clear_agent_durable_recovery(agent_id);
                             self.host_runner_composition.forget_local_tool_permission(agent_id);
+                            self.delete_production_automation_schedules(agent_id);
                         }
                     }
                     "deleteAgents" => {
@@ -4005,6 +4017,7 @@ impl GatewayApi for UnifiedGatewayApi {
                                     .mark_agent_deleted(agent_id);
                                 self.transcript_manager.clear_agent_durable_recovery(agent_id);
                                 self.host_runner_composition.forget_local_tool_permission(agent_id);
+                                self.delete_production_automation_schedules(agent_id);
                             }
                         }
                     }
