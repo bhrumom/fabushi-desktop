@@ -26,6 +26,13 @@ use crate::extensions::box_lifecycle::extension::start_box_lifecycle_extension;
 use crate::extensions::box_lifecycle::production::{
     ProductionBoxLifecycleClient, ProductionBoxLifecycleClientFactory,
 };
+use crate::extensions::box_store_sync::extension::{
+    BoxStoreScheduling, BoxStoreSyncExtension, BoxStoreSyncExtensionDeps,
+    start_box_store_sync_extension,
+};
+use crate::extensions::box_store_sync::production::{
+    ProductionBoxStoreSyncFactory, ProductionBoxStoreSyncService,
+};
 use crate::extensions::browser_ua::{
     BrowserUaExtensionRuntime, BrowserUaHostLog, start_browser_ua_extension,
 };
@@ -134,6 +141,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::SourceMap,
     HostExtensionId::Trays,
     HostExtensionId::BoxLifecycle,
+    HostExtensionId::BoxStoreSync,
     HostExtensionId::WebauthnProxy,
     HostExtensionId::BrowserUa,
     HostExtensionId::LocalToolPermission,
@@ -192,6 +200,7 @@ pub struct ProductionHostExtensions {
     pub cloud_agents: CloudAgentsExtension,
     backend_url: String,
     mcp: Mutex<Option<McpExtensionRuntime>>,
+    box_store_sync: Mutex<Option<BoxStoreSyncExtension<ProductionBoxStoreSyncService>>>,
     automations: Mutex<Option<Arc<ProductionAutomationsLifecycle>>>,
 }
 
@@ -329,6 +338,7 @@ pub fn start_production_host_extensions(
         cloud_agents,
         backend_url,
         mcp: Mutex::new(None),
+        box_store_sync: Mutex::new(None),
         automations: Mutex::new(None),
     })
 }
@@ -484,6 +494,54 @@ impl ProductionHostExtensions {
             .map_err(|_| "production MCP runtime lock poisoned".to_string())?
             .take();
         runtime.map(|runtime| runtime.stop()).unwrap_or(Ok(()))
+    }
+
+    pub fn start_box_store_sync(
+        &self,
+        is_idle: Arc<dyn Fn() -> bool + Send + Sync>,
+    ) -> Result<(), String> {
+        let mut slot = self
+            .box_store_sync
+            .lock()
+            .map_err(|_| "production BoxStoreSync runtime lock poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("production BoxStoreSync runtime is already started".into());
+        }
+        if self
+            .mcp
+            .lock()
+            .map_err(|_| "production MCP runtime lock poisoned".to_string())?
+            .is_none()
+        {
+            return Err("production BoxStoreSync requires MCP to be started first".into());
+        }
+        let logs = self.telemetry.logs.clone();
+        let diagnostic_logs = logs.clone();
+        let extension = start_box_store_sync_extension(
+            &ProductionBoxStoreSyncFactory,
+            BoxStoreSyncExtensionDeps {
+                is_idle,
+                log: Arc::new(move |message| eprintln!("{message}")),
+                report_host_extension_diagnostic: Arc::new(move |diagnostic| {
+                    let _ = diagnostic_logs.report_host_extension_diagnostic(
+                        &serde_json::Value::Object(diagnostic.clone()),
+                    );
+                }),
+                scheduling: BoxStoreScheduling::default(),
+            },
+        );
+        *slot = Some(extension);
+        Ok(())
+    }
+
+    pub fn stop_box_store_sync(&self) -> Result<(), String> {
+        let extension = self
+            .box_store_sync
+            .lock()
+            .map_err(|_| "production BoxStoreSync runtime lock poisoned".to_string())?
+            .take();
+        drop(extension);
+        Ok(())
     }
 }
 
