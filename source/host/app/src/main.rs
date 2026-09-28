@@ -4822,7 +4822,9 @@ fn main() {
     let mcp_lifecycle_relay = Arc::new(CoordinatorMcpLifecycleRelay::new(gateway_events.clone()));
     let box_mcp_owner = Arc::clone(&forever_box);
     let box_status_loader: BoxServerStatusLoader = Arc::new(move |ids, kick_only| {
-        let accessor = box_mcp_owner.mcp_resource_accessor()?;
+        let accessor = box_mcp_owner
+            .mcp_resource_accessor()
+            .map_err(|error| error.to_string())?;
         ProductionBoxMcpStateLoader::new(accessor).list_servers(ids, kick_only)
     });
     let mcp_manager_backend = Arc::new(CoordinatorMcpManagerBackend::new(
