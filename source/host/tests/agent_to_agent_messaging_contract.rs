@@ -5,7 +5,8 @@ use std::time::{SystemTime,UNIX_EPOCH};
 use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
-use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{AgentWakeRequest,ProductionAgentToAgentMessaging};
+use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{AgentWakeRequest,ProductionAgentToAgentMessaging,should_interrupt_priority_peer};
+use mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane;
 
 fn temp_root()->std::path::PathBuf{
     let suffix=SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
@@ -34,3 +35,12 @@ fn direct_delivery_writes_both_transcripts_partners_activity_and_priority_interr
     let wake=wakes.lock().expect("wakes").last().cloned().expect("wake");assert_eq!(wake.agent_id,beta.id);assert!(wake.priority);assert!(wake.prompt.starts_with("[agent]"));
     sessions.shutdown();let _=fs::remove_dir_all(root);
 }
+
+#[test]
+fn priority_peer_preemption_never_interrupts_an_active_user_lane() {
+    assert!(!should_interrupt_priority_peer(Some(RunLane::User)));
+    assert!(should_interrupt_priority_peer(Some(RunLane::Agent)));
+    assert!(should_interrupt_priority_peer(Some(RunLane::Background)));
+    assert!(should_interrupt_priority_peer(None));
+}
+
