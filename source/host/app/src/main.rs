@@ -28,6 +28,10 @@ use mahayana_host_runtime::runner::sand_auto_review::{
     SandAutoReviewResolution,
 };
 use mahayana_host_runtime::runner::sand_auto_review_classifier_run::run_sand_auto_review_classifier;
+use mahayana_host_runtime::runner::sand_automation_auto_review::{
+    AutomationReviewOutcome, SAND_AUTOMATION_WRITE_CLASSIFIER_ERROR_REASON,
+    review_sand_automation_write,
+};
 use mahayana_host_runtime::runner::sand_auto_review_summaries::CloudLifecycleAction;
 use mahayana_host_runtime::runner::sand_browser_auto_review::run_sand_browser_auto_review_preflight;
 use mahayana_host_runtime::runner::sand_computer_auto_review::{
@@ -196,7 +200,9 @@ use mahayana_host_runtime::runner::turn_memory::{
     TurnExchange, TurnMemoryMode, run_turn_memory_with,
 };
 use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt_section;
-use mahayana_host_runtime::runner::tools::sand_state_tool::SandStateWriter;
+use mahayana_host_runtime::runner::tools::sand_state_tool::{
+    RoutineAutoReviewCallback, SandStateWriter,
+};
 use mahayana_host_runtime::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BrowserAutoReviewCallback, BrowserPersistImageCallback, BrowserPossibleNavigationCallback,
@@ -2262,6 +2268,57 @@ fn start_routed_provider_task(
                     )
                     .map_err(|error| ProviderSessionError::Tool(error.to_string()))
                 });
+            let routine_review_auth = Arc::clone(&worker_auth);
+            let routine_review_auto_review = Arc::clone(&worker_auto_review);
+            let routine_review_controller = Arc::clone(&worker_auto_review_controller);
+            let routine_review_cancellation = worker_cancellation.clone();
+            let routine_review_agent_id = agent_id.clone();
+            let routine_review_request_source = auto_review_request_source.clone();
+            let routine_review_context = auto_review_context
+                .iter()
+                .map(|message| {
+                    serde_json::json!({
+                        "role": message.role,
+                        "content": message.content,
+                    })
+                })
+                .collect::<Vec<_>>();
+            let routine_auto_review: RoutineAutoReviewCallback =
+                Arc::new(move |target, tool_call_id| {
+                    let mode = routine_review_auto_review.current_modes().automation_write;
+                    let classifier_cancellation = routine_review_cancellation.clone();
+                    let mut classifier =
+                        create_sand_backend_smart_mode_classifier_executor_with_cancellation(
+                            Arc::clone(&routine_review_auth),
+                            Arc::new(move || classifier_cancellation.is_cancelled()),
+                        )
+                        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                    let outcome = review_sand_automation_write(
+                        mode,
+                        target,
+                        Some(routine_review_controller.as_ref()),
+                        &routine_review_request_source,
+                        |risk_target, classifier_mode| {
+                            run_sand_auto_review_classifier(
+                                &mut classifier,
+                                tool_call_id,
+                                &routine_review_agent_id,
+                                classifier_mode,
+                                || risk_target.clone(),
+                                || Ok(routine_review_context.clone()),
+                                &[],
+                                SAND_AUTOMATION_WRITE_CLASSIFIER_ERROR_REASON,
+                            )
+                        },
+                    )
+                    .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                    match outcome {
+                        AutomationReviewOutcome::Allowed => Ok(()),
+                        AutomationReviewOutcome::Blocked(reason) => {
+                            Err(ProviderSessionError::Tool(reason))
+                        }
+                    }
+                });
             let cloud_agent_review = build_cloud_agent_auto_review_hook(
                 Arc::clone(&worker_auth),
                 Arc::clone(&worker_auto_review),
@@ -2600,7 +2657,8 @@ fn start_routed_provider_task(
                 },
             )
             .with_agent_management_sink(agent_management_sink)
-            .with_state_writer(state_writer);
+            .with_state_writer(state_writer)
+            .with_routine_auto_review(routine_auto_review);
             if let Some(todo_state) = multitask_todo_state {
                 composition = composition.with_multitask_todo_state(todo_state);
             }
