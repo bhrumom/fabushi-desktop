@@ -107,6 +107,7 @@ struct FakeState {
     creates: usize,
     updates: usize,
     deletes: usize,
+    fail_delete_once: bool,
 }
 
 #[derive(Default)]
@@ -184,6 +185,10 @@ impl CloudSyncClient for FakeClient {
     fn delete_sand_automation(&self, automation_id: &str) -> Result<(), SandConnectError> {
         let mut state = self.state.lock().unwrap();
         state.deletes += 1;
+        if state.fail_delete_once {
+            state.fail_delete_once = false;
+            return Err(SandConnectError::Protocol("injected delete failure".into()));
+        }
         for entries in state.by_agent.values_mut() {
             entries.retain(|entry| entry.workflow.as_ref().is_none_or(|remote| remote.automation_id != automation_id));
         }
@@ -222,6 +227,10 @@ fn reconcile_mutates_then_readbacks_before_granting_remote_authority() {
     assert!(outcome.converged);
     assert!(outcome.scheduling_authority_changed);
     assert_eq!(client.counters(), (1, 0, 1));
+    let prunes = sync.drain_shadow_prune_reports();
+    assert_eq!(prunes.len(), 1);
+    assert_eq!(prunes[0].automation_id, "stale-shadow");
+    assert_eq!(prunes[0].outcome, "deleted");
 
     let remote = client.shadows("agent-1");
     assert_eq!(remote.len(), 1);
@@ -262,6 +271,39 @@ fn delete_agent_requires_empty_readback_before_clearing_pending_state() {
     assert!(sync.pending_agent_deletions().is_empty());
     assert!(client.shadows("agent-1").is_empty());
     assert_eq!(client.counters().2, 1);
+}
+
+#[test]
+fn pending_agent_deletion_is_redriven_after_a_transient_failure() {
+    let client = Arc::new(FakeClient::default());
+    {
+        let mut state = client.state.lock().unwrap();
+        state.fail_delete_once = true;
+        state.by_agent.insert(
+            "agent-1".into(),
+            vec![AutomationWithOwner {
+                workflow: Some(Automation {
+                    enabled: true,
+                    description: Some(format!("{SAND_SHADOW_MARKER_PREFIX}old")),
+                    automation_id: "remote-1".into(),
+                }),
+            }],
+        );
+    }
+    let trait_client: Arc<dyn CloudSyncClient> = client.clone();
+    let mut sync = SandAutomationCloudSync::new(trait_client);
+
+    let first = sync.delete_agent("agent-1").expect("first delete attempt");
+    assert!(!first.converged);
+    assert!(sync.pending_agent_deletions().contains("agent-1"));
+    assert!(sync.failed_agent_ids().contains("agent-1"));
+
+    let retried = sync.retry_pending_agent_deletions();
+    assert_eq!(retried.len(), 1);
+    assert!(retried[0].1.as_ref().expect("retry").converged);
+    assert!(sync.pending_agent_deletions().is_empty());
+    assert!(!sync.failed_agent_ids().contains("agent-1"));
+    assert!(client.shadows("agent-1").is_empty());
 }
 
 #[test]
