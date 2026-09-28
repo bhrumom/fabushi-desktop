@@ -119,6 +119,28 @@ impl ProductionAutomationsLifecycle {
                         continue;
                     }
 
+                    let mut authority_changed = false;
+                    {
+                        let mut sync = worker_cloud
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner());
+                        for (agent_id, outcome) in sync.retry_pending_agent_deletions() {
+                            match outcome {
+                                Ok(outcome) => {
+                                    authority_changed |= outcome.scheduling_authority_changed;
+                                    if !outcome.converged {
+                                        worker_log(&format!(
+                                            "[sand:automations] pending cloud deletion did not converge agent={agent_id}"
+                                        ));
+                                    }
+                                }
+                                Err(error) => worker_log(&format!(
+                                    "[sand:automations] pending cloud deletion retry failed agent={agent_id}: {error}"
+                                )),
+                            }
+                        }
+                    }
+
                     let entries = match cloud_definitions() {
                         Ok(entries) => entries,
                         Err(error) => {
@@ -159,7 +181,6 @@ impl ProductionAutomationsLifecycle {
                         .difference(&current_agent_ids)
                         .cloned()
                         .collect::<Vec<_>>();
-                    let mut authority_changed = false;
                     {
                         let mut sync = worker_cloud
                             .lock()
