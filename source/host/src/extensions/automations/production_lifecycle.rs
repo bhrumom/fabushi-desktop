@@ -9,11 +9,16 @@ use std::time::Duration;
 use crate::extensions::auth::extension::HostAuthExtension;
 use crate::extensions::browser_ua::extension::{BrowserUaAuthApi, StopSubscription};
 use crate::extensions::notify_bus::extension::HostNotifyBusExtension;
+use crate::extensions::telemetry::agent_error_telemetry::{
+    AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
+};
 use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
+use crate::extensions::telemetry::sand_error_tags::SandErrorValue;
+use crate::ports::telemetry::sand_error_detail;
 use crate::extensions::trays::extension::HostTraysExtension;
 use crate::extensions::trays::trays_service::PushErrorOptions;
 
-use super::backend_transport::ReqwestAutomationsBackendTransport;
+use super::backend_transport::{AutomationsBackendError, ReqwestAutomationsBackendTransport};
 use super::connect_unary::{SandConnectAuth, SandConnectUnaryClient};
 use super::listener_connect_watcher_production::{
     ListenerConnectedCallback, ProductionListenerConnectWatcher,
@@ -143,6 +148,26 @@ impl ProductionAutomationsLifecycle {
         let connection_reader: Arc<dyn PlatformConnectionReader> = integrations.clone();
         let watcher =
             ProductionListenerConnectWatcher::start(connection_reader, on_connected);
+        let fire_poll_telemetry = telemetry_logs.clone();
+        let fire_poll_error: FirePollErrorSink = Arc::new(move |error| {
+            let sand_error = match error {
+                AutomationsBackendError::Status { status, .. } => {
+                    SandErrorValue::new("SAND-E0103").with_number("httpStatus", f64::from(*status))
+                }
+                _ => SandErrorValue::new("SAND-E0108"),
+            };
+            let report = AgentErrorReport {
+                source: "automation_fire_poll".into(),
+                conversation_id: String::new(),
+                request_id: None,
+                error: sand_error,
+                detail: Some(sand_error_detail(error)),
+            };
+            let _ = fire_poll_telemetry.report_projection(&agent_error_telemetry(&report));
+            if let Some(detail) = agent_error_detail_telemetry(&report) {
+                let _ = fire_poll_telemetry.report_projection(&detail);
+            }
+        });
         let backend = ProductionAutomationsBackendRuntime::start(
             transport,
             notify_bus,
@@ -150,6 +175,7 @@ impl ProductionAutomationsLifecycle {
             relay_sink,
             fire_dispatch,
             fire_poll_state,
+            fire_poll_error,
             Arc::clone(&log),
         );
 
