@@ -916,25 +916,12 @@ impl UnifiedGatewayApi {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .upgrade();
-        let Some(lifecycle) = lifecycle else {
-            return;
-        };
-        lifecycle.request_reconcile();
-        let Ok(entries) = self
-            .transcript_manager
-            .automation_runtime()
-            .list_all_automation_definitions()
-        else {
-            return;
-        };
-        for entry in entries.into_iter().filter(|entry| entry.automation.is_enabled) {
-            for listener in trigger_members(&entry.automation.trigger) {
-                if let Some(platform @ ("slack" | "github")) =
-                    listener.get("type").and_then(serde_json::Value::as_str)
-                {
-                    lifecycle.watch_listener_connection(entry.agent_id.clone(), platform);
-                }
-            }
+        if let Some(lifecycle) = lifecycle {
+            // Reconcile backend polling state only. The listener reconnect
+            // watcher is an interactive handoff owner and must be armed only
+            // when the Runner surfaces a listener-connect card, never merely
+            // because an enabled routine already exists.
+            lifecycle.request_reconcile();
         }
     }
 
@@ -3555,6 +3542,49 @@ impl GatewayApi for UnifiedGatewayApi {
             return Ok(teach_recording_status_value(status));
         }
 
+        if method == "getListenerIntegrations" {
+            let lifecycle = self
+                .automations_lifecycle
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .upgrade()
+                .ok_or_else(|| GatewayCommandError::Internal(
+                    "production Automations lifecycle is not initialized".into(),
+                ))?;
+            let mut integrations = Vec::with_capacity(2);
+            for platform in ["github", "slack"] {
+                let is_connected = lifecycle
+                    .is_platform_connected(platform)
+                    .map_err(GatewayCommandError::Internal)?;
+                integrations.push(serde_json::json!({
+                    "platform": platform,
+                    "isConnected": is_connected,
+                }));
+            }
+            return Ok(serde_json::json!({ "integrations": integrations }));
+        }
+        if method == "getListenerConnectUrl" {
+            let platform = args
+                .get("platform")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|platform| matches!(*platform, "github" | "slack"))
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "getListenerConnectUrl requires platform github or slack".into(),
+                ))?;
+            let lifecycle = self
+                .automations_lifecycle
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .upgrade()
+                .ok_or_else(|| GatewayCommandError::Internal(
+                    "production Automations lifecycle is not initialized".into(),
+                ))?;
+            return Ok(serde_json::json!({
+                "url": lifecycle.get_connect_url(platform),
+            }));
+        }
+
         if method == "createAgent" {
             let projected = sanitize_create_agent_args(&args);
 
@@ -5770,6 +5800,19 @@ mod tests {
     }
 
 
+
+    #[test]
+    fn listener_gateway_methods_are_owned_by_production_automations_lifecycle() {
+        let source = include_str!("main.rs");
+        assert!(source.contains("if method == \"getListenerIntegrations\""));
+        assert!(source.contains("if method == \"getListenerConnectUrl\""));
+        assert!(source.contains("lifecycle.is_platform_connected(platform)"));
+        assert!(source.contains("lifecycle.get_connect_url(platform)"));
+        assert!(
+            !source.contains("watch_listener_connection(entry.agent_id.clone(), platform)"),
+            "existing routines must not implicitly arm the interactive connect watcher"
+        );
+    }
 
     #[test]
     fn listener_connect_resume_is_hidden_handoff_with_stable_nonce() {

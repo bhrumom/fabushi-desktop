@@ -86,6 +86,12 @@ impl ProductionAutomationsLifecycle {
         self.integrations.get_connect_url(platform)
     }
 
+    pub fn is_platform_connected(&self, platform: &str) -> Result<bool, String> {
+        self.integrations
+            .is_platform_connected(platform)
+            .map_err(|error| error.to_string())
+    }
+
     pub fn request_reconcile(&self) {
         if !self.stopped.load(Ordering::Acquire) {
             self.backend.request_reconcile();
