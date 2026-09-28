@@ -12,6 +12,10 @@ use sha2::{Digest, Sha256};
 use subtle::ConstantTimeEq;
 use uuid::Uuid;
 
+use crate::r#box::box_shell_command::{HostShellArgsInput, build_host_shell_args};
+use crate::r#box::generated_production::ProductionShellResult;
+use crate::extensions::forever_box::ForeverBoxService;
+
 use super::extension::{
     TeachRecordingService, TeachRecordingServiceDeps, TeachRecordingServiceFactory,
 };
@@ -95,6 +99,85 @@ pub trait TeachRecordingRuntimePort: Send + Sync {
         command: &str,
         tool_call_id: &str,
     ) -> Result<ShellResult, String>;
+}
+
+#[derive(Clone)]
+pub struct ProductionTeachRecordingRuntime {
+    forever_box: Arc<ForeverBoxService>,
+}
+
+impl ProductionTeachRecordingRuntime {
+    pub fn new(forever_box: Arc<ForeverBoxService>) -> Self {
+        Self { forever_box }
+    }
+}
+
+impl TeachRecordingRuntimePort for ProductionTeachRecordingRuntime {
+    fn ensure_ready(&self, agent_id: &str) -> Result<(), String> {
+        self.forever_box
+            .ensure(agent_id)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn get_agent_window_index(&self, agent_id: &str) -> Option<u32> {
+        self.forever_box.box_().get_agent_window_index(agent_id)
+    }
+
+    fn run_shell(
+        &self,
+        agent_id: &str,
+        command: &str,
+        tool_call_id: &str,
+    ) -> Result<ShellResult, String> {
+        let mut ready = self
+            .forever_box
+            .box_()
+            .ensure_ready(agent_id)
+            .map_err(|error| error.to_string())?;
+        let args = build_host_shell_args(HostShellArgsInput {
+            command: command.to_string(),
+            name: "teach-recording".into(),
+            working_directory: "/workspace".into(),
+            tool_call_id: tool_call_id.to_string(),
+        });
+        let result = ready
+            .remote_accessor
+            .execute_shell_result(&(), args)
+            .map_err(|error| error.to_string())?;
+        match result {
+            ProductionShellResult::Success {
+                exit_code,
+                stdout,
+                stderr,
+            }
+            | ProductionShellResult::Failure {
+                exit_code,
+                stdout,
+                stderr,
+                ..
+            } => Ok(ShellResult {
+                exit_code,
+                stdout,
+                stderr,
+            }),
+            ProductionShellResult::SpawnError { error } => {
+                Err(format!("shell spawn failed: {error}"))
+            }
+            ProductionShellResult::PermissionDenied { error } => {
+                Err(format!("shell permission denied: {error}"))
+            }
+            ProductionShellResult::Rejected { reason } => {
+                Err(format!("shell request rejected: {reason}"))
+            }
+            ProductionShellResult::Timeout { timeout_ms } => {
+                Err(format!("shell request timed out after {timeout_ms}ms"))
+            }
+            ProductionShellResult::Other { case } => {
+                Err(format!("shell request returned unsupported result: {case}"))
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
