@@ -74,7 +74,6 @@ use mahayana_host_runtime::extensions::secrets::extension::{
 use mahayana_host_runtime::extensions::notifications::extension::{
     notification_agent_from_value, start_notifications_extension,
 };
-use mahayana_host_runtime::extensions::wallpaper::extension::start_wallpaper_extension;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
     dispatch_production_session_gateway_call_with_content_search,
@@ -141,9 +140,7 @@ use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostSt
 use mahayana_host_runtime::extensions::experiments::HostExperimentsExtension;
 use mahayana_host_runtime::extensions::content_search::extension::ProductionContentSearchExtension;
 use mahayana_host_runtime::extensions::trays::extension::HostTraysExtension;
-use mahayana_host_runtime::host_production_extensions::{
-    start_production_browser_ua, start_production_host_extensions,
-};
+use mahayana_host_runtime::host_production_extensions::start_production_host_extensions;
 #[cfg(test)]
 use mahayana_host_runtime::host_production_extensions::{
     ProductionBrowserUaLog, ProductionHostExtensions,
@@ -4143,10 +4140,6 @@ fn main() {
         }
     };
     let host_telemetry = production_extensions.telemetry.clone();
-    let browser_ua_runtime = start_production_browser_ua(
-        Arc::clone(&production_extensions.auth),
-        Arc::clone(&production_extensions.experiments),
-    );
     let lifecycle: Arc<dyn ForeverBoxLifecycle> =
         production_extensions.box_lifecycle.clone();
     let forever_box = start_forever_box_extension(
@@ -4176,10 +4169,6 @@ fn main() {
     let settings_extension = Arc::clone(&production_extensions.settings);
     let local_tool_permission_extension =
         Arc::clone(&production_extensions.local_tool_permission);
-    let mut wallpaper_extension = start_wallpaper_extension(
-        Arc::clone(&settings_extension),
-        Arc::new(|message| eprintln!("mahayana-host-wallpaper {message}")),
-    );
     let settings_for_session = Arc::clone(&settings_extension);
 
     let session_workers = Arc::new(
@@ -4938,8 +4927,6 @@ fn main() {
     cross_user.stop();
     production_extensions.notify_bus.stop();
     session_extension.shutdown();
-    wallpaper_extension.stop();
-    browser_ua_runtime.stop();
     secrets_extension.stop();
     drop(teach_recording_extension);
     forever_box.dispose();
