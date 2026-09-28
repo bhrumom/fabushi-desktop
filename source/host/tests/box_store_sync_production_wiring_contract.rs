@@ -116,6 +116,9 @@ fn production_owner_wires_real_chrome_watcher_and_periodic_cycle() {
     assert!(production.contains("run_local_cycle(true)"));
     assert!(production.contains("run_local_cycle(false)"));
     assert!(production.contains("stage_box_chrome_session()"));
+    assert!(production.contains("sync_store_db_snapshots("));
+    assert!(production.contains("StoreDbSnapshotUpload::new("));
+    assert!(production.contains("run_vacuum_off_thread(&source_path, &temp_path)"));
     assert!(production.contains("write_manifest("));
     assert!(production.contains("store.put_from_file(&blob_key, path)"));
     assert!(production.contains("remote-backend-not-wired"));
