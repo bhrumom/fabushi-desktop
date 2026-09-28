@@ -1,8 +1,10 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
+use std::time::Duration;
 
 use mahayana_host_runtime::runner::background_work::{
     BackgroundWakeup, BackgroundWakeupPayload, BackgroundWorkRecord,
-    RevivingBackgroundWorkRegistry, SHELL_REWATCH_POLL_DEFAULT_MS,
+    CloudAgentBackgroundCompletion, CloudAgentWatchOptions, CloudAgentWatchOutcome,
+    RevivingBackgroundWorkRegistry, RunnerCloudAgentWatches, SHELL_REWATCH_POLL_DEFAULT_MS,
     derive_background_subagent_title, format_steer_prompt, parse_shell_terminal_footer,
     shell_rewatch_poll_ms,
 };
@@ -134,4 +136,145 @@ fn reviving_registry_preserves_work_wakeup_completion_and_quiet_origin_semantics
 
     assert!(registry.clear_work("shell-1").is_some());
     assert!(*changed.lock().expect("changed") >= 2);
+}
+
+
+#[test]
+fn runner_cloud_agent_watches_match_frozen_ownership_and_settlement_contract() {
+    let (await_started_tx, await_started_rx) = mpsc::channel::<(String, bool)>();
+    let (release_tx, release_rx) = mpsc::channel::<()>();
+    let release_rx = Arc::new(Mutex::new(release_rx));
+    let pending = Arc::new(Mutex::new(Vec::new()));
+    let settled = Arc::new(Mutex::new(Vec::<CloudAgentBackgroundCompletion>::new()));
+    let changed = Arc::new(Mutex::new(Vec::<String>::new()));
+
+    let watches = RunnerCloudAgentWatches::new(
+        Arc::new({
+            let release_rx = Arc::clone(&release_rx);
+            move |id, after_followup| {
+                await_started_tx
+                    .send((id.to_string(), after_followup))
+                    .expect("await started");
+                release_rx
+                    .lock()
+                    .expect("release rx")
+                    .recv_timeout(Duration::from_secs(2))
+                    .expect("release");
+                CloudAgentWatchOutcome {
+                    status: "completed".into(),
+                    text: "  finished work  ".into(),
+                }
+            }
+        }),
+        Some({
+            let pending = Arc::clone(&pending);
+            Arc::new(move |watch| pending.lock().expect("pending").push(watch.clone()))
+        }),
+        Some({
+            let settled = Arc::clone(&settled);
+            Arc::new(move |completion| {
+                settled.lock().expect("settled").push(completion);
+            })
+        }),
+        Some({
+            let changed = Arc::clone(&changed);
+            Arc::new(move |agent_id| {
+                changed.lock().expect("changed").push(agent_id.to_string());
+            })
+        }),
+    );
+
+    let quiet_origin = json!({"automation":{"id":"routine-1","name":"Daily"}});
+    assert!(watches.watch_cloud_agent(
+        "agent-a",
+        "bc-1",
+        CloudAgentWatchOptions::new(Some(quiet_origin.clone()), true),
+    ));
+    assert!(!watches.watch_cloud_agent(
+        "agent-a",
+        "bc-1",
+        CloudAgentWatchOptions::new(None, false),
+    ));
+    assert!(watches.is_cloud_watch_armed("agent-a", "bc-1"));
+    assert_eq!(
+        watches.pending_cloud_agent_watch_ids("agent-a"),
+        vec!["bc-1".to_string()]
+    );
+    assert_eq!(
+        await_started_rx.recv_timeout(Duration::from_secs(2)).expect("started"),
+        ("bc-1".to_string(), true)
+    );
+    {
+        let pending = pending.lock().expect("pending");
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].parent_agent_id, "agent-a");
+        assert_eq!(pending[0].work_id, "bc-1");
+        assert_eq!(pending[0].title, "Cloud agent bc-1");
+        assert_eq!(pending[0].quiet_origin, Some(quiet_origin.clone()));
+    }
+
+    release_tx.send(()).expect("release watch");
+    for _ in 0..100 {
+        if !watches.is_cloud_watch_armed("agent-a", "bc-1") {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    assert!(!watches.is_cloud_watch_armed("agent-a", "bc-1"));
+    let settled = settled.lock().expect("settled");
+    assert_eq!(settled.len(), 1);
+    assert_eq!(settled[0].parent_agent_id, "agent-a");
+    assert_eq!(settled[0].work_id, "bc-1");
+    assert_eq!(settled[0].status, "completed");
+    assert_eq!(settled[0].result, "finished work");
+    assert_eq!(settled[0].quiet_origin, Some(quiet_origin));
+    assert!(changed.lock().expect("changed").len() >= 2);
+}
+
+#[test]
+fn runner_cloud_agent_watch_cancellation_fences_stale_completion() {
+    let (await_started_tx, await_started_rx) = mpsc::channel::<()>();
+    let (release_tx, release_rx) = mpsc::channel::<()>();
+    let release_rx = Arc::new(Mutex::new(release_rx));
+    let settled = Arc::new(Mutex::new(Vec::<CloudAgentBackgroundCompletion>::new()));
+
+    let watches = RunnerCloudAgentWatches::new(
+        Arc::new({
+            let release_rx = Arc::clone(&release_rx);
+            move |_id, _after_followup| {
+                await_started_tx.send(()).expect("await started");
+                release_rx
+                    .lock()
+                    .expect("release rx")
+                    .recv_timeout(Duration::from_secs(2))
+                    .expect("release");
+                CloudAgentWatchOutcome {
+                    status: "error".into(),
+                    text: String::new(),
+                }
+            }
+        }),
+        None,
+        Some({
+            let settled = Arc::clone(&settled);
+            Arc::new(move |completion| {
+                settled.lock().expect("settled").push(completion);
+            })
+        }),
+        None,
+    );
+
+    assert!(watches.watch_cloud_agent(
+        "agent-a",
+        "bc-stale",
+        CloudAgentWatchOptions::new(None, false),
+    ));
+    await_started_rx
+        .recv_timeout(Duration::from_secs(2))
+        .expect("started");
+    assert!(watches.cancel_cloud_watch("agent-a", "bc-stale"));
+    release_tx.send(()).expect("release stale watch");
+    std::thread::sleep(Duration::from_millis(30));
+    assert!(settled.lock().expect("settled").is_empty());
+    assert!(!watches.is_cloud_watch_armed("agent-a", "bc-stale"));
 }
