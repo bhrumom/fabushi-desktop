@@ -569,7 +569,7 @@ pub fn sand_cloud_definition(
         }],
     };
     let mut hasher = Sha256::new();
-    if workflow.triggers.iter().any(|trigger| matches!(trigger.trigger, Some(trigger::Trigger::Git(_)))) {
+    if workflow.triggers.iter().any(|wire_trigger| matches!(wire_trigger.trigger.as_ref(), Some(trigger::Trigger::Git(_)))) {
         hasher.update(GITHUB_SUBSCRIPTION_VERSION);
     }
     hasher.update(automation.id.as_bytes());
