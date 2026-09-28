@@ -453,7 +453,7 @@ struct ProductionBoxStoreSyncInner {
 }
 
 impl ProductionBoxStoreSyncInner {
-    fn resolve_object_store(&self) -> Result<(String, Box<dyn BoxObjectStore>), String> {
+    fn resolve_object_store(&self) -> Result<(String, Arc<dyn BoxObjectStore>), String> {
         let store_id = match &self.mode {
             ProductionBoxStoreSyncMode::LocalFs {
                 store_id_override: Some(store_id),
@@ -474,7 +474,7 @@ impl ProductionBoxStoreSyncInner {
         match &self.mode {
             ProductionBoxStoreSyncMode::LocalFs { base_dir, .. } => Ok((
                 store_id.clone(),
-                Box::new(LocalFsObjectStore::new(base_dir.join(&store_id))),
+                Arc::new(LocalFsObjectStore::new(base_dir.join(&store_id))),
             )),
             ProductionBoxStoreSyncMode::AgentStore => {
                 let provider = {
@@ -510,7 +510,8 @@ impl ProductionBoxStoreSyncInner {
                         .cloned()
                         .ok_or_else(|| "AgentStore provider failed to initialize".to_string())?
                 };
-                Ok((store_id.clone(), provider.for_store(&store_id)))
+                let store: Arc<dyn BoxObjectStore> = provider.for_store(&store_id).into();
+                Ok((store_id.clone(), store))
             }
             _ => Err("box-store backend is not active".into()),
         }
@@ -589,7 +590,7 @@ impl ProductionBoxStoreSyncInner {
             )?);
             if include_store_dbs {
                 categories.push(sync_store_db_snapshots(
-                    store.as_ref(),
+                    Arc::clone(&store),
                     &store_id,
                     &mut entries,
                     &sand_root,
@@ -711,7 +712,7 @@ impl ProductionBoxStoreSyncInner {
             .unwrap_or_default();
         let entries_before = entries.clone();
         let summary = sync_store_db_snapshots(
-            store.as_ref(),
+            Arc::clone(&store),
             &store_id,
             &mut entries,
             &get_sand_root_dir(),
@@ -967,11 +968,11 @@ fn sync_chrome_session(
 
 
 #[derive(Clone)]
-struct LocalFsStoreDbSnapshotRuntime {
-    store: LocalFsObjectStore,
+struct ProductionStoreDbSnapshotRuntime {
+    store: Arc<dyn BoxObjectStore>,
 }
 
-impl StoreDbSnapshotRuntimePort for LocalFsStoreDbSnapshotRuntime {
+impl StoreDbSnapshotRuntimePort for ProductionStoreDbSnapshotRuntime {
     fn put_bytes(
         &self,
         _store_id: &str,
@@ -1240,7 +1241,7 @@ where
 }
 
 fn sync_store_db_snapshots(
-    store: &dyn BoxObjectStore,
+    store: Arc<dyn BoxObjectStore>,
     store_id: &str,
     manifest: &mut BoxManifestMap,
     sand_root: &Path,
@@ -1265,8 +1266,8 @@ fn sync_store_db_snapshots(
         }
     };
 
-    let runtime: Arc<dyn StoreDbSnapshotRuntimePort> = Arc::new(LocalFsStoreDbSnapshotRuntime {
-        store: store.clone(),
+    let runtime: Arc<dyn StoreDbSnapshotRuntimePort> = Arc::new(ProductionStoreDbSnapshotRuntime {
+        store,
     });
     let uploader = StoreDbSnapshotUpload::new(
         runtime,
@@ -1941,7 +1942,7 @@ mod tests {
         let store = LocalFsObjectStore::new(&store_root);
         let mut manifest = BoxManifestMap::new();
         let summary = sync_store_db_snapshots(
-            store.as_ref(),
+            Arc::clone(&store),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -1966,7 +1967,7 @@ mod tests {
 
         fs::remove_file(&source_db).expect("remove source db");
         let summary = sync_store_db_snapshots(
-            store.as_ref(),
+            Arc::clone(&store),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -2003,7 +2004,7 @@ mod tests {
         let store = LocalFsObjectStore::new(&store_root);
         let mut manifest = BoxManifestMap::new();
         let summary = sync_store_db_snapshots(
-            store.as_ref(),
+            Arc::clone(&store),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -2045,7 +2046,7 @@ mod tests {
         let store = LocalFsObjectStore::new(&store_root);
         let mut manifest = BoxManifestMap::new();
         sync_store_db_snapshots(
-            store.as_ref(),
+            Arc::clone(&store),
             "store-a",
             &mut manifest,
             &sand_root,
@@ -2062,7 +2063,7 @@ mod tests {
                 .expect("mutate live db");
         }
         let summary = sync_store_db_snapshots(
-            store.as_ref(),
+            Arc::clone(&store),
             "store-a",
             &mut manifest,
             &sand_root,
