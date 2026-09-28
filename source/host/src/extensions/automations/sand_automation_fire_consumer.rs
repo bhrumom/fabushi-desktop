@@ -1,6 +1,12 @@
-use std::collections::VecDeque;
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::sync::Arc;
 
-use serde_json::Value;
+use serde_json::{Value, json};
+
+use super::backend_transport::{AutomationsBackendError, AutomationsBackendTransport};
+
+pub const AUTOMATION_FIRE_ERROR_BACKOFF_MS: u64 = 30_000;
+pub const MAX_NEXT_POLL_DELAY_MS: u64 = 5 * 60_000;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AutomationFireEnvelope {
@@ -64,5 +70,205 @@ impl SandAutomationFireConsumer {
 
         self.firing = false;
         failures
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct BackendAutomationFire {
+    pub id: String,
+    pub sand_agent_id: String,
+    pub automation_id: String,
+    pub timestamp_ms: u64,
+    pub definition_revision: Option<String>,
+    pub scheduled_for_ms: Option<u64>,
+    pub event: Option<Value>,
+}
+
+impl BackendAutomationFire {
+    fn from_value(value: &Value) -> Option<Self> {
+        Some(Self {
+            id: value.get("id")?.as_str()?.to_string(),
+            sand_agent_id: value.get("sandAgentId")?.as_str()?.to_string(),
+            automation_id: value.get("automationId")?.as_str()?.to_string(),
+            timestamp_ms: value.get("timestampMs")?.as_u64()?,
+            definition_revision: value
+                .get("definitionRevision")
+                .and_then(Value::as_str)
+                .map(str::to_string),
+            scheduled_for_ms: value.get("scheduledForMs").and_then(Value::as_u64),
+            event: value.get("event").filter(|value| !value.is_null()).cloned(),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FireCompletion {
+    pub status: String,
+    pub error_message: Option<String>,
+}
+
+impl FireCompletion {
+    pub fn succeeded() -> Self {
+        Self { status: "succeeded".into(), error_message: None }
+    }
+
+    pub fn failed(error_message: impl Into<String>) -> Self {
+        Self { status: "failed".into(), error_message: Some(error_message.into()) }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum BackendFireState {
+    Completed(FireCompletion),
+    Reported,
+}
+
+pub struct AutomationFireBackendRuntime {
+    transport: Arc<dyn AutomationsBackendTransport>,
+    states: BTreeMap<String, BackendFireState>,
+    stopped: bool,
+    backoff_until_ms: u64,
+    poll_not_before_ms: u64,
+}
+
+impl AutomationFireBackendRuntime {
+    pub fn new(transport: Arc<dyn AutomationsBackendTransport>) -> Self {
+        Self {
+            transport,
+            states: BTreeMap::new(),
+            stopped: false,
+            backoff_until_ms: 0,
+            poll_not_before_ms: 0,
+        }
+    }
+
+    pub fn start(&mut self) {
+        self.stopped = false;
+        self.backoff_until_ms = 0;
+        self.poll_not_before_ms = 0;
+    }
+
+    pub fn stop(&mut self) {
+        self.stopped = true;
+        self.backoff_until_ms = 0;
+        self.poll_not_before_ms = 0;
+    }
+
+    pub fn request_drain(&mut self) {
+        self.poll_not_before_ms = 0;
+    }
+
+    pub fn pending_len(&self) -> usize {
+        self.states.len()
+    }
+
+    pub fn tick(
+        &mut self,
+        now_ms: u64,
+        notify_connected: bool,
+        safety_poll_enabled: bool,
+        mut deliver: impl FnMut(&BackendAutomationFire) -> Option<FireCompletion>,
+    ) -> Result<usize, AutomationsBackendError> {
+        if self.stopped
+            || now_ms < self.backoff_until_ms
+            || now_ms < self.poll_not_before_ms
+        {
+            return Ok(0);
+        }
+        let has_owed_work = !self.states.is_empty();
+        if !has_owed_work && !notify_connected && !safety_poll_enabled {
+            return Ok(0);
+        }
+
+        let result = (|| {
+            let ack_run_uuids = self
+                .states
+                .iter()
+                .filter_map(|(id, state)| matches!(state, BackendFireState::Reported).then_some(id.clone()))
+                .collect::<Vec<_>>();
+            let response = self.transport.post_json(
+                "/sand/automation-events/poll",
+                &json!({ "ackRunUuids": ack_run_uuids }),
+            )?;
+            let events = response
+                .get("events")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            let returned = events
+                .iter()
+                .filter_map(|event| event.get("id").and_then(Value::as_str))
+                .map(str::to_string)
+                .collect::<BTreeSet<_>>();
+            self.states.retain(|id, state| {
+                !matches!(state, BackendFireState::Reported) || returned.contains(id)
+            });
+
+            let mut delivered = 0usize;
+            for raw in events {
+                let Some(event) = BackendAutomationFire::from_value(&raw) else { continue };
+                if self.states.contains_key(&event.id) {
+                    continue;
+                }
+                let Some(completion) = deliver(&event) else {
+                    continue;
+                };
+                delivered += 1;
+                self.states.insert(event.id.clone(), BackendFireState::Completed(completion));
+            }
+
+            let completions = self
+                .states
+                .iter()
+                .filter_map(|(id, state)| match state {
+                    BackendFireState::Completed(completion) => Some((id.clone(), completion.clone())),
+                    BackendFireState::Reported => None,
+                })
+                .collect::<Vec<_>>();
+            for (id, completion) in completions {
+                match self.report_completion(&id, &completion) {
+                    Ok(()) => {
+                        self.states.insert(id, BackendFireState::Reported);
+                    }
+                    Err(error) if matches!(error.status(), Some(404 | 409)) => {
+                        self.states.insert(id, BackendFireState::Reported);
+                    }
+                    Err(_) => {}
+                }
+            }
+
+            let next_poll_after_ms = response
+                .get("nextPollAfterMs")
+                .and_then(Value::as_u64)
+                .unwrap_or(0)
+                .min(MAX_NEXT_POLL_DELAY_MS);
+            if delivered == 0 && self.states.is_empty() && next_poll_after_ms > 0 {
+                self.poll_not_before_ms = now_ms.saturating_add(next_poll_after_ms);
+            } else {
+                self.poll_not_before_ms = 0;
+            }
+            Ok(delivered)
+        })();
+
+        if result.is_err() {
+            self.backoff_until_ms = now_ms.saturating_add(AUTOMATION_FIRE_ERROR_BACKOFF_MS);
+        }
+        result
+    }
+
+    fn report_completion(
+        &self,
+        id: &str,
+        completion: &FireCompletion,
+    ) -> Result<(), AutomationsBackendError> {
+        self.transport.post_json(
+            "/sand/automation-runs/complete",
+            &json!({
+                "runUuid": id,
+                "status": &completion.status,
+                "errorMessage": &completion.error_message,
+            }),
+        )?;
+        Ok(())
     }
 }
