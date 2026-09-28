@@ -87,7 +87,10 @@ use mahayana_host_runtime::extensions::transcript::completion_revivals::{
     SubagentCompletion,
 };
 use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
-    DurablePendingWakeMarker, PendingWakeKind, coerce_quiet_origin,
+    DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin, coerce_quiet_origin,
+};
+use mahayana_host_runtime::extensions::transcript::pending_wake_rearm::{
+    LostSubagentWake, PendingWakeRearm, PendingWakeReport, PendingWakeRuntimePort,
 };
 use mahayana_host_runtime::extensions::transcript::group_chat_glue::GroupChatGlue;
 use mahayana_host_runtime::extensions::transcript::group_chat_orchestrator::GroupMemberTurnRequest;
@@ -901,6 +904,114 @@ struct LocalRoutedRunnerDeps {
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
     host_runner_composition: Arc<HostRunnerComposition>,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
+}
+
+#[derive(Clone)]
+struct ProductionPendingWakeRuntime {
+    gateway: Arc<Mutex<Weak<UnifiedGatewayApi>>>,
+    cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
+}
+
+impl ProductionPendingWakeRuntime {
+    fn gateway(&self) -> Option<Arc<UnifiedGatewayApi>> {
+        self.gateway
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .upgrade()
+    }
+}
+
+impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
+    fn can_execute(&self) -> bool {
+        self.gateway().is_some()
+    }
+
+    fn is_agent_gone(&self, agent_id: &str) -> bool {
+        self.gateway().is_none_or(|gateway| {
+            gateway
+                .transcript_runtime
+                .session_runtime()
+                .is_agent_gone(&gateway.session_workers, agent_id)
+        })
+    }
+
+    fn is_group_session(&self, agent_id: &str) -> Result<bool, String> {
+        let gateway = self
+            .gateway()
+            .ok_or_else(|| "Host gateway is not ready for pending-wake rearm".to_string())?;
+        Ok(gateway
+            .session_workers
+            .summarize_agent_by_id(agent_id, None)?
+            .is_some_and(|summary| summary.is_group))
+    }
+
+    fn cloud_watch_is_armed(&self, agent_id: &str, work_id: &str) -> bool {
+        self.cloud_agent_watches
+            .is_cloud_watch_armed(agent_id, work_id)
+    }
+
+    fn watch_cloud_agent(
+        &self,
+        agent_id: &str,
+        work_id: &str,
+        quiet_origin: Option<&QuietWakeOrigin>,
+    ) -> Result<(), String> {
+        let quiet_origin = quiet_origin
+            .map(serde_json::to_value)
+            .transpose()
+            .map_err(|error| format!("could not encode quiet wake origin: {error}"))?;
+        let _ = self.cloud_agent_watches.watch_cloud_agent(
+            agent_id,
+            work_id,
+            CloudAgentWatchOptions::new(quiet_origin, false),
+        );
+        Ok(())
+    }
+
+    fn watch_background_shell(
+        &self,
+        _agent_id: &str,
+        _work_id: &str,
+        _title: Option<&str>,
+        _quiet_origin: Option<&QuietWakeOrigin>,
+    ) -> Result<(), String> {
+        Err("production shell pending-wake rearm is not wired yet".into())
+    }
+
+    fn deliver_recreate_interrupted_shell_notice(
+        &self,
+        _marker: &DurablePendingWakeMarker,
+    ) -> Result<(), String> {
+        Err("production recreate-interrupted shell notice is not wired yet".into())
+    }
+
+    fn revive_lost_subagent(&self, _wake: LostSubagentWake) -> Result<(), String> {
+        Err("production lost-subagent pending-wake revival is not wired yet".into())
+    }
+
+    fn emit_async_tasks_for_agent(&self, agent_id: &str) {
+        if let Some(gateway) = self.gateway() {
+            gateway.emit_async_tasks_for_agent(agent_id);
+        }
+    }
+
+    fn report_pending_wake(&self, report: PendingWakeReport) {
+        let Some(gateway) = self.gateway() else {
+            return;
+        };
+        gateway.events.publish(serde_json::json!({
+            "channel": "pending-wake",
+            "payload": {
+                "agentId": report.conversation_id,
+                "kind": report.kind,
+                "workId": report.work_id,
+                "outcome": report.outcome,
+                "ageMs": report.age_ms,
+                "reason": report.reason,
+                "isQuietOrigin": report.is_quiet_origin,
+            }
+        }));
+    }
 }
 
 #[derive(Clone)]
@@ -6020,6 +6131,27 @@ fn main() {
     *cloud_agent_completion_gateway_slot
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) = Arc::downgrade(&gateway_api);
+
+    // Re-arm only the CloudAgent durable subset here. PendingWakeRearm remains
+    // the single frozen state machine; shell/subagent rearm stay explicit
+    // manifest work until their shipping watcher owners are composed.
+    if let Some(store) = transcript_runtime.pending_wake_store().cloned() {
+        let rearm = PendingWakeRearm::new(
+            Some(store.clone()),
+            Arc::new(ProductionPendingWakeRuntime {
+                gateway: Arc::clone(&cloud_agent_completion_gateway_slot),
+                cloud_agent_watches: Arc::clone(&cloud_agent_watches),
+            }),
+        );
+        let now_ms = started_at_ms() as f64;
+        for pending in store
+            .list_pending()
+            .into_iter()
+            .filter(|marker| marker.kind == PendingWakeKind::CloudAgent)
+        {
+            rearm.rearm_pending_wake(pending, now_ms, Some("host_startup"));
+        }
+    }
 
     let listener_runtime = transcript_manager.automation_runtime();
     let listener_lifecycle_slot = Arc::clone(&automations_lifecycle_slot);
