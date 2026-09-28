@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::extensions::action_audit::extension::{
     ActionAuditExtension, start_action_audit_extension,
@@ -125,8 +125,8 @@ pub struct ProductionHostExtensions {
     pub auth: Arc<HostAuthExtension>,
     pub settings: Arc<SettingsService>,
     pub experiments: Arc<HostExperimentsExtension>,
-    pub browser_ua: BrowserUaExtensionRuntime,
-    pub wallpaper: HostWallpaperExtension,
+    pub browser_ua: Mutex<Option<BrowserUaExtensionRuntime>>,
+    pub wallpaper: Mutex<Option<HostWallpaperExtension>>,
     pub inference: Arc<ProductionInferenceExtension>,
     pub content_search: Arc<ProductionContentSearchExtension>,
     pub local_tool_permission: Arc<HostLocalToolPermissionExtension>,
@@ -261,8 +261,8 @@ pub fn start_production_host_extensions(
         auth,
         settings,
         experiments,
-        browser_ua,
-        wallpaper,
+        browser_ua: Mutex::new(Some(browser_ua)),
+        wallpaper: Mutex::new(Some(wallpaper)),
         inference,
         content_search,
         local_tool_permission,
