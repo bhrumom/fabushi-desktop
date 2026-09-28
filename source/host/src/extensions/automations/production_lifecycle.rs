@@ -29,8 +29,8 @@ use super::listener_integrations::{
 };
 use super::backend_relay_source::RelayStatus;
 use super::production::{
-    FireDispatch, FirePollStateReader, ProductionAutomationsBackendRuntime, ProductionLog,
-    RelayEventSink, RelayListeners,
+    FireDispatch, FirePollErrorSink, FirePollStateReader, ProductionAutomationsBackendRuntime,
+    ProductionLog, RelayEventSink, RelayListeners,
 };
 use super::sand_automation_cloud_sync::{
     CloudSyncClient, ProductionCloudSyncClient, SandAutomationCloudSync,
@@ -152,7 +152,7 @@ impl ProductionAutomationsLifecycle {
         let fire_poll_error: FirePollErrorSink = Arc::new(move |error| {
             let sand_error = match error {
                 AutomationsBackendError::Status { status, .. } => {
-                    SandErrorValue::new("SAND-E0103").with_number("httpStatus", f64::from(*status))
+                    SandErrorValue::new("SAND-E0103").with_number("httpStatus", f64::from(status))
                 }
                 _ => SandErrorValue::new("SAND-E0108"),
             };
