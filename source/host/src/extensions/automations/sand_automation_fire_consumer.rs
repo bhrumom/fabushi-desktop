@@ -7,6 +7,8 @@ use super::backend_transport::{AutomationsBackendError, AutomationsBackendTransp
 
 pub const AUTOMATION_FIRE_ERROR_BACKOFF_MS: u64 = 30_000;
 pub const MAX_NEXT_POLL_DELAY_MS: u64 = 60_000;
+pub const NOTIFY_DRAIN_FLOOR_MS: u64 = 4_000;
+pub const NOTIFY_SAFETY_POLL_MS: u64 = 120_000;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AutomationFireEnvelope {
@@ -124,6 +126,10 @@ pub struct AutomationFireBackendRuntime {
     backoff_until_ms: u64,
     poll_not_before_ms: u64,
     drained_while_unschedulable: bool,
+    notify_pending: bool,
+    last_poll_at_ms: Option<u64>,
+    notify_seq: u64,
+    drained_notify_seq: u64,
 }
 
 impl AutomationFireBackendRuntime {
@@ -135,6 +141,10 @@ impl AutomationFireBackendRuntime {
             backoff_until_ms: 0,
             poll_not_before_ms: 0,
             drained_while_unschedulable: false,
+            notify_pending: false,
+            last_poll_at_ms: None,
+            notify_seq: 0,
+            drained_notify_seq: 0,
         }
     }
 
@@ -143,6 +153,7 @@ impl AutomationFireBackendRuntime {
         self.backoff_until_ms = 0;
         self.poll_not_before_ms = 0;
         self.drained_while_unschedulable = false;
+        self.last_poll_at_ms = None;
     }
 
     pub fn stop(&mut self) {
@@ -152,6 +163,12 @@ impl AutomationFireBackendRuntime {
     }
 
     pub fn request_drain(&mut self) {
+        self.notify_pending = true;
+        self.notify_seq = self.notify_seq.saturating_add(1);
+        self.poll_not_before_ms = 0;
+    }
+
+    pub fn reset_poll_delay(&mut self) {
         self.poll_not_before_ms = 0;
     }
 
@@ -225,9 +242,21 @@ impl AutomationFireBackendRuntime {
         }
 
         let has_owed_work = !self.states.is_empty();
+        self.drained_notify_seq = self.notify_seq;
         if !has_owed_work {
-            if !notify_connected && !safety_poll_enabled {
-                return Ok(0);
+            if notify_connected {
+                let should_drain = match self.last_poll_at_ms {
+                    None => true,
+                    Some(last_poll_at_ms) => {
+                        let since_last_poll_ms = now_ms.saturating_sub(last_poll_at_ms);
+                        (self.notify_pending && since_last_poll_ms >= NOTIFY_DRAIN_FLOOR_MS)
+                            || (safety_poll_enabled
+                                && since_last_poll_ms >= NOTIFY_SAFETY_POLL_MS)
+                    }
+                };
+                if !should_drain {
+                    return Ok(0);
+                }
             }
             if !has_server_schedulable && self.drained_while_unschedulable {
                 return Ok(0);
@@ -251,6 +280,10 @@ impl AutomationFireBackendRuntime {
                 .and_then(Value::as_array)
                 .cloned()
                 .unwrap_or_default();
+            if self.notify_seq == self.drained_notify_seq {
+                self.notify_pending = false;
+            }
+            self.last_poll_at_ms = Some(now_ms);
             let returned = events
                 .iter()
                 .filter_map(|event| event.get("id").and_then(Value::as_str))
