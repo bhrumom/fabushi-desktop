@@ -1,4 +1,4 @@
-use crate::box_runtime::generated_production::ProductionBoxResourceAccessor;
+use crate::r#box::generated_production::ProductionBoxResourceAccessor;
 use super::mcp_service::BoxServerStatus;
 use prost::{Message, Oneof};
 use std::sync::Mutex;
