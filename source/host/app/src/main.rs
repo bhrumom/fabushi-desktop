@@ -120,6 +120,9 @@ use mahayana_host_runtime::extensions::automations::fire_delivery::{
     PreparedBackendFire, prepare_backend_fire,
 };
 use mahayana_host_runtime::extensions::automations::production_lifecycle::ProductionAutomationsLifecycle;
+use mahayana_host_runtime::extensions::automations::sand_automation_cloud_sync::{
+    ScheduledCloudAutomation, is_server_schedulable,
+};
 use mahayana_host_runtime::extensions::automations::sand_automation_fire_consumer::{
     BackendAutomationFire, FireCompletion,
 };
@@ -923,10 +926,9 @@ impl UnifiedGatewayApi {
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .upgrade();
         if let Some(lifecycle) = lifecycle {
-            // Reconcile backend polling state only. The listener reconnect
-            // watcher is an interactive handoff owner and must be armed only
-            // when the Runner surfaces a listener-connect card, never merely
-            // because an enabled routine already exists.
+            // Reconcile both backend relay state and the cloud scheduling
+            // shadow. The listener reconnect watcher remains an interactive
+            // handoff owner and is never armed merely because a routine exists.
             lifecycle.request_reconcile();
         }
     }
@@ -958,9 +960,27 @@ impl UnifiedGatewayApi {
         let Ok(entries) = runtime.list_all_automation_definitions() else {
             return false;
         };
+        let lifecycle = self
+            .automations_lifecycle
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .upgrade();
         let matches = entries
             .into_iter()
             .filter(|entry| entry.automation.is_enabled)
+            .filter(|entry| {
+                let cloud = ScheduledCloudAutomation {
+                    id: entry.automation.id.clone(),
+                    name: entry.automation.name.clone(),
+                    prompt: entry.automation.prompt.clone(),
+                    is_enabled: entry.automation.is_enabled,
+                    trigger: entry.automation.trigger.clone(),
+                };
+                lifecycle
+                    .as_ref()
+                    .map(|owner| owner.should_schedule_locally(&entry.agent_id, &cloud))
+                    .unwrap_or_else(|| !is_server_schedulable(&entry.automation.trigger))
+            })
             .filter(|entry| trigger_matches_event(&entry.automation.trigger, &event, true, false))
             .collect::<Vec<_>>();
         if matches.is_empty() {
@@ -3975,6 +3995,9 @@ impl GatewayApi for UnifiedGatewayApi {
                     }
                     _ => {}
                 }
+                if matches!(method, "deleteAgent" | "deleteAgents") {
+                    self.refresh_production_automations();
+                }
             }
             return result;
         }
@@ -5538,13 +5561,32 @@ fn main() {
         .unwrap_or_else(|poisoned| poisoned.into_inner()) = Arc::downgrade(&gateway_api);
 
     let listener_runtime = transcript_manager.automation_runtime();
+    let listener_lifecycle_slot = Arc::clone(&automations_lifecycle_slot);
     let production_listeners = Arc::new(move || {
         let Ok(entries) = listener_runtime.list_all_automation_definitions() else {
             return (Vec::new(), Vec::new());
         };
+        let lifecycle = listener_lifecycle_slot
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .upgrade();
         let mut slack = Vec::new();
         let mut github = Vec::new();
         for entry in entries.into_iter().filter(|entry| entry.automation.is_enabled) {
+            let cloud = ScheduledCloudAutomation {
+                id: entry.automation.id.clone(),
+                name: entry.automation.name.clone(),
+                prompt: entry.automation.prompt.clone(),
+                is_enabled: entry.automation.is_enabled,
+                trigger: entry.automation.trigger.clone(),
+            };
+            let should_schedule_locally = lifecycle
+                .as_ref()
+                .map(|owner| owner.should_schedule_locally(&entry.agent_id, &cloud))
+                .unwrap_or_else(|| !is_server_schedulable(&entry.automation.trigger));
+            if !should_schedule_locally {
+                continue;
+            }
             for listener in trigger_members(&entry.automation.trigger) {
                 match listener.get("type").and_then(serde_json::Value::as_str) {
                     Some("slack") => slack.push(listener),
@@ -5579,12 +5621,42 @@ fn main() {
             .map(|connection| serde_json::to_value(connection).map_err(|error| error.to_string()))
             .collect::<Result<Vec<_>, _>>()
     });
+    let cloud_runtime = transcript_manager.automation_runtime();
+    let cloud_definitions = Arc::new(move || {
+        cloud_runtime
+            .list_all_automation_definitions()
+            .map(|entries| {
+                entries
+                    .into_iter()
+                    .map(|entry| {
+                        (
+                            entry.agent_id,
+                            ScheduledCloudAutomation {
+                                id: entry.automation.id,
+                                name: entry.automation.name,
+                                prompt: entry.automation.prompt,
+                                is_enabled: entry.automation.is_enabled,
+                                trigger: entry.automation.trigger,
+                            },
+                        )
+                    })
+                    .collect::<Vec<_>>()
+            })
+    });
+    let cloud_agent_sessions = Arc::clone(&session_workers);
+    let cloud_agent_ids = Arc::new(move || cloud_agent_sessions.list_agent_record_ids());
+    let cloud_time_zone_sessions = Arc::clone(&session_workers);
+    let cloud_time_zone = Arc::new(move || cloud_time_zone_sessions.resolve_user_time_zone());
+
     let automations_lifecycle = match production_extensions.start_automations(
         production_listeners,
         relay_sink,
         fire_dispatch,
         on_listener_connected,
         listener_agent_channels,
+        cloud_definitions,
+        cloud_agent_ids,
+        cloud_time_zone,
         Arc::new(|message| eprintln!("{message}")),
     ) {
         Ok(runtime) => runtime,
