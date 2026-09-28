@@ -1,6 +1,6 @@
 use std::env;
 use std::sync::{Mutex, OnceLock};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub const HOST_BUNDLE_BUCKET: &str = "public-asphr-vm-daemon-bucket";
 pub const HOST_BUNDLE_REGION: &str = "us-east-1";
@@ -28,6 +28,41 @@ impl HostBundleHttpResponse {
 
 pub trait HostBundleFetcher: Send + Sync {
     fn fetch(&self, url: &str) -> Result<HostBundleHttpResponse, String>;
+}
+
+/// Shipping HTTP transport for the frozen Host bundle source. Keeping this
+/// behind HostBundleFetcher preserves deterministic contract tests while the
+/// production Host uses rustls-backed reqwest and never shells out to curl.
+#[derive(Clone)]
+pub struct ReqwestHostBundleFetcher {
+    client: reqwest::blocking::Client,
+}
+
+impl ReqwestHostBundleFetcher {
+    pub fn new() -> Result<Self, String> {
+        let client = reqwest::blocking::Client::builder()
+            .connect_timeout(Duration::from_secs(10))
+            .timeout(Duration::from_secs(60))
+            .build()
+            .map_err(|error| format!("could not build host bundle HTTP client: {error}"))?;
+        Ok(Self { client })
+    }
+}
+
+impl HostBundleFetcher for ReqwestHostBundleFetcher {
+    fn fetch(&self, url: &str) -> Result<HostBundleHttpResponse, String> {
+        let response = self
+            .client
+            .get(url)
+            .send()
+            .map_err(|error| format!("host bundle GET {url} failed: {error}"))?;
+        let status = response.status().as_u16();
+        let body = response
+            .bytes()
+            .map_err(|error| format!("host bundle GET {url} body failed: {error}"))?
+            .to_vec();
+        Ok(HostBundleHttpResponse { status, body })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

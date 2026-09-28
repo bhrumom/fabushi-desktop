@@ -1,5 +1,5 @@
 use std::collections::{BTreeMap, HashMap};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 
 use serde_json::{Map, Value};
 
@@ -267,6 +267,7 @@ pub struct AutomationRuntime {
     run_path: Arc<AutomationRunPath>,
     event_fires: Arc<AutomationEventFires>,
     spend_guard: Arc<AutomationSpendGuardRuntime>,
+    wakes_suspended: Arc<AtomicBool>,
     last_known: Arc<Mutex<HashMap<String, BTreeMap<String, AutomationSnapshot>>>>,
     mutation_locks: Arc<Mutex<HashMap<String, Arc<Mutex<()>>>>>,
 }
@@ -278,6 +279,7 @@ impl AutomationRuntime {
             run_path: Arc::new(AutomationRunPath::default()),
             event_fires: Arc::new(AutomationEventFires::default()),
             spend_guard: Arc::new(AutomationSpendGuardRuntime::new(sessions)),
+            wakes_suspended: Arc::new(AtomicBool::new(false)),
             last_known: Arc::new(Mutex::new(HashMap::new())),
             mutation_locks: Arc::new(Mutex::new(HashMap::new())),
         }
@@ -293,6 +295,21 @@ impl AutomationRuntime {
 
     pub fn set_dropped_fire_reporter(&self, reporter: Option<DroppedFireReporter>) {
         self.event_fires.set_dropped_fire_reporter(reporter);
+    }
+
+    /// Freeze only background automation wakes while a Host upgrade is being
+    /// prepared. Manual user-triggered runs remain available, matching Grok's
+    /// automations.suspendWakes() boundary rather than globally disabling CRUD.
+    pub fn suspend_wakes(&self) {
+        self.wakes_suspended.store(true, Ordering::Release);
+    }
+
+    pub fn resume_wakes(&self) {
+        self.wakes_suspended.store(false, Ordering::Release);
+    }
+
+    pub fn wakes_suspended(&self) -> bool {
+        self.wakes_suspended.load(Ordering::Acquire)
     }
 
     fn report_fire_dropped(&self, args: &FireAutomationArgs, reason: &str) {
@@ -463,6 +480,9 @@ impl AutomationRuntime {
         if !trigger.is_background() {
             return Err("background automation run requires schedule or event trigger".into());
         }
+        if self.wakes_suspended() {
+            return Ok(None);
+        }
         let Some((store, automation, reminder)) = self.with_agent_mutation_lock(agent_id, || {
             let store = self.automation_store(agent_id)?;
             let Some(automation) = store.get(automation_id) else {
@@ -542,6 +562,9 @@ impl AutomationRuntime {
                 + 'static,
         >,
     ) -> Result<Option<FireAutomationOutcome>, String> {
+        if self.wakes_suspended() {
+            return Ok(None);
+        }
         let store = self.automation_store(agent_id)?;
         let Some(automation) = store.get(automation_id) else {
             return Ok(None);
