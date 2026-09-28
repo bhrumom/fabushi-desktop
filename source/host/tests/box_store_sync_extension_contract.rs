@@ -51,6 +51,7 @@ impl BoxStoreSyncServiceFactory for FakeFactory {
     fn create(&self, deps: BoxStoreSyncExtensionDeps) -> Self::Service {
         *self.seen.lock().unwrap() = Some(deps.scheduling.clone());
         assert_eq!((deps.is_idle)(), self.idle_value.load(Ordering::SeqCst));
+        assert_eq!((deps.resolve_store_id)().unwrap(), "source-map-store");
         (deps.log)("box store factory created");
         FakeService {
             started: Arc::clone(&self.started),
@@ -140,6 +141,7 @@ fn extension_pins_diagnostics_starts_service_projects_api_and_disposes() {
         &factory,
         BoxStoreSyncExtensionDeps {
             is_idle: Arc::new(|| true),
+            resolve_store_id: Arc::new(|| Ok("source-map-store".to_string())),
             log,
             report_host_extension_diagnostic: reporter,
             scheduling: BoxStoreScheduling::default(),
