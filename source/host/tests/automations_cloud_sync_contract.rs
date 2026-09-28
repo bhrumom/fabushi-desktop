@@ -187,7 +187,7 @@ impl CloudSyncClient for FakeClient {
         state.deletes += 1;
         if state.fail_delete_once {
             state.fail_delete_once = false;
-            return Err(SandConnectError::Protocol("injected delete failure".into()));
+            return Err(SandConnectError::Transport("injected delete failure".into()));
         }
         for entries in state.by_agent.values_mut() {
             entries.retain(|entry| entry.workflow.as_ref().is_none_or(|remote| remote.automation_id != automation_id));
