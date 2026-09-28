@@ -574,9 +574,13 @@ impl ProductionBoxStoreSyncInner {
                 self.env.get("SAND_BOX_STORE_PACKS").map(String::as_str),
             )
         {
-            categories.push(sync_local_packs(&store, &entries, || {
+            let pack_summary = sync_local_packs(&store, &entries, || {
                 self.flush_waiters.load(Ordering::Acquire) > 0
-            })?);
+            });
+            if pack_summary.failures > 0 {
+                self.log("pack maintenance round failed; preserving the committed manifest and retrying later");
+            }
+            categories.push(pack_summary);
             *self
                 .last_pack_sync
                 .lock()
@@ -982,7 +986,7 @@ fn sync_local_packs<F>(
     store: &LocalFsObjectStore,
     manifest: &BoxManifestMap,
     should_abort: F,
-) -> Result<CategoryTransferSummary, String>
+) -> CategoryTransferSummary
 where
     F: Fn() -> bool,
 {
@@ -990,6 +994,7 @@ where
         name: "packs".into(),
         ..CategoryTransferSummary::default()
     };
+    let result = (|| -> Result<(), String> {
     let mut live = HashMap::<String, u64>::new();
     let mut eligible = HashMap::<String, u64>::new();
     let mut local_by_sha = HashMap::<String, PathBuf>::new();
@@ -1034,7 +1039,7 @@ where
     summary.removed = plan.retired_pack_ids.len();
     summary.files_scanned = plan.new_packs.len();
     if plan.new_packs.is_empty() && plan.retired_pack_ids.is_empty() {
-        return Ok(summary);
+        return Ok(());
     }
 
     let tmp_dir = std::env::temp_dir().join(PACK_TMP_DIR_NAME);
@@ -1044,7 +1049,7 @@ where
 
     for (group_index, planned) in plan.new_packs.iter().enumerate() {
         if should_abort() {
-            return Ok(summary);
+            return Ok(());
         }
         let sources = planned
             .iter()
@@ -1069,7 +1074,7 @@ where
             Ok(Some(value)) => value,
             Ok(None) => {
                 let _ = fs::remove_file(&tmp_path);
-                return Ok(summary);
+                return Ok(());
             }
             Err(error) => {
                 let _ = fs::remove_file(&tmp_path);
@@ -1100,10 +1105,10 @@ where
     }
 
     if should_abort() {
-        return Ok(summary);
+        return Ok(());
     }
     if built_packs.is_empty() && plan.retired_pack_ids.is_empty() {
-        return Ok(summary);
+        return Ok(());
     }
 
     let max_built_vmtime = built_packs
@@ -1145,16 +1150,14 @@ where
                 Ok(value) => value,
                 Err(_) if retiring.is_empty() => "",
                 Err(_) => {
-                    summary.failures += 1;
-                    return Ok(summary);
+                    return Err("packs/retired.json is present but unreadable; refusing to overwrite".into());
                 }
             };
             match parse_pack_retired(text) {
                 Some(value) => value,
                 None if retiring.is_empty() => Vec::new(),
                 None => {
-                    summary.failures += 1;
-                    return Ok(summary);
+                    return Err("packs/retired.json is present but unreadable; refusing to overwrite".into());
                 }
             }
         }
@@ -1177,7 +1180,12 @@ where
     for pack_id in retiring {
         let _ = store.delete(&format!("{BOX_STORE_PACKS_PREFIX}/{pack_id}"));
     }
-    Ok(summary)
+        Ok(())
+    })();
+    if result.is_err() {
+        summary.failures += 1;
+    }
+    summary
 }
 
 fn sync_store_db_snapshots(
