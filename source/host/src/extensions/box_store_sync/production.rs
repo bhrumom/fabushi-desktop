@@ -16,12 +16,8 @@ use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
 use crate::extensions::box_store_sync::box_object_store::{
-    AgentStoreObjectStoreProvider, BoxObjectStore, BoxObjectStoreProvider, LocalFsObjectStore,
-};
-use crate::extensions::box_store_sync::agent_store_sand_files::AgentStoreClientDependencies;
-use crate::extensions::box_store_sync::sand_box_store_files::SandBoxStoreServiceProvider;
-use crate::extensions::box_store_sync::sand_box_store_v2_client::{
-    SandBoxStoreV2Client, SandBoxStoreV2ClientDependencies,
+    BoxObjectStore, BoxObjectStoreProvider, BoxObjectStoreProviderDependencies,
+    resolve_box_object_store_provider,
 };
 use crate::extensions::box_store_sync::box_store_pack::{
     BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACK_RETIRED_KEY, BOX_STORE_PACKS_PREFIX,
@@ -205,8 +201,7 @@ impl ProductionBoxStoreSyncService {
                 store_db_debounce: Mutex::new(StoreDbDebounceQueue::default()),
                 store_db_wake: Condvar::new(),
                 agent_db_capture_queues: AgentDbCaptureQueues::default(),
-                agent_store_provider: Mutex::new(None),
-                sand_box_store_v2_provider: Mutex::new(None),
+                object_store_provider: Mutex::new(None),
                 last_pack_sync: Mutex::new(None),
                 flush_waiters: AtomicUsize::new(0),
                 status: Mutex::new(ProductionBoxStoreSyncStatus {
@@ -461,8 +456,7 @@ struct ProductionBoxStoreSyncInner {
     store_db_debounce: Mutex<StoreDbDebounceQueue>,
     store_db_wake: Condvar,
     agent_db_capture_queues: AgentDbCaptureQueues,
-    agent_store_provider: Mutex<Option<AgentStoreObjectStoreProvider>>,
-    sand_box_store_v2_provider: Mutex<Option<SandBoxStoreServiceProvider>>,
+    object_store_provider: Mutex<Option<Arc<dyn BoxObjectStoreProvider>>>,
     last_pack_sync: Mutex<Option<Instant>>,
     flush_waiters: AtomicUsize,
     status: Mutex<ProductionBoxStoreSyncStatus>,
@@ -496,85 +490,26 @@ impl ProductionBoxStoreSyncInner {
             ));
         }
 
-        match &self.mode {
-            ProductionBoxStoreSyncMode::LocalFs { base_dir, .. } => {
-                Ok(Arc::new(LocalFsObjectStore::new(base_dir.join(source_id))))
+        let provider = {
+            let mut slot = self
+                .object_store_provider
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if slot.is_none() {
+                *slot = Some(resolve_box_object_store_provider(
+                    &self.env,
+                    BoxObjectStoreProviderDependencies {
+                        backend_url: self.deps.backend_url.clone(),
+                        get_access_token: self.deps.get_access_token.clone(),
+                        get_machine_id: self.deps.get_machine_id.clone(),
+                    },
+                )?);
             }
-            ProductionBoxStoreSyncMode::AgentStore => {
-                let provider = {
-                    let mut slot = self
-                        .agent_store_provider
-                        .lock()
-                        .unwrap_or_else(|poisoned| poisoned.into_inner());
-                    if slot.is_none() {
-                        let backend_url = self
-                            .deps
-                            .backend_url
-                            .clone()
-                            .ok_or_else(|| "AgentStore backend URL is not configured".to_string())?;
-                        let get_access_token = self
-                            .deps
-                            .get_access_token
-                            .clone()
-                            .ok_or_else(|| "AgentStore auth token resolver is not configured".to_string())?;
-                        let get_machine_id = self
-                            .deps
-                            .get_machine_id
-                            .clone()
-                            .ok_or_else(|| "AgentStore machine id resolver is not configured".to_string())?;
-                        *slot = Some(AgentStoreObjectStoreProvider::new(
-                            AgentStoreClientDependencies {
-                                backend_url,
-                                get_access_token,
-                                get_machine_id,
-                            },
-                        )?);
-                    }
-                    slot.as_ref()
-                        .cloned()
-                        .ok_or_else(|| "AgentStore provider failed to initialize".to_string())?
-                };
-                Ok(provider.for_store(source_id).into())
-            }
-            ProductionBoxStoreSyncMode::SandBoxStoreV2 => {
-                let provider = {
-                    let mut slot = self
-                        .sand_box_store_v2_provider
-                        .lock()
-                        .unwrap_or_else(|poisoned| poisoned.into_inner());
-                    if slot.is_none() {
-                        let backend_url = self
-                            .deps
-                            .backend_url
-                            .clone()
-                            .ok_or_else(|| "SandBoxStoreV2 backend URL is not configured".to_string())?;
-                        let get_access_token = self
-                            .deps
-                            .get_access_token
-                            .clone()
-                            .ok_or_else(|| "SandBoxStoreV2 auth token resolver is not configured".to_string())?;
-                        let get_machine_id = self
-                            .deps
-                            .get_machine_id
-                            .clone()
-                            .ok_or_else(|| "SandBoxStoreV2 machine id resolver is not configured".to_string())?;
-                        let client = Arc::new(SandBoxStoreV2Client::new(
-                            SandBoxStoreV2ClientDependencies {
-                                backend_url,
-                                get_access_token,
-                                get_machine_id,
-                            },
-                        ));
-                        *slot = Some(SandBoxStoreServiceProvider::new(client)?);
-                    }
-                    slot.as_ref()
-                        .cloned()
-                        .ok_or_else(|| "SandBoxStoreV2 provider failed to initialize".to_string())?
-                };
-                Ok(provider.for_store(source_id).into())
-            }
-            _ => Err("box-store backend is not active".into()),
-        }
+            slot.as_ref()
+                .cloned()
+                .ok_or_else(|| "BoxStore object-store provider failed to initialize".to_string())?
+        };
+        Ok(Arc::from(provider.for_store(source_id)))
     }
 
     fn log(&self, message: &str) {

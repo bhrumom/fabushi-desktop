@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs::{self, OpenOptions};
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use sha2::{Digest, Sha256};
 
@@ -11,6 +11,14 @@ use fs2::FileExt;
 use super::agent_store_sand_files::{
     AgentStoreClient, AgentStoreClientDependencies, AgentStoreObjectProbe, AgentStoreReadObject,
     AgentStoreWriteOutcome, AgentStoreWritePrecondition, normalize_rel_path,
+};
+
+use super::sand_box_store_files::SandBoxStoreServiceProvider;
+use super::sand_box_store_v2_client::{
+    SandBoxStoreV2Client, SandBoxStoreV2ClientDependencies,
+};
+use crate::r#box::box_store_backend_policy::{
+    BoxStoreBackendKind, resolve_box_store_backend_policy,
 };
 
 pub trait BoxObjectStore: Send + Sync {
@@ -43,6 +51,58 @@ pub trait BoxObjectStore: Send + Sync {
 
 pub trait BoxObjectStoreProvider: Send + Sync {
     fn for_store(&self, store_id: &str) -> Box<dyn BoxObjectStore>;
+}
+
+#[derive(Clone, Default)]
+pub struct BoxObjectStoreProviderDependencies {
+    pub backend_url: Option<String>,
+    pub get_access_token: Option<Arc<dyn Fn() -> Result<String, String> + Send + Sync>>,
+    pub get_machine_id: Option<Arc<dyn Fn() -> Result<String, String> + Send + Sync>>,
+}
+
+pub fn resolve_box_object_store_provider(
+    environment: &std::collections::BTreeMap<String, String>,
+    deps: BoxObjectStoreProviderDependencies,
+) -> Result<Arc<dyn BoxObjectStoreProvider>, String> {
+    let policy = resolve_box_store_backend_policy(environment);
+    match policy.kind {
+        BoxStoreBackendKind::LocalFs => {
+            let base_dir = policy
+                .local_dir
+                .ok_or_else(|| "local BoxStore backend selected without an absolute local directory".to_string())?;
+            Ok(Arc::new(LocalFsObjectStoreProvider::new(base_dir)))
+        }
+        BoxStoreBackendKind::AgentStore => {
+            let remote = remote_provider_dependencies("AgentStore", deps)?;
+            Ok(Arc::new(AgentStoreObjectStoreProvider::new(remote)?))
+        }
+        BoxStoreBackendKind::SandBoxStoreV2 => {
+            let remote = remote_provider_dependencies("SandBoxStoreV2", deps)?;
+            let client = Arc::new(SandBoxStoreV2Client::new(SandBoxStoreV2ClientDependencies {
+                backend_url: remote.backend_url,
+                get_access_token: remote.get_access_token,
+                get_machine_id: remote.get_machine_id,
+            }));
+            Ok(Arc::new(SandBoxStoreServiceProvider::new(client)?))
+        }
+    }
+}
+
+fn remote_provider_dependencies(
+    backend_name: &str,
+    deps: BoxObjectStoreProviderDependencies,
+) -> Result<AgentStoreClientDependencies, String> {
+    Ok(AgentStoreClientDependencies {
+        backend_url: deps
+            .backend_url
+            .ok_or_else(|| format!("{backend_name} backend URL is not configured"))?,
+        get_access_token: deps
+            .get_access_token
+            .ok_or_else(|| format!("{backend_name} auth token resolver is not configured"))?,
+        get_machine_id: deps
+            .get_machine_id
+            .ok_or_else(|| format!("{backend_name} machine id resolver is not configured"))?,
+    })
 }
 
 #[derive(Clone)]
@@ -456,6 +516,55 @@ fn walk_files(root: &Path, dir: &Path, out: &mut Vec<String>) -> io::Result<()> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn provider_resolver_preserves_frozen_backend_selection_and_fails_closed() {
+        let local_root = std::env::temp_dir().join(format!(
+            "fabushi-box-object-store-provider-{}",
+            uuid::Uuid::new_v4().simple()
+        ));
+        let local_env = std::collections::BTreeMap::from([(
+            crate::r#box::box_store_backend_policy::SAND_BOX_STORE_LOCAL_DIR_ENV.to_string(),
+            local_root.to_string_lossy().into_owned(),
+        )]);
+        let local = resolve_box_object_store_provider(
+            &local_env,
+            BoxObjectStoreProviderDependencies::default(),
+        )
+        .expect("local provider requires no remote auth");
+        local
+            .for_store("agentStore:test")
+            .put("probe.txt", b"ok")
+            .expect("local provider write");
+        assert_eq!(
+            fs::read(local_root.join("agentStore:test/probe.txt")).expect("local provider bytes"),
+            b"ok"
+        );
+        fs::remove_dir_all(&local_root).expect("cleanup local provider");
+
+        let v2_env = std::collections::BTreeMap::from([(
+            crate::r#box::box_store_backend_policy::SAND_BOX_STORE_BACKEND_ENV.to_string(),
+            "v2".to_string(),
+        )]);
+        let error = match resolve_box_object_store_provider(
+            &v2_env,
+            BoxObjectStoreProviderDependencies::default(),
+        ) {
+            Ok(_) => panic!("v2 without auth must fail closed"),
+            Err(error) => error,
+        };
+        assert!(error.contains("SandBoxStoreV2 backend URL"));
+
+        let agent_env = std::collections::BTreeMap::new();
+        let error = match resolve_box_object_store_provider(
+            &agent_env,
+            BoxObjectStoreProviderDependencies::default(),
+        ) {
+            Ok(_) => panic!("agent-store without auth must fail closed"),
+            Err(error) => error,
+        };
+        assert!(error.contains("AgentStore backend URL"));
+    }
 
     #[test]
     fn local_fs_conditional_put_rejects_stale_manifest_baseline() {
