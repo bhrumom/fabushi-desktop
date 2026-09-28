@@ -758,13 +758,17 @@ impl SandAutomationCloudSync {
         }
 
         let mut mutation_failed = false;
-        for (automation_id, remote) in &remote {
+        let remote_shadow_count = remote.len();
+        for (automation_id, remote_automation) in &remote {
             if desired_by_id.contains_key(automation_id) {
                 continue;
             }
             self.scheduling_evidence_by_agent
                 .insert(agent_id.to_owned(), SchedulingEvidence::Unknown);
-            let succeeded = match self.client.delete_sand_automation(&remote.automation_id) {
+            let succeeded = match self
+                .client
+                .delete_sand_automation(&remote_automation.automation_id)
+            {
                 Ok(()) => true,
                 Err(_) => {
                     mutation_failed = true;
@@ -779,7 +783,7 @@ impl SandAutomationCloudSync {
                 local_definition_state: "loaded".into(),
                 local_definition_count: desired_by_id.len(),
                 desired_count: desired_by_id.len(),
-                remote_shadow_count: remote.len(),
+                remote_shadow_count,
             });
         }
         for (automation_id, definition) in &desired_by_id {
