@@ -324,7 +324,8 @@ impl ProductionBoxStoreSyncInner {
         }
 
         let store = LocalFsObjectStore::new(base_dir.join(&store_id));
-        let mut manifest = load_manifest(&store)?;
+        let manifest_baseline = store.get(BOX_STORE_MANIFEST_REL_PATH)?;
+        let mut manifest = parse_manifest_bytes(manifest_baseline.as_deref())?;
         let manifest_v2 = self
             .env
             .get(SAND_MANIFEST_V2_ENV)
@@ -382,8 +383,9 @@ impl ProductionBoxStoreSyncInner {
             )?);
         }
 
-        write_manifest(
+        write_manifest_if_unchanged(
             &store,
+            manifest_baseline.as_deref(),
             &entries,
             manifest_v2,
             format!("mahayana-host-{}", std::process::id()),
@@ -525,22 +527,26 @@ fn mode_name(mode: &ProductionBoxStoreSyncMode) -> &'static str {
 }
 
 fn load_manifest(store: &dyn BoxObjectStore) -> Result<Option<BoxStoreManifest>, String> {
-    let Some(bytes) = store.get(BOX_STORE_MANIFEST_REL_PATH)? else {
+    let bytes = store.get(BOX_STORE_MANIFEST_REL_PATH)?;
+    parse_manifest_bytes(bytes.as_deref())
+}
+
+fn parse_manifest_bytes(bytes: Option<&[u8]>) -> Result<Option<BoxStoreManifest>, String> {
+    let Some(bytes) = bytes else {
         return Ok(None);
     };
-    let value = serde_json::from_slice::<Value>(&bytes)
+    let value = serde_json::from_slice::<Value>(bytes)
         .map_err(|error| format!("manifest JSON is invalid: {error}"))?;
     parse_box_store_manifest(&value)
         .map(Some)
         .ok_or_else(|| "manifest schema is invalid".to_string())
 }
 
-fn write_manifest(
-    store: &dyn BoxObjectStore,
+fn serialize_manifest(
     entries: &BoxManifestMap,
     manifest_v2: bool,
     writer_window_id: String,
-) -> Result<(), String> {
+) -> Result<Vec<u8>, String> {
     let mut values = Map::new();
     for (path, entry) in entries {
         let value = match entry {
@@ -571,7 +577,31 @@ fn write_manifest(
         "writerWindowId": writer_window_id,
         "entries": values,
     });
-    let bytes = serde_json::to_vec(&payload).map_err(|error| error.to_string())?;
+    serde_json::to_vec(&payload).map_err(|error| error.to_string())
+}
+
+fn write_manifest_if_unchanged(
+    store: &dyn BoxObjectStore,
+    baseline: Option<&[u8]>,
+    entries: &BoxManifestMap,
+    manifest_v2: bool,
+    writer_window_id: String,
+) -> Result<(), String> {
+    let bytes = serialize_manifest(entries, manifest_v2, writer_window_id)?;
+    if store.put_if_unchanged(BOX_STORE_MANIFEST_REL_PATH, baseline, &bytes)? {
+        Ok(())
+    } else {
+        Err("box-store manifest canonical write lost a concurrent-write race".into())
+    }
+}
+
+fn write_manifest(
+    store: &dyn BoxObjectStore,
+    entries: &BoxManifestMap,
+    manifest_v2: bool,
+    writer_window_id: String,
+) -> Result<(), String> {
+    let bytes = serialize_manifest(entries, manifest_v2, writer_window_id)?;
     store.put(BOX_STORE_MANIFEST_REL_PATH, &bytes)
 }
 
@@ -1182,6 +1212,55 @@ mod tests {
         ));
         fs::create_dir_all(&path).expect("create temp root");
         path
+    }
+
+    #[test]
+    fn conditional_manifest_write_rejects_stale_cycle_baseline() {
+        let root = temp_root("manifest-cas");
+        let store = LocalFsObjectStore::new(root.join("store"));
+        let mut first = BoxManifestMap::new();
+        first.insert(
+            "workspace/a.txt".into(),
+            BoxStoreManifestEntry::File {
+                sha: "a".into(),
+                size: 1,
+                mode: 0o644,
+            },
+        );
+        write_manifest(&store, &first, true, "writer-a".into()).expect("seed manifest");
+        let baseline = store
+            .get(BOX_STORE_MANIFEST_REL_PATH)
+            .expect("read baseline")
+            .expect("baseline exists");
+
+        let mut concurrent = first.clone();
+        concurrent.insert(
+            "workspace/b.txt".into(),
+            BoxStoreManifestEntry::File {
+                sha: "b".into(),
+                size: 1,
+                mode: 0o644,
+            },
+        );
+        write_manifest(&store, &concurrent, true, "writer-b".into())
+            .expect("concurrent manifest");
+
+        let error = write_manifest_if_unchanged(
+            &store,
+            Some(&baseline),
+            &first,
+            true,
+            "stale-writer".into(),
+        )
+        .expect_err("stale writer must lose");
+        assert!(error.contains("concurrent-write race"));
+
+        let persisted = load_manifest(&store)
+            .expect("load winning manifest")
+            .expect("manifest exists");
+        assert!(persisted.entries.contains_key("workspace/b.txt"));
+
+        fs::remove_dir_all(root).expect("cleanup");
     }
 
     #[test]
