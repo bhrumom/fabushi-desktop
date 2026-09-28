@@ -1042,6 +1042,34 @@ impl UnifiedGatewayApi {
         accepted > 0
     }
 
+    fn report_production_backend_fire_dropped(
+        &self,
+        fire: &BackendAutomationFire,
+        reason: &str,
+        error_type: Option<&str>,
+        error_code: Option<&str>,
+    ) {
+        let now_ms = started_at_ms();
+        let scheduled_for_ms = fire.scheduled_for_ms.map(|value| value as f64);
+        let lateness_ms = fire
+            .scheduled_for_ms
+            .map(|value| now_ms.saturating_sub(value) as f64);
+        let projection = automation_fire_dropped_telemetry(&AutomationFireDroppedReport {
+            conversation_id: fire.sand_agent_id.clone(),
+            trigger: if fire.event.is_some() { "event".into() } else { "schedule".into() },
+            reason: reason.to_owned(),
+            scheduled_for_ms,
+            lateness_ms,
+            error_type: error_type.map(str::to_owned),
+            error_code: error_code.map(str::to_owned),
+            run_uuid: Some(fire.id.clone()),
+            fire_age_ms: Some(now_ms.saturating_sub(fire.timestamp_ms) as f64),
+            has_definition_revision: Some(fire.definition_revision.is_some()),
+            box_uptime_ms: None,
+        });
+        let _ = self.telemetry_logs.report_projection(&projection);
+    }
+
     fn dispatch_production_backend_fire(
         &self,
         fire: BackendAutomationFire,
@@ -1069,8 +1097,11 @@ impl UnifiedGatewayApi {
         }) {
             PreparedBackendFire::Complete {
                 completion: terminal,
-                ..
+                reason,
             } => {
+                if reason != "existing_run" {
+                    self.report_production_backend_fire_dropped(&fire, reason, None, None);
+                }
                 completion(Some(terminal));
                 true
             }
