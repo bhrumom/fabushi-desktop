@@ -217,6 +217,10 @@ export function createProductionMcpOAuthAdapter(
         requireFunction(runtimeDeps[method], `mcpOAuth.${method}`);
       }
       const runtime = createMcpRuntime<DesktopMcpManagerFacade>(runtimeDeps);
+      const peekAccessToken = async () => {
+        const auth = await context.requireAccount().getAuthService();
+        return await auth.peekAccessToken?.() ?? null;
+      };
       let desktopHandle: ReturnType<typeof registerMcpDesktopIpc> | undefined;
       let disposed = false;
       return {
@@ -239,6 +243,35 @@ export function createProductionMcpOAuthAdapter(
           if (disposed) throw new Error("Electron production MCP adapter is disposed.");
           if (typeof request !== "object" || request == null) throw new TypeError("Routed MCP execution requires a request.");
           return await (await runtime.ensureMcpManager()).executeRoutedTool(request as Parameters<DesktopMcpManagerFacade["executeRoutedTool"]>[0]);
+        },
+        async listHostMcpServers() {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          return await (await runtime.ensureMcpManager()).listServers();
+        },
+        async listHostMcpCatalog(options) {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          return await (await runtime.ensureMcpManager()).getCatalog(peekAccessToken, options);
+        },
+        async listHostEffectiveMcpPlugins() {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          return await (await runtime.ensureMcpManager()).listEffectivePlugins();
+        },
+        async installHostMcpPlugin(request) {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          if (typeof request !== "object" || request == null) throw new TypeError("Host MCP install requires a request.");
+          return await (await runtime.ensureMcpManager()).installEntry(request, peekAccessToken);
+        },
+        async uninstallHostMcpPlugin(pluginId) {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          if (typeof pluginId !== "string" || pluginId.trim().length === 0) throw new TypeError("Host MCP uninstall requires pluginId.");
+          return await (await runtime.ensureMcpManager()).uninstallPlugin(pluginId);
+        },
+        async noteHostMcpAuthCompleted(request) {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          if (typeof request?.serverId !== "string" || request.serverId.trim().length === 0 || typeof request?.accountKey !== "string" || request.accountKey.trim().length === 0) {
+            throw new TypeError("Host MCP auth completion requires serverId and accountKey.");
+          }
+          return await Promise.resolve((await runtime.ensureMcpManager()).noteAuthCompletedElsewhere(request.serverId, request.accountKey));
         },
         registerDesktopIpc(ipc) {
           if (disposed) throw new Error("Electron production MCP adapter is disposed.");
