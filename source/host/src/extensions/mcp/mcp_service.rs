@@ -168,6 +168,20 @@ pub trait McpManagerBackend: Send + Sync {
         plugin_id: &str,
         values: &HashMap<String, String>,
     ) -> Result<Vec<McpServerSummary>, String>;
+    fn add_server(&self, name: &str, config_json: &str) -> Result<Vec<McpServerSummary>, String>;
+    fn remove_server(&self, server_id: &str) -> Result<(bool, Option<String>, Vec<McpServerSummary>), String>;
+    fn restart_servers(&self) -> Result<Vec<McpServerSummary>, String>;
+    fn set_server_custom_instructions(&self, server_id: &str, instructions: &str) -> Result<Vec<McpServerSummary>, String>;
+    fn authenticate_server(
+        &self,
+        server_id: &str,
+        account_key: &str,
+        requesting_agent_id: Option<&str>,
+        force_reauth: bool,
+    ) -> Result<Value, String>;
+    fn logout_account(&self, server_id: &str, account_key: &str) -> Result<Vec<McpServerSummary>, String>;
+    fn remove_account(&self, server_id: &str, account_key: &str) -> Result<Vec<McpServerSummary>, String>;
+    fn rename_account(&self, server_id: &str, account_key: &str, new_account_key: &str) -> Result<Vec<McpServerSummary>, String>;
     fn list_box_servers(
         &self,
         ids: &[String],
@@ -316,6 +330,89 @@ impl McpHostService {
             let _ = skills.sync("install");
         }
         Ok(to_installed_servers(&servers))
+    }
+
+    pub fn add_server(&self, name: &str, config_json: &str) -> Result<Vec<Value>, String> {
+        self.backend
+            .add_server(name, config_json)
+            .map(|servers| to_installed_servers(&servers))
+    }
+
+    pub fn remove_server(&self, server_id: &str) -> Result<Value, String> {
+        let (removed, reason, servers) = self.backend.remove_server(server_id)?;
+        Ok(json!({
+            "removed": removed,
+            "reason": reason,
+            "servers": to_installed_servers(&servers),
+        }))
+    }
+
+    pub fn restart_servers(&self) -> Result<Vec<Value>, String> {
+        self.backend
+            .restart_servers()
+            .map(|servers| to_installed_servers(&servers))
+    }
+
+    pub fn set_server_custom_instructions(
+        &self,
+        server_id: &str,
+        instructions: &str,
+    ) -> Result<Vec<Value>, String> {
+        self.backend
+            .set_server_custom_instructions(server_id, instructions)
+            .map(|servers| to_installed_servers(&servers))
+    }
+
+    pub fn authenticate_server(
+        &self,
+        server_id: &str,
+        account_key: &str,
+        requesting_agent_id: Option<&str>,
+        force_reauth: bool,
+    ) -> Result<Value, String> {
+        let result = self.backend.authenticate_server(
+            server_id,
+            account_key,
+            requesting_agent_id,
+            force_reauth,
+        )?;
+        let status = result
+            .get("status")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "MCP authentication result requires status".to_string())?;
+        let server_name = result
+            .get("serverName")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "MCP authentication result requires serverName".to_string())?;
+        Ok(to_auth_result(
+            status,
+            server_name,
+            result.get("authorizationUrl").and_then(Value::as_str),
+            result.get("message").and_then(Value::as_str),
+        ))
+    }
+
+    pub fn logout_account(&self, server_id: &str, account_key: &str) -> Result<Vec<Value>, String> {
+        self.backend
+            .logout_account(server_id, account_key)
+            .map(|servers| to_installed_servers(&servers))
+    }
+
+    pub fn remove_account(&self, server_id: &str, account_key: &str) -> Result<Vec<Value>, String> {
+        self.backend
+            .remove_account(server_id, account_key)
+            .map(|servers| to_installed_servers(&servers))
+    }
+
+    pub fn rename_account(
+        &self,
+        server_id: &str,
+        account_key: &str,
+        new_account_key: &str,
+    ) -> Result<Vec<Value>, String> {
+        self.backend
+            .rename_account(server_id, account_key, new_account_key)
+            .map(|servers| to_installed_servers(&servers))
     }
 
     pub fn sync_plugin_skills(&self) -> Result<Vec<Value>, String> {
