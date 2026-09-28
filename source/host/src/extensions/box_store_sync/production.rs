@@ -69,7 +69,10 @@ const CLI_CONFIG_EXCLUDES: &[&str] = &[
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProductionBoxStoreSyncMode {
     Disabled,
-    LocalFs { base_dir: PathBuf, store_id: String },
+    LocalFs {
+        base_dir: PathBuf,
+        store_id_override: Option<String>,
+    },
     UnsupportedRemote { backend: BoxStoreBackendKind },
     InvalidLocalConfiguration { reason: String },
 }
@@ -299,11 +302,24 @@ impl ProductionBoxStoreSyncInner {
         if self.stopped.load(Ordering::Acquire) {
             return Err("stopped".into());
         }
-        let ProductionBoxStoreSyncMode::LocalFs { base_dir, store_id } = &self.mode else {
+        let ProductionBoxStoreSyncMode::LocalFs {
+            base_dir,
+            store_id_override,
+        } = &self.mode
+        else {
             return Err("local-fs backend is not active".into());
         };
+        let store_id = match store_id_override {
+            Some(store_id) => store_id.clone(),
+            None => (self.deps.resolve_store_id)()?,
+        };
+        let normalized_store_id = crate::extensions::box_store_sync::agent_store_sand_files::normalize_rel_path(&store_id)
+            .map_err(|error| format!("resolved BoxStore source id is unsafe: {error}"))?;
+        if normalized_store_id != store_id {
+            return Err("resolved BoxStore source id must already be canonical".into());
+        }
 
-        let store = LocalFsObjectStore::new(base_dir.join(store_id));
+        let store = LocalFsObjectStore::new(base_dir.join(&store_id));
         let mut manifest = load_manifest(&store)?;
         let manifest_v2 = self
             .env
@@ -410,24 +426,24 @@ pub fn resolve_production_box_store_sync_mode(env: &BTreeMap<String, String>) ->
                     reason: "local-fs backend requires an absolute SAND_BOX_STORE_LOCAL_DIR".into(),
                 };
             };
-            let Some(store_id) = env
+            let store_id_override = env
                 .get(SAND_BOX_STORE_ID_ENV)
                 .map(String::as_str)
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
-            else {
-                return ProductionBoxStoreSyncMode::InvalidLocalConfiguration {
-                    reason: "local-fs backend requires SAND_BOX_STORE_ID".into(),
-                };
-            };
-            if store_id.contains('/') || store_id.contains('\\') || store_id == "." || store_id == ".." {
-                return ProductionBoxStoreSyncMode::InvalidLocalConfiguration {
-                    reason: "SAND_BOX_STORE_ID must be a single safe path segment".into(),
-                };
+                .map(str::to_string);
+            if let Some(store_id) = store_id_override.as_deref() {
+                let normalized =
+                    crate::extensions::box_store_sync::agent_store_sand_files::normalize_rel_path(store_id);
+                if normalized.as_deref() != Ok(store_id) {
+                    return ProductionBoxStoreSyncMode::InvalidLocalConfiguration {
+                        reason: "SAND_BOX_STORE_ID must be a canonical safe relative source id".into(),
+                    };
+                }
             }
             ProductionBoxStoreSyncMode::LocalFs {
                 base_dir,
-                store_id: store_id.to_string(),
+                store_id_override,
             }
         }
         backend => ProductionBoxStoreSyncMode::UnsupportedRemote { backend },
