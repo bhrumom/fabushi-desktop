@@ -10093,10 +10093,11 @@
         "source/host/tests/cloud_agent_images_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/auto_review_production_wiring_contract.rs",
-        "source/host/tests/system_prompt_contract.rs"
+        "source/host/tests/system_prompt_contract.rs",
+        "source/host/tests/cloud_agent_background_revival_production_contract.rs"
       ],
       "parityMode": "rust-adaptation",
-      "notes": "Rust Runner registers CloudAgent as a first-party RoutedToolBridge and production-wires launch/list/models/get/dump/watch/reply/rename/cancel/archive/unarchive/delete/list_artifacts against the single Host SandCloudAgentManager. launch/reply consume the canonical image loader through the live ForeverBox binary Read port; dump writes through the live Box Write port; destructive confirmation, model validation, managed-id fencing and cancellation are preserved. The frozen production Auto-review callback is now wired to the same per-turn controller/backend classifier. Final remains withheld for reviving cloud-agent watcher/quiet-origin ownership and the generated ConversationMessage-to-trace adapter used by dump. Shipping provider prompt capability projection now follows the actual first-party CloudAgent tool: turns with the tool receive the enabled frozen system-prompt variant instead of the stale team-disabled variant. Final remains withheld for reviving cloud-agent watcher/quiet-origin ownership and the generated ConversationMessage-to-trace adapter used by dump."
+      "notes": "Rust Runner registers CloudAgent as a first-party RoutedToolBridge and production-wires launch/list/models/get/dump/watch/reply/rename/cancel/archive/unarchive/delete/list_artifacts against the single Host SandCloudAgentManager. launch/reply consume the canonical image loader through the live ForeverBox binary Read port; dump writes through the live Box Write port; destructive confirmation, model validation, managed-id fencing and cancellation are preserved. The frozen production Auto-review callback is wired to the same per-turn controller/backend classifier. Shipping Host now owns one shared RunnerCloudAgentWatches instance: launch/watch/reply arm real completion polling, persist CloudAgent durable pending-wake markers, project async tasks, and route terminal completion into CompletionRevivals and a hidden background-revival routed turn. Automation-origin quiet metadata is propagated from the live automation wake. Final remains withheld for the generic sand quiet-work-origin carrier used by non-automation quiet work and for the generated ConversationMessage-to-trace adapter used by dump."
     },
     {
       "referencePath": "source/host/cloud-agents/cloud-agent-transcript-dump.ts",
@@ -15978,10 +15979,11 @@
         "source/host/tests/durable_recovery_stores_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/async_task_union_contract.rs"
+        "source/host/tests/async_task_union_contract.rs",
+        "source/host/tests/cloud_agent_background_revival_production_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production slice ports frozen marker coercion, quiet automation origin, key-based upsert, has/clear/prune semantics and part-file replacement. ProductionTranscriptRuntime owns the store under app_data_dir; getAsyncTasks now projects its durable ledger into the shipping frontend-compatible async-task union, and successful agent deletion clears durable markers. Final remains withheld until background/subagent/shell completion paths persist and rearm these markers with frozen telemetry/recreate semantics."
+      "notes": "Rust production ports frozen marker coercion, quiet automation origin, key-based upsert, has/clear/prune semantics and part-file replacement. ProductionTranscriptRuntime owns the store under app_data_dir; getAsyncTasks projects its durable ledger into the shipping frontend-compatible async-task union, and successful agent deletion clears durable markers. Cloud-agent launch/watch/reply now persist markers from the shipping shared RunnerCloudAgentWatches owner and CompletionRevivals clears them on terminal settlement while emitting async-task projection. Final remains withheld until shell/subagent completion paths and recreate rearm are fully composed in the shipping Runner/Transcript lifecycle."
     },
     {
       "referencePath": "source/host/extensions/transcript/sand-upgrade-resume-store.ts",
@@ -17637,15 +17639,17 @@
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
-        "source/host/src/runner/background_work.rs"
+        "source/host/src/runner/background_work.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/background_work_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/cloud_agent_background_revival_production_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port now owns the frozen background-work core: reviving work registry, wakeup ack/nack/suppress/completion semantics, quiet-origin propagation, shell terminal footer parsing, rewatch constants, subagent title derivation and steer-prompt formatting. It remains existing-needs-parity until cloud-agent/shell rewatch production watchers and pending-wake callbacks are composed into the shipping Runner/subagent runtime."
+      "notes": "Rust port owns the frozen background-work core: reviving work registry, wakeup ack/nack/suppress/completion semantics, quiet-origin propagation, shell terminal footer parsing, rewatch constants, subagent title derivation and steer-prompt formatting. Shipping Host now composes RunnerCloudAgentWatches as a shared owner with generation fencing, durable pending-wake persistence, async-task projection, SandCloudAgentManager awaitCompletion polling and CompletionRevivals settlement. Final remains withheld for production shell rewatch/pending-wake composition and the remaining generic quiet-work-origin carrier semantics."
     },
     {
       "referencePath": "source/host/runner/bot-block-detection.ts",
