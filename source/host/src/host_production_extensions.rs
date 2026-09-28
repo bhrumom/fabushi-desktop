@@ -517,10 +517,17 @@ impl ProductionHostExtensions {
         }
         let logs = self.telemetry.logs.clone();
         let diagnostic_logs = logs.clone();
+        let source_map = Arc::clone(&self.source_map);
         let extension = start_box_store_sync_extension(
             &ProductionBoxStoreSyncFactory,
             BoxStoreSyncExtensionDeps {
                 is_idle,
+                resolve_store_id: Arc::new(move || {
+                    source_map
+                        .get_or_create_box_store()
+                        .map(|entry| entry.source_id)
+                        .map_err(|error| error.to_string())
+                }),
                 log: Arc::new(move |message| eprintln!("{message}")),
                 report_host_extension_diagnostic: Arc::new(move |diagnostic| {
                     let _ = diagnostic_logs.report_host_extension_diagnostic(
