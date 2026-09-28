@@ -67,7 +67,7 @@ struct Provider {
     info: Option<LocalExecProviderInfo>,
     computer_id: Option<String>,
     label: Option<String>,
-    supervised: bool,
+    supervised: Option<bool>,
     variant: Option<String>,
 }
 
@@ -86,7 +86,7 @@ impl Provider {
     }
 
     fn rank(&self) -> i32 {
-        local_exec_provider_rank(self.supervised, self.variant.as_deref())
+        local_exec_provider_rank(self.supervised.unwrap_or(false), self.variant.as_deref())
     }
 }
 
@@ -113,16 +113,52 @@ impl BridgeState {
 type Now = Arc<dyn Fn() -> u64 + Send + Sync>;
 type RandomId = Arc<dyn Fn() -> String + Send + Sync>;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LocalExecProviderLifecycleReport {
+    Registered {
+        provider_id: String,
+        provider_count: usize,
+    },
+    Hello {
+        provider_id: String,
+        provider_count: usize,
+        hello_delay_ms: u64,
+        computer_id_present: bool,
+        rehello: bool,
+        supervised: Option<bool>,
+        variant: Option<String>,
+    },
+    Detached {
+        provider_id: String,
+        provider_count: usize,
+        age_ms: u64,
+        had_hello: bool,
+        has_heartbeat: bool,
+        was_live: bool,
+        emptied: bool,
+    },
+}
+
+pub type ProviderLifecycleReporter =
+    Arc<dyn Fn(LocalExecProviderLifecycleReport) + Send + Sync>;
+
 #[derive(Clone)]
 pub struct SandLocalExecBridge {
     state: Arc<Mutex<BridgeState>>,
     now_ms: Now,
     random_id: RandomId,
+    provider_reporter: Option<ProviderLifecycleReporter>,
 }
 
 impl SandLocalExecBridge {
     pub fn production() -> Self {
-        Self::with_sources(
+        Self::production_with_reporter(None)
+    }
+
+    pub fn production_with_reporter(
+        provider_reporter: Option<ProviderLifecycleReporter>,
+    ) -> Self {
+        Self::with_sources_and_reporter(
             Arc::new(|| {
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
@@ -132,22 +168,32 @@ impl SandLocalExecBridge {
                     .unwrap_or(u64::MAX)
             }),
             Arc::new(|| Uuid::new_v4().to_string()),
+            provider_reporter,
         )
     }
 
     pub fn with_sources(now_ms: Now, random_id: RandomId) -> Self {
+        Self::with_sources_and_reporter(now_ms, random_id, None)
+    }
+
+    pub fn with_sources_and_reporter(
+        now_ms: Now,
+        random_id: RandomId,
+        provider_reporter: Option<ProviderLifecycleReporter>,
+    ) -> Self {
         let now = now_ms();
         Self {
             state: Arc::new(Mutex::new(BridgeState::new(now))),
             now_ms,
             random_id,
+            provider_reporter,
         }
     }
 
     pub fn register_provider(&self, send: Sender<Value>) -> LocalExecProviderRegistration {
         let now = (self.now_ms)();
         let id = (self.random_id)();
-        {
+        let provider_count = {
             let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
             let sequence = state.next_sequence;
             state.next_sequence = state.next_sequence.saturating_add(1);
@@ -164,11 +210,16 @@ impl SandLocalExecBridge {
                     info: None,
                     computer_id: None,
                     label: None,
-                    supervised: false,
+                    supervised: None,
                     variant: None,
                 },
             );
-        }
+            state.providers.len()
+        };
+        self.report_provider(LocalExecProviderLifecycleReport::Registered {
+            provider_id: id.clone(),
+            provider_count,
+        });
         let _ = send.send(json!({ "kind": "welcome", "providerId": id }));
         LocalExecProviderRegistration {
             bridge: self.clone(),
@@ -177,9 +228,28 @@ impl SandLocalExecBridge {
     }
 
     fn detach_provider(&self, provider_id: &str) {
-        let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
-        if state.providers.remove(provider_id).is_some() && state.providers.is_empty() {
-            state.empty_since_ms = (self.now_ms)();
+        let now = (self.now_ms)();
+        let report = {
+            let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            let removed = state.providers.remove(provider_id);
+            removed.map(|provider| {
+                let emptied = state.providers.is_empty();
+                if emptied {
+                    state.empty_since_ms = now;
+                }
+                LocalExecProviderLifecycleReport::Detached {
+                    provider_id: provider.id,
+                    provider_count: state.providers.len(),
+                    age_ms: now.saturating_sub(provider.registered_at_ms),
+                    had_hello: provider.info.is_some(),
+                    has_heartbeat: provider.has_heartbeat,
+                    was_live: provider.live(now),
+                    emptied,
+                }
+            })
+        };
+        if let Some(report) = report {
+            self.report_provider(report);
         }
     }
 
@@ -257,6 +327,7 @@ impl SandLocalExecBridge {
             .unwrap_or_default();
         let now = (self.now_ms)();
         let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut provider_reports = Vec::new();
         let fallback = state
             .providers
             .values()
@@ -274,9 +345,10 @@ impl SandLocalExecBridge {
                             provider.has_heartbeat = true;
                         }
                         if let Some(supervised) = frame.get("supervised").and_then(Value::as_bool) {
-                            provider.supervised = supervised;
+                            provider.supervised = Some(supervised);
                         }
                         if kind == Some("hello") {
+                            let rehello = provider.info.is_some();
                             let local_root = frame.get("localRoot").and_then(Value::as_str);
                             let terminals_folder = frame.get("terminalsFolder").and_then(Value::as_str);
                             if let (Some(local_root), Some(terminals_folder)) = (local_root, terminals_folder) {
@@ -309,6 +381,16 @@ impl SandLocalExecBridge {
                             {
                                 provider.variant = Some(variant.to_string());
                             }
+                            provider_reports.push(LocalExecProviderLifecycleReport::Hello {
+                                provider_id: provider.id.clone(),
+                                provider_count: state.providers.len(),
+                                hello_delay_ms: now.saturating_sub(provider.registered_at_ms),
+                                computer_id_present: provider.computer_id.is_some(),
+                                rehello,
+                                supervised: provider.supervised,
+                                variant: bounded_local_exec_variant(provider.variant.as_deref())
+                                    .map(str::to_string),
+                            });
                         }
                     }
                 }
@@ -320,6 +402,10 @@ impl SandLocalExecBridge {
                     let _ = sender.send(frame.clone());
                 }
             }
+        }
+        drop(state);
+        for report in provider_reports {
+            self.report_provider(report);
         }
     }
 
@@ -395,6 +481,12 @@ impl SandLocalExecBridge {
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .pending
             .remove(request_id);
+    }
+
+    fn report_provider(&self, report: LocalExecProviderLifecycleReport) {
+        if let Some(reporter) = &self.provider_reporter {
+            reporter(report);
+        }
     }
 
     fn best_provider<'a>(

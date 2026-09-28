@@ -10,8 +10,9 @@ use mahayana_host_runtime::extensions::local_exec::extension::{
     LOCAL_EXEC_DEPENDENCIES, local_exec_extension_id,
 };
 use mahayana_host_runtime::extensions::local_exec::local_exec_bridge::{
-    DEFAULT_SAND_COMPUTER_ID, SAND_LOCAL_EXEC_LIVENESS_WINDOW_MS,
-    SandLocalExecBridge, bounded_local_exec_variant, local_exec_provider_rank,
+    DEFAULT_SAND_COMPUTER_ID, LocalExecProviderLifecycleReport,
+    SAND_LOCAL_EXEC_LIVENESS_WINDOW_MS, SandLocalExecBridge,
+    bounded_local_exec_variant, local_exec_provider_rank,
 };
 use serde_json::json;
 
@@ -42,9 +43,14 @@ fn provider_registration_hello_liveness_and_selection_follow_frozen_transport() 
         "provider-a".to_string(),
     ]));
     let ids_for_bridge = Arc::clone(&ids);
-    let bridge = SandLocalExecBridge::with_sources(
+    let reports = Arc::new(Mutex::new(Vec::new()));
+    let reports_for_bridge = Arc::clone(&reports);
+    let bridge = SandLocalExecBridge::with_sources_and_reporter(
         Arc::new(move || now_for_bridge.load(Ordering::SeqCst)),
         Arc::new(move || ids_for_bridge.lock().expect("ids").pop().expect("id")),
+        Some(Arc::new(move |report| {
+            reports_for_bridge.lock().expect("reports").push(report);
+        })),
     );
 
     let (send, receive) = mpsc::channel();
@@ -55,6 +61,13 @@ fn provider_registration_hello_liveness_and_selection_follow_frozen_transport() 
     );
     assert!(bridge.has_provider());
     assert!(bridge.ever_registered());
+    assert_eq!(
+        reports.lock().expect("reports").as_slice(),
+        &[LocalExecProviderLifecycleReport::Registered {
+            provider_id: "provider-a".into(),
+            provider_count: 1,
+        }]
+    );
 
     bridge.submit_responses(json!({
         "providerId": "provider-a",
@@ -76,6 +89,43 @@ fn provider_registration_hello_liveness_and_selection_follow_frozen_transport() 
         bridge.get_provider_info().expect("info").terminals_folder,
         "terminals"
     );
+    assert_eq!(
+        reports.lock().expect("reports")[1],
+        LocalExecProviderLifecycleReport::Hello {
+            provider_id: "provider-a".into(),
+            provider_count: 1,
+            hello_delay_ms: 0,
+            computer_id_present: true,
+            rehello: false,
+            supervised: Some(true),
+            variant: Some("sand".into()),
+        }
+    );
+
+    bridge.submit_responses(json!({
+        "providerId": "provider-a",
+        "frames": [{
+            "kind": "hello",
+            "localRoot": "/Users/test",
+            "terminalsFolder": "terminals",
+            "computerId": "mac-1",
+            "label": "My Mac",
+            "supervised": true,
+            "variant": "sand"
+        }]
+    }));
+    assert_eq!(
+        reports.lock().expect("reports")[2],
+        LocalExecProviderLifecycleReport::Hello {
+            provider_id: "provider-a".into(),
+            provider_count: 1,
+            hello_delay_ms: 0,
+            computer_id_present: true,
+            rehello: true,
+            supervised: Some(true),
+            variant: Some("sand".into()),
+        }
+    );
 
     bridge.submit_responses(json!({
         "providerId": "provider-a",
@@ -87,6 +137,18 @@ fn provider_registration_hello_liveness_and_selection_follow_frozen_transport() 
 
     drop(registration);
     assert!(!bridge.has_provider());
+    assert_eq!(
+        reports.lock().expect("reports")[3],
+        LocalExecProviderLifecycleReport::Detached {
+            provider_id: "provider-a".into(),
+            provider_count: 0,
+            age_ms: SAND_LOCAL_EXEC_LIVENESS_WINDOW_MS + 1,
+            had_hello: true,
+            has_heartbeat: true,
+            was_live: false,
+            emptied: true,
+        }
+    );
 }
 
 #[test]

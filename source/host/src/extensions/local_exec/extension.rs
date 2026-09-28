@@ -6,12 +6,13 @@ use crate::extensions::extension_ids_generated::HostExtensionId;
 use crate::gateway_server::{GatewayBridgeClose, GatewayBridgeHub};
 use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use crate::extensions::telemetry::local_exec_telemetry::{
-    LocalExecRefusalCause, LocalExecRefusedReport, local_exec_refused_telemetry,
+    LocalExecProviderReport, LocalExecRefusalCause, LocalExecRefusedReport,
+    local_exec_provider_telemetry, local_exec_refused_telemetry,
 };
 
 use super::local_exec_bridge::{
-    LocalExecComputer, LocalExecProviderRegistration, LocalExecProviderInfo,
-    SandLocalExecBridge,
+    LocalExecComputer, LocalExecProviderInfo, LocalExecProviderLifecycleReport,
+    LocalExecProviderRegistration, SandLocalExecBridge,
 };
 
 pub const LOCAL_EXEC_DEPENDENCIES: &[HostExtensionId] = &[
@@ -25,9 +26,9 @@ pub fn local_exec_extension_id() -> HostExtensionId {
 
 /// Host owner for the desktop local-exec provider transport.
 ///
-/// The production Gateway provider channel is live in this slice. Permission
-/// resolution, generated exec protobuf decoding and the SandBox/user-computer
-/// adapters remain separate mapped modules and intentionally stay non-final.
+/// The production Gateway provider channel is live and reports the frozen
+/// provider lifecycle telemetry. Permission-authorized exec streaming and the
+/// Runner's external-shell/file-transfer consumers remain separate mapped work.
 #[derive(Clone)]
 pub struct HostLocalExecExtension {
     bridge: SandLocalExecBridge,
@@ -102,8 +103,55 @@ impl HostLocalExecExtension {
 pub fn start_local_exec_extension(
     logs: HostStructuredLogTelemetry,
 ) -> HostLocalExecExtension {
+    let provider_logs = logs.clone();
+    let provider_reporter = Arc::new(move |report: LocalExecProviderLifecycleReport| {
+        let telemetry = match report {
+            LocalExecProviderLifecycleReport::Registered {
+                provider_id,
+                provider_count,
+            } => LocalExecProviderReport::Registered {
+                provider_id,
+                provider_count: provider_count.try_into().unwrap_or(i64::MAX),
+            },
+            LocalExecProviderLifecycleReport::Hello {
+                provider_id,
+                provider_count,
+                hello_delay_ms,
+                computer_id_present,
+                rehello,
+                supervised,
+                variant,
+            } => LocalExecProviderReport::Hello {
+                provider_id,
+                provider_count: provider_count.try_into().unwrap_or(i64::MAX),
+                hello_delay_ms: hello_delay_ms as f64,
+                computer_id_present,
+                rehello,
+                supervised,
+                variant,
+            },
+            LocalExecProviderLifecycleReport::Detached {
+                provider_id,
+                provider_count,
+                age_ms,
+                had_hello,
+                has_heartbeat,
+                was_live,
+                emptied,
+            } => LocalExecProviderReport::Detached {
+                provider_id,
+                provider_count: provider_count.try_into().unwrap_or(i64::MAX),
+                age_ms: age_ms as f64,
+                had_hello,
+                has_heartbeat,
+                was_live,
+                emptied,
+            },
+        };
+        let _ = provider_logs.report_projection(&local_exec_provider_telemetry(&telemetry));
+    });
     HostLocalExecExtension {
-        bridge: SandLocalExecBridge::production(),
+        bridge: SandLocalExecBridge::production_with_reporter(Some(provider_reporter)),
         logs,
     }
 }

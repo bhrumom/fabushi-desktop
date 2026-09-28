@@ -110,6 +110,10 @@ pub fn local_exec_failed_telemetry(
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum LocalExecProviderReport {
+    Registered {
+        provider_id: String,
+        provider_count: i64,
+    },
     Hello {
         provider_id: String,
         provider_count: i64,
@@ -135,6 +139,14 @@ pub fn local_exec_provider_telemetry(
 ) -> HostTelemetryProjection {
     let mut metadata = BTreeMap::new();
     match report {
+        LocalExecProviderReport::Registered {
+            provider_id,
+            provider_count,
+        } => {
+            metadata.insert("phase".into(), "registered".into());
+            metadata.insert("provider_id".into(), provider_id.clone());
+            metadata.insert("provider_count".into(), provider_count.to_string());
+        }
         LocalExecProviderReport::Hello {
             provider_id,
             provider_count,

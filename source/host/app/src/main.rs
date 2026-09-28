@@ -4205,7 +4205,9 @@ fn main() {
         Some(Arc::new(|message| eprintln!("{message}"))),
     );
     let retired_permission_events = gateway_events.clone();
+    let local_exec_retirement_owner = Arc::clone(&production_extensions.local_exec);
     local_tool_permission_extension.bind_approval_retired_sink(Some(Arc::new(move |approval_id| {
+        local_exec_retirement_owner.retire_approval(approval_id);
         retired_permission_events.publish(serde_json::json!({
             "channel": "local-tool-permission.approval-retired",
             "payload": { "approvalId": approval_id },

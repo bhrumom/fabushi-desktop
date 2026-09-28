@@ -1,5 +1,8 @@
 use std::fs;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::mpsc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+use serde_json::json;
 
 use mahayana_host_runtime::extensions::local_exec::{
     local_exec_error::SandLocalExecError,
@@ -81,4 +84,60 @@ fn failure_classifier_matches_grok_spawn_errno_contract() {
             errno: Some("EPERM".into()),
         }
     );
+}
+
+#[test]
+fn local_exec_provider_lifecycle_is_persisted_through_host_telemetry() {
+    let unique = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let path = std::env::temp_dir().join(format!(
+        "fabushi-local-exec-provider-telemetry-{}-{unique}.jsonl",
+        std::process::id()
+    ));
+    let telemetry = HostTelemetryService::open_with_identity_tags(
+        &path,
+        Default::default(),
+    )
+    .expect("open telemetry");
+    let extension = start_local_exec_extension(telemetry.logs.clone());
+    let (send, receive) = mpsc::channel();
+    let registration = extension.register_provider(send);
+    let welcome = receive
+        .recv_timeout(Duration::from_millis(100))
+        .expect("welcome");
+    let provider_id = welcome["providerId"]
+        .as_str()
+        .expect("provider id")
+        .to_string();
+    extension.submit_responses(json!({
+        "providerId": provider_id,
+        "frames": [{
+            "kind": "hello",
+            "localRoot": "/Users/test",
+            "terminalsFolder": "terminals",
+            "computerId": "mac-telemetry",
+            "supervised": true,
+            "variant": "sand"
+        }]
+    }));
+    drop(registration);
+
+    let records = fs::read_to_string(&path)
+        .expect("read telemetry")
+        .lines()
+        .map(|line| serde_json::from_str::<serde_json::Value>(line).expect("telemetry record"))
+        .filter(|record| record["event"] == "sand.local_exec.provider")
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 3);
+    assert_eq!(records[0]["payload"]["metadata"]["phase"], "registered");
+    assert_eq!(records[1]["payload"]["metadata"]["phase"], "hello");
+    assert_eq!(records[1]["payload"]["metadata"]["computer_id_present"], "true");
+    assert_eq!(records[1]["payload"]["metadata"]["supervised"], "true");
+    assert_eq!(records[1]["payload"]["metadata"]["variant"], "sand");
+    assert_eq!(records[2]["payload"]["metadata"]["phase"], "detached");
+    assert_eq!(records[2]["payload"]["metadata"]["had_hello"], "true");
+    assert_eq!(records[2]["payload"]["metadata"]["emptied"], "true");
+    let _ = fs::remove_file(path);
 }
