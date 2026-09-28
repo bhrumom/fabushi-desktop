@@ -272,6 +272,12 @@ export interface ProductionMcpService extends ProductionDisposable {
   resetMcpManager(): Promise<void>;
   listRoutedTools(): Promise<unknown>;
   executeRoutedTool(request: unknown): Promise<unknown>;
+  listHostMcpServers(): Promise<unknown>;
+  listHostMcpCatalog(options?: { readonly forceRefresh?: boolean }): Promise<unknown>;
+  listHostEffectiveMcpPlugins(): Promise<unknown>;
+  installHostMcpPlugin(request: unknown): Promise<unknown>;
+  uninstallHostMcpPlugin(pluginId: string): Promise<unknown>;
+  noteHostMcpAuthCompleted(request: { readonly serverId: string; readonly accountKey: string }): Promise<unknown>;
 }
 export interface ProductionCoordinatorResyncPort {
   pushHostSettings(update: unknown): Promise<Record<string, any> | null>;
