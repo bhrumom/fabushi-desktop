@@ -19685,7 +19685,7 @@
       "targetPath": "source/host/src/workflows/workflow_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "761b6c34931e69a6c8e7a818525172dd96819ac4",
       "architecturalRole": "host/workflows",
       "processOrPackage": "mahayana-host",
@@ -19715,7 +19715,7 @@
         "source/host/tests/agent_session_contract.rs",
         "source/host/tests/watched_directory_contract.rs"
       ],
-      "notes": "Rust FileWorkflowStore owns user workflow + automation projection, per-agent enablement, CRUD, Markdown/live-source import and legacy per-agent migration. Its embedded automation store now receives the live Session timezone resolver so triggered workflows derive timezone-aware nextRunAt. Final is withheld for managed/plugin skill cache aggregation/watchers, published-plugin editing and local-skill port completeness. Frozen portLocalSkills parity is now implemented with deduped cwd/home CLAUDE.md, AGENTS.md, .claude/CLAUDE.md and cwd .cursor/rules .md/.mdc discovery, delegating each source to live-source import. Managed/plugin cache aggregation/watchers and published-plugin editing remain non-final. Global workflow watching/debounce and stat-cache-backed parse invalidation are now production-wired; this row remains non-final specifically for managed/plugin skill aggregation/watchers and published-plugin editing."
+      "notes": "Rust FileWorkflowStore matches the frozen Grok 0.18 workflow-store ownership and behavior: user workflows and automations, per-agent enablement, legacy migration, local-skill import, managed-skill aggregation, plugin-skill aggregation with user > managed > plugin precedence, stat-keyed cache invalidation, managed/plugin directory watchers, helper-script discovery, disable-model-invocation projection, and editing only plugin skills published by the current user while preserving unrelated frontmatter. Exact focused contracts cover aggregation, precedence, published-plugin editing, frontmatter preservation, cache invalidation, and both managed/plugin watcher notifications."
     },
     {
       "referencePath": "source/internal/host-extensions.ts",
@@ -39685,5 +39685,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-28T02:45:00+08:00"
+  "generatedAt": "2026-09-28T16:27:00+08:00"
 }
