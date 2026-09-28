@@ -13,6 +13,9 @@ use crate::extensions::auth::extension::{
     HostAuthExtension, start_host_auth_extension_with_options,
 };
 use crate::extensions::auth::user_full_name_service::production_user_full_name_fetch;
+use crate::extensions::automations::listener_connect_watcher_production::ListenerConnectedCallback;
+use crate::extensions::automations::production::{FireDispatch, ProductionLog, RelayEventSink, RelayListeners};
+use crate::extensions::automations::production_lifecycle::ProductionAutomationsLifecycle;
 use crate::extensions::box_lifecycle::box_lifecycle_service::BoxLifecycleService;
 use crate::extensions::box_lifecycle::extension::start_box_lifecycle_extension;
 use crate::extensions::box_lifecycle::production::{
@@ -111,6 +114,7 @@ use crate::r#box::production::ProductionBoxEnvironment;
 /// until their real production owners exist.
 pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Auth,
+    HostExtensionId::Automations,
     HostExtensionId::Telemetry,
     HostExtensionId::ContentSearch,
     HostExtensionId::Settings,
@@ -183,6 +187,7 @@ pub struct ProductionHostExtensions {
     pub cloud_agents: CloudAgentsExtension,
     backend_url: String,
     mcp: Mutex<Option<McpExtensionRuntime>>,
+    automations: Mutex<Option<Arc<ProductionAutomationsLifecycle>>>,
 }
 
 pub fn start_production_host_extensions(
@@ -319,11 +324,53 @@ pub fn start_production_host_extensions(
         cloud_agents,
         backend_url,
         mcp: Mutex::new(None),
+        automations: Mutex::new(None),
     })
 }
 
 
 impl ProductionHostExtensions {
+    pub fn start_automations(
+        &self,
+        listeners: RelayListeners,
+        relay_sink: RelayEventSink,
+        fire_dispatch: FireDispatch,
+        on_connected: ListenerConnectedCallback,
+        log: ProductionLog,
+    ) -> Result<Arc<ProductionAutomationsLifecycle>, String> {
+        let mut slot = self
+            .automations
+            .lock()
+            .map_err(|_| "production Automations runtime lock poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("production Automations runtime is already started".into());
+        }
+        let runtime = ProductionAutomationsLifecycle::start(
+            self.backend_url.clone(),
+            Arc::clone(&self.auth),
+            self.notify_bus.clone(),
+            listeners,
+            relay_sink,
+            fire_dispatch,
+            on_connected,
+            log,
+        )?;
+        *slot = Some(Arc::clone(&runtime));
+        Ok(runtime)
+    }
+
+    pub fn stop_automations(&self) -> Result<(), String> {
+        let runtime = self
+            .automations
+            .lock()
+            .map_err(|_| "production Automations runtime lock poisoned".to_string())?
+            .take();
+        if let Some(runtime) = runtime {
+            runtime.stop();
+        }
+        Ok(())
+    }
+
     pub fn start_mcp(
         &self,
         sand_root_dir: &Path,

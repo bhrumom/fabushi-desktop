@@ -11,3 +11,5 @@ pub mod production;
 pub mod extension;
 pub mod listener_integrations;
 pub mod sand_automation_cloud_sync;
+
+pub mod production_lifecycle;

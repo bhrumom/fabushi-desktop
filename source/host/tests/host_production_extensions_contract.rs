@@ -32,6 +32,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     );
     assert_eq!(HOST_EXTENSION_ORDER.len(), 35);
     assert!(shipping.contains(&HostExtensionId::Auth));
+    assert!(shipping.contains(&HostExtensionId::Automations));
     assert!(shipping.contains(&HostExtensionId::Settings));
     assert!(shipping.contains(&HostExtensionId::BrowserUa));
     assert!(shipping.contains(&HostExtensionId::CodebaseTelemetry));
@@ -166,4 +167,21 @@ fn mcp_plugin_skills_have_one_shipping_production_owner() {
         !SHIPPING_HOST.contains("McpHostService::new(mcp_manager_backend, None)"),
         "shipping Host must never bypass Plugin Skills with a None port"
     );
+}
+
+
+#[test]
+fn automations_have_one_shipping_production_owner() {
+    for needle in [
+        "HostExtensionId::Automations",
+        "automations: Mutex<Option<Arc<ProductionAutomationsLifecycle>>>",
+        "pub fn start_automations(",
+        "ProductionAutomationsLifecycle::start(",
+        "pub fn stop_automations(&self)",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own the Automations production lifecycle: {needle}"
+        );
+    }
 }
