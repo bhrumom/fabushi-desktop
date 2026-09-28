@@ -64,6 +64,9 @@ use crate::extensions::trays::extension::{
 use crate::extensions::webauthn_proxy::extension::{
     HostWebAuthnProxyExtension, start_webauthn_proxy_extension,
 };
+use crate::extensions::wallpaper::extension::{
+    HostWallpaperExtension, start_wallpaper_extension,
+};
 use crate::host_event_bus::SandHostEventBus;
 use crate::production_binding_providers::production_cloud_agent_trace_converter;
 
@@ -93,6 +96,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::LocalToolPermission,
     HostExtensionId::LocalExec,
     HostExtensionId::Inference,
+    HostExtensionId::Wallpaper,
 ];
 
 pub struct ProductionBrowserUaLog;
@@ -121,6 +125,8 @@ pub struct ProductionHostExtensions {
     pub auth: Arc<HostAuthExtension>,
     pub settings: Arc<SettingsService>,
     pub experiments: Arc<HostExperimentsExtension>,
+    pub browser_ua: BrowserUaExtensionRuntime,
+    pub wallpaper: HostWallpaperExtension,
     pub inference: Arc<ProductionInferenceExtension>,
     pub content_search: Arc<ProductionContentSearchExtension>,
     pub local_tool_permission: Arc<HostLocalToolPermissionExtension>,
@@ -165,6 +171,14 @@ pub fn start_production_host_extensions(
     );
     let settings = start_settings_extension();
     let experiments = Arc::new(start_host_experiments_extension());
+    let browser_ua = start_production_browser_ua(
+        Arc::clone(&auth),
+        Arc::clone(&experiments),
+    );
+    let wallpaper = start_wallpaper_extension(
+        Arc::clone(&settings),
+        Arc::new(|message| eprintln!("mahayana-host-wallpaper {message}")),
+    );
     let inference = Arc::new(start_production_inference_extension(
         Arc::clone(&auth),
         Arc::clone(&experiments),
@@ -247,6 +261,8 @@ pub fn start_production_host_extensions(
         auth,
         settings,
         experiments,
+        browser_ua,
+        wallpaper,
         inference,
         content_search,
         local_tool_permission,
