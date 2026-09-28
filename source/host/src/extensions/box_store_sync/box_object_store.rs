@@ -132,6 +132,20 @@ impl AgentStoreObjectStore {
         }
     }
 
+    fn known_write_precondition(&self, key: &str) -> Option<AgentStoreWritePrecondition> {
+        let baselines = self
+            .baselines
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        match baselines.get(key) {
+            Some(AgentStoreBaseline::Absent) => Some(AgentStoreWritePrecondition::ExpectAbsent),
+            Some(AgentStoreBaseline::Present { etag, .. }) => {
+                Some(AgentStoreWritePrecondition::BaseEtag(etag.clone()))
+            }
+            None => None,
+        }
+    }
+
     fn probe_precondition(&self, key: &str) -> Result<AgentStoreWritePrecondition, String> {
         match self.client.probe_object(&self.source_id, key)? {
             AgentStoreObjectProbe::Absent => Ok(AgentStoreWritePrecondition::ExpectAbsent),
@@ -171,7 +185,10 @@ impl BoxObjectStore for AgentStoreObjectStore {
     }
 
     fn put(&self, key: &str, bytes: &[u8]) -> Result<(), String> {
-        let precondition = self.probe_precondition(key)?;
+        let precondition = match self.known_write_precondition(key) {
+            Some(precondition) => precondition,
+            None => self.probe_precondition(key)?,
+        };
         let outcome = self
             .client
             .put_bytes(&self.source_id, key, bytes, precondition)?;

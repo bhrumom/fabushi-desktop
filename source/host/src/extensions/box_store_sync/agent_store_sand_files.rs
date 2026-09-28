@@ -573,6 +573,41 @@ impl AgentStoreClient {
         }
     }
 
+    pub fn presign_read_batch(
+        &self,
+        source_id: &str,
+        rel_paths: &[String],
+    ) -> Result<HashMap<String, (String, i64)>, String> {
+        let mut by_rel_path = HashMap::new();
+        for chunk in rel_paths.chunks(PRESIGN_READ_BATCH_MAX) {
+            let canonical = chunk
+                .iter()
+                .map(|path| normalize_rel_path(path))
+                .collect::<Result<Vec<_>, _>>()?;
+            let token = self.token_for(source_id)?;
+            let response: PresignAgentStoreReadsResponseProto = self.agent_rpc(
+                source_id,
+                PRESIGN_AGENT_STORE_READS_PATH,
+                PresignAgentStoreReadsRequestProto {
+                    agent_id: String::new(),
+                    rel_paths: canonical,
+                    share_id: None,
+                    store_id: Some(token.store_id),
+                },
+            )?;
+            for instruction in response.instructions {
+                let rel_path = normalize_rel_path(&instruction.rel_path)?;
+                validate_presigned_url(
+                    &self.inner.deps.backend_url,
+                    &instruction.url,
+                    &rel_path,
+                )?;
+                by_rel_path.insert(rel_path, (instruction.url, instruction.expires_at_ms));
+            }
+        }
+        Ok(by_rel_path)
+    }
+
     pub fn list_objects(&self, source_id: &str, prefix: &str) -> Result<Vec<String>, String> {
         let normalized_prefix = if prefix.trim().is_empty() {
             String::new()
