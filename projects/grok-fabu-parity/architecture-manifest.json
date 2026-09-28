@@ -12953,60 +12953,87 @@
       "targetPath": "source/host/src/extensions/mcp/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b9449811f6afc4d9c9becd61bf3cb8703b4714f7",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/mcp/extension.rs",
         "source/host/src/extensions/mcp/plugin_skills.rs",
-        "source/host/src/extensions/mcp/legacy_live_references.rs"
+        "source/host/src/extensions/mcp/legacy_live_references.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/mcp/coordinator_relay.rs",
+        "source/electron-main/mcp/host-plugin-skills-loader.ts",
+        "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs"
       ],
       "testEvidence": [
         "source/host/tests/mcp_extension_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/host_production_extensions_contract.rs",
+        "source/host/tests/mcp_coordinator_relay_contract.rs",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+        "source/electron-main/coordinator/coordinator-executors.test.ts"
       ],
-      "notes": "Rust Host now owns the frozen MCP extension lifecycle boundary: dependency identity, auth-gated plugin-skills startup, renewal/first-credential handling, startup-vs-refresh polling, startup-success legacy sweep hook, and idempotent poll/auth/plugin/service shutdown. Final remains withheld until production.rs supplies real Auth/Experiments/ForeverBox/Settings/Telemetry adapters and McpHostService."
+      "notes": "Implemented. Rust Mahayana Host owns the frozen MCP extension lifecycle in the shipping ProductionHostExtensions graph: dependency identity, legacy auth cleanup, auth-gated Plugin Skills startup, immediate startup sync, first-credential/auth-change resync, daily refresh, startup-success legacy live-reference sweep, Skill Publish composition, and idempotent shutdown. The Cursor marketplace SDK edge remains in Electron and is reached only through the independent allowlisted Coordinator relay."
     },
     {
       "referencePath": "source/host/extensions/mcp/legacy-live-references.ts",
       "targetPath": "source/host/src/extensions/mcp/legacy_live_references.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f55730f804b6b80b2d13b734e25619c8d92796db",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/mcp/legacy_live_references.rs",
         "source/host/src/extensions/mcp/plugin_skills_cache.rs",
-        "source/host/src/workflows/workflow_library.rs"
+        "source/host/src/workflows/workflow_library.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/mcp/coordinator_relay.rs",
+        "source/electron-main/mcp/host-plugin-skills-loader.ts",
+        "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs"
       ],
       "testEvidence": [
         "source/host/tests/legacy_live_references_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/host_production_extensions_contract.rs",
+        "source/host/tests/mcp_coordinator_relay_contract.rs",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+        "source/electron-main/coordinator/coordinator-executors.test.ts"
       ],
-      "notes": "Rust Host now owns frozen legacy live-reference identification, GitHub blob URL normalization, plugin+skill-tail materialization matching, cache projection, and selective GlobalWorkflowLibrary retirement. Final remains withheld until MCP production/plugin-skills composition drives the marketplace/auth sweep at startup/refresh."
+      "notes": "Implemented. Rust Host owns frozen live-reference normalization, materialized skill matching, selective GlobalWorkflowLibrary retirement, uninstall/install cleanup, and startup-success sweep. The sweep consumes the shipping MCP catalog through McpManagerBackend after Plugin Skills materialization, so only live references whose plugin+skill tails are currently materialized are retired."
     },
     {
       "referencePath": "source/host/extensions/mcp/mcp-service.ts",
       "targetPath": "source/host/src/extensions/mcp/mcp_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "93399693a169d6ce3914b42b8fd885acc5a9ca42",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/mcp/mcp_service.rs",
         "source/host/src/extensions/mcp/plugin_skills.rs",
-        "source/host/src/extensions/mcp/box_mcp_exec.rs"
+        "source/host/src/extensions/mcp/box_mcp_exec.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/mcp/coordinator_relay.rs",
+        "source/electron-main/mcp/host-plugin-skills-loader.ts",
+        "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs"
       ],
       "testEvidence": [
         "source/host/tests/mcp_service_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/host_production_extensions_contract.rs",
+        "source/host/tests/mcp_coordinator_relay_contract.rs",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+        "source/electron-main/coordinator/coordinator-executors.test.ts"
       ],
-      "notes": "Rust Host now owns the frozen MCP service semantic boundary: installed server and plugin projection, effective-install attribution, detail force-refresh fallback, install/uninstall plugin-skill/live-reference coordination, Box kick-only discovery plus terminal follow-up fanout, auth-completion/server-update listeners, external-auth completion forwarding and idempotent disposal. Listener state is Arc-owned with no unsafe raw pointers. Final remains withheld until production.rs supplies authenticated Dashboard/plugin-manager, ForeverBox/CapableBox execution, settings/experiments and telemetry adapters."
+      "notes": "Implemented. Rust Host owns the frozen MCP service semantic boundary and the shipping service is constructed with a real PluginSkillsPort, not None: installed/catalog/effective projection, force-refresh detail lookup, install/uninstall Plugin Skills coordination and live-reference cleanup, Box discovery/follow-up fanout, auth/server events, external-auth forwarding, desktop sync/status, and idempotent disposal. The single Electron SandMcpManager remains behind the independent Coordinator relay."
     },
     {
       "referencePath": "source/host/extensions/mcp/plugin-skills-cache.ts",
@@ -13032,38 +13059,56 @@
       "targetPath": "source/host/src/extensions/mcp/plugin_skills.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "7a3e11bfd40f73b45398c87f5621e60305950017",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/mcp/plugin_skills.rs",
-        "source/host/src/extensions/mcp/plugin_skills_cache.rs"
+        "source/host/src/extensions/mcp/plugin_skills_cache.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/mcp/coordinator_relay.rs",
+        "source/electron-main/mcp/host-plugin-skills-loader.ts",
+        "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs"
       ],
       "testEvidence": [
         "source/host/tests/plugin_skills_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/host_production_extensions_contract.rs",
+        "source/host/tests/mcp_coordinator_relay_contract.rs",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+        "source/electron-main/coordinator/coordinator-executors.test.ts"
       ],
-      "notes": "Rust Host now owns the frozen plugin-skill projection/cache service core: stable plugin/skill IDs, publisher/team facts, auth-block de-duplication, listed/indexed cache pruning, preservation of listed-but-temporarily-unloaded records, serialized sync passes and sync telemetry. Final remains withheld until production binds the authenticated Dashboard/marketplace loader, sparse clone/auth configuration, startup/auth-change/daily scheduling and legacy-reference sweep."
+      "notes": "Implemented. Rust Host owns stable Plugin/Skill projection, cache/index, publisher/team facts, auth-block deduplication, listed/indexed pruning, preservation of listed-but-temporarily-unloaded records, serialized/coalesced sync, startup/auth-change/daily scheduling, and sync status. The Grok Cursor Dashboard/effective-user-plugin + marketplace materialization algorithm is implemented as a narrow TypeScript SDK edge in source/electron-main/mcp/host-plugin-skills-loader.ts and consumed through the correlated Coordinator relay."
     },
     {
       "referencePath": "source/host/extensions/mcp/production.ts",
       "targetPath": "source/host/src/extensions/mcp/production.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f6e50b2474adcebb33dbb52291c7be5d5256f0a9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/mcp/production.rs"
+        "source/host/src/extensions/mcp/production.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/mcp/coordinator_relay.rs",
+        "source/electron-main/mcp/host-plugin-skills-loader.ts",
+        "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs"
       ],
       "testEvidence": [
         "source/host/tests/mcp_production_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/host_production_extensions_contract.rs",
+        "source/host/tests/mcp_coordinator_relay_contract.rs",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+        "source/electron-main/coordinator/coordinator-executors.test.ts"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Mahayana Host now owns the recovered production MCP publish RPC client, authenticated renewal adapter, real plugin-skills polling lifecycle, and skill-publish construction. This advances the frozen production.ts mapping from planned to existing-needs-parity; it is intentionally not marked implemented until the full production extras composition (plugin loader/service/legacy cleanup+sweep) is wired through the shipping Host extension registry."
+      "notes": "Implemented. Shipping ProductionHostExtensions composes the Rust MCP lifecycle with real Host auth renewal, legacy auth-file cleanup, real daily polling, SandPluginSkillsService, McpHostService(Some(plugin skills)), Skill Publish, startup-success legacy live-reference sweep, and centralized stop ownership. Cursor Dashboard/marketplace Node SDK materialization remains an Electron SDK edge while Host lifecycle/state stays Rust, preserving Grok Coordinator/Host fault boundaries."
     },
     {
       "referencePath": "source/host/extensions/mcp/skill-publish.ts",
