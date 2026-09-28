@@ -14,6 +14,7 @@ use super::sand_agent_management_tools::{
 };
 use super::sand_browser_tools::{BrowserToolExecutor, SandBrowserToolBridge};
 use super::sand_computer_tool::{ComputerToolExecutor, SandComputerToolBridge};
+use super::sand_file_transfer_tools::{FileTransferExecutor, SandFileTransferToolBridge};
 use super::sand_reaction_tool::{ReactionSink, ReactionToolBridge};
 use super::sand_spotlight_tools::SpotlightedRoutedToolBridge;
 use super::sand_state_tool::{SandStateToolBridge, SandStateWriter};
@@ -33,6 +34,7 @@ pub struct TurnToolsetDependencies {
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     pub browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     pub computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
+    pub file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
     pub send_message_sink: Option<Arc<dyn SendMessageSink>>,
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
     pub agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
@@ -59,6 +61,10 @@ pub fn build_turn_toolset(
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.computer_executor {
         Some(executor) => Arc::new(SandComputerToolBridge::new(bridge, executor)),
+        None => bridge,
+    };
+    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.file_transfer_executor {
+        Some(executor) => Arc::new(SandFileTransferToolBridge::new(bridge, executor)),
         None => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.reaction_sink {

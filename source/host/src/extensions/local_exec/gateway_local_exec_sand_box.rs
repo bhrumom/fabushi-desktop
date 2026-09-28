@@ -8,6 +8,11 @@ use super::local_exec_bridge::{
     LocalExecComputer, SandLocalExecBridge, SAND_NO_LOCAL_MACHINE_MESSAGE,
 };
 use super::local_exec_error::SandLocalExecError;
+use crate::extensions::local_tool_permission::extension::HostLocalToolPermissionExtension;
+use crate::extensions::local_tool_permission::local_tool_permission_controller::{
+    SandLocalToolRequest, SandLocalToolScope,
+};
+use crate::r#box::box_transfer::TransferBox;
 
 pub const FALLBACK_TERMINALS_FOLDER: &str = "terminals";
 pub const DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES: usize = 100 * 1024 * 1024;
@@ -24,15 +29,60 @@ pub fn local_exec_file_too_large_message(actual_bytes: usize, max_bytes: usize) 
     )
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct GatewayLocalToolScope {
+    pub agent_id: Option<String>,
+    pub tool_call_id: Option<String>,
+    pub action: Option<String>,
+}
+
 pub trait GatewayLocalToolGate: Send + Sync {
     fn blocked_reason(&self) -> Option<String>;
     fn requires_approval(&self) -> bool;
     fn authorize(
         &self,
-        agent_id: Option<&str>,
+        scope: &GatewayLocalToolScope,
         action: &str,
         target: &str,
     ) -> Result<Option<String>, SandLocalExecError>;
+}
+
+impl GatewayLocalToolGate for HostLocalToolPermissionExtension {
+    fn blocked_reason(&self) -> Option<String> {
+        HostLocalToolPermissionExtension::blocked_reason(self)
+    }
+
+    fn requires_approval(&self) -> bool {
+        HostLocalToolPermissionExtension::requires_approval(self)
+    }
+
+    fn authorize(
+        &self,
+        scope: &GatewayLocalToolScope,
+        action: &str,
+        target: &str,
+    ) -> Result<Option<String>, SandLocalExecError> {
+        let sand_scope = scope.agent_id.as_ref().map(|agent_id| SandLocalToolScope {
+            agent_id: agent_id.clone(),
+            tool_call_id: scope.tool_call_id.clone(),
+            action: scope.action.clone(),
+            direction_epoch: None,
+        });
+        let decision = HostLocalToolPermissionExtension::authorize(
+            self,
+            sand_scope.as_ref(),
+            &SandLocalToolRequest::simple(action, target),
+        );
+        if decision.allowed {
+            Ok(decision.approval_id)
+        } else {
+            Err(SandLocalExecError::new(
+                decision
+                    .reason
+                    .unwrap_or_else(|| "Local tool permission denied".to_string()),
+            ))
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -105,6 +155,22 @@ impl GatewayLocalExecSandBox {
         box_path: &str,
         data: &[u8],
     ) -> Result<(), SandLocalExecError> {
+        self.upload_file_with_scope(
+            &GatewayLocalToolScope {
+                agent_id: agent_id.map(str::to_string),
+                ..GatewayLocalToolScope::default()
+            },
+            box_path,
+            data,
+        )
+    }
+
+    pub fn upload_file_with_scope(
+        &self,
+        scope: &GatewayLocalToolScope,
+        box_path: &str,
+        data: &[u8],
+    ) -> Result<(), SandLocalExecError> {
         if data.len() > self.max_file_bytes {
             return Err(SandLocalExecError::new(local_exec_file_too_large_message(
                 data.len(),
@@ -113,10 +179,10 @@ impl GatewayLocalExecSandBox {
         }
         self.check_blocked()?;
         self.bridge
-            .assert_computer_available(self.computer_id.as_deref(), "upload", agent_id)?;
+            .assert_computer_available(self.computer_id.as_deref(), "upload", scope.agent_id.as_deref())?;
         let approval_id = self
             .gate
-            .authorize(agent_id, "write-file", box_path)?;
+            .authorize(scope, "write-file", box_path)?;
         let mut frame = json!({
             "kind": "upload",
             "path": box_path,
@@ -153,12 +219,26 @@ impl GatewayLocalExecSandBox {
         agent_id: Option<&str>,
         box_path: &str,
     ) -> Result<Vec<u8>, SandLocalExecError> {
+        self.download_file_with_scope(
+            &GatewayLocalToolScope {
+                agent_id: agent_id.map(str::to_string),
+                ..GatewayLocalToolScope::default()
+            },
+            box_path,
+        )
+    }
+
+    pub fn download_file_with_scope(
+        &self,
+        scope: &GatewayLocalToolScope,
+        box_path: &str,
+    ) -> Result<Vec<u8>, SandLocalExecError> {
         self.check_blocked()?;
         self.bridge
-            .assert_computer_available(self.computer_id.as_deref(), "download", agent_id)?;
+            .assert_computer_available(self.computer_id.as_deref(), "download", scope.agent_id.as_deref())?;
         let approval_id = self
             .gate
-            .authorize(agent_id, "read-file", box_path)?;
+            .authorize(scope, "read-file", box_path)?;
         let mut frame = json!({
             "kind": "download",
             "path": box_path,
@@ -212,6 +292,50 @@ impl GatewayLocalExecSandBox {
             Some(reason) => Err(SandLocalExecError::new(reason)),
             None => Ok(()),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LocalExecTransferContext {
+    pub agent_id: String,
+    pub tool_call_id: String,
+}
+
+impl TransferBox<LocalExecTransferContext> for GatewayLocalExecSandBox {
+    type Error = SandLocalExecError;
+
+    fn download_file(
+        &self,
+        ctx: &LocalExecTransferContext,
+        _agent_id: &str,
+        path: &str,
+    ) -> Result<Vec<u8>, Self::Error> {
+        self.download_file_with_scope(
+            &GatewayLocalToolScope {
+                agent_id: Some(ctx.agent_id.clone()),
+                tool_call_id: Some(ctx.tool_call_id.clone()),
+                action: None,
+            },
+            path,
+        )
+    }
+
+    fn upload_file(
+        &self,
+        ctx: &LocalExecTransferContext,
+        _agent_id: &str,
+        path: &str,
+        data: &[u8],
+    ) -> Result<(), Self::Error> {
+        self.upload_file_with_scope(
+            &GatewayLocalToolScope {
+                agent_id: Some(ctx.agent_id.clone()),
+                tool_call_id: Some(ctx.tool_call_id.clone()),
+                action: None,
+            },
+            path,
+            data,
+        )
     }
 }
 

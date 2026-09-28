@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::{
     DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, GatewayLocalExecSandBox, GatewayLocalToolGate,
+    GatewayLocalToolScope,
     create_bridge_user_computers, local_exec_file_too_large_message,
 };
 use mahayana_host_runtime::extensions::local_exec::local_exec_bridge::SandLocalExecBridge;
@@ -27,12 +28,12 @@ impl GatewayLocalToolGate for FakeGate {
 
     fn authorize(
         &self,
-        agent_id: Option<&str>,
+        scope: &GatewayLocalToolScope,
         action: &str,
         target: &str,
     ) -> Result<Option<String>, SandLocalExecError> {
         self.calls.lock().expect("calls").push((
-            agent_id.map(str::to_string),
+            scope.agent_id.clone(),
             action.to_string(),
             target.to_string(),
         ));

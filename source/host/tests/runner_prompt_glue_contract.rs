@@ -76,7 +76,7 @@ impl RunnerBoxResourcePort for BoxResources {
     }
 }
 
-fn transfer_controller() -> FileTransferController<MemoryBox> {
+fn transfer_controller() -> FileTransferController<MemoryBox, MemoryBox> {
     let agent = Arc::new(MemoryBox::default());
     let computer = Arc::new(MemoryBox::default());
     FileTransferController {

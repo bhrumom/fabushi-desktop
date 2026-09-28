@@ -13,6 +13,7 @@ use crate::runner::sand_action_audit::{ActionAuditSink, RoutedMcpAuditConfig};
 use crate::runner::tools::sand_reaction_tool::ReactionSink;
 use crate::runner::tools::sand_browser_tools::BrowserToolExecutor;
 use crate::runner::tools::sand_computer_tool::ComputerToolExecutor;
+use crate::runner::tools::sand_file_transfer_tools::FileTransferExecutor;
 use crate::runner::tools::send_message_tool::SendMessageSink;
 use crate::runner::turn_agent_composition::TurnAgentComposition;
 use crate::runner::turn_observation::TurnObservationHandle;
@@ -42,6 +43,7 @@ pub struct ProductionRunnerCompositionInput {
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     pub browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     pub computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
+    pub file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
     pub send_message_sink: Option<Arc<dyn SendMessageSink>>,
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
     pub cloud_agent_tool: Option<CloudAgentToolDependencies>,
@@ -88,6 +90,9 @@ pub fn create_production_runner_composition(
     }
     if let Some(computer_executor) = input.computer_executor {
         composition = composition.with_computer_executor(computer_executor);
+    }
+    if let Some(file_transfer_executor) = input.file_transfer_executor {
+        composition = composition.with_file_transfer_executor(file_transfer_executor);
     }
     if let Some(reaction_sink) = input.reaction_sink {
         composition = composition.with_reaction_sink(reaction_sink);

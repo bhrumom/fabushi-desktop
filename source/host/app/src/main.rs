@@ -52,6 +52,7 @@ use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
 };
 use mahayana_host_runtime::extensions::memory::agent_state::SandAgentState;
 use mahayana_host_runtime::extensions::telemetry::HostTelemetryProjection;
+use mahayana_host_runtime::extensions::local_exec::extension::HostLocalExecExtension;
 use mahayana_host_runtime::extensions::local_tool_permission::extension::{
     HostLocalToolPermissionExtension,
 };
@@ -192,6 +193,8 @@ use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     to_browser_review_action,
 };
 use mahayana_host_runtime::runner::host_computer_tool_dependencies::ProductionComputerToolExecutor;
+use mahayana_host_runtime::runner::host_file_transfer_dependencies::ProductionFileTransferExecutor;
+use mahayana_host_runtime::runner::tools::sand_file_transfer_tools::FileTransferExecutor;
 use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     ComputerAutoReviewCallback, ComputerPersistImageCallback, ComputerToolExecutor,
     to_exact_action_value, validate_computer_action,
@@ -735,6 +738,7 @@ struct UnifiedGatewayApi {
     ack_obligations: Arc<AckObligations>,
     agent_deletion_runtime: AgentDeletionRuntimeDeps,
     forever_box: Arc<ForeverBoxService>,
+    local_exec: Arc<HostLocalExecExtension>,
     session_handoff: BoxHandoffService,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     trays: Arc<HostTraysExtension>,
@@ -768,6 +772,8 @@ struct LocalRoutedRunnerDeps {
     ack_obligations: Arc<AckObligations>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     forever_box: Arc<ForeverBoxService>,
+    local_exec: Arc<HostLocalExecExtension>,
+    local_tool_permission: Arc<HostLocalToolPermissionExtension>,
     session_handoff: BoxHandoffService,
     trays: Arc<HostTraysExtension>,
     telemetry_logs: HostStructuredLogTelemetry,
@@ -793,6 +799,8 @@ impl UnifiedGatewayApi {
             ack_obligations: Arc::clone(&self.ack_obligations),
             transcript_runtime: Arc::clone(&self.transcript_runtime),
             forever_box: Arc::clone(&self.forever_box),
+            local_exec: Arc::clone(&self.local_exec),
+            local_tool_permission: Arc::clone(&self.local_tool_permission),
             session_handoff: self.session_handoff.clone(),
             trays: Arc::clone(&self.trays),
             telemetry_logs: self.telemetry_logs.clone(),
@@ -952,6 +960,8 @@ fn run_local_group_member_turn(
         deps.ack_obligations,
         deps.transcript_runtime,
         deps.forever_box,
+        deps.local_exec,
+        deps.local_tool_permission,
         deps.session_handoff,
         deps.trays,
         deps.telemetry_logs,
@@ -1116,6 +1126,8 @@ fn run_local_automation_turn(
         deps.ack_obligations,
         deps.transcript_runtime,
         deps.forever_box,
+        deps.local_exec,
+        deps.local_tool_permission,
         deps.session_handoff,
         deps.trays,
         deps.telemetry_logs,
@@ -1617,6 +1629,8 @@ fn start_routed_provider_task(
     ack_obligations: Arc<AckObligations>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     forever_box: Arc<ForeverBoxService>,
+    local_exec: Arc<HostLocalExecExtension>,
+    local_tool_permission: Arc<HostLocalToolPermissionExtension>,
     session_handoff: BoxHandoffService,
     trays: Arc<HostTraysExtension>,
     telemetry_logs: HostStructuredLogTelemetry,
@@ -2448,6 +2462,14 @@ fn start_routed_provider_task(
                     .with_auto_review_callback(computer_auto_review)
                     .with_persist_image_callback(computer_persist_image),
             );
+            let file_transfer_executor: Arc<dyn FileTransferExecutor> = Arc::new(
+                ProductionFileTransferExecutor::new(
+                    Arc::clone(&forever_box),
+                    Arc::clone(&local_exec),
+                    Arc::clone(&local_tool_permission),
+                    agent_id.clone(),
+                ),
+            );
             let worker_provider_usage = Arc::new(Mutex::new(None::<ProviderTokenUsage>));
             let usage_store = Arc::clone(&worker_provider_usage);
             let usage_settings = Arc::clone(&settings);
@@ -2484,6 +2506,7 @@ fn start_routed_provider_task(
                     box_resources: Some(box_resources),
                     browser_executor: Some(browser_executor),
                     computer_executor: Some(computer_executor),
+                    file_transfer_executor: Some(file_transfer_executor),
                     send_message_sink: Some(send_message_sink),
                     reaction_sink: Some(reaction_sink),
                     cloud_agent_tool: Some(cloud_agent_tool),
@@ -3208,6 +3231,8 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.ack_obligations),
                 Arc::clone(&self.transcript_runtime),
                 Arc::clone(&self.forever_box),
+                Arc::clone(&self.local_exec),
+                Arc::clone(&self.local_tool_permission),
                 self.session_handoff.clone(),
                 Arc::clone(&self.trays),
                 self.telemetry_logs.clone(),
@@ -3642,6 +3667,8 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.ack_obligations),
                 Arc::clone(&self.transcript_runtime),
                 Arc::clone(&self.forever_box),
+                Arc::clone(&self.local_exec),
+                Arc::clone(&self.local_tool_permission),
                 self.session_handoff.clone(),
                 Arc::clone(&self.trays),
                 self.telemetry_logs.clone(),
@@ -4396,6 +4423,8 @@ fn main() {
         ack_obligations: Arc::clone(&ack_obligations),
         transcript_runtime: Arc::clone(&transcript_runtime),
         forever_box: Arc::clone(&forever_box),
+        local_exec: Arc::clone(&local_exec_extension),
+        local_tool_permission: Arc::clone(&local_tool_permission_extension),
         session_handoff: session_handoff.clone(),
         trays: Arc::clone(&production_extensions.trays),
         telemetry_logs: host_telemetry.logs.clone(),
@@ -4503,6 +4532,7 @@ fn main() {
             ack_obligations: Arc::clone(&ack_obligations),
             agent_deletion_runtime,
             forever_box: Arc::clone(&forever_box),
+            local_exec: Arc::clone(&local_exec_extension),
             session_handoff: session_handoff.clone(),
             webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
             trays: Arc::clone(&production_extensions.trays),

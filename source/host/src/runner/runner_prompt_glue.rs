@@ -13,14 +13,14 @@ use super::prompt_collector_glue::{
 use super::tools::sand_file_transfer_tools::FileTransferController;
 
 #[derive(Debug, Clone)]
-pub struct RunnerPromptGlue<BoxType> {
-    file_transfer_controller: FileTransferController<BoxType>,
+pub struct RunnerPromptGlue<AgentBoxType, UserBoxType> {
+    file_transfer_controller: FileTransferController<AgentBoxType, UserBoxType>,
     mcp_text_spill_enabled: bool,
 }
 
-impl<BoxType> RunnerPromptGlue<BoxType> {
+impl<AgentBoxType, UserBoxType> RunnerPromptGlue<AgentBoxType, UserBoxType> {
     pub fn new(
-        file_transfer_controller: FileTransferController<BoxType>,
+        file_transfer_controller: FileTransferController<AgentBoxType, UserBoxType>,
         mcp_text_spill_enabled: bool,
     ) -> Self {
         Self {
@@ -30,12 +30,12 @@ impl<BoxType> RunnerPromptGlue<BoxType> {
     }
 
     pub fn from_environment(
-        file_transfer_controller: FileTransferController<BoxType>,
+        file_transfer_controller: FileTransferController<AgentBoxType, UserBoxType>,
     ) -> Self {
         Self::new(file_transfer_controller, is_large_output_spill_enabled())
     }
 
-    pub fn file_transfer_controller(&self) -> &FileTransferController<BoxType> {
+    pub fn file_transfer_controller(&self) -> &FileTransferController<AgentBoxType, UserBoxType> {
         &self.file_transfer_controller
     }
 
@@ -84,16 +84,17 @@ impl<BoxType> RunnerPromptGlue<BoxType> {
     }
 }
 
-pub fn create_runner_prompt_glue<BoxType>(
-    file_transfer_controller: FileTransferController<BoxType>,
-) -> RunnerPromptGlue<BoxType> {
+pub fn create_runner_prompt_glue<AgentBoxType, UserBoxType>(
+    file_transfer_controller: FileTransferController<AgentBoxType, UserBoxType>,
+) -> RunnerPromptGlue<AgentBoxType, UserBoxType> {
     RunnerPromptGlue::from_environment(file_transfer_controller)
 }
 
-pub fn assert_transfer_box_bound<Ctx, BoxType>(
-    glue: &RunnerPromptGlue<BoxType>,
+pub fn assert_transfer_box_bound<Ctx, AgentBoxType, UserBoxType>(
+    glue: &RunnerPromptGlue<AgentBoxType, UserBoxType>,
 ) where
-    BoxType: TransferBox<Ctx>,
+    AgentBoxType: TransferBox<Ctx>,
+    UserBoxType: TransferBox<Ctx>,
 {
     let _ = glue.file_transfer_controller();
 }

@@ -11,6 +11,7 @@ use crate::extensions::box_lifecycle::{
     BoxLifecycleClient, BoxLifecycleService, RecreateSandBoxResponse,
 };
 use crate::r#box::box_env::BoxEnvironmentUpdate;
+use crate::r#box::box_transfer::TransferBox;
 use crate::r#box::generated_production::ProductionBoxResourceAccessor;
 use crate::r#box::loopback_sand_box::LoopbackSandBoxError;
 
@@ -395,4 +396,27 @@ fn skip_proto_field(data: &[u8], position: &mut usize, wire: u8) -> Option<()> {
         _ => return None,
     }
     Some(())
+}
+
+impl<Ctx> TransferBox<Ctx> for ForeverBoxService {
+    type Error = LoopbackSandBoxError;
+
+    fn download_file(
+        &self,
+        _ctx: &Ctx,
+        agent_id: &str,
+        path: &str,
+    ) -> Result<Vec<u8>, Self::Error> {
+        self.box_.download_file(agent_id, path)
+    }
+
+    fn upload_file(
+        &self,
+        _ctx: &Ctx,
+        agent_id: &str,
+        path: &str,
+        data: &[u8],
+    ) -> Result<(), Self::Error> {
+        self.box_.upload_file(agent_id, path, data)
+    }
 }

@@ -25,6 +25,7 @@ use super::tools::sand_reaction_tool::ReactionSink;
 use super::tools::sand_agent_management_tools::AgentManagementSink;
 use super::tools::sand_browser_tools::BrowserToolExecutor;
 use super::tools::sand_computer_tool::ComputerToolExecutor;
+use super::tools::sand_file_transfer_tools::FileTransferExecutor;
 use super::tools::sand_state_tool::SandStateWriter;
 use super::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use super::tools::turn_toolset::{
@@ -51,6 +52,7 @@ pub struct TurnAgentComposition {
     box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
+    file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
@@ -83,6 +85,7 @@ impl TurnAgentComposition {
             box_resources: None,
             browser_executor: None,
             computer_executor: None,
+            file_transfer_executor: None,
             send_message_sink: None,
             reaction_sink: None,
             agent_management_sink: None,
@@ -154,6 +157,19 @@ impl TurnAgentComposition {
 
     pub fn has_computer_executor(&self) -> bool {
         self.computer_executor.is_some()
+    }
+
+
+    pub fn with_file_transfer_executor(
+        mut self,
+        executor: Arc<dyn FileTransferExecutor>,
+    ) -> Self {
+        self.file_transfer_executor = Some(executor);
+        self
+    }
+
+    pub fn has_file_transfer_executor(&self) -> bool {
+        self.file_transfer_executor.is_some()
     }
 
     pub fn with_send_message_sink(
@@ -295,6 +311,7 @@ impl TurnAgentComposition {
                 box_resources: self.box_resources.clone(),
                 browser_executor: self.browser_executor.clone(),
                 computer_executor: self.computer_executor.clone(),
+                file_transfer_executor: self.file_transfer_executor.clone(),
                 send_message_sink: self.send_message_sink.clone(),
                 reaction_sink: self.reaction_sink.clone(),
                 agent_management_sink: self.agent_management_sink.clone(),

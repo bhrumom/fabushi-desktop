@@ -72,6 +72,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
             box_resources: None,
             browser_executor: None,
             computer_executor: None,
+            file_transfer_executor: None,
             send_message_sink: None,
             reaction_sink: None,
             cloud_agent_tool: None,
