@@ -107,7 +107,7 @@
       "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "2c59f3b56847facdabc53aa137d3758ee25a9dce",
+      "targetBlobSha": "e4cbfc640bf089149759e61f45788863181c988a",
       "behavioralEvidence": [
         "source/electron-main/adapters/mcp-oauth.ts",
         "source/electron-main/mcp/desktop-mcp-manager.ts",
@@ -292,7 +292,7 @@
       "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "860600cce750c0b075f2e443859835a1382666d1",
+      "targetBlobSha": "8ef54dafec59df439dfc570c926426b10c4f1f8a",
       "behavioralEvidence": [
         "source/electron-main/coordinator/coordinator-executors.ts",
         "source/electron-main/coordinator/production-provider.ts",
@@ -309,7 +309,7 @@
       "referencePath": "source/electron-main/coordinator/production-provider.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "1bab8ea6301b0158f5d885adad6927b8bd425d05",
+      "targetBlobSha": "ddeed58dd59e935b2a91a1bcab0221d31826df11",
       "behavioralEvidence": [
         "source/electron-main/coordinator/production-provider.ts",
         "source/electron-main/coordinator/coordinator-executors.ts",
@@ -326,7 +326,7 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "b167ae68cce928f4aa437f5b939b884105f799df",
+      "targetBlobSha": "06837cea4b7c631890b3ae49163ac0acfa09075f",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "source/electron-main/adapters/mcp-oauth.ts"
@@ -342,7 +342,7 @@
       "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "4375ade8b14bdd7b7078d9f377d6673dcff4c40c",
+      "targetBlobSha": "082815e2b5800ea444f2777dbb435f26a97379ee",
       "behavioralEvidence": [
         "source/electron-main/mcp/desktop-mcp-manager.ts",
         "source/shared/node/mcp/mcp-manager.ts",
