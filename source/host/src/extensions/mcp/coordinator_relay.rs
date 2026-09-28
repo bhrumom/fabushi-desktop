@@ -1,4 +1,8 @@
 use crate::gateway_server::GatewayEventHub;
+use super::mcp_service::{
+    BoxServerStatus, CatalogField, CatalogPlugin, CatalogSkill, EffectivePlugin,
+    McpManagerBackend, McpServerSummary,
+};
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::{
@@ -165,5 +169,205 @@ impl CoordinatorMcpLifecycleRelay {
 
     pub fn pending_count(&self) -> usize {
         self.pending.lock().map(|pending| pending.len()).unwrap_or_default()
+    }
+}
+
+
+pub type BoxServerStatusLoader =
+    Arc<dyn Fn(&[String], bool) -> Result<Vec<BoxServerStatus>, String> + Send + Sync>;
+
+pub struct CoordinatorMcpManagerBackend {
+    relay: Arc<CoordinatorMcpLifecycleRelay>,
+    list_box_servers: BoxServerStatusLoader,
+}
+
+impl CoordinatorMcpManagerBackend {
+    pub fn new(
+        relay: Arc<CoordinatorMcpLifecycleRelay>,
+        list_box_servers: BoxServerStatusLoader,
+    ) -> Self {
+        Self { relay, list_box_servers }
+    }
+}
+
+fn required_string(row: &Value, key: &str, context: &str) -> Result<String, String> {
+    row.get(key)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| format!("{context} requires string {key}"))
+}
+
+fn optional_string(row: &Value, key: &str) -> Option<String> {
+    row.get(key)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+}
+
+pub fn decode_mcp_server_state(value: Value) -> Result<Vec<McpServerSummary>, String> {
+    let rows = value
+        .get("servers")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "desktop MCP owner listServers response requires servers".to_string())?;
+    rows.iter()
+        .map(|row| {
+            Ok(McpServerSummary {
+                id: required_string(row, "id", "MCP server")?,
+                name: required_string(row, "name", "MCP server")?,
+                server_identifier: required_string(row, "serverIdentifier", "MCP server")?,
+                account_key: required_string(row, "accountKey", "MCP server")?,
+                plugin_id: optional_string(row, "pluginId"),
+                is_team_server: row.get("isTeamServer").and_then(Value::as_bool).unwrap_or(false),
+                status: required_string(row, "status", "MCP server")?,
+                status_detail: optional_string(row, "statusDetail"),
+                transport: required_string(row, "transport", "MCP server")?,
+                tool_count: row.get("toolCount").and_then(Value::as_u64).unwrap_or_default() as usize,
+                disabled_tool_count: row.get("disabledToolCount").and_then(Value::as_u64).map(|value| value as usize),
+                custom_instructions: row
+                    .get("customInstructions")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_string(),
+            })
+        })
+        .collect()
+}
+
+pub fn decode_mcp_catalog(value: Value) -> Result<Vec<CatalogPlugin>, String> {
+    let rows = value
+        .as_array()
+        .ok_or_else(|| "desktop MCP owner catalog response must be an array".to_string())?;
+    rows.iter()
+        .map(|row| {
+            let fields = row
+                .get("fields")
+                .and_then(Value::as_array)
+                .map(|fields| {
+                    fields.iter()
+                        .map(|field| {
+                            Ok(CatalogField {
+                                key: required_string(field, "key", "MCP catalog field")?,
+                                label: field.get("label").and_then(Value::as_str).unwrap_or_default().to_string(),
+                                hint: field.get("hint").and_then(Value::as_str).unwrap_or_default().to_string(),
+                                is_required: field.get("isRequired").and_then(Value::as_bool).unwrap_or(false),
+                                is_secret: field.get("isSecret").and_then(Value::as_bool).unwrap_or(false),
+                            })
+                        })
+                        .collect::<Result<Vec<_>, String>>()
+                })
+                .transpose()?
+                .unwrap_or_default();
+            let skills = row
+                .get("skills")
+                .and_then(Value::as_array)
+                .map(|skills| {
+                    skills.iter()
+                        .map(|skill| {
+                            Ok(CatalogSkill {
+                                name: required_string(skill, "name", "MCP catalog skill")?,
+                                description: optional_string(skill, "description"),
+                                source_url: optional_string(skill, "sourceUrl"),
+                            })
+                        })
+                        .collect::<Result<Vec<_>, String>>()
+                })
+                .transpose()?
+                .unwrap_or_default();
+            Ok(CatalogPlugin {
+                id: required_string(row, "id", "MCP catalog plugin")?,
+                name: required_string(row, "name", "MCP catalog plugin")?,
+                display_name: optional_string(row, "displayName"),
+                description: optional_string(row, "description"),
+                category: optional_string(row, "category"),
+                fields,
+                connector_count: row.get("connectors").and_then(Value::as_array).map(Vec::len).unwrap_or_default(),
+                skills,
+            })
+        })
+        .collect()
+}
+
+pub fn decode_effective_plugins(value: Value) -> Result<Vec<EffectivePlugin>, String> {
+    let rows = value
+        .as_array()
+        .ok_or_else(|| "desktop MCP owner effective plugins response must be an array".to_string())?;
+    rows.iter()
+        .map(|row| {
+            Ok(EffectivePlugin {
+                plugin_id: required_string(row, "pluginId", "effective MCP plugin")?,
+                install_mode: optional_string(row, "installMode"),
+                is_enabled: row.get("isEnabled").and_then(Value::as_bool).unwrap_or(false),
+                has_team_configured_variables: row
+                    .get("hasTeamConfiguredVariables")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false),
+            })
+        })
+        .collect()
+}
+
+impl McpManagerBackend for CoordinatorMcpManagerBackend {
+    fn list_servers(&self) -> Result<Vec<McpServerSummary>, String> {
+        self.relay
+            .request(MCP_LIST_SERVERS_METHOD, json!({}))
+            .map_err(|error| error.to_string())
+            .and_then(decode_mcp_server_state)
+    }
+
+    fn list_catalog(&self, force_refresh: bool) -> Result<Vec<CatalogPlugin>, String> {
+        self.relay
+            .request(MCP_LIST_CATALOG_METHOD, json!({"forceRefresh": force_refresh}))
+            .map_err(|error| error.to_string())
+            .and_then(decode_mcp_catalog)
+    }
+
+    fn list_effective_plugins(&self) -> Result<Vec<EffectivePlugin>, String> {
+        self.relay
+            .request(MCP_LIST_EFFECTIVE_PLUGINS_METHOD, json!({}))
+            .map_err(|error| error.to_string())
+            .and_then(decode_effective_plugins)
+    }
+
+    fn uninstall_plugin(&self, plugin_id: &str) -> Result<(bool, Option<String>), String> {
+        let result = self.relay
+            .request(MCP_UNINSTALL_PLUGIN_METHOD, json!({"pluginId": plugin_id}))
+            .map_err(|error| error.to_string())?;
+        let removed = result.get("removed").and_then(Value::as_bool).unwrap_or(false);
+        Ok((removed, optional_string(&result, "reason")))
+    }
+
+    fn install_plugin(
+        &self,
+        plugin_id: &str,
+        values: &HashMap<String, String>,
+    ) -> Result<Vec<McpServerSummary>, String> {
+        self.relay
+            .request(MCP_INSTALL_PLUGIN_METHOD, json!({"entryId": plugin_id, "values": values}))
+            .map_err(|error| error.to_string())
+            .and_then(decode_mcp_server_state)
+    }
+
+    fn list_box_servers(
+        &self,
+        ids: &[String],
+        kick_only: bool,
+    ) -> Result<Vec<BoxServerStatus>, String> {
+        (self.list_box_servers)(ids, kick_only)
+    }
+
+    fn note_auth_completed_elsewhere(&self, server_id: &str, account_key: &str) {
+        if let Err(error) = self.relay.request(
+            MCP_NOTE_AUTH_COMPLETED_METHOD,
+            json!({"serverId": server_id, "accountKey": account_key}),
+        ) {
+            eprintln!("Host MCP external-auth completion relay failed: {error}");
+        }
+    }
+
+    fn dispose(&self) -> Result<(), String> {
+        Ok(())
     }
 }
