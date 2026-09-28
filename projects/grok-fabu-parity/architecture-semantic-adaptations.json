@@ -107,14 +107,18 @@
       "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "e4cbfc640bf089149759e61f45788863181c988a",
+      "targetBlobSha": "fb033baf337bee95bfb5714f11042d758f833913",
       "behavioralEvidence": [
         "source/electron-main/adapters/mcp-oauth.ts",
         "source/electron-main/mcp/desktop-mcp-manager.ts",
         "source/electron-main/coordinator/coordinator-executors.ts",
         "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs",
         "source/host/src/extensions/mcp/coordinator_relay.rs",
-        "source/shared/node/sand-data-root.ts"
+        "source/shared/node/sand-data-root.ts",
+        "source/electron-main/mcp/mcp-runtime.ts",
+        "source/shared/rpc/coordinator-main.ts",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
@@ -122,9 +126,11 @@
         "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
         "source/host/tests/mcp_coordinator_relay_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs"
       ],
-      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and moving the shared Fabushi data-root resolver out of the legacy Host TypeScript tree. The approved Fabushi adaptation adds an explicit Host MCP lifecycle relay for server/catalog/effective-plugin snapshots, install/uninstall, and external-auth completion. The relay crosses the existing independent Mahayana Coordinator and Host gateway with a frozen allowlist and correlated request IDs; it does not construct a second MCP manager in Rust Host or collapse Coordinator/Host/Runner process boundaries."
+      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and moving the shared Fabushi data-root resolver out of the legacy Host TypeScript tree. The approved Fabushi adaptation routes the full Host MCP lifecycle plus Box MCP load/list-tools/execute raw data operations through the existing independent Mahayana Coordinator and shipping Host gateway with typed method allowlists and correlated requests. It does not construct a second MCP manager in Rust Host or collapse Coordinator/Host/Runner process boundaries."
     },
     {
       "referencePath": "source/electron-main/attachments/attachment-manager.ts",
@@ -275,18 +281,22 @@
       "referencePath": "source/shared/rpc/coordinator-main.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "6d156a974818eee8d7166697ac3ec7b821140705",
+      "targetBlobSha": "cce166bbb86491418bb9be04a827b31508426262",
       "behavioralEvidence": [
         "source/shared/rpc/coordinator-main.ts",
         "source/electron-main/adapters/attachment-gateway.ts",
-        "source/node-agent-coordinator/src/main.rs"
+        "source/node-agent-coordinator/src/main.rs",
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/electron-main/coordinator/coordinator-executors.test.ts",
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs"
       ],
-      "rationale": "Extends the frozen Coordinator-main RPC contract with fetchLinkMetadata so Electron attachment previews cross the Coordinator boundary instead of calling legacy Host TypeScript directly. Request/reply ownership and transport remain on the existing Coordinator protocol; no parallel channel is introduced."
+      "rationale": "Extends the frozen Coordinator-main RPC contract only for approved cross-boundary capabilities: fetchLinkMetadata plus Box MCP load/list-servers/list-tools-raw/execute-tool-raw operations. Electron remains the MCP manager owner; the calls cross the existing Coordinator protocol into the shipping Host/Box implementation with request/reply ownership preserved and no parallel transport channel."
     },
     {
       "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
@@ -342,18 +352,46 @@
       "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "082815e2b5800ea444f2777dbb435f26a97379ee",
+      "targetBlobSha": "5bb6fb89e3763a7fb4f5d1b1526b93edf7ff12b0",
       "behavioralEvidence": [
         "source/electron-main/mcp/desktop-mcp-manager.ts",
         "source/shared/node/mcp/mcp-manager.ts",
-        "source/electron-main/adapters/mcp-oauth.ts"
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/electron-main/mcp/mcp-runtime.ts",
+        "source/shared/rpc/coordinator-main.ts",
+        "source/host/src/extensions/mcp/box_mcp_exec.rs"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
         "source/electron-main/coordinator/coordinator-executors.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs"
       ],
-      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing two existing manager capabilities through the typed desktop facade: force-refresh catalog options and external-auth completion notification. No manager behavior is duplicated or moved into Rust Host."
+      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator→Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent."
+    },
+    {
+      "referencePath": "source/electron-main/mcp/mcp-runtime.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "4ee803ca0a2796d3bedb94b98056543df7a5e20f",
+      "behavioralEvidence": [
+        "source/electron-main/mcp/mcp-runtime.ts",
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/shared/rpc/coordinator-main.ts",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok MCP runtime lifecycle while adding only the approved dependency forwarding needed by Fabushi Box MCP parity: loadBoxMcpServers, listBoxMcpServers, listBoxMcpToolsRaw, and executeBoxMcpToolRaw are passed into the single SandMcpManager created by the existing runtime. No second manager, transport, or lifecycle owner is introduced."
     }
   ]
 }

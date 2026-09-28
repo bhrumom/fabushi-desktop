@@ -106,7 +106,7 @@ fn cursor_request_is_connect_framed_and_accepts_frozen_tool_schema() {
 
 #[test]
 fn cursor_connect_decoder_rejects_server_end_stream_error() {
-    let metadata = br#"{\"error\":{\"code\":\"unavailable\",\"message\":\"down\"}}"#;
+    let metadata = br#"{"error":{"code":"unavailable","message":"down"}}"#;
     let mut frame = vec![CONNECT_END_STREAM_FLAG];
     frame.extend_from_slice(&(metadata.len() as u32).to_be_bytes());
     frame.extend_from_slice(metadata);
