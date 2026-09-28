@@ -124,7 +124,7 @@ pub struct ProductionBoxStoreSyncService {
 impl ProductionBoxStoreSyncService {
     pub fn new(deps: BoxStoreSyncExtensionDeps) -> Self {
         let env = std::env::vars().collect::<BTreeMap<_, _>>();
-        let mode = resolve_mode(&env);
+        let mode = resolve_production_box_store_sync_mode(&env);
         let backend = mode_name(&mode).to_string();
         let enabled = matches!(mode, ProductionBoxStoreSyncMode::LocalFs { .. });
         Self {
@@ -398,7 +398,7 @@ impl ProductionBoxStoreSyncInner {
     }
 }
 
-fn resolve_mode(env: &BTreeMap<String, String>) -> ProductionBoxStoreSyncMode {
+pub fn resolve_production_box_store_sync_mode(env: &BTreeMap<String, String>) -> ProductionBoxStoreSyncMode {
     if !is_box_store_sync_enabled(env) {
         return ProductionBoxStoreSyncMode::Disabled;
     }
