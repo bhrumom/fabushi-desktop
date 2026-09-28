@@ -13,7 +13,7 @@ use mahayana_host_runtime::runner::sand_auto_review_tool_escalations::{
     request_sand_mcp_approval, request_sand_shell_approval,
 };
 use mahayana_host_runtime::runner::sand_automation_auto_review::{
-    AutomationReference, AutomationReviewOutcome, AutomationWriteTarget,
+    AutomationReference, AutomationReviewOutcome, AutomationWriteSpec, AutomationWriteTarget,
     build_sand_automation_write_risk_target, review_sand_automation_write,
 };
 use mahayana_host_runtime::runner::sand_browser_auto_review::{
@@ -58,24 +58,36 @@ fn approving_controller() -> SandAutoReviewController {
 fn automation_review_preserves_off_shadow_enforce_and_approval_contract() {
     let target = AutomationWriteTarget {
         operation: "create".into(),
-        name: "Morning brief".into(),
-        trigger_description: "Every weekday at 8 AM".into(),
-        prompt: "Summarize inbox".into(),
-        is_enabled: Some(false),
+        id: "morning-brief".into(),
+        spec: AutomationWriteSpec {
+            name: "Morning brief".into(),
+            prompt: "Summarize inbox".into(),
+            trigger: json!({"type":"cron","schedule":"0 8 * * 1-5"}),
+            is_enabled: false,
+        },
+        referenced_workflows: vec![],
         referencing_routines: vec![AutomationReference {
             id: "routine-a".into(),
             name: "Daily".into(),
+            body: None,
+            prompt: Some("Run daily".into()),
         }],
     };
     let risk = build_sand_automation_write_risk_target(&target);
     assert_eq!(risk["action"], "sand_automation_write");
+    assert_eq!(risk["arguments"]["surface"], "automation_write");
+    assert_eq!(risk["arguments"]["automation_id"], "morning-brief");
     assert_eq!(risk["arguments"]["name"], "Morning brief");
+    assert_eq!(risk["arguments"]["schedule"], "0 8 * * 1-5");
+    assert_eq!(risk["arguments"]["enabled"], false);
+    assert_eq!(risk["arguments"]["trigger"]["type"], "cron");
 
     let mut shadow_calls = 0;
     assert_eq!(
         review_sand_automation_write(
             SandAutoReviewMode::Shadow,
             &target,
+            "agent-a",
             None,
             "turn",
             |_, mode| {
@@ -97,6 +109,7 @@ fn automation_review_preserves_off_shadow_enforce_and_approval_contract() {
         review_sand_automation_write(
             SandAutoReviewMode::Enforce,
             &target,
+            "agent-a",
             Some(&controller),
             "turn",
             |_, mode| {
@@ -356,15 +369,20 @@ fn shell_enrichment_resolves_package_scripts_and_binds_definition_hash() {
 fn specialized_classifiers_surface_transport_errors_without_guessing() {
     let target = AutomationWriteTarget {
         operation: "update".into(),
-        name: "Daily".into(),
-        trigger_description: "every day".into(),
-        prompt: "Summarize".into(),
-        is_enabled: Some(true),
+        id: "daily".into(),
+        spec: AutomationWriteSpec {
+            name: "Daily".into(),
+            prompt: "Summarize".into(),
+            trigger: json!({"type":"cron","schedule":"0 9 * * *"}),
+            is_enabled: true,
+        },
+        referenced_workflows: vec![],
         referencing_routines: vec![],
     };
     let error = review_sand_automation_write(
         SandAutoReviewMode::Enforce,
         &target,
+        "agent-a",
         None,
         "turn",
         |_, _| Err(AutoReviewClassifierError::Aborted("cancelled".into())),

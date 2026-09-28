@@ -2296,6 +2296,7 @@ fn start_routed_provider_task(
                     let outcome = review_sand_automation_write(
                         mode,
                         target,
+                        &routine_review_agent_id,
                         Some(routine_review_controller.as_ref()),
                         &routine_review_request_source,
                         |risk_target, classifier_mode| {

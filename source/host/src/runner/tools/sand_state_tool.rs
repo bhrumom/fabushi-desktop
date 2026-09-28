@@ -11,7 +11,9 @@ use crate::extensions::memory::agent_state::{
     MemoryScope, MemoryTier, SandAgentState, StateWriteResult,
 };
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
-use crate::runner::sand_automation_auto_review::AutomationWriteTarget;
+use crate::runner::sand_automation_auto_review::{
+    AutomationWriteSpec, AutomationWriteTarget,
+};
 
 pub const SAND_UPDATE_STATE_TOOL_NAME: &str = "update_state";
 
@@ -21,6 +23,7 @@ pub type RoutineAutoReviewCallback = Arc<
 
 pub trait SandStateWriter: Send + Sync {
     fn automation_record(&self, id: &str) -> Option<AutomationRecord>;
+    fn next_automation_id(&self, name: &str) -> String;
     fn write_memory(
         &self,
         content: &str,
@@ -68,6 +71,10 @@ pub trait SandStateWriter: Send + Sync {
 impl SandStateWriter for SandAgentState {
     fn automation_record(&self, id: &str) -> Option<AutomationRecord> {
         self.automation_record(id)
+    }
+
+    fn next_automation_id(&self, name: &str) -> String {
+        self.next_automation_id(name)
     }
 
     fn write_memory(
@@ -272,50 +279,59 @@ pub fn automation_review_target(
         return Ok(None);
     }
     let action = required_string(object, "action")?;
-    let (operation, spec) = match action {
-        "create" => ("create", automation_spec(object, None)?),
+    let (operation, id, spec, existing_enabled) = match action {
+        "create" => {
+            let spec = automation_spec(object, None)?;
+            let id = state.next_automation_id(&spec.name);
+            ("create", id, spec, None)
+        }
         "update" => {
             let id = required_string(object, "id")?;
             let existing = state.automation_record(id).ok_or_else(|| tool_error(
                 format!("no routine with folder \"{id}\" exists"),
             ))?;
-            ("update", automation_spec(object, Some(&existing))?)
+            let enabled = existing.is_enabled;
+            (
+                "update",
+                existing.id.clone(),
+                automation_spec(object, Some(&existing))?,
+                Some(enabled),
+            )
         }
         "pause" | "resume" | "delete" => {
             let id = required_string(object, "id")?;
             let existing = state.automation_record(id).ok_or_else(|| tool_error(
                 format!("no routine with folder \"{id}\" exists"),
             ))?;
-            let mut spec = AutomationSpec {
+            let enabled = match action {
+                "pause" => false,
+                "resume" => true,
+                _ => existing.is_enabled,
+            };
+            let spec = AutomationSpec {
                 name: existing.name,
                 prompt: existing.prompt,
                 trigger: existing.trigger,
-                is_enabled: Some(existing.is_enabled),
+                is_enabled: Some(enabled),
             };
-            if action == "pause" {
-                spec.is_enabled = Some(false);
-            } else if action == "resume" {
-                spec.is_enabled = Some(true);
-            }
-            (action, spec)
+            (action, existing.id, spec, Some(enabled))
         }
         _ => return Ok(None),
     };
-    let trigger_description = if let Some(schedule) = spec
-        .trigger
-        .get("schedule")
-        .and_then(Value::as_str)
-    {
-        schedule.to_string()
-    } else {
-        serde_json::to_string(&spec.trigger).unwrap_or_else(|_| "unknown trigger".into())
-    };
+    let is_enabled = spec
+        .is_enabled
+        .or(existing_enabled)
+        .unwrap_or(true);
     Ok(Some(AutomationWriteTarget {
         operation: operation.to_string(),
-        name: spec.name,
-        trigger_description,
-        prompt: spec.prompt,
-        is_enabled: spec.is_enabled,
+        id,
+        spec: AutomationWriteSpec {
+            name: spec.name,
+            prompt: spec.prompt,
+            trigger: spec.trigger,
+            is_enabled,
+        },
+        referenced_workflows: Vec::new(),
         referencing_routines: Vec::new(),
     }))
 }
