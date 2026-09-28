@@ -5509,6 +5509,7 @@ fn main() {
     let host_upgrade_gateway_slot =
         Arc::new(Mutex::new(Weak::<UnifiedGatewayApi>::new()));
     let host_upgrade_automation = transcript_manager.automation_runtime();
+    let host_upgrade_production_automations = Arc::clone(&automations_lifecycle_slot);
     let host_upgrade_sharing = Arc::clone(&cross_user);
     let host_upgrade_transcript = Arc::clone(&transcript_runtime);
     let host_upgrade_resume_gateway = Arc::clone(&host_upgrade_gateway_slot);
@@ -5516,6 +5517,13 @@ fn main() {
         ProductionHostUpgradePeers {
             suspend_automation_wakes: Arc::new(move || {
                 host_upgrade_automation.suspend_wakes();
+                if let Some(runtime) = host_upgrade_production_automations
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .upgrade()
+                {
+                    runtime.suspend_wakes();
+                }
                 Ok(())
             }),
             prepare_sharing_for_upgrade: Arc::new(move || {
