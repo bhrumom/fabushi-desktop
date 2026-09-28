@@ -97,6 +97,12 @@ use crate::extensions::secrets::extension::{
 };
 use crate::extensions::settings::extension::start_settings_extension;
 use crate::extensions::settings::settings_service::{SettingsService, SettingsSubscription};
+use crate::extensions::state_backstop::extension::{
+    HostStateBackstopExtension, start_state_backstop_extension,
+};
+use crate::extensions::state_backstop::state_backstop_service::{
+    StateBackstopObjectStore, StateBackstopOptions,
+};
 use crate::extensions::telemetry::extension::{
     HostTelemetryExtension, start_host_telemetry_extension,
 };
@@ -114,9 +120,11 @@ use crate::extensions::wallpaper::extension::{
 };
 use crate::host_event_bus::SandHostEventBus;
 use crate::production_binding_providers::{
-    production_cloud_agent_trace_converter, production_secrets_log,
+    create_production_state_backstop_runtime, production_cloud_agent_trace_converter,
+    production_secrets_log,
 };
 use crate::r#box::production::ProductionBoxEnvironment;
+use crate::extensions::box_store_sync::box_object_store::BoxObjectStore;
 
 /// Grok-shaped owner for the production extension subset that is already
 /// shipping in the Rust Host.
@@ -142,6 +150,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Trays,
     HostExtensionId::BoxLifecycle,
     HostExtensionId::BoxStoreSync,
+    HostExtensionId::StateBackstop,
     HostExtensionId::WebauthnProxy,
     HostExtensionId::BrowserUa,
     HostExtensionId::LocalToolPermission,
@@ -174,6 +183,30 @@ pub fn start_production_browser_ua(
     )
 }
 
+struct ProductionStateBackstopObjectStore {
+    store: Result<Arc<dyn BoxObjectStore>, String>,
+}
+
+impl ProductionStateBackstopObjectStore {
+    fn new(store: Result<Arc<dyn BoxObjectStore>, String>) -> Self {
+        Self { store }
+    }
+
+    fn store(&self) -> Result<&Arc<dyn BoxObjectStore>, String> {
+        self.store.as_ref().map_err(Clone::clone)
+    }
+}
+
+impl StateBackstopObjectStore for ProductionStateBackstopObjectStore {
+    fn put(&self, path: &str, bytes: &[u8]) -> Result<(), String> {
+        self.store()?.put(path, bytes)
+    }
+
+    fn get(&self, path: &str) -> Result<Option<Vec<u8>>, String> {
+        self.store()?.get(path)
+    }
+}
+
 pub struct ProductionHostExtensions {
     pub telemetry: HostTelemetryExtension,
     pub auth: Arc<HostAuthExtension>,
@@ -201,6 +234,7 @@ pub struct ProductionHostExtensions {
     backend_url: String,
     mcp: Mutex<Option<McpExtensionRuntime>>,
     box_store_sync: Mutex<Option<BoxStoreSyncExtension<ProductionBoxStoreSyncService>>>,
+    state_backstop: Mutex<Option<HostStateBackstopExtension>>,
     automations: Mutex<Option<Arc<ProductionAutomationsLifecycle>>>,
 }
 
@@ -339,6 +373,7 @@ pub fn start_production_host_extensions(
         backend_url,
         mcp: Mutex::new(None),
         box_store_sync: Mutex::new(None),
+        state_backstop: Mutex::new(None),
         automations: Mutex::new(None),
     })
 }
@@ -546,7 +581,42 @@ impl ProductionHostExtensions {
                 scheduling: BoxStoreScheduling::default(),
             },
         );
+        let box_api = extension.api();
         *slot = Some(extension);
+        drop(slot);
+
+        let mut backstop_slot = self
+            .state_backstop
+            .lock()
+            .map_err(|_| "production StateBackstop runtime lock poisoned".to_string())?;
+        if backstop_slot.is_some() {
+            return Err("production StateBackstop runtime is already started".into());
+        }
+        let runtime = create_production_state_backstop_runtime();
+        let store_api = box_api.clone();
+        let provider = Arc::new(move |source_id: &str| -> Arc<dyn StateBackstopObjectStore> {
+            Arc::new(ProductionStateBackstopObjectStore::new(
+                store_api.object_store_for(source_id),
+            ))
+        });
+        let source_map = Arc::clone(&self.source_map);
+        let source_id_for_agent = Arc::new(move |agent_id: &str| {
+            source_map
+                .get_or_create(agent_id)
+                .map(|entry| entry.source_id)
+                .map_err(|error| error.to_string())
+        });
+        let options = StateBackstopOptions::new(
+            provider,
+            source_id_for_agent,
+            runtime.agents_root_dir,
+            runtime.read_db_bytes,
+        );
+        let state_backstop = start_state_backstop_extension(options);
+        if state_backstop.is_enabled() {
+            eprintln!("SandState S3 backstop enabled");
+        }
+        *backstop_slot = Some(state_backstop);
         Ok(())
     }
 
@@ -559,6 +629,14 @@ impl ProductionHostExtensions {
     }
 
     pub fn stop_box_store_sync(&self) -> Result<(), String> {
+        let state_backstop = self
+            .state_backstop
+            .lock()
+            .map_err(|_| "production StateBackstop runtime lock poisoned".to_string())?
+            .take();
+        if let Some(state_backstop) = state_backstop {
+            state_backstop.stop();
+        }
         let extension = self
             .box_store_sync
             .lock()

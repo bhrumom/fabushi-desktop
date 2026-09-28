@@ -42,6 +42,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert!(shipping.contains(&HostExtensionId::LocalExec));
     assert!(shipping.contains(&HostExtensionId::CloudAgents));
     assert!(shipping.contains(&HostExtensionId::WebauthnProxy));
+    assert!(shipping.contains(&HostExtensionId::StateBackstop));
     assert!(shipping.contains(&HostExtensionId::Inference));
     assert!(shipping.contains(&HostExtensionId::Mcp));
     assert!(shipping.contains(&HostExtensionId::Wallpaper));
@@ -182,6 +183,25 @@ fn automations_have_one_shipping_production_owner() {
         assert!(
             PRODUCTION_OWNER.contains(needle),
             "ProductionHostExtensions must own the Automations production lifecycle: {needle}"
+        );
+    }
+}
+
+#[test]
+fn state_backstop_is_composed_after_box_store_sync_and_stopped_before_it() {
+    for needle in [
+        "HostExtensionId::StateBackstop",
+        "state_backstop: Mutex<Option<HostStateBackstopExtension>>",
+        "let box_api = extension.api()",
+        "create_production_state_backstop_runtime()",
+        "store_api.object_store_for(source_id)",
+        "source_map.get_or_create(agent_id)",
+        "start_state_backstop_extension(options)",
+        "state_backstop.stop()",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "production Host must own frozen StateBackstop composition: {needle}"
         );
     }
 }

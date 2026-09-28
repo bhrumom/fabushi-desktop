@@ -130,6 +130,10 @@ impl ProductionBoxStoreSyncApi {
         Ok(self.status())
     }
 
+    pub fn object_store_for(&self, source_id: &str) -> Result<Arc<dyn BoxObjectStore>, String> {
+        self.inner.object_store_for_source_id(source_id)
+    }
+
     pub fn schedule_store_db_snapshot(&self, agent_id: &str) -> bool {
         let agent_id = agent_id.trim();
         if agent_id.is_empty()
@@ -464,18 +468,24 @@ impl ProductionBoxStoreSyncInner {
             }
             _ => return Err("box-store backend is not active".into()),
         };
+        let store = self.object_store_for_source_id(&store_id)?;
+        Ok((store_id, store))
+    }
 
-        if !is_frozen_agent_store_source_id(&store_id) {
+    fn object_store_for_source_id(
+        &self,
+        source_id: &str,
+    ) -> Result<Arc<dyn BoxObjectStore>, String> {
+        if !is_frozen_agent_store_source_id(source_id) {
             return Err(format!(
-                "resolved BoxStore source id is not a frozen AgentStore source id: {store_id}"
+                "resolved BoxStore source id is not a frozen AgentStore source id: {source_id}"
             ));
         }
 
         match &self.mode {
-            ProductionBoxStoreSyncMode::LocalFs { base_dir, .. } => Ok((
-                store_id.clone(),
-                Arc::new(LocalFsObjectStore::new(base_dir.join(&store_id))),
-            )),
+            ProductionBoxStoreSyncMode::LocalFs { base_dir, .. } => {
+                Ok(Arc::new(LocalFsObjectStore::new(base_dir.join(source_id))))
+            }
             ProductionBoxStoreSyncMode::AgentStore => {
                 let provider = {
                     let mut slot = self
@@ -510,8 +520,7 @@ impl ProductionBoxStoreSyncInner {
                         .cloned()
                         .ok_or_else(|| "AgentStore provider failed to initialize".to_string())?
                 };
-                let store: Arc<dyn BoxObjectStore> = provider.for_store(&store_id).into();
-                Ok((store_id.clone(), store))
+                Ok(provider.for_store(source_id).into())
             }
             _ => Err("box-store backend is not active".into()),
         }
