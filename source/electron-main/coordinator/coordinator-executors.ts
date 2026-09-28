@@ -117,6 +117,7 @@ export interface CoordinatorControlExecutorDependencies {
   readonly listHostMcpServers?: () => Promise<unknown>;
   readonly listHostMcpCatalog?: (options: { readonly forceRefresh?: boolean }) => Promise<unknown>;
   readonly listHostEffectiveMcpPlugins?: () => Promise<unknown>;
+  readonly loadHostPluginSkills?: () => Promise<unknown>;
   readonly installHostMcpPlugin?: (request: unknown) => Promise<unknown>;
   readonly uninstallHostMcpPlugin?: (pluginId: string) => Promise<unknown>;
   readonly addHostMcpServer?: (request: { readonly name: string; readonly configJson: string }) => Promise<unknown>;
@@ -495,6 +496,10 @@ export function createCoordinatorControlExecutors(
     listHostEffectiveMcpPlugins: async () => {
       if (dependencies.listHostEffectiveMcpPlugins == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
       return await dependencies.listHostEffectiveMcpPlugins();
+    },
+    loadHostPluginSkills: async () => {
+      if (dependencies.loadHostPluginSkills == null) throw new Error("Desktop Plugin Skills loader is unavailable.");
+      return await dependencies.loadHostPluginSkills();
     },
     installHostMcpPlugin: async (request: unknown) => {
       if (dependencies.installHostMcpPlugin == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
