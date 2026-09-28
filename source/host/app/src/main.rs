@@ -2351,10 +2351,7 @@ fn start_routed_provider_task(
                 Arc::new(move |args, tool_call_id| {
                     let mode = computer_review_auto_review.current_modes().computer;
                     validate_computer_action(args, Some(mode))
-                        .map_err(|error| ProviderSessionError::Tool(match error {
-                        mahayana_host_runtime::runner::sand_auto_review_classifier_run::AutoReviewClassifierError::Aborted(reason)
-                        | mahayana_host_runtime::runner::sand_auto_review_classifier_run::AutoReviewClassifierError::Failed(reason) => reason,
-                    }))?;
+                        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
                     let initial_display = computer_review_box.browser_window_index()?;
                     let box_identity = BoxIdentity {
                         box_id: std::env::var("SAND_BOX_HOST")
@@ -2538,7 +2535,12 @@ fn start_routed_provider_task(
                             )
                         },
                     )
-                    .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                    .map_err(|error| {
+                        ProviderSessionError::Tool(match error {
+                            mahayana_host_runtime::runner::sand_auto_review_classifier_run::AutoReviewClassifierError::Aborted(reason)
+                            | mahayana_host_runtime::runner::sand_auto_review_classifier_run::AutoReviewClassifierError::Failed(reason) => reason,
+                        })
+                    })?;
                     match outcome {
                         AutomationReviewOutcome::Allowed => Ok(()),
                         AutomationReviewOutcome::Blocked(reason) => {
