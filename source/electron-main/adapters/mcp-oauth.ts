@@ -4,6 +4,7 @@ import type { DesktopMcpManagerFacade } from "../mcp/desktop-mcp-manager.js";
 import { createSandDesktopMcpManager } from "../mcp/desktop-mcp-manager.js";
 import { fetchTeamPluginPopularity } from "../mcp/mcp-team-popularity.js";
 import { createProductionMcpOAuthLoopbackFactory } from "../mcp/mcp-oauth-loopback-provider.js";
+import { createHostPluginSkillsLoader } from "../mcp/host-plugin-skills-loader.js";
 import type { ElectronProductionAdapterBindings } from "../production-adapters.js";
 import type { ProductionDisposable, ProductionMcpService, ProductionServiceContext } from "../main-production-services.js";
 import { getSandRootDir } from "../../shared/node/sand-data-root.js";
@@ -250,6 +251,19 @@ export function createProductionMcpOAuthAdapter(
         const auth = await context.requireAccount().getAuthService();
         return await auth.peekAccessToken?.() ?? null;
       };
+      const loadHostPluginSkills = createHostPluginSkillsLoader({
+        sandRootDir: getSandRootDir(),
+        getAccessToken: async ({ backendUrl }) => {
+          const auth = await context.requireAccount().getAuthService();
+          const token = await auth.getValidAccessToken({ backendUrl });
+          if (typeof token !== "string" || token.length === 0) throw new Error("Plugin Skills require an authenticated account.");
+          return token;
+        },
+        getMachineId: () => context.machineId,
+        peekAccessToken,
+        isSparsePluginClonesEnabled: () => context.requireExperiments().checkFeatureGate("enable_sparse_plugin_clones"),
+        log: (message) => console.info(message),
+      });
       let desktopHandle: ReturnType<typeof registerMcpDesktopIpc> | undefined;
       let disposed = false;
       return {
@@ -284,6 +298,10 @@ export function createProductionMcpOAuthAdapter(
         async listHostEffectiveMcpPlugins() {
           if (disposed) throw new Error("Electron production MCP adapter is disposed.");
           return await (await runtime.ensureMcpManager()).listEffectivePlugins();
+        },
+        async loadHostPluginSkills() {
+          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+          return await loadHostPluginSkills();
         },
         async installHostMcpPlugin(request) {
           if (disposed) throw new Error("Electron production MCP adapter is disposed.");
