@@ -52,9 +52,12 @@
     "@tiptap/starter-kit": "3.14.0",
     "@tiptap/suggestion": "3.14.0",
     "electron-updater": "^6.8.9",
+    "gray-matter": "4.0.3",
+    "jsonc-parser": "3.3.1",
     "lucide-react": "^1.14.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
+    "rxjs": "8.0.0-alpha.14",
     "ws": "8.20.0",
     "zod": "3.25.76"
   },
