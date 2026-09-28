@@ -144,6 +144,30 @@ impl<S: TeachRecordingService> Drop for TeachRecordingExtension<S> {
     }
 }
 
+pub fn create_teach_recording_extension<F>(
+    factory: &F,
+    deps: TeachRecordingServiceDeps,
+) -> TeachRecordingExtension<F::Service>
+where
+    F: TeachRecordingServiceFactory,
+{
+    TeachRecordingExtension {
+        service: Arc::new(factory.create(deps)),
+    }
+}
+
+pub fn recover_teach_recording_extension<S>(
+    extension: &TeachRecordingExtension<S>,
+    log: Arc<dyn Fn(&str) + Send + Sync>,
+)
+where
+    S: TeachRecordingService,
+{
+    if extension.service.recover_pending().is_err() {
+        log("teach-recording: pending delivery recovery failed");
+    }
+}
+
 pub fn start_teach_recording_extension<F>(
     factory: &F,
     deps: TeachRecordingServiceDeps,
@@ -152,9 +176,7 @@ pub fn start_teach_recording_extension<F>(
 where
     F: TeachRecordingServiceFactory,
 {
-    let service = Arc::new(factory.create(deps));
-    if service.recover_pending().is_err() {
-        log("teach-recording: pending delivery recovery failed");
-    }
-    TeachRecordingExtension { service }
+    let extension = create_teach_recording_extension(factory, deps);
+    recover_teach_recording_extension(&extension, log);
+    extension
 }
