@@ -3,9 +3,12 @@ type McpManagerOptions = {
   readonly onAccountScopeApplied: () => void;
   readonly getAccessToken: (args: { backendUrl: string }) => Promise<string | null>;
   readonly getMachineId: () => string | Promise<string>;
+  readonly loadBoxMcpServers: (configJson: string) => Promise<unknown>;
   readonly listBoxMcpServers: (
     serverIdentifiers: unknown,
   ) => Promise<readonly Record<string, unknown>[]>;
+  readonly listBoxMcpToolsRaw: (payloadHex: string) => Promise<string>;
+  readonly executeBoxMcpToolRaw: (payloadHex: string) => Promise<string>;
   readonly onConnectorAuth: (report: unknown) => void;
   readonly onMcpDiagnostic: (failure: {
     readonly leg: string;
@@ -25,9 +28,12 @@ type McpRuntimeDependencies<TManager> = {
   readonly pushBoxSecrets: () => Promise<unknown>;
   readonly ensureCursorAuthService: () => Promise<CursorAuthService>;
   readonly getMachineId: () => string | Promise<string>;
+  readonly loadBoxMcpServers: (configJson: string) => Promise<unknown>;
   readonly listBoxMcpServers: (
     serverIdentifiers: unknown,
   ) => Promise<readonly Record<string, unknown>[]>;
+  readonly listBoxMcpToolsRaw: (payloadHex: string) => Promise<string>;
+  readonly executeBoxMcpToolRaw: (payloadHex: string) => Promise<string>;
   readonly reportConnectorAuth: (report: unknown) => void;
   readonly reportDiagnostic: (leg: string, errorClass: string) => void;
   readonly cleanupLegacyAuth: (root: string) => Promise<unknown>;
@@ -59,7 +65,10 @@ export function createMcpRuntime<
         return await service.getValidAccessToken({ backendUrl });
       },
       getMachineId: deps.getMachineId,
+      loadBoxMcpServers: deps.loadBoxMcpServers,
       listBoxMcpServers: deps.listBoxMcpServers,
+      listBoxMcpToolsRaw: deps.listBoxMcpToolsRaw,
+      executeBoxMcpToolRaw: deps.executeBoxMcpToolRaw,
       onConnectorAuth: (report) => deps.reportConnectorAuth(report),
       onMcpDiagnostic: (failure) =>
         deps.reportDiagnostic(failure.leg, failure.errorClass),
