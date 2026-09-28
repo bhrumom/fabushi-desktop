@@ -191,3 +191,17 @@ fn group_member_routed_admission_projects_running_without_user_turn_badge() {
     assert_eq!(runtime.in_flight_run_count("member-a"), 0);
     let _ = std::fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn upgrade_resume_admission_uses_the_background_exclusive_lane() {
+    use mahayana_host_runtime::extensions::transcript::production_runtime::classify_send_dispatch;
+    use mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane;
+
+    let (lane, source) = classify_send_dispatch(&serde_json::json!({
+        "requestSource": "upgrade-resume"
+    }))
+    .expect("upgrade resume dispatch");
+    assert_eq!(lane, RunLane::Background);
+    assert_eq!(source, "upgrade-resume");
+}

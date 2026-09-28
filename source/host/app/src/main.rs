@@ -100,6 +100,8 @@ use mahayana_host_runtime::extensions::transcript::send_message_shaping::shape_s
 use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
     build_box_handoff_resume_send_args, settle_box_handoff_state,
 };
+use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::UpgradeResumeMarker;
+use mahayana_host_runtime::extensions::transcript::upgrade_recreate_resume::build_upgrade_resume_prompt;
 use mahayana_host_runtime::extensions::transcript::box_request_entries::resolve_box_request_entry;
 use mahayana_host_runtime::extensions::transcript::workflow_commands::{
     WorkflowCommandError, WorkflowRunNowPlan, dispatch_workflow_command_with_runtime,
@@ -883,6 +885,98 @@ impl UnifiedGatewayApi {
         }
     }
 
+    fn resume_interrupted_upgrade_turns(&self) -> Result<(), String> {
+        let Some(store) = self.transcript_runtime.upgrade_resume_store() else {
+            return Ok(());
+        };
+        let pending = store.list_pending();
+        if pending.is_empty() {
+            return Ok(());
+        }
+
+        store.clear_all();
+        for marker in pending {
+            let Some(summary) = self
+                .session_workers
+                .summarize_agent_by_id(&marker.agent_id, None)?
+            else {
+                continue;
+            };
+            if summary.is_group {
+                continue;
+            }
+
+            let resumed_source = match marker.source.as_deref() {
+                Some("notification") => "background-revival",
+                Some(source) if !source.trim().is_empty() => source,
+                _ => "handoff-resume",
+            };
+            let automation_wake = if resumed_source == "automation" {
+                marker.automation_id.as_deref().and_then(|automation_id| {
+                    self.transcript_manager
+                        .automation_runtime()
+                        .get_agent_automations(&marker.agent_id)
+                        .ok()?
+                        .into_iter()
+                        .find(|automation| automation.id == automation_id)
+                        .map(|automation| serde_json::json!({
+                            "id": automation.id,
+                            "name": automation.name,
+                        }))
+                })
+            } else {
+                None
+            };
+
+            let provider = configured_routed_provider(&self.data_dir.join("settings.json"));
+            let result = match provider {
+                Some(provider) if provider != RoutedProvider::Cursor => {
+                    start_local_upgrade_resume_turn(
+                        self.local_routed_runner_deps(),
+                        provider,
+                        &marker,
+                        automation_wake,
+                    )
+                }
+                _ => {
+                    let mut args = serde_json::json!({
+                        "agentId": marker.agent_id,
+                        "prompt": build_upgrade_resume_prompt(resumed_source),
+                        "clientNonce": format!(
+                            "upgrade-resume:{}:{}",
+                            marker.agent_id,
+                            uuid::Uuid::new_v4()
+                        ),
+                        "appendUserMessage": false,
+                        "hidden": true,
+                        "requestSource": resumed_source,
+                        "upgradeResume": true,
+                        "skipAckObligation": true,
+                        "awaitTurn": false,
+                    });
+                    if let Some(automation_wake) = automation_wake {
+                        args["automationWake"] = automation_wake;
+                    }
+                    self.call("sendPrompt", args)
+                        .map(|_| ())
+                        .map_err(|error| error.to_string())
+                }
+            };
+
+            if let Err(error) = result {
+                let mut tray =
+                    provider_failure_tray(&marker.agent_id, &error, started_at_ms() as i64);
+                tray.title = "Agent failed to resume after host update".into();
+                self.trays.push_error(tray);
+                eprintln!(
+                    "mahayana-host upgrade_resume_failed agent={} error={error}",
+                    marker.agent_id
+                );
+            }
+        }
+        Ok(())
+    }
+
     fn preempt_group_member_runs_for_direct_send(&self, args: &serde_json::Value) {
         let request_source = args
             .get("requestSource")
@@ -1100,6 +1194,109 @@ fn run_local_group_member_turn(
         .session_workers
         .read_agent_transcript_entries(&member_id)?;
     Ok(collect_new_member_send_messages(&before, &after))
+}
+
+fn start_local_upgrade_resume_turn(
+    deps: LocalRoutedRunnerDeps,
+    provider: RoutedProvider,
+    marker: &UpgradeResumeMarker,
+    automation_wake: Option<serde_json::Value>,
+) -> Result<(), String> {
+    if provider == RoutedProvider::Cursor {
+        return Err("Cursor upgrade resume stays on the compatibility production path".into());
+    }
+
+    let resumed_source = match marker.source.as_deref() {
+        Some("notification") => "background-revival".to_string(),
+        Some(source) if !source.trim().is_empty() => source.to_string(),
+        _ => "handoff-resume".to_string(),
+    };
+    let prompt = build_upgrade_resume_prompt(&resumed_source);
+    let stream_id = format!("upgrade-resume-{}", uuid::Uuid::new_v4());
+    let client_nonce = format!(
+        "upgrade-resume:{}:{}",
+        marker.agent_id,
+        uuid::Uuid::new_v4()
+    );
+    let ack_token = if matches!(resumed_source.as_str(), "turn" | "handoff-resume") {
+        deps.ack_obligations
+            .mint_ack_run_token(&marker.agent_id)
+            .map_err(|error| error.to_string())?
+    } else {
+        None
+    };
+
+    let mut admission_args = serde_json::json!({
+        "agentId": marker.agent_id,
+        "prompt": prompt,
+        "clientNonce": client_nonce,
+        "streamId": stream_id,
+        "appendUserMessage": false,
+        "hidden": true,
+        "requestSource": "upgrade-resume",
+        "ackToken": ack_token,
+        "skipAckObligation": true,
+    });
+    if let Some(automation_wake) = automation_wake.clone() {
+        admission_args["automationWake"] = automation_wake;
+    }
+
+    if let Err(error) = deps.transcript_runtime.accept_routed_send(&admission_args, |_| {
+        Ok::<_, ProductionSendError>(PersistedSendContext::default())
+    }) {
+        deps.ack_obligations
+            .retire_ack_run_token(&marker.agent_id, ack_token.as_deref());
+        return Err(error.to_string());
+    }
+
+    let mut runner_args = serde_json::json!({
+        "provider": provider.as_str(),
+        "agentId": marker.agent_id,
+        "streamId": stream_id,
+        "requestSource": resumed_source,
+        "hidden": true,
+        "upgradeResume": true,
+        "messages": [{
+            "role": "user",
+            "content": prompt,
+        }],
+    });
+    if let Some(ack_token) = ack_token {
+        runner_args["ackToken"] = serde_json::Value::String(ack_token);
+    }
+    if let Some(automation_wake) = automation_wake {
+        runner_args["automationWake"] = automation_wake;
+    }
+
+    start_routed_provider_task(
+        deps.routed_tool_relay,
+        deps.events.clone(),
+        deps.host_tx,
+        deps.data_dir,
+        deps.request_context,
+        deps.auth,
+        deps.auto_review,
+        deps.experiments,
+        deps.settings,
+        deps.inference,
+        Arc::clone(&deps.session_workers),
+        Arc::clone(&deps.runner_registry),
+        deps.ack_obligations,
+        deps.transcript_runtime,
+        deps.forever_box,
+        deps.local_exec,
+        deps.local_tool_permission,
+        deps.session_handoff,
+        deps.trays,
+        deps.telemetry_logs,
+        deps.production_action_auditor,
+        deps.cloud_agents,
+        deps.host_runner_composition,
+        None,
+        runner_args,
+    )
+    .map(|_| ())
+    .map_err(|error| error.to_string())
 }
 
 fn automation_terminal_from_event(
@@ -1749,6 +1946,10 @@ fn start_routed_provider_task(
         .get("ackRedrive")
         .and_then(serde_json::Value::as_bool)
         .unwrap_or(false);
+    let is_upgrade_resume = args
+        .get("upgradeResume")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false);
     let turn_hidden = args
         .get("hidden")
         .and_then(serde_json::Value::as_bool)
@@ -1889,18 +2090,40 @@ fn start_routed_provider_task(
         .and_then(serde_json::Value::as_bool)
         .unwrap_or(false);
     transcript_runtime.begin_provider_run_with_kind(&agent_id, is_group_member_turn);
-    let ack_token = ack_obligations
-        .mint_ack_run_token(&agent_id)
-        .map_err(|error| {
+    let supplied_ack_token = args
+        .get("ackToken")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    let ack_token = if let Some(ack_token) = supplied_ack_token {
+        if !ack_obligations
+            .is_ack_run_token_for_agent(&agent_id, ack_token)
+            .map_err(|error| GatewayCommandError::Internal(error.to_string()))?
+        {
             transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
             let _ = transcript_runtime.retire_idle_live_session(
                 &session_workers,
                 &agent_id,
             );
-            GatewayCommandError::Internal(format!(
-                "could not mint ack run token for {agent_id}: {error}"
-            ))
-        })?;
+            return Err(GatewayCommandError::BadRequest(
+                "runner ackToken is not owned by this agent".into(),
+            ));
+        }
+        Some(ack_token.to_string())
+    } else {
+        ack_obligations
+            .mint_ack_run_token(&agent_id)
+            .map_err(|error| {
+                transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
+                let _ = transcript_runtime.retire_idle_live_session(
+                    &session_workers,
+                    &agent_id,
+                );
+                GatewayCommandError::Internal(format!(
+                    "could not mint ack run token for {agent_id}: {error}"
+                ))
+            })?
+    };
     let cancellation = runner_registry
         .register_routed_provider(&agent_id, &stream_id)
         .map_err(|error| {
@@ -1948,6 +2171,7 @@ fn start_routed_provider_task(
     let worker_telemetry_logs = telemetry_logs.clone();
     let worker_request_source = request_source.clone();
     let worker_is_ack_redrive = is_ack_redrive;
+    let worker_is_upgrade_resume = is_upgrade_resume;
     let worker_memory_store = memory_store.clone();
     let worker_turn_hidden = turn_hidden;
     let worker_gateway_context = gateway_context;
@@ -2855,9 +3079,13 @@ fn start_routed_provider_task(
                     })),
                     Err(error) => {
                         let message = error.to_string();
-                        if worker_is_ack_redrive {
+                        if worker_is_ack_redrive || worker_is_upgrade_resume {
                             let report = AgentErrorReport {
-                                source: "ack_redrive".into(),
+                                source: if worker_is_upgrade_resume {
+                                    "resume".into()
+                                } else {
+                                    "ack_redrive".into()
+                                },
                                 conversation_id: agent_id.clone(),
                                 request_id: Some(worker_stream_id.clone()),
                                 error: classify_agent_error(&error),
@@ -2881,11 +3109,15 @@ fn start_routed_provider_task(
                                 }
                             }
                         }
-                        worker_trays.push_error(provider_failure_tray(
+                        let mut tray = provider_failure_tray(
                             &agent_id,
                             &message,
                             started_at_ms() as i64,
-                        ));
+                        );
+                        if worker_is_upgrade_resume {
+                            tray.title = "Agent failed to resume after host update".into();
+                        }
+                        worker_trays.push_error(tray);
                         worker_events.publish(serde_json::json!({
                             "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
                             "payload": {
@@ -4691,9 +4923,12 @@ fn main() {
         .unwrap_or_else(|poisoned| poisoned.into_inner()) =
         Arc::downgrade(&cross_user);
 
+    let host_upgrade_gateway_slot =
+        Arc::new(Mutex::new(Weak::<UnifiedGatewayApi>::new()));
     let host_upgrade_automation = transcript_manager.automation_runtime();
     let host_upgrade_sharing = Arc::clone(&cross_user);
     let host_upgrade_transcript = Arc::clone(&transcript_runtime);
+    let host_upgrade_resume_gateway = Arc::clone(&host_upgrade_gateway_slot);
     let host_upgrade = match start_production_host_upgrade_extension(
         ProductionHostUpgradePeers {
             suspend_automation_wakes: Arc::new(move || {
@@ -4707,12 +4942,13 @@ fn main() {
                 host_upgrade_transcript.quiesce_for_upgrade();
                 Ok(())
             }),
-            // Frozen resumeInterruptedUpgradeTurns recreates a real Runner from
-            // durable upgrade markers. Keep this fail-closed until that shipping
-            // Runner recreation path is wired; never treat resume_after_recreate
-            // (which only clears quiesce state) as equivalent.
-            resume_interrupted_upgrade_turns: Arc::new(|| {
-                Err("resumeInterruptedUpgradeTurns production Runner recreation is not wired".into())
+            resume_interrupted_upgrade_turns: Arc::new(move || {
+                let gateway = host_upgrade_resume_gateway
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .upgrade()
+                    .ok_or_else(|| "Host gateway is not ready for upgrade resume".to_string())?;
+                gateway.resume_interrupted_upgrade_turns()
             }),
         },
         host_telemetry.logs.clone(),
@@ -4762,6 +4998,10 @@ fn main() {
             create_agent_nonces: Mutex::new(CreateAgentNonceLedger::default()),
             last_busy_at_ms: Mutex::new(gateway_started_at),
         });
+    *host_upgrade_gateway_slot
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) = Arc::downgrade(&gateway_api);
+
     let teach_runtime: Arc<dyn TeachRecordingRuntimePort> =
         Arc::new(ProductionTeachRecordingRuntime::new(Arc::clone(&forever_box)));
     let teach_factory = SandTeachRecordingServiceFactory::new(teach_runtime);
@@ -4836,20 +5076,6 @@ fn main() {
         });
 
     let ack_redrive_stop = Arc::new(AtomicBool::new(false));
-    let _ack_redrive_worker = match start_ack_redrive_worker(
-        Arc::clone(&gateway_api),
-        Arc::clone(&ack_obligations),
-        Arc::clone(&session_workers),
-        Arc::clone(&runner_registry),
-        gateway_events.clone(),
-        Arc::clone(&ack_redrive_stop),
-    ) {
-        Ok(worker) => Some(worker),
-        Err(error) => {
-            eprintln!("failed to start Mahayana ack-redrive worker: {error}");
-            None
-        }
-    };
 
     let gateway_discovery_path = get_gateway_discovery_path();
     let gateway_discovery = GatewayDiscoveryInfo {
@@ -4919,6 +5145,24 @@ fn main() {
         eprintln!("[sand-host] CrossUserSharing background work failed: {error}");
     }
     let _ = local_tool_permission_extension.background_work_ready();
+
+    if let Err(error) = host_upgrade.service().resume_interrupted_upgrade_turns() {
+        eprintln!("mahayana-host upgrade_resume_boot_failed error={error}");
+    }
+    let _ack_redrive_worker = match start_ack_redrive_worker(
+        Arc::clone(&gateway_api),
+        Arc::clone(&ack_obligations),
+        Arc::clone(&session_workers),
+        Arc::clone(&runner_registry),
+        gateway_events.clone(),
+        Arc::clone(&ack_redrive_stop),
+    ) {
+        Ok(worker) => Some(worker),
+        Err(error) => {
+            eprintln!("failed to start Mahayana ack-redrive worker: {error}");
+            None
+        }
+    };
 
     // Runtime events travel as unsolicited JSON frames. The event worker blocks
     // in Rust instead of issuing 500 ms JSON-RPC receive requests from Electron.

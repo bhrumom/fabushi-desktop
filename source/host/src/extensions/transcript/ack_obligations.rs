@@ -423,6 +423,14 @@ impl AckObligations {
         Ok(cleared || reservations.len() != before)
     }
 
+    pub fn is_ack_run_token_for_agent(
+        &self,
+        agent_id: &str,
+        ack_token: &str,
+    ) -> io::Result<bool> {
+        self.token_matches_agent(agent_id, ack_token)
+    }
+
     fn token_matches_agent(&self, agent_id: &str, ack_token: &str) -> io::Result<bool> {
         Ok(self
             .reservations

@@ -72,3 +72,24 @@ fn production_upgrade_telemetry_uses_frozen_event_name() {
     metadata.insert("outcome".to_string(), "applied".to_string());
     assert_eq!(metadata.get("outcome").map(String::as_str), Some("applied"));
 }
+
+
+#[test]
+fn shipping_host_recreates_durable_upgrade_turns_before_ack_redrive() {
+    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+
+    assert!(SHIPPING_HOST.contains("fn resume_interrupted_upgrade_turns(&self)"));
+    assert!(SHIPPING_HOST.contains("start_local_upgrade_resume_turn("));
+    assert!(SHIPPING_HOST.contains("gateway.resume_interrupted_upgrade_turns()"));
+    assert!(!SHIPPING_HOST.contains(
+        "resumeInterruptedUpgradeTurns production Runner recreation is not wired"
+    ));
+
+    let resume = SHIPPING_HOST
+        .rfind("host_upgrade.service().resume_interrupted_upgrade_turns()")
+        .expect("shipping startup upgrade resume");
+    let redrive = SHIPPING_HOST
+        .rfind("start_ack_redrive_worker(")
+        .expect("shipping ack redrive");
+    assert!(resume < redrive);
+}

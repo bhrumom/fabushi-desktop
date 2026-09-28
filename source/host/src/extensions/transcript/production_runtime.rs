@@ -60,12 +60,13 @@ pub fn classify_send_dispatch(
     let request_source = optional_non_empty(args, "requestSource");
     let is_handoff_resume = request_source == Some("handoff-resume");
     let is_automation = request_source == Some("automation");
+    let is_upgrade_resume = request_source == Some("upgrade-resume");
     let is_group_member = request_source == Some("group-member");
     let is_agent_inbound = request_source == Some("agent-inbound");
     let is_ack_redrive =
         optional_bool(args, "ackRedrive")?.unwrap_or(false) && is_handoff_resume;
     Ok((
-        if is_handoff_resume || is_automation {
+        if is_handoff_resume || is_automation || is_upgrade_resume {
             RunLane::Background
         } else if is_agent_inbound {
             RunLane::Agent
@@ -78,6 +79,8 @@ pub fn classify_send_dispatch(
             "handoff-resume"
         } else if is_automation {
             "automation"
+        } else if is_upgrade_resume {
+            "upgrade-resume"
         } else if is_agent_inbound {
             "agent-inbound"
         } else if is_group_member {

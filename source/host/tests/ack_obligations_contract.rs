@@ -264,3 +264,25 @@ fn ack_redrive_empty_delivery_report_only_exists_while_delivery_is_still_owed() 
 
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn pre_minted_ack_tokens_are_reusable_only_by_their_own_agent() {
+    let root = temp_root("owned-token");
+    let ack = AckObligations::new(&root);
+    ack.record_send("agent-a", 10.0).expect("record send");
+    let token = ack
+        .mint_ack_run_token("agent-a")
+        .expect("mint")
+        .expect("token");
+
+    assert!(ack
+        .is_ack_run_token_for_agent("agent-a", &token)
+        .expect("matching token"));
+    assert!(!ack
+        .is_ack_run_token_for_agent("agent-b", &token)
+        .expect("wrong agent token"));
+    assert!(ack.retire_ack_run_token("agent-a", Some(&token)));
+
+    let _ = fs::remove_dir_all(root);
+}
