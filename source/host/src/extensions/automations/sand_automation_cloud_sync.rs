@@ -665,6 +665,7 @@ pub struct SandAutomationCloudSync {
     client: Arc<dyn CloudSyncClient>,
     scheduling_evidence_by_agent: BTreeMap<String, SchedulingEvidence>,
     last_authority_by_agent: BTreeMap<String, SchedulingAuthority>,
+    last_successful_fingerprint_by_agent: BTreeMap<String, String>,
     failed_agent_ids: BTreeSet<String>,
     pending_agent_deletions: BTreeSet<String>,
 }
@@ -675,6 +676,7 @@ impl SandAutomationCloudSync {
             client,
             scheduling_evidence_by_agent: BTreeMap::new(),
             last_authority_by_agent: BTreeMap::new(),
+            last_successful_fingerprint_by_agent: BTreeMap::new(),
             failed_agent_ids: BTreeSet::new(),
             pending_agent_deletions: BTreeSet::new(),
         }
@@ -707,12 +709,29 @@ impl SandAutomationCloudSync {
             .into_iter()
             .map(|definition| (definition.automation_id.clone(), definition))
             .collect::<BTreeMap<_, _>>();
+        let fingerprint = desired_by_id
+            .values()
+            .map(|definition| format!("{}:{}", definition.automation_id, definition.marker))
+            .collect::<Vec<_>>()
+            .join("\0");
+        if self
+            .last_successful_fingerprint_by_agent
+            .get(agent_id)
+            .is_some_and(|previous| previous == &fingerprint)
+        {
+            return Ok(ReconcileOutcome {
+                converged: true,
+                scheduling_authority_changed: false,
+            });
+        }
         let desired_ids = desired_by_id.keys().cloned().collect::<BTreeSet<_>>();
         let initial = self.client.list_sand_automations(agent_id)?;
         let remote = remote_shadow_automations_by_id(&initial);
         if is_converged(&remote, &desired_by_id) {
             let changed = self.publish_known(agent_id, &initial, desired_ids);
             self.failed_agent_ids.remove(agent_id);
+            self.last_successful_fingerprint_by_agent
+                .insert(agent_id.to_owned(), fingerprint.clone());
             return Ok(ReconcileOutcome {
                 converged: true,
                 scheduling_authority_changed: changed,
@@ -774,6 +793,8 @@ impl SandAutomationCloudSync {
         let converged = is_converged(&remote_shadow_automations_by_id(&readback), &desired_by_id);
         if converged {
             self.failed_agent_ids.remove(agent_id);
+            self.last_successful_fingerprint_by_agent
+                .insert(agent_id.to_owned(), fingerprint);
         } else if !mutation_failed {
             self.failed_agent_ids.insert(agent_id.to_owned());
         }
@@ -807,11 +828,25 @@ impl SandAutomationCloudSync {
             self.failed_agent_ids.remove(agent_id);
             self.scheduling_evidence_by_agent.remove(agent_id);
             self.last_authority_by_agent.remove(agent_id);
+            self.last_successful_fingerprint_by_agent.remove(agent_id);
         }
         Ok(ReconcileOutcome {
             converged,
             scheduling_authority_changed: changed,
         })
+    }
+
+    pub fn retry_pending_agent_deletions(
+        &mut self,
+    ) -> Vec<(String, Result<ReconcileOutcome, SandConnectError>)> {
+        let pending = self.pending_agent_deletions.iter().cloned().collect::<Vec<_>>();
+        pending
+            .into_iter()
+            .map(|agent_id| {
+                let outcome = self.delete_agent(&agent_id);
+                (agent_id, outcome)
+            })
+            .collect()
     }
 
     pub fn pending_agent_deletions(&self) -> &BTreeSet<String> {
