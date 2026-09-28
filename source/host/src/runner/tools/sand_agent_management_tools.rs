@@ -10,6 +10,7 @@ pub struct AgentManagementRecord{pub id:String,pub name:String}
 
 pub trait AgentManagementSink:Send+Sync{
     fn self_agent_id(&self)->&str;
+    fn resolve_image_source(&self,image:&AgentMessageImage,_tool_call_id:&str)->Result<AgentMessageImage,ProviderSessionError>{Ok(image.clone())}
     fn send_to_agent(&self,target_id:&str,message:&str,images:&[AgentMessageImage],priority:bool)->Result<String,ProviderSessionError>;
     fn create_agent(&self,name:&str,description:&str)->Result<AgentManagementRecord,ProviderSessionError>;
     fn update_agent(&self,agent_id:&str,name:Option<&str>,description:Option<&str>)->Result<Option<AgentManagementRecord>,ProviderSessionError>;
@@ -52,7 +53,10 @@ impl RoutedToolBridge for AgentManagementToolBridge{
                 let message=required_trimmed(o,"message",SAND_SEND_TO_AGENT_TOOL_NAME)?;
                 if target==self.sink.self_agent_id(){return Ok(Value::String("You can't message yourself with SendToAgent. Use SendMessage to talk to the user, or pick a different target id.".into()));}
                 let priority=o.get("priority").and_then(Value::as_bool).unwrap_or(false);
-                let images=parse_images(o.get("images"))?;
+                let images=parse_images(o.get("images"))?
+                    .into_iter()
+                    .map(|image|self.sink.resolve_image_source(&image,tool_call_id))
+                    .collect::<Result<Vec<_>,_>>()?;
                 Ok(Value::String(self.sink.send_to_agent(target,message,&images,priority)?))
             }
             "CreateAgent"=>{

@@ -330,6 +330,78 @@ const RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD: &str = "runner.startRoutedPro
 const RUNNER_CANCEL_ROUTED_PROVIDER_GATEWAY_METHOD: &str = "runner.cancelRoutedProvider";
 const RUNNER_INFERENCE_EVENT_CHANNEL: &str = "runner-inference";
 
+fn persist_runner_media_bytes(
+    sessions: &ProductionSessionWorkers,
+    agent_id: &str,
+    source_name: &str,
+    bytes: &[u8],
+    kind: AgentMediaKind,
+) -> Option<String> {
+    let db_path = sessions.session_db_path(agent_id).ok()?;
+    let agent_dir = db_path.parent()?;
+    let path = persist_agent_media_bytes(agent_dir, source_name, bytes, kind).ok()?;
+    file_url_for_path(path)
+}
+
+fn resolve_production_attachment_source(
+    sessions: &ProductionSessionWorkers,
+    forever_box: &ForeverBoxService,
+    agent_id: &str,
+    source_url: &str,
+) -> ResolvedAttachmentSource {
+    let Some(source_path) = file_path_from_file_url(source_url) else {
+        return ResolvedAttachmentSource {
+            url: source_url.to_string(),
+            file_name: None,
+        };
+    };
+    let file_name = source_path
+        .file_name()
+        .map(|value| value.to_string_lossy().into_owned())
+        .filter(|value| !value.is_empty());
+    let source_path_text = source_path.to_string_lossy().into_owned();
+    if let Ok(bytes) = fs::read(&source_path) {
+        let kind = if image_mime_from_path(&source_path_text).is_some() {
+            AgentMediaKind::Image
+        } else {
+            AgentMediaKind::Attachment
+        };
+        if let Some(url) = persist_runner_media_bytes(
+            sessions,
+            agent_id,
+            &source_path_text,
+            &bytes,
+            kind,
+        ) {
+            return ResolvedAttachmentSource { url, file_name };
+        }
+    }
+    let status = forever_box.get_status(agent_id);
+    let remote_box_has_desktop = status.vnc_url.is_some()
+        || status.windows.as_ref().is_some_and(|windows| !windows.is_empty());
+    let resolved = resolve_box_media_attachment(
+        &source_path_text,
+        remote_box_has_desktop,
+        |path| forever_box.box_().download_file(agent_id, path).ok(),
+        |bytes, _mime| persist_runner_media_bytes(
+            sessions,
+            agent_id,
+            &source_path_text,
+            bytes,
+            AgentMediaKind::Image,
+        ),
+        |name, bytes| persist_runner_media_bytes(
+            sessions,
+            agent_id,
+            name,
+            bytes,
+            AgentMediaKind::Attachment,
+        ),
+    )
+    .unwrap_or_else(|| source_url.to_string());
+    ResolvedAttachmentSource { url: resolved, file_name }
+}
+
 struct ProductionSendMessageSink {
     sessions: Arc<ProductionSessionWorkers>,
     forever_box: Arc<ForeverBoxService>,
@@ -341,17 +413,6 @@ struct ProductionSendMessageSink {
 }
 
 impl ProductionSendMessageSink {
-    fn persist_media_bytes(
-        &self,
-        source_name: &str,
-        bytes: &[u8],
-        kind: AgentMediaKind,
-    ) -> Option<String> {
-        let db_path = self.sessions.session_db_path(&self.agent_id).ok()?;
-        let agent_dir = db_path.parent()?;
-        let path = persist_agent_media_bytes(agent_dir, source_name, bytes, kind).ok()?;
-        file_url_for_path(path)
-    }
 
     fn fulfill_ack_obligation(&self) {
         if let Some(ack_token) = self.ack_token.as_deref() {
@@ -454,49 +515,12 @@ impl SendMessageSink for ProductionSendMessageSink {
         source_url: &str,
         _tool_call_id: &str,
     ) -> Result<ResolvedAttachmentSource, ProviderSessionError> {
-        let Some(source_path) = file_path_from_file_url(source_url) else {
-            return Ok(ResolvedAttachmentSource {
-                url: source_url.to_string(),
-                file_name: None,
-            });
-        };
-        let file_name = source_path
-            .file_name()
-            .map(|value| value.to_string_lossy().into_owned())
-            .filter(|value| !value.is_empty());
-        let source_path_text = source_path.to_string_lossy().into_owned();
-
-        if let Ok(bytes) = fs::read(&source_path) {
-            let kind = if image_mime_from_path(&source_path_text).is_some() {
-                AgentMediaKind::Image
-            } else {
-                AgentMediaKind::Attachment
-            };
-            if let Some(url) = self.persist_media_bytes(&source_path_text, &bytes, kind) {
-                return Ok(ResolvedAttachmentSource { url, file_name });
-            }
-        }
-
-        let status = self.forever_box.get_status(&self.agent_id);
-        let remote_box_has_desktop = status.vnc_url.is_some()
-            || status.windows.as_ref().is_some_and(|windows| !windows.is_empty());
-        let resolved = resolve_box_media_attachment(
-            &source_path_text,
-            remote_box_has_desktop,
-            |path| self.forever_box.box_().download_file(&self.agent_id, path).ok(),
-            |bytes, _mime| self.persist_media_bytes(
-                &source_path_text,
-                bytes,
-                AgentMediaKind::Image,
-            ),
-            |name, bytes| self.persist_media_bytes(
-                name,
-                bytes,
-                AgentMediaKind::Attachment,
-            ),
-        )
-        .unwrap_or_else(|| source_url.to_string());
-        Ok(ResolvedAttachmentSource { url: resolved, file_name })
+        Ok(resolve_production_attachment_source(
+            self.sessions.as_ref(),
+            self.forever_box.as_ref(),
+            &self.agent_id,
+            source_url,
+        ))
     }
 
     fn read_media_dimensions(&self, resolved_url: &str) -> Option<(u32, u32)> {
@@ -549,6 +573,7 @@ fn reaction_gateway_args(
 
 struct ProductionAgentManagementSink {
     sessions: Arc<ProductionSessionWorkers>,
+    forever_box: Arc<ForeverBoxService>,
     messaging: Arc<ProductionAgentToAgentMessaging>,
     agent_id: String,
 }
@@ -556,6 +581,23 @@ struct ProductionAgentManagementSink {
 impl AgentManagementSink for ProductionAgentManagementSink {
     fn self_agent_id(&self) -> &str {
         &self.agent_id
+    }
+
+    fn resolve_image_source(
+        &self,
+        image: &AgentMessageImage,
+        _tool_call_id: &str,
+    ) -> Result<AgentMessageImage, ProviderSessionError> {
+        let resolved = resolve_production_attachment_source(
+            self.sessions.as_ref(),
+            self.forever_box.as_ref(),
+            &self.agent_id,
+            &image.url,
+        );
+        Ok(AgentMessageImage {
+            url: resolved.url,
+            alt: image.alt.clone(),
+        })
     }
 
     fn send_to_agent(
@@ -2255,6 +2297,7 @@ fn start_routed_provider_task(
             let agent_management_sink: Arc<dyn AgentManagementSink> = Arc::new(
                 ProductionAgentManagementSink {
                     sessions: Arc::clone(&worker_sessions),
+                    forever_box: Arc::clone(&forever_box),
                     messaging: agent_messaging,
                     agent_id: agent_id.clone(),
                 },
