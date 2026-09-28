@@ -339,6 +339,7 @@ impl SandLocalExecBridge {
             let kind = frame.get("kind").and_then(Value::as_str);
             if matches!(kind, Some("hello" | "ping")) {
                 if let Some(id) = selected.as_deref() {
+                    let provider_count = state.providers.len();
                     if let Some(provider) = state.providers.get_mut(id) {
                         provider.last_seen_at_ms = now;
                         if kind == Some("ping") {
@@ -383,7 +384,7 @@ impl SandLocalExecBridge {
                             }
                             provider_reports.push(LocalExecProviderLifecycleReport::Hello {
                                 provider_id: provider.id.clone(),
-                                provider_count: state.providers.len(),
+                                provider_count,
                                 hello_delay_ms: now.saturating_sub(provider.registered_at_ms),
                                 computer_id_present: provider.computer_id.is_some(),
                                 rehello,
