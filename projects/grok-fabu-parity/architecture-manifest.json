@@ -12263,22 +12263,27 @@
       "targetPath": "source/host/src/extensions/host_upgrade/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "6db8f7bea825ebf6c3cc502426708808c5046ef8",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/host_upgrade/extension.rs",
         "source/host/src/extensions/host_upgrade/host_bundle_upgrade.rs",
-        "source/host/src/extensions/host_upgrade/host_upgrade_marker.rs"
+        "source/host/src/extensions/host_upgrade/host_upgrade_marker.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/src/extensions/transcript/ack_obligations.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_upgrade_extension_contract.rs",
         "source/host/tests/host_upgrade_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/host_upgrade_production_contract.rs"
+        "source/host/tests/host_upgrade_production_contract.rs",
+        "source/host/tests/ack_obligations_contract.rs",
+        "source/host/tests/routed_send_acceptance_contract.rs"
       ],
-      "notes": "Rust HostUpgrade extension owns the frozen identity/dependency set, environment/watch policy, marker store, immediate post-identity marker forwarding, periodic forwarding, jittered shared update-watch worker, idempotent start/stop and worker teardown. Shipping Host now injects the live rustls bundle fetcher, supervisor staging, structured telemetry, the authoritative Transcript AutomationRuntime wake gate, ProductionCrossUserRuntime stop boundary, and ProductionTranscriptRuntime quiesce owner. It remains non-final only because resumeInterruptedUpgradeTurns still lacks the frozen durable real-Runner recreation path and the shared root-update callback has no independent production owner yet."
+      "notes": "Final: Rust HostUpgrade extension owns the frozen identity/dependency set, environment/watch policy, marker store, immediate post-identity marker forwarding, periodic forwarding, jittered shared update-watch worker, idempotent start/stop and worker teardown. Shipping Host injects the live rustls bundle fetcher, supervisor staging, structured telemetry, authoritative Transcript AutomationRuntime wake gate, ProductionCrossUserRuntime stop boundary, ProductionTranscriptRuntime quiesce owner, and durable interrupted-turn resume callback. Durable upgrade markers now re-enter the canonical shipping routed Runner through exclusive background admission with Ack-token agent scoping, and startup runs upgrade resume before Ack redrive so accepted work is not duplicated."
     },
     {
       "referencePath": "source/host/extensions/host-upgrade/host-bundle-source.ts",
@@ -12344,22 +12349,27 @@
       "targetPath": "source/host/src/extensions/host_upgrade/host_upgrade_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "05cde6eef931ef0e775c2b89d279eab347d80b0c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/host_upgrade/host_upgrade_service.rs",
         "source/host/src/extensions/host_upgrade/host_bundle_upgrade.rs",
-        "source/host/src/extensions/host_upgrade/host_upgrade_marker.rs"
+        "source/host/src/extensions/host_upgrade/host_upgrade_marker.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/src/extensions/transcript/ack_obligations.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_upgrade_service_contract.rs",
         "source/host/tests/host_bundle_upgrade_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/host_upgrade_production_contract.rs"
+        "source/host/tests/host_upgrade_production_contract.rs",
+        "source/host/tests/ack_obligations_contract.rs",
+        "source/host/tests/routed_send_acceptance_contract.rs"
       ],
-      "notes": "Rust HostUpgradeService owns manual/idle update state, bundle in-flight fencing, local/latest version state, automation/share/transcript upgrade preparation, marker forwarding, failed-swap restage and idle-watch de-duplication. Shipping production composition now injects live Automations/CrossUserSharing/Telemetry/Transcript quiesce peers and the real bundle source/staging adapters. The row remains non-final specifically because resumeInterruptedUpgradeTurns is still fail-closed until durable markers can recreate the real shipping Runner with the frozen exclusive-background/Ack/automation semantics."
+      "notes": "Final: Rust HostUpgradeService owns manual/idle update state, bundle in-flight fencing, local/latest version state, automation/share/transcript upgrade preparation, marker forwarding, failed-swap restage and idle-watch de-duplication. Shipping production composition injects live Automations/CrossUserSharing/Telemetry/Transcript peers and real bundle source/staging adapters. resumeInterruptedUpgradeTurns now consumes durable markers, validates agent-scoped Ack tokens, acquires the exclusive background lane, and recreates the canonical shipping routed Runner; startup ordering resumes interrupted upgrades before Ack redrive."
     },
     {
       "referencePath": "source/host/extensions/inference/codex-direct-responses.ts",
