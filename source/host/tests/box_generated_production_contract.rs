@@ -16,7 +16,7 @@ use mahayana_host_runtime::r#box::box_windows::{
 };
 use mahayana_host_runtime::r#box::generated_production::{
     CONNECT_STREAM_CONTENT_TYPE, EXEC_PATH, PING_PATH, ProductionBoxExecError,
-    ProductionReadArgs, ProductionReadOutput, ProductionReadResult,
+    ProductionReadArgs, ProductionReadOutput, ProductionReadResult, ProductionShellResult,
 };
 use mahayana_host_runtime::r#box::box_factory::{
     format_sand_box_startup_summary, should_apply_shared_desktop,
@@ -65,8 +65,13 @@ fn connect_envelope(flags: u8, payload: &[u8]) -> Vec<u8> {
 }
 
 fn shell_success_element(stderr: &str) -> Vec<u8> {
+    shell_success_element_with_output("", stderr)
+}
+
+fn shell_success_element_with_output(stdout: &str, stderr: &str) -> Vec<u8> {
     let mut success = Vec::new();
     push_varint(3, 0, &mut success);
+    push_len(5, stdout.as_bytes(), &mut success);
     push_len(6, stderr.as_bytes(), &mut success);
 
     let mut shell_result = Vec::new();
@@ -215,6 +220,44 @@ fn serve_exec_response(
     stream.write_all(&connect_body).expect("write Connect body");
     stream.write_all(b"\r\n0\r\n\r\n").expect("finish chunks");
     stream.flush().expect("flush response");
+}
+
+#[test]
+fn production_exec_service_preserves_shell_stdout_for_internal_consumers() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind fake ExecService");
+    let port = listener.local_addr().expect("local address").port();
+    let server = thread::spawn(move || {
+        serve_exec_response(
+            &listener,
+            b"printf shipping-full-result",
+            shell_success_element_with_output("pending-recording\n", "diagnostic"),
+        );
+    });
+
+    let environment = ProductionBoxEnvironment::new("127.0.0.1", port, "secret");
+    let mut accessor = environment.remote_resource_accessor();
+    let result = accessor
+        .execute_shell_result(
+            &(),
+            build_host_shell_args(HostShellArgsInput {
+                command: "printf shipping-full-result".into(),
+                name: "printf".into(),
+                working_directory: "/workspace".into(),
+                tool_call_id: "shipping-full-result-contract".into(),
+            }),
+        )
+        .expect("shipping full shell result");
+
+    assert_eq!(
+        result,
+        ProductionShellResult::Success {
+            exit_code: 0,
+            stdout: "pending-recording\n".into(),
+            stderr: "diagnostic".into(),
+        }
+    );
+
+    server.join().expect("fake ExecService thread");
 }
 
 #[test]

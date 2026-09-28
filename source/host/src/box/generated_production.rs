@@ -270,10 +270,15 @@ pub enum ProductionExecRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProductionShellResult {
-    Success { exit_code: i32, stderr: String },
+    Success {
+        exit_code: i32,
+        stdout: String,
+        stderr: String,
+    },
     Failure {
         exit_code: i32,
         signal: String,
+        stdout: String,
         stderr: String,
         aborted: bool,
     },
@@ -468,7 +473,7 @@ impl ProductionBoxResourceAccessor {
             .ok_or(ProductionBoxExecError::MissingResult("raw-resource"))
     }
 
-    fn execute_shell_raw<Ctx>(
+    pub fn execute_shell_result<Ctx>(
         &mut self,
         ctx: &Ctx,
         args: HostShellArgs,
@@ -494,9 +499,11 @@ impl<Ctx> ShellAccessor<Ctx> for ProductionBoxResourceAccessor {
         ctx: &Ctx,
         args: HostShellArgs,
     ) -> Result<ShellExecutionResult, Self::Error> {
-        let result = self.execute_shell_raw(ctx, args)?;
+        let result = self.execute_shell_result(ctx, args)?;
         Ok(match result {
-            ProductionShellResult::Success { exit_code, stderr } => ShellExecutionResult {
+            ProductionShellResult::Success {
+                exit_code, stderr, ..
+            } => ShellExecutionResult {
                 result: ShellExecutionOutcome::Success { exit_code, stderr },
             },
             ProductionShellResult::Failure {
@@ -504,6 +511,7 @@ impl<Ctx> ShellAccessor<Ctx> for ProductionBoxResourceAccessor {
                 signal,
                 stderr,
                 aborted,
+                ..
             } => ShellExecutionResult {
                 result: ShellExecutionOutcome::Failure {
                     case: format!(
@@ -546,7 +554,7 @@ impl<Ctx> FileTransferAccessor<Ctx> for ProductionBoxResourceAccessor {
         ctx: &Ctx,
         args: HostShellArgs,
     ) -> Result<ShellExecResult, Self::Error> {
-        let result = self.execute_shell_raw(ctx, args)?;
+        let result = self.execute_shell_result(ctx, args)?;
         Ok(match result {
             ProductionShellResult::Success { exit_code, .. } => {
                 ShellExecResult::Success { exit_code }
@@ -556,6 +564,7 @@ impl<Ctx> FileTransferAccessor<Ctx> for ProductionBoxResourceAccessor {
                 signal,
                 stderr,
                 aborted,
+                ..
             } => ShellExecResult::Failure {
                 exit_code,
                 signal,
@@ -886,8 +895,13 @@ fn decode_shell_success(
     input: &[u8],
 ) -> Result<ProductionShellResult, ProductionBoxTransportError> {
     let exit_code = decode_u64_field(input, 3)?.unwrap_or_default() as u32 as i32;
+    let stdout = decode_string_field(input, 5)?.unwrap_or_default();
     let stderr = decode_string_field(input, 6)?.unwrap_or_default();
-    Ok(ProductionShellResult::Success { exit_code, stderr })
+    Ok(ProductionShellResult::Success {
+        exit_code,
+        stdout,
+        stderr,
+    })
 }
 
 fn decode_shell_failure(
@@ -896,6 +910,7 @@ fn decode_shell_failure(
     Ok(ProductionShellResult::Failure {
         exit_code: decode_u64_field(input, 3)?.unwrap_or_default() as u32 as i32,
         signal: decode_string_field(input, 4)?.unwrap_or_default(),
+        stdout: decode_string_field(input, 5)?.unwrap_or_default(),
         stderr: decode_string_field(input, 6)?.unwrap_or_default(),
         aborted: decode_u64_field(input, 11)?.unwrap_or_default() != 0,
     })
