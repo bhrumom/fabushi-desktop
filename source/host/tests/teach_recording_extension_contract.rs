@@ -6,8 +6,10 @@ use std::sync::{Arc, Mutex};
 use mahayana_host_runtime::extensions::teach_recording::extension::{
     CAP_SLACK_MS, TEACH_QUEUE_KEY_FILENAME, TEACH_RECORDING_DEPENDENCIES,
     TeachRecordingService, TeachRecordingServiceDeps, TeachRecordingServiceFactory,
-    load_teach_queue_key_with, parse_teach_queue_key, start_teach_recording_extension,
+    create_teach_recording_extension, load_teach_queue_key_with, parse_teach_queue_key,
+    recover_teach_recording_extension, start_teach_recording_extension,
 };
+use mahayana_host_runtime::extensions::teach_recording::teach_recording_service::SAND_TEACH_MAX_DURATION_MS;
 
 #[test]
 fn queue_key_parser_and_persistence_match_the_frozen_extension_contract() {
@@ -119,7 +121,7 @@ impl TeachRecordingServiceFactory for FakeFactory {
 fn deps() -> TeachRecordingServiceDeps {
     TeachRecordingServiceDeps {
         is_enabled: Arc::new(|| true),
-        cap_delay_ms: 15 * 60_000 + CAP_SLACK_MS,
+        cap_delay_ms: SAND_TEACH_MAX_DURATION_MS + CAP_SLACK_MS,
         send_learning_prompt: Arc::new(|_, _, _, _| Ok(())),
         list_agent_ids: Arc::new(|| Ok(vec!["agent-1".into()])),
         queue_signature_key: Arc::new(|| Ok([7; 32])),
@@ -148,8 +150,35 @@ fn extension_composes_service_recovers_pending_and_disposes_with_host_lifecycle(
 
     let extension = start_teach_recording_extension(&factory, deps(), log);
     assert_eq!(extension.api(), Api("teach-api"));
-    assert_eq!(*cap.lock().unwrap(), Some(15 * 60_000 + CAP_SLACK_MS));
+    assert_eq!(*cap.lock().unwrap(), Some(SAND_TEACH_MAX_DURATION_MS + CAP_SLACK_MS));
     assert!(logs.lock().unwrap().is_empty());
+    drop(extension);
+    assert_eq!(dispose_calls.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn production_composition_can_publish_api_before_pending_recovery() {
+    let cap = Arc::new(Mutex::new(None));
+    let dispose_calls = Arc::new(AtomicUsize::new(0));
+    let factory = FakeFactory {
+        seen_cap_delay: Arc::clone(&cap),
+        dispose_calls: Arc::clone(&dispose_calls),
+        fail_recovery: false,
+    };
+    let extension = create_teach_recording_extension(&factory, deps());
+
+    assert_eq!(extension.api(), Api("teach-api"));
+    assert_eq!(
+        extension.service().recover_calls.load(Ordering::SeqCst),
+        0,
+        "shipping Host must be able to publish the API before recovery can re-enter sendPrompt"
+    );
+
+    recover_teach_recording_extension(&extension, Arc::new(|_| {}));
+    assert_eq!(
+        extension.service().recover_calls.load(Ordering::SeqCst),
+        1
+    );
     drop(extension);
     assert_eq!(dispose_calls.load(Ordering::SeqCst), 1);
 }

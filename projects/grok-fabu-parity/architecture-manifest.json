@@ -14281,20 +14281,28 @@
       "targetPath": "source/host/src/extensions/teach_recording/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "37a530d2bc60a8f090e69787b475bca03f0c917b",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/teach_recording/extension.rs",
+        "source/host/src/extensions/teach_recording/teach_recording_service.rs",
+        "source/host/src/box/generated_production.rs",
+        "source/host/app/src/main.rs",
+        "source/shared/rpc/coordinator.ts",
         "source/host/src/extensions/extension_ids.generated.rs",
         "source/host/src/extensions/registry.rs"
       ],
       "testEvidence": [
         "source/host/tests/teach_recording_extension_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/teach_recording_service_contract.rs",
+        "source/host/tests/box_generated_production_contract.rs",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Mahayana Host now owns the frozen teach-recording extension boundary: the generated registry ID/dependency set, versioned 32-byte queue-signature key parsing and 0600 persistence, cryptographic key generation, cap-delay composition, service-factory dependency injection, best-effort pending recovery, API projection, and Host-lifecycle disposal. Final remains withheld until the independent teach-recording-service Rust owner ports the ffmpeg/Box recording, signed pending queue, save/discard, recovery and learning-prompt state machine and production Host composition binds these ports."
+      "notes": "Rust Mahayana Host owns the frozen teach-recording extension end-to-end: generated registry/dependency identity, persisted 32-byte queue signing key, frozen 10-minute cap plus slack, real ForeverBox shell runtime with stdout/stderr preservation, ffmpeg/private-monitor recording, signed pending queue save/discard/recovery, managed learn-from-demonstration workflow, Transcript sendPrompt redelivery, frozen analytics and structured failure telemetry, Renderer/Coordinator RPC methods, deferred post-gateway recovery to avoid Host-lane re-entry deadlock, and Host-lifecycle disposal before ForeverBox teardown. Shipping production composition is bound in source/host/app/src/main.rs and covered by focused Rust contracts plus CI."
     },
     {
       "referencePath": "source/host/extensions/teach-recording/teach-recording-service.ts",
@@ -14312,7 +14320,7 @@
         "source/host/tests/teach_recording_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Mahayana Host now owns the frozen teach-recording service state machine: private-monitor ffmpeg/x11grab capture, PID/cmdline ownership fencing, 15-minute cap stop, HMAC-SHA256 signed pending queues with constant-time verification/quarantine, save/discard finalization, crash recovery and idempotent learning-prompt redelivery. The service is independently injectable/testable through a Box shell runtime port. Shipping Host registration remains intentionally tracked by the separate teach-recording extension row until production composition starts it.",
+      "notes": "Rust Mahayana Host owns the frozen teach-recording service state machine: private-monitor ffmpeg/x11grab capture, PID/cmdline ownership fencing, the frozen 10-minute cap stop, HMAC-SHA256 signed pending queues with constant-time verification/quarantine, save/discard finalization, crash recovery and idempotent learning-prompt redelivery. The service is independently injectable/testable through a Box shell runtime port and is now bound by the shipping Host teach-recording extension.",
       "parityMode": "rust-port"
     },
     {
