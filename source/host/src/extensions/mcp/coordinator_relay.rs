@@ -3,6 +3,7 @@ use super::mcp_service::{
     BoxServerStatus, CatalogField, CatalogPlugin, CatalogSkill, EffectivePlugin,
     McpManagerBackend, McpServerSummary,
 };
+use super::plugin_skills::{LoadedPlugins, PluginSkillsLoader};
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::{
@@ -68,6 +69,28 @@ pub fn is_host_mcp_lifecycle_method(method: &str) -> bool {
             | MCP_RENAME_ACCOUNT_METHOD
             | MCP_NOTE_AUTH_COMPLETED_METHOD
     )
+}
+
+#[derive(Clone)]
+pub struct CoordinatorPluginSkillsLoader {
+    relay: Arc<CoordinatorMcpLifecycleRelay>,
+}
+
+impl CoordinatorPluginSkillsLoader {
+    pub fn new(relay: Arc<CoordinatorMcpLifecycleRelay>) -> Self {
+        Self { relay }
+    }
+}
+
+impl PluginSkillsLoader for CoordinatorPluginSkillsLoader {
+    fn load(&self) -> Result<LoadedPlugins, String> {
+        let payload = self
+            .relay
+            .request(MCP_LOAD_PLUGIN_SKILLS_METHOD, json!({}))
+            .map_err(|error| error.to_string())?;
+        serde_json::from_value(payload)
+            .map_err(|error| format!("invalid Plugin Skills loader response: {error}"))
+    }
 }
 
 pub struct CoordinatorMcpLifecycleRelay {
