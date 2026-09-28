@@ -6,6 +6,7 @@ pub const MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD: &str = "mcp.resolveLifecycleRequ
 pub const MCP_LIST_SERVERS_METHOD: &str = "listHostMcpServers";
 pub const MCP_LIST_CATALOG_METHOD: &str = "listHostMcpCatalog";
 pub const MCP_LIST_EFFECTIVE_PLUGINS_METHOD: &str = "listHostEffectiveMcpPlugins";
+pub const MCP_LOAD_PLUGIN_SKILLS_METHOD: &str = "loadHostPluginSkills";
 pub const MCP_INSTALL_PLUGIN_METHOD: &str = "installHostMcpPlugin";
 pub const MCP_UNINSTALL_PLUGIN_METHOD: &str = "uninstallHostMcpPlugin";
 pub const MCP_ADD_SERVER_METHOD: &str = "addHostMcpServer";
@@ -31,6 +32,7 @@ pub fn is_host_mcp_lifecycle_method(method: &str) -> bool {
         MCP_LIST_SERVERS_METHOD
             | MCP_LIST_CATALOG_METHOD
             | MCP_LIST_EFFECTIVE_PLUGINS_METHOD
+            | MCP_LOAD_PLUGIN_SKILLS_METHOD
             | MCP_INSTALL_PLUGIN_METHOD
             | MCP_UNINSTALL_PLUGIN_METHOD
             | MCP_ADD_SERVER_METHOD
