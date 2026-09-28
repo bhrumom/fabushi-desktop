@@ -12419,18 +12419,21 @@
       "targetPath": "source/host/src/extensions/inference/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "d8c4a00d2d577631a0b742ed97b1f09048a545da",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/inference/extension.rs"
+        "source/host/src/extensions/inference/extension.rs",
+        "source/host/src/extensions/inference/production.rs",
+        "source/host/src/host_production_extensions.rs"
       ],
       "testEvidence": [
         "source/host/tests/inference_extension_composition_contract.rs",
+        "source/host/tests/host_production_extensions_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host now owns the inference extension readiness rule (mock response or cached access token) and model-experiment listener fanout while preserving a distinct AgentInferenceOwner port. Final remains withheld until the production Host extension registry starts this runtime and exposes web-search/web-fetch through the canonical extension surface."
+      "notes": "Rust Mahayana Host now preserves the frozen inference extension boundary: explicit auth/experiments/settings dependencies, readiness from mock response or cached access token, model-experiment listener fanout, a distinct AgentInferenceOwner port, and canonical production Host ownership. ProductionHostExtensions starts the Inference slot, and ProductionInferenceExtension exposes authenticated Cursor web-search/web-fetch without moving Runner turn execution into Host. Deeper inference-service/cursor-session parity remains tracked by their own non-final rows."
     },
     {
       "referencePath": "source/host/extensions/inference/inference-service.ts",
