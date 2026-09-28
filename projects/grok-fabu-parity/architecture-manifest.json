@@ -12275,9 +12275,10 @@
       "testEvidence": [
         "source/host/tests/host_upgrade_extension_contract.rs",
         "source/host/tests/host_upgrade_service_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/host_upgrade_production_contract.rs"
       ],
-      "notes": "Rust HostUpgrade extension now owns the frozen identity/dependency set, environment/watch policy, marker store, immediate post-identity marker forwarding, periodic marker forwarding, jittered shared update-watch worker, idempotent start/stop, and worker teardown. It remains existing-needs-parity until shipping Host production composition injects the real Automations/CrossUserSharing/Telemetry/Transcript peers and production bundle-source/root-update adapters."
+      "notes": "Rust HostUpgrade extension owns the frozen identity/dependency set, environment/watch policy, marker store, immediate post-identity marker forwarding, periodic forwarding, jittered shared update-watch worker, idempotent start/stop and worker teardown. Shipping Host now injects the live rustls bundle fetcher, supervisor staging, structured telemetry, the authoritative Transcript AutomationRuntime wake gate, ProductionCrossUserRuntime stop boundary, and ProductionTranscriptRuntime quiesce owner. It remains non-final only because resumeInterruptedUpgradeTurns still lacks the frozen durable real-Runner recreation path and the shared root-update callback has no independent production owner yet."
     },
     {
       "referencePath": "source/host/extensions/host-upgrade/host-bundle-source.ts",
@@ -12303,7 +12304,7 @@
       "targetPath": "source/host/src/extensions/host_upgrade/host_bundle_upgrade.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f4d51c449db520d1c450f5a391a537ad94f7fdfa",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12314,9 +12315,10 @@
       ],
       "testEvidence": [
         "source/host/tests/host_bundle_upgrade_contract.rs",
+        "source/host/tests/host_upgrade_production_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host owns supervisor bundle command construction, atomic bundle/command staging, local-version availability, swap-veto acknowledgement, bounded failed-swap restaging with crash-loop protection, fetch/stage failure de-duplication, and frozen watch jitter math; the HostUpgrade extension now also consumes that jitter math in its real background watch worker. Final remains withheld until production Host composition provides the live bundle source and peer quiesce/resume adapters."
+      "notes": "Rust Host owns the frozen supervisor bundle command construction, atomic bundle/command staging, local-version availability, swap-veto acknowledgement, bounded failed-swap restaging with crash-loop protection, fetch/stage failure de-duplication, and watch jitter math. Shipping HostUpgrade now injects the live rustls-backed bundle source, real supervisor staging path, telemetry, and live automation/sharing/transcript quiesce peers; exact-HEAD Host cargo check and focused HostUpgrade production contracts cover the production composition."
     },
     {
       "referencePath": "source/host/extensions/host-upgrade/host-upgrade-marker.ts",
@@ -12354,9 +12356,10 @@
       "testEvidence": [
         "source/host/tests/host_upgrade_service_contract.rs",
         "source/host/tests/host_bundle_upgrade_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/host_upgrade_production_contract.rs"
       ],
-      "notes": "Rust HostUpgradeService owns manual/idle update state, bundle in-flight fencing, local/latest version state, automation/share/transcript upgrade preparation and resume, marker forwarding, failed-swap restage and idle-watch de-duplication; HostUpgradeExtension now schedules the service through real background workers. Final remains withheld until shipping production composition injects live Automations/CrossUserSharing/Telemetry/Transcript and bundle-source adapters."
+      "notes": "Rust HostUpgradeService owns manual/idle update state, bundle in-flight fencing, local/latest version state, automation/share/transcript upgrade preparation, marker forwarding, failed-swap restage and idle-watch de-duplication. Shipping production composition now injects live Automations/CrossUserSharing/Telemetry/Transcript quiesce peers and the real bundle source/staging adapters. The row remains non-final specifically because resumeInterruptedUpgradeTurns is still fail-closed until durable markers can recreate the real shipping Runner with the frozen exclusive-background/Ack/automation semantics."
     },
     {
       "referencePath": "source/host/extensions/inference/codex-direct-responses.ts",
