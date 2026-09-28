@@ -15088,17 +15088,19 @@
         "source/host/src/runner/tools/sand_agent_management_tools.rs",
         "source/host/src/runner/turn_agent_composition.rs",
         "source/node-agent-coordinator/src/main.rs",
-        "source/node-agent-coordinator/src/inference_router.rs"
+        "source/node-agent-coordinator/src/inference_router.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_to_agent_messaging_contract.rs",
         "source/host/tests/sand_agent_management_tools_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/node-agent-coordinator/tests/coordinator_contract.rs"
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/host/tests/transcript_production_composition_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Production SendToAgent durably writes sender/recipient transcript state, persists the conversation partner, records recipient activity and emits agent-inbound-wake-request with the frozen hidden prompt; group targets receive the durable group post. Mahayana Coordinator now consumes that wake request into a hidden requestSource=agent-inbound route, serializes normal peer wakes per Agent and puts priority peer wakes on the urgent queue. This row remains non-final because the Host priority interrupt still needs the frozen user-vs-non-user preemption fence, and the durable pending-inbound/redrive lifecycle, complete group-member fanout, and recipient-run selected-image materialization still need production parity. These broader Transcript responsibilities are intentionally not hidden by the now-final Runner sand-agent-management-tools mapping."
+      "notes": "Production SendToAgent durably writes sender/recipient transcript state, persists the conversation partner, records recipient activity and emits agent-inbound-wake-request with the frozen hidden prompt; group targets receive the durable group post. Mahayana Coordinator consumes that wake request into a hidden requestSource=agent-inbound route, serializes normal peer wakes per Agent and puts priority peer wakes on the urgent queue. Shipping Host now classifies requestSource=agent-inbound as RunLane::Agent and applies the frozen priority-peer fence: an active RunLane::User is never cancelled, while Agent/Background/idle targets remain preemptible. Exact implementation HEAD 53c5ddd03b0ad0abdea64a2d367fef6e0391d6ca passed shipping Host build, independent Mahayana Coordinator contract and independent Mahayana Host Runner contract in Rust desktop runtime run 36369832560 (rust-host job 108764549059), plus both Desktop Chat Parity jobs in run 36369832624. This row remains non-final for the durable pending-inbound/redrive lifecycle, complete group-member fanout/redrive semantics, and recipient-run selected-image materialization."
     },
     {
       "referencePath": "source/host/extensions/transcript/async-task-union.ts",
