@@ -14,7 +14,8 @@ use crate::extensions::auth::extension::{
 };
 use crate::extensions::auth::user_full_name_service::production_user_full_name_fetch;
 use crate::extensions::automations::listener_connect_watcher_production::ListenerConnectedCallback;
-use crate::extensions::automations::production::{FireDispatch, ProductionLog, RelayEventSink, RelayListeners};
+use crate::extensions::automations::production::{FireDispatch, FirePollStateReader, ProductionLog, RelayEventSink, RelayListeners};
+use crate::extensions::automations::sand_automation_cloud_sync::is_server_schedulable;
 use crate::extensions::automations::listener_integrations::AgentChannelsReader;
 use crate::extensions::automations::production_lifecycle::{
     CloudAgentIdsReader, CloudDefinitionsReader, CloudTimeZoneReader,
@@ -353,6 +354,18 @@ impl ProductionHostExtensions {
         if slot.is_some() {
             return Err("production Automations runtime is already started".into());
         }
+        let fire_definitions = Arc::clone(&cloud_definitions);
+        let fire_inference = Arc::clone(&self.inference);
+        let fire_poll_state: FirePollStateReader = Arc::new(move || {
+            let has_server_schedulable = fire_definitions()
+                .map(|entries| {
+                    entries.into_iter().any(|(_, automation)| {
+                        automation.is_enabled && is_server_schedulable(&automation.trigger)
+                    })
+                })
+                .unwrap_or(false);
+            (fire_inference.is_ready(), has_server_schedulable)
+        });
         let runtime = ProductionAutomationsLifecycle::start(
             self.backend_url.clone(),
             Arc::clone(&self.auth),
@@ -365,6 +378,7 @@ impl ProductionHostExtensions {
             cloud_definitions,
             cloud_agent_ids,
             cloud_time_zone,
+            fire_poll_state,
             Arc::clone(&self.trays),
             self.telemetry.logs.clone(),
             log,
