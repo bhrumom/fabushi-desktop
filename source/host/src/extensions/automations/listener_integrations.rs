@@ -95,6 +95,10 @@ struct GetSlackInstallUrlResponse {
     url: String,
 }
 
+pub trait PlatformConnectionReader: Send + Sync {
+    fn is_platform_connected(&self, platform: &str) -> Result<bool, SandConnectError>;
+}
+
 pub struct ProductionListenerIntegrations {
     client: Arc<SandConnectUnaryClient>,
 }
@@ -104,7 +108,7 @@ impl ProductionListenerIntegrations {
         Self { client }
     }
 
-    pub fn is_platform_connected(&self, platform: &str) -> Result<bool, SandConnectError> {
+    fn read_platform_connected(&self, platform: &str) -> Result<bool, SandConnectError> {
         match platform {
             "slack" => self
                 .client
@@ -148,5 +152,11 @@ impl ProductionListenerIntegrations {
             .map(|response| response.url)
             .filter(|url| !url.trim().is_empty())
             .unwrap_or_else(|| DASHBOARD_INTEGRATIONS_URL.to_string())
+    }
+}
+
+impl PlatformConnectionReader for ProductionListenerIntegrations {
+    fn is_platform_connected(&self, platform: &str) -> Result<bool, SandConnectError> {
+        self.read_platform_connected(platform)
     }
 }
