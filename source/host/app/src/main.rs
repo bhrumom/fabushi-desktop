@@ -107,11 +107,21 @@ use mahayana_host_runtime::extensions::transcript::workflow_commands::{
     WorkflowCommandError, WorkflowRunNowPlan, dispatch_workflow_command_with_runtime,
     prepare_workflow_run_now,
 };
-use mahayana_host_runtime::extensions::transcript::automation_run_path::AutomationExecutionResult;
+use mahayana_host_runtime::extensions::transcript::automation_run_path::{
+    AutomationExecutionResult, FireAutomationOutcome,
+};
 use mahayana_host_runtime::extensions::transcript::automation_runtime::{
     AutomationCommandError, dispatch_automation_command,
 };
 use mahayana_host_runtime::automations::automation_status_reminder::create_automation_status_reminder;
+use mahayana_host_runtime::automations::automation_trigger::{trigger_matches_event, trigger_members};
+use mahayana_host_runtime::extensions::automations::fire_delivery::{
+    PreparedBackendFire, prepare_backend_fire,
+};
+use mahayana_host_runtime::extensions::automations::production_lifecycle::ProductionAutomationsLifecycle;
+use mahayana_host_runtime::extensions::automations::sand_automation_fire_consumer::{
+    BackendAutomationFire, FireCompletion,
+};
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     AckObligations, AckRedrivePreparation, build_ack_redrive_empty_delivery_report,
     build_ack_redrive_send_args,
@@ -837,6 +847,7 @@ struct UnifiedGatewayApi {
     host_runner_composition: Arc<HostRunnerComposition>,
     cross_user: Arc<ProductionCrossUserRuntime>,
     host_upgrade: Arc<ProductionHostUpgradeExtension>,
+    automations_lifecycle: Mutex<Weak<ProductionAutomationsLifecycle>>,
     create_agent_nonces: Mutex<CreateAgentNonceLedger<serde_json::Value>>,
     last_busy_at_ms: Mutex<u64>,
 }
@@ -896,6 +907,233 @@ impl UnifiedGatewayApi {
             production_action_auditor: self.production_action_auditor.clone(),
             cloud_agents: Arc::clone(&self.cloud_agents),
             host_runner_composition: Arc::clone(&self.host_runner_composition),
+        }
+    }
+
+    fn refresh_production_automations(&self) {
+        let lifecycle = self
+            .automations_lifecycle
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .upgrade();
+        let Some(lifecycle) = lifecycle else {
+            return;
+        };
+        lifecycle.request_reconcile();
+        let Ok(entries) = self
+            .transcript_manager
+            .automation_runtime()
+            .list_all_automation_definitions()
+        else {
+            return;
+        };
+        for entry in entries.into_iter().filter(|entry| entry.automation.is_enabled) {
+            for listener in trigger_members(&entry.automation.trigger) {
+                if let Some(platform @ ("slack" | "github")) =
+                    listener.get("type").and_then(serde_json::Value::as_str)
+                {
+                    lifecycle.watch_listener_connection(entry.agent_id.clone(), platform);
+                }
+            }
+        }
+    }
+
+    fn resume_after_listener_connect(&self, agent_id: &str, platform: &str) -> Result<(), String> {
+        let nonce = format!(
+            "listener-connect-resume:{agent_id}:{platform}:{}",
+            uuid::Uuid::new_v4()
+        );
+        self.call(
+            "sendPrompt",
+            listener_connect_resume_args(agent_id, platform, &nonce),
+        )
+        .map(|_| ())
+        .map_err(|error| error.to_string())
+    }
+
+    fn dispatch_production_listener_event(&self, event: serde_json::Value) -> bool {
+        let Some(provider) = configured_routed_provider(&self.data_dir.join("settings.json")) else {
+            return false;
+        };
+        if provider == RoutedProvider::Cursor {
+            // Fail closed: do not ACK backend relay delivery until the Cursor
+            // background Runner path is owned by the Rust Host.
+            return false;
+        }
+
+        let runtime = self.transcript_manager.automation_runtime();
+        let Ok(entries) = runtime.list_all_automation_definitions() else {
+            return false;
+        };
+        let matches = entries
+            .into_iter()
+            .filter(|entry| entry.automation.is_enabled)
+            .filter(|entry| trigger_matches_event(&entry.automation.trigger, &event, true, false))
+            .collect::<Vec<_>>();
+        if matches.is_empty() {
+            return false;
+        }
+
+        let mut accepted = 0usize;
+        for entry in matches {
+            let runtime = Arc::clone(&runtime);
+            let deps = self.local_routed_runner_deps();
+            let event = event.clone();
+            let agent_id = entry.agent_id;
+            let automation_id = entry.automation.id;
+            let automation_name = entry.automation.name;
+            let spawn = thread::Builder::new()
+                .name("mahayana-automation-listener-fire".into())
+                .spawn(move || {
+                    let execute_deps = deps.clone();
+                    let execute_agent_id = agent_id.clone();
+                    let execute_automation_id = automation_id.clone();
+                    let execute_automation_name = automation_name.clone();
+                    let executor = Arc::new(move |_agent_id: &str, _automation_id: &str, _automation_name: &str, prompt: &str| {
+                        run_local_automation_turn(
+                            execute_deps.clone(),
+                            provider,
+                            &execute_agent_id,
+                            &execute_automation_id,
+                            &execute_automation_name,
+                            prompt,
+                        )
+                    });
+                    if let Err(error) = runtime.enqueue_event_automation_fire_with(
+                        &agent_id,
+                        &automation_id,
+                        event,
+                        None,
+                        executor,
+                    ) {
+                        eprintln!(
+                            "[sand:automations] listener fire failed agent={agent_id} automation={automation_id}: {error}"
+                        );
+                    }
+                });
+            if spawn.is_ok() {
+                accepted += 1;
+            }
+        }
+        accepted > 0
+    }
+
+    fn dispatch_production_backend_fire(
+        &self,
+        fire: BackendAutomationFire,
+        completion: Arc<dyn Fn(Option<FireCompletion>) + Send + Sync>,
+    ) -> bool {
+        let runtime = self.transcript_manager.automation_runtime();
+        let Ok(entries) = runtime.list_all_automations() else {
+            return false;
+        };
+        match prepare_backend_fire(&entries, &fire, |_| None) {
+            PreparedBackendFire::Complete {
+                completion: terminal,
+                ..
+            } => {
+                completion(Some(terminal));
+                true
+            }
+            PreparedBackendFire::Abandon { .. } => false,
+            PreparedBackendFire::Schedule {
+                agent_id,
+                automation_id,
+                run_uuid,
+                ..
+            } => {
+                let Some(provider) =
+                    configured_routed_provider(&self.data_dir.join("settings.json"))
+                else {
+                    return false;
+                };
+                if provider == RoutedProvider::Cursor {
+                    return false;
+                }
+                let Some(automation) = entries
+                    .iter()
+                    .find(|entry| {
+                        entry.agent_id == agent_id && entry.automation.id == automation_id
+                    })
+                    .map(|entry| entry.automation.clone())
+                else {
+                    return false;
+                };
+                let deps = self.local_routed_runner_deps();
+                thread::Builder::new()
+                    .name("mahayana-automation-cloud-fire".into())
+                    .spawn(move || {
+                        let result = runtime.run_server_scheduled_automation_with(
+                            &agent_id,
+                            &automation_id,
+                            run_uuid,
+                            |prompt| {
+                                run_local_automation_turn(
+                                    deps,
+                                    provider,
+                                    &agent_id,
+                                    &automation_id,
+                                    &automation.name,
+                                    prompt,
+                                )
+                            },
+                        );
+                        completion(automation_fire_completion(result));
+                    })
+                    .is_ok()
+            }
+            PreparedBackendFire::Event {
+                agent_id,
+                automation_id,
+                run_uuid,
+                event,
+            } => {
+                let Some(provider) =
+                    configured_routed_provider(&self.data_dir.join("settings.json"))
+                else {
+                    return false;
+                };
+                if provider == RoutedProvider::Cursor {
+                    return false;
+                }
+                let Some(automation) = entries
+                    .iter()
+                    .find(|entry| {
+                        entry.agent_id == agent_id && entry.automation.id == automation_id
+                    })
+                    .map(|entry| entry.automation.clone())
+                else {
+                    return false;
+                };
+                let deps = self.local_routed_runner_deps();
+                thread::Builder::new()
+                    .name("mahayana-automation-cloud-event".into())
+                    .spawn(move || {
+                        let execute_deps = deps.clone();
+                        let execute_agent_id = agent_id.clone();
+                        let execute_automation_id = automation_id.clone();
+                        let execute_automation_name = automation.name.clone();
+                        let executor = Arc::new(move |_agent_id: &str, _automation_id: &str, _automation_name: &str, prompt: &str| {
+                            run_local_automation_turn(
+                                execute_deps.clone(),
+                                provider,
+                                &execute_agent_id,
+                                &execute_automation_id,
+                                &execute_automation_name,
+                                prompt,
+                            )
+                        });
+                        let result = runtime.enqueue_event_automation_fire_with(
+                            &agent_id,
+                            &automation_id,
+                            event,
+                            Some(run_uuid),
+                            executor,
+                        );
+                        completion(automation_fire_completion(result));
+                    })
+                    .is_ok()
+            }
         }
     }
 
@@ -1313,6 +1551,43 @@ fn start_local_upgrade_resume_turn(
     )
     .map(|_| ())
     .map_err(|error| error.to_string())
+}
+
+fn listener_connect_resume_args(
+    agent_id: &str,
+    platform: &str,
+    client_nonce: &str,
+) -> serde_json::Value {
+    let prompt = if platform == "slack" {
+        "Slack is connected. Continue configuring the listener from where you left off. If this routine listens in a Slack channel, make sure the bot is invited to that channel."
+    } else {
+        "The integration is connected. Continue configuring the listener from where you left off."
+    };
+    serde_json::json!({
+        "agentId": agent_id,
+        "prompt": prompt,
+        "clientNonce": client_nonce,
+        "appendUserMessage": false,
+        "hidden": true,
+        "requestSource": "handoff-resume",
+        "awaitTurn": false,
+    })
+}
+
+fn automation_fire_completion(
+    result: Result<Option<FireAutomationOutcome>, String>,
+) -> Option<FireCompletion> {
+    match result {
+        Ok(Some(FireAutomationOutcome::Ok)) => Some(FireCompletion::succeeded()),
+        Ok(Some(FireAutomationOutcome::Error)) => Some(FireCompletion::failed(
+            "Automation run failed on the Sand box",
+        )),
+        Ok(Some(FireAutomationOutcome::Interrupted)) => Some(FireCompletion::failed(
+            "Automation run was interrupted on the Sand box",
+        )),
+        Ok(None) => None,
+        Err(error) => Some(FireCompletion::failed(error)),
+    }
 }
 
 fn automation_terminal_from_event(
@@ -3450,7 +3725,11 @@ impl GatewayApi for UnifiedGatewayApi {
             method,
             &args,
         ) {
-            return result.map_err(map_automation_command_error);
+            let result = result.map_err(map_automation_command_error);
+            if result.is_ok() && method != "getAgentAutomations" {
+                self.refresh_production_automations();
+            }
+            return result;
         }
         let workflow_automation_runtime = self.transcript_manager.automation_runtime();
         if let Some(result) = dispatch_workflow_command_with_runtime(
@@ -5093,12 +5372,67 @@ fn main() {
             host_runner_composition: Arc::clone(&host_runner_composition),
             cross_user: Arc::clone(&cross_user),
             host_upgrade: Arc::clone(&host_upgrade),
+            automations_lifecycle: Mutex::new(Weak::new()),
             create_agent_nonces: Mutex::new(CreateAgentNonceLedger::default()),
             last_busy_at_ms: Mutex::new(gateway_started_at),
         });
     *host_upgrade_gateway_slot
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) = Arc::downgrade(&gateway_api);
+
+    let listener_runtime = transcript_manager.automation_runtime();
+    let production_listeners = Arc::new(move || {
+        let Ok(entries) = listener_runtime.list_all_automation_definitions() else {
+            return (Vec::new(), Vec::new());
+        };
+        let mut slack = Vec::new();
+        let mut github = Vec::new();
+        for entry in entries.into_iter().filter(|entry| entry.automation.is_enabled) {
+            for listener in trigger_members(&entry.automation.trigger) {
+                match listener.get("type").and_then(serde_json::Value::as_str) {
+                    Some("slack") => slack.push(listener),
+                    Some("github") => github.push(listener),
+                    _ => {}
+                }
+            }
+        }
+        (slack, github)
+    });
+    let listener_gateway = Arc::clone(&gateway_api);
+    let relay_sink = Arc::new(move |event: serde_json::Value| {
+        listener_gateway.dispatch_production_listener_event(event)
+    });
+    let fire_gateway = Arc::clone(&gateway_api);
+    let fire_dispatch = Arc::new(move |fire, completion| {
+        fire_gateway.dispatch_production_backend_fire(fire, completion)
+    });
+    let resume_gateway = Arc::clone(&gateway_api);
+    let on_listener_connected = Arc::new(move |agent_id: &str, platform: &str| {
+        if let Err(error) = resume_gateway.resume_after_listener_connect(agent_id, platform) {
+            eprintln!(
+                "[sand:automations] listener reconnect resume failed agent={agent_id} platform={platform}: {error}"
+            );
+        }
+    });
+    let automations_lifecycle = match production_extensions.start_automations(
+        production_listeners,
+        relay_sink,
+        fire_dispatch,
+        on_listener_connected,
+        Arc::new(|message| eprintln!("{message}")),
+    ) {
+        Ok(runtime) => runtime,
+        Err(error) => {
+            eprintln!("failed to start production Automations extension: {error}");
+            return;
+        }
+    };
+    *gateway_api
+        .automations_lifecycle
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) =
+        Arc::downgrade(&automations_lifecycle);
+    gateway_api.refresh_production_automations();
 
     let teach_runtime: Arc<dyn TeachRecordingRuntimePort> =
         Arc::new(ProductionTeachRecordingRuntime::new(Arc::clone(&forever_box)));
@@ -5357,6 +5691,9 @@ fn main() {
     if let Err(error) = production_extensions.stop_mcp() {
         eprintln!("failed to stop production MCP extension cleanly: {error}");
     }
+    if let Err(error) = production_extensions.stop_automations() {
+        eprintln!("failed to stop production Automations extension cleanly: {error}");
+    }
     cross_user.stop();
     production_extensions.notify_bus.stop();
     session_extension.shutdown();
@@ -5389,7 +5726,8 @@ mod tests {
         ProductionHostExtensions, ProductionRunnerRequestContextSource, UnifiedGatewayApi,
         decode_provider_messages,
         dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
-        AutomationExecutionResult, automation_terminal_from_event,
+        AutomationExecutionResult, automation_fire_completion, automation_terminal_from_event,
+        listener_connect_resume_args,
         project_forever_box_status, reaction_gateway_args,
     };
     use mahayana_host_runtime::extensions::forever_box::BoxStatus;
@@ -5432,6 +5770,41 @@ mod tests {
     }
 
 
+
+    #[test]
+    fn listener_connect_resume_is_hidden_handoff_with_stable_nonce() {
+        let args = listener_connect_resume_args("agent-1", "slack", "nonce-123");
+        assert_eq!(args["agentId"], "agent-1");
+        assert_eq!(args["clientNonce"], "nonce-123");
+        assert_eq!(args["requestSource"], "handoff-resume");
+        assert_eq!(args["appendUserMessage"], false);
+        assert_eq!(args["hidden"], true);
+        assert!(
+            args["prompt"]
+                .as_str()
+                .expect("resume prompt")
+                .contains("bot is invited")
+        );
+    }
+
+    #[test]
+    fn backend_fire_completion_preserves_retryable_none_and_terminal_outcomes() {
+        assert_eq!(automation_fire_completion(Ok(None)), None);
+        assert_eq!(
+            automation_fire_completion(Ok(Some(
+                mahayana_host_runtime::extensions::transcript::automation_run_path::FireAutomationOutcome::Ok
+            )))
+            .expect("success completion")
+            .status,
+            "succeeded"
+        );
+        assert_eq!(
+            automation_fire_completion(Err("runner failed".into()))
+                .expect("failed completion")
+                .status,
+            "failed"
+        );
+    }
 
     #[test]
     fn runner_provider_gateway_rejects_empty_message_batches() {
