@@ -123,6 +123,7 @@ pub struct AutomationFireBackendRuntime {
     stopped: bool,
     backoff_until_ms: u64,
     poll_not_before_ms: u64,
+    drained_while_unschedulable: bool,
 }
 
 impl AutomationFireBackendRuntime {
@@ -133,6 +134,7 @@ impl AutomationFireBackendRuntime {
             stopped: false,
             backoff_until_ms: 0,
             poll_not_before_ms: 0,
+            drained_while_unschedulable: false,
         }
     }
 
@@ -140,6 +142,7 @@ impl AutomationFireBackendRuntime {
         self.stopped = false;
         self.backoff_until_ms = 0;
         self.poll_not_before_ms = 0;
+        self.drained_while_unschedulable = false;
     }
 
     pub fn stop(&mut self) {
@@ -192,9 +195,29 @@ impl AutomationFireBackendRuntime {
         now_ms: u64,
         notify_connected: bool,
         safety_poll_enabled: bool,
+        dispatch: impl FnMut(&BackendAutomationFire) -> bool,
+    ) -> Result<usize, AutomationsBackendError> {
+        self.tick_with_state(
+            now_ms,
+            notify_connected,
+            safety_poll_enabled,
+            true,
+            true,
+            dispatch,
+        )
+    }
+
+    pub fn tick_with_state(
+        &mut self,
+        now_ms: u64,
+        notify_connected: bool,
+        safety_poll_enabled: bool,
+        is_ready: bool,
+        has_server_schedulable: bool,
         mut dispatch: impl FnMut(&BackendAutomationFire) -> bool,
     ) -> Result<usize, AutomationsBackendError> {
         if self.stopped
+            || !is_ready
             || now_ms < self.backoff_until_ms
             || now_ms < self.poll_not_before_ms
         {
@@ -202,8 +225,13 @@ impl AutomationFireBackendRuntime {
         }
 
         let has_owed_work = !self.states.is_empty();
-        if !has_owed_work && !notify_connected && !safety_poll_enabled {
-            return Ok(0);
+        if !has_owed_work {
+            if !notify_connected && !safety_poll_enabled {
+                return Ok(0);
+            }
+            if !has_server_schedulable && self.drained_while_unschedulable {
+                return Ok(0);
+            }
         }
 
         let result: Result<usize, AutomationsBackendError> = (|| {
@@ -248,6 +276,10 @@ impl AutomationFireBackendRuntime {
             }
 
             self.retry_completions();
+
+            if !has_owed_work {
+                self.drained_while_unschedulable = !has_server_schedulable;
+            }
 
             let next_poll_after_ms = response
                 .get("nextPollAfterMs")
