@@ -367,6 +367,11 @@ impl AgentStoreClient {
             },
         )?;
         validate_presigned_url(&self.inner.deps.backend_url, &instruction.url, &rel_path)?;
+        if presign_has_conditional_headers(&instruction.headers) && instruction.conflict.is_none() {
+            return Err(format!(
+                "agent-store presign for {rel_path} carries a conditional header but no conflict instruction"
+            ));
+        }
         let mut response = self.put_bytes_once(&instruction.url, &instruction.headers, &sha, bytes)?;
         if response.status().as_u16() == 409 {
             response = self.put_bytes_once(&instruction.url, &instruction.headers, &sha, bytes)?;
@@ -969,6 +974,12 @@ fn is_loopback_host_name(hostname: &str) -> bool {
     )
 }
 
+fn presign_has_conditional_headers(headers: &HashMap<String, String>) -> bool {
+    headers.keys().any(|name| {
+        name.eq_ignore_ascii_case("if-match") || name.eq_ignore_ascii_case("if-none-match")
+    })
+}
+
 pub fn is_conditional_write_rejection(status: u16) -> bool {
     matches!(status, 409 | 412)
 }
@@ -1129,6 +1140,21 @@ mod tests {
         assert_eq!(decoded.store_id.as_deref(), Some("store-1"));
         assert_eq!(decoded.files[0].base_etag.as_deref(), Some("etag-1"));
         assert_eq!(decoded.files[0].expect_absent, None);
+    }
+
+    #[test]
+    fn conditional_presign_headers_require_conflict_protection() {
+        let mut headers = HashMap::new();
+        headers.insert("If-Match".to_string(), "etag-1".to_string());
+        assert!(presign_has_conditional_headers(&headers));
+
+        headers.clear();
+        headers.insert("if-none-match".to_string(), "*".to_string());
+        assert!(presign_has_conditional_headers(&headers));
+
+        headers.clear();
+        headers.insert("x-amz-meta-content-sha256".to_string(), "abc".to_string());
+        assert!(!presign_has_conditional_headers(&headers));
     }
 
     #[test]

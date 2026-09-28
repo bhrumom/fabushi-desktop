@@ -1019,7 +1019,7 @@ fn sweep_pack_temp_dir(dir: &Path) {
 }
 
 fn sync_local_packs<F>(
-    store: &LocalFsObjectStore,
+    store: &dyn BoxObjectStore,
     manifest: &BoxManifestMap,
     should_abort: F,
 ) -> CategoryTransferSummary
@@ -1225,7 +1225,7 @@ where
 }
 
 fn sync_store_db_snapshots(
-    store: &LocalFsObjectStore,
+    store: &dyn BoxObjectStore,
     store_id: &str,
     manifest: &mut BoxManifestMap,
     sand_root: &Path,
