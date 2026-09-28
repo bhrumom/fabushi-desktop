@@ -107,16 +107,24 @@
       "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "8005abbb15071ea958a7d7966290895edd2fc5f2",
+      "targetBlobSha": "2c59f3b56847facdabc53aa137d3758ee25a9dce",
       "behavioralEvidence": [
         "source/electron-main/adapters/mcp-oauth.ts",
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/electron-main/coordinator/coordinator-executors.ts",
+        "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs",
+        "source/host/src/extensions/mcp/coordinator_relay.rs",
         "source/shared/node/sand-data-root.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+        "source/host/tests/mcp_coordinator_relay_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Preserves Grok MCP/OAuth composition while moving the shared Fabushi data-root resolver out of the legacy Host TypeScript tree. Electron Main no longer imports Host implementation code merely to locate persistent data, preserving the Host process boundary without changing MCP OAuth behavior."
+      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and moving the shared Fabushi data-root resolver out of the legacy Host TypeScript tree. The approved Fabushi adaptation adds an explicit Host MCP lifecycle relay for server/catalog/effective-plugin snapshots, install/uninstall, and external-auth completion. The relay crosses the existing independent Mahayana Coordinator and Host gateway with a frozen allowlist and correlated request IDs; it does not construct a second MCP manager in Rust Host or collapse Coordinator/Host/Runner process boundaries."
     },
     {
       "referencePath": "source/electron-main/attachments/attachment-manager.ts",
@@ -279,6 +287,73 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Extends the frozen Coordinator-main RPC contract with fetchLinkMetadata so Electron attachment previews cross the Coordinator boundary instead of calling legacy Host TypeScript directly. Request/reply ownership and transport remain on the existing Coordinator protocol; no parallel channel is introduced."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "860600cce750c0b075f2e443859835a1382666d1",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.ts",
+        "source/electron-main/coordinator/production-provider.ts",
+        "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok Coordinator executor surface and adds only the Fabushi-approved MCP lifecycle owner calls required for the independent Rust Host to reuse Electron's single SandMcpManager. Each lifecycle command fails closed when the owner is unavailable; the Coordinator Rust relay separately freezes the method allowlist, request correlation, and failure settlement."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/production-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "1bab8ea6301b0158f5d885adad6927b8bd425d05",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/production-provider.ts",
+        "source/electron-main/coordinator/coordinator-executors.ts",
+        "source/electron-main/adapters/mcp-oauth.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Keeps the Grok production Coordinator provider graph while wiring the approved Host MCP lifecycle commands to the existing Electron ProductionMcpService. This is dependency injection into the single MCP owner, not a second manager or an in-process Host replacement."
+    },
+    {
+      "referencePath": "source/electron-main/main-production-services.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "b167ae68cce928f4aa437f5b939b884105f799df",
+      "behavioralEvidence": [
+        "source/electron-main/main-production-services.ts",
+        "source/electron-main/adapters/mcp-oauth.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Extends only the typed ProductionMcpService contract with the Fabushi-approved Host lifecycle owner surface. Electron Main remains the MCP manager owner and Coordinator/Host consume it through their existing process boundary; no legacy Host runtime or duplicate manager is introduced."
+    },
+    {
+      "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "4375ade8b14bdd7b7078d9f377d6673dcff4c40c",
+      "behavioralEvidence": [
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/shared/node/mcp/mcp-manager.ts",
+        "source/electron-main/adapters/mcp-oauth.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing two existing manager capabilities through the typed desktop facade: force-refresh catalog options and external-auth completion notification. No manager behavior is duplicated or moved into Rust Host."
     }
   ]
 }
