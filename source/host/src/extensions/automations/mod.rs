@@ -5,6 +5,7 @@ pub mod backend_transport;
 pub mod backend_relay_source;
 pub mod sand_automation_fire_consumer;
 pub mod fire_delivery;
+pub mod connect_unary;
 pub mod production;
 pub mod extension;
 pub mod listener_integrations;
