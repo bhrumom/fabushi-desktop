@@ -8,6 +8,9 @@ use std::thread::{self, JoinHandle};
 use crate::extensions::auth::extension::HostAuthExtension;
 use crate::extensions::browser_ua::extension::{BrowserUaAuthApi, StopSubscription};
 use crate::extensions::notify_bus::extension::HostNotifyBusExtension;
+use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
+use crate::extensions::trays::extension::HostTraysExtension;
+use crate::extensions::trays::trays_service::PushErrorOptions;
 
 use super::backend_transport::ReqwestAutomationsBackendTransport;
 use super::connect_unary::{SandConnectAuth, SandConnectUnaryClient};
@@ -35,6 +38,57 @@ pub type CloudAgentIdsReader =
     Arc<dyn Fn() -> Result<Vec<String>, String> + Send + Sync + 'static>;
 pub type CloudTimeZoneReader =
     Arc<dyn Fn() -> Option<String> + Send + Sync + 'static>;
+
+fn publish_cloud_sync_health(
+    sync: &mut SandAutomationCloudSync,
+    trays: &HostTraysExtension,
+    telemetry: &HostStructuredLogTelemetry,
+    tray_ids: &mut BTreeMap<String, String>,
+) {
+    for report in sync.drain_shadow_prune_reports() {
+        let payload = serde_json::json!({
+            "conversationId": report.agent_id,
+            "automationId": report.automation_id,
+            "outcome": report.outcome,
+            "localDefinitionState": report.local_definition_state,
+            "localDefinitionCount": report.local_definition_count,
+            "desiredCount": report.desired_count,
+            "remoteShadowCount": report.remote_shadow_count,
+        });
+        let _ = telemetry.report_automation_shadow_prune(&payload);
+    }
+
+    let failed = sync.failed_agent_ids().clone();
+    for agent_id in &failed {
+        if tray_ids.contains_key(agent_id) {
+            continue;
+        }
+        let tray = trays.push_error(PushErrorOptions {
+            agent_id: Some(agent_id.clone()),
+            title: "Routine Sync Failed".into(),
+            detail: "Fabushi couldn't sync this agent's routines. Event routines keep running locally when safe, but scheduled routines may be delayed while Fabushi retries.".into(),
+            dedupe_key: Some(format!("automation-cloud-sync:{agent_id}")),
+            ..PushErrorOptions::default()
+        });
+        tray_ids.insert(agent_id.clone(), tray.id);
+        let _ = telemetry.report_host_extension_diagnostic(&serde_json::json!({
+            "extension": "automation_cloud_sync",
+            "operation": "failure",
+            "agentId": agent_id,
+        }));
+    }
+
+    let recovered = tray_ids
+        .keys()
+        .filter(|agent_id| !failed.contains(*agent_id))
+        .cloned()
+        .collect::<Vec<_>>();
+    for agent_id in recovered {
+        if let Some(tray_id) = tray_ids.remove(&agent_id) {
+            trays.dismiss(&tray_id);
+        }
+    }
+}
 
 /// Single shipping owner for the Grok Automations background lifecycle.
 ///
@@ -68,6 +122,8 @@ impl ProductionAutomationsLifecycle {
         cloud_definitions: CloudDefinitionsReader,
         cloud_agent_ids: CloudAgentIdsReader,
         cloud_time_zone: CloudTimeZoneReader,
+        trays: Arc<HostTraysExtension>,
+        telemetry_logs: HostStructuredLogTelemetry,
         log: ProductionLog,
     ) -> Result<Arc<Self>, String> {
         let transport = Arc::new(
@@ -103,10 +159,13 @@ impl ProductionAutomationsLifecycle {
         let worker_auth = Arc::clone(&auth);
         let worker_stopped = Arc::clone(&stopped);
         let worker_log = Arc::clone(&log);
+        let worker_trays = Arc::clone(&trays);
+        let worker_telemetry = telemetry_logs.clone();
         let worker = thread::Builder::new()
             .name("mahayana-automations-cloud-sync".into())
             .spawn(move || {
                 let mut known_agent_ids = BTreeSet::<String>::new();
+                let mut routine_sync_failure_tray_ids = BTreeMap::<String, String>::new();
                 loop {
                     if cloud_rx.recv().is_err() || worker_stopped.load(Ordering::Acquire) {
                         break;
@@ -139,6 +198,12 @@ impl ProductionAutomationsLifecycle {
                                 )),
                             }
                         }
+                        publish_cloud_sync_health(
+                            &mut sync,
+                            &worker_trays,
+                            &worker_telemetry,
+                            &mut routine_sync_failure_tray_ids,
+                        );
                     }
 
                     let entries = match cloud_definitions() {
@@ -217,6 +282,12 @@ impl ProductionAutomationsLifecycle {
                                 )),
                             }
                         }
+                        publish_cloud_sync_health(
+                            &mut sync,
+                            &worker_trays,
+                            &worker_telemetry,
+                            &mut routine_sync_failure_tray_ids,
+                        );
                     }
                     known_agent_ids = current_agent_ids;
                     if authority_changed {
