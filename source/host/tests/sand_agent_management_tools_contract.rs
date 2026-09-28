@@ -27,7 +27,7 @@ fn runner_management_tools_are_first_party_and_validate_send_inputs(){
  assert_eq!(bridge.call_tool(send,json!({"target_id":"other","message":" hello ","priority":true,"images":[{"url":"https://example.com/a.png","alt":"a"}]}),"c1").expect("send"),Value::String("sent".into()));
  assert_eq!(sink.sends.lock().unwrap().as_slice(),&[("other".into(),"hello".into(),true,1)]);
  assert_eq!(sink.resolved_images.lock().unwrap().as_slice(),&[("c1".into(),"https://example.com/a.png".into())]);
- assert_eq!(sink.sent_images.lock().unwrap().as_slice(),&[vec!["resolved:https://example.com/a.png".into()]]);
+ assert_eq!(sink.sent_images.lock().unwrap().as_slice(),&[vec![String::from("resolved:https://example.com/a.png")]]);
  assert!(bridge.call_tool(send,json!({"target_id":"other","message":"x","images":[{"url":"relative.png"}]}),"c2").is_err());
  assert!(bridge.call_tool(send,json!({"target_id":"self","message":"x"}),"c3").expect("self").as_str().unwrap().contains("can't message yourself"));
 }
