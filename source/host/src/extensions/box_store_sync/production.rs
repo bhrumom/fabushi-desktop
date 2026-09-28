@@ -466,19 +466,34 @@ fn is_frozen_agent_store_source_id(value: &str) -> bool {
     if valid_uuid(value) {
         return true;
     }
-    let Some(rest) = value.strip_prefix("bc-").or_else(|| value.strip_prefix("BC-")) else {
+    let Some(rest) = value
+        .strip_prefix("bc-")
+        .or_else(|| value.strip_prefix("BC-"))
+        .or_else(|| value.strip_prefix("Bc-"))
+        .or_else(|| value.strip_prefix("bC-"))
+    else {
         return false;
     };
     if rest.len() == 36 {
         return valid_uuid(rest);
     }
-    let Some((prefix, uuid)) = rest.rsplit_once('-') else {
+    if rest.len() <= 37 {
+        return false;
+    }
+    let split = rest.len() - 36;
+    let (prefix_with_dash, uuid) = rest.split_at(split);
+    let Some(prefix) = prefix_with_dash.strip_suffix('-') else {
         return false;
     };
     !prefix.is_empty()
-        && prefix
-            .bytes()
-            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
+        && prefix.bytes().enumerate().all(|(index, byte)| {
+            let lowered = byte.to_ascii_lowercase();
+            (index == 0 && (lowered.is_ascii_lowercase() || lowered.is_ascii_digit()))
+                || (index > 0
+                    && (lowered.is_ascii_lowercase()
+                        || lowered.is_ascii_digit()
+                        || lowered == b'-'))
+        })
         && valid_uuid(uuid)
 }
 
