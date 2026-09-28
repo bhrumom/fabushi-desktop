@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::ThreadId;
 
+use serde::Deserialize;
 use serde_json::Value;
 
 use super::plugin_skills_cache::{
@@ -16,7 +17,8 @@ pub const EFFECTIVE_PLUGINS_RPC_TIMEOUT_MS: u64 = 15_000;
 pub const CURRENT_USER_RPC_TIMEOUT_MS: u64 = 10_000;
 pub const PLUGIN_SKILLS_REFRESH_INTERVAL_MS: u64 = 24 * 60 * 60 * 1_000;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PluginIdentifier {
     pub source: String,
     pub name: String,
@@ -24,14 +26,16 @@ pub struct PluginIdentifier {
     pub version: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InstalledSkill {
     pub name: Option<String>,
     pub description: Option<String>,
     pub path: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InstalledPlugin {
     pub identifier: PluginIdentifier,
     pub display_name: Option<String>,
@@ -40,7 +44,8 @@ pub struct InstalledPlugin {
     pub skills: Vec<InstalledSkill>,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PublisherFacts {
     pub publisher_user_id: Option<u64>,
     pub marketplace_team_id: Option<u64>,
@@ -56,13 +61,15 @@ pub struct PluginLoadFailure {
     pub error_kind: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ListedCacheKey {
     pub marketplace_slug: String,
     pub plugin_id: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LoadedPlugins {
     pub plugins: Vec<InstalledPlugin>,
     pub auth_blocked: Vec<PluginAuthBlock>,
