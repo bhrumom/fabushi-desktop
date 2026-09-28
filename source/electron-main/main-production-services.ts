@@ -277,6 +277,14 @@ export interface ProductionMcpService extends ProductionDisposable {
   listHostEffectiveMcpPlugins(): Promise<unknown>;
   installHostMcpPlugin(request: unknown): Promise<unknown>;
   uninstallHostMcpPlugin(pluginId: string): Promise<unknown>;
+  addHostMcpServer(request: { readonly name: string; readonly configJson: string }): Promise<unknown>;
+  removeHostMcpServer(serverId: string): Promise<unknown>;
+  restartHostMcpServers(): Promise<unknown>;
+  setHostMcpInstructions(request: { readonly serverId: string; readonly instructions: string }): Promise<unknown>;
+  authenticateHostMcpServer(request: { readonly serverId: string; readonly accountKey: string; readonly requestingAgentId?: string | null; readonly forceReauth?: boolean }): Promise<unknown>;
+  logoutHostMcpAccount(request: { readonly serverId: string; readonly accountKey: string }): Promise<unknown>;
+  removeHostMcpAccount(request: { readonly serverId: string; readonly accountKey: string }): Promise<unknown>;
+  renameHostMcpAccount(request: { readonly serverId: string; readonly accountKey: string; readonly newAccountKey: string }): Promise<unknown>;
   noteHostMcpAuthCompleted(request: { readonly serverId: string; readonly accountKey: string }): Promise<unknown>;
 }
 export interface ProductionCoordinatorResyncPort {
