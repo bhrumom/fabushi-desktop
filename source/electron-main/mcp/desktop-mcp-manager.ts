@@ -1,5 +1,10 @@
 import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
-import { McpError, McpResult } from "../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
+import {
+  McpArgs,
+  McpResult,
+  McpStateExecArgs,
+  McpStateExecResult,
+} from "../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
 import { reportDesktopEdgeFailure } from "../desktop-edge-failures.js";
 import { createSandCursorBackendClient, getSandInferenceBackendUrl } from "../../shared/node/cursor-backend/cursor-inference.js";
 import {
@@ -55,7 +60,10 @@ export interface DesktopMcpManagerOptions {
   readonly onAccountScopeApplied: () => void;
   readonly getAccessToken: (args: { backendUrl: string }) => Promise<string>;
   readonly getMachineId: () => string | Promise<string>;
+  readonly loadBoxMcpServers: (configJson: string) => Promise<unknown>;
   readonly listBoxMcpServers: (serverIdentifiers: unknown) => Promise<readonly Record<string, unknown>[]>;
+  readonly listBoxMcpToolsRaw: (payloadHex: string) => Promise<string>;
+  readonly executeBoxMcpToolRaw: (payloadHex: string) => Promise<string>;
   readonly onConnectorAuth: (report: unknown) => void;
   readonly onMcpDiagnostic?: (failure: { readonly leg: string; readonly errorClass: string }) => void;
 }
@@ -105,14 +113,45 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
     backendMcpExec,
   }, {
     boxMcpExec: {
-      loadServers: async () => {},
-      listTools: async (serverIdentifiers: unknown) => (await options.listBoxMcpServers(serverIdentifiers)).map((server) => ({ ...server, tools: [] })),
-      executeTool: async (args: { readonly name: string }) => new McpResult({
-        result: {
-          case: "error",
-          value: new McpError({ error: `MCP tools run on Grok Bot's computer, not the desktop app (tool "${args.name}").` }),
-        },
-      }),
+      loadServers: async (configJson: string) => {
+        await options.loadBoxMcpServers(configJson);
+      },
+      listTools: async (serverIdentifiers: string[], request?: { readonly kickOnly?: boolean }) => {
+        const payload = new McpStateExecArgs({
+          serverIdentifiers,
+          kickOnly: request?.kickOnly === true,
+        }).toBinary();
+        const responseHex = await options.listBoxMcpToolsRaw(Buffer.from(payload).toString("hex"));
+        const response = McpStateExecResult.fromBinary(Buffer.from(responseHex, "hex"));
+        if (response.result.case === "error") throw new Error(response.result.value.error);
+        if (response.result.case === "rejected") throw new Error(response.result.value.reason);
+        if (response.result.case !== "success") throw new Error("Box MCP state returned no result.");
+        return response.result.value.servers;
+      },
+      executeTool: async (args: {
+        readonly name: string;
+        readonly args?: unknown;
+        readonly toolCallId?: string;
+        readonly providerIdentifier?: string;
+        readonly toolName?: string;
+        readonly smartModeApprovalOnly?: boolean;
+        readonly skipApproval?: boolean;
+      }) => {
+        const request = McpArgs.fromJson({
+          name: args.name,
+          args: args.args ?? {},
+          toolCallId: args.toolCallId ?? "",
+          providerIdentifier: args.providerIdentifier ?? "",
+          toolName: args.toolName ?? args.name,
+          smartModeApprovalOnly: args.smartModeApprovalOnly === true,
+          skipApproval: args.skipApproval === true,
+          serverIdentifier: args.providerIdentifier ?? "",
+        });
+        const responseHex = await options.executeBoxMcpToolRaw(
+          Buffer.from(request.toBinary()).toString("hex"),
+        );
+        return McpResult.fromBinary(Buffer.from(responseHex, "hex"));
+      },
     },
   });
   manager.setBoxRuntime(discovery);
