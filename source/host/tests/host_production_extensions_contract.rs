@@ -43,6 +43,9 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert!(shipping.contains(&HostExtensionId::WebauthnProxy));
     assert!(shipping.contains(&HostExtensionId::Inference));
     assert!(shipping.contains(&HostExtensionId::Wallpaper));
+    assert!(shipping.contains(&HostExtensionId::ForeverBox));
+    assert!(shipping.contains(&HostExtensionId::Attachments));
+    assert!(shipping.contains(&HostExtensionId::Secrets));
     assert_eq!(inference_extension_id(), HostExtensionId::Inference);
     assert_eq!(
         INFERENCE_DEPENDENCIES,
@@ -58,6 +61,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
 fn shipping_production_extension_owner_remains_send_sync() {
     fn assert_send_sync<T: Send + Sync>() {}
     assert_send_sync::<ProductionHostExtensions>();
+    assert_send_sync::<mahayana_host_runtime::host_production_extensions::ProductionHostBoxExtensions>();
     assert_send_sync::<ProductionBrowserUaLog>();
     assert_send_sync::<ProductionInferenceExtension>();
 }
@@ -90,4 +94,37 @@ fn browser_ua_and_wallpaper_have_one_production_lifecycle_owner() {
             "shipping Host must not recreate a second extension lifecycle: {forbidden}"
         );
     }
+}
+
+
+#[test]
+fn box_stage_extensions_have_one_production_composition_owner() {
+    for needle in [
+        "pub struct ProductionHostBoxExtensions",
+        "start_production_host_box_extensions(",
+        "let forever_box = start_forever_box_extension(",
+        "let attachments = start_attachments_extension(",
+        "let secrets = Arc::new(start_secrets_extension(",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "host production composition must own the Box-stage extension: {needle}"
+        );
+    }
+
+    for forbidden in [
+        "let forever_box = start_forever_box_extension(",
+        "let attachments_extension = start_attachments_extension(",
+        "Arc::new(start_secrets_extension(",
+    ] {
+        assert!(
+            !SHIPPING_HOST.contains(forbidden),
+            "shipping Host must not recreate a Box-stage extension owner: {forbidden}"
+        );
+    }
+
+    assert!(
+        SHIPPING_HOST.contains("start_production_host_box_extensions(&production_extensions, production_box)"),
+        "shipping Host must consume the centralized Box-stage owner"
+    );
 }
