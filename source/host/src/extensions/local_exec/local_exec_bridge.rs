@@ -237,13 +237,14 @@ impl SandLocalExecBridge {
                 if emptied {
                     state.empty_since_ms = now;
                 }
+                let was_live = provider.live(now);
                 LocalExecProviderLifecycleReport::Detached {
                     provider_id: provider.id,
                     provider_count: state.providers.len(),
                     age_ms: now.saturating_sub(provider.registered_at_ms),
                     had_hello: provider.info.is_some(),
                     has_heartbeat: provider.has_heartbeat,
-                    was_live: provider.live(now),
+                    was_live,
                     emptied,
                 }
             })
