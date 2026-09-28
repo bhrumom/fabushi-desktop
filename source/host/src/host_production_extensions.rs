@@ -365,6 +365,8 @@ impl ProductionHostExtensions {
             cloud_definitions,
             cloud_agent_ids,
             cloud_time_zone,
+            Arc::clone(&self.trays),
+            self.telemetry.logs.clone(),
             log,
         )?;
         *slot = Some(Arc::clone(&runtime));
