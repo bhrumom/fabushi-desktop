@@ -1,7 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
+use std::thread::ThreadId;
 
 use serde_json::Value;
 
@@ -299,11 +300,45 @@ pub trait PluginSkillsLoader: Send + Sync {
     fn load(&self) -> Result<LoadedPlugins, String>;
 }
 
+type SyncResult = Result<Vec<PluginSkillRecord>, String>;
+
+#[derive(Default)]
+struct SyncPass {
+    // Lock ordering: service state, then pass result. A pass outlives its slot
+    // so every coalesced caller can observe the same outcome.
+    result: Mutex<Option<SyncResult>>,
+}
+
+struct PendingSync {
+    trigger: String,
+    pass: Arc<SyncPass>,
+}
+
 #[derive(Default)]
 struct ServiceState {
     disposed: bool,
-    in_flight: bool,
-    pending_trigger: Option<String>,
+    active: Option<Arc<SyncPass>>,
+    active_thread: Option<ThreadId>,
+    pending: Option<PendingSync>,
+}
+
+struct ActiveSyncGuard<'a> {
+    service: &'a SandPluginSkillsService,
+    pass: Arc<SyncPass>,
+    completed: bool,
+}
+
+impl Drop for ActiveSyncGuard<'_> {
+    fn drop(&mut self) {
+        if !self.completed {
+            // A loader/reporter panic must not orphan this pass's other callers
+            // or leave every future refresh waiting on a dead executor.
+            self.service.complete_pass(
+                &self.pass,
+                Err("plugin skills sync aborted before completion".into()),
+            );
+        }
+    }
 }
 
 pub struct SandPluginSkillsService {
@@ -312,6 +347,7 @@ pub struct SandPluginSkillsService {
     now: Arc<dyn Fn() -> i64 + Send + Sync>,
     report_sync: Option<Arc<dyn Fn(PluginSkillsSyncEvent) + Send + Sync>>,
     state: Mutex<ServiceState>,
+    changed: Condvar,
 }
 
 impl SandPluginSkillsService {
@@ -322,6 +358,7 @@ impl SandPluginSkillsService {
             now: Arc::new(|| chrono::Utc::now().timestamp_millis()),
             report_sync: None,
             state: Mutex::new(ServiceState::default()),
+            changed: Condvar::new(),
         }
     }
 
@@ -355,46 +392,97 @@ impl SandPluginSkillsService {
     }
 
     pub fn dispose(&self) {
-        self.state
-            .lock()
-            .expect("plugin skills state poisoned")
-            .disposed = true;
+        let mut state = self.state.lock().expect("plugin skills state poisoned");
+        state.disposed = true;
+        state.pending = None;
+        self.changed.notify_all();
     }
 
-    pub fn sync(&self, trigger: &str) -> Result<Vec<PluginSkillRecord>, String> {
-        {
-            let mut state = self.state.lock().expect("plugin skills state poisoned");
-            if state.disposed {
-                return Ok(self.current());
-            }
-            if state.in_flight {
-                state.pending_trigger = Some(trigger.to_string());
-                return Ok(self.current());
-            }
-            state.in_flight = true;
+    pub fn sync(&self, trigger: &str) -> SyncResult {
+        let mut state = self.state.lock().expect("plugin skills state poisoned");
+        if state.disposed {
+            drop(state);
+            return Ok(self.current());
+        }
+        if state.active_thread == Some(std::thread::current().id()) {
+            // Unlike a JS promise, this blocking API cannot await the callback
+            // that is currently calling it. Fail explicitly instead of hanging.
+            return Err("recursive plugin skills sync cannot wait on its own pass".into());
+        }
+        if state.active.is_none() && state.pending.is_none() {
+            let pass = Arc::new(SyncPass::default());
+            state.active = Some(Arc::clone(&pass));
+            state.active_thread = Some(std::thread::current().id());
+            drop(state);
+            return self.execute_pass(pass, trigger);
         }
 
-        let mut next_trigger = trigger.to_string();
-        let mut last = Ok(self.current());
+        // Exactly one follow-up is shared by all callers arriving during a
+        // pass. New arrivals must not overtake a follow-up awaiting its worker.
+        let pending = state.pending.get_or_insert_with(|| PendingSync {
+            trigger: trigger.to_string(),
+            pass: Arc::new(SyncPass::default()),
+        });
+        pending.trigger = trigger.to_string();
+        let pass = Arc::clone(&pending.pass);
+        self.changed.notify_all();
         loop {
-            last = self.run_pass(&next_trigger);
-            let mut state = self.state.lock().expect("plugin skills state poisoned");
+            let result = pass
+                .result
+                .lock()
+                .expect("plugin skills pass poisoned")
+                .clone();
+            if let Some(result) = result {
+                return result;
+            }
             if state.disposed {
-                state.in_flight = false;
-                break;
+                drop(state);
+                return Ok(self.current());
             }
-            match state.pending_trigger.take() {
-                Some(next) => {
-                    next_trigger = next;
-                    drop(state);
-                }
-                None => {
-                    state.in_flight = false;
-                    break;
-                }
+            if state.active.is_none()
+                && state
+                    .pending
+                    .as_ref()
+                    .is_some_and(|pending| Arc::ptr_eq(&pending.pass, &pass))
+            {
+                let pending = state.pending.take().expect("pending pass exists");
+                state.active = Some(Arc::clone(&pass));
+                state.active_thread = Some(std::thread::current().id());
+                drop(state);
+                return self.execute_pass(pass, &pending.trigger);
             }
+            state = self
+                .changed
+                .wait(state)
+                .expect("plugin skills state poisoned");
         }
-        last
+    }
+
+    fn execute_pass(&self, pass: Arc<SyncPass>, trigger: &str) -> SyncResult {
+        let mut guard = ActiveSyncGuard {
+            service: self,
+            pass,
+            completed: false,
+        };
+        // All loading, cache IO and callbacks are outside the state/result locks.
+        let result = self.run_pass(trigger);
+        self.complete_pass(&guard.pass, result.clone());
+        guard.completed = true;
+        result
+    }
+
+    fn complete_pass(&self, pass: &Arc<SyncPass>, result: SyncResult) {
+        let mut state = self.state.lock().expect("plugin skills state poisoned");
+        *pass.result.lock().expect("plugin skills pass poisoned") = Some(result);
+        if state
+            .active
+            .as_ref()
+            .is_some_and(|active| Arc::ptr_eq(active, pass))
+        {
+            state.active = None;
+            state.active_thread = None;
+        }
+        self.changed.notify_all();
     }
 
     fn run_pass(&self, trigger: &str) -> Result<Vec<PluginSkillRecord>, String> {
@@ -493,3 +581,7 @@ impl SandPluginSkillsService {
         Ok(records)
     }
 }
+
+#[cfg(test)]
+#[path = "plugin_skills_sync_tests.rs"]
+mod sync_tests;
