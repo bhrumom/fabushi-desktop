@@ -12546,13 +12546,16 @@
       "behavioralEvidence": [
         "source/host/src/extensions/local_exec/extension.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/gateway_server.rs"
+        "source/host/src/gateway_server.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/src/extensions/telemetry/local_exec_telemetry.rs"
       ],
       "testEvidence": [
         "source/host/tests/local_exec_bridge_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/extensions_local_exec_contract.rs"
       ],
-      "notes": "Rust Host now starts a LocalExec extension owner and exposes it through the shipping authenticated Gateway local-exec channel instead of local_exec: None. The extension preserves the frozen LocalToolPermission+Telemetry dependency declaration and provider lifecycle API. Final remains withheld until LocalToolPermission production composition, telemetry sinks, generated exec codec and box/userComputers adapters are all bound."
+      "notes": "Rust Host starts a LocalExec extension owner through the shipping production registry and exposes it through the authenticated Gateway local-exec channel. The live LocalToolPermission ask gate now calls the HostLocalExecExtension with the agent id, and no-provider/stale-provider refusals are persisted through the canonical sand.local_exec.refused telemetry projection instead of bypassing Host telemetry. The frozen dependency declaration and provider lifecycle API remain preserved. Final remains withheld until the generated ExecClient codec/RemoteResourceAccessor path, full provider hello/detach telemetry, permission-authorized GatewayLocalExecManager exec stream, and Runner ExternalShell/file-transfer consumers are production-bound."
     },
     {
       "referencePath": "source/host/extensions/local-exec/gateway-local-exec-sand-box.ts",
