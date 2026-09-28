@@ -122,7 +122,7 @@ fn box_stage_extensions_have_one_production_composition_owner() {
     ] {
         assert!(
             !SHIPPING_HOST.contains(forbidden),
-            "shipping Host must not recreate a Box-stage extension owner: {forbidden}"
+            "shipping Host must not recreate a second Box-stage extension owner: {forbidden}"
         );
     }
 
@@ -195,7 +195,8 @@ fn state_backstop_is_composed_after_box_store_sync_and_stopped_before_it() {
         "let box_api = extension.api()",
         "create_production_state_backstop_runtime()",
         "store_api.object_store_for(source_id)",
-        "source_map.get_or_create(agent_id)",
+        "let source_map = Arc::clone(&self.source_map)",
+        ".get_or_create(agent_id)",
         "start_state_backstop_extension(options)",
         "state_backstop.stop()",
     ] {
