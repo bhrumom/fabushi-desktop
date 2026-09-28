@@ -98,6 +98,12 @@ pub struct AgentStoreReadObject {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AgentStoreObjectProbe {
+    Absent,
+    Present { etag: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AgentStoreWritePrecondition {
     BaseEtag(String),
     ExpectAbsent,
@@ -309,6 +315,54 @@ impl AgentStoreClient {
             .send()
             .map_err(|error| error.to_string())?;
         read_object_response(response, &rel_path)
+    }
+
+    pub fn probe_object(
+        &self,
+        source_id: &str,
+        rel_path: &str,
+    ) -> Result<AgentStoreObjectProbe, String> {
+        let rel_path = normalize_rel_path(rel_path)?;
+        let instruction = self
+            .presign_read(source_id, &rel_path)?
+            .ok_or_else(|| format!("agent-store baseline probe returned no read for {rel_path}"))?;
+        validate_presigned_url(&self.inner.deps.backend_url, &instruction.url, &rel_path)?;
+
+        let probe = |range: bool| {
+            let request = self.inner.http.get(&instruction.url);
+            let request = if range {
+                request.header(RANGE, "bytes=0-0")
+            } else {
+                request
+            };
+            request.send().map_err(|error| error.to_string())
+        };
+
+        let mut response = probe(true)?;
+        if response.status().as_u16() == 416 {
+            drop(response);
+            response = probe(false)?;
+        }
+        match response.status().as_u16() {
+            404 => Ok(AgentStoreObjectProbe::Absent),
+            200 | 206 => {
+                let etag = response
+                    .headers()
+                    .get(ETAG)
+                    .and_then(|value| value.to_str().ok())
+                    .map(normalize_s3_etag)
+                    .filter(|value| !value.is_empty())
+                    .ok_or_else(|| {
+                        format!(
+                            "agent-store baseline probe returned no usable etag for {rel_path}"
+                        )
+                    })?;
+                Ok(AgentStoreObjectProbe::Present { etag })
+            }
+            status => Err(format!(
+                "agent-store baseline probe failed for {rel_path}: {status}"
+            )),
+        }
     }
 
     pub fn get_object_to_file(

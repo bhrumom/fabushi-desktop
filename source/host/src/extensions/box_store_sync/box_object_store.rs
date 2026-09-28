@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 use fs2::FileExt;
 
 use super::agent_store_sand_files::{
-    AgentStoreClient, AgentStoreClientDependencies, AgentStoreReadObject,
+    AgentStoreClient, AgentStoreClientDependencies, AgentStoreObjectProbe, AgentStoreReadObject,
     AgentStoreWriteOutcome, AgentStoreWritePrecondition, normalize_rel_path,
 };
 
@@ -133,19 +133,11 @@ impl AgentStoreObjectStore {
     }
 
     fn probe_precondition(&self, key: &str) -> Result<AgentStoreWritePrecondition, String> {
-        let object = self.client.get_object(&self.source_id, key)?;
-        self.remember_read(key, object.as_ref());
-        match object {
-            None => Ok(AgentStoreWritePrecondition::ExpectAbsent),
-            Some(object) => object
-                .etag
-                .filter(|etag| !etag.is_empty())
-                .map(AgentStoreWritePrecondition::BaseEtag)
-                .ok_or_else(|| {
-                    format!(
-                        "agent-store write for {key} has no usable baseline: object exists but GET carried no etag"
-                    )
-                }),
+        match self.client.probe_object(&self.source_id, key)? {
+            AgentStoreObjectProbe::Absent => Ok(AgentStoreWritePrecondition::ExpectAbsent),
+            AgentStoreObjectProbe::Present { etag } => {
+                Ok(AgentStoreWritePrecondition::BaseEtag(etag))
+            }
         }
     }
 
