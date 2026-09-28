@@ -426,6 +426,7 @@ export function createProductionCoordinatorAdapter<
         listHostMcpServers: () => context.requireMcp().listHostMcpServers(),
         listHostMcpCatalog: (options) => context.requireMcp().listHostMcpCatalog(options),
         listHostEffectiveMcpPlugins: () => context.requireMcp().listHostEffectiveMcpPlugins(),
+        loadHostPluginSkills: () => context.requireMcp().loadHostPluginSkills(),
         installHostMcpPlugin: (request) => context.requireMcp().installHostMcpPlugin(request),
         uninstallHostMcpPlugin: (pluginId) => context.requireMcp().uninstallHostMcpPlugin(pluginId),
         addHostMcpServer: (request) => context.requireMcp().addHostMcpServer(request),
