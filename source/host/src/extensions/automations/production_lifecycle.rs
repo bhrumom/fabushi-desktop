@@ -4,6 +4,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
 use crate::extensions::auth::extension::HostAuthExtension;
 use crate::extensions::browser_ua::extension::{BrowserUaAuthApi, StopSubscription};
@@ -102,6 +103,7 @@ pub struct ProductionAutomationsLifecycle {
     integrations: Arc<ProductionListenerIntegrations>,
     agent_channels: AgentChannelsReader,
     cloud: Arc<Mutex<SandAutomationCloudSync>>,
+    cloud_delete_requests: Arc<Mutex<BTreeSet<String>>>,
     cloud_wake: mpsc::Sender<()>,
     cloud_worker: Mutex<Option<JoinHandle<()>>>,
     cloud_auth_stop: Mutex<Option<StopSubscription>>,
@@ -151,10 +153,12 @@ impl ProductionAutomationsLifecycle {
         let cloud_client: Arc<dyn CloudSyncClient> =
             Arc::new(ProductionCloudSyncClient::new(connect));
         let cloud = Arc::new(Mutex::new(SandAutomationCloudSync::new(cloud_client)));
+        let cloud_delete_requests = Arc::new(Mutex::new(BTreeSet::<String>::new()));
         let stopped = Arc::new(AtomicBool::new(false));
         let (cloud_wake, cloud_rx) = mpsc::channel::<()>();
 
         let worker_cloud = Arc::clone(&cloud);
+        let worker_delete_requests = Arc::clone(&cloud_delete_requests);
         let worker_backend = Arc::clone(&backend);
         let worker_auth = Arc::clone(&auth);
         let worker_stopped = Arc::clone(&stopped);
@@ -167,8 +171,9 @@ impl ProductionAutomationsLifecycle {
                 let mut known_agent_ids = BTreeSet::<String>::new();
                 let mut routine_sync_failure_tray_ids = BTreeMap::<String, String>::new();
                 loop {
-                    if cloud_rx.recv().is_err() || worker_stopped.load(Ordering::Acquire) {
-                        break;
+                    match cloud_rx.recv_timeout(Duration::from_secs(15)) {
+                        Ok(()) | Err(mpsc::RecvTimeoutError::Timeout) => {}
+                        Err(mpsc::RecvTimeoutError::Disconnected) => break,
                     }
                     while cloud_rx.try_recv().is_ok() {}
                     if worker_stopped.load(Ordering::Acquire) {
@@ -180,9 +185,30 @@ impl ProductionAutomationsLifecycle {
 
                     let mut authority_changed = false;
                     {
+                        let explicit_deletions = {
+                            let mut pending = worker_delete_requests
+                                .lock()
+                                .unwrap_or_else(|poisoned| poisoned.into_inner());
+                            std::mem::take(&mut *pending)
+                        };
                         let mut sync = worker_cloud
                             .lock()
                             .unwrap_or_else(|poisoned| poisoned.into_inner());
+                        for agent_id in explicit_deletions {
+                            match sync.delete_agent(&agent_id) {
+                                Ok(outcome) => {
+                                    authority_changed |= outcome.scheduling_authority_changed;
+                                    if !outcome.converged {
+                                        worker_log(&format!(
+                                            "[sand:automations] explicit cloud deletion did not converge agent={agent_id}"
+                                        ));
+                                    }
+                                }
+                                Err(error) => worker_log(&format!(
+                                    "[sand:automations] explicit cloud deletion failed agent={agent_id}: {error}"
+                                )),
+                            }
+                        }
                         for (agent_id, outcome) in sync.retry_pending_agent_deletions() {
                             match outcome {
                                 Ok(outcome) => {
@@ -310,6 +336,7 @@ impl ProductionAutomationsLifecycle {
             integrations,
             agent_channels,
             cloud,
+            cloud_delete_requests,
             cloud_wake,
             cloud_worker: Mutex::new(Some(worker)),
             cloud_auth_stop: Mutex::new(Some(cloud_auth_stop)),
@@ -357,6 +384,17 @@ impl ProductionAutomationsLifecycle {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .should_schedule_locally(agent_id, automation)
+    }
+
+    pub fn delete_agent_schedules(&self, agent_id: &str) {
+        if self.stopped.load(Ordering::Acquire) || agent_id.trim().is_empty() {
+            return;
+        }
+        self.cloud_delete_requests
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(agent_id.to_owned());
+        let _ = self.cloud_wake.send(());
     }
 
     pub fn request_reconcile(&self) {
