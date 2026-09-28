@@ -244,6 +244,7 @@ use mahayana_host_runtime::extensions::mcp::coordinator_relay::{
     BoxServerStatusLoader, CoordinatorMcpLifecycleRelay, CoordinatorMcpManagerBackend,
     MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
 };
+use mahayana_host_runtime::extensions::mcp::mcp_service::McpHostService;
 use mahayana_host_runtime::extensions::mcp::production_box_state::{
     MCP_STATE_EXEC_FIELD_NUMBER, MCP_TOOL_EXEC_FIELD_NUMBER, ProductionBoxMcpStateLoader,
     execute_box_mcp_raw,
