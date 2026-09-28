@@ -42,6 +42,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert!(shipping.contains(&HostExtensionId::CloudAgents));
     assert!(shipping.contains(&HostExtensionId::WebauthnProxy));
     assert!(shipping.contains(&HostExtensionId::Inference));
+    assert!(shipping.contains(&HostExtensionId::Mcp));
     assert!(shipping.contains(&HostExtensionId::Wallpaper));
     assert!(shipping.contains(&HostExtensionId::ForeverBox));
     assert!(shipping.contains(&HostExtensionId::Attachments));
@@ -126,5 +127,40 @@ fn box_stage_extensions_have_one_production_composition_owner() {
     assert!(
         SHIPPING_HOST.contains("start_production_host_box_extensions(&production_extensions, production_box)"),
         "shipping Host must consume the centralized Box-stage owner"
+    );
+}
+
+
+#[test]
+fn mcp_plugin_skills_have_one_shipping_production_owner() {
+    for needle in [
+        "HostExtensionId::Mcp",
+        "mcp: Mutex<Option<McpExtensionRuntime>>",
+        "pub fn start_mcp(",
+        "CoordinatorPluginSkillsLoader::new(relay)",
+        "SandPluginSkillsService::new(",
+        "McpHostService::new(backend, Some(plugin_port))",
+        "PluginSkillsAuthenticatedStartup::start(",
+        "RealPluginSkillsPolling::daily()",
+        "create_production_skill_publish(",
+        "pub fn stop_mcp(&self)",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own the MCP production lifecycle: {needle}"
+        );
+    }
+
+    assert!(
+        SHIPPING_HOST.contains("production_extensions.start_mcp("),
+        "shipping Host must start MCP through the centralized production extension owner"
+    );
+    assert!(
+        SHIPPING_HOST.contains("production_extensions.stop_mcp()"),
+        "shipping Host must stop MCP through the centralized production extension owner"
+    );
+    assert!(
+        !SHIPPING_HOST.contains("McpHostService::new(mcp_manager_backend, None)"),
+        "shipping Host must never bypass Plugin Skills with a None port"
     );
 }
