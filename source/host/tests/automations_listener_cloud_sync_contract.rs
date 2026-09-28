@@ -1,6 +1,7 @@
 use mahayana_host_runtime::automations::automation_trigger::parse_stored_trigger;
 use mahayana_host_runtime::extensions::automations::listener_integrations::{
     ListenerIntegrations, count_listener_platforms, filter_listener_agent_channels,
+    listener_agent_channels_view,
 };
 use mahayana_host_runtime::extensions::automations::sand_automation_cloud_sync::desired_cloud_triggers;
 use mahayana_host_runtime::extensions::automations::sand_trigger_hub::ScheduledAutomation;
@@ -84,5 +85,22 @@ fn listener_agent_channels_keep_only_shipping_listener_connectors() {
     assert_eq!(
         filter_listener_agent_channels(&channels),
         vec![channels[0].clone(), channels[1].clone()]
+    );
+}
+
+
+#[test]
+fn listener_agent_channels_view_matches_frozen_automations_surface() {
+    let channels = vec![
+        json!({"platform":"slack","label":"Slack","status":"configured"}),
+        json!({"platform":"github","label":"GitHub","status":"configured"}),
+        json!({"platform":"discord","label":"Discord","status":"configured"}),
+    ];
+    assert_eq!(
+        listener_agent_channels_view(&channels),
+        json!({
+            "manifests":[{"platform":"slack"},{"platform":"github"}],
+            "connections":[channels[0].clone(), channels[1].clone()]
+        })
     );
 }

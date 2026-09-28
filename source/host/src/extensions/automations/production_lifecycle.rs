@@ -12,7 +12,8 @@ use super::listener_connect_watcher_production::{
     ListenerConnectedCallback, ProductionListenerConnectWatcher,
 };
 use super::listener_integrations::{
-    PlatformConnectionReader, ProductionListenerIntegrations,
+    AgentChannelsReader, PlatformConnectionReader, ProductionListenerIntegrations,
+    listener_agent_channels_view,
 };
 use super::backend_relay_source::RelayStatus;
 use super::production::{
@@ -29,6 +30,7 @@ pub struct ProductionAutomationsLifecycle {
     backend: Arc<ProductionAutomationsBackendRuntime>,
     watcher: Arc<ProductionListenerConnectWatcher>,
     integrations: Arc<ProductionListenerIntegrations>,
+    agent_channels: AgentChannelsReader,
     stopped: AtomicBool,
 }
 
@@ -41,6 +43,7 @@ impl ProductionAutomationsLifecycle {
         relay_sink: RelayEventSink,
         fire_dispatch: FireDispatch,
         on_connected: ListenerConnectedCallback,
+        agent_channels: AgentChannelsReader,
         log: ProductionLog,
     ) -> Result<Arc<Self>, String> {
         let transport = Arc::new(
@@ -69,6 +72,7 @@ impl ProductionAutomationsLifecycle {
             backend,
             watcher,
             integrations,
+            agent_channels,
             stopped: AtomicBool::new(false),
         }))
     }
@@ -95,6 +99,11 @@ impl ProductionAutomationsLifecycle {
 
     pub fn listener_source_status(&self, platform: &str) -> Option<RelayStatus> {
         self.backend.listener_source_status(platform)
+    }
+
+    pub fn get_agent_channels(&self, agent_id: &str) -> Result<serde_json::Value, String> {
+        let channels = (self.agent_channels)(agent_id)?;
+        Ok(listener_agent_channels_view(&channels))
     }
 
     pub fn request_reconcile(&self) {

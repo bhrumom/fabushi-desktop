@@ -15,6 +15,7 @@ use crate::extensions::auth::extension::{
 use crate::extensions::auth::user_full_name_service::production_user_full_name_fetch;
 use crate::extensions::automations::listener_connect_watcher_production::ListenerConnectedCallback;
 use crate::extensions::automations::production::{FireDispatch, ProductionLog, RelayEventSink, RelayListeners};
+use crate::extensions::automations::listener_integrations::AgentChannelsReader;
 use crate::extensions::automations::production_lifecycle::ProductionAutomationsLifecycle;
 use crate::extensions::box_lifecycle::box_lifecycle_service::BoxLifecycleService;
 use crate::extensions::box_lifecycle::extension::start_box_lifecycle_extension;
@@ -336,6 +337,7 @@ impl ProductionHostExtensions {
         relay_sink: RelayEventSink,
         fire_dispatch: FireDispatch,
         on_connected: ListenerConnectedCallback,
+        agent_channels: AgentChannelsReader,
         log: ProductionLog,
     ) -> Result<Arc<ProductionAutomationsLifecycle>, String> {
         let mut slot = self
@@ -353,6 +355,7 @@ impl ProductionHostExtensions {
             relay_sink,
             fire_dispatch,
             on_connected,
+            agent_channels,
             log,
         )?;
         *slot = Some(Arc::clone(&runtime));

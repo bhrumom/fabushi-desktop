@@ -10,6 +10,8 @@ use super::connect_unary::{SandConnectError, SandConnectUnaryClient};
 
 pub const DASHBOARD_INTEGRATIONS_URL: &str = "https://cursor.com/dashboard?tab=integrations";
 pub const LISTENER_INTEGRATION_PLATFORMS: [&str; 2] = ["github", "slack"];
+pub type AgentChannelsReader =
+    Arc<dyn Fn(&str) -> Result<Vec<Value>, String> + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -76,6 +78,16 @@ pub fn filter_listener_agent_channels(channels: &[Value]) -> Vec<Value> {
         })
         .cloned()
         .collect()
+}
+
+pub fn listener_agent_channels_view(channels: &[Value]) -> Value {
+    serde_json::json!({
+        "manifests": [
+            { "platform": "slack" },
+            { "platform": "github" }
+        ],
+        "connections": filter_listener_agent_channels(channels),
+    })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

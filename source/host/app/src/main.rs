@@ -5571,11 +5571,20 @@ fn main() {
             );
         }
     });
+    let listener_session_workers = Arc::clone(&session_workers);
+    let listener_agent_channels = Arc::new(move |agent_id: &str| {
+        listener_session_workers
+            .list_agent_channels(agent_id)?
+            .into_iter()
+            .map(|connection| serde_json::to_value(connection).map_err(|error| error.to_string()))
+            .collect::<Result<Vec<_>, _>>()
+    });
     let automations_lifecycle = match production_extensions.start_automations(
         production_listeners,
         relay_sink,
         fire_dispatch,
         on_listener_connected,
+        listener_agent_channels,
         Arc::new(|message| eprintln!("{message}")),
     ) {
         Ok(runtime) => runtime,
