@@ -51,6 +51,9 @@ use crate::extensions::mcp::extension::{
     AuthRenewalPort, McpExtensionRuntime, McpPluginSkillsService,
     PluginSkillsAuthenticatedStartup, PollingPort,
 };
+use crate::extensions::mcp::legacy_live_references::{
+    PluginCatalogEntry, PluginSkillCatalogEntry, sweep_legacy_plugin_skill_references,
+};
 use crate::extensions::mcp::mcp_service::{
     McpHostService, McpManagerBackend, PluginSkillsPort,
 };
@@ -58,7 +61,8 @@ use crate::extensions::mcp::plugin_skills::{
     PluginSkillsLoader, SandPluginSkillsService,
 };
 use crate::extensions::mcp::production::{
-    RealPluginSkillsPolling, create_production_skill_publish,
+    LegacyMcpAuthCleanupOutcome, RealPluginSkillsPolling,
+    cleanup_legacy_mcp_auth_credentials, create_production_skill_publish,
 };
 use crate::extensions::local_exec::extension::{
     HostLocalExecExtension, start_local_exec_extension,
@@ -338,15 +342,51 @@ impl ProductionHostExtensions {
             loader,
         ));
         let plugin_port: Arc<dyn PluginSkillsPort> = plugin_skills.clone();
+        let backend_for_sweep = Arc::clone(&backend);
         let service = Arc::new(McpHostService::new(backend, Some(plugin_port)));
+
+        let (cleanup_outcome, removed_credentials) =
+            cleanup_legacy_mcp_auth_credentials(sand_root_dir);
+        if cleanup_outcome == LegacyMcpAuthCleanupOutcome::Error {
+            eprintln!(
+                "MCP legacy auth cleanup completed with errors after removing {removed_credentials} file(s)"
+            );
+        }
+
         let auth: Arc<dyn AuthRenewalPort> = self.auth.clone();
         let plugin_runtime: Arc<dyn McpPluginSkillsService> = plugin_skills.clone();
         let polling: Arc<dyn PollingPort> = Arc::new(RealPluginSkillsPolling::daily());
+        let sweep_root = sand_root_dir.to_path_buf();
+        let on_startup_sync_succeeded: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
+            let Ok(catalog) = backend_for_sweep.list_catalog(false) else {
+                eprintln!("MCP legacy live-reference sweep could not load the marketplace catalog");
+                return;
+            };
+            let catalog = catalog
+                .into_iter()
+                .map(|plugin| PluginCatalogEntry {
+                    plugin_id: plugin.id,
+                    skills: plugin
+                        .skills
+                        .into_iter()
+                        .map(|skill| PluginSkillCatalogEntry {
+                            source_url: skill.source_url,
+                        })
+                        .collect(),
+                })
+                .collect::<Vec<_>>();
+            let removed = sweep_legacy_plugin_skill_references(&sweep_root, &catalog);
+            if removed > 0 {
+                eprintln!(
+                    "[sand:plugin-skills] retired {removed} legacy live-reference record(s)"
+                );
+            }
+        });
         let startup = PluginSkillsAuthenticatedStartup::start(
             auth,
             plugin_runtime,
             polling,
-            None,
+            Some(on_startup_sync_succeeded),
         );
         let skill_publish = Arc::new(create_production_skill_publish(
             sand_root_dir.to_path_buf(),
