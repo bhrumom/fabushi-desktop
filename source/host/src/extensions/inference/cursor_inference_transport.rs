@@ -590,8 +590,8 @@ pub fn cursor_tool_result_message(
     message.encode_to_vec()
 }
 
-#[cfg(test)]
-pub(crate) fn encode_test_response(event: CursorInferenceEvent) -> Vec<u8> {
+#[doc(hidden)]
+pub fn encode_test_response(event: CursorInferenceEvent) -> Vec<u8> {
     use inference_stream_response::Response;
 
     let response = match event {
