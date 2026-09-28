@@ -7,6 +7,7 @@ use crate::automations::automation_trigger::{
     GITHUB_EVENT_KINDS, TRIGGER_ANY_SCOPE, listener_matches_event,
 };
 use super::backend_transport::{AutomationsBackendError, AutomationsBackendTransport};
+use super::listener_integrations::{ListenerScopeIssue, describe_scope_issues};
 
 pub const DEFAULT_REGISTER_INTERVAL_MS: u64 = 5 * 60_000;
 pub const DEGRADED_REGISTER_INTERVAL_MS: u64 = 60_000;
@@ -190,6 +191,7 @@ pub fn map_relay_wire_event(event: &Value, now_ms: u64) -> Option<Value> {
 pub struct RelayStatus {
     pub state: String,
     pub detail: Option<String>,
+    pub scope_issues: Vec<ListenerScopeIssue>,
 }
 
 pub struct BackendRelayRuntime {
@@ -216,8 +218,8 @@ impl BackendRelayRuntime {
             degraded_streak: 0,
             backoff_until_ms: 0,
             pending_ack_ids: Vec::new(),
-            slack_status: RelayStatus { state: "idle".into(), detail: None },
-            github_status: RelayStatus { state: "idle".into(), detail: None },
+            slack_status: RelayStatus { state: "idle".into(), detail: None, scope_issues: Vec::new() },
+            github_status: RelayStatus { state: "idle".into(), detail: None, scope_issues: Vec::new() },
         }
     }
 
@@ -294,10 +296,10 @@ impl BackendRelayRuntime {
             self.backoff_until_ms = now_ms.saturating_add(ERROR_BACKOFF_MS);
             let detail = error.to_string();
             if !self.slack_listeners.is_empty() {
-                self.slack_status = RelayStatus { state: "error".into(), detail: Some(detail.clone()) };
+                self.slack_status = RelayStatus { state: "error".into(), detail: Some(detail.clone()), scope_issues: Vec::new() };
             }
             if !self.github_listeners.is_empty() {
-                self.github_status = RelayStatus { state: "error".into(), detail: Some(detail) };
+                self.github_status = RelayStatus { state: "error".into(), detail: Some(detail), scope_issues: Vec::new() };
             }
         }
         result
@@ -324,17 +326,102 @@ impl BackendRelayRuntime {
 
         let slack_state = response.get("slack").and_then(Value::as_object);
         let github_state = response.get("github").and_then(Value::as_object);
-        self.slack_status = relay_platform_status(
-            !self.slack_listeners.is_empty(),
-            slack_state.and_then(|value| value.get("status")).and_then(Value::as_str),
-            "Slack isn't connected to your Cursor account. Connect it to start listening.",
-        );
-        self.github_status = relay_platform_status(
-            !self.github_listeners.is_empty(),
-            github_state.and_then(|value| value.get("status")).and_then(Value::as_str),
-            "GitHub isn't connected to your Cursor account. Connect it to start listening.",
-        );
-        let degraded = self.slack_status.state == "error" || self.github_status.state == "error";
+        let mut slack_issues = Vec::new();
+        for team in slack_state
+            .and_then(|value| value.get("teams"))
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            for channel in team
+                .get("channels")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+            {
+                if channel.get("isBotMember").and_then(Value::as_bool) == Some(false) {
+                    if let Some(scope) = channel.get("input").and_then(Value::as_str) {
+                        slack_issues.push(ListenerScopeIssue {
+                            kind: "bot-not-in-channel".into(),
+                            scope: scope.into(),
+                        });
+                    }
+                }
+            }
+            for scope in team
+                .get("unresolvedChannels")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+            {
+                slack_issues.push(ListenerScopeIssue {
+                    kind: "not-found".into(),
+                    scope: scope.into(),
+                });
+            }
+        }
+        self.slack_status = if self.slack_listeners.is_empty() {
+            RelayStatus { state: "idle".into(), detail: None, scope_issues: Vec::new() }
+        } else if slack_state.and_then(|value| value.get("status")).and_then(Value::as_str) == Some("not-linked") {
+            RelayStatus {
+                state: "error".into(),
+                detail: Some("Slack isn't connected to your Cursor account. Connect it to start listening.".into()),
+                scope_issues: Vec::new(),
+            }
+        } else if slack_issues.is_empty() {
+            RelayStatus { state: "listening".into(), detail: None, scope_issues: Vec::new() }
+        } else {
+            RelayStatus {
+                state: "listening".into(),
+                detail: Some(describe_scope_issues(&slack_issues)),
+                scope_issues: slack_issues,
+            }
+        };
+
+        let github_repos = github_state
+            .and_then(|value| value.get("repos"))
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        let failed_repos = github_repos
+            .iter()
+            .filter(|repo| repo.get("isSubscribed").and_then(Value::as_bool) == Some(false))
+            .collect::<Vec<_>>();
+        self.github_status = if self.github_listeners.is_empty() {
+            RelayStatus { state: "idle".into(), detail: None, scope_issues: Vec::new() }
+        } else if github_state.and_then(|value| value.get("status")).and_then(Value::as_str) == Some("not-connected") {
+            RelayStatus {
+                state: "error".into(),
+                detail: Some("GitHub isn't connected to your Cursor account. Connect it to start listening.".into()),
+                scope_issues: Vec::new(),
+            }
+        } else if failed_repos.is_empty() {
+            RelayStatus { state: "listening".into(), detail: None, scope_issues: Vec::new() }
+        } else {
+            let detail = failed_repos
+                .iter()
+                .map(|repo| {
+                    repo.get("detail")
+                        .and_then(Value::as_str)
+                        .map(str::to_string)
+                        .unwrap_or_else(|| format!(
+                            "Can't watch {}.",
+                            repo.get("repo").and_then(Value::as_str).unwrap_or_default()
+                        ))
+                })
+                .collect::<Vec<_>>()
+                .join(" ");
+            RelayStatus {
+                state: if failed_repos.len() == github_repos.len() { "error".into() } else { "listening".into() },
+                detail: Some(detail),
+                scope_issues: Vec::new(),
+            }
+        };
+        let degraded = self.slack_status.state == "error"
+            || !self.slack_status.scope_issues.is_empty()
+            || self.github_status.state == "error"
+            || self.github_status.detail.is_some();
         self.degraded_streak = if degraded {
             self.degraded_streak.saturating_add(1)
         } else {
@@ -344,13 +431,3 @@ impl BackendRelayRuntime {
     }
 }
 
-fn relay_platform_status(active: bool, backend_status: Option<&str>, disconnected_detail: &str) -> RelayStatus {
-    if !active {
-        return RelayStatus { state: "idle".into(), detail: None };
-    }
-    if matches!(backend_status, Some("not-linked" | "not-connected")) {
-        RelayStatus { state: "error".into(), detail: Some(disconnected_detail.into()) }
-    } else {
-        RelayStatus { state: "listening".into(), detail: None }
-    }
-}

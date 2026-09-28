@@ -236,3 +236,43 @@ fn fire_runtime_treats_completion_conflict_as_reported_and_honors_next_poll_dela
     runtime.tick(103, true, true, |_| false).expect("delayed tick");
     assert_eq!(transport.calls().len(), before);
 }
+
+
+#[test]
+fn relay_runtime_preserves_scope_and_repo_degradation_status() {
+    let transport = MockTransport::with_responses(vec![
+        Ok(json!({
+            "slack": {
+                "status": "ok",
+                "teams": [{
+                    "channels": [{"input":"#private","isBotMember":false}],
+                    "unresolvedChannels": ["#missing"]
+                }]
+            },
+            "github": {
+                "status": "ok",
+                "repos": [
+                    {"repo":"org/good","isSubscribed":true},
+                    {"repo":"org/bad","isSubscribed":false,"detail":"Missing repository access."}
+                ]
+            }
+        })),
+        Ok(json!({"events":[]}))
+    ]);
+    let mut runtime = BackendRelayRuntime::new(transport);
+    runtime.set_listeners(
+        vec![json!({"type":"slack","channel":"#private","match":{"kind":"message"}})],
+        vec![json!({"type":"github","repo":"org/bad","events":["pr-opened"]})],
+    );
+    runtime.tick(1_000, true, true, |_| true).expect("relay status tick");
+
+    assert_eq!(runtime.slack_status.state, "listening");
+    assert_eq!(runtime.slack_status.scope_issues.len(), 2);
+    assert!(runtime.slack_status.detail.as_deref().unwrap_or_default().contains("Invite @Cursor"));
+    assert!(runtime.slack_status.detail.as_deref().unwrap_or_default().contains("#missing"));
+    assert_eq!(runtime.github_status.state, "listening");
+    assert_eq!(
+        runtime.github_status.detail.as_deref(),
+        Some("Missing repository access.")
+    );
+}

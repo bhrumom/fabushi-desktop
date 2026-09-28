@@ -2,11 +2,81 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use prost::Message;
+use serde::Serialize;
 use serde_json::Value;
 
+use crate::automations::automation_trigger::trigger_listener_platforms;
 use super::connect_unary::{SandConnectError, SandConnectUnaryClient};
 
 pub const DASHBOARD_INTEGRATIONS_URL: &str = "https://cursor.com/dashboard?tab=integrations";
+pub const LISTENER_INTEGRATION_PLATFORMS: [&str; 2] = ["github", "slack"];
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListenerScopeIssue {
+    pub kind: String,
+    pub scope: String,
+}
+
+pub fn describe_scope_issues(issues: &[ListenerScopeIssue]) -> String {
+    let missing_bot = issues
+        .iter()
+        .filter(|issue| issue.kind == "bot-not-in-channel")
+        .map(|issue| issue.scope.as_str())
+        .collect::<Vec<_>>();
+    let not_found = issues
+        .iter()
+        .filter(|issue| issue.kind == "not-found")
+        .map(|issue| issue.scope.as_str())
+        .collect::<Vec<_>>();
+    let mut parts = Vec::new();
+    if !missing_bot.is_empty() {
+        parts.push(format!(
+            "Invite @Cursor to {} in Slack — messages there can't reach this listener until the bot joins.",
+            missing_bot.join(", ")
+        ));
+    }
+    if !not_found.is_empty() {
+        parts.push(format!(
+            "Couldn't find {} — check the name, or invite @Cursor to it first if it's a private channel.",
+            not_found.join(", ")
+        ));
+    }
+    parts.join(" ")
+}
+
+pub fn count_listener_platforms<'a>(
+    automations: impl IntoIterator<Item = (bool, &'a Value)>,
+) -> BTreeMap<String, usize> {
+    let mut counts = BTreeMap::from([
+        ("github".to_string(), 0usize),
+        ("slack".to_string(), 0usize),
+    ]);
+    for (is_enabled, trigger) in automations {
+        if !is_enabled {
+            continue;
+        }
+        for platform in trigger_listener_platforms(trigger) {
+            if let Some(count) = counts.get_mut(&platform) {
+                *count += 1;
+            }
+        }
+    }
+    counts
+}
+
+pub fn filter_listener_agent_channels(channels: &[Value]) -> Vec<Value> {
+    channels
+        .iter()
+        .filter(|channel| {
+            channel
+                .get("platform")
+                .and_then(Value::as_str)
+                .is_some_and(|platform| LISTENER_INTEGRATION_PLATFORMS.contains(&platform))
+        })
+        .cloned()
+        .collect()
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListenerConnectionState {
