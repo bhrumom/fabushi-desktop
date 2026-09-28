@@ -27,7 +27,11 @@ use crate::extensions::box_store_sync::box_store_manifest_format::{
     parse_box_store_manifest,
 };
 use crate::extensions::box_store_sync::box_store_transfer::{
-    CategoryTransferSummary, glob_matches_path,
+    BOX_STORE_SNAPSHOT_TMP_SUFFIX, CategoryTransferSummary, glob_matches_path,
+};
+use crate::extensions::box_store_sync::box_store_sync::LARGE_OBJECT_THRESHOLD_BYTES;
+use crate::extensions::box_store_sync::store_db_snapshot_upload::{
+    SnapshotUploadOutcome, StoreDbSnapshotRuntimePort, StoreDbSnapshotUpload,
 };
 use crate::extensions::box_store_sync::chrome_session_stage::{
     CHROME_SESSION_DB_DIR, CHROME_SESSION_DB_NAMES, stage_box_chrome_session,
@@ -348,6 +352,12 @@ impl ProductionBoxStoreSyncInner {
                 None,
                 manifest_v2,
             )?);
+            categories.push(sync_store_db_snapshots(
+                &store,
+                &store_id,
+                &mut entries,
+                &sand_root,
+            )?);
             let workspace_ignore =
                 load_workspace_ignore(WORKSPACE_ROOT, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS);
             categories.push(sync_tree_category(
@@ -601,6 +611,174 @@ fn sync_chrome_session(
     }
     summary.failures += staged.skipped;
     staged.cleanup().map_err(|error| error.to_string())?;
+    Ok(summary)
+}
+
+
+#[derive(Clone)]
+struct LocalFsStoreDbSnapshotRuntime {
+    store: LocalFsObjectStore,
+}
+
+impl StoreDbSnapshotRuntimePort for LocalFsStoreDbSnapshotRuntime {
+    fn put_bytes(
+        &self,
+        _store_id: &str,
+        key: &str,
+        bytes: &[u8],
+        _content_addressed: bool,
+    ) -> Result<(), String> {
+        self.store.put(key, bytes)
+    }
+
+    fn put_from_file(
+        &self,
+        _store_id: &str,
+        key: &str,
+        path: &Path,
+        _sha: &str,
+        _size: u64,
+    ) -> Result<(), String> {
+        self.store.put_from_file(key, path)
+    }
+}
+
+fn sync_store_db_snapshots(
+    store: &LocalFsObjectStore,
+    store_id: &str,
+    manifest: &mut BoxManifestMap,
+    sand_root: &Path,
+) -> Result<CategoryTransferSummary, String> {
+    let mut summary = CategoryTransferSummary {
+        name: "store.db".into(),
+        ..CategoryTransferSummary::default()
+    };
+    let agents_root = sand_root.join("agents");
+    let mut seen = HashSet::new();
+    let mut walk_complete = true;
+    let agent_dirs = match fs::read_dir(&agents_root) {
+        Ok(entries) => Some(entries),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(_) => {
+            summary.metadata_failures += 1;
+            walk_complete = false;
+            None
+        }
+    };
+
+    let runtime: Arc<dyn StoreDbSnapshotRuntimePort> = Arc::new(LocalFsStoreDbSnapshotRuntime {
+        store: store.clone(),
+    });
+    let uploader = StoreDbSnapshotUpload::new(
+        runtime,
+        Arc::new(now_ms),
+        Arc::new(|message| eprintln!("[box-store-sync] {message}")),
+        DEFAULT_MAX_OBJECT_BYTES,
+        LARGE_OBJECT_THRESHOLD_BYTES,
+    );
+
+    if let Some(agent_dirs) = agent_dirs {
+        for agent_entry in agent_dirs {
+            let agent_entry = match agent_entry {
+                Ok(entry) => entry,
+                Err(_) => {
+                    summary.metadata_failures += 1;
+                    walk_complete = false;
+                    continue;
+                }
+            };
+            let file_type = match agent_entry.file_type() {
+                Ok(file_type) => file_type,
+                Err(_) => {
+                    summary.metadata_failures += 1;
+                    walk_complete = false;
+                    continue;
+                }
+            };
+            if !file_type.is_dir() {
+                continue;
+            }
+            let agent_id = agent_entry.file_name().to_string_lossy().to_string();
+            if agent_id.is_empty() {
+                summary.metadata_failures += 1;
+                walk_complete = false;
+                continue;
+            }
+
+            for basename in AGENT_STORE_DB_BASENAMES {
+                let source_path = agent_entry.path().join(basename);
+                let metadata = match fs::metadata(&source_path) {
+                    Ok(metadata) if metadata.is_file() => metadata,
+                    Ok(_) => {
+                        summary.metadata_failures += 1;
+                        continue;
+                    }
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                    Err(_) => {
+                        summary.metadata_failures += 1;
+                        walk_complete = false;
+                        continue;
+                    }
+                };
+                let rel_path = format!(
+                    "{SAND_DATA_REL_PREFIX}/agents/{agent_id}/{basename}"
+                );
+                seen.insert(rel_path.clone());
+                summary.files_scanned += 1;
+
+                let temp_path = PathBuf::from(format!(
+                    "{}{}{}",
+                    source_path.display(),
+                    BOX_STORE_SNAPSHOT_TMP_SUFFIX,
+                    uuid::Uuid::new_v4().simple(),
+                ));
+                if let Err(error) = uploader.run_vacuum_off_thread(&source_path, &temp_path) {
+                    uploader.discard_snapshot_temp(&temp_path, &rel_path);
+                    eprintln!(
+                        "[box-store-sync] store.db snapshot capture failed {rel_path}: {error}"
+                    );
+                    summary.failures += 1;
+                    continue;
+                }
+
+                let result = uploader.upload_agent_db_snapshot(
+                    store_id,
+                    manifest,
+                    &rel_path,
+                    &temp_path,
+                    file_mode(&metadata),
+                );
+                uploader.discard_snapshot_temp(&temp_path, &rel_path);
+                match result.outcome {
+                    SnapshotUploadOutcome::Uploaded => {
+                        summary.files_uploaded += 1;
+                        summary.bytes_uploaded = summary
+                            .bytes_uploaded
+                            .saturating_add(result.bytes_uploaded);
+                    }
+                    SnapshotUploadOutcome::Unchanged => summary.skipped_unchanged += 1,
+                    SnapshotUploadOutcome::Oversize => summary.oversize += 1,
+                    SnapshotUploadOutcome::Error => summary.failures += 1,
+                }
+            }
+        }
+    }
+
+    if walk_complete {
+        let prefix = format!("{SAND_DATA_REL_PREFIX}/agents/");
+        let stale = manifest
+            .keys()
+            .filter(|path| path.starts_with(&prefix))
+            .filter(|path| is_agent_store_db_path(path))
+            .filter(|path| !seen.contains(*path))
+            .cloned()
+            .collect::<Vec<_>>();
+        for path in stale {
+            manifest.remove(&path);
+            summary.removed += 1;
+        }
+    }
+
     Ok(summary)
 }
 
@@ -965,6 +1143,62 @@ mod tests {
         .expect("snapshot pruned workspace");
         assert_eq!(summary.removed, 1);
         assert!(!manifest.contains_key("workspace/src/main.ts"));
+
+        fs::remove_dir_all(root).expect("cleanup temp root");
+    }
+
+    #[test]
+    fn local_snapshot_captures_agent_store_databases_instead_of_skipping_them() {
+        let root = temp_root("store-db");
+        let sand_root = root.join("sand-data");
+        let agent_dir = sand_root.join("agents/agent-a");
+        let store_root = root.join("store");
+        fs::create_dir_all(&agent_dir).expect("create agent dir");
+
+        let source_db = agent_dir.join("store.db");
+        {
+            let db = rusqlite::Connection::open(&source_db).expect("open source store.db");
+            db.execute_batch(
+                "CREATE TABLE state (id INTEGER PRIMARY KEY, value TEXT);
+                 INSERT INTO state(value) VALUES ('durable');",
+            )
+            .expect("seed source store.db");
+        }
+
+        let store = LocalFsObjectStore::new(&store_root);
+        let mut manifest = BoxManifestMap::new();
+        let summary = sync_store_db_snapshots(
+            &store,
+            "store-a",
+            &mut manifest,
+            &sand_root,
+        )
+        .expect("snapshot store.db");
+
+        assert_eq!(summary.failures, 0);
+        assert_eq!(summary.metadata_failures, 0);
+        assert_eq!(summary.files_scanned, 1);
+        assert_eq!(summary.files_uploaded, 1);
+        let rel_path = "home/box/sand-data/agents/agent-a/store.db";
+        let sha = match manifest.get(rel_path).expect("store.db manifest entry") {
+            BoxStoreManifestEntry::File { sha, size, .. } => {
+                assert!(*size > 0);
+                sha.clone()
+            }
+            other => panic!("expected file manifest entry, got {other:?}"),
+        };
+        assert!(store_root.join(BOX_STORE_BLOBS_PREFIX).join(sha).is_file());
+
+        fs::remove_file(&source_db).expect("remove source db");
+        let summary = sync_store_db_snapshots(
+            &store,
+            "store-a",
+            &mut manifest,
+            &sand_root,
+        )
+        .expect("prune removed store.db");
+        assert_eq!(summary.removed, 1);
+        assert!(!manifest.contains_key(rel_path));
 
         fs::remove_dir_all(root).expect("cleanup temp root");
     }
