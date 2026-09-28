@@ -10,8 +10,8 @@ use mahayana_host_runtime::extensions::local_exec::extension::{
     LOCAL_EXEC_DEPENDENCIES, local_exec_extension_id,
 };
 use mahayana_host_runtime::extensions::local_exec::local_exec_bridge::{
-    DEFAULT_SAND_COMPUTER_ID, LocalExecProviderLifecycleReport,
-    SAND_LOCAL_EXEC_LIVENESS_WINDOW_MS, SandLocalExecBridge,
+    DEFAULT_SAND_COMPUTER_ID, LocalExecProviderLifecycleReport, LocalExecRefusalCause,
+    LocalExecRefusalReport, SAND_LOCAL_EXEC_LIVENESS_WINDOW_MS, SandLocalExecBridge,
     bounded_local_exec_variant, local_exec_provider_rank,
 };
 use serde_json::json;
@@ -149,6 +149,71 @@ fn provider_registration_hello_liveness_and_selection_follow_frozen_transport() 
             emptied: true,
         }
     );
+}
+
+#[test]
+fn unavailable_computer_reports_frozen_refusal_causes() {
+    let now = Arc::new(AtomicU64::new(1000));
+    let now_for_bridge = Arc::clone(&now);
+    let reports = Arc::new(Mutex::new(Vec::new()));
+    let reports_for_bridge = Arc::clone(&reports);
+    let bridge = SandLocalExecBridge::with_sources_and_reporters(
+        Arc::new(move || now_for_bridge.load(Ordering::SeqCst)),
+        Arc::new(|| "provider-1".to_string()),
+        None,
+        Some(Arc::new(move |report| {
+            reports_for_bridge.lock().expect("refusals").push(report);
+        })),
+    );
+
+    assert!(!bridge.check_live_computer_for_ask_with_agent(Some("agent-empty")));
+    assert_eq!(
+        reports.lock().expect("refusals")[0],
+        LocalExecRefusalReport {
+            cause: LocalExecRefusalCause::NoProviders,
+            site: "ask_gate".into(),
+            conversation_id: Some("agent-empty".into()),
+            provider_count: 0,
+            live_provider_count: 0,
+            ever_registered: false,
+            empty_for_ms: Some(0),
+        }
+    );
+
+    let (send, receive) = mpsc::channel();
+    let _registration = bridge.register_provider(send);
+    let _ = receive.recv_timeout(Duration::from_millis(100)).expect("welcome");
+    bridge.submit_responses(json!({
+        "providerId": "provider-1",
+        "frames": [{
+            "kind": "hello",
+            "localRoot": "/tmp",
+            "terminalsFolder": "terminals",
+            "computerId": "mac-1",
+            "label": "My Mac"
+        }]
+    }));
+    let error = bridge
+        .assert_computer_available(Some("missing"), "download", Some("agent-1"))
+        .expect_err("unknown computer");
+    assert_eq!(error.message, mahayana_host_runtime::extensions::local_exec::local_exec_bridge::SAND_NO_LOCAL_MACHINE_MESSAGE);
+    assert_eq!(reports.lock().expect("refusals")[1].cause, LocalExecRefusalCause::ComputerUnknown);
+
+    bridge.submit_responses(json!({
+        "providerId": "provider-1",
+        "frames": [{"kind":"ping"}]
+    }));
+    now.store(1000 + SAND_LOCAL_EXEC_LIVENESS_WINDOW_MS + 1, Ordering::SeqCst);
+    let error = bridge
+        .assert_computer_available(Some("mac-1"), "upload", Some("agent-1"))
+        .expect_err("stale computer");
+    assert!(error.message.contains("My Mac"));
+    let report = reports.lock().expect("refusals")[2].clone();
+    assert_eq!(report.cause, LocalExecRefusalCause::StaleHeartbeat);
+    assert_eq!(report.site, "upload");
+    assert_eq!(report.provider_count, 1);
+    assert_eq!(report.live_provider_count, 0);
+    assert!(report.ever_registered);
 }
 
 #[test]

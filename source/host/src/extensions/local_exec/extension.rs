@@ -12,7 +12,8 @@ use crate::extensions::telemetry::local_exec_telemetry::{
 
 use super::local_exec_bridge::{
     LocalExecComputer, LocalExecProviderInfo, LocalExecProviderLifecycleReport,
-    LocalExecProviderRegistration, SandLocalExecBridge,
+    LocalExecProviderRegistration, LocalExecRefusalCause as BridgeRefusalCause,
+    LocalExecRefusalReport as BridgeRefusalReport, SandLocalExecBridge,
 };
 
 pub const LOCAL_EXEC_DEPENDENCIES: &[HostExtensionId] = &[
@@ -45,26 +46,7 @@ impl HostLocalExecExtension {
     }
 
     pub fn check_live_computer_for_ask(&self, agent_id: Option<&str>) -> bool {
-        if self.bridge.check_live_computer_for_ask() {
-            return true;
-        }
-
-        let provider_count = self.bridge.provider_count();
-        let report = LocalExecRefusedReport {
-            cause: if provider_count == 0 {
-                LocalExecRefusalCause::NoProviders
-            } else {
-                LocalExecRefusalCause::StaleHeartbeat
-            },
-            site: "ask_gate".into(),
-            conversation_id: agent_id.unwrap_or_default().to_string(),
-            provider_count: provider_count.try_into().unwrap_or(i64::MAX),
-            live_provider_count: 0,
-            ever_registered: self.bridge.ever_registered(),
-            empty_for_ms: None,
-        };
-        let _ = self.logs.report_projection(&local_exec_refused_telemetry(&report));
-        false
+        self.bridge.check_live_computer_for_ask_with_agent(agent_id)
     }
 
     pub fn list_computers(&self) -> Vec<LocalExecComputer> {
@@ -150,8 +132,29 @@ pub fn start_local_exec_extension(
         };
         let _ = provider_logs.report_projection(&local_exec_provider_telemetry(&telemetry));
     });
+    let refusal_logs = logs.clone();
+    let refusal_reporter = Arc::new(move |report: BridgeRefusalReport| {
+        let cause = match report.cause {
+            BridgeRefusalCause::NoProviders => LocalExecRefusalCause::NoProviders,
+            BridgeRefusalCause::ComputerUnknown => LocalExecRefusalCause::ComputerUnknown,
+            BridgeRefusalCause::StaleHeartbeat => LocalExecRefusalCause::StaleHeartbeat,
+        };
+        let report = LocalExecRefusedReport {
+            cause,
+            site: report.site,
+            conversation_id: report.conversation_id.unwrap_or_default(),
+            provider_count: report.provider_count.try_into().unwrap_or(i64::MAX),
+            live_provider_count: report.live_provider_count.try_into().unwrap_or(i64::MAX),
+            ever_registered: report.ever_registered,
+            empty_for_ms: report.empty_for_ms.map(|value| value as f64),
+        };
+        let _ = refusal_logs.report_projection(&local_exec_refused_telemetry(&report));
+    });
     HostLocalExecExtension {
-        bridge: SandLocalExecBridge::production_with_reporter(Some(provider_reporter)),
+        bridge: SandLocalExecBridge::production_with_reporters(
+            Some(provider_reporter),
+            Some(refusal_reporter),
+        ),
         logs,
     }
 }

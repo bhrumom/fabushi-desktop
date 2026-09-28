@@ -113,7 +113,7 @@ impl GatewayLocalExecSandBox {
         }
         self.check_blocked()?;
         self.bridge
-            .assert_computer_available(self.computer_id.as_deref())?;
+            .assert_computer_available(self.computer_id.as_deref(), "upload", agent_id)?;
         let approval_id = self
             .gate
             .authorize(agent_id, "write-file", box_path)?;
@@ -155,7 +155,7 @@ impl GatewayLocalExecSandBox {
     ) -> Result<Vec<u8>, SandLocalExecError> {
         self.check_blocked()?;
         self.bridge
-            .assert_computer_available(self.computer_id.as_deref())?;
+            .assert_computer_available(self.computer_id.as_deref(), "download", agent_id)?;
         let approval_id = self
             .gate
             .authorize(agent_id, "read-file", box_path)?;

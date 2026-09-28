@@ -45,6 +45,8 @@ fn local_exec_ask_gate_reports_refusal_with_agent_identity() {
     );
     assert_eq!(record["payload"]["metadata"]["provider_count"], "0");
     assert_eq!(record["payload"]["metadata"]["live_provider_count"], "0");
+    assert_eq!(record["payload"]["metadata"]["ever_registered"], "false");
+    assert_eq!(record["payload"]["metadata"]["empty_for_ms"], "0");
     let _ = fs::remove_file(path);
 }
 

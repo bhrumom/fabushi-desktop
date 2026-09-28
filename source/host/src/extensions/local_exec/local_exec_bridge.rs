@@ -142,12 +142,33 @@ pub enum LocalExecProviderLifecycleReport {
 pub type ProviderLifecycleReporter =
     Arc<dyn Fn(LocalExecProviderLifecycleReport) + Send + Sync>;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LocalExecRefusalCause {
+    NoProviders,
+    ComputerUnknown,
+    StaleHeartbeat,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LocalExecRefusalReport {
+    pub cause: LocalExecRefusalCause,
+    pub site: String,
+    pub conversation_id: Option<String>,
+    pub provider_count: usize,
+    pub live_provider_count: usize,
+    pub ever_registered: bool,
+    pub empty_for_ms: Option<u64>,
+}
+
+pub type RefusalReporter = Arc<dyn Fn(LocalExecRefusalReport) + Send + Sync>;
+
 #[derive(Clone)]
 pub struct SandLocalExecBridge {
     state: Arc<Mutex<BridgeState>>,
     now_ms: Now,
     random_id: RandomId,
     provider_reporter: Option<ProviderLifecycleReporter>,
+    refusal_reporter: Option<RefusalReporter>,
 }
 
 impl SandLocalExecBridge {
@@ -158,7 +179,14 @@ impl SandLocalExecBridge {
     pub fn production_with_reporter(
         provider_reporter: Option<ProviderLifecycleReporter>,
     ) -> Self {
-        Self::with_sources_and_reporter(
+        Self::production_with_reporters(provider_reporter, None)
+    }
+
+    pub fn production_with_reporters(
+        provider_reporter: Option<ProviderLifecycleReporter>,
+        refusal_reporter: Option<RefusalReporter>,
+    ) -> Self {
+        Self::with_sources_and_reporters(
             Arc::new(|| {
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
@@ -169,11 +197,12 @@ impl SandLocalExecBridge {
             }),
             Arc::new(|| Uuid::new_v4().to_string()),
             provider_reporter,
+            refusal_reporter,
         )
     }
 
     pub fn with_sources(now_ms: Now, random_id: RandomId) -> Self {
-        Self::with_sources_and_reporter(now_ms, random_id, None)
+        Self::with_sources_and_reporters(now_ms, random_id, None, None)
     }
 
     pub fn with_sources_and_reporter(
@@ -181,12 +210,22 @@ impl SandLocalExecBridge {
         random_id: RandomId,
         provider_reporter: Option<ProviderLifecycleReporter>,
     ) -> Self {
+        Self::with_sources_and_reporters(now_ms, random_id, provider_reporter, None)
+    }
+
+    pub fn with_sources_and_reporters(
+        now_ms: Now,
+        random_id: RandomId,
+        provider_reporter: Option<ProviderLifecycleReporter>,
+        refusal_reporter: Option<RefusalReporter>,
+    ) -> Self {
         let now = now_ms();
         Self {
             state: Arc::new(Mutex::new(BridgeState::new(now))),
             now_ms,
             random_id,
             provider_reporter,
+            refusal_reporter,
         }
     }
 
@@ -316,19 +355,30 @@ impl SandLocalExecBridge {
     }
 
     pub fn check_live_computer_for_ask(&self) -> bool {
-        self.active_computer().is_some()
+        self.check_live_computer_for_ask_with_agent(None)
+    }
+
+    pub fn check_live_computer_for_ask_with_agent(&self, agent_id: Option<&str>) -> bool {
+        self.assert_computer_available(None, "ask_gate", agent_id)
+            .is_ok()
     }
 
     pub fn assert_computer_available(
         &self,
         computer_id: Option<&str>,
+        site: &str,
+        agent_id: Option<&str>,
     ) -> Result<(), SandLocalExecError> {
         let now = (self.now_ms)();
         let state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         if self.best_provider(&state, now, computer_id).is_some() {
             return Ok(());
         }
-        Err(self.unavailable_error(&state, now, computer_id))
+        let report = self.refusal_report(&state, now, computer_id, site, agent_id);
+        let error = self.unavailable_error(&state, now, computer_id);
+        drop(state);
+        self.report_refusal(report);
+        Err(error)
     }
 
     pub fn submit_responses(&self, batch: Value) {
@@ -486,6 +536,46 @@ impl SandLocalExecBridge {
     fn report_provider(&self, report: LocalExecProviderLifecycleReport) {
         if let Some(reporter) = &self.provider_reporter {
             reporter(report);
+        }
+    }
+
+    fn report_refusal(&self, report: LocalExecRefusalReport) {
+        if let Some(reporter) = &self.refusal_reporter {
+            reporter(report);
+        }
+    }
+
+    fn refusal_report(
+        &self,
+        state: &BridgeState,
+        now_ms: u64,
+        computer_id: Option<&str>,
+        site: &str,
+        agent_id: Option<&str>,
+    ) -> LocalExecRefusalReport {
+        let live_provider_count = state
+            .providers
+            .values()
+            .filter(|provider| provider.live(now_ms))
+            .count();
+        let cause = if state.providers.is_empty() {
+            LocalExecRefusalCause::NoProviders
+        } else if computer_id.is_some_and(|id| {
+            !state.providers.values().any(|provider| provider.computer_id() == id)
+        }) {
+            LocalExecRefusalCause::ComputerUnknown
+        } else {
+            LocalExecRefusalCause::StaleHeartbeat
+        };
+        LocalExecRefusalReport {
+            cause,
+            site: site.to_string(),
+            conversation_id: agent_id.map(str::to_string),
+            provider_count: state.providers.len(),
+            live_provider_count,
+            ever_registered: state.ever_registered,
+            empty_for_ms: (cause == LocalExecRefusalCause::NoProviders)
+                .then(|| now_ms.saturating_sub(state.empty_since_ms)),
         }
     }
 
