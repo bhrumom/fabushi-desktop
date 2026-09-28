@@ -10587,21 +10587,27 @@
       "targetPath": "source/host/src/extensions/automations/backend_relay_source.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "1b131df1e702e60cacce49e50d359787d323ab45",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/automations/backend_relay_source.rs",
         "source/host/src/extensions/automations/extension.rs",
-        "source/host/src/automations/automation_trigger.rs"
+        "source/host/src/automations/automation_trigger.rs",
+        "source/host/src/extensions/automations/backend_transport.rs",
+        "source/host/src/extensions/automations/production.rs",
+        "source/host/src/extensions/automations/production_lifecycle.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/automations_extension_runtime_contract.rs",
         "source/host/tests/automation_trigger_matching_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/automations_backend_contract.rs",
+        "source/host/tests/automations_listener_cloud_sync_contract.rs"
       ],
-      "notes": "Rust BackendRelaySource owns started/stopped listener admission and delegates frozen listener matching to the canonical automation-trigger matcher. It is wired through AutomationExtensionRuntime. Final remains withheld for the frozen authenticated backend polling/notify-gate transport and error/backoff telemetry."
+      "notes": "Shipping Rust BackendRelayRuntime now owns the frozen listener backend behavior: authenticated backend transport with Sand client metadata, subscription registration/refresh, degraded refresh and 30-second error backoff, NotifyBus-driven drains with safety-poll gating, Slack/GitHub wire-event normalization, canonical listener matching, sink-acceptance ACK fencing, Slack scope issue projection, GitHub per-repository degradation detail, and production source-status exposure through the singleton Automations lifecycle. No second listener runtime remains."
     },
     {
       "referencePath": "source/host/extensions/automations/extension.ts",
@@ -10660,20 +10666,28 @@
       "targetPath": "source/host/src/extensions/automations/listener_integrations.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "ba6a1542cd67bf30bc72e699af2dd911c81bfaae",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/automations/listener_integrations.rs",
-        "source/host/src/extensions/automations/extension.rs"
+        "source/host/src/extensions/automations/extension.rs",
+        "source/host/src/extensions/automations/backend_relay_source.rs",
+        "source/host/src/extensions/automations/production.rs",
+        "source/host/src/extensions/automations/production_lifecycle.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/automations_listener_cloud_sync_contract.rs",
         "source/host/tests/automations_extension_runtime_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/automations_backend_contract.rs",
+        "source/host/tests/automations_listener_watcher_production_contract.rs"
       ],
-      "notes": "Rust ListenerIntegrations projects supported listener platform connection state and is consumed by AutomationExtensionRuntime. Final remains withheld for frozen authenticated integration reads/connect URLs/channel reads against live Host auth/transcript services."
+      "notes": "Shipping Rust ListenerIntegrations now matches the frozen Host responsibilities without duplicating Session ownership: authenticated Slack/GitHub connection reads and connect URLs are owned by ProductionListenerIntegrations; transient connection-read failures degrade to disconnected; getListenerIntegrations projects canonical relay state/detail/scopeIssues plus enabled-routine neededByCount with per-platform de-duplication; getAgentChannels is supplied through an injected Session-owned channel reader and filters to Slack/GitHub manifests/connections. ProductionAutomationsLifecycle owns the single shipping surface."
     },
     {
       "referencePath": "source/host/extensions/automations/sand-automation-cloud-sync.ts",
