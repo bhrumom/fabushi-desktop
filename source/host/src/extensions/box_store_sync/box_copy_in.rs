@@ -290,6 +290,16 @@ pub fn run_local_box_copy_in(store: &dyn BoxObjectStore, target_root: &Path) -> 
             BoxStoreManifestEntry::LegacyFile { sha, size }
             | BoxStoreManifestEntry::File { sha, size, .. } => {
                 if pack_restored.contains(rel_path) {
+                    if let BoxStoreManifestEntry::File { mode, .. } = entry {
+                        #[cfg(unix)]
+                        {
+                            use std::os::unix::fs::PermissionsExt;
+                            let permissions = fs::Permissions::from_mode(*mode);
+                            if let Err(error) = fs::set_permissions(&destination, permissions) {
+                                failures.push(format!("set mode {rel_path}: {error}"));
+                            }
+                        }
+                    }
                     continue;
                 }
                 if let Err(error) = remove_existing_restore_path(&destination) {
