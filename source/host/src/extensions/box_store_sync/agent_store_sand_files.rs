@@ -658,8 +658,9 @@ impl AgentStoreClient {
         }
 
         let request = mint_request_for_source_id(source_id)?;
-        let response: MintAgentStoreTokenResponseProto =
-            self.cursor_rpc(MINT_AGENT_STORE_TOKEN_PATH, request, &[])?;
+        let response: MintAgentStoreTokenResponseProto = self
+            .cursor_rpc(MINT_AGENT_STORE_TOKEN_PATH, request, &[])
+            .map_err(|error| error.to_string())?;
         let store_id = response
             .store_ids
             .into_iter()
