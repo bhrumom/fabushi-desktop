@@ -2,8 +2,9 @@ use std::fs;
 use std::path::PathBuf;
 
 use mahayana_host_runtime::extensions::box_store_sync::box_copy_in::{
-    BOX_COPY_IN_EXIT_HYDRATED, CopyInOutcome, execute_box_copy_in_from_env_with_provider_dependencies,
-    run_local_box_copy_in,
+    BOX_COPY_IN_EXIT_HYDRATED, CopyInOutcome, build_copy_in_status_from_result,
+    execute_box_copy_in_from_env_with_provider_dependencies, is_transient_copy_in_failure,
+    run_local_box_copy_in, write_copy_in_status_atomic,
 };
 use mahayana_host_runtime::extensions::box_store_sync::box_object_store::{
     BoxObjectStore, BoxObjectStoreProviderDependencies, LocalFsObjectStore,
@@ -273,6 +274,42 @@ fn shipping_copy_in_composes_through_canonical_object_store_provider() {
         fs::read(target_root.join("workspace/provider.txt")).expect("restored file"),
         bytes
     );
+
+    fs::remove_dir_all(root).expect("cleanup");
+}
+
+
+#[test]
+fn copy_in_status_is_atomic_and_transient_retry_classification_fails_closed_for_auth() {
+    let root = temp_root("status");
+    let status_path = root.join("copy-in-status.json");
+    let transient = mahayana_host_runtime::extensions::box_store_sync::box_copy_in::CopyInResult {
+        outcome: CopyInOutcome::Failed,
+        reason: "network connection reset".into(),
+        manifest_entries: 2,
+        store_db_entries: 1,
+        restored_store_db_entries: Some(0),
+        files: 1,
+        bytes: 5,
+        verified: 1,
+        failures: vec!["network connection reset".into()],
+    };
+    assert!(is_transient_copy_in_failure(&transient));
+    let auth = mahayana_host_runtime::extensions::box_store_sync::box_copy_in::CopyInResult {
+        reason: "401 unauthorized".into(),
+        failures: vec!["401 unauthorized".into()],
+        ..transient.clone()
+    };
+    assert!(!is_transient_copy_in_failure(&auth));
+
+    let status = build_copy_in_status_from_result(&transient);
+    write_copy_in_status_atomic(&status_path, &status).expect("write atomic status");
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&fs::read(&status_path).expect("read status")).expect("parse status");
+    assert_eq!(parsed["phase"], "failed");
+    assert_eq!(parsed["total"], 2);
+    assert_eq!(parsed["storeDbEntries"], 1);
+    assert!(!status_path.with_extension("tmp").exists());
 
     fs::remove_dir_all(root).expect("cleanup");
 }

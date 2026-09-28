@@ -1,8 +1,12 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::fs;
+use std::fs::{self, File, OpenOptions};
+use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+use fs2::FileExt;
 
 use sha2::{Digest, Sha256};
 
@@ -28,6 +32,7 @@ use super::box_store_manifest_format::{
 };
 use crate::extensions::auth::auth_service::HostAuthService;
 use crate::extensions::auth::credential_renewer::get_configured_backend_url;
+use crate::host_paths::get_sand_root_dir;
 use crate::r#box::box_store_backend_policy::{
     is_box_store_copy_in_enabled, resolve_box_store_backend_policy,
 };
@@ -40,6 +45,8 @@ pub const SAND_BOX_COPY_IN_STATUS_PATH: &str = "/tmp/sand-copy-in-status.json";
 pub const COPY_IN_STATUS_THROTTLE_MS: u64 = 750;
 pub const COPY_IN_HYDRATE_ATTEMPTS: usize = 8;
 pub const COPY_IN_STUCK_THRESHOLD_MS: u64 = 5 * 60_000;
+const COPY_IN_RETRY_BASE_MS: u64 = 1_000;
+const COPY_IN_RETRY_MAX_MS: u64 = 15_000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CopyInOutcome {
@@ -114,20 +121,37 @@ pub fn is_transient_copy_in_failure(result: &CopyInResult) -> bool {
     if result.outcome != CopyInOutcome::Failed {
         return false;
     }
-    let reason = result.reason.to_ascii_lowercase();
-    [
-        "timeout",
-        "timed out",
-        "temporar",
-        "connection",
-        "network",
-        "locked",
-        "in-flight",
-        "503",
-        "429",
-    ]
-    .iter()
-    .any(|needle| reason.contains(needle))
+    if result.reason.starts_with("lock-held")
+        || result.reason.contains("primary V2 store.db coverage is below")
+        || result.reason.contains("no store.db identities to validate V2")
+        || result.reason.starts_with("legacy source manifest is empty")
+    {
+        return false;
+    }
+    if result.reason.starts_with("partial hydrate")
+        || result.reason.starts_with("incomplete legacy hydrate")
+    {
+        return true;
+    }
+    let text = result
+        .failures
+        .first()
+        .map(String::as_str)
+        .unwrap_or(&result.reason)
+        .to_ascii_lowercase();
+    if text.contains("no inference credential")
+        || text.contains("401")
+        || text.contains("403")
+        || text.contains("forbidden")
+        || text.contains("access denied")
+        || text.contains("unauthorized")
+        || text.contains("unauthenticated")
+        || text.contains("not authorized")
+        || text.contains("access is not enabled")
+    {
+        return false;
+    }
+    true
 }
 
 pub fn redact_copy_in_error_for_telemetry(raw: &str) -> String {
@@ -164,10 +188,127 @@ pub fn empty(reason: impl Into<String>) -> CopyInResult {
     }
 }
 
-/// Executes the shipping Host's copy-in bootstrap for the local object-store
-/// backend. The CLI must never fall through into the long-lived Host when
-/// copy-in was explicitly requested. Remote AgentStore/V2 adapters remain
-/// fail-closed until their production transport is wired into this owner.
+#[derive(Debug)]
+struct CopyInStoreLock {
+    file: File,
+}
+
+impl Drop for CopyInStoreLock {
+    fn drop(&mut self) {
+        let _ = FileExt::unlock(&self.file);
+    }
+}
+
+fn try_acquire_copy_in_lock(path: &Path) -> io::Result<Option<CopyInStoreLock>> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let file = OpenOptions::new()
+        .create(true)
+        .read(true)
+        .write(true)
+        .open(path)?;
+    match file.try_lock_exclusive() {
+        Ok(()) => Ok(Some(CopyInStoreLock { file })),
+        Err(error) if error.kind() == io::ErrorKind::WouldBlock => Ok(None),
+        Err(error) => Err(error),
+    }
+}
+
+pub fn build_copy_in_status_from_result(result: &CopyInResult) -> serde_json::Value {
+    serde_json::json!({
+        "phase": if result.outcome == CopyInOutcome::Failed { "failed" } else { "done" },
+        "restored": result.files,
+        "total": result.manifest_entries,
+        "bytes": result.bytes,
+        "outcome": match classify_copy_in_metered_outcome(result) {
+            CopyInMeteredOutcome::Hydrated => "hydrated",
+            CopyInMeteredOutcome::Empty => "empty",
+            CopyInMeteredOutcome::Partial => "partial",
+            CopyInMeteredOutcome::Failed => "failed",
+        },
+        "storeDbEntries": result.store_db_entries,
+    })
+}
+
+pub fn write_copy_in_status_atomic(path: &Path, status: &serde_json::Value) -> io::Result<()> {
+    let temp_path = path.with_extension("tmp");
+    fs::write(&temp_path, serde_json::to_vec(status).map_err(io::Error::other)?)?;
+    fs::rename(temp_path, path)
+}
+
+fn run_copy_in_with_provider(
+    environment: &BTreeMap<String, String>,
+    target_root: &Path,
+    provider: &dyn BoxObjectStoreProvider,
+) -> CopyInResult {
+    let Some(store_id) = environment
+        .get("SAND_BOX_STORE_ID")
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+    else {
+        return empty("no SAND_BOX_STORE_ID; booting fresh");
+    };
+    let store_id = match normalize_rel_path(store_id) {
+        Ok(value) => value,
+        Err(error) => return failed_copy_in(format!("invalid store id: {error}")),
+    };
+    let store = provider.for_store(&store_id);
+    run_local_box_copy_in(store.as_ref(), target_root)
+}
+
+fn report_copy_in_result(result: &CopyInResult) -> i32 {
+    match result {
+        CopyInResult { outcome: CopyInOutcome::Hydrated | CopyInOutcome::Noop, .. } => {
+            eprintln!(
+                "[box-copy-in] outcome={:?} files={} bytes={} verified={} reason={}",
+                result.outcome, result.files, result.bytes, result.verified, result.reason
+            );
+        }
+        _ => {
+            eprintln!(
+                "[box-copy-in] failed files={} verified={} failures={} reason={}",
+                result.files,
+                result.verified,
+                result.failures.len(),
+                result.reason
+            );
+        }
+    }
+    outcome_to_exit_code(result.outcome)
+}
+
+fn run_copy_in_with_retry(
+    environment: &BTreeMap<String, String>,
+    target_root: &Path,
+    provider: &dyn BoxObjectStoreProvider,
+) -> CopyInResult {
+    let attempts = resolve_copy_in_attempts(environment).max(1);
+    let mut last = failed_copy_in("copy-in did not run".into());
+    for attempt in 1..=attempts {
+        last = run_copy_in_with_provider(environment, target_root, provider);
+        if last.outcome != CopyInOutcome::Failed
+            || !is_transient_copy_in_failure(&last)
+            || attempt == attempts
+        {
+            return last;
+        }
+        let exponent = u32::try_from(attempt.saturating_sub(1)).unwrap_or(u32::MAX).min(20);
+        let backoff = COPY_IN_RETRY_BASE_MS
+            .saturating_mul(1_u64 << exponent)
+            .min(COPY_IN_RETRY_MAX_MS);
+        eprintln!(
+            "[box-copy-in] transient failure (attempt {attempt}/{attempts}): {}; retrying in {backoff}ms",
+            last.reason
+        );
+        thread::sleep(Duration::from_millis(backoff));
+    }
+    last
+}
+
+/// Dependency-injected copy-in entrypoint. Without remote dependencies it is
+/// appropriate for LocalFS/tests; the shipping CLI uses
+/// execute_production_box_copy_in_from_env so AgentStore/V2 reuse Host auth.
 pub fn execute_box_copy_in_from_env(
     environment: &BTreeMap<String, String>,
     target_root: &Path,
@@ -190,6 +331,34 @@ pub fn execute_production_box_copy_in_from_env(
     if !is_box_store_copy_in_enabled(environment) {
         return BOX_COPY_IN_EXIT_NOOP;
     }
+
+    let lock_path = get_sand_root_dir().join("box-store-sync.lock");
+    let _lock = match try_acquire_copy_in_lock(&lock_path) {
+        Ok(Some(lock)) => lock,
+        Ok(None) => {
+            let result = failed_copy_in("lock-held".into());
+            let _ = write_copy_in_status_atomic(
+                Path::new(SAND_BOX_COPY_IN_STATUS_PATH),
+                &build_copy_in_status_from_result(&result),
+            );
+            eprintln!("[box-copy-in] could not acquire box-store lock; failing closed");
+            return BOX_COPY_IN_EXIT_FAILED;
+        }
+        Err(error) => {
+            let result = failed_copy_in(format!("store lock error: {error}"));
+            let _ = write_copy_in_status_atomic(
+                Path::new(SAND_BOX_COPY_IN_STATUS_PATH),
+                &build_copy_in_status_from_result(&result),
+            );
+            return report_copy_in_result(&result);
+        }
+    };
+
+    let _ = write_copy_in_status_atomic(
+        Path::new(SAND_BOX_COPY_IN_STATUS_PATH),
+        &serde_json::json!({"phase":"copying","restored":0,"total":0,"bytes":0}),
+    );
+
     let policy = resolve_box_store_backend_policy(environment);
     let deps = if policy.local_dir.is_some() {
         BoxObjectStoreProviderDependencies::default()
@@ -197,8 +366,12 @@ pub fn execute_production_box_copy_in_from_env(
         let backend_url = match get_configured_backend_url() {
             Ok(url) => url,
             Err(error) => {
-                eprintln!("[box-copy-in] invalid production backend URL: {error}");
-                return BOX_COPY_IN_EXIT_FAILED;
+                let result = failed_copy_in(format!("invalid production backend URL: {error}"));
+                let _ = write_copy_in_status_atomic(
+                    Path::new(SAND_BOX_COPY_IN_STATUS_PATH),
+                    &build_copy_in_status_from_result(&result),
+                );
+                return report_copy_in_result(&result);
             }
         };
         let auth = match HostAuthService::production(|message| {
@@ -206,8 +379,12 @@ pub fn execute_production_box_copy_in_from_env(
         }) {
             Ok(auth) => Arc::new(auth),
             Err(error) => {
-                eprintln!("[box-copy-in] failed to initialize production auth: {error}");
-                return BOX_COPY_IN_EXIT_FAILED;
+                let result = failed_copy_in(format!("failed to initialize production auth: {error}"));
+                let _ = write_copy_in_status_atomic(
+                    Path::new(SAND_BOX_COPY_IN_STATUS_PATH),
+                    &build_copy_in_status_from_result(&result),
+                );
+                return report_copy_in_result(&result);
             }
         };
         let token_auth = Arc::clone(&auth);
@@ -222,7 +399,24 @@ pub fn execute_production_box_copy_in_from_env(
             })),
         }
     };
-    execute_box_copy_in_from_env_with_provider_dependencies(environment, target_root, deps)
+
+    let provider = match resolve_box_object_store_provider(environment, deps) {
+        Ok(provider) => provider,
+        Err(error) => {
+            let result = failed_copy_in(format!("object-store provider unavailable: {error}"));
+            let _ = write_copy_in_status_atomic(
+                Path::new(SAND_BOX_COPY_IN_STATUS_PATH),
+                &build_copy_in_status_from_result(&result),
+            );
+            return report_copy_in_result(&result);
+        }
+    };
+    let result = run_copy_in_with_retry(environment, target_root, provider.as_ref());
+    let _ = write_copy_in_status_atomic(
+        Path::new(SAND_BOX_COPY_IN_STATUS_PATH),
+        &build_copy_in_status_from_result(&result),
+    );
+    report_copy_in_result(&result)
 }
 
 pub fn execute_box_copy_in_from_env_with_provider_dependencies(
@@ -235,10 +429,9 @@ pub fn execute_box_copy_in_from_env_with_provider_dependencies(
     }
     let provider = match resolve_box_object_store_provider(environment, deps) {
         Ok(provider) => provider,
-        Err(error) => {
-            eprintln!("[box-copy-in] object-store provider unavailable: {error}");
-            return BOX_COPY_IN_EXIT_FAILED;
-        }
+        Err(error) => return report_copy_in_result(&failed_copy_in(format!(
+            "object-store provider unavailable: {error}"
+        ))),
     };
     execute_box_copy_in_with_provider(environment, target_root, provider.as_ref())
 }
@@ -248,42 +441,7 @@ pub fn execute_box_copy_in_with_provider(
     target_root: &Path,
     provider: &dyn BoxObjectStoreProvider,
 ) -> i32 {
-    let Some(store_id) = environment
-        .get("SAND_BOX_STORE_ID")
-        .map(|value| value.trim())
-        .filter(|value| !value.is_empty())
-    else {
-        eprintln!("[box-copy-in] no SAND_BOX_STORE_ID; booting fresh");
-        return BOX_COPY_IN_EXIT_NOOP;
-    };
-    let store_id = match normalize_rel_path(store_id) {
-        Ok(value) => value,
-        Err(error) => {
-            eprintln!("[box-copy-in] invalid store id: {error}");
-            return BOX_COPY_IN_EXIT_FAILED;
-        }
-    };
-    let store = provider.for_store(&store_id);
-    match run_local_box_copy_in(store.as_ref(), target_root) {
-        result @ CopyInResult { outcome: CopyInOutcome::Hydrated, .. }
-        | result @ CopyInResult { outcome: CopyInOutcome::Noop, .. } => {
-            eprintln!(
-                "[box-copy-in] outcome={:?} files={} bytes={} verified={} reason={}",
-                result.outcome, result.files, result.bytes, result.verified, result.reason
-            );
-            outcome_to_exit_code(result.outcome)
-        }
-        result => {
-            eprintln!(
-                "[box-copy-in] failed files={} verified={} failures={} reason={}",
-                result.files,
-                result.verified,
-                result.failures.len(),
-                result.reason
-            );
-            BOX_COPY_IN_EXIT_FAILED
-        }
-    }
+    report_copy_in_result(&run_copy_in_with_provider(environment, target_root, provider))
 }
 
 /// Canonical local-store copy-in orchestration used by the shipping
