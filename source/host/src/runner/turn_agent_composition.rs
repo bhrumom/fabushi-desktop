@@ -27,6 +27,7 @@ use super::tools::sand_agent_management_tools::AgentManagementSink;
 use super::tools::sand_browser_tools::BrowserToolExecutor;
 use super::tools::sand_computer_tool::ComputerToolExecutor;
 use super::tools::sand_file_transfer_tools::FileTransferExecutor;
+use super::tools::sand_mcp_management_tools::{McpManagementSink, McpManagementToolBridge};
 use super::tools::sand_state_tool::{RoutineAutoReviewCallback, SandStateWriter};
 use super::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use super::tools::turn_toolset::{
@@ -55,6 +56,7 @@ pub struct TurnAgentComposition {
     browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
     file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
+    mcp_management_sink: Option<Arc<dyn McpManagementSink>>,
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
@@ -90,6 +92,7 @@ impl TurnAgentComposition {
             browser_executor: None,
             computer_executor: None,
             file_transfer_executor: None,
+            mcp_management_sink: None,
             send_message_sink: None,
             reaction_sink: None,
             agent_management_sink: None,
@@ -183,6 +186,18 @@ impl TurnAgentComposition {
 
     pub fn has_file_transfer_executor(&self) -> bool {
         self.file_transfer_executor.is_some()
+    }
+
+    pub fn with_mcp_management_sink(
+        mut self,
+        sink: Arc<dyn McpManagementSink>,
+    ) -> Self {
+        self.mcp_management_sink = Some(sink);
+        self
+    }
+
+    pub fn has_mcp_management_sink(&self) -> bool {
+        self.mcp_management_sink.is_some()
     }
 
     pub fn with_send_message_sink(
@@ -328,6 +343,13 @@ impl TurnAgentComposition {
                 config.clone(),
             )),
             None => Arc::clone(&self.bridge),
+        };
+        let bridge: Arc<dyn RoutedToolBridge> = match &self.mcp_management_sink {
+            Some(management) => Arc::new(McpManagementToolBridge::new(
+                bridge,
+                Arc::clone(management),
+            )),
+            None => bridge,
         };
         let bridge = build_turn_toolset(
             bridge,
