@@ -15086,16 +15086,19 @@
         "source/host/src/extensions/session/production.rs",
         "source/host/app/src/main.rs",
         "source/host/src/runner/tools/sand_agent_management_tools.rs",
-        "source/host/src/runner/turn_agent_composition.rs"
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/node-agent-coordinator/src/inference_router.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_to_agent_messaging_contract.rs",
         "source/host/tests/sand_agent_management_tools_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Real production slice: 1:1 SendToAgent performs durable sender/recipient transcript writes, conversation-partner persistence, recipient activity and priority cancellation through the live TranscriptRunnerRegistry. Group targets get a durable text-only group post. Every delivery emits an agent-inbound-wake-request on the shipping Host event hub with the frozen hidden prompt. Final remains withheld until Coordinator consumes that wake request into the background Agent run lane, priority interruption also fences queued non-user work exactly like Grok, and group member fanout/redrive/selected-image materialization are fully wired."
+      "notes": "Production SendToAgent durably writes sender/recipient transcript state, persists the conversation partner, records recipient activity and emits agent-inbound-wake-request with the frozen hidden prompt; group targets receive the durable group post. Mahayana Coordinator now consumes that wake request into a hidden requestSource=agent-inbound route, serializes normal peer wakes per Agent and puts priority peer wakes on the urgent queue. This row remains non-final because the Host priority interrupt still needs the frozen user-vs-non-user preemption fence, and the durable pending-inbound/redrive lifecycle, complete group-member fanout, and recipient-run selected-image materialization still need production parity. These broader Transcript responsibilities are intentionally not hidden by the now-final Runner sand-agent-management-tools mapping."
     },
     {
       "referencePath": "source/host/extensions/transcript/async-task-union.ts",
