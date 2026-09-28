@@ -144,6 +144,32 @@ export function createProductionMcpOAuthRootPortProvider(
   };
 }
 
+function coordinatorBoxMcpCall(
+  context: ProductionServiceContext,
+  method: "loadBoxMcpServers" | "listBoxMcpToolsRaw" | "executeBoxMcpToolRaw",
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const call = context.coordinatorLegs.legs[method];
+  if (typeof call !== "function") return Promise.reject(new Error(`Coordinator ${method} port is unavailable.`));
+  return call(args);
+}
+
+async function loadBoxMcpServers(context: ProductionServiceContext, configJson: string): Promise<unknown> {
+  return await coordinatorBoxMcpCall(context, "loadBoxMcpServers", { configJson });
+}
+
+async function boxMcpRaw(
+  context: ProductionServiceContext,
+  method: "listBoxMcpToolsRaw" | "executeBoxMcpToolRaw",
+  payloadHex: string,
+): Promise<string> {
+  const response = await coordinatorBoxMcpCall(context, method, { payloadHex });
+  if (typeof response !== "object" || response == null) throw new TypeError(`Coordinator ${method} returned an invalid response.`);
+  const value = Reflect.get(response, "payloadHex");
+  if (typeof value !== "string" || value.length === 0) throw new TypeError(`Coordinator ${method} returned invalid payloadHex.`);
+  return value;
+}
+
 function listBoxMcpServers(context: ProductionServiceContext, serverIdentifiers: unknown): Promise<readonly Record<string, unknown>[]> {
   const list = context.coordinatorLegs.legs.listBoxMcpServers;
   if (typeof list !== "function") return Promise.reject(new Error("Coordinator MCP server-list port is unavailable."));
@@ -176,7 +202,10 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
       pushBoxSecrets: () => context.secretsStores.pushBoxSecrets.push("account_scope"),
       ensureCursorAuthService: async () => await context.requireAccount().getAuthService(),
       getMachineId: () => context.machineId,
+      loadBoxMcpServers: (configJson) => loadBoxMcpServers(context, configJson),
       listBoxMcpServers: (serverIdentifiers) => listBoxMcpServers(context, serverIdentifiers),
+      listBoxMcpToolsRaw: (payloadHex) => boxMcpRaw(context, "listBoxMcpToolsRaw", payloadHex),
+      executeBoxMcpToolRaw: (payloadHex) => boxMcpRaw(context, "executeBoxMcpToolRaw", payloadHex),
       reportConnectorAuth: (report) => reportConnectorAuth(context, report),
       reportDiagnostic: (leg, errorClass) => reportDesktopEdgeFailureClass("mcp-manager", leg, errorClass),
       cleanupLegacyAuth: (root) => cleanupLegacyMcpAuthCredentials(root),
@@ -213,7 +242,7 @@ export function createProductionMcpOAuthAdapter(
       const rootPorts = ports.resolveRootPorts?.(context);
       const runtimeDeps = { ...ports.resolveRuntimeDeps(context), ...rootPorts?.runtime };
       requireObject(runtimeDeps, "mcpOAuth.runtimeDeps");
-      for (const method of ["createManager", "pushBoxSecrets", "ensureCursorAuthService", "getMachineId", "listBoxMcpServers", "reportConnectorAuth", "reportDiagnostic", "cleanupLegacyAuth", "sandRootDir", "reportFailure", "broadcast", "refreshHostMcp"] as const) {
+      for (const method of ["createManager", "pushBoxSecrets", "ensureCursorAuthService", "getMachineId", "loadBoxMcpServers", "listBoxMcpServers", "listBoxMcpToolsRaw", "executeBoxMcpToolRaw", "reportConnectorAuth", "reportDiagnostic", "cleanupLegacyAuth", "sandRootDir", "reportFailure", "broadcast", "refreshHostMcp"] as const) {
         requireFunction(runtimeDeps[method], `mcpOAuth.${method}`);
       }
       const runtime = createMcpRuntime<DesktopMcpManagerFacade>(runtimeDeps);
