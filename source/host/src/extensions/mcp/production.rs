@@ -1,3 +1,5 @@
+use std::fs;
+use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -23,6 +25,56 @@ use super::skill_publish::{
     PublishPluginInput, PublishedSkillResult, SandSkillPublishService,
     SkillPublishClient, SkillPublishTeam,
 };
+
+pub const LEGACY_MCP_AUTH_FILENAME: &str = "mcp-auth.json";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LegacyMcpAuthCleanupOutcome {
+    NotFound,
+    Error,
+    Deleted,
+}
+
+pub fn is_legacy_mcp_auth_file(name: &str) -> bool {
+    name == LEGACY_MCP_AUTH_FILENAME || name.starts_with(&format!("{LEGACY_MCP_AUTH_FILENAME}."))
+}
+
+pub fn cleanup_legacy_mcp_auth_credentials(
+    root_dir: &Path,
+) -> (LegacyMcpAuthCleanupOutcome, usize) {
+    let entries = match fs::read_dir(root_dir) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return (LegacyMcpAuthCleanupOutcome::NotFound, 0);
+        }
+        Err(_) => return (LegacyMcpAuthCleanupOutcome::Error, 0),
+    };
+    let mut removed = 0usize;
+    let mut saw_error = false;
+    for entry in entries {
+        let Ok(entry) = entry else {
+            saw_error = true;
+            continue;
+        };
+        let Some(name) = entry.file_name().to_str().map(ToOwned::to_owned) else {
+            continue;
+        };
+        if !is_legacy_mcp_auth_file(&name) {
+            continue;
+        }
+        match fs::remove_file(entry.path()) {
+            Ok(()) => removed += 1,
+            Err(_) => saw_error = true,
+        }
+    }
+    if saw_error {
+        (LegacyMcpAuthCleanupOutcome::Error, removed)
+    } else if removed > 0 {
+        (LegacyMcpAuthCleanupOutcome::Deleted, removed)
+    } else {
+        (LegacyMcpAuthCleanupOutcome::NotFound, 0)
+    }
+}
 
 pub const DASHBOARD_GET_TEAMS_PATH: &str = "/aiserver.v1.DashboardService/GetTeams";
 pub const DASHBOARD_PUBLISH_PLUGIN_PATH: &str =
