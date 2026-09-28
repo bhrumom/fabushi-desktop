@@ -143,6 +143,37 @@ fn upload_and_download_enforce_gate_and_use_frozen_frames() {
 }
 
 #[test]
+fn unavailable_computer_fails_before_permission_approval() {
+    let bridge = SandLocalExecBridge::with_sources(
+        Arc::new(|| 1000),
+        Arc::new(|| "provider-1".to_string()),
+    );
+    let gate = Arc::new(FakeGate::default());
+    let sandbox = GatewayLocalExecSandBox::new(bridge, gate.clone());
+
+    let error = sandbox
+        .upload_file(Some("agent"), "/tmp/file", b"hello")
+        .expect_err("missing provider");
+    assert_eq!(
+        error.message,
+        mahayana_host_runtime::extensions::local_exec::local_exec_bridge::SAND_NO_LOCAL_MACHINE_MESSAGE
+    );
+    assert!(gate.calls.lock().expect("calls").is_empty());
+
+    let (bridge, _registration, _receive) = bridge_with_provider();
+    let gate = Arc::new(FakeGate::default());
+    let sandbox = GatewayLocalExecSandBox::new(bridge, gate.clone()).for_computer("missing");
+    let error = sandbox
+        .download_file(Some("agent"), "/tmp/file")
+        .expect_err("unknown computer");
+    assert_eq!(
+        error.message,
+        mahayana_host_runtime::extensions::local_exec::local_exec_bridge::SAND_NO_LOCAL_MACHINE_MESSAGE
+    );
+    assert!(gate.calls.lock().expect("calls").is_empty());
+}
+
+#[test]
 fn oversized_file_and_blocked_gate_fail_before_provider_side_effect() {
     let (bridge, _registration, receive) = bridge_with_provider();
     let gate = Arc::new(FakeGate::default());

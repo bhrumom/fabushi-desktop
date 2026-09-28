@@ -319,6 +319,18 @@ impl SandLocalExecBridge {
         self.active_computer().is_some()
     }
 
+    pub fn assert_computer_available(
+        &self,
+        computer_id: Option<&str>,
+    ) -> Result<(), SandLocalExecError> {
+        let now = (self.now_ms)();
+        let state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if self.best_provider(&state, now, computer_id).is_some() {
+            return Ok(());
+        }
+        Err(self.unavailable_error(&state, now, computer_id))
+    }
+
     pub fn submit_responses(&self, batch: Value) {
         let provider_id = batch.get("providerId").and_then(Value::as_str).map(str::to_string);
         let frames = batch
@@ -437,21 +449,7 @@ impl SandLocalExecBridge {
             let provider = self
                 .best_provider(&state, now, computer_id)
                 .cloned()
-                .ok_or_else(|| {
-                    let has_any = !state.providers.is_empty();
-                    if !has_any {
-                        SandLocalExecError::new(SAND_NO_LOCAL_MACHINE_MESSAGE)
-                    } else {
-                        let label = computer_id.and_then(|id| {
-                            state
-                                .providers
-                                .values()
-                                .find(|provider| provider.computer_id() == id)
-                                .map(Provider::label)
-                        });
-                        SandLocalExecError::new(sand_computer_unavailable_message(label))
-                    }
-                })?;
+                .ok_or_else(|| self.unavailable_error(&state, now, computer_id))?;
             state.pending.insert(request_id.clone(), send);
             provider
         };
@@ -488,6 +486,39 @@ impl SandLocalExecBridge {
     fn report_provider(&self, report: LocalExecProviderLifecycleReport) {
         if let Some(reporter) = &self.provider_reporter {
             reporter(report);
+        }
+    }
+
+    fn unavailable_error(
+        &self,
+        state: &BridgeState,
+        now_ms: u64,
+        computer_id: Option<&str>,
+    ) -> SandLocalExecError {
+        if state.providers.is_empty() {
+            return SandLocalExecError::new(SAND_NO_LOCAL_MACHINE_MESSAGE);
+        }
+        if self.best_provider(state, now_ms, computer_id).is_some() {
+            return SandLocalExecError::new("local-exec provider unexpectedly available");
+        }
+
+        let candidate = state
+            .providers
+            .values()
+            .filter(|provider| computer_id.is_none_or(|id| provider.computer_id() == id))
+            .max_by(|left, right| {
+                left.rank()
+                    .cmp(&right.rank())
+                    .then_with(|| left.last_seen_at_ms.cmp(&right.last_seen_at_ms))
+                    .then_with(|| left.sequence.cmp(&right.sequence))
+            });
+
+        match (computer_id, candidate) {
+            (Some(_), None) => SandLocalExecError::new(SAND_NO_LOCAL_MACHINE_MESSAGE),
+            (_, Some(provider)) => SandLocalExecError::new(
+                sand_computer_unavailable_message(Some(provider.label())),
+            ),
+            (None, None) => SandLocalExecError::new(SAND_NO_LOCAL_MACHINE_MESSAGE),
         }
     }
 
