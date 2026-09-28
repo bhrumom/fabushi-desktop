@@ -10,6 +10,7 @@ const EXPECTED_CONTROL_METHODS = [
   "listHostMcpServers",
   "listHostMcpCatalog",
   "listHostEffectiveMcpPlugins",
+  "loadHostPluginSkills",
   "installHostMcpPlugin",
   "uninstallHostMcpPlugin",
   "addHostMcpServer",
@@ -103,6 +104,10 @@ function makeDependencies(calls: string[]) {
       calls.push("mcp-host-effective");
       return [{ pluginId: "7" }];
     },
+    async loadHostPluginSkills() {
+      calls.push("mcp-host-plugin-skills");
+      return { plugins: [{ identifier: { name: "calendar" } }] };
+    },
     async installHostMcpPlugin(request: unknown) {
       calls.push("mcp-host-install");
       return { request };
@@ -171,6 +176,7 @@ test("control executor routes gateway, MCP, WebAuthn, and telemetry without abso
   assert.deepEqual(await executors.listHostMcpServers(), { servers: [{ id: "7" }] });
   assert.deepEqual(await executors.listHostMcpCatalog({ forceRefresh: true }), [{ id: "plugin-7" }]);
   assert.deepEqual(await executors.listHostEffectiveMcpPlugins(), [{ pluginId: "7" }]);
+  assert.deepEqual(await executors.loadHostPluginSkills(), { plugins: [{ identifier: { name: "calendar" } }] });
   assert.deepEqual(await executors.installHostMcpPlugin({ entryId: "7" }), { request: { entryId: "7" } });
   assert.deepEqual(await executors.uninstallHostMcpPlugin({ pluginId: "7" }), { removed: true });
   assert.deepEqual(await executors.addHostMcpServer({ name: "custom", configJson: "{}" }), { servers: [{ id: "custom" }] });
@@ -220,6 +226,7 @@ test("control executor routes gateway, MCP, WebAuthn, and telemetry without abso
     "mcp-host-servers",
     "mcp-host-catalog:true",
     "mcp-host-effective",
+    "mcp-host-plugin-skills",
     "mcp-host-install",
     "mcp-host-uninstall:7",
     "mcp-host-add:custom",
@@ -263,6 +270,7 @@ test("MCP control methods fail closed when routing is not configured", async () 
   await assert.rejects(executors.listHostMcpServers(), /Desktop MCP lifecycle routing is unavailable/);
   await assert.rejects(executors.listHostMcpCatalog({}), /Desktop MCP lifecycle routing is unavailable/);
   await assert.rejects(executors.listHostEffectiveMcpPlugins(), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.loadHostPluginSkills(), /Desktop Plugin Skills loader is unavailable/);
   await assert.rejects(executors.installHostMcpPlugin({}), /Desktop MCP lifecycle routing is unavailable/);
   await assert.rejects(executors.uninstallHostMcpPlugin({ pluginId: "7" }), /Desktop MCP lifecycle routing is unavailable/);
   await assert.rejects(executors.addHostMcpServer({ name: "x", configJson: "{}" }), /Desktop MCP lifecycle routing is unavailable/);
