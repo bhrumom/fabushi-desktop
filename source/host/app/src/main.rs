@@ -161,6 +161,14 @@ use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxRunnerResourcePort,
     BoxStatus, ForeverBoxService, start_forever_box_extension,
 };
+use mahayana_host_runtime::extensions::teach_recording::extension::{
+    CAP_SLACK_MS, TeachRecordingServiceDeps, create_teach_recording_extension,
+    load_teach_queue_key,
+};
+use mahayana_host_runtime::extensions::teach_recording::teach_recording_service::{
+    LEARN_SKILL_NAME, ProductionTeachRecordingRuntime, SAND_TEACH_MAX_DURATION_MS,
+    SandTeachRecordingServiceFactory, TeachRecordingApi, TeachRecordingRuntimePort, TeachStatus,
+};
 use mahayana_host_runtime::runner_context_production_provider::ProductionRunnerRequestContextSource;
 use mahayana_host_runtime::sand_activity::ActivityUpdate;
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
@@ -282,6 +290,16 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 const SHUTDOWN_WATCHDOG_MS: u64 = 5_000;
+
+fn teach_recording_status_value(status: TeachStatus) -> serde_json::Value {
+    serde_json::json!({
+        "state": status.state,
+        "agentId": status.agent_id,
+        "startedAtMs": status.started_at_ms,
+        "maxDurationMs": status.max_duration_ms,
+    })
+}
+
 
 fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
     // The desktop product owns this fallback workspace.  It must exist before
@@ -780,6 +798,7 @@ struct UnifiedGatewayApi {
     ack_obligations: Arc<AckObligations>,
     agent_deletion_runtime: AgentDeletionRuntimeDeps,
     forever_box: Arc<ForeverBoxService>,
+    teach_recording: Arc<Mutex<Option<TeachRecordingApi>>>,
     local_exec: Arc<HostLocalExecExtension>,
     session_handoff: BoxHandoffService,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
@@ -2842,6 +2861,56 @@ impl GatewayApi for UnifiedGatewayApi {
         method: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+        if matches!(
+            method,
+            "getTeachRecordingStatus" | "startTeachRecording" | "stopTeachRecording"
+        ) {
+            let api = self
+                .teach_recording
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .clone()
+                .ok_or_else(|| GatewayCommandError::Internal(
+                    "teach-recording production extension is not initialized".into(),
+                ))?;
+            let status = match method {
+                "getTeachRecordingStatus" => api.get_status(),
+                "startTeachRecording" => {
+                    let agent_id = args.get("agentId")
+                        .and_then(serde_json::Value::as_str)
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty())
+                        .ok_or_else(|| GatewayCommandError::BadRequest(
+                            "startTeachRecording requires agentId".into(),
+                        ))?;
+                    let entry_point = args.get("entryPoint")
+                        .and_then(serde_json::Value::as_str)
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty());
+                    api.start(agent_id, entry_point)
+                        .map_err(|error| GatewayCommandError::BadRequest(error.to_string()))?
+                }
+                "stopTeachRecording" => {
+                    let agent_id = args.get("agentId")
+                        .and_then(serde_json::Value::as_str)
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty())
+                        .ok_or_else(|| GatewayCommandError::BadRequest(
+                            "stopTeachRecording requires agentId".into(),
+                        ))?;
+                    let save = args.get("save")
+                        .and_then(serde_json::Value::as_bool)
+                        .ok_or_else(|| GatewayCommandError::BadRequest(
+                            "stopTeachRecording requires boolean save".into(),
+                        ))?;
+                    api.stop(agent_id, save)
+                        .map_err(|error| GatewayCommandError::BadRequest(error.to_string()))?
+                }
+                _ => unreachable!(),
+            };
+            return Ok(teach_recording_status_value(status));
+        }
+
         if method == "createAgent" {
             let projected = sanitize_create_agent_args(&args);
 
@@ -4566,6 +4635,8 @@ fn main() {
         .unwrap_or_else(|poisoned| poisoned.into_inner()) =
         Arc::downgrade(&cross_user);
 
+    let teach_recording_slot = Arc::new(Mutex::new(None::<TeachRecordingApi>));
+
     let gateway_api = Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
             auth: Arc::clone(&production_extensions.auth),
@@ -4581,6 +4652,7 @@ fn main() {
             ack_obligations: Arc::clone(&ack_obligations),
             agent_deletion_runtime,
             forever_box: Arc::clone(&forever_box),
+            teach_recording: Arc::clone(&teach_recording_slot),
             local_exec: Arc::clone(&local_exec_extension),
             session_handoff: session_handoff.clone(),
             webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
@@ -4598,6 +4670,55 @@ fn main() {
             create_agent_nonces: Mutex::new(CreateAgentNonceLedger::default()),
             last_busy_at_ms: Mutex::new(gateway_started_at),
         });
+    let teach_runtime: Arc<dyn TeachRecordingRuntimePort> =
+        Arc::new(ProductionTeachRecordingRuntime::new(Arc::clone(&forever_box)));
+    let teach_factory = SandTeachRecordingServiceFactory::new(teach_runtime);
+    let teach_experiments = Arc::clone(&production_extensions.experiments);
+    let teach_sessions = Arc::clone(&session_workers);
+    let teach_managed_setup = Arc::clone(&production_extensions.managed_setup);
+    let teach_analytics_started = host_telemetry.analytics.clone();
+    let teach_analytics_stopped = host_telemetry.analytics.clone();
+    let teach_logs_cap = host_telemetry.logs.clone();
+    let teach_logs_start = host_telemetry.logs.clone();
+    let teach_gateway = Arc::downgrade(&gateway_api);
+    let teach_deps = TeachRecordingServiceDeps {
+        is_enabled: Arc::new(move || teach_experiments.check_feature_gate("sand_teach_by_demonstration")),
+        cap_delay_ms: SAND_TEACH_MAX_DURATION_MS + CAP_SLACK_MS,
+        send_learning_prompt: Arc::new(move |agent_id, content, client_nonce, rich_text| {
+            let gateway = teach_gateway.upgrade()
+                .ok_or_else(|| "teach-recording gateway is unavailable".to_string())?;
+            let mut args = serde_json::json!({
+                "agentId": agent_id,
+                "prompt": content,
+                "clientNonce": client_nonce,
+                "directAddressedAcceptance": true,
+                "awaitTurn": false,
+            });
+            if let Some(rich_text) = rich_text {
+                args["richText"] = serde_json::Value::String(rich_text.to_string());
+            }
+            gateway.call("sendPrompt", args).map(|_| ()).map_err(|error| error.to_string())
+        }),
+        list_agent_ids: Arc::new(move || teach_sessions.list_agent_record_ids()),
+        queue_signature_key: Arc::new(|| load_teach_queue_key(None)),
+        ensure_learning_workflow: Arc::new(move || Ok(teach_managed_setup.ensure_managed_skill(LEARN_SKILL_NAME))),
+        track_recording_started: Arc::new(move |event| {
+            let _ = teach_analytics_started.track_event("sand.teach.recording_started", &event);
+        }),
+        track_recording_stopped: Arc::new(move |event| {
+            let _ = teach_analytics_stopped.track_event("sand.teach.recording_stopped", &event);
+        }),
+        report_cap_stop_failed: Arc::new(move |event| {
+            let _ = teach_logs_cap.report_teach_recording_cap_stop_failed(&event);
+        }),
+        report_start_failed: Arc::new(move |event| {
+            let _ = teach_logs_start.report_teach_recording_start_failed(&event);
+        }),
+    };
+    let teach_recording_extension = create_teach_recording_extension(&teach_factory, teach_deps);
+    *teach_recording_slot.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) =
+        Some(teach_recording_extension.api());
+
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: gateway_api.clone(),
         events: gateway_events.clone(),
@@ -4612,6 +4733,15 @@ fn main() {
             return;
         }
     };
+
+    let teach_recovery_service = Arc::clone(teach_recording_extension.service());
+    let _teach_recovery_worker = thread::Builder::new()
+        .name("mahayana-teach-recording-recovery".into())
+        .spawn(move || {
+            if let Err(error) = teach_recovery_service.recover_pending() {
+                eprintln!("teach-recording: pending delivery recovery failed: {error}");
+            }
+        });
 
     let ack_redrive_stop = Arc::new(AtomicBool::new(false));
     let _ack_redrive_worker = match start_ack_redrive_worker(
@@ -4795,6 +4925,7 @@ fn main() {
     wallpaper_extension.stop();
     browser_ua_runtime.stop();
     secrets_extension.stop();
+    drop(teach_recording_extension);
     forever_box.dispose();
     if let Some(daemon) = box_exec_daemon.as_mut() {
         if let Err(error) = daemon.close() {
