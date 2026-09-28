@@ -179,13 +179,17 @@ fn fire_runtime_polls_delivers_reports_and_acks_on_next_poll() {
         .tick(100, true, true, |event| {
             assert_eq!(event.id, "run-1");
             assert_eq!(event.sand_agent_id, "agent-1");
-            Some(FireCompletion::succeeded())
+            true
         })
         .expect("fire tick");
     assert_eq!(count, 1);
+    assert!(runtime.is_running("run-1"));
+    runtime
+        .complete("run-1", FireCompletion::succeeded())
+        .expect("completion report");
     assert_eq!(runtime.pending_len(), 1);
 
-    runtime.tick(101, true, true, |_| None).expect("ack fire tick");
+    runtime.tick(101, true, true, |_| false).expect("ack fire tick");
     assert_eq!(runtime.pending_len(), 0);
 
     let calls = transport.calls();
@@ -221,11 +225,14 @@ fn fire_runtime_treats_completion_conflict_as_reported_and_honors_next_poll_dela
     ]);
     let mut runtime = AutomationFireBackendRuntime::new(transport.clone());
     runtime
-        .tick(100, true, true, |_| Some(FireCompletion::failed("boom")))
+        .tick(100, true, true, |_| true)
         .expect("delivery tick");
-    runtime.tick(101, true, true, |_| None).expect("ack tick");
-    runtime.tick(102, true, true, |_| None).expect("empty tick");
+    runtime
+        .complete("run-1", FireCompletion::failed("boom"))
+        .expect("conflict completion");
+    runtime.tick(101, true, true, |_| false).expect("ack tick");
+    runtime.tick(102, true, true, |_| false).expect("empty tick");
     let before = transport.calls().len();
-    runtime.tick(103, true, true, |_| None).expect("delayed tick");
+    runtime.tick(103, true, true, |_| false).expect("delayed tick");
     assert_eq!(transport.calls().len(), before);
 }

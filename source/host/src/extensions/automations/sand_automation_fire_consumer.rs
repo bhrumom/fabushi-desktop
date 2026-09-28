@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 use super::backend_transport::{AutomationsBackendError, AutomationsBackendTransport};
 
 pub const AUTOMATION_FIRE_ERROR_BACKOFF_MS: u64 = 30_000;
-pub const MAX_NEXT_POLL_DELAY_MS: u64 = 5 * 60_000;
+pub const MAX_NEXT_POLL_DELAY_MS: u64 = 60_000;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AutomationFireEnvelope {
@@ -30,13 +30,8 @@ pub struct SandAutomationFireConsumer {
 }
 
 impl SandAutomationFireConsumer {
-    pub fn start(&mut self) {
-        self.stopped = false;
-    }
-
-    pub fn stop(&mut self) {
-        self.stopped = true;
-    }
+    pub fn start(&mut self) { self.stopped = false; }
+    pub fn stop(&mut self) { self.stopped = true; }
 
     pub fn enqueue(&mut self, envelope: AutomationFireEnvelope) {
         if !self.stopped {
@@ -57,7 +52,6 @@ impl SandAutomationFireConsumer {
         }
         self.firing = true;
         let mut failures = Vec::new();
-
         while let Some(envelope) = self.queue.pop_front() {
             if let Err(error) = fire(&envelope) {
                 failures.push(AutomationFireFailure {
@@ -67,7 +61,6 @@ impl SandAutomationFireConsumer {
                 });
             }
         }
-
         self.firing = false;
         failures
     }
@@ -119,6 +112,7 @@ impl FireCompletion {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum BackendFireState {
+    Running,
     Completed(FireCompletion),
     Reported,
 }
@@ -162,12 +156,43 @@ impl AutomationFireBackendRuntime {
         self.states.len()
     }
 
+    pub fn is_running(&self, id: &str) -> bool {
+        matches!(self.states.get(id), Some(BackendFireState::Running))
+    }
+
+    pub fn abandon(&mut self, id: &str) {
+        self.states.remove(id);
+    }
+
+    pub fn complete(
+        &mut self,
+        id: &str,
+        completion: FireCompletion,
+    ) -> Result<(), AutomationsBackendError> {
+        if !self.states.contains_key(id) {
+            return Ok(());
+        }
+        self.states
+            .insert(id.to_string(), BackendFireState::Completed(completion.clone()));
+        match self.report_completion(id, &completion) {
+            Ok(()) => {
+                self.states.insert(id.to_string(), BackendFireState::Reported);
+                Ok(())
+            }
+            Err(error) if matches!(error.status(), Some(404 | 409)) => {
+                self.states.insert(id.to_string(), BackendFireState::Reported);
+                Ok(())
+            }
+            Err(error) => Err(error),
+        }
+    }
+
     pub fn tick(
         &mut self,
         now_ms: u64,
         notify_connected: bool,
         safety_poll_enabled: bool,
-        mut deliver: impl FnMut(&BackendAutomationFire) -> Option<FireCompletion>,
+        mut dispatch: impl FnMut(&BackendAutomationFire) -> bool,
     ) -> Result<usize, AutomationsBackendError> {
         if self.stopped
             || now_ms < self.backoff_until_ms
@@ -175,16 +200,19 @@ impl AutomationFireBackendRuntime {
         {
             return Ok(0);
         }
+
         let has_owed_work = !self.states.is_empty();
         if !has_owed_work && !notify_connected && !safety_poll_enabled {
             return Ok(0);
         }
 
-        let result = (|| {
+        let result: Result<usize, AutomationsBackendError> = (|| {
             let ack_run_uuids = self
                 .states
                 .iter()
-                .filter_map(|(id, state)| matches!(state, BackendFireState::Reported).then_some(id.clone()))
+                .filter_map(|(id, state)| {
+                    matches!(state, BackendFireState::Reported).then_some(id.clone())
+                })
                 .collect::<Vec<_>>();
             let response = self.transport.post_json(
                 "/sand/automation-events/poll",
@@ -200,6 +228,7 @@ impl AutomationFireBackendRuntime {
                 .filter_map(|event| event.get("id").and_then(Value::as_str))
                 .map(str::to_string)
                 .collect::<BTreeSet<_>>();
+
             self.states.retain(|id, state| {
                 !matches!(state, BackendFireState::Reported) || returned.contains(id)
             });
@@ -210,32 +239,15 @@ impl AutomationFireBackendRuntime {
                 if self.states.contains_key(&event.id) {
                     continue;
                 }
-                let Some(completion) = deliver(&event) else {
-                    continue;
-                };
-                delivered += 1;
-                self.states.insert(event.id.clone(), BackendFireState::Completed(completion));
-            }
-
-            let completions = self
-                .states
-                .iter()
-                .filter_map(|(id, state)| match state {
-                    BackendFireState::Completed(completion) => Some((id.clone(), completion.clone())),
-                    BackendFireState::Reported => None,
-                })
-                .collect::<Vec<_>>();
-            for (id, completion) in completions {
-                match self.report_completion(&id, &completion) {
-                    Ok(()) => {
-                        self.states.insert(id, BackendFireState::Reported);
-                    }
-                    Err(error) if matches!(error.status(), Some(404 | 409)) => {
-                        self.states.insert(id, BackendFireState::Reported);
-                    }
-                    Err(_) => {}
+                self.states.insert(event.id.clone(), BackendFireState::Running);
+                if dispatch(&event) {
+                    delivered += 1;
+                } else {
+                    self.states.remove(&event.id);
                 }
             }
+
+            self.retry_completions();
 
             let next_poll_after_ms = response
                 .get("nextPollAfterMs")
@@ -254,6 +266,28 @@ impl AutomationFireBackendRuntime {
             self.backoff_until_ms = now_ms.saturating_add(AUTOMATION_FIRE_ERROR_BACKOFF_MS);
         }
         result
+    }
+
+    fn retry_completions(&mut self) {
+        let completions = self
+            .states
+            .iter()
+            .filter_map(|(id, state)| match state {
+                BackendFireState::Completed(completion) => Some((id.clone(), completion.clone())),
+                BackendFireState::Running | BackendFireState::Reported => None,
+            })
+            .collect::<Vec<_>>();
+        for (id, completion) in completions {
+            match self.report_completion(&id, &completion) {
+                Ok(()) => {
+                    self.states.insert(id, BackendFireState::Reported);
+                }
+                Err(error) if matches!(error.status(), Some(404 | 409)) => {
+                    self.states.insert(id, BackendFireState::Reported);
+                }
+                Err(_) => {}
+            }
+        }
     }
 
     fn report_completion(

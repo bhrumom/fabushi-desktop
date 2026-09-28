@@ -222,6 +222,9 @@ impl BackendRelayRuntime {
     }
 
     pub fn set_listeners(&mut self, slack: Vec<Value>, github: Vec<Value>) {
+        if self.slack_listeners == slack && self.github_listeners == github {
+            return;
+        }
         self.slack_listeners = slack;
         self.github_listeners = github;
         self.registered_key.clear();
