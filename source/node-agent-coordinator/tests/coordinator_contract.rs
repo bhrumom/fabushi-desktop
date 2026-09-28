@@ -11,6 +11,7 @@ use mahayana_node_agent_coordinator::renderer_port_server::{
 use mahayana_node_agent_coordinator::supervisor::{
     CoordinatorSupervisor, GatewayState, HostGeneration,
 };
+use mahayana_node_agent_coordinator::inference_router::prepare_agent_inbound_wake_routes;
 use serde_json::json;
 
 #[test]
@@ -1931,3 +1932,33 @@ fn inference_router_serializes_each_agent_but_allows_parallel_agents() {
     queue.dispose();
     assert_eq!(queue.worker_count(), 0);
 }
+
+#[test]
+fn agent_inbound_group_wake_fans_out_once_per_member_with_group_context() {
+    let routes = prepare_agent_inbound_wake_routes(&json!({
+        "agentId": "group-1",
+        "sourceAgentId": "agent-source",
+        "prompt": "[agent] group update",
+        "priority": false,
+        "memberIds": ["agent-b", "agent-c", "agent-b", ""]
+    }))
+    .expect("valid group wake");
+
+    assert_eq!(routes.len(), 2);
+    assert_eq!(routes[0].agent_id, "agent-b");
+    assert_eq!(routes[1].agent_id, "agent-c");
+    for route in routes {
+        assert_eq!(route.send_args["requestSource"], "agent-inbound");
+        assert_eq!(route.send_args["appendUserMessage"], false);
+        assert_eq!(route.send_args["hidden"], true);
+        assert_eq!(route.send_args["agentWake"]["sourceAgentId"], "agent-source");
+        assert_eq!(route.send_args["agentWake"]["priority"], false);
+        assert_eq!(route.send_args["groupContext"]["groupId"], "group-1");
+        assert_eq!(
+            route.send_args["groupContext"]["sourceAgentId"],
+            "agent-source"
+        );
+        assert_eq!(route.send_args["groupContext"]["backgroundWake"], true);
+    }
+}
+
