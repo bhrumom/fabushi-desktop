@@ -114,6 +114,12 @@ export interface CoordinatorControlExecutorDependencies {
   readonly getRpcTraceWindowTraceparent?: () => string | undefined;
   readonly listRoutedMcpTools?: () => Promise<unknown>;
   readonly executeRoutedMcpTool?: (request: unknown) => Promise<unknown>;
+  readonly listHostMcpServers?: () => Promise<unknown>;
+  readonly listHostMcpCatalog?: (options: { readonly forceRefresh?: boolean }) => Promise<unknown>;
+  readonly listHostEffectiveMcpPlugins?: () => Promise<unknown>;
+  readonly installHostMcpPlugin?: (request: unknown) => Promise<unknown>;
+  readonly uninstallHostMcpPlugin?: (pluginId: string) => Promise<unknown>;
+  readonly noteHostMcpAuthCompleted?: (request: { readonly serverId: string; readonly accountKey: string }) => Promise<unknown>;
   readonly readLocalExecDaemonDiscovery?: () => Promise<LocalExecDiscovery | null>;
   readonly clearLocalExecDaemonDiscoveryIfMatches?: (expected: LocalExecDiscovery) => Promise<boolean>;
   readonly native?: {
@@ -469,6 +475,34 @@ export function createCoordinatorControlExecutors(
     executeRoutedMcpTool: async (request: unknown) => {
       if (dependencies.executeRoutedMcpTool == null) throw new Error("Desktop MCP routing is unavailable.");
       return await dependencies.executeRoutedMcpTool(request);
+    },
+    listHostMcpServers: async () => {
+      if (dependencies.listHostMcpServers == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      return await dependencies.listHostMcpServers();
+    },
+    listHostMcpCatalog: async (options: { readonly forceRefresh?: boolean }) => {
+      if (dependencies.listHostMcpCatalog == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      return await dependencies.listHostMcpCatalog(options ?? {});
+    },
+    listHostEffectiveMcpPlugins: async () => {
+      if (dependencies.listHostEffectiveMcpPlugins == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      return await dependencies.listHostEffectiveMcpPlugins();
+    },
+    installHostMcpPlugin: async (request: unknown) => {
+      if (dependencies.installHostMcpPlugin == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      return await dependencies.installHostMcpPlugin(request);
+    },
+    uninstallHostMcpPlugin: async (request: { readonly pluginId?: unknown }) => {
+      if (dependencies.uninstallHostMcpPlugin == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      if (typeof request?.pluginId !== "string" || request.pluginId.trim().length === 0) throw new TypeError("uninstallHostMcpPlugin requires pluginId.");
+      return await dependencies.uninstallHostMcpPlugin(request.pluginId);
+    },
+    noteHostMcpAuthCompleted: async (request: { readonly serverId?: unknown; readonly accountKey?: unknown }) => {
+      if (dependencies.noteHostMcpAuthCompleted == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");
+      if (typeof request?.serverId !== "string" || request.serverId.trim().length === 0 || typeof request?.accountKey !== "string" || request.accountKey.trim().length === 0) {
+        throw new TypeError("noteHostMcpAuthCompleted requires serverId and accountKey.");
+      }
+      return await dependencies.noteHostMcpAuthCompleted({ serverId: request.serverId, accountKey: request.accountKey });
     },
     async mintLocalExecDaemonCredential() {
       return (await connector.issueLocalExecDaemonCredential?.()) ?? null;
