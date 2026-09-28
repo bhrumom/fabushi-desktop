@@ -275,6 +275,7 @@ export interface ProductionMcpService extends ProductionDisposable {
   listHostMcpServers(): Promise<unknown>;
   listHostMcpCatalog(options?: { readonly forceRefresh?: boolean }): Promise<unknown>;
   listHostEffectiveMcpPlugins(): Promise<unknown>;
+  loadHostPluginSkills(): Promise<unknown>;
   installHostMcpPlugin(request: unknown): Promise<unknown>;
   uninstallHostMcpPlugin(pluginId: string): Promise<unknown>;
   addHostMcpServer(request: { readonly name: string; readonly configJson: string }): Promise<unknown>;
