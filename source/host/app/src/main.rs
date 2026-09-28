@@ -5817,6 +5817,8 @@ fn main() {
         Arc::clone(&mcp_lifecycle_relay),
         box_status_loader,
     ));
+    let transcript_runtime = transcript_manager.transcript_runtime();
+    let box_store_idle_runtime = Arc::clone(&transcript_runtime);
     let mcp_service = match production_extensions.start_mcp(
         &app_data_dir,
         Arc::clone(&mcp_lifecycle_relay),
@@ -5828,7 +5830,13 @@ fn main() {
             return;
         }
     };
-    let transcript_runtime = transcript_manager.transcript_runtime();
+    if let Err(error) = production_extensions.start_box_store_sync(Arc::new(move || {
+        box_store_idle_runtime.live_running_agent_ids().is_empty()
+            && !box_store_idle_runtime.has_carryable_pending_wake()
+    })) {
+        eprintln!("failed to start production BoxStoreSync extension: {error}");
+        return;
+    }
     match load_initial_transcript_resiliently(|| {
         ensure_initial_transcript_loaded(&session_workers, transcript_runtime.session_runtime())
     }) {
@@ -6530,6 +6538,9 @@ fn main() {
     runner_registry.cancel_all("Mahayana Host shutting down");
     routed_tool_relay.cancel_all("Mahayana Host shutting down");
     mcp_lifecycle_relay.cancel_all("Mahayana Host shutting down");
+    if let Err(error) = production_extensions.stop_box_store_sync() {
+        eprintln!("failed to stop production BoxStoreSync extension cleanly: {error}");
+    }
     if let Err(error) = production_extensions.stop_mcp() {
         eprintln!("failed to stop production MCP extension cleanly: {error}");
     }
