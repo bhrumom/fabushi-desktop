@@ -408,24 +408,29 @@ impl PackExtractionSink for CopyInPackSink {
             return Ok(());
         };
         for rel_path in &group.rel_paths {
-            if self
-                .restored
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .contains(rel_path)
-            {
+            let reserved = {
+                let mut restored = self
+                    .restored
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                if restored.contains(rel_path) {
+                    false
+                } else {
+                    restored.insert(rel_path.clone());
+                    true
+                }
+            };
+            if !reserved {
                 continue;
             }
             let Some(destination) = resolve_restore_destination(&self.target_root, rel_path) else {
+                self.restored
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .remove(rel_path);
                 continue;
             };
             if local_file_matches(&destination, &member.sha, member.size) {
-                if apply_manifest_mode_from_group(&destination, rel_path, &self.groups).is_ok() {
-                    self.restored
-                        .lock()
-                        .unwrap_or_else(|poisoned| poisoned.into_inner())
-                        .insert(rel_path.clone());
-                }
                 continue;
             }
             if write_pack_blob_atomically(
@@ -434,14 +439,13 @@ impl PackExtractionSink for CopyInPackSink {
                 &member.sha,
                 member.size,
                 &bytes,
-                &self.groups,
             )
-            .is_ok()
+            .is_err()
             {
                 self.restored
                     .lock()
                     .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .insert(rel_path.clone());
+                    .remove(rel_path);
             }
         }
         Ok(())
@@ -465,24 +469,12 @@ fn local_file_matches(path: &Path, sha: &str, size: u64) -> bool {
         && verify_restored_file(path, sha, size).is_ok()
 }
 
-fn apply_manifest_mode_from_group(
-    _path: &Path,
-    _rel_path: &str,
-    _groups: &HashMap<String, PackRestoreGroup>,
-) -> Result<(), String> {
-    // Mode is applied after pack restore by the main manifest pass when needed.
-    // Keeping this hook explicit prevents a local-match shortcut from becoming
-    // an untracked alternate restore path.
-    Ok(())
-}
-
 fn write_pack_blob_atomically(
     destination: &Path,
     rel_path: &str,
     sha: &str,
     size: u64,
     bytes: &[u8],
-    _groups: &HashMap<String, PackRestoreGroup>,
 ) -> Result<(), String> {
     if bytes.len() as u64 != size || format!("{:x}", Sha256::digest(bytes)) != sha {
         return Err(format!("pack member sha/size mismatch for {rel_path}"));
@@ -621,10 +613,12 @@ fn restore_bulk_small_from_packs(
         }
     }
 
-    sink.restored
+    let restored = sink
+        .restored
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner())
-        .clone()
+        .clone();
+    restored
 }
 
 fn verify_restored_file(path: &Path, expected_sha: &str, expected_size: u64) -> Result<(), String> {
