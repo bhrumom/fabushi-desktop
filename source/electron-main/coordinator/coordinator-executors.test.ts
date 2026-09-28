@@ -12,6 +12,14 @@ const EXPECTED_CONTROL_METHODS = [
   "listHostEffectiveMcpPlugins",
   "installHostMcpPlugin",
   "uninstallHostMcpPlugin",
+  "addHostMcpServer",
+  "removeHostMcpServer",
+  "restartHostMcpServers",
+  "setHostMcpInstructions",
+  "authenticateHostMcpServer",
+  "logoutHostMcpAccount",
+  "removeHostMcpAccount",
+  "renameHostMcpAccount",
   "noteHostMcpAuthCompleted",
   "mintLocalExecDaemonCredential",
   "requestWebAuthnConsent",
@@ -103,6 +111,38 @@ function makeDependencies(calls: string[]) {
       calls.push(`mcp-host-uninstall:${pluginId}`);
       return { removed: true };
     },
+    async addHostMcpServer(request: { readonly name: string; readonly configJson: string }) {
+      calls.push(`mcp-host-add:${request.name}`);
+      return { servers: [{ id: "custom" }] };
+    },
+    async removeHostMcpServer(serverId: string) {
+      calls.push(`mcp-host-remove:${serverId}`);
+      return { removed: true, state: { servers: [] } };
+    },
+    async restartHostMcpServers() {
+      calls.push("mcp-host-restart");
+      return { servers: [{ id: "7" }] };
+    },
+    async setHostMcpInstructions(request: { readonly serverId: string; readonly instructions: string }) {
+      calls.push(`mcp-host-instructions:${request.serverId}`);
+      return { servers: [{ id: "7", customInstructions: request.instructions }] };
+    },
+    async authenticateHostMcpServer(request: { readonly serverId: string; readonly accountKey: string; readonly requestingAgentId?: string | null; readonly forceReauth?: boolean }) {
+      calls.push(`mcp-host-authenticate:${request.serverId}:${request.accountKey}:${request.forceReauth === true}`);
+      return { status: "started", serverName: "Calendar", authorizationUrl: "https://auth" };
+    },
+    async logoutHostMcpAccount(request: { readonly serverId: string; readonly accountKey: string }) {
+      calls.push(`mcp-host-logout:${request.serverId}:${request.accountKey}`);
+      return { servers: [] };
+    },
+    async removeHostMcpAccount(request: { readonly serverId: string; readonly accountKey: string }) {
+      calls.push(`mcp-host-remove-account:${request.serverId}:${request.accountKey}`);
+      return { servers: [] };
+    },
+    async renameHostMcpAccount(request: { readonly serverId: string; readonly accountKey: string; readonly newAccountKey: string }) {
+      calls.push(`mcp-host-rename:${request.serverId}:${request.newAccountKey}`);
+      return { servers: [] };
+    },
     async noteHostMcpAuthCompleted(request: { readonly serverId: string; readonly accountKey: string }) {
       calls.push(`mcp-host-auth:${request.serverId}:${request.accountKey}`);
       return { noted: true };
@@ -133,6 +173,14 @@ test("control executor routes gateway, MCP, WebAuthn, and telemetry without abso
   assert.deepEqual(await executors.listHostEffectiveMcpPlugins(), [{ pluginId: "7" }]);
   assert.deepEqual(await executors.installHostMcpPlugin({ entryId: "7" }), { request: { entryId: "7" } });
   assert.deepEqual(await executors.uninstallHostMcpPlugin({ pluginId: "7" }), { removed: true });
+  assert.deepEqual(await executors.addHostMcpServer({ name: "custom", configJson: "{}" }), { servers: [{ id: "custom" }] });
+  assert.deepEqual(await executors.removeHostMcpServer({ serverId: "server-7" }), { removed: true, state: { servers: [] } });
+  assert.deepEqual(await executors.restartHostMcpServers(), { servers: [{ id: "7" }] });
+  assert.deepEqual(await executors.setHostMcpInstructions({ serverId: "server-7", instructions: "reply in threads" }), { servers: [{ id: "7", customInstructions: "reply in threads" }] });
+  assert.equal((await executors.authenticateHostMcpServer({ serverId: "server-7", accountKey: "default", forceReauth: true }) as { status: string }).status, "started");
+  assert.deepEqual(await executors.logoutHostMcpAccount({ serverId: "server-7", accountKey: "default" }), { servers: [] });
+  assert.deepEqual(await executors.removeHostMcpAccount({ serverId: "server-7", accountKey: "default" }), { servers: [] });
+  assert.deepEqual(await executors.renameHostMcpAccount({ serverId: "server-7", accountKey: "default", newAccountKey: "work" }), { servers: [] });
   assert.deepEqual(await executors.noteHostMcpAuthCompleted({ serverId: "server-7", accountKey: "default" }), { noted: true });
   assert.deepEqual(await executors.requestWebAuthnConsent({
     origin: "https://example.test",
@@ -174,6 +222,14 @@ test("control executor routes gateway, MCP, WebAuthn, and telemetry without abso
     "mcp-host-effective",
     "mcp-host-install",
     "mcp-host-uninstall:7",
+    "mcp-host-add:custom",
+    "mcp-host-remove:server-7",
+    "mcp-host-restart",
+    "mcp-host-instructions:server-7",
+    "mcp-host-authenticate:server-7:default:true",
+    "mcp-host-logout:server-7:default",
+    "mcp-host-remove-account:server-7:default",
+    "mcp-host-rename:server-7:work",
     "mcp-host-auth:server-7:default",
     "consent",
     "pin",
@@ -209,5 +265,13 @@ test("MCP control methods fail closed when routing is not configured", async () 
   await assert.rejects(executors.listHostEffectiveMcpPlugins(), /Desktop MCP lifecycle routing is unavailable/);
   await assert.rejects(executors.installHostMcpPlugin({}), /Desktop MCP lifecycle routing is unavailable/);
   await assert.rejects(executors.uninstallHostMcpPlugin({ pluginId: "7" }), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.addHostMcpServer({ name: "x", configJson: "{}" }), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.removeHostMcpServer({ serverId: "7" }), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.restartHostMcpServers(), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.setHostMcpInstructions({ serverId: "7", instructions: "" }), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.authenticateHostMcpServer({ serverId: "7", accountKey: "default" }), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.logoutHostMcpAccount({ serverId: "7", accountKey: "default" }), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.removeHostMcpAccount({ serverId: "7", accountKey: "default" }), /Desktop MCP lifecycle routing is unavailable/);
+  await assert.rejects(executors.renameHostMcpAccount({ serverId: "7", accountKey: "default", newAccountKey: "work" }), /Desktop MCP lifecycle routing is unavailable/);
   await assert.rejects(executors.noteHostMcpAuthCompleted({ serverId: "7", accountKey: "default" }), /Desktop MCP lifecycle routing is unavailable/);
 });
