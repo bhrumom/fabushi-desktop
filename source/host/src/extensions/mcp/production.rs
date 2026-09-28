@@ -15,7 +15,8 @@ use super::extension::{
     AuthRenewalEvent, AuthRenewalPort, McpHostServicePort, McpPluginSkillsService,
     PollingHandle, PollingPort,
 };
-use super::mcp_service::McpHostService;
+use super::legacy_live_references::remove_workflow_live_references;
+use super::mcp_service::{McpHostService, PluginSkillsPort};
 use super::plugin_skills::{
     PLUGIN_SKILLS_REFRESH_INTERVAL_MS, SandPluginSkillsService,
 };
@@ -219,6 +220,33 @@ impl McpPluginSkillsService for SandPluginSkillsService {
 
     fn dispose(&self) {
         SandPluginSkillsService::dispose(self);
+    }
+}
+
+impl PluginSkillsPort for SandPluginSkillsService {
+    fn sync(&self, trigger: &str) -> Result<Vec<serde_json::Value>, String> {
+        SandPluginSkillsService::sync(self, trigger).map(|records| {
+            records
+                .into_iter()
+                .map(|record| serde_json::json!({
+                    "id": record.id,
+                    "pluginId": record.plugin_id,
+                    "pluginName": record.plugin_name,
+                    "name": record.name,
+                    "description": record.description,
+                    "filePath": record.file_path,
+                    "pluginVersion": record.plugin_version,
+                }))
+                .collect()
+        })
+    }
+
+    fn status(&self) -> serde_json::Value {
+        serde_json::json!({ "authBlocked": self.current_auth_blocked() })
+    }
+
+    fn remove_live_references(&self, source_urls: &[String]) {
+        let _ = remove_workflow_live_references(&self.sand_root_dir, source_urls);
     }
 }
 
