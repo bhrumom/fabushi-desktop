@@ -29,6 +29,7 @@ pub mod sand_multitask_todo_tool;
 pub mod turn_toolset;
 
 pub mod sand_mcp_management_tools;
+pub mod mcp_host_service_management_sink;
 
 pub mod sand_browser_driver_source;
 
