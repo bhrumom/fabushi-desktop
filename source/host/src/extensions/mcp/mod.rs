@@ -8,3 +8,4 @@ pub mod skill_publish;
 pub mod production;
 
 pub mod coordinator_relay;
+pub mod production_box_state;
