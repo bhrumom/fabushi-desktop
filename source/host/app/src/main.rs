@@ -245,7 +245,10 @@ use mahayana_host_runtime::extensions::mcp::coordinator_relay::{
     MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
 };
 use mahayana_host_runtime::extensions::mcp::mcp_service::McpHostService;
-use mahayana_host_runtime::extensions::mcp::production_box_state::ProductionBoxMcpStateLoader;
+use mahayana_host_runtime::extensions::mcp::production_box_state::{
+    MCP_STATE_EXEC_FIELD_NUMBER, MCP_TOOL_EXEC_FIELD_NUMBER, ProductionBoxMcpStateLoader,
+    execute_box_mcp_raw,
+};
 use mahayana_host_runtime::runner::tools::mcp_host_service_management_sink::McpHostServiceManagementSink;
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
 use mahayana_host_runtime::attachment_paths::{
@@ -3191,6 +3194,42 @@ impl GatewayApi for UnifiedGatewayApi {
         method: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+        if method == "loadBoxMcpServers" {
+            let config_json = args
+                .get("configJson")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "loadBoxMcpServers requires configJson".into(),
+                ))?;
+            let server_identifiers = self
+                .forever_box
+                .load_mcp_servers(config_json)
+                .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
+            return Ok(serde_json::json!({ "serverIdentifiers": server_identifiers }));
+        }
+        if matches!(method, "listBoxMcpToolsRaw" | "executeBoxMcpToolRaw") {
+            let payload_hex = args
+                .get("payloadHex")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    format!("{method} requires payloadHex"),
+                ))?;
+            let field_number = if method == "listBoxMcpToolsRaw" {
+                MCP_STATE_EXEC_FIELD_NUMBER
+            } else {
+                MCP_TOOL_EXEC_FIELD_NUMBER
+            };
+            let mut accessor = self
+                .forever_box
+                .mcp_resource_accessor()
+                .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
+            let response_hex = execute_box_mcp_raw(&mut accessor, field_number, payload_hex)
+                .map_err(GatewayCommandError::Internal)?;
+            return Ok(serde_json::json!({ "payloadHex": response_hex }));
+        }
+
         if matches!(
             method,
             "getTeachRecordingStatus" | "startTeachRecording" | "stopTeachRecording"
