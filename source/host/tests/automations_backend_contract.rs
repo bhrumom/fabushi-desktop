@@ -8,7 +8,7 @@ use mahayana_host_runtime::extensions::automations::backend_transport::{
     AutomationsBackendError, AutomationsBackendTransport,
 };
 use mahayana_host_runtime::extensions::automations::sand_automation_fire_consumer::{
-    AutomationFireBackendRuntime, FireCompletion,
+    AutomationFireBackendRuntime, FireCompletion, NOTIFY_DRAIN_FLOOR_MS, NOTIFY_SAFETY_POLL_MS,
 };
 use serde_json::{Value, json};
 
@@ -248,6 +248,129 @@ fn fire_runtime_drains_once_while_no_server_schedulable_routines_exist() {
     runtime
         .tick_with_state(102, true, true, true, false, |_| true)
         .expect("config-reset drain");
+    assert_eq!(transport.calls().len(), 2);
+}
+
+#[test]
+fn fire_runtime_matches_frozen_notify_floor_and_safety_poll_gate() {
+    let transport = MockTransport::with_responses(vec![
+        Ok(json!({"events":[]})),
+        Ok(json!({"events":[]})),
+        Ok(json!({"events":[]})),
+    ]);
+    let mut runtime = AutomationFireBackendRuntime::new(transport.clone());
+
+    runtime
+        .tick_with_state(100, true, true, true, true, |_| true)
+        .expect("initial connected poll");
+    assert_eq!(transport.calls().len(), 1);
+
+    runtime.request_drain();
+    runtime
+        .tick_with_state(
+            100 + NOTIFY_DRAIN_FLOOR_MS - 1,
+            true,
+            true,
+            true,
+            true,
+            |_| true,
+        )
+        .expect("notify floor");
+    assert_eq!(transport.calls().len(), 1);
+
+    runtime
+        .tick_with_state(
+            100 + NOTIFY_DRAIN_FLOOR_MS,
+            true,
+            true,
+            true,
+            true,
+            |_| true,
+        )
+        .expect("notify drain");
+    assert_eq!(transport.calls().len(), 2);
+
+    runtime
+        .tick_with_state(
+            100 + NOTIFY_DRAIN_FLOOR_MS + NOTIFY_SAFETY_POLL_MS - 1,
+            true,
+            true,
+            true,
+            true,
+            |_| true,
+        )
+        .expect("before safety poll");
+    assert_eq!(transport.calls().len(), 2);
+
+    runtime
+        .tick_with_state(
+            100 + NOTIFY_DRAIN_FLOOR_MS + NOTIFY_SAFETY_POLL_MS,
+            true,
+            true,
+            true,
+            true,
+            |_| true,
+        )
+        .expect("safety poll");
+    assert_eq!(transport.calls().len(), 3);
+}
+
+#[test]
+fn fire_runtime_disconnected_and_owed_work_bypass_notify_gate() {
+    let transport = MockTransport::with_responses(vec![
+        Ok(json!({"events":[]})),
+        Ok(json!({"events":[{
+            "id":"run-1",
+            "sandAgentId":"agent-1",
+            "automationId":"cloud-1",
+            "timestampMs":10
+        }]})),
+        Ok(json!({"events":[{"id":"run-1","sandAgentId":"agent-1","automationId":"cloud-1","timestampMs":10}]})),
+    ]);
+    let mut runtime = AutomationFireBackendRuntime::new(transport.clone());
+
+    runtime
+        .tick_with_state(100, true, false, true, true, |_| true)
+        .expect("initial poll");
+    runtime
+        .tick_with_state(101, false, false, true, true, |_| true)
+        .expect("disconnected poll");
+    assert_eq!(transport.calls().len(), 2);
+    assert!(runtime.is_running("run-1"));
+
+    runtime
+        .tick_with_state(102, true, false, true, true, |_| true)
+        .expect("owed work poll");
+    assert_eq!(transport.calls().len(), 3);
+}
+
+#[test]
+fn fire_runtime_config_reset_does_not_impersonate_notify() {
+    let transport = MockTransport::with_responses(vec![
+        Ok(json!({"events":[],"nextPollAfterMs":60000})),
+        Ok(json!({"events":[]})),
+    ]);
+    let mut runtime = AutomationFireBackendRuntime::new(transport.clone());
+
+    runtime
+        .tick_with_state(100, true, true, true, true, |_| true)
+        .expect("initial poll");
+    runtime.reset_poll_delay();
+    runtime
+        .tick_with_state(101, true, true, true, true, |_| true)
+        .expect("config reset remains notify-gated");
+    assert_eq!(transport.calls().len(), 1);
+
+    runtime
+        .tick_with_state(
+            100 + NOTIFY_SAFETY_POLL_MS,
+            true,
+            true,
+            true,
+            true,
+            |_| true,
+        )
+        .expect("safety poll after config reset");
     assert_eq!(transport.calls().len(), 2);
 }
 
