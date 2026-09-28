@@ -12,7 +12,6 @@ use mahayana_host_runtime::extensions::box_store_sync::box_copy_in::{
 };
 use mahayana_host_runtime::extensions::action_audit::extension::ActionAuditExtension;
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
-use mahayana_host_runtime::extensions::attachments::extension::start_attachments_extension;
 use mahayana_host_runtime::extensions::auto_review::auto_review_service::AutoReviewService;
 use mahayana_host_runtime::extensions::auto_review::extension::{
     HostAutoReviewExtension, start_auto_review_extension,
@@ -42,7 +41,6 @@ use mahayana_host_runtime::runner::sand_cloud_agent_auto_review::{
     review_sand_cloud_agent_action, review_sand_cloud_agent_lifecycle_action,
 };
 use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
-use mahayana_host_runtime::production_binding_providers::production_secrets_log;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
@@ -69,7 +67,6 @@ use mahayana_host_runtime::extensions::session::extension::start_session_extensi
 use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
 use mahayana_host_runtime::extensions::secrets::extension::{
     HostSecretsExtension, SecretsGatewayError, dispatch_secrets_gateway_call,
-    start_secrets_extension,
 };
 use mahayana_host_runtime::extensions::notifications::extension::{
     notification_agent_from_value, start_notifications_extension,
@@ -140,7 +137,9 @@ use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostSt
 use mahayana_host_runtime::extensions::experiments::HostExperimentsExtension;
 use mahayana_host_runtime::extensions::content_search::extension::ProductionContentSearchExtension;
 use mahayana_host_runtime::extensions::trays::extension::HostTraysExtension;
-use mahayana_host_runtime::host_production_extensions::start_production_host_extensions;
+use mahayana_host_runtime::host_production_extensions::{
+    start_production_host_box_extensions, start_production_host_extensions,
+};
 #[cfg(test)]
 use mahayana_host_runtime::host_production_extensions::{
     ProductionBrowserUaLog, ProductionHostExtensions,
@@ -159,8 +158,7 @@ use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_fai
 use mahayana_host_runtime::extensions::transcript::turn_runtime::classify_agent_error;
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
 use mahayana_host_runtime::extensions::forever_box::{
-    ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxRunnerResourcePort,
-    BoxStatus, ForeverBoxService, start_forever_box_extension,
+    ForeverBoxRunnerResourcePort, BoxStatus, ForeverBoxService,
 };
 use mahayana_host_runtime::extensions::teach_recording::extension::{
     CAP_SLACK_MS, TeachRecordingServiceDeps, create_teach_recording_extension,
@@ -4140,26 +4138,11 @@ fn main() {
         }
     };
     let host_telemetry = production_extensions.telemetry.clone();
-    let lifecycle: Arc<dyn ForeverBoxLifecycle> =
-        production_extensions.box_lifecycle.clone();
-    let forever_box = start_forever_box_extension(
-        production_box,
-        lifecycle,
-        ForeverBoxExtensionOptions::from_process_env(),
-    );
-    let attachment_logs = host_telemetry.logs.clone();
-    let attachments_extension = start_attachments_extension(
-        Arc::clone(&production_extensions.auth),
-        Arc::clone(&forever_box),
-        Some(Arc::new(move |diagnostic| {
-            let _ = attachment_logs.report_host_extension_diagnostic(&diagnostic);
-        })),
-    );
-    let attachments_service = attachments_extension.service();
-    let secrets_extension = Arc::new(start_secrets_extension(
-        Arc::clone(&forever_box),
-        production_secrets_log(),
-    ));
+    let box_extensions =
+        start_production_host_box_extensions(&production_extensions, production_box);
+    let forever_box = Arc::clone(&box_extensions.forever_box);
+    let attachments_service = box_extensions.attachments.service();
+    let secrets_extension = Arc::clone(&box_extensions.secrets);
     let runner_request_context: Arc<dyn RunnerRequestContextSource> =
         Arc::new(ProductionRunnerRequestContextSource::new(
             Arc::clone(&production_extensions.auth),
@@ -4927,9 +4910,8 @@ fn main() {
     cross_user.stop();
     production_extensions.notify_bus.stop();
     session_extension.shutdown();
-    secrets_extension.stop();
     drop(teach_recording_extension);
-    forever_box.dispose();
+    box_extensions.stop();
     if let Some(daemon) = box_exec_daemon.as_mut() {
         if let Err(error) = daemon.close() {
             eprintln!("failed to stop managed Grok box exec-daemon cleanly: {error}");
