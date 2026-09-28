@@ -6,7 +6,7 @@ use mahayana_host_runtime::extensions::inference::cursor_session::{
 };
 use mahayana_host_runtime::extensions::inference::inference_service::{
     HostInferenceService, InferenceRoute, InferenceSettings, InferenceUsage,
-    resolve_inference_route, usage_from_extended_fields,
+    authorize_routed_provider_request, resolve_inference_route, usage_from_extended_fields,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::RoutedProvider;
 use mahayana_host_runtime::extensions::inference::sand_labeling::{
@@ -138,6 +138,30 @@ fn inference_service_keeps_cursor_out_of_local_provider_router_and_records_usage
     assert_eq!(
         resolve_inference_route(RoutedProvider::Codex),
         InferenceRoute::Routed(RoutedProvider::Codex)
+    );
+    assert_eq!(
+        authorize_routed_provider_request(
+            InferenceRoute::Routed(RoutedProvider::OpenRouter),
+            RoutedProvider::OpenRouter,
+        )
+        .unwrap(),
+        RoutedProvider::OpenRouter
+    );
+    assert!(
+        authorize_routed_provider_request(
+            InferenceRoute::Routed(RoutedProvider::Codex),
+            RoutedProvider::OpenRouter,
+        )
+        .unwrap_err()
+        .contains("does not match Host inference settings")
+    );
+    assert!(
+        authorize_routed_provider_request(
+            InferenceRoute::Cursor,
+            RoutedProvider::Codex,
+        )
+        .unwrap_err()
+        .contains("provider is cursor")
     );
 
     let settings = RecordingSettings::default();

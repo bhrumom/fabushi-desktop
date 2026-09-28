@@ -13,6 +13,24 @@ pub fn resolve_inference_route(provider: RoutedProvider) -> InferenceRoute {
     }
 }
 
+pub fn authorize_routed_provider_request(
+    route: InferenceRoute,
+    requested: RoutedProvider,
+) -> Result<RoutedProvider, String> {
+    match route {
+        InferenceRoute::Cursor => Err(
+            "runner.startRoutedProvider is unavailable while Host inference provider is cursor"
+                .into(),
+        ),
+        InferenceRoute::Routed(configured) if configured == requested => Ok(configured),
+        InferenceRoute::Routed(configured) => Err(format!(
+            "routed provider request does not match Host inference settings: requested={} configured={}",
+            requested.as_str(),
+            configured.as_str(),
+        )),
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct InferenceUsage {
     pub input_tokens: Option<u64>,

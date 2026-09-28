@@ -1,4 +1,6 @@
+use std::fs;
 use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::inference::cursor_web_tools::{
     CursorWebBackend, WebDocument, WebFetchResponse, WebSearchRequest, WebSearchResponse,
@@ -6,10 +8,15 @@ use mahayana_host_runtime::extensions::inference::cursor_web_tools::{
 use mahayana_host_runtime::extensions::inference::extension::{
     AgentInferenceOwner, InferenceExtensionRuntime,
 };
+use mahayana_host_runtime::extensions::inference::inference_service::{
+    InferenceSettings, InferenceUsage,
+};
 use mahayana_host_runtime::extensions::inference::production::{
     CursorWebBackendFactory, InferenceAuth, InferencePortFactory, InferenceProductionExtras,
-    ModelExperimentApplied, RequestIdObserver,
+    ModelExperimentApplied, ProductionInferenceSettings, RequestIdObserver,
 };
+use mahayana_host_runtime::extensions::inference::provider_session::RoutedProvider;
+use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
 
 struct FakeAuth;
 impl InferenceAuth for FakeAuth {
@@ -136,4 +143,42 @@ fn production_extras_share_auth_and_forward_request_identity_to_web_services() {
     assert_eq!(request_ids.lock().unwrap().as_slice(), ["req-42"]);
     assert_eq!(port_factory.auth_seen.lock().unwrap().len(), 1);
     assert_eq!(backend_factory.auth_seen.lock().unwrap().len(), 2);
+}
+
+
+#[test]
+fn production_inference_settings_owns_live_route_and_usage_persistence() {
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-production-inference-settings-{}-{nonce}",
+        std::process::id()
+    ));
+    fs::create_dir_all(&root).expect("create temp settings dir");
+    let settings = Arc::new(SettingsService::new(root.join("settings.json")));
+    settings
+        .set_inference_provider("openrouter")
+        .expect("persist provider");
+    let adapter = ProductionInferenceSettings::new(Arc::clone(&settings));
+
+    assert_eq!(adapter.inference_provider(), RoutedProvider::OpenRouter);
+    adapter.record_inference_usage(
+        RoutedProvider::OpenRouter,
+        InferenceUsage {
+            input_tokens: Some(11),
+            output_tokens: Some(7),
+            cache_read_tokens: Some(3),
+            cache_write_tokens: Some(2),
+        },
+    );
+
+    let usage = settings.get_inference_router_usage();
+    assert_eq!(usage["providers"]["openrouter"]["requests"].as_u64(), Some(1));
+    assert_eq!(usage["providers"]["openrouter"]["inputTokens"].as_u64(), Some(11));
+    assert_eq!(usage["providers"]["openrouter"]["outputTokens"].as_u64(), Some(7));
+    assert_eq!(usage["providers"]["openrouter"]["cacheReadTokens"].as_u64(), Some(3));
+    assert_eq!(usage["providers"]["openrouter"]["cacheWriteTokens"].as_u64(), Some(2));
+    let _ = fs::remove_dir_all(root);
 }

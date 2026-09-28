@@ -2178,3 +2178,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Architecture manifest after this closure: **1,872 implemented / 130 existing-needs-parity / 0 planned**. No broader inference row is promoted: `production.ts`, `inference-service.ts`, `cursor-session.ts`, `cursor-web-tools.ts`, `sand-labeling.ts`, and `sand-model-experiment.ts` keep their independent production/generated-binding blockers.
 - The `host-production-extensions.ts` evidence note was refreshed at `c814ad03821c9aa4949b08bf08296d5bd33d63c0`: the centralized shipping subset now includes Inference as well as ContentSearch / LocalExec / LocalToolPermission and the other real owners. Remaining frozen registry slots are not papered over with no-op declarations.
 - The highest-leverage remaining production blocker is Box Store Sync. Its Rust directory has the complete frozen module map, but the current production object-store side is still only a local-filesystem owner; the authenticated AgentStore / SandBox provider transport and full `DefaultBoxStoreSyncService` lifecycle are not yet production-composed. This blocks BoxStoreSync itself plus StateBackstop and several request/workspace/transfer rows. This remains a real implementation blocker, not a manifest bookkeeping issue.
+
+
+### 2026-09-28 Host inference routing-authority checkpoint
+
+- `source/host/extensions/inference/inference-service.ts` is now production-bound through the canonical Rust Host Inference owner instead of leaving provider authority in the RPC caller.
+- Live `SettingsService` is adapted by `ProductionInferenceSettings` into `HostInferenceService`. `runner.startRoutedProvider` accepts only the non-Cursor provider currently selected by that Host-owned route and fails closed on stale/mismatched provider arguments.
+- Routed provider execution remains Runner-owned. Host only authorizes the route and records provider token usage; the Coordinator/Host/Runner fault boundaries are unchanged.
+- Provider usage persistence now flows Runner -> Host Inference service -> canonical Settings counters instead of bypassing the Inference owner from the shipping gateway.
+- Focused contracts cover route authorization (including Cursor rejection and mismatch rejection) plus live Settings route/usage persistence. The manifest row is advanced only for this completed slice; the remaining Inference rows retain their own generated-codec, labeling, model-experiment and backend-transport blockers.
+- Exact-head GitHub Actions remains the acceptance authority for the resulting commit; this checkpoint does not claim the overall strict architecture gate is complete.

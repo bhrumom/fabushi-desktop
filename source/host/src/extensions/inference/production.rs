@@ -9,6 +9,10 @@ use super::cursor_web_tools::{
     create_cursor_web_backend,
 };
 use super::extension::{AgentInferenceOwner, InferenceExtensionRuntime};
+use super::inference_service::{
+    HostInferenceService, InferenceRoute, InferenceSettings, InferenceUsage,
+};
+use super::provider_session::RoutedProvider;
 
 pub type RequestIdObserver = Arc<dyn Fn(&str) + Send + Sync>;
 pub type ModelExperimentApplied = Arc<dyn Fn() + Send + Sync>;
@@ -86,6 +90,39 @@ impl InferenceProductionExtras {
 /// The Runner remains the owner of turn execution.  This object only keeps the
 /// frozen Host inference dependencies together and exposes the live provider /
 /// experiment state needed by Host-side inference surfaces.
+#[derive(Clone)]
+pub struct ProductionInferenceSettings {
+    settings: Arc<SettingsService>,
+}
+
+impl ProductionInferenceSettings {
+    pub fn new(settings: Arc<SettingsService>) -> Self {
+        Self { settings }
+    }
+}
+
+impl InferenceSettings for ProductionInferenceSettings {
+    fn inference_provider(&self) -> RoutedProvider {
+        RoutedProvider::parse(&self.settings.get_inference_provider())
+            .unwrap_or(RoutedProvider::Cursor)
+    }
+
+    fn record_inference_usage(&self, provider: RoutedProvider, usage: InferenceUsage) {
+        if let Err(error) = self.settings.record_inference_usage(
+            provider.as_str(),
+            usage.input_tokens.map(|value| value as f64),
+            usage.output_tokens.map(|value| value as f64),
+            usage.cache_read_tokens.map(|value| value as f64),
+            usage.cache_write_tokens.map(|value| value as f64),
+        ) {
+            eprintln!(
+                "mahayana-host inference_usage_persist_failed provider={} error={error}",
+                provider.as_str(),
+            );
+        }
+    }
+}
+
 pub struct ProductionAgentInferenceOwner {
     auth: Arc<HostAuthExtension>,
     experiments: Arc<HostExperimentsExtension>,
@@ -116,6 +153,7 @@ impl AgentInferenceOwner for ProductionAgentInferenceOwner {}
 pub struct ProductionInferenceExtension {
     runtime: InferenceExtensionRuntime<Arc<ProductionAgentInferenceOwner>>,
     auth: Arc<HostAuthExtension>,
+    service: HostInferenceService<ProductionInferenceSettings>,
 }
 
 impl ProductionInferenceExtension {
@@ -134,6 +172,14 @@ impl ProductionInferenceExtension {
 
     pub fn notify_model_experiment_applied(&self) {
         self.runtime.notify_model_experiment_applied();
+    }
+
+    pub fn route(&self) -> InferenceRoute {
+        self.service.route()
+    }
+
+    pub fn record_usage(&self, provider: RoutedProvider, usage: InferenceUsage) {
+        self.service.record_usage(provider, usage);
     }
 
     pub fn create_web_search(
@@ -167,14 +213,16 @@ pub fn start_production_inference_extension(
     let owner = Arc::new(ProductionAgentInferenceOwner {
         auth: Arc::clone(&auth),
         experiments,
-        settings,
+        settings: Arc::clone(&settings),
     });
     let ready_auth = Arc::clone(&auth);
+    let service = HostInferenceService::new(ProductionInferenceSettings::new(settings));
     ProductionInferenceExtension {
         runtime: InferenceExtensionRuntime::new(
             owner,
             Arc::new(move || ready_auth.peek_access_token()),
         ),
         auth,
+        service,
     }
 }
