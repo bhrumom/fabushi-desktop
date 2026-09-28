@@ -244,7 +244,6 @@ use mahayana_host_runtime::extensions::mcp::coordinator_relay::{
     BoxServerStatusLoader, CoordinatorMcpLifecycleRelay, CoordinatorMcpManagerBackend,
     MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
 };
-use mahayana_host_runtime::extensions::mcp::mcp_service::McpHostService;
 use mahayana_host_runtime::extensions::mcp::production_box_state::{
     MCP_STATE_EXEC_FIELD_NUMBER, MCP_TOOL_EXEC_FIELD_NUMBER, ProductionBoxMcpStateLoader,
     execute_box_mcp_raw,
@@ -4870,7 +4869,17 @@ fn main() {
         Arc::clone(&mcp_lifecycle_relay),
         box_status_loader,
     ));
-    let mcp_service = Arc::new(McpHostService::new(mcp_manager_backend, None));
+    let mcp_service = match production_extensions.start_mcp(
+        &app_data_dir,
+        Arc::clone(&mcp_lifecycle_relay),
+        mcp_manager_backend,
+    ) {
+        Ok(service) => service,
+        Err(error) => {
+            eprintln!("failed to start production MCP extension: {error}");
+            return;
+        }
+    };
     let transcript_runtime = transcript_manager.transcript_runtime();
     match load_initial_transcript_resiliently(|| {
         ensure_initial_transcript_loaded(&session_workers, transcript_runtime.session_runtime())
@@ -5344,6 +5353,9 @@ fn main() {
     runner_registry.cancel_all("Mahayana Host shutting down");
     routed_tool_relay.cancel_all("Mahayana Host shutting down");
     mcp_lifecycle_relay.cancel_all("Mahayana Host shutting down");
+    if let Err(error) = production_extensions.stop_mcp() {
+        eprintln!("failed to stop production MCP extension cleanly: {error}");
+    }
     cross_user.stop();
     production_extensions.notify_bus.stop();
     session_extension.shutdown();
