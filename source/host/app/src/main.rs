@@ -240,6 +240,9 @@ use mahayana_host_runtime::runner::coordinator_tool_relay::{
     CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
     RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
 };
+use mahayana_host_runtime::extensions::mcp::coordinator_relay::{
+    CoordinatorMcpLifecycleRelay, MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
+};
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
 use mahayana_host_runtime::attachment_paths::{
     AgentMediaKind, file_url_for_path, persist_agent_media_bytes,
@@ -802,6 +805,7 @@ struct UnifiedGatewayApi {
     content_search: Arc<ProductionContentSearchExtension>,
     events: GatewayEventHub,
     routed_tool_relay: Arc<CoordinatorToolRelay>,
+    mcp_lifecycle_relay: Arc<CoordinatorMcpLifecycleRelay>,
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
     session_workers: Arc<ProductionSessionWorkers>,
@@ -3642,6 +3646,12 @@ impl GatewayApi for UnifiedGatewayApi {
                 .resolve(&args)
                 .map_err(|error| GatewayCommandError::BadRequest(error.to_string()));
         }
+        if method == MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD {
+            return self
+                .mcp_lifecycle_relay
+                .resolve(&args)
+                .map_err(|error| GatewayCommandError::BadRequest(error.to_string()));
+        }
         if method == RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD {
             return start_routed_provider_task(
                 Arc::clone(&self.routed_tool_relay),
@@ -4790,6 +4800,7 @@ fn main() {
         local_exec_ask_owner.check_live_computer_for_ask(Some(agent_id))
     }));
     let routed_tool_relay = Arc::new(CoordinatorToolRelay::new(gateway_events.clone()));
+    let mcp_lifecycle_relay = Arc::new(CoordinatorMcpLifecycleRelay::new(gateway_events.clone()));
     let transcript_runtime = transcript_manager.transcript_runtime();
     match load_initial_transcript_resiliently(|| {
         ensure_initial_transcript_loaded(&session_workers, transcript_runtime.session_runtime())
@@ -4976,6 +4987,7 @@ fn main() {
             content_search: Arc::clone(&content_search_extension),
             events: gateway_events.clone(),
             routed_tool_relay: Arc::clone(&routed_tool_relay),
+            mcp_lifecycle_relay: Arc::clone(&mcp_lifecycle_relay),
             data_dir: app_data_dir.clone(),
             request_context: Arc::clone(&runner_request_context),
             session_workers: Arc::clone(&session_workers),
@@ -5259,6 +5271,7 @@ fn main() {
     drop(gateway_server);
     runner_registry.cancel_all("Mahayana Host shutting down");
     routed_tool_relay.cancel_all("Mahayana Host shutting down");
+    mcp_lifecycle_relay.cancel_all("Mahayana Host shutting down");
     cross_user.stop();
     production_extensions.notify_bus.stop();
     session_extension.shutdown();
