@@ -137,6 +137,10 @@ use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostSt
 use mahayana_host_runtime::extensions::experiments::HostExperimentsExtension;
 use mahayana_host_runtime::extensions::content_search::extension::ProductionContentSearchExtension;
 use mahayana_host_runtime::extensions::trays::extension::HostTraysExtension;
+use mahayana_host_runtime::extensions::host_upgrade::production::{
+    ProductionHostUpgradeExtension, ProductionHostUpgradePeers,
+    start_production_host_upgrade_extension,
+};
 use mahayana_host_runtime::host_production_extensions::{
     start_production_host_box_extensions, start_production_host_extensions,
 };
@@ -813,6 +817,7 @@ struct UnifiedGatewayApi {
     auto_review: Arc<HostAutoReviewExtension>,
     host_runner_composition: Arc<HostRunnerComposition>,
     cross_user: Arc<ProductionCrossUserRuntime>,
+    host_upgrade: Arc<ProductionHostUpgradeExtension>,
     create_agent_nonces: Mutex<CreateAgentNonceLedger<serde_json::Value>>,
     last_busy_at_ms: Mutex<u64>,
 }
@@ -3763,10 +3768,13 @@ impl GatewayApi for UnifiedGatewayApi {
     }
 
     fn prepare_for_upgrade(&self) -> Result<serde_json::Value, GatewayCommandError> {
-        let summary = self.transcript_runtime.quiesce_for_upgrade();
+        self.host_upgrade
+            .service()
+            .prepare_for_upgrade()
+            .map_err(GatewayCommandError::Internal)?;
         Ok(serde_json::json!({
-            "quiescing": summary.quiescing,
-            "runningTurns": summary.running_turns,
+            "quiescing": self.transcript_runtime.is_quiescing_for_upgrade(),
+            "runningTurns": self.transcript_runtime.live_running_agent_ids().len(),
             "resumeAgentIds": self.transcript_runtime.upgrade_resume_agent_ids(),
         }))
     }
@@ -4622,6 +4630,40 @@ fn main() {
         .unwrap_or_else(|poisoned| poisoned.into_inner()) =
         Arc::downgrade(&cross_user);
 
+    let host_upgrade_automation = transcript_manager.automation_runtime();
+    let host_upgrade_sharing = Arc::clone(&cross_user);
+    let host_upgrade_transcript = Arc::clone(&transcript_runtime);
+    let host_upgrade = match start_production_host_upgrade_extension(
+        ProductionHostUpgradePeers {
+            suspend_automation_wakes: Arc::new(move || {
+                host_upgrade_automation.suspend_wakes();
+                Ok(())
+            }),
+            prepare_sharing_for_upgrade: Arc::new(move || {
+                host_upgrade_sharing.prepare_for_upgrade();
+            }),
+            quiesce_transcript_for_upgrade: Arc::new(move || {
+                host_upgrade_transcript.quiesce_for_upgrade();
+                Ok(())
+            }),
+            // Frozen resumeInterruptedUpgradeTurns recreates a real Runner from
+            // durable upgrade markers. Keep this fail-closed until that shipping
+            // Runner recreation path is wired; never treat resume_after_recreate
+            // (which only clears quiesce state) as equivalent.
+            resume_interrupted_upgrade_turns: Arc::new(|| {
+                Err("resumeInterruptedUpgradeTurns production Runner recreation is not wired".into())
+            }),
+        },
+        host_telemetry.logs.clone(),
+        Arc::new(|| Ok(())),
+    ) {
+        Ok(extension) => extension,
+        Err(error) => {
+            eprintln!("failed to start production HostUpgrade extension: {error}");
+            return;
+        }
+    };
+
     let teach_recording_slot = Arc::new(Mutex::new(None::<TeachRecordingApi>));
 
     let gateway_api = Arc::new(UnifiedGatewayApi {
@@ -4655,6 +4697,7 @@ fn main() {
             auto_review: Arc::clone(&auto_review_extension),
             host_runner_composition: Arc::clone(&host_runner_composition),
             cross_user: Arc::clone(&cross_user),
+            host_upgrade: Arc::clone(&host_upgrade),
             create_agent_nonces: Mutex::new(CreateAgentNonceLedger::default()),
             last_busy_at_ms: Mutex::new(gateway_started_at),
         });

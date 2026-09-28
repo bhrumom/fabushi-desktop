@@ -774,6 +774,12 @@ impl ProductionCrossUserRuntime {
         Arc::clone(&self.service)
     }
 
+    /// Frozen Grok prepareForUpgrade is intentionally just a sharing stop.
+    /// The supervisor is about to replace this Host, so no reconnect is started.
+    pub fn prepare_for_upgrade(&self) {
+        self.stop();
+    }
+
     pub fn stop(&self) {
         self.extension.stop();
         self.remote_turns.stop();
