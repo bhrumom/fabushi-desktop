@@ -28,7 +28,9 @@ use super::tools::sand_browser_tools::BrowserToolExecutor;
 use super::tools::sand_computer_tool::ComputerToolExecutor;
 use super::tools::sand_file_transfer_tools::FileTransferExecutor;
 use super::tools::sand_mcp_management_tools::{McpManagementSink, McpManagementToolBridge};
-use super::tools::sand_state_tool::{RoutineAutoReviewCallback, SandStateWriter};
+use super::tools::sand_state_tool::{
+    RoutineAutoReviewCallback, RoutinePostWriteCallback, SandStateWriter,
+};
 use super::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use super::tools::turn_toolset::{
     TurnToolsetDependencies, build_turn_toolset, fence_turn_toolset,
@@ -62,6 +64,7 @@ pub struct TurnAgentComposition {
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     state_writer: Option<Arc<dyn SandStateWriter>>,
     routine_auto_review: Option<RoutineAutoReviewCallback>,
+    routine_post_write: Option<RoutinePostWriteCallback>,
     multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
     cloud_agent_tool: Option<CloudAgentToolDependencies>,
     multitask_enabled: bool,
@@ -98,6 +101,7 @@ impl TurnAgentComposition {
             agent_management_sink: None,
             state_writer: None,
             routine_auto_review: None,
+            routine_post_write: None,
             multitask_todo_state: None,
             cloud_agent_tool: None,
             multitask_enabled: false,
@@ -260,6 +264,18 @@ impl TurnAgentComposition {
         self.routine_auto_review.is_some()
     }
 
+    pub fn with_routine_post_write(
+        mut self,
+        callback: RoutinePostWriteCallback,
+    ) -> Self {
+        self.routine_post_write = Some(callback);
+        self
+    }
+
+    pub fn has_routine_post_write(&self) -> bool {
+        self.routine_post_write.is_some()
+    }
+
     pub fn with_multitask_todo_state(
         mut self,
         state: Arc<dyn MultitaskTodoState>,
@@ -364,6 +380,7 @@ impl TurnAgentComposition {
                 agent_management_sink: self.agent_management_sink.clone(),
                 state_writer: self.state_writer.clone(),
                 routine_auto_review: self.routine_auto_review.clone(),
+                routine_post_write: self.routine_post_write.clone(),
                 multitask_enabled: self.multitask_enabled,
                 multitask_todo_state: self.multitask_todo_state.clone(),
                 cloud_agent_tool: self.cloud_agent_tool.clone(),

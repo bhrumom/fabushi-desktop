@@ -212,7 +212,10 @@ use mahayana_host_runtime::runner::turn_memory::{
 };
 use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt_section;
 use mahayana_host_runtime::runner::tools::sand_state_tool::{
-    RoutineAutoReviewCallback, SandStateWriter,
+    RoutineAutoReviewCallback, RoutinePostWriteCallback, SandStateWriter,
+};
+use mahayana_host_runtime::runner::tools::listener_connect_cards::{
+    surface_listener_connect_cards,
 };
 use mahayana_host_runtime::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
@@ -878,6 +881,7 @@ struct LocalRoutedRunnerDeps {
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     host_runner_composition: Arc<HostRunnerComposition>,
+    automations_lifecycle: Option<Arc<ProductionAutomationsLifecycle>>,
 }
 
 impl UnifiedGatewayApi {
@@ -907,6 +911,11 @@ impl UnifiedGatewayApi {
             production_action_auditor: self.production_action_auditor.clone(),
             cloud_agents: Arc::clone(&self.cloud_agents),
             host_runner_composition: Arc::clone(&self.host_runner_composition),
+            automations_lifecycle: self
+                .automations_lifecycle
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .upgrade(),
         }
     }
 
@@ -1376,6 +1385,7 @@ fn run_local_group_member_turn(
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.host_runner_composition,
+        deps.automations_lifecycle,
         None,
         runner_args,
     )
@@ -1533,6 +1543,7 @@ fn start_local_upgrade_resume_turn(
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.host_runner_composition,
+        deps.automations_lifecycle,
         None,
         runner_args,
     )
@@ -1685,6 +1696,7 @@ fn run_local_automation_turn(
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.host_runner_composition,
+        deps.automations_lifecycle,
         None,
         runner_args,
     )
@@ -2190,6 +2202,7 @@ fn start_routed_provider_task(
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     host_runner_composition: Arc<HostRunnerComposition>,
+    automations_lifecycle: Option<Arc<ProductionAutomationsLifecycle>>,
     gateway_context: Option<GatewayCommandContext>,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
@@ -2920,6 +2933,58 @@ fn start_routed_provider_task(
                     agent_id: agent_id.clone(),
                 },
             );
+            let routine_post_write: Option<RoutinePostWriteCallback> =
+                automations_lifecycle.as_ref().map(|lifecycle| {
+                    let lifecycle = Arc::clone(lifecycle);
+                    let sink = Arc::clone(&send_message_sink);
+                    let callback_agent_id = agent_id.clone();
+                    Arc::new(move |target: &mahayana_host_runtime::runner::sand_automation_auto_review::AutomationWriteTarget, tool_call_id: &str| {
+                        if !matches!(target.operation.as_str(), "create" | "update")
+                            || !target.spec.is_enabled
+                        {
+                            return Ok(());
+                        }
+                        let mut platforms = trigger_members(&target.spec.trigger)
+                            .into_iter()
+                            .filter_map(|listener| {
+                                listener
+                                    .get("type")
+                                    .and_then(serde_json::Value::as_str)
+                                    .filter(|platform| matches!(*platform, "slack" | "github"))
+                                    .map(ToOwned::to_owned)
+                            })
+                            .collect::<Vec<_>>();
+                        platforms.sort();
+                        platforms.dedup();
+                        let surfaced = surface_listener_connect_cards(
+                            &platforms,
+                            Some(|platform: &str| lifecycle.is_platform_connected(platform)),
+                            |platform| match platform {
+                                "slack" => Some("Slack".to_string()),
+                                "github" => Some("GitHub".to_string()),
+                                _ => None,
+                            },
+                        );
+                        for card in surfaced.cards {
+                            let card_tool_call_id =
+                                format!("{tool_call_id}:listener:{}", card.platform);
+                            sink.send_message(
+                                serde_json::json!({
+                                    "type": card.message_type,
+                                    "platform": card.platform,
+                                    "reason": card.reason,
+                                }),
+                                started_at_ms() as u64,
+                                &card_tool_call_id,
+                            )?;
+                            lifecycle.watch_listener_connection(
+                                callback_agent_id.clone(),
+                                card.platform,
+                            );
+                        }
+                        Ok(())
+                    }) as RoutinePostWriteCallback
+                });
             let reaction_sink: Arc<dyn ReactionSink> = Arc::new(
                 ProductionReactionSink {
                     host_tx,
@@ -3175,6 +3240,9 @@ fn start_routed_provider_task(
             .with_agent_management_sink(agent_management_sink)
             .with_state_writer(state_writer)
             .with_routine_auto_review(routine_auto_review);
+            if let Some(routine_post_write) = routine_post_write {
+                composition = composition.with_routine_post_write(routine_post_write);
+            }
             if let Some(todo_state) = multitask_todo_state {
                 composition = composition.with_multitask_todo_state(todo_state);
             }
@@ -4043,6 +4111,10 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.production_action_auditor.clone(),
                 Arc::clone(&self.cloud_agents),
                 Arc::clone(&self.host_runner_composition),
+                self.automations_lifecycle
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .upgrade(),
                 None,
                 args,
             );
@@ -4484,6 +4556,10 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.production_action_auditor.clone(),
                 Arc::clone(&self.cloud_agents),
                 Arc::clone(&self.host_runner_composition),
+                self.automations_lifecycle
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .upgrade(),
                 Some(context.clone()),
                 args,
             );

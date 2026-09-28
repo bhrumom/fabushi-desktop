@@ -23,6 +23,10 @@ pub type RoutineAutoReviewCallback = Arc<
     dyn Fn(&AutomationWriteTarget, &str) -> Result<(), ProviderSessionError> + Send + Sync,
 >;
 
+pub type RoutinePostWriteCallback = Arc<
+    dyn Fn(&AutomationWriteTarget, &str) -> Result<(), ProviderSessionError> + Send + Sync,
+>;
+
 pub trait SandStateWriter: Send + Sync {
     fn automation_record(&self, id: &str) -> Option<AutomationRecord>;
     fn automation_records(&self) -> Vec<AutomationRecord>;
@@ -184,6 +188,7 @@ pub struct SandStateToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
     state: Arc<dyn SandStateWriter>,
     routine_auto_review: Option<RoutineAutoReviewCallback>,
+    routine_post_write: Option<RoutinePostWriteCallback>,
 }
 
 impl SandStateToolBridge {
@@ -195,6 +200,7 @@ impl SandStateToolBridge {
             delegate,
             state,
             routine_auto_review: None,
+            routine_post_write: None,
         }
     }
 
@@ -203,6 +209,14 @@ impl SandStateToolBridge {
         review: RoutineAutoReviewCallback,
     ) -> Self {
         self.routine_auto_review = Some(review);
+        self
+    }
+
+    pub fn with_routine_post_write(
+        mut self,
+        callback: RoutinePostWriteCallback,
+    ) -> Self {
+        self.routine_post_write = Some(callback);
         self
     }
 }
@@ -229,12 +243,18 @@ impl RoutedToolBridge for SandStateToolBridge {
         {
             return self.delegate.call_tool(tool, args, tool_call_id);
         }
-        if let Some(review) = &self.routine_auto_review {
-            if let Some(target) = automation_review_target(&args, self.state.as_ref())? {
-                review(&target, tool_call_id)?;
-            }
+        let routine_target = automation_review_target(&args, self.state.as_ref())?;
+        if let (Some(review), Some(target)) = (&self.routine_auto_review, routine_target.as_ref()) {
+            review(target, tool_call_id)?;
         }
         let outcome = apply_state_update(&args, self.state.as_ref())?;
+        if outcome.ok {
+            if let (Some(callback), Some(target)) =
+                (&self.routine_post_write, routine_target.as_ref())
+            {
+                callback(target, tool_call_id)?;
+            }
+        }
         Ok(Value::String(if outcome.ok {
             outcome.message
         } else {

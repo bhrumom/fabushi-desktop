@@ -270,3 +270,71 @@ fn workflow_body_write_is_reviewed_only_when_a_routine_references_it() {
     assert!(error.to_string().contains("review denied"));
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn routine_post_write_runs_only_after_successful_routine_write() {
+    use std::sync::Mutex;
+
+    let root = temp_root("routine-post-write");
+    let state = Arc::new(SandAgentState::new(&root, "agent-post").expect("state"));
+    let writer: Arc<dyn SandStateWriter> = state.clone();
+    let observed = Arc::new(Mutex::new(Vec::<String>::new()));
+    let observed_callback = Arc::clone(&observed);
+    let bridge = SandStateToolBridge::new(Arc::new(DelegateBridge), writer)
+        .with_routine_post_write(Arc::new(move |target, tool_call_id| {
+            observed_callback
+                .lock()
+                .expect("observed")
+                .push(format!("{}:{tool_call_id}", target.operation));
+            Ok(())
+        }));
+    let tool = bridge
+        .list_tools()
+        .expect("tools")
+        .into_iter()
+        .find(|tool| tool.name == SAND_UPDATE_STATE_TOOL_NAME)
+        .expect("update_state");
+
+    bridge.call_tool(
+        &tool,
+        json!({
+            "target":"routine",
+            "action":"create",
+            "name":"Listener routine",
+            "prompt":"Watch Slack",
+            "trigger":{"type":"slack","channel":"C1"}
+        }),
+        "tool-listener",
+    ).expect("successful write");
+    assert_eq!(
+        observed.lock().expect("observed").as_slice(),
+        &["create:tool-listener".to_string()]
+    );
+
+    let _ = bridge.call_tool(
+        &tool,
+        json!({
+            "target":"routine",
+            "action":"update",
+            "id":"missing-routine",
+            "prompt":"still missing"
+        }),
+        "tool-missing",
+    );
+    assert_eq!(observed.lock().expect("observed").len(), 1);
+
+    bridge.call_tool(
+        &tool,
+        json!({
+            "target":"memory",
+            "action":"write",
+            "fact":"not a routine",
+            "tier":"log"
+        }),
+        "tool-memory",
+    ).expect("memory write");
+    assert_eq!(observed.lock().expect("observed").len(), 1);
+
+    let _ = fs::remove_dir_all(root);
+}
