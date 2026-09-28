@@ -16845,14 +16845,20 @@
         "source/host/app/src/main.rs",
         "source/host/src/extensions/inference/production.rs",
         "source/host/src/extensions/browser_ua/extension.rs",
-        "source/host/src/extensions/wallpaper/extension.rs"
+        "source/host/src/extensions/wallpaper/extension.rs",
+        "source/host/src/extensions/forever_box/extension.rs",
+        "source/host/src/extensions/attachments/extension.rs",
+        "source/host/src/extensions/secrets/extension.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_production_extensions_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/extensions_browser_ua_contract.rs",
-        "source/host/tests/wallpaper_contract.rs"
+        "source/host/tests/wallpaper_contract.rs",
+        "source/host/tests/extensions_forever_box_contract.rs",
+        "source/host/tests/attachments_service_contract.rs",
+        "source/host/tests/secrets_extension_contract.rs"
       ],
       "parityMode": "rust-port",
       "evidence": [
@@ -16860,7 +16866,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Host has a Grok-shaped host_production_extensions owner and the shipping app consumes it directly. The canonical production subset now centrally owns 20 frozen slots, including BrowserUa and Wallpaper lifecycle ownership in addition to Auth, Telemetry, ContentSearch, Settings, Experiments, CodebaseTelemetry, ActionAudit, CloudAgents, NotifyBus, Memory, ManagedSetup, SourceMap, Trays, BoxLifecycle, WebauthnProxy, LocalToolPermission, LocalExec and Inference. app/main.rs no longer starts or stops a second BrowserUa/Wallpaper runtime. Final parity remains withheld until the remaining frozen slots are centralized with real production owners/extras bindings: Notifications, CrossUserSharing, StateBackstop, Attachments, ForeverBox, Secrets, TurnExecution, Transcript, Session, Automations, MCP, BoxStoreSync, HostUpgrade, AutoReview and TeachRecording. Existing app/main.rs ownership is not counted as registry completion, and no no-op slot is synthesized."
+      "notes": "Rust Host has a Grok-shaped host_production_extensions owner and the shipping app consumes it directly. The production graph is now staged rather than flattened: the core stage owns Auth, Telemetry, ContentSearch, Settings, Experiments, CodebaseTelemetry, ActionAudit, CloudAgents, NotifyBus, Memory, ManagedSetup, SourceMap, Trays, BoxLifecycle, WebauthnProxy, BrowserUa, LocalToolPermission, LocalExec, Inference and Wallpaper; a Box-dependent stage owns ForeverBox, Attachments and Secrets after the platform Box environment exists. app/main.rs no longer constructs second BrowserUa/Wallpaper/ForeverBox/Attachments/Secrets owners. That makes 23 frozen registry slots centrally composed with real owners. Final parity remains withheld until the remaining frozen slots are centralized with real production owners/extras bindings: Notifications, CrossUserSharing, StateBackstop, TurnExecution, Transcript, Session, Automations, MCP, BoxStoreSync, HostUpgrade, AutoReview and TeachRecording. No no-op slot is synthesized."
     },
     {
       "referencePath": "source/host/host-request-context.ts",
