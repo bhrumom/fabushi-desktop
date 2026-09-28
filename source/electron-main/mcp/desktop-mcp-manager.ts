@@ -25,9 +25,12 @@ export interface DesktopMcpManagerFacade {
   resolvePluginLogo(url: string): Promise<unknown>;
   installEntry(request: unknown, getAccessToken: unknown): Promise<unknown>;
   updatePluginInstall(request: unknown, getAccessToken: unknown): Promise<unknown>;
+  addServer(request: { name: string; configJson: string }): Promise<unknown>;
   removeServer(serverId: string): Promise<unknown>;
+  reloadServers(): Promise<unknown>;
   uninstallPlugin(pluginId: string): Promise<unknown>;
-  authenticateServer(serverId: string, accountKey: string, trigger?: string): Promise<unknown>;
+  authenticateServer(serverId: string, accountKey: string, requestingAgentId?: string | null, forceReauth?: boolean, trigger?: string | null): Promise<unknown>;
+  logoutAccount(args: { serverId: string; accountKey: string }): Promise<unknown>;
   renameAccount(args: { serverId: string; accountKey: string; newAccountKey: string }): Promise<unknown>;
   removeAccount(args: { serverId: string; accountKey: string }): Promise<unknown>;
   setServerCustomInstructions(request: unknown): Promise<unknown>;
@@ -136,9 +139,12 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
     resolvePluginLogo: (url) => manager.resolvePluginLogo(url),
     installEntry: (request, getAccessToken) => manager.installEntry(request, getAccessToken),
     updatePluginInstall: (request, getAccessToken) => manager.updatePluginInstall(request, getAccessToken),
+    addServer: (request) => manager.addServer(request),
     removeServer: (serverId) => manager.removeServer(serverId),
+    reloadServers: () => manager.reloadServers(),
     uninstallPlugin: (pluginId) => manager.uninstallPlugin(pluginId),
-    authenticateServer: (serverId, accountKey, trigger) => manager.authenticateServer(serverId, accountKey, null, false, trigger ?? null),
+    authenticateServer: (serverId, accountKey, requestingAgentId, forceReauth, trigger) => manager.authenticateServer(serverId, accountKey, requestingAgentId ?? null, forceReauth === true, trigger ?? null),
+    logoutAccount: (args) => manager.logoutAccount(args.serverId, args.accountKey),
     renameAccount: (args) => manager.renameAccount(args.serverId, args.accountKey, args.newAccountKey),
     removeAccount: (args) => manager.removeAccount(args.serverId, args.accountKey),
     setServerCustomInstructions: (request) => manager.setServerCustomInstructions(request),
