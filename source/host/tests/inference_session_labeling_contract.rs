@@ -140,7 +140,7 @@ impl InferenceSettings for RecordingSettings {
 }
 
 #[test]
-fn inference_service_keeps_cursor_out_of_local_provider_router_and_records_usage() {
+fn inference_service_authorizes_cursor_only_through_the_cursor_shipping_route_and_records_usage() {
     assert_eq!(resolve_inference_route(RoutedProvider::Cursor), InferenceRoute::Cursor);
     assert_eq!(
         resolve_inference_route(RoutedProvider::Codex),
@@ -162,13 +162,21 @@ fn inference_service_keeps_cursor_out_of_local_provider_router_and_records_usage
         .unwrap_err()
         .contains("does not match Host inference settings")
     );
+    assert_eq!(
+        authorize_routed_provider_request(
+            InferenceRoute::Cursor,
+            RoutedProvider::Cursor,
+        )
+        .unwrap(),
+        RoutedProvider::Cursor
+    );
     assert!(
         authorize_routed_provider_request(
             InferenceRoute::Cursor,
             RoutedProvider::Codex,
         )
         .unwrap_err()
-        .contains("provider is cursor")
+        .contains("does not match Host inference settings")
     );
 
     let settings = RecordingSettings::default();

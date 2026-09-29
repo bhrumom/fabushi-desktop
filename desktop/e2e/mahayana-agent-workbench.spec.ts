@@ -333,7 +333,10 @@ async function expectHermesAssistantTurn(page: Page, expectedText: string): Prom
 
   const message = matchingMessages.first();
   await expect(message).toBeVisible();
-  const turn = message.locator('xpath=ancestor::*[@role="article" and @data-role="assistant"][1]');
+  const turn = transcript
+    .locator('[role="article"][data-role="assistant"]')
+    .filter({ has: message })
+    .first();
   await expect(turn).toBeVisible();
   await expect(message).toBeVisible();
   const body = message.locator('.sand-message-prose');
