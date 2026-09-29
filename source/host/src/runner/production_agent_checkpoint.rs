@@ -18,16 +18,41 @@ use super::{
 };
 
 pub trait AgentStateCheckpointSink: Send + Sync {
+    fn stage_text_turn(
+        &self,
+        _messages: &[ProviderMessage],
+        _options: &TurnRunOptions,
+        _assistant_content: &str,
+    ) -> Result<TextTurnCheckpointArtifacts, ProviderSessionError> {
+        Err(ProviderSessionError::Protocol(
+            "Agent checkpoint sink does not support staged generated state".into(),
+        ))
+    }
+
+    fn persist_staged_text_turn(
+        &self,
+        _options: &TurnRunOptions,
+        _checkpoint: &TextTurnCheckpointArtifacts,
+    ) -> Result<(), ProviderSessionError> {
+        Err(ProviderSessionError::Protocol(
+            "Agent checkpoint sink does not support staged generated state".into(),
+        ))
+    }
+
     fn checkpoint_text_turn(
         &self,
         messages: &[ProviderMessage],
         options: &TurnRunOptions,
         assistant_content: &str,
-    ) -> Result<(), ProviderSessionError>;
+    ) -> Result<(), ProviderSessionError> {
+        let checkpoint = self.stage_text_turn(messages, options, assistant_content)?;
+        self.persist_staged_text_turn(options, &checkpoint)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TextTurnCheckpointArtifacts {
+    pub prior_state_bytes: Vec<u8>,
     pub user_message_id: Vec<u8>,
     pub user_message_bytes: Vec<u8>,
     pub step_ids: Vec<Vec<u8>>,
@@ -89,6 +114,7 @@ pub fn build_text_turn_checkpoint(
     push_length_delimited(8, &turn_id, &mut state_bytes);
 
     TextTurnCheckpointArtifacts {
+        prior_state_bytes: prior_state_bytes.to_vec(),
         user_message_id,
         user_message_bytes,
         step_ids,
@@ -174,12 +200,12 @@ impl ProductionAgentStateCheckpointSink {
 }
 
 impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
-    fn checkpoint_text_turn(
+    fn stage_text_turn(
         &self,
         messages: &[ProviderMessage],
         options: &TurnRunOptions,
         assistant_content: &str,
-    ) -> Result<(), ProviderSessionError> {
+    ) -> Result<TextTurnCheckpointArtifacts, ProviderSessionError> {
         let user_text = options
             .recent_message_text
             .as_deref()
@@ -231,6 +257,29 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
             options.inference_request_id.as_deref(),
             assistant_content,
         );
+        Ok(artifacts)
+    }
+
+    fn persist_staged_text_turn(
+        &self,
+        options: &TurnRunOptions,
+        artifacts: &TextTurnCheckpointArtifacts,
+    ) -> Result<(), ProviderSessionError> {
+        let mut prior = self
+            .prior_state_bytes
+            .lock()
+            .map_err(|_| {
+                ProviderSessionError::Protocol(
+                    "Runner Agent checkpoint prior state is poisoned".into(),
+                )
+            })?;
+        let live_prior = self.agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        if live_prior != *prior || artifacts.prior_state_bytes != *prior {
+            return Err(ProviderSessionError::Protocol(
+                "Runner Agent checkpoint root changed while this turn was active".into(),
+            ));
+        }
+
         self.persist_blob(
             &artifacts.user_message_id,
             &artifacts.user_message_bytes,
@@ -296,7 +345,7 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
                 "Runner Agent checkpoint transaction failed: {error}"
             ))
         })?;
-        *prior = artifacts.state_bytes;
+        *prior = artifacts.state_bytes.clone();
         Ok(())
     }
 }

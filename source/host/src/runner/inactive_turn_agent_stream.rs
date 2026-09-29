@@ -8,17 +8,30 @@ use super::{
     persist_outer_stream_final_state, release_outer_stream_persistence,
 };
 
+/// Generated Agent streams execute inside the already-owned Runner worker.
+/// They intentionally keep scoped borrows (for example the live renderer
+/// delta callback), so the future itself does not claim a second cross-thread
+/// ownership boundary.
 pub type InactiveTurnStreamFuture<'a, T> =
-    Pin<Box<dyn Future<Output = T> + Send + 'a>>;
+    Pin<Box<dyn Future<Output = T> + 'a>>;
 
-/// Rust adaptation of the frozen generated Agent stream boundary.
-///
-/// Checkpoint callback boundary used by the dormant generated Agent stream.
+pub trait InactiveTurnAgentOutputSink {
+    fn on_text_delta(&mut self, delta: &str, accumulated: &str);
+}
+
+#[derive(Default)]
+pub struct NoopInactiveTurnAgentOutputSink;
+
+impl InactiveTurnAgentOutputSink for NoopInactiveTurnAgentOutputSink {
+    fn on_text_delta(&mut self, _delta: &str, _accumulated: &str) {}
+}
+
+/// Checkpoint callback boundary used by the generated Agent stream.
 ///
 /// The frozen Grok owner exposes an async persist callback. Keep that shape in
 /// Rust instead of nesting an executor: a checkpoint is not eligible for
 /// resume until this future has settled successfully.
-pub trait InactiveTurnCheckpointSink<Context, State>: Send {
+pub trait InactiveTurnCheckpointSink<Context, State> {
     fn persist<'a>(
         &'a mut self,
         context: &'a Context,
@@ -27,12 +40,15 @@ pub trait InactiveTurnCheckpointSink<Context, State>: Send {
 }
 
 pub trait InactiveTurnAgentStreamSource<Context, State>: Send + Sync {
+    type Error: From<String>;
+
     fn start_stream<'a>(
         &'a self,
         context: &'a Context,
         resume_from: Option<&'a State>,
         persist_checkpoint: &'a mut dyn InactiveTurnCheckpointSink<Context, State>,
-    ) -> InactiveTurnStreamFuture<'a, Result<State, String>>;
+        output: &'a mut dyn InactiveTurnAgentOutputSink,
+    ) -> InactiveTurnStreamFuture<'a, Result<State, Self::Error>>;
 }
 
 pub trait InactiveTurnAgentLifecycleHooks<State>: Send + Sync {
@@ -53,12 +69,21 @@ pub struct NoopInactiveTurnAgentLifecycleHooks;
 
 impl<State> InactiveTurnAgentLifecycleHooks<State> for NoopInactiveTurnAgentLifecycleHooks {}
 
-pub struct InactiveTurnAgentStreamPath<Context, State> {
-    source: Arc<dyn InactiveTurnAgentStreamSource<Context, State>>,
-    _marker: PhantomData<fn(Context, State)>,
+pub struct InactiveTurnAgentStreamPath<Context, State, Error = String>
+where
+    Error: From<String>,
+{
+    source: Arc<
+        dyn InactiveTurnAgentStreamSource<Context, State, Error = Error>,
+    >,
+    _marker: PhantomData<fn(Context, State, Error)>,
 }
 
-impl<Context, State> Clone for InactiveTurnAgentStreamPath<Context, State> {
+impl<Context, State, Error> Clone
+    for InactiveTurnAgentStreamPath<Context, State, Error>
+where
+    Error: From<String>,
+{
     fn clone(&self) -> Self {
         Self {
             source: Arc::clone(&self.source),
@@ -67,12 +92,15 @@ impl<Context, State> Clone for InactiveTurnAgentStreamPath<Context, State> {
     }
 }
 
-impl<Context, State> InactiveTurnAgentStreamPath<Context, State>
+impl<Context, State, Error> InactiveTurnAgentStreamPath<Context, State, Error>
 where
-    Context: Send + Sync,
-    State: Send + Sync,
+    Error: From<String>,
 {
-    pub fn new(source: Arc<dyn InactiveTurnAgentStreamSource<Context, State>>) -> Self {
+    pub fn new(
+        source: Arc<
+            dyn InactiveTurnAgentStreamSource<Context, State, Error = Error>,
+        >,
+    ) -> Self {
         Self {
             source,
             _marker: PhantomData,
@@ -84,25 +112,49 @@ where
         context: &Context,
         resume_from: Option<&State>,
         persist_checkpoint: &mut dyn InactiveTurnCheckpointSink<Context, State>,
-    ) -> Result<State, String> {
+        output: &mut dyn InactiveTurnAgentOutputSink,
+    ) -> Result<State, Error> {
         self.source
-            .start_stream(context, resume_from, persist_checkpoint)
+            .start_stream(context, resume_from, persist_checkpoint, output)
             .await
     }
 
-    /// Own one dormant generated-Agent stream lifecycle.
-    ///
-    /// This mirrors createOuterStreamLifecycle: generation-gated step
-    /// checkpoints are drained synchronously, completion hooks run before
-    /// cleanup, final state is persisted only for a completed stream, and the
-    /// disk-pressure claim is released exactly once on every exit path.
     pub async fn run_lifecycle<P, H>(
         &self,
         context: &Context,
         resume_from: Option<&State>,
         persistence: &P,
         hooks: &H,
-    ) -> Result<State, String>
+    ) -> Result<State, Error>
+    where
+        P: OuterStreamPersistence<Context, State>,
+        H: InactiveTurnAgentLifecycleHooks<State>,
+    {
+        let mut output = NoopInactiveTurnAgentOutputSink;
+        self.run_lifecycle_with_output(
+            context,
+            resume_from,
+            persistence,
+            hooks,
+            &mut output,
+        )
+        .await
+    }
+
+    /// Own one generated-Agent stream lifecycle on the shipping Runner worker.
+    ///
+    /// This mirrors createOuterStreamLifecycle: generation-gated step
+    /// checkpoints are drained synchronously, completion hooks run before
+    /// cleanup, final state is persisted only for a completed stream, and the
+    /// disk-pressure claim is released exactly once on every exit path.
+    pub async fn run_lifecycle_with_output<P, H>(
+        &self,
+        context: &Context,
+        resume_from: Option<&State>,
+        persistence: &P,
+        hooks: &H,
+        output: &mut dyn InactiveTurnAgentOutputSink,
+    ) -> Result<State, Error>
     where
         P: OuterStreamPersistence<Context, State>,
         H: InactiveTurnAgentLifecycleHooks<State>,
@@ -115,8 +167,6 @@ where
             for OuterCheckpointSink<'_, P>
         where
             P: OuterStreamPersistence<Context, State>,
-            Context: Send + Sync,
-            State: Send + Sync,
         {
             fn persist<'a>(
                 &'a mut self,
@@ -137,7 +187,7 @@ where
 
         let mut persist = OuterCheckpointSink { persistence };
         let stream_result = self
-            .start_stream(context, resume_from, &mut persist)
+            .start_stream(context, resume_from, &mut persist, output)
             .await;
 
         let result = match stream_result {
@@ -157,18 +207,21 @@ where
                 };
 
                 if let Err(error) = completion {
-                    Err(error)
+                    Err(Error::from(error))
                 } else if let Err(error) = cleanup {
-                    Err(error)
+                    Err(Error::from(error))
                 } else if let Err(error) = final_persist {
-                    Err(error)
+                    Err(Error::from(error))
                 } else {
                     Ok(final_state)
                 }
             }
             Err(error) => {
                 let cleanup = hooks.cleanup().await;
-                Err(cleanup.err().unwrap_or(error))
+                match cleanup {
+                    Ok(()) => Err(error),
+                    Err(cleanup_error) => Err(Error::from(cleanup_error)),
+                }
             }
         };
 

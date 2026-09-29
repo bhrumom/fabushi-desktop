@@ -2,9 +2,9 @@ use std::sync::{Arc, Mutex};
 
 use futures::future;
 use mahayana_host_runtime::runner::inactive_turn_agent_stream::{
-    InactiveTurnAgentLifecycleHooks, InactiveTurnAgentStreamPath,
-    InactiveTurnAgentStreamSource, InactiveTurnCheckpointSink,
-    InactiveTurnStreamFuture,
+    InactiveTurnAgentLifecycleHooks, InactiveTurnAgentOutputSink,
+    InactiveTurnAgentStreamPath, InactiveTurnAgentStreamSource,
+    InactiveTurnCheckpointSink, InactiveTurnStreamFuture,
 };
 use mahayana_host_runtime::runner::{
     OuterStreamFuture, OuterStreamPersistence, StreamCancelReason,
@@ -93,11 +93,14 @@ impl OuterStreamPersistence<String, String> for Persistence<'_> {
 struct Source(Arc<Events>);
 
 impl InactiveTurnAgentStreamSource<String, String> for Source {
+    type Error = String;
+
     fn start_stream<'a>(
         &'a self,
         context: &'a String,
         resume_from: Option<&'a String>,
         persist_checkpoint: &'a mut dyn InactiveTurnCheckpointSink<String, String>,
+        _output: &'a mut dyn InactiveTurnAgentOutputSink,
     ) -> InactiveTurnStreamFuture<'a, Result<String, String>> {
         Box::pin(async move {
             self.0.push(format!(

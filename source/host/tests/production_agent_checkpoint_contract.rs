@@ -309,3 +309,79 @@ fn owner_does_not_settle_completed_before_agent_checkpoint_succeeds() {
         }) if message.contains("durable Agent checkpoint failed")
     ));
 }
+
+
+#[test]
+fn production_sink_can_stage_generated_state_before_outer_stream_final_persist() {
+    let root = temp_root("staged-generated-state");
+    let agents_root = root.join("agents");
+    let transcripts_dir = root.join("transcripts");
+    let sessions = ProductionSessionWorkers::with_agents_root(&agents_root, 500);
+    let session = sessions
+        .materialize_session_with_active(None, "user", None, None)
+        .expect("session");
+    session
+        .db
+        .append_transcript_entry(&serde_json::json!({
+            "id": "message-staged",
+            "kind": "message",
+            "role": "user",
+            "content": "stage me",
+            "confirmed": false
+        }))
+        .expect("user echo");
+    let blob_store = Arc::new(
+        sessions
+            .create_agent_blob_store(&session.record.id)
+            .expect("blob store"),
+    );
+    let prior = session.agent_store.latest_checkpoint_bytes().unwrap_or_default();
+    let provider = ProductionTranscriptMirrorProvider::new(
+        &transcripts_dir,
+        GeneratedTranscriptOccurrenceCodec::new(
+            RejectGeneratedToolJsonProjection,
+        ),
+    );
+    let mirror = Arc::new(
+        provider
+            .route_for_session(
+                Arc::clone(&blob_store),
+                &prior,
+                Arc::new(|| Ok(true)),
+            )
+            .expect("route"),
+    );
+    let sink = ProductionAgentStateCheckpointSink::new(
+        session.record.id.clone(),
+        Arc::clone(&session.agent_store),
+        blob_store,
+        mirror,
+        prior.clone(),
+        true,
+    )
+    .expect("sink");
+    let options = TurnRunOptions {
+        inference_request_id: Some("request-staged".into()),
+        message_id: Some("message-staged".into()),
+        recent_message_text: Some("stage me".into()),
+        ..TurnRunOptions::default()
+    };
+    let staged = sink
+        .stage_text_turn(&[ProviderMessage {
+            role: "user".into(),
+            content: "stage me".into(),
+        }], &options, "assistant staged")
+        .expect("stage generated state");
+    assert_eq!(session.agent_store.latest_checkpoint_bytes().unwrap_or_default(), prior);
+    assert_ne!(staged.state_bytes, prior);
+
+    sink.persist_staged_text_turn(&options, &staged)
+        .expect("persist staged generated state");
+    assert_eq!(
+        session.agent_store.latest_checkpoint_bytes().expect("final state"),
+        staged.state_bytes
+    );
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}

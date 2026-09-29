@@ -76,6 +76,7 @@ pub mod inactive_turn_agent_stream;
 pub mod turn_agent_composition;
 pub mod production_turn_agent_owner;
 pub mod production_agent_checkpoint;
+pub mod generated_agent_turn_stream;
 pub mod production_turn_input_projection;
 pub mod prompt_collector_glue;
 pub mod sand_agent_runner;

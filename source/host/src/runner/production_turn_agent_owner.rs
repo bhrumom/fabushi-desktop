@@ -5,6 +5,7 @@ use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
 };
 
+use super::generated_agent_turn_stream::run_production_generated_agent_stream;
 use super::production_agent_checkpoint::AgentStateCheckpointSink;
 use super::tools::box_help_tool::WAITING_USER_CANCELLATION_PREFIX;
 use super::routed_provider_runtime::RoutedProviderCancellation;
@@ -96,13 +97,29 @@ impl ProductionTurnAgentOwner {
             last_finished,
             agent_state_checkpoint_sink,
         } = self;
+        let checkpoint_sink = agent_state_checkpoint_sink.clone();
+        let composition_for_stream = composition.clone();
         run_owned_turn(
             shell,
             last_finished,
-            agent_state_checkpoint_sink.as_deref(),
             lifecycle_messages,
-            options,
-            || composition.run(data_dir, provider_messages, on_text_delta),
+            options.clone(),
+            move |started| {
+                if let Some(checkpoint_sink) = checkpoint_sink {
+                    run_production_generated_agent_stream(
+                        composition_for_stream,
+                        checkpoint_sink,
+                        data_dir,
+                        lifecycle_messages,
+                        provider_messages,
+                        &options,
+                        started.owner.generation,
+                        on_text_delta,
+                    )
+                } else {
+                    composition.run(data_dir, provider_messages, on_text_delta)
+                }
+            },
         )
     }
 
@@ -131,10 +148,9 @@ impl ProductionTurnAgentOwner {
         run_owned_turn(
             &mut self.shell,
             &mut self.last_finished,
-            self.agent_state_checkpoint_sink.as_deref(),
             messages,
             options,
-            execute,
+            move |_started| execute(),
         )
     }
 }
@@ -142,20 +158,18 @@ impl ProductionTurnAgentOwner {
 fn run_owned_turn<Execute>(
     shell: &mut TurnRunShell,
     last_finished: &mut Option<TurnRunFinished>,
-    agent_state_checkpoint_sink: Option<&dyn AgentStateCheckpointSink>,
     messages: &[ProviderMessage],
     options: TurnRunOptions,
     execute: Execute,
 ) -> Result<String, ProviderSessionError>
 where
-    Execute: FnOnce() -> Result<String, ProviderSessionError>,
+    Execute: FnOnce(&super::TurnRunStarted) -> Result<String, ProviderSessionError>,
 {
     let prompt = latest_non_empty_user_prompt(messages).ok_or_else(|| {
         ProviderSessionError::Configuration(
             "Runner production turn requires a non-empty user prompt.".into(),
         )
     })?;
-    let checkpoint_options = options.clone();
     let started = shell
         .begin_run(prompt, options)
         .map_err(turn_shell_error)?;
@@ -163,16 +177,7 @@ where
         .mark_dispatched(&started.owner)
         .map_err(turn_shell_error)?;
 
-    let mut result = execute();
-    if let (Ok(content), Some(sink)) = (&result, agent_state_checkpoint_sink) {
-        if let Err(error) = sink.checkpoint_text_turn(
-            messages,
-            &checkpoint_options,
-            content,
-        ) {
-            result = Err(error);
-        }
-    }
+    let result = execute(&started);
     let settlement = match &result {
         Ok(_) => shell.finish_completed(&started.owner),
         Err(ProviderSessionError::Cancelled(reason))
