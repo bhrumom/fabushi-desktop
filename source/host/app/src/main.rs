@@ -63,7 +63,9 @@ use mahayana_host_runtime::runner::sand_subagent_auto_review::{
 use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
-use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
+use mahayana_host_runtime::agents::agent_messaging::{
+    AgentAddress, AgentGroupAddress, AgentMessageImage,
+};
 use mahayana_host_runtime::agents::agent_profile::{SandAgentProfile, get_sand_profile_path};
 use mahayana_host_runtime::agents::settings_file::get_sand_settings_path;
 use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
@@ -277,10 +279,11 @@ use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     to_exact_action_value, validate_computer_action,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{
-    AgentProfileForPrompt, append_agent_profile_system_prompt,
-    append_automations_system_prompt, append_combined_memory_system_prompt,
-    append_workflows_system_prompt, render_agent_profile_section,
-    resolve_combined_memory_system_prompt,
+    AgentProfileForPrompt, append_agent_directory_system_prompt,
+    append_agent_profile_system_prompt, append_automations_system_prompt,
+    append_channels_system_prompt, append_combined_memory_system_prompt,
+    append_mcp_system_prompt_sections, append_workflows_system_prompt,
+    render_agent_profile_section, resolve_combined_memory_system_prompt,
 };
 use mahayana_host_runtime::runner::sand_agent_profile_prompt::{
     AgentProfileIdentity, AgentProfilePromptSnapshot, agent_profile_identities_equal,
@@ -3167,12 +3170,17 @@ fn start_routed_provider_task(
     }
 
     let memory_service = session_workers.memory_service();
-    let agent_summaries = session_workers
-        .list_agent_summaries(Some(&agent_id))
-        .unwrap_or_default();
+    let agent_summaries = Arc::new(
+        session_workers
+            .list_agent_summaries(Some(&agent_id))
+            .map_err(|error| GatewayCommandError::Internal(format!(
+                "could not read production agent directory for {agent_id}: {error}"
+            )))?,
+    );
+    let resolve_agent_summaries = Arc::clone(&agent_summaries);
     let resolve_agent_name: Arc<dyn Fn(&str) -> String + Send + Sync> =
         Arc::new(move |candidate: &str| {
-            agent_summaries
+            resolve_agent_summaries
                 .iter()
                 .find(|summary| summary.id == candidate)
                 .map(|summary| summary.name.trim())
@@ -3294,6 +3302,101 @@ fn start_routed_provider_task(
         &mut provider_messages,
         Some(&workflow_location),
     );
+
+    let channel_store = session_workers
+        .open_channel_store(&agent_id)
+        .map_err(|error| GatewayCommandError::Internal(format!(
+            "could not open production channel store for {agent_id}: {error}"
+        )))?;
+    let channel_location = to_model_visible_path(channel_store.get_location())
+        .to_string_lossy()
+        .into_owned();
+    let channel_connections = session_workers
+        .list_agent_channels(&agent_id)
+        .map_err(|error| GatewayCommandError::Internal(format!(
+            "could not read production channel state for {agent_id}: {error}"
+        )))?;
+    append_channels_system_prompt(
+        &mut provider_messages,
+        &channel_connections,
+        Some(&channel_location),
+    );
+
+    let other_agents = agent_summaries
+        .iter()
+        .filter(|summary| summary.id != agent_id && !summary.is_group)
+        .map(|summary| AgentAddress {
+            id: summary.id.clone(),
+            name: summary.name.clone(),
+            description: (!summary.description.trim().is_empty())
+                .then(|| summary.description.clone()),
+            is_group: false,
+        })
+        .collect::<Vec<_>>();
+    let agent_groups = agent_summaries
+        .iter()
+        .filter(|summary| {
+            summary.is_group
+                && summary.member_ids.iter().any(|member_id| member_id == &agent_id)
+        })
+        .map(|summary| {
+            let members = summary
+                .member_ids
+                .iter()
+                .filter(|member_id| member_id.as_str() != agent_id)
+                .filter_map(|member_id| {
+                    agent_summaries
+                        .iter()
+                        .find(|candidate| candidate.id == *member_id && !candidate.is_group)
+                })
+                .map(|member| AgentAddress {
+                    id: member.id.clone(),
+                    name: member.name.clone(),
+                    description: (!member.description.trim().is_empty())
+                        .then(|| member.description.clone()),
+                    is_group: false,
+                })
+                .collect::<Vec<_>>();
+            AgentGroupAddress {
+                address: AgentAddress {
+                    id: summary.id.clone(),
+                    name: summary.name.clone(),
+                    description: (!summary.description.trim().is_empty())
+                        .then(|| summary.description.clone()),
+                    is_group: true,
+                },
+                members,
+            }
+        })
+        .collect::<Vec<_>>();
+    let agents_root_location = to_model_visible_path(session_workers.agents_root())
+        .to_string_lossy()
+        .into_owned();
+    append_agent_directory_system_prompt(
+        &mut provider_messages,
+        &other_agents,
+        &agent_groups,
+        Some(&agents_root_location),
+        generated_parent_agent_id.is_none(),
+    );
+
+    let (installed_mcp_servers, mcp_discovery_unavailable) =
+        match mcp_service.list_installed() {
+            Ok(installed) => (installed, false),
+            Err(error) => {
+                eprintln!(
+                    "[sand:mcp] connector discovery unavailable for provider turn agent={agent_id}: {error}"
+                );
+                (Vec::new(), true)
+            }
+        };
+    append_mcp_system_prompt_sections(
+        &mut provider_messages,
+        &installed_mcp_servers,
+        mcp_discovery_unavailable,
+        true,
+    );
+
     let firing_automation_id = args
         .get("automationWake")
         .and_then(serde_json::Value::as_object)

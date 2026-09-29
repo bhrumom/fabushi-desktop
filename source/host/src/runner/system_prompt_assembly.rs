@@ -600,3 +600,96 @@ pub fn append_memory_system_prompt(
         );
     }
 }
+
+#[cfg(test)]
+mod frozen_dynamic_section_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn system_content(messages: &[ProviderMessage]) -> &str {
+        messages
+            .iter()
+            .find(|message| message.role == "system")
+            .map(|message| message.content.as_str())
+            .expect("system message")
+    }
+
+    #[test]
+    fn dynamic_sections_preserve_frozen_order_and_dedupe() {
+        let mut messages = vec![ProviderMessage {
+            role: "system".into(),
+            content: "base".into(),
+        }];
+        append_workflows_system_prompt(&mut messages, Some("/agents/a/workflows"));
+        let channels = vec![ChannelConnection {
+            platform: "slack".into(),
+            label: "Ops".into(),
+            status: "configured",
+        }];
+        append_channels_system_prompt(&mut messages, &channels, Some("/agents/a/channels"));
+        let others = vec![AgentAddress {
+            id: "peer".into(),
+            name: "Peer".into(),
+            description: Some("Research".into()),
+            is_group: false,
+        }];
+        let groups = vec![AgentGroupAddress {
+            address: AgentAddress {
+                id: "group".into(),
+                name: "Team".into(),
+                description: None,
+                is_group: true,
+            },
+            members: others.clone(),
+        }];
+        append_agent_directory_system_prompt(&mut messages, &others, &groups, Some("/agents"), true);
+        let installed = vec![
+            json!({"name":"Acme","status":"connected","customInstructions":"Use raw rows."}),
+            json!({"name":"Ignored","status":"disconnected","customInstructions":"Do not render."}),
+        ];
+        append_mcp_system_prompt_sections(&mut messages, &installed, true, true);
+
+        append_channels_system_prompt(&mut messages, &channels, Some("/agents/a/channels"));
+        append_agent_directory_system_prompt(&mut messages, &others, &groups, Some("/agents"), true);
+        append_mcp_system_prompt_sections(&mut messages, &installed, true, true);
+
+        let content = system_content(&messages);
+        let workflows = content.find("Workflows are a GLOBAL").expect("workflows");
+        let channels = content.find("Channels: outside messaging surfaces").expect("channels");
+        let directory = content.find("Your teammates: the other agents").expect("agent directory");
+        let custom = content.find("## Connector custom instructions").expect("mcp custom");
+        let discovery = content.find("<mcp_status>").expect("mcp discovery");
+        assert!(workflows < channels && channels < directory && directory < custom && custom < discovery);
+        assert_eq!(content.matches("Channels: outside messaging surfaces").count(), 1);
+        assert_eq!(content.matches("Your teammates: the other agents").count(), 1);
+        assert_eq!(content.matches("## Connector custom instructions").count(), 1);
+        assert_eq!(content.matches("<mcp_status>").count(), 1);
+        assert!(!content.contains("Do not render."));
+    }
+
+    #[test]
+    fn feature_and_failure_gates_match_frozen_semantics() {
+        let mut messages = vec![ProviderMessage {
+            role: "system".into(),
+            content: "base".into(),
+        }];
+        append_agent_directory_system_prompt(
+            &mut messages,
+            &[AgentAddress {
+                id: "peer".into(),
+                name: "Peer".into(),
+                description: None,
+                is_group: false,
+            }],
+            &[],
+            Some("/agents"),
+            false,
+        );
+        assert!(!system_content(&messages).contains("Your teammates: the other agents"));
+
+        append_mcp_system_prompt_sections(&mut messages, &[], true, true);
+        assert!(system_content(&messages).contains("<mcp_status>"));
+        assert!(system_content(&messages).contains("temporarily unavailable"));
+    }
+}
+
