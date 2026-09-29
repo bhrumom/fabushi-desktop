@@ -1211,6 +1211,9 @@ fn restore_manifest(
                     },
                 );
             })),
+            on_log: Some(Arc::new(|message| {
+                eprintln!("[box-copy-in] {message}");
+            })),
             ..BoxStoreDownloadOptions::default()
         },
     );
