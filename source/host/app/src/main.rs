@@ -5430,7 +5430,7 @@ fn start_routed_provider_task(
                     .lock()
                     .ok()
                     .and_then(|usage| *usage)
-                    .map(|usage| mahayana_host_runtime::runner::turn_usage::TurnUsage {
+                    .map(|usage| mahayana_host_runtime::runner::TurnUsage {
                         input_tokens: usage.input_tokens,
                         output_tokens: usage.output_tokens,
                         cache_read_tokens: usage.cache_read_tokens,
