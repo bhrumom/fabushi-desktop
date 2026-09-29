@@ -83,5 +83,9 @@ where
         self.set_blob(ctx, blob_id, blob_data).await
     }
 
-    pub async fn flush<Ctx>(&self, _ctx: &Ctx) {}
+    pub fn flush_blocking(&self) {}
+
+    pub async fn flush<Ctx>(&self, _ctx: &Ctx) {
+        self.flush_blocking();
+    }
 }
