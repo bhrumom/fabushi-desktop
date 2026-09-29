@@ -917,6 +917,7 @@ struct LocalRoutedRunnerDeps {
 struct ProductionPendingWakeRuntime {
     gateway: Arc<Mutex<Weak<UnifiedGatewayApi>>>,
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
+    completion_revivals: Arc<CompletionRevivals>,
 }
 
 impl ProductionPendingWakeRuntime {
@@ -992,8 +993,18 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
         Err("production recreate-interrupted shell notice is not wired yet".into())
     }
 
-    fn revive_lost_subagent(&self, _wake: LostSubagentWake) -> Result<(), String> {
-        Err("production lost-subagent pending-wake revival is not wired yet".into())
+    fn revive_lost_subagent(&self, wake: LostSubagentWake) -> Result<(), String> {
+        self.completion_revivals
+            .handle_background_subagent_completion(SubagentCompletion {
+                parent_agent_id: wake.parent_agent_id,
+                subagent_agent_id: wake.subagent_agent_id,
+                title: wake.title,
+                subagent_type: wake.subagent_type,
+                status: "error".into(),
+                result: wake.result,
+                quiet_origin: wake.quiet_origin,
+            });
+        Ok(())
     }
 
     fn emit_async_tasks_for_agent(&self, agent_id: &str) {
@@ -6237,22 +6248,28 @@ fn main() {
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) = Arc::downgrade(&gateway_api);
 
-    // Re-arm only the CloudAgent durable subset here. PendingWakeRearm remains
-    // the single frozen state machine; shell/subagent rearm stay explicit
-    // manifest work until their shipping watcher owners are composed.
+    // Re-arm the durable CloudAgent and Subagent subsets through the single
+    // frozen PendingWakeRearm state machine. Shell watcher ownership remains
+    // explicit manifest work until its shipping owner is composed.
     if let Some(store) = transcript_runtime.pending_wake_store().cloned() {
         let rearm = PendingWakeRearm::new(
             Some(store.clone()),
             Arc::new(ProductionPendingWakeRuntime {
                 gateway: Arc::clone(&cloud_agent_completion_gateway_slot),
                 cloud_agent_watches: Arc::clone(&cloud_agent_watches),
+                completion_revivals: Arc::clone(&completion_revivals),
             }),
         );
         let now_ms = started_at_ms() as f64;
         for pending in store
             .list_pending()
             .into_iter()
-            .filter(|marker| marker.kind == PendingWakeKind::CloudAgent)
+            .filter(|marker| {
+                matches!(
+                    marker.kind,
+                    PendingWakeKind::CloudAgent | PendingWakeKind::Subagent
+                )
+            })
         {
             rearm.rearm_pending_wake(pending, now_ms, Some("host_startup"));
         }
