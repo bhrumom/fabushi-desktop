@@ -265,3 +265,36 @@ fn provider_terminal_retires_session_that_was_running_when_user_switched_away() 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn provider_terminal_retirement_is_safe_inside_existing_local_executor() {
+    let root = temp_root("retire-inside-local-executor");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&sessions));
+    let active = store.create_session(None, "user", None).expect("active");
+    let background = store.create_session(None, "user", None).expect("background");
+
+    for id in [&active.id, &background.id] {
+        sessions.close_agent_store_owner(id, true);
+        sessions.close_agent_db_owner(id, true);
+    }
+    store.write_active_agent_id(&active.id).expect("active pointer");
+
+    let runtime = ProductionTranscriptRuntime::new(Some(&root));
+    runtime
+        .session_runtime()
+        .resolve_background_session(&sessions, &background.id)
+        .expect("open background live session");
+    runtime.begin_provider_run(&background.id);
+    runtime.end_provider_run(&background.id);
+
+    let retired = futures::executor::block_on(async {
+        runtime.retire_idle_live_session(&sessions, &background.id)
+    });
+    assert_eq!(retired, Ok(true));
+    assert!(!runtime.session_runtime().is_live_session(&background.id));
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
