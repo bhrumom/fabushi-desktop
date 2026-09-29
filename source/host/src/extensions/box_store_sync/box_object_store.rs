@@ -44,6 +44,9 @@ pub trait BoxObjectStore: Send + Sync {
         dest_path: &Path,
         max_bytes: Option<u64>,
     ) -> Result<Option<u64>, String>;
+    fn prefetch_reads(&self, _keys: &[String]) -> Result<(), String> {
+        Ok(())
+    }
     fn put_from_file(&self, key: &str, src_path: &Path) -> Result<(), String>;
     fn list(&self, prefix: &str) -> Result<Vec<String>, String>;
     fn delete(&self, key: &str) -> Result<(), String>;
