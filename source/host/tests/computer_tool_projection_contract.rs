@@ -1,7 +1,8 @@
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
-use mahayana_host_runtime::extensions::inference::provider_session::ProviderSessionError;
+use mahayana_host_runtime::extensions::inference::provider_session::{ProviderSessionError, RoutedToolDefinition};
+use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::box_tool_access::{
     RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest, RunnerBoxWriteRequest,
 };
@@ -18,6 +19,7 @@ use mahayana_host_runtime::runner::host_computer_tool_dependencies::{
 use mahayana_host_runtime::runner::sand_auto_review::SandAutoReviewMode;
 use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     ComputerActionArgs, ComputerActionName, ComputerCoordinate, ComputerToolExecutor,
+    ComputerToolExposure, SandComputerToolBridge,
     ComputerUseResult, MouseButtonInput, ReportedComputerAction, ScrollDirectionInput,
     build_computer_action_sequence, describe_outcome, drag_path,
     persist_computer_screenshot, reported_batch_position, to_action,
@@ -338,4 +340,88 @@ fn production_computer_executor_uses_host_box_transport_and_persists_screenshot(
         persist_calls.lock().expect("persist").as_slice(),
         &[(vec![1, 2, 3], "image/webp".into())]
     );
+}
+
+
+#[derive(Default)]
+struct EmptyToolBridge;
+
+impl RoutedToolBridge for EmptyToolBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        Ok(Vec::new())
+    }
+
+    fn call_tool(
+        &self,
+        _tool: &RoutedToolDefinition,
+        _args: Value,
+        _tool_call_id: &str,
+    ) -> Result<Value, ProviderSessionError> {
+        Err(ProviderSessionError::Tool("unexpected delegated tool".into()))
+    }
+}
+
+#[test]
+fn computer_tool_exposure_matches_frozen_runner_roles() {
+    let executor: Arc<dyn ComputerToolExecutor> =
+        Arc::new(ProductionComputerToolExecutor::new(
+            Arc::new(ComputerTransportPort::default()) as Arc<dyn RunnerBoxResourcePort>,
+        ));
+
+    let full = SandComputerToolBridge::new(Arc::new(EmptyToolBridge), Arc::clone(&executor))
+        .with_exposure(ComputerToolExposure::Full)
+        .list_tools()
+        .expect("full tools");
+    assert!(full.iter().any(|tool| tool.name == "Computer"));
+    assert!(full.iter().any(|tool| tool.name == "Screenshot"));
+
+    let screenshot_only =
+        SandComputerToolBridge::new(Arc::new(EmptyToolBridge), Arc::clone(&executor))
+            .with_exposure(ComputerToolExposure::ScreenshotOnly);
+    let screenshot_tools = screenshot_only.list_tools().expect("screenshot tools");
+    assert!(!screenshot_tools.iter().any(|tool| tool.name == "Computer"));
+    assert!(screenshot_tools.iter().any(|tool| tool.name == "Screenshot"));
+
+    let disabled = SandComputerToolBridge::new(Arc::new(EmptyToolBridge), executor)
+        .with_exposure(ComputerToolExposure::Disabled)
+        .list_tools()
+        .expect("disabled tools");
+    assert!(disabled.is_empty());
+}
+
+#[test]
+fn production_computer_executor_checks_live_takeover_before_input_but_allows_screenshot() {
+    let port = Arc::new(ComputerTransportPort::default());
+    let takeover = Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let takeover_check = Arc::clone(&takeover);
+    let executor = ProductionComputerToolExecutor::new(
+        Arc::clone(&port) as Arc<dyn RunnerBoxResourcePort>,
+    )
+    .with_availability_check(Arc::new(move |args| {
+        if takeover_check.load(std::sync::atomic::Ordering::SeqCst)
+            && args.action != ComputerActionName::Screenshot
+        {
+            return Err(ProviderSessionError::Tool("human takeover".into()));
+        }
+        Ok(())
+    }));
+
+    let mut click = ComputerActionArgs::simple(ComputerActionName::Click);
+    click.x = Some(1);
+    click.y = Some(2);
+    let blocked = executor.execute(&click, "blocked").expect_err("takeover blocks input");
+    assert!(blocked.to_string().contains("human takeover"));
+    assert!(port.requests.lock().expect("requests").is_empty());
+
+    executor
+        .execute(
+            &ComputerActionArgs::simple(ComputerActionName::Screenshot),
+            "screenshot",
+        )
+        .expect("screenshot remains read only");
+    assert_eq!(port.requests.lock().expect("requests").len(), 1);
+
+    takeover.store(false, std::sync::atomic::Ordering::SeqCst);
+    executor.execute(&click, "released").expect("input after hand back");
+    assert_eq!(port.requests.lock().expect("requests").len(), 2);
 }
