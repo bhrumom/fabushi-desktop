@@ -397,6 +397,22 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "Preserves the frozen Grok MCP runtime lifecycle while adding only the approved dependency forwarding needed by Fabushi Box MCP parity: loadBoxMcpServers, listBoxMcpServers, listBoxMcpToolsRaw, and executeBoxMcpToolRaw are passed into the single SandMcpManager created by the existing runtime. No second manager, transport, or lifecycle owner is introduced."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/coordinator-runtime.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "52af61f060b59b7f1f6675a6c9b2b7c93a7f4e13",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/coordinator-runtime.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-runtime.test.ts",
+        "source/electron-main/coordinator/coordinator-launcher.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok Coordinator runtime ownership/relaunch model while adapting one Fabushi-approved resource-lifetime boundary: the shipping Mahayana Host owns a managed loopback box exec-daemon on a single fixed production endpoint, so renderer-port replacement and explicit Coordinator restart must retire the previous Coordinator/Host generation completely before launching the successor. Intentional retirement is fenced from crash-relaunch accounting, and repeated renderer requests coalesce behind the same generation replacement. This prevents overlapping shipping Host generations from racing for the managed daemon without moving Host or Runner responsibilities into Electron Main or collapsing the independent Coordinator/Host/Runner failure boundaries."
     }
   ]
 }
