@@ -439,6 +439,147 @@ pub fn append_mcp_system_prompt_sections(
 }
 
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RunnerPromptRole {
+    Main,
+    ComputerUseSubagent,
+    BrowserUseSubagent,
+    OtherSubagent,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RemoteBoxPromptState {
+    pub role: RunnerPromptRole,
+    pub available: bool,
+    pub runtime_state: String,
+    pub desktop_capable: bool,
+    pub desktop_ready: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ComputerPromptState {
+    pub role: RunnerPromptRole,
+    pub box_available: bool,
+    pub desktop_capable: bool,
+    pub desktop_ready: bool,
+    pub human_takeover_pending: bool,
+    pub browser_use_offered: bool,
+    pub window_index: Option<u32>,
+}
+
+pub fn render_remote_box_system_prompt(state: &RemoteBoxPromptState) -> String {
+    if !state.available {
+        return format!(
+            "## Your box\nThe shipping box runtime is unavailable this turn (runtime state: {}). Do not claim that Read, Shell, browser, or box desktop actions succeeded. If a box tool fails, report the unavailable state and retry only after the runtime becomes available.",
+            state.runtime_state.trim()
+        );
+    }
+
+    match state.role {
+        RunnerPromptRole::ComputerUseSubagent => {
+            if !state.desktop_capable {
+                return "## Your box\nThe box filesystem and Shell are available, but this shipping runtime has no desktop monitor capability. Computer input is unavailable; do not invent a screen or browser window.".into();
+            }
+            let readiness = if state.desktop_ready {
+                "This agent's desktop is assigned and ready."
+            } else {
+                "This agent's desktop is supported but is not assigned yet; the first real Computer/browser operation may initialize it."
+            };
+            format!(
+                "## Your box\nYou drive this agent's own desktop on the box: a persistent Linux machine shared by all of this user's agents, while each agent gets its own desktop. Read, Shell, and the desktop share the box filesystem; files, installed tools, and browser logins persist across turns. The user's computer is a separate machine. {readiness}"
+            )
+        }
+        RunnerPromptRole::BrowserUseSubagent => {
+            if !state.desktop_capable {
+                return "## Your box\nThe box filesystem and Shell are available, but this shipping runtime has no desktop/browser monitor capability. Browser UI work is unavailable this turn.".into();
+            }
+            let readiness = if state.desktop_ready { "The assigned desktop/browser is ready." } else { "The desktop/browser is supported and will be initialized by the real box runtime when needed." };
+            format!(
+                "## Your box\nYou drive this agent's box browser on the persistent shared Linux box. Read, Shell, and the browser share one filesystem; files and browser logins persist across turns. Each agent has its own desktop/browser window on the shared machine. {readiness}"
+            )
+        }
+        RunnerPromptRole::Main | RunnerPromptRole::OtherSubagent => {
+            if !state.desktop_capable {
+                return "## Your box\nYou have the persistent shared Linux box with Read and Shell. This shipping runtime does not currently provide a desktop monitor, so do not claim that Computer, Screenshot, or browser-desktop interaction is available. The box and the user's computer are separate filesystems.".into();
+            }
+            let readiness = if state.desktop_ready {
+                "Your desktop assignment is currently ready."
+            } else {
+                "A desktop is supported, but no live desktop assignment exists yet; the shipping box runtime will establish one when a desktop-capable operation actually needs it."
+            };
+            format!(
+                "## Your box\nAlongside the user's computer you have one persistent Linux box shared by all of this user's agents. Read and Shell use the shared filesystem; each agent gets its own desktop/window on that shared machine, so agents share the computer but not each other's screen. Files, installed tools, and browser logins persist across turns. The box and the user's computer are separate machines and filesystems. {readiness}"
+            )
+        }
+    }
+}
+
+pub fn append_remote_box_system_prompt(
+    messages: &mut Vec<ProviderMessage>,
+    state: &RemoteBoxPromptState,
+) {
+    let prompt = render_remote_box_system_prompt(state);
+    append_unique_system_section(messages, &prompt, "## Your box");
+}
+
+pub fn render_computer_system_prompt(state: &ComputerPromptState) -> String {
+    if state.role == RunnerPromptRole::OtherSubagent {
+        return String::new();
+    }
+    if !state.box_available || !state.desktop_capable {
+        return "## Computer\nComputer control is unavailable in the current shipping box runtime. Do not claim to see or control a desktop, and do not substitute Shell-driven GUI automation for unavailable Computer capability.".into();
+    }
+    if state.human_takeover_pending {
+        return "## Computer\nThe user currently has control of this box desktop through the shipping handoff owner. You may use the read-only Screenshot surface if it is available, but do not send clicks, typing, keys, scrolling, drag, move, or wait actions until the user hands control back.".into();
+    }
+
+    match state.role {
+        RunnerPromptRole::ComputerUseSubagent => {
+            let display = state.window_index
+                .map(|index| format!(" Your shipping desktop window index is {index}."))
+                .unwrap_or_default();
+            format!(
+                "## Computer\nYou drive this box desktop with the Computer tool: screenshot, click, move, drag, type, key, scroll, and wait. Work in a see-act-verify loop and rely on the fresh screenshot returned by Computer instead of remembered coordinates. Stop and report when a human-only login, 2FA, captcha, payment, or other handoff is required.{display}"
+            )
+        }
+        RunnerPromptRole::BrowserUseSubagent => {
+            "## Browser\nYou drive this box browser with the browser tool surface. Computer/Screenshot are not exposed to this Runner role; use browser state and element references rather than pixel coordinates.".into()
+        }
+        RunnerPromptRole::Main => {
+            let delegate = if state.browser_use_offered {
+                "Delegate browser interaction to browserUse first and desktop-only interaction to computerUse."
+            } else {
+                "Delegate desktop interaction to computerUse."
+            };
+            let readiness = if state.desktop_ready {
+                "The desktop assignment is ready."
+            } else {
+                "The desktop is supported but will be initialized by the shipping runtime when a delegated desktop operation needs it."
+            };
+            format!(
+                "## The box desktop\nYou have the read-only Screenshot tool for this agent's own box desktop, but you do not have interactive Computer input in the main Runner. {delegate} While a computerUse subagent is operating the shared screen, limit yourself to Screenshot and do not compete for input. {readiness}"
+            )
+        }
+        RunnerPromptRole::OtherSubagent => String::new(),
+    }
+}
+
+pub fn append_computer_system_prompt(
+    messages: &mut Vec<ProviderMessage>,
+    state: &ComputerPromptState,
+) {
+    let prompt = render_computer_system_prompt(state);
+    if prompt.starts_with("## The box desktop") {
+        append_unique_system_section(messages, &prompt, "## The box desktop");
+    } else {
+        append_unique_system_section(messages, &prompt, "## Computer");
+        if prompt.starts_with("## Browser") {
+            append_unique_system_section(messages, &prompt, "## Browser");
+        }
+    }
+}
+
+
 pub fn resolve_combined_memory_system_prompt(
     user_recall: &UserMemoryRecall,
     user_memory_dir: Option<&str>,
