@@ -12523,7 +12523,7 @@
       "targetPath": "source/host/src/extensions/inference/cursor_web_tools.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "93940a71771562f35b502f0c13eede862f187cdd",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12532,9 +12532,11 @@
       ],
       "testEvidence": [
         "source/host/tests/inference_extension_composition_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/cursor_inference_transport_contract.rs"
       ],
-      "notes": "Rust Host now owns frozen web-search request/model projection and web-fetch success/error/missing-result normalization behind a typed CursorWebBackend port. Final remains withheld until authenticated Cursor backend transport and generated AiService request/response bindings are wired into the shipping backend factory."
+      "notes": "Rust Host preserves frozen web-search request/model projection and web-fetch success/error/missing-result normalization, and now production-wires HostAuth access-token/machine-id identity, backend URL/ghost-mode resolution, request-id observation, protobuf request/response codecs, Cursor unary transport, and the shipping backend factory.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/inference/extension.ts",
@@ -12648,7 +12650,7 @@
       "targetPath": "source/host/src/extensions/inference/sand_model_experiment.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "9b7286a755776d235dbcc33eebf5f56592e2fd15",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12658,10 +12660,11 @@
       ],
       "testEvidence": [
         "source/host/tests/sand_model_experiment_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/inference_extension_composition_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port preserves frozen control/treatment selection, the claude-opus-4-8 max-mode medium fallback, automation-specific configured-model precedence, and lazy config reads for inactive/control paths. Final remains withheld until the shipping inference/turn model resolver consumes this module from production experiment state instead of leaving selection isolated."
+      "notes": "Rust Host preserves frozen control/treatment selection, the claude-opus-4-8 max-mode medium fallback, automation-specific configured-model precedence, and lazy config reads; the shipping ProductionAgentInferenceOwner now consumes live Host experiment state in resolve_requested_model(), so model selection is production-wired rather than isolated."
     },
     {
       "referencePath": "source/host/extensions/local-exec/extension.ts",
