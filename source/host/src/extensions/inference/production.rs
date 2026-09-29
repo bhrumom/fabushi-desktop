@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::extensions::auth::extension::HostAuthExtension;
 use crate::extensions::experiments::HostExperimentsExtension;
@@ -6,8 +6,12 @@ use crate::extensions::settings::settings_service::SettingsService;
 
 use super::cursor_inference_transport::CursorInferenceAuth;
 use super::cursor_session::{
-    RequestedModel, ResolveRequestedModelInputs, SandSessionOptions,
-    resolve_sand_requested_model,
+    RequestLineage, RequestedModel, ResolveRequestedModelInputs, SandAttachedMediaUrlProvider,
+    SandSessionOptions, resolve_sand_requested_model,
+};
+use super::generated_inference_codec::InferenceReason;
+use super::sand_labeling::{
+    FollowupLabelingTracker, LabelMessage, SandLabelingClient, prepare_post_turn_labeling,
 };
 use super::sand_model_experiment::{
     SandAgentModelParameter, SandAgentModelSelection, select_sand_experiment_turn_model,
@@ -227,6 +231,10 @@ impl AgentInferenceOwner for ProductionAgentInferenceOwner {}
 struct ProductionCursorInferenceAuth {
     auth: Arc<HostAuthExtension>,
     requested_model: RequestedModel,
+    session_options: SandSessionOptions,
+    labeling_client: Arc<SandLabelingClient>,
+    labeling_tracker: Arc<Mutex<FollowupLabelingTracker>>,
+    last_request_id: Arc<Mutex<Option<String>>>,
 }
 
 impl CursorInferenceAuth for ProductionCursorInferenceAuth {
@@ -241,6 +249,85 @@ impl CursorInferenceAuth for ProductionCursorInferenceAuth {
     fn requested_model(&self) -> RequestedModel {
         self.requested_model.clone()
     }
+
+    fn conversation_id(&self) -> Option<String> {
+        self.session_options.conversation_id.clone()
+    }
+
+    fn inference_reason(&self) -> Option<InferenceReason> {
+        self.session_options.inference_reason
+    }
+
+    fn lineage(&self) -> Option<RequestLineage> {
+        self.session_options.lineage.clone()
+    }
+
+    fn on_request_id(&self, request_id: &str, messages: &[super::provider_session::ProviderMessage]) {
+        *self
+            .last_request_id
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(request_id.to_string());
+        if self.session_options.skip_labeling
+            || self.session_options.is_summarization_session
+            || self.session_options.is_computer_use_subagent
+        {
+            return;
+        }
+        let Some(conversation_id) = self.session_options.conversation_id.as_deref() else {
+            return;
+        };
+        let markers = messages
+            .iter()
+            .map(|_| LabelMessage::default())
+            .collect::<Vec<_>>();
+        let classification = self
+            .labeling_tracker
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .observe_stream(
+                conversation_id,
+                request_id,
+                &self.requested_model.model_id,
+                &markers,
+            );
+        if let Some(classification) = classification {
+            self.labeling_client
+                .spawn_followup_classification(classification, messages.to_vec());
+        }
+    }
+
+    fn record_post_turn_labeling(&self, messages: &[super::provider_session::ProviderMessage]) {
+        if self.session_options.skip_labeling
+            || self.session_options.is_summarization_session
+            || self.session_options.is_computer_use_subagent
+        {
+            return;
+        }
+        let Some(conversation_id) = self.session_options.conversation_id.as_deref() else {
+            return;
+        };
+        let request_id = self
+            .last_request_id
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        let Some(request_id) = request_id else {
+            return;
+        };
+        let markers = messages
+            .iter()
+            .map(|_| LabelMessage::default())
+            .collect::<Vec<_>>();
+        if let Some(labeling) = prepare_post_turn_labeling(
+            conversation_id,
+            &request_id,
+            &self.requested_model.model_id,
+            &markers,
+        ) {
+            self.labeling_client
+                .spawn_post_turn_labeling(labeling, messages.to_vec());
+        }
+    }
 }
 
 /// Shipping Grok-shaped inference extension surface.
@@ -252,6 +339,9 @@ pub struct ProductionInferenceExtension {
     runtime: InferenceExtensionRuntime<Arc<ProductionAgentInferenceOwner>>,
     auth: Arc<HostAuthExtension>,
     service: HostInferenceService<ProductionInferenceSettings>,
+    labeling_client: Arc<SandLabelingClient>,
+    labeling_tracker: Arc<Mutex<FollowupLabelingTracker>>,
+    attached_media: SandAttachedMediaUrlProvider,
 }
 
 impl ProductionInferenceExtension {
@@ -284,10 +374,22 @@ impl ProductionInferenceExtension {
         &self,
         session_options: Option<&SandSessionOptions>,
     ) -> Arc<dyn CursorInferenceAuth> {
+        let session_options = session_options.cloned().unwrap_or_default();
         Arc::new(ProductionCursorInferenceAuth {
             auth: Arc::clone(&self.auth),
-            requested_model: self.runtime.port().resolve_requested_model(session_options),
+            requested_model: self
+                .runtime
+                .port()
+                .resolve_requested_model(Some(&session_options)),
+            session_options,
+            labeling_client: Arc::clone(&self.labeling_client),
+            labeling_tracker: Arc::clone(&self.labeling_tracker),
+            last_request_id: Arc::new(Mutex::new(None)),
         })
+    }
+
+    pub fn attached_media_provider(&self) -> SandAttachedMediaUrlProvider {
+        self.attached_media.clone()
     }
 
     pub fn create_web_search(
@@ -324,6 +426,8 @@ pub fn start_production_inference_extension(
         settings: Arc::clone(&settings),
     });
     let ready_auth = Arc::clone(&auth);
+    let labeling_client = Arc::new(SandLabelingClient::production(Arc::clone(&auth)));
+    let attached_media = SandAttachedMediaUrlProvider::production(Arc::clone(&auth));
     let service = HostInferenceService::new(ProductionInferenceSettings::new(settings));
     ProductionInferenceExtension {
         runtime: InferenceExtensionRuntime::new(
@@ -332,5 +436,8 @@ pub fn start_production_inference_extension(
         ),
         auth,
         service,
+        labeling_client,
+        labeling_tracker: Arc::new(Mutex::new(FollowupLabelingTracker::default())),
+        attached_media,
     }
 }
