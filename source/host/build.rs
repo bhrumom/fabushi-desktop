@@ -473,21 +473,132 @@ fn cloud_trace_field_is_required(type_name: &str, field: &CloudTraceGeneratedFie
     }
 }
 
-fn cloud_trace_child_types(field: &CloudTraceGeneratedField) -> Vec<&str> {
-    match &field.kind {
-        CloudTraceGeneratedFieldKind::Message {
-            child_type: Some(child_type),
-            ..
-        } => vec![child_type.as_str()],
-        CloudTraceGeneratedFieldKind::Map {
-            value:
-                CloudTraceGeneratedMapValueKind::Message {
-                    child_type: Some(child_type),
-                    ..
+fn add_cloud_trace_well_known_types(
+    defs: &mut BTreeMap<String, CloudTraceGeneratedMessage>,
+    symbol_to_types: &mut BTreeMap<String, BTreeSet<String>>,
+) {
+    // @bufbuild/protobuf supplies these canonical proto3 well-known messages
+    // outside the recovered *_pb.ts tree. Keep their standard protobuf schemas
+    // explicit so generated aiserver.v1 fields such as CallMcpToolResult.result
+    // remain fully decoded rather than becoming opaque fallbacks.
+    let scalar = |number, proto_name: &str, scalar, oneof: Option<&str>| CloudTraceGeneratedField {
+        number,
+        proto_name: proto_name.to_string(),
+        json_name: snake_to_lower_camel(proto_name),
+        kind: CloudTraceGeneratedFieldKind::Scalar(scalar),
+        repeated: false,
+        optional: false,
+        oneof: oneof.map(str::to_string),
+    };
+    let enum_field = |number, proto_name: &str, oneof: Option<&str>| CloudTraceGeneratedField {
+        number,
+        proto_name: proto_name.to_string(),
+        json_name: snake_to_lower_camel(proto_name),
+        kind: CloudTraceGeneratedFieldKind::Enum,
+        repeated: false,
+        optional: false,
+        oneof: oneof.map(str::to_string),
+    };
+    let message = |number, proto_name: &str, child_symbol: &str, child_type: &str, repeated| CloudTraceGeneratedField {
+        number,
+        proto_name: proto_name.to_string(),
+        json_name: snake_to_lower_camel(proto_name),
+        kind: CloudTraceGeneratedFieldKind::Message {
+            child_symbol: child_symbol.to_string(),
+            child_type: Some(child_type.to_string()),
+        },
+        repeated,
+        optional: false,
+        oneof: None,
+    };
+
+    defs.insert(
+        "google.protobuf.Struct".to_string(),
+        CloudTraceGeneratedMessage {
+            fields: vec![CloudTraceGeneratedField {
+                number: 1,
+                proto_name: "fields".to_string(),
+                json_name: "fields".to_string(),
+                kind: CloudTraceGeneratedFieldKind::Map {
+                    key_scalar: 9,
+                    value: CloudTraceGeneratedMapValueKind::Message {
+                        child_symbol: "Value".to_string(),
+                        child_type: Some("google.protobuf.Value".to_string()),
+                    },
                 },
-            ..
-        } => vec![child_type.as_str()],
-        _ => Vec::new(),
+                repeated: false,
+                optional: false,
+                oneof: None,
+            }],
+        },
+    );
+    defs.insert(
+        "google.protobuf.Value".to_string(),
+        CloudTraceGeneratedMessage {
+            fields: vec![
+                enum_field(1, "null_value", Some("kind")),
+                scalar(2, "number_value", 1, Some("kind")),
+                scalar(3, "string_value", 9, Some("kind")),
+                scalar(4, "bool_value", 8, Some("kind")),
+                CloudTraceGeneratedField {
+                    number: 5,
+                    proto_name: "struct_value".to_string(),
+                    json_name: "structValue".to_string(),
+                    kind: CloudTraceGeneratedFieldKind::Message {
+                        child_symbol: "Struct".to_string(),
+                        child_type: Some("google.protobuf.Struct".to_string()),
+                    },
+                    repeated: false,
+                    optional: false,
+                    oneof: Some("kind".to_string()),
+                },
+                CloudTraceGeneratedField {
+                    number: 6,
+                    proto_name: "list_value".to_string(),
+                    json_name: "listValue".to_string(),
+                    kind: CloudTraceGeneratedFieldKind::Message {
+                        child_symbol: "ListValue".to_string(),
+                        child_type: Some("google.protobuf.ListValue".to_string()),
+                    },
+                    repeated: false,
+                    optional: false,
+                    oneof: Some("kind".to_string()),
+                },
+            ],
+        },
+    );
+    defs.insert(
+        "google.protobuf.ListValue".to_string(),
+        CloudTraceGeneratedMessage {
+            fields: vec![message(
+                1,
+                "values",
+                "Value",
+                "google.protobuf.Value",
+                true,
+            )],
+        },
+    );
+    defs.insert(
+        "google.protobuf.Timestamp".to_string(),
+        CloudTraceGeneratedMessage {
+            fields: vec![
+                scalar(1, "seconds", 3, None),
+                scalar(2, "nanos", 5, None),
+            ],
+        },
+    );
+
+    for (symbol, type_name) in [
+        ("Struct", "google.protobuf.Struct"),
+        ("Value", "google.protobuf.Value"),
+        ("ListValue", "google.protobuf.ListValue"),
+        ("Timestamp", "google.protobuf.Timestamp"),
+    ] {
+        symbol_to_types
+            .entry(symbol.to_string())
+            .or_default()
+            .insert(type_name.to_string());
     }
 }
 
@@ -505,6 +616,7 @@ fn generate_cloud_agent_trace_schema(manifest_dir: &std::path::Path) {
             .unwrap_or_else(|error| panic!("read generated protobuf TypeScript {}: {error}", path.display()));
         parse_cloud_trace_message_definitions(&content, &mut defs, &mut symbol_to_types);
     }
+    add_cloud_trace_well_known_types(&mut defs, &mut symbol_to_types);
 
     let parent_names = defs.keys().cloned().collect::<Vec<_>>();
     for parent_type in parent_names {
