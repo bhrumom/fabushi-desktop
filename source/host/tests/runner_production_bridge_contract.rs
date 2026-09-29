@@ -108,6 +108,8 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
             browser_executor: None,
             computer_executor: None,
             file_transfer_executor: None,
+            external_machine_executor: None,
+            external_shell_review: None,
             mcp_management_sink: None,
             send_message_sink: None,
             reaction_sink: None,
@@ -126,6 +128,8 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
     assert!(!composition.has_box_resources());
     assert!(!composition.has_browser_executor());
     assert!(!composition.has_computer_executor());
+    assert!(!composition.has_external_machine_executor());
+    assert!(!composition.has_external_shell_review());
     assert!(!composition.has_mcp_management_sink());
     assert!(!composition.has_send_message_sink());
     assert!(!composition.has_reaction_sink());
@@ -154,6 +158,8 @@ fn production_bridge_projects_mcp_management_into_canonical_turn_composition() {
             browser_executor: None,
             computer_executor: None,
             file_transfer_executor: None,
+            external_machine_executor: None,
+            external_shell_review: None,
             mcp_management_sink: Some(Arc::new(EmptyMcpManagementSink)),
             send_message_sink: None,
             reaction_sink: None,

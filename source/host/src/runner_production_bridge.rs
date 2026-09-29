@@ -15,6 +15,9 @@ use crate::runner::tools::sand_reaction_tool::ReactionSink;
 use crate::runner::tools::sand_browser_tools::BrowserToolExecutor;
 use crate::runner::tools::sand_computer_tool::ComputerToolExecutor;
 use crate::runner::tools::sand_file_transfer_tools::FileTransferExecutor;
+use crate::runner::tools::sand_external_machine_tools::{
+    ExternalMachineExecutor, ExternalShellAutoReviewCallback,
+};
 use crate::runner::tools::sand_mcp_management_tools::McpManagementSink;
 use crate::runner::tools::send_message_tool::SendMessageSink;
 use crate::runner::turn_agent_composition::TurnAgentComposition;
@@ -47,6 +50,8 @@ pub struct ProductionRunnerCompositionInput {
     pub browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     pub computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
     pub file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
+    pub external_machine_executor: Option<Arc<dyn ExternalMachineExecutor>>,
+    pub external_shell_review: Option<ExternalShellAutoReviewCallback>,
     pub mcp_management_sink: Option<Arc<dyn McpManagementSink>>,
     pub send_message_sink: Option<Arc<dyn SendMessageSink>>,
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
@@ -100,6 +105,12 @@ pub fn create_production_runner_composition(
     }
     if let Some(file_transfer_executor) = input.file_transfer_executor {
         composition = composition.with_file_transfer_executor(file_transfer_executor);
+    }
+    if let Some(external_machine_executor) = input.external_machine_executor {
+        composition = composition.with_external_machine_executor(external_machine_executor);
+    }
+    if let Some(external_shell_review) = input.external_shell_review {
+        composition = composition.with_external_shell_review(external_shell_review);
     }
     if let Some(mcp_management_sink) = input.mcp_management_sink {
         composition = composition.with_mcp_management_sink(mcp_management_sink);

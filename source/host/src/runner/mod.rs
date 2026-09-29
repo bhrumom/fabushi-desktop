@@ -98,3 +98,4 @@ pub mod remote_box_resources;
 
 pub mod host_computer_tool_dependencies;
 pub mod host_file_transfer_dependencies;
+pub mod host_external_machine_dependencies;

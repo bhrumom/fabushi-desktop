@@ -263,7 +263,11 @@ use mahayana_host_runtime::runner::tools::sand_browser_tools::{
 };
 use mahayana_host_runtime::runner::host_computer_tool_dependencies::ProductionComputerToolExecutor;
 use mahayana_host_runtime::runner::host_file_transfer_dependencies::ProductionFileTransferExecutor;
+use mahayana_host_runtime::runner::host_external_machine_dependencies::ProductionExternalMachineExecutor;
 use mahayana_host_runtime::runner::tools::sand_file_transfer_tools::FileTransferExecutor;
+use mahayana_host_runtime::runner::tools::sand_external_machine_tools::{
+    ExternalMachineExecutor, ExternalMachineShellArgs, ExternalShellAutoReviewCallback,
+};
 use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     ComputerAutoReviewCallback, ComputerPersistImageCallback, ComputerToolExecutor,
     to_exact_action_value, validate_computer_action,
@@ -3784,6 +3788,108 @@ fn start_routed_provider_task(
                     })
                 },
             );
+
+            let external_shell_gate = Arc::clone(&auto_review_gate);
+            let external_shell_auth = Arc::clone(&worker_auth);
+            let external_shell_controller = Arc::clone(&worker_auto_review_controller);
+            let external_shell_cancellation = worker_cancellation.clone();
+            let external_shell_agent_id = agent_id.clone();
+            let external_shell_request_source = auto_review_request_source.clone();
+            let external_shell_context = auto_review_context
+                .iter()
+                .map(|message| serde_json::json!({"role": message.role, "content": message.content}))
+                .collect::<Vec<_>>();
+            let external_shell_review: ExternalShellAutoReviewCallback = Arc::new(
+                move |request: &ExternalMachineShellArgs| {
+                    external_shell_gate.assert_no_pending_approval()
+                        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                    let mode = external_shell_gate.current_modes().host_shell;
+                    let approval_identity =
+                        external_shell_gate.shell_approval_identity(ShellApprovalSurface::HostShell);
+                    if mode == SandAutoReviewMode::Off {
+                        external_shell_gate.mark_shell_side_effect_start(ShellApprovalSurface::HostShell);
+                        return Ok(None);
+                    }
+                    let instructions = external_shell_gate.user_instructions();
+                    let risk_target = serde_json::json!({
+                        "action": "shell",
+                        "arguments": {
+                            "command": request.command,
+                            "working_directory": request.working_directory,
+                            "surface": "host_machine",
+                            "approval_identity": approval_identity,
+                            "allow_instructions": instructions.as_ref().map(|value| &value.allow_instructions),
+                            "block_instructions": instructions.as_ref().map(|value| &value.block_instructions),
+                        }
+                    });
+                    let classifier_cancellation = external_shell_cancellation.clone();
+                    let mut classifier =
+                        create_sand_backend_smart_mode_classifier_executor_with_cancellation(
+                            Arc::clone(&external_shell_auth),
+                            Arc::new(move || classifier_cancellation.is_cancelled()),
+                        )
+                        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                    let classifier_mode = if mode == SandAutoReviewMode::Shadow { "shadow" } else { "enforce" };
+                    let decision = run_sand_auto_review_classifier(
+                        &mut classifier,
+                        &request.tool_call_id,
+                        &external_shell_agent_id,
+                        classifier_mode,
+                        || risk_target.clone(),
+                        || Ok(external_shell_context.clone()),
+                        &[],
+                        "Auto-review could not classify this shell command.",
+                    )
+                    .map_err(|error| ProviderSessionError::Tool(format!("{error:?}")))?;
+                    if mode == SandAutoReviewMode::Shadow {
+                        external_shell_gate.mark_shell_side_effect_start(ShellApprovalSurface::HostShell);
+                        return Ok(None);
+                    }
+                    let (reason, proposed_rule) = match decision {
+                        AutoReviewClassifierDecision::Allow => {
+                            external_shell_gate.mark_shell_side_effect_start(ShellApprovalSurface::HostShell);
+                            return Ok(None);
+                        }
+                        AutoReviewClassifierDecision::Reject { reason } => return Ok(Some(reason)),
+                        AutoReviewClassifierDecision::Block { reason, proposed_rule } => (reason, proposed_rule),
+                    };
+                    let identity_before_approval = approval_identity.clone();
+                    let recheck_gate = Arc::clone(&external_shell_gate);
+                    let decision = request_sand_shell_approval(
+                        external_shell_controller.as_ref(),
+                        &ShellApprovalRequest {
+                            target: ShellApprovalTarget {
+                                surface: mahayana_host_runtime::runner::sand_auto_review::SandAutoReviewSurface::HostShell,
+                                description: Some("Run a shell command on the user's computer".into()),
+                                working_directory: Some(request.working_directory.clone()),
+                            },
+                            fingerprint: fingerprint_sand_auto_review_target(&risk_target),
+                            reason: reason.clone(),
+                            command: request.command.clone(),
+                            proposed_rule,
+                            expiry_policy: sand_auto_review_approval_expiry_policy(&external_shell_request_source),
+                        },
+                        |_| Ok(()),
+                        move |_| {
+                            let current = recheck_gate.shell_approval_identity(ShellApprovalSurface::HostShell);
+                            if current == identity_before_approval {
+                                Ok(())
+                            } else {
+                                Err("Shell approval context changed while awaiting review".into())
+                            }
+                        },
+                    ).map_err(ProviderSessionError::Tool)?;
+                    Ok(match decision {
+                        SandAutoReviewDecision::Approved => {
+                            external_shell_gate.mark_shell_side_effect_start(ShellApprovalSurface::HostShell);
+                            None
+                        }
+                        SandAutoReviewDecision::Denied { reason: denied } => {
+                            Some(if denied.trim().is_empty() { reason } else { denied })
+                        }
+                    })
+                },
+            );
             let browser_media_sessions = Arc::clone(&worker_sessions);
             let computer_media_sessions = Arc::clone(&worker_sessions);
             let computer_review_box = Arc::clone(&box_resources);
@@ -4496,6 +4602,13 @@ fn start_routed_provider_task(
                     agent_id.clone(),
                 ),
             );
+            let external_machine_executor: Arc<dyn ExternalMachineExecutor> = Arc::new(
+                ProductionExternalMachineExecutor::new(
+                    Arc::clone(&local_exec),
+                    Arc::clone(&local_tool_permission),
+                    agent_id.clone(),
+                ),
+            );
             let worker_provider_usage = Arc::new(Mutex::new(None::<ProviderTokenUsage>));
             let usage_store = Arc::clone(&worker_provider_usage);
             let usage_inference = Arc::clone(&inference);
@@ -4532,6 +4645,8 @@ fn start_routed_provider_task(
                     browser_executor: Some(browser_executor),
                     computer_executor: Some(computer_executor),
                     file_transfer_executor: Some(file_transfer_executor),
+                    external_machine_executor: Some(external_machine_executor),
+                    external_shell_review: Some(external_shell_review),
                     mcp_management_sink: Some(Arc::new(McpHostServiceManagementSink::new(
                         Arc::clone(&worker_mcp_service),
                         Some(agent_id.clone()),

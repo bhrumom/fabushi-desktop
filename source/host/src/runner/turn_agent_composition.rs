@@ -30,6 +30,9 @@ use super::tools::sand_subagent_management_tools::SubagentSteerReviewCallback;
 use super::tools::sand_browser_tools::BrowserToolExecutor;
 use super::tools::sand_computer_tool::ComputerToolExecutor;
 use super::tools::sand_file_transfer_tools::FileTransferExecutor;
+use super::tools::sand_external_machine_tools::{
+    ExternalMachineExecutor, ExternalShellAutoReviewCallback,
+};
 use super::tools::sand_mcp_management_tools::{McpManagementSink, McpManagementToolBridge};
 use super::tools::sand_state_tool::{
     RoutineAutoReviewCallback, RoutinePostWriteCallback, SandStateWriter,
@@ -62,6 +65,8 @@ pub struct TurnAgentComposition {
     browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
     file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
+    external_machine_executor: Option<Arc<dyn ExternalMachineExecutor>>,
+    external_shell_review: Option<ExternalShellAutoReviewCallback>,
     mcp_management_sink: Option<Arc<dyn McpManagementSink>>,
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
@@ -104,6 +109,8 @@ impl TurnAgentComposition {
             browser_executor: None,
             computer_executor: None,
             file_transfer_executor: None,
+            external_machine_executor: None,
+            external_shell_review: None,
             mcp_management_sink: None,
             send_message_sink: None,
             reaction_sink: None,
@@ -208,6 +215,30 @@ impl TurnAgentComposition {
 
     pub fn has_file_transfer_executor(&self) -> bool {
         self.file_transfer_executor.is_some()
+    }
+
+    pub fn with_external_machine_executor(
+        mut self,
+        executor: Arc<dyn ExternalMachineExecutor>,
+    ) -> Self {
+        self.external_machine_executor = Some(executor);
+        self
+    }
+
+    pub fn has_external_machine_executor(&self) -> bool {
+        self.external_machine_executor.is_some()
+    }
+
+    pub fn with_external_shell_review(
+        mut self,
+        review: ExternalShellAutoReviewCallback,
+    ) -> Self {
+        self.external_shell_review = Some(review);
+        self
+    }
+
+    pub fn has_external_shell_review(&self) -> bool {
+        self.external_shell_review.is_some()
     }
 
     pub fn with_mcp_management_sink(
@@ -422,6 +453,8 @@ impl TurnAgentComposition {
                 browser_executor: self.browser_executor.clone(),
                 computer_executor: self.computer_executor.clone(),
                 file_transfer_executor: self.file_transfer_executor.clone(),
+                external_machine_executor: self.external_machine_executor.clone(),
+                external_shell_review: self.external_shell_review.clone(),
                 send_message_sink: self.send_message_sink.clone(),
                 reaction_sink: self.reaction_sink.clone(),
                 agent_management_sink: self.agent_management_sink.clone(),

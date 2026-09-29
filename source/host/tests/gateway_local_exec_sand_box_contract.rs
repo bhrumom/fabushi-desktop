@@ -194,3 +194,76 @@ fn oversized_file_and_blocked_gate_fail_before_provider_side_effect() {
 
     assert_eq!(DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, 100 * 1024 * 1024);
 }
+
+
+#[test]
+fn exec_manager_streams_shell_and_read_through_permissioned_provider() {
+    let (bridge, _registration, receive) = bridge_with_provider();
+    let gate = Arc::new(FakeGate::default());
+    let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate.clone())
+        .remote_resource_accessor()
+        .manager();
+
+    let shell_manager = Arc::clone(&manager);
+    let shell = thread::spawn(move || {
+        shell_manager.execute_shell(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-1".into()),
+                tool_call_id: Some("shell-call".into()),
+                action: Some("run-command".into()),
+            },
+            "pwd",
+            "/tmp",
+            "shell-call",
+        )
+    });
+    let shell_frame = receive.recv_timeout(Duration::from_secs(1)).expect("shell frame");
+    assert_eq!(shell_frame["kind"], "exec");
+    assert_eq!(shell_frame["approvalId"], "approval-1");
+    assert_eq!(shell_frame["serverMessage"]["shellStreamArgs"]["command"], "pwd");
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"client",
+        "requestId":shell_frame["requestId"],
+        "message":{"id":1,"shellStream":{"stdout":{"data":"hello\n"}}}
+    }]}));
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"client",
+        "requestId":shell_frame["requestId"],
+        "message":{"id":1,"shellStream":{"exit":{"code":0,"cwd":"/tmp","aborted":false}}}
+    }]}));
+    let shell_result = shell.join().expect("shell thread").expect("shell");
+    assert_eq!(shell_result.stdout, "hello\n");
+    assert_eq!(shell_result.exit_code, Some(0));
+    let _ = receive.recv_timeout(Duration::from_secs(1)).expect("shell cancel");
+
+    let read_manager = Arc::clone(&manager);
+    let read = thread::spawn(move || {
+        read_manager.execute_read(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-1".into()),
+                tool_call_id: Some("read-call".into()),
+                action: Some("read-file".into()),
+            },
+            "/tmp/a.txt",
+            "read-call",
+            Some(2),
+            Some(4),
+            Some("utf-8"),
+        )
+    });
+    let read_frame = receive.recv_timeout(Duration::from_secs(1)).expect("read frame");
+    assert_eq!(read_frame["kind"], "exec");
+    assert_eq!(read_frame["serverMessage"]["readArgs"]["path"], "/tmp/a.txt");
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"client",
+        "requestId":read_frame["requestId"],
+        "message":{"id":2,"readResult":{"success":{"path":"/tmp/a.txt","content":"hello"}}}
+    }]}));
+    let read_result = read.join().expect("read thread").expect("read");
+    assert_eq!(read_result["success"]["content"], "hello");
+    let _ = receive.recv_timeout(Duration::from_secs(1)).expect("read cancel");
+
+    let calls = gate.calls.lock().expect("calls");
+    assert!(calls.iter().any(|(_, action, target)| action == "run-command" && target == "pwd"));
+    assert!(calls.iter().any(|(_, action, target)| action == "read-file" && target == "/tmp/a.txt"));
+}

@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use mahayana_host_runtime::extensions::local_exec::production::{
-    GatewayExecControl, PRODUCTION_LOCAL_EXEC_CODEC,
+    GatewayExecControl, ProductionExecClientPayload, ProductionShellStreamEvent,
+    PRODUCTION_LOCAL_EXEC_CODEC,
 };
 use serde_json::json;
 
@@ -73,4 +74,48 @@ fn production_codec_creates_package_owned_remote_accessor() {
     let manager = Arc::new(String::from("manager"));
     let accessor = PRODUCTION_LOCAL_EXEC_CODEC.create_remote_accessor(Arc::clone(&manager));
     assert!(Arc::ptr_eq(&manager, &accessor.manager()));
+}
+
+
+#[test]
+fn production_codec_projects_generated_shell_and_read_shapes() {
+    let shell_request = PRODUCTION_LOCAL_EXEC_CODEC
+        .shell_stream_server_message(4, "pwd", "/tmp", "tool-shell");
+    assert_eq!(shell_request["id"], 4);
+    assert_eq!(shell_request["shellStreamArgs"]["command"], "pwd");
+    assert_eq!(shell_request["shellStreamArgs"]["workingDirectory"], "/tmp");
+    assert_eq!(shell_request["shellStreamArgs"]["toolCallId"], "tool-shell");
+
+    let shell = PRODUCTION_LOCAL_EXEC_CODEC
+        .decode_client(json!({
+            "id": 4,
+            "shellStream": {"stdout": {"data": "hello\n"}},
+            "futureField": true
+        }))
+        .expect("shell stream");
+    assert_eq!(
+        shell.payload(),
+        &ProductionExecClientPayload::ShellStream(
+            ProductionShellStreamEvent::Stdout("hello\n".into())
+        )
+    );
+
+    let read_request = PRODUCTION_LOCAL_EXEC_CODEC
+        .read_server_message(5, "/tmp/a.txt", "tool-read", Some(3), Some(7), Some("utf-8"));
+    assert_eq!(read_request["readArgs"]["path"], "/tmp/a.txt");
+    assert_eq!(read_request["readArgs"]["offset"], 3);
+    assert_eq!(read_request["readArgs"]["limit"], 7);
+    assert_eq!(read_request["readArgs"]["encodingHint"], "utf-8");
+
+    let read = PRODUCTION_LOCAL_EXEC_CODEC
+        .decode_client(json!({
+            "id": 5,
+            "readResult": {"success": {"path": "/tmp/a.txt", "content": "hello"}}
+        }))
+        .expect("read result");
+    assert!(matches!(
+        read.payload(),
+        ProductionExecClientPayload::ReadResult(value)
+            if value["success"]["content"] == "hello"
+    ));
 }

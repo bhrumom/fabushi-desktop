@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, atomic::{AtomicU32, Ordering}};
 use std::time::Duration;
 
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
@@ -8,6 +8,10 @@ use super::local_exec_bridge::{
     LocalExecComputer, SandLocalExecBridge, SAND_NO_LOCAL_MACHINE_MESSAGE,
 };
 use super::local_exec_error::SandLocalExecError;
+use super::production::{
+    GatewayExecControl, ProductionExecClientPayload, ProductionShellStreamEvent,
+    RemoteResourceAccessor, PRODUCTION_LOCAL_EXEC_CODEC,
+};
 use crate::extensions::local_tool_permission::extension::HostLocalToolPermissionExtension;
 use crate::extensions::local_tool_permission::local_tool_permission_controller::{
     SandLocalToolRequest, SandLocalToolScope,
@@ -91,6 +95,21 @@ pub struct GatewayLocalExecReady {
     pub terminals_folder: String,
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct GatewayLocalExecShellResult {
+    pub stdout: String,
+    pub stderr: String,
+    pub exit_code: Option<u32>,
+    pub cwd: Option<String>,
+    pub aborted: bool,
+}
+
+#[derive(Clone)]
+pub struct GatewayLocalExecManager {
+    sandbox: GatewayLocalExecSandBox,
+    next_exec_id: Arc<AtomicU32>,
+}
+
 #[derive(Clone)]
 pub struct GatewayLocalExecSandBox {
     bridge: SandLocalExecBridge,
@@ -135,6 +154,17 @@ impl GatewayLocalExecSandBox {
             vnc_url: String::new(),
             terminals_folder: self.terminals_folder(),
         }
+    }
+
+    pub fn exec_manager(&self) -> GatewayLocalExecManager {
+        GatewayLocalExecManager {
+            sandbox: self.clone(),
+            next_exec_id: Arc::new(AtomicU32::new(1)),
+        }
+    }
+
+    pub fn remote_resource_accessor(&self) -> RemoteResourceAccessor<GatewayLocalExecManager> {
+        PRODUCTION_LOCAL_EXEC_CODEC.create_remote_accessor(Arc::new(self.exec_manager()))
     }
 
     pub fn run_state(&self) -> &'static str {
@@ -291,6 +321,187 @@ impl GatewayLocalExecSandBox {
         match self.gate.blocked_reason() {
             Some(reason) => Err(SandLocalExecError::new(reason)),
             None => Ok(()),
+        }
+    }
+}
+
+
+impl GatewayLocalExecManager {
+    fn next_id(&self) -> u32 {
+        let id = self.next_exec_id.fetch_add(1, Ordering::Relaxed);
+        if id == 0 { 1 } else { id }
+    }
+
+    fn open_exec(
+        &self,
+        scope: &GatewayLocalToolScope,
+        action: &str,
+        target: &str,
+        server_message: Value,
+    ) -> Result<super::local_exec_bridge::LocalExecRequest, SandLocalExecError> {
+        self.sandbox.check_blocked()?;
+        self.sandbox.bridge.assert_computer_available(
+            self.sandbox.computer_id.as_deref(),
+            "exec",
+            scope.agent_id.as_deref(),
+        )?;
+        let approval_id = self.sandbox.gate.authorize(scope, action, target)?;
+        let mut frame = json!({
+            "kind": "exec",
+            "serverMessage": server_message,
+        });
+        if let Some(approval_id) = approval_id {
+            frame["approvalId"] = Value::String(approval_id);
+        }
+        self.sandbox.bridge.request(frame, self.sandbox.computer_id.as_deref())
+    }
+
+    pub fn execute_shell(
+        &self,
+        scope: &GatewayLocalToolScope,
+        command: &str,
+        working_directory: &str,
+        tool_call_id: &str,
+    ) -> Result<GatewayLocalExecShellResult, SandLocalExecError> {
+        let message = PRODUCTION_LOCAL_EXEC_CODEC.shell_stream_server_message(
+            self.next_id(), command, working_directory, tool_call_id,
+        );
+        let mut request = self.open_exec(scope, "run-command", command, message)?;
+        let mut result = GatewayLocalExecShellResult::default();
+        loop {
+            let response = request
+                .recv_timeout(Duration::from_secs(10))
+                .map_err(|_| SandLocalExecError::new("local-exec exec response timed out"))?;
+            match response.get("kind").and_then(Value::as_str) {
+                Some("client") => {
+                    let message = response.get("message").cloned().ok_or_else(|| {
+                        SandLocalExecError::new("local-exec client frame is missing message")
+                    })?;
+                    let decoded = PRODUCTION_LOCAL_EXEC_CODEC
+                        .decode_client(message)
+                        .map_err(SandLocalExecError::new)?;
+                    match decoded.payload() {
+                        ProductionExecClientPayload::ShellStream(event) => match event {
+                            ProductionShellStreamEvent::Stdout(data) => result.stdout.push_str(data),
+                            ProductionShellStreamEvent::Stderr(data) => result.stderr.push_str(data),
+                            ProductionShellStreamEvent::Exit { code, cwd, aborted } => {
+                                result.exit_code = Some(*code);
+                                result.cwd = (!cwd.is_empty()).then(|| cwd.clone());
+                                result.aborted = *aborted;
+                                request.close();
+                                return Ok(result);
+                            }
+                            ProductionShellStreamEvent::Rejected(reason)
+                            | ProductionShellStreamEvent::PermissionDenied(reason) => {
+                                request.close();
+                                return Err(SandLocalExecError::new(reason.clone()));
+                            }
+                            ProductionShellStreamEvent::Start
+                            | ProductionShellStreamEvent::Backgrounded
+                            | ProductionShellStreamEvent::Other => {}
+                        },
+                        ProductionExecClientPayload::ReadResult(_)
+                        | ProductionExecClientPayload::Other => {}
+                    }
+                }
+                Some("control") => {
+                    let message = response.get("message").ok_or_else(|| {
+                        SandLocalExecError::new("local-exec control frame is missing message")
+                    })?;
+                    match PRODUCTION_LOCAL_EXEC_CODEC
+                        .decode_control(message)
+                        .map_err(SandLocalExecError::new)?
+                    {
+                        GatewayExecControl::Throw { error, stack_trace } => {
+                            request.close();
+                            let detail = stack_trace
+                                .filter(|stack| !stack.trim().is_empty())
+                                .map(|stack| format!("{error}\n{stack}"))
+                                .unwrap_or(error);
+                            return Err(SandLocalExecError::new(detail));
+                        }
+                        GatewayExecControl::StreamClose => {
+                            request.close();
+                            return Ok(result);
+                        }
+                        GatewayExecControl::Unknown => {}
+                    }
+                }
+                Some("file-error") => {
+                    let error = response.get("error").and_then(Value::as_str)
+                        .unwrap_or(SAND_NO_LOCAL_MACHINE_MESSAGE).to_string();
+                    request.close();
+                    return Err(SandLocalExecError::new(error));
+                }
+                _ => {}
+            }
+        }
+    }
+
+    pub fn execute_read(
+        &self,
+        scope: &GatewayLocalToolScope,
+        path: &str,
+        tool_call_id: &str,
+        offset: Option<i32>,
+        limit: Option<u32>,
+        encoding_hint: Option<&str>,
+    ) -> Result<Value, SandLocalExecError> {
+        let message = PRODUCTION_LOCAL_EXEC_CODEC.read_server_message(
+            self.next_id(), path, tool_call_id, offset, limit, encoding_hint,
+        );
+        let mut request = self.open_exec(scope, "read-file", path, message)?;
+        loop {
+            let response = request
+                .recv_timeout(Duration::from_secs(10))
+                .map_err(|_| SandLocalExecError::new("local-exec exec response timed out"))?;
+            match response.get("kind").and_then(Value::as_str) {
+                Some("client") => {
+                    let message = response.get("message").cloned().ok_or_else(|| {
+                        SandLocalExecError::new("local-exec client frame is missing message")
+                    })?;
+                    let decoded = PRODUCTION_LOCAL_EXEC_CODEC
+                        .decode_client(message)
+                        .map_err(SandLocalExecError::new)?;
+                    if let ProductionExecClientPayload::ReadResult(result) = decoded.payload() {
+                        let result = result.clone();
+                        request.close();
+                        return Ok(result);
+                    }
+                }
+                Some("control") => {
+                    let message = response.get("message").ok_or_else(|| {
+                        SandLocalExecError::new("local-exec control frame is missing message")
+                    })?;
+                    match PRODUCTION_LOCAL_EXEC_CODEC
+                        .decode_control(message)
+                        .map_err(SandLocalExecError::new)?
+                    {
+                        GatewayExecControl::Throw { error, stack_trace } => {
+                            request.close();
+                            let detail = stack_trace
+                                .filter(|stack| !stack.trim().is_empty())
+                                .map(|stack| format!("{error}\n{stack}"))
+                                .unwrap_or(error);
+                            return Err(SandLocalExecError::new(detail));
+                        }
+                        GatewayExecControl::StreamClose => {
+                            request.close();
+                            return Err(SandLocalExecError::new(
+                                "local-exec read stream closed without a ReadResult",
+                            ));
+                        }
+                        GatewayExecControl::Unknown => {}
+                    }
+                }
+                Some("file-error") => {
+                    let error = response.get("error").and_then(Value::as_str)
+                        .unwrap_or(SAND_NO_LOCAL_MACHINE_MESSAGE).to_string();
+                    request.close();
+                    return Err(SandLocalExecError::new(error));
+                }
+                _ => {}
+            }
         }
     }
 }
