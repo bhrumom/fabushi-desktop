@@ -986,7 +986,7 @@ pub fn execute_production_box_copy_in_from_env(
         environment,
         target_root,
         provider.as_ref(),
-        legacy_provider.as_deref().map(|value| value.as_ref()),
+        legacy_provider.as_deref(),
         Some(&marker_path),
         CopyInRuntimeOptions {
             download_owner: resolve_copy_in_download_owner(),
