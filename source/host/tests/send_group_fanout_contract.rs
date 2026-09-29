@@ -83,7 +83,7 @@ fn local_group_fanout_reads_room_history_executes_members_and_durably_posts_auth
     let runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
     let outcome = dispatch_local_group_send(
         Arc::clone(&sessions),
-        runtime,
+        Arc::clone(&runtime),
         &room.id,
         0,
         executor,
@@ -102,11 +102,6 @@ fn local_group_fanout_reads_room_history_executes_members_and_durably_posts_auth
     let calls = calls.lock().expect("calls");
     assert!(!calls.is_empty());
     assert!(calls.iter().all(|(_, _, system)| system.contains("SendMessage")));
-
-    let mut settled_rows = json!([{"id": room.id.clone()}]);
-    runtime.decorate_agent_summaries(&mut settled_rows);
-    assert!(settled_rows[0]["activeRemoteMemberId"].is_null());
-    runtime.end_provider_run(&room.id);
 
     let entries = sessions
         .read_agent_transcript_entries(&room.id)
@@ -259,6 +254,11 @@ fn shared_group_uses_remote_executor_without_creating_a_second_group_runtime() {
                     && group == "Shared Team"
             })
     );
+
+    let mut settled_rows = json!([{"id": room.id.clone()}]);
+    runtime.decorate_agent_summaries(&mut settled_rows);
+    assert!(settled_rows[0]["activeRemoteMemberId"].is_null());
+    runtime.end_provider_run(&room.id);
 
     let entries = sessions
         .read_agent_transcript_entries(&room.id)
