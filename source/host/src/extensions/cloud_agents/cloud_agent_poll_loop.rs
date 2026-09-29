@@ -364,13 +364,19 @@ impl CloudAgentTeamAdminPolicyCache {
     }
 
     pub fn is_disabled_by_team_admin(&self) -> bool {
-        self.refresh();
-        self.state
+        // Match the frozen Promise semantics: callers observe the cache snapshot that
+        // existed before this call scheduled a background refresh. Even a loader that
+        // completes immediately must not turn the synchronous fail-open read into a
+        // blocking/fail-closed result.
+        let disabled = self
+            .state
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .cached
             .map(|(disabled, _)| disabled)
-            .unwrap_or(false)
+            .unwrap_or(false);
+        self.refresh();
+        disabled
     }
 
     pub fn prefetch_team_admin_policy(&self) {
