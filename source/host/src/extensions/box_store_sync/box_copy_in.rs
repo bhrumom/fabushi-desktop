@@ -107,6 +107,7 @@ pub struct CopyInWatchdogEvent {
 #[derive(Clone, Default)]
 pub struct CopyInRuntimeOptions {
     pub download_owner: Option<(u32, u32)>,
+    pub download_concurrency: Option<usize>,
     pub on_progress: Option<Arc<dyn Fn(CopyInProgress) + Send + Sync>>,
     pub on_trace: Option<Arc<dyn Fn(CopyInTraceStatus) + Send + Sync>>,
 }
@@ -981,6 +982,11 @@ pub fn execute_production_box_copy_in_from_env(
         Some(&marker_path),
         CopyInRuntimeOptions {
             download_owner: resolve_copy_in_download_owner(),
+            download_concurrency: resolve_copy_in_concurrency(
+                environment
+                    .get("SAND_BOX_STORE_COPY_IN_CONCURRENCY")
+                    .map(String::as_str),
+            ),
             on_progress: Some(on_progress),
             on_trace: Some(on_trace),
         },
@@ -1183,6 +1189,9 @@ fn restore_manifest(
         target_root,
         manifest,
         BoxStoreDownloadOptions {
+            download_concurrency: options
+                .download_concurrency
+                .unwrap_or(super::box_store_sync::DEFAULT_COPY_IN_CONCURRENCY),
             owner: options.download_owner,
             on_progress: Some(Arc::new(move |progress: BoxStoreDownloadProgress| {
                 emit_progress(
