@@ -4,6 +4,12 @@ use crate::extensions::auth::extension::HostAuthExtension;
 use crate::extensions::experiments::HostExperimentsExtension;
 use crate::extensions::settings::settings_service::SettingsService;
 
+use super::cursor_inference_transport::CursorInferenceAuth;
+use super::cursor_session::{
+    RequestedModel, ResolveRequestedModelInputs, SandSessionOptions,
+    resolve_sand_requested_model,
+};
+use super::sand_model_experiment::{SandAgentModelParameter, SandAgentModelSelection};
 use super::cursor_web_tools::{
     CursorWebBackend, CursorWebBackendOptions, CursorWebFetchService, CursorWebSearchService,
     create_cursor_web_backend,
@@ -62,6 +68,16 @@ impl InferenceProductionExtras {
             Arc::clone(&self.auth),
             on_model_experiment_applied,
         )
+    }
+
+    pub fn cursor_auth_for_session(
+        &self,
+        session_options: Option<&SandSessionOptions>,
+    ) -> Arc<dyn CursorInferenceAuth> {
+        Arc::new(ProductionCursorInferenceAuth {
+            auth: Arc::clone(&self.auth),
+            requested_model: self.runtime.port().resolve_requested_model(session_options),
+        })
     }
 
     pub fn create_web_search(
@@ -129,9 +145,70 @@ pub struct ProductionAgentInferenceOwner {
     settings: Arc<SettingsService>,
 }
 
+fn model_selection_from_value(value: Option<serde_json::Value>) -> Option<SandAgentModelSelection> {
+    let value = value?;
+    let object = value.as_object()?;
+    let model_id = object.get("modelId")?.as_str()?.trim();
+    if model_id.is_empty() {
+        return None;
+    }
+    let max_mode = object
+        .get("maxMode")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(true);
+    let parameters = object
+        .get("parameters")
+        .and_then(serde_json::Value::as_array)
+        .map(|parameters| {
+            parameters
+                .iter()
+                .filter_map(|parameter| {
+                    let parameter = parameter.as_object()?;
+                    let id = parameter.get("id")?.as_str()?.trim();
+                    let value = parameter.get("value")?.as_str()?.trim();
+                    if id.is_empty() || value.is_empty() {
+                        return None;
+                    }
+                    Some(SandAgentModelParameter {
+                        id: id.to_string(),
+                        value: value.to_string(),
+                    })
+                })
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    Some(SandAgentModelSelection {
+        model_id: model_id.to_string(),
+        max_mode,
+        parameters,
+    })
+}
+
 impl ProductionAgentInferenceOwner {
     pub fn configured_provider(&self) -> String {
         self.settings.get_inference_provider()
+    }
+
+    pub fn resolve_requested_model(
+        &self,
+        session_options: Option<&SandSessionOptions>,
+    ) -> RequestedModel {
+        let stored_default_model =
+            model_selection_from_value(self.settings.get_agent_default_model());
+        let stored_computer_use_model =
+            model_selection_from_value(self.settings.get_computer_use_model());
+        let env_model_override = std::env::var("SAND_AGENT_MODEL")
+            .ok()
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty());
+        resolve_sand_requested_model(ResolveRequestedModelInputs {
+            session_options,
+            env_model_override: env_model_override.as_deref(),
+            stored_default_model: stored_default_model.as_ref(),
+            stored_computer_use_model: stored_computer_use_model.as_ref(),
+            stored_browser_use_model: None,
+            experiment_model_override: None,
+        })
     }
 
     pub fn is_agent_network_enabled(&self) -> bool {
@@ -144,6 +221,26 @@ impl ProductionAgentInferenceOwner {
 }
 
 impl AgentInferenceOwner for ProductionAgentInferenceOwner {}
+
+#[derive(Clone)]
+struct ProductionCursorInferenceAuth {
+    auth: Arc<HostAuthExtension>,
+    requested_model: RequestedModel,
+}
+
+impl CursorInferenceAuth for ProductionCursorInferenceAuth {
+    fn access_token(&self) -> Result<String, String> {
+        self.auth.get_access_token().map_err(|error| error.to_string())
+    }
+
+    fn machine_id(&self) -> Result<String, String> {
+        self.auth.get_machine_id().map_err(|error| error.to_string())
+    }
+
+    fn requested_model(&self) -> RequestedModel {
+        self.requested_model.clone()
+    }
+}
 
 /// Shipping Grok-shaped inference extension surface.
 ///
