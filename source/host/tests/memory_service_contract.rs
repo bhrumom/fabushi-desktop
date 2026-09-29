@@ -524,7 +524,7 @@ fn project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering() 
         .add_memory("shared project rule", beta_at, MemoryKind::Profile)
         .expect("older shared project rule");
     FileMemoryStore::new(get_project_memory_shard_dir(&root, "beta", "agent-c"))
-        .add_memory("SHARED PROJECT RULE", beta_at + 1_000, MemoryKind::Profile)
+        .add_memory("SHARED PROJECT RULE", beta_at + 86_400_000, MemoryKind::Profile)
         .expect("newer shared project rule");
     FileMemoryStore::new(get_project_memory_shard_dir(&root, "zeta", "agent-c"))
         .add_memory("zeta fact", zeta_at, MemoryKind::Log)
