@@ -64,7 +64,8 @@ use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandC
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
-use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
+use mahayana_host_runtime::agents::agent_profile::{SandAgentProfile, get_sand_profile_path};
+use mahayana_host_runtime::agents::settings_file::get_sand_settings_path;
 use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
     AgentWakeRequest, ProductionAgentToAgentMessaging, should_interrupt_priority_peer,
 };
@@ -276,8 +277,14 @@ use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     to_exact_action_value, validate_computer_action,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{
+    AgentProfileForPrompt, append_agent_profile_system_prompt,
     append_automations_system_prompt, append_combined_memory_system_prompt,
-    resolve_combined_memory_system_prompt,
+    render_agent_profile_section, resolve_combined_memory_system_prompt,
+};
+use mahayana_host_runtime::runner::sand_agent_profile_prompt::{
+    AgentProfileIdentity, AgentProfilePromptSnapshot, agent_profile_identities_equal,
+    normalize_agent_profile_identity, persist_announced_agent_profile_snapshot,
+    render_agent_profile_update, resolve_agent_profile_prompt_snapshot,
 };
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
@@ -3080,6 +3087,84 @@ fn start_routed_provider_task(
             })?;
     }
 
+    const FROZEN_PROFILE_COMPACTION_EPOCH: i64 = 0;
+    let mut pending_profile_announcement: Option<(
+        AgentProfilePromptSnapshot,
+        AgentProfileIdentity,
+    )> = None;
+    if let Some(profile) = session_workers
+        .get_agent_profile_text(&agent_id)
+        .map_err(|error| GatewayCommandError::Internal(format!(
+            "could not read production Agent profile for {agent_id}: {error}"
+        )))?
+    {
+        let agent_dir = session_workers
+            .session_db_path(&agent_id)
+            .map_err(GatewayCommandError::Internal)?
+            .parent()
+            .map(Path::to_path_buf)
+            .ok_or_else(|| GatewayCommandError::Internal(format!(
+                "agent database path has no parent for {agent_id}"
+            )))?;
+        let profile_path = to_model_visible_path(get_sand_profile_path(&agent_dir))
+            .to_string_lossy()
+            .into_owned();
+        let settings_path = to_model_visible_path(get_sand_settings_path(&agent_dir))
+            .to_string_lossy()
+            .into_owned();
+        let profile_for_prompt = AgentProfileForPrompt {
+            name: profile.name.clone(),
+            description: profile.description.clone(),
+            file_path: profile_path,
+            settings_file_path: settings_path,
+        };
+        if let Some(live_section) = render_agent_profile_section(&profile_for_prompt, false) {
+            let persisted_profile_snapshot = session_workers
+                .get_agent_profile_prompt_snapshot(&agent_id)
+                .map_err(|error| GatewayCommandError::Internal(format!(
+                    "could not read production profile prompt snapshot for {agent_id}: {error}"
+                )))?
+                .and_then(|value| serde_json::from_value::<AgentProfilePromptSnapshot>(value).ok());
+            let identity = normalize_agent_profile_identity(AgentProfileIdentity {
+                name: profile.name,
+                description: profile.description,
+            });
+            let resolved_profile_snapshot = resolve_agent_profile_prompt_snapshot(
+                persisted_profile_snapshot.as_ref(),
+                FROZEN_PROFILE_COMPACTION_EPOCH,
+                live_section,
+                identity.clone(),
+            );
+            if persisted_profile_snapshot.as_ref() != Some(&resolved_profile_snapshot) {
+                let value = serde_json::to_value(&resolved_profile_snapshot).map_err(|error| {
+                    GatewayCommandError::Internal(format!(
+                        "could not serialize production profile prompt snapshot for {agent_id}: {error}"
+                    ))
+                })?;
+                session_workers
+                    .set_agent_profile_prompt_snapshot(&agent_id, &value)
+                    .map_err(|error| GatewayCommandError::Internal(format!(
+                        "could not persist production profile prompt snapshot for {agent_id}: {error}"
+                    )))?;
+            }
+            append_agent_profile_system_prompt(
+                &mut provider_messages,
+                &resolved_profile_snapshot.profile_section,
+            );
+            if !agent_profile_identities_equal(
+                &identity,
+                &resolved_profile_snapshot.announced_identity,
+            ) {
+                provider_messages.push(ProviderMessage {
+                    role: "user".into(),
+                    content: render_agent_profile_update(&identity),
+                });
+                pending_profile_announcement =
+                    Some((resolved_profile_snapshot, identity));
+            }
+        }
+    }
+
     let memory_service = session_workers.memory_service();
     let agent_summaries = session_workers
         .list_agent_summaries(Some(&agent_id))
@@ -3481,6 +3566,7 @@ fn start_routed_provider_task(
         .then(|| Arc::clone(&generated_agent_runtime));
     let worker_is_ack_redrive = is_ack_redrive;
     let worker_is_upgrade_resume = is_upgrade_resume;
+    let worker_profile_announcement = pending_profile_announcement;
     let worker_memory_store = memory_store.clone();
     let worker_memory_service = session_workers.memory_service();
     let worker_turn_hidden = turn_hidden;
@@ -4841,6 +4927,30 @@ fn start_routed_provider_task(
                 runner.last_finished().map(|finished| &finished.outcome),
                 Some(mahayana_host_runtime::runner::TerminalOutcome::WaitingUser)
             );
+
+            if result.is_ok() {
+                if let Some((turn_snapshot, identity)) =
+                    worker_profile_announcement.as_ref()
+                {
+                    if let Ok(current_value) =
+                        worker_retire_sessions.get_agent_profile_prompt_snapshot(&agent_id)
+                    {
+                        let current = current_value.and_then(|value| {
+                            serde_json::from_value::<AgentProfilePromptSnapshot>(value).ok()
+                        });
+                        if let Some(next) = persist_announced_agent_profile_snapshot(
+                            current.as_ref(),
+                            turn_snapshot,
+                            identity,
+                        ) {
+                            if let Ok(value) = serde_json::to_value(&next) {
+                                let _ = worker_retire_sessions
+                                    .set_agent_profile_prompt_snapshot(&agent_id, &value);
+                            }
+                        }
+                    }
+                }
+            }
 
             if !waiting_user && !worker_turn_hidden {
                 if let Ok(content) = result.as_ref() {

@@ -7,6 +7,7 @@ use crate::extensions::memory::memory_service::{
     MemoryRecall, ProjectMemoryPromptRecall, UserMemoryRecall,
 };
 use crate::sand_multitask::SAND_MULTITASK_PROMPT_SECTION;
+use crate::sand_activity::SAND_EXTERNAL_SHELL_TOOL_NAME;
 
 use super::system_prompt::{
     SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, build_sand_base_system_prompt,
@@ -17,6 +18,81 @@ use super::sand_memory::{
     render_memory_system_prompt, render_project_memory_system_prompt,
     render_user_memory_system_prompt, resolve_frozen_memory_prompt,
 };
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AgentProfileForPrompt {
+    pub name: String,
+    pub description: String,
+    pub file_path: String,
+    pub settings_file_path: String,
+}
+
+pub fn render_agent_profile_section(
+    profile: &AgentProfileForPrompt,
+    shared_room: bool,
+) -> Option<String> {
+    let title = profile.name.trim();
+    let description = profile.description.trim();
+    let mut lines = Vec::new();
+    if !title.is_empty() {
+        lines.push(format!("Title: {title}"));
+        if !shared_room {
+            lines.push(format!(
+                "Your agent name is \"{title}\". If the user asks for your name, answer with \"{title}\"."
+            ));
+        }
+    }
+    if !description.is_empty() {
+        lines.push(format!("Description: {description}"));
+    }
+    if !shared_room && !profile.file_path.is_empty() {
+        lines.push(format!(
+            "Your profile is a JSON config file at {} with \"name\", \"description\", and \"title\" fields, which you can read with your shell tools. To rename yourself or rewrite your own description, use the update_state tool (target \"profile\", action \"set\"); it preserves every field you do not pass. Name and description edits are announced in a profile-update message for the current context and folded into this Agent profile section after the next conversation summary.",
+            profile.file_path
+        ));
+        lines.push(format!(
+            "Your profile picture is NOT part of that config — it is a conventional image file named \"avatar.png\" (or avatar.jpg/.jpeg/.webp/.gif/.svg) in the same directory, which you can read with your shell tools. To set it, put the image somewhere first (Shell under /workspace is fine — no CopyFromBox needed — or {SAND_EXTERNAL_SHELL_TOOL_NAME} on the user's computer), then call update_state (target \"avatar\", action \"set\", path=...); to go back to the default picture, update_state target \"avatar\", action \"clear\". Never change your picture unless the user asks."
+        ));
+    }
+    if !shared_room && !profile.settings_file_path.is_empty() {
+        lines.push(format!(
+            "Your per-agent settings live in a separate JSON config file at {}, readable the same way and changed with update_state (target \"settings\", action \"set\"). \"hidden_from_sidebar\" (true/false) removes your own row from the user's sidebar: you stay fully functional — you keep your conversation, keep receiving messages, keep running your routines, and still accrue unread — and the user can still reach you through the Hidden chats manager and Cmd-K; the default is visible. Pass only the fields you mean to change; the rest are preserved.",
+            profile.settings_file_path
+        ));
+    }
+    (!lines.is_empty()).then(|| {
+        let mut rendered = vec!["Agent profile:".to_string()];
+        rendered.extend(lines);
+        rendered.join("\n")
+    })
+}
+
+pub fn append_agent_profile_system_prompt(
+    messages: &mut Vec<ProviderMessage>,
+    profile_section: &str,
+) {
+    if profile_section.trim().is_empty() {
+        return;
+    }
+    if messages.iter().any(|message| {
+        message.role == "system"
+            && (message.content.starts_with("Agent profile:\n")
+                || message.content.contains("\n\nAgent profile:\n"))
+    }) {
+        return;
+    }
+    if let Some(system) = messages.iter_mut().find(|message| message.role == "system") {
+        if !system.content.trim().is_empty() {
+            system.content.push_str("\n\n");
+        }
+        system.content.push_str(profile_section);
+    } else {
+        messages.insert(0, ProviderMessage {
+            role: "system".into(),
+            content: profile_section.to_string(),
+        });
+    }
+}
 
 pub fn render_request_context_system_prompt(
     context: &HostRequestContext,

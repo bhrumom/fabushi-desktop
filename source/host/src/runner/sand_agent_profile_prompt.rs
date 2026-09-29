@@ -12,7 +12,8 @@ pub struct AgentProfileIdentity {
     pub description: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AgentProfilePromptSnapshot {
     pub version: u8,
     pub profile_section: String,
@@ -53,6 +54,24 @@ pub fn resolve_agent_profile_prompt_snapshot(
         announced_identity: identity,
         compaction_epoch,
     }
+}
+
+pub fn persist_announced_agent_profile_snapshot(
+    current: Option<&AgentProfilePromptSnapshot>,
+    turn_snapshot: &AgentProfilePromptSnapshot,
+    identity: &AgentProfileIdentity,
+) -> Option<AgentProfilePromptSnapshot> {
+    let current = current?;
+    if current.compaction_epoch != turn_snapshot.compaction_epoch
+        || current.profile_section != turn_snapshot.profile_section
+        || !agent_profile_identities_equal(&current.system_identity, &turn_snapshot.system_identity)
+        || agent_profile_identities_equal(&current.announced_identity, identity)
+    {
+        return None;
+    }
+    let mut next = current.clone();
+    next.announced_identity = normalize_agent_profile_identity(identity.clone());
+    Some(next)
 }
 
 pub fn render_agent_profile_update(identity: &AgentProfileIdentity) -> String {

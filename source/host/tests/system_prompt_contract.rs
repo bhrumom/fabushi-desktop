@@ -10,9 +10,11 @@ use mahayana_host_runtime::runner::system_prompt::{
     format_attached_file_size, is_media_review_subagent_type,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{
-    render_request_context_system_prompt,
+    AgentProfileForPrompt, append_agent_profile_system_prompt,
+    render_agent_profile_section, render_request_context_system_prompt,
     render_request_context_system_prompt_with_capabilities,
 };
+use mahayana_host_runtime::extensions::inference::provider_session::ProviderMessage;
 use mahayana_host_runtime::sand_multitask::SAND_MULTITASK_PROMPT_SECTION;
 use serde_json::json;
 
@@ -149,4 +151,41 @@ fn shipping_system_prompt_projects_live_cloud_agent_and_multitask_capabilities()
     assert!(disabled.starts_with(SAND_SYSTEM_PROMPT_CLOUD_AGENTS_DISABLED));
     assert!(disabled.contains(SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION));
     assert!(!disabled.contains(SAND_MULTITASK_PROMPT_SECTION));
+}
+
+
+#[test]
+fn frozen_agent_profile_section_is_provider_bound_once() {
+    let profile = AgentProfileForPrompt {
+        name: " Researcher ".into(),
+        description: " Investigates deeply. ".into(),
+        file_path: "/home/oai/share/agents/a/profile.json".into(),
+        settings_file_path: "/home/oai/share/agents/a/settings.json".into(),
+    };
+    let section = render_agent_profile_section(&profile, false).expect("profile section");
+    assert!(section.starts_with("Agent profile:\nTitle: Researcher"));
+    assert!(section.contains("Your agent name is \"Researcher\"."));
+    assert!(section.contains("Description: Investigates deeply."));
+    assert!(section.contains("/home/oai/share/agents/a/profile.json"));
+    assert!(section.contains("update_state (target \"profile\", action \"set\")"));
+    assert!(section.contains("ExternalShell"));
+    assert!(section.contains("/home/oai/share/agents/a/settings.json"));
+    assert!(section.contains("\"hidden_from_sidebar\""));
+
+    let mut messages = vec![
+        ProviderMessage { role: "system".into(), content: "base".into() },
+        ProviderMessage { role: "user".into(), content: "hello".into() },
+    ];
+    append_agent_profile_system_prompt(&mut messages, &section);
+    append_agent_profile_system_prompt(&mut messages, &section);
+    assert_eq!(
+        messages[0].content.matches("Agent profile:\n").count(),
+        1
+    );
+
+    let shared = render_agent_profile_section(&profile, true).expect("shared profile");
+    assert!(shared.contains("Title: Researcher"));
+    assert!(!shared.contains("Your agent name is"));
+    assert!(!shared.contains("profile.json"));
+    assert!(!shared.contains("settings.json"));
 }
