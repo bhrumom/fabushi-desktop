@@ -12,7 +12,11 @@ fn shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gatewa
 }
 
 #[test]
-fn startup_rearm_keeps_shell_shipping_parity_explicit() {
+fn startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals() {
     assert!(SHIPPING_HOST.contains("production shell pending-wake rearm is not wired yet"));
+    assert!(!SHIPPING_HOST.contains("production recreate-interrupted shell notice is not wired yet"));
+    assert!(SHIPPING_HOST.contains("handle_background_shell_completion(ShellCompletion"));
+    assert!(SHIPPING_HOST.contains("shell_id: marker.work_id.clone()"));
+    assert!(SHIPPING_HOST.contains("quiet_origin: marker.quiet_origin.clone()"));
     assert!(!SHIPPING_HOST.contains("production lost-subagent pending-wake revival is not wired yet"));
 }

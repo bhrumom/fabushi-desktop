@@ -85,7 +85,7 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
 };
 use mahayana_host_runtime::extensions::transcript::completion_revivals::{
     CompletionRevivalRuntimePort, CompletionRevivals, RevivalExecution, RevivalReport,
-    SubagentCompletion,
+    ShellCompletion, SubagentCompletion,
 };
 use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
     DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin, coerce_quiet_origin,
@@ -988,9 +988,25 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
 
     fn deliver_recreate_interrupted_shell_notice(
         &self,
-        _marker: &DurablePendingWakeMarker,
+        marker: &DurablePendingWakeMarker,
     ) -> Result<(), String> {
-        Err("production recreate-interrupted shell notice is not wired yet".into())
+        self.completion_revivals
+            .handle_background_shell_completion(ShellCompletion {
+                agent_id: marker.agent_id.clone(),
+                shell_id: marker.work_id.clone(),
+                title: marker
+                    .title
+                    .clone()
+                    .unwrap_or_else(|| "Background command".into()),
+                status: "error".into(),
+                detail: Some(
+                    "A host restart interrupted observation of this background command before its terminal result could be delivered; the process state did not survive the recreate boundary, so its final state is unknown."
+                        .into(),
+                ),
+                output_path: None,
+                quiet_origin: marker.quiet_origin.clone(),
+            });
+        Ok(())
     }
 
     fn revive_lost_subagent(&self, wake: LostSubagentWake) -> Result<(), String> {

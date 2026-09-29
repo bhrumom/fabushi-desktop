@@ -16038,10 +16038,11 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/async_task_union_contract.rs",
-        "source/host/tests/cloud_agent_background_revival_production_contract.rs"
+        "source/host/tests/cloud_agent_background_revival_production_contract.rs",
+        "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production ports frozen marker coercion, quiet automation origin, key-based upsert, has/clear/prune semantics and part-file replacement. ProductionTranscriptRuntime owns the store under app_data_dir; getAsyncTasks projects its durable ledger into the shipping frontend-compatible async-task union, and successful agent deletion clears durable markers. Cloud-agent launch/watch/reply now persist markers from the shipping shared RunnerCloudAgentWatches owner and CompletionRevivals clears them on terminal settlement while emitting async-task projection. Final remains withheld until shell/subagent completion paths and recreate rearm are fully composed in the shipping Runner/Transcript lifecycle."
+      "notes": "Rust production ports frozen marker coercion, quiet automation origin, key-based upsert, has/clear/prune semantics and part-file replacement. ProductionTranscriptRuntime owns the store under app_data_dir; getAsyncTasks projects its durable ledger into the shipping frontend-compatible async-task union, and successful agent deletion clears durable markers. Cloud-agent launch/watch/reply persist markers from the shipping shared RunnerCloudAgentWatches owner and CompletionRevivals clears them on terminal settlement while emitting async-task projection. Recreate-interrupted Shell markers now enter the same shipping CompletionRevivals path with an explicit unknown-final-state completion instead of the former Host stub. Final remains withheld for ordinary live shell rewatch and live generated-Agent subagent completion ownership."
     },
     {
       "referencePath": "source/host/extensions/transcript/sand-upgrade-resume-store.ts",
@@ -17704,10 +17705,11 @@
         "source/host/tests/background_work_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/cloud_agent_background_revival_production_contract.rs"
+        "source/host/tests/cloud_agent_background_revival_production_contract.rs",
+        "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port owns the frozen background-work core: reviving work registry, wakeup ack/nack/suppress/completion semantics, quiet-origin propagation, shell terminal footer parsing, rewatch constants, subagent title derivation and steer-prompt formatting. Shipping Host now composes RunnerCloudAgentWatches as a shared owner with generation fencing, durable pending-wake persistence, async-task projection, SandCloudAgentManager awaitCompletion polling and CompletionRevivals settlement. Final remains withheld for production shell rewatch/pending-wake composition and the remaining generic quiet-work-origin carrier semantics."
+      "notes": "Rust port owns the frozen background-work core: reviving work registry, wakeup ack/nack/suppress/completion semantics, quiet-origin propagation, shell terminal footer parsing, rewatch constants, subagent title derivation and steer-prompt formatting. Shipping Host composes RunnerCloudAgentWatches as a shared owner with generation fencing, durable pending-wake persistence, async-task projection, SandCloudAgentManager awaitCompletion polling and CompletionRevivals settlement. Recreate-interrupted Shell wakes now route through CompletionRevivals with a concrete interrupted-result projection. Final remains withheld for ordinary production shell rewatch/poll composition and the remaining generic quiet-work-origin carrier semantics."
     },
     {
       "referencePath": "source/host/runner/bot-block-detection.ts",
