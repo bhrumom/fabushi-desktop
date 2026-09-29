@@ -1,14 +1,21 @@
 use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::extensions::inference::cursor_session::{
-    RequestedModel, ResolveRequestedModelInputs, SandSessionOptions,
+    RequestLineage, RequestedModel, ResolveRequestedModelInputs, SandSessionOptions,
     parse_sand_mock_script, resolve_sand_requested_model, sand_default_model_selection,
+};
+use mahayana_host_runtime::extensions::inference::generated_inference_codec::{
+    AgentFollowupCategorizationRequest, AgentPostTurnLabelingRequest, InferenceMessageRole,
+    InferenceReason, core_message_to_proto,
 };
 use mahayana_host_runtime::extensions::inference::inference_service::{
     HostInferenceService, InferenceRoute, InferenceSettings, InferenceUsage,
     authorize_routed_provider_request, resolve_inference_route, usage_from_extended_fields,
 };
-use mahayana_host_runtime::extensions::inference::provider_session::RoutedProvider;
+use mahayana_host_runtime::extensions::inference::provider_session::{
+    ProviderMessage, RoutedProvider,
+};
+use prost::Message;
 use mahayana_host_runtime::extensions::inference::sand_labeling::{
     FollowupLabelingTracker, LabelMessage, SAND_AGENT_MODE, SAND_SUMMARIZATION_REASON,
     prepare_post_turn_labeling,
@@ -204,4 +211,70 @@ fn labeling_tracks_previous_request_once_and_skips_summarization() {
     assert!(prepare_post_turn_labeling("", "req", "model", &normal).is_none());
     let post = prepare_post_turn_labeling("conv", "req-4", "model", &normal).expect("post");
     assert_eq!(post.agent_mode, SAND_AGENT_MODE);
+}
+
+
+#[test]
+fn generated_labeling_codec_matches_frozen_field_contract_and_core_message_projection() {
+    let messages = vec![
+        ProviderMessage { role: "user".into(), content: "hello".into() },
+        ProviderMessage { role: "assistant".into(), content: "world".into() },
+    ];
+    let projected = messages.iter().map(core_message_to_proto).collect::<Vec<_>>();
+    assert_eq!(projected[0].role, InferenceMessageRole::User as i32);
+    assert_eq!(projected[1].role, InferenceMessageRole::Assistant as i32);
+
+    let followup = AgentFollowupCategorizationRequest {
+        request_id: "req-2".into(),
+        replying_to_request_id: "req-1".into(),
+        messages: projected.clone(),
+        conversation_id: Some("conv-1".into()),
+        agent_mode: Some(SAND_AGENT_MODE.into()),
+        model_name: Some("grok-4.5".into()),
+    };
+    let encoded = followup.encode_to_vec();
+    let decoded = AgentFollowupCategorizationRequest::decode(encoded.as_slice()).expect("followup codec");
+    assert_eq!(decoded.request_id, "req-2");
+    assert_eq!(decoded.replying_to_request_id, "req-1");
+    assert_eq!(decoded.conversation_id.as_deref(), Some("conv-1"));
+    assert_eq!(decoded.messages.len(), 2);
+
+    let post = AgentPostTurnLabelingRequest {
+        request_id: "req-2".into(),
+        messages: projected,
+        conversation_id: Some("conv-1".into()),
+        agent_mode: Some(SAND_AGENT_MODE.into()),
+        model_name: Some("grok-4.5".into()),
+    };
+    let encoded = post.encode_to_vec();
+    let decoded = AgentPostTurnLabelingRequest::decode(encoded.as_slice()).expect("post-turn codec");
+    assert_eq!(decoded.request_id, "req-2");
+    assert_eq!(decoded.conversation_id.as_deref(), Some("conv-1"));
+}
+
+#[test]
+fn cursor_session_lineage_sanitizes_headers_and_preserves_inference_reason() {
+    let lineage = RequestLineage {
+        parent_request_id: "parent\r\nunsafe".into(),
+        root_parent_request_id: "root\nunsafe".into(),
+        parent_agent_tool_call_id: Some("tool\runsafe".into()),
+    };
+    assert_eq!(
+        lineage.sanitized_headers(),
+        vec![
+            ("x-parent-request-id".into(), "parentunsafe".into()),
+            ("x-root-parent-request-id".into(), "rootunsafe".into()),
+            ("x-parent-agent-tool-call-id".into(), "toolunsafe".into()),
+        ]
+    );
+
+    let options = SandSessionOptions {
+        conversation_id: Some("conv-1".into()),
+        inference_reason: Some(InferenceReason::GeminiVideoSubagent),
+        lineage: Some(lineage),
+        ..Default::default()
+    };
+    assert_eq!(options.conversation_id.as_deref(), Some("conv-1"));
+    assert_eq!(options.inference_reason, Some(InferenceReason::GeminiVideoSubagent));
+    assert!(options.lineage.is_some());
 }

@@ -40,7 +40,7 @@ pub struct RequestLineage {
 
 impl RequestLineage {
     pub fn sanitized_headers(&self) -> Vec<(String, String)> {
-        let clean = |value: &str| value.replace(['\\r', '\\n'], "");
+        let clean = |value: &str| value.replace(['\r', '\n'], "");
         let mut headers = vec![
             ("x-parent-request-id".into(), clean(&self.parent_request_id)),
             (
