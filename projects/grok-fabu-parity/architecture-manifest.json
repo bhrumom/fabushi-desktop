@@ -10975,18 +10975,24 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_download.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "135b33e665620542e037ed26345cfd4f89f07917",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/box_store_sync/box_store_download.rs"
+        "source/host/src/extensions/box_store_sync/box_store_download.rs",
+        "source/host/src/extensions/box_store_sync/box_copy_in.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
-        "source/host/tests/box_store_sync_planned_contract.rs",
+        "source/host/tests/box_store_download_frozen_parity_contract.rs",
+        "source/host/tests/box_copy_in_pack_contract.rs",
+        "source/host/tests/box_copy_in_frozen_parity_contract.rs",
+        "source/host/tests/box_store_sync_production_wiring_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
+      "parityMode": "rust-adaptation",
+      "notes": "Independently verified against frozen Grok 0.18 blob 135b33e665620542e037ed26345cfd4f89f07917 and the shipping --box-copy-in path. The canonical Rust downloader now preserves frozen critical/bulk ordering, wave prefetch fallback, deduplicated small/large restores, bounded byte budget, pack selection/download/extraction concurrency with shared admission budget and loose-blob fallback, stale pack-temp sweep, per-path progress, local pack-skip behavior, race-safe owned parent creation, O_NOFOLLOW file verification/metadata application, symlink safety/trace semantics, and SAND_BOX_STORE_COPY_IN_CONCURRENCY wiring. Exact-HEAD GitHub Actions at 054d8d69ec26f0aad66d41346a74af3e63425cca proved shipping Host compile, full Host cargo contracts, independent Coordinator/Host/Runner and box-exec boundaries, platform worker, Renderer build, and Focused Electron E2E green; only the expected strict architecture inventory gate remained."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-hydration.ts",
