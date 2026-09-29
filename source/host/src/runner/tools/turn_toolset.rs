@@ -16,7 +16,7 @@ use super::sand_agent_management_tools::{
     AgentManagementSink, AgentManagementToolBridge,
 };
 use super::sand_browser_tools::{BrowserToolExecutor, SandBrowserToolBridge};
-use super::sand_computer_tool::{ComputerToolExecutor, SandComputerToolBridge};
+use super::sand_computer_tool::{ComputerToolExecutor, ComputerToolExposure, SandComputerToolBridge};
 use super::sand_file_transfer_tools::{FileTransferExecutor, SandFileTransferToolBridge};
 use super::sand_external_machine_tools::{
     ExternalMachineExecutor, ExternalMachineToolBridge, ExternalShellAutoReviewCallback,
@@ -49,6 +49,7 @@ pub struct TurnToolsetDependencies {
     pub box_shell_review: Option<BoxShellAutoReviewCallback>,
     pub browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     pub computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
+    pub computer_exposure: ComputerToolExposure,
     pub file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
     pub external_machine_executor: Option<Arc<dyn ExternalMachineExecutor>>,
     pub external_shell_review: Option<ExternalShellAutoReviewCallback>,
@@ -86,7 +87,10 @@ pub fn build_turn_toolset(
         None => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.computer_executor {
-        Some(executor) => Arc::new(SandComputerToolBridge::new(bridge, executor)),
+        Some(executor) => Arc::new(
+            SandComputerToolBridge::new(bridge, executor)
+                .with_exposure(dependencies.computer_exposure),
+        ),
         None => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.external_machine_executor {
