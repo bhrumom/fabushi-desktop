@@ -10884,18 +10884,22 @@
       "targetPath": "source/host/src/extensions/box_store_sync/agent_store_sand_files.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "e2dd1245f9ab16c768bea9f226a1670fbd6f44f9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/box_store_sync/agent_store_sand_files.rs"
+        "source/host/src/extensions/box_store_sync/agent_store_sand_files.rs",
+        "source/host/src/extensions/box_store_sync/box_object_store.rs",
+        "source/host/src/extensions/box_store_sync/production.rs",
+        "source/host/src/host_production_extensions.rs"
       ],
       "testEvidence": [
         "source/host/tests/box_store_sync_planned_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/box_store_sync_production_wiring_contract.rs"
       ],
-      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
+      "notes": "Rust Mahayana Host implements the frozen AgentStore transport as the production AgentStoreClient: scoped token caching and refresh, Cursor RPC presign/list calls, canonical relative-path validation, presigned URL allowlisting, bounded streaming reads, batched reads, content-addressed file uploads, mutable writes with probe/session preconditions, 409 retry/412 handling, conflict preservation and diagnostics. AgentStoreObjectStoreProvider consumes this client for the shipping BoxObjectStore abstraction, and ProductionBoxStoreSync resolves that provider for the AgentStore backend through the canonical Host extension lifecycle. Production wiring contracts pin this ownership and shipping consumption."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-copy-in.ts",

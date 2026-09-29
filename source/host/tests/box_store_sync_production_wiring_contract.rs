@@ -141,6 +141,23 @@ fn production_owner_wires_real_chrome_watcher_periodic_cycle_and_remote_provider
     let provider_owner = include_str!("../src/extensions/box_store_sync/box_object_store.rs");
     assert!(provider_owner.contains("BoxStoreBackendKind::AgentStore =>"));
     assert!(provider_owner.contains("AgentStoreObjectStoreProvider::new(remote)?"));
+    assert!(provider_owner.contains("AgentStoreClient::new(deps)?"));
+    assert!(provider_owner.contains("client.get_object(&self.source_id, key)?"));
+    assert!(provider_owner.contains("client.put_bytes(&self.source_id, key, bytes, precondition)?"));
+    assert!(provider_owner.contains("client.put_file_content_addressed(&self.source_id, key, src_path)?"));
+    assert!(provider_owner.contains("client.list_objects(&self.source_id, prefix)"));
+
+    let agent_store = include_str!("../src/extensions/box_store_sync/agent_store_sand_files.rs");
+    assert!(agent_store.contains("fn token_for(&self, source_id: &str)"));
+    assert!(agent_store.contains("PRESIGN_AGENT_STORE_READS_PATH"));
+    assert!(agent_store.contains("PRESIGN_AGENT_STORE_WRITES_PATH"));
+    assert!(agent_store.contains("validate_presigned_url(&self.inner.deps.backend_url"));
+    assert!(agent_store.contains("if response.status().as_u16() == 409"));
+    assert!(agent_store.contains("status == 412 || status == 409"));
+    assert!(agent_store.contains("pub fn get_object_to_file("));
+    assert!(agent_store.contains("pub fn put_file_content_addressed("));
+    assert!(agent_store.contains("pub fn presign_read_batch("));
+    assert!(agent_store.contains("pub fn list_objects("));
     assert!(provider_owner.contains("BoxStoreBackendKind::SandBoxStoreV2 =>"));
     assert!(provider_owner.contains("SandBoxStoreServiceProvider::new(client)?"));
 
