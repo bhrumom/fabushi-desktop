@@ -321,6 +321,18 @@ fn user_memory_store_aggregates_frozen_shards_and_recent_order() {
     FileMemoryStore::new(get_user_memory_shard_dir(&root, "agent-b"))
         .add_memory("newer event", day_two, MemoryKind::Log)
         .expect("event b");
+    FileMemoryStore::new(get_user_memory_shard_dir(&root, "agent-a"))
+        .add_memory("shared winner", day_one, MemoryKind::Profile)
+        .expect("shared profile older");
+    FileMemoryStore::new(get_user_memory_shard_dir(&root, "agent-b"))
+        .add_memory("SHARED WINNER", day_two, MemoryKind::Profile)
+        .expect("shared profile newer");
+    FileMemoryStore::new(get_user_memory_shard_dir(&root, "agent-a"))
+        .add_memory("[episode] durable older episode", day_one, MemoryKind::Log)
+        .expect("ranked episode");
+    FileMemoryStore::new(get_user_memory_shard_dir(&root, "agent-b"))
+        .add_memory("[note] newer low importance note", day_two, MemoryKind::Log)
+        .expect("ranked note");
 
     let user = service.user_memory_store(
         "agent-a",
@@ -332,16 +344,37 @@ fn user_memory_store_aggregates_frozen_shards_and_recent_order() {
         root.join("user-memory").join("agents").join("agent-a")
     );
     let recalled = user.recall(50, 20);
-    assert_eq!(recalled.profile.len(), 2);
+    assert_eq!(recalled.profile.len(), 3);
     assert_eq!(
         recalled.profile.iter().map(|item| item.agent_id.as_str()).collect::<Vec<_>>(),
-        vec!["agent-a", "agent-b"]
+        vec!["agent-b", "agent-b", "agent-a"]
+    );
+    assert_eq!(
+        recalled
+            .profile
+            .iter()
+            .filter(|item| item.memory.content.eq_ignore_ascii_case("shared winner"))
+            .count(),
+        1
+    );
+    assert_eq!(
+        recalled
+            .profile
+            .iter()
+            .find(|item| item.memory.content.eq_ignore_ascii_case("shared winner"))
+            .map(|item| item.agent_id.as_str()),
+        Some("agent-b")
     );
     assert_eq!(
         recalled.recent.iter().map(|item| item.memory.content.as_str()).collect::<Vec<_>>(),
-        vec!["newer event", "older event"]
+        vec![
+            "[episode] durable older episode",
+            "newer event",
+            "older event",
+            "[note] newer low importance note",
+        ]
     );
-    assert_eq!(recalled.recent[0].agent_name, "name-agent-b");
+    assert_eq!(recalled.recent[0].agent_name, "name-agent-a");
 
     let _ = fs::remove_dir_all(root);
 }
@@ -487,6 +520,12 @@ fn project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering() 
     FileMemoryStore::new(get_project_memory_shard_dir(&root, "beta", "agent-b"))
         .add_memory("beta fact", beta_at, MemoryKind::Profile)
         .expect("beta fact");
+    FileMemoryStore::new(get_project_memory_shard_dir(&root, "beta", "agent-b"))
+        .add_memory("shared project rule", beta_at, MemoryKind::Profile)
+        .expect("older shared project rule");
+    FileMemoryStore::new(get_project_memory_shard_dir(&root, "beta", "agent-c"))
+        .add_memory("SHARED PROJECT RULE", beta_at + 1_000, MemoryKind::Profile)
+        .expect("newer shared project rule");
     FileMemoryStore::new(get_project_memory_shard_dir(&root, "zeta", "agent-c"))
         .add_memory("zeta fact", zeta_at, MemoryKind::Log)
         .expect("zeta fact");
@@ -508,7 +547,25 @@ fn project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering() 
     assert_eq!(recalled.injected[0].name, "Beta Project");
     assert_eq!(
         recalled.injected[0].recall.profile[0].agent_name,
-        "display-agent-b"
+        "display-agent-c"
+    );
+    assert_eq!(
+        recalled.injected[0]
+            .recall
+            .profile
+            .iter()
+            .filter(|item| item.memory.content.eq_ignore_ascii_case("shared project rule"))
+            .count(),
+        1
+    );
+    assert_eq!(
+        recalled.injected[0]
+            .recall
+            .profile
+            .iter()
+            .find(|item| item.memory.content.eq_ignore_ascii_case("shared project rule"))
+            .map(|item| item.agent_id.as_str()),
+        Some("agent-c")
     );
     assert_eq!(
         recalled.injected[0].own_shard_dir,

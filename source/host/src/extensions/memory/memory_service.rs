@@ -715,6 +715,63 @@ pub struct ProjectMemoryPromptRecall {
     pub also_member_of: Vec<ProjectMemoryMembership>,
 }
 
+fn shared_memory_importance(content: &str) -> f64 {
+    if content.starts_with("[episode] ") {
+        1.5
+    } else if content.starts_with("[note] ") {
+        0.5
+    } else {
+        1.0
+    }
+}
+
+fn shared_memory_recall_rank(memory: &MemoryRecord) -> f64 {
+    const DAY_MS: f64 = 86_400_000.0;
+    const HALF_LIFE_DAYS: f64 = 30.0;
+    shared_memory_importance(&memory.content).log2()
+        + memory.created_at as f64 / (HALF_LIFE_DAYS * DAY_MS)
+}
+
+fn merge_scoped_memory_records(
+    records: Vec<ScopedMemoryRecord>,
+    limit: usize,
+    rank_by_recall: bool,
+) -> Vec<ScopedMemoryRecord> {
+    let mut by_key: HashMap<String, usize> = HashMap::new();
+    let mut merged: Vec<ScopedMemoryRecord> = Vec::new();
+
+    for record in records {
+        let key = memory_dedupe_key(&record.memory.content);
+        if let Some(index) = by_key.get(&key).copied() {
+            if record.memory.created_at > merged[index].memory.created_at {
+                merged[index] = record;
+            }
+        } else {
+            by_key.insert(key, merged.len());
+            merged.push(record);
+        }
+    }
+
+    if rank_by_recall {
+        merged.sort_by(|left, right| {
+            shared_memory_recall_rank(&right.memory)
+                .partial_cmp(&shared_memory_recall_rank(&left.memory))
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| right.memory.created_at.cmp(&left.memory.created_at))
+        });
+    } else {
+        merged.sort_by(|left, right| {
+            right
+                .memory
+                .created_at
+                .cmp(&left.memory.created_at)
+                .then_with(|| left.memory.content.cmp(&right.memory.content))
+        });
+    }
+    merged.truncate(limit);
+    merged
+}
+
 #[derive(Clone)]
 pub struct UserMemoryStore {
     sand_root: PathBuf,
@@ -760,7 +817,7 @@ impl UserMemoryStore {
         agent_ids.sort();
         for agent_id in agent_ids {
             let store = FileMemoryStore::new(get_user_memory_shard_dir(&self.sand_root, &agent_id));
-            let recalled = store.recall(recent_limit);
+            let recalled = store.recall(usize::MAX);
             let agent_name = (self.resolve_agent_name)(&agent_id);
             profile.extend(recalled.profile.into_iter().map(|memory| ScopedMemoryRecord {
                 agent_id: agent_id.clone(),
@@ -773,10 +830,10 @@ impl UserMemoryStore {
                 memory,
             }));
         }
-        profile.truncate(profile_limit);
-        recent.sort_by(|left, right| right.memory.created_at.cmp(&left.memory.created_at));
-        recent.truncate(recent_limit);
-        UserMemoryRecall { profile, recent }
+        UserMemoryRecall {
+            profile: merge_scoped_memory_records(profile, profile_limit, false),
+            recent: merge_scoped_memory_records(recent, recent_limit, true),
+        }
     }
 }
 
@@ -875,7 +932,7 @@ impl ProjectMemoryStore {
                     &slug,
                     &agent_id,
                 ));
-                let recalled = store.recall(recent_limit);
+                let recalled = store.recall(usize::MAX);
                 let agent_name = (self.resolve_agent_name)(&agent_id);
                 profile.extend(recalled.profile.into_iter().map(|memory| ScopedMemoryRecord {
                     agent_id: agent_id.clone(),
@@ -888,22 +945,8 @@ impl ProjectMemoryStore {
                     memory,
                 }));
             }
-            profile.sort_by(|left, right| {
-                right
-                    .memory
-                    .created_at
-                    .cmp(&left.memory.created_at)
-                    .then_with(|| left.memory.content.cmp(&right.memory.content))
-            });
-            recent.sort_by(|left, right| {
-                right
-                    .memory
-                    .created_at
-                    .cmp(&left.memory.created_at)
-                    .then_with(|| left.memory.content.cmp(&right.memory.content))
-            });
-            profile.truncate(profile_limit);
-            recent.truncate(recent_limit);
+            let profile = merge_scoped_memory_records(profile, profile_limit, false);
+            let recent = merge_scoped_memory_records(recent, recent_limit, true);
             blocks.push(ProjectMemoryBlock {
                 name: read_project_name(&self.sand_root, &slug),
                 own_shard_dir: get_project_memory_shard_dir(
