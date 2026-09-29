@@ -6414,6 +6414,7 @@ fn main() {
         ack_obligations: Arc::clone(&ack_obligations),
         transcript_runtime: Arc::clone(&transcript_runtime),
         generated_agent_runtime: Arc::clone(&generated_agent_runtime),
+        completion_revivals: Arc::clone(&completion_revivals),
         forever_box: Arc::clone(&forever_box),
         local_exec: Arc::clone(&local_exec_extension),
         local_tool_permission: Arc::clone(&local_tool_permission_extension),
