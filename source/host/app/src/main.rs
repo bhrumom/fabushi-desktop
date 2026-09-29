@@ -1621,10 +1621,6 @@ impl UnifiedGatewayApi {
         let Some(provider) = configured_routed_provider(&self.data_dir.join("settings.json")) else {
             return Ok(None);
         };
-        if provider == RoutedProvider::Cursor {
-            return Ok(None);
-        }
-
         let deps = self.local_routed_runner_deps();
         let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
             run_local_group_member_turn(deps.clone(), provider, request)
@@ -1660,9 +1656,6 @@ fn run_local_group_member_turn(
     provider: RoutedProvider,
     request: GroupMemberTurnRequest,
 ) -> Result<Vec<String>, String> {
-    if provider == RoutedProvider::Cursor {
-        return Err("Cursor group member turns remain on the compatibility path".into());
-    }
     let member_id = request.member.id.clone();
     let before = deps
         .session_workers

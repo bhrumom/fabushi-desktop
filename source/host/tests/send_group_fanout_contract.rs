@@ -1,3 +1,5 @@
+const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+
 use std::fs;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -273,4 +275,15 @@ fn shared_group_uses_remote_executor_without_creating_a_second_group_runtime() {
 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn shipping_group_fanout_keeps_cursor_on_the_canonical_host_runner_path() {
+    assert!(SHIPPING_HOST.contains("dispatch_local_group_send("));
+    assert!(SHIPPING_HOST.contains("self.cross_user.remote_executor()"));
+    assert!(SHIPPING_HOST.contains("run_local_group_member_turn(deps.clone(), provider, request)"));
+    assert!(SHIPPING_HOST.contains("start_routed_provider_task("));
+    assert!(!SHIPPING_HOST.contains("Cursor group member turns remain on the compatibility path"));
+    assert!(!SHIPPING_HOST.contains("if provider == RoutedProvider::Cursor {\n            return Ok(None);"));
 }
