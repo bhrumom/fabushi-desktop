@@ -30,9 +30,24 @@ pub struct ComputerUseUsageSnapshot {
     pub usage: Option<TurnUsage>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ComputerControlLease {
+    owner_agent_id: String,
+    window_index: u32,
+    generation: u64,
+}
+
+impl ComputerControlLease {
+    pub fn owner_agent_id(&self) -> &str { &self.owner_agent_id }
+    pub fn window_index(&self) -> u32 { self.window_index }
+    pub fn generation(&self) -> u64 { self.generation }
+}
+
 #[derive(Debug, Default)]
 pub struct ComputerUseCoordination {
     window_by_subagent: HashMap<String, u32>,
+    control_lease: Option<ComputerControlLease>,
+    next_lease_generation: u64,
     preparation_by_subagent: HashMap<String, PreparationState>,
     audit_action_counts: HashMap<String, u64>,
     model_ids: BTreeSet<String>,
@@ -51,19 +66,45 @@ impl ComputerUseCoordination {
         }
     }
 
-    pub fn allocate_window(&mut self, subagent_agent_id: &str) -> Option<u32> {
-        if let Some(existing) = self.window_by_subagent.get(subagent_agent_id) {
-            return Some(*existing);
+    pub fn acquire_control_lease(&mut self, subagent_agent_id: &str) -> Option<ComputerControlLease> {
+        if let Some(existing) = self.control_lease.as_ref() {
+            return (existing.owner_agent_id == subagent_agent_id).then(|| existing.clone());
         }
         if self.window_by_subagent.values().any(|window| *window == 1) {
             return None;
         }
-        self.window_by_subagent
-            .insert(subagent_agent_id.to_string(), 1);
-        Some(1)
+        self.next_lease_generation = self.next_lease_generation.saturating_add(1).max(1);
+        let lease = ComputerControlLease {
+            owner_agent_id: subagent_agent_id.to_string(),
+            window_index: 1,
+            generation: self.next_lease_generation,
+        };
+        self.window_by_subagent.insert(subagent_agent_id.to_string(), lease.window_index);
+        self.control_lease = Some(lease.clone());
+        Some(lease)
+    }
+
+    pub fn owns_control_lease(&self, lease: &ComputerControlLease) -> bool {
+        self.control_lease.as_ref() == Some(lease)
+            && self.window_by_subagent.get(lease.owner_agent_id()).is_some_and(|window| *window == lease.window_index())
+    }
+
+    pub fn release_control_lease(&mut self, lease: &ComputerControlLease) -> bool {
+        if !self.owns_control_lease(lease) { return false; }
+        self.window_by_subagent.remove(lease.owner_agent_id());
+        self.preparation_by_subagent.remove(lease.owner_agent_id());
+        self.control_lease = None;
+        true
+    }
+
+    pub fn allocate_window(&mut self, subagent_agent_id: &str) -> Option<u32> {
+        self.acquire_control_lease(subagent_agent_id).map(|lease| lease.window_index())
     }
 
     pub fn free_window(&mut self, subagent_agent_id: &str) {
+        if self.control_lease.as_ref().is_some_and(|lease| lease.owner_agent_id() == subagent_agent_id) {
+            self.control_lease = None;
+        }
         self.window_by_subagent.remove(subagent_agent_id);
         self.preparation_by_subagent.remove(subagent_agent_id);
     }

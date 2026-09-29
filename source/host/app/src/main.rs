@@ -3415,13 +3415,15 @@ fn start_routed_provider_task(
         agent_id.clone(),
     ));
     let computer_use_owner = host_runner_composition.computer_use_coordination();
+    let mut computer_control_lease = None;
     let mut computer_use_window_granted = true;
     if prompt_role == RunnerPromptRole::ComputerUseSubagent {
         {
             let mut owner = computer_use_owner
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            computer_use_window_granted = owner.allocate_window(&agent_id).is_some();
+            computer_control_lease = owner.acquire_control_lease(&agent_id);
+            computer_use_window_granted = computer_control_lease.is_some();
             if computer_use_window_granted {
                 owner.begin_preparation(&agent_id);
             } else {
@@ -3480,7 +3482,11 @@ fn start_routed_provider_task(
                 .windows
                 .as_ref()
                 .is_some_and(|windows| !windows.is_empty()));
-    let shipping_window_index = forever_box.box_().get_agent_window_index(&agent_id);
+    let computer_control_lease_active = computer_control_lease.as_ref().is_some_and(|lease| {
+        computer_use_owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).owns_control_lease(lease)
+    });
+    let shipping_window_index = computer_control_lease.as_ref().map(|lease| lease.window_index())
+        .or_else(|| forever_box.box_().get_agent_window_index(&agent_id));
     let human_takeover_pending = session_handoff.get(&agent_id).is_some();
 
     append_remote_box_system_prompt(
@@ -3500,6 +3506,7 @@ fn start_routed_provider_task(
             box_available: shipping_box_available,
             desktop_capable: shipping_desktop_capable,
             desktop_ready: shipping_desktop_ready,
+            control_lease_active: computer_control_lease_active,
             human_takeover_pending,
             browser_use_offered: false,
             window_index: shipping_window_index,
@@ -5012,6 +5019,9 @@ fn start_routed_provider_task(
             );
             let computer_control_handoff = session_handoff.clone();
             let computer_control_agent_id = agent_id.clone();
+            let computer_control_lease_for_check = computer_control_lease.clone();
+            let computer_control_owner_for_check = Arc::clone(&computer_use_owner);
+            let computer_control_box = Arc::clone(&forever_box);
             let computer_action_audit = Arc::clone(&action_audit_sink);
             let computer_action_agent_id = agent_id.clone();
             let computer_action_turn_id = stream_id.clone();
@@ -5056,12 +5066,33 @@ fn start_routed_provider_task(
                         });
                     }))
                     .with_availability_check(Arc::new(move |args| {
-                        if args.action != mahayana_host_runtime::runner::tools::sand_computer_tool::ComputerActionName::Screenshot
-                            && computer_control_handoff.get(&computer_control_agent_id).is_some()
-                        {
-                            return Err(ProviderSessionError::Tool(
-                                "Computer control is currently handed to the user. Wait for the user to hand the box back before sending desktop input.".into(),
-                            ));
+                        if !computer_control_box.box_().is_available() {
+                            return Err(ProviderSessionError::Tool("Computer is unavailable because the shipping box runtime is not available.".into()));
+                        }
+                        if computer_control_box.box_().inner().shared_desktop().is_none() {
+                            return Err(ProviderSessionError::Tool("Computer is unavailable because the shipping box has no desktop monitor capability.".into()));
+                        }
+                        if args.action != mahayana_host_runtime::runner::tools::sand_computer_tool::ComputerActionName::Screenshot {
+                            let lease = computer_control_lease_for_check.as_ref().ok_or_else(|| ProviderSessionError::Tool(
+                                "Computer input is unavailable because this Runner does not hold a ComputerControlLease.".into()
+                            ))?;
+                            if !computer_control_owner_for_check.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).owns_control_lease(lease) {
+                                return Err(ProviderSessionError::Tool(
+                                    "Computer input is unavailable because this Runner's ComputerControlLease is no longer active.".into(),
+                                ));
+                            }
+                            if computer_control_box.box_().get_agent_window_index(&computer_control_agent_id)
+                                .is_some_and(|window| window != lease.window_index())
+                            {
+                                return Err(ProviderSessionError::Tool(
+                                    "Computer input is unavailable because the live desktop assignment no longer matches this Runner's ComputerControlLease.".into(),
+                                ));
+                            }
+                            if computer_control_handoff.get(&computer_control_agent_id).is_some() {
+                                return Err(ProviderSessionError::Tool(
+                                    "Computer control is currently handed to the user. Wait for the user to hand the box back before sending desktop input.".into(),
+                                ));
+                            }
                         }
                         Ok(())
                     })),
@@ -5104,6 +5135,7 @@ fn start_routed_provider_task(
             let computer_exposure = if worker_generated_parent_agent_id.is_some() {
                 if worker_generated_subagent_type.eq_ignore_ascii_case("computeruse")
                     && computer_use_window_granted
+                    && computer_control_lease_active
                 {
                     ComputerToolExposure::Full
                 } else {
@@ -5444,7 +5476,11 @@ fn start_routed_provider_task(
                     owner.record_model_id(model_id);
                 }
                 owner.record_turn_ended(usage);
-                owner.free_window(&agent_id);
+                if let Some(lease) = computer_control_lease.as_ref() {
+                    let _ = owner.release_control_lease(lease);
+                } else {
+                    owner.free_window(&agent_id);
+                }
             }
             worker_transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
             worker_registry.finish_routed_provider(&worker_stream_id);

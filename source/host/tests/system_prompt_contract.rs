@@ -250,6 +250,7 @@ fn shipping_remote_box_and_computer_sections_follow_frozen_order_and_live_gates(
             box_available: true,
             desktop_capable: true,
             desktop_ready: true,
+            control_lease_active: true,
             human_takeover_pending: false,
             browser_use_offered: false,
             window_index: Some(2),
@@ -300,11 +301,24 @@ fn shipping_remote_box_and_computer_sections_follow_frozen_order_and_live_gates(
     assert!(computer_use.starts_with("## Computer"));
     assert!(computer_use.contains("window index is 4"));
 
+    let no_lease = render_computer_system_prompt(&ComputerPromptState {
+        role: RunnerPromptRole::ComputerUseSubagent,
+        box_available: true,
+        desktop_capable: true,
+        desktop_ready: true,
+        control_lease_active: false,
+        human_takeover_pending: false,
+        browser_use_offered: false,
+        window_index: Some(4),
+    });
+    assert!(no_lease.contains("does not hold the live ComputerControlLease"));
+
     let other = render_computer_system_prompt(&ComputerPromptState {
         role: RunnerPromptRole::OtherSubagent,
         box_available: true,
         desktop_capable: true,
         desktop_ready: true,
+        control_lease_active: false,
         human_takeover_pending: false,
         browser_use_offered: false,
         window_index: None,

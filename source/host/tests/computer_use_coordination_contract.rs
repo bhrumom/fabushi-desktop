@@ -4,20 +4,28 @@ use mahayana_host_runtime::runner::computer_use::{
 };
 
 #[test]
-fn single_desktop_window_is_reentrant_for_owner_and_exclusive_across_subagents() {
+fn single_desktop_control_lease_is_reentrant_exclusive_and_generation_fenced() {
     let mut coordination = ComputerUseCoordination::new(true);
-    assert_eq!(coordination.allocate_window("a"), Some(1));
-    assert_eq!(coordination.allocate_window("a"), Some(1));
-    assert_eq!(coordination.allocate_window("b"), None);
+    let lease_a = coordination.acquire_control_lease("a").expect("lease a");
+    assert_eq!(lease_a.owner_agent_id(), "a");
+    assert_eq!(lease_a.window_index(), 1);
+    assert_eq!(coordination.acquire_control_lease("a"), Some(lease_a.clone()));
+    assert!(coordination.owns_control_lease(&lease_a));
+    assert!(coordination.acquire_control_lease("b").is_none());
 
     coordination.begin_preparation("a");
     assert_eq!(coordination.preparation_for("a"), Some(PreparationState::Pending));
     coordination.mark_preparation_ready("a");
     assert_eq!(coordination.preparation_for("a"), Some(PreparationState::Ready));
 
-    coordination.free_window("a");
+    assert!(coordination.release_control_lease(&lease_a));
+    assert!(!coordination.owns_control_lease(&lease_a));
     assert_eq!(coordination.preparation_for("a"), None);
-    assert_eq!(coordination.allocate_window("b"), Some(1));
+
+    let lease_b = coordination.acquire_control_lease("b").expect("lease b");
+    assert!(lease_b.generation() > lease_a.generation());
+    assert!(!coordination.release_control_lease(&lease_a));
+    assert!(coordination.owns_control_lease(&lease_b));
 }
 
 #[test]

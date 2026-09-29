@@ -1,5 +1,6 @@
 const SHIPPING_BOX_RUNNER: &str = include_str!("../src/extensions/forever_box/runner_tools.rs");
 const HOST_RUNNER_COMPOSITION: &str = include_str!("../src/host_runner_composition.rs");
+const COMPUTER_USE_OWNER: &str = include_str!("../src/runner/computer_use.rs");
 const SHIPPING_HOST_MAIN: &str = include_str!("../app/src/main.rs");
 
 #[test]
@@ -50,16 +51,24 @@ fn shipping_remote_box_and_computer_owners_are_consumed_not_test_only_helpers() 
 
     assert!(HOST_RUNNER_COMPOSITION.contains("computer_use: Arc<Mutex<ComputerUseCoordination>>"));
     assert!(HOST_RUNNER_COMPOSITION.contains("pub fn computer_use_coordination(&self)"));
+    assert!(COMPUTER_USE_OWNER.contains("pub struct ComputerControlLease"));
+    assert!(COMPUTER_USE_OWNER.contains("pub fn acquire_control_lease("));
+    assert!(COMPUTER_USE_OWNER.contains("pub fn owns_control_lease("));
+    assert!(COMPUTER_USE_OWNER.contains("pub fn release_control_lease("));
 
     for binding in [
         "let shipping_box_resources = Arc::new(ForeverBoxRunnerResourcePort::new(",
         "let computer_use_owner = host_runner_composition.computer_use_coordination();",
-        "owner.allocate_window(&agent_id)",
+        "owner.acquire_control_lease(&agent_id)",
+        "owner.owns_control_lease(lease)",
         "owner.begin_preparation(&agent_id)",
         "box-chrome --sand-prepare",
         "owner.record_turn_ended(usage)",
-        "owner.free_window(&agent_id)",
+        "owner.release_control_lease(lease)",
         "shipping_box_resources.clone()",
+        "computer_control_box.box_().is_available()",
+        "computer_control_box.box_().inner().shared_desktop().is_none()",
+        "Computer input is unavailable because this Runner does not hold a ComputerControlLease.",
     ] {
         assert!(
             SHIPPING_HOST_MAIN.contains(binding),

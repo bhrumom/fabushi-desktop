@@ -462,6 +462,7 @@ pub struct ComputerPromptState {
     pub box_available: bool,
     pub desktop_capable: bool,
     pub desktop_ready: bool,
+    pub control_lease_active: bool,
     pub human_takeover_pending: bool,
     pub browser_use_offered: bool,
     pub window_index: Option<u32>,
@@ -528,6 +529,9 @@ pub fn render_computer_system_prompt(state: &ComputerPromptState) -> String {
     }
     if !state.box_available || !state.desktop_capable {
         return "## Computer\nComputer control is unavailable in the current shipping box runtime. Do not claim to see or control a desktop, and do not substitute Shell-driven GUI automation for unavailable Computer capability.".into();
+    }
+    if state.role == RunnerPromptRole::ComputerUseSubagent && !state.control_lease_active {
+        return "## Computer\nInteractive Computer control is unavailable because this Runner does not hold the live ComputerControlLease for the box desktop. Do not send desktop input or compete with the current controller; report the unavailable control state and wait for a new computer-use turn.".into();
     }
     if state.human_takeover_pending {
         return "## Computer\nThe user currently has control of this box desktop through the shipping handoff owner. You may use the read-only Screenshot surface if it is available, but do not send clicks, typing, keys, scrolling, drag, move, or wait actions until the user hands control back.".into();
