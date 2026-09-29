@@ -139,20 +139,28 @@ impl GroupOrchestratorDeps for LocalGroupFanoutDeps {
         request: GroupMemberTurnRequest,
     ) -> futures::future::BoxFuture<'a, Vec<String>> {
         let member_id = request.member.id.clone();
-        let executor = if member_id.starts_with("sand-remote:") {
+        let is_remote = member_id.starts_with("sand-remote:");
+        let executor = if is_remote {
             self.remote_executor.as_ref().unwrap_or(&self.executor)
         } else {
             &self.executor
         };
+        if is_remote {
+            self.runtime
+                .set_active_remote_member(&self.room_id, Some(&member_id));
+        }
         let output = match executor(request) {
             Ok(messages) => messages,
             Err(error) => {
                 if let Ok(mut failures) = self.member_failures.lock() {
-                    failures.push((member_id, error));
+                    failures.push((member_id.clone(), error));
                 }
                 Vec::new()
             }
         };
+        if is_remote {
+            self.runtime.set_active_remote_member(&self.room_id, None);
+        }
         futures::future::ready(output).boxed()
     }
 

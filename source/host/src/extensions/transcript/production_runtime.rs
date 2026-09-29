@@ -1083,6 +1083,16 @@ impl ProductionTranscriptRuntime {
         state.lifecycle.track_retrying_from_update(agent_id, update);
     }
 
+    pub fn set_active_remote_member(
+        &self,
+        agent_id: &str,
+        remote_member_id: Option<&str>,
+    ) {
+        self.lock_state()
+            .lifecycle
+            .set_active_remote_member(agent_id, remote_member_id);
+    }
+
     pub fn track_box_request_entry(
         &self,
         agent_id: &str,
@@ -1138,10 +1148,14 @@ impl ProductionTranscriptRuntime {
             let Some(agent_id) = object.get("id").and_then(Value::as_str).map(str::to_string) else {
                 continue;
             };
+            let active_remote_member_id = state
+                .lifecycle
+                .active_remote_member_id(&agent_id)
+                .map(ToOwned::to_owned);
             let projected = state.lifecycle.project_run_state(
                 &agent_id,
                 durable_subagent_parents.contains(&agent_id),
-                None,
+                active_remote_member_id.as_deref(),
             );
             object.insert("isRunning".into(), Value::Bool(projected.is_running));
             object.insert(

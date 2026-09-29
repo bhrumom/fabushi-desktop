@@ -65,6 +65,7 @@ pub struct RunLifecycleState {
     last_request_id: HashMap<String, String>,
     turn_request_ids: HashMap<String, HashSet<String>>,
     turn_ended_seq: HashMap<String, u64>,
+    active_remote_members: HashMap<String, String>,
 }
 
 impl RunLifecycleState {
@@ -227,6 +228,23 @@ impl RunLifecycleState {
 
     pub fn active_run_session(&self) -> Option<&str> {
         self.active_run_session.as_deref()
+    }
+
+    pub fn set_active_remote_member(&mut self, agent_id: &str, remote_member_id: Option<&str>) {
+        let remote_member_id = remote_member_id.map(str::trim).filter(|value| !value.is_empty());
+        match remote_member_id {
+            Some(remote_member_id) => {
+                self.active_remote_members
+                    .insert(agent_id.to_string(), remote_member_id.to_string());
+            }
+            None => {
+                self.active_remote_members.remove(agent_id);
+            }
+        }
+    }
+
+    pub fn active_remote_member_id(&self, agent_id: &str) -> Option<&str> {
+        self.active_remote_members.get(agent_id).map(String::as_str)
     }
 
     pub fn project_run_state(
@@ -418,5 +436,6 @@ impl RunLifecycleState {
         self.activity.remove(agent_id);
         self.structured_activity.remove(agent_id);
         self.activity_holds.remove(agent_id);
+        self.active_remote_members.remove(agent_id);
     }
 }

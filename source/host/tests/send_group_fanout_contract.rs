@@ -103,6 +103,11 @@ fn local_group_fanout_reads_room_history_executes_members_and_durably_posts_auth
     assert!(!calls.is_empty());
     assert!(calls.iter().all(|(_, _, system)| system.contains("SendMessage")));
 
+    let mut settled_rows = json!([{"id": room.id.clone()}]);
+    runtime.decorate_agent_summaries(&mut settled_rows);
+    assert!(settled_rows[0]["activeRemoteMemberId"].is_null());
+    runtime.end_provider_run(&room.id);
+
     let entries = sessions
         .read_agent_transcript_entries(&room.id)
         .expect("room transcript");
@@ -203,7 +208,18 @@ fn shared_group_uses_remote_executor_without_creating_a_second_group_runtime() {
     });
     let observed = Arc::new(Mutex::new(Vec::new()));
     let observed_remote = Arc::clone(&observed);
+    let runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    runtime.begin_provider_run(&room.id);
+    let observed_runtime = Arc::clone(&runtime);
+    let observed_room_id = room.id.clone();
     let remote: GroupMemberTurnExecutor = Arc::new(move |request| {
+        let mut rows = json!([{"id": observed_room_id}]);
+        observed_runtime.decorate_agent_summaries(&mut rows);
+        assert_eq!(rows[0]["isRunning"], true);
+        assert_eq!(
+            rows[0]["activeRemoteMemberId"].as_str(),
+            Some(request.member.id.as_str()),
+        );
         observed_remote.lock().expect("remote calls").push((
             request.member.id.clone(),
             request.shared_room_id.clone(),
@@ -216,7 +232,7 @@ fn shared_group_uses_remote_executor_without_creating_a_second_group_runtime() {
 
     let outcome = dispatch_local_group_send(
         Arc::clone(&sessions),
-        Arc::new(ProductionTranscriptRuntime::new(Some(&root))),
+        Arc::clone(&runtime),
         &room.id,
         0,
         local,
