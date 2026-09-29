@@ -293,6 +293,7 @@ fn copy_in_status_is_atomic_and_transient_retry_classification_fails_closed_for_
         bytes: 5,
         verified: 1,
         failures: vec!["network connection reset".into()],
+        hydrate_source: None,
     };
     assert!(is_transient_copy_in_failure(&transient));
     let auth = mahayana_host_runtime::extensions::box_store_sync::box_copy_in::CopyInResult {
