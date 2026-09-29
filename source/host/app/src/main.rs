@@ -6114,11 +6114,6 @@ fn main() {
         move |room_agent_id, remote_executor| {
             let provider = configured_routed_provider(&shared_room_settings_path)
                 .ok_or_else(|| "no routed provider configured for shared-room fanout".to_string())?;
-            if provider == RoutedProvider::Cursor {
-                return Err(
-                    "Cursor shared-room fanout remains on the compatibility path".to_string(),
-                );
-            }
             let deps = shared_room_runner_deps.clone();
             let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
                 run_local_group_member_turn(deps.clone(), provider, request)

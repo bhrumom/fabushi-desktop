@@ -15655,7 +15655,7 @@
         "source/host/tests/routed_send_acceptance_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Rust Session Gateway owns createGroup/setGroupMembers and group config. Production room turns now consume the canonical GroupChatOrchestrator; local non-Cursor members execute through the real Routed Runner, and shared/remote members use the production CrossUser remote executor through that same orchestrator. This closes the former remote/shared-room delegate blocker. The row remains non-final because frozen GroupChatGlue still requires Cursor member-run parity, streaming preview lifecycle, reactions, three-attempt direct-message preemption/redrive behavior, activity/trace lifecycle parity, and the full shared-room guardrail/publication behavior at this owner boundary."
+      "notes": "Shipping Rust Session Gateway owns createGroup/setGroupMembers and group config. Production room turns consume the canonical GroupChatOrchestrator; local members, including Cursor-backed members, execute through the real Routed Runner, and shared/remote members use the production CrossUser remote executor through that same orchestrator. The shared-room production callback also uses this provider-agnostic path rather than a Cursor compatibility route. This row remains non-final for streaming preview lifecycle, reactions, three-attempt direct-message preemption/redrive behavior, activity/trace lifecycle parity, and the full shared-room guardrail/publication behavior at this owner boundary."
     },
     {
       "referencePath": "source/host/extensions/transcript/group-chat-orchestrator.ts",
@@ -16117,7 +16117,7 @@
         "source/host/tests/routed_send_acceptance_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Production Rust group fanout runs on the shipping Host path for non-Cursor providers: the outer room send owns the room epoch, local members get real groupMemberTurn Routed Runner leases, and shared/remote members are routed through the live CrossUser remote executor using the same GroupChatOrchestrator. The former shared/remote deferral blocker is closed when that executor is present, and no parallel group runtime is created. The row remains non-final because the frozen dispatchMirrorOrGroupSend contract still needs complete mirror-room send semantics (text/image/non-image attachment validation and acceptance), canonical user-entry publication ordering, Cursor-native member execution, and the frozen redrive/reaction/stream-preview semantics owned by the broader GroupChatGlue path."
+      "notes": "Production Rust group fanout runs on the shipping Host path for every configured routed provider, including Cursor: the outer room send owns the room epoch, local members enter the canonical run_local_group_member_turn -> start_routed_provider_task Host/Runner route, and shared/remote members use the live CrossUser remote executor through the same GroupChatOrchestrator. Shared-room CrossUser turns no longer carry a Cursor compatibility exclusion, and activeRemoteMemberId is projected/cleared by the same ProductionTranscriptRuntime. The row remains non-final for the frozen dispatchMirrorOrGroupSend mirror-room send semantics (text/image/non-image attachment validation and acceptance), canonical user-entry publication ordering, and broader redrive/reaction/stream-preview behavior."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-message-shaping.ts",
@@ -16216,7 +16216,7 @@
         "source/host/tests/send_group_fanout_contract.rs",
         "source/host/tests/ack_obligations_contract.rs"
       ],
-      "notes": "Shipping Rust owns nonce admission/coalescing, durable Session echo, queue/watchdog, turn epochs, attachment batch identity, recovery sends, ack obligations, checkpoint settlement, BoxRequestEntries, and real local non-Cursor group fanout through per-member Runner leases and durable room SendMessage projection. Frozen SendAckGuard is now production-wired as a Rust RAII guard around both routed admission and ordinary sendPrompt: after durable direct-local acceptance it best-effort recreates a missing obligation on early exit without double-coalescing an already recorded obligation. Final remains withheld for Cursor/remote/shared-room fanout and full generated Agent media consumption."
+      "notes": "Shipping Rust owns nonce admission/coalescing, durable Session echo, queue/watchdog, turn epochs, attachment batch identity, recovery sends, ack obligations, checkpoint settlement, BoxRequestEntries, and real group fanout through per-member Runner leases plus durable room SendMessage projection. Frozen SendAckGuard is production-wired as a Rust RAII guard around both routed admission and ordinary sendPrompt: after durable direct-local acceptance it best-effort recreates a missing obligation on early exit without double-coalescing an already recorded obligation. Cursor is no longer excluded from local/shared group member execution; final remains withheld for remote mirror-room send acceptance/publication semantics and full generated Agent media consumption."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-thread-stamping.ts",

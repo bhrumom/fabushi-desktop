@@ -287,3 +287,11 @@ fn shipping_group_fanout_keeps_cursor_on_the_canonical_host_runner_path() {
     assert!(!SHIPPING_HOST.contains("Cursor group member turns remain on the compatibility path"));
     assert!(!SHIPPING_HOST.contains("if provider == RoutedProvider::Cursor {\n            return Ok(None);"));
 }
+
+#[test]
+fn shipping_shared_room_fanout_keeps_cursor_on_the_same_canonical_runner_path() {
+    assert!(SHIPPING_HOST.contains("let run_shared_room_turn: SharedRoomTurnRunner"));
+    assert!(SHIPPING_HOST.contains("run_local_group_member_turn(deps.clone(), provider, request)"));
+    assert!(SHIPPING_HOST.contains("dispatch_local_group_send("));
+    assert!(!SHIPPING_HOST.contains("Cursor shared-room fanout remains on the compatibility path"));
+}
