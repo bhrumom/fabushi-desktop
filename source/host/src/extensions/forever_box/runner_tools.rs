@@ -70,7 +70,7 @@ impl ForeverBoxRunnerResourcePort {
                     .get_agent_window_index(&agent_id)
                     .unwrap_or(1);
                 let owns_monitor = service.box_().inner().shared_desktop().is_some()
-                    && ready.vnc_url.is_some();
+                    && !ready.vnc_url.trim().is_empty();
                 Ok(RemoteConnection {
                     terminals_folder: ready.terminals_folder.to_string(),
                     resource: Arc::new(Mutex::new(ready.remote_accessor)),
