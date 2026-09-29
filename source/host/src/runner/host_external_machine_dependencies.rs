@@ -5,8 +5,7 @@ use serde_json::{Value, json};
 use crate::extensions::inference::provider_session::ProviderSessionError;
 use crate::extensions::local_exec::extension::HostLocalExecExtension;
 use crate::extensions::local_exec::gateway_local_exec_sand_box::{
-    GatewayLocalExecManager, GatewayLocalExecSandBox, GatewayLocalToolGate,
-    GatewayLocalToolScope,
+    GatewayLocalExecManager, GatewayLocalToolGate, GatewayLocalToolScope,
 };
 use crate::extensions::local_tool_permission::extension::HostLocalToolPermissionExtension;
 use crate::runner::tools::sand_external_machine_tools::{
@@ -26,7 +25,8 @@ impl ProductionExternalMachineExecutor {
         agent_id: impl Into<String>,
     ) -> Self {
         let gate: Arc<dyn GatewayLocalToolGate> = local_tool_permission;
-        let manager = GatewayLocalExecSandBox::new(local_exec.bridge(), gate)
+        let manager = local_exec
+            .sandbox(gate)
             .remote_resource_accessor()
             .manager();
         Self {

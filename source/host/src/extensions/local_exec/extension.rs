@@ -6,15 +6,21 @@ use crate::extensions::extension_ids_generated::HostExtensionId;
 use crate::gateway_server::{GatewayBridgeClose, GatewayBridgeHub};
 use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use crate::extensions::telemetry::local_exec_telemetry::{
-    LocalExecProviderReport, LocalExecRefusalCause, LocalExecRefusedReport,
+    LocalExecFailedReport, LocalExecProviderReport, LocalExecRefusalCause,
+    LocalExecRefusedReport, local_exec_failed_telemetry,
     local_exec_provider_telemetry, local_exec_refused_telemetry,
 };
 
+use super::gateway_local_exec_sand_box::{
+    GatewayLocalExecFailureReport, GatewayLocalExecFailureReporter,
+    GatewayLocalExecSandBox, GatewayLocalToolGate,
+};
 use super::local_exec_bridge::{
     LocalExecComputer, LocalExecProviderInfo, LocalExecProviderLifecycleReport,
     LocalExecProviderRegistration, LocalExecRefusalCause as BridgeRefusalCause,
     LocalExecRefusalReport as BridgeRefusalReport, SandLocalExecBridge,
 };
+use super::local_exec_failure_classifier::LocalExecFailureClass;
 
 pub const LOCAL_EXEC_DEPENDENCIES: &[HostExtensionId] = &[
     HostExtensionId::LocalToolPermission,
@@ -23,6 +29,15 @@ pub const LOCAL_EXEC_DEPENDENCIES: &[HostExtensionId] = &[
 
 pub fn local_exec_extension_id() -> HostExtensionId {
     HostExtensionId::LocalExec
+}
+
+fn failure_class_name(error_class: LocalExecFailureClass) -> &'static str {
+    match error_class {
+        LocalExecFailureClass::Other => "other",
+        LocalExecFailureClass::SpawnEnoent => "spawn_enoent",
+        LocalExecFailureClass::SpawnPermissions => "spawn_permissions",
+        LocalExecFailureClass::SpawnOther => "spawn_other",
+    }
 }
 
 /// Host owner for the desktop local-exec provider transport.
@@ -67,6 +82,25 @@ impl HostLocalExecExtension {
 
     pub fn bridge(&self) -> SandLocalExecBridge {
         self.bridge.clone()
+    }
+
+    pub fn sandbox(
+        &self,
+        gate: Arc<dyn GatewayLocalToolGate>,
+    ) -> GatewayLocalExecSandBox {
+        let logs = self.logs.clone();
+        let failure_reporter: GatewayLocalExecFailureReporter =
+            Arc::new(move |report: GatewayLocalExecFailureReport| {
+                let report = LocalExecFailedReport {
+                    error_class: failure_class_name(report.error_class).to_string(),
+                    errno: report.errno,
+                    site: report.site,
+                    conversation_id: report.conversation_id.unwrap_or_default(),
+                };
+                let _ = logs.report_projection(&local_exec_failed_telemetry(&report));
+            });
+        GatewayLocalExecSandBox::new(self.bridge(), gate)
+            .with_failure_reporter(failure_reporter)
     }
 
     pub fn gateway_bridge(self: &Arc<Self>) -> GatewayBridgeHub {

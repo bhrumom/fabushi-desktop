@@ -39,7 +39,6 @@ impl ProductionFileTransferExecutor {
         &self,
     ) -> FileTransferController<ForeverBoxService, GatewayLocalExecSandBox> {
         let gate: Arc<dyn GatewayLocalToolGate> = self.local_tool_permission.clone();
-        let bridge = self.local_exec.bridge();
         let user_computers = self
             .local_exec
             .list_computers()
@@ -49,7 +48,8 @@ impl ProductionFileTransferExecutor {
                 label: computer.label,
                 connected: computer.connected,
                 box_: Arc::new(
-                    GatewayLocalExecSandBox::new(bridge.clone(), Arc::clone(&gate))
+                    self.local_exec
+                        .sandbox(Arc::clone(&gate))
                         .for_computer(computer.id),
                 ),
             })

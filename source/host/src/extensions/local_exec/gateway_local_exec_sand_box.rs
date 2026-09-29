@@ -8,6 +8,9 @@ use super::local_exec_bridge::{
     LocalExecComputer, SandLocalExecBridge, SAND_NO_LOCAL_MACHINE_MESSAGE,
 };
 use super::local_exec_error::SandLocalExecError;
+use super::local_exec_failure_classifier::{
+    LocalExecFailureClass, classify_local_exec_failure,
+};
 use super::production::{
     GatewayExecControl, ProductionExecClientPayload, ProductionShellStreamEvent,
     RemoteResourceAccessor, PRODUCTION_LOCAL_EXEC_CODEC,
@@ -39,6 +42,17 @@ pub struct GatewayLocalToolScope {
     pub tool_call_id: Option<String>,
     pub action: Option<String>,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GatewayLocalExecFailureReport {
+    pub error_class: LocalExecFailureClass,
+    pub errno: Option<String>,
+    pub site: String,
+    pub conversation_id: Option<String>,
+}
+
+pub type GatewayLocalExecFailureReporter =
+    Arc<dyn Fn(GatewayLocalExecFailureReport) + Send + Sync>;
 
 pub trait GatewayLocalToolGate: Send + Sync {
     fn blocked_reason(&self) -> Option<String>;
@@ -116,6 +130,7 @@ pub struct GatewayLocalExecSandBox {
     gate: Arc<dyn GatewayLocalToolGate>,
     computer_id: Option<String>,
     max_file_bytes: usize,
+    failure_reporter: Option<GatewayLocalExecFailureReporter>,
 }
 
 impl GatewayLocalExecSandBox {
@@ -128,6 +143,7 @@ impl GatewayLocalExecSandBox {
             gate,
             computer_id: None,
             max_file_bytes: DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES,
+            failure_reporter: None,
         }
     }
 
@@ -138,6 +154,14 @@ impl GatewayLocalExecSandBox {
 
     pub fn with_max_file_bytes(mut self, max_file_bytes: usize) -> Self {
         self.max_file_bytes = max_file_bytes;
+        self
+    }
+
+    pub fn with_failure_reporter(
+        mut self,
+        failure_reporter: GatewayLocalExecFailureReporter,
+    ) -> Self {
+        self.failure_reporter = Some(failure_reporter);
         self
     }
 
@@ -317,6 +341,19 @@ impl GatewayLocalExecSandBox {
         }
     }
 
+    fn report_exec_failure(&self, scope: &GatewayLocalToolScope, message: &str) {
+        let Some(reporter) = self.failure_reporter.as_ref() else {
+            return;
+        };
+        let classification = classify_local_exec_failure(message);
+        reporter(GatewayLocalExecFailureReport {
+            error_class: classification.error_class,
+            errno: classification.errno,
+            site: "exec".to_string(),
+            conversation_id: scope.agent_id.clone(),
+        });
+    }
+
     fn check_blocked(&self) -> Result<(), SandLocalExecError> {
         match self.gate.blocked_reason() {
             Some(reason) => Err(SandLocalExecError::new(reason)),
@@ -413,6 +450,7 @@ impl GatewayLocalExecManager {
                         .map_err(SandLocalExecError::new)?
                     {
                         GatewayExecControl::Throw { error, stack_trace } => {
+                            self.sandbox.report_exec_failure(scope, &error);
                             request.close();
                             let detail = stack_trace
                                 .filter(|stack| !stack.trim().is_empty())
@@ -478,6 +516,7 @@ impl GatewayLocalExecManager {
                         .map_err(SandLocalExecError::new)?
                     {
                         GatewayExecControl::Throw { error, stack_trace } => {
+                            self.sandbox.report_exec_failure(scope, &error);
                             request.close();
                             let detail = stack_trace
                                 .filter(|stack| !stack.trim().is_empty())

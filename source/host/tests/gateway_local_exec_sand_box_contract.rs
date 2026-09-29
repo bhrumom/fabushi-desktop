@@ -3,10 +3,11 @@ use std::thread;
 use std::time::Duration;
 
 use mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::{
-    DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, GatewayLocalExecSandBox, GatewayLocalToolGate,
-    GatewayLocalToolScope,
+    DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, GatewayLocalExecFailureReport,
+    GatewayLocalExecSandBox, GatewayLocalToolGate, GatewayLocalToolScope,
     create_bridge_user_computers, local_exec_file_too_large_message,
 };
+use mahayana_host_runtime::extensions::local_exec::local_exec_failure_classifier::LocalExecFailureClass;
 use mahayana_host_runtime::extensions::local_exec::local_exec_bridge::SandLocalExecBridge;
 use mahayana_host_runtime::extensions::local_exec::local_exec_error::SandLocalExecError;
 use serde_json::json;
@@ -266,4 +267,64 @@ fn exec_manager_streams_shell_and_read_through_permissioned_provider() {
     let calls = gate.calls.lock().expect("calls");
     assert!(calls.iter().any(|(_, action, target)| action == "run-command" && target == "pwd"));
     assert!(calls.iter().any(|(_, action, target)| action == "read-file" && target == "/tmp/a.txt"));
+}
+
+
+#[test]
+fn exec_manager_reports_control_throw_with_frozen_failure_classification() {
+    let (bridge, _registration, receive) = bridge_with_provider();
+    let gate = Arc::new(FakeGate::default());
+    let reports = Arc::new(Mutex::new(Vec::<GatewayLocalExecFailureReport>::new()));
+    let report_sink = Arc::clone(&reports);
+    let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate)
+        .with_failure_reporter(Arc::new(move |report| {
+            report_sink.lock().expect("reports").push(report);
+        }))
+        .remote_resource_accessor()
+        .manager();
+
+    let shell_manager = Arc::clone(&manager);
+    let shell = thread::spawn(move || {
+        shell_manager.execute_shell(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-telemetry".into()),
+                tool_call_id: Some("shell-failure".into()),
+                action: Some("run-command".into()),
+            },
+            "rg needle",
+            "/tmp",
+            "shell-failure",
+        )
+    });
+    let frame = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("exec frame");
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"control",
+        "requestId":frame["requestId"],
+        "message":{"throw":{
+            "error":"Error: spawn rg ENOENT",
+            "stackTrace":"provider-stack"
+        }}
+    }]}));
+
+    let error = shell
+        .join()
+        .expect("shell thread")
+        .expect_err("provider throw must fail");
+    assert!(error.to_string().contains("Error: spawn rg ENOENT"));
+    assert!(error.to_string().contains("provider-stack"));
+    let _ = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("exec cleanup cancel");
+
+    assert_eq!(
+        reports.lock().expect("reports").as_slice(),
+        &[GatewayLocalExecFailureReport {
+            error_class: LocalExecFailureClass::SpawnEnoent,
+            errno: Some("ENOENT".into()),
+            site: "exec".into(),
+            conversation_id: Some("agent-telemetry".into()),
+        }]
+    );
 }
