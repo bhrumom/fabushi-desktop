@@ -3,8 +3,8 @@ use std::cell::Cell;
 use mahayana_host_runtime::extensions::inference::sand_model_experiment::{
     SAND_AUTOMATION_REQUEST_SOURCE, SandAgentModelParameter, SandAgentModelSelection,
     SandModelExperimentArm, SandModelExperimentState,
-    sand_model_experiment_opus_medium_selection, select_sand_experiment_turn_model,
-    select_sand_model_experiment_model,
+    read_sand_model_experiment_env_override, sand_model_experiment_opus_medium_selection,
+    select_sand_experiment_turn_model, select_sand_model_experiment_model,
 };
 
 fn configured(id: &str) -> SandAgentModelSelection {
@@ -16,6 +16,33 @@ fn configured(id: &str) -> SandAgentModelSelection {
             value: "high".into(),
         }],
     }
+}
+
+#[test]
+fn env_override_matches_frozen_control_and_treatment_aliases() {
+    assert_eq!(
+        read_sand_model_experiment_env_override(Some(" control ")),
+        Some(SandModelExperimentState {
+            active: true,
+            arm: SandModelExperimentArm::Control,
+        })
+    );
+    assert_eq!(
+        read_sand_model_experiment_env_override(Some("TREATMENT")),
+        Some(SandModelExperimentState {
+            active: true,
+            arm: SandModelExperimentArm::Treatment,
+        })
+    );
+    assert_eq!(
+        read_sand_model_experiment_env_override(Some("test")),
+        Some(SandModelExperimentState {
+            active: true,
+            arm: SandModelExperimentArm::Treatment,
+        })
+    );
+    assert_eq!(read_sand_model_experiment_env_override(Some("off")), None);
+    assert_eq!(read_sand_model_experiment_env_override(None), None);
 }
 
 #[test]
