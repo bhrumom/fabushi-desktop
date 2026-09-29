@@ -1,12 +1,14 @@
+use std::collections::BTreeSet;
 use std::fs;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::memory::memory_service::{
     FileMemoryStore, MemoryKind, MemoryOrigin, MemoryService, MemorySynthesisBridge,
-    agent_memory_has_content,
-    get_agent_memory_dir, memory_id_for, normalize_memory_content, parse_facts,
+    agent_memory_has_content, get_agent_memory_dir, get_project_memory_shard_dir,
+    get_user_memory_shard_dir, memory_id_for, normalize_memory_content, parse_facts,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -228,5 +230,149 @@ fn memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory
         "ignored",
         1_900_000_000_001,
     ));
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn user_memory_store_aggregates_frozen_shards_and_recent_order() {
+    let root = temp_root("user-shards");
+    let service = MemoryService::new_with_sand_root(&root, root.join("agents"));
+    let day_one = chrono::DateTime::parse_from_rfc3339("2026-09-20T00:00:00Z")
+        .expect("day one")
+        .timestamp_millis();
+    let day_two = chrono::DateTime::parse_from_rfc3339("2026-09-21T00:00:00Z")
+        .expect("day two")
+        .timestamp_millis();
+
+    FileMemoryStore::new(get_user_memory_shard_dir(&root, "agent-a"))
+        .add_memory("shared profile A", day_one, MemoryKind::Profile)
+        .expect("profile a");
+    FileMemoryStore::new(get_user_memory_shard_dir(&root, "agent-a"))
+        .add_memory("older event", day_one, MemoryKind::Log)
+        .expect("event a");
+    FileMemoryStore::new(get_user_memory_shard_dir(&root, "agent-b"))
+        .add_memory("shared profile B", day_two, MemoryKind::Profile)
+        .expect("profile b");
+    FileMemoryStore::new(get_user_memory_shard_dir(&root, "agent-b"))
+        .add_memory("newer event", day_two, MemoryKind::Log)
+        .expect("event b");
+
+    let user = service.user_memory_store(
+        "agent-a",
+        Arc::new(|id| format!("name-{id}")),
+    );
+    assert_eq!(user.get_location(), root.join("user-memory"));
+    assert_eq!(
+        user.get_own_shard_location(),
+        root.join("user-memory").join("agents").join("agent-a")
+    );
+    let recalled = user.recall(50, 20);
+    assert_eq!(recalled.profile.len(), 2);
+    assert_eq!(
+        recalled.profile.iter().map(|item| item.agent_id.as_str()).collect::<Vec<_>>(),
+        vec!["agent-a", "agent-b"]
+    );
+    assert_eq!(
+        recalled.recent.iter().map(|item| item.memory.content.as_str()).collect::<Vec<_>>(),
+        vec!["newer event", "older event"]
+    );
+    assert_eq!(recalled.recent[0].agent_name, "name-agent-b");
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn project_memory_store_reads_membership_shards_and_applies_global_cap() {
+    let root = temp_root("project-shards");
+    let agents_root = root.join("agents");
+    let service = MemoryService::new_with_sand_root(&root, &agents_root);
+    let own_agent = agents_root.join("owner");
+    let membership = service.create_project_membership(&own_agent);
+    let mut projects = BTreeSet::new();
+    projects.insert("alpha".to_string());
+    projects.insert("beta".to_string());
+    membership.write(&projects).expect("write membership");
+
+    let first = chrono::DateTime::parse_from_rfc3339("2026-09-20T00:00:00Z")
+        .expect("first")
+        .timestamp_millis();
+    let second = chrono::DateTime::parse_from_rfc3339("2026-09-22T00:00:00Z")
+        .expect("second")
+        .timestamp_millis();
+    FileMemoryStore::new(get_project_memory_shard_dir(&root, "alpha", "agent-a"))
+        .add_memory("alpha memory", first, MemoryKind::Log)
+        .expect("alpha memory");
+    FileMemoryStore::new(get_project_memory_shard_dir(&root, "beta", "agent-b"))
+        .add_memory("beta memory", second, MemoryKind::Log)
+        .expect("beta memory");
+
+    let project = service.project_memory_store(
+        "owner",
+        membership,
+        Arc::new(|id| format!("display-{id}")),
+    );
+    assert_eq!(project.get_location(), root.join("projects"));
+    let recalled = project.recall(50, 20, 1);
+    assert_eq!(recalled.len(), 1);
+    assert_eq!(recalled[0].project, "beta");
+    assert_eq!(recalled[0].agent_id, "agent-b");
+    assert_eq!(recalled[0].agent_name, "display-agent-b");
+    assert_eq!(recalled[0].memory.content, "beta memory");
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners() {
+    let root = temp_root("facade");
+    let service = MemoryService::new(&root);
+    let day = chrono::DateTime::parse_from_rfc3339("2026-09-24T00:00:00Z")
+        .expect("day")
+        .timestamp_millis();
+    let record = service
+        .store_for_agent("agent-a")
+        .add_memory("mutable memory", day, MemoryKind::Profile)
+        .expect("add")
+        .expect("new");
+
+    let emissions = Arc::new(AtomicUsize::new(0));
+    let emissions_for_listener = Arc::clone(&emissions);
+    let unsubscribe = service.subscribe(Arc::new(move || {
+        emissions_for_listener.fetch_add(1, Ordering::SeqCst);
+    }));
+
+    assert_eq!(service.list("agent-a").len(), 1);
+    service.set_active_agent(Some("agent-a".into()));
+    assert_eq!(emissions.load(Ordering::SeqCst), 1);
+    service.set_active_agent(Some("agent-a".into()));
+    assert_eq!(emissions.load(Ordering::SeqCst), 1);
+    assert_eq!(service.active_agent_id().as_deref(), Some("agent-a"));
+
+    assert!(!service.remove("agent-a", "missing").expect("missing remove"));
+    assert_eq!(emissions.load(Ordering::SeqCst), 1);
+    assert!(service.remove("agent-a", &record.id).expect("remove"));
+    assert_eq!(emissions.load(Ordering::SeqCst), 2);
+
+    service
+        .store_for_agent("agent-a")
+        .add_memory("clear me", day, MemoryKind::Log)
+        .expect("add clear");
+    service.clear("agent-a").expect("clear");
+    assert_eq!(emissions.load(Ordering::SeqCst), 3);
+
+    unsubscribe();
+    service.set_active_agent(None);
+    assert_eq!(emissions.load(Ordering::SeqCst), 3);
+
+    let disposed_emissions = Arc::new(AtomicUsize::new(0));
+    let disposed_for_listener = Arc::clone(&disposed_emissions);
+    let _subscription = service.subscribe(Arc::new(move || {
+        disposed_for_listener.fetch_add(1, Ordering::SeqCst);
+    }));
+    service.dispose();
+    service.set_active_agent(Some("agent-b".into()));
+    assert_eq!(disposed_emissions.load(Ordering::SeqCst), 0);
+
     let _ = fs::remove_dir_all(root);
 }

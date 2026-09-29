@@ -3,6 +3,7 @@ use std::fs;
 use std::io;
 use std::fmt;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, Weak};
 
 use chrono::{DateTime, NaiveDate, Utc};
@@ -644,17 +645,189 @@ pub trait MemorySynthesisBridge: Send + Sync {
     );
 }
 
+pub type MemoryChangeListener = Arc<dyn Fn() + Send + Sync>;
+pub type MemoryUnsubscribe = Box<dyn FnOnce() + Send>;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ScopedMemoryRecord {
+    pub agent_id: String,
+    pub agent_name: String,
+    pub memory: MemoryRecord,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct UserMemoryRecall {
+    pub profile: Vec<ScopedMemoryRecord>,
+    pub recent: Vec<ScopedMemoryRecord>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectMemoryRecord {
+    pub project: String,
+    pub agent_id: String,
+    pub agent_name: String,
+    pub memory: MemoryRecord,
+}
+
+#[derive(Clone)]
+pub struct UserMemoryStore {
+    sand_root: PathBuf,
+    own_agent_id: String,
+    resolve_agent_name: Arc<dyn Fn(&str) -> String + Send + Sync>,
+}
+
+impl fmt::Debug for UserMemoryStore {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("UserMemoryStore")
+            .field("sand_root", &self.sand_root)
+            .field("own_agent_id", &self.own_agent_id)
+            .finish()
+    }
+}
+
+impl UserMemoryStore {
+    pub fn new(
+        sand_root: impl Into<PathBuf>,
+        own_agent_id: impl Into<String>,
+        resolve_agent_name: Arc<dyn Fn(&str) -> String + Send + Sync>,
+    ) -> Self {
+        Self {
+            sand_root: sand_root.into(),
+            own_agent_id: own_agent_id.into(),
+            resolve_agent_name,
+        }
+    }
+
+    pub fn get_location(&self) -> PathBuf {
+        get_user_memory_dir(&self.sand_root)
+    }
+
+    pub fn get_own_shard_location(&self) -> PathBuf {
+        get_user_memory_shard_dir(&self.sand_root, &self.own_agent_id)
+    }
+
+    pub fn recall(&self, profile_limit: usize, recent_limit: usize) -> UserMemoryRecall {
+        let mut profile = Vec::new();
+        let mut recent = Vec::new();
+        let mut agent_ids = read_child_directory_names(&get_user_memory_shards_dir(&self.sand_root));
+        agent_ids.sort();
+        for agent_id in agent_ids {
+            let store = FileMemoryStore::new(get_user_memory_shard_dir(&self.sand_root, &agent_id));
+            let recalled = store.recall(recent_limit);
+            let agent_name = (self.resolve_agent_name)(&agent_id);
+            profile.extend(recalled.profile.into_iter().map(|memory| ScopedMemoryRecord {
+                agent_id: agent_id.clone(),
+                agent_name: agent_name.clone(),
+                memory,
+            }));
+            recent.extend(recalled.recent.into_iter().map(|memory| ScopedMemoryRecord {
+                agent_id: agent_id.clone(),
+                agent_name: agent_name.clone(),
+                memory,
+            }));
+        }
+        profile.truncate(profile_limit);
+        recent.sort_by(|left, right| right.memory.created_at.cmp(&left.memory.created_at));
+        recent.truncate(recent_limit);
+        UserMemoryRecall { profile, recent }
+    }
+}
+
+#[derive(Clone)]
+pub struct ProjectMemoryStore {
+    sand_root: PathBuf,
+    own_agent_id: String,
+    membership: AgentProjectMembership,
+    resolve_agent_name: Arc<dyn Fn(&str) -> String + Send + Sync>,
+}
+
+impl fmt::Debug for ProjectMemoryStore {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("ProjectMemoryStore")
+            .field("sand_root", &self.sand_root)
+            .field("own_agent_id", &self.own_agent_id)
+            .field("membership", &self.membership)
+            .finish()
+    }
+}
+
+impl ProjectMemoryStore {
+    pub fn new(
+        sand_root: impl Into<PathBuf>,
+        own_agent_id: impl Into<String>,
+        membership: AgentProjectMembership,
+        resolve_agent_name: Arc<dyn Fn(&str) -> String + Send + Sync>,
+    ) -> Self {
+        Self {
+            sand_root: sand_root.into(),
+            own_agent_id: own_agent_id.into(),
+            membership,
+            resolve_agent_name,
+        }
+    }
+
+    pub fn get_location(&self) -> PathBuf {
+        get_projects_root_dir(&self.sand_root)
+    }
+
+    pub fn recall(
+        &self,
+        _profile_limit: usize,
+        recent_limit: usize,
+        cap: usize,
+    ) -> Vec<ProjectMemoryRecord> {
+        let mut output = Vec::new();
+        for project in self.membership.read() {
+            let mut agent_ids =
+                read_child_directory_names(&get_project_memory_shards_dir(&self.sand_root, &project));
+            agent_ids.sort();
+            for agent_id in agent_ids {
+                let store = FileMemoryStore::new(get_project_memory_shard_dir(
+                    &self.sand_root,
+                    &project,
+                    &agent_id,
+                ));
+                let recalled = store.recall(recent_limit);
+                let agent_name = (self.resolve_agent_name)(&agent_id);
+                for memory in recalled
+                    .profile
+                    .into_iter()
+                    .chain(recalled.recent.into_iter())
+                {
+                    output.push(ProjectMemoryRecord {
+                        project: project.clone(),
+                        agent_id: agent_id.clone(),
+                        agent_name: agent_name.clone(),
+                        memory,
+                    });
+                }
+            }
+        }
+        output.sort_by(|left, right| right.memory.created_at.cmp(&left.memory.created_at));
+        output.truncate(cap);
+        output
+    }
+}
+
 #[derive(Clone)]
 pub struct MemoryService {
+    sand_root: PathBuf,
     agents_root_dir: PathBuf,
     synthesis_bridge: Arc<Mutex<Option<Weak<dyn MemorySynthesisBridge>>>>,
+    active_agent_id: Arc<Mutex<Option<String>>>,
+    listeners: Arc<Mutex<HashMap<u64, MemoryChangeListener>>>,
+    next_listener_id: Arc<AtomicU64>,
 }
 
 impl fmt::Debug for MemoryService {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
             .debug_struct("MemoryService")
+            .field("sand_root", &self.sand_root)
             .field("agents_root_dir", &self.agents_root_dir)
+            .field("active_agent_id", &self.active_agent_id())
             .field("synthesis_enabled", &self.synthesis_enabled())
             .finish()
     }
@@ -662,9 +835,29 @@ impl fmt::Debug for MemoryService {
 
 impl MemoryService {
     pub fn new(agents_root_dir: impl Into<PathBuf>) -> Self {
+        let agents_root_dir = agents_root_dir.into();
+        let sand_root = if agents_root_dir.file_name().and_then(|value| value.to_str()) == Some("agents") {
+            agents_root_dir
+                .parent()
+                .map(Path::to_path_buf)
+                .unwrap_or_else(|| agents_root_dir.clone())
+        } else {
+            agents_root_dir.clone()
+        };
+        Self::new_with_sand_root(sand_root, agents_root_dir)
+    }
+
+    pub fn new_with_sand_root(
+        sand_root: impl Into<PathBuf>,
+        agents_root_dir: impl Into<PathBuf>,
+    ) -> Self {
         Self {
+            sand_root: sand_root.into(),
             agents_root_dir: agents_root_dir.into(),
             synthesis_bridge: Arc::new(Mutex::new(None)),
+            active_agent_id: Arc::new(Mutex::new(None)),
+            listeners: Arc::new(Mutex::new(HashMap::new())),
+            next_listener_id: Arc::new(AtomicU64::new(0)),
         }
     }
 
@@ -685,6 +878,109 @@ impl MemoryService {
 
     pub fn store_for_agent(&self, agent_id: &str) -> FileMemoryStore {
         self.create_agent_store(self.agents_root_dir.join(agent_id))
+    }
+
+    pub fn user_memory_store(
+        &self,
+        own_agent_id: impl Into<String>,
+        resolve_agent_name: Arc<dyn Fn(&str) -> String + Send + Sync>,
+    ) -> UserMemoryStore {
+        UserMemoryStore::new(&self.sand_root, own_agent_id, resolve_agent_name)
+    }
+
+    pub fn project_memory_store(
+        &self,
+        own_agent_id: impl Into<String>,
+        membership: AgentProjectMembership,
+        resolve_agent_name: Arc<dyn Fn(&str) -> String + Send + Sync>,
+    ) -> ProjectMemoryStore {
+        ProjectMemoryStore::new(
+            &self.sand_root,
+            own_agent_id,
+            membership,
+            resolve_agent_name,
+        )
+    }
+
+    pub fn list(&self, agent_id: &str) -> Vec<MemoryRecord> {
+        self.store_for_agent(agent_id).list_memories(100)
+    }
+
+    pub fn remove(&self, agent_id: &str, id: &str) -> io::Result<bool> {
+        let removed = self.store_for_agent(agent_id).remove_memory(id)?;
+        if removed {
+            self.emit();
+        }
+        Ok(removed)
+    }
+
+    pub fn clear(&self, agent_id: &str) -> io::Result<()> {
+        self.store_for_agent(agent_id).clear_memories()?;
+        self.emit();
+        Ok(())
+    }
+
+    pub fn active_agent_id(&self) -> Option<String> {
+        self.active_agent_id
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone()
+    }
+
+    pub fn set_active_agent(&self, agent_id: Option<String>) {
+        let changed = {
+            let mut active = self
+                .active_agent_id
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if *active == agent_id {
+                false
+            } else {
+                *active = agent_id;
+                true
+            }
+        };
+        if changed {
+            self.emit();
+        }
+    }
+
+    pub fn subscribe(&self, listener: MemoryChangeListener) -> MemoryUnsubscribe {
+        let id = self.next_listener_id.fetch_add(1, Ordering::SeqCst) + 1;
+        self.listeners
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(id, listener);
+        let listeners = Arc::downgrade(&self.listeners);
+        Box::new(move || {
+            if let Some(listeners) = listeners.upgrade() {
+                listeners
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .remove(&id);
+            }
+        })
+    }
+
+    pub fn dispose(&self) {
+        self.clear_synthesis_bridge();
+        self.listeners
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
+    }
+
+    fn emit(&self) {
+        let listeners = self
+            .listeners
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .values()
+            .cloned()
+            .collect::<Vec<_>>();
+        for listener in listeners {
+            listener();
+        }
     }
 
     pub fn set_synthesis_bridge(&self, bridge: Weak<dyn MemorySynthesisBridge>) {
@@ -764,6 +1060,10 @@ impl MemoryService {
 
     pub fn agent_has_content(&self, agent_dir: impl AsRef<Path>) -> bool {
         agent_memory_has_content(agent_dir)
+    }
+
+    pub fn sand_root(&self) -> &Path {
+        &self.sand_root
     }
 
     pub fn agents_root_dir(&self) -> &Path {
@@ -942,4 +1242,14 @@ pub fn project_dir_exists(sand_root: impl AsRef<Path>, slug: &str) -> bool {
     fs::metadata(get_project_dir(sand_root, slug))
         .map(|metadata| metadata.is_dir())
         .unwrap_or(false)
+}
+
+fn read_child_directory_names(path: &Path) -> Vec<String> {
+    fs::read_dir(path)
+        .into_iter()
+        .flatten()
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_type().map(|kind| kind.is_dir()).unwrap_or(false))
+        .filter_map(|entry| entry.file_name().into_string().ok())
+        .collect()
 }

@@ -15,7 +15,7 @@ struct HostMemoryExtensionState {
 
 impl Drop for HostMemoryExtensionState {
     fn drop(&mut self) {
-        self.service.clear_synthesis_bridge();
+        self.service.dispose();
         if let Ok(slot) = self.synthesis.get_mut() {
             if let Some(synthesis) = slot.take() {
                 synthesis.dispose();
