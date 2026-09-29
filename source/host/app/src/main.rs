@@ -4905,10 +4905,22 @@ fn start_routed_provider_task(
                     file_url_for_path(path)
                 },
             );
+            let computer_control_handoff = session_handoff.clone();
+            let computer_control_agent_id = agent_id.clone();
             let computer_executor: Arc<dyn ComputerToolExecutor> = Arc::new(
                 ProductionComputerToolExecutor::new(Arc::clone(&box_resources))
                     .with_auto_review_callback(computer_auto_review)
-                    .with_persist_image_callback(computer_persist_image),
+                    .with_persist_image_callback(computer_persist_image)
+                    .with_availability_check(Arc::new(move |args| {
+                        if args.action != mahayana_host_runtime::runner::tools::sand_computer_tool::ComputerActionName::Screenshot
+                            && computer_control_handoff.get(&computer_control_agent_id).is_some()
+                        {
+                            return Err(ProviderSessionError::Tool(
+                                "Computer control is currently handed to the user. Wait for the user to hand the box back before sending desktop input.".into(),
+                            ));
+                        }
+                        Ok(())
+                    })),
             );
             let file_transfer_executor: Arc<dyn FileTransferExecutor> = Arc::new(
                 ProductionFileTransferExecutor::new(
