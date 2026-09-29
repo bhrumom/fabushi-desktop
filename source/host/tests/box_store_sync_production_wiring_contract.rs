@@ -217,3 +217,44 @@ fn production_owner_wires_real_chrome_watcher_periodic_cycle_and_remote_provider
         "turn-end capture must be scheduled only after the live Agent DB owner retires"
     );
 }
+
+
+#[test]
+fn production_manifest_owner_consumes_frozen_retry_hydration_and_conflict_contract() {
+    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    assert!(production.contains("load_manifest_for_write("));
+    assert!(production.contains("write_manifest_with_retry("));
+    assert!(production.contains("fully_hydrated"));
+    assert!(production.contains("BOX_STORE_HYDRATION_HANDOFF_FILE_NAME"));
+    assert!(production.contains("BOX_STORE_MANIFEST_RETRY_ATTEMPTS"));
+    assert!(production.contains("BOX_STORE_MANIFEST_RETRY_DELAY_MS"));
+    assert!(
+        !production.contains("fn serialize_manifest("),
+        "shipping production must not retain a second manifest serializer"
+    );
+
+    let manifest = include_str!("../src/extensions/box_store_sync/box_store_manifest.rs");
+    for expected in [
+        "BoxStoreManifestParseError::UnsupportedVersion",
+        "BoxStoreManifestParseError::PathConflict",
+        "configured_manifest_entries(",
+        "load_manifest_for_write(",
+        "write_manifest_with_retry(",
+        "accept_matching_canonical_on_conflict",
+        "manifest_write_conflict",
+        "mark_legacy_hydration_incomplete(",
+        "mark_legacy_hydration_complete_for_handoff(",
+        "prepare_canonical_manifest_reset(",
+    ] {
+        assert!(
+            manifest.contains(expected),
+            "canonical manifest owner must retain frozen behavior marker {expected}"
+        );
+    }
+
+    let object_store = include_str!("../src/extensions/box_store_sync/box_object_store.rs");
+    assert!(object_store.contains("put_if_unchanged_detailed("));
+    assert!(object_store.contains("conflict_rel_path"));
+    assert!(object_store.contains("base_etag.or(fallback_base_etag)"));
+    assert!(object_store.contains("agent-store-etag"));
+}

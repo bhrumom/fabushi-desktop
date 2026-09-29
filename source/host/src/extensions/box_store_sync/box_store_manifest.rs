@@ -1,6 +1,24 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::fmt;
+use std::path::Path;
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use super::box_store_manifest_format::BoxStoreManifestEntry;
+use serde_json::{Map, Value};
+
+use super::box_object_store::BoxObjectStore;
+use super::box_store_diagnostics::report_box_store_diagnostic;
+use super::box_store_hydration::{
+    is_hydration_handoff_manifest_path, remove_hydration_handoff_marker,
+    write_hydration_handoff_marker,
+};
+use super::box_store_manifest_format::{
+    BOX_STORE_LEGACY_MANIFEST_VERSION, BOX_STORE_MANIFEST_REL_PATH, BOX_STORE_MANIFEST_VERSION,
+    BoxStoreManifest, BoxStoreManifestEntry, parse_box_store_manifest,
+};
+use super::object_store_port::{
+    BoxStoreCanonicalWriteConflictError, BoxStoreConditionalWriteOutcome,
+};
 
 pub const AGENT_STORE_DB_BASENAMES: [&str; 2] = ["store.db", "conversation-blobs.db"];
 pub type BoxManifestMap = BTreeMap<String, BoxStoreManifestEntry>;
@@ -184,4 +202,557 @@ fn ancestor_paths(rel_path: &str) -> Vec<String> {
         .match_indices('/')
         .map(|(index, _)| rel_path[..index].to_string())
         .collect()
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BoxStoreManifestParseError {
+    UnsupportedVersion(u64),
+    PathConflict,
+}
+
+impl fmt::Display for BoxStoreManifestParseError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::UnsupportedVersion(version) => {
+                write!(formatter, "unsupported box store manifest version {version}")
+            }
+            Self::PathConflict => {
+                write!(formatter, "box store manifest contains conflicting node paths")
+            }
+        }
+    }
+}
+
+impl std::error::Error for BoxStoreManifestParseError {}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ManifestLoad {
+    pub baseline: Option<Vec<u8>>,
+    pub manifest: BoxManifestMap,
+    pub manifest_v2: bool,
+    pub fully_hydrated: Option<bool>,
+    pub present: bool,
+    pub canonical_snapshot: bool,
+    pub invalid_nonblocking: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ManifestHydrationUpdate {
+    MarkIncomplete,
+    PromoteComplete,
+    ResetComplete,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ManifestSaveOptions {
+    pub accept_matching_canonical_on_conflict: bool,
+    pub is_forced: bool,
+    pub hydration_update: Option<ManifestHydrationUpdate>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ManifestWriteResult {
+    pub attempts: usize,
+    pub written: bool,
+    pub accepted_matching_canonical: bool,
+    pub fully_hydrated: Option<bool>,
+}
+
+pub fn parse_manifest_bytes(
+    bytes: &[u8],
+) -> Result<Option<BoxStoreManifest>, BoxStoreManifestParseError> {
+    let value = match serde_json::from_slice::<Value>(bytes) {
+        Ok(value) => value,
+        Err(_) => return Ok(None),
+    };
+    if let Some(version) = value
+        .as_object()
+        .and_then(|map| map.get("version"))
+        .and_then(Value::as_u64)
+    {
+        if version != BOX_STORE_LEGACY_MANIFEST_VERSION && version != BOX_STORE_MANIFEST_VERSION {
+            return Err(BoxStoreManifestParseError::UnsupportedVersion(version));
+        }
+    }
+    let Some(manifest) = parse_box_store_manifest(&value) else {
+        return Ok(None);
+    };
+    if has_manifest_path_conflict(manifest.entries.keys().map(String::as_str)) {
+        return Err(BoxStoreManifestParseError::PathConflict);
+    }
+    Ok(Some(manifest))
+}
+
+pub fn configured_manifest_entry(
+    entry: &BoxStoreManifestEntry,
+    manifest_v2: bool,
+) -> Option<BoxStoreManifestEntry> {
+    if manifest_v2 {
+        return Some(entry.clone());
+    }
+    match entry {
+        BoxStoreManifestEntry::Symlink { .. } => None,
+        BoxStoreManifestEntry::LegacyFile { sha, size }
+        | BoxStoreManifestEntry::File {
+            sha,
+            size,
+            mode: _,
+        } => Some(BoxStoreManifestEntry::LegacyFile {
+            sha: sha.clone(),
+            size: *size,
+        }),
+    }
+}
+
+pub fn configured_manifest_entries(
+    entries: &BoxManifestMap,
+    manifest_v2: bool,
+) -> BoxManifestMap {
+    entries
+        .iter()
+        .filter_map(|(path, entry)| {
+            configured_manifest_entry(entry, manifest_v2)
+                .map(|configured| (path.clone(), configured))
+        })
+        .collect()
+}
+
+fn manifest_entry_value(entry: &BoxStoreManifestEntry) -> Value {
+    let mut value = Map::new();
+    match entry {
+        BoxStoreManifestEntry::LegacyFile { sha, size } => {
+            value.insert("sha".into(), Value::String(sha.clone()));
+            value.insert("size".into(), Value::from(*size));
+        }
+        BoxStoreManifestEntry::File { sha, size, mode } => {
+            value.insert("kind".into(), Value::String("file".into()));
+            value.insert("sha".into(), Value::String(sha.clone()));
+            value.insert("size".into(), Value::from(*size));
+            value.insert("mode".into(), Value::from(*mode));
+        }
+        BoxStoreManifestEntry::Symlink { target } => {
+            value.insert("kind".into(), Value::String("symlink".into()));
+            value.insert("target".into(), Value::String(target.clone()));
+        }
+    }
+    Value::Object(value)
+}
+
+pub fn serialize_manifest_bytes(
+    entries: &BoxManifestMap,
+    manifest_v2: bool,
+    writer_window_id: Option<&str>,
+    fully_hydrated: Option<bool>,
+    updated_at_ms: u64,
+) -> Result<Vec<u8>, String> {
+    let configured = configured_manifest_entries(entries, manifest_v2);
+    let mut serialized_entries = Map::new();
+    for (path, entry) in configured {
+        serialized_entries.insert(path, manifest_entry_value(&entry));
+    }
+
+    let mut payload = Map::new();
+    payload.insert(
+        "version".into(),
+        Value::from(if manifest_v2 {
+            BOX_STORE_MANIFEST_VERSION
+        } else {
+            BOX_STORE_LEGACY_MANIFEST_VERSION
+        }),
+    );
+    payload.insert("updatedAtMs".into(), Value::from(updated_at_ms));
+    if let Some(writer_window_id) = writer_window_id {
+        payload.insert(
+            "writerWindowId".into(),
+            Value::String(writer_window_id.to_string()),
+        );
+    }
+    if let Some(fully_hydrated) = fully_hydrated {
+        payload.insert("fullyHydrated".into(), Value::Bool(fully_hydrated));
+    }
+    payload.insert("entries".into(), Value::Object(serialized_entries));
+    serde_json::to_vec(&Value::Object(payload)).map_err(|error| error.to_string())
+}
+
+pub fn load_manifest_for_write(
+    store: &dyn BoxObjectStore,
+    manifest_v2_requested: bool,
+    hydration_handoff_marker_path: Option<&Path>,
+) -> Result<ManifestLoad, String> {
+    let baseline = store.get(BOX_STORE_MANIFEST_REL_PATH)?;
+    let hydration_handoff_pending =
+        hydration_handoff_marker_path.is_some_and(Path::exists);
+
+    let Some(bytes) = baseline.as_deref() else {
+        if hydration_handoff_pending {
+            return Err("manifest missing while legacy hydration handoff is pending".into());
+        }
+        return Ok(ManifestLoad {
+            baseline,
+            manifest: BoxManifestMap::new(),
+            manifest_v2: manifest_v2_requested,
+            fully_hydrated: None,
+            present: false,
+            canonical_snapshot: true,
+            invalid_nonblocking: false,
+        });
+    };
+
+    let decoded = match parse_manifest_bytes(bytes).map_err(|error| error.to_string())? {
+        Some(decoded) => decoded,
+        None if hydration_handoff_pending => {
+            return Err("manifest unreadable while legacy hydration handoff is pending".into());
+        }
+        None => {
+            return Ok(ManifestLoad {
+                baseline,
+                manifest: BoxManifestMap::new(),
+                manifest_v2: manifest_v2_requested,
+                fully_hydrated: None,
+                present: true,
+                canonical_snapshot: false,
+                invalid_nonblocking: true,
+            });
+        }
+    };
+
+    if hydration_handoff_pending && decoded.fully_hydrated.is_none() {
+        if let Some(marker_path) = hydration_handoff_marker_path {
+            remove_hydration_handoff_marker(marker_path).map_err(|error| error.to_string())?;
+        }
+    }
+
+    let manifest_v2 =
+        manifest_v2_requested || decoded.version == BOX_STORE_MANIFEST_VERSION;
+    let fully_hydrated = decoded.fully_hydrated;
+    let mut manifest = decoded.entries;
+    let before = manifest.len();
+    manifest.retain(|path, _| !is_hydration_handoff_manifest_path(path));
+    let canonical_snapshot = manifest.len() == before;
+
+    Ok(ManifestLoad {
+        baseline,
+        manifest,
+        manifest_v2,
+        fully_hydrated,
+        present: true,
+        canonical_snapshot,
+        invalid_nonblocking: false,
+    })
+}
+
+pub fn read_manifest_strict(
+    store: &dyn BoxObjectStore,
+) -> Result<Option<BoxStoreManifest>, String> {
+    let Some(bytes) = store.get(BOX_STORE_MANIFEST_REL_PATH)? else {
+        return Ok(None);
+    };
+    parse_manifest_bytes(&bytes)
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| "box store manifest is present but unparseable".to_string())
+        .map(Some)
+}
+
+pub fn prepare_canonical_manifest_reset(store: &dyn BoxObjectStore) -> Result<(), String> {
+    let Some(bytes) = store.get(BOX_STORE_MANIFEST_REL_PATH)? else {
+        return Ok(());
+    };
+    match parse_manifest_bytes(&bytes) {
+        Ok(_) | Err(BoxStoreManifestParseError::PathConflict) => Ok(()),
+        Err(error @ BoxStoreManifestParseError::UnsupportedVersion(_)) => Err(error.to_string()),
+    }
+}
+
+fn apply_hydration_update(
+    fully_hydrated: Option<bool>,
+    update: Option<ManifestHydrationUpdate>,
+) -> Option<bool> {
+    match update {
+        Some(ManifestHydrationUpdate::MarkIncomplete) => Some(false),
+        Some(ManifestHydrationUpdate::PromoteComplete | ManifestHydrationUpdate::ResetComplete) => {
+            Some(true)
+        }
+        None => fully_hydrated,
+    }
+}
+
+fn manifest_now_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+        .min(u64::MAX as u128) as u64
+}
+
+fn canonical_matches_attempt(
+    canonical: &BoxStoreManifest,
+    version: u64,
+    entries: &BoxManifestMap,
+    fully_hydrated: Option<bool>,
+) -> bool {
+    canonical.version == version
+        && canonical.entries == *entries
+        && canonical.fully_hydrated == fully_hydrated
+}
+
+fn optional_string(value: Option<&str>) -> Value {
+    value
+        .map(|value| Value::String(value.to_string()))
+        .unwrap_or(Value::Null)
+}
+
+fn report_manifest_write_conflict(
+    store_id: &str,
+    attempts: usize,
+    accepted: bool,
+    covered: bool,
+    canonical_matches: bool,
+    attempted_entries: usize,
+    conflict: &BoxStoreCanonicalWriteConflictError,
+    canonical: Option<&BoxStoreManifest>,
+    writer_window_id: Option<&str>,
+) {
+    let mut diagnostic = Map::new();
+    diagnostic.insert("extension".into(), Value::String("box_store".into()));
+    diagnostic.insert(
+        "kind".into(),
+        Value::String("manifest_write_conflict".into()),
+    );
+    diagnostic.insert("storeId".into(), Value::String(store_id.to_string()));
+    diagnostic.insert("attempts".into(), Value::from(attempts as u64));
+    diagnostic.insert("accepted".into(), Value::Bool(accepted));
+    diagnostic.insert("covered".into(), Value::Bool(covered));
+    diagnostic.insert(
+        "canonicalMatchesAttempt".into(),
+        Value::Bool(canonical_matches),
+    );
+    diagnostic.insert("liveViewChanged".into(), Value::Bool(false));
+    diagnostic.insert(
+        "attemptedEntries".into(),
+        Value::from(attempted_entries as u64),
+    );
+    diagnostic.insert(
+        "lastBaseEtag".into(),
+        optional_string(conflict.base_etag.as_deref()),
+    );
+    diagnostic.insert(
+        "lastBaselineSource".into(),
+        optional_string(conflict.baseline_source.as_deref()),
+    );
+    diagnostic.insert(
+        "lastConflictRelPath".into(),
+        optional_string(conflict.conflict_rel_path.as_deref()),
+    );
+    diagnostic.insert("canonicalReadable".into(), Value::Bool(canonical.is_some()));
+    diagnostic.insert(
+        "canonicalEntryCount".into(),
+        canonical
+            .map(|manifest| Value::from(manifest.entries.len() as u64))
+            .unwrap_or(Value::Null),
+    );
+    diagnostic.insert(
+        "canonicalUpdatedAtMs".into(),
+        canonical
+            .map(|manifest| Value::from(manifest.updated_at_ms))
+            .unwrap_or(Value::Null),
+    );
+    diagnostic.insert(
+        "canonicalWriterWindowId".into(),
+        optional_string(canonical.and_then(|manifest| manifest.writer_window_id.as_deref())),
+    );
+    diagnostic.insert("ourWindowId".into(), optional_string(writer_window_id));
+    report_box_store_diagnostic(&diagnostic);
+}
+
+pub fn write_manifest_with_retry(
+    store: &dyn BoxObjectStore,
+    store_id: &str,
+    baseline: Option<Vec<u8>>,
+    entries: &BoxManifestMap,
+    manifest_v2: bool,
+    writer_window_id: Option<&str>,
+    fully_hydrated: Option<bool>,
+    options: ManifestSaveOptions,
+    retry_attempts: usize,
+    retry_delay_ms: u64,
+    log: &dyn Fn(&str),
+    is_disposed: &dyn Fn() -> bool,
+) -> Result<ManifestWriteResult, String> {
+    let configured_entries = configured_manifest_entries(entries, manifest_v2);
+    let version = if manifest_v2 {
+        BOX_STORE_MANIFEST_VERSION
+    } else {
+        BOX_STORE_LEGACY_MANIFEST_VERSION
+    };
+    let fully_hydrated = apply_hydration_update(fully_hydrated, options.hydration_update);
+    let required_write = options.accept_matching_canonical_on_conflict
+        || options.is_forced
+        || options.hydration_update.is_some();
+
+    if !required_write {
+        if let Some(bytes) = baseline.as_deref() {
+            if let Some(canonical) =
+                parse_manifest_bytes(bytes).map_err(|error| error.to_string())?
+            {
+                if canonical_matches_attempt(
+                    &canonical,
+                    version,
+                    &configured_entries,
+                    fully_hydrated,
+                ) {
+                    return Ok(ManifestWriteResult {
+                        attempts: 0,
+                        written: false,
+                        accepted_matching_canonical: false,
+                        fully_hydrated,
+                    });
+                }
+            }
+        }
+    }
+
+    let retry_attempts = retry_attempts.max(1);
+    let mut baseline = baseline;
+    let mut last_conflict: Option<BoxStoreCanonicalWriteConflictError> = None;
+    let mut canonical_after_conflict: Option<BoxStoreManifest> = None;
+    let mut attempts = 0;
+
+    for attempt in 1..=retry_attempts {
+        attempts = attempt;
+        if attempt > 1 && last_conflict.is_some() && is_disposed() {
+            break;
+        }
+
+        let bytes = serialize_manifest_bytes(
+            &configured_entries,
+            manifest_v2,
+            writer_window_id,
+            fully_hydrated,
+            manifest_now_ms(),
+        )?;
+        match store.put_if_unchanged_detailed(
+            BOX_STORE_MANIFEST_REL_PATH,
+            baseline.as_deref(),
+            &bytes,
+        )? {
+            BoxStoreConditionalWriteOutcome::Written => {
+                return Ok(ManifestWriteResult {
+                    attempts,
+                    written: true,
+                    accepted_matching_canonical: false,
+                    fully_hydrated,
+                });
+            }
+            BoxStoreConditionalWriteOutcome::Conflict(conflict) => {
+                let canonical_bytes = store.get(BOX_STORE_MANIFEST_REL_PATH)?;
+                canonical_after_conflict = match canonical_bytes.as_deref() {
+                    Some(bytes) => parse_manifest_bytes(bytes)
+                        .map_err(|error| error.to_string())?,
+                    None => None,
+                };
+                baseline = canonical_bytes;
+                log(&format!(
+                    "manifest save lost a concurrent-write race; retry policy will use the winner's baseline{}",
+                    conflict
+                        .conflict_rel_path
+                        .as_ref()
+                        .map(|path| format!(" (lost attempt preserved at {path})"))
+                        .unwrap_or_default()
+                ));
+                last_conflict = Some(conflict);
+                if attempt < retry_attempts {
+                    if retry_delay_ms > 0 {
+                        thread::sleep(Duration::from_millis(retry_delay_ms));
+                    }
+                    continue;
+                }
+            }
+        }
+    }
+
+    let conflict = last_conflict.unwrap_or_else(|| {
+        BoxStoreCanonicalWriteConflictError::new(
+            BOX_STORE_MANIFEST_REL_PATH,
+            None,
+            None,
+            Some("manifest-cas".into()),
+        )
+    });
+    let covered = canonical_after_conflict.as_ref().is_some_and(|canonical| {
+        !configured_entries.is_empty()
+            && configured_entries
+                .iter()
+                .all(|(path, entry)| canonical.entries.get(path) == Some(entry))
+    });
+    let canonical_matches = canonical_after_conflict.as_ref().is_some_and(|canonical| {
+        covered
+            && canonical.entries.len() == configured_entries.len()
+            && canonical.fully_hydrated == fully_hydrated
+            && canonical.version == version
+    });
+    let accepted =
+        options.accept_matching_canonical_on_conflict && canonical_matches;
+    report_manifest_write_conflict(
+        store_id,
+        attempts,
+        accepted,
+        covered,
+        canonical_matches,
+        configured_entries.len(),
+        &conflict,
+        canonical_after_conflict.as_ref(),
+        writer_window_id,
+    );
+    if accepted {
+        log(&format!(
+            "manifest save lost a concurrent-write race; canonical manifest already covers the attempted entries (winner {})",
+            canonical_after_conflict
+                .as_ref()
+                .and_then(|manifest| manifest.writer_window_id.as_deref())
+                .unwrap_or("unknown")
+        ));
+        return Ok(ManifestWriteResult {
+            attempts,
+            written: false,
+            accepted_matching_canonical: true,
+            fully_hydrated,
+        });
+    }
+    Err(conflict.to_string())
+}
+
+pub fn mark_legacy_hydration_incomplete(
+    store: &dyn BoxObjectStore,
+    store_id: &str,
+    marker_path: &Path,
+    manifest_v2_requested: bool,
+    writer_window_id: Option<&str>,
+    retry_attempts: usize,
+    retry_delay_ms: u64,
+    log: &dyn Fn(&str),
+) -> Result<ManifestWriteResult, String> {
+    remove_hydration_handoff_marker(marker_path).map_err(|error| error.to_string())?;
+    let load = load_manifest_for_write(store, manifest_v2_requested, None)?;
+    write_manifest_with_retry(
+        store,
+        store_id,
+        load.baseline,
+        &load.manifest,
+        load.manifest_v2,
+        writer_window_id,
+        load.fully_hydrated,
+        ManifestSaveOptions {
+            hydration_update: Some(ManifestHydrationUpdate::MarkIncomplete),
+            ..ManifestSaveOptions::default()
+        },
+        retry_attempts,
+        retry_delay_ms,
+        log,
+        &|| false,
+    )
+}
+
+pub fn mark_legacy_hydration_complete_for_handoff(marker_path: &Path) -> Result<(), String> {
+    write_hydration_handoff_marker(marker_path).map_err(|error| error.to_string())
 }

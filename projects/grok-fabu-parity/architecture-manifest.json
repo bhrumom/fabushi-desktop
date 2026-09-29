@@ -11040,18 +11040,21 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_manifest.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "7661d583192777113e193450f7374a49ea35ba74",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/box_store_sync/box_store_manifest.rs"
+        "source/host/src/extensions/box_store_sync/box_store_manifest.rs",
+        "source/host/src/extensions/box_store_sync/box_object_store.rs",
+        "source/host/src/extensions/box_store_sync/production.rs"
       ],
       "testEvidence": [
-        "source/host/tests/box_store_sync_planned_contract.rs",
+        "source/host/tests/box_store_manifest_frozen_parity_contract.rs",
+        "source/host/tests/box_store_sync_production_wiring_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
+      "notes": "Frozen Grok 0.18 manifest semantics are owned by the Mahayana Host manifest module and consumed by real shipping periodic and turn-end Box Store writes: differentiated unsupported-version/path-conflict blocking, ordinary invalid-manifest recovery, V1/V2 projection with V1 symlink omission, fullyHydrated preservation, hydration-handoff fail-closed primitives, strict read/reset primitives, 3-attempt/100ms canonical CAS retry with winner-baseline refresh and exact-canonical acceptance, plus structured conflict diagnostics carrying AgentStore conflict metadata. The production cycle lock remains the local serialization boundary while remote writers are fenced by object-store conditional writes."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-pack-pipeline.ts",

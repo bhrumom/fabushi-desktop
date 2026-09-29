@@ -13,6 +13,9 @@ use super::agent_store_sand_files::{
     AgentStoreWriteOutcome, AgentStoreWritePrecondition, normalize_rel_path,
 };
 
+use super::object_store_port::{
+    BoxStoreCanonicalWriteConflictError, BoxStoreConditionalWriteOutcome,
+};
 use super::sand_box_store_files::SandBoxStoreServiceProvider;
 use super::sand_box_store_v2_client::{
     SandBoxStoreV2Client, SandBoxStoreV2ClientDependencies,
@@ -36,6 +39,26 @@ pub trait BoxObjectStore: Send + Sync {
         }
         self.put(key, bytes)?;
         Ok(true)
+    }
+
+    fn put_if_unchanged_detailed(
+        &self,
+        key: &str,
+        expected: Option<&[u8]>,
+        bytes: &[u8],
+    ) -> Result<BoxStoreConditionalWriteOutcome, String> {
+        if self.put_if_unchanged(key, expected, bytes)? {
+            Ok(BoxStoreConditionalWriteOutcome::Written)
+        } else {
+            Ok(BoxStoreConditionalWriteOutcome::Conflict(
+                BoxStoreCanonicalWriteConflictError::new(
+                    key,
+                    None,
+                    None,
+                    Some("compare-and-swap".into()),
+                ),
+            ))
+        }
     }
 
     fn get_to_file(
@@ -289,6 +312,52 @@ impl BoxObjectStore for AgentStoreObjectStore {
             outcome,
             AgentStoreWriteOutcome::Written { .. } | AgentStoreWriteOutcome::AlreadyPresent
         ))
+    }
+
+    fn put_if_unchanged_detailed(
+        &self,
+        key: &str,
+        expected: Option<&[u8]>,
+        bytes: &[u8],
+    ) -> Result<BoxStoreConditionalWriteOutcome, String> {
+        let Some(precondition) = self.baseline_for_expected(key, expected) else {
+            return Ok(BoxStoreConditionalWriteOutcome::Conflict(
+                BoxStoreCanonicalWriteConflictError::new(
+                    key,
+                    None,
+                    None,
+                    Some("cached-baseline-mismatch".into()),
+                ),
+            ));
+        };
+        let baseline_source = match &precondition {
+            AgentStoreWritePrecondition::BaseEtag(_) => "agent-store-etag",
+            AgentStoreWritePrecondition::ExpectAbsent => "agent-store-expect-absent",
+        };
+        let fallback_base_etag = match &precondition {
+            AgentStoreWritePrecondition::BaseEtag(etag) => Some(etag.clone()),
+            AgentStoreWritePrecondition::ExpectAbsent => None,
+        };
+        let outcome = self
+            .client
+            .put_bytes(&self.source_id, key, bytes, precondition)?;
+        self.remember_write(key, bytes, &outcome);
+        match outcome {
+            AgentStoreWriteOutcome::Written { .. } | AgentStoreWriteOutcome::AlreadyPresent => {
+                Ok(BoxStoreConditionalWriteOutcome::Written)
+            }
+            AgentStoreWriteOutcome::Conflict {
+                conflict_rel_path,
+                base_etag,
+            } => Ok(BoxStoreConditionalWriteOutcome::Conflict(
+                BoxStoreCanonicalWriteConflictError::new(
+                    key,
+                    conflict_rel_path,
+                    base_etag.or(fallback_base_etag),
+                    Some(baseline_source.into()),
+                ),
+            )),
+        }
     }
 
     fn get_to_file(

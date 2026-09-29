@@ -29,18 +29,25 @@ use crate::extensions::box_store_sync::box_store_pack_pipeline::{
     PACK_BUILD_MIN_BYTES, PACK_BUILD_MIN_MEMBERS, PACK_TMP_DIR_NAME, PACK_TMP_MAX_AGE_MS,
 };
 use crate::extensions::box_store_sync::box_store_manifest::{
-    AGENT_STORE_DB_BASENAMES, BoxManifestMap, set_manifest_entry,
+    AGENT_STORE_DB_BASENAMES, BoxManifestMap, ManifestSaveOptions,
+    load_manifest_for_write, read_manifest_strict, serialize_manifest_bytes,
+    set_manifest_entry, write_manifest_with_retry,
 };
 use crate::extensions::box_store_sync::box_store_manifest_format::{
-    BOX_STORE_BLOBS_PREFIX, BOX_STORE_LEGACY_MANIFEST_VERSION, BOX_STORE_MANIFEST_REL_PATH,
-    BOX_STORE_MANIFEST_VERSION, BoxStoreManifest, BoxStoreManifestEntry, SAND_MANIFEST_V2_ENV,
-    parse_box_store_manifest,
+    BOX_STORE_BLOBS_PREFIX, BOX_STORE_MANIFEST_REL_PATH, BOX_STORE_MANIFEST_VERSION,
+    BoxStoreManifest, BoxStoreManifestEntry, SAND_MANIFEST_V2_ENV,
 };
 use crate::extensions::box_store_sync::box_store_transfer::{
     BOX_STORE_SNAPSHOT_TMP_SUFFIX, CategoryTransferSummary, glob_matches_path,
 };
 use crate::extensions::box_store_sync::box_store_sync::LARGE_OBJECT_THRESHOLD_BYTES;
-use crate::extensions::box_store_sync::box_store_sync_service::BOX_STORE_CHROME_INTERVAL_MS;
+use crate::extensions::box_store_sync::box_store_sync_service::{
+    BOX_STORE_CHROME_INTERVAL_MS, BOX_STORE_MANIFEST_RETRY_ATTEMPTS,
+    BOX_STORE_MANIFEST_RETRY_DELAY_MS,
+};
+use crate::extensions::box_store_sync::box_store_hydration::{
+    BOX_STORE_HYDRATION_HANDOFF_FILE_NAME, BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH,
+};
 use crate::extensions::box_store_sync::store_db_snapshot_upload::{
     SnapshotUploadOutcome, StoreDbSnapshotRuntimePort, StoreDbSnapshotUpload,
 };
@@ -77,6 +84,7 @@ const SAND_DATA_EXCLUDES: &[&str] = &[
     "home/box/sand-data/gateway.json",
     "home/box/sand-data/box-store-sync.lock",
     "home/box/sand-data/box-store-hydration-handoff.json",
+    BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH,
 ];
 
 const CLI_CONFIG_EXCLUDES: &[&str] = &[
@@ -554,25 +562,29 @@ impl ProductionBoxStoreSyncInner {
             return Err("stopped".into());
         }
         let (store_id, store) = self.resolve_object_store()?;
-        let manifest_baseline = store.get(BOX_STORE_MANIFEST_REL_PATH)?;
-        let mut manifest = parse_manifest_bytes(manifest_baseline.as_deref())?;
-        let manifest_v2 = self
+        let manifest_v2_requested = self
             .env
             .get(SAND_MANIFEST_V2_ENV)
-            .is_some_and(|value| value == "1")
-            || manifest
-                .as_ref()
-                .is_some_and(|value| value.version == BOX_STORE_MANIFEST_VERSION);
-        let mut entries = manifest
-            .take()
-            .map(|value| value.entries)
-            .unwrap_or_default();
+            .is_some_and(|value| value == "1");
+        let sand_root = get_sand_root_dir();
+        let hydration_marker_path = sand_root.join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME);
+        let loaded = load_manifest_for_write(
+            store.as_ref(),
+            manifest_v2_requested,
+            Some(&hydration_marker_path),
+        )?;
+        if loaded.invalid_nonblocking {
+            self.log("manifest load failed, starting empty: manifest is invalid or unreadable");
+        }
+        let manifest_baseline = loaded.baseline;
+        let manifest_v2 = loaded.manifest_v2;
+        let fully_hydrated = loaded.fully_hydrated;
+        let mut entries = loaded.manifest;
         let mut categories = Vec::new();
 
         if chrome_only {
             categories.push(sync_chrome_session(store.as_ref(), &mut entries, manifest_v2)?);
         } else {
-            let sand_root = get_sand_root_dir();
             categories.push(sync_tree_category(
                 store.as_ref(),
                 &mut entries,
@@ -617,12 +629,26 @@ impl ProductionBoxStoreSyncInner {
             )?);
         }
 
-        write_manifest_if_unchanged(
+        let has_cycle_failures = categories
+            .iter()
+            .any(|category| category.failures > 0 || category.oversize > 0);
+        let writer_window_id = format!("mahayana-host-{}", std::process::id());
+        write_manifest_with_retry(
             store.as_ref(),
-            manifest_baseline.as_deref(),
+            &store_id,
+            manifest_baseline,
             &entries,
             manifest_v2,
-            format!("mahayana-host-{}", std::process::id()),
+            Some(&writer_window_id),
+            fully_hydrated,
+            ManifestSaveOptions {
+                is_forced: has_cycle_failures,
+                ..ManifestSaveOptions::default()
+            },
+            BOX_STORE_MANIFEST_RETRY_ATTEMPTS,
+            BOX_STORE_MANIFEST_RETRY_DELAY_MS,
+            &|message| self.log(message),
+            &|| self.stopped.load(Ordering::Acquire),
         )?;
 
         if include_packs
@@ -692,19 +718,24 @@ impl ProductionBoxStoreSyncInner {
             return Err("stopped".into());
         }
         let (store_id, store) = self.resolve_object_store()?;
-        let manifest_baseline = store.get(BOX_STORE_MANIFEST_REL_PATH)?;
-        let mut parsed = parse_manifest_bytes(manifest_baseline.as_deref())?;
-        let manifest_v2 = self
+        let manifest_v2_requested = self
             .env
             .get(SAND_MANIFEST_V2_ENV)
-            .is_some_and(|value| value == "1")
-            || parsed
-                .as_ref()
-                .is_some_and(|value| value.version == BOX_STORE_MANIFEST_VERSION);
-        let mut entries = parsed
-            .take()
-            .map(|value| value.entries)
-            .unwrap_or_default();
+            .is_some_and(|value| value == "1");
+        let sand_root = get_sand_root_dir();
+        let hydration_marker_path = sand_root.join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME);
+        let loaded = load_manifest_for_write(
+            store.as_ref(),
+            manifest_v2_requested,
+            Some(&hydration_marker_path),
+        )?;
+        if loaded.invalid_nonblocking {
+            self.log("manifest load failed, starting empty: manifest is invalid or unreadable");
+        }
+        let manifest_baseline = loaded.baseline;
+        let manifest_v2 = loaded.manifest_v2;
+        let fully_hydrated = loaded.fully_hydrated;
+        let mut entries = loaded.manifest;
         let entries_before = entries.clone();
         let summary = sync_store_db_snapshots(
             store.clone(),
@@ -715,12 +746,20 @@ impl ProductionBoxStoreSyncInner {
             Some(agent_id),
         )?;
         if entries != entries_before {
-            write_manifest_if_unchanged(
+            let writer_window_id = format!("mahayana-host-{}", std::process::id());
+            write_manifest_with_retry(
                 store.as_ref(),
-                manifest_baseline.as_deref(),
+                &store_id,
+                manifest_baseline,
                 &entries,
                 manifest_v2,
-                format!("mahayana-host-{}", std::process::id()),
+                Some(&writer_window_id),
+                fully_hydrated,
+                ManifestSaveOptions::default(),
+                BOX_STORE_MANIFEST_RETRY_ATTEMPTS,
+                BOX_STORE_MANIFEST_RETRY_DELAY_MS,
+                &|message| self.log(message),
+                &|| self.stopped.load(Ordering::Acquire),
             )?;
         }
         let failures = summary.failures + summary.oversize + summary.metadata_failures;
@@ -845,57 +884,7 @@ fn mode_name(mode: &ProductionBoxStoreSyncMode) -> &'static str {
 }
 
 fn load_manifest(store: &dyn BoxObjectStore) -> Result<Option<BoxStoreManifest>, String> {
-    let bytes = store.get(BOX_STORE_MANIFEST_REL_PATH)?;
-    parse_manifest_bytes(bytes.as_deref())
-}
-
-fn parse_manifest_bytes(bytes: Option<&[u8]>) -> Result<Option<BoxStoreManifest>, String> {
-    let Some(bytes) = bytes else {
-        return Ok(None);
-    };
-    let value = serde_json::from_slice::<Value>(bytes)
-        .map_err(|error| format!("manifest JSON is invalid: {error}"))?;
-    parse_box_store_manifest(&value)
-        .map(Some)
-        .ok_or_else(|| "manifest schema is invalid".to_string())
-}
-
-fn serialize_manifest(
-    entries: &BoxManifestMap,
-    manifest_v2: bool,
-    writer_window_id: String,
-) -> Result<Vec<u8>, String> {
-    let mut values = Map::new();
-    for (path, entry) in entries {
-        let value = match entry {
-            BoxStoreManifestEntry::LegacyFile { sha, size } => {
-                json!({ "sha": sha, "size": size })
-            }
-            BoxStoreManifestEntry::File { sha, size, mode } => {
-                if !manifest_v2 {
-                    json!({ "sha": sha, "size": size })
-                } else {
-                    json!({ "kind": "file", "sha": sha, "size": size, "mode": mode })
-                }
-            }
-            BoxStoreManifestEntry::Symlink { target } => {
-                if !manifest_v2 {
-                    return Err(
-                        "manifest v1 cannot represent a symlink; enable SAND_MANIFEST_V2".into(),
-                    );
-                }
-                json!({ "kind": "symlink", "target": target })
-            }
-        };
-        values.insert(path.clone(), value);
-    }
-    let payload = json!({
-        "version": if manifest_v2 { BOX_STORE_MANIFEST_VERSION } else { BOX_STORE_LEGACY_MANIFEST_VERSION },
-        "updatedAtMs": now_ms(),
-        "writerWindowId": writer_window_id,
-        "entries": values,
-    });
-    serde_json::to_vec(&payload).map_err(|error| error.to_string())
+    read_manifest_strict(store)
 }
 
 fn write_manifest_if_unchanged(
@@ -905,12 +894,24 @@ fn write_manifest_if_unchanged(
     manifest_v2: bool,
     writer_window_id: String,
 ) -> Result<(), String> {
-    let bytes = serialize_manifest(entries, manifest_v2, writer_window_id)?;
-    if store.put_if_unchanged(BOX_STORE_MANIFEST_REL_PATH, baseline, &bytes)? {
-        Ok(())
-    } else {
-        Err("box-store manifest canonical write lost a concurrent-write race".into())
-    }
+    write_manifest_with_retry(
+        store,
+        "production-test",
+        baseline.map(|value| value.to_vec()),
+        entries,
+        manifest_v2,
+        Some(&writer_window_id),
+        None,
+        ManifestSaveOptions {
+            is_forced: true,
+            ..ManifestSaveOptions::default()
+        },
+        1,
+        0,
+        &|_| {},
+        &|| false,
+    )
+    .map(|_| ())
 }
 
 fn write_manifest(
@@ -919,7 +920,13 @@ fn write_manifest(
     manifest_v2: bool,
     writer_window_id: String,
 ) -> Result<(), String> {
-    let bytes = serialize_manifest(entries, manifest_v2, writer_window_id)?;
+    let bytes = serialize_manifest_bytes(
+        entries,
+        manifest_v2,
+        Some(&writer_window_id),
+        None,
+        now_ms(),
+    )?;
     store.put(BOX_STORE_MANIFEST_REL_PATH, &bytes)
 }
 

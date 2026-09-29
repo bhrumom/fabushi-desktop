@@ -42,3 +42,10 @@ impl fmt::Display for BoxStoreCanonicalWriteConflictError {
 }
 
 impl std::error::Error for BoxStoreCanonicalWriteConflictError {}
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BoxStoreConditionalWriteOutcome {
+    Written,
+    Conflict(BoxStoreCanonicalWriteConflictError),
+}
