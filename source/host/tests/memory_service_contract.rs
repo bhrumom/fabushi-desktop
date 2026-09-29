@@ -235,6 +235,70 @@ fn memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory
 
 
 #[test]
+fn existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically() {
+    let root = temp_root("dynamic-dreaming-gate");
+    let agent_dir = root.join("agent-a");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let service = MemoryService::new(&root);
+    let store = service.create_agent_store(&agent_dir);
+    let created_at = 1_900_000_000_000;
+
+    let before_gate = store
+        .add_memory("before authenticated gate", created_at, MemoryKind::Profile)
+        .expect("add before gate")
+        .expect("new before gate memory");
+    assert_eq!(
+        store
+            .prepare_synthesis()
+            .memories
+            .iter()
+            .find(|memory| memory.id == before_gate.id)
+            .map(|memory| memory.origin),
+        Some(MemoryOrigin::Legacy)
+    );
+
+    let bridge = Arc::new(RecordingSynthesisBridge {
+        enabled: true,
+        ..RecordingSynthesisBridge::default()
+    });
+    let bridge_trait: Arc<dyn MemorySynthesisBridge> = bridge.clone();
+    service.set_synthesis_bridge(Arc::downgrade(&bridge_trait));
+    drop(bridge_trait);
+
+    let after_enable = store
+        .add_memory("after authenticated gate", created_at + 1, MemoryKind::Profile)
+        .expect("add after enable")
+        .expect("new enabled memory");
+    assert_eq!(
+        store
+            .prepare_synthesis()
+            .memories
+            .iter()
+            .find(|memory| memory.id == after_enable.id)
+            .map(|memory| memory.origin),
+        Some(MemoryOrigin::Explicit)
+    );
+
+    drop(bridge);
+    assert!(!service.synthesis_enabled());
+    let after_disable = store
+        .add_memory("after gate disable", created_at + 2, MemoryKind::Profile)
+        .expect("add after disable")
+        .expect("new disabled memory");
+    assert_eq!(
+        store
+            .prepare_synthesis()
+            .memories
+            .iter()
+            .find(|memory| memory.id == after_disable.id)
+            .map(|memory| memory.origin),
+        Some(MemoryOrigin::Legacy)
+    );
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn user_memory_store_aggregates_frozen_shards_and_recent_order() {
     let root = temp_root("user-shards");
     let service = MemoryService::new_with_sand_root(&root, root.join("agents"));

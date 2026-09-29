@@ -123,7 +123,9 @@ struct SynthesisStoredFact {
     origin: MemoryOrigin,
 }
 
-#[derive(Debug, Clone)]
+type SynthesisEnabledProbe = Arc<dyn Fn() -> bool + Send + Sync>;
+
+#[derive(Clone)]
 pub struct FileMemoryStore {
     dir: WatchedDirectory,
     profile_file: PathBuf,
@@ -132,7 +134,17 @@ pub struct FileMemoryStore {
     synthesized_dir: PathBuf,
     tombstone_dir: PathBuf,
     refresh_file: PathBuf,
-    synthesis_metadata_enabled: bool,
+    synthesis_enabled: SynthesisEnabledProbe,
+}
+
+impl fmt::Debug for FileMemoryStore {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("FileMemoryStore")
+            .field("location", &self.dir.get_location())
+            .field("synthesis_enabled", &self.synthesis_metadata_enabled())
+            .finish()
+    }
 }
 
 impl FileMemoryStore {
@@ -144,6 +156,16 @@ impl FileMemoryStore {
         memory_dir: impl Into<PathBuf>,
         synthesis_metadata_enabled: bool,
     ) -> Self {
+        Self::with_synthesis_probe(
+            memory_dir,
+            Arc::new(move || synthesis_metadata_enabled),
+        )
+    }
+
+    pub fn with_synthesis_probe(
+        memory_dir: impl Into<PathBuf>,
+        synthesis_enabled: SynthesisEnabledProbe,
+    ) -> Self {
         let memory_dir = memory_dir.into();
         let metadata = memory_dir.join(METADATA_DIRNAME);
         Self {
@@ -153,9 +175,13 @@ impl FileMemoryStore {
             synthesized_dir: metadata.join(SYNTHESIZED_DIRNAME),
             tombstone_dir: metadata.join(TOMBSTONE_DIRNAME),
             refresh_file: metadata.join(REFRESH_FILENAME),
-            synthesis_metadata_enabled,
+            synthesis_enabled,
             dir: WatchedDirectory::new(memory_dir, MEMORY_CHANGE_DEBOUNCE_MS),
         }
+    }
+
+    fn synthesis_metadata_enabled(&self) -> bool {
+        (self.synthesis_enabled)()
     }
 
     pub fn get_location(&self) -> PathBuf {
@@ -231,7 +257,7 @@ impl FileMemoryStore {
             .into_iter()
             .find(|fact| memory_dedupe_key(&fact.record.content) == key)
         {
-            if self.synthesis_metadata_enabled {
+            if self.synthesis_metadata_enabled() {
                 self.clear_tombstone(&existing.record.content)?;
                 self.clear_origins(&existing.record.content)?;
                 self.mark_origin(&existing.record.content, MemoryOrigin::Explicit)?;
@@ -265,7 +291,7 @@ impl FileMemoryStore {
         next.push_str(&serialize_fact_line(&normalized, created_at));
         next.push('\n');
         self.dir.write_file_atomic(&path, next.as_bytes())?;
-        if self.synthesis_metadata_enabled {
+        if self.synthesis_metadata_enabled() {
             self.clear_tombstone(&normalized)?;
             self.clear_origins(&normalized)?;
             self.mark_origin(&normalized, MemoryOrigin::Explicit)?;
@@ -299,7 +325,7 @@ impl FileMemoryStore {
         lines.remove(fact.line);
         self.dir
             .write_file_atomic(&fact.path, lines.join("\n").as_bytes())?;
-        if self.synthesis_metadata_enabled {
+        if self.synthesis_metadata_enabled() {
             self.clear_origins(&fact.record.content)?;
             self.mark_tombstone(&fact.record.content)?;
         }
@@ -311,7 +337,7 @@ impl FileMemoryStore {
         if facts.is_empty() {
             return Ok(());
         }
-        if self.synthesis_metadata_enabled {
+        if self.synthesis_metadata_enabled() {
             for fact in &facts {
                 self.clear_origins(&fact.record.content)?;
                 self.mark_tombstone(&fact.record.content)?;
@@ -862,9 +888,20 @@ impl MemoryService {
     }
 
     pub fn create_agent_store(&self, agent_dir: impl AsRef<Path>) -> FileMemoryStore {
-        FileMemoryStore::with_synthesis_metadata(
+        let synthesis_bridge = Arc::downgrade(&self.synthesis_bridge);
+        FileMemoryStore::with_synthesis_probe(
             get_agent_memory_dir(agent_dir),
-            self.synthesis_enabled(),
+            Arc::new(move || {
+                let Some(synthesis_bridge) = synthesis_bridge.upgrade() else {
+                    return false;
+                };
+                let bridge = synthesis_bridge
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .as_ref()
+                    .and_then(Weak::upgrade);
+                bridge.is_some_and(|bridge| bridge.is_enabled())
+            }),
         )
     }
 
