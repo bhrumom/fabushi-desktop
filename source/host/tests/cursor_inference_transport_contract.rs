@@ -4,13 +4,41 @@ use std::sync::Mutex;
 use mahayana_host_runtime::extensions::inference::cursor_inference_transport::{
     CONNECT_END_STREAM_FLAG, CursorCheckpoint, CursorCheckpointMessage,
     CursorInferenceEvent, CursorInferenceStreamTransport, decode_cursor_connect_frames,
-    encode_connect_envelope, encode_cursor_inference_request, encode_test_response,
+    encode_connect_envelope, encode_cursor_inference_request,
+    encode_cursor_inference_request_with_model, encode_test_response,
     run_cursor_with_transport_reporting_usage,
 };
+use mahayana_host_runtime::extensions::inference::cursor_session::RequestedModel;
+use mahayana_host_runtime::extensions::inference::sand_model_experiment::SandAgentModelParameter;
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderTokenUsage, RoutedToolDefinition,
 };
+use prost::Message;
 use serde_json::json;
+
+#[derive(Clone, PartialEq, Message)]
+struct RequestedModelEnvelope {
+    #[prost(message, optional, tag = "7")]
+    requested_model: Option<RequestedModelProto>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct RequestedModelProto {
+    #[prost(string, tag = "1")]
+    model_id: String,
+    #[prost(bool, tag = "2")]
+    max_mode: bool,
+    #[prost(message, repeated, tag = "3")]
+    parameters: Vec<ModelParameterProto>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct ModelParameterProto {
+    #[prost(string, tag = "1")]
+    id: String,
+    #[prost(string, tag = "2")]
+    value: String,
+}
 
 #[test]
 fn cursor_connect_stream_decoder_preserves_text_thinking_tools_usage_and_finish() {
@@ -102,6 +130,35 @@ fn cursor_request_is_connect_framed_and_accepts_frozen_tool_schema() {
     let declared = u32::from_be_bytes([request[1], request[2], request[3], request[4]]) as usize;
     assert_eq!(declared, request.len() - 5);
     assert!(request.len() > 32);
+}
+
+#[test]
+fn cursor_request_uses_explicit_requested_model_instead_of_hardcoded_default() {
+    let request = encode_cursor_inference_request_with_model(
+        &[ProviderMessage {
+            role: "user".into(),
+            content: "hello".into(),
+        }],
+        &[],
+        &RequestedModel {
+            model_id: "session-model".into(),
+            max_mode: Some(false),
+            parameters: vec![SandAgentModelParameter {
+                id: "effort".into(),
+                value: "medium".into(),
+            }],
+        },
+    )
+    .expect("encode request with model");
+
+    let payload = &request[5..];
+    let decoded = RequestedModelEnvelope::decode(payload).expect("decode inference request");
+    let model = decoded.requested_model.expect("requested model");
+    assert_eq!(model.model_id, "session-model");
+    assert!(!model.max_mode);
+    assert_eq!(model.parameters.len(), 1);
+    assert_eq!(model.parameters[0].id, "effort");
+    assert_eq!(model.parameters[0].value, "medium");
 }
 
 #[test]
