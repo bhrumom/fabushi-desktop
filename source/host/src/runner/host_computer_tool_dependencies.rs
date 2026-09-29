@@ -15,7 +15,7 @@ use super::tools::sand_computer_tool::{
     ComputerActionArgs, ComputerAutoReviewCallback, ComputerCoordinate,
     ComputerPersistImageCallback, ComputerProtocolAction, ComputerToolExecutor,
     ComputerUseResult, ComputerUseSuccess, build_computer_action_sequence,
-    persist_computer_screenshot,
+    persist_computer_screenshot, reported_batch_position,
 };
 
 #[derive(Debug, Clone, PartialEq)]
