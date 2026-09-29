@@ -1,4 +1,15 @@
+use std::sync::Arc;
+
+use prost::Message;
 use serde_json::Value;
+
+use crate::cursor_backend::{resolve_sand_ghost_mode_header, send_cursor_unary};
+use crate::extensions::auth::credential_renewer::get_configured_backend_url;
+use crate::extensions::auth::extension::HostAuthExtension;
+
+use super::generated_inference_codec::{
+    GetSignedUrlForAttachedMediaRequest, GetSignedUrlForAttachedMediaResponse, InferenceReason,
+};
 
 use super::sand_model_experiment::{
     SandAgentModelParameter, SandAgentModelSelection,
@@ -14,7 +25,113 @@ pub struct SandSessionOptions {
     pub is_computer_use_subagent: bool,
     pub is_browser_use_subagent: bool,
     pub request_source: Option<String>,
+    pub conversation_id: Option<String>,
+    pub inference_reason: Option<InferenceReason>,
+    pub lineage: Option<RequestLineage>,
     pub skip_labeling: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RequestLineage {
+    pub parent_request_id: String,
+    pub root_parent_request_id: String,
+    pub parent_agent_tool_call_id: Option<String>,
+}
+
+impl RequestLineage {
+    pub fn sanitized_headers(&self) -> Vec<(String, String)> {
+        let clean = |value: &str| value.replace(['\\r', '\\n'], "");
+        let mut headers = vec![
+            ("x-parent-request-id".into(), clean(&self.parent_request_id)),
+            (
+                "x-root-parent-request-id".into(),
+                clean(&self.root_parent_request_id),
+            ),
+        ];
+        if let Some(tool_call_id) = self.parent_agent_tool_call_id.as_deref() {
+            headers.push((
+                "x-parent-agent-tool-call-id".into(),
+                clean(tool_call_id),
+            ));
+        }
+        headers
+    }
+}
+
+pub const GET_SIGNED_URL_FOR_ATTACHED_MEDIA_PATH: &str =
+    "/agent.v1.AgentService/GetSignedUrlForAttachedMedia";
+pub const ATTACHED_MEDIA_RPC_TIMEOUT_MS: u64 = 10_000;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AttachedMediaUrlRequest {
+    pub conversation_id: String,
+    pub key: String,
+    pub mime_type: String,
+    pub content_length_bytes: Option<i64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AttachedMediaUrl {
+    pub key: String,
+    pub put_url: String,
+    pub get_url: String,
+    pub expires_at_unix_ms: i64,
+    pub refresh_after_unix_ms: i64,
+}
+
+#[derive(Clone)]
+pub struct SandAttachedMediaUrlProvider {
+    auth: Arc<HostAuthExtension>,
+}
+
+impl SandAttachedMediaUrlProvider {
+    pub fn production(auth: Arc<HostAuthExtension>) -> Self {
+        Self { auth }
+    }
+
+    pub fn get_signed_url(
+        &self,
+        request: &AttachedMediaUrlRequest,
+    ) -> Result<AttachedMediaUrl, String> {
+        let backend_url =
+            get_configured_backend_url().map_err(|error| error.to_string())?;
+        let access_token = self
+            .auth
+            .get_access_token()
+            .map_err(|error| error.to_string())?;
+        let machine_id = self
+            .auth
+            .get_machine_id()
+            .map_err(|error| error.to_string())?;
+        let ghost_mode =
+            resolve_sand_ghost_mode_header(&backend_url, &access_token, &machine_id);
+        let proto = GetSignedUrlForAttachedMediaRequest {
+            key: Some(request.key.clone()),
+            mime_type: Some(request.mime_type.clone()),
+            conversation_id: request.conversation_id.clone(),
+            content_length_bytes: request.content_length_bytes,
+        };
+        let response = send_cursor_unary(
+            &backend_url,
+            &access_token,
+            &machine_id,
+            GET_SIGNED_URL_FOR_ATTACHED_MEDIA_PATH,
+            &proto.encode_to_vec(),
+            ATTACHED_MEDIA_RPC_TIMEOUT_MS,
+            ghost_mode,
+        )
+        .map_err(|error| error.to_string())?;
+        let decoded =
+            GetSignedUrlForAttachedMediaResponse::decode(response.as_slice())
+                .map_err(|error| error.to_string())?;
+        Ok(AttachedMediaUrl {
+            key: decoded.key,
+            put_url: decoded.put_url,
+            get_url: decoded.get_url,
+            expires_at_unix_ms: decoded.expires_at_unix_ms,
+            refresh_after_unix_ms: decoded.refresh_after_unix_ms,
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
