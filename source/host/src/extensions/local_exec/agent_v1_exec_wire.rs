@@ -16,9 +16,9 @@ use prost::Message;
 use serde_json::{Map, Value, json};
 
 pub const FROZEN_EXEC_PB_BLOB_SHA: &str =
-    "d6c82f73e6ccf2739a81762c36bfe0fc3ce38595";
+    "b3d569d1ad5f923444d472a08efb8bad58c5941f";
 
-fn object<'a>(value: &'a Value, name: &str) -> Result<&'a Map<String, Value>, String> {
+fn json_object<'a>(value: &'a Value, name: &str) -> Result<&'a Map<String, Value>, String> {
     value
         .as_object()
         .ok_or_else(|| format!("{name} JSON must be an object"))
@@ -183,20 +183,20 @@ pub mod exec_client_control_message {
 
 impl ExecClientControlMessage {
     pub fn from_json_ignoring_unknown_fields(value: &Value) -> Result<Self, String> {
-        let object = object(value, "ExecClientControlMessage")?;
+        let object = json_object(value, "ExecClientControlMessage")?;
         let message = match present_oneof(
             object,
             &["streamClose", "throw", "heartbeat"],
             "ExecClientControlMessage",
         )? {
             Some("streamClose") => {
-                let value = object(object.get("streamClose").unwrap(), "ExecClientStreamClose")?;
+                let value = json_object(object.get("streamClose").unwrap(), "ExecClientStreamClose")?;
                 Some(exec_client_control_message::Message::StreamClose(
                     ExecClientStreamClose { id: u32_field(value, "id")? },
                 ))
             }
             Some("throw") => {
-                let value = object(object.get("throw").unwrap(), "ExecClientThrow")?;
+                let value = json_object(object.get("throw").unwrap(), "ExecClientThrow")?;
                 Some(exec_client_control_message::Message::Throw(ExecClientThrow {
                     id: u32_field(value, "id")?,
                     error: string_field(value, "error")?,
@@ -205,7 +205,7 @@ impl ExecClientControlMessage {
                 }))
             }
             Some("heartbeat") => {
-                let value = object(object.get("heartbeat").unwrap(), "ExecClientHeartbeat")?;
+                let value = json_object(object.get("heartbeat").unwrap(), "ExecClientHeartbeat")?;
                 Some(exec_client_control_message::Message::Heartbeat(
                     ExecClientHeartbeat { id: u32_field(value, "id")? },
                 ))
@@ -332,7 +332,7 @@ pub mod shell_stream {
 
 impl ShellStream {
     fn from_json(value: &Value) -> Result<Self, String> {
-        let object = object(value, "ShellStream")?;
+        let object = json_object(value, "ShellStream")?;
         let event = match present_oneof(
             object,
             &[
@@ -349,19 +349,19 @@ impl ShellStream {
             "ShellStream",
         )? {
             Some("stdout") => {
-                let value = object(object.get("stdout").unwrap(), "ShellStreamStdout")?;
+                let value = json_object(object.get("stdout").unwrap(), "ShellStreamStdout")?;
                 Some(shell_stream::Event::Stdout(ShellStreamStdout {
                     data: string_field(value, "data")?,
                 }))
             }
             Some("stderr") => {
-                let value = object(object.get("stderr").unwrap(), "ShellStreamStderr")?;
+                let value = json_object(object.get("stderr").unwrap(), "ShellStreamStderr")?;
                 Some(shell_stream::Event::Stderr(ShellStreamStderr {
                     data: string_field(value, "data")?,
                 }))
             }
             Some("exit") => {
-                let value = object(object.get("exit").unwrap(), "ShellStreamExit")?;
+                let value = json_object(object.get("exit").unwrap(), "ShellStreamExit")?;
                 Some(shell_stream::Event::Exit(ShellStreamExit {
                     code: u32_field(value, "code")?,
                     cwd: string_field(value, "cwd")?,
@@ -370,11 +370,11 @@ impl ShellStream {
                 }))
             }
             Some("start") => {
-                object(object.get("start").unwrap(), "ShellStreamStart")?;
+                json_object(object.get("start").unwrap(), "ShellStreamStart")?;
                 Some(shell_stream::Event::Start(ShellStreamStart {}))
             }
             Some("rejected") => {
-                let value = object(object.get("rejected").unwrap(), "ShellRejected")?;
+                let value = json_object(object.get("rejected").unwrap(), "ShellRejected")?;
                 Some(shell_stream::Event::Rejected(ShellRejected {
                     command: string_field(value, "command")?,
                     working_directory: string_field(value, "workingDirectory")?,
@@ -383,7 +383,7 @@ impl ShellStream {
                 }))
             }
             Some("permissionDenied") => {
-                let value = object(object.get("permissionDenied").unwrap(), "ShellPermissionDenied")?;
+                let value = json_object(object.get("permissionDenied").unwrap(), "ShellPermissionDenied")?;
                 Some(shell_stream::Event::PermissionDenied(ShellPermissionDenied {
                     command: string_field(value, "command")?,
                     working_directory: string_field(value, "workingDirectory")?,
@@ -392,7 +392,7 @@ impl ShellStream {
                 }))
             }
             Some("backgrounded") => {
-                let value = object(object.get("backgrounded").unwrap(), "ShellStreamBackgrounded")?;
+                let value = json_object(object.get("backgrounded").unwrap(), "ShellStreamBackgrounded")?;
                 Some(shell_stream::Event::Backgrounded(ShellStreamBackgrounded {
                     shell_id: u32_field(value, "shellId")?,
                     command: string_field(value, "command")?,
@@ -403,11 +403,11 @@ impl ShellStream {
                 }))
             }
             Some("hookContext") => {
-                object(object.get("hookContext").unwrap(), "ShellStreamHookContext")?;
+                json_object(object.get("hookContext").unwrap(), "ShellStreamHookContext")?;
                 Some(shell_stream::Event::HookContext(ShellStreamHookContext {}))
             }
             Some("sandboxUnsupported") => {
-                let value = object(object.get("sandboxUnsupported").unwrap(), "ShellSandboxUnsupported")?;
+                let value = json_object(object.get("sandboxUnsupported").unwrap(), "ShellSandboxUnsupported")?;
                 Some(shell_stream::Event::SandboxUnsupported(ShellSandboxUnsupported {
                     command: string_field(value, "command")?,
                     working_directory: string_field(value, "workingDirectory")?,
@@ -512,14 +512,14 @@ pub mod read_result {
 
 impl ReadResult {
     fn from_json(value: &Value) -> Result<Self, String> {
-        let object = object(value, "ReadResult")?;
+        let object = json_object(value, "ReadResult")?;
         let result = match present_oneof(
             object,
             &["success", "error", "rejected", "fileNotFound", "permissionDenied", "invalidFile"],
             "ReadResult",
         )? {
             Some("success") => {
-                let value = object(object.get("success").unwrap(), "ReadSuccess")?;
+                let value = json_object(object.get("success").unwrap(), "ReadSuccess")?;
                 let output = match present_oneof(value, &["content", "data"], "ReadSuccess")? {
                     Some("content") => Some(read_success::Output::Content(string_field(value, "content")?)),
                     Some("data") => {
@@ -539,33 +539,33 @@ impl ReadResult {
                 }))
             }
             Some("error") => {
-                let value = object(object.get("error").unwrap(), "ReadError")?;
+                let value = json_object(object.get("error").unwrap(), "ReadError")?;
                 Some(read_result::Result::Error(ReadError {
                     path: string_field(value, "path")?,
                     error: string_field(value, "error")?,
                 }))
             }
             Some("rejected") => {
-                let value = object(object.get("rejected").unwrap(), "ReadRejected")?;
+                let value = json_object(object.get("rejected").unwrap(), "ReadRejected")?;
                 Some(read_result::Result::Rejected(ReadRejected {
                     path: string_field(value, "path")?,
                     reason: string_field(value, "reason")?,
                 }))
             }
             Some("fileNotFound") => {
-                let value = object(object.get("fileNotFound").unwrap(), "ReadFileNotFound")?;
+                let value = json_object(object.get("fileNotFound").unwrap(), "ReadFileNotFound")?;
                 Some(read_result::Result::FileNotFound(ReadFileNotFound {
                     path: string_field(value, "path")?,
                 }))
             }
             Some("permissionDenied") => {
-                let value = object(object.get("permissionDenied").unwrap(), "ReadPermissionDenied")?;
+                let value = json_object(object.get("permissionDenied").unwrap(), "ReadPermissionDenied")?;
                 Some(read_result::Result::PermissionDenied(ReadPermissionDenied {
                     path: string_field(value, "path")?,
                 }))
             }
             Some("invalidFile") => {
-                let value = object(object.get("invalidFile").unwrap(), "ReadInvalidFile")?;
+                let value = json_object(object.get("invalidFile").unwrap(), "ReadInvalidFile")?;
                 Some(read_result::Result::InvalidFile(ReadInvalidFile {
                     path: string_field(value, "path")?,
                     reason: string_field(value, "reason")?,
@@ -667,7 +667,7 @@ const EXEC_CLIENT_ONEOF_JSON_FIELDS: &[&str] = &[
 
 impl ExecClientMessage {
     pub fn from_json_ignoring_unknown_fields(value: &Value) -> Result<Self, String> {
-        let object = object(value, "ExecClientMessage")?;
+        let object = json_object(value, "ExecClientMessage")?;
         let branch = present_oneof(object, EXEC_CLIENT_ONEOF_JSON_FIELDS, "ExecClientMessage")?;
         let message = match branch {
             Some("shellStream") => Some(exec_client_message::Message::ShellStream(
