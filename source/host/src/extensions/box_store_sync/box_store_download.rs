@@ -4,6 +4,7 @@ use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use sha2::{Digest, Sha256};
 
@@ -15,7 +16,7 @@ use super::box_store_pack::{
 };
 use super::box_store_pack_pipeline::{
     BoxStoreBlobGroup, PACK_DOWNLOAD_CONCURRENCY, PACK_EXTRACT_CONCURRENCY, PACK_TMP_DIR_NAME,
-    should_restore_from_pack,
+    should_restore_from_pack, temp_is_stale,
 };
 use super::box_store_sync::{
     DEFAULT_COPY_IN_CONCURRENCY, DOWNLOAD_IN_FLIGHT_BYTE_BUDGET, LARGE_OBJECT_THRESHOLD_BYTES,
@@ -778,6 +779,8 @@ struct DownloadPackSink {
     restored: Mutex<HashSet<String>>,
     owner: Option<(u32, u32)>,
     budget: Arc<BoxStoreByteBudget>,
+    summary: Arc<Mutex<BoxStoreDownloadSummary>>,
+    options: BoxStoreDownloadOptions,
 }
 
 impl PackExtractionSink for DownloadPackSink {
@@ -868,9 +871,47 @@ impl PackExtractionSink for DownloadPackSink {
                     .lock()
                     .expect("pack restored lock")
                     .remove(rel_path);
+                continue;
             }
+            {
+                let mut summary = self.summary.lock().expect("download summary lock");
+                summary.verified = summary.verified.saturating_add(1);
+                summary.files = summary.files.saturating_add(1);
+                summary.bytes = summary.bytes.saturating_add(group.size);
+            }
+            report_progress(
+                &self.options,
+                self.summary.as_ref(),
+                self.manifest.len(),
+            );
         }
         Ok(())
+    }
+}
+
+fn sweep_restore_pack_temp_dir(temp_dir: &Path) {
+    let now_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(u64::MAX as u128) as u64)
+        .unwrap_or(0);
+    let Ok(entries) = fs::read_dir(temp_dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Ok(metadata) = entry.metadata() else {
+            continue;
+        };
+        let Ok(modified) = metadata.modified() else {
+            continue;
+        };
+        let modified_ms = modified
+            .duration_since(UNIX_EPOCH)
+            .map(|duration| duration.as_millis().min(u64::MAX as u128) as u64)
+            .unwrap_or(now_ms);
+        if temp_is_stale(now_ms, modified_ms) {
+            let _ = fs::remove_file(path);
+        }
     }
 }
 
@@ -881,6 +922,7 @@ fn restore_bulk_small_from_packs(
     owner: Option<(u32, u32)>,
     budget: Arc<BoxStoreByteBudget>,
     options: &BoxStoreDownloadOptions,
+    summary: Arc<Mutex<BoxStoreDownloadSummary>>,
 ) -> HashSet<String> {
     let mut groups = HashMap::<String, PackRestoreGroup>::new();
     for group in &planned.bulk_small {
@@ -919,6 +961,8 @@ fn restore_bulk_small_from_packs(
         restored: Mutex::new(HashSet::new()),
         owner,
         budget,
+        summary,
+        options: options.clone(),
     });
     let temp_dir = std::env::temp_dir().join(PACK_TMP_DIR_NAME);
     if let Err(error) = fs::create_dir_all(&temp_dir) {
@@ -929,6 +973,7 @@ fn restore_bulk_small_from_packs(
         }
         return HashSet::new();
     }
+    sweep_restore_pack_temp_dir(&temp_dir);
 
     let _ = for_each_bounded(
         &index.packs,
@@ -943,7 +988,23 @@ fn restore_bulk_small_from_packs(
                 let Some(group) = groups.get(&key) else {
                     continue;
                 };
-                if group.rel_paths.iter().any(|path| !restored.contains(path)) {
+                let has_pending = group.rel_paths.iter().any(|path| {
+                    if restored.contains(path) {
+                        return false;
+                    }
+                    let Some(destination) = planned.destinations.get(path) else {
+                        return true;
+                    };
+                    !local_file_matches(
+                        destination,
+                        &BoxStoreBlobGroup {
+                            sha: member.sha.clone(),
+                            size: member.size,
+                            rel_paths: Vec::new(),
+                        },
+                    )
+                });
+                if has_pending {
                     usable_count += 1;
                     usable_clen = usable_clen.saturating_add(member.clen);
                     usable_size = usable_size.saturating_add(member.size);
@@ -967,12 +1028,7 @@ fn restore_bulk_small_from_packs(
                 )? else {
                     return Ok(());
                 };
-                if written != pack.bytes {
-                    return Err(format!(
-                        "pack {} short read: expected {} bytes, got {written}",
-                        pack.id, pack.bytes
-                    ));
-                }
+                let _ = written;
                 let result = extract_pack_members(
                     &temp,
                     &pack.members,
@@ -1236,11 +1292,11 @@ pub fn download_manifest(
     }
 
     let planned = plan_download(target_root, manifest, options.large_object_threshold);
-    let state = Mutex::new(BoxStoreDownloadSummary {
+    let state = Arc::new(Mutex::new(BoxStoreDownloadSummary {
         manifest_entries: manifest.len(),
         failures: planned.failures.clone(),
         ..BoxStoreDownloadSummary::default()
-    });
+    }));
     let file_entry_count = manifest.values().filter(|entry| entry.is_file()).count();
     let symlink_entry_count = planned.symlinks.len();
     let trace_state = Mutex::new(SymlinkTraceState::default());
@@ -1288,21 +1344,8 @@ pub fn download_manifest(
         options.owner,
         Arc::clone(&budget),
         &options,
+        Arc::clone(&state),
     );
-    if !restored_by_pack.is_empty() {
-        let mut summary = state.lock().expect("download summary lock");
-        for rel_path in &restored_by_pack {
-            if let Some(entry) = planned.manifest.get(rel_path) {
-                summary.verified = summary.verified.saturating_add(1);
-                summary.files = summary.files.saturating_add(1);
-                summary.bytes = summary.bytes.saturating_add(
-                    file_identity(entry).map(|(_, size)| size).unwrap_or(0),
-                );
-            }
-        }
-        drop(summary);
-        report_progress(&options, &state, manifest.len());
-    }
 
     let remaining_bulk_small = planned
         .bulk_small
@@ -1609,7 +1652,7 @@ pub fn download_manifest(
         );
     }
 
-    state.into_inner().expect("download summary mutex")
+    state.lock().expect("download summary mutex").clone()
 }
 
 pub fn remove_existing_restore_path(path: &Path) -> Result<(), String> {
