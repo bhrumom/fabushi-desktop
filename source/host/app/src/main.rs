@@ -276,7 +276,7 @@ use mahayana_host_runtime::runner::tools::sand_external_machine_tools::{
 };
 use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     ComputerAutoReviewCallback, ComputerPersistImageCallback, ComputerToolExecutor,
-    ComputerToolExposure,
+    ComputerToolExposure, ReportedComputerAction,
     to_exact_action_value, validate_computer_action,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{
@@ -4953,10 +4953,49 @@ fn start_routed_provider_task(
             );
             let computer_control_handoff = session_handoff.clone();
             let computer_control_agent_id = agent_id.clone();
+            let computer_action_audit = Arc::clone(&action_audit_sink);
+            let computer_action_agent_id = agent_id.clone();
+            let computer_action_turn_id = stream_id.clone();
             let computer_executor: Arc<dyn ComputerToolExecutor> = Arc::new(
                 ProductionComputerToolExecutor::new(Arc::clone(&box_resources))
                     .with_auto_review_callback(computer_auto_review)
                     .with_persist_image_callback(computer_persist_image)
+                    .with_action_report_callback(Arc::new(move |reported, _tool_call_id| {
+                        let action = match reported {
+                            ReportedComputerAction::Drag { x, y } => serde_json::json!({
+                                "kind": "computerAction",
+                                "type": "drag",
+                                "x": x,
+                                "y": y,
+                            }),
+                            ReportedComputerAction::Move { x, y } => serde_json::json!({
+                                "kind": "computerAction",
+                                "type": "move",
+                                "x": x,
+                                "y": y,
+                            }),
+                            ReportedComputerAction::Scroll { x, y } => serde_json::json!({
+                                "kind": "computerAction",
+                                "type": "scroll",
+                                "x": x,
+                                "y": y,
+                            }),
+                            ReportedComputerAction::Click { x, y, button, count } => serde_json::json!({
+                                "kind": "computerAction",
+                                "type": "click",
+                                "x": x,
+                                "y": y,
+                                "button": button,
+                                "count": count,
+                            }),
+                        };
+                        computer_action_audit.record(ActionAuditRecord {
+                            occurred_at_ms: started_at_ms(),
+                            agent_id: computer_action_agent_id.clone(),
+                            turn_id: Some(computer_action_turn_id.clone()),
+                            action,
+                        });
+                    }))
                     .with_availability_check(Arc::new(move |args| {
                         if args.action != mahayana_host_runtime::runner::tools::sand_computer_tool::ComputerActionName::Screenshot
                             && computer_control_handoff.get(&computer_control_agent_id).is_some()
