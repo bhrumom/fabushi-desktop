@@ -18,10 +18,11 @@ pub fn authorize_routed_provider_request(
     requested: RoutedProvider,
 ) -> Result<RoutedProvider, String> {
     match route {
-        InferenceRoute::Cursor => Err(
-            "runner.startRoutedProvider is unavailable while Host inference provider is cursor"
-                .into(),
-        ),
+        InferenceRoute::Cursor if requested == RoutedProvider::Cursor => Ok(RoutedProvider::Cursor),
+        InferenceRoute::Cursor => Err(format!(
+            "routed provider request does not match Host inference settings: requested={} configured=cursor",
+            requested.as_str(),
+        )),
         InferenceRoute::Routed(configured) if configured == requested => Ok(configured),
         InferenceRoute::Routed(configured) => Err(format!(
             "routed provider request does not match Host inference settings: requested={} configured={}",
