@@ -279,7 +279,8 @@ use mahayana_host_runtime::runner::tools::sand_computer_tool::{
 use mahayana_host_runtime::runner::system_prompt_assembly::{
     AgentProfileForPrompt, append_agent_profile_system_prompt,
     append_automations_system_prompt, append_combined_memory_system_prompt,
-    render_agent_profile_section, resolve_combined_memory_system_prompt,
+    append_workflows_system_prompt, render_agent_profile_section,
+    resolve_combined_memory_system_prompt,
 };
 use mahayana_host_runtime::runner::sand_agent_profile_prompt::{
     AgentProfileIdentity, AgentProfilePromptSnapshot, agent_profile_identities_equal,
@@ -3282,6 +3283,16 @@ fn start_routed_provider_task(
         &automation_definitions,
         Some(&automation_location),
         automation_time_zone.as_deref(),
+    );
+    let workflow_store = session_workers
+        .open_workflow_store(&agent_id)
+        .map_err(|error| GatewayCommandError::Internal(format!(
+            "could not open production workflow store for {agent_id}: {error}"
+        )))?;
+    let workflow_location = workflow_store.get_location().to_string_lossy().into_owned();
+    append_workflows_system_prompt(
+        &mut provider_messages,
+        Some(&workflow_location),
     );
     let firing_automation_id = args
         .get("automationWake")

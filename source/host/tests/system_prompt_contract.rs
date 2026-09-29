@@ -11,8 +11,10 @@ use mahayana_host_runtime::runner::system_prompt::{
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{
     AgentProfileForPrompt, append_agent_profile_system_prompt,
-    render_agent_profile_section, render_request_context_system_prompt,
+    append_workflows_system_prompt, render_agent_profile_section,
+    render_request_context_system_prompt,
     render_request_context_system_prompt_with_capabilities,
+    render_workflows_system_prompt,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::ProviderMessage;
 use mahayana_host_runtime::sand_multitask::SAND_MULTITASK_PROMPT_SECTION;
@@ -188,4 +190,29 @@ fn frozen_agent_profile_section_is_provider_bound_once() {
     assert!(!shared.contains("Your agent name is"));
     assert!(!shared.contains("profile.json"));
     assert!(!shared.contains("settings.json"));
+}
+
+
+#[test]
+fn frozen_workflows_section_is_rendered_once_for_the_shipping_provider_prompt() {
+    let prompt = render_workflows_system_prompt(Some("/home/oai/share/workflows"));
+    assert_eq!(
+        prompt,
+        "Workflows are a GLOBAL, shared library across all of the user's assistants. User-created skills live as files at /home/oai/share/workflows: one subfolder per workflow, each holding a SKILL.md. Prefer the update_state tool (target \"workflow\") to save, rewrite, and delete them. Reference workflows as [name](sand-workflow:<id>)."
+    );
+    assert!(render_workflows_system_prompt(None).is_empty());
+
+    let mut messages = vec![
+        ProviderMessage { role: "system".into(), content: "base".into() },
+        ProviderMessage { role: "user".into(), content: "hello".into() },
+    ];
+    append_workflows_system_prompt(&mut messages, Some("/home/oai/share/workflows"));
+    append_workflows_system_prompt(&mut messages, Some("/home/oai/share/workflows"));
+    assert_eq!(
+        messages[0]
+            .content
+            .matches("Workflows are a GLOBAL, shared library")
+            .count(),
+        1
+    );
 }
