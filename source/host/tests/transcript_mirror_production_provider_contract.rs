@@ -1,3 +1,5 @@
+const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+
 use std::fs;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -84,6 +86,16 @@ fn state_bytes(
         push_length_delimited(13, value, &mut output);
     }
     output
+}
+
+#[test]
+fn shipping_runner_binds_generated_checkpoint_codec_into_file_transcript_mirror() {
+    assert!(SHIPPING_HOST.contains("ProductionTranscriptMirrorProvider::new("));
+    assert!(SHIPPING_HOST.contains("GeneratedTranscriptOccurrenceCodec::new("));
+    assert!(SHIPPING_HOST.contains("RejectGeneratedToolJsonProjection"));
+    assert!(SHIPPING_HOST.contains(".route_for_session("));
+    assert!(SHIPPING_HOST.contains("ProductionAgentStateCheckpointSink::new("));
+    assert!(SHIPPING_HOST.contains("transcript_mirror,"));
 }
 
 #[test]

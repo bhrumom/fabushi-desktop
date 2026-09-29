@@ -19750,7 +19750,7 @@
       "targetPath": "source/host/src/transcript_mirror/transcript_mirror.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "e85e9ce0eab850ffce57c5773ed9d77069f48a11",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
@@ -19759,7 +19759,8 @@
         "source/host/src/transcript_mirror/transcript_journal_codec.rs",
         "source/host/src/transcript_mirror/transcript_mirror_router.rs",
         "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs",
-        "source/host/src/transcript_mirror/production_provider.rs"
+        "source/host/src/transcript_mirror/production_provider.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_contract.rs",
@@ -19770,7 +19771,7 @@
         "source/host/tests/transcript_mirror_production_provider_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust FileTranscriptMirror ports frozen safe paths, journal ownership marker, per-conversation serialization, atomic file install/fsync, canonical file identity fencing, pending WAL prepare/commit/abort/replay, deferred cursor persistence, skip semantics, unique occurrence validation and outcome reporting. It implements the Rust TranscriptJournalPort consumed by the sticky router. Final is withheld until the generated occurrence deriver and production provider feed real ConversationStateStructure Agent checkpoints on the shipping Runner path."
+      "notes": "Rust FileTranscriptMirror owns the frozen journal boundary: safe paths, ownership marker, per-conversation serialization, atomic install/fsync, canonical file-identity fencing, pending WAL prepare/commit/abort/replay, deferred cursor persistence, skip semantics, unique occurrence validation and outcome reporting. It implements TranscriptJournalPort for the sticky router, and the shipping Runner now binds it through ProductionTranscriptMirrorProvider with GeneratedTranscriptOccurrenceCodec and ProductionAgentStateCheckpointSink over real Agent state/blob stores. Canonical generated tool JSON remains intentionally isolated to the separate generated-occurrence-codec / production-provider mappings rather than duplicating that gap on the mirror storage owner."
     },
     {
       "referencePath": "source/host/transcript-mirror/transcript-occurrence-deriver.ts",
