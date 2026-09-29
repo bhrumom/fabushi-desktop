@@ -507,7 +507,7 @@ pub fn decode_generated_computer_use_result(
     })
 }
 
-pub type ComputerAvailabilityCheck = Arc<dyn Fn() -> Result<(), ProviderSessionError> + Send + Sync>;
+pub type ComputerAvailabilityCheck = Arc<dyn Fn(&ComputerActionArgs) -> Result<(), ProviderSessionError> + Send + Sync>;
 
 pub struct ProductionComputerToolExecutor {
     box_resources: Arc<dyn RunnerBoxResourcePort>,
@@ -556,7 +556,7 @@ impl ComputerToolExecutor for ProductionComputerToolExecutor {
         tool_call_id: &str,
     ) -> Result<ComputerUseResult, ProviderSessionError> {
         if let Some(check) = self.availability_check.as_ref() {
-            check()?;
+            check(args)?;
         }
         let actions = build_computer_action_sequence(args, None)
             .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
