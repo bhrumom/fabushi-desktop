@@ -10,6 +10,7 @@ use crate::extensions::local_tool_permission::local_tool_permission_controller::
     SandLocalToolRequestStatus,
 };
 use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::runner::computer_use::ComputerUseCoordination;
 
 type PermissionEventSink = Arc<dyn Fn(&SandLocalToolControllerEvent) + Send + Sync>;
 
@@ -17,6 +18,7 @@ pub struct HostRunnerComposition {
     controller: Arc<SandLocalToolPermissionController>,
     sink: PermissionEventSink,
     surfaces: Mutex<HashMap<String, SandLocalToolControllerSubscription>>,
+    computer_use: Arc<Mutex<ComputerUseCoordination>>,
 }
 
 impl HostRunnerComposition {
@@ -44,6 +46,7 @@ impl HostRunnerComposition {
             controller,
             sink,
             surfaces: Mutex::new(HashMap::new()),
+            computer_use: Arc::new(Mutex::new(ComputerUseCoordination::new(true))),
         }
     }
 
@@ -86,6 +89,10 @@ impl HostRunnerComposition {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .len()
+    }
+
+    pub fn computer_use_coordination(&self) -> Arc<Mutex<ComputerUseCoordination>> {
+        Arc::clone(&self.computer_use)
     }
 }
 
