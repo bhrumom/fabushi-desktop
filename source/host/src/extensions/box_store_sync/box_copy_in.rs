@@ -283,7 +283,12 @@ fn run_copy_in_with_retry(
     target_root: &Path,
     provider: &dyn BoxObjectStoreProvider,
 ) -> CopyInResult {
-    let attempts = resolve_copy_in_attempts(\n        environment\n            .get("SAND_BOX_COPY_IN_ATTEMPTS")\n            .map(String::as_str),\n    )\n    .max(1);
+    let attempts = resolve_copy_in_attempts(
+        environment
+            .get("SAND_BOX_COPY_IN_ATTEMPTS")
+            .map(String::as_str),
+    )
+    .max(1);
     let mut last = failed_copy_in("copy-in did not run".into());
     for attempt in 1..=attempts {
         last = run_copy_in_with_provider(environment, target_root, provider);
