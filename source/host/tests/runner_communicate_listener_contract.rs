@@ -1,3 +1,5 @@
+const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+
 use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
@@ -20,6 +22,17 @@ use mahayana_host_runtime::runner::tools::listener_connect_cards::{
 };
 use prost::Message as _;
 use serde_json::{Value, json};
+
+#[test]
+fn shipping_routine_write_surfaces_listener_connect_cards_and_arms_resume_watcher() {
+    assert!(SHIPPING_HOST.contains("trigger_members(&target.spec.trigger)"));
+    assert!(SHIPPING_HOST.contains("surface_listener_connect_cards("));
+    assert!(SHIPPING_HOST.contains("lifecycle.is_platform_connected(platform)"));
+    assert!(SHIPPING_HOST.contains("\"type\": card.message_type"));
+    assert!(SHIPPING_HOST.contains("sink.send_message("));
+    assert!(SHIPPING_HOST.contains("lifecycle.watch_listener_connection("));
+    assert!(SHIPPING_HOST.contains(".with_routine_post_write(routine_post_write)"));
+}
 
 #[test]
 fn listener_cards_are_fail_soft_and_preserve_frozen_instruction() {
