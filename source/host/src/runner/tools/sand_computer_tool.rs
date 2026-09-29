@@ -618,9 +618,18 @@ pub fn computer_tool_definitions() -> Vec<RoutedToolDefinition> {
     ]
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ComputerToolExposure {
+    #[default]
+    Full,
+    ScreenshotOnly,
+    Disabled,
+}
+
 pub struct SandComputerToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
     executor: Arc<dyn ComputerToolExecutor>,
+    exposure: ComputerToolExposure,
 }
 
 impl SandComputerToolBridge {
@@ -628,14 +637,31 @@ impl SandComputerToolBridge {
         delegate: Arc<dyn RoutedToolBridge>,
         executor: Arc<dyn ComputerToolExecutor>,
     ) -> Self {
-        Self { delegate, executor }
+        Self {
+            delegate,
+            executor,
+            exposure: ComputerToolExposure::Full,
+        }
+    }
+
+    pub fn with_exposure(mut self, exposure: ComputerToolExposure) -> Self {
+        self.exposure = exposure;
+        self
     }
 }
 
 impl RoutedToolBridge for SandComputerToolBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
-        let definitions = computer_tool_definitions();
-        let names = definitions.iter().map(|tool| tool.name.as_str()).collect::<Vec<_>>();
+        if self.exposure == ComputerToolExposure::Disabled {
+            return self.delegate.list_tools();
+        }
+        let definitions = computer_tool_definitions()
+            .into_iter()
+            .filter(|tool| {
+                self.exposure == ComputerToolExposure::Full || tool.name == "Screenshot"
+            })
+            .collect::<Vec<_>>();
+        let names = ["Computer", "Screenshot"];
         let mut delegated = self.delegate.list_tools()?;
         delegated.retain(|tool| {
             !names.contains(&tool.name.as_str()) && !names.contains(&tool.tool_name.as_str())
@@ -656,6 +682,18 @@ impl RoutedToolBridge for SandComputerToolBridge {
         } else {
             tool.tool_name.as_str()
         };
+        if self.exposure == ComputerToolExposure::Disabled
+            && matches!(effective, "Computer" | "Screenshot")
+        {
+            return Err(ProviderSessionError::Tool(
+                "Computer tools are not available for this Runner role.".into(),
+            ));
+        }
+        if self.exposure == ComputerToolExposure::ScreenshotOnly && effective == "Computer" {
+            return Err(ProviderSessionError::Tool(
+                "Interactive Computer control is reserved for the computerUse subagent; this Runner only has Screenshot.".into(),
+            ));
+        }
         let (action, screenshot) = match effective {
             "Screenshot" => (ComputerActionArgs::simple(ComputerActionName::Screenshot), true),
             "Computer" => (parse_computer_action(&args, true)?, false),
