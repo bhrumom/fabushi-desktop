@@ -276,6 +276,7 @@ use mahayana_host_runtime::runner::tools::sand_external_machine_tools::{
 };
 use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     ComputerAutoReviewCallback, ComputerPersistImageCallback, ComputerToolExecutor,
+    ComputerToolExposure,
     to_exact_action_value, validate_computer_action,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{
@@ -4944,6 +4945,15 @@ fn start_routed_provider_task(
                     }
                 });
             let cursor_auth = inference.cursor_auth_for_session(Some(&worker_session_options));
+            let computer_exposure = if worker_generated_parent_agent_id.is_some() {
+                if worker_generated_subagent_type.eq_ignore_ascii_case("computeruse") {
+                    ComputerToolExposure::Full
+                } else {
+                    ComputerToolExposure::Disabled
+                }
+            } else {
+                ComputerToolExposure::ScreenshotOnly
+            };
             let mut composition = create_production_runner_composition(
                 ProductionRunnerCompositionInput {
                     provider,
@@ -4959,6 +4969,7 @@ fn start_routed_provider_task(
                     box_resources: Some(box_resources),
                     browser_executor: Some(browser_executor),
                     computer_executor: Some(computer_executor),
+                    computer_exposure,
                     file_transfer_executor: Some(file_transfer_executor),
                     external_machine_executor: Some(external_machine_executor),
                     external_shell_review: Some(external_shell_review),
