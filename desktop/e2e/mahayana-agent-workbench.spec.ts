@@ -20,23 +20,94 @@ function e2eAuthToken(): string {
   ].join('.');
 }
 
+
+function encodeVarint(value: number): Buffer {
+  const bytes: number[] = [];
+  let remaining = value >>> 0;
+  do {
+    let byte = remaining & 0x7f;
+    remaining >>>= 7;
+    if (remaining !== 0) byte |= 0x80;
+    bytes.push(byte);
+  } while (remaining !== 0);
+  return Buffer.from(bytes);
+}
+
+function encodeLengthDelimited(fieldNumber: number, payload: Buffer): Buffer {
+  return Buffer.concat([
+    encodeVarint((fieldNumber << 3) | 2),
+    encodeVarint(payload.length),
+    payload,
+  ]);
+}
+
+function encodeConnectFrame(payload: Buffer): Buffer {
+  const header = Buffer.alloc(5);
+  header.writeUInt8(0, 0);
+  header.writeUInt32BE(payload.length, 1);
+  return Buffer.concat([header, payload]);
+}
+
+function encodeCursorTextPart(text: string, isFinal: boolean): Buffer {
+  const fields: Buffer[] = [];
+  if (text.length > 0) fields.push(encodeLengthDelimited(1, Buffer.from(text, 'utf8')));
+  if (isFinal) fields.push(Buffer.from([0x10, 0x01]));
+  const textPart = Buffer.concat(fields);
+  return encodeConnectFrame(encodeLengthDelimited(1, textPart));
+}
+
+async function readRequestBody(request: import('node:http').IncomingMessage): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of request) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  return Buffer.concat(chunks);
+}
+
 async function ensureE2eAuthBackend(): Promise<string> {
   if (e2eAuthBackendPromise != null) return await e2eAuthBackendPromise;
   e2eAuthBackendPromise = new Promise<string>((resolve, reject) => {
     const token = e2eAuthToken();
-    const server = createServer((request, response) => {
+    const server = createServer(async (request, response) => {
       const requestUrl = new URL(request.url ?? '/', 'http://127.0.0.1');
-      response.setHeader('content-type', 'application/json');
       if (requestUrl.pathname === '/auth/poll') {
+        response.setHeader('content-type', 'application/json');
         response.statusCode = 200;
         response.end(JSON.stringify({ accessToken: token, refreshToken: token }));
         return;
       }
       if (requestUrl.pathname === '/oauth/token') {
+        response.setHeader('content-type', 'application/json');
         response.statusCode = 200;
         response.end(JSON.stringify({ access_token: token, refresh_token: token }));
         return;
       }
+      if (requestUrl.pathname === '/aiserver.v1.InferenceService/Stream') {
+        const body = await readRequestBody(request);
+        const authorization = request.headers.authorization;
+        const requestId = request.headers['x-request-id'];
+        const contentType = request.headers['content-type'];
+        if (authorization !== `Bearer ${token}`
+          || typeof requestId !== 'string'
+          || !requestId
+          || contentType !== 'application/connect+proto'
+          || body.length < 6) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 400;
+          response.end(JSON.stringify({ error: 'invalid-inference-request' }));
+          return;
+        }
+        const isSelfHosted = body.includes(Buffer.from('自建 Bot', 'utf8'));
+        const text = isSelfHosted
+          ? '收到：自建 Bot 请规划步骤'
+          : '收到：请分析这个任务';
+        response.setHeader('content-type', 'application/connect+proto');
+        response.statusCode = 200;
+        response.end(Buffer.concat([
+          encodeCursorTextPart(text, false),
+          encodeCursorTextPart('', true),
+        ]));
+        return;
+      }
+      response.setHeader('content-type', 'application/json');
       response.statusCode = 404;
       response.end(JSON.stringify({ error: 'not-found' }));
     });
