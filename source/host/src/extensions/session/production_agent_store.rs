@@ -282,9 +282,7 @@ impl ProductionAgentStore {
             self.clear_checkpoint();
             return false;
         }
-        let blob = match futures::executor::block_on(
-            self.blob_store.get_blob(&(), &root),
-        ) {
+        let blob = match self.blob_store.get_blob_blocking(&root) {
             Ok(Some(blob)) => blob,
             _ => {
                 self.clear_checkpoint();
@@ -313,7 +311,7 @@ impl ProductionAgentStore {
     /// Shipping direct-user checkpoint boundary. Blob bytes are content
     /// addressed first; then SandAgentDb advances latestRootBlobId and the
     /// transcript recovery watermark in one IMMEDIATE SQLite transaction.
-    pub async fn handle_checkpoint_bytes_and_confirm_user_message_async(
+    pub fn handle_checkpoint_bytes_and_confirm_user_message_blocking(
         &self,
         checkpoint: &[u8],
         message_id: &str,
@@ -323,8 +321,7 @@ impl ProductionAgentStore {
 
         let root_blob_id = Sha256::digest(checkpoint).to_vec();
         self.blob_store
-            .set_blob(&(), &root_blob_id, checkpoint)
-            .await
+            .set_blob_blocking(&root_blob_id, checkpoint)
             .map_err(|error| error.to_string())?;
 
         let expected_root = self.latest_root_blob_id();
@@ -352,7 +349,18 @@ impl ProductionAgentStore {
         Ok(root_blob_id)
     }
 
-    pub async fn handle_checkpoint_bytes_async(
+    pub async fn handle_checkpoint_bytes_and_confirm_user_message_async(
+        &self,
+        checkpoint: &[u8],
+        message_id: &str,
+    ) -> Result<Vec<u8>, String> {
+        self.handle_checkpoint_bytes_and_confirm_user_message_blocking(
+            checkpoint,
+            message_id,
+        )
+    }
+
+    pub fn handle_checkpoint_bytes_blocking(
         &self,
         checkpoint: &[u8],
     ) -> Result<Vec<u8>, String> {
@@ -361,8 +369,7 @@ impl ProductionAgentStore {
 
         let root_blob_id = Sha256::digest(checkpoint).to_vec();
         self.blob_store
-            .set_blob(&(), &root_blob_id, checkpoint)
-            .await
+            .set_blob_blocking(&root_blob_id, checkpoint)
             .map_err(|error| error.to_string())?;
 
         let advanced = self
@@ -385,13 +392,18 @@ impl ProductionAgentStore {
         Ok(root_blob_id)
     }
 
+    pub async fn handle_checkpoint_bytes_async(
+        &self,
+        checkpoint: &[u8],
+    ) -> Result<Vec<u8>, String> {
+        self.handle_checkpoint_bytes_blocking(checkpoint)
+    }
+
     pub fn handle_checkpoint_bytes(
         &self,
         checkpoint: &[u8],
     ) -> Result<Vec<u8>, String> {
-        futures::executor::block_on(
-            self.handle_checkpoint_bytes_async(checkpoint),
-        )
+        self.handle_checkpoint_bytes_blocking(checkpoint)
     }
 
     pub fn latest_root_blob_id(&self) -> Vec<u8> {
@@ -412,10 +424,9 @@ impl ProductionAgentStore {
         &self,
         blob_id: &[u8],
     ) -> Result<Option<Vec<u8>>, String> {
-        futures::executor::block_on(
-            self.blob_store.get_blob(&(), blob_id),
-        )
-        .map_err(|error| error.to_string())
+        self.blob_store
+            .get_blob_blocking(blob_id)
+            .map_err(|error| error.to_string())
     }
 
     pub fn flush(&self) {

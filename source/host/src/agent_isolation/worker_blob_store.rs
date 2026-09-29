@@ -57,21 +57,27 @@ where
         self.get_blob_blocking(blob_id)
     }
 
+    pub fn set_blob_blocking(
+        &self,
+        blob_id: &[u8],
+        blob_data: &[u8],
+    ) -> Result<(), AgentWorkerPoolError<Backend::Error>> {
+        self.pool.set_blob_blocking(
+            &self.agent_id,
+            &self.blob_db_path,
+            blob_id,
+            blob_data,
+            self.legacy_blob_db_path(),
+        )
+    }
+
     pub async fn set_blob<Ctx>(
         &self,
         _ctx: &Ctx,
         blob_id: &[u8],
         blob_data: &[u8],
     ) -> Result<(), AgentWorkerPoolError<Backend::Error>> {
-        self.pool
-            .set_blob(
-                &self.agent_id,
-                &self.blob_db_path,
-                blob_id,
-                blob_data,
-                self.legacy_blob_db_path(),
-            )
-            .await
+        self.set_blob_blocking(blob_id, blob_data)
     }
 
     pub async fn set_blob_locally_only<Ctx>(

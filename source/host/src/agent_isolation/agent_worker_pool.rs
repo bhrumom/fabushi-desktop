@@ -546,7 +546,7 @@ where
         )
     }
 
-    pub async fn set_blob(
+    pub fn set_blob_blocking(
         &self,
         agent_id: &str,
         blob_db_path: &Path,
@@ -560,6 +560,23 @@ where
             .and_then(|connection| connection.send_set(blob_id, blob_data));
         self.release(blob_db_path);
         result
+    }
+
+    pub async fn set_blob(
+        &self,
+        agent_id: &str,
+        blob_db_path: &Path,
+        blob_id: &[u8],
+        blob_data: &[u8],
+        legacy_blob_db_path: Option<&Path>,
+    ) -> Result<(), AgentWorkerPoolError<Backend::Error>> {
+        self.set_blob_blocking(
+            agent_id,
+            blob_db_path,
+            blob_id,
+            blob_data,
+            legacy_blob_db_path,
+        )
     }
 
     pub async fn find_latest_root_blob_id(

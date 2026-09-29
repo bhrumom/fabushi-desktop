@@ -385,3 +385,85 @@ fn production_sink_can_stage_generated_state_before_outer_stream_final_persist()
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn production_sink_can_checkpoint_inside_existing_localpool_executor() {
+    let root = temp_root("nested-localpool");
+    let agents_root = root.join("agents");
+    let transcripts_dir = root.join("transcripts");
+    let sessions = ProductionSessionWorkers::with_agents_root(&agents_root, 500);
+    let session = sessions
+        .materialize_session_with_active(None, "user", None, None)
+        .expect("session");
+    session
+        .db
+        .append_transcript_entry(&serde_json::json!({
+            "id": "message-nested",
+            "kind": "message",
+            "role": "user",
+            "content": "nested checkpoint",
+            "confirmed": false
+        }))
+        .expect("user echo");
+    let blob_store = Arc::new(
+        sessions
+            .create_agent_blob_store(&session.record.id)
+            .expect("blob store"),
+    );
+    let prior = session.agent_store.latest_checkpoint_bytes().unwrap_or_default();
+    let provider = ProductionTranscriptMirrorProvider::new(
+        &transcripts_dir,
+        GeneratedTranscriptOccurrenceCodec::new(
+            RejectGeneratedToolJsonProjection,
+        ),
+    );
+    let mirror = Arc::new(
+        provider
+            .route_for_session(
+                Arc::clone(&blob_store),
+                &prior,
+                Arc::new(|| Ok(true)),
+            )
+            .expect("route"),
+    );
+    let sink = ProductionAgentStateCheckpointSink::new(
+        session.record.id.clone(),
+        Arc::clone(&session.agent_store),
+        blob_store,
+        mirror,
+        prior,
+        true,
+    )
+    .expect("sink");
+
+    futures::executor::block_on(async {
+        sink.checkpoint_text_turn(
+            &[ProviderMessage {
+                role: "user".into(),
+                content: "nested checkpoint".into(),
+            }],
+            &TurnRunOptions {
+                inference_request_id: Some("request-nested".into()),
+                message_id: Some("message-nested".into()),
+                recent_message_text: Some("nested checkpoint".into()),
+                ..TurnRunOptions::default()
+            },
+            "assistant nested",
+        )
+        .expect("checkpoint inside existing LocalPool");
+    });
+
+    assert!(!session.agent_store.latest_root_blob_id().is_empty());
+    assert_eq!(
+        session
+            .db
+            .get_transcript_entry_by_id("message-nested")
+            .expect("read user echo")
+            .and_then(|entry| entry.get("confirmed").and_then(serde_json::Value::as_bool)),
+        Some(true)
+    );
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
