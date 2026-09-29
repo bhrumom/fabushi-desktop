@@ -10,6 +10,7 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProv
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSnapshot,
 };
+use mahayana_host_runtime::runner::tools::sand_computer_tool::ComputerToolExposure;
 use mahayana_host_runtime::runner::tools::sand_mcp_management_tools::{
     McpAuthenticationResult, McpInstalledServer, McpManagementSink, McpPluginDetail,
     McpPluginSummary, McpRemoveServerResult, McpUninstallPluginResult,
@@ -107,6 +108,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
             box_resources: None,
             browser_executor: None,
             computer_executor: None,
+            computer_exposure: ComputerToolExposure::Full,
             file_transfer_executor: None,
             external_machine_executor: None,
             external_shell_review: None,
@@ -157,6 +159,7 @@ fn production_bridge_projects_mcp_management_into_canonical_turn_composition() {
             box_resources: None,
             browser_executor: None,
             computer_executor: None,
+            computer_exposure: ComputerToolExposure::Full,
             file_transfer_executor: None,
             external_machine_executor: None,
             external_shell_review: None,
