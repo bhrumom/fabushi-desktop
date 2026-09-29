@@ -1,13 +1,14 @@
 use mahayana_host_runtime::extensions::inference::provider_session::ProviderMessage;
 use mahayana_host_runtime::extensions::memory::memory_service::{
-    MemoryKind, MemoryRecall, MemoryRecord, ScopedMemoryRecord, UserMemoryRecall,
+    MemoryKind, MemoryRecall, MemoryRecord, ProjectMemoryBlock,
+    ProjectMemoryMembership, ProjectMemoryPromptRecall, ScopedMemoryRecord, UserMemoryRecall,
 };
 use mahayana_host_runtime::runner::sand_memory::{
     MEMORY_EPISODE_PREFIX, MEMORY_NOTE_PREFIX, MemoryExtraction, build_episode_user_prompt,
     build_extraction_user_prompt, episode_interval, fact_line, gather_extraction_memories,
     is_memorable_exchange, memory_importance, parse_extracted_memories,
-    render_memory_system_prompt, render_user_memory_system_prompt,
-    resolve_frozen_memory_prompt, select_relevant_memories,
+    render_memory_system_prompt, render_project_memory_system_prompt,
+    render_user_memory_system_prompt, resolve_frozen_memory_prompt, select_relevant_memories,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::append_memory_system_prompt;
 
@@ -166,4 +167,38 @@ fn shared_user_memory_prompt_preserves_frozen_provenance_and_precedence() {
     assert!(rendered.contains("Your own shard is at /sand/user-memory/agents/agent-a"));
     assert!(rendered.contains("[via Researcher] The user prefers concise answers"));
     assert!(rendered.contains("[via Planner] Booked Tokyo for October"));
+}
+
+
+#[test]
+fn project_memory_prompt_preserves_frozen_precedence_blocks_and_membership_tail() {
+    let recall = ProjectMemoryPromptRecall {
+        injected: vec![ProjectMemoryBlock {
+            slug: "launch".into(),
+            name: "Launch Plan".into(),
+            own_shard_dir: "/sand/projects/launch/memory/agents/agent-a".into(),
+            recall: UserMemoryRecall {
+                profile: vec![ScopedMemoryRecord {
+                    agent_id: "agent-b".into(),
+                    agent_name: "Planner".into(),
+                    memory: record("Release requires two approvals", 1_720_000_000_000, MemoryKind::Profile),
+                }],
+                recent: vec![],
+            },
+        }],
+        also_member_of: vec![ProjectMemoryMembership {
+            slug: "archive".into(),
+            name: "Archive".into(),
+        }],
+    };
+    let rendered = render_project_memory_system_prompt(&recall, Some("/sand/projects"));
+    assert!(rendered.starts_with(
+        "Project memory: durable facts shared by every assistant that has joined a project"
+    ));
+    assert!(rendered.contains(
+        "prefer your OWN memory first, then project memory, then user memory"
+    ));
+    assert!(rendered.contains("Project \"Launch Plan\" (launch)"));
+    assert!(rendered.contains("[via Planner] Release requires two approvals"));
+    assert!(rendered.contains("Also a member of: Archive (archive)"));
 }

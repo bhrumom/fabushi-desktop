@@ -440,3 +440,83 @@ fn memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_liste
 
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering() {
+    let root = temp_root("project-prompt");
+    let agents_root = root.join("agents");
+    let service = MemoryService::new_with_sand_root(&root, &agents_root);
+    let own_agent = agents_root.join("owner");
+    let membership = service.create_project_membership(&own_agent);
+    let projects = BTreeSet::from([
+        "alpha".to_string(),
+        "beta".to_string(),
+        "gamma".to_string(),
+        "zeta".to_string(),
+    ]);
+    membership.write(&projects).expect("write membership");
+
+    for (slug, name) in [
+        ("alpha", "Alpha Project"),
+        ("beta", "Beta Project"),
+        ("gamma", "Gamma Project"),
+        ("zeta", "Zeta Project"),
+    ] {
+        let dir = root.join("projects").join(slug);
+        fs::create_dir_all(&dir).expect("project dir");
+        fs::write(
+            dir.join("project.md"),
+            format!("---\nname: {name}\ndescription: fixture\n---\n"),
+        )
+        .expect("project metadata");
+    }
+
+    let alpha_at = chrono::DateTime::parse_from_rfc3339("2026-09-20T00:00:00Z")
+        .expect("alpha time")
+        .timestamp_millis();
+    let beta_at = chrono::DateTime::parse_from_rfc3339("2026-09-23T00:00:00Z")
+        .expect("beta time")
+        .timestamp_millis();
+    let zeta_at = chrono::DateTime::parse_from_rfc3339("2026-09-22T00:00:00Z")
+        .expect("zeta time")
+        .timestamp_millis();
+    FileMemoryStore::new(get_project_memory_shard_dir(&root, "alpha", "agent-a"))
+        .add_memory("alpha fact", alpha_at, MemoryKind::Log)
+        .expect("alpha fact");
+    FileMemoryStore::new(get_project_memory_shard_dir(&root, "beta", "agent-b"))
+        .add_memory("beta fact", beta_at, MemoryKind::Profile)
+        .expect("beta fact");
+    FileMemoryStore::new(get_project_memory_shard_dir(&root, "zeta", "agent-c"))
+        .add_memory("zeta fact", zeta_at, MemoryKind::Log)
+        .expect("zeta fact");
+
+    let project = service.project_memory_store(
+        "owner",
+        membership,
+        Arc::new(|id| format!("display-{id}")),
+    );
+    let recalled = project.recall_for_prompt(25, 10, 3);
+    assert_eq!(
+        recalled
+            .injected
+            .iter()
+            .map(|block| block.slug.as_str())
+            .collect::<Vec<_>>(),
+        vec!["beta", "zeta", "alpha"]
+    );
+    assert_eq!(recalled.injected[0].name, "Beta Project");
+    assert_eq!(
+        recalled.injected[0].recall.profile[0].agent_name,
+        "display-agent-b"
+    );
+    assert_eq!(
+        recalled.injected[0].own_shard_dir,
+        get_project_memory_shard_dir(&root, "beta", "owner")
+    );
+    assert_eq!(recalled.also_member_of.len(), 1);
+    assert_eq!(recalled.also_member_of[0].slug, "gamma");
+    assert_eq!(recalled.also_member_of[0].name, "Gamma Project");
+
+    let _ = fs::remove_dir_all(root);
+}

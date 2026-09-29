@@ -243,8 +243,10 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::prompt_collector_glue::project_provider_messages_for_turn;
 use mahayana_host_runtime::runner::sand_memory::{
-    MEMORY_RECENT_PROMPT_LIMIT, MEMORY_USER_PROFILE_PROMPT_LIMIT,
-    MEMORY_USER_RECENT_PROMPT_LIMIT, is_memorable_exchange,
+    MEMORY_PROJECT_INJECTED_CAP, MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
+    MEMORY_PROJECT_RECENT_PROMPT_LIMIT, MEMORY_RECENT_PROMPT_LIMIT,
+    MEMORY_USER_PROFILE_PROMPT_LIMIT, MEMORY_USER_RECENT_PROMPT_LIMIT,
+    is_memorable_exchange,
 };
 use mahayana_host_runtime::runner::turn_memory::{
     TurnExchange, TurnMemoryMode, build_turn_memory_exchange, run_turn_memory_with,
@@ -275,7 +277,7 @@ use mahayana_host_runtime::runner::tools::sand_computer_tool::{
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{
     append_automations_system_prompt, append_memory_system_prompt,
-    append_user_memory_system_prompt,
+    append_project_memory_system_prompt, append_user_memory_system_prompt,
 };
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
@@ -3080,17 +3082,20 @@ fn start_routed_provider_task(
     let agent_summaries = session_workers
         .list_agent_summaries(Some(&agent_id))
         .unwrap_or_default();
-    let resolve_agent_name = Arc::new(move |candidate: &str| {
-        agent_summaries
-            .iter()
-            .find(|summary| summary.id == candidate)
-            .map(|summary| summary.name.trim())
-            .filter(|name| !name.is_empty())
-            .map(str::to_string)
-            .unwrap_or_else(|| candidate.to_string())
-    });
-    let user_memory_store =
-        memory_service.user_memory_store(agent_id.clone(), resolve_agent_name);
+    let resolve_agent_name: Arc<dyn Fn(&str) -> String + Send + Sync> =
+        Arc::new(move |candidate: &str| {
+            agent_summaries
+                .iter()
+                .find(|summary| summary.id == candidate)
+                .map(|summary| summary.name.trim())
+                .filter(|name| !name.is_empty())
+                .map(str::to_string)
+                .unwrap_or_else(|| candidate.to_string())
+        });
+    let user_memory_store = memory_service.user_memory_store(
+        agent_id.clone(),
+        Arc::clone(&resolve_agent_name),
+    );
     let user_memory_recall = user_memory_store.recall(
         MEMORY_USER_PROFILE_PROMPT_LIMIT,
         MEMORY_USER_RECENT_PROMPT_LIMIT,
@@ -3108,6 +3113,26 @@ fn start_routed_provider_task(
         &user_memory_recall,
         Some(&user_memory_location),
         Some(&user_memory_own_shard_location),
+    );
+
+    let project_memory_store = memory_service.project_memory_store(
+        agent_id.clone(),
+        memory_service.project_membership_for_agent(&agent_id),
+        Arc::clone(&resolve_agent_name),
+    );
+    let project_memory_recall = project_memory_store.recall_for_prompt(
+        MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
+        MEMORY_PROJECT_RECENT_PROMPT_LIMIT,
+        MEMORY_PROJECT_INJECTED_CAP,
+    );
+    let projects_root_location = project_memory_store
+        .get_location()
+        .to_string_lossy()
+        .into_owned();
+    append_project_memory_system_prompt(
+        &mut provider_messages,
+        &project_memory_recall,
+        Some(&projects_root_location),
     );
 
     let memory_store = memory_service.store_for_agent(&agent_id);

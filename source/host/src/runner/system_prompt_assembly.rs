@@ -3,15 +3,18 @@ use serde_json::Value;
 use crate::host_request_context::HostRequestContext;
 use crate::automations::automation::{AutomationRecord, render_automations_system_prompt};
 use crate::extensions::inference::provider_session::ProviderMessage;
-use crate::extensions::memory::memory_service::{MemoryRecall, UserMemoryRecall};
+use crate::extensions::memory::memory_service::{
+    MemoryRecall, ProjectMemoryPromptRecall, UserMemoryRecall,
+};
 use crate::sand_multitask::SAND_MULTITASK_PROMPT_SECTION;
 
 use super::system_prompt::{
     SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, build_sand_base_system_prompt,
 };
 use super::sand_memory::{
-    MEMORY_SYSTEM_PROMPT_HEADER, MEMORY_USER_SYSTEM_PROMPT_HEADER,
-    render_memory_system_prompt, render_user_memory_system_prompt,
+    MEMORY_PROJECT_SYSTEM_PROMPT_HEADER, MEMORY_SYSTEM_PROMPT_HEADER,
+    MEMORY_USER_SYSTEM_PROMPT_HEADER, render_memory_system_prompt,
+    render_project_memory_system_prompt, render_user_memory_system_prompt,
 };
 
 pub fn render_request_context_system_prompt(
@@ -151,6 +154,36 @@ pub fn append_user_memory_system_prompt(
         system.content.push_str(&memory);
     } else {
         messages.insert(0, ProviderMessage { role: "system".into(), content: memory });
+    }
+}
+
+pub fn append_project_memory_system_prompt(
+    messages: &mut Vec<ProviderMessage>,
+    recall: &ProjectMemoryPromptRecall,
+    projects_root_dir: Option<&str>,
+) {
+    let memory = render_project_memory_system_prompt(recall, projects_root_dir);
+    if memory.is_empty() {
+        return;
+    }
+    if messages.iter().any(|message| {
+        message.role == "system" && message.content.contains(MEMORY_PROJECT_SYSTEM_PROMPT_HEADER)
+    }) {
+        return;
+    }
+    if let Some(system) = messages.iter_mut().find(|message| message.role == "system") {
+        if !system.content.trim().is_empty() {
+            system.content.push_str("\n\n");
+        }
+        system.content.push_str(&memory);
+    } else {
+        messages.insert(
+            0,
+            ProviderMessage {
+                role: "system".into(),
+                content: memory,
+            },
+        );
     }
 }
 

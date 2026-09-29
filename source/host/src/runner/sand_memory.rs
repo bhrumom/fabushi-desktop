@@ -2,8 +2,9 @@ use std::collections::HashSet;
 use std::io;
 
 use crate::extensions::memory::memory_service::{
-    FileMemoryStore, MemoryKind, MemoryRecall, MemoryRecord, ScopedMemoryRecord,
-    UserMemoryRecall, format_memory_date, memory_dedupe_key, normalize_memory_content,
+    FileMemoryStore, MemoryKind, MemoryRecall, MemoryRecord, ProjectMemoryPromptRecall,
+    ScopedMemoryRecord, UserMemoryRecall, format_memory_date, memory_dedupe_key,
+    normalize_memory_content,
 };
 
 pub const MEMORY_RECENT_PROMPT_LIMIT: usize = 30;
@@ -12,9 +13,16 @@ pub const MEMORY_USER_PROFILE_PROMPT_LIMIT: usize = 50;
 pub const MEMORY_USER_RECENT_PROMPT_LIMIT: usize = 15;
 pub const MEMORY_USER_PROFILE_CHAR_BUDGET: usize = 4_000;
 pub const MEMORY_USER_RECENT_CHAR_BUDGET: usize = 2_000;
+pub const MEMORY_PROJECT_PROFILE_PROMPT_LIMIT: usize = 25;
+pub const MEMORY_PROJECT_RECENT_PROMPT_LIMIT: usize = 10;
+pub const MEMORY_PROJECT_INJECTED_CAP: usize = 3;
+pub const MEMORY_PROJECT_PROFILE_CHAR_BUDGET: usize = 2_500;
+pub const MEMORY_PROJECT_RECENT_CHAR_BUDGET: usize = 1_500;
 pub const MEMORY_MAX_CONTENT_LENGTH: usize = 500;
 pub const MEMORY_USER_SYSTEM_PROMPT_HEADER: &str =
     "User memory: durable facts shared across every assistant this user runs";
+pub const MEMORY_PROJECT_SYSTEM_PROMPT_HEADER: &str =
+    "Project memory: durable facts shared by every assistant that has joined a project";
 pub const MEMORY_EXTRACTION_PROMPT_MARKER: &str = "<<SAND_MEMORY_EXTRACTION>>";
 pub const MEMORY_EPISODE_PROMPT_MARKER: &str = "<<SAND_MEMORY_EPISODE>>";
 pub const MEMORY_EPISODE_PREFIX: &str = "[episode] ";
@@ -264,6 +272,68 @@ pub fn render_user_memory_system_prompt(
     }
     if recall.profile.is_empty() && recall.recent.is_empty() {
         lines.push("No shared facts recorded yet.".to_string());
+    }
+    lines.join("\n")
+}
+
+pub fn render_project_memory_system_prompt(
+    recall: &ProjectMemoryPromptRecall,
+    projects_root_dir: Option<&str>,
+) -> String {
+    let Some(projects_root_dir) = projects_root_dir else {
+        return String::new();
+    };
+    let mut lines = vec![
+        "Project memory: durable facts shared by every assistant that has joined a project — the project's decisions, conventions, and state. Projects are optional and opt-in; joining one lets its memory into your prompt below.".to_string(),
+        "Precedence across memory tiers: on conflict prefer your OWN memory first, then project memory, then user memory — the most specific wins.".to_string(),
+        format!(
+            "Projects live under {projects_root_dir}: each is a folder <slug>/ holding a project.md (frontmatter name/description) and memory/by-agent/<assistantId>/ shards (one per contributing assistant, a standard profile.md + log/). Read and grep those folders with Read and Shell on your own computer; prefer the update_state tool for every CHANGE:"
+        ),
+        "  - Define a project: update_state target \"project\", action \"create\", project=<slug>, name=... (optional description). If the slug already exists this is create-is-join.".to_string(),
+        "  - Join or leave: update_state target \"project\", action \"join\" or \"leave\", project=<slug>. Only projects you have joined load below; to see who else is a member, grep the assistants' projects.json files.".to_string(),
+        "  - Write project facts with update_state target \"memory\", scope \"project\", project=<slug>, action \"write\" or \"forget\" (never another assistant's shard); newest wins on conflict. Record a fact here only when it is about the project and useful to every member.".to_string(),
+    ];
+    for block in &recall.injected {
+        lines.push(format!(
+            "Project \"{}\" ({}) — your shard: {}:",
+            block.name,
+            block.slug,
+            block.own_shard_dir.to_string_lossy()
+        ));
+        if !block.recall.profile.is_empty() {
+            lines.push("About this project (shared):".to_string());
+            append_budgeted_provenanced_facts(
+                &mut lines,
+                &block.recall.profile,
+                MEMORY_PROJECT_PROFILE_CHAR_BUDGET,
+                "profile facts",
+                "this project's memory/ folder",
+            );
+        }
+        if !block.recall.recent.is_empty() {
+            lines.push("Recently (shared):".to_string());
+            append_budgeted_provenanced_facts(
+                &mut lines,
+                &block.recall.recent,
+                MEMORY_PROJECT_RECENT_CHAR_BUDGET,
+                "log facts",
+                "this project's memory/ folder",
+            );
+        }
+        if block.recall.profile.is_empty() && block.recall.recent.is_empty() {
+            lines.push("No shared facts recorded yet for this project.".to_string());
+        }
+    }
+    if !recall.also_member_of.is_empty() {
+        lines.push(format!(
+            "Also a member of: {} — grep those project folders for their memory.",
+            recall
+                .also_member_of
+                .iter()
+                .map(|project| format!("{} ({})", project.name, project.slug))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
     }
     lines.join("\n")
 }

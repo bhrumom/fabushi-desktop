@@ -695,6 +695,26 @@ pub struct ProjectMemoryRecord {
     pub memory: MemoryRecord,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectMemoryBlock {
+    pub slug: String,
+    pub name: String,
+    pub own_shard_dir: PathBuf,
+    pub recall: UserMemoryRecall,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectMemoryMembership {
+    pub slug: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ProjectMemoryPromptRecall {
+    pub injected: Vec<ProjectMemoryBlock>,
+    pub also_member_of: Vec<ProjectMemoryMembership>,
+}
+
 #[derive(Clone)]
 pub struct UserMemoryStore {
     sand_root: PathBuf,
@@ -835,6 +855,124 @@ impl ProjectMemoryStore {
         output.truncate(cap);
         output
     }
+
+    pub fn recall_for_prompt(
+        &self,
+        profile_limit: usize,
+        recent_limit: usize,
+        injected_cap: usize,
+    ) -> ProjectMemoryPromptRecall {
+        let mut blocks = Vec::new();
+        for slug in self.membership.read() {
+            let mut profile = Vec::new();
+            let mut recent = Vec::new();
+            let mut agent_ids =
+                read_child_directory_names(&get_project_memory_shards_dir(&self.sand_root, &slug));
+            agent_ids.sort();
+            for agent_id in agent_ids {
+                let store = FileMemoryStore::new(get_project_memory_shard_dir(
+                    &self.sand_root,
+                    &slug,
+                    &agent_id,
+                ));
+                let recalled = store.recall(recent_limit);
+                let agent_name = (self.resolve_agent_name)(&agent_id);
+                profile.extend(recalled.profile.into_iter().map(|memory| ScopedMemoryRecord {
+                    agent_id: agent_id.clone(),
+                    agent_name: agent_name.clone(),
+                    memory,
+                }));
+                recent.extend(recalled.recent.into_iter().map(|memory| ScopedMemoryRecord {
+                    agent_id: agent_id.clone(),
+                    agent_name: agent_name.clone(),
+                    memory,
+                }));
+            }
+            profile.sort_by(|left, right| {
+                right
+                    .memory
+                    .created_at
+                    .cmp(&left.memory.created_at)
+                    .then_with(|| left.memory.content.cmp(&right.memory.content))
+            });
+            recent.sort_by(|left, right| {
+                right
+                    .memory
+                    .created_at
+                    .cmp(&left.memory.created_at)
+                    .then_with(|| left.memory.content.cmp(&right.memory.content))
+            });
+            profile.truncate(profile_limit);
+            recent.truncate(recent_limit);
+            blocks.push(ProjectMemoryBlock {
+                name: read_project_name(&self.sand_root, &slug),
+                own_shard_dir: get_project_memory_shard_dir(
+                    &self.sand_root,
+                    &slug,
+                    &self.own_agent_id,
+                ),
+                slug,
+                recall: UserMemoryRecall { profile, recent },
+            });
+        }
+        blocks.sort_by(|left, right| {
+            let left_has = !left.recall.profile.is_empty() || !left.recall.recent.is_empty();
+            let right_has = !right.recall.profile.is_empty() || !right.recall.recent.is_empty();
+            let newest = |block: &ProjectMemoryBlock| {
+                block
+                    .recall
+                    .profile
+                    .iter()
+                    .chain(block.recall.recent.iter())
+                    .map(|record| record.memory.created_at)
+                    .max()
+                    .unwrap_or(0)
+            };
+            right_has
+                .cmp(&left_has)
+                .then_with(|| newest(right).cmp(&newest(left)))
+                .then_with(|| left.slug.cmp(&right.slug))
+        });
+        let injected_count = injected_cap.min(blocks.len());
+        let also_member_of = blocks[injected_count..]
+            .iter()
+            .map(|block| ProjectMemoryMembership {
+                slug: block.slug.clone(),
+                name: block.name.clone(),
+            })
+            .collect();
+        let injected = blocks.into_iter().take(injected_count).collect();
+        ProjectMemoryPromptRecall {
+            injected,
+            also_member_of,
+        }
+    }
+}
+
+fn read_project_name(sand_root: &Path, slug: &str) -> String {
+    let raw = fs::read_to_string(get_project_dir(sand_root, slug).join("project.md"))
+        .unwrap_or_default();
+    let mut in_frontmatter = false;
+    for line in raw.lines() {
+        let line = line.trim();
+        if line == "---" {
+            if in_frontmatter {
+                break;
+            }
+            in_frontmatter = true;
+            continue;
+        }
+        if !in_frontmatter {
+            continue;
+        }
+        if let Some(value) = line.strip_prefix("name:") {
+            let value = value.trim().trim_matches(['"', '\'']);
+            if !value.is_empty() {
+                return value.to_string();
+            }
+        }
+    }
+    slug.to_string()
 }
 
 #[derive(Clone)]
