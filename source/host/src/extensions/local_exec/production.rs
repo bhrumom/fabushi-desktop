@@ -1,6 +1,11 @@
 use std::sync::Arc;
 
-use serde_json::{Value, json};
+use serde_json::Value;
+
+use super::agent_v1_exec_wire::{
+    ExecClientControlMessage, ExecClientMessage, ExecServerMessage,
+    exec_client_control_message, exec_client_message, shell_stream,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProductionShellStreamEvent {
@@ -23,13 +28,18 @@ pub enum ProductionExecClientPayload {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProductionExecClientMessage {
-    json: Value,
+    message: ExecClientMessage,
     payload: ProductionExecClientPayload,
 }
 
 impl ProductionExecClientMessage {
-    pub fn as_json(&self) -> &Value { &self.json }
-    pub fn payload(&self) -> &ProductionExecClientPayload { &self.payload }
+    pub fn generated(&self) -> &ExecClientMessage {
+        &self.message
+    }
+
+    pub fn payload(&self) -> &ProductionExecClientPayload {
+        &self.payload
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -40,11 +50,18 @@ pub enum GatewayExecControl {
 }
 
 #[derive(Debug, Clone)]
-pub struct RemoteResourceAccessor<M> { manager: Arc<M> }
+pub struct RemoteResourceAccessor<M> {
+    manager: Arc<M>,
+}
 
 impl<M> RemoteResourceAccessor<M> {
-    pub fn new(manager: Arc<M>) -> Self { Self { manager } }
-    pub fn manager(&self) -> Arc<M> { Arc::clone(&self.manager) }
+    pub fn new(manager: Arc<M>) -> Self {
+        Self { manager }
+    }
+
+    pub fn manager(&self) -> Arc<M> {
+        Arc::clone(&self.manager)
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -52,46 +69,62 @@ pub struct ProductionLocalExecCodec;
 
 impl ProductionLocalExecCodec {
     pub fn decode_client(&self, json: Value) -> Result<ProductionExecClientMessage, String> {
-        let object = json.as_object().ok_or_else(|| "ExecClientMessage JSON must be an object".to_string())?;
-        let recognized = [object.contains_key("shellStream"), object.contains_key("readResult")]
-            .into_iter().filter(|present| *present).count();
-        if recognized > 1 {
-            return Err("ExecClientMessage JSON has conflicting oneof fields".into());
-        }
-        let payload = if let Some(stream) = object.get("shellStream") {
-            ProductionExecClientPayload::ShellStream(decode_shell_stream(stream)?)
-        } else if let Some(result) = object.get("readResult") {
-            if !result.is_object() {
-                return Err("ExecClientMessage.readResult must be an object".into());
+        let message = ExecClientMessage::from_json_ignoring_unknown_fields(&json)?;
+        let payload = match message.message.as_ref() {
+            Some(exec_client_message::Message::ShellStream(stream)) => {
+                let event = match stream.event.as_ref() {
+                    Some(shell_stream::Event::Stdout(value)) => {
+                        ProductionShellStreamEvent::Stdout(value.data.clone())
+                    }
+                    Some(shell_stream::Event::Stderr(value)) => {
+                        ProductionShellStreamEvent::Stderr(value.data.clone())
+                    }
+                    Some(shell_stream::Event::Exit(value)) => ProductionShellStreamEvent::Exit {
+                        code: value.code,
+                        cwd: value.cwd.clone(),
+                        aborted: value.aborted,
+                    },
+                    Some(shell_stream::Event::Rejected(value)) => {
+                        ProductionShellStreamEvent::Rejected(value.reason.clone())
+                    }
+                    Some(shell_stream::Event::PermissionDenied(value)) => {
+                        ProductionShellStreamEvent::PermissionDenied(value.error.clone())
+                    }
+                    Some(shell_stream::Event::Start(_)) => ProductionShellStreamEvent::Start,
+                    Some(shell_stream::Event::Backgrounded(_)) => {
+                        ProductionShellStreamEvent::Backgrounded
+                    }
+                    Some(shell_stream::Event::HookContext(_))
+                    | Some(shell_stream::Event::SandboxUnsupported(_))
+                    | None => ProductionShellStreamEvent::Other,
+                };
+                ProductionExecClientPayload::ShellStream(event)
             }
-            ProductionExecClientPayload::ReadResult(result.clone())
-        } else {
-            ProductionExecClientPayload::Other
+            Some(exec_client_message::Message::ReadResult(result)) => {
+                ProductionExecClientPayload::ReadResult(result.to_json())
+            }
+            None => ProductionExecClientPayload::Other,
         };
-        Ok(ProductionExecClientMessage { json, payload })
+        Ok(ProductionExecClientMessage { message, payload })
     }
 
     pub fn decode_control(&self, json: &Value) -> Result<GatewayExecControl, String> {
-        let object = json.as_object().ok_or_else(|| "ExecClientControlMessage JSON must be an object".to_string())?;
-        let recognized = [
-            object.contains_key("throw"),
-            object.contains_key("streamClose"),
-            object.contains_key("heartbeat"),
-        ].into_iter().filter(|present| *present).count();
-        if recognized > 1 {
-            return Err("ExecClientControlMessage JSON has conflicting oneof fields".into());
-        }
-        if let Some(thrown) = object.get("throw") {
-            let thrown = thrown.as_object().ok_or_else(|| "ExecClientControlMessage.throw must be an object".to_string())?;
-            return Ok(GatewayExecControl::Throw {
-                error: thrown.get("error").and_then(Value::as_str).unwrap_or_default().to_string(),
-                stack_trace: thrown.get("stackTrace").and_then(Value::as_str).map(str::to_string),
-            });
-        }
-        if object.contains_key("streamClose") {
-            return Ok(GatewayExecControl::StreamClose);
-        }
-        Ok(GatewayExecControl::Unknown)
+        let control =
+            ExecClientControlMessage::from_json_ignoring_unknown_fields(json)?.message;
+        Ok(match control {
+            Some(exec_client_control_message::Message::Throw(value)) => {
+                GatewayExecControl::Throw {
+                    error: value.error,
+                    stack_trace: value.stack_trace,
+                }
+            }
+            Some(exec_client_control_message::Message::StreamClose(_)) => {
+                GatewayExecControl::StreamClose
+            }
+            Some(exec_client_control_message::Message::Heartbeat(_)) | None => {
+                GatewayExecControl::Unknown
+            }
+        })
     }
 
     pub fn shell_stream_server_message(
@@ -101,14 +134,7 @@ impl ProductionLocalExecCodec {
         working_directory: &str,
         tool_call_id: &str,
     ) -> Value {
-        json!({
-            "id": id,
-            "shellStreamArgs": {
-                "command": command,
-                "workingDirectory": working_directory,
-                "toolCallId": tool_call_id
-            }
-        })
+        ExecServerMessage::shell_stream(id, command, working_directory, tool_call_id).to_json()
     }
 
     pub fn read_server_message(
@@ -120,61 +146,12 @@ impl ProductionLocalExecCodec {
         limit: Option<u32>,
         encoding_hint: Option<&str>,
     ) -> Value {
-        let mut args = json!({ "path": path, "toolCallId": tool_call_id });
-        if let Some(offset) = offset { args["offset"] = json!(offset); }
-        if let Some(limit) = limit { args["limit"] = json!(limit); }
-        if let Some(encoding_hint) = encoding_hint { args["encodingHint"] = json!(encoding_hint); }
-        json!({ "id": id, "readArgs": args })
+        ExecServerMessage::read(id, path, tool_call_id, offset, limit, encoding_hint).to_json()
     }
 
     pub fn create_remote_accessor<M>(&self, manager: Arc<M>) -> RemoteResourceAccessor<M> {
         RemoteResourceAccessor::new(manager)
     }
-}
-
-fn decode_shell_stream(value: &Value) -> Result<ProductionShellStreamEvent, String> {
-    let object = value.as_object().ok_or_else(|| "ExecClientMessage.shellStream must be an object".to_string())?;
-    let cases = [
-        "stdout", "stderr", "exit", "start", "rejected", "permissionDenied",
-        "backgrounded", "hookContext", "sandboxUnsupported",
-    ];
-    let recognized = cases.iter().filter(|key| object.contains_key(**key)).count();
-    if recognized > 1 {
-        return Err("ShellStream JSON has conflicting oneof fields".into());
-    }
-    if let Some(stdout) = object.get("stdout") {
-        return Ok(ProductionShellStreamEvent::Stdout(
-            stdout.get("data").and_then(Value::as_str).unwrap_or_default().to_string()
-        ));
-    }
-    if let Some(stderr) = object.get("stderr") {
-        return Ok(ProductionShellStreamEvent::Stderr(
-            stderr.get("data").and_then(Value::as_str).unwrap_or_default().to_string()
-        ));
-    }
-    if let Some(exit) = object.get("exit") {
-        let exit = exit.as_object().ok_or_else(|| "ShellStream.exit must be an object".to_string())?;
-        return Ok(ProductionShellStreamEvent::Exit {
-            code: exit.get("code").and_then(Value::as_u64).and_then(|value| u32::try_from(value).ok()).unwrap_or_default(),
-            cwd: exit.get("cwd").and_then(Value::as_str).unwrap_or_default().to_string(),
-            aborted: exit.get("aborted").and_then(Value::as_bool).unwrap_or(false),
-        });
-    }
-    if let Some(rejected) = object.get("rejected") {
-        return Ok(ProductionShellStreamEvent::Rejected(
-            rejected.get("reason").or_else(|| rejected.get("message")).and_then(Value::as_str)
-                .unwrap_or("Shell command was rejected").to_string()
-        ));
-    }
-    if let Some(denied) = object.get("permissionDenied") {
-        return Ok(ProductionShellStreamEvent::PermissionDenied(
-            denied.get("reason").or_else(|| denied.get("message")).and_then(Value::as_str)
-                .unwrap_or("Shell command permission was denied").to_string()
-        ));
-    }
-    if object.contains_key("start") { return Ok(ProductionShellStreamEvent::Start); }
-    if object.contains_key("backgrounded") { return Ok(ProductionShellStreamEvent::Backgrounded); }
-    Ok(ProductionShellStreamEvent::Other)
 }
 
 pub const PRODUCTION_LOCAL_EXEC_CODEC: ProductionLocalExecCodec = ProductionLocalExecCodec;
