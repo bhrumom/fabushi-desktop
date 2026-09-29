@@ -2405,9 +2405,6 @@ fn dispatch_inference_if_handled(
         .and_then(Value::as_str)
         .unwrap_or("");
     let provider = routed_inference_provider(state, inference_agent_id);
-    if matches!(provider, InferenceProvider::Cursor) {
-        return false;
-    }
 
     if matches!(
         method,
