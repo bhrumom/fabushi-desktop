@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use crate::extensions::cloud_agents::cloud_agents_service::CloudConversationTraceConverter;
+use crate::cloud_agents::cloud_agent_trace_format::convert_generated_conversation_messages_to_no_preamble_trace;
 use crate::extensions::secrets::secrets_service::BoxSecretsLog;
 use crate::extensions::state_backstop::state_backstop_service::{
     StateBackstopReadDb, read_store_db_bytes,
@@ -56,18 +57,13 @@ pub fn create_production_state_backstop_runtime_with(
     }
 }
 
-/// Central fail-closed binding for the still-missing generated
-/// ConversationMessage -> NO_PREAMBLE trace adapter.
+/// Canonical production ConversationMessage -> NO_PREAMBLE trace binding.
 ///
-/// Keeping this in the production-binding owner prevents shipping Host main
-/// from carrying an anonymous fallback that could be mistaken for a real
-/// adapter. The architecture row remains non-final until canonical generated
-/// aiserver.v1 bindings provide the complete tool-result oneof projection.
+/// The decoder consumes build-time descriptors generated directly from the
+/// frozen aiserver.v1 TypeScript protobuf artifacts. Shipping Host therefore
+/// cannot silently fall back to guessed protobuf tags or simplified JSON.
 pub fn production_cloud_agent_trace_converter() -> CloudConversationTraceConverter {
-    Arc::new(|_conversation: &[Vec<u8>]| {
-        Err(
-            "CloudAgent transcript dump is unavailable until canonical generated ConversationMessage trace bindings are wired by production Host"
-                .to_string(),
-        )
+    Arc::new(|conversation: &[Vec<u8>]| {
+        convert_generated_conversation_messages_to_no_preamble_trace(conversation)
     })
 }
