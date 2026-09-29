@@ -62,6 +62,11 @@ fn coordinator_projects_durable_turn_context_without_host_linkage() {
             "composedAtMs":10,
             "enterEpochMs":20,
             "requestSource":"handoff-resume",
+            "modelId":"cursor-session-model",
+            "isSummarizationSession":true,
+            "isComputerUseSubagent":false,
+            "isBrowserUseSubagent":true,
+            "skipLabeling":true,
             "ackRedrive":true,
             "ackRedriveTrigger":"idle",
             "redriveAttempts":2,
@@ -84,6 +89,11 @@ fn coordinator_projects_durable_turn_context_without_host_linkage() {
     assert_eq!(projected["composedAtMs"], 10);
     assert_eq!(projected["enterEpochMs"], 20);
     assert_eq!(projected["requestSource"], "handoff-resume");
+    assert_eq!(projected["modelId"], "cursor-session-model");
+    assert_eq!(projected["isSummarizationSession"], true);
+    assert_eq!(projected["isComputerUseSubagent"], false);
+    assert_eq!(projected["isBrowserUseSubagent"], true);
+    assert_eq!(projected["skipLabeling"], true);
     assert_eq!(projected["ackRedrive"], true);
     assert_eq!(projected["ackRedriveTrigger"], "idle");
     assert_eq!(projected["redriveAttempts"], 2);
