@@ -57,9 +57,16 @@ impl ForeverBoxRunnerResourcePort {
         let box_preparing = matches!(status.state.as_str(), "starting" | "preparing");
         let service = Arc::clone(&self.service);
         let agent_id = self.agent_id.clone();
-        self.coordinator
+        let mut coordinator = self
+            .coordinator
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        // HostBox owns readiness/authentication and returns a guarded accessor.
+        // Do not reuse that transport across Runner tool invocations: a stale
+        // cached accessor can outlive box recreation, credential rotation, or
+        // daemon readiness changes and bypass the shipping readiness probe.
+        coordinator.clear_connection();
+        coordinator
             .connect(box_preparing, move || {
                 let ready = service
                     .box_()
