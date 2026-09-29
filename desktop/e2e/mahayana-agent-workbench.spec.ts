@@ -333,9 +333,15 @@ async function expectHermesAssistantTurn(page: Page, expectedText: string): Prom
 
   const message = matchingMessages.first();
   await expect(message).toBeVisible();
+  // Playwright's locator { has } is evaluated relative to each candidate.
+  // Passing a locator already rooted at `transcript` makes it search for a
+  // nested transcript inside the assistant article, so the visible message
+  // cannot match its real parent. Bind the canonical assistant article by the
+  // same visible text instead; the count assertion above still proves the
+  // Agent-message payload itself is unique.
   const turn = transcript
     .locator('[role="article"][data-role="assistant"]')
-    .filter({ has: message })
+    .filter({ hasText: expectedText })
     .first();
   await expect(turn).toBeVisible();
   await expect(message).toBeVisible();
