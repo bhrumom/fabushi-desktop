@@ -9,7 +9,9 @@ use super::cursor_session::{
     RequestedModel, ResolveRequestedModelInputs, SandSessionOptions,
     resolve_sand_requested_model,
 };
-use super::sand_model_experiment::{SandAgentModelParameter, SandAgentModelSelection};
+use super::sand_model_experiment::{
+    SandAgentModelParameter, SandAgentModelSelection, select_sand_experiment_turn_model,
+};
 use super::cursor_web_tools::{
     CursorWebBackend, CursorWebBackendOptions, CursorWebFetchService, CursorWebSearchService,
     create_cursor_web_backend,
@@ -191,13 +193,27 @@ impl ProductionAgentInferenceOwner {
             .ok()
             .map(|value| value.trim().to_string())
             .filter(|value| !value.is_empty());
+        let experiment_state = self.experiments.get_sand_model_experiment_state();
+        let request_source = session_options
+            .and_then(|options| options.request_source.as_deref());
+        let experiment_model_override = select_sand_experiment_turn_model(
+            experiment_state.as_ref(),
+            request_source,
+            || None,
+            || None,
+        );
+        if experiment_model_override.is_some() {
+            // Matches frozen Grok's onModelExperimentApplied boundary for the
+            // explicit process override. Authenticated exposure logging stays
+            // owned by the future Statsig bootstrap implementation.
+        }
         resolve_sand_requested_model(ResolveRequestedModelInputs {
             session_options,
             env_model_override: env_model_override.as_deref(),
             stored_default_model: stored_default_model.as_ref(),
             stored_computer_use_model: stored_computer_use_model.as_ref(),
             stored_browser_use_model: None,
-            experiment_model_override: None,
+            experiment_model_override: experiment_model_override.as_ref(),
         })
     }
 
