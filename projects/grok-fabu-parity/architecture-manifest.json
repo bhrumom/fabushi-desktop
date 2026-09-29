@@ -13331,7 +13331,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host now owns one Memory extension service with the frozen extension id/dependency boundary; production startup creates that owner once and injects the same Arc<MemoryService> into ProductionSessionWorkers, eliminating the Session-local fallback owner. Final remains withheld for authenticated sand_memory_dreaming gate wiring, synthesis lifecycle/start-dispose, inference/telemetry collaborators and active-agent/listener surfaces."
+      "notes": "Rust Host now owns one Memory extension service with the frozen extension id/dependency boundary; production startup creates that owner once and injects the same Arc<MemoryService> into ProductionSessionWorkers. HostMemoryExtension now strongly owns at most one synthesis runtime, installs only a weak dreaming bridge into MemoryService to avoid a second owner/cycle, and exposes deterministic enable/disable disposal semantics. Final remains withheld for authenticated sand_memory_dreaming gate startup, real inference/telemetry collaborators, background policy lifecycle and active-agent/listener surfaces."
     },
     {
       "referencePath": "source/host/extensions/memory/memory-service.ts",
@@ -13362,7 +13362,7 @@
         "source/host/tests/watched_directory_contract.rs",
         "source/host/tests/project_membership_contract.rs"
       ],
-      "notes": "Rust Host now owns the production FileMemoryStore core: frozen normalization/case-insensitive dedupe, SHA-1-derived stable IDs, profile/log markdown persistence, profile-first list ordering, recency recall, add/remove/remove-by-content/clear/count/has-memory and real agent-scoped MemoryService store creation. ProductionMaterializedSession receives a real FileMemoryStore rooted at <agent>/memory instead of NO_SESSION_MEMORY. Watched-directory subscriptions/debounce and atomic notification ownership are now production-wired. Per-Agent project membership is now shipping-session owned. Final remains withheld for explicit/synthesis origin metadata, tombstones, synthesis snapshot/apply lifecycle, shared user/project memory stores and synthesis service/extension composition. Shipping Host now owns MemoryService as an extension singleton and injects that exact service into Session; synthesis/watch/shared-memory semantics remain non-final."
+      "notes": "Rust Host now owns the production FileMemoryStore core and the canonical MemoryService singleton injected into Session. In addition to frozen normalization/dedupe, durable profile/log storage, watched-directory notifications and per-Agent project membership, the service now owns the weak dreaming bridge used by the single Host synthesis owner, switches newly-created stores to synthesis metadata while that bridge is live, preserves explicit/synthesis origin+tombstone semantics, and exposes canonical synthesisTargetForAgent/listSynthesisTargets over the same agents root. Final remains withheld for the production synthesis executor/lifecycle and the broader shared user/project memory-store surfaces."
     },
     {
       "referencePath": "source/host/extensions/memory/memory-synthesis-service.ts",
@@ -13382,7 +13382,7 @@
         "source/host/tests/memory_synthesis_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host now owns the frozen synthesis core: bounded per-agent evidence, strict proposal parsing, known-evidence/clock fencing, explicit-memory protection, proposal verification, retry bounds, stale requeue semantics, temporal-review admission and commit through the synthesis-safe FileMemoryStore. Final remains withheld because the shipping Memory extension does not yet bind the real inference PromptExecutor stages, background debounce/poll lifecycle, enforceable 90s deadline/cancellation, telemetry reporting, and post-turn production recordTurn hook."
+      "notes": "Rust Host now owns the frozen synthesis core: bounded per-agent evidence, strict proposal parsing, known-evidence/clock fencing, explicit-memory protection, proposal verification, retry bounds, stale requeue semantics, temporal-review admission and commit through the synthesis-safe FileMemoryStore. The canonical MemoryService dreaming bridge now exposes real post-turn evidence recording and shipping turn completion dynamically selects RecordEvidence whenever that bridge is active. Final remains withheld because production startup still lacks the authenticated sand_memory_dreaming gate, real summarization/verification inference executors, background debounce/poll lifecycle, enforceable 90s deadline/cancellation and telemetry reporting."
     },
     {
       "referencePath": "source/host/extensions/memory/production.ts",
@@ -19244,7 +19244,7 @@
         "source/host/tests/sand_memory_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Runner now ports the frozen post-turn memory engine: extraction uses recent+archive context and applies add/remove results; episode progress persists in the Agent DB, summarizes at the configured interval and clears after summary; evidence mode clears pending episodes and bypasses extraction. Shipping routed-provider completion now invokes this path only for successful, visible, memorable user turns before the renderer completed event, with tool-free inference on the selected provider. Final remains withheld until the Memory synthesis service production-wires recordMemoryEvidence and auxiliary agent-message collectors are projected into the exchange exactly like the frozen turn-settle path."
+      "notes": "Rust Runner now ports the frozen post-turn memory engine: extraction uses recent+archive context and applies add/remove results; episode progress persists in the Agent DB, summarizes at the configured interval and clears after summary; evidence mode clears pending episodes and bypasses extraction. Shipping routed-provider completion invokes this path only for successful, visible, memorable user turns before the renderer completed event. The frozen auxiliary agent-message collector is production-wired into the remembered exchange, and completion now dynamically uses RecordEvidence through the canonical MemoryService dreaming bridge when synthesis is active, falling back to tool-free Extract otherwise. Final remains withheld until the production Memory synthesis runtime is actually enabled through the authenticated gate with its real inference/deadline/poll/telemetry collaborators."
     },
     {
       "referencePath": "source/host/runner/turn-observation.ts",

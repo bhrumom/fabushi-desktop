@@ -3378,6 +3378,7 @@ fn start_routed_provider_task(
     let worker_is_ack_redrive = is_ack_redrive;
     let worker_is_upgrade_resume = is_upgrade_resume;
     let worker_memory_store = memory_store.clone();
+    let worker_memory_service = session_workers.memory_service();
     let worker_turn_hidden = turn_hidden;
     let worker_gateway_context = gateway_context;
     let state_sand_root = session_workers
@@ -4796,12 +4797,26 @@ fn start_routed_provider_task(
                                 remembered_agent_messages,
                                 content.clone(),
                             );
+                            let mut record_memory_evidence = |exchange: &TurnExchange| {
+                                let _ = worker_memory_service.record_memory_evidence(
+                                    &agent_id,
+                                    None,
+                                    &exchange.user,
+                                    &exchange.agent,
+                                    runner_started_at_ms as i64,
+                                );
+                            };
+                            let memory_mode = if worker_memory_service.synthesis_enabled() {
+                                TurnMemoryMode::RecordEvidence(&mut record_memory_evidence)
+                            } else {
+                                TurnMemoryMode::Extract
+                            };
                             let _ = run_turn_memory_with(
                                 &worker_memory_store,
                                 Some(episode_db.as_ref()),
                                 runner_started_at_ms as i64,
                                 exchange,
-                                TurnMemoryMode::Extract,
+                                memory_mode,
                                 &mut execute_memory_prompt,
                             );
                         }
