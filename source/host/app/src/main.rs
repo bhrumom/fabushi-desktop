@@ -246,7 +246,7 @@ use mahayana_host_runtime::runner::sand_memory::{
     MEMORY_RECENT_PROMPT_LIMIT, is_memorable_exchange,
 };
 use mahayana_host_runtime::runner::turn_memory::{
-    TurnMemoryMode, build_turn_memory_exchange, run_turn_memory_with,
+    TurnExchange, TurnMemoryMode, build_turn_memory_exchange, run_turn_memory_with,
 };
 use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt_section;
 use mahayana_host_runtime::runner::tools::sand_state_tool::{
