@@ -13,7 +13,7 @@ use crate::runner::routed_provider_runtime::{
 use crate::runner::sand_action_audit::{ActionAuditSink, RoutedMcpAuditConfig};
 use crate::runner::tools::sand_reaction_tool::ReactionSink;
 use crate::runner::tools::sand_browser_tools::BrowserToolExecutor;
-use crate::runner::tools::sand_computer_tool::ComputerToolExecutor;
+use crate::runner::tools::sand_computer_tool::{ComputerToolExecutor, ComputerToolExposure};
 use crate::runner::tools::sand_file_transfer_tools::FileTransferExecutor;
 use crate::runner::tools::sand_external_machine_tools::{
     ExternalMachineExecutor, ExternalShellAutoReviewCallback,
@@ -49,6 +49,7 @@ pub struct ProductionRunnerCompositionInput {
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     pub browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     pub computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
+    pub computer_exposure: ComputerToolExposure,
     pub file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
     pub external_machine_executor: Option<Arc<dyn ExternalMachineExecutor>>,
     pub external_shell_review: Option<ExternalShellAutoReviewCallback>,
@@ -100,6 +101,7 @@ pub fn create_production_runner_composition(
     if let Some(browser_executor) = input.browser_executor {
         composition = composition.with_browser_executor(browser_executor);
     }
+    composition = composition.with_computer_exposure(input.computer_exposure);
     if let Some(computer_executor) = input.computer_executor {
         composition = composition.with_computer_executor(computer_executor);
     }
