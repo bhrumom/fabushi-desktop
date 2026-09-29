@@ -270,6 +270,26 @@ fn worker_store_offloads_full_fallback_and_advances_root_prompt_cursor() {
 }
 
 #[test]
+fn worker_blob_store_legacy_read_is_safe_inside_existing_local_executor() {
+    let root = temp_root("nested-local-executor");
+    let worker_pool = Arc::new(AgentWorkerPool::new(ConversationBlobWorkerBackend::default()));
+    let store = WorkerBlobStore::new(
+        Arc::clone(&worker_pool),
+        "agent-nested-local-executor",
+        root.join("conversation-blobs.db"),
+        None,
+    );
+
+    let result = futures::executor::block_on(async {
+        LegacyTranscriptBlobStore::get_blob(&store, b"missing")
+    });
+    assert_eq!(result, Ok(None));
+
+    futures::executor::block_on(worker_pool.close_all());
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn worker_store_without_state_blob_does_not_claim_successful_progress() {
     let root = temp_root("missing-state");
     let pool = Arc::new(TranscriptMirrorOffloadPool::with_worker(
