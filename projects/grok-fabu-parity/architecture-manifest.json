@@ -6431,11 +6431,11 @@
         "source/electron-main/coordinator/coordinator-runtime.ts"
       ],
       "testEvidence": [
-        "scripts/check-grok-architecture.mjs",
-        ".github/workflows/grok-architecture-migrate.yml"
+        "source/electron-main/coordinator/coordinator-runtime.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "parityMode": "reference-copy",
-      "notes": "Byte-identical frozen Grok 0.18 source restored at the mapped production path; Git blob SHA is enforced by the architecture gate."
+      "notes": "Target preserves the frozen Grok 0.18 Coordinator runtime ownership and renderer-port handoff semantics while applying a production safety adaptation: a transferred generation is fully retired before the replacement generation launches, intentional retirement cannot schedule crash relaunch, and explicit restart uses the same serialized generation boundary. The focused Coordinator runtime contract exercises replacement, restart, disposal, and relaunch fencing; referenceBlobSha remains the frozen Grok source anchor rather than a target-content hash."
     },
     {
       "referencePath": "source/electron-main/coordinator/coordinator-telemetry.ts",
