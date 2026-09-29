@@ -2699,7 +2699,6 @@ fn start_routed_provider_task(
 ) -> Result<serde_json::Value, GatewayCommandError> {
     let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
     let requested_provider = RoutedProvider::parse(provider_name)
-        .filter(|provider| *provider != RoutedProvider::Cursor)
         .ok_or_else(|| GatewayCommandError::Internal(format!(
             "unsupported routed provider: {provider_name}"
         )))?;
