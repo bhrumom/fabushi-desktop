@@ -4,8 +4,8 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use super::memory_service::{
-    MemoryKind, MemoryOrigin, SynthesisApplyResult, SynthesisChange, SynthesisSnapshot,
-    normalize_memory_content,
+    MemoryKind, MemoryOrigin, MemorySynthesisBridge, SynthesisApplyResult, SynthesisChange,
+    SynthesisSnapshot, normalize_memory_content,
 };
 
 pub const MEMORY_SYNTHESIS_PROMPT_MARKER: &str = "<<SAND_MEMORY_SYNTHESIS_V1>>";
@@ -546,6 +546,11 @@ impl MemorySynthesisService {
         }
     }
 
+    pub fn is_enabled(&self) -> bool {
+        let state = self.state.lock().expect("memory synthesis state poisoned");
+        state.started && !state.disposed
+    }
+
     pub fn record_turn(
         &self,
         agent_id: &str,
@@ -769,5 +774,30 @@ impl MemorySynthesisService {
             .expect("memory synthesis state poisoned")
             .queue
             .finish(agent_id, &consumed, temporal);
+    }
+}
+
+
+impl MemorySynthesisBridge for MemorySynthesisService {
+    fn is_enabled(&self) -> bool {
+        MemorySynthesisService::is_enabled(self)
+    }
+
+    fn record_turn(
+        &self,
+        agent_id: &str,
+        evidence_id: Option<String>,
+        user: &str,
+        assistant: &str,
+        occurred_at: i64,
+    ) {
+        MemorySynthesisService::record_turn(
+            self,
+            agent_id,
+            evidence_id,
+            user,
+            assistant,
+            occurred_at,
+        );
     }
 }

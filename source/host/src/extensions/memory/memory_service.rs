@@ -1,7 +1,9 @@
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io;
+use std::fmt;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex, Weak};
 
 use chrono::{DateTime, NaiveDate, Utc};
 use sha1::{Digest, Sha1};
@@ -630,20 +632,47 @@ impl FileMemoryStore {
     }
 }
 
-#[derive(Debug, Clone)]
+pub trait MemorySynthesisBridge: Send + Sync {
+    fn is_enabled(&self) -> bool;
+    fn record_turn(
+        &self,
+        agent_id: &str,
+        evidence_id: Option<String>,
+        user: &str,
+        assistant: &str,
+        occurred_at: i64,
+    );
+}
+
+#[derive(Clone)]
 pub struct MemoryService {
     agents_root_dir: PathBuf,
+    synthesis_bridge: Arc<Mutex<Option<Weak<dyn MemorySynthesisBridge>>>>,
+}
+
+impl fmt::Debug for MemoryService {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("MemoryService")
+            .field("agents_root_dir", &self.agents_root_dir)
+            .field("synthesis_enabled", &self.synthesis_enabled())
+            .finish()
+    }
 }
 
 impl MemoryService {
     pub fn new(agents_root_dir: impl Into<PathBuf>) -> Self {
         Self {
             agents_root_dir: agents_root_dir.into(),
+            synthesis_bridge: Arc::new(Mutex::new(None)),
         }
     }
 
     pub fn create_agent_store(&self, agent_dir: impl AsRef<Path>) -> FileMemoryStore {
-        FileMemoryStore::new(get_agent_memory_dir(agent_dir))
+        FileMemoryStore::with_synthesis_metadata(
+            get_agent_memory_dir(agent_dir),
+            self.synthesis_enabled(),
+        )
     }
 
     pub fn create_project_membership(&self, agent_dir: impl AsRef<Path>) -> AgentProjectMembership {
@@ -656,6 +685,81 @@ impl MemoryService {
 
     pub fn store_for_agent(&self, agent_id: &str) -> FileMemoryStore {
         self.create_agent_store(self.agents_root_dir.join(agent_id))
+    }
+
+    pub fn set_synthesis_bridge(&self, bridge: Weak<dyn MemorySynthesisBridge>) {
+        *self
+            .synthesis_bridge
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(bridge);
+    }
+
+    pub fn clear_synthesis_bridge(&self) {
+        *self
+            .synthesis_bridge
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = None;
+    }
+
+    pub fn synthesis_enabled(&self) -> bool {
+        self.synthesis_bridge
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+            .and_then(Weak::upgrade)
+            .is_some_and(|bridge| bridge.is_enabled())
+    }
+
+    pub fn record_memory_evidence(
+        &self,
+        agent_id: &str,
+        evidence_id: Option<String>,
+        user: &str,
+        assistant: &str,
+        occurred_at: i64,
+    ) -> bool {
+        let bridge = self
+            .synthesis_bridge
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+            .and_then(Weak::upgrade);
+        let Some(bridge) = bridge.filter(|bridge| bridge.is_enabled()) else {
+            return false;
+        };
+        bridge.record_turn(
+            agent_id,
+            evidence_id,
+            user,
+            assistant,
+            occurred_at,
+        );
+        true
+    }
+
+    pub fn synthesis_target_for_agent(&self, agent_id: &str) -> Option<FileMemoryStore> {
+        let agent_dir = self.agents_root_dir.join(agent_id);
+        agent_dir.is_dir().then(|| {
+            FileMemoryStore::with_synthesis_metadata(get_agent_memory_dir(agent_dir), true)
+        })
+    }
+
+    pub fn list_synthesis_targets(&self) -> Vec<(String, FileMemoryStore)> {
+        let mut agent_ids = fs::read_dir(&self.agents_root_dir)
+            .into_iter()
+            .flatten()
+            .filter_map(Result::ok)
+            .filter(|entry| entry.file_type().map(|kind| kind.is_dir()).unwrap_or(false))
+            .filter_map(|entry| entry.file_name().into_string().ok())
+            .collect::<Vec<_>>();
+        agent_ids.sort();
+        agent_ids
+            .into_iter()
+            .filter_map(|agent_id| {
+                self.synthesis_target_for_agent(&agent_id)
+                    .map(|store| (agent_id, store))
+            })
+            .collect()
     }
 
     pub fn agent_has_content(&self, agent_dir: impl AsRef<Path>) -> bool {

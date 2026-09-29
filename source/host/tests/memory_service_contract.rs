@@ -1,9 +1,11 @@
 use std::fs;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::memory::memory_service::{
-    FileMemoryStore, MemoryKind, MemoryService, agent_memory_has_content,
+    FileMemoryStore, MemoryKind, MemoryOrigin, MemoryService, MemorySynthesisBridge,
+    agent_memory_has_content,
     get_agent_memory_dir, memory_id_for, normalize_memory_content, parse_facts,
 };
 
@@ -136,5 +138,95 @@ fn production_session_workers_can_share_host_memory_extension_owner() {
     );
     assert!(std::sync::Arc::ptr_eq(&workers.memory_service(), &memory));
     workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[derive(Default)]
+struct RecordingSynthesisBridge {
+    enabled: bool,
+    evidence: Mutex<Vec<(String, String, String)>>,
+}
+
+impl MemorySynthesisBridge for RecordingSynthesisBridge {
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn record_turn(
+        &self,
+        agent_id: &str,
+        _evidence_id: Option<String>,
+        user: &str,
+        assistant: &str,
+        _occurred_at: i64,
+    ) {
+        self.evidence.lock().unwrap().push((
+            agent_id.to_string(),
+            user.to_string(),
+            assistant.to_string(),
+        ));
+    }
+}
+
+#[test]
+fn memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory() {
+    let root = temp_root("dreaming-bridge");
+    let agent_dir = root.join("agent-a");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let service = MemoryService::new(&root);
+    let bridge = Arc::new(RecordingSynthesisBridge {
+        enabled: true,
+        ..RecordingSynthesisBridge::default()
+    });
+    let bridge_trait: Arc<dyn MemorySynthesisBridge> = bridge.clone();
+    service.set_synthesis_bridge(Arc::downgrade(&bridge_trait));
+    drop(bridge_trait);
+
+    assert!(service.synthesis_enabled());
+    assert!(service.record_memory_evidence(
+        "agent-a",
+        Some("evidence-1".into()),
+        "user evidence",
+        "assistant evidence",
+        1_900_000_000_000,
+    ));
+    assert_eq!(
+        bridge.evidence.lock().unwrap().as_slice(),
+        &[(
+            "agent-a".to_string(),
+            "user evidence".to_string(),
+            "assistant evidence".to_string(),
+        )]
+    );
+
+    let explicit = service
+        .store_for_agent("agent-a")
+        .add_memory("explicit preference", 1_900_000_000_000, MemoryKind::Profile)
+        .expect("add explicit")
+        .expect("new explicit");
+    let target = service
+        .synthesis_target_for_agent("agent-a")
+        .expect("synthesis target");
+    let snapshot = target.prepare_synthesis();
+    assert_eq!(
+        snapshot
+            .memories
+            .iter()
+            .find(|memory| memory.id == explicit.id)
+            .map(|memory| memory.origin),
+        Some(MemoryOrigin::Explicit)
+    );
+    assert_eq!(service.list_synthesis_targets().len(), 1);
+
+    drop(bridge);
+    assert!(!service.synthesis_enabled());
+    assert!(!service.record_memory_evidence(
+        "agent-a",
+        None,
+        "ignored",
+        "ignored",
+        1_900_000_000_001,
+    ));
     let _ = fs::remove_dir_all(root);
 }
