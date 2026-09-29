@@ -158,7 +158,7 @@ impl SessionRuntime {
         );
         let _ = sessions.close_agent_store_owner(agent_id, true);
         let _ = sessions.close_agent_db_owner(agent_id, true);
-        futures::executor::block_on(sessions.worker_pool().close_store(&blob_path));
+        sessions.worker_pool().close_store_blocking(&blob_path);
         Ok(true)
     }
 
