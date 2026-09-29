@@ -60,7 +60,7 @@ fn shipping_remote_box_and_computer_owners_are_consumed_not_test_only_helpers() 
         "let shipping_box_resources = Arc::new(ForeverBoxRunnerResourcePort::new(",
         "let computer_use_owner = host_runner_composition.computer_use_coordination();",
         "owner.acquire_control_lease(&agent_id)",
-        "owner.owns_control_lease(lease)",
+        ".owns_control_lease(lease)",
         "owner.begin_preparation(&agent_id)",
         "box-chrome --sand-prepare",
         "owner.record_turn_ended(usage)",
