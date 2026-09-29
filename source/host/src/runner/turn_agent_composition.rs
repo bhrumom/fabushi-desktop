@@ -24,6 +24,7 @@ use super::tools::communicate_tool::{
 use super::tools::send_message_tool::SendMessageSink;
 use super::tools::sand_reaction_tool::ReactionSink;
 use super::tools::sand_agent_management_tools::AgentManagementSink;
+use super::tools::sand_task_subagent_tool::SubagentTaskSink;
 use super::tools::sand_browser_tools::BrowserToolExecutor;
 use super::tools::sand_computer_tool::ComputerToolExecutor;
 use super::tools::sand_file_transfer_tools::FileTransferExecutor;
@@ -62,6 +63,7 @@ pub struct TurnAgentComposition {
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
+    subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
     state_writer: Option<Arc<dyn SandStateWriter>>,
     routine_auto_review: Option<RoutineAutoReviewCallback>,
     routine_post_write: Option<RoutinePostWriteCallback>,
@@ -99,6 +101,7 @@ impl TurnAgentComposition {
             send_message_sink: None,
             reaction_sink: None,
             agent_management_sink: None,
+            subagent_task_sink: None,
             state_writer: None,
             routine_auto_review: None,
             routine_post_write: None,
@@ -240,6 +243,15 @@ impl TurnAgentComposition {
         self.agent_management_sink.is_some()
     }
 
+    pub fn with_subagent_task_sink(mut self, sink: Arc<dyn SubagentTaskSink>) -> Self {
+        self.subagent_task_sink = Some(sink);
+        self
+    }
+
+    pub fn has_subagent_task_sink(&self) -> bool {
+        self.subagent_task_sink.is_some()
+    }
+
     pub fn with_state_writer(
         mut self,
         state: Arc<dyn SandStateWriter>,
@@ -378,6 +390,7 @@ impl TurnAgentComposition {
                 send_message_sink: self.send_message_sink.clone(),
                 reaction_sink: self.reaction_sink.clone(),
                 agent_management_sink: self.agent_management_sink.clone(),
+                subagent_task_sink: self.subagent_task_sink.clone(),
                 state_writer: self.state_writer.clone(),
                 routine_auto_review: self.routine_auto_review.clone(),
                 routine_post_write: self.routine_post_write.clone(),

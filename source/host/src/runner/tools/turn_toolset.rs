@@ -24,6 +24,7 @@ use super::sand_multitask_todo_tool::{
     MultitaskTodoState, SandMultitaskTodoToolBridge,
 };
 use super::send_message_tool::{SendMessageSink, SendMessageToolBridge};
+use super::sand_task_subagent_tool::{SubagentTaskSink, SubagentTaskToolBridge};
 
 /// Per-turn Runner tool dependency projection.
 ///
@@ -40,6 +41,7 @@ pub struct TurnToolsetDependencies {
     pub send_message_sink: Option<Arc<dyn SendMessageSink>>,
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
     pub agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
+    pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
     pub state_writer: Option<Arc<dyn SandStateWriter>>,
     pub routine_auto_review: Option<RoutineAutoReviewCallback>,
     pub routine_post_write: Option<RoutinePostWriteCallback>,
@@ -77,6 +79,10 @@ pub fn build_turn_toolset(
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.agent_management_sink {
         Some(sink) => Arc::new(AgentManagementToolBridge::new(bridge, sink)),
+        None => bridge,
+    };
+    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.subagent_task_sink {
+        Some(sink) => Arc::new(SubagentTaskToolBridge::new(bridge, sink)),
         None => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.state_writer {

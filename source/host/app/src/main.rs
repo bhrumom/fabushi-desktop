@@ -289,6 +289,10 @@ use mahayana_host_runtime::extensions::mcp::production_box_state::{
 };
 use mahayana_host_runtime::runner::tools::mcp_host_service_management_sink::McpHostServiceManagementSink;
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
+use mahayana_host_runtime::runner::subagent_runtime::{
+    RunOutcome as GeneratedSubagentRunOutcome, SubagentLineage as GeneratedSubagentLineage,
+    SubagentRuntime,
+};
 use mahayana_host_runtime::attachment_paths::{
     AgentMediaKind, file_url_for_path, persist_agent_media_bytes,
 };
@@ -303,6 +307,9 @@ use mahayana_host_runtime::selected_image_inputs::read_image_file_dimensions;
 use mahayana_host_runtime::runner::tools::sand_reaction_tool::ReactionSink;
 use mahayana_host_runtime::runner::tools::sand_agent_management_tools::{
     AgentManagementRecord, AgentManagementSink,
+};
+use mahayana_host_runtime::runner::tools::sand_task_subagent_tool::{
+    SubagentLaunchRecord, SubagentTaskSink,
 };
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
@@ -865,6 +872,8 @@ struct UnifiedGatewayApi {
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     trays: Arc<HostTraysExtension>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
+    generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
+    completion_revivals: Arc<CompletionRevivals>,
     transcript_manager: Arc<TranscriptManager>,
     telemetry_logs: HostStructuredLogTelemetry,
     production_action_auditor: ActionAuditExtension,
@@ -899,6 +908,8 @@ struct LocalRoutedRunnerDeps {
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
+    generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
+    completion_revivals: Arc<CompletionRevivals>,
     forever_box: Arc<ForeverBoxService>,
     local_exec: Arc<HostLocalExecExtension>,
     local_tool_permission: Arc<HostLocalToolPermissionExtension>,
@@ -911,6 +922,133 @@ struct LocalRoutedRunnerDeps {
     host_runner_composition: Arc<HostRunnerComposition>,
     box_store_sync: ProductionBoxStoreSyncApi,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
+}
+
+#[derive(Clone)]
+struct ProductionSubagentTaskSink {
+    deps: LocalRoutedRunnerDeps,
+    parent_agent_id: String,
+    provider: RoutedProvider,
+    parent_stream_id: String,
+    root_parent_request_id: String,
+}
+
+impl SubagentTaskSink for ProductionSubagentTaskSink {
+    fn launch_subagent(
+        &self,
+        prompt: &str,
+        subagent_type: &str,
+        tool_call_id: &str,
+    ) -> Result<SubagentLaunchRecord, ProviderSessionError> {
+        let profile = SandAgentProfile {
+            name: format!("{} subagent", subagent_type.trim()),
+            description: prompt.trim().to_string(),
+            title: String::new(),
+            avatar_shape: String::new(),
+            avatar_color: String::new(),
+        };
+        let child = self
+            .deps
+            .session_workers
+            .materialize_new_session(Some(&profile), "subagent", Some(subagent_type))
+            .map_err(ProviderSessionError::Tool)?;
+        let child_id = child.id.clone();
+        let child_stream_id = uuid::Uuid::new_v4().to_string();
+        let normalized_type = subagent_type
+            .chars()
+            .filter(|ch| !matches!(ch, '-' | '_' | ' '))
+            .collect::<String>();
+        let args = serde_json::json!({
+            "provider": self.provider.as_str(),
+            "agentId": child_id,
+            "streamId": child_stream_id,
+            "messages": [{"role":"user","content":prompt}],
+            "requestSource": "subagent",
+            "parentAgentId": self.parent_agent_id,
+            "subagentType": subagent_type,
+            "parentAgentToolCallId": tool_call_id,
+            "lineage": {
+                "parentRequestId": self.parent_stream_id,
+                "rootParentRequestId": self.root_parent_request_id,
+                "parentAgentToolCallId": tool_call_id,
+            },
+            "skipLabeling": true,
+            "isComputerUseSubagent": normalized_type.eq_ignore_ascii_case("computeruse"),
+            "isBrowserUseSubagent": normalized_type.eq_ignore_ascii_case("browseruse"),
+        });
+        start_routed_provider_task(
+            Arc::clone(&self.deps.routed_tool_relay),
+            Arc::clone(&self.deps.mcp_service),
+            self.deps.events.clone(),
+            self.deps.host_tx.clone(),
+            self.deps.data_dir.clone(),
+            Arc::clone(&self.deps.request_context),
+            Arc::clone(&self.deps.auth),
+            Arc::clone(&self.deps.auto_review),
+            Arc::clone(&self.deps.experiments),
+            Arc::clone(&self.deps.settings),
+            Arc::clone(&self.deps.inference),
+            Arc::clone(&self.deps.session_workers),
+            Arc::clone(&self.deps.runner_registry),
+            Arc::clone(&self.deps.ack_obligations),
+            Arc::clone(&self.deps.transcript_runtime),
+            Arc::clone(&self.deps.generated_agent_runtime),
+            Arc::clone(&self.deps.completion_revivals),
+            Arc::clone(&self.deps.forever_box),
+            Arc::clone(&self.deps.local_exec),
+            Arc::clone(&self.deps.local_tool_permission),
+            self.deps.session_handoff.clone(),
+            Arc::clone(&self.deps.trays),
+            self.deps.telemetry_logs.clone(),
+            self.deps.production_action_auditor.clone(),
+            Arc::clone(&self.deps.cloud_agents),
+            Arc::clone(&self.deps.cloud_agent_watches),
+            Arc::clone(&self.deps.host_runner_composition),
+            self.deps.box_store_sync.clone(),
+            Arc::clone(&self.deps.automations_lifecycle),
+            None,
+            args,
+        )
+        .map_err(|error| ProviderSessionError::Tool(format!("subagent launch failed: {error:?}")))?;
+        Ok(SubagentLaunchRecord {
+            id: child.id,
+            subagent_type: subagent_type.to_string(),
+        })
+    }
+}
+
+fn publish_generated_subagents(
+    events: &GatewayEventHub,
+    runtime: &Arc<Mutex<SubagentRuntime>>,
+    parent_agent_id: &str,
+) {
+    let subagents = runtime
+        .lock()
+        .map(|runtime| runtime.list_subagents())
+        .unwrap_or_default()
+        .into_iter()
+        .map(|(id, record)| {
+            let status = match record.status {
+                mahayana_host_runtime::runner::subagent_runtime::SubagentStatus::Running => "running",
+                mahayana_host_runtime::runner::subagent_runtime::SubagentStatus::Done => "done",
+                mahayana_host_runtime::runner::subagent_runtime::SubagentStatus::Error => "error",
+                mahayana_host_runtime::runner::subagent_runtime::SubagentStatus::Aborted => "aborted",
+            };
+            serde_json::json!({
+                "subagentId": id,
+                "subagentType": record.subagent_type,
+                "title": record.title,
+                "status": status,
+            })
+        })
+        .collect::<Vec<_>>();
+    events.publish(serde_json::json!({
+        "channel": "subagents",
+        "payload": {
+            "parentAgentId": parent_agent_id,
+            "subagents": subagents,
+        }
+    }));
 }
 
 #[derive(Clone)]
@@ -1178,6 +1316,8 @@ impl UnifiedGatewayApi {
             runner_registry: Arc::clone(&self.runner_registry),
             ack_obligations: Arc::clone(&self.ack_obligations),
             transcript_runtime: Arc::clone(&self.transcript_runtime),
+            generated_agent_runtime: Arc::clone(&self.generated_agent_runtime),
+            completion_revivals: Arc::clone(&self.completion_revivals),
             forever_box: Arc::clone(&self.forever_box),
             local_exec: Arc::clone(&self.local_exec),
             local_tool_permission: Arc::clone(&self.local_tool_permission),
@@ -1765,6 +1905,8 @@ fn run_local_group_member_turn(
         Arc::clone(&deps.runner_registry),
         deps.ack_obligations,
         deps.transcript_runtime,
+        deps.generated_agent_runtime,
+        deps.completion_revivals,
         deps.forever_box,
         deps.local_exec,
         deps.local_tool_permission,
@@ -1925,6 +2067,8 @@ fn start_local_upgrade_resume_turn(
         Arc::clone(&deps.runner_registry),
         deps.ack_obligations,
         deps.transcript_runtime,
+        deps.generated_agent_runtime,
+        deps.completion_revivals,
         deps.forever_box,
         deps.local_exec,
         deps.local_tool_permission,
@@ -2095,6 +2239,8 @@ fn run_local_automation_turn(
         Arc::clone(&deps.runner_registry),
         deps.ack_obligations,
         deps.transcript_runtime,
+        deps.generated_agent_runtime,
+        deps.completion_revivals,
         deps.forever_box,
         deps.local_exec,
         deps.local_tool_permission,
@@ -2205,6 +2351,8 @@ fn run_local_background_revival_turn(
         Arc::clone(&deps.runner_registry),
         deps.ack_obligations,
         deps.transcript_runtime,
+        deps.generated_agent_runtime,
+        deps.completion_revivals,
         deps.forever_box,
         deps.local_exec,
         deps.local_tool_permission,
@@ -2737,6 +2885,8 @@ fn start_routed_provider_task(
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
+    generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
+    completion_revivals: Arc<CompletionRevivals>,
     forever_box: Arc<ForeverBoxService>,
     local_exec: Arc<HostLocalExecExtension>,
     local_tool_permission: Arc<HostLocalToolPermissionExtension>,
@@ -2780,6 +2930,26 @@ fn start_routed_provider_task(
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(ToOwned::to_owned);
+    let generated_parent_agent_id = args
+        .get("parentAgentId")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
+    let generated_subagent_type = args
+        .get("subagentType")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("general-purpose")
+        .to_string();
+    let generated_tool_call_id = args
+        .get("parentAgentToolCallId")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(&stream_id)
+        .to_string();
     let is_ack_redrive = args
         .get("ackRedrive")
         .and_then(serde_json::Value::as_bool)
@@ -3070,6 +3240,63 @@ fn start_routed_provider_task(
             .and_then(serde_json::Value::as_bool)
             .unwrap_or(false),
     };
+    let worker_generated_parent_agent_id = generated_parent_agent_id.clone();
+    let worker_generated_subagent_type = generated_subagent_type.clone();
+    let worker_generated_tool_call_id = generated_tool_call_id.clone();
+    let worker_generated_lineage = worker_session_options.lineage.as_ref().map(|lineage| {
+        GeneratedSubagentLineage {
+            parent_request_id: Some(lineage.parent_request_id.clone()),
+            root_parent_request_id: Some(lineage.root_parent_request_id.clone()),
+            parent_agent_tool_call_id: lineage.parent_agent_tool_call_id.clone(),
+        }
+    });
+    let worker_subagent_task_sink: Option<Arc<dyn SubagentTaskSink>> =
+        if generated_parent_agent_id.is_none() {
+            let root_parent_request_id = worker_session_options
+                .lineage
+                .as_ref()
+                .map(|lineage| lineage.root_parent_request_id.clone())
+                .unwrap_or_else(|| stream_id.clone());
+            Some(Arc::new(ProductionSubagentTaskSink {
+                deps: LocalRoutedRunnerDeps {
+                    routed_tool_relay: Arc::clone(&routed_tool_relay),
+                    mcp_service: Arc::clone(&mcp_service),
+                    auth: Arc::clone(&auth),
+                    auto_review: Arc::clone(&auto_review),
+                    events: events.clone(),
+                    host_tx: host_tx.clone(),
+                    data_dir: data_dir.clone(),
+                    request_context: Arc::clone(&request_context),
+                    experiments: Arc::clone(&experiments),
+                    settings: Arc::clone(&settings),
+                    inference: Arc::clone(&inference),
+                    session_workers: Arc::clone(&session_workers),
+                    runner_registry: Arc::clone(&runner_registry),
+                    ack_obligations: Arc::clone(&ack_obligations),
+                    transcript_runtime: Arc::clone(&transcript_runtime),
+                    generated_agent_runtime: Arc::clone(&generated_agent_runtime),
+                    completion_revivals: Arc::clone(&completion_revivals),
+                    forever_box: Arc::clone(&forever_box),
+                    local_exec: Arc::clone(&local_exec),
+                    local_tool_permission: Arc::clone(&local_tool_permission),
+                    session_handoff: session_handoff.clone(),
+                    trays: Arc::clone(&trays),
+                    telemetry_logs: telemetry_logs.clone(),
+                    production_action_auditor: production_action_auditor.clone(),
+                    cloud_agents: Arc::clone(&cloud_agents),
+                    cloud_agent_watches: Arc::clone(&cloud_agent_watches),
+                    host_runner_composition: Arc::clone(&host_runner_composition),
+                    box_store_sync: box_store_sync.clone(),
+                    automations_lifecycle: Arc::clone(&automations_lifecycle),
+                },
+                parent_agent_id: agent_id.clone(),
+                provider,
+                parent_stream_id: stream_id.clone(),
+                root_parent_request_id,
+            }))
+        } else {
+            None
+        };
     let worker_is_ack_redrive = is_ack_redrive;
     let worker_is_upgrade_resume = is_upgrade_resume;
     let worker_memory_store = memory_store.clone();
@@ -3111,6 +3338,8 @@ fn start_routed_provider_task(
     let worker_cloud_agents = Arc::clone(&cloud_agents);
     let worker_cloud_agent_watches = Arc::clone(&cloud_agent_watches);
     let worker_box_store_sync = box_store_sync.clone();
+    let worker_generated_agent_runtime = Arc::clone(&generated_agent_runtime);
+    let worker_completion_revivals = Arc::clone(&completion_revivals);
     let cloud_agent_quiet_origin = args
         .get("quietOrigin")
         .filter(|origin| origin.is_object())
@@ -3890,6 +4119,9 @@ fn start_routed_provider_task(
             .with_agent_management_sink(agent_management_sink)
             .with_state_writer(state_writer)
             .with_routine_auto_review(routine_auto_review);
+            if let Some(subagent_task_sink) = worker_subagent_task_sink {
+                composition = composition.with_subagent_task_sink(subagent_task_sink);
+            }
             if let Some(routine_post_write) = routine_post_write {
                 composition = composition.with_routine_post_write(routine_post_write);
             }
@@ -3898,7 +4130,33 @@ fn start_routed_provider_task(
             }
             let owner = ProductionTurnAgentOwner::new(composition)
                 .with_agent_state_checkpoint_sink(agent_state_checkpoint_sink);
-            let mut runner = SandAgentRunner::new(owner);
+            let mut runner = SandAgentRunner::new(owner)
+                .with_generated_agent_runtime(Arc::clone(&worker_generated_agent_runtime));
+            let generated_prompt = lifecycle_messages
+                .iter()
+                .rev()
+                .find(|message| message.role == "user" && !message.content.trim().is_empty())
+                .map(|message| message.content.trim().to_string())
+                .unwrap_or_default();
+            let generated_parent = worker_generated_parent_agent_id.clone();
+            if let Some(parent_agent_id) = generated_parent.as_deref() {
+                let _ = runner.begin_generated_subagent(
+                    parent_agent_id,
+                    "shipping-runner",
+                    &agent_id,
+                    &worker_generated_subagent_type,
+                    &worker_generated_tool_call_id,
+                    &generated_prompt,
+                    worker_generated_lineage.clone(),
+                    started_at_ms(),
+                );
+                worker_transcript_runtime.begin_live_subagent(parent_agent_id);
+                publish_generated_subagents(
+                    &worker_events,
+                    &worker_generated_agent_runtime,
+                    parent_agent_id,
+                );
+            }
             let result = runner.run_routed_provider_with_projected_messages(
                 &data_dir,
                 &lifecycle_messages,
@@ -4007,6 +4265,39 @@ fn start_routed_provider_task(
                         );
                     }
                 }
+            }
+
+            if let Some(parent_agent_id) = generated_parent.as_deref() {
+                let generated_outcome = match result.as_ref() {
+                    Ok(content) => GeneratedSubagentRunOutcome::Completed(content.clone()),
+                    Err(_) if worker_cancellation.is_cancelled() => GeneratedSubagentRunOutcome::Aborted,
+                    Err(error) => GeneratedSubagentRunOutcome::Error(error.to_string()),
+                };
+                if let Ok(settled) = runner.settle_generated_subagent(
+                    &agent_id,
+                    generated_outcome,
+                    started_at_ms(),
+                ) {
+                    if let Some(completion) = settled.completion {
+                        worker_completion_revivals.handle_background_subagent_completion(
+                            SubagentCompletion {
+                                parent_agent_id: completion.parent_agent_id,
+                                subagent_agent_id: completion.subagent_agent_id,
+                                title: completion.title,
+                                subagent_type: completion.subagent_type,
+                                status: completion.status,
+                                result: completion.result,
+                                quiet_origin: None,
+                            },
+                        );
+                    }
+                }
+                worker_transcript_runtime.end_live_subagent(parent_agent_id);
+                publish_generated_subagents(
+                    &worker_events,
+                    &worker_generated_agent_runtime,
+                    parent_agent_id,
+                );
             }
 
             // A terminal inference event is the renderer-visible completion
@@ -4796,6 +5087,8 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.runner_registry),
                 Arc::clone(&self.ack_obligations),
                 Arc::clone(&self.transcript_runtime),
+                Arc::clone(&self.generated_agent_runtime),
+                Arc::clone(&self.completion_revivals),
                 Arc::clone(&self.forever_box),
                 Arc::clone(&self.local_exec),
                 Arc::clone(&self.local_tool_permission),
@@ -5256,6 +5549,8 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.runner_registry),
                 Arc::clone(&self.ack_obligations),
                 Arc::clone(&self.transcript_runtime),
+                Arc::clone(&self.generated_agent_runtime),
+                Arc::clone(&self.completion_revivals),
                 Arc::clone(&self.forever_box),
                 Arc::clone(&self.local_exec),
                 Arc::clone(&self.local_tool_permission),
@@ -5964,6 +6259,7 @@ fn main() {
         box_status_loader,
     ));
     let transcript_runtime = transcript_manager.transcript_runtime();
+    let generated_agent_runtime = Arc::new(Mutex::new(SubagentRuntime::default()));
     let box_store_idle_runtime = Arc::clone(&transcript_runtime);
     let mcp_service = match production_extensions.start_mcp(
         &app_data_dir,
@@ -6117,6 +6413,7 @@ fn main() {
         runner_registry: Arc::clone(&runner_registry),
         ack_obligations: Arc::clone(&ack_obligations),
         transcript_runtime: Arc::clone(&transcript_runtime),
+        generated_agent_runtime: Arc::clone(&generated_agent_runtime),
         forever_box: Arc::clone(&forever_box),
         local_exec: Arc::clone(&local_exec_extension),
         local_tool_permission: Arc::clone(&local_tool_permission_extension),
@@ -6282,6 +6579,8 @@ fn main() {
             webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
             trays: Arc::clone(&production_extensions.trays),
             transcript_runtime: Arc::clone(&transcript_runtime),
+            generated_agent_runtime: Arc::clone(&generated_agent_runtime),
+            completion_revivals: Arc::clone(&completion_revivals),
             transcript_manager: Arc::clone(&transcript_manager),
             telemetry_logs: host_telemetry.logs.clone(),
             production_action_auditor: production_extensions.action_audit.clone(),

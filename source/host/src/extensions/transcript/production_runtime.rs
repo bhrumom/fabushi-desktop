@@ -219,6 +219,24 @@ impl ProductionTranscriptRuntime {
         self.upgrade_resume_store.as_ref()
     }
 
+    pub fn begin_live_subagent(&self, parent_agent_id: &str) {
+        self.lock_state()
+            .lifecycle
+            .begin_live_subagent(parent_agent_id);
+    }
+
+    pub fn end_live_subagent(&self, parent_agent_id: &str) {
+        self.lock_state()
+            .lifecycle
+            .end_live_subagent(parent_agent_id);
+    }
+
+    pub fn has_live_subagent(&self, parent_agent_id: &str) -> bool {
+        self.lock_state()
+            .lifecycle
+            .has_live_subagent(parent_agent_id)
+    }
+
     /// Frozen SandHost health reads this live set instead of projecting a
     /// permanently-idle default through the gateway.
     pub fn live_running_agent_ids(&self) -> Vec<String> {

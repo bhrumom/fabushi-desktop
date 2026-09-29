@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider,
@@ -11,6 +11,9 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSnapshot,
 };
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
+use mahayana_host_runtime::runner::subagent_runtime::{
+    RunOutcome as SubagentRunOutcome, SubagentRuntime, SubagentStatus,
+};
 use mahayana_host_runtime::runner::turn_agent_composition::TurnAgentComposition;
 use mahayana_host_runtime::runner::tools::box_help_tool::WAITING_USER_CANCELLATION_PREFIX;
 use mahayana_host_runtime::runner::{TerminalOutcome, TurnRunOptions};
@@ -178,4 +181,48 @@ fn shipping_sand_agent_owner_preserves_projected_request_identity_through_termin
     assert_eq!(finished.owner.request_id, "stream-request-123");
     assert_eq!(finished.owner.generation, 1);
     assert!(matches!(finished.outcome, TerminalOutcome::Completed));
+}
+
+
+#[test]
+fn shipping_sand_agent_runner_owns_and_settles_generated_subagent_runtime() {
+    let shared = Arc::new(Mutex::new(SubagentRuntime::default()));
+    let runner = runner().with_generated_agent_runtime(Arc::clone(&shared));
+    assert!(runner.generated_agent_runtime().is_some());
+
+    let pending = runner
+        .begin_generated_subagent(
+            "parent-agent",
+            "box-a",
+            "child-agent",
+            "general-purpose",
+            "tool-call-1",
+            "research this",
+            None,
+            100,
+        )
+        .expect("generated subagent begin")
+        .expect("new subagent pending wake metadata");
+    assert_eq!(pending.parent_agent_id, "parent-agent");
+    assert_eq!(pending.work_id, "child-agent");
+    {
+        let runtime = shared.lock().expect("shared runtime");
+        assert_eq!(runtime.list_running_subagents(150).len(), 1);
+        assert_eq!(runtime.list_running_subagents(150)[0].subagent_id, "child-agent");
+    }
+
+    let settled = runner
+        .settle_generated_subagent(
+            "child-agent",
+            SubagentRunOutcome::Completed("done".into()),
+            200,
+        )
+        .expect("generated subagent settle");
+    assert!(settled.completion.is_some());
+    let runtime = shared.lock().expect("shared runtime after settle");
+    assert!(runtime.list_running_subagents(250).is_empty());
+    assert!(runtime
+        .list_subagents()
+        .iter()
+        .any(|(id, record)| id == "child-agent" && record.status == SubagentStatus::Done));
 }

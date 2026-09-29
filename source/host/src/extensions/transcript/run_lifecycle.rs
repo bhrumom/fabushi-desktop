@@ -66,6 +66,7 @@ pub struct RunLifecycleState {
     turn_request_ids: HashMap<String, HashSet<String>>,
     turn_ended_seq: HashMap<String, u64>,
     active_remote_members: HashMap<String, String>,
+    live_subagent_parent_counts: HashMap<String, u64>,
 }
 
 impl RunLifecycleState {
@@ -142,7 +143,44 @@ impl RunLifecycleState {
                 .filter(|(_, count)| **count > 0)
                 .map(|(agent_id, _)| agent_id.clone()),
         );
+        running.extend(
+            self.live_subagent_parent_counts
+                .iter()
+                .filter(|(_, count)| **count > 0)
+                .map(|(agent_id, _)| agent_id.clone()),
+        );
         running
+    }
+
+    pub fn begin_live_subagent(&mut self, parent_agent_id: &str) {
+        let parent_agent_id = parent_agent_id.trim();
+        if parent_agent_id.is_empty() {
+            return;
+        }
+        let count = self
+            .live_subagent_parent_counts
+            .entry(parent_agent_id.to_string())
+            .or_default();
+        *count = count.saturating_add(1);
+    }
+
+    pub fn end_live_subagent(&mut self, parent_agent_id: &str) {
+        let mut remove = false;
+        if let Some(count) = self.live_subagent_parent_counts.get_mut(parent_agent_id) {
+            *count = count.saturating_sub(1);
+            remove = *count == 0;
+        }
+        if remove {
+            self.live_subagent_parent_counts.remove(parent_agent_id);
+        }
+    }
+
+    pub fn has_live_subagent(&self, parent_agent_id: &str) -> bool {
+        self.live_subagent_parent_counts
+            .get(parent_agent_id)
+            .copied()
+            .unwrap_or_default()
+            > 0
     }
 
     pub fn begin_provider_run(&mut self, agent_id: &str) {
@@ -253,7 +291,9 @@ impl RunLifecycleState {
         has_running_subagent: bool,
         active_remote_member_id: Option<&str>,
     ) -> RunStateProjection {
-        let is_running = self.is_running(agent_id) || has_running_subagent;
+        let is_running = self.is_running(agent_id)
+            || self.has_live_subagent(agent_id)
+            || has_running_subagent;
         let is_running_turn = self.is_turn_worthy_running(agent_id);
         RunStateProjection {
             is_running,

@@ -138,3 +138,28 @@ fn durable_subagent_parent_projects_running_without_claiming_a_parent_turn() {
 
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn live_runner_subagent_parent_projects_running_without_durable_wake() {
+    let runtime = ProductionTranscriptRuntime::new(None);
+    assert!(runtime.live_running_agent_ids().is_empty());
+    assert!(!runtime.has_live_subagent("agent-parent"));
+
+    runtime.begin_live_subagent("agent-parent");
+    assert!(runtime.has_live_subagent("agent-parent"));
+    assert_eq!(runtime.live_running_agent_ids(), vec!["agent-parent".to_string()]);
+
+    let mut rows = serde_json::json!([{"id":"agent-parent"},{"id":"agent-idle"}]);
+    runtime.decorate_agent_summaries(&mut rows);
+    assert_eq!(rows[0]["isRunning"], true);
+    assert_eq!(rows[0]["isRunningTurn"], false);
+    assert_eq!(rows[0]["isComposingMessage"], false);
+    assert_eq!(rows[0]["isRetrying"], false);
+    assert!(rows[0]["currentActivity"].is_null());
+    assert_eq!(rows[1]["isRunning"], false);
+
+    runtime.end_live_subagent("agent-parent");
+    assert!(!runtime.has_live_subagent("agent-parent"));
+    assert!(runtime.live_running_agent_ids().is_empty());
+}
