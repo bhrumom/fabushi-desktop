@@ -28,7 +28,7 @@ use super::tools::sand_agent_management_tools::AgentManagementSink;
 use super::tools::sand_task_subagent_tool::{SubagentTaskReviewCallback, SubagentTaskSink};
 use super::tools::sand_subagent_management_tools::SubagentSteerReviewCallback;
 use super::tools::sand_browser_tools::BrowserToolExecutor;
-use super::tools::sand_computer_tool::ComputerToolExecutor;
+use super::tools::sand_computer_tool::{ComputerToolExecutor, ComputerToolExposure};
 use super::tools::sand_file_transfer_tools::FileTransferExecutor;
 use super::tools::sand_external_machine_tools::{
     ExternalMachineExecutor, ExternalShellAutoReviewCallback,
@@ -64,6 +64,7 @@ pub struct TurnAgentComposition {
     box_shell_review: Option<BoxShellAutoReviewCallback>,
     browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
+    computer_exposure: ComputerToolExposure,
     file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
     external_machine_executor: Option<Arc<dyn ExternalMachineExecutor>>,
     external_shell_review: Option<ExternalShellAutoReviewCallback>,
@@ -108,6 +109,7 @@ impl TurnAgentComposition {
             box_shell_review: None,
             browser_executor: None,
             computer_executor: None,
+            computer_exposure: ComputerToolExposure::Full,
             file_transfer_executor: None,
             external_machine_executor: None,
             external_shell_review: None,
@@ -202,6 +204,11 @@ impl TurnAgentComposition {
 
     pub fn has_computer_executor(&self) -> bool {
         self.computer_executor.is_some()
+    }
+
+    pub fn with_computer_exposure(mut self, exposure: ComputerToolExposure) -> Self {
+        self.computer_exposure = exposure;
+        self
     }
 
 
@@ -452,6 +459,7 @@ impl TurnAgentComposition {
                 box_shell_review: self.box_shell_review.clone(),
                 browser_executor: self.browser_executor.clone(),
                 computer_executor: self.computer_executor.clone(),
+                computer_exposure: self.computer_exposure,
                 file_transfer_executor: self.file_transfer_executor.clone(),
                 external_machine_executor: self.external_machine_executor.clone(),
                 external_shell_review: self.external_shell_review.clone(),
