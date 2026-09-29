@@ -19,7 +19,8 @@ use crate::extensions::auth::credential_renewer::{
 };
 use crate::extensions::auth::extension::HostAuthExtension;
 
-use super::cursor_session::{RequestedModel, sand_default_model_selection};
+use super::cursor_session::{RequestLineage, RequestedModel, sand_default_model_selection};
+use super::generated_inference_codec::InferenceReason;
 use super::provider_session::{
     ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedToolDefinition,
 };
@@ -44,6 +45,17 @@ pub trait CursorInferenceAuth: Send + Sync {
             parameters: selection.parameters,
         }
     }
+    fn conversation_id(&self) -> Option<String> {
+        None
+    }
+    fn inference_reason(&self) -> Option<InferenceReason> {
+        None
+    }
+    fn lineage(&self) -> Option<RequestLineage> {
+        None
+    }
+    fn on_request_id(&self, _request_id: &str, _messages: &[ProviderMessage]) {}
+    fn record_post_turn_labeling(&self, _messages: &[ProviderMessage]) {}
 }
 
 impl CursorInferenceAuth for HostAuthExtension {
@@ -116,6 +128,10 @@ struct InferenceStreamRequest {
     tools: Vec<InferenceAgentTool>,
     #[prost(message, optional, tag = "7")]
     requested_model: Option<InferenceRequestedModel>,
+    #[prost(string, optional, tag = "8")]
+    conversation_id: Option<String>,
+    #[prost(enumeration = "InferenceReason", optional, tag = "11")]
+    inference_reason: Option<i32>,
 }
 
 #[derive(Clone, PartialEq, Message)]
@@ -517,6 +533,8 @@ fn encode_cursor_conversation_request(
     conversation: &[CursorCheckpointMessage],
     tools: &[RoutedToolDefinition],
     model: &RequestedModel,
+    conversation_id: Option<String>,
+    inference_reason: Option<InferenceReason>,
 ) -> Result<Vec<u8>, ProviderSessionError> {
     let request = InferenceStreamRequest {
         messages: conversation.iter().map(checkpoint_message_to_proto).collect(),
@@ -541,6 +559,8 @@ fn encode_cursor_conversation_request(
                 })
                 .collect(),
         }),
+        conversation_id,
+        inference_reason: inference_reason.map(|reason| reason as i32),
     };
     let mut payload = Vec::with_capacity(request.encoded_len());
     request.encode(&mut payload).map_err(|error| {
@@ -565,7 +585,7 @@ pub fn encode_cursor_inference_request(
         max_mode: Some(selection.max_mode),
         parameters: selection.parameters,
     };
-    encode_cursor_conversation_request(&conversation, tools, &model)
+    encode_cursor_conversation_request(&conversation, tools, &model, None, None)
 }
 
 pub fn encode_cursor_inference_request_with_model(
@@ -577,7 +597,7 @@ pub fn encode_cursor_inference_request_with_model(
         .iter()
         .map(provider_message_to_checkpoint)
         .collect::<Vec<_>>();
-    encode_cursor_conversation_request(&conversation, tools, model)
+    encode_cursor_conversation_request(&conversation, tools, model, None, None)
 }
 
 pub trait CursorInferenceStreamTransport {
@@ -636,7 +656,33 @@ impl CursorInferenceTransport {
         );
         let request_id = Uuid::new_v4().to_string();
         let requested_model = self.auth.requested_model();
-        let body = encode_cursor_conversation_request(conversation, tools, &requested_model)?;
+        let conversation_id = self.auth.conversation_id();
+        let inference_reason = self.auth.inference_reason();
+        let body = encode_cursor_conversation_request(
+            conversation,
+            tools,
+            &requested_model,
+            conversation_id,
+            inference_reason,
+        )?;
+        let label_messages = conversation
+            .iter()
+            .map(|message| match message {
+                CursorCheckpointMessage::Text { role, text } => ProviderMessage {
+                    role: role.clone(),
+                    content: text.clone(),
+                },
+                CursorCheckpointMessage::AssistantTool { text, .. } => ProviderMessage {
+                    role: "assistant".into(),
+                    content: text.clone(),
+                },
+                CursorCheckpointMessage::ToolResult { result, .. } => ProviderMessage {
+                    role: "tool".into(),
+                    content: result.to_string(),
+                },
+            })
+            .collect::<Vec<_>>();
+        self.auth.on_request_id(&request_id, &label_messages);
 
         let base = Url::parse(&backend_url)
             .map_err(|error| ProviderSessionError::Configuration(error.to_string()))?;
@@ -647,7 +693,7 @@ impl CursorInferenceTransport {
             .timeout(Duration::from_secs(30 * 60))
             .build()
             .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
-        let request = client
+        let mut request = client
             .post(url)
             .header(CONTENT_TYPE, CONNECT_STREAM_CONTENT_TYPE)
             .header(ACCEPT, CONNECT_STREAM_CONTENT_TYPE)
@@ -661,8 +707,13 @@ impl CursorInferenceTransport {
             .header("x-cursor-client-version", sand_client_version())
             .header("x-sand-box-namespace", sand_box_namespace())
             .header("x-ghost-mode", ghost_mode)
-            .header("x-request-id", request_id)
-            .body(body);
+            .header("x-request-id", &request_id);
+        if let Some(lineage) = self.auth.lineage() {
+            for (name, value) in lineage.sanitized_headers() {
+                request = request.header(name, value);
+            }
+        }
+        let request = request.body(body);
 
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
