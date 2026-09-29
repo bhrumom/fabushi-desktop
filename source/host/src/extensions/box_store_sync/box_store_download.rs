@@ -1,8 +1,9 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use sha2::{Digest, Sha256};
 
@@ -88,10 +89,17 @@ fn lexical_normalize(path: &Path) -> PathBuf {
     out
 }
 
+#[derive(Debug, Default)]
+struct ByteBudgetState {
+    in_flight_bytes: u64,
+    waiters: VecDeque<(u64, u64)>,
+}
+
 #[derive(Debug)]
 pub struct BoxStoreByteBudget {
     budget_bytes: u64,
-    state: Mutex<u64>,
+    next_ticket: AtomicU64,
+    state: Mutex<ByteBudgetState>,
     wake: Condvar,
 }
 
@@ -99,17 +107,24 @@ impl BoxStoreByteBudget {
     pub fn new(budget_bytes: u64) -> Self {
         Self {
             budget_bytes,
-            state: Mutex::new(0),
+            next_ticket: AtomicU64::new(1),
+            state: Mutex::new(ByteBudgetState::default()),
             wake: Condvar::new(),
         }
     }
 
     pub fn try_acquire(&self, bytes: u64) -> bool {
-        let mut in_flight = self.state.lock().expect("byte budget poisoned");
-        if *in_flight > 0 && in_flight.saturating_add(bytes) > self.budget_bytes {
+        if bytes == 0 {
+            return true;
+        }
+        let mut state = self.state.lock().expect("byte budget poisoned");
+        if !state.waiters.is_empty()
+            || (state.in_flight_bytes > 0
+                && state.in_flight_bytes.saturating_add(bytes) > self.budget_bytes)
+        {
             return false;
         }
-        *in_flight = in_flight.saturating_add(bytes);
+        state.in_flight_bytes = state.in_flight_bytes.saturating_add(bytes);
         true
     }
 
@@ -117,21 +132,47 @@ impl BoxStoreByteBudget {
         if bytes == 0 {
             return;
         }
-        let mut in_flight = self.state.lock().expect("byte budget poisoned");
-        while *in_flight > 0 && in_flight.saturating_add(bytes) > self.budget_bytes {
-            in_flight = self.wake.wait(in_flight).expect("byte budget wait poisoned");
+        let ticket = self.next_ticket.fetch_add(1, Ordering::Relaxed);
+        let mut state = self.state.lock().expect("byte budget poisoned");
+        if state.waiters.is_empty()
+            && (state.in_flight_bytes == 0
+                || state.in_flight_bytes.saturating_add(bytes) <= self.budget_bytes)
+        {
+            state.in_flight_bytes = state.in_flight_bytes.saturating_add(bytes);
+            return;
         }
-        *in_flight = in_flight.saturating_add(bytes);
+        state.waiters.push_back((ticket, bytes));
+        loop {
+            let is_head = state
+                .waiters
+                .front()
+                .is_some_and(|(head_ticket, _)| *head_ticket == ticket);
+            let fits = state.in_flight_bytes == 0
+                || state.in_flight_bytes.saturating_add(bytes) <= self.budget_bytes;
+            if is_head && fits {
+                state.waiters.pop_front();
+                state.in_flight_bytes = state.in_flight_bytes.saturating_add(bytes);
+                self.wake.notify_all();
+                return;
+            }
+            state = self.wake.wait(state).expect("byte budget wait poisoned");
+        }
     }
 
     pub fn release(&self, bytes: u64) {
-        let mut in_flight = self.state.lock().expect("byte budget poisoned");
-        *in_flight = in_flight.saturating_sub(bytes);
+        if bytes == 0 {
+            return;
+        }
+        let mut state = self.state.lock().expect("byte budget poisoned");
+        state.in_flight_bytes = state.in_flight_bytes.saturating_sub(bytes);
         self.wake.notify_all();
     }
 
     pub fn in_flight_bytes(&self) -> u64 {
-        *self.state.lock().expect("byte budget poisoned")
+        self.state
+            .lock()
+            .expect("byte budget poisoned")
+            .in_flight_bytes
     }
 }
 
@@ -845,6 +886,222 @@ fn restore_bulk_small_from_packs(
     restored
 }
 
+const SYMLINK_TRACE_STEPS: &[&str] = &[
+    "prepare-parent",
+    "match-existing",
+    "create-temp",
+    "inspect-destination",
+    "remove-directory",
+    "rename-temp",
+    "apply-owner",
+    "verify-target",
+    "cleanup-temp",
+];
+
+#[derive(Debug)]
+struct SymlinkTraceState {
+    started: usize,
+    completed: usize,
+    active_steps: BTreeMap<String, usize>,
+}
+
+impl Default for SymlinkTraceState {
+    fn default() -> Self {
+        Self {
+            started: 0,
+            completed: 0,
+            active_steps: SYMLINK_TRACE_STEPS
+                .iter()
+                .map(|step| ((*step).to_string(), 0usize))
+                .collect(),
+        }
+    }
+}
+
+fn emit_symlink_trace(
+    options: &BoxStoreDownloadOptions,
+    state: &Mutex<SymlinkTraceState>,
+    manifest_entries: usize,
+    file_entries: usize,
+    symlink_entries: usize,
+    event: &str,
+    ordinal: Option<usize>,
+    step: Option<&str>,
+    outcome: Option<&str>,
+) {
+    let Some(callback) = options.on_trace.as_ref() else {
+        return;
+    };
+    let trace = state.lock().expect("symlink trace lock");
+    let snapshot = BoxStoreDownloadTrace {
+        event: event.to_string(),
+        manifest_entries,
+        file_entries,
+        symlink_entries,
+        symlinks_started: trace.started,
+        symlinks_completed: trace.completed,
+        symlinks_in_flight: trace.started.saturating_sub(trace.completed),
+        active_symlink_steps: trace.active_steps.clone(),
+        symlink_ordinal: ordinal,
+        symlink_step: step.map(str::to_string),
+        symlink_outcome: outcome.map(str::to_string),
+    };
+    drop(trace);
+    callback(snapshot);
+}
+
+fn run_symlink_step<T>(
+    options: &BoxStoreDownloadOptions,
+    state: &Mutex<SymlinkTraceState>,
+    manifest_entries: usize,
+    file_entries: usize,
+    symlink_entries: usize,
+    ordinal: usize,
+    step: &'static str,
+    operation: impl FnOnce() -> Result<T, String>,
+) -> Result<T, String> {
+    {
+        let mut trace = state.lock().expect("symlink trace lock");
+        *trace.active_steps.entry(step.to_string()).or_default() += 1;
+    }
+    emit_symlink_trace(
+        options,
+        state,
+        manifest_entries,
+        file_entries,
+        symlink_entries,
+        "symlink-step-started",
+        Some(ordinal),
+        Some(step),
+        None,
+    );
+    let result = operation();
+    {
+        let mut trace = state.lock().expect("symlink trace lock");
+        let active = trace.active_steps.entry(step.to_string()).or_default();
+        *active = active.saturating_sub(1);
+    }
+    emit_symlink_trace(
+        options,
+        state,
+        manifest_entries,
+        file_entries,
+        symlink_entries,
+        "symlink-step-finished",
+        Some(ordinal),
+        Some(step),
+        None,
+    );
+    result
+}
+
+fn run_download_phase(
+    store: &dyn BoxObjectStore,
+    target_root: &Path,
+    planned: &PlannedDownload,
+    groups: &[BoxStoreBlobGroup],
+    concurrency: usize,
+    large: bool,
+    budget: &BoxStoreByteBudget,
+    options: &BoxStoreDownloadOptions,
+    state: &Mutex<BoxStoreDownloadSummary>,
+) {
+    let result = for_each_wave_pipelined(
+        groups,
+        COPY_IN_WAVE_SIZE,
+        concurrency.max(1),
+        |wave| {
+            let prepared = Mutex::new(Vec::<(BoxStoreBlobGroup, Vec<String>)>::new());
+            for_each_bounded(wave, concurrency.max(1), |group| {
+                let mut pending = Vec::new();
+                for rel_path in &group.rel_paths {
+                    let Some(destination) = planned.destinations.get(rel_path) else {
+                        continue;
+                    };
+                    if let Err(error) = ensure_owned_parent(target_root, destination, options.owner) {
+                        record_failure(state, format!("{rel_path}: {error}"));
+                        continue;
+                    }
+                    if local_file_matches(destination, group) {
+                        {
+                            let mut summary = state.lock().expect("download summary lock");
+                            summary.verified = summary.verified.saturating_add(1);
+                        }
+                        let Some(entry) = planned.manifest.get(rel_path) else {
+                            record_failure(state, format!("{rel_path}: missing manifest entry"));
+                            continue;
+                        };
+                        match apply_file_metadata(destination, entry, options.owner, None) {
+                            Ok(()) => {
+                                let mut summary = state.lock().expect("download summary lock");
+                                summary.files = summary.files.saturating_add(1);
+                                summary.bytes = summary.bytes.saturating_add(group.size);
+                                drop(summary);
+                                report_progress(options, state, planned.manifest.len());
+                            }
+                            Err(error) => record_failure(state, format!("{rel_path}: {error}")),
+                        }
+                    } else {
+                        pending.push(rel_path.clone());
+                    }
+                }
+                if !pending.is_empty() {
+                    prepared
+                        .lock()
+                        .expect("download prepared lock")
+                        .push((group.clone(), pending));
+                }
+                Ok::<(), String>(())
+            })?;
+            let prepared = prepared
+                .into_inner()
+                .expect("download prepared mutex");
+            if !prepared.is_empty() {
+                let keys = prepared
+                    .iter()
+                    .map(|(group, _)| format!("{BOX_STORE_BLOBS_PREFIX}/{}", group.sha))
+                    .collect::<Vec<_>>();
+                if let Err(error) = store.prefetch_reads(&keys) {
+                    if let Some(log) = options.on_log.as_ref() {
+                        log(format!(
+                            "read prefetch failed (falling back to per-blob presign): {error}"
+                        ));
+                    }
+                }
+            }
+            Ok::<_, String>(prepared)
+        },
+        |(group, pending)| {
+            if large {
+                restore_large_group(
+                    store,
+                    target_root,
+                    planned,
+                    &group,
+                    &pending,
+                    options,
+                    state,
+                );
+            } else {
+                restore_small_group(
+                    store,
+                    target_root,
+                    planned,
+                    &group,
+                    &pending,
+                    budget,
+                    options,
+                    state,
+                );
+            }
+            Ok::<(), String>(())
+        },
+    );
+    if let Err(error) = result {
+        record_failure(state, format!("restore phase failed: {error}"));
+    }
+}
+
 pub fn download_manifest(
     store: &dyn BoxObjectStore,
     target_root: &Path,
@@ -858,114 +1115,70 @@ pub fn download_manifest(
             ..BoxStoreDownloadSummary::default()
         };
     }
+
     let planned = plan_download(target_root, manifest, options.large_object_threshold);
     let state = Mutex::new(BoxStoreDownloadSummary {
         manifest_entries: manifest.len(),
         failures: planned.failures.clone(),
         ..BoxStoreDownloadSummary::default()
     });
+    let file_entry_count = manifest.values().filter(|entry| entry.is_file()).count();
+    let symlink_entry_count = planned.symlinks.len();
+    let trace_state = Mutex::new(SymlinkTraceState::default());
 
-    if let Some(callback) = options.on_trace.as_ref() {
-        callback(BoxStoreDownloadTrace {
-            event: "manifest-planned".into(),
-            manifest_entries: manifest.len(),
-            file_entries: manifest.values().filter(|entry| entry.is_file()).count(),
-            symlink_entries: planned.symlinks.len(),
-            ..BoxStoreDownloadTrace::default()
-        });
-    }
+    emit_symlink_trace(
+        &options,
+        &trace_state,
+        manifest.len(),
+        file_entry_count,
+        symlink_entry_count,
+        "manifest-planned",
+        None,
+        None,
+        None,
+    );
 
     let budget = BoxStoreByteBudget::new(options.download_byte_budget);
-    let run_phase = |groups: &[BoxStoreBlobGroup], concurrency: usize, large: bool| {
-        let _ = for_each_wave_pipelined(
-            groups,
-            COPY_IN_WAVE_SIZE,
-            concurrency,
-            |wave| {
-                let mut prepared = Vec::new();
-                for group in wave {
-                    let mut pending = Vec::new();
-                    for rel_path in &group.rel_paths {
-                        let Some(destination) = planned.destinations.get(rel_path) else {
-                            continue;
-                        };
-                        if local_file_matches(destination, group) {
-                            if let Some(entry) = planned.manifest.get(rel_path) {
-                                match apply_file_metadata(destination, entry, options.owner, None) {
-                                    Ok(()) => {
-                                        let mut summary = state.lock().expect("download summary lock");
-                                        summary.verified += 1;
-                                        summary.files += 1;
-                                        summary.bytes = summary.bytes.saturating_add(group.size);
-                                        drop(summary);
-                                        report_progress(&options, &state, manifest.len());
-                                    }
-                                    Err(error) => {
-                                        record_failure(&state, format!("{rel_path}: {error}"));
-                                    }
-                                }
-                            }
-                        } else {
-                            pending.push(rel_path.clone());
-                        }
-                    }
-                    if !pending.is_empty() {
-                        prepared.push((group.clone(), pending));
-                    }
-                }
-                if !prepared.is_empty() {
-                    let keys = prepared
-                        .iter()
-                        .map(|(group, _)| format!("{BOX_STORE_BLOBS_PREFIX}/{}", group.sha))
-                        .collect::<Vec<_>>();
-                    let _ = store.prefetch_reads(&keys);
-                }
-                Ok::<_, ()>(prepared)
-            },
-            |(group, pending)| {
-                if large {
-                    restore_large_group(
-                        store,
-                        target_root,
-                        &planned,
-                        &group,
-                        &pending,
-                        &options,
-                        &state,
-                    );
-                } else {
-                    restore_small_group(
-                        store,
-                        target_root,
-                        &planned,
-                        &group,
-                        &pending,
-                        &budget,
-                        &options,
-                        &state,
-                    );
-                }
-                Ok::<(), ()>(())
-            },
-        );
-    };
+    run_download_phase(
+        store,
+        target_root,
+        &planned,
+        &planned.critical_small,
+        options.download_concurrency,
+        false,
+        &budget,
+        &options,
+        &state,
+    );
+    run_download_phase(
+        store,
+        target_root,
+        &planned,
+        &planned.critical_large,
+        COPY_IN_LARGE_BLOB_CONCURRENCY,
+        true,
+        &budget,
+        &options,
+        &state,
+    );
 
-    run_phase(&planned.critical_small, options.download_concurrency.max(1), false);
-    run_phase(&planned.critical_large, COPY_IN_LARGE_BLOB_CONCURRENCY, true);
-
-    let restored_by_pack = restore_bulk_small_from_packs(store, target_root, &planned, options.owner);
+    let restored_by_pack =
+        restore_bulk_small_from_packs(store, target_root, &planned, options.owner);
     if !restored_by_pack.is_empty() {
         let mut summary = state.lock().expect("download summary lock");
         for rel_path in &restored_by_pack {
             if let Some(entry) = planned.manifest.get(rel_path) {
-                summary.verified += 1;
-                summary.files += 1;
-                summary.bytes = summary.bytes.saturating_add(file_identity(entry).map(|(_, size)| size).unwrap_or(0));
+                summary.verified = summary.verified.saturating_add(1);
+                summary.files = summary.files.saturating_add(1);
+                summary.bytes = summary.bytes.saturating_add(
+                    file_identity(entry).map(|(_, size)| size).unwrap_or(0),
+                );
             }
         }
         drop(summary);
         report_progress(&options, &state, manifest.len());
     }
+
     let remaining_bulk_small = planned
         .bulk_small
         .iter()
@@ -983,134 +1196,292 @@ pub fn download_manifest(
             })
         })
         .collect::<Vec<_>>();
-    run_phase(&remaining_bulk_small, options.download_concurrency.max(1), false);
-    run_phase(&planned.bulk_large, COPY_IN_LARGE_BLOB_CONCURRENCY, true);
 
-    let trace_state = Mutex::new((
-        0usize,
-        0usize,
-        BTreeMap::<String, usize>::new(),
-    ));
-    if !planned.symlinks.is_empty() {
-        if let Some(callback) = options.on_trace.as_ref() {
-            callback(BoxStoreDownloadTrace {
-                event: "symlink-phase-started".into(),
-                manifest_entries: manifest.len(),
-                file_entries: manifest.values().filter(|entry| entry.is_file()).count(),
-                symlink_entries: planned.symlinks.len(),
-                ..BoxStoreDownloadTrace::default()
-            });
+    std::thread::scope(|scope| {
+        let small = scope.spawn(|| {
+            run_download_phase(
+                store,
+                target_root,
+                &planned,
+                &remaining_bulk_small,
+                options.download_concurrency,
+                false,
+                &budget,
+                &options,
+                &state,
+            )
+        });
+        let large = scope.spawn(|| {
+            run_download_phase(
+                store,
+                target_root,
+                &planned,
+                &planned.bulk_large,
+                COPY_IN_LARGE_BLOB_CONCURRENCY,
+                true,
+                &budget,
+                &options,
+                &state,
+            )
+        });
+        if small.join().is_err() {
+            record_failure(&state, "bulk small restore worker panicked".into());
         }
+        if large.join().is_err() {
+            record_failure(&state, "bulk large restore worker panicked".into());
+        }
+    });
+
+    if !planned.symlinks.is_empty() {
+        emit_symlink_trace(
+            &options,
+            &trace_state,
+            manifest.len(),
+            file_entry_count,
+            symlink_entry_count,
+            "symlink-phase-started",
+            None,
+            None,
+            None,
+        );
         let indexed = planned
             .symlinks
             .iter()
             .enumerate()
             .map(|(index, (path, target))| (index + 1, path.clone(), target.clone()))
             .collect::<Vec<_>>();
-        let _ = for_each_bounded(&indexed, options.download_concurrency.max(1), |item| {
-            let (ordinal, rel_path, target) = item;
-            let Some(destination) = planned.destinations.get(rel_path) else {
-                return Ok::<(), ()>(());
-            };
-            {
-                let mut trace = trace_state.lock().expect("symlink trace lock");
-                trace.0 += 1;
-                trace.2.insert("prepare-parent".into(), 1);
-                if let Some(callback) = options.on_trace.as_ref() {
-                    callback(BoxStoreDownloadTrace {
-                        event: "symlink-entry-started".into(),
-                        manifest_entries: manifest.len(),
-                        file_entries: manifest.values().filter(|entry| entry.is_file()).count(),
-                        symlink_entries: planned.symlinks.len(),
-                        symlinks_started: trace.0,
-                        symlinks_completed: trace.1,
-                        symlinks_in_flight: trace.0.saturating_sub(trace.1),
-                        active_symlink_steps: trace.2.clone(),
-                        symlink_ordinal: Some(*ordinal),
-                        symlink_step: Some("prepare-parent".into()),
-                        symlink_outcome: None,
-                    });
-                }
-            }
-            let restored = (|| -> Result<(), String> {
-                ensure_owned_parent(target_root, destination, options.owner)?;
-                if !symlink_target_stays_within_root(target_root, destination, target) {
-                    return Err("unsafe symlink target".into());
-                }
-                if fs::read_link(destination).ok().as_deref() == Some(Path::new(target)) {
-                    return apply_owner(destination, options.owner, true);
-                }
-                let temp = unique_temp_path(destination);
-                #[cfg(unix)]
+
+        let _ = for_each_bounded(
+            &indexed,
+            options.download_concurrency.max(1),
+            |(ordinal, rel_path, target)| {
                 {
-                    std::os::unix::fs::symlink(target, &temp).map_err(|error| error.to_string())?;
+                    let mut trace = trace_state.lock().expect("symlink trace lock");
+                    trace.started = trace.started.saturating_add(1);
                 }
-                #[cfg(not(unix))]
+                emit_symlink_trace(
+                    &options,
+                    &trace_state,
+                    manifest.len(),
+                    file_entry_count,
+                    symlink_entry_count,
+                    "symlink-entry-started",
+                    Some(*ordinal),
+                    None,
+                    None,
+                );
+
+                let restored = (|| -> Result<(), String> {
+                    let destination = planned
+                        .destinations
+                        .get(rel_path)
+                        .ok_or_else(|| "unsafe manifest path".to_string())?;
+                    if !symlink_target_stays_within_root(target_root, destination, target) {
+                        return Err("unsafe symlink target".into());
+                    }
+
+                    run_symlink_step(
+                        &options,
+                        &trace_state,
+                        manifest.len(),
+                        file_entry_count,
+                        symlink_entry_count,
+                        *ordinal,
+                        "prepare-parent",
+                        || ensure_owned_parent(target_root, destination, options.owner),
+                    )?;
+
+                    let matches = run_symlink_step(
+                        &options,
+                        &trace_state,
+                        manifest.len(),
+                        file_entry_count,
+                        symlink_entry_count,
+                        *ordinal,
+                        "match-existing",
+                        || {
+                            Ok(fs::symlink_metadata(destination)
+                                .ok()
+                                .is_some_and(|metadata| metadata.file_type().is_symlink())
+                                && fs::read_link(destination)
+                                    .ok()
+                                    .as_deref()
+                                    == Some(Path::new(target)))
+                        },
+                    )?;
+                    if matches {
+                        return run_symlink_step(
+                            &options,
+                            &trace_state,
+                            manifest.len(),
+                            file_entry_count,
+                            symlink_entry_count,
+                            *ordinal,
+                            "apply-owner",
+                            || apply_owner(destination, options.owner, true),
+                        );
+                    }
+
+                    let temp = unique_temp_path(destination);
+                    let work = (|| -> Result<(), String> {
+                        run_symlink_step(
+                            &options,
+                            &trace_state,
+                            manifest.len(),
+                            file_entry_count,
+                            symlink_entry_count,
+                            *ordinal,
+                            "create-temp",
+                            || {
+                                #[cfg(unix)]
+                                {
+                                    std::os::unix::fs::symlink(target, &temp)
+                                        .map_err(|error| error.to_string())
+                                }
+                                #[cfg(not(unix))]
+                                {
+                                    Err("symlink restore unsupported on this platform".into())
+                                }
+                            },
+                        )?;
+
+                        let destination_is_dir = run_symlink_step(
+                            &options,
+                            &trace_state,
+                            manifest.len(),
+                            file_entry_count,
+                            symlink_entry_count,
+                            *ordinal,
+                            "inspect-destination",
+                            || match fs::symlink_metadata(destination) {
+                                Ok(metadata) => Ok(metadata.is_dir()),
+                                Err(error)
+                                    if error.kind() == std::io::ErrorKind::NotFound =>
+                                {
+                                    Ok(false)
+                                }
+                                Err(error) => Err(error.to_string()),
+                            },
+                        )?;
+                        if destination_is_dir {
+                            run_symlink_step(
+                                &options,
+                                &trace_state,
+                                manifest.len(),
+                                file_entry_count,
+                                symlink_entry_count,
+                                *ordinal,
+                                "remove-directory",
+                                || {
+                                    fs::remove_dir_all(destination)
+                                        .map_err(|error| error.to_string())
+                                },
+                            )?;
+                        }
+                        run_symlink_step(
+                            &options,
+                            &trace_state,
+                            manifest.len(),
+                            file_entry_count,
+                            symlink_entry_count,
+                            *ordinal,
+                            "rename-temp",
+                            || fs::rename(&temp, destination).map_err(|error| error.to_string()),
+                        )?;
+                        run_symlink_step(
+                            &options,
+                            &trace_state,
+                            manifest.len(),
+                            file_entry_count,
+                            symlink_entry_count,
+                            *ordinal,
+                            "apply-owner",
+                            || apply_owner(destination, options.owner, true),
+                        )?;
+                        Ok(())
+                    })();
+
+                    let cleanup = run_symlink_step(
+                        &options,
+                        &trace_state,
+                        manifest.len(),
+                        file_entry_count,
+                        symlink_entry_count,
+                        *ordinal,
+                        "cleanup-temp",
+                        || {
+                            let _ = fs::remove_file(&temp);
+                            Ok(())
+                        },
+                    );
+                    work?;
+                    cleanup?;
+
+                    let verified_target = run_symlink_step(
+                        &options,
+                        &trace_state,
+                        manifest.len(),
+                        file_entry_count,
+                        symlink_entry_count,
+                        *ordinal,
+                        "verify-target",
+                        || {
+                            Ok(fs::symlink_metadata(destination)
+                                .ok()
+                                .is_some_and(|metadata| metadata.file_type().is_symlink())
+                                && fs::read_link(destination)
+                                    .ok()
+                                    .as_deref()
+                                    == Some(Path::new(target)))
+                        },
+                    )?;
+                    if !verified_target {
+                        return Err("restored symlink target does not match".into());
+                    }
+                    Ok(())
+                })();
+
                 {
-                    return Err("symlink restore unsupported on this platform".into());
+                    let mut trace = trace_state.lock().expect("symlink trace lock");
+                    trace.completed = trace.completed.saturating_add(1);
                 }
-                if fs::symlink_metadata(destination).is_ok_and(|metadata| metadata.is_dir()) {
-                    fs::remove_dir_all(destination).map_err(|error| error.to_string())?;
+                emit_symlink_trace(
+                    &options,
+                    &trace_state,
+                    manifest.len(),
+                    file_entry_count,
+                    symlink_entry_count,
+                    "symlink-entry-finished",
+                    Some(*ordinal),
+                    None,
+                    Some(if restored.is_ok() { "restored" } else { "failed" }),
+                );
+
+                match restored {
+                    Ok(()) => {
+                        let mut summary = state.lock().expect("download summary lock");
+                        summary.verified = summary.verified.saturating_add(1);
+                        summary.files = summary.files.saturating_add(1);
+                        drop(summary);
+                        report_progress(&options, &state, manifest.len());
+                    }
+                    Err(error) => record_failure(&state, format!("{rel_path}: {error}")),
                 }
-                let result = fs::rename(&temp, destination).map_err(|error| error.to_string());
-                if result.is_err() {
-                    let _ = fs::remove_file(&temp);
-                    result?;
-                }
-                apply_owner(destination, options.owner, true)?;
-                if fs::read_link(destination).ok().as_deref() != Some(Path::new(target)) {
-                    return Err("restored symlink target does not match".into());
-                }
-                Ok(())
-            })();
-            {
-                let mut trace = trace_state.lock().expect("symlink trace lock");
-                trace.2.clear();
-                if restored.is_ok() {
-                    trace.1 += 1;
-                }
-                if let Some(callback) = options.on_trace.as_ref() {
-                    callback(BoxStoreDownloadTrace {
-                        event: "symlink-entry-finished".into(),
-                        manifest_entries: manifest.len(),
-                        file_entries: manifest.values().filter(|entry| entry.is_file()).count(),
-                        symlink_entries: planned.symlinks.len(),
-                        symlinks_started: trace.0,
-                        symlinks_completed: trace.1,
-                        symlinks_in_flight: trace.0.saturating_sub(trace.1),
-                        active_symlink_steps: trace.2.clone(),
-                        symlink_ordinal: Some(*ordinal),
-                        symlink_step: None,
-                        symlink_outcome: Some(if restored.is_ok() { "restored" } else { "failed" }.into()),
-                    });
-                }
-            }
-            match restored {
-                Ok(()) => {
-                    let mut summary = state.lock().expect("download summary lock");
-                    summary.verified += 1;
-                    summary.files += 1;
-                    drop(summary);
-                    report_progress(&options, &state, manifest.len());
-                }
-                Err(error) => record_failure(&state, format!("{rel_path}: {error}")),
-            }
-            Ok::<(), ()>(())
-        });
-        if let Some(callback) = options.on_trace.as_ref() {
-            let trace = trace_state.lock().expect("symlink trace lock");
-            callback(BoxStoreDownloadTrace {
-                event: "symlink-phase-finished".into(),
-                manifest_entries: manifest.len(),
-                file_entries: manifest.values().filter(|entry| entry.is_file()).count(),
-                symlink_entries: planned.symlinks.len(),
-                symlinks_started: trace.0,
-                symlinks_completed: trace.1,
-                symlinks_in_flight: trace.0.saturating_sub(trace.1),
-                active_symlink_steps: trace.2.clone(),
-                ..BoxStoreDownloadTrace::default()
-            });
-        }
+                Ok::<(), String>(())
+            },
+        );
+
+        emit_symlink_trace(
+            &options,
+            &trace_state,
+            manifest.len(),
+            file_entry_count,
+            symlink_entry_count,
+            "symlink-phase-finished",
+            None,
+            None,
+            None,
+        );
     }
 
     state.into_inner().expect("download summary mutex")
