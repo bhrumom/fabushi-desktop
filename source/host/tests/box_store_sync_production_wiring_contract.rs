@@ -161,8 +161,34 @@ fn production_owner_wires_real_chrome_watcher_periodic_cycle_and_remote_provider
             .contains(".client.put_bytes(&self.source_id,key,bytes,precondition)?;"),
         "AgentStoreObjectStore::put must call AgentStoreClient::put_bytes with the resolved precondition"
     );
-    assert!(provider_owner.contains("client.put_file_content_addressed(&self.source_id, key, src_path)?"));
-    assert!(provider_owner.contains("client.list_objects(&self.source_id, prefix)"));
+    let agent_store_put_file = agent_store_impl
+        .split_once("fn put_from_file(&self, key: &str, src_path: &Path)")
+        .map(|(_, body)| body)
+        .and_then(|body| body.split_once("fn list(&self, prefix: &str)").map(|(put_file, _)| put_file))
+        .expect("AgentStoreObjectStore production put_from_file method");
+    let agent_store_put_file_compact: String = agent_store_put_file
+        .chars()
+        .filter(|ch| !ch.is_whitespace())
+        .collect();
+    assert!(
+        agent_store_put_file_compact
+            .contains(".client.put_file_content_addressed(&self.source_id,key,src_path)?"),
+        "AgentStoreObjectStore::put_from_file must use the content-addressed AgentStore upload path"
+    );
+
+    let agent_store_list = agent_store_impl
+        .split_once("fn list(&self, prefix: &str)")
+        .map(|(_, body)| body)
+        .and_then(|body| body.split_once("fn delete(&self, key: &str)").map(|(list, _)| list))
+        .expect("AgentStoreObjectStore production list method");
+    let agent_store_list_compact: String = agent_store_list
+        .chars()
+        .filter(|ch| !ch.is_whitespace())
+        .collect();
+    assert!(
+        agent_store_list_compact.contains(".client.list_objects(&self.source_id,prefix)"),
+        "AgentStoreObjectStore::list must delegate to AgentStoreClient::list_objects"
+    );
 
     let agent_store = include_str!("../src/extensions/box_store_sync/agent_store_sand_files.rs");
     assert!(agent_store.contains("fn token_for(&self, source_id: &str)"));
