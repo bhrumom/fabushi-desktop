@@ -9,7 +9,7 @@ use mahayana_host_runtime::extensions::inference::extension::{
     AgentInferenceOwner, InferenceExtensionRuntime,
 };
 use mahayana_host_runtime::extensions::inference::inference_service::{
-    InferenceSettings, InferenceUsage,
+    InferenceRoute, InferenceSettings, InferenceUsage, authorize_routed_provider_request,
 };
 use mahayana_host_runtime::extensions::inference::production::{
     CursorWebBackendFactory, InferenceAuth, InferencePortFactory, InferenceProductionExtras,
@@ -181,4 +181,32 @@ fn production_inference_settings_owns_live_route_and_usage_persistence() {
     assert_eq!(usage["providers"]["openrouter"]["cacheReadTokens"].as_u64(), Some(3));
     assert_eq!(usage["providers"]["openrouter"]["cacheWriteTokens"].as_u64(), Some(2));
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn cursor_route_is_authorized_through_the_same_shipping_runner_boundary() {
+    assert_eq!(
+        authorize_routed_provider_request(InferenceRoute::Cursor, RoutedProvider::Cursor),
+        Ok(RoutedProvider::Cursor)
+    );
+    assert!(authorize_routed_provider_request(
+        InferenceRoute::Cursor,
+        RoutedProvider::ClaudeCode,
+    )
+    .is_err());
+
+    let shipping_main = include_str!("../app/src/main.rs");
+    assert!(shipping_main.contains(
+        "let requested_provider = RoutedProvider::parse(provider_name)"
+    ));
+    assert!(!shipping_main.contains(
+        ".filter(|provider| *provider != RoutedProvider::Cursor)"
+    ));
+    assert!(shipping_main.contains(
+        "let cursor_auth = inference.cursor_auth_for_session(Some(&worker_session_options));"
+    ));
+    assert!(shipping_main.contains(
+        "cursor_auth: Some(cursor_auth)"
+    ));
 }
