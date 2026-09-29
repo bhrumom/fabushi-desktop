@@ -15908,9 +15908,10 @@
         "source/host/tests/transcript_manager_contract.rs",
         "source/host/tests/routed_send_acceptance_contract.rs",
         "source/host/tests/box_help_tool_contract.rs",
-        "source/host/tests/production_turn_agent_owner_contract.rs"
+        "source/host/tests/production_turn_agent_owner_contract.rs",
+        "source/host/tests/send_group_fanout_contract.rs"
       ],
-      "notes": "Production Rust owns user/provider run counts, composing/retrying/activity, request IDs, queue/watchdog settlement, non-Cursor routed-provider leases, durable Subagent pending-wake projection, and now real local non-Cursor group-member run accounting via groupMemberTurn routed leases plus direct-DM cancellation. Final remains withheld for live Runner subagent-source fanout and remote-member activeRemoteMemberId production wiring."
+      "notes": "Production Rust owns user/provider run counts, composing/retrying/activity, request IDs, queue/watchdog settlement, routed-provider leases, durable Subagent pending-wake projection, real group-member run accounting and direct-DM cancellation. Shipping shared/remote group execution also drives activeRemoteMemberId through the same ProductionTranscriptRuntime and clears it after the remote turn; send_group_fanout_contract proves that production path, including the canonical Host/Runner route. Final remains withheld for live Runner subagent-source fanout: durable Subagent pending-wake projection is recovery evidence, not a substitute for the frozen live subagent-parent roster source."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-scheduler.ts",
