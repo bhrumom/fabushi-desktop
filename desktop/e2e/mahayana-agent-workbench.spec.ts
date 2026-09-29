@@ -1,5 +1,5 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -66,6 +66,15 @@ test.afterAll(async () => {
 
 async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication> {
   const e2eAuthBackendUrl = await ensureE2eAuthBackend();
+  // The shipping Rust Host owns a separate short-lived inference credential
+  // from the renderer account token. Seed that real HostAuth input explicitly
+  // so deterministic CI exercises the authenticated Cursor Runner boundary
+  // instead of stalling before provider execution.
+  const inferenceCredentialPath = path.join(appDataDir, 'e2e-inference-credential.json');
+  await writeFile(inferenceCredentialPath, JSON.stringify({
+    accessToken: e2eAuthToken(),
+    expiresAtMs: 4_102_444_800_000,
+  }), 'utf8');
   return electron.launch({
     ...(packagedExecutable
       ? { executablePath: packagedExecutable, args: [] }
@@ -79,6 +88,7 @@ async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication
       SAND_USER_DATA_DIR: appDataDir,
       SAND_BACKEND_URL: e2eAuthBackendUrl,
       CURSOR_API_BASE_URL: e2eAuthBackendUrl,
+      SAND_DEV_INFERENCE_TOKEN_FILE: inferenceCredentialPath,
       SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
       SAND_DISABLE_SENTRY: '1',
       FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',

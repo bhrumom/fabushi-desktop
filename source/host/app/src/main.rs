@@ -1037,8 +1037,7 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
         let Some(gateway) = self.gateway() else {
             return false;
         };
-        configured_routed_provider(&gateway.data_dir.join("settings.json"))
-            .is_some_and(|provider| provider != RoutedProvider::Cursor)
+        configured_routed_provider(&gateway.data_dir.join("settings.json")).is_some()
     }
 
     fn is_agent_deleted(&self, agent_id: &str) -> bool {
@@ -1076,8 +1075,7 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
             .gateway()
             .ok_or_else(|| "Host gateway is not ready for background revival".to_string())?;
         let provider = configured_routed_provider(&gateway.data_dir.join("settings.json"))
-            .filter(|provider| *provider != RoutedProvider::Cursor)
-            .ok_or_else(|| "no Rust routed provider configured for background revival".to_string())?;
+            .ok_or_else(|| "no routed provider configured for background revival".to_string())?;
         run_local_background_revival_turn(
             gateway.local_routed_runner_deps(),
             provider,
@@ -2091,9 +2089,6 @@ fn run_local_background_revival_turn(
     is_silence_allowed: bool,
     auto_review_epoch: &str,
 ) -> Result<RevivalExecution, String> {
-    if provider == RoutedProvider::Cursor {
-        return Err("Cursor background revival remains on the compatibility path".into());
-    }
     let stream_id = format!("background-revival-{}", uuid::Uuid::new_v4());
     let client_nonce = format!(
         "background-revival:{}:{}",

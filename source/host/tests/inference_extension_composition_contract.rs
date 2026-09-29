@@ -209,4 +209,13 @@ fn cursor_route_is_authorized_through_the_same_shipping_runner_boundary() {
     assert!(shipping_main.contains(
         "cursor_auth: Some(cursor_auth)"
     ));
+    assert!(shipping_main.contains(
+        "run_local_background_revival_turn("
+    ));
+    assert!(!shipping_main.contains(
+        "Cursor background revival remains on the compatibility path"
+    ));
+    assert!(shipping_main.contains(
+        "configured_routed_provider(&gateway.data_dir.join(\"settings.json\"))"
+    ));
 }
