@@ -136,7 +136,7 @@ impl InactiveTurnAgentLifecycleHooks<String> for Hooks<'_> {
 #[test]
 fn inactive_generated_agent_stream_drains_checkpoint_and_owns_outer_lifecycle() {
     let events = Arc::new(Events::default());
-    let source: Arc<dyn InactiveTurnAgentStreamSource<String, String>> =
+    let source: Arc<dyn InactiveTurnAgentStreamSource<String, String, Error = String>> =
         Arc::new(Source(Arc::clone(&events)));
     let path = InactiveTurnAgentStreamPath::new(source);
     let persistence = Persistence {
@@ -178,7 +178,7 @@ fn inactive_generated_agent_stream_drains_checkpoint_and_owns_outer_lifecycle() 
 #[test]
 fn inactive_generated_agent_stream_skips_stale_checkpoint_persistence_but_releases_claim() {
     let events = Arc::new(Events::default());
-    let source: Arc<dyn InactiveTurnAgentStreamSource<String, String>> =
+    let source: Arc<dyn InactiveTurnAgentStreamSource<String, String, Error = String>> =
         Arc::new(Source(Arc::clone(&events)));
     let path = InactiveTurnAgentStreamPath::new(source);
     let persistence = Persistence {
