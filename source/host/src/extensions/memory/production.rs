@@ -7,7 +7,8 @@ use crate::storage::agent_paths::get_sand_agents_root_dir;
 use super::extension::{HostMemoryExtension, start_memory_extension};
 use super::memory_service::MemoryService;
 use super::memory_synthesis_service::{
-    MemorySynthesisOptions, MemorySynthesisService, SynthesisTarget, parse_json_object,
+    MemorySynthesisOptions, MemorySynthesisService, SynthesisCancelSignal,
+    SynthesisProposalRequest, SynthesisTarget, SynthesisVerificationRequest, parse_json_object,
     synthesis_request_json, synthesis_system_prompt, verification_request_json,
     verification_system_prompt,
 };
@@ -44,7 +45,7 @@ pub fn create_production_memory_synthesis(
 
     let propose_inference = Arc::clone(&inference);
     let propose_data_dir = data_dir.clone();
-    let propose = Arc::new(move |request, cancel| {
+    let propose = Arc::new(move |request: SynthesisProposalRequest, cancel: SynthesisCancelSignal| {
         let user = synthesis_request_json(&request);
         let output = propose_inference
             .run_summarization_prompt(
@@ -59,7 +60,7 @@ pub fn create_production_memory_synthesis(
     });
 
     let verify_inference = Arc::clone(&inference);
-    let verify = Arc::new(move |request, cancel| {
+    let verify = Arc::new(move |request: SynthesisVerificationRequest, cancel: SynthesisCancelSignal| {
         let user = verification_request_json(&request);
         let output = verify_inference
             .run_summarization_prompt(
