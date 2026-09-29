@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use super::workspace_ignore::{WorkspaceIgnore, compile_workspace_ignore};
+
 pub const SAND_STORE_BETTER_CLI_ENV: &str = "SAND_STORE_BETTER_CLI";
 pub const SAND_USER_NON_ROOT_ENV: &str = "SAND_USER_NON_ROOT";
 pub const BOX_HOME_CATEGORY_NAME: &str = "home";
@@ -96,6 +98,10 @@ pub fn plan_periodic_cycle(
         skip_live_handle_store_dbs: !seal_hydration_handoff,
         include_packs: include_idle_only,
     }
+}
+
+pub fn build_box_home_ignore() -> WorkspaceIgnore {
+    compile_workspace_ignore(BOX_HOME_REGENERABLE_JUNK_IGNORE_PATTERNS)
 }
 
 pub fn is_better_cli_home_enabled(better_cli: Option<&str>, user_non_root: Option<&str>) -> bool {
