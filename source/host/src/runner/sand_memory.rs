@@ -389,11 +389,17 @@ fn non_empty_or<'a>(value: &'a str, fallback: &'a str) -> &'a str {
 
 fn split_category(line: &str) -> (Option<&'static str>, &str) {
     for tag in ["profile", "log", "note", "remove"] {
-        if line.len() > tag.len()
-            && line[..tag.len()].eq_ignore_ascii_case(tag)
-            && line.as_bytes().get(tag.len()) == Some(&b':')
+        let tag_len = tag.len();
+        if line.len() > tag_len
+            && line
+                .get(..tag_len)
+                .is_some_and(|prefix| prefix.eq_ignore_ascii_case(tag))
+            && line.as_bytes().get(tag_len) == Some(&b':')
         {
-            return (Some(tag), line[tag.len() + 1..].trim());
+            return (
+                Some(tag),
+                line.get(tag_len + 1..).unwrap_or_default().trim(),
+            );
         }
     }
     (None, line)

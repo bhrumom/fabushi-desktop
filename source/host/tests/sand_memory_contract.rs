@@ -111,3 +111,27 @@ fn extraction_parse_dedupe_relevance_and_episode_prompt_match_frozen_rules() {
     assert!(episode.contains("User: question"));
     assert!(episode.contains("Grok Bot: answer"));
 }
+
+#[test]
+fn extraction_parser_is_utf8_safe_for_uncategorized_non_ascii_output() {
+    let parsed = parse_extracted_memories("收到：请分析这个任务", &[]);
+    assert_eq!(
+        parsed,
+        MemoryExtraction {
+            additions: vec![mahayana_host_runtime::runner::sand_memory::MemoryAddition {
+                content: "收到：请分析这个任务".into(),
+                kind: MemoryKind::Log,
+            }],
+            removals: vec![],
+        }
+    );
+
+    let mixed = parse_extracted_memories(
+        "profile: 用户偏好中文\n说明：保留这个事实",
+        &[],
+    );
+    assert_eq!(mixed.additions.len(), 2);
+    assert_eq!(mixed.additions[0].kind, MemoryKind::Profile);
+    assert_eq!(mixed.additions[0].content, "用户偏好中文");
+    assert_eq!(mixed.additions[1].content, "说明：保留这个事实");
+}
