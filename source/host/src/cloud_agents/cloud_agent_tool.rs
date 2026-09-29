@@ -48,7 +48,7 @@ pub type CloudAgentReviewHook = Arc<
         + Send
         + Sync,
 >;
-pub type CloudAgentWatchHook = Arc<dyn Fn(&str, bool) + Send + Sync>;
+pub type CloudAgentWatchHook = Arc<dyn Fn(&str, bool, Option<Value>) + Send + Sync>;
 
 #[derive(Clone)]
 pub struct CloudAgentToolDependencies {
@@ -57,6 +57,7 @@ pub struct CloudAgentToolDependencies {
     pub box_resources: Arc<dyn RunnerBoxResourcePort>,
     pub cancellation: RoutedProviderCancellation,
     pub review: Option<CloudAgentReviewHook>,
+    pub quiet_origin: Option<Value>,
     pub watch: Option<CloudAgentWatchHook>,
 }
 
@@ -374,7 +375,7 @@ fn launch_action(
         .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
     deps.manager.remember_managed_id(&result.bc_id);
     if let Some(watch) = deps.watch.as_ref() {
-        watch(&result.bc_id, false);
+        watch(&result.bc_id, false, deps.quiet_origin.clone());
     }
     let followup = if deps.watch.is_some() {
         r#"You're revived automatically when it finishes, so keep working and don't poll it — use "reply" to send a follow-up, or "get" if you need its status sooner."#
@@ -523,7 +524,7 @@ fn watch_action(
             r#"Watching isn't available here. Use action "get" with {id} to check its status."#
         ));
     };
-    watch(id, false);
+    watch(id, false, deps.quiet_origin.clone());
     deps.manager.remember_managed_id(id);
     Ok(format!(
         "Watching {id}. You'll be revived automatically when it finishes — keep working and don't poll it."
@@ -575,7 +576,7 @@ fn reply_action(
         .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
     deps.manager.remember_managed_id(id);
     if let Some(watch) = deps.watch.as_ref() {
-        watch(id, true);
+        watch(id, true, deps.quiet_origin.clone());
     }
     let sent = if !interrupt {
         format!("Sent follow-up to {id} (run {run_id})")
