@@ -512,6 +512,10 @@ impl SandBoxStoreServiceObjectStore {
 }
 
 impl BoxObjectStore for SandBoxStoreServiceObjectStore {
+    fn prefetch_reads(&self, keys: &[String]) -> Result<(), String> {
+        SandBoxStoreServiceObjectStore::prefetch_reads(self, keys)
+    }
+
     fn get(&self, key: &str) -> Result<Option<Vec<u8>>, String> {
         let key = normalize_rel_path(key)?;
         let instruction = match self.take_prefetched_read(&key) { Some(value) => Some(value), None => self.presign_read(&key)? };
