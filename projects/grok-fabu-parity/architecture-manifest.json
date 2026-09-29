@@ -12586,18 +12586,22 @@
       "targetPath": "source/host/src/extensions/inference/production.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "98c39d4a3d20cb92d0454c528c493a5bf1e9b7d5",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/inference/production.rs"
+        "source/host/src/extensions/inference/production.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/inference_extension_composition_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/cursor_inference_transport_contract.rs"
       ],
-      "notes": "Rust Host now owns the frozen production composition seam: one auth identity is injected into the Host inference port and Cursor web backend factories; request-id observers and model-experiment callbacks are forwarded without renderer ownership. Final remains withheld until inference-service/cursor-session and the authenticated Cursor backend factory are production-wired."
+      "notes": "Rust Host owns the frozen production inference composition seam in the shipping extension graph: HostAuth, experiments and settings are assembled by start_production_host_extensions; ProductionInferenceExtension owns live route/usage, authenticated Cursor session auth/model resolution and authenticated Cursor web backend factories; the shipping Runner path consumes cursor_auth_for_session() without renderer-side inference ownership.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/inference/provider-session.ts",
