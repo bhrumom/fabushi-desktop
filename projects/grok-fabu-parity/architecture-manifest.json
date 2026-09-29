@@ -6435,7 +6435,8 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Target preserves the frozen Grok 0.18 Coordinator runtime ownership and renderer-port handoff semantics while applying a production safety adaptation: a transferred generation is fully retired before the replacement generation launches, intentional retirement cannot schedule crash relaunch, and explicit restart uses the same serialized generation boundary. The focused Coordinator runtime contract exercises replacement, restart, disposal, and relaunch fencing; referenceBlobSha remains the frozen Grok source anchor rather than a target-content hash."
+      "notes": "Target preserves the frozen Grok 0.18 Coordinator runtime ownership and renderer-port handoff semantics while applying a production safety adaptation: a transferred generation is fully retired before the replacement generation launches, intentional retirement cannot schedule crash relaunch, and explicit restart uses the same serialized generation boundary. The focused Coordinator runtime contract exercises replacement, restart, disposal, and relaunch fencing; referenceBlobSha remains the frozen Grok source anchor rather than a target-content hash.",
+      "parityMode": "reference-copy"
     },
     {
       "referencePath": "source/electron-main/coordinator/coordinator-telemetry.ts",
