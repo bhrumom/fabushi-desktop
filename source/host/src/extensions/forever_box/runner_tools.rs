@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use serde_json::{Value, json};
 
@@ -14,6 +14,9 @@ use crate::r#box::generated_production::{
 use crate::runner::box_tool_access::{
     RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest, RunnerBoxWriteRequest,
 };
+use crate::runner::remote_box_resources::{
+    RemoteBoxResourceCoordinator, RemoteConnection,
+};
 
 use super::forever_box_service::ForeverBoxService;
 
@@ -27,6 +30,7 @@ use super::forever_box_service::ForeverBoxService;
 pub struct ForeverBoxRunnerResourcePort {
     service: Arc<ForeverBoxService>,
     agent_id: String,
+    coordinator: Arc<Mutex<RemoteBoxResourceCoordinator<Arc<Mutex<crate::r#box::generated_production::ProductionBoxResourceAccessor>>>>>,
 }
 
 impl ForeverBoxRunnerResourcePort {
@@ -34,26 +38,54 @@ impl ForeverBoxRunnerResourcePort {
         service: Arc<ForeverBoxService>,
         agent_id: impl Into<String>,
     ) -> Self {
+        let desktop_capable = service.box_().inner().shared_desktop().is_some();
         Self {
             service,
             agent_id: agent_id.into(),
+            coordinator: Arc::new(Mutex::new(RemoteBoxResourceCoordinator::new(
+                desktop_capable,
+                None,
+            ))),
         }
+    }
+
+    fn connection(
+        &self,
+    ) -> Result<RemoteConnection<Arc<Mutex<crate::r#box::generated_production::ProductionBoxResourceAccessor>>>, ProviderSessionError>
+    {
+        let status = self.service.get_status(&self.agent_id);
+        let box_preparing = matches!(status.state.as_str(), "starting" | "preparing");
+        let service = Arc::clone(&self.service);
+        let agent_id = self.agent_id.clone();
+        self.coordinator
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .connect(box_preparing, move || {
+                let ready = service
+                    .box_()
+                    .ensure_ready(&agent_id)
+                    .map_err(|error| Arc::new(error) as crate::runner::remote_box_resources::RemoteConnectError)?;
+                let window_index = service
+                    .box_()
+                    .get_agent_window_index(&agent_id)
+                    .unwrap_or(1);
+                let owns_monitor = service.box_().inner().shared_desktop().is_some()
+                    && ready.vnc_url.is_some();
+                Ok(RemoteConnection {
+                    terminals_folder: ready.terminals_folder.to_string(),
+                    resource: Arc::new(Mutex::new(ready.remote_accessor)),
+                    owns_monitor,
+                    window_index,
+                })
+            })
+            .map_err(|error| ProviderSessionError::Tool(error.to_string()))
     }
 
     fn production_accessor(
         &self,
-    ) -> Result<crate::r#box::generated_production::ProductionBoxResourceAccessor, ProviderSessionError>
+    ) -> Result<Arc<Mutex<crate::r#box::generated_production::ProductionBoxResourceAccessor>>, ProviderSessionError>
     {
-        self.service
-            .box_()
-            .ensure_ready(&self.agent_id)
-            .map(|ready| ready.remote_accessor)
-            .map_err(|error| {
-                ProviderSessionError::Tool(format!(
-                    "Box is not ready for {}: {error}",
-                    self.agent_id
-                ))
-            })
+        self.connection().map(|connection| connection.resource)
     }
 }
 
@@ -74,7 +106,8 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
             working_directory: request.working_directory,
             tool_call_id: request.tool_call_id,
         });
-        let mut accessor = self.production_accessor()?;
+        let accessor = self.production_accessor()?;
+        let mut accessor = accessor.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         let result = accessor.execute(&(), args).map_err(|error| {
             ProviderSessionError::Tool(format!("Box Shell failed: {error}"))
         })?;
@@ -95,7 +128,8 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
         &self,
         request: RunnerBoxReadRequest,
     ) -> Result<Value, ProviderSessionError> {
-        let mut accessor = self.production_accessor()?;
+        let accessor = self.production_accessor()?;
+        let mut accessor = accessor.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         let result = accessor
             .execute_read(
                 &(),
@@ -165,10 +199,25 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
         &self,
         protobuf_args: Vec<u8>,
     ) -> Result<Vec<u8>, ProviderSessionError> {
-        let mut accessor = self.production_accessor()?;
+        let connection = self.connection()?;
+        self.coordinator
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .computer_use_plan(&connection, None)
+            .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+        let mut accessor = connection
+            .resource
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         accessor
             .execute_computer_use_protobuf(&(), protobuf_args)
             .map_err(|error| {
+                if error.to_string().to_ascii_lowercase().contains("monitor") {
+                    self.coordinator
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner())
+                        .clear_connection();
+                }
                 ProviderSessionError::Tool(format!("Computer use failed: {error}"))
             })
     }
@@ -198,7 +247,8 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
         &self,
         request: RunnerBoxWriteRequest,
     ) -> Result<(), ProviderSessionError> {
-        let mut accessor = self.production_accessor()?;
+        let accessor = self.production_accessor()?;
+        let mut accessor = accessor.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         let result = accessor
             .execute_write(&(), &request.path, &request.data, &request.tool_call_id)
             .map_err(|error| {
