@@ -116,8 +116,11 @@ fn shipping_host_starts_box_store_sync_after_mcp_and_stops_it_before_mcp() {
 fn production_owner_wires_real_chrome_watcher_periodic_cycle_and_remote_providers() {
     let production = include_str!("../src/extensions/box_store_sync/production.rs");
     assert!(production.contains("ChromeSessionWatcher::with_logger"));
-    assert!(production.contains("run_local_cycle(true, false, false, false)"));
-    assert!(production.contains("run_local_cycle(false, include_store_dbs, true, include_packs)"));
+    assert!(production.contains("run_local_cycle(true, false, false, false, false, true, false)"));
+    assert!(production.contains("plan_periodic_cycle("));
+    assert!(production.contains("plan.include_store_dbs"));
+    assert!(production.contains("plan.skip_live_handle_store_dbs"));
+    assert!(production.contains("plan.include_idle_only"));
     assert!(production.contains("stage_box_chrome_session()"));
     assert!(production.contains("sync_store_db_snapshots("));
     assert!(production.contains("StoreDbSnapshotUpload::new("));
@@ -136,7 +139,7 @@ fn production_owner_wires_real_chrome_watcher_periodic_cycle_and_remote_provider
     assert!(production.contains("PACK_TMP_DIR_NAME"));
     assert!(production.contains("BOX_STORE_PACK_RETIRED_KEY"));
     assert!(production.contains("BOX_STORE_PACK_INDEX_KEY"));
-    assert!(production.contains("idle && poll_inner.pack_sync_due()"));
+    assert!(production.contains("plan.include_packs"));
 
     let provider_owner = include_str!("../src/extensions/box_store_sync/box_object_store.rs");
     assert!(provider_owner.contains("BoxStoreBackendKind::AgentStore =>"));
