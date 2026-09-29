@@ -214,6 +214,47 @@ pub fn append_automations_system_prompt(
     }
 }
 
+pub fn render_workflows_system_prompt(location: Option<&str>) -> String {
+    let Some(location) = location.map(str::trim).filter(|value| !value.is_empty()) else {
+        return String::new();
+    };
+    format!(
+        "Workflows are a GLOBAL, shared library across all of the user's assistants. User-created skills live as files at {location}: one subfolder per workflow, each holding a SKILL.md. Prefer the update_state tool (target \"workflow\") to save, rewrite, and delete them. Reference workflows as [name](sand-workflow:<id>)."
+    )
+}
+
+pub fn append_workflows_system_prompt(
+    messages: &mut Vec<ProviderMessage>,
+    location: Option<&str>,
+) {
+    let prompt = render_workflows_system_prompt(location);
+    if prompt.is_empty() {
+        return;
+    }
+    if messages.iter().any(|message| {
+        message.role == "system"
+            && message.content.contains(
+                "Workflows are a GLOBAL, shared library across all of the user's assistants.",
+            )
+    }) {
+        return;
+    }
+    if let Some(system) = messages.iter_mut().find(|message| message.role == "system") {
+        if !system.content.trim().is_empty() {
+            system.content.push_str("\n\n");
+        }
+        system.content.push_str(&prompt);
+    } else {
+        messages.insert(
+            0,
+            ProviderMessage {
+                role: "system".into(),
+                content: prompt,
+            },
+        );
+    }
+}
+
 
 pub fn resolve_combined_memory_system_prompt(
     user_recall: &UserMemoryRecall,
