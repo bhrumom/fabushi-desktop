@@ -8,6 +8,10 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::host_paths::get_host_crash_marker_path;
 
 use super::HostTelemetryProjection;
+use super::box_log_shipper::{
+    BoxLogShipper, BoxLogShipperConfig, BoxTelemetryRecord, DeliverySettlement,
+    SUPERVISOR_LOG_PATH, is_box_log_shipping_enabled,
+};
 use super::desktop_health_forwarder::{
     DesktopHealthForwardResult, forward_desktop_health_with,
 };
@@ -240,6 +244,7 @@ pub struct HostTelemetryExtension {
     crash_marker_forwarder: Arc<HostCrashMarkerForwarder>,
     _desktop_health_forwarder: Option<Arc<DesktopHealthForwarder>>,
     _event_loop_telemetry: Option<Arc<EventLoopTelemetryRuntime>>,
+    _box_log_shipper: Option<Arc<BoxLogShipper>>,
 }
 
 impl HostTelemetryExtension {
@@ -266,6 +271,49 @@ pub fn start_host_telemetry_extension(
             let _ = logs.report_projection(&event_loop_window_telemetry(report));
         })))
     });
+    let box_log_shipper = if telemetry_enabled
+        && is_box_log_shipping_enabled(
+            std::env::var("SAND_HOST_IN_BOX").ok().as_deref(),
+            std::env::var("SAND_BOX_LOG_SHIP_DISABLED").ok().as_deref(),
+        )
+    {
+        let logs_for_batch = service.logs.clone();
+        let logs_for_ship = service.logs.clone();
+        let mut config = BoxLogShipperConfig::default();
+        let host_log_file = std::env::var("SAND_HOST_LOG_FILE")
+            .ok()
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty());
+        config.skip_paths = vec![PathBuf::from(
+            host_log_file.as_deref().unwrap_or(SUPERVISOR_LOG_PATH),
+        )];
+        let shipper = Arc::new(BoxLogShipper::new(
+            config,
+            Arc::new(move |records: &[BoxTelemetryRecord]| {
+                records
+                    .iter()
+                    .map(|record| {
+                        if logs_for_batch.report_box_log_record(record).is_ok() {
+                            DeliverySettlement::Delivered
+                        } else {
+                            DeliverySettlement::Dropped
+                        }
+                    })
+                    .collect()
+            }),
+            Arc::new(move |report| {
+                if logs_for_ship.report_box_log_ship(report).is_ok() {
+                    DeliverySettlement::Delivered
+                } else {
+                    DeliverySettlement::Dropped
+                }
+            }),
+        ));
+        shipper.start()?;
+        Some(shipper)
+    } else {
+        None
+    };
     Ok(HostTelemetryExtension {
         logs: service.logs.clone(),
         analytics: service.analytics.clone(),
@@ -273,5 +321,6 @@ pub fn start_host_telemetry_extension(
         crash_marker_forwarder,
         _desktop_health_forwarder: desktop_health_forwarder,
         _event_loop_telemetry: event_loop_telemetry,
+        _box_log_shipper: box_log_shipper,
     })
 }

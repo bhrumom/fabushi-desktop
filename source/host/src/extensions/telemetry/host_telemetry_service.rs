@@ -11,6 +11,9 @@ use crate::ports::telemetry::resolve_sand_box_identity_tags;
 
 use super::HostTelemetryProjection;
 use super::analytics_service::product_analytics_event;
+use super::box_log_ship_telemetry::{BoxLogShipReport, box_log_ship_telemetry};
+use super::box_log_shipper::BoxTelemetryRecord;
+use super::lifecycle_telemetry::box_infrastructure_telemetry;
 use super::structured_log_telemetry::{BOX_HELP_EVENT, box_help_telemetry};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -74,6 +77,29 @@ impl HostStructuredLogTelemetry {
                 "metadata": metadata,
             }),
         })
+    }
+
+    pub fn report_box_log_record(&self, record: &BoxTelemetryRecord) -> io::Result<()> {
+        match record {
+            BoxTelemetryRecord::Log { source, line } => {
+                let text = line.chars().take(2_048).collect::<String>();
+                self.report_projection(&HostTelemetryProjection {
+                    level: Some("info"),
+                    event: Some("sand.box.log"),
+                    metadata: BTreeMap::from([
+                        ("source".into(), source.clone()),
+                        ("text".into(), text),
+                    ]),
+                })
+            }
+            BoxTelemetryRecord::Infrastructure { event } => {
+                self.report_projection(&box_infrastructure_telemetry(event))
+            }
+        }
+    }
+
+    pub fn report_box_log_ship(&self, report: &BoxLogShipReport) -> io::Result<()> {
+        self.report_projection(&box_log_ship_telemetry(report))
     }
 
     pub fn report_box_help(&self, report: &Value) -> io::Result<()> {

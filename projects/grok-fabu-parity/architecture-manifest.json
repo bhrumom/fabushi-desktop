@@ -14618,18 +14618,21 @@
       "targetPath": "source/host/src/extensions/telemetry/box_log_shipper.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "5f7a2bc7023cd895d919d086e77e06bbef396178",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/telemetry/box_log_shipper.rs"
+        "source/host/src/extensions/telemetry/box_log_shipper.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/src/extensions/telemetry/extension.rs"
       ],
       "testEvidence": [
-        "source/host/tests/remaining_planned_contract.rs",
+        "source/host/tests/box_log_shipper_production_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Mahayana Host now has a concrete owner for the frozen module's deterministic policy/state boundary and focused contract evidence. This row is intentionally non-final until the shipping Host/Transcript/Telemetry composition consumes the owner end-to-end with the generated/external adapters required by the frozen Grok graph."
+      "notes": "Shipping Rust now owns the frozen box-log shipping lifecycle end to end: bounded /tmp and sand-window-* log discovery, host/self and source-prefix filtering, persistent atomic offsets, truncation recovery, lag skipping, line/read budgets, strict sand-box-telemetry infrastructure-event validation, synchronous delivery settlement before offset advance, progress/save-failure/save-recovery telemetry, and clean checkpoint-on-drop. HostTelemetryExtension conditionally starts this owner only for SAND_HOST_IN_BOX=1 with telemetry enabled, routes ordinary box logs through sand.box.log and infrastructure events through the canonical lifecycle mapper, and retains the owner for the extension lifetime. The Rust JSONL transport settles writes synchronously, so frozen asynchronous delivery windows collapse to immediate delivered/dropped settlement without weakening the all-records-delivered offset fence.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/telemetry/conversation-gc-telemetry.ts",
@@ -39888,5 +39891,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-29T06:45:00+08:00"
+  "generatedAt": "2026-09-29T03:28:00.000Z"
 }
