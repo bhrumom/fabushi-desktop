@@ -2057,6 +2057,15 @@ fn execute_local_inference(
         if !append_user_message {
             messages.push(json!({
                 "role": "user",
+                "content": runner_prompt.clone(),
+            }));
+        }
+        // Host admission is authoritative, but the Coordinator transcript
+        // snapshot can still be empty during a fresh local-first turn. Never
+        // start the shipping Runner with an empty provider conversation.
+        if messages.is_empty() {
+            messages.push(json!({
+                "role": "user",
                 "content": runner_prompt,
             }));
         }
