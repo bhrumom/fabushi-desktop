@@ -1,12 +1,13 @@
 use mahayana_host_runtime::extensions::inference::provider_session::ProviderMessage;
 use mahayana_host_runtime::extensions::memory::memory_service::{
-    MemoryKind, MemoryRecall, MemoryRecord,
+    MemoryKind, MemoryRecall, MemoryRecord, ScopedMemoryRecord, UserMemoryRecall,
 };
 use mahayana_host_runtime::runner::sand_memory::{
     MEMORY_EPISODE_PREFIX, MEMORY_NOTE_PREFIX, MemoryExtraction, build_episode_user_prompt,
     build_extraction_user_prompt, episode_interval, fact_line, gather_extraction_memories,
     is_memorable_exchange, memory_importance, parse_extracted_memories,
-    render_memory_system_prompt, resolve_frozen_memory_prompt, select_relevant_memories,
+    render_memory_system_prompt, render_user_memory_system_prompt,
+    resolve_frozen_memory_prompt, select_relevant_memories,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::append_memory_system_prompt;
 
@@ -134,4 +135,35 @@ fn extraction_parser_is_utf8_safe_for_uncategorized_non_ascii_output() {
     assert_eq!(mixed.additions[0].kind, MemoryKind::Profile);
     assert_eq!(mixed.additions[0].content, "用户偏好中文");
     assert_eq!(mixed.additions[1].content, "说明：保留这个事实");
+}
+
+
+#[test]
+fn shared_user_memory_prompt_preserves_frozen_provenance_and_precedence() {
+    let recall = UserMemoryRecall {
+        profile: vec![ScopedMemoryRecord {
+            agent_id: "agent-a".into(),
+            agent_name: "Researcher".into(),
+            memory: record("The user prefers concise answers", 1_700_000_000_000, MemoryKind::Profile),
+        }],
+        recent: vec![ScopedMemoryRecord {
+            agent_id: "agent-b".into(),
+            agent_name: "Planner".into(),
+            memory: record("Booked Tokyo for October", 1_710_000_000_000, MemoryKind::Log),
+        }],
+    };
+    let rendered = render_user_memory_system_prompt(
+        &recall,
+        Some("/sand/user-memory"),
+        Some("/sand/user-memory/agents/agent-a"),
+    );
+    assert!(rendered.starts_with(
+        "User memory: durable facts shared across every assistant this user runs"
+    ));
+    assert!(rendered.contains(
+        "Precedence: when a shared user fact conflicts with your OWN memory, prefer your own"
+    ));
+    assert!(rendered.contains("Your own shard is at /sand/user-memory/agents/agent-a"));
+    assert!(rendered.contains("[via Researcher] The user prefers concise answers"));
+    assert!(rendered.contains("[via Planner] Booked Tokyo for October"));
 }

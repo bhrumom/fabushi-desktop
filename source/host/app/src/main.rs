@@ -243,7 +243,8 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::prompt_collector_glue::project_provider_messages_for_turn;
 use mahayana_host_runtime::runner::sand_memory::{
-    MEMORY_RECENT_PROMPT_LIMIT, is_memorable_exchange,
+    MEMORY_RECENT_PROMPT_LIMIT, MEMORY_USER_PROFILE_PROMPT_LIMIT,
+    MEMORY_USER_RECENT_PROMPT_LIMIT, is_memorable_exchange,
 };
 use mahayana_host_runtime::runner::turn_memory::{
     TurnExchange, TurnMemoryMode, build_turn_memory_exchange, run_turn_memory_with,
@@ -272,7 +273,10 @@ use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     ComputerAutoReviewCallback, ComputerPersistImageCallback, ComputerToolExecutor,
     to_exact_action_value, validate_computer_action,
 };
-use mahayana_host_runtime::runner::system_prompt_assembly::{append_automations_system_prompt, append_memory_system_prompt};
+use mahayana_host_runtime::runner::system_prompt_assembly::{
+    append_automations_system_prompt, append_memory_system_prompt,
+    append_user_memory_system_prompt,
+};
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
     create_production_runner_composition,
@@ -3072,7 +3076,41 @@ fn start_routed_provider_task(
             })?;
     }
 
-    let memory_store = session_workers.memory_service().store_for_agent(&agent_id);
+    let memory_service = session_workers.memory_service();
+    let agent_summaries = session_workers
+        .list_agent_summaries(Some(&agent_id))
+        .unwrap_or_default();
+    let resolve_agent_name = Arc::new(move |candidate: &str| {
+        agent_summaries
+            .iter()
+            .find(|summary| summary.id == candidate)
+            .map(|summary| summary.name.trim())
+            .filter(|name| !name.is_empty())
+            .map(str::to_string)
+            .unwrap_or_else(|| candidate.to_string())
+    });
+    let user_memory_store =
+        memory_service.user_memory_store(agent_id.clone(), resolve_agent_name);
+    let user_memory_recall = user_memory_store.recall(
+        MEMORY_USER_PROFILE_PROMPT_LIMIT,
+        MEMORY_USER_RECENT_PROMPT_LIMIT,
+    );
+    let user_memory_location = user_memory_store
+        .get_location()
+        .to_string_lossy()
+        .into_owned();
+    let user_memory_own_shard_location = user_memory_store
+        .get_own_shard_location()
+        .to_string_lossy()
+        .into_owned();
+    append_user_memory_system_prompt(
+        &mut provider_messages,
+        &user_memory_recall,
+        Some(&user_memory_location),
+        Some(&user_memory_own_shard_location),
+    );
+
+    let memory_store = memory_service.store_for_agent(&agent_id);
     let memory_recall = memory_store.recall(MEMORY_RECENT_PROMPT_LIMIT);
     let memory_location = memory_store.get_location().to_string_lossy().into_owned();
     append_memory_system_prompt(

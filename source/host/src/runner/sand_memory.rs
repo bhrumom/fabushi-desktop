@@ -2,13 +2,19 @@ use std::collections::HashSet;
 use std::io;
 
 use crate::extensions::memory::memory_service::{
-    FileMemoryStore, MemoryKind, MemoryRecall, MemoryRecord, format_memory_date,
-    memory_dedupe_key, normalize_memory_content,
+    FileMemoryStore, MemoryKind, MemoryRecall, MemoryRecord, ScopedMemoryRecord,
+    UserMemoryRecall, format_memory_date, memory_dedupe_key, normalize_memory_content,
 };
 
 pub const MEMORY_RECENT_PROMPT_LIMIT: usize = 30;
 pub const MEMORY_RECENT_PROMPT_CHAR_BUDGET: usize = 4_000;
+pub const MEMORY_USER_PROFILE_PROMPT_LIMIT: usize = 50;
+pub const MEMORY_USER_RECENT_PROMPT_LIMIT: usize = 15;
+pub const MEMORY_USER_PROFILE_CHAR_BUDGET: usize = 4_000;
+pub const MEMORY_USER_RECENT_CHAR_BUDGET: usize = 2_000;
 pub const MEMORY_MAX_CONTENT_LENGTH: usize = 500;
+pub const MEMORY_USER_SYSTEM_PROMPT_HEADER: &str =
+    "User memory: durable facts shared across every assistant this user runs";
 pub const MEMORY_EXTRACTION_PROMPT_MARKER: &str = "<<SAND_MEMORY_EXTRACTION>>";
 pub const MEMORY_EPISODE_PROMPT_MARKER: &str = "<<SAND_MEMORY_EPISODE>>";
 pub const MEMORY_EPISODE_PREFIX: &str = "[episode] ";
@@ -182,6 +188,82 @@ pub fn render_memory_system_prompt(recall: &MemoryRecall, location: Option<&str>
     }
     if recall.profile.is_empty() && recall.recent.is_empty() {
         lines.push("No facts recorded yet.".into());
+    }
+    lines.join("\n")
+}
+
+fn provenanced_line(record: &ScopedMemoryRecord) -> String {
+    let via = record.agent_name.trim();
+    format!(
+        "- (learned {}){} {}",
+        format_memory_date(record.memory.created_at),
+        if via.is_empty() { String::new() } else { format!(" [via {via}]") },
+        record.memory.content
+    )
+}
+
+fn append_budgeted_provenanced_facts(
+    lines: &mut Vec<String>,
+    records: &[ScopedMemoryRecord],
+    char_budget: usize,
+    more_label: &str,
+    grep_hint: &str,
+) {
+    let mut budget = char_budget;
+    let mut shown = 0usize;
+    for record in records {
+        let line = provenanced_line(record);
+        if shown > 0 && line.len() > budget { break; }
+        budget = budget.saturating_sub(line.len());
+        shown += 1;
+        lines.push(line);
+    }
+    let omitted = records.len().saturating_sub(shown);
+    if omitted > 0 {
+        lines.push(format!(
+            "({omitted} more shared {more_label} on disk — grep {grep_hint} for them.)"
+        ));
+    }
+}
+
+pub fn render_user_memory_system_prompt(
+    recall: &UserMemoryRecall,
+    user_memory_dir: Option<&str>,
+    own_shard_dir: Option<&str>,
+) -> String {
+    let Some(user_memory_dir) = user_memory_dir else { return String::new(); };
+    let has_facts = !recall.profile.is_empty() || !recall.recent.is_empty();
+    let mut lines = vec![
+        "User memory: durable facts shared across every assistant this user runs — their name, timezone, lasting preferences, and anything all of the user's assistants should know. This is separate from your own memory (shown below) and is visible to all of them.".to_string(),
+        "Precedence: when a shared user fact conflicts with your OWN memory, prefer your own — it is curated for your role and may deliberately override a shared default.".to_string(),
+    ];
+    if let Some(own_shard_dir) = own_shard_dir {
+        lines.push(format!(
+            "User memory lives under {user_memory_dir}, split into one shard folder per assistant so every file has a single writer. Your own shard is at {own_shard_dir} (a profile.md and log/YYYY-MM.md you can read and grep with Read and Shell on your own computer). To CHANGE shared user memory, prefer the update_state tool (target \"memory\", scope \"user\", action \"write\" or \"forget\"). Never edit another assistant's shard."
+        ));
+        lines.push(
+            "To fix or replace a shared fact another assistant recorded, write the corrected fact into YOUR shard via update_state — the newest wins on conflict. Record a fact here only when it is clearly about the user and useful to every assistant; keep role-specific facts in your own memory (scope \"agent\").".to_string()
+        );
+    }
+    if has_facts {
+        lines.push("Shared facts are tagged [via <assistant>] so you can tell which assistant learned each one.".to_string());
+    }
+    if !recall.profile.is_empty() {
+        lines.push("About the user (shared):".to_string());
+        append_budgeted_provenanced_facts(
+            &mut lines, &recall.profile, MEMORY_USER_PROFILE_CHAR_BUDGET,
+            "profile facts", "the user-memory/ folder",
+        );
+    }
+    if !recall.recent.is_empty() {
+        lines.push("Recently (shared):".to_string());
+        append_budgeted_provenanced_facts(
+            &mut lines, &recall.recent, MEMORY_USER_RECENT_CHAR_BUDGET,
+            "log facts", "the user-memory/ folder",
+        );
+    }
+    if recall.profile.is_empty() && recall.recent.is_empty() {
+        lines.push("No shared facts recorded yet.".to_string());
     }
     lines.join("\n")
 }
