@@ -158,3 +158,38 @@ fn dropped_delivery_does_not_advance_the_file_offset() {
     drop(dropped);
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn infrastructure_schema_is_strict_and_fail_closed() {
+    use mahayana_host_runtime::extensions::telemetry::box_log_shipper::parse_box_infrastructure_event;
+    use mahayana_host_runtime::extensions::telemetry::lifecycle_telemetry::BoxInfrastructureEvent;
+    use serde_json::json;
+
+    assert_eq!(
+        parse_box_infrastructure_event(&json!({
+            "kind": "process_crash",
+            "binary": "chrome",
+            "signal": "sigsegv",
+            "count": 2
+        })),
+        Some(BoxInfrastructureEvent::ProcessCrash {
+            binary: "chrome".into(),
+            signal: "sigsegv".into(),
+            count: 2,
+        })
+    );
+    assert!(parse_box_infrastructure_event(&json!({
+        "kind": "process_crash",
+        "binary": "not-a-frozen-binary",
+        "signal": "sigsegv",
+        "count": 2
+    })).is_none());
+    assert!(parse_box_infrastructure_event(&json!({
+        "kind": "host_boot_fetch",
+        "outcome": "applied",
+        "reason": "applied",
+        "durationMs": 7,
+        "fromVersion": "not-a-sha"
+    })).is_none());
+}
