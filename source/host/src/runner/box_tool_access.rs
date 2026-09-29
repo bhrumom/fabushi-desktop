@@ -21,6 +21,13 @@ pub struct RunnerBoxShellRequest {
     pub tool_call_id: String,
 }
 
+pub type BoxShellAutoReviewCallback = Arc<
+    dyn Fn(&RunnerBoxShellRequest) -> Result<Option<String>, ProviderSessionError>
+        + Send
+        + Sync
+        + 'static,
+>;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RunnerBoxReadRequest {
     pub path: String,
@@ -131,6 +138,7 @@ pub fn runner_box_tool_definitions() -> Vec<RoutedToolDefinition> {
 pub struct RunnerBoxToolBridge {
     upstream: Arc<dyn RoutedToolBridge>,
     box_resources: Arc<dyn RunnerBoxResourcePort>,
+    shell_review: Option<BoxShellAutoReviewCallback>,
 }
 
 impl RunnerBoxToolBridge {
@@ -141,7 +149,13 @@ impl RunnerBoxToolBridge {
         Self {
             upstream,
             box_resources,
+            shell_review: None,
         }
+    }
+
+    pub fn with_shell_review(mut self, review: BoxShellAutoReviewCallback) -> Self {
+        self.shell_review = Some(review);
+        self
     }
 
     fn is_box_tool(tool: &RoutedToolDefinition) -> bool {
@@ -268,9 +282,15 @@ impl RoutedToolBridge for RunnerBoxToolBridge {
             });
         }
         match tool.name.as_str() {
-            RUNNER_BOX_SHELL_TOOL_NAME => self
-                .box_resources
-                .execute_shell(Self::parse_shell_request(&args, tool_call_id)?),
+            RUNNER_BOX_SHELL_TOOL_NAME => {
+                let request = Self::parse_shell_request(&args, tool_call_id)?;
+                if let Some(review) = self.shell_review.as_ref() {
+                    if let Some(reason) = review(&request)? {
+                        return Ok(Value::String(reason));
+                    }
+                }
+                self.box_resources.execute_shell(request)
+            }
             RUNNER_BOX_READ_TOOL_NAME => self
                 .box_resources
                 .execute_read(Self::parse_read_request(&args, tool_call_id)?),

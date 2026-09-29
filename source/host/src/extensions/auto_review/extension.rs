@@ -7,6 +7,7 @@ use crate::extensions::experiments::HostExperimentsExtension;
 use crate::extensions::extension_ids_generated::HostExtensionId;
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::extensions::settings::settings_service::SettingsService;
+use crate::runner::auto_review_gate::AutoReviewInstructions;
 use crate::runner::sand_auto_review::{
     SandAutoReviewController, SandAutoReviewEvent, SandAutoReviewMode,
     SandAutoReviewModes,
@@ -55,6 +56,14 @@ impl HostAutoReviewExtension {
             self.experiments.check_feature_gate("sand_auto_review"),
             self.local_mode,
         )
+    }
+
+    pub fn instructions(&self) -> AutoReviewInstructions {
+        let instructions = self.settings.get_auto_review_instructions();
+        AutoReviewInstructions {
+            allow_instructions: instructions.allow_instructions,
+            block_instructions: instructions.block_instructions,
+        }
     }
 
     pub fn bind_runner(

@@ -7,7 +7,7 @@ use crate::extensions::inference::provider_session::{
 };
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
 
-use super::box_tool_access::RunnerBoxResourcePort;
+use super::box_tool_access::{BoxShellAutoReviewCallback, RunnerBoxResourcePort};
 use super::production_turn_run_shell_adapter::{
     ProviderRetryEvent, ProviderRetryReport, RoutedProviderCheckpointStore,
 };
@@ -58,6 +58,7 @@ pub struct TurnAgentComposition {
     retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
     usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
     box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
+    box_shell_review: Option<BoxShellAutoReviewCallback>,
     browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
     file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
@@ -99,6 +100,7 @@ impl TurnAgentComposition {
             retry_report_sink: None,
             usage_sink: None,
             box_resources: None,
+            box_shell_review: None,
             browser_executor: None,
             computer_executor: None,
             file_transfer_executor: None,
@@ -164,6 +166,11 @@ impl TurnAgentComposition {
 
     pub fn has_box_resources(&self) -> bool {
         self.box_resources.is_some()
+    }
+
+    pub fn with_box_shell_review(mut self, review: BoxShellAutoReviewCallback) -> Self {
+        self.box_shell_review = Some(review);
+        self
     }
 
     pub fn with_browser_executor(
@@ -411,6 +418,7 @@ impl TurnAgentComposition {
             TurnToolsetDependencies {
                 cancellation: self.cancellation.clone(),
                 box_resources: self.box_resources.clone(),
+                box_shell_review: self.box_shell_review.clone(),
                 browser_executor: self.browser_executor.clone(),
                 computer_executor: self.computer_executor.clone(),
                 file_transfer_executor: self.file_transfer_executor.clone(),

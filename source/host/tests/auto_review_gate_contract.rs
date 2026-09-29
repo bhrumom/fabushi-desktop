@@ -118,3 +118,22 @@ fn user_instructions_are_cloned_from_live_dependencies() {
         vec!["block destructive reset"]
     );
 }
+
+#[test]
+fn shipping_host_composes_shared_gate_into_box_shell_and_routed_mcp() {
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let main = std::fs::read_to_string(root.join("app/src/main.rs")).expect("shipping host main");
+    for required in [
+        "ProductionAutoReviewGateDeps",
+        "AutoReviewGate::new",
+        "assert_no_pending_approval()",
+        "request_sand_mcp_approval(",
+        "request_sand_shell_approval(",
+        "shell_approval_identity(ShellApprovalSurface::BoxShell)",
+        "mark_shell_side_effect_start(",
+        "mcp_review: Some(mcp_review)",
+        ".with_box_shell_review(box_shell_review)",
+    ] {
+        assert!(main.contains(required), "missing production auto-review gate wiring: {required}");
+    }
+}

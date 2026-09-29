@@ -176,3 +176,33 @@ fn runner_box_bridge_validates_model_arguments_before_host_resource_execution() 
     assert!(box_port.shells.lock().expect("shell calls").is_empty());
     assert!(box_port.reads.lock().expect("read calls").is_empty());
 }
+
+#[test]
+fn runner_box_shell_review_fences_side_effect_before_resource_execution() {
+    let box_port = Arc::new(BoxPort::default());
+    let seen = Arc::new(Mutex::new(Vec::<RunnerBoxShellRequest>::new()));
+    let seen_review = Arc::clone(&seen);
+    let bridge = RunnerBoxToolBridge::new(
+        Arc::new(Upstream { collide: false }),
+        box_port.clone(),
+    )
+    .with_shell_review(Arc::new(move |request| {
+        seen_review.lock().expect("review calls").push(request.clone());
+        Ok(Some("Auto-review blocked shell".into()))
+    }));
+    let tools = bridge.list_tools().expect("tool list");
+    let shell = tools
+        .iter()
+        .find(|tool| tool.name == RUNNER_BOX_SHELL_TOOL_NAME)
+        .expect("Shell definition");
+    let result = bridge
+        .call_tool(
+            shell,
+            json!({"command":"curl example.com","workingDirectory":"/workspace"}),
+            "shell-review-call",
+        )
+        .expect("review denial is a tool result");
+    assert_eq!(result, Value::String("Auto-review blocked shell".into()));
+    assert_eq!(seen.lock().expect("review calls").len(), 1);
+    assert!(box_port.shells.lock().expect("shell calls").is_empty());
+}

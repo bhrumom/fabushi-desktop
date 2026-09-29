@@ -3,7 +3,9 @@ use std::sync::{Arc, Mutex};
 use crate::cloud_agents::cloud_agent_tool::{
     CloudAgentToolBridge, CloudAgentToolDependencies,
 };
-use crate::runner::box_tool_access::{RunnerBoxResourcePort, RunnerBoxToolBridge};
+use crate::runner::box_tool_access::{
+    BoxShellAutoReviewCallback, RunnerBoxResourcePort, RunnerBoxToolBridge,
+};
 use crate::runner::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedToolBridge,
 };
@@ -41,6 +43,7 @@ use super::sand_subagent_management_tools::{
 pub struct TurnToolsetDependencies {
     pub cancellation: RoutedProviderCancellation,
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
+    pub box_shell_review: Option<BoxShellAutoReviewCallback>,
     pub browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     pub computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
     pub file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
@@ -64,10 +67,13 @@ pub fn build_turn_toolset(
     dependencies: TurnToolsetDependencies,
 ) -> Arc<dyn RoutedToolBridge> {
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.box_resources {
-        Some(box_resources) => Arc::new(RunnerBoxToolBridge::new(
-            base,
-            box_resources,
-        )),
+        Some(box_resources) => {
+            let mut box_bridge = RunnerBoxToolBridge::new(base, box_resources);
+            if let Some(review) = dependencies.box_shell_review {
+                box_bridge = box_bridge.with_shell_review(review);
+            }
+            Arc::new(box_bridge)
+        }
         None => base,
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.browser_executor {

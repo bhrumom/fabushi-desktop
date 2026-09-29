@@ -23,11 +23,22 @@ use mahayana_host_runtime::extensions::auth::extension::HostAuthExtension;
 use mahayana_host_runtime::extensions::telemetry::auto_review_approval_telemetry::{
     AutoReviewApprovalReport, auto_review_approval_telemetry,
 };
-use mahayana_host_runtime::runner::sand_auto_review::{
-    SandAutoReviewApprovalStatus, SandAutoReviewEvent, SandAutoReviewExpiryCause,
-    SandAutoReviewResolution,
+use mahayana_host_runtime::runner::auto_review_gate::{
+    AutoReviewGate, AutoReviewGateDependencies, AutoReviewInstructions, ShellApprovalSurface,
 };
-use mahayana_host_runtime::runner::sand_auto_review_classifier_run::run_sand_auto_review_classifier;
+use mahayana_host_runtime::runner::sand_auto_review::{
+    SandAutoReviewApprovalStatus, SandAutoReviewController, SandAutoReviewDecision,
+    SandAutoReviewEvent, SandAutoReviewExpiryCause, SandAutoReviewMode, SandAutoReviewModes,
+    SandAutoReviewResolution, fingerprint_sand_auto_review_target,
+    sand_auto_review_approval_expiry_policy,
+};
+use mahayana_host_runtime::runner::sand_auto_review_classifier_run::{
+    AutoReviewClassifierDecision, run_sand_auto_review_classifier,
+};
+use mahayana_host_runtime::runner::sand_auto_review_tool_escalations::{
+    McpApprovalRequest, ShellApprovalRequest, ShellApprovalTarget,
+    request_sand_mcp_approval, request_sand_shell_approval,
+};
 use mahayana_host_runtime::runner::sand_automation_auto_review::{
     AutomationReviewOutcome, SAND_AUTOMATION_WRITE_CLASSIFIER_ERROR_REASON,
     review_sand_automation_write,
@@ -274,7 +285,9 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderTokenUsage, merge_provider_token_usage,
 };
-use mahayana_host_runtime::runner::box_tool_access::RunnerBoxResourcePort;
+use mahayana_host_runtime::runner::box_tool_access::{
+    BoxShellAutoReviewCallback, RunnerBoxResourcePort, RunnerBoxShellRequest,
+};
 use mahayana_host_runtime::cloud_agents::cloud_agent_tool::{CloudAgentReviewHook, CloudAgentToolDependencies};
 use mahayana_host_runtime::runner::background_work::{
     CloudAgentWatchOptions, RunnerCloudAgentWatches,
@@ -2623,11 +2636,48 @@ fn call_host_lane(
         .map_err(|_| GatewayCommandError::Internal("Mahayana Host gateway request timed out".into()))?
 }
 
+struct ProductionAutoReviewGateDeps {
+    auto_review: Arc<HostAutoReviewExtension>,
+    controller: Arc<SandAutoReviewController>,
+    box_id: String,
+}
+
+impl AutoReviewGateDependencies for ProductionAutoReviewGateDeps {
+    fn base_modes(&self) -> SandAutoReviewModes {
+        self.auto_review.current_modes()
+    }
+
+    fn current_modes(&self) -> Option<SandAutoReviewModes> {
+        Some(self.auto_review.current_modes())
+    }
+
+    fn controller(&self) -> Option<Arc<SandAutoReviewController>> {
+        Some(Arc::clone(&self.controller))
+    }
+
+    fn resolve_box_id(&self) -> String {
+        self.box_id.clone()
+    }
+
+    fn instructions(&self) -> Option<AutoReviewInstructions> {
+        Some(self.auto_review.instructions())
+    }
+}
+
+type RoutedMcpAutoReviewCallback = Arc<
+    dyn Fn(&RoutedToolDefinition, &serde_json::Value, &str)
+            -> Result<Option<String>, ProviderSessionError>
+        + Send
+        + Sync
+        + 'static,
+>;
+
 #[derive(Clone)]
 struct CoordinatorRoutedToolBridge {
     relay: Arc<CoordinatorToolRelay>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     agent_id: String,
+    mcp_review: Option<RoutedMcpAutoReviewCallback>,
 }
 
 impl RoutedToolBridge for CoordinatorRoutedToolBridge {
@@ -2645,6 +2695,11 @@ impl RoutedToolBridge for CoordinatorRoutedToolBridge {
         args: serde_json::Value,
         tool_call_id: &str,
     ) -> Result<serde_json::Value, ProviderSessionError> {
+        if let Some(review) = self.mcp_review.as_ref() {
+            if let Some(reason) = review(tool, &args, tool_call_id)? {
+                return Ok(serde_json::Value::String(reason));
+            }
+        }
         let activity_args = serde_json::json!({
             "providerIdentifier": tool.provider_identifier,
             "serverIdentifier": tool.provider_identifier,
@@ -3484,16 +3539,251 @@ fn start_routed_provider_task(
                 }));
                 observation.turn_started(runner_started_at_ms);
             }
+            let auto_review_gate = Arc::new(AutoReviewGate::new(Arc::new(
+                ProductionAutoReviewGateDeps {
+                    auto_review: Arc::clone(&worker_auto_review),
+                    controller: Arc::clone(&worker_auto_review_controller),
+                    box_id: agent_id.clone(),
+                },
+            )));
+            let _ = auto_review_gate.current_modes();
+
+            let mcp_review_gate = Arc::clone(&auto_review_gate);
+            let mcp_review_auth = Arc::clone(&worker_auth);
+            let mcp_review_controller = Arc::clone(&worker_auto_review_controller);
+            let mcp_review_cancellation = worker_cancellation.clone();
+            let mcp_review_agent_id = agent_id.clone();
+            let mcp_review_request_source = auto_review_request_source.clone();
+            let mcp_review_context = auto_review_context
+                .iter()
+                .map(|message| {
+                    serde_json::json!({
+                        "role": message.role,
+                        "content": message.content,
+                    })
+                })
+                .collect::<Vec<_>>();
+            let mcp_review: RoutedMcpAutoReviewCallback = Arc::new(
+                move |tool: &RoutedToolDefinition,
+                      args: &serde_json::Value,
+                      tool_call_id: &str| {
+                    mcp_review_gate.assert_no_pending_approval().map_err(|error| {
+                        ProviderSessionError::Tool(error.to_string())
+                    })?;
+                    let mode = mcp_review_gate.current_modes().mcp;
+                    if mode == SandAutoReviewMode::Off {
+                        return Ok(None);
+                    }
+                    let instructions = mcp_review_gate.user_instructions();
+                    let risk_target = serde_json::json!({
+                        "action": "mcp",
+                        "arguments": {
+                            "server_display_name": tool.provider_identifier,
+                            "tool_name": if tool.tool_name.trim().is_empty() { &tool.name } else { &tool.tool_name },
+                            "mcp_arguments": args,
+                            "allow_instructions": instructions.as_ref().map(|value| &value.allow_instructions),
+                            "block_instructions": instructions.as_ref().map(|value| &value.block_instructions),
+                        }
+                    });
+                    let classifier_cancellation = mcp_review_cancellation.clone();
+                    let mut classifier =
+                        create_sand_backend_smart_mode_classifier_executor_with_cancellation(
+                            Arc::clone(&mcp_review_auth),
+                            Arc::new(move || classifier_cancellation.is_cancelled()),
+                        )
+                        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                    let classifier_mode = if mode == SandAutoReviewMode::Shadow {
+                        "shadow"
+                    } else {
+                        "enforce"
+                    };
+                    let decision = run_sand_auto_review_classifier(
+                        &mut classifier,
+                        tool_call_id,
+                        &mcp_review_agent_id,
+                        classifier_mode,
+                        || risk_target.clone(),
+                        || Ok(mcp_review_context.clone()),
+                        &[],
+                        "Auto-review could not classify this MCP action.",
+                    )
+                    .map_err(|error| ProviderSessionError::Tool(format!("{error:?}")))?;
+                    if mode == SandAutoReviewMode::Shadow {
+                        return Ok(None);
+                    }
+                    let (reason, proposed_rule) = match decision {
+                        AutoReviewClassifierDecision::Allow => return Ok(None),
+                        AutoReviewClassifierDecision::Reject { reason } => {
+                            return Ok(Some(reason));
+                        }
+                        AutoReviewClassifierDecision::Block {
+                            reason,
+                            proposed_rule,
+                        } => (reason, proposed_rule),
+                    };
+                    let decision = request_sand_mcp_approval(
+                        mcp_review_controller.as_ref(),
+                        &McpApprovalRequest {
+                            fingerprint: fingerprint_sand_auto_review_target(&risk_target),
+                            reason: reason.clone(),
+                            server_display_name: tool.provider_identifier.clone(),
+                            tool_name: if tool.tool_name.trim().is_empty() {
+                                tool.name.clone()
+                            } else {
+                                tool.tool_name.clone()
+                            },
+                            mcp_arguments: Some(args.clone()),
+                            description: tool.description.clone(),
+                            proposed_rule,
+                            expiry_policy: sand_auto_review_approval_expiry_policy(
+                                &mcp_review_request_source,
+                            ),
+                        },
+                    )
+                    .map_err(ProviderSessionError::Tool)?;
+                    Ok(match decision {
+                        SandAutoReviewDecision::Approved => None,
+                        SandAutoReviewDecision::Denied { reason: denied } => Some(
+                            if denied.trim().is_empty() { reason } else { denied },
+                        ),
+                    })
+                },
+            );
             let bridge: Arc<dyn RoutedToolBridge> = Arc::new(CoordinatorRoutedToolBridge {
                 relay: routed_tool_relay,
                 transcript_runtime: Arc::clone(&worker_transcript_runtime),
                 agent_id: agent_id.clone(),
+                mcp_review: Some(mcp_review),
             });
             let box_resources: Arc<dyn RunnerBoxResourcePort> =
                 Arc::new(ForeverBoxRunnerResourcePort::new(
                     Arc::clone(&forever_box),
                     agent_id.clone(),
                 ));
+            let box_shell_gate = Arc::clone(&auto_review_gate);
+            let box_shell_auth = Arc::clone(&worker_auth);
+            let box_shell_controller = Arc::clone(&worker_auto_review_controller);
+            let box_shell_cancellation = worker_cancellation.clone();
+            let box_shell_agent_id = agent_id.clone();
+            let box_shell_request_source = auto_review_request_source.clone();
+            let box_shell_context = auto_review_context
+                .iter()
+                .map(|message| {
+                    serde_json::json!({
+                        "role": message.role,
+                        "content": message.content,
+                    })
+                })
+                .collect::<Vec<_>>();
+            let box_shell_review: BoxShellAutoReviewCallback = Arc::new(
+                move |request: &RunnerBoxShellRequest| {
+                    box_shell_gate.assert_no_pending_approval().map_err(|error| {
+                        ProviderSessionError::Tool(error.to_string())
+                    })?;
+                    let mode = box_shell_gate.current_modes().box_shell;
+                    let approval_identity =
+                        box_shell_gate.shell_approval_identity(ShellApprovalSurface::BoxShell);
+                    if mode == SandAutoReviewMode::Off {
+                        box_shell_gate.mark_shell_side_effect_start(ShellApprovalSurface::BoxShell);
+                        return Ok(None);
+                    }
+                    let instructions = box_shell_gate.user_instructions();
+                    let risk_target = serde_json::json!({
+                        "action": "shell",
+                        "arguments": {
+                            "command": request.command,
+                            "working_directory": request.working_directory,
+                            "surface": "isolated_box",
+                            "approval_identity": approval_identity,
+                            "allow_instructions": instructions.as_ref().map(|value| &value.allow_instructions),
+                            "block_instructions": instructions.as_ref().map(|value| &value.block_instructions),
+                        }
+                    });
+                    let classifier_cancellation = box_shell_cancellation.clone();
+                    let mut classifier =
+                        create_sand_backend_smart_mode_classifier_executor_with_cancellation(
+                            Arc::clone(&box_shell_auth),
+                            Arc::new(move || classifier_cancellation.is_cancelled()),
+                        )
+                        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                    let classifier_mode = if mode == SandAutoReviewMode::Shadow {
+                        "shadow"
+                    } else {
+                        "enforce"
+                    };
+                    let decision = run_sand_auto_review_classifier(
+                        &mut classifier,
+                        &request.tool_call_id,
+                        &box_shell_agent_id,
+                        classifier_mode,
+                        || risk_target.clone(),
+                        || Ok(box_shell_context.clone()),
+                        &[],
+                        "Auto-review could not classify this shell command.",
+                    )
+                    .map_err(|error| ProviderSessionError::Tool(format!("{error:?}")))?;
+                    if mode == SandAutoReviewMode::Shadow {
+                        box_shell_gate.mark_shell_side_effect_start(ShellApprovalSurface::BoxShell);
+                        return Ok(None);
+                    }
+                    let (reason, proposed_rule) = match decision {
+                        AutoReviewClassifierDecision::Allow => {
+                            box_shell_gate.mark_shell_side_effect_start(
+                                ShellApprovalSurface::BoxShell,
+                            );
+                            return Ok(None);
+                        }
+                        AutoReviewClassifierDecision::Reject { reason } => {
+                            return Ok(Some(reason));
+                        }
+                        AutoReviewClassifierDecision::Block {
+                            reason,
+                            proposed_rule,
+                        } => (reason, proposed_rule),
+                    };
+                    let identity_before_approval = approval_identity.clone();
+                    let recheck_gate = Arc::clone(&box_shell_gate);
+                    let decision = request_sand_shell_approval(
+                        box_shell_controller.as_ref(),
+                        &ShellApprovalRequest {
+                            target: ShellApprovalTarget {
+                                surface: mahayana_host_runtime::runner::sand_auto_review::SandAutoReviewSurface::BoxShell,
+                                description: Some("Run a shell command in the isolated box".into()),
+                                working_directory: Some(request.working_directory.clone()),
+                            },
+                            fingerprint: fingerprint_sand_auto_review_target(&risk_target),
+                            reason: reason.clone(),
+                            command: request.command.clone(),
+                            proposed_rule,
+                            expiry_policy: sand_auto_review_approval_expiry_policy(
+                                &box_shell_request_source,
+                            ),
+                        },
+                        |_| Ok(()),
+                        move |_| {
+                            let current = recheck_gate
+                                .shell_approval_identity(ShellApprovalSurface::BoxShell);
+                            if current == identity_before_approval {
+                                Ok(())
+                            } else {
+                                Err("Shell approval context changed while awaiting review".into())
+                            }
+                        },
+                    )
+                    .map_err(ProviderSessionError::Tool)?;
+                    Ok(match decision {
+                        SandAutoReviewDecision::Approved => {
+                            box_shell_gate.mark_shell_side_effect_start(
+                                ShellApprovalSurface::BoxShell,
+                            );
+                            None
+                        }
+                        SandAutoReviewDecision::Denied { reason: denied } => Some(
+                            if denied.trim().is_empty() { reason } else { denied },
+                        ),
+                    })
+                },
+            );
             let browser_media_sessions = Arc::clone(&worker_sessions);
             let computer_media_sessions = Arc::clone(&worker_sessions);
             let computer_review_box = Arc::clone(&box_resources);
@@ -4261,7 +4551,8 @@ fn start_routed_provider_task(
             )
             .with_agent_management_sink(agent_management_sink)
             .with_state_writer(state_writer)
-            .with_routine_auto_review(routine_auto_review);
+            .with_routine_auto_review(routine_auto_review)
+            .with_box_shell_review(box_shell_review);
             if let Some(subagent_task_sink) = worker_subagent_task_sink {
                 composition = composition.with_subagent_task_sink(subagent_task_sink);
                 if let Some(subagent_task_review) = subagent_task_review {
