@@ -10,11 +10,12 @@ use sha2::{Digest, Sha256};
 use super::box_object_store::BoxObjectStore;
 use super::box_store_manifest_format::{BOX_STORE_BLOBS_PREFIX, BoxStoreManifestEntry};
 use super::box_store_pack::{
-    BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACKS_PREFIX, PACK_INDEX_MAX_BYTES, PackExtractionSink,
-    PackMember, extract_pack_members, parse_pack_index,
+    BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACKS_PREFIX, PACK_INDEX_MAX_BYTES, PackAdmissionPermit,
+    PackExtractionSink, PackMember, extract_pack_members, parse_pack_index,
 };
 use super::box_store_pack_pipeline::{
-    BoxStoreBlobGroup, PACK_EXTRACT_CONCURRENCY, PACK_TMP_DIR_NAME, should_restore_from_pack,
+    BoxStoreBlobGroup, PACK_DOWNLOAD_CONCURRENCY, PACK_EXTRACT_CONCURRENCY, PACK_TMP_DIR_NAME,
+    should_restore_from_pack,
 };
 use super::box_store_sync::{
     DEFAULT_COPY_IN_CONCURRENCY, DOWNLOAD_IN_FLIGHT_BYTE_BUDGET, LARGE_OBJECT_THRESHOLD_BYTES,
@@ -409,6 +410,36 @@ fn apply_owner(path: &Path, owner: Option<(u32, u32)>, symlink: bool) -> Result<
     }
 }
 
+fn open_readonly_nofollow(path: &Path) -> Result<fs::File, String> {
+    let mut options = OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NOFOLLOW);
+    }
+    options.open(path).map_err(|error| error.to_string())
+}
+
+fn apply_open_file_owner(file: &fs::File, owner: Option<(u32, u32)>) -> Result<(), String> {
+    let Some((uid, gid)) = owner else {
+        return Ok(());
+    };
+    #[cfg(unix)]
+    {
+        use std::os::fd::AsRawFd;
+        let rc = unsafe { libc::fchown(file.as_raw_fd(), uid, gid) };
+        if rc != 0 {
+            return Err(std::io::Error::last_os_error().to_string());
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = (file, uid, gid);
+    }
+    Ok(())
+}
+
 fn entry_mode(entry: &BoxStoreManifestEntry) -> Option<u32> {
     match entry {
         BoxStoreManifestEntry::File { mode, .. } => Some(*mode),
@@ -422,19 +453,21 @@ fn apply_file_metadata(
     owner: Option<(u32, u32)>,
     legacy_replacement_mode: Option<u32>,
 ) -> Result<(), String> {
-    let metadata = fs::symlink_metadata(path).map_err(|error| error.to_string())?;
+    let file = open_readonly_nofollow(path)?;
+    let metadata = file.metadata().map_err(|error| error.to_string())?;
     if !metadata.is_file() {
         return Err("restore destination is not a regular file".into());
     }
+    apply_open_file_owner(&file, owner)?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         if let Some(mode) = entry_mode(entry).or(legacy_replacement_mode) {
-            fs::set_permissions(path, fs::Permissions::from_mode(mode))
+            file.set_permissions(fs::Permissions::from_mode(mode))
                 .map_err(|error| error.to_string())?;
         }
     }
-    apply_owner(path, owner, false)
+    Ok(())
 }
 
 fn existing_regular_file_mode(path: &Path) -> Option<u32> {
@@ -471,20 +504,19 @@ fn install_verified_temp(
     let legacy_mode = matches!(entry, BoxStoreManifestEntry::LegacyFile { .. })
         .then(|| existing_regular_file_mode(destination))
         .flatten();
-    apply_file_metadata(temp, entry, None, legacy_mode)?;
+    apply_file_metadata(temp, entry, owner, legacy_mode)?;
     if fs::symlink_metadata(destination).is_ok_and(|metadata| metadata.is_dir()) {
         fs::remove_dir_all(destination).map_err(|error| error.to_string())?;
     }
-    fs::rename(temp, destination).map_err(|error| error.to_string())?;
-    apply_owner(destination, owner, false)
+    fs::rename(temp, destination).map_err(|error| error.to_string())
 }
 
 fn sha256_file(path: &Path) -> Result<String, String> {
-    let metadata = fs::symlink_metadata(path).map_err(|error| error.to_string())?;
+    let mut file = open_readonly_nofollow(path)?;
+    let metadata = file.metadata().map_err(|error| error.to_string())?;
     if !metadata.is_file() {
         return Err("hash source is not a regular file".into());
     }
-    let mut file = fs::File::open(path).map_err(|error| error.to_string())?;
     let mut hash = Sha256::new();
     let mut buffer = vec![0_u8; 1024 * 1024];
     loop {
@@ -503,11 +535,11 @@ fn local_file_matches(path: &Path, group: &BoxStoreBlobGroup) -> bool {
 }
 
 fn copy_file_hashing(source: &Path, destination: &Path) -> Result<(String, u64), String> {
-    let metadata = fs::symlink_metadata(source).map_err(|error| error.to_string())?;
+    let mut reader = open_readonly_nofollow(source)?;
+    let metadata = reader.metadata().map_err(|error| error.to_string())?;
     if !metadata.is_file() {
         return Err("copy source is not a regular file".into());
     }
-    let mut reader = fs::File::open(source).map_err(|error| error.to_string())?;
     let mut writer = OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -728,12 +760,24 @@ struct PackRestoreGroup {
     rel_paths: Vec<String>,
 }
 
+struct BoxStoreByteBudgetPermit {
+    budget: Arc<BoxStoreByteBudget>,
+    bytes: u64,
+}
+
+impl Drop for BoxStoreByteBudgetPermit {
+    fn drop(&mut self) {
+        self.budget.release(self.bytes);
+    }
+}
+
 struct DownloadPackSink {
     target_root: PathBuf,
     manifest: BTreeMap<String, BoxStoreManifestEntry>,
     groups: HashMap<String, PackRestoreGroup>,
     restored: Mutex<HashSet<String>>,
     owner: Option<(u32, u32)>,
+    budget: Arc<BoxStoreByteBudget>,
 }
 
 impl PackExtractionSink for DownloadPackSink {
@@ -744,6 +788,17 @@ impl PackExtractionSink for DownloadPackSink {
         };
         let restored = self.restored.lock().expect("pack restored lock");
         group.rel_paths.iter().any(|rel_path| !restored.contains(rel_path))
+    }
+
+    fn admit_bytes(
+        &self,
+        bytes: u64,
+    ) -> Result<Option<Box<dyn PackAdmissionPermit>>, String> {
+        self.budget.acquire(bytes);
+        Ok(Some(Box::new(BoxStoreByteBudgetPermit {
+            budget: Arc::clone(&self.budget),
+            bytes,
+        })))
     }
 
     fn on_blob(&self, member: &PackMember, bytes: Vec<u8>) -> Result<(), String> {
@@ -824,6 +879,8 @@ fn restore_bulk_small_from_packs(
     target_root: &Path,
     planned: &PlannedDownload,
     owner: Option<(u32, u32)>,
+    budget: Arc<BoxStoreByteBudget>,
+    options: &BoxStoreDownloadOptions,
 ) -> HashSet<String> {
     let mut groups = HashMap::<String, PackRestoreGroup>::new();
     for group in &planned.bulk_small {
@@ -838,70 +895,114 @@ fn restore_bulk_small_from_packs(
     if groups.is_empty() {
         return HashSet::new();
     }
+
     let raw_index = match store.get(BOX_STORE_PACK_INDEX_KEY) {
         Ok(Some(bytes)) if bytes.len() as u64 <= PACK_INDEX_MAX_BYTES => bytes,
-        _ => return HashSet::new(),
+        Ok(_) => return HashSet::new(),
+        Err(error) => {
+            if let Some(log) = options.on_log.as_ref() {
+                log(format!(
+                    "pack index read failed (falling back to loose blobs): {error}"
+                ));
+            }
+            return HashSet::new();
+        }
     };
     let Some(index) = std::str::from_utf8(&raw_index).ok().and_then(parse_pack_index) else {
         return HashSet::new();
     };
+
     let sink = Arc::new(DownloadPackSink {
         target_root: target_root.to_path_buf(),
         manifest: planned.manifest.clone(),
         groups: groups.clone(),
         restored: Mutex::new(HashSet::new()),
         owner,
+        budget,
     });
     let temp_dir = std::env::temp_dir().join(PACK_TMP_DIR_NAME);
-    if fs::create_dir_all(&temp_dir).is_err() {
+    if let Err(error) = fs::create_dir_all(&temp_dir) {
+        if let Some(log) = options.on_log.as_ref() {
+            log(format!(
+                "pack temp directory unavailable (falling back to loose blobs): {error}"
+            ));
+        }
         return HashSet::new();
     }
-    for (ordinal, pack) in index.packs.iter().enumerate() {
-        let restored = sink.restored.lock().expect("pack restored lock");
-        let mut usable_count = 0usize;
-        let mut usable_clen = 0u64;
-        let mut usable_size = 0u64;
-        for member in &pack.members {
-            let key = format!("{}:{}", member.sha, member.size);
-            let Some(group) = groups.get(&key) else {
-                continue;
-            };
-            if group.rel_paths.iter().any(|path| !restored.contains(path)) {
-                usable_count += 1;
-                usable_clen = usable_clen.saturating_add(member.clen);
-                usable_size = usable_size.saturating_add(member.size);
+
+    let _ = for_each_bounded(
+        &index.packs,
+        PACK_DOWNLOAD_CONCURRENCY,
+        |pack| {
+            let restored = sink.restored.lock().expect("pack restored lock");
+            let mut usable_count = 0usize;
+            let mut usable_clen = 0u64;
+            let mut usable_size = 0u64;
+            for member in &pack.members {
+                let key = format!("{}:{}", member.sha, member.size);
+                let Some(group) = groups.get(&key) else {
+                    continue;
+                };
+                if group.rel_paths.iter().any(|path| !restored.contains(path)) {
+                    usable_count += 1;
+                    usable_clen = usable_clen.saturating_add(member.clen);
+                    usable_size = usable_size.saturating_add(member.size);
+                }
             }
-        }
-        drop(restored);
-        if !should_restore_from_pack(usable_count, usable_clen, usable_size, pack.bytes) {
-            continue;
-        }
-        let temp = temp_dir.join(format!(
-            "restore-{}-{}-{ordinal}",
-            std::process::id(),
-            uuid::Uuid::new_v4().simple()
-        ));
-        let restored_pack = (|| -> Result<(), String> {
-            let Some(written) = store.get_to_file(
-                &format!("{BOX_STORE_PACKS_PREFIX}/{}", pack.id),
-                &temp,
-                Some(pack.bytes),
-            )? else {
-                return Ok(());
-            };
-            if written != pack.bytes {
-                return Ok(());
+            drop(restored);
+            if !should_restore_from_pack(usable_count, usable_clen, usable_size, pack.bytes) {
+                return Ok::<(), String>(());
             }
-            let _ = extract_pack_members(&temp, &pack.members, PACK_EXTRACT_CONCURRENCY, sink.clone())?;
-            Ok(())
-        })();
-        let _ = fs::remove_file(&temp);
-        if restored_pack.is_err() {
-            continue;
-        }
-    }
-    let restored = sink.restored.lock().expect("pack restored lock").clone();
-    restored
+
+            let temp = temp_dir.join(format!(
+                "restore-{}-{}",
+                std::process::id(),
+                uuid::Uuid::new_v4().simple()
+            ));
+            let restored_pack = (|| -> Result<(), String> {
+                let Some(written) = store.get_to_file(
+                    &format!("{BOX_STORE_PACKS_PREFIX}/{}", pack.id),
+                    &temp,
+                    Some(pack.bytes),
+                )? else {
+                    return Ok(());
+                };
+                if written != pack.bytes {
+                    return Err(format!(
+                        "pack {} short read: expected {} bytes, got {written}",
+                        pack.id, pack.bytes
+                    ));
+                }
+                let result = extract_pack_members(
+                    &temp,
+                    &pack.members,
+                    PACK_EXTRACT_CONCURRENCY,
+                    sink.clone(),
+                )?;
+                if result.mismatched > 0 {
+                    if let Some(log) = options.on_log.as_ref() {
+                        log(format!(
+                            "pack {}: {} member(s) failed sha verify; falling back to loose blobs",
+                            pack.id, result.mismatched
+                        ));
+                    }
+                }
+                Ok(())
+            })();
+            let _ = fs::remove_file(&temp);
+            if let Err(error) = restored_pack {
+                if let Some(log) = options.on_log.as_ref() {
+                    log(format!(
+                        "pack {} restore failed (falling back to loose blobs): {error}",
+                        pack.id
+                    ));
+                }
+            }
+            Ok::<(), String>(())
+        },
+    );
+
+    sink.restored.lock().expect("pack restored lock").clone()
 }
 
 const SYMLINK_TRACE_STEPS: &[&str] = &[
@@ -1156,7 +1257,7 @@ pub fn download_manifest(
         None,
     );
 
-    let budget = BoxStoreByteBudget::new(options.download_byte_budget);
+    let budget = Arc::new(BoxStoreByteBudget::new(options.download_byte_budget));
     run_download_phase(
         store,
         target_root,
@@ -1164,7 +1265,7 @@ pub fn download_manifest(
         &planned.critical_small,
         options.download_concurrency,
         false,
-        &budget,
+        budget.as_ref(),
         &options,
         &state,
     );
@@ -1175,13 +1276,19 @@ pub fn download_manifest(
         &planned.critical_large,
         COPY_IN_LARGE_BLOB_CONCURRENCY,
         true,
-        &budget,
+        budget.as_ref(),
         &options,
         &state,
     );
 
-    let restored_by_pack =
-        restore_bulk_small_from_packs(store, target_root, &planned, options.owner);
+    let restored_by_pack = restore_bulk_small_from_packs(
+        store,
+        target_root,
+        &planned,
+        options.owner,
+        Arc::clone(&budget),
+        &options,
+    );
     if !restored_by_pack.is_empty() {
         let mut summary = state.lock().expect("download summary lock");
         for rel_path in &restored_by_pack {
@@ -1224,7 +1331,7 @@ pub fn download_manifest(
                 &remaining_bulk_small,
                 options.download_concurrency,
                 false,
-                &budget,
+                budget.as_ref(),
                 &options,
                 &state,
             )
@@ -1237,7 +1344,7 @@ pub fn download_manifest(
                 &planned.bulk_large,
                 COPY_IN_LARGE_BLOB_CONCURRENCY,
                 true,
-                &budget,
+                budget.as_ref(),
                 &options,
                 &state,
             )
