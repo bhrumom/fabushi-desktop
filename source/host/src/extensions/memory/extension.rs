@@ -24,7 +24,7 @@ impl HostMemoryExtension {
     }
 
     pub fn enable_memory_synthesis(&self, synthesis: Arc<MemorySynthesisService>) {
-        synthesis.start();
+        synthesis.start_background();
         let bridge: Arc<dyn MemorySynthesisBridge> = synthesis.clone();
         self.service.set_synthesis_bridge(Arc::downgrade(&bridge));
         let previous = self

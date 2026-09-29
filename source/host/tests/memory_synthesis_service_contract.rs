@@ -7,7 +7,9 @@ use std::time::Duration;
 use mahayana_host_runtime::extensions::memory::memory_service::{FileMemoryStore, MemoryKind};
 use mahayana_host_runtime::extensions::memory::memory_synthesis_service::{
     MemoryEvidence, MemorySynthesisOptions, MemorySynthesisService, SynthesisOutcome,
-    bounded_evidence_text, parse_memory_synthesis_changes, uses_known_evidence,
+    bounded_evidence_text, parse_memory_synthesis_changes, synthesis_request_json,
+    synthesis_system_prompt, uses_known_evidence, verification_request_json,
+    verification_system_prompt,
 };
 use serde_json::json;
 
@@ -178,4 +180,59 @@ fn evidence_bounding_keeps_both_ends() {
     assert!(bounded.starts_with('a'));
     assert!(bounded.ends_with('z'));
     assert!(bounded.contains("[...middle omitted...]"));
+}
+
+
+#[test]
+fn frozen_synthesis_prompts_and_wire_payloads_are_preserved() {
+    use mahayana_host_runtime::extensions::memory::memory_service::{
+        MemoryKind, MemoryOrigin, SynthesisMemory,
+    };
+    use mahayana_host_runtime::extensions::memory::memory_synthesis_service::{
+        MemoryChange, SynthesisProposalRequest, SynthesisVerificationRequest,
+    };
+
+    assert!(synthesis_system_prompt().starts_with("<<SAND_MEMORY_SYNTHESIS_V1>>"));
+    assert!(verification_system_prompt()
+        .starts_with("<<SAND_MEMORY_SYNTHESIS_VERIFICATION_V1>>"));
+
+    let proposal = SynthesisProposalRequest {
+        today: "2026-09-29".into(),
+        current_memories: vec![SynthesisMemory {
+            id: "m1".into(),
+            content: "Prefers concise replies".into(),
+            created_at: 123,
+            kind: MemoryKind::Profile,
+            origin: MemoryOrigin::Explicit,
+        }],
+        new_evidence: vec![MemoryEvidence {
+            id: "ev1".into(),
+            occurred_at: 456,
+            user: "Please stay concise".into(),
+            assistant: "Understood".into(),
+        }],
+    };
+    let proposal_json: serde_json::Value =
+        serde_json::from_str(&synthesis_request_json(&proposal)).unwrap();
+    assert_eq!(proposal_json["today"], "2026-09-29");
+    assert_eq!(proposal_json["currentMemories"][0]["origin"], "explicit");
+    assert_eq!(proposal_json["newEvidence"][0]["id"], "ev1");
+
+    let verification = SynthesisVerificationRequest {
+        today: proposal.today,
+        current_memories: proposal.current_memories,
+        evidence: proposal.new_evidence,
+        proposed_changes: vec![MemoryChange::Create {
+            content: "Prefers concise replies".into(),
+            kind: MemoryKind::Profile,
+            source_evidence_ids: vec!["ev1".into()],
+        }],
+    };
+    let verification_json: serde_json::Value =
+        serde_json::from_str(&verification_request_json(&verification)).unwrap();
+    assert_eq!(verification_json["proposedChanges"][0]["action"], "create");
+    assert_eq!(
+        verification_json["proposedChanges"][0]["sourceEvidenceIds"][0],
+        "ev1"
+    );
 }

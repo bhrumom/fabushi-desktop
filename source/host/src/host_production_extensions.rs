@@ -86,7 +86,9 @@ use crate::extensions::local_tool_permission::extension::{
     HostLocalToolPermissionExtension, start_local_tool_permission_extension,
 };
 use crate::extensions::memory::extension::HostMemoryExtension;
-use crate::extensions::memory::production::start_production_memory_extension;
+use crate::extensions::memory::production::{
+    create_production_memory_synthesis, start_production_memory_extension,
+};
 use crate::extensions::notify_bus::extension::{
     HostNotifyBusExtension, start_notify_bus_extension,
 };
@@ -321,6 +323,14 @@ pub fn start_production_host_extensions(
     )
     .map_err(|error| error.to_string())?;
     let memory = start_production_memory_extension();
+    if experiments.check_feature_gate("sand_memory_dreaming") {
+        let synthesis = create_production_memory_synthesis(
+            memory.service(),
+            Arc::clone(&inference),
+            app_data_dir.to_path_buf(),
+        );
+        memory.enable_memory_synthesis(synthesis);
+    }
     let managed_setup = start_managed_setup_extension(
         backend_url.clone(),
         Arc::clone(&auth),
