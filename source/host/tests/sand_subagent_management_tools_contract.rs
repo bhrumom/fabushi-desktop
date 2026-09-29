@@ -249,6 +249,8 @@ fn shipping_host_wires_management_tools_to_generated_runtime_and_auto_review() {
     let main = std::fs::read_to_string(root.join("app/src/main.rs")).expect("shipping host main");
     let composition = std::fs::read_to_string(root.join("src/runner/turn_agent_composition.rs"))
         .expect("turn composition");
+    let toolset = std::fs::read_to_string(root.join("src/runner/tools/turn_toolset.rs"))
+        .expect("turn toolset");
     for required in [
         "worker_subagent_management_runtime",
         "build_sand_subagent_steer_review_target",
@@ -258,6 +260,6 @@ fn shipping_host_wires_management_tools_to_generated_runtime_and_auto_review() {
     ] {
         assert!(main.contains(required), "missing shipping management wiring: {required}");
     }
-    assert!(composition.contains("SubagentManagementToolBridge"));
+    assert!(toolset.contains("SubagentManagementToolBridge"));
     assert!(composition.contains("subagent_steer_review"));
 }
