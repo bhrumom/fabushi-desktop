@@ -125,6 +125,7 @@ jobs:
           .tmp-grok-electron/source/shared/foundations.test.js
           .tmp-grok-electron/source/electron-main/foundations.test.js
           .tmp-grok-electron/source/electron-main/coordinator/coordinator-launcher.test.js
+          .tmp-grok-electron/source/electron-main/coordinator/coordinator-runtime.test.js
           .tmp-grok-electron/source/electron-main/coordinator/coordinator-executors.test.js
           .tmp-grok-electron/source/electron-main/local-exec/local-exec-daemon-protocol.test.js
       - uses: dtolnay/rust-toolchain@stable

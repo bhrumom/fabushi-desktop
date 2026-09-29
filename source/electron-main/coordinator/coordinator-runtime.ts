@@ -98,6 +98,8 @@ export function createCoordinatorRuntime(
   let disposed = false;
   let current: CoordinatorLaunchHandle;
   const launchedHandles = new Set<CoordinatorLaunchHandle>();
+  const intentionallyRetiringHandles = new Set<CoordinatorLaunchHandle>();
+  let generationReplacement: Promise<void> | undefined;
   let disposeCompletion: Promise<void> | undefined;
   let launchedAtMs = 0;
   let relaunchSeq = 0;
@@ -147,7 +149,8 @@ export function createCoordinatorRuntime(
 
     void handle.processExited.then(({ code }) => {
       launchedHandles.delete(handle);
-      if (disposed || current !== handle) return;
+      const intentionallyRetired = intentionallyRetiringHandles.delete(handle);
+      if (disposed || current !== handle || intentionallyRetired) return;
 
       const uptimeMs = dependencies.monotonicNow() - launchedAtMs;
       relaunchSeq += 1;
@@ -183,6 +186,28 @@ export function createCoordinatorRuntime(
     });
   };
 
+  const replaceCurrentAfterExit = (): Promise<void> => {
+    if (generationReplacement !== undefined) return generationReplacement;
+    cancelPendingRelaunch();
+    const previous = current;
+    intentionallyRetiringHandles.add(previous);
+    previous.dispose();
+
+    const replacement = previous.processExited
+      .then(() => {
+        if (disposed || current !== previous) return;
+        launch();
+        serveRequester();
+      })
+      .finally(() => {
+        if (generationReplacement === replacement) {
+          generationReplacement = undefined;
+        }
+      });
+    generationReplacement = replacement;
+    return replacement;
+  };
+
   launch();
   return {
     requestRendererPort(sink) {
@@ -194,26 +219,19 @@ export function createCoordinatorRuntime(
         serveRequester();
         return;
       }
+      if (generationReplacement !== undefined) return;
       if (!portTransferred) {
         serveRequester();
         return;
       }
-      const previous = current;
-      launch();
-      previous.dispose();
-      serveRequester();
+      void replaceCurrentAfterExit();
     },
     revokeRendererPortRequest() {
       requester = null;
     },
     restart() {
       if (disposed) return Promise.resolve();
-      cancelPendingRelaunch();
-      const previous = current;
-      launch();
-      previous.dispose();
-      serveRequester();
-      return previous.processExited.then(() => undefined);
+      return replaceCurrentAfterExit();
     },
     dispose() {
       if (disposeCompletion !== undefined) return disposeCompletion;
