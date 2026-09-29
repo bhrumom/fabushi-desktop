@@ -7,4 +7,5 @@ pub mod production;
 pub mod cursor_session;
 pub mod cursor_inference_transport;
 pub mod inference_service;
+pub mod generated_inference_codec;
 pub mod sand_labeling;
