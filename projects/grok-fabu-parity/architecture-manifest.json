@@ -15862,7 +15862,7 @@
       "targetPath": "source/host/src/extensions/transcript/run_lifecycle.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "4daf49c779d9f740d2edd3bceecd5b38d930d4e6",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -15890,7 +15890,10 @@
         "source/host/src/runner/tools/box_help_tool.rs",
         "source/host/src/runner/production_turn_agent_owner.rs",
         "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
-        "source/host/src/extensions/transcript/send_group_fanout.rs"
+        "source/host/src/extensions/transcript/send_group_fanout.rs",
+        "source/host/src/runner/sand_agent_runner.rs",
+        "source/host/src/runner/subagent_runtime.rs",
+        "source/host/src/runner/tools/sand_task_subagent_tool.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -15912,9 +15915,10 @@
         "source/host/tests/routed_send_acceptance_contract.rs",
         "source/host/tests/box_help_tool_contract.rs",
         "source/host/tests/production_turn_agent_owner_contract.rs",
-        "source/host/tests/send_group_fanout_contract.rs"
+        "source/host/tests/send_group_fanout_contract.rs",
+        "source/host/tests/generated_subagent_production_cutover_contract.rs"
       ],
-      "notes": "Production Rust owns user/provider run counts, composing/retrying/activity, request IDs, queue/watchdog settlement, routed-provider leases, durable Subagent pending-wake projection, real group-member run accounting and direct-DM cancellation. Shipping shared/remote group execution also drives activeRemoteMemberId through the same ProductionTranscriptRuntime and clears it after the remote turn; send_group_fanout_contract proves that production path, including the canonical Host/Runner route. Final remains withheld for live Runner subagent-source fanout: durable Subagent pending-wake projection is recovery evidence, not a substitute for the frozen live subagent-parent roster source."
+      "notes": "Production Rust owns user/provider run counts, composing/retrying/activity, request IDs, queue/watchdog settlement, routed-provider leases, real group-member run accounting and direct-DM cancellation. The final live subagent source is now shipping rather than durable-recovery-only: the first-party Task tool launches a materialized child back through the same startRoutedProvider production boundary, SandAgentRunner owns the shared SubagentRuntime, child start/settle increments and clears the parent live-subagent projection in ProductionTranscriptRuntime, and completion revival is driven after terminal settlement. The roster/run-lifecycle projection therefore consumes live Runner subagent-parent state directly; generated_subagent_production_cutover_contract and run_lifecycle_activity_production_contract cover the production wiring, while exact-HEAD Rust Host/Runner CI and Focused Electron E2E validate the composed runtime."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-scheduler.ts",
@@ -18482,19 +18486,27 @@
       "targetPath": "source/host/src/runner/subagent_runtime.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b08c81d50f39c1886f01910f8178ebddbbf55cae",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
-        "source/host/src/runner/subagent_runtime.rs"
+        "source/host/src/runner/subagent_runtime.rs",
+        "source/host/src/runner/sand_agent_runner.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner/tools/sand_task_subagent_tool.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/subagent_runtime_adapter_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/generated_subagent_production_cutover_contract.rs",
+        "source/host/tests/production_turn_agent_owner_contract.rs",
+        "source/host/tests/run_lifecycle_activity_production_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust now owns the frozen subagent request-id/lineage helpers and the background subagent lifecycle state machine: dispatch, pending wake metadata, steer interruption/continuation, abort, terminal status, running projection, retained outline, computer-use usage projection and audit aggregation. Final remains withheld until the shipping generated Agent session owns this runtime and async runner sessions/Host callbacks are bound to these state transitions."
+      "notes": "Rust owns the frozen subagent request-id/lineage helpers and background subagent lifecycle state machine: dispatch, pending wake metadata, steer interruption/continuation, abort, terminal status, running projection, retained outline, computer-use usage projection and audit aggregation. Shipping generated-Agent sessions now consume this runtime directly: TurnAgentComposition exposes the first-party Task bridge, ProductionSubagentTaskSink materializes the child and re-enters startRoutedProvider with lineage, SandAgentRunner holds the shared SubagentRuntime, registers/dispatches the live child, settles terminal outcomes, publishes the generated-agent roster and drives completion revival. This closes the previous helper-only gap; exact-HEAD Rust Host/Runner CI plus Focused Electron E2E provide production composition evidence."
     },
     {
       "referencePath": "source/host/runner/system-prompt-assembly.ts",
