@@ -18357,7 +18357,7 @@
       "targetPath": "source/host/src/runner/sand_memory.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "aa686cca6a8dc2c363d96a89e6c3b8f9203f3966",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -18371,10 +18371,12 @@
         "source/host/tests/sand_memory_contract.rs",
         "source/host/tests/system_prompt_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/memory_service_contract.rs",
+        "source/host/tests/turn_memory_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production slice ports frozen deterministic memory semantics used by the live prompt path: freeze snapshot resolution, memorable-exchange filtering, normalization/dedupe importance/ranking, prompt rendering with the 4k recent-fact budget, extraction prompt parsing/apply helpers, relevance selection/gathering and episode prompt construction. Shipping startRoutedProvider reads the canonical per-agent FileMemoryStore and appends exactly one frozen memory section to the actual provider system message. Final remains withheld for the inference-backed extractMemories/summarizeEpisode executor, shared user/project shard rendering, and turn-settlement writeback owned by turn-memory."
+      "notes": "Final Rust parity is production-wired. sand_memory.rs preserves the frozen deterministic memory contract: memory normalization/dedupe, importance/recall ranking, 4k recent-fact prompt budget, memorable-exchange filtering, extraction parsing/apply helpers, episode summary prompting, relevance selection/gathering, model-visible user/project/agent rendering and frozen prompt snapshots. Shipping startRoutedProvider consumes the canonical MemoryService user/project/agent stores, performs frozen cross-shard newest-wins dedupe and recall ranking, injects exactly one combined memory section into the real provider-bound system prompt, persists the frozen snapshot, and settles turns through turn-memory: synthesis evidence goes to the single production dreaming owner when enabled; otherwise real no-tools ProductionInferenceExtension provider sessions execute extractMemories/summarizeEpisode and write back through the canonical stores. Exact-HEAD d57aa12765c3b1140a4104a52990fa680fa15f9e passed the complete source/host Cargo suite step 'Test independent Mahayana Host Runner contract' in Rust desktop runtime run 36566689316 and Focused Electron chat E2E in run 36566689228; the preceding be8c fixture-only failure exposed date-granularity semantics and was corrected without changing production logic."
     },
     {
       "referencePath": "source/host/runner/sand-prompt-markers.ts",
