@@ -3106,10 +3106,10 @@ fn start_routed_provider_task(
             .ok_or_else(|| GatewayCommandError::Internal(format!(
                 "agent database path has no parent for {agent_id}"
             )))?;
-        let profile_path = to_model_visible_path(get_sand_profile_path(&agent_dir))
+        let profile_path = to_model_visible_path(&get_sand_profile_path(&agent_dir))
             .to_string_lossy()
             .into_owned();
-        let settings_path = to_model_visible_path(get_sand_settings_path(&agent_dir))
+        let settings_path = to_model_visible_path(&get_sand_settings_path(&agent_dir))
             .to_string_lossy()
             .into_owned();
         let profile_for_prompt = AgentProfileForPrompt {
