@@ -6,6 +6,9 @@ use crate::extensions::browser_ua::extension::{
     BrowserUaExperimentsApi, StopSubscription,
 };
 use crate::extensions::extension_ids_generated::HostExtensionId;
+use crate::extensions::inference::sand_model_experiment::{
+    SandModelExperimentState, read_sand_model_experiment_process_override,
+};
 
 pub const EXPERIMENTS_DEPENDENCIES: &[HostExtensionId] =
     &[HostExtensionId::Auth, HostExtensionId::Settings];
@@ -87,6 +90,14 @@ impl HostExperimentsExtension {
 
     pub fn is_ua_token_kill_switch_enabled(&self) -> bool {
         self.check_feature_gate("sand_browser_ua_token_kill_switch")
+    }
+
+    pub fn get_sand_model_experiment_state(&self) -> Option<SandModelExperimentState> {
+        // Frozen Grok gives the explicit process override precedence over
+        // authenticated Statsig state. The authenticated bootstrap owner is
+        // still tracked separately in the architecture manifest; until that
+        // owner lands, do not synthesize a network experiment assignment.
+        read_sand_model_experiment_process_override()
     }
 
     pub fn get_dynamic_config(
