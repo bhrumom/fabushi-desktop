@@ -143,7 +143,24 @@ fn production_owner_wires_real_chrome_watcher_periodic_cycle_and_remote_provider
     assert!(provider_owner.contains("AgentStoreObjectStoreProvider::new(remote)?"));
     assert!(provider_owner.contains("AgentStoreClient::new(deps)?"));
     assert!(provider_owner.contains("client.get_object(&self.source_id, key)?"));
-    assert!(provider_owner.contains("client.put_bytes(&self.source_id, key, bytes, precondition)?"));
+    let agent_store_impl = provider_owner
+        .split_once("impl BoxObjectStore for AgentStoreObjectStore {")
+        .map(|(_, body)| body)
+        .expect("AgentStoreObjectStore production BoxObjectStore implementation");
+    let agent_store_put = agent_store_impl
+        .split_once("fn put(&self, key: &str, bytes: &[u8])")
+        .map(|(_, body)| body)
+        .and_then(|body| body.split_once("fn put_if_unchanged(").map(|(put, _)| put))
+        .expect("AgentStoreObjectStore production put method");
+    let agent_store_put_compact: String = agent_store_put
+        .chars()
+        .filter(|ch| !ch.is_whitespace())
+        .collect();
+    assert!(
+        agent_store_put_compact
+            .contains(".client.put_bytes(&self.source_id,key,bytes,precondition)?;"),
+        "AgentStoreObjectStore::put must call AgentStoreClient::put_bytes with the resolved precondition"
+    );
     assert!(provider_owner.contains("client.put_file_content_addressed(&self.source_id, key, src_path)?"));
     assert!(provider_owner.contains("client.list_objects(&self.source_id, prefix)"));
 
