@@ -145,12 +145,32 @@ impl ProductionTurnAgentOwner {
     where
         Execute: FnOnce() -> Result<String, ProviderSessionError>,
     {
+        // This is the independent contract seam, not the shipping provider path.
+        // Preserve the owner invariant that a durable Agent checkpoint must
+        // succeed before Completed settlement. The shipping path above already
+        // owns this transaction inside run_production_generated_agent_stream,
+        // so it intentionally does not checkpoint a second time here.
+        let checkpoint_sink = self.agent_state_checkpoint_sink.clone();
+        let checkpoint_options = options.clone();
         run_owned_turn(
             &mut self.shell,
             &mut self.last_finished,
             messages,
             options,
-            move |_started| execute(),
+            move |_started| {
+                let result = execute();
+                match (result, checkpoint_sink) {
+                    (Ok(content), Some(sink)) => {
+                        sink.checkpoint_text_turn(
+                            messages,
+                            &checkpoint_options,
+                            &content,
+                        )?;
+                        Ok(content)
+                    }
+                    (result, _) => result,
+                }
+            },
         )
     }
 }
