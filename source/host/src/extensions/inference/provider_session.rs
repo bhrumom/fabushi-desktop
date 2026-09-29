@@ -1073,11 +1073,11 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
                 Some(RoutedProviderCheckpoint::Cursor(checkpoint)) => Some(checkpoint),
                 _ => None,
             };
-            let transport = CursorInferenceTransport::new(auth);
+            let transport = CursorInferenceTransport::new(Arc::clone(&auth));
             let mut cursor_checkpoint = |checkpoint: &CursorCheckpoint| {
                 on_checkpoint(&RoutedProviderCheckpoint::Cursor(checkpoint.clone()))
             };
-            run_cursor_with_transport_reporting_usage(
+            let result = run_cursor_with_transport_reporting_usage(
                 &transport,
                 messages,
                 options.tools,
@@ -1087,7 +1087,18 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
                 resume,
                 &mut cursor_checkpoint,
                 on_usage,
-            )
+            );
+            if let Ok(text) = result.as_ref() {
+                let mut labeled_messages = messages.to_vec();
+                if !text.is_empty() {
+                    labeled_messages.push(ProviderMessage {
+                        role: "assistant".into(),
+                        content: text.clone(),
+                    });
+                }
+                auth.record_post_turn_labeling(&labeled_messages);
+            }
+            result
         }
         RoutedProvider::Codex => {
             let resume = match resume_from {
