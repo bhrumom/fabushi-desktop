@@ -507,10 +507,13 @@ pub fn decode_generated_computer_use_result(
     })
 }
 
+pub type ComputerAvailabilityCheck = Arc<dyn Fn() -> Result<(), ProviderSessionError> + Send + Sync>;
+
 pub struct ProductionComputerToolExecutor {
     box_resources: Arc<dyn RunnerBoxResourcePort>,
     auto_review: Option<ComputerAutoReviewCallback>,
     persist_image: Option<ComputerPersistImageCallback>,
+    availability_check: Option<ComputerAvailabilityCheck>,
     bind_unmapped_characters: bool,
 }
 
@@ -520,6 +523,7 @@ impl ProductionComputerToolExecutor {
             box_resources,
             auto_review: None,
             persist_image: None,
+            availability_check: None,
             bind_unmapped_characters: false,
         }
     }
@@ -531,6 +535,11 @@ impl ProductionComputerToolExecutor {
 
     pub fn with_persist_image_callback(mut self, callback: ComputerPersistImageCallback) -> Self {
         self.persist_image = Some(callback);
+        self
+    }
+
+    pub fn with_availability_check(mut self, check: ComputerAvailabilityCheck) -> Self {
+        self.availability_check = Some(check);
         self
     }
 
@@ -546,6 +555,9 @@ impl ComputerToolExecutor for ProductionComputerToolExecutor {
         args: &ComputerActionArgs,
         tool_call_id: &str,
     ) -> Result<ComputerUseResult, ProviderSessionError> {
+        if let Some(check) = self.availability_check.as_ref() {
+            check()?;
+        }
         let actions = build_computer_action_sequence(args, None)
             .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
         if let Some(auto_review) = self.auto_review.as_ref() {
