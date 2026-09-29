@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 use std::fs::{self, File, OpenOptions};
 use std::io;
 use std::path::{Path, PathBuf};
@@ -7,8 +7,6 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use fs2::FileExt;
-
-use sha2::{Digest, Sha256};
 
 use super::agent_store_sand_files::{AgentStoreClientDependencies, normalize_rel_path};
 use super::box_object_store::{
@@ -21,16 +19,8 @@ use super::box_store_hydration::{
     remove_hydration_handoff_marker, write_hydration_handoff_marker,
 };
 use super::box_store_download::{
-    is_critical_rel_path, resolve_restore_destination, symlink_target_stays_within_root,
+    BoxStoreDownloadOptions, BoxStoreDownloadProgress, BoxStoreDownloadTrace, download_manifest,
 };
-use super::box_store_pack::{
-    BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACKS_PREFIX, PACK_INDEX_MAX_BYTES, PackExtractionSink,
-    PackMember, extract_pack_members, parse_pack_index,
-};
-use super::box_store_pack_pipeline::{
-    PACK_EXTRACT_CONCURRENCY, PACK_TMP_DIR_NAME, should_restore_from_pack,
-};
-use super::box_store_sync::LARGE_OBJECT_THRESHOLD_BYTES;
 use super::box_store_manifest::{
     count_store_db_manifest_entries, get_store_db_manifest_agent_ids,
 };
@@ -1185,141 +1175,50 @@ fn restore_manifest(
     let manifest_entries = manifest.len();
     let store_db_entries =
         authoritative_store_db_entries.unwrap_or_else(|| count_store_db_manifest_entries(Some(manifest)));
-    let pack_restored = restore_bulk_small_from_packs(store, target_root, manifest);
-    let mut files = pack_restored.len();
-    let mut bytes = pack_restored
-        .iter()
-        .filter_map(|rel_path| manifest.get(rel_path))
-        .filter_map(manifest_file_size)
-        .sum::<u64>();
-    let mut verified = files;
-    let mut failures = Vec::new();
-    for rel_path in &pack_restored {
-        let destination = target_root.join(rel_path);
-        if let Err(error) = apply_download_owner(&destination, options.download_owner) {
-            failures.push(format!("set owner {rel_path}: {error}"));
-        }
-    }
 
-    let file_entries = manifest.values().filter(|entry| !entry.is_symlink()).count();
-    let symlink_entries = manifest_entries.saturating_sub(file_entries);
-    let mut trace = CopyInTraceStatus {
-        copy_stage: Some("manifest".into()),
-        file_entries: Some(file_entries),
-        symlink_entries: Some(symlink_entries),
-        symlinks_started: Some(0),
-        symlinks_completed: Some(0),
-        symlinks_in_flight: Some(0),
-        active_symlink_steps: BTreeMap::new(),
-    };
-    emit_trace(options, &trace);
-    if files > 0 {
-        emit_progress(options, manifest_entries, files, bytes);
-    }
+    let progress_options = options.clone();
+    let trace_options = options.clone();
+    let download = download_manifest(
+        store,
+        target_root,
+        manifest,
+        BoxStoreDownloadOptions {
+            owner: options.download_owner,
+            on_progress: Some(Arc::new(move |progress: BoxStoreDownloadProgress| {
+                emit_progress(
+                    &progress_options,
+                    progress.total,
+                    progress.files,
+                    progress.bytes,
+                );
+            })),
+            on_trace: Some(Arc::new(move |trace: BoxStoreDownloadTrace| {
+                let copy_stage = if trace.event.starts_with("symlink") {
+                    "symlink"
+                } else {
+                    "manifest"
+                };
+                emit_trace(
+                    &trace_options,
+                    &CopyInTraceStatus {
+                        copy_stage: Some(copy_stage.into()),
+                        file_entries: Some(trace.file_entries),
+                        symlink_entries: Some(trace.symlink_entries),
+                        symlinks_started: Some(trace.symlinks_started),
+                        symlinks_completed: Some(trace.symlinks_completed),
+                        symlinks_in_flight: Some(trace.symlinks_in_flight),
+                        active_symlink_steps: trace.active_symlink_steps,
+                    },
+                );
+            })),
+            ..BoxStoreDownloadOptions::default()
+        },
+    );
 
-    for (rel_path, entry) in manifest {
-        let Some(destination) = resolve_restore_destination(target_root, rel_path) else {
-            failures.push(format!("unsafe restore path: {rel_path}"));
-            continue;
-        };
-        match entry {
-            BoxStoreManifestEntry::Symlink { target } => {
-                trace.copy_stage = Some("symlink".into());
-                *trace.symlinks_started.get_or_insert(0) += 1;
-                *trace.symlinks_in_flight.get_or_insert(0) += 1;
-                trace.active_symlink_steps.insert("restore".into(), 1);
-                emit_trace(options, &trace);
-
-                let symlink_result = (|| -> Result<(), String> {
-                    if !symlink_target_stays_within_root(target_root, &destination, target) {
-                        return Err(format!("unsafe symlink target: {rel_path}"));
-                    }
-                    if let Some(parent) = destination.parent() {
-                        fs::create_dir_all(parent)
-                            .map_err(|error| format!("create parent {rel_path}: {error}"))?;
-                    }
-                    remove_existing_restore_path(&destination)
-                        .map_err(|error| format!("remove existing {rel_path}: {error}"))?;
-                    #[cfg(unix)]
-                    {
-                        std::os::unix::fs::symlink(target, &destination)
-                            .map_err(|error| format!("restore symlink {rel_path}: {error}"))?;
-                    }
-                    #[cfg(not(unix))]
-                    {
-                        return Err(format!(
-                            "symlink restore unsupported on this platform: {rel_path}"
-                        ));
-                    }
-                    Ok(())
-                })();
-
-                trace.active_symlink_steps.clear();
-                if let Some(value) = trace.symlinks_in_flight.as_mut() {
-                    *value = value.saturating_sub(1);
-                }
-                if symlink_result.is_ok() {
-                    *trace.symlinks_completed.get_or_insert(0) += 1;
-                    files += 1;
-                    verified += 1;
-                    emit_progress(options, manifest_entries, files, bytes);
-                } else if let Err(error) = symlink_result {
-                    failures.push(error);
-                }
-                emit_trace(options, &trace);
-            }
-            BoxStoreManifestEntry::LegacyFile { sha, size }
-            | BoxStoreManifestEntry::File { sha, size, .. } => {
-                if pack_restored.contains(rel_path) {
-                    if let BoxStoreManifestEntry::File { mode, .. } = entry {
-                        #[cfg(unix)]
-                        {
-                            use std::os::unix::fs::PermissionsExt;
-                            let permissions = fs::Permissions::from_mode(*mode);
-                            if let Err(error) = fs::set_permissions(&destination, permissions) {
-                                failures.push(format!("set mode {rel_path}: {error}"));
-                            }
-                        }
-                    }
-                    continue;
-                }
-                if let Err(error) = remove_existing_restore_path(&destination) {
-                    failures.push(format!("remove existing {rel_path}: {error}"));
-                    continue;
-                }
-                let key = format!("blobs/{sha}");
-                match store.get_to_file(&key, &destination, Some(*size)) {
-                    Ok(Some(restored_bytes)) => {
-                        files += 1;
-                        bytes = bytes.saturating_add(restored_bytes);
-                        match verify_restored_file(&destination, sha, *size) {
-                            Ok(()) => verified += 1,
-                            Err(error) => failures.push(format!("verify {rel_path}: {error}")),
-                        }
-                        if let Err(error) = apply_download_owner(&destination, options.download_owner)
-                        {
-                            failures.push(format!("set owner {rel_path}: {error}"));
-                        }
-                        emit_progress(options, manifest_entries, files, bytes);
-                    }
-                    Ok(None) => failures.push(format!("missing blob for {rel_path}: {sha}")),
-                    Err(error) => failures.push(format!("restore {rel_path}: {error}")),
-                }
-                if let BoxStoreManifestEntry::File { mode, .. } = entry {
-                    #[cfg(unix)]
-                    {
-                        use std::os::unix::fs::PermissionsExt;
-                        if destination.exists() {
-                            let permissions = fs::Permissions::from_mode(*mode);
-                            if let Err(error) = fs::set_permissions(&destination, permissions) {
-                                failures.push(format!("set mode {rel_path}: {error}"));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    let files = download.files;
+    let bytes = download.bytes;
+    let verified = download.verified;
+    let failures = download.failures;
 
     let restored_store_db_entries = if let Some(authoritative_ids) = authoritative_store_db_agent_ids
     {
@@ -1590,276 +1489,6 @@ pub fn run_local_box_copy_in(store: &dyn BoxObjectStore, target_root: &Path) -> 
     )
 }
 
-
-#[derive(Debug, Clone)]
-struct PackRestoreGroup {
-    size: u64,
-    rel_paths: Vec<String>,
-}
-
-struct CopyInPackSink {
-    target_root: PathBuf,
-    groups: HashMap<String, PackRestoreGroup>,
-    restored: Mutex<HashSet<String>>,
-}
-
-impl PackExtractionSink for CopyInPackSink {
-    fn wants(&self, member: &PackMember) -> bool {
-        let key = format!("{}:{}", member.sha, member.size);
-        let Some(group) = self.groups.get(&key) else {
-            return false;
-        };
-        let restored = self
-            .restored
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        group.rel_paths.iter().any(|rel_path| !restored.contains(rel_path))
-    }
-
-    fn on_blob(&self, member: &PackMember, bytes: Vec<u8>) -> Result<(), String> {
-        let key = format!("{}:{}", member.sha, member.size);
-        let Some(group) = self.groups.get(&key) else {
-            return Ok(());
-        };
-        for rel_path in &group.rel_paths {
-            let reserved = {
-                let mut restored = self
-                    .restored
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner());
-                if restored.contains(rel_path) {
-                    false
-                } else {
-                    restored.insert(rel_path.clone());
-                    true
-                }
-            };
-            if !reserved {
-                continue;
-            }
-            let Some(destination) = resolve_restore_destination(&self.target_root, rel_path) else {
-                self.restored
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .remove(rel_path);
-                continue;
-            };
-            if local_file_matches(&destination, &member.sha, member.size) {
-                continue;
-            }
-            if write_pack_blob_atomically(
-                &destination,
-                rel_path,
-                &member.sha,
-                member.size,
-                &bytes,
-            )
-            .is_err()
-            {
-                self.restored
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .remove(rel_path);
-            }
-        }
-        Ok(())
-    }
-}
-
-fn manifest_file_size(entry: &BoxStoreManifestEntry) -> Option<u64> {
-    match entry {
-        BoxStoreManifestEntry::LegacyFile { size, .. }
-        | BoxStoreManifestEntry::File { size, .. } => Some(*size),
-        BoxStoreManifestEntry::Symlink { .. } => None,
-    }
-}
-
-fn local_file_matches(path: &Path, sha: &str, size: u64) -> bool {
-    let Ok(metadata) = fs::symlink_metadata(path) else {
-        return false;
-    };
-    metadata.file_type().is_file()
-        && metadata.len() == size
-        && verify_restored_file(path, sha, size).is_ok()
-}
-
-fn write_pack_blob_atomically(
-    destination: &Path,
-    rel_path: &str,
-    sha: &str,
-    size: u64,
-    bytes: &[u8],
-) -> Result<(), String> {
-    if bytes.len() as u64 != size || format!("{:x}", Sha256::digest(bytes)) != sha {
-        return Err(format!("pack member sha/size mismatch for {rel_path}"));
-    }
-    if let Some(parent) = destination.parent() {
-        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    }
-    let nonce = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_nanos())
-        .unwrap_or_default();
-    let temp = PathBuf::from(format!(
-        "{}.box-store-pack-part-{}-{nonce}",
-        destination.display(),
-        std::process::id()
-    ));
-    let result = (|| -> Result<(), String> {
-        fs::write(&temp, bytes).map_err(|error| error.to_string())?;
-        remove_existing_restore_path(destination)?;
-        fs::rename(&temp, destination).map_err(|error| error.to_string())?;
-        verify_restored_file(destination, sha, size)
-    })();
-    if result.is_err() {
-        let _ = fs::remove_file(&temp);
-    }
-    result
-}
-
-fn restore_bulk_small_from_packs(
-    store: &dyn BoxObjectStore,
-    target_root: &Path,
-    manifest: &BTreeMap<String, BoxStoreManifestEntry>,
-) -> HashSet<String> {
-    let mut groups = HashMap::<String, PackRestoreGroup>::new();
-    for (rel_path, entry) in manifest {
-        if is_critical_rel_path(rel_path) {
-            continue;
-        }
-        let (sha, size) = match entry {
-            BoxStoreManifestEntry::LegacyFile { sha, size }
-            | BoxStoreManifestEntry::File { sha, size, .. } => (sha, *size),
-            BoxStoreManifestEntry::Symlink { .. } => continue,
-        };
-        if size >= LARGE_OBJECT_THRESHOLD_BYTES {
-            continue;
-        }
-        let key = format!("{sha}:{size}");
-        groups
-            .entry(key)
-            .and_modify(|group| group.rel_paths.push(rel_path.clone()))
-            .or_insert_with(|| PackRestoreGroup {
-                size,
-                rel_paths: vec![rel_path.clone()],
-            });
-    }
-    if groups.is_empty() {
-        return HashSet::new();
-    }
-
-    let raw_index = match store.get(BOX_STORE_PACK_INDEX_KEY) {
-        Ok(Some(bytes)) if bytes.len() as u64 <= PACK_INDEX_MAX_BYTES => bytes,
-        _ => return HashSet::new(),
-    };
-    let Some(index) = std::str::from_utf8(&raw_index).ok().and_then(parse_pack_index) else {
-        return HashSet::new();
-    };
-    if index.packs.is_empty() {
-        return HashSet::new();
-    }
-
-    let sink = std::sync::Arc::new(CopyInPackSink {
-        target_root: target_root.to_path_buf(),
-        groups: groups.clone(),
-        restored: Mutex::new(HashSet::new()),
-    });
-    let tmp_dir = std::env::temp_dir().join(PACK_TMP_DIR_NAME);
-    if fs::create_dir_all(&tmp_dir).is_err() {
-        return HashSet::new();
-    }
-
-    for (ordinal, pack) in index.packs.iter().enumerate() {
-        let mut usable_count = 0usize;
-        let mut usable_clen = 0u64;
-        let mut usable_size = 0u64;
-        for member in &pack.members {
-            let key = format!("{}:{}", member.sha, member.size);
-            let Some(group) = groups.get(&key) else {
-                continue;
-            };
-            let restored = sink
-                .restored
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            let pending = group.rel_paths.iter().any(|rel_path| !restored.contains(rel_path));
-            drop(restored);
-            if pending {
-                usable_count += 1;
-                usable_clen = usable_clen.saturating_add(member.clen);
-                usable_size = usable_size.saturating_add(member.size);
-            }
-        }
-        if !should_restore_from_pack(usable_count, usable_clen, usable_size, pack.bytes) {
-            continue;
-        }
-
-        let nonce = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|duration| duration.as_nanos())
-            .unwrap_or_default();
-        let temp = tmp_dir.join(format!(
-            "restore-{}-{nonce}-{ordinal}",
-            std::process::id()
-        ));
-        let result = (|| -> Result<(), String> {
-            let Some(written) = store.get_to_file(
-                &format!("{BOX_STORE_PACKS_PREFIX}/{}", pack.id),
-                &temp,
-                Some(pack.bytes),
-            )? else {
-                return Ok(());
-            };
-            if written != pack.bytes {
-                return Ok(());
-            }
-            let _ = extract_pack_members(
-                &temp,
-                &pack.members,
-                PACK_EXTRACT_CONCURRENCY,
-                sink.clone(),
-            )?;
-            Ok(())
-        })();
-        let _ = fs::remove_file(&temp);
-        if result.is_err() {
-            continue;
-        }
-    }
-
-    let restored = sink
-        .restored
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
-        .clone();
-    restored
-}
-
-fn verify_restored_file(path: &Path, expected_sha: &str, expected_size: u64) -> Result<(), String> {
-    let bytes = fs::read(path).map_err(|error| error.to_string())?;
-    if bytes.len() as u64 != expected_size {
-        return Err(format!(
-            "size mismatch expected={expected_size} actual={}",
-            bytes.len()
-        ));
-    }
-    let actual_sha = format!("{:x}", Sha256::digest(&bytes));
-    if actual_sha != expected_sha {
-        return Err(format!("sha mismatch expected={expected_sha} actual={actual_sha}"));
-    }
-    Ok(())
-}
-
-fn remove_existing_restore_path(path: &Path) -> Result<(), String> {
-    match fs::symlink_metadata(path) {
-        Ok(metadata) if metadata.file_type().is_dir() => {
-            fs::remove_dir_all(path).map_err(|error| error.to_string())
-        }
-        Ok(_) => fs::remove_file(path).map_err(|error| error.to_string()),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(error) => Err(error.to_string()),
-    }
-}
 
 fn failed_copy_in(reason: String) -> CopyInResult {
     CopyInResult {
