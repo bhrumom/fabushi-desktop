@@ -155,7 +155,10 @@ use mahayana_host_runtime::extensions::inference::inference_service::{
     InferenceUsage, authorize_routed_provider_request,
 };
 use mahayana_host_runtime::extensions::inference::production::ProductionInferenceExtension;
-use mahayana_host_runtime::extensions::inference::cursor_session::SandSessionOptions;
+use mahayana_host_runtime::extensions::inference::cursor_session::{
+    RequestLineage, SandSessionOptions,
+};
+use mahayana_host_runtime::extensions::inference::generated_inference_codec::InferenceReason;
 use mahayana_host_runtime::extensions::webauthn_proxy::extension::HostWebAuthnProxyExtension;
 use mahayana_host_runtime::extensions::telemetry::automation_fire_telemetry::{
     AutomationFireDroppedReport, automation_fire_dropped_telemetry,
@@ -2969,6 +2972,42 @@ fn start_routed_provider_task(
             .and_then(serde_json::Value::as_bool)
             .unwrap_or(false),
         request_source: request_source.clone(),
+        conversation_id: Some(agent_id.clone()),
+        inference_reason: match args
+            .get("inferenceReason")
+            .and_then(serde_json::Value::as_i64)
+        {
+            Some(1) => Some(InferenceReason::GeminiVideoSubagent),
+            _ => None,
+        },
+        lineage: args
+            .get("lineage")
+            .and_then(serde_json::Value::as_object)
+            .and_then(|lineage| {
+                let parent_request_id = lineage
+                    .get("parentRequestId")?
+                    .as_str()?
+                    .trim()
+                    .to_string();
+                let root_parent_request_id = lineage
+                    .get("rootParentRequestId")?
+                    .as_str()?
+                    .trim()
+                    .to_string();
+                if parent_request_id.is_empty() || root_parent_request_id.is_empty() {
+                    return None;
+                }
+                Some(RequestLineage {
+                    parent_request_id,
+                    root_parent_request_id,
+                    parent_agent_tool_call_id: lineage
+                        .get("parentAgentToolCallId")
+                        .and_then(serde_json::Value::as_str)
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty())
+                        .map(ToOwned::to_owned),
+                })
+            }),
         skip_labeling: args
             .get("skipLabeling")
             .and_then(serde_json::Value::as_bool)
