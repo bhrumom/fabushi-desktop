@@ -46,7 +46,8 @@ use crate::extensions::codebase_telemetry::extension::{
     CodebaseTelemetryExtension, start_codebase_telemetry_extension,
 };
 use crate::extensions::experiments::{
-    HostExperimentsExtension, start_host_experiments_extension,
+    HostExperimentsExtension, ProductionStatsigBootstrapRuntime,
+    start_authenticated_statsig_bootstrap, start_host_experiments_extension,
 };
 use crate::extensions::forever_box::{
     ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxService,
@@ -107,6 +108,9 @@ use crate::extensions::state_backstop::state_backstop_service::{
 };
 use crate::extensions::telemetry::extension::{
     HostTelemetryExtension, start_host_telemetry_extension,
+};
+use crate::extensions::telemetry::memory_synthesis_telemetry::{
+    MemorySynthesisReport, memory_synthesis_telemetry,
 };
 use crate::extensions::telemetry::webauthn_proxy_telemetry::{
     WebAuthnProxyReport, webauthn_proxy_telemetry,
@@ -214,6 +218,7 @@ pub struct ProductionHostExtensions {
     pub auth: Arc<HostAuthExtension>,
     pub settings: Arc<SettingsService>,
     pub experiments: Arc<HostExperimentsExtension>,
+    _statsig_bootstrap: ProductionStatsigBootstrapRuntime,
     pub browser_ua: Mutex<Option<BrowserUaExtensionRuntime>>,
     pub wallpaper: Mutex<Option<HostWallpaperExtension>>,
     pub inference: Arc<ProductionInferenceExtension>,
@@ -265,6 +270,12 @@ pub fn start_production_host_extensions(
     );
     let settings = start_settings_extension();
     let experiments = Arc::new(start_host_experiments_extension());
+    let statsig_bootstrap = start_authenticated_statsig_bootstrap(
+        Arc::clone(&experiments),
+        Arc::clone(&auth),
+        backend_url.clone(),
+        app_data_dir.to_path_buf(),
+    )?;
     let browser_ua = start_production_browser_ua(
         Arc::clone(&auth),
         Arc::clone(&experiments),
@@ -323,14 +334,28 @@ pub fn start_production_host_extensions(
     )
     .map_err(|error| error.to_string())?;
     let memory = start_production_memory_extension();
-    if experiments.check_feature_gate("sand_memory_dreaming") {
-        let synthesis = create_production_memory_synthesis(
-            memory.service(),
-            Arc::clone(&inference),
-            app_data_dir.to_path_buf(),
-        );
-        memory.enable_memory_synthesis(synthesis);
-    }
+    let memory_for_gate = memory.clone();
+    let inference_for_memory = Arc::clone(&inference);
+    let memory_data_dir = app_data_dir.to_path_buf();
+    let memory_logs = telemetry.logs.clone();
+    experiments.pin_gate_on_authenticated_bootstrap(
+        "sand_memory_dreaming",
+        Arc::new(move |enabled| {
+            if !enabled {
+                let _ = memory_logs.report_projection(
+                    &memory_synthesis_telemetry(&MemorySynthesisReport::SkippedGate),
+                );
+                return;
+            }
+            let synthesis = create_production_memory_synthesis(
+                memory_for_gate.service(),
+                Arc::clone(&inference_for_memory),
+                memory_data_dir.clone(),
+                memory_logs.clone(),
+            );
+            memory_for_gate.enable_memory_synthesis(synthesis);
+        }),
+    );
     let managed_setup = start_managed_setup_extension(
         backend_url.clone(),
         Arc::clone(&auth),
@@ -363,6 +388,7 @@ pub fn start_production_host_extensions(
         auth,
         settings,
         experiments,
+        _statsig_bootstrap: statsig_bootstrap,
         browser_ua: Mutex::new(Some(browser_ua)),
         wallpaper: Mutex::new(Some(wallpaper)),
         inference,

@@ -105,3 +105,82 @@ fn dynamic_config_overrides_merge_over_frozen_fallback_and_notify_subscribers() 
     assert_eq!(notifications.load(Ordering::SeqCst), 1);
     stop();
 }
+
+
+#[test]
+fn authenticated_statsig_bootstrap_pins_memory_gate_once() {
+    use std::sync::Mutex;
+
+    let service = HostExperimentsExtension::new(HostExperimentsOptions {
+        is_dev_build: false,
+        env_gate_overrides: None,
+    });
+    let pins = Arc::new(Mutex::new(Vec::new()));
+    let pins_for_callback = Arc::clone(&pins);
+    service.pin_gate_on_authenticated_bootstrap(
+        "sand_memory_dreaming",
+        Arc::new(move |enabled| {
+            pins_for_callback.lock().unwrap().push(enabled);
+        }),
+    );
+
+    let treatment = serde_json::json!({
+        "user": { "userID": "user-1" },
+        "feature_gates": {
+            "sand_memory_dreaming": { "value": true }
+        }
+    })
+    .to_string();
+    assert!(!service
+        .hydrate_statsig_bootstrap(&treatment, false)
+        .unwrap());
+    assert!(service.check_feature_gate("sand_memory_dreaming"));
+    assert!(pins.lock().unwrap().is_empty());
+    assert!(!service.has_authenticated_statsig_bootstrap());
+
+    assert!(service
+        .hydrate_statsig_bootstrap(&treatment, true)
+        .unwrap());
+    assert_eq!(*pins.lock().unwrap(), vec![true]);
+    assert!(service.has_authenticated_statsig_bootstrap());
+
+    let control = serde_json::json!({
+        "user": { "userID": "user-1" },
+        "feature_gates": {
+            "sand_memory_dreaming": { "value": false }
+        }
+    })
+    .to_string();
+    assert!(service
+        .hydrate_statsig_bootstrap(&control, true)
+        .unwrap());
+    assert_eq!(*pins.lock().unwrap(), vec![true]);
+    assert!(!service.check_feature_gate("sand_memory_dreaming"));
+}
+
+#[test]
+fn unauthenticated_statsig_payload_never_resolves_authenticated_pin() {
+    use std::sync::Mutex;
+
+    let service = HostExperimentsExtension::new(HostExperimentsOptions {
+        is_dev_build: false,
+        env_gate_overrides: None,
+    });
+    let pins = Arc::new(Mutex::new(Vec::new()));
+    let pins_for_callback = Arc::clone(&pins);
+    service.pin_gate_on_authenticated_bootstrap(
+        "sand_memory_dreaming",
+        Arc::new(move |enabled| pins_for_callback.lock().unwrap().push(enabled)),
+    );
+    let anonymous = serde_json::json!({
+        "user": {},
+        "feature_gates": {
+            "sand_memory_dreaming": { "value": true }
+        }
+    })
+    .to_string();
+    assert!(!service
+        .hydrate_statsig_bootstrap(&anonymous, true)
+        .unwrap());
+    assert!(pins.lock().unwrap().is_empty());
+}

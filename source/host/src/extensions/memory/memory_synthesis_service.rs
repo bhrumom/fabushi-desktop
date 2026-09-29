@@ -98,6 +98,59 @@ pub enum SynthesisOutcome {
     Failed,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SynthesisReportOutcome {
+    Committed,
+    NoWork,
+    InvalidOutput,
+    Rejected,
+    Stale,
+    Failed,
+    Dropped,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SynthesisReport {
+    pub outcome: SynthesisReportOutcome,
+    pub agent_id: Option<String>,
+    pub evidence_count: usize,
+    pub input_memory_count: usize,
+    pub change_count: usize,
+    pub duration_ms: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum SynthesisAttemptError {
+    InvalidOutput(usize),
+    Rejected(usize),
+    Failed,
+}
+
+impl SynthesisAttemptError {
+    fn proposed_count(&self) -> usize {
+        match self {
+            Self::InvalidOutput(count) | Self::Rejected(count) => *count,
+            Self::Failed => 0,
+        }
+    }
+
+    fn outcome(&self) -> SynthesisOutcome {
+        match self {
+            Self::InvalidOutput(_) => SynthesisOutcome::InvalidOutput,
+            Self::Rejected(_) => SynthesisOutcome::Rejected,
+            Self::Failed => SynthesisOutcome::Failed,
+        }
+    }
+
+    fn report_outcome(&self) -> SynthesisReportOutcome {
+        match self {
+            Self::InvalidOutput(_) => SynthesisReportOutcome::InvalidOutput,
+            Self::Rejected(_) => SynthesisReportOutcome::Rejected,
+            Self::Failed => SynthesisReportOutcome::Failed,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct PendingAgent {
     evidence: Vec<MemoryEvidence>,
@@ -120,19 +173,23 @@ impl MemorySynthesisQueue {
         user: &str,
         assistant: &str,
         active: bool,
-    ) -> Option<String> {
+    ) -> Vec<(String, usize)> {
         let user = bounded_evidence_text(user);
         let assistant = bounded_evidence_text(assistant);
         if user.is_empty() && assistant.is_empty() {
-            return None;
+            return Vec::new();
         }
 
-        let mut dropped_agent = None;
+        let mut dropped = Vec::new();
         if !self.pending.contains_key(agent_id) && self.pending.len() >= MAX_PENDING_AGENTS {
             if let Some(oldest) = self.order.first().cloned() {
-                self.pending.remove(&oldest);
+                let evidence_count = self
+                    .pending
+                    .remove(&oldest)
+                    .map(|pending| pending.evidence.len())
+                    .unwrap_or(0);
                 self.order.remove(0);
-                dropped_agent = Some(oldest);
+                dropped.push((oldest, evidence_count));
             }
         }
 
@@ -142,6 +199,9 @@ impl MemorySynthesisQueue {
             self.order.push(agent_id.to_string());
         }
         let pending = self.pending.get_mut(agent_id).expect("pending inserted");
+        if pending.evidence.len() >= MAX_PENDING_EVIDENCE_PER_AGENT {
+            dropped.push((agent_id.to_string(), 1));
+        }
         pending.evidence.push(MemoryEvidence {
             id: evidence_id
                 .map(ToOwned::to_owned)
@@ -157,7 +217,7 @@ impl MemorySynthesisQueue {
         if active {
             self.needs_another_pass = true;
         }
-        dropped_agent
+        dropped
     }
 
     pub fn queue_temporal(&mut self, agent_id: &str, active: bool) -> bool {
@@ -380,6 +440,7 @@ pub fn apply_verified_changes(
 }
 
 use std::sync::{Arc, Mutex, Weak, mpsc};
+use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
 use chrono::{TimeZone, Utc};
@@ -576,19 +637,46 @@ pub fn verification_request_json(request: &SynthesisVerificationRequest) -> Stri
     .expect("memory synthesis verification request must serialize")
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct SynthesisCancelSignal {
-    cancelled: Arc<std::sync::atomic::AtomicBool>,
+    lifetime_cancelled: Arc<std::sync::atomic::AtomicBool>,
+    attempt_cancelled: Arc<std::sync::atomic::AtomicBool>,
+}
+
+impl Default for SynthesisCancelSignal {
+    fn default() -> Self {
+        Self {
+            lifetime_cancelled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            attempt_cancelled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        }
+    }
 }
 
 impl SynthesisCancelSignal {
+    fn child(&self) -> Self {
+        Self {
+            lifetime_cancelled: Arc::clone(&self.lifetime_cancelled),
+            attempt_cancelled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        }
+    }
+
     pub fn cancel(&self) {
-        self.cancelled
+        self.attempt_cancelled
             .store(true, std::sync::atomic::Ordering::SeqCst);
     }
 
+    fn cancel_lifetime(&self) {
+        self.lifetime_cancelled
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+        self.cancel();
+    }
+
     pub fn is_cancelled(&self) -> bool {
-        self.cancelled.load(std::sync::atomic::Ordering::SeqCst)
+        self.lifetime_cancelled
+            .load(std::sync::atomic::Ordering::SeqCst)
+            || self
+                .attempt_cancelled
+                .load(std::sync::atomic::Ordering::SeqCst)
     }
 }
 
@@ -603,6 +691,57 @@ type Verify = Arc<
         + Send
         + Sync,
 >;
+type Report = Arc<dyn Fn(SynthesisReport) + Send + Sync>;
+
+fn perform_synthesis_attempt(
+    propose: Propose,
+    verify: Option<Verify>,
+    request: SynthesisProposalRequest,
+    snapshot: SynthesisSnapshot,
+    evidence: Vec<MemoryEvidence>,
+    temporal: bool,
+    cancel: SynthesisCancelSignal,
+) -> Result<Vec<MemoryChange>, SynthesisAttemptError> {
+    if cancel.is_cancelled() {
+        return Err(SynthesisAttemptError::Failed);
+    }
+    let raw = propose(request.clone(), cancel.clone())
+        .map_err(|_| SynthesisAttemptError::Failed)?;
+    if cancel.is_cancelled() {
+        return Err(SynthesisAttemptError::Failed);
+    }
+    let changes = parse_memory_synthesis_changes(&raw)
+        .ok_or(SynthesisAttemptError::InvalidOutput(0))?;
+    let known = evidence
+        .iter()
+        .map(|item| item.id.clone())
+        .collect::<HashSet<_>>();
+    if !uses_known_evidence(&known, &changes, temporal) {
+        return Err(SynthesisAttemptError::InvalidOutput(changes.len()));
+    }
+    if !protects_explicit_memories(&snapshot, &changes) {
+        return Err(SynthesisAttemptError::Rejected(changes.len()));
+    }
+    if !changes.is_empty() {
+        if let Some(verify) = verify {
+            let verification = SynthesisVerificationRequest {
+                today: request.today,
+                current_memories: snapshot.memories,
+                evidence,
+                proposed_changes: changes.clone(),
+            };
+            match verify(verification, cancel.clone()) {
+                Ok(true) => {}
+                Ok(false) => return Err(SynthesisAttemptError::Rejected(changes.len())),
+                Err(_) => return Err(SynthesisAttemptError::Failed),
+            }
+        }
+    }
+    if cancel.is_cancelled() {
+        return Err(SynthesisAttemptError::Failed);
+    }
+    Ok(changes)
+}
 
 pub struct MemorySynthesisOptions {
     pub list_targets: ListTargets,
@@ -616,6 +755,7 @@ pub struct MemorySynthesisOptions {
     pub retry_initial: Duration,
     pub retry_max: Duration,
     pub now: Arc<dyn Fn() -> i64 + Send + Sync>,
+    pub report: Option<Report>,
 }
 
 impl MemorySynthesisOptions {
@@ -632,6 +772,7 @@ impl MemorySynthesisOptions {
             retry_initial: Duration::from_millis(MEMORY_SYNTHESIS_RETRY_INITIAL_MS),
             retry_max: Duration::from_millis(MEMORY_SYNTHESIS_RETRY_MAX_MS),
             now: Arc::new(|| Utc::now().timestamp_millis()),
+            report: None,
         }
     }
 }
@@ -654,6 +795,7 @@ pub struct MemorySynthesisService {
     state: Mutex<MemorySynthesisState>,
     cancel: SynthesisCancelSignal,
     background_tx: Mutex<Option<mpsc::Sender<BackgroundCommand>>>,
+    background_worker: Mutex<Option<JoinHandle<()>>>,
 }
 
 impl MemorySynthesisService {
@@ -663,6 +805,7 @@ impl MemorySynthesisService {
             state: Mutex::new(MemorySynthesisState::default()),
             cancel: SynthesisCancelSignal::default(),
             background_tx: Mutex::new(None),
+            background_worker: Mutex::new(None),
         }
     }
 
@@ -694,10 +837,14 @@ impl MemorySynthesisService {
         let weak = Arc::downgrade(self);
         let debounce = self.options.debounce;
         let poll_interval = self.options.poll_interval;
-        std::thread::Builder::new()
+        let worker = thread::Builder::new()
             .name("sand-memory-synthesis".into())
             .spawn(move || memory_synthesis_background_loop(weak, rx, debounce, poll_interval))
             .expect("memory synthesis background worker must start");
+        *self
+            .background_worker
+            .lock()
+            .expect("memory synthesis worker lock poisoned") = Some(worker);
 
         if !self
             .state
@@ -744,20 +891,32 @@ impl MemorySynthesisService {
         assistant: &str,
         occurred_at: i64,
     ) {
-        let mut state = self.state.lock().expect("memory synthesis state poisoned");
-        if !state.started || state.disposed {
-            return;
+        let dropped = {
+            let mut state = self.state.lock().expect("memory synthesis state poisoned");
+            if !state.started || state.disposed {
+                return;
+            }
+            let active = state.active;
+            state.queue.record_turn(
+                agent_id,
+                evidence_id.as_deref(),
+                occurred_at,
+                user,
+                assistant,
+                active,
+            )
+        };
+        for (dropped_agent, evidence_count) in dropped {
+            let started = (self.options.now)();
+            self.report(
+                SynthesisReportOutcome::Dropped,
+                Some(dropped_agent),
+                evidence_count,
+                0,
+                0,
+                started,
+            );
         }
-        let active = state.active;
-        state.queue.record_turn(
-            agent_id,
-            evidence_id.as_deref(),
-            occurred_at,
-            user,
-            assistant,
-            active,
-        );
-        drop(state);
         if let Some(tx) = self
             .background_tx
             .lock()
@@ -793,13 +952,27 @@ impl MemorySynthesisService {
             outcomes.push(self.run_agent(&agent_id));
         }
 
-        let mut state = self.state.lock().expect("memory synthesis state poisoned");
-        state.active = false;
+        let needs_another_pass = {
+            let mut state = self.state.lock().expect("memory synthesis state poisoned");
+            state.active = false;
+            state.queue.take_needs_another_pass() && !state.disposed
+        };
+        if needs_another_pass {
+            if let Some(tx) = self
+                .background_tx
+                .lock()
+                .expect("memory synthesis background lock poisoned")
+                .as_ref()
+                .cloned()
+            {
+                let _ = tx.send(BackgroundCommand::Debounce);
+            }
+        }
         outcomes
     }
 
     pub fn dispose(&self) {
-        self.cancel.cancel();
+        self.cancel.cancel_lifetime();
         if let Some(tx) = self
             .background_tx
             .lock()
@@ -807,6 +980,16 @@ impl MemorySynthesisService {
             .take()
         {
             let _ = tx.send(BackgroundCommand::Stop);
+        }
+        if let Some(worker) = self
+            .background_worker
+            .lock()
+            .expect("memory synthesis worker lock poisoned")
+            .take()
+        {
+            if worker.thread().id() != thread::current().id() {
+                let _ = worker.join();
+            }
         }
         let mut state = self.state.lock().expect("memory synthesis state poisoned");
         state.disposed = true;
@@ -826,104 +1009,84 @@ impl MemorySynthesisService {
             return SynthesisOutcome::NoWork;
         };
         let snapshot = target.prepare_synthesis();
-        let now = (self.options.now)();
+        let started = (self.options.now)();
 
         if snapshot.memories.is_empty() && evidence.is_empty() {
             if temporal {
-                target.mark_temporal_review(now);
+                target.mark_temporal_review(started);
             }
             self.finish(agent_id, &evidence, temporal);
+            self.report(
+                SynthesisReportOutcome::NoWork,
+                Some(agent_id.to_string()),
+                0,
+                0,
+                0,
+                started,
+            );
             return SynthesisOutcome::NoWork;
         }
 
-        let today = Utc
-            .timestamp_millis_opt(now)
-            .single()
-            .unwrap_or_else(Utc::now)
-            .format("%Y-%m-%d")
-            .to_string();
         let request = SynthesisProposalRequest {
-            today: today.clone(),
+            today: Utc
+                .timestamp_millis_opt(started)
+                .single()
+                .unwrap_or_else(Utc::now)
+                .format("%Y-%m-%d")
+                .to_string(),
             current_memories: snapshot.memories.clone(),
             new_evidence: evidence.clone(),
         };
 
-        let proposal_raw = match self.propose_with_retry(request) {
-            Ok(raw) => raw,
-            Err(()) => {
+        let changes = match self.perform_with_retry(
+            request,
+            snapshot.clone(),
+            evidence.clone(),
+            temporal,
+        ) {
+            Ok(changes) => changes,
+            Err(error) => {
+                if self.cancel.is_cancelled() {
+                    return SynthesisOutcome::NoWork;
+                }
                 if temporal {
-                    target.mark_temporal_review(now);
+                    target.mark_temporal_review(started);
                 }
                 self.finish(agent_id, &evidence, temporal);
-                return SynthesisOutcome::Failed;
+                let outcome = error.outcome();
+                self.report(
+                    error.report_outcome(),
+                    Some(agent_id.to_string()),
+                    evidence.len(),
+                    snapshot.memories.len(),
+                    error.proposed_count(),
+                    started,
+                );
+                return outcome;
             }
         };
-        let Some(changes) = parse_memory_synthesis_changes(&proposal_raw) else {
-            if temporal {
-                target.mark_temporal_review(now);
-            }
-            self.finish(agent_id, &evidence, temporal);
-            return SynthesisOutcome::InvalidOutput;
-        };
-        let known = evidence
-            .iter()
-            .map(|item| item.id.clone())
-            .collect::<HashSet<_>>();
-        if !uses_known_evidence(&known, &changes, temporal) {
-            if temporal {
-                target.mark_temporal_review(now);
-            }
-            self.finish(agent_id, &evidence, temporal);
-            return SynthesisOutcome::InvalidOutput;
-        }
 
         if changes.is_empty() {
             if temporal {
-                target.mark_temporal_review(now);
+                target.mark_temporal_review(started);
             }
             self.finish(agent_id, &evidence, temporal);
+            self.report(
+                SynthesisReportOutcome::NoWork,
+                Some(agent_id.to_string()),
+                evidence.len(),
+                snapshot.memories.len(),
+                0,
+                started,
+            );
             return SynthesisOutcome::NoWork;
-        }
-
-        if !protects_explicit_memories(&snapshot, &changes) {
-            if temporal {
-                target.mark_temporal_review(now);
-            }
-            self.finish(agent_id, &evidence, temporal);
-            return SynthesisOutcome::Rejected;
-        }
-
-        if let Some(verify) = &self.options.verify {
-            let verification = SynthesisVerificationRequest {
-                today,
-                current_memories: snapshot.memories.clone(),
-                evidence: evidence.clone(),
-                proposed_changes: changes.clone(),
-            };
-            match verify(verification, self.cancel.clone()) {
-                Ok(true) => {}
-                Ok(false) => {
-                    if temporal {
-                        target.mark_temporal_review(now);
-                    }
-                    self.finish(agent_id, &evidence, temporal);
-                    return SynthesisOutcome::Rejected;
-                }
-                Err(_) => {
-                    if temporal {
-                        target.mark_temporal_review(now);
-                    }
-                    self.finish(agent_id, &evidence, temporal);
-                    return SynthesisOutcome::Failed;
-                }
-            }
         }
 
         let store_changes = changes
             .iter()
             .map(MemoryChange::to_store_change)
             .collect::<Vec<_>>();
-        let outcome = match target.apply_synthesis(&snapshot, &store_changes, now) {
+        let outcome = match target.apply_synthesis(&snapshot, &store_changes, started) {
             SynthesisApplyResult::Committed => SynthesisOutcome::Committed,
             SynthesisApplyResult::Stale => SynthesisOutcome::Stale,
             SynthesisApplyResult::Invalid => SynthesisOutcome::InvalidOutput,
@@ -936,35 +1099,135 @@ impl MemorySynthesisService {
                 .mark_stale();
         } else {
             if temporal && outcome != SynthesisOutcome::Committed {
-                target.mark_temporal_review(now);
+                target.mark_temporal_review(started);
             }
             self.finish(agent_id, &evidence, temporal);
         }
+        let report_outcome = match outcome {
+            SynthesisOutcome::Committed => SynthesisReportOutcome::Committed,
+            SynthesisOutcome::NoWork => SynthesisReportOutcome::NoWork,
+            SynthesisOutcome::InvalidOutput => SynthesisReportOutcome::InvalidOutput,
+            SynthesisOutcome::Rejected => SynthesisReportOutcome::Rejected,
+            SynthesisOutcome::Stale => SynthesisReportOutcome::Stale,
+            SynthesisOutcome::Failed => SynthesisReportOutcome::Failed,
+        };
+        self.report(
+            report_outcome,
+            Some(agent_id.to_string()),
+            evidence.len(),
+            snapshot.memories.len(),
+            changes.len(),
+            started,
+        );
         outcome
     }
 
-    fn propose_with_retry(&self, request: SynthesisProposalRequest) -> Result<Value, ()> {
+    fn perform_with_retry(
+        &self,
+        request: SynthesisProposalRequest,
+        snapshot: SynthesisSnapshot,
+        evidence: Vec<MemoryEvidence>,
+        temporal: bool,
+    ) -> Result<Vec<MemoryChange>, SynthesisAttemptError> {
         let attempts = self.options.retry_attempts.max(1);
         let mut delay = self.options.retry_initial;
         for attempt in 0..attempts {
             if self.cancel.is_cancelled() {
-                return Err(());
+                return Err(SynthesisAttemptError::Failed);
             }
-            match (self.options.propose)(request.clone(), self.cancel.clone()) {
-                Ok(value) => return Ok(value),
-                Err(_) if attempt + 1 < attempts => {
-                    if !delay.is_zero() {
-                        std::thread::sleep(delay.min(self.options.retry_max));
+            match self.run_attempt_with_deadline(
+                request.clone(),
+                snapshot.clone(),
+                evidence.clone(),
+                temporal,
+            ) {
+                Ok(changes) => return Ok(changes),
+                Err(error) if attempt + 1 < attempts => {
+                    if !self.wait_retry_delay(delay.min(self.options.retry_max)) {
+                        return Err(SynthesisAttemptError::Failed);
                     }
                     delay = delay
                         .checked_mul(2)
                         .unwrap_or(self.options.retry_max)
                         .min(self.options.retry_max);
+                    let _ = error;
                 }
-                Err(_) => return Err(()),
+                Err(error) => return Err(error),
             }
         }
-        Err(())
+        Err(SynthesisAttemptError::Failed)
+    }
+
+    fn run_attempt_with_deadline(
+        &self,
+        request: SynthesisProposalRequest,
+        snapshot: SynthesisSnapshot,
+        evidence: Vec<MemoryEvidence>,
+        temporal: bool,
+    ) -> Result<Vec<MemoryChange>, SynthesisAttemptError> {
+        let (result_tx, result_rx) = mpsc::sync_channel(1);
+        let propose = Arc::clone(&self.options.propose);
+        let verify = self.options.verify.clone();
+        let cancel = self.cancel.child();
+        let worker_cancel = cancel.clone();
+        thread::Builder::new()
+            .name("sand-memory-synthesis-inference".into())
+            .spawn(move || {
+                let result = perform_synthesis_attempt(
+                    propose,
+                    verify,
+                    request,
+                    snapshot,
+                    evidence,
+                    temporal,
+                    worker_cancel,
+                );
+                let _ = result_tx.send(result);
+            })
+            .map_err(|_| SynthesisAttemptError::Failed)?;
+
+        match result_rx.recv_timeout(self.options.deadline) {
+            Ok(result) => result,
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                cancel.cancel();
+                Err(SynthesisAttemptError::Failed)
+            }
+            Err(mpsc::RecvTimeoutError::Disconnected) => Err(SynthesisAttemptError::Failed),
+        }
+    }
+
+    fn wait_retry_delay(&self, delay: Duration) -> bool {
+        let started = Instant::now();
+        while started.elapsed() < delay {
+            if self.cancel.is_cancelled() {
+                return false;
+            }
+            let remaining = delay.saturating_sub(started.elapsed());
+            thread::sleep(remaining.min(Duration::from_millis(25)));
+        }
+        !self.cancel.is_cancelled()
+    }
+
+    fn report(
+        &self,
+        outcome: SynthesisReportOutcome,
+        agent_id: Option<String>,
+        evidence_count: usize,
+        input_memory_count: usize,
+        change_count: usize,
+        started_at: i64,
+    ) {
+        let Some(report) = &self.options.report else {
+            return;
+        };
+        report(SynthesisReport {
+            outcome,
+            agent_id,
+            evidence_count,
+            input_memory_count,
+            change_count,
+            duration_ms: (self.options.now)().saturating_sub(started_at).max(0),
+        });
     }
 
     fn finish(&self, agent_id: &str, evidence: &[MemoryEvidence], temporal: bool) {

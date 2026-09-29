@@ -12,6 +12,7 @@ use mahayana_host_runtime::host_production_extensions::{
 };
 
 const PRODUCTION_OWNER: &str = include_str!("../src/host_production_extensions.rs");
+const MEMORY_PRODUCTION: &str = include_str!("../src/extensions/memory/production.rs");
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 
 #[test]
@@ -203,6 +204,41 @@ fn state_backstop_is_composed_after_box_store_sync_and_stopped_before_it() {
         assert!(
             PRODUCTION_OWNER.contains(needle),
             "production Host must own frozen StateBackstop composition: {needle}"
+        );
+    }
+}
+
+
+#[test]
+fn memory_synthesis_is_pinned_to_authenticated_statsig_and_shipping_inference() {
+    for needle in [
+        "start_authenticated_statsig_bootstrap(",
+        "pin_gate_on_authenticated_bootstrap(",
+        "\"sand_memory_dreaming\"",
+        "MemorySynthesisReport::SkippedGate",
+        "create_production_memory_synthesis(",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "production Host must preserve frozen authenticated Memory synthesis wiring: {needle}"
+        );
+    }
+    assert!(
+        !PRODUCTION_OWNER.contains("if experiments.check_feature_gate(\"sand_memory_dreaming\")"),
+        "Memory synthesis must not read the unpinned startup fallback before authenticated Statsig bootstrap"
+    );
+
+    for needle in [
+        "run_summarization_prompt(",
+        "synthesis_system_prompt()",
+        "verification_system_prompt()",
+        "is_cancelled()",
+        "memory_synthesis_telemetry_report",
+        "report_projection",
+    ] {
+        assert!(
+            MEMORY_PRODUCTION.contains(needle),
+            "shipping Memory production must consume the shared inference/telemetry path: {needle}"
         );
     }
 }

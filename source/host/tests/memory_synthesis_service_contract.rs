@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 use std::fs;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use mahayana_host_runtime::extensions::memory::memory_service::{FileMemoryStore, MemoryKind};
 use mahayana_host_runtime::extensions::memory::memory_synthesis_service::{
-    MemoryEvidence, MemorySynthesisOptions, MemorySynthesisService, SynthesisOutcome,
+    MEMORY_SYNTHESIS_DEADLINE_MS, MEMORY_SYNTHESIS_DEBOUNCE_MS,
+    MEMORY_SYNTHESIS_POLL_INTERVAL_MS, MemoryEvidence, MemorySynthesisOptions,
+    MemorySynthesisService, SynthesisOutcome, SynthesisReportOutcome,
     bounded_evidence_text, parse_memory_synthesis_changes, synthesis_request_json,
     synthesis_system_prompt, uses_known_evidence, verification_request_json,
     verification_system_prompt,
@@ -235,4 +237,71 @@ fn frozen_synthesis_prompts_and_wire_payloads_are_preserved() {
         verification_json["proposedChanges"][0]["sourceEvidenceIds"][0],
         "ev1"
     );
+}
+
+
+#[test]
+fn frozen_production_scheduling_constants_are_enforced() {
+    assert_eq!(MEMORY_SYNTHESIS_DEBOUNCE_MS, 15_000);
+    assert_eq!(MEMORY_SYNTHESIS_DEADLINE_MS, 90_000);
+    assert_eq!(MEMORY_SYNTHESIS_POLL_INTERVAL_MS, 3_600_000);
+}
+
+#[test]
+fn synthesis_deadline_cancels_verification_and_reports_terminal_failure() {
+    let (root, store) = temp_store();
+    let target = store.clone()
+        as Arc<dyn mahayana_host_runtime::extensions::memory::memory_synthesis_service::SynthesisTarget>;
+    let saw_cancel = Arc::new(AtomicBool::new(false));
+    let saw_cancel_for_verify = Arc::clone(&saw_cancel);
+    let reports = Arc::new(Mutex::new(Vec::new()));
+    let reports_for_callback = Arc::clone(&reports);
+
+    let mut options = MemorySynthesisOptions::new(
+        Arc::new({
+            let target = target.clone();
+            move || vec![("agent".into(), target.clone())]
+        }),
+        Arc::new({
+            let target = target.clone();
+            move |_id| Some(target.clone())
+        }),
+        Arc::new(|_request, _cancel| {
+            Ok(json!({"changes":[{
+                "action":"create",
+                "content":"Deadline protected memory",
+                "kind":"log",
+                "sourceEvidenceIds":["ev"]
+            }]}))
+        }),
+    );
+    options.verify = Some(Arc::new(move |_request, cancel| {
+        while !cancel.is_cancelled() {
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        saw_cancel_for_verify.store(true, Ordering::SeqCst);
+        Err("cancelled".into())
+    }));
+    options.deadline = Duration::from_millis(25);
+    options.retry_attempts = 1;
+    options.report = Some(Arc::new(move |report| {
+        reports_for_callback.lock().unwrap().push(report);
+    }));
+
+    let service = MemorySynthesisService::new(options);
+    service.start();
+    service.record_turn("agent", Some("ev".into()), "u", "a", 1);
+    assert_eq!(service.run_now(), vec![SynthesisOutcome::Failed]);
+    for _ in 0..100 {
+        if saw_cancel.load(Ordering::SeqCst) {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(2));
+    }
+    assert!(saw_cancel.load(Ordering::SeqCst));
+    let reports = reports.lock().unwrap();
+    assert_eq!(reports.last().unwrap().outcome, SynthesisReportOutcome::Failed);
+    assert_eq!(store.count_memories(), 0);
+    service.dispose();
+    let _ = fs::remove_dir_all(root);
 }
