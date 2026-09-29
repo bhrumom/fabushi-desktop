@@ -12686,7 +12686,7 @@
       "targetPath": "source/host/src/extensions/local_exec/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "6c4180e574a7ad73d447241c79367d27afcd7062",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12695,53 +12695,72 @@
         "source/host/app/src/main.rs",
         "source/host/src/gateway_server.rs",
         "source/host/src/host_production_extensions.rs",
-        "source/host/src/extensions/telemetry/local_exec_telemetry.rs"
+        "source/host/src/extensions/telemetry/local_exec_telemetry.rs",
+        "source/host/src/extensions/local_exec/agent_v1_exec_wire.rs",
+        "source/host/src/runner/host_external_machine_dependencies.rs",
+        "source/host/src/runner/tools/sand_external_machine_tools.rs",
+        "source/host/src/runner_production_bridge.rs"
       ],
       "testEvidence": [
         "source/host/tests/local_exec_bridge_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/extensions_local_exec_contract.rs"
+        "source/host/tests/extensions_local_exec_contract.rs",
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "source/host/tests/local_exec_production_codec_contract.rs",
+        "source/host/tests/external_machine_shipping_contract.rs"
       ],
-      "notes": "Rust Host starts a LocalExec extension owner through the shipping production registry and exposes it through the authenticated Gateway local-exec channel. The live LocalToolPermission ask gate uses HostLocalExecExtension liveness, canonical refusal telemetry is preserved, and Runner file transfer now consumes the live registry. Final remains withheld until the generated ExecClient codec/RemoteResourceAccessor path, full provider hello/detach telemetry, permission-authorized GatewayLocalExecManager exec stream, and ExternalShell/ExternalRead consumers are production-bound."
+      "notes": "Shipping Rust Host now owns the frozen LocalExec extension through the production extension registry with LocalToolPermission and Telemetry dependencies. The same owner exposes provider registration/submission, live-computer ask fencing, provider hello/detach/refusal/failure telemetry, approval retirement, permission-authorized file/exec access, and is injected into the shipping Runner external-machine/file-transfer graph. ExternalShell/ExternalRead consume this owner through ProductionExternalMachineExecutor rather than a parallel runtime. The artifact-backed agent.v1 codec provenance remains tracked separately by production.ts and does not create a second extension owner."
     },
     {
       "referencePath": "source/host/extensions/local-exec/gateway-local-exec-sand-box.ts",
       "targetPath": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "0201ff36f64344e4157162114c007d35b759d19a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
-        "source/host/src/extensions/local_exec/local_exec_bridge.rs"
+        "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+        "source/host/src/extensions/local_exec/production.rs",
+        "source/host/src/extensions/local_exec/agent_v1_exec_wire.rs",
+        "source/host/src/runner/host_external_machine_dependencies.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/local_exec_production_codec_contract.rs",
+        "source/host/tests/external_machine_shipping_contract.rs"
       ],
-      "notes": "Rust Host owns the GatewayLocalExecSandBox adaptation for provider state, active/selected computers, terminals-folder projection, max-file fencing, LocalToolPermission authorization with toolCallId scope, approval ids, upload/download base64 frames, file/error settlement and user-computer resolution over the production local-exec bridge. Runner CopyToBox/CopyFromBox now consumes this live sandbox in the shipping provider path. This row remains non-final until the generated ExecClient stream management/RemoteResourceAccessor and the ExternalShell/ExternalRead execution surfaces consume the canonical manager path."
+      "notes": "Rust Host owns the frozen GatewayLocalExecSandBox adaptation in production: active/selected computers, terminal-folder projection, max-file fencing, LocalToolPermission authorization with toolCallId scope and approval ids, upload/download, RemoteResourceAccessor creation, generated-wire shell/read streams, provider control settlement, failure telemetry and cleanup cancellation. Shipping Runner ExternalShell/ExternalRead and file-transfer consumers use this same canonical manager path through Host-injected production dependencies."
     },
     {
       "referencePath": "source/host/extensions/local-exec/local-exec-bridge.ts",
       "targetPath": "source/host/src/extensions/local_exec/local_exec_bridge.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b289d8b0092ecf9a1f516ab1a5911695d5c5811d",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/local_exec/local_exec_bridge.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/gateway_server.rs"
+        "source/host/src/gateway_server.rs",
+        "source/host/src/extensions/local_exec/extension.rs",
+        "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+        "source/host/src/runner/host_external_machine_dependencies.rs"
       ],
       "testEvidence": [
         "source/host/tests/local_exec_bridge_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/extensions_local_exec_contract.rs",
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "source/host/tests/external_machine_shipping_contract.rs"
       ],
-      "notes": "Rust Host now owns the real local-exec provider registry, welcome/hello/ping lifecycle, liveness window, supervised/variant ranking, multi-computer projection, request/response correlation, approval retirement and cancellation. Shipping Gateway /local-exec requests/responses is wired to this owner. Final remains withheld for the generated exec codec, permission-authorized SandBox/file-transfer manager and full telemetry/refusal reporting."
+      "notes": "Rust Host owns the real frozen local-exec bridge lifecycle: welcome/hello/ping, liveness and provider ranking, multi-computer projection, request/response correlation, idle response timeout, abort/drop cancellation, approval retirement, provider/refusal telemetry and deterministic cleanup. The bridge is the shipping Gateway /local-exec owner and is consumed through the permissioned GatewayLocalExecManager by Runner ExternalShell/ExternalRead and file transfer; no compatibility bridge remains in parallel."
     },
     {
       "referencePath": "source/host/extensions/local-exec/local-exec-error.ts",
@@ -12792,13 +12811,17 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/local_exec/production.rs",
-        "source/packages/proto/generated/agent/v1/exec_pb.ts"
+        "source/packages/proto/generated/agent/v1/exec_pb.ts",
+        "source/host/src/extensions/local_exec/agent_v1_exec_wire.rs",
+        "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+        "source/host/src/runner/host_external_machine_dependencies.rs"
       ],
       "testEvidence": [
         "source/host/tests/local_exec_production_codec_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/external_machine_shipping_contract.rs"
       ],
-      "notes": "Rust Host now owns a production Local Exec codec boundary mirroring the frozen TS module: object-shaped ExecClient JSON is retained without rejecting unknown fields, control JSON projects throw/streamClose while ignoring heartbeat/unknown controls, and RemoteResourceAccessor ownership is explicit. Final remains withheld because canonical generated agent.v1 ExecClientMessage/ExecClientControlMessage Rust protobuf bindings do not yet exist; this adapter must be replaced by generated fromJson semantics and consumed by the shipping GatewayLocalExecManager/Runner graph."
+      "notes": "Rust Host now consumes artifact-backed prost bindings for the frozen agent.v1 ExecClientMessage/ExecClientControlMessage/Shell/Read wire shapes, including generated-oneof behavior, unknown-field-tolerant JSON projection, server message construction and package-owned RemoteResourceAccessor. Those bindings are consumed by the shipping permissioned GatewayLocalExecManager and Runner ExternalShell/ExternalRead graph. This row remains non-final only because the Rust binding is still an artifact-backed adaptation rather than the canonical generated agent.v1 Rust package/provenance required to replace the frozen generated TypeScript import one-for-one."
     },
     {
       "referencePath": "source/host/extensions/local-tool-permission/extension.ts",
@@ -17877,21 +17900,27 @@
       "targetPath": "source/host/src/runner/inactive_turn_agent_stream.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "5ab083d9d433777bcab660dd95f0a9ba7c280b62",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/inactive_turn_agent_stream.rs",
-        "source/host/src/runner/stream_attempt.rs"
+        "source/host/src/runner/stream_attempt.rs",
+        "source/host/src/runner/generated_agent_turn_stream.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/runner/sand_agent_runner.rs"
       ],
       "testEvidence": [
         "source/host/tests/inactive_turn_agent_stream_contract.rs",
         "source/host/tests/stream_attempt_outer_lifecycle_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        "source/host/tests/production_turn_agent_owner_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Real dormant generated-Agent stream boundary now exists in Rust: resume state is forwarded to the stream source; checkpoint persistence is synchronously drained before resume eligibility; outer generation fencing, completion, cleanup, final-state persistence and exactly-once release are composed with contract coverage. Final remains withheld because this dormant path is not yet installed as the shipping SandAgentRunner turn source and the generated Agent/action/MCP factory graph is still incomplete."
+      "notes": "Shipping Rust Runner now owns the generated-Agent stream lifecycle end-to-end. ProductionTurnAgentOwner enters run_production_generated_agent_stream whenever the real Agent checkpoint sink is installed; that source executes the shipping TurnAgentComposition, forwards live deltas, stages canonical Agent state, drains generation-gated step persistence, runs completion/cleanup/final persistence, and releases the outer persistence claim exactly once. This is consumed by the shipping SandAgentRunner path rather than a dormant helper. Exact-head 9b0be9edcb87bddb76adaa5c49ac0f453846c76e passed the independent Mahayana Host Runner contract and Focused Electron chat E2E before this manifest closure."
     },
     {
       "referencePath": "source/host/runner/large-output-spill.ts",
@@ -17934,7 +17963,8 @@
         "source/host/src/runner/production_turn_input_projection.rs",
         "source/host/src/runner/production_agent_checkpoint.rs",
         "source/host/src/extensions/session/agent_db.rs",
-        "source/host/src/extensions/session/production_agent_store.rs"
+        "source/host/src/extensions/session/production_agent_store.rs",
+        "source/host/src/runner/generated_agent_turn_stream.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_agent_owner_contract.rs",
@@ -17942,9 +17972,10 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/production_turn_input_projection_contract.rs",
         "source/host/tests/production_agent_checkpoint_contract.rs",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/inactive_turn_agent_stream_contract.rs"
       ],
-      "notes": "Shipping ProductionTurnAgentOwner gates terminal Completed settlement on a Runner-owned AgentStateCheckpointSink. Successful provider text is converted to canonical agent.v1 wire and committed through mirror prepare -> ProductionAgentStore durable root -> mirror commit. Direct-user turns use a turn-scoped durable store that atomically advances latestRootBlobId and marks the addressed transcript user entry confirmed:true in one SandAgentDb transaction; missing/stale message identity aborts root advancement. Checkpoint failure becomes the same turn's non-retryable failed terminal outcome. Full frozen Agent build/resource/tool/summarization/static-config/disk-pressure/profile/update/disposer surfaces remain non-final."
+      "notes": "Shipping ProductionTurnAgentOwner now owns both terminal turn settlement and the generated-Agent stream/checkpoint boundary: with a production AgentStateCheckpointSink it enters run_production_generated_agent_stream, uses the current Runner generation, and cannot settle Completed before the outer durable checkpoint succeeds. The independent contract seam preserves the same checkpoint-before-Completed invariant without double-writing the shipping path. This mapping remains non-final because the frozen owner also constructs broader Agent resource/tool/summarization/static-config/disk-pressure/profile/update/disposer surfaces that are not yet fully represented."
     },
     {
       "referencePath": "source/host/runner/production-turn-input-projection.ts",
@@ -18470,16 +18501,20 @@
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/stream_attempt.rs",
-        "source/host/src/runner/production_turn_run_shell_adapter.rs"
+        "source/host/src/runner/production_turn_run_shell_adapter.rs",
+        "source/host/src/runner/generated_agent_turn_stream.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs"
       ],
       "testEvidence": [
         "source/host/tests/runner_contract.rs",
         "source/host/tests/stream_attempt_outer_lifecycle_contract.rs",
         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/inactive_turn_agent_stream_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust retains retry policy/watchdog and shipping provider retry/resume via ProductionTurnRunShellAdapter, plus the frozen outer generation-gated checkpoint/final persistence contract. The dormant generated-Agent stream boundary now drains checkpoint persistence synchronously (the Rust adaptation has no outstanding async checkpoint operations), and shipping retry telemetry distinguishes retried/exhausted/gave_up_ineligible without projecting terminal outcomes as Retry UI. Final remains withheld because resettable first-token deadline hooks and the generated Agent stream cutover are not yet production-composed."
+      "notes": "Rust preserves bounded retry/backoff, retry/resume eligibility and telemetry through the shipping ProductionTurnRunShellAdapter, plus the frozen generation-gated outer checkpoint/final-persistence contract. The generated-Agent stream cutover is now production-composed through ProductionTurnAgentOwner -> run_production_generated_agent_stream -> InactiveTurnAgentStreamPath, so that former blocker is closed. This row remains non-final for the frozen createStreamAttempt-level resettable first-token deadline hooks, per-attempt active-generation fencing and generated-Agent-level transient retry orchestration rather than provider-only retry ownership."
     },
     {
       "referencePath": "source/host/runner/subagent-runtime.ts",
@@ -19171,7 +19206,8 @@
         "source/host/src/runner/tools/sand_reaction_tool.rs",
         "source/host/src/runner/tools/box_help_tool.rs",
         "source/host/src/runner/tools/sand_agent_management_tools.rs",
-        "source/host/src/extensions/transcript/agent_to_agent_messaging.rs"
+        "source/host/src/extensions/transcript/agent_to_agent_messaging.rs",
+        "source/host/src/runner/generated_agent_turn_stream.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_agent_owner_contract.rs",
@@ -19181,9 +19217,11 @@
         "source/host/tests/sand_reaction_tool_contract.rs",
         "source/host/tests/box_help_tool_contract.rs",
         "source/host/tests/sand_agent_management_tools_contract.rs",
-        "source/host/tests/agent_to_agent_messaging_contract.rs"
+        "source/host/tests/agent_to_agent_messaging_contract.rs",
+        "source/host/tests/inactive_turn_agent_stream_contract.rs",
+        "source/host/tests/generated_subagent_production_cutover_contract.rs"
       ],
-      "notes": "A real shipping TurnAgentComposition now owns provider selection, routed Host tool bridge, request-context projection, cancellation and durable checkpoint store, and invokes the independent Runner routed-provider runtime. The frozen Grok composition also builds the full Agent/tool-session/resource-projection/MCP/static-config stream graph; those Agent construction surfaces are not yet represented by this Rust slice, so the mapping remains non-final. Shipping TurnAgentComposition now wraps the delegated MCP/box tool bridge with the first-party SendMessage tool and a Host-injected Session sink, so user-visible Runner tool output is durably transcript-owned rather than prose-only. Shipping TurnAgentComposition also inserts the frozen ReactToMessage first-party tool and routes its authoritative mutation through the Host reaction gateway; the broader frozen Agent/tool-session/resource/subagent graph remains non-final. Shipping TurnAgentComposition now also inserts the frozen SendToAgent/CreateAgent/UpdateAgent first-party tool family against real Session/Host services; full generated Agent/resource/subagent composition remains non-final."
+      "notes": "A real shipping TurnAgentComposition owns provider selection, routed Host tools, request context, cancellation, checkpoint store and first-party tool injection, and it is now executed inside the shipping generated-Agent stream lifecycle rather than only the routed-provider helper path. Subagent Task/management, SendMessage, reaction, box, Computer, external-machine and other production bridges are progressively composed here. The row remains non-final because the frozen Grok composition still includes the complete generated Agent/tool-session/resource projection/MCP/static-config/auto-review factory graph and those remaining surfaces are not yet fully centralized."
     },
     {
       "referencePath": "source/host/runner/turn-memory.ts",
@@ -19261,7 +19299,10 @@
       "behavioralEvidence": [
         "source/host/src/runner/turn_settle.rs",
         "source/host/src/extensions/session/production_agent_store.rs",
-        "source/host/src/transcript_mirror/production_provider.rs"
+        "source/host/src/transcript_mirror/production_provider.rs",
+        "source/host/src/runner/generated_agent_turn_stream.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs"
       ],
       "testEvidence": [
         "source/host/tests/runner_contract.rs",
@@ -19269,10 +19310,11 @@
         "source/host/tests/turn_settle_checkpoint_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/production_agent_store_contract.rs",
-        "source/host/tests/transcript_mirror_production_provider_contract.rs"
+        "source/host/tests/transcript_mirror_production_provider_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust preserves exactly-once terminal settlement and the frozen checkpoint transaction seam. The production RoutedTranscriptMirror now implements TranscriptCheckpointMirror and the real ProductionAgentStore implements DurableTurnCheckpointStore for exact ConversationStateStructure bytes, so a materialized Session contract proves mirror prepare -> durable AgentStore/root update -> mirror commit, with the existing abort-on-durable-failure and skip paths retained. Still non-final because shipping SandAgentRunner has not yet been cut over to the real generated Agent stream/checkpoint source, and broader frozen profile/token-details/labeling/memory settle semantics remain incomplete."
+      "notes": "Rust preserves exactly-once terminal settlement and the frozen checkpoint transaction seam. Shipping generated-Agent turns now enter the real outer stream/checkpoint source before terminal completion, and the production RoutedTranscriptMirror plus ProductionAgentStore perform mirror prepare -> durable AgentStore/root update -> mirror commit. The previous generated-stream cutover blocker is closed. This row remains non-final only for broader frozen profile/token-details/labeling/memory settle semantics and their canonical generated projections."
     },
     {
       "referencePath": "source/host/runner/turn-shape.ts",
@@ -39909,5 +39951,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-29T03:28:00.000Z"
+  "generatedAt": "2026-09-29"
 }
