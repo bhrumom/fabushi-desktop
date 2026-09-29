@@ -50,6 +50,7 @@ pub trait XuserEntryPublisherHost: Send + Sync {
 
 enum PublisherCommand {
     Publish(Value),
+    PublishAndWait(Value, mpsc::SyncSender<Result<(), String>>),
     Barrier(mpsc::SyncSender<()>),
 }
 
@@ -87,6 +88,11 @@ impl SandXuserEntryPublisher {
                         PublisherCommand::Publish(entry) => {
                             let _ = publish_entry_with_host(host.as_ref(), &worker_room_id, &entry);
                         }
+                        PublisherCommand::PublishAndWait(entry, done) => {
+                            let result =
+                                publish_entry_with_host(host.as_ref(), &worker_room_id, &entry);
+                            let _ = done.send(result);
+                        }
                         PublisherCommand::Barrier(done) => {
                             let _ = done.send(());
                         }
@@ -113,6 +119,21 @@ impl SandXuserEntryPublisher {
         receive
             .recv()
             .map_err(|_| "xuser entry publisher worker stopped".to_string())
+    }
+
+    pub fn publish_entry_ordered_and_wait(
+        &self,
+        shared_room_id: &str,
+        entry: &Value,
+    ) -> Result<(), String> {
+        let sender = self.sender_for_room(shared_room_id)?;
+        let (done, receive) = mpsc::sync_channel(1);
+        sender
+            .send(PublisherCommand::PublishAndWait(entry.clone(), done))
+            .map_err(|_| "xuser entry publisher worker stopped".to_string())?;
+        receive
+            .recv()
+            .map_err(|_| "xuser entry publisher worker stopped".to_string())?
     }
 
     pub fn publish_entry(&self, shared_room_id: &str, entry: &Value) -> Result<(), String> {

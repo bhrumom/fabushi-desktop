@@ -657,11 +657,24 @@ fn manager_delegate_serializes_room_publications_through_bound_publisher() {
         )
         .unwrap();
 
+    publisher
+        .publish_entry_ordered_and_wait(
+            "room-delegate",
+            &serde_json::json!({
+                "id": "delegate-4",
+                "kind": "message",
+                "role": "user",
+                "content": "fourth"
+            }),
+        )
+        .unwrap();
+
     let sent = host.sent.lock().unwrap();
-    assert_eq!(sent.len(), 3);
+    assert_eq!(sent.len(), 4);
     assert_eq!(sent[0]["entry"]["entryId"], "delegate-1");
     assert_eq!(sent[1]["entry"]["entryId"], "delegate-2");
     assert_eq!(sent[2]["entry"]["entryId"], "delegate-3");
+    assert_eq!(sent[3]["entry"]["entryId"], "delegate-4");
     drop(sent);
 
     svc.set_enabled(false);
@@ -678,5 +691,5 @@ fn manager_delegate_serializes_room_publications_through_bound_publisher() {
         )
         .unwrap();
     publisher.flush_room("room-delegate").unwrap();
-    assert_eq!(host.sent.lock().unwrap().len(), 3);
+    assert_eq!(host.sent.lock().unwrap().len(), 4);
 }

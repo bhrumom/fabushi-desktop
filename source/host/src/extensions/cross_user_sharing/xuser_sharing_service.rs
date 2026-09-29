@@ -92,8 +92,7 @@ impl SandXuserManagerDelegate {
             .as_ref()
             .cloned();
         if let Some(publisher) = publisher {
-            publisher.enqueue_publish(room_id, entry)?;
-            publisher.flush_room(room_id)?;
+            publisher.publish_entry_ordered_and_wait(room_id, entry)?;
         }
         Ok(())
     }
