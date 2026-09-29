@@ -3409,8 +3409,6 @@ fn start_routed_provider_task(
     } else {
         RunnerPromptRole::OtherSubagent
     };
-    let shipping_box_status = forever_box.get_status(&agent_id);
-    let shipping_box_available = forever_box.box_().is_available();
     let shipping_desktop_capable = forever_box.box_().inner().shared_desktop().is_some();
     let shipping_box_resources = Arc::new(ForeverBoxRunnerResourcePort::new(
         Arc::clone(&forever_box),
@@ -3473,6 +3471,8 @@ fn start_routed_provider_task(
             }
         }
     }
+    let shipping_box_status = forever_box.get_status(&agent_id);
+    let shipping_box_available = forever_box.box_().is_available();
     let shipping_desktop_ready = shipping_desktop_capable
         && computer_use_window_granted
         && (shipping_box_status.vnc_url.is_some()
@@ -4082,7 +4082,7 @@ fn start_routed_provider_task(
                 mcp_review: Some(mcp_review),
             });
             let box_resources: Arc<dyn RunnerBoxResourcePort> =
-                Arc::clone(&shipping_box_resources) as Arc<dyn RunnerBoxResourcePort>;
+                shipping_box_resources.clone();
             let box_shell_gate = Arc::clone(&auto_review_gate);
             let box_shell_auth = Arc::clone(&worker_auth);
             let box_shell_controller = Arc::clone(&worker_auto_review_controller);
