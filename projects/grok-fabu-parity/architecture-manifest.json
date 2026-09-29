@@ -18989,20 +18989,26 @@
       "targetPath": "source/host/src/runner/tools/sand_subagent_management_tools.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "7b5988132835cef891c05cd8c3f1962c2b75d993",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/tools/sand_subagent_management_tools.rs",
-        "source/host/src/runner/subagent_runtime.rs"
+        "source/host/src/runner/subagent_runtime.rs",
+        "source/host/src/runner/tools/turn_toolset.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner/tools/communicate_tool.rs",
+        "source/host/src/runner/sand_subagent_auto_review.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_subagent_management_tools_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Runner now ports the frozen CheckSubagent/MessageSubagent/StopSubagent semantics directly over the single SubagentRuntime registry: elapsed formatting, compact/detailed live status, recent activity/transcript projection, not-running guidance, steer review denial, course-correct interruption and abort confirmation. Final remains withheld until these functions are registered as canonical generated communicate tools with live reviewSteer/toolCallId/InteractionHandler wiring."
+      "notes": "Rust Runner now owns the frozen CheckSubagent/MessageSubagent/StopSubagent semantics and registers all three as canonical first-party communicate tools in the shipping TurnToolset against the single shared SubagentRuntime. CheckSubagent reads the live registry; StopSubagent aborts through that same owner; MessageSubagent carries the real routed toolCallId into a shipping reviewSteer callback backed by the production Auto-review controller and authenticated smart-mode classifier, and a denied review fences the runtime mutation. The existing CommunicateRoutedToolBridge wraps these frozen communicate names with initial/completed Interaction observation, so tool-call lifecycle evidence remains on the canonical Runner observation path. Exact HEAD 24e5704fe1b177e991f3ef53aebe5f84b7333dbb passed the complete rust-host job in Rust desktop runtime run 36527834407 and passed Desktop Chat Parity run 36527834406 including Focused Electron E2E; the Rust workflow remained red only because the strict final architecture gate still had 87 manifest rows before this promotion."
     },
     {
       "referencePath": "source/host/runner/tools/send-message-encoding.ts",
