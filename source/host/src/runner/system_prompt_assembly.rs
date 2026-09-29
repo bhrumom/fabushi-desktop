@@ -1,7 +1,12 @@
 use serde_json::Value;
 
 use crate::host_request_context::HostRequestContext;
+use crate::agents::agent_messaging::{
+    AgentAddress, AgentGroupAddress,
+    render_agent_directory_system_prompt as render_agent_directory_prompt,
+};
 use crate::automations::automation::{AutomationRecord, render_automations_system_prompt};
+use crate::extensions::session::channel_store::ChannelConnection;
 use crate::extensions::inference::provider_session::ProviderMessage;
 use crate::extensions::memory::memory_service::{
     MemoryRecall, ProjectMemoryPromptRecall, UserMemoryRecall,
@@ -253,6 +258,184 @@ pub fn append_workflows_system_prompt(
             },
         );
     }
+}
+
+
+
+
+fn append_unique_system_section(
+    messages: &mut Vec<ProviderMessage>,
+    prompt: &str,
+    marker: &str,
+) {
+    let prompt = prompt.trim();
+    if prompt.is_empty() {
+        return;
+    }
+    if messages
+        .iter()
+        .any(|message| message.role == "system" && message.content.contains(marker))
+    {
+        return;
+    }
+    if let Some(system) = messages.iter_mut().find(|message| message.role == "system") {
+        if !system.content.trim().is_empty() {
+            system.content.push_str("\n\n");
+        }
+        system.content.push_str(prompt);
+    } else {
+        messages.insert(
+            0,
+            ProviderMessage {
+                role: "system".into(),
+                content: prompt.to_string(),
+            },
+        );
+    }
+}
+
+fn channel_display_name(platform: &str) -> &str {
+    match platform {
+        "discord" => "Discord",
+        "slack" => "Slack",
+        other => other,
+    }
+}
+
+pub fn render_channels_system_prompt(
+    connections: &[ChannelConnection],
+    location: Option<&str>,
+) -> String {
+    let Some(location) = location.map(str::trim).filter(|value| !value.is_empty()) else {
+        return String::new();
+    };
+
+    // Frozen Grok 0.18 exposes Discord and Slack manifests, both coming-soon.
+    // A real persisted+secret-backed connection still makes the section visible.
+    if connections.is_empty() {
+        return String::new();
+    }
+
+    let mut lines = vec![
+        "Channels: outside messaging surfaces you can talk on, beyond this Grok Bot chat.".to_string(),
+        format!(
+            "Each connected channel lives in a subfolder at {location} holding a connection.json. That file holds only a label, never a credential; the secret is kept in a separate store you cannot read. To disconnect one, prefer the update_state tool (target \"channel\", action \"disconnect\", the platform); a background connector notices and closes the live connection within a few seconds."
+        ),
+        "Never ask the user to paste a token, API key, or password into the chat, and never write one into a file: that would persist it in the transcript or somewhere you can read it back. To collect any credential, send a SendMessage of type secret-request (connector + field + a clear label). The user types it into a masked field and the value goes straight to the secret store; you only learn that it was provided, never the value. You do not need the credential to check status; never cat the connection file expecting one.".to_string(),
+        "Every conversation on a channel has an address shaped like platform:chat (e.g. slack:C12345). An address names one chat; that is all routing needs.".to_string(),
+        "INBOUND: when someone messages you on a connected channel, you are woken with a hidden message that opens with the cue [inbound] and names the source address and sender. That is a real person reaching out on that platform, not the user typing in this app. Reply to them on that same channel by calling SendMessage with a channel target set to their address; if you instead omit the channel, your message goes to this in-app Grok Bot chat (the user at their desk), not to them.".to_string(),
+        "REACTIONS: the same [inbound] cue also wakes you when someone reacts to one of your messages (e.g. ❤️). A reaction is a lightweight acknowledgement, not a question: you usually do not need to reply, only act on it if it is useful.".to_string(),
+        "OUTBOUND: SendMessage takes an optional channel target. Set it to an address (e.g. slack:C12345) to deliver there; leave it off and the message lands in this in-app chat exactly as before. You choose where each message goes, so be deliberate: by default answer an inbound message on the channel it came from.".to_string(),
+        "Pace a channel reply exactly like the in-app chat: open with a quick one-line acknowledgement, then send each progress beat and the final result as its own SendMessage as it happens. Each SendMessage is delivered to the platform immediately as a separate message, so the person sees you respond in real time; never hold it all back for one long message at the end, the worst way to reply on a channel. Keep every one of those messages extra concise: a channel is a messaging app, so write the short, to-the-point messages a person texts, terser than your in-app replies. Lead with the answer, prefer one or two short sentences, and skip long multi-paragraph messages, exhaustive detail, and unprompted caveats; expand only if they ask.".to_string(),
+        "A channel only carries text and attachments, never the in-app widget or cursor-agent cards (those render only in this app), so degrade them to text when the conversation is on a channel: ask a multiple-choice question as plain text with the options as a numbered list and tell them to reply with their choice; reference a Cursor cloud agent as a plain https://cursor.com/agents/<bcId> link instead of a card; and for an attachment pass either a local file:// path or an https URL: the file is uploaded to the platform so they receive the real image or file, never a path.".to_string(),
+        "Platforms you can connect:".to_string(),
+        "Coming soon (not connectable yet): Discord, Slack.".to_string(),
+        "Currently connected:".to_string(),
+    ];
+    for connection in connections {
+        lines.push(format!(
+            "- {} \"{}\" [{}]. Address people on it as {}:<chat id>",
+            channel_display_name(&connection.platform),
+            connection.label,
+            connection.status,
+            connection.platform
+        ));
+    }
+    lines.join("\n")
+}
+
+pub fn append_channels_system_prompt(
+    messages: &mut Vec<ProviderMessage>,
+    connections: &[ChannelConnection],
+    location: Option<&str>,
+) {
+    let prompt = render_channels_system_prompt(connections, location);
+    append_unique_system_section(messages, &prompt, "Channels: outside messaging surfaces");
+}
+
+pub fn append_agent_directory_system_prompt(
+    messages: &mut Vec<ProviderMessage>,
+    others: &[AgentAddress],
+    groups: &[AgentGroupAddress],
+    agents_root_dir: Option<&str>,
+    enabled: bool,
+) {
+    if !enabled {
+        return;
+    }
+    let prompt = render_agent_directory_prompt(others, groups, agents_root_dir);
+    append_unique_system_section(messages, &prompt, "Your teammates: the other agents");
+}
+
+fn default_mcp_custom_instruction(server_name: &str) -> &'static str {
+    if server_name.trim().eq_ignore_ascii_case("hex") {
+        "When using Hex, get the underlying numbers as data: download/export the results as CSV or use the data the connector returns, and analyze those raw values directly. Don't read rendered charts or graphs from screenshots (computer-use chart reading is unreliable) — work from the actual data."
+    } else {
+        ""
+    }
+}
+
+pub fn render_mcp_custom_instructions_system_prompt(installed: &[Value]) -> String {
+    let mut entries = installed
+        .iter()
+        .filter(|server| {
+            server
+                .get("status")
+                .and_then(Value::as_str)
+                .is_some_and(|status| status.eq_ignore_ascii_case("connected"))
+        })
+        .filter_map(|server| {
+            let name = server.get("name")?.as_str()?.trim();
+            if name.is_empty() {
+                return None;
+            }
+            // Frozen resolveMcpCustomInstruction falls back only when no stored
+            // instruction exists; an explicitly stored empty string suppresses the default.
+            let instructions = match server.get("customInstructions") {
+                Some(value) => value.as_str().unwrap_or_default().trim(),
+                None => default_mcp_custom_instruction(name),
+            };
+            (!instructions.is_empty()).then(|| (name.to_string(), instructions.to_string()))
+        })
+        .collect::<Vec<_>>();
+    entries.sort_by(|left, right| left.0.cmp(&right.0));
+    entries.dedup_by(|left, right| left.0 == right.0);
+    if entries.is_empty() {
+        return String::new();
+    }
+
+    let mut lines = vec![
+        "## Connector custom instructions".to_string(),
+        "Custom instructions are configured for some connected tools (MCP connectors). Always follow the matching instruction whenever you use that connector's tools, even before your first call to it:".to_string(),
+    ];
+    lines.extend(
+        entries
+            .into_iter()
+            .map(|(name, instructions)| format!("- {name}: {instructions}")),
+    );
+    lines.join("\n")
+}
+
+pub fn render_mcp_discovery_status_system_prompt(discovery_unavailable: bool) -> String {
+    if !discovery_unavailable {
+        return String::new();
+    }
+    "<mcp_status>\nYour MCP tools are temporarily unavailable: discovering the user's MCP connectors from the backend failed this turn. This does NOT mean the user has no MCP connectors. Do not claim they have none or that a connector is missing; if the user needs an MCP tool, tell them MCP is temporarily unavailable and to retry shortly.\n</mcp_status>".to_string()
+}
+
+pub fn append_mcp_system_prompt_sections(
+    messages: &mut Vec<ProviderMessage>,
+    installed: &[Value],
+    discovery_unavailable: bool,
+    enabled: bool,
+) {
+    if !enabled {
+        return;
+    }
+    let custom = render_mcp_custom_instructions_system_prompt(installed);
+    append_unique_system_section(messages, &custom, "## Connector custom instructions");
+    let discovery = render_mcp_discovery_status_system_prompt(discovery_unavailable);
+    append_unique_system_section(messages, &discovery, "<mcp_status>");
 }
 
 
