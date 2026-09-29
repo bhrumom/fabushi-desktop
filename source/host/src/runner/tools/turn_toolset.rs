@@ -25,7 +25,9 @@ use super::sand_multitask_todo_tool::{
     MultitaskTodoState, SandMultitaskTodoToolBridge,
 };
 use super::send_message_tool::{SendMessageSink, SendMessageToolBridge};
-use super::sand_task_subagent_tool::{SubagentTaskSink, SubagentTaskToolBridge};
+use super::sand_task_subagent_tool::{
+    SubagentTaskReviewCallback, SubagentTaskSink, SubagentTaskToolBridge,
+};
 use super::sand_subagent_management_tools::{
     SubagentManagementToolBridge, SubagentSteerReviewCallback,
 };
@@ -46,6 +48,7 @@ pub struct TurnToolsetDependencies {
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
     pub agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
+    pub subagent_task_review: Option<SubagentTaskReviewCallback>,
     pub subagent_runtime: Option<Arc<Mutex<SubagentRuntime>>>,
     pub subagent_steer_review: Option<SubagentSteerReviewCallback>,
     pub state_writer: Option<Arc<dyn SandStateWriter>>,
@@ -88,7 +91,13 @@ pub fn build_turn_toolset(
         None => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.subagent_task_sink {
-        Some(sink) => Arc::new(SubagentTaskToolBridge::new(bridge, sink)),
+        Some(sink) => {
+            let mut task_bridge = SubagentTaskToolBridge::new(bridge, sink);
+            if let Some(review) = dependencies.subagent_task_review {
+                task_bridge = task_bridge.with_review(review);
+            }
+            Arc::new(task_bridge)
+        }
         None => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.subagent_runtime {

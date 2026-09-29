@@ -25,7 +25,7 @@ use super::tools::communicate_tool::{
 use super::tools::send_message_tool::SendMessageSink;
 use super::tools::sand_reaction_tool::ReactionSink;
 use super::tools::sand_agent_management_tools::AgentManagementSink;
-use super::tools::sand_task_subagent_tool::SubagentTaskSink;
+use super::tools::sand_task_subagent_tool::{SubagentTaskReviewCallback, SubagentTaskSink};
 use super::tools::sand_subagent_management_tools::SubagentSteerReviewCallback;
 use super::tools::sand_browser_tools::BrowserToolExecutor;
 use super::tools::sand_computer_tool::ComputerToolExecutor;
@@ -66,6 +66,7 @@ pub struct TurnAgentComposition {
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
+    subagent_task_review: Option<SubagentTaskReviewCallback>,
     subagent_runtime: Option<Arc<Mutex<SubagentRuntime>>>,
     subagent_steer_review: Option<SubagentSteerReviewCallback>,
     state_writer: Option<Arc<dyn SandStateWriter>>,
@@ -106,6 +107,7 @@ impl TurnAgentComposition {
             reaction_sink: None,
             agent_management_sink: None,
             subagent_task_sink: None,
+            subagent_task_review: None,
             subagent_runtime: None,
             subagent_steer_review: None,
             state_writer: None,
@@ -256,6 +258,11 @@ impl TurnAgentComposition {
 
     pub fn has_subagent_task_sink(&self) -> bool {
         self.subagent_task_sink.is_some()
+    }
+
+    pub fn with_subagent_task_review(mut self, review: SubagentTaskReviewCallback) -> Self {
+        self.subagent_task_review = Some(review);
+        self
     }
 
     pub fn with_subagent_management(
@@ -411,6 +418,7 @@ impl TurnAgentComposition {
                 reaction_sink: self.reaction_sink.clone(),
                 agent_management_sink: self.agent_management_sink.clone(),
                 subagent_task_sink: self.subagent_task_sink.clone(),
+                subagent_task_review: self.subagent_task_review.clone(),
                 subagent_runtime: self.subagent_runtime.clone(),
                 subagent_steer_review: self.subagent_steer_review.clone(),
                 state_writer: self.state_writer.clone(),

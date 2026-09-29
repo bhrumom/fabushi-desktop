@@ -13,6 +13,10 @@ pub struct SubagentLaunchRecord {
     pub subagent_type: String,
 }
 
+pub type SubagentTaskReviewCallback = Arc<
+    dyn Fn(&str, &str, &str) -> Result<Option<String>, ProviderSessionError> + Send + Sync + 'static,
+>;
+
 pub trait SubagentTaskSink: Send + Sync {
     fn launch_subagent(
         &self,
@@ -25,11 +29,17 @@ pub trait SubagentTaskSink: Send + Sync {
 pub struct SubagentTaskToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
     sink: Arc<dyn SubagentTaskSink>,
+    review: Option<SubagentTaskReviewCallback>,
 }
 
 impl SubagentTaskToolBridge {
     pub fn new(delegate: Arc<dyn RoutedToolBridge>, sink: Arc<dyn SubagentTaskSink>) -> Self {
-        Self { delegate, sink }
+        Self { delegate, sink, review: None }
+    }
+
+    pub fn with_review(mut self, review: SubagentTaskReviewCallback) -> Self {
+        self.review = Some(review);
+        self
     }
 }
 
@@ -89,6 +99,11 @@ impl RoutedToolBridge for SubagentTaskToolBridge {
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .unwrap_or("general-purpose");
+        if let Some(review) = self.review.as_ref() {
+            if let Some(reason) = review(prompt, subagent_type, tool_call_id)? {
+                return Ok(Value::String(reason));
+            }
+        }
         let launched = self
             .sink
             .launch_subagent(prompt, subagent_type, tool_call_id)?;
