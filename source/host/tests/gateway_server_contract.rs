@@ -40,6 +40,7 @@ impl GatewayApi for TestApi {
                     | "runner.startRoutedProvider"
                     | "runner.cancelRoutedProvider"
                     | "runner.resolveRoutedToolRequest"
+                    | "mcp.resolveLifecycleRequest"
             ) => Ok(json!({
                 "method": method,
                 "args": args,
@@ -377,6 +378,47 @@ fn gateway_carries_explicit_fabushi_extensions_without_widening_unknown_methods(
         );
         assert_eq!(json_body(&response)["method"], method);
     }
+}
+
+#[test]
+fn gateway_admits_only_explicit_internal_mcp_lifecycle_settlement_method() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(None),
+        started_at: 1,
+    })
+    .expect("gateway server");
+
+    let method = "mcp.resolveLifecycleRequest";
+    let response = request(
+        server.port(),
+        &format!(
+            "POST /api/{method} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+        ),
+    );
+    assert!(
+        response.starts_with("HTTP/1.1 200 OK"),
+        "{method} was not admitted through the explicit Host MCP lifecycle settlement boundary: {response}"
+    );
+    assert_eq!(json_body(&response)["method"], method);
+
+    let denied = request(
+        server.port(),
+        "POST /api/mcp.anythingElse HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+    );
+    assert!(
+        denied.starts_with("HTTP/1.1 404 Not Found"),
+        "the mcp namespace must stay fail-closed: {denied}"
+    );
+    assert_eq!(
+        json_body(&denied)["error"],
+        "unknown gateway method: mcp.anythingElse"
+    );
+
+    server.close();
 }
 
 #[test]

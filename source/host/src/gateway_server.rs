@@ -70,6 +70,9 @@ const FABUSHI_EXTENSION_COMMANDS: &[&str] = &[
     "feature.auth.logout",
     "feature.interrupt",
     "feature.approval.resolve",
+    // Internal desktop MCP lifecycle settlement. The shipping desktop MCP owner
+    // answers Host lifecycle requests through this single explicit callback.
+    "mcp.resolveLifecycleRequest",
     // Internal Coordinator -> Host -> Runner methods. These are explicit
     // Fabushi architecture extensions and must never widen the runner.*
     // namespace generically.
