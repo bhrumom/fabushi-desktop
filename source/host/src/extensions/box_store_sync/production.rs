@@ -3,7 +3,7 @@ use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{
-    Arc, Condvar, Mutex,
+    Arc, Condvar, Mutex, TryLockError,
     atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 use std::thread::{self, JoinHandle};
@@ -29,7 +29,7 @@ use crate::extensions::box_store_sync::box_store_pack_pipeline::{
     PACK_BUILD_MIN_BYTES, PACK_BUILD_MIN_MEMBERS, PACK_TMP_DIR_NAME, PACK_TMP_MAX_AGE_MS,
 };
 use crate::extensions::box_store_sync::box_store_manifest::{
-    AGENT_STORE_DB_BASENAMES, BoxManifestMap, ManifestSaveOptions,
+    AGENT_STORE_DB_BASENAMES, BoxManifestMap, ManifestHydrationUpdate, ManifestSaveOptions,
     load_manifest_for_write, read_manifest_strict, serialize_manifest_bytes,
     set_manifest_entry, write_manifest_with_retry,
 };
@@ -42,17 +42,22 @@ use crate::extensions::box_store_sync::box_store_transfer::{
 };
 use crate::extensions::box_store_sync::box_store_sync::LARGE_OBJECT_THRESHOLD_BYTES;
 use crate::extensions::box_store_sync::box_store_sync_service::{
-    BOX_STORE_CHROME_INTERVAL_MS, BOX_STORE_MANIFEST_RETRY_ATTEMPTS,
-    BOX_STORE_MANIFEST_RETRY_DELAY_MS,
+    BOX_HOME_DIR, BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_REL_PREFIX,
+    BOX_STORE_MANIFEST_RETRY_ATTEMPTS, BOX_STORE_MANIFEST_RETRY_DELAY_MS,
+    SAND_STORE_BETTER_CLI_ENV, SAND_USER_NON_ROOT_ENV, build_box_home_category,
+    is_better_cli_home_enabled, plan_periodic_cycle,
 };
 use crate::extensions::box_store_sync::box_store_hydration::{
     BOX_STORE_HYDRATION_HANDOFF_FILE_NAME, BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH,
+    remove_hydration_handoff_marker,
 };
 use crate::extensions::box_store_sync::store_db_snapshot_upload::{
     SnapshotUploadOutcome, StoreDbSnapshotRuntimePort, StoreDbSnapshotUpload,
 };
 use crate::extensions::box_store_sync::chrome_session_stage::{
-    CHROME_SESSION_DB_DIR, CHROME_SESSION_DB_NAMES, stage_box_chrome_session,
+    CHROME_AUTH_STATE_CACHE_EXCLUDE_NAMES, CHROME_AUTH_STATE_REL_DIRS,
+    CHROME_SESSION_DB_DIR, CHROME_SESSION_DB_NAMES, CHROME_SESSION_DB_REL_DIR,
+    stage_box_chrome_session,
 };
 use crate::extensions::box_store_sync::chrome_session_watcher::ChromeSessionWatcher;
 use crate::extensions::box_store_sync::extension::{
@@ -133,7 +138,9 @@ impl ProductionBoxStoreSyncApi {
 
     pub fn snapshot_local_now(&self) -> Result<ProductionBoxStoreSyncStatus, String> {
         self.inner.flush_waiters.fetch_add(1, Ordering::AcqRel);
-        let result = self.inner.run_local_cycle(false, true, false, false);
+        let result = self
+            .inner
+            .run_local_cycle(false, true, false, false, false, true, true);
         self.inner.flush_waiters.fetch_sub(1, Ordering::AcqRel);
         result?;
         Ok(self.status())
@@ -210,7 +217,7 @@ impl ProductionBoxStoreSyncService {
                 store_db_wake: Condvar::new(),
                 agent_db_capture_queues: AgentDbCaptureQueues::default(),
                 object_store_provider: Mutex::new(None),
-                last_pack_sync: Mutex::new(None),
+                last_idle_only_sync: Mutex::new(Instant::now()),
                 flush_waiters: AtomicUsize::new(0),
                 status: Mutex::new(ProductionBoxStoreSyncStatus {
                     enabled,
@@ -276,7 +283,9 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
             CHROME_SESSION_DB_NAMES.iter().copied(),
             self.inner.deps.scheduling.chrome_session_debounce.delay_ms,
             Arc::new(move || {
-                if let Err(error) = chrome_inner.run_local_cycle(true, false, false, false) {
+                if let Err(error) =
+                    chrome_inner.run_local_cycle(true, false, false, false, false, true, false)
+                {
                     chrome_inner.log(&format!(
                         "chrome-session snapshot rejected: {error}"
                     ));
@@ -322,10 +331,27 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                         break;
                     }
                     let idle = (poll_inner.deps.is_idle)();
-                    let include_store_dbs = idle;
-                    let include_packs = idle && poll_inner.pack_sync_due();
+                    let hydration_handoff_pending = get_sand_root_dir()
+                        .join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME)
+                        .exists();
+                    let plan = plan_periodic_cycle(
+                        idle,
+                        hydration_handoff_pending,
+                        poll_inner.elapsed_since_idle_only_sync_ms(),
+                    );
+                    if plan.include_idle_only {
+                        poll_inner.mark_idle_only_sync();
+                    }
                     if let Err(error) =
-                        poll_inner.run_local_cycle(false, include_store_dbs, true, include_packs)
+                        poll_inner.run_local_cycle(
+                            false,
+                            plan.include_store_dbs,
+                            plan.skip_live_handle_store_dbs,
+                            plan.include_packs,
+                            plan.include_idle_only,
+                            false,
+                            false,
+                        )
                     {
                         poll_inner.log(&format!("periodic snapshot rejected: {error}"));
                         poll_inner.diagnostic("periodic", &error, false);
@@ -465,7 +491,7 @@ struct ProductionBoxStoreSyncInner {
     store_db_wake: Condvar,
     agent_db_capture_queues: AgentDbCaptureQueues,
     object_store_provider: Mutex<Option<Arc<dyn BoxObjectStoreProvider>>>,
-    last_pack_sync: Mutex<Option<Instant>>,
+    last_idle_only_sync: Mutex<Instant>,
     flush_waiters: AtomicUsize,
     status: Mutex<ProductionBoxStoreSyncStatus>,
 }
@@ -534,17 +560,20 @@ impl ProductionBoxStoreSyncInner {
         (self.deps.report_host_extension_diagnostic)(&diagnostic);
     }
 
-    fn pack_sync_due(&self) -> bool {
-        let last = self
-            .last_pack_sync
+    fn elapsed_since_idle_only_sync_ms(&self) -> u64 {
+        self.last_idle_only_sync
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        match *last {
-            None => true,
-            Some(observed) => {
-                observed.elapsed() >= Duration::from_millis(BOX_STORE_CHROME_INTERVAL_MS)
-            }
-        }
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .elapsed()
+            .as_millis()
+            .min(u128::from(u64::MAX)) as u64
+    }
+
+    fn mark_idle_only_sync(&self) {
+        *self
+            .last_idle_only_sync
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Instant::now();
     }
 
     fn run_local_cycle(
@@ -553,11 +582,26 @@ impl ProductionBoxStoreSyncInner {
         include_store_dbs: bool,
         skip_live_handle_store_dbs: bool,
         include_packs: bool,
+        include_idle_only: bool,
+        wait_for_in_flight: bool,
+        accept_matching_canonical_on_conflict: bool,
     ) -> Result<(), String> {
-        let _cycle = self
-            .cycle_lock
-            .lock()
-            .map_err(|_| "box-store sync cycle lock poisoned".to_string())?;
+        let _cycle = if wait_for_in_flight {
+            self.cycle_lock
+                .lock()
+                .map_err(|_| "box-store sync cycle lock poisoned".to_string())?
+        } else {
+            match self.cycle_lock.try_lock() {
+                Ok(cycle) => cycle,
+                Err(TryLockError::WouldBlock) => {
+                    self.log("cycle skipped (in-flight)");
+                    return Ok(());
+                }
+                Err(TryLockError::Poisoned(_)) => {
+                    return Err("box-store sync cycle lock poisoned".into());
+                }
+            }
+        };
         if self.stopped.load(Ordering::Acquire) {
             return Err("stopped".into());
         }
@@ -627,6 +671,32 @@ impl ProductionBoxStoreSyncInner {
                 None,
                 manifest_v2,
             )?);
+            categories.push(sync_chrome_session(store.as_ref(), &mut entries, manifest_v2)?);
+            for rel_dir in CHROME_AUTH_STATE_REL_DIRS {
+                categories.push(sync_chrome_auth_state_category(
+                    store.as_ref(),
+                    &mut entries,
+                    rel_dir,
+                    manifest_v2,
+                )?);
+            }
+            if include_idle_only {
+                categories.push(sync_chrome_profile_category(
+                    store.as_ref(),
+                    &mut entries,
+                    manifest_v2,
+                )?);
+            }
+            if is_better_cli_home_enabled(
+                self.env.get(SAND_STORE_BETTER_CLI_ENV).map(String::as_str),
+                self.env.get(SAND_USER_NON_ROOT_ENV).map(String::as_str),
+            ) {
+                categories.push(sync_box_home_category(
+                    store.as_ref(),
+                    &mut entries,
+                    manifest_v2,
+                )?);
+            }
         }
 
         let has_cycle_failures = categories
@@ -642,14 +712,39 @@ impl ProductionBoxStoreSyncInner {
             Some(&writer_window_id),
             fully_hydrated,
             ManifestSaveOptions {
+                accept_matching_canonical_on_conflict,
                 is_forced: has_cycle_failures,
-                ..ManifestSaveOptions::default()
+                hydration_update: if !chrome_only
+                    && hydration_marker_path.exists()
+                    && include_idle_only
+                    && include_store_dbs
+                    && categories
+                        .iter()
+                        .all(|category| category.failures == 0 && category.oversize == 0)
+                {
+                    Some(ManifestHydrationUpdate::PromoteComplete)
+                } else {
+                    None
+                },
             },
             BOX_STORE_MANIFEST_RETRY_ATTEMPTS,
             BOX_STORE_MANIFEST_RETRY_DELAY_MS,
             &|message| self.log(message),
             &|| self.stopped.load(Ordering::Acquire),
         )?;
+
+        if !chrome_only
+            && hydration_marker_path.exists()
+            && include_idle_only
+            && include_store_dbs
+            && categories
+                .iter()
+                .all(|category| category.failures == 0 && category.oversize == 0)
+        {
+            if let Err(error) = remove_hydration_handoff_marker(&hydration_marker_path) {
+                self.log(&format!("hydration handoff marker cleanup failed: {error}"));
+            }
+        }
 
         if include_packs
             && is_box_store_pack_build_enabled(
@@ -929,6 +1024,85 @@ fn write_manifest(
     )?;
     store.put(BOX_STORE_MANIFEST_REL_PATH, &bytes)
 }
+
+fn sync_chrome_auth_state_category(
+    store: &dyn BoxObjectStore,
+    manifest: &mut BoxManifestMap,
+    rel_dir: &str,
+    manifest_v2: bool,
+) -> Result<CategoryTransferSummary, String> {
+    let root = Path::new(CHROME_SESSION_DB_DIR).join(rel_dir);
+    let rel_prefix = format!("{CHROME_SESSION_DB_REL_DIR}/{rel_dir}");
+    let excludes = CHROME_AUTH_STATE_CACHE_EXCLUDE_NAMES
+        .iter()
+        .map(|cache| format!("{rel_prefix}/{cache}"))
+        .collect::<Vec<_>>();
+    let exclude_refs = excludes.iter().map(String::as_str).collect::<Vec<_>>();
+    sync_tree_category(
+        store,
+        manifest,
+        &root,
+        &rel_prefix,
+        &format!("chrome-{}", rel_dir.to_ascii_lowercase().replace(' ', "-")),
+        &exclude_refs,
+        None,
+        manifest_v2,
+    )
+}
+
+fn sync_chrome_profile_category(
+    store: &dyn BoxObjectStore,
+    manifest: &mut BoxManifestMap,
+    manifest_v2: bool,
+) -> Result<CategoryTransferSummary, String> {
+    let mut excludes = vec![
+        "home/box/chrome-profile/*/Cache".to_string(),
+        "home/box/chrome-profile/*/Code Cache".to_string(),
+        "home/box/chrome-profile/*/GPUCache".to_string(),
+        "home/box/chrome-profile/*/Service Worker/CacheStorage".to_string(),
+    ];
+    for name in CHROME_SESSION_DB_NAMES {
+        for suffix in ["", "-wal", "-shm", "-journal"] {
+            excludes.push(format!("{CHROME_SESSION_DB_REL_DIR}/{name}{suffix}"));
+        }
+    }
+    excludes.extend(
+        CHROME_AUTH_STATE_REL_DIRS
+            .iter()
+            .map(|dir| format!("{CHROME_SESSION_DB_REL_DIR}/{dir}")),
+    );
+    let exclude_refs = excludes.iter().map(String::as_str).collect::<Vec<_>>();
+    sync_tree_category(
+        store,
+        manifest,
+        Path::new("/home/box/chrome-profile"),
+        "home/box/chrome-profile",
+        "chrome-profile",
+        &exclude_refs,
+        None,
+        manifest_v2,
+    )
+}
+
+fn sync_box_home_category(
+    store: &dyn BoxObjectStore,
+    manifest: &mut BoxManifestMap,
+    manifest_v2: bool,
+) -> Result<CategoryTransferSummary, String> {
+    let category = build_box_home_category(BOX_HOME_DIR);
+    let exclude_refs = category.excludes.iter().map(String::as_str).collect::<Vec<_>>();
+    sync_tree_category(
+        store,
+        manifest,
+        Path::new(BOX_HOME_DIR),
+        BOX_HOME_REL_PREFIX,
+        &category.name,
+        &exclude_refs,
+        None,
+        manifest_v2,
+    )
+}
+
 
 fn sync_chrome_session(
     store: &dyn BoxObjectStore,
