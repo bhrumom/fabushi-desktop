@@ -508,12 +508,14 @@ pub fn decode_generated_computer_use_result(
 }
 
 pub type ComputerAvailabilityCheck = Arc<dyn Fn(&ComputerActionArgs) -> Result<(), ProviderSessionError> + Send + Sync>;
+pub type ComputerActionReportCallback = Arc<dyn Fn(&crate::runner::tools::sand_computer_tool::ReportedComputerAction, &str) + Send + Sync>;
 
 pub struct ProductionComputerToolExecutor {
     box_resources: Arc<dyn RunnerBoxResourcePort>,
     auto_review: Option<ComputerAutoReviewCallback>,
     persist_image: Option<ComputerPersistImageCallback>,
     availability_check: Option<ComputerAvailabilityCheck>,
+    action_report: Option<ComputerActionReportCallback>,
     bind_unmapped_characters: bool,
 }
 
@@ -524,6 +526,7 @@ impl ProductionComputerToolExecutor {
             auto_review: None,
             persist_image: None,
             availability_check: None,
+            action_report: None,
             bind_unmapped_characters: false,
         }
     }
@@ -540,6 +543,11 @@ impl ProductionComputerToolExecutor {
 
     pub fn with_availability_check(mut self, check: ComputerAvailabilityCheck) -> Self {
         self.availability_check = Some(check);
+        self
+    }
+
+    pub fn with_action_report_callback(mut self, callback: ComputerActionReportCallback) -> Self {
+        self.action_report = Some(callback);
         self
     }
 
@@ -562,6 +570,15 @@ impl ComputerToolExecutor for ProductionComputerToolExecutor {
             .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
         if let Some(auto_review) = self.auto_review.as_ref() {
             auto_review(args, tool_call_id)?;
+        }
+        if let Some(reported) = reported_batch_position(
+            &std::iter::once(args.clone())
+                .chain(args.then_actions.iter().cloned())
+                .collect::<Vec<_>>(),
+        ) {
+            if let Some(report) = self.action_report.as_ref() {
+                report(&reported, tool_call_id);
+            }
         }
         let generated = to_generated_computer_use_args(
             tool_call_id,
