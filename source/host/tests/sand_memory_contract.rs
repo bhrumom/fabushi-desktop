@@ -3,14 +3,18 @@ use mahayana_host_runtime::extensions::memory::memory_service::{
     MemoryKind, MemoryRecall, MemoryRecord, ProjectMemoryBlock,
     ProjectMemoryMembership, ProjectMemoryPromptRecall, ScopedMemoryRecord, UserMemoryRecall,
 };
+use mahayana_host_runtime::host_paths::to_model_visible_path;
 use mahayana_host_runtime::runner::sand_memory::{
-    MEMORY_EPISODE_PREFIX, MEMORY_NOTE_PREFIX, MemoryExtraction, build_episode_user_prompt,
+    FrozenMemorySnapshot, MEMORY_EPISODE_PREFIX, MEMORY_NOTE_PREFIX, MemoryExtraction,
+    build_episode_user_prompt,
     build_extraction_user_prompt, episode_interval, fact_line, gather_extraction_memories,
     is_memorable_exchange, memory_importance, parse_extracted_memories,
     render_memory_system_prompt, render_project_memory_system_prompt,
     render_user_memory_system_prompt, resolve_frozen_memory_prompt, select_relevant_memories,
 };
-use mahayana_host_runtime::runner::system_prompt_assembly::append_memory_system_prompt;
+use mahayana_host_runtime::runner::system_prompt_assembly::{
+    append_memory_system_prompt, resolve_combined_memory_system_prompt,
+};
 
 fn record(content: &str, created_at: i64, kind: MemoryKind) -> MemoryRecord {
     MemoryRecord {
@@ -201,4 +205,114 @@ fn project_memory_prompt_preserves_frozen_precedence_blocks_and_membership_tail(
     assert!(rendered.contains("Project \"Launch Plan\" (launch)"));
     assert!(rendered.contains("[via Planner] Release requires two approvals"));
     assert!(rendered.contains("Also a member of: Archive (archive)"));
+}
+
+
+#[test]
+fn combined_memory_prompt_uses_model_visible_paths_and_frozen_snapshot_semantics() {
+    let user = UserMemoryRecall {
+        profile: vec![ScopedMemoryRecord {
+            agent_id: "agent-a".into(),
+            agent_name: "Researcher".into(),
+            memory: record("Shared user fact", 1_700_000_000_000, MemoryKind::Profile),
+        }],
+        recent: vec![],
+    };
+    let project = ProjectMemoryPromptRecall {
+        injected: vec![ProjectMemoryBlock {
+            slug: "launch".into(),
+            name: "Launch".into(),
+            own_shard_dir: to_model_visible_path(
+                std::path::Path::new("/home/box/sand-data/projects/launch/memory/agents/agent-a"),
+            ),
+            recall: UserMemoryRecall {
+                profile: vec![ScopedMemoryRecord {
+                    agent_id: "agent-b".into(),
+                    agent_name: "Planner".into(),
+                    memory: record("Shared project fact", 1_710_000_000_000, MemoryKind::Profile),
+                }],
+                recent: vec![],
+            },
+        }],
+        also_member_of: vec![],
+    };
+    let agent = MemoryRecall {
+        profile: vec![record("Own agent fact", 1_720_000_000_000, MemoryKind::Profile)],
+        recent: vec![],
+    };
+    let user_dir = to_model_visible_path(std::path::Path::new(
+        "/home/box/sand-data/user-memory",
+    ));
+    let user_shard = to_model_visible_path(std::path::Path::new(
+        "/home/box/sand-data/user-memory/agents/agent-a",
+    ));
+    let projects_root = to_model_visible_path(std::path::Path::new(
+        "/home/box/sand-data/projects",
+    ));
+    let agent_dir = to_model_visible_path(std::path::Path::new(
+        "/home/box/sand-data/agents/agent-a/memory",
+    ));
+
+    let first = resolve_combined_memory_system_prompt(
+        &user,
+        Some(&user_dir.to_string_lossy()),
+        Some(&user_shard.to_string_lossy()),
+        &project,
+        Some(&projects_root.to_string_lossy()),
+        &agent,
+        Some(&agent_dir.to_string_lossy()),
+        None,
+        0,
+        true,
+    );
+    assert!(first.render.find("User memory:").unwrap() < first.render.find("Project memory:").unwrap());
+    assert!(first.render.find("Project memory:").unwrap() < first.render.find("Memory: durable facts").unwrap());
+    assert!(first.render.contains("/home/box/agent-data/user-memory"));
+    assert!(first.render.contains("/home/box/agent-data/projects/launch/memory/agents/agent-a"));
+    assert!(!first.render.contains("/home/box/sand-data"));
+    let persisted = first.snapshot_to_persist.expect("memory snapshot");
+
+    let changed_agent = MemoryRecall {
+        profile: vec![record("Changed live fact", 1_730_000_000_000, MemoryKind::Profile)],
+        recent: vec![],
+    };
+    let frozen = resolve_combined_memory_system_prompt(
+        &user,
+        Some(&user_dir.to_string_lossy()),
+        Some(&user_shard.to_string_lossy()),
+        &project,
+        Some(&projects_root.to_string_lossy()),
+        &changed_agent,
+        Some(&agent_dir.to_string_lossy()),
+        Some(&persisted),
+        0,
+        true,
+    );
+    assert_eq!(frozen.render, persisted.render);
+    assert!(frozen.snapshot_to_persist.is_none());
+
+    let stale = FrozenMemorySnapshot {
+        render: "stale".into(),
+        compaction_epoch: 0,
+    };
+    let refreshed = resolve_combined_memory_system_prompt(
+        &user,
+        Some(&user_dir.to_string_lossy()),
+        Some(&user_shard.to_string_lossy()),
+        &project,
+        Some(&projects_root.to_string_lossy()),
+        &changed_agent,
+        Some(&agent_dir.to_string_lossy()),
+        Some(&stale),
+        1,
+        true,
+    );
+    assert_ne!(refreshed.render, "stale");
+    assert_eq!(
+        refreshed
+            .snapshot_to_persist
+            .expect("advanced epoch snapshot")
+            .compaction_epoch,
+        1
+    );
 }

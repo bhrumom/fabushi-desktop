@@ -243,10 +243,10 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::prompt_collector_glue::project_provider_messages_for_turn;
 use mahayana_host_runtime::runner::sand_memory::{
-    MEMORY_PROJECT_INJECTED_CAP, MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
+    FrozenMemorySnapshot, MEMORY_PROJECT_INJECTED_CAP, MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
     MEMORY_PROJECT_RECENT_PROMPT_LIMIT, MEMORY_RECENT_PROMPT_LIMIT,
     MEMORY_USER_PROFILE_PROMPT_LIMIT, MEMORY_USER_RECENT_PROMPT_LIMIT,
-    is_memorable_exchange,
+    is_memorable_exchange, is_memory_freeze_enabled,
 };
 use mahayana_host_runtime::runner::turn_memory::{
     TurnExchange, TurnMemoryMode, build_turn_memory_exchange, run_turn_memory_with,
@@ -276,8 +276,8 @@ use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     to_exact_action_value, validate_computer_action,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{
-    append_automations_system_prompt, append_memory_system_prompt,
-    append_project_memory_system_prompt, append_user_memory_system_prompt,
+    append_automations_system_prompt, append_combined_memory_system_prompt,
+    resolve_combined_memory_system_prompt,
 };
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
@@ -362,7 +362,9 @@ use mahayana_host_runtime::host_initial_transcript_load::{
     InitialTranscriptDegradedReason, ensure_initial_transcript_loaded,
     load_initial_transcript_resiliently,
 };
-use mahayana_host_runtime::host_paths::{get_gateway_discovery_path, get_host_lock_path};
+use mahayana_host_runtime::host_paths::{
+    get_gateway_discovery_path, get_host_lock_path, to_model_visible_path,
+};
 use mahayana_host_runtime::r#box::box_env::BoxEnvironmentUpdate;
 use mahayana_host_runtime::r#box::exec_daemon_process::start_managed_box_exec_daemon_from_process_env;
 use mahayana_host_runtime::r#box::production::{
@@ -3100,48 +3102,87 @@ fn start_routed_provider_task(
         MEMORY_USER_PROFILE_PROMPT_LIMIT,
         MEMORY_USER_RECENT_PROMPT_LIMIT,
     );
-    let user_memory_location = user_memory_store
-        .get_location()
+    let user_memory_location = to_model_visible_path(&user_memory_store.get_location())
         .to_string_lossy()
         .into_owned();
-    let user_memory_own_shard_location = user_memory_store
-        .get_own_shard_location()
-        .to_string_lossy()
-        .into_owned();
-    append_user_memory_system_prompt(
-        &mut provider_messages,
-        &user_memory_recall,
-        Some(&user_memory_location),
-        Some(&user_memory_own_shard_location),
-    );
+    let user_memory_own_shard_location =
+        to_model_visible_path(&user_memory_store.get_own_shard_location())
+            .to_string_lossy()
+            .into_owned();
 
     let project_memory_store = memory_service.project_memory_store(
         agent_id.clone(),
         memory_service.project_membership_for_agent(&agent_id),
         Arc::clone(&resolve_agent_name),
     );
-    let project_memory_recall = project_memory_store.recall_for_prompt(
+    let mut project_memory_recall = project_memory_store.recall_for_prompt(
         MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
         MEMORY_PROJECT_RECENT_PROMPT_LIMIT,
         MEMORY_PROJECT_INJECTED_CAP,
     );
-    let projects_root_location = project_memory_store
-        .get_location()
+    for block in &mut project_memory_recall.injected {
+        block.own_shard_dir = to_model_visible_path(&block.own_shard_dir);
+    }
+    let projects_root_location = to_model_visible_path(&project_memory_store.get_location())
         .to_string_lossy()
         .into_owned();
-    append_project_memory_system_prompt(
-        &mut provider_messages,
-        &project_memory_recall,
-        Some(&projects_root_location),
-    );
 
     let memory_store = memory_service.store_for_agent(&agent_id);
     let memory_recall = memory_store.recall(MEMORY_RECENT_PROMPT_LIMIT);
-    let memory_location = memory_store.get_location().to_string_lossy().into_owned();
-    append_memory_system_prompt(
-        &mut provider_messages,
+    let memory_location = to_model_visible_path(&memory_store.get_location())
+        .to_string_lossy()
+        .into_owned();
+
+    const FROZEN_MEMORY_COMPACTION_EPOCH: u64 = 0;
+    let frozen_memory_snapshot = session_workers
+        .get_agent_memory_prompt_snapshot(&agent_id)
+        .map_err(|error| {
+            GatewayCommandError::Internal(format!(
+                "could not read production memory prompt snapshot for {agent_id}: {error}"
+            ))
+        })?
+        .and_then(|snapshot| {
+            let epoch = snapshot.compaction_epoch;
+            (epoch.is_finite()
+                && epoch >= 0.0
+                && epoch.fract() == 0.0
+                && epoch <= u64::MAX as f64)
+                .then(|| FrozenMemorySnapshot {
+                    render: snapshot.render,
+                    compaction_epoch: epoch as u64,
+                })
+        });
+    let disable_memory_freeze = std::env::var("SAND_DISABLE_MEMORY_FREEZE").ok();
+    let resolved_memory = resolve_combined_memory_system_prompt(
+        &user_memory_recall,
+        Some(&user_memory_location),
+        Some(&user_memory_own_shard_location),
+        &project_memory_recall,
+        Some(&projects_root_location),
         &memory_recall,
         Some(&memory_location),
+        frozen_memory_snapshot.as_ref(),
+        FROZEN_MEMORY_COMPACTION_EPOCH,
+        is_memory_freeze_enabled(disable_memory_freeze.as_deref()),
+    );
+    if let Some(snapshot) = resolved_memory.snapshot_to_persist.as_ref() {
+        session_workers
+            .set_agent_memory_prompt_snapshot(
+                &agent_id,
+                &serde_json::json!({
+                    "render": snapshot.render,
+                    "compactionEpoch": snapshot.compaction_epoch,
+                }),
+            )
+            .map_err(|error| {
+                GatewayCommandError::Internal(format!(
+                    "could not persist production memory prompt snapshot for {agent_id}: {error}"
+                ))
+            })?;
+    }
+    append_combined_memory_system_prompt(
+        &mut provider_messages,
+        &resolved_memory.render,
     );
     let automation_store = session_workers
         .open_automation_store(&agent_id)

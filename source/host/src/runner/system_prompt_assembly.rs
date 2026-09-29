@@ -12,9 +12,10 @@ use super::system_prompt::{
     SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, build_sand_base_system_prompt,
 };
 use super::sand_memory::{
-    MEMORY_PROJECT_SYSTEM_PROMPT_HEADER, MEMORY_SYSTEM_PROMPT_HEADER,
-    MEMORY_USER_SYSTEM_PROMPT_HEADER, render_memory_system_prompt,
-    render_project_memory_system_prompt, render_user_memory_system_prompt,
+    FrozenMemoryPrompt, FrozenMemorySnapshot, MEMORY_PROJECT_SYSTEM_PROMPT_HEADER,
+    MEMORY_SYSTEM_PROMPT_HEADER, MEMORY_USER_SYSTEM_PROMPT_HEADER,
+    render_memory_system_prompt, render_project_memory_system_prompt,
+    render_user_memory_system_prompt, resolve_frozen_memory_prompt,
 };
 
 pub fn render_request_context_system_prompt(
@@ -137,6 +138,89 @@ pub fn append_automations_system_prompt(
     }
 }
 
+
+pub fn resolve_combined_memory_system_prompt(
+    user_recall: &UserMemoryRecall,
+    user_memory_dir: Option<&str>,
+    user_own_shard_dir: Option<&str>,
+    project_recall: &ProjectMemoryPromptRecall,
+    projects_root_dir: Option<&str>,
+    agent_recall: &MemoryRecall,
+    agent_memory_dir: Option<&str>,
+    snapshot: Option<&FrozenMemorySnapshot>,
+    compaction_epoch: u64,
+    freeze_enabled: bool,
+) -> FrozenMemoryPrompt {
+    let render_live = || {
+        let mut parts = Vec::new();
+        let mut has_facts = !user_recall.profile.is_empty() || !user_recall.recent.is_empty();
+
+        let user = render_user_memory_system_prompt(
+            user_recall,
+            user_memory_dir,
+            user_own_shard_dir,
+        );
+        if !user.is_empty() {
+            parts.push(user);
+        }
+
+        let project = render_project_memory_system_prompt(project_recall, projects_root_dir);
+        if !project.is_empty() {
+            parts.push(project);
+        }
+        has_facts |= project_recall.injected.iter().any(|block| {
+            !block.recall.profile.is_empty() || !block.recall.recent.is_empty()
+        });
+
+        let agent = render_memory_system_prompt(agent_recall, agent_memory_dir);
+        if !agent.is_empty() {
+            parts.push(agent);
+        }
+        has_facts |= !agent_recall.profile.is_empty() || !agent_recall.recent.is_empty();
+
+        (parts.join("\n\n"), has_facts)
+    };
+
+    if !freeze_enabled {
+        let (render, _) = render_live();
+        return FrozenMemoryPrompt {
+            render,
+            snapshot_to_persist: None,
+        };
+    }
+    resolve_frozen_memory_prompt(snapshot, compaction_epoch, render_live)
+}
+
+pub fn append_combined_memory_system_prompt(
+    messages: &mut Vec<ProviderMessage>,
+    memory: &str,
+) {
+    if memory.is_empty() {
+        return;
+    }
+    if messages.iter().any(|message| {
+        message.role == "system"
+            && (message.content.contains(MEMORY_USER_SYSTEM_PROMPT_HEADER)
+                || message.content.contains(MEMORY_PROJECT_SYSTEM_PROMPT_HEADER)
+                || message.content.contains(MEMORY_SYSTEM_PROMPT_HEADER))
+    }) {
+        return;
+    }
+    if let Some(system) = messages.iter_mut().find(|message| message.role == "system") {
+        if !system.content.trim().is_empty() {
+            system.content.push_str("\n\n");
+        }
+        system.content.push_str(memory);
+    } else {
+        messages.insert(
+            0,
+            ProviderMessage {
+                role: "system".into(),
+                content: memory.to_string(),
+            },
+        );
+    }
+}
 
 pub fn append_user_memory_system_prompt(
     messages: &mut Vec<ProviderMessage>,

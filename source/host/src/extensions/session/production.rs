@@ -31,7 +31,8 @@ use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
 use super::agent_db_serde::{
-    AwaitingUserResponse, EpisodeTurn, SandProfile, SpendGuardState, UnreadState,
+    AwaitingUserResponse, EpisodeTurn, MemoryPromptSnapshot, SandProfile, SpendGuardState,
+    UnreadState,
 };
 use super::session_conversation_state::{
     ConversationOutlineItem, ResolvedConversationState, SessionConversationState, TranscriptThread,
@@ -972,6 +973,15 @@ impl ProductionSessionWorkers {
     ) -> Result<bool, String> {
         self.open_agent_db_owner(agent_id)?
             .record_episode_turn(turn)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn get_agent_memory_prompt_snapshot(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<MemoryPromptSnapshot>, String> {
+        self.open_agent_db_owner(agent_id)?
+            .get_memory_prompt_snapshot()
             .map_err(|error| error.to_string())
     }
 
