@@ -7,6 +7,8 @@ const PRODUCTION_BINDINGS: &str = include_str!("../src/production_binding_provid
 const PRODUCTION_EXTENSIONS: &str = include_str!("../src/host_production_extensions.rs");
 const CLOUD_AGENT_SERVICE: &str =
     include_str!("../src/extensions/cloud_agents/cloud_agents_service.rs");
+const CLOUD_AGENT_TOOL: &str = include_str!("../src/cloud_agents/cloud_agent_tool.rs");
+const SHIPPING_HOST_MAIN: &str = include_str!("../app/src/main.rs");
 
 #[derive(Clone, PartialEq, Message)]
 struct FixtureThinking {
@@ -273,6 +275,21 @@ fn shipping_dump_path_consumes_the_production_converter_without_a_json_fallback(
         "(self.convert_conversation)(&conversation.conversation)"
     ));
     assert!(service.contains("serde_json::to_string(&message)"));
+
+    let tool = compact(CLOUD_AGENT_TOOL);
+    assert!(tool.contains("deps.manager.get_transcript_dump(id)"));
+    assert!(tool.contains("deps.box_resources.execute_write(RunnerBoxWriteRequest{"));
+    assert!(tool.contains("data:dump.jsonl.as_bytes().to_vec()"));
+
+    let shipping_host = compact(SHIPPING_HOST_MAIN);
+    assert!(shipping_host.contains(
+        "letshipping_box_resources=Arc::new(ForeverBoxRunnerResourcePort::new("
+    ));
+    assert!(shipping_host.contains(
+        "letbox_resources:Arc<dynRunnerBoxResourcePort>=shipping_box_resources.clone();"
+    ));
+    assert!(shipping_host.contains("manager:Arc::clone(&worker_cloud_agents)"));
+    assert!(shipping_host.contains("box_resources:Arc::clone(&box_resources)"));
 
     assert_eq!(
         cloud_agent_transcript_dump_path("bc-production"),

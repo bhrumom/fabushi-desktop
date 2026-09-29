@@ -10074,7 +10074,7 @@
       "targetPath": "source/host/src/cloud_agents/cloud_agent_tool.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "77b6a1682a06efe7a5f3e3c71a5d63555d304796",
       "architecturalRole": "host/cloud-agents",
       "processOrPackage": "mahayana-host",
@@ -10085,7 +10085,12 @@
         "source/host/app/src/main.rs",
         "source/host/src/extensions/cloud_agents/cloud_agents_service.rs",
         "source/host/src/runner/system_prompt_assembly.rs",
-        "source/host/src/runner/routed_provider_runtime.rs"
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/packages/agent-transcript/trace-format.ts",
+        "source/host/src/cloud_agents/cloud_agent_trace_format.rs",
+        "source/host/src/production_binding_providers.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/src/runner/box_tool_access.rs"
       ],
       "testEvidence": [
         "source/host/tests/cloud_agent_tool_contract.rs",
@@ -10095,10 +10100,12 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/auto_review_production_wiring_contract.rs",
         "source/host/tests/system_prompt_contract.rs",
-        "source/host/tests/cloud_agent_background_revival_production_contract.rs"
+        "source/host/tests/cloud_agent_background_revival_production_contract.rs",
+        "source/host/tests/cloud_agent_trace_production_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-adaptation",
-      "notes": "Rust Runner registers CloudAgent as a first-party RoutedToolBridge and production-wires launch/list/models/get/dump/watch/reply/rename/cancel/archive/unarchive/delete/list_artifacts against the single Host SandCloudAgentManager. launch/reply consume the canonical image loader through the live ForeverBox binary Read port; dump writes through the live Box Write port; destructive confirmation, model validation, managed-id fencing and cancellation are preserved. The frozen production Auto-review callback is wired to the same per-turn controller/backend classifier. Shipping Host now owns one shared RunnerCloudAgentWatches instance: launch/watch/reply arm real completion polling, persist CloudAgent durable pending-wake markers, project async tasks, and route terminal completion into CompletionRevivals and a hidden background-revival routed turn. Automation-origin quiet metadata is propagated from the live automation wake. Final remains withheld for the generic sand quiet-work-origin carrier used by non-automation quiet work and for the generated ConversationMessage-to-trace adapter used by dump."
+      "notes": "Rust Runner registers CloudAgent as a first-party RoutedToolBridge and production-wires launch/list/models/get/dump/watch/reply/rename/cancel/archive/unarchive/delete/list_artifacts against the single Host SandCloudAgentManager. launch/reply consume the canonical image loader through the live ForeverBox binary Read port; dump consumes the production generated ConversationMessage -> NO_PREAMBLE trace converter, serializes one JSON object per line, and writes through the live ForeverBox-backed RunnerBoxResourcePort. The converter schema is generated at Host build time directly from packages/proto/generated and requires ConversationMessage, ToolResult, Thinking, and ClientSideToolV2Result roots; rawArgs/args truthiness, content-before-result oneof, tool_calls plus role=tool rows, and started/completed/duration semantics match the frozen Grok trace-format. Shipping Host owns one shared RunnerCloudAgentWatches instance and preserves durable completion revival and quiet-origin behavior."
     },
     {
       "referencePath": "source/host/cloud-agents/cloud-agent-transcript-dump.ts",
