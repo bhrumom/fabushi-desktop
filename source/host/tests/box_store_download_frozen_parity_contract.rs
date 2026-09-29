@@ -12,6 +12,10 @@ use mahayana_host_runtime::extensions::box_store_sync::box_store_download::{
     symlink_target_stays_within_root,
 };
 use mahayana_host_runtime::extensions::box_store_sync::box_store_manifest_format::BoxStoreManifestEntry;
+use mahayana_host_runtime::extensions::box_store_sync::box_store_pack::{
+    BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACKS_PREFIX, PACK_INDEX_VERSION, PackEntry, PackIndex,
+    PackSource, build_pack_file, serialize_pack_index, sha256_hex,
+};
 
 fn temp_root(label: &str) -> PathBuf {
     let nonce = SystemTime::now()
@@ -295,6 +299,160 @@ fn byte_budget_admits_an_oversized_item_when_idle() {
     budget.release(20);
     assert!(budget.try_acquire(10));
     budget.release(10);
+}
+
+#[test]
+fn pack_restore_reports_each_restored_path_and_skips_loose_blobs() {
+    let root = temp_root("pack-progress");
+    let source_root = root.join("pack-sources");
+    let target_root = root.join("target");
+    fs::create_dir_all(&source_root).expect("create pack source root");
+    fs::create_dir_all(&target_root).expect("create target root");
+
+    let mut sources = Vec::new();
+    let mut manifest = BTreeMap::new();
+    let mut expected = Vec::new();
+    for index in 0..16_u64 {
+        let rel_path = format!("workspace/pack-{index}.txt");
+        let bytes = format!("pack-progress-{index}\n").into_bytes();
+        let sha = sha256_hex(&bytes);
+        let source = source_root.join(format!("source-{index}"));
+        fs::write(&source, &bytes).expect("write pack source");
+        sources.push(PackSource {
+            abs_path: source,
+            sha: sha.clone(),
+            size: bytes.len() as u64,
+            vmtime: index + 1,
+        });
+        manifest.insert(
+            rel_path.clone(),
+            BoxStoreManifestEntry::File {
+                sha,
+                size: bytes.len() as u64,
+                mode: 0o600,
+            },
+        );
+        expected.push((rel_path, bytes));
+    }
+
+    let pack_path = root.join("pack.gz");
+    let built = build_pack_file(&pack_path, &sources, || false)
+        .expect("build pack")
+        .expect("pack build not aborted");
+    assert_eq!(built.members.len(), 16);
+    let pack_bytes = fs::read(&pack_path).expect("read pack");
+    let pack_id = sha256_hex(&pack_bytes);
+    let pack_key = format!("{BOX_STORE_PACKS_PREFIX}/{pack_id}");
+    let index = PackIndex {
+        version: PACK_INDEX_VERSION,
+        max_vmtime: 16,
+        packs: vec![PackEntry {
+            id: pack_id,
+            bytes: pack_bytes.len() as u64,
+            members: built.members,
+        }],
+    };
+    let store = CountingStore::with_objects([
+        (
+            BOX_STORE_PACK_INDEX_KEY.to_string(),
+            serialize_pack_index(&index)
+                .expect("serialize pack index")
+                .into_bytes(),
+        ),
+        (pack_key.clone(), pack_bytes),
+    ]);
+    let progress = Arc::new(Mutex::new(Vec::<usize>::new()));
+    let progress_sink = Arc::clone(&progress);
+
+    let summary = download_manifest(
+        &store,
+        &target_root,
+        &manifest,
+        BoxStoreDownloadOptions {
+            on_progress: Some(Arc::new(move |snapshot| {
+                progress_sink.lock().expect("progress").push(snapshot.files);
+            })),
+            ..BoxStoreDownloadOptions::default()
+        },
+    );
+
+    assert!(summary.failures.is_empty(), "{:?}", summary.failures);
+    assert_eq!((summary.files, summary.verified), (16, 16));
+    assert_eq!(store.file_get_count(&pack_key), 1);
+    assert_eq!(
+        progress.lock().expect("progress").as_slice(),
+        (1_usize..=16).collect::<Vec<_>>().as_slice()
+    );
+    for (rel_path, bytes) in expected {
+        assert_eq!(
+            fs::read(target_root.join(rel_path)).expect("read restored pack member"),
+            bytes
+        );
+    }
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn all_local_pack_members_skip_pack_download_and_are_counted_by_bulk_phase() {
+    let root = temp_root("pack-local-skip");
+    let target_root = root.join("target");
+    fs::create_dir_all(&target_root).expect("create target root");
+
+    let mut manifest = BTreeMap::new();
+    let mut members = Vec::new();
+    for index in 0..16_u64 {
+        let rel_path = format!("workspace/local-{index}.txt");
+        let bytes = format!("already-local-{index}\n").into_bytes();
+        let sha = sha256_hex(&bytes);
+        let destination = target_root.join(&rel_path);
+        fs::create_dir_all(destination.parent().expect("destination parent")).expect("create parent");
+        fs::write(&destination, &bytes).expect("write local file");
+        manifest.insert(
+            rel_path,
+            BoxStoreManifestEntry::File {
+                sha: sha.clone(),
+                size: bytes.len() as u64,
+                mode: 0o600,
+            },
+        );
+        members.push(mahayana_host_runtime::extensions::box_store_sync::box_store_pack::PackMember {
+            sha,
+            size: bytes.len() as u64,
+            offset: index,
+            clen: 1,
+            vmtime: index + 1,
+        });
+    }
+    let pack_key = format!("{BOX_STORE_PACKS_PREFIX}/unused-local-pack");
+    let index = PackIndex {
+        version: PACK_INDEX_VERSION,
+        max_vmtime: 16,
+        packs: vec![PackEntry {
+            id: "unused-local-pack".into(),
+            bytes: 16,
+            members,
+        }],
+    };
+    let store = CountingStore::with_objects([(
+        BOX_STORE_PACK_INDEX_KEY.to_string(),
+        serialize_pack_index(&index)
+            .expect("serialize pack index")
+            .into_bytes(),
+    )]);
+
+    let summary = download_manifest(
+        &store,
+        &target_root,
+        &manifest,
+        BoxStoreDownloadOptions::default(),
+    );
+
+    assert!(summary.failures.is_empty(), "{:?}", summary.failures);
+    assert_eq!((summary.files, summary.verified), (16, 16));
+    assert_eq!(store.file_get_count(&pack_key), 0);
+
+    let _ = fs::remove_dir_all(root);
 }
 
 #[cfg(unix)]
