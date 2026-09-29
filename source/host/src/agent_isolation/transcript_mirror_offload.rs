@@ -527,7 +527,7 @@ where
     Backend: AgentBlobWorkerBackend + 'static,
 {
     fn get_blob(&self, blob_id: &[u8]) -> Result<Option<Vec<u8>>, String> {
-        futures::executor::block_on(WorkerBlobStore::get_blob(self, &(), blob_id))
+        self.get_blob_blocking(blob_id)
             .map_err(|_| "worker blob read failed".to_string())
     }
 }
