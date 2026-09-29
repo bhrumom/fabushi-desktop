@@ -202,11 +202,6 @@ impl ProductionAgentInferenceOwner {
             || None,
             || None,
         );
-        if experiment_model_override.is_some() {
-            // Matches frozen Grok's onModelExperimentApplied boundary for the
-            // explicit process override. Authenticated exposure logging stays
-            // owned by the future Statsig bootstrap implementation.
-        }
         resolve_sand_requested_model(ResolveRequestedModelInputs {
             session_options,
             env_model_override: env_model_override.as_deref(),
