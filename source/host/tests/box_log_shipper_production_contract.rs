@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -8,13 +9,16 @@ use mahayana_host_runtime::extensions::telemetry::box_log_shipper::{
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
 
+static TEMP_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
 fn temp_root() -> PathBuf {
     let suffix = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
+    let sequence = TEMP_ROOT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
     std::env::temp_dir().join(format!(
-        "fabushi-box-log-shipper-{}-{suffix}",
+        "fabushi-box-log-shipper-{}-{suffix}-{sequence}",
         std::process::id()
     ))
 }
