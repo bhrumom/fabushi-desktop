@@ -62,15 +62,15 @@ fn production_mode_uses_source_map_when_local_store_id_is_not_overridden() {
 }
 
 #[test]
-fn production_mode_wires_agent_store_but_keeps_unrecovered_v2_fail_closed() {
+fn production_mode_wires_agent_store_and_sand_box_store_v2() {
     let env = BTreeMap::from([
         ("SAND_BOX_STORE_SYNC".to_string(), "1".to_string()),
         ("SAND_BOX_STORE_BACKEND".to_string(), "v2".to_string()),
     ]);
-    assert!(matches!(
+    assert_eq!(
         resolve_production_box_store_sync_mode(&env),
-        ProductionBoxStoreSyncMode::UnsupportedRemote { .. }
-    ));
+        ProductionBoxStoreSyncMode::SandBoxStoreV2
+    );
 
     let env = BTreeMap::from([
         ("SAND_BOX_STORE_SYNC".to_string(), "1".to_string()),
@@ -113,7 +113,7 @@ fn shipping_host_starts_box_store_sync_after_mcp_and_stops_it_before_mcp() {
 }
 
 #[test]
-fn production_owner_wires_real_chrome_watcher_and_periodic_cycle() {
+fn production_owner_wires_real_chrome_watcher_periodic_cycle_and_remote_providers() {
     let production = include_str!("../src/extensions/box_store_sync/production.rs");
     assert!(production.contains("ChromeSessionWatcher::with_logger"));
     assert!(production.contains("run_local_cycle(true, false, false, false)"));
@@ -125,8 +125,9 @@ fn production_owner_wires_real_chrome_watcher_and_periodic_cycle() {
     assert!(production.contains("write_manifest("));
     assert!(production.contains("store.put_from_file(&blob_key, path)"));
     assert!(production.contains("ProductionBoxStoreSyncMode::AgentStore"));
-    assert!(production.contains("AgentStoreObjectStoreProvider"));
-    assert!(production.contains("remote-backend-not-wired"));
+    assert!(production.contains("ProductionBoxStoreSyncMode::SandBoxStoreV2"));
+    assert!(production.contains("resolve_box_object_store_provider("));
+    assert!(production.contains("BoxObjectStoreProviderDependencies {"));
     assert!(production.contains("has_live_sand_agent_db_handle"));
     assert!(production.contains("run_store_db_debounce_loop"));
     assert!(production.contains("AgentDbCaptureQueues"));
@@ -136,6 +137,12 @@ fn production_owner_wires_real_chrome_watcher_and_periodic_cycle() {
     assert!(production.contains("BOX_STORE_PACK_RETIRED_KEY"));
     assert!(production.contains("BOX_STORE_PACK_INDEX_KEY"));
     assert!(production.contains("idle && poll_inner.pack_sync_due()"));
+
+    let provider_owner = include_str!("../src/extensions/box_store_sync/box_object_store.rs");
+    assert!(provider_owner.contains("BoxStoreBackendKind::AgentStore =>"));
+    assert!(provider_owner.contains("AgentStoreObjectStoreProvider::new(remote)?"));
+    assert!(provider_owner.contains("BoxStoreBackendKind::SandBoxStoreV2 =>"));
+    assert!(provider_owner.contains("SandBoxStoreServiceProvider::new(client)?"));
 
     let shipping_main = include_str!("../app/src/main.rs");
     assert!(shipping_main.contains("schedule_store_db_snapshot(&agent_id)"));
