@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::cloud_agents::cloud_agent_tool::{
     CloudAgentToolBridge, CloudAgentToolDependencies,
@@ -7,6 +7,7 @@ use crate::runner::box_tool_access::{RunnerBoxResourcePort, RunnerBoxToolBridge}
 use crate::runner::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedToolBridge,
 };
+use crate::runner::subagent_runtime::SubagentRuntime;
 
 use super::box_help_tool::BoxHelpToolBridge;
 use super::sand_agent_management_tools::{
@@ -25,6 +26,9 @@ use super::sand_multitask_todo_tool::{
 };
 use super::send_message_tool::{SendMessageSink, SendMessageToolBridge};
 use super::sand_task_subagent_tool::{SubagentTaskSink, SubagentTaskToolBridge};
+use super::sand_subagent_management_tools::{
+    SubagentManagementToolBridge, SubagentSteerReviewCallback,
+};
 
 /// Per-turn Runner tool dependency projection.
 ///
@@ -42,6 +46,8 @@ pub struct TurnToolsetDependencies {
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
     pub agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
+    pub subagent_runtime: Option<Arc<Mutex<SubagentRuntime>>>,
+    pub subagent_steer_review: Option<SubagentSteerReviewCallback>,
     pub state_writer: Option<Arc<dyn SandStateWriter>>,
     pub routine_auto_review: Option<RoutineAutoReviewCallback>,
     pub routine_post_write: Option<RoutinePostWriteCallback>,
@@ -83,6 +89,14 @@ pub fn build_turn_toolset(
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.subagent_task_sink {
         Some(sink) => Arc::new(SubagentTaskToolBridge::new(bridge, sink)),
+        None => bridge,
+    };
+    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.subagent_runtime {
+        Some(runtime) => Arc::new(SubagentManagementToolBridge::new(
+            bridge,
+            runtime,
+            dependencies.subagent_steer_review,
+        )),
         None => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.state_writer {

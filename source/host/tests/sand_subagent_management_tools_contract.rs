@@ -1,10 +1,19 @@
+use std::sync::{Arc, Mutex};
+
 use mahayana_host_runtime::runner::subagent_runtime::{
     SubagentRuntime, SubagentSessionSnapshot,
 };
-use mahayana_host_runtime::runner::tools::sand_subagent_management_tools::{
-    SteerReview, check_subagent, describe_running_subagent, elapsed_label,
-    message_subagent, not_running_message, stop_subagent,
+use mahayana_host_runtime::extensions::inference::provider_session::{
+    ProviderSessionError, RoutedToolDefinition,
 };
+use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
+use mahayana_host_runtime::runner::tools::sand_subagent_management_tools::{
+    CHECK_SUBAGENT_TOOL_NAME, MESSAGE_SUBAGENT_TOOL_NAME, STOP_SUBAGENT_TOOL_NAME,
+    SteerReview, SubagentManagementToolBridge, SubagentSteerReviewCallback,
+    check_subagent, describe_running_subagent, elapsed_label, message_subagent,
+    not_running_message, stop_subagent,
+};
+use serde_json::{Value, json};
 
 #[test]
 fn elapsed_labels_match_frozen_rounding_and_minute_format() {
@@ -126,4 +135,129 @@ fn detailed_description_without_activity_has_explicit_empty_state() {
     };
     let text = describe_running_subagent(&info, true);
     assert!(text.contains("No tool activity recorded yet."));
+}
+
+
+struct EmptyBridge;
+
+impl RoutedToolBridge for EmptyBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        Ok(Vec::new())
+    }
+
+    fn call_tool(
+        &self,
+        _tool: &RoutedToolDefinition,
+        _args: Value,
+        _tool_call_id: &str,
+    ) -> Result<Value, ProviderSessionError> {
+        Err(ProviderSessionError::Tool("unexpected delegate call".into()))
+    }
+}
+
+#[test]
+fn shipping_management_bridge_registers_all_frozen_tools_on_single_runtime() {
+    let runtime = Arc::new(Mutex::new(running_runtime()));
+    let review_calls = Arc::new(Mutex::new(Vec::<(String, String, String)>::new()));
+    let review_calls_sink = Arc::clone(&review_calls);
+    let review: SubagentSteerReviewCallback = Arc::new(move |subagent_id, message, tool_call_id| {
+        review_calls_sink.lock().unwrap().push((
+            subagent_id.to_string(),
+            message.to_string(),
+            tool_call_id.to_string(),
+        ));
+        Ok(SteerReview {
+            allowed: true,
+            reason: String::new(),
+        })
+    });
+    let bridge = SubagentManagementToolBridge::new(
+        Arc::new(EmptyBridge),
+        Arc::clone(&runtime),
+        Some(review),
+    );
+    let tools = bridge.list_tools().expect("management tools");
+    for name in [
+        CHECK_SUBAGENT_TOOL_NAME,
+        MESSAGE_SUBAGENT_TOOL_NAME,
+        STOP_SUBAGENT_TOOL_NAME,
+    ] {
+        assert!(tools.iter().any(|tool| tool.name == name), "missing {name}");
+    }
+
+    let check = tools.iter().find(|tool| tool.name == CHECK_SUBAGENT_TOOL_NAME).unwrap();
+    let checked = bridge
+        .call_tool(check, json!({"subagent_id":"worker-a"}), "check-call")
+        .expect("check");
+    assert!(checked.as_str().is_some_and(|text| text.contains("worker-a")));
+
+    let message = tools.iter().find(|tool| tool.name == MESSAGE_SUBAGENT_TOOL_NAME).unwrap();
+    let steered = bridge
+        .call_tool(
+            message,
+            json!({"subagent_id":"worker-a","message":"Try another button"}),
+            "steer-call",
+        )
+        .expect("steer");
+    assert!(steered.as_str().is_some_and(|text| text.starts_with("Message delivered")));
+    assert_eq!(
+        review_calls.lock().unwrap().as_slice(),
+        &[(
+            "worker-a".to_string(),
+            "Try another button".to_string(),
+            "steer-call".to_string(),
+        )]
+    );
+
+    let stop = tools.iter().find(|tool| tool.name == STOP_SUBAGENT_TOOL_NAME).unwrap();
+    let stopped = bridge
+        .call_tool(stop, json!({"subagent_id":"worker-a"}), "stop-call")
+        .expect("stop");
+    assert!(stopped.as_str().is_some_and(|text| text.starts_with("Stopping subagent")));
+}
+
+#[test]
+fn denied_live_steer_review_fences_runtime_mutation() {
+    let runtime = Arc::new(Mutex::new(running_runtime()));
+    let review: SubagentSteerReviewCallback = Arc::new(|_, _, _| {
+        Ok(SteerReview {
+            allowed: false,
+            reason: "production review denied".into(),
+        })
+    });
+    let bridge = SubagentManagementToolBridge::new(
+        Arc::new(EmptyBridge),
+        Arc::clone(&runtime),
+        Some(review),
+    );
+    let tools = bridge.list_tools().expect("management tools");
+    let message = tools.iter().find(|tool| tool.name == MESSAGE_SUBAGENT_TOOL_NAME).unwrap();
+    let denied = bridge
+        .call_tool(
+            message,
+            json!({"subagent_id":"worker-a","message":"redirect"}),
+            "steer-denied",
+        )
+        .expect("review denial is a communicate result");
+    assert_eq!(denied, Value::String("production review denied".into()));
+    assert!(runtime.lock().unwrap().is_running("worker-a"));
+}
+
+#[test]
+fn shipping_host_wires_management_tools_to_generated_runtime_and_auto_review() {
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let main = std::fs::read_to_string(root.join("app/src/main.rs")).expect("shipping host main");
+    let composition = std::fs::read_to_string(root.join("src/runner/turn_agent_composition.rs"))
+        .expect("turn composition");
+    for required in [
+        "worker_subagent_management_runtime",
+        "build_sand_subagent_steer_review_target",
+        "review_sand_subagent_action(",
+        "tool_call_id",
+        ".with_subagent_management(",
+    ] {
+        assert!(main.contains(required), "missing shipping management wiring: {required}");
+    }
+    assert!(composition.contains("SubagentManagementToolBridge"));
+    assert!(composition.contains("subagent_steer_review"));
 }

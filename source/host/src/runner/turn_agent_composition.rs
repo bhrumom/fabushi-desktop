@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
@@ -16,6 +16,7 @@ use super::routed_provider_runtime::{
     RunnerRequestContextSnapshot, run_routed_provider_in_runner,
 };
 use super::sand_action_audit::{AuditedRoutedToolBridge, RoutedMcpAuditConfig};
+use super::subagent_runtime::SubagentRuntime;
 use super::turn_observation::{ObservedRoutedToolBridge, TurnObservationHandle};
 use super::tools::communicate_tool::{
     CommunicateInteractionSink, CommunicateRoutedToolBridge,
@@ -25,6 +26,7 @@ use super::tools::send_message_tool::SendMessageSink;
 use super::tools::sand_reaction_tool::ReactionSink;
 use super::tools::sand_agent_management_tools::AgentManagementSink;
 use super::tools::sand_task_subagent_tool::SubagentTaskSink;
+use super::tools::sand_subagent_management_tools::SubagentSteerReviewCallback;
 use super::tools::sand_browser_tools::BrowserToolExecutor;
 use super::tools::sand_computer_tool::ComputerToolExecutor;
 use super::tools::sand_file_transfer_tools::FileTransferExecutor;
@@ -64,6 +66,8 @@ pub struct TurnAgentComposition {
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
+    subagent_runtime: Option<Arc<Mutex<SubagentRuntime>>>,
+    subagent_steer_review: Option<SubagentSteerReviewCallback>,
     state_writer: Option<Arc<dyn SandStateWriter>>,
     routine_auto_review: Option<RoutineAutoReviewCallback>,
     routine_post_write: Option<RoutinePostWriteCallback>,
@@ -102,6 +106,8 @@ impl TurnAgentComposition {
             reaction_sink: None,
             agent_management_sink: None,
             subagent_task_sink: None,
+            subagent_runtime: None,
+            subagent_steer_review: None,
             state_writer: None,
             routine_auto_review: None,
             routine_post_write: None,
@@ -252,6 +258,20 @@ impl TurnAgentComposition {
         self.subagent_task_sink.is_some()
     }
 
+    pub fn with_subagent_management(
+        mut self,
+        runtime: Arc<Mutex<SubagentRuntime>>,
+        review: Option<SubagentSteerReviewCallback>,
+    ) -> Self {
+        self.subagent_runtime = Some(runtime);
+        self.subagent_steer_review = review;
+        self
+    }
+
+    pub fn has_subagent_management(&self) -> bool {
+        self.subagent_runtime.is_some()
+    }
+
     pub fn with_state_writer(
         mut self,
         state: Arc<dyn SandStateWriter>,
@@ -391,6 +411,8 @@ impl TurnAgentComposition {
                 reaction_sink: self.reaction_sink.clone(),
                 agent_management_sink: self.agent_management_sink.clone(),
                 subagent_task_sink: self.subagent_task_sink.clone(),
+                subagent_runtime: self.subagent_runtime.clone(),
+                subagent_steer_review: self.subagent_steer_review.clone(),
                 state_writer: self.state_writer.clone(),
                 routine_auto_review: self.routine_auto_review.clone(),
                 routine_post_write: self.routine_post_write.clone(),
