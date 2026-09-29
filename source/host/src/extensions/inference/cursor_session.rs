@@ -16,6 +16,7 @@ use super::sand_model_experiment::{
 };
 
 pub const SAND_DEFAULT_MODEL_ID: &str = "grok-4.5";
+pub const SAND_SUMMARIZATION_MODEL_ID: &str = "gemini-2.5-flash";
 pub const SAND_COMPUTER_USE_SUBAGENT_MODEL_ID: &str = "claude-opus-4-8";
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

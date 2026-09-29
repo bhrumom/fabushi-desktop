@@ -14,8 +14,10 @@ use mahayana_host_runtime::extensions::inference::inference_service::{
 use mahayana_host_runtime::extensions::inference::production::{
     CursorWebBackendFactory, InferenceAuth, InferencePortFactory, InferenceProductionExtras,
     ModelExperimentApplied, ProductionInferenceSettings, RequestIdObserver,
+    summarization_session_options,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::RoutedProvider;
+use mahayana_host_runtime::extensions::inference::cursor_session::SAND_SUMMARIZATION_MODEL_ID;
 use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
 
 struct FakeAuth;
@@ -218,4 +220,19 @@ fn cursor_route_is_authorized_through_the_same_shipping_runner_boundary() {
     assert!(shipping_main.contains(
         "configured_routed_provider(&gateway.data_dir.join(\"settings.json\"))"
     ));
+}
+
+
+#[test]
+fn summarization_session_matches_frozen_model_and_labeling_fence() {
+    let options = summarization_session_options();
+    assert_eq!(
+        options.model_id.as_deref(),
+        Some(SAND_SUMMARIZATION_MODEL_ID)
+    );
+    assert_eq!(SAND_SUMMARIZATION_MODEL_ID, "gemini-2.5-flash");
+    assert!(options.is_summarization_session);
+    assert!(options.skip_labeling);
+    assert!(!options.is_computer_use_subagent);
+    assert!(!options.is_browser_use_subagent);
 }

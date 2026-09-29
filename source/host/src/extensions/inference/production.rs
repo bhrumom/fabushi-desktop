@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use crate::extensions::auth::extension::HostAuthExtension;
@@ -7,7 +8,7 @@ use crate::extensions::settings::settings_service::SettingsService;
 use super::cursor_inference_transport::CursorInferenceAuth;
 use super::cursor_session::{
     RequestLineage, RequestedModel, ResolveRequestedModelInputs, SandAttachedMediaUrlProvider,
-    SandSessionOptions, resolve_sand_requested_model,
+    SAND_SUMMARIZATION_MODEL_ID, SandSessionOptions, resolve_sand_requested_model,
 };
 use super::generated_inference_codec::InferenceReason;
 use super::sand_labeling::{
@@ -24,10 +25,23 @@ use super::extension::{AgentInferenceOwner, InferenceExtensionRuntime};
 use super::inference_service::{
     HostInferenceService, InferenceRoute, InferenceSettings, InferenceUsage,
 };
-use super::provider_session::RoutedProvider;
+use super::provider_session::{
+    ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedProvider,
+    RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
+    run_routed_provider_text_with_lifecycle_reporting_usage,
+};
 
 pub type RequestIdObserver = Arc<dyn Fn(&str) + Send + Sync>;
 pub type ModelExperimentApplied = Arc<dyn Fn() + Send + Sync>;
+
+pub fn summarization_session_options() -> SandSessionOptions {
+    SandSessionOptions {
+        model_id: Some(SAND_SUMMARIZATION_MODEL_ID.to_string()),
+        is_summarization_session: true,
+        skip_labeling: true,
+        ..SandSessionOptions::default()
+    }
+}
 
 pub trait InferenceAuth: Send + Sync {
     fn access_token(&self) -> Result<String, String>;
@@ -390,6 +404,71 @@ impl ProductionInferenceExtension {
 
     pub fn attached_media_provider(&self) -> SandAttachedMediaUrlProvider {
         self.attached_media.clone()
+    }
+
+    pub fn run_summarization_prompt(
+        &self,
+        data_dir: &Path,
+        system_prompt: &str,
+        user_prompt: &str,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<String, ProviderSessionError> {
+        let provider = match self.route() {
+            InferenceRoute::Cursor => RoutedProvider::Cursor,
+            InferenceRoute::Routed(provider) => provider,
+        };
+        let session_options = summarization_session_options();
+        let cursor_auth = self.cursor_auth_for_session(Some(&session_options));
+        let messages = vec![
+            ProviderMessage {
+                role: "system".into(),
+                content: system_prompt.to_string(),
+            },
+            ProviderMessage {
+                role: "user".into(),
+                content: user_prompt.to_string(),
+            },
+        ];
+        let mut reject_tool = |
+            _tool: &RoutedToolDefinition,
+            _args: serde_json::Value,
+            _tool_call_id: &str,
+        | -> Result<serde_json::Value, ProviderSessionError> {
+            Err(ProviderSessionError::Tool(
+                "summarization inference exposes no tools".into(),
+            ))
+        };
+        let mut ignore_delta = |_delta: &str, _accumulated: &str| {};
+        let mut options = RoutedProviderOptions {
+            data_dir,
+            cursor_auth: Some(cursor_auth),
+            tools: &[],
+            mcp_server_url: None,
+            execute_tool: &mut reject_tool,
+            on_text_delta: &mut ignore_delta,
+            should_cancel,
+        };
+        let mut ignore_checkpoint =
+            |_checkpoint: &RoutedProviderCheckpoint| Ok(());
+        let mut record_usage = |usage: ProviderTokenUsage| {
+            self.record_usage(
+                provider,
+                InferenceUsage {
+                    input_tokens: Some(usage.input_tokens),
+                    output_tokens: Some(usage.output_tokens),
+                    cache_read_tokens: Some(usage.cache_read_tokens),
+                    cache_write_tokens: Some(usage.cache_write_tokens),
+                },
+            );
+        };
+        run_routed_provider_text_with_lifecycle_reporting_usage(
+            provider,
+            &messages,
+            &mut options,
+            None,
+            &mut ignore_checkpoint,
+            &mut record_usage,
+        )
     }
 
     pub fn create_web_search(
