@@ -13314,99 +13314,120 @@
       "targetPath": "source/host/src/extensions/memory/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "383de9c3db598308862af4e92c1e3a7724bde59f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/memory/extension.rs",
         "source/host/src/extensions/memory/memory_service.rs",
+        "source/host/src/extensions/memory/production.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/src/extensions/experiments/extension.rs",
         "source/host/app/src/main.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "testEvidence": [
         "source/host/tests/memory_extension_contract.rs",
         "source/host/tests/memory_service_contract.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs",
+        "source/host/tests/host_production_extensions_contract.rs",
+        "source/host/tests/extensions_experiments_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host now owns one Memory extension service with the frozen extension id/dependency boundary; production startup creates that owner once and injects the same Arc<MemoryService> into ProductionSessionWorkers. HostMemoryExtension now strongly owns at most one synthesis runtime, installs only a weak dreaming bridge into MemoryService to avoid a second owner/cycle, and exposes deterministic enable/disable disposal semantics. Final remains withheld for authenticated sand_memory_dreaming gate startup, real inference/telemetry collaborators, background policy lifecycle and active-agent/listener surfaces."
+      "notes": "Implemented with one shipping Host Memory extension owner over the canonical MemoryService. Authenticated Statsig bootstrap pins sand_memory_dreaming before enabling the owner; replacement, gate disable and extension disposal terminate the prior synthesis worker and clear the weak dreaming bridge. The same production MemoryService is injected into Session/turn completion, so synthesis evidence and ordinary memory operations share one owner. Exact-HEAD Host contracts and Focused Electron E2E cover the shipping lifecycle."
     },
     {
       "referencePath": "source/host/extensions/memory/memory-service.ts",
       "targetPath": "source/host/src/extensions/memory/memory_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b3800aec1c20dddd426c774c4f9394f241fa012c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/memory/memory_service.rs",
-        "source/host/src/extensions/session/session_roster.rs",
-        "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/memory/extension.rs",
         "source/host/src/extensions/memory/production.rs",
+        "source/host/src/extensions/session/session_roster.rs",
+        "source/host/src/extensions/session/production.rs",
         "source/host/app/src/main.rs",
         "source/host/src/watched_directory.rs",
         "source/host/src/extensions/memory/project_membership.rs"
       ],
       "testEvidence": [
         "source/host/tests/memory_service_contract.rs",
-        "source/host/tests/session_summaries_roster_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/session_materialization_contract.rs",
         "source/host/tests/memory_extension_contract.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs",
+        "source/host/tests/session_summaries_roster_contract.rs",
+        "source/host/tests/session_materialization_contract.rs",
         "source/host/tests/watched_directory_contract.rs",
-        "source/host/tests/project_membership_contract.rs"
+        "source/host/tests/project_membership_contract.rs",
+        "source/host/tests/host_production_extensions_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Host now owns the production FileMemoryStore core and the canonical MemoryService singleton injected into Session. In addition to frozen normalization/dedupe, durable profile/log storage, watched-directory notifications and per-Agent project membership, the service now owns the weak dreaming bridge used by the single Host synthesis owner, switches newly-created stores to synthesis metadata while that bridge is live, preserves explicit/synthesis origin+tombstone semantics, and exposes canonical synthesisTargetForAgent/listSynthesisTargets over the same agents root. Final remains withheld for the production synthesis executor/lifecycle and the broader shared user/project memory-store surfaces."
+      "notes": "Implemented as the canonical Host MemoryService over durable per-agent FileMemoryStore plus user/project shard stores, active-agent/listener surfaces and synthesis targets. Existing FileMemoryStore instances dynamically consult the live dreaming bridge, matching frozen Promise-era gate semantics across authenticated gate enable/disable so explicit origins and tombstones cannot be stranded by startup order. Shipping turn completion records evidence through this same service when dreaming is enabled."
     },
     {
       "referencePath": "source/host/extensions/memory/memory-synthesis-service.ts",
       "targetPath": "source/host/src/extensions/memory/memory_synthesis_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "bd19d94ca12956e607612338dee5a2a3ad81a540",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/memory/memory_synthesis_service.rs",
-        "source/host/src/extensions/memory/memory_service.rs"
+        "source/host/src/extensions/memory/memory_service.rs",
+        "source/host/src/extensions/memory/production.rs",
+        "source/host/src/extensions/memory/extension.rs",
+        "source/host/src/host_production_extensions.rs"
       ],
       "testEvidence": [
         "source/host/tests/memory_synthesis_service_contract.rs",
         "source/host/tests/memory_synthesis_store_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/memory_extension_contract.rs",
+        "source/host/tests/host_production_extensions_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Host now owns the frozen synthesis core: bounded per-agent evidence, strict proposal parsing, known-evidence/clock fencing, explicit-memory protection, proposal verification, retry bounds, stale requeue semantics, temporal-review admission and commit through the synthesis-safe FileMemoryStore. The canonical MemoryService dreaming bridge now exposes real post-turn evidence recording and shipping turn completion dynamically selects RecordEvidence whenever that bridge is active. Final remains withheld because production startup still lacks the authenticated sand_memory_dreaming gate, real summarization/verification inference executors, background debounce/poll lifecycle, enforceable 90s deadline/cancellation and telemetry reporting."
+      "notes": "Implemented with the frozen bounded-evidence synthesis core and one background owner: 15-second debounce, hourly temporal sweep, bounded retry/backoff, per-attempt 90-second deadline, cancellation through proposal/verification, stale requeue, explicit-memory protection and terminal telemetry reporting. Proposal and verification are production callbacks rather than test helpers, and disable/dispose joins the worker and clears pending ownership."
     },
     {
       "referencePath": "source/host/extensions/memory/production.ts",
       "targetPath": "source/host/src/extensions/memory/production.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b43cf6836e6f102bb2f9e22c5181d36b06dfef57",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/memory/production.rs",
+        "source/host/src/extensions/memory/memory_synthesis_service.rs",
         "source/host/src/extensions/memory/extension.rs",
-        "source/host/app/src/main.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/inference/production.rs",
+        "source/host/src/extensions/experiments/extension.rs",
+        "source/host/src/extensions/telemetry/memory_synthesis_telemetry.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/memory_extension_contract.rs",
         "source/host/tests/memory_service_contract.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs",
+        "source/host/tests/host_production_extensions_contract.rs",
+        "source/host/tests/extensions_experiments_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Production Rust binding now resolves the canonical Fabushi agents root, starts the single Host Memory extension owner and passes its service into shipping Session materialization. Final remains withheld for real debounce/deadline/poll/retry synthesis policies, summarization inference executor and telemetry reporting."
+      "notes": "Implemented as the shipping production binding. Authenticated Statsig pins sand_memory_dreaming; enabled production creates exactly one synthesis owner over the canonical MemoryService, ProductionInferenceExtension and memory synthesis telemetry. Proposal and verification both consume ProductionInferenceExtension::run_summarization_prompt, whose frozen summarization session uses SAND_SUMMARIZATION_MODEL_ID with is_summarization_session=true, skip_labeling=true and no tools. Gate-disabled startup reports SkippedGate and does not create a second inference runtime."
     },
     {
       "referencePath": "source/host/extensions/memory/project-membership.ts",
