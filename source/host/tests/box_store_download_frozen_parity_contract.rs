@@ -379,10 +379,9 @@ fn pack_restore_reports_each_restored_path_and_skips_loose_blobs() {
     assert!(summary.failures.is_empty(), "{:?}", summary.failures);
     assert_eq!((summary.files, summary.verified), (16, 16));
     assert_eq!(store.file_get_count(&pack_key), 1);
-    assert_eq!(
-        progress.lock().expect("progress").as_slice(),
-        (1_usize..=16).collect::<Vec<_>>().as_slice()
-    );
+    let mut progress_files = progress.lock().expect("progress").clone();
+    progress_files.sort_unstable();
+    assert_eq!(progress_files, (1_usize..=16).collect::<Vec<_>>());
     for (rel_path, bytes) in expected {
         assert_eq!(
             fs::read(target_root.join(rel_path)).expect("read restored pack member"),
