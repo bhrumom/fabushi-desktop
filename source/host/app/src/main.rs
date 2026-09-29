@@ -4547,23 +4547,24 @@ fn start_routed_provider_task(
             );
             let cloud_watch_parent_agent_id = agent_id.clone();
             let cloud_watch_owner = Arc::clone(&worker_cloud_agent_watches);
-            let cloud_watch_quiet_origin = cloud_agent_quiet_origin.clone();
-            let cloud_agent_watch = Arc::new(move |bc_id: &str, after_followup: bool| {
-                let _ = cloud_watch_owner.watch_cloud_agent(
-                    &cloud_watch_parent_agent_id,
-                    bc_id,
-                    CloudAgentWatchOptions::new(
-                        cloud_watch_quiet_origin.clone(),
-                        after_followup,
-                    ),
-                );
-            });
+            let cloud_agent_watch = Arc::new(
+                move |bc_id: &str,
+                      after_followup: bool,
+                      quiet_origin: Option<serde_json::Value>| {
+                    let _ = cloud_watch_owner.watch_cloud_agent(
+                        &cloud_watch_parent_agent_id,
+                        bc_id,
+                        CloudAgentWatchOptions::new(quiet_origin, after_followup),
+                    );
+                },
+            );
             let cloud_agent_tool = CloudAgentToolDependencies {
                 manager: Arc::clone(&worker_cloud_agents),
                 agent_dir: cloud_agent_dir,
                 box_resources: Arc::clone(&box_resources),
                 cancellation: worker_cancellation.clone(),
                 review: Some(cloud_agent_review),
+                quiet_origin: cloud_agent_quiet_origin,
                 watch: Some(cloud_agent_watch),
             };
             let subagent_task_review: Option<SubagentTaskReviewCallback> =
