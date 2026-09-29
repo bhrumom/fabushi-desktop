@@ -12505,18 +12505,24 @@
       "targetPath": "source/host/src/extensions/inference/cursor_session.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f222a0e40ef002aadc19244b98aadbb2286ae738",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/inference/cursor_session.rs"
+        "source/host/src/extensions/inference/cursor_session.rs",
+        "source/host/src/extensions/inference/cursor_inference_transport.rs",
+        "source/host/src/extensions/inference/production.rs",
+        "source/host/src/extensions/inference/sand_labeling.rs"
       ],
       "testEvidence": [
         "source/host/tests/inference_session_labeling_contract.rs",
+        "source/host/tests/inference_extension_composition_contract.rs",
+        "source/host/tests/cursor_inference_transport_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host now owns the frozen cursor-session model-selection precedence, default/computer/browser/subagent selection semantics and strict SAND_AGENT_MOCK_RESPONSE script parsing. Final remains withheld until the live authenticated Cursor prompt-session transport, privacy/media provider, generated inference reason/lineage bindings and labeling wrapper are composed on the shipping Host path."
+      "notes": "Rust Host now preserves the frozen Cursor session semantics on the shipping path: requested-model precedence, authenticated prompt-session transport, conversation identity, generated inference-reason projection, sanitized request lineage, authenticated attached-media signed-URL provider, and the production labeling wrapper are all consumed through ProductionInferenceExtension -> ProductionCursorInferenceAuth -> shipping Runner.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/inference/cursor-web-tools.ts",
@@ -12636,18 +12642,23 @@
       "targetPath": "source/host/src/extensions/inference/sand_labeling.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "30f7a4784a7cd337a34903062f93f3bb6bf386bd",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/inference/sand_labeling.rs"
+        "source/host/src/extensions/inference/sand_labeling.rs",
+        "source/host/src/extensions/inference/generated_inference_codec.rs",
+        "source/host/src/extensions/inference/production.rs"
       ],
       "testEvidence": [
         "source/host/tests/inference_session_labeling_contract.rs",
+        "source/host/tests/inference_extension_composition_contract.rs",
+        "source/host/tests/cursor_inference_transport_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host now owns frozen follow-up request lineage/deduplication, summarization skipping and post-turn labeling admission semantics. Final remains withheld until generated InferenceService request codecs, core-message-to-proto conversion, diagnostic emission and authenticated labeling backend calls are production-wired."
+      "notes": "Rust Host now preserves the frozen labeling path end-to-end: generated InferenceService request codecs and core-message projection feed authenticated HostAuth-backed Cursor unary RPCs, failures emit bounded labeling diagnostics, and the shipping ProductionCursorInferenceAuth invokes follow-up classification from live request IDs plus post-turn labeling from the same Runner session. Summarization/computer-use/explicit skip-labeling paths remain excluded by the production wrapper.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/inference/sand-model-experiment.ts",
