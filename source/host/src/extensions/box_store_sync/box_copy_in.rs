@@ -35,7 +35,8 @@ use super::box_store_manifest::{
     count_store_db_manifest_entries, get_store_db_manifest_agent_ids,
 };
 use super::box_store_manifest_format::{
-    BOX_STORE_MANIFEST_REL_PATH, BoxStoreManifestEntry, parse_box_store_manifest,
+    BOX_STORE_MANIFEST_REL_PATH, BOX_STORE_MANIFEST_VERSION, BoxStoreManifestEntry,
+    parse_box_store_manifest,
 };
 use crate::extensions::auth::auth_service::HostAuthService;
 use crate::extensions::auth::credential_renewer::get_configured_backend_url;
@@ -1084,6 +1085,46 @@ fn read_manifest_snapshot(
     })
 }
 
+fn mark_primary_legacy_hydration_incomplete(
+    primary: &dyn BoxObjectStore,
+) -> Result<(), String> {
+    let baseline = primary.get(BOX_STORE_MANIFEST_REL_PATH)?;
+    let mut value = match baseline.as_deref() {
+        Some(bytes) => {
+            let value: serde_json::Value = serde_json::from_slice(bytes)
+                .map_err(|error| format!("primary manifest unreadable before legacy hydrate: {error}"))?;
+            parse_box_store_manifest(&value)
+                .ok_or_else(|| "primary manifest unreadable before legacy hydrate: invalid manifest".to_string())?;
+            value
+        }
+        None => serde_json::json!({
+            "version": BOX_STORE_MANIFEST_VERSION,
+            "updatedAtMs": wall_clock_now_ms(),
+            "fullyHydrated": false,
+            "entries": {}
+        }),
+    };
+    let object = value
+        .as_object_mut()
+        .ok_or_else(|| "primary manifest unreadable before legacy hydrate: expected object".to_string())?;
+    object.insert(
+        "updatedAtMs".into(),
+        serde_json::Value::from(wall_clock_now_ms()),
+    );
+    object.insert("fullyHydrated".into(), serde_json::Value::Bool(false));
+    let encoded = serde_json::to_vec(&value)
+        .map_err(|error| format!("failed to serialize primary legacy-hydration manifest: {error}"))?;
+    if primary.put_if_unchanged(
+        BOX_STORE_MANIFEST_REL_PATH,
+        baseline.as_deref(),
+        &encoded,
+    )? {
+        Ok(())
+    } else {
+        Err("primary manifest changed while marking legacy hydration incomplete".into())
+    }
+}
+
 fn failure_with_source(
     reason: impl Into<String>,
     manifest_entries: usize,
@@ -1480,6 +1521,16 @@ pub fn run_box_copy_in_with_sources(
                 format!("failed to mark legacy hydrate incomplete: {error}"),
                 manifest.len(),
                 count_store_db_manifest_entries(Some(&manifest)),
+                Some(0),
+                hydrate_source,
+            );
+        }
+        if let Err(error) = mark_primary_legacy_hydration_incomplete(primary) {
+            return failure_with_source(
+                format!("failed to mark legacy hydrate incomplete: {error}"),
+                manifest.len(),
+                authoritative_store_db_entries
+                    .unwrap_or_else(|| count_store_db_manifest_entries(Some(&manifest))),
                 Some(0),
                 hydrate_source,
             );
