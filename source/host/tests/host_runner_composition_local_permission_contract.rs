@@ -87,3 +87,39 @@ fn direct_runner_surface_projects_created_and_settled_events_and_unbinds() {
     assert!(!composition.can_ask_local_tool_permission("agent-a"));
     let _ = fs::remove_file(path);
 }
+
+
+#[test]
+fn host_runner_composition_owns_one_shared_computer_use_coordination() {
+    let path = temp_settings();
+    let settings = Arc::new(SettingsService::new(path.clone()));
+    let controller = Arc::new(SandLocalToolPermissionController::with_options(
+        settings,
+        1_000,
+        Arc::new(|| 100),
+        Arc::new(|| "request-computer".to_string()),
+    ));
+    let composition = HostRunnerComposition::with_sink(
+        controller,
+        Arc::new(|_| {}),
+    );
+
+    let first = composition.computer_use_coordination();
+    assert_eq!(
+        first.lock().expect("coordination").allocate_window("computer-a"),
+        Some(1)
+    );
+    let second = composition.computer_use_coordination();
+    assert!(Arc::ptr_eq(&first, &second));
+    assert_eq!(
+        second.lock().expect("coordination").allocate_window("computer-b"),
+        None
+    );
+    second.lock().expect("coordination").free_window("computer-a");
+    assert_eq!(
+        first.lock().expect("coordination").allocate_window("computer-b"),
+        Some(1)
+    );
+
+    let _ = fs::remove_file(path);
+}
