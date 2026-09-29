@@ -327,6 +327,20 @@ fn plan_download(
     }
 }
 
+fn create_restore_directory_race_safe(path: &Path) -> Result<bool, String> {
+    match fs::create_dir(path) {
+        Ok(()) => Ok(true),
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+            if fs::symlink_metadata(path).is_ok_and(|metadata| metadata.is_dir()) {
+                Ok(false)
+            } else {
+                Err("restore parent is not a directory".into())
+            }
+        }
+        Err(error) => Err(error.to_string()),
+    }
+}
+
 fn ensure_owned_parent(target_root: &Path, destination: &Path, owner: Option<(u32, u32)>) -> Result<(), String> {
     let parent = destination
         .parent()
@@ -344,20 +358,24 @@ fn ensure_owned_parent(target_root: &Path, destination: &Path, owner: Option<(u3
     let mut current = target_root.to_path_buf();
     for segment in relative.components() {
         current.push(segment.as_os_str());
-        let mut created = false;
-        match fs::symlink_metadata(&current) {
-            Ok(metadata) if metadata.is_dir() => {}
+        let created = match fs::symlink_metadata(&current) {
+            Ok(metadata) if metadata.is_dir() => false,
             Ok(_) => {
-                remove_existing_restore_path(&current)?;
-                fs::create_dir(&current).map_err(|error| error.to_string())?;
-                created = true;
+                if let Err(error) = remove_existing_restore_path(&current) {
+                    if fs::symlink_metadata(&current).is_ok_and(|metadata| metadata.is_dir()) {
+                        false
+                    } else {
+                        return Err(error);
+                    }
+                } else {
+                    create_restore_directory_race_safe(&current)?
+                }
             }
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                fs::create_dir(&current).map_err(|error| error.to_string())?;
-                created = true;
+                create_restore_directory_race_safe(&current)?
             }
             Err(error) => return Err(error.to_string()),
-        }
+        };
         if created {
             apply_owner(&current, owner, false)?;
         }
