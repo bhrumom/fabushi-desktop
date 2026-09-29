@@ -295,3 +295,14 @@ fn shipping_shared_room_fanout_keeps_cursor_on_the_same_canonical_runner_path() 
     assert!(SHIPPING_HOST.contains("dispatch_local_group_send("));
     assert!(!SHIPPING_HOST.contains("Cursor shared-room fanout remains on the compatibility path"));
 }
+
+#[test]
+fn shipping_send_prompt_routes_mirror_and_hosted_room_entries_through_cross_user_publisher() {
+    assert!(SHIPPING_HOST.contains("dispatch_mirror_or_group_send_if_supported("));
+    assert!(SHIPPING_HOST.contains("read_sand_remote_room_config(&agent_dir)"));
+    assert!(SHIPPING_HOST.contains("read_sand_group_config(&agent_dir)"));
+    assert!(SHIPPING_HOST.contains("publish_room_entry_and_wait(&remote_room.room_id, &entry)"));
+    assert!(SHIPPING_HOST.contains("publish_room_entry_and_wait(shared_room_id, &entry)"));
+    assert!(SHIPPING_HOST.contains("Shared mirror rooms only support image attachments."));
+    assert!(SHIPPING_HOST.contains("persisted_send_context"));
+}

@@ -579,6 +579,16 @@ impl ProductionCrossUserRuntime {
         }))
     }
 
+    pub fn publish_room_entry_and_wait(
+        &self,
+        room_id: &str,
+        entry: &Value,
+    ) -> Result<(), String> {
+        self.service
+            .build_manager_delegate()
+            .publish_room_entry_and_wait(room_id, entry)
+    }
+
     pub fn note_agent_deleted(&self, agent_id: &str) -> Result<(), String> {
         if !self.is_enabled() {
             return Ok(());

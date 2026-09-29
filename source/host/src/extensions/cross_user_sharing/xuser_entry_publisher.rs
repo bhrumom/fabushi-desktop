@@ -169,12 +169,12 @@ fn serialize_entry_with_host(
         {
             return None;
         }
-        let content = entry.get("content").and_then(Value::as_str)?;
-        if content.trim().is_empty() {
+        let content = entry.get("content").and_then(Value::as_str).unwrap_or_default();
+        let images = inline_images(host, entry.get("images"));
+        if content.trim().is_empty() && images.is_empty() {
             return None;
         }
         let entry_id = entry.get("id").and_then(Value::as_str)?;
-        let images = inline_images(host, entry.get("images"));
         let mut wire = json!({
             "kind": "human-message",
             "entryId": entry_id,

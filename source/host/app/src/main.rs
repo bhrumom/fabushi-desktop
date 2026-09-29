@@ -1618,21 +1618,64 @@ impl UnifiedGatewayApi {
         }
     }
 
-    fn dispatch_local_group_send_if_supported(
+    fn persisted_user_entry(
         &self,
-        args: &serde_json::Value,
+        agent_id: &str,
+        context: &PersistedSendContext,
     ) -> Result<Option<serde_json::Value>, ProductionSendError> {
-        let Some(agent_id) = args
-            .get("agentId")
-            .or_else(|| args.get("id"))
-            .and_then(serde_json::Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-        else {
+        let Some(user_message_id) = context.user_message_id.as_deref() else {
             return Ok(None);
         };
-        if !GroupChatGlue::new(Arc::clone(&self.session_workers)).is_group_agent_id(agent_id) {
-            return Ok(None);
+        Ok(self
+            .session_workers
+            .read_agent_transcript_entries(agent_id)
+            .map_err(ProductionSendError::Internal)?
+            .into_iter()
+            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(user_message_id)))
+    }
+
+    fn dispatch_mirror_or_group_send_if_supported(
+        &self,
+        args: &serde_json::Value,
+        shaped_args: &serde_json::Value,
+        context: &PersistedSendContext,
+    ) -> Result<Option<serde_json::Value>, ProductionSendError> {
+        let Some(agent_id) = args.get("agentId").or_else(|| args.get("id"))
+            .and_then(serde_json::Value::as_str).map(str::trim).filter(|value| !value.is_empty())
+        else { return Ok(None); };
+        let agent_dir = self.session_workers.agents_root().join(agent_id);
+
+        if let Some(remote_room) =
+            mahayana_host_runtime::groups::remote_room_store::read_sand_remote_room_config(&agent_dir)
+        {
+            if remote_room.is_revoked == Some(true) {
+                return Err(ProductionSendError::Rejected("This shared room is no longer active.".into()));
+            }
+            let has_files = shaped_args.get("attachmentPaths").and_then(serde_json::Value::as_array)
+                .is_some_and(|values| !values.is_empty());
+            let has_videos = shaped_args.get("selectedVideos").and_then(serde_json::Value::as_array)
+                .is_some_and(|values| !values.is_empty());
+            if has_files || has_videos {
+                return Err(ProductionSendError::BadRequest(
+                    "Shared mirror rooms only support image attachments.".into(),
+                ));
+            }
+            let entry = self.persisted_user_entry(agent_id, context)?.ok_or_else(|| {
+                ProductionSendError::Internal("mirror-room send is missing its durable user entry".into())
+            })?;
+            self.cross_user.publish_room_entry_and_wait(&remote_room.room_id, &entry)
+                .map_err(ProductionSendError::Internal)?;
+            return Ok(Some(serde_json::json!({"accepted": true, "mirrorRoom": true})));
+        }
+
+        let Some(group_config) =
+            mahayana_host_runtime::groups::group_store::read_sand_group_config(&agent_dir)
+        else { return Ok(None); };
+        if let Some(shared_room_id) = group_config.shared_room_id.as_deref() {
+            if let Some(entry) = self.persisted_user_entry(agent_id, context)? {
+                self.cross_user.publish_room_entry_and_wait(shared_room_id, &entry)
+                    .map_err(ProductionSendError::Internal)?;
+            }
         }
         let Some(provider) = configured_routed_provider(&self.data_dir.join("settings.json")) else {
             return Ok(None);
@@ -1649,15 +1692,9 @@ impl UnifiedGatewayApi {
             epoch,
             executor,
             self.cross_user.remote_executor(),
-        )
-        .map_err(ProductionSendError::Internal)?
-        {
-            LocalGroupFanoutDisposition::NotGroup
-            | LocalGroupFanoutDisposition::DeferredRemote { .. } => Ok(None),
-            LocalGroupFanoutDisposition::Completed {
-                posted_messages,
-                member_failures,
-            } => Ok(Some(serde_json::json!({
+        ).map_err(ProductionSendError::Internal)? {
+            LocalGroupFanoutDisposition::NotGroup | LocalGroupFanoutDisposition::DeferredRemote { .. } => Ok(None),
+            LocalGroupFanoutDisposition::Completed { posted_messages, member_failures } => Ok(Some(serde_json::json!({
                 "accepted": true,
                 "groupFanout": true,
                 "postedMessages": posted_messages,
@@ -4874,13 +4911,25 @@ impl GatewayApi for UnifiedGatewayApi {
                 .as_deref()
                 .is_some_and(|agent_id| self.transcript_runtime.is_agent_running(agent_id));
             let send_ack_guard = Mutex::new(None);
+            let persisted_send_context = Mutex::new(None::<PersistedSendContext>);
             let send_result = self
                 .transcript_runtime
                 .execute_send_with_queue_observers(
                     &durable_args,
                     || {
+                        let persisted = persisted_send_context
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner())
+                            .clone()
+                            .ok_or_else(|| ProductionSendError::Internal(
+                                "send dispatch started before durable persistence".into(),
+                            ))?;
                         if let Some(group_result) =
-                            self.dispatch_local_group_send_if_supported(&durable_args)?
+                            self.dispatch_mirror_or_group_send_if_supported(
+                                &durable_args,
+                                &runner_args,
+                                &persisted,
+                            )?
                         {
                             return Ok(group_result);
                         }
@@ -4894,6 +4943,10 @@ impl GatewayApi for UnifiedGatewayApi {
                             accepted,
                         )
                         .map_err(map_session_send_error)?;
+                        *persisted_send_context
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner()) =
+                            Some(persisted.clone());
                         if accepted.get("accepted").and_then(serde_json::Value::as_bool)
                             == Some(true)
                         {

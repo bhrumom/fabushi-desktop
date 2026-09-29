@@ -73,6 +73,30 @@ impl SandXuserManagerDelegate {
         }
         Ok(())
     }
+
+    pub fn publish_room_entry_and_wait(
+        &self,
+        room_id: &str,
+        entry: &Value,
+    ) -> Result<(), String> {
+        let Some(service) = self.service.upgrade() else {
+            return Ok(());
+        };
+        if !service.get_state().is_enabled {
+            return Ok(());
+        }
+        let publisher = service
+            .entry_publisher
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+            .cloned();
+        if let Some(publisher) = publisher {
+            publisher.enqueue_publish(room_id, entry)?;
+            publisher.flush_room(room_id)?;
+        }
+        Ok(())
+    }
 }
 
 pub struct SandXuserSharingService {

@@ -602,6 +602,27 @@ fn entry_publisher_preserves_frozen_projection_attachment_and_restamp_contract()
 }
 
 #[test]
+fn entry_publisher_allows_image_only_human_messages_for_mirror_rooms() {
+    let (host, publisher) = publisher_fixture();
+    publisher
+        .publish_entry(
+            "room-image-only",
+            &serde_json::json!({
+                "id": "human-image-only",
+                "kind": "message",
+                "role": "user",
+                "content": "",
+                "images": [{"url":"attachment://ok","alt":"image only"}]
+            }),
+        )
+        .unwrap();
+    let sent = host.sent.lock().unwrap();
+    assert_eq!(sent.len(), 1);
+    assert_eq!(sent[0]["entry"]["text"], "");
+    assert_eq!(sent[0]["entry"]["images"].as_array().unwrap().len(), 1);
+}
+
+#[test]
 fn manager_delegate_serializes_room_publications_through_bound_publisher() {
     let (host, publisher) = publisher_fixture();
     let svc = service(serde_json::json!({}));
@@ -624,11 +645,23 @@ fn manager_delegate_serializes_room_publications_through_bound_publisher() {
             .unwrap();
     }
     publisher.flush_room("room-delegate").unwrap();
+    delegate
+        .publish_room_entry_and_wait(
+            "room-delegate",
+            &serde_json::json!({
+                "id": "delegate-3",
+                "kind": "message",
+                "role": "user",
+                "content": "third"
+            }),
+        )
+        .unwrap();
 
     let sent = host.sent.lock().unwrap();
-    assert_eq!(sent.len(), 2);
+    assert_eq!(sent.len(), 3);
     assert_eq!(sent[0]["entry"]["entryId"], "delegate-1");
     assert_eq!(sent[1]["entry"]["entryId"], "delegate-2");
+    assert_eq!(sent[2]["entry"]["entryId"], "delegate-3");
     drop(sent);
 
     svc.set_enabled(false);
@@ -645,5 +678,5 @@ fn manager_delegate_serializes_room_publications_through_bound_publisher() {
         )
         .unwrap();
     publisher.flush_room("room-delegate").unwrap();
-    assert_eq!(host.sent.lock().unwrap().len(), 2);
+    assert_eq!(host.sent.lock().unwrap().len(), 3);
 }
