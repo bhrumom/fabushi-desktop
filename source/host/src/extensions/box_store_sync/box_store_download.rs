@@ -6,7 +6,6 @@ use std::sync::{Arc, Condvar, Mutex};
 
 use sha2::{Digest, Sha256};
 
-use super::agent_store_sand_files::normalize_rel_path;
 use super::box_object_store::BoxObjectStore;
 use super::box_store_manifest_format::{BOX_STORE_BLOBS_PREFIX, BoxStoreManifestEntry};
 use super::box_store_pack::{
@@ -40,11 +39,18 @@ pub fn is_critical_rel_path(rel_path: &str) -> bool {
 }
 
 pub fn resolve_restore_destination(target_root: &Path, rel_path: &str) -> Option<PathBuf> {
-    let normalized = normalize_rel_path(rel_path).ok()?;
-    let candidate = target_root.join(normalized);
-    let candidate = lexical_normalize(&candidate);
+    if rel_path.is_empty() || rel_path.contains('\0') || Path::new(rel_path).is_absolute() {
+        return None;
+    }
+    if rel_path
+        .split('/')
+        .any(|segment| segment.is_empty() || segment == "." || segment == "..")
+    {
+        return None;
+    }
     let root = lexical_normalize(target_root);
-    (candidate != root && candidate.starts_with(&root)).then_some(candidate)
+    let destination = lexical_normalize(&root.join(rel_path));
+    (destination != root && destination.starts_with(&root)).then_some(destination)
 }
 
 pub fn symlink_target_stays_within_root(
@@ -52,15 +58,20 @@ pub fn symlink_target_stays_within_root(
     symlink_path: &Path,
     target: &str,
 ) -> bool {
-    if Path::new(target).is_absolute() || target.contains('\0') {
+    if target.contains('\0') {
         return false;
     }
-    let Some(parent) = symlink_path.parent() else {
-        return false;
-    };
-    let candidate = lexical_normalize(&parent.join(target));
     let root = lexical_normalize(target_root);
-    candidate.starts_with(root)
+    let target_path = Path::new(target);
+    let candidate = if target_path.is_absolute() {
+        lexical_normalize(target_path)
+    } else {
+        let Some(parent) = symlink_path.parent() else {
+            return false;
+        };
+        lexical_normalize(&parent.join(target_path))
+    };
+    candidate == root || candidate.starts_with(&root)
 }
 
 fn lexical_normalize(path: &Path) -> PathBuf {
@@ -163,6 +174,7 @@ pub struct BoxStoreDownloadOptions {
     pub owner: Option<(u32, u32)>,
     pub on_progress: Option<Arc<dyn Fn(BoxStoreDownloadProgress) + Send + Sync>>,
     pub on_trace: Option<Arc<dyn Fn(BoxStoreDownloadTrace) + Send + Sync>>,
+    pub on_log: Option<Arc<dyn Fn(String) + Send + Sync>>,
 }
 
 impl Default for BoxStoreDownloadOptions {
@@ -174,6 +186,7 @@ impl Default for BoxStoreDownloadOptions {
             owner: None,
             on_progress: None,
             on_trace: None,
+            on_log: None,
         }
     }
 }
@@ -506,6 +519,10 @@ fn restore_small_group(
             && format!("{:x}", Sha256::digest(&blob)) == group.sha =>
         {
             for rel_path in pending {
+                {
+                    let mut summary = state.lock().expect("download summary lock");
+                    summary.verified = summary.verified.saturating_add(1);
+                }
                 let Some(destination) = planned.destinations.get(rel_path) else {
                     record_failure(state, format!("{rel_path}: unsafe manifest path"));
                     continue;
@@ -535,8 +552,7 @@ fn restore_small_group(
                 match result {
                     Ok(()) => {
                         let mut summary = state.lock().expect("download summary lock");
-                        summary.verified += 1;
-                        summary.files += 1;
+                        summary.files = summary.files.saturating_add(1);
                         summary.bytes = summary.bytes.saturating_add(blob.len() as u64);
                         drop(summary);
                         report_progress(options, state, planned.manifest.len());
@@ -597,125 +613,54 @@ fn restore_large_group(
             );
             continue;
         }
+
         let temp = unique_temp_path(destination);
-        let result = if let Some(source) = restored_source.as_ref() {
-            copy_file_hashing(source, &temp).and_then(|(sha, size)| {
-                if sha != group.sha || size != group.size {
-                    Err("sha/size mismatch".into())
-                } else {
-                    install_verified_temp(&temp, destination, entry, options.owner)
-                }
-            })
+        let verified_temp = if let Some(source) = restored_source.as_ref() {
+            match copy_file_hashing(source, &temp) {
+                Ok((sha, size)) if sha == group.sha && size == group.size => Ok(()),
+                Ok(_) => Err("sha/size mismatch".to_string()),
+                Err(error) => Err(error),
+            }
         } else {
             match store.get_to_file(
                 &format!("{BOX_STORE_BLOBS_PREFIX}/{}", group.sha),
                 &temp,
                 Some(group.size),
             ) {
-                Ok(Some(written)) if written == group.size => {
-                    match sha256_file(&temp) {
-                        Ok(sha) if sha == group.sha => {
-                            install_verified_temp(&temp, destination, entry, options.owner)
-                        }
-                        Ok(_) => Err("sha/size mismatch".into()),
-                        Err(error) => Err(error),
-                    }
-                }
-                Ok(Some(_)) => Err("sha/size mismatch".into()),
+                Ok(Some(written)) if written == group.size => match sha256_file(&temp) {
+                    Ok(sha) if sha == group.sha => Ok(()),
+                    Ok(_) => Err("sha/size mismatch".to_string()),
+                    Err(error) => Err(error),
+                },
+                Ok(Some(_)) => Err("sha/size mismatch".to_string()),
                 Ok(None) => Err(format!("blob {} missing", group.sha)),
                 Err(error) => Err(error),
             }
         };
-        if result.is_err() {
-            let _ = fs::remove_file(&temp);
-        }
-        match result {
-            Ok(()) => {
-                if restored_source.is_none() {
-                    restored_source = Some(destination.clone());
-                }
-                let mut summary = state.lock().expect("download summary lock");
-                summary.verified += 1;
-                summary.files += 1;
-                summary.bytes = summary.bytes.saturating_add(group.size);
-                drop(summary);
-                report_progress(options, state, planned.manifest.len());
-            }
-            Err(error) => record_failure(state, format!("{rel_path}: {error}")),
-        }
-    }
-}
 
-fn pending_group_paths(
-    planned: &PlannedDownload,
-    groups: &[BoxStoreBlobGroup],
-    concurrency: usize,
-    store: &dyn BoxObjectStore,
-    options: &BoxStoreDownloadOptions,
-    state: &Mutex<BoxStoreDownloadSummary>,
-) -> Vec<(BoxStoreBlobGroup, Vec<String>)> {
-    let prepared = Mutex::new(Vec::new());
-    let _ = for_each_bounded(groups, concurrency, |group| {
-        let mut pending = Vec::new();
-        for rel_path in &group.rel_paths {
-            let Some(destination) = planned.destinations.get(rel_path) else {
-                continue;
-            };
-            if let Err(error) = ensure_owned_parent(
-                planned
-                    .destinations
-                    .values()
-                    .next()
-                    .and_then(|path| {
-                        planned
-                            .manifest
-                            .keys()
-                            .next()
-                            .and_then(|_| path.ancestors().last())
-                    })
-                    .unwrap_or(Path::new("/")),
-                destination,
-                options.owner,
-            ) {
-                record_failure(state, format!("{rel_path}: {error}"));
-                continue;
-            }
-            if local_file_matches(destination, group) {
-                if let Some(entry) = planned.manifest.get(rel_path) {
-                    match apply_file_metadata(destination, entry, options.owner, None) {
-                        Ok(()) => {
-                            let mut summary = state.lock().expect("download summary lock");
-                            summary.verified += 1;
-                            summary.files += 1;
-                            summary.bytes = summary.bytes.saturating_add(group.size);
-                            drop(summary);
-                            report_progress(options, state, planned.manifest.len());
-                        }
-                        Err(error) => record_failure(state, format!("{rel_path}: {error}")),
-                    }
-                }
-            } else {
-                pending.push(rel_path.clone());
-            }
+        if let Err(error) = verified_temp {
+            let _ = fs::remove_file(&temp);
+            record_failure(state, format!("{rel_path}: {error}"));
+            continue;
         }
-        if !pending.is_empty() {
-            prepared
-                .lock()
-                .expect("prepared group lock")
-                .push((group.clone(), pending));
+        {
+            let mut summary = state.lock().expect("download summary lock");
+            summary.verified = summary.verified.saturating_add(1);
         }
-        Ok::<(), ()>(())
-    });
-    let mut prepared = prepared.into_inner().expect("prepared group mutex");
-    if !prepared.is_empty() {
-        let keys = prepared
-            .iter()
-            .map(|(group, _)| format!("{BOX_STORE_BLOBS_PREFIX}/{}", group.sha))
-            .collect::<Vec<_>>();
-        let _ = store.prefetch_reads(&keys);
+        if let Err(error) = install_verified_temp(&temp, destination, entry, options.owner) {
+            let _ = fs::remove_file(&temp);
+            record_failure(state, format!("{rel_path}: {error}"));
+            continue;
+        }
+        if restored_source.is_none() {
+            restored_source = Some(destination.clone());
+        }
+        let mut summary = state.lock().expect("download summary lock");
+        summary.files = summary.files.saturating_add(1);
+        summary.bytes = summary.bytes.saturating_add(group.size);
+        drop(summary);
+        report_progress(options, state, planned.manifest.len());
     }
-    prepared.sort_by(|left, right| left.0.sha.cmp(&right.0.sha));
-    prepared
 }
 
 #[derive(Debug, Clone)]
