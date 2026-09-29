@@ -419,7 +419,7 @@ impl ProductionAgentStore {
     }
 
     pub fn flush(&self) {
-        futures::executor::block_on(self.blob_store.flush(&()));
+        self.blob_store.flush_blocking();
     }
 
     fn clear_checkpoint(&self) {
