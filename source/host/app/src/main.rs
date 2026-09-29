@@ -155,6 +155,7 @@ use mahayana_host_runtime::extensions::inference::inference_service::{
     InferenceUsage, authorize_routed_provider_request,
 };
 use mahayana_host_runtime::extensions::inference::production::ProductionInferenceExtension;
+use mahayana_host_runtime::extensions::inference::cursor_session::SandSessionOptions;
 use mahayana_host_runtime::extensions::webauthn_proxy::extension::HostWebAuthnProxyExtension;
 use mahayana_host_runtime::extensions::telemetry::automation_fire_telemetry::{
     AutomationFireDroppedReport, automation_fire_dropped_telemetry,
@@ -2954,6 +2955,31 @@ fn start_routed_provider_task(
     let worker_trays = Arc::clone(&trays);
     let worker_telemetry_logs = telemetry_logs.clone();
     let worker_request_source = request_source.clone();
+    let worker_session_options = SandSessionOptions {
+        model_id: args
+            .get("modelId")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned),
+        is_summarization_session: args
+            .get("isSummarizationSession")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false),
+        is_computer_use_subagent: args
+            .get("isComputerUseSubagent")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false),
+        is_browser_use_subagent: args
+            .get("isBrowserUseSubagent")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false),
+        request_source: request_source.clone(),
+        skip_labeling: args
+            .get("skipLabeling")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false),
+    };
     let worker_is_ack_redrive = is_ack_redrive;
     let worker_is_upgrade_resume = is_upgrade_resume;
     let worker_memory_store = memory_store.clone();
@@ -3737,11 +3763,12 @@ fn start_routed_provider_task(
                         *stored = Some(merge_provider_token_usage(stored.take(), usage));
                     }
                 });
+            let cursor_auth = inference.cursor_auth_for_session(Some(&worker_session_options));
             let mut composition = create_production_runner_composition(
                 ProductionRunnerCompositionInput {
                     provider,
                     bridge,
-                    cursor_auth: Some(auth.clone()),
+                    cursor_auth: Some(cursor_auth),
                     request_context: resolved_request_context,
                     cancellation,
                     checkpoint_store,
