@@ -10,8 +10,11 @@ use mahayana_host_runtime::runner::system_prompt::{
     format_attached_file_size, is_media_review_subagent_type,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{
-    AgentProfileForPrompt, append_agent_profile_system_prompt,
+    AgentProfileForPrompt, ComputerPromptState, RemoteBoxPromptState, RunnerPromptRole,
+    append_agent_profile_system_prompt, append_computer_system_prompt,
+    append_mcp_system_prompt_sections, append_remote_box_system_prompt,
     append_workflows_system_prompt, render_agent_profile_section,
+    render_computer_system_prompt, render_remote_box_system_prompt,
     render_request_context_system_prompt,
     render_request_context_system_prompt_with_capabilities,
     render_workflows_system_prompt,
@@ -215,4 +218,96 @@ fn frozen_workflows_section_is_rendered_once_for_the_shipping_provider_prompt() 
             .count(),
         1
     );
+}
+
+
+#[test]
+fn shipping_remote_box_and_computer_sections_follow_frozen_order_and_live_gates() {
+    let mut messages = vec![
+        ProviderMessage { role: "system".into(), content: "base".into() },
+        ProviderMessage { role: "user".into(), content: "hello".into() },
+    ];
+    append_mcp_system_prompt_sections(
+        &mut messages,
+        &[json!({"name":"Acme","status":"connected","customInstructions":"Use raw rows."})],
+        true,
+        true,
+    );
+    append_remote_box_system_prompt(
+        &mut messages,
+        &RemoteBoxPromptState {
+            role: RunnerPromptRole::Main,
+            available: true,
+            runtime_state: "running".into(),
+            desktop_capable: true,
+            desktop_ready: true,
+        },
+    );
+    append_computer_system_prompt(
+        &mut messages,
+        &ComputerPromptState {
+            role: RunnerPromptRole::Main,
+            box_available: true,
+            desktop_capable: true,
+            desktop_ready: true,
+            human_takeover_pending: false,
+            browser_use_offered: false,
+            window_index: Some(2),
+        },
+    );
+
+    let content = &messages[0].content;
+    let mcp_custom = content.find("## Connector custom instructions").expect("mcp custom");
+    let mcp_status = content.find("<mcp_status>").expect("mcp status");
+    let remote_box = content.find("## Your box").expect("remote box");
+    let computer = content.find("## The box desktop").expect("computer");
+    assert!(mcp_custom < mcp_status && mcp_status < remote_box && remote_box < computer);
+    assert_eq!(content.matches("## Your box").count(), 1);
+    assert_eq!(content.matches("## The box desktop").count(), 1);
+
+    let unavailable = render_remote_box_system_prompt(&RemoteBoxPromptState {
+        role: RunnerPromptRole::Main,
+        available: false,
+        runtime_state: "absent".into(),
+        desktop_capable: false,
+        desktop_ready: false,
+    });
+    assert!(unavailable.contains("shipping box runtime is unavailable"));
+    assert!(unavailable.contains("runtime state: absent"));
+
+    let takeover = render_computer_system_prompt(&ComputerPromptState {
+        role: RunnerPromptRole::ComputerUseSubagent,
+        box_available: true,
+        desktop_capable: true,
+        desktop_ready: true,
+        human_takeover_pending: true,
+        browser_use_offered: false,
+        window_index: Some(1),
+    });
+    assert!(takeover.contains("user currently has control"));
+    assert!(takeover.contains("read-only Screenshot"));
+    assert!(takeover.contains("do not send clicks"));
+
+    let computer_use = render_computer_system_prompt(&ComputerPromptState {
+        role: RunnerPromptRole::ComputerUseSubagent,
+        box_available: true,
+        desktop_capable: true,
+        desktop_ready: true,
+        human_takeover_pending: false,
+        browser_use_offered: false,
+        window_index: Some(4),
+    });
+    assert!(computer_use.starts_with("## Computer"));
+    assert!(computer_use.contains("window index is 4"));
+
+    let other = render_computer_system_prompt(&ComputerPromptState {
+        role: RunnerPromptRole::OtherSubagent,
+        box_available: true,
+        desktop_capable: true,
+        desktop_ready: true,
+        human_takeover_pending: false,
+        browser_use_offered: false,
+        window_index: None,
+    });
+    assert!(other.is_empty());
 }
