@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
+use super::agent_state::SandAgentState;
 use super::memory_service::{MemoryService, MemorySynthesisBridge};
 use super::memory_synthesis_service::MemorySynthesisService;
 
@@ -36,6 +37,10 @@ impl HostMemoryExtension {
 
     pub fn agents_root_dir(&self) -> &Path {
         &self.state.agents_root_dir
+    }
+
+    pub fn create_agent_state(&self, agent_id: &str) -> Result<SandAgentState, String> {
+        SandAgentState::new(self.state.service.sand_root(), agent_id)
     }
 
     pub fn enable_memory_synthesis(&self, synthesis: Arc<MemorySynthesisService>) {

@@ -51,3 +51,19 @@ fn memory_extension_replacement_and_disable_keep_one_background_owner() {
     extension.disable_memory_synthesis();
     assert!(!second.is_enabled());
 }
+
+
+#[test]
+fn memory_extension_exposes_frozen_agent_state_factory_on_same_sand_root() {
+    let sand_root = std::env::temp_dir().join(format!(
+        "fabushi-memory-extension-agent-state-{}",
+        std::process::id()
+    ));
+    let agents_root = sand_root.join("agents");
+    let extension = start_memory_extension(agents_root);
+    let state = extension
+        .create_agent_state("agent-a")
+        .expect("create agent state");
+    assert_eq!(state.agent_dir(), sand_root.join("agents").join("agent-a"));
+    let _ = std::fs::remove_dir_all(sand_root);
+}
