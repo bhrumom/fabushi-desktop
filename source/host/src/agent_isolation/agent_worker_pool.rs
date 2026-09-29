@@ -631,7 +631,7 @@ where
         result
     }
 
-    pub async fn close_store(&self, blob_db_path: &Path) {
+    pub fn close_store_blocking(&self, blob_db_path: &Path) {
         let connection = {
             let mut state = self
                 .inner
@@ -644,6 +644,10 @@ where
         if let Some(connection) = connection {
             connection.close();
         }
+    }
+
+    pub async fn close_store(&self, blob_db_path: &Path) {
+        self.close_store_blocking(blob_db_path);
     }
 
     pub async fn close_all(&self) {
