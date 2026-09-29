@@ -19250,22 +19250,31 @@
       "targetPath": "source/host/src/runner/turn_memory.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "fc39a00c7fff813bd5e39d5c0d3db3b4bbe0d301",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/turn_memory.rs",
-        "source/host/app/src/main.rs",
         "source/host/src/runner/sand_memory.rs",
-        "source/host/src/extensions/session/agent_db.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/memory/memory_service.rs",
+        "source/host/src/extensions/memory/memory_synthesis_service.rs",
+        "source/host/src/extensions/memory/production.rs",
+        "source/host/src/host_production_extensions.rs"
       ],
       "testEvidence": [
         "source/host/tests/turn_memory_contract.rs",
         "source/host/tests/sand_memory_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/memory_service_contract.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs",
+        "source/host/tests/host_production_extensions_contract.rs",
+        "source/host/tests/extensions_experiments_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Runner now ports the frozen post-turn memory engine: extraction uses recent+archive context and applies add/remove results; episode progress persists in the Agent DB, summarizes at the configured interval and clears after summary; evidence mode clears pending episodes and bypasses extraction. Shipping routed-provider completion invokes this path only for successful, visible, memorable user turns before the renderer completed event. The frozen auxiliary agent-message collector is production-wired into the remembered exchange, and completion now dynamically uses RecordEvidence through the canonical MemoryService dreaming bridge when synthesis is active, falling back to tool-free Extract otherwise. Final remains withheld until the production Memory synthesis runtime is actually enabled through the authenticated gate with its real inference/deadline/poll/telemetry collaborators."
+      "notes": "Implemented as the frozen post-turn memory owner in the shipping Runner. Successful visible memorable user turns build one exchange from user text, Agent-to-Agent messages and final assistant text before completion projection. When the canonical MemoryService dreaming bridge is live, shipping completion records synthesis evidence and clears pending episode state without running extraction; when the authenticated gate is disabled it falls back to tool-free extraction plus interval episode summarization over the same per-agent store and Agent DB. The production synthesis owner is now authenticated-Statsig pinned, 15-second debounced, hourly swept, 90-second deadline/cancel fenced, terminal-telemetry reported, and consumes ProductionInferenceExtension summarization callbacks, so the former synthesis-runtime blocker is closed."
     },
     {
       "referencePath": "source/host/runner/turn-observation.ts",
