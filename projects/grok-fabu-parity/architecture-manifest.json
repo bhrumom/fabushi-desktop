@@ -10906,18 +10906,26 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_copy_in.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "776ceded57f623d2b46de525172377e82c2caedd",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/box_store_sync/box_copy_in.rs"
+        "source/host/src/extensions/box_store_sync/box_copy_in.rs",
+        "source/host/src/extensions/box_store_sync/box_store_hydration.rs",
+        "source/host/src/extensions/box_store_sync/box_object_store.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
-        "source/host/tests/box_store_sync_planned_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/box_copy_in_frozen_parity_contract.rs",
+        "source/host/tests/box_store_hydration_contract.rs",
+        "source/host/tests/box_copy_in_pack_contract.rs",
+        "source/host/tests/box_store_sync_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
+      "notes": "Rust Mahayana Host now production-wires the frozen Grok 0.18 box-copy-in lifecycle through the canonical --box-copy-in Host entrypoint. SandBoxStoreV2 composes a separate legacy AgentStore source with the same Host auth/machine ownership; unseeded or incompletely hydrated primary stores use authoritative legacy store.db identity coverage with fail-closed migration rules, persist primary fullyHydrated=false before legacy hydration, and write the durable hydration handoff marker only after authoritative store.db restoration is complete. The shipping path preserves retry/lock semantics, pack and loose-blob restore verification, safe symlink projection with trace state, root /home/box download ownership, 750ms status throttling, stuck/slow watchdog reporting, hydrateSource/count evidence, and structured sand.box_copy_in telemetry. Focused contracts exercise migration, coverage failures, handoff state, throttling, watchdog/symlink trace, owner resolution, packs/status and hydration marker durability; GitHub Actions own all build/test acceptance."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-object-store.ts",
