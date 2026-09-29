@@ -283,7 +283,9 @@ use mahayana_host_runtime::runner::system_prompt_assembly::{
     AgentProfileForPrompt, append_agent_directory_system_prompt,
     append_agent_profile_system_prompt, append_automations_system_prompt,
     append_channels_system_prompt, append_combined_memory_system_prompt,
-    append_mcp_system_prompt_sections, append_workflows_system_prompt,
+    append_computer_system_prompt, append_mcp_system_prompt_sections,
+    append_remote_box_system_prompt, append_workflows_system_prompt,
+    ComputerPromptState, RemoteBoxPromptState, RunnerPromptRole,
     render_agent_profile_section, resolve_combined_memory_system_prompt,
 };
 use mahayana_host_runtime::runner::sand_agent_profile_prompt::{
@@ -3396,6 +3398,50 @@ fn start_routed_provider_task(
         &installed_mcp_servers,
         mcp_discovery_unavailable,
         true,
+    );
+
+    let prompt_role = if generated_parent_agent_id.is_none() {
+        RunnerPromptRole::Main
+    } else if generated_subagent_type.eq_ignore_ascii_case("computeruse") {
+        RunnerPromptRole::ComputerUseSubagent
+    } else if generated_subagent_type.eq_ignore_ascii_case("browseruse") {
+        RunnerPromptRole::BrowserUseSubagent
+    } else {
+        RunnerPromptRole::OtherSubagent
+    };
+    let shipping_box_status = forever_box.get_status(&agent_id);
+    let shipping_box_available = forever_box.box_().is_available();
+    let shipping_desktop_capable = forever_box.box_().inner().shared_desktop().is_some();
+    let shipping_desktop_ready = shipping_desktop_capable
+        && (shipping_box_status.vnc_url.is_some()
+            || shipping_box_status
+                .windows
+                .as_ref()
+                .is_some_and(|windows| !windows.is_empty()));
+    let shipping_window_index = forever_box.box_().get_agent_window_index(&agent_id);
+    let human_takeover_pending = session_handoff.get(&agent_id).is_some();
+
+    append_remote_box_system_prompt(
+        &mut provider_messages,
+        &RemoteBoxPromptState {
+            role: prompt_role,
+            available: shipping_box_available,
+            runtime_state: shipping_box_status.state.clone(),
+            desktop_capable: shipping_desktop_capable,
+            desktop_ready: shipping_desktop_ready,
+        },
+    );
+    append_computer_system_prompt(
+        &mut provider_messages,
+        &ComputerPromptState {
+            role: prompt_role,
+            box_available: shipping_box_available,
+            desktop_capable: shipping_desktop_capable,
+            desktop_ready: shipping_desktop_ready,
+            human_takeover_pending,
+            browser_use_offered: false,
+            window_index: shipping_window_index,
+        },
     );
 
     let firing_automation_id = args
