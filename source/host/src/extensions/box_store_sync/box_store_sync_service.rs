@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 pub const SAND_STORE_BETTER_CLI_ENV: &str = "SAND_STORE_BETTER_CLI";
+pub const SAND_USER_NON_ROOT_ENV: &str = "SAND_USER_NON_ROOT";
 pub const BOX_HOME_CATEGORY_NAME: &str = "home";
 pub const BOX_HOME_DIR: &str = "/home/box";
 pub const BOX_HOME_REL_PREFIX: &str = "home/box";
@@ -19,7 +20,7 @@ pub const BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES: [&str; 5] = [
     "home/box/deps",
 ];
 
-pub const BOX_HOME_REGENERABLE_JUNK_IGNORE_PATTERNS: [&str; 16] = [
+pub const BOX_HOME_REGENERABLE_JUNK_IGNORE_PATTERNS: [&str; 23] = [
     "/cli-config/",
     "/chrome-profile*/",
     "/sand-data/",
@@ -35,6 +36,13 @@ pub const BOX_HOME_REGENERABLE_JUNK_IGNORE_PATTERNS: [&str; 16] = [
     "/.local/share/Trash/",
     "/.local/state/",
     "/.docker/buildx/",
+    "/.gradle/caches/",
+    "/.gradle/daemon/",
+    "/.gradle/wrapper/",
+    "/.m2/repository/",
+    "/.vnc/",
+    "/.dbus/",
+    "/.Xauthority",
     "*.sock",
 ];
 
@@ -61,6 +69,32 @@ pub fn build_box_home_category(abs_root: impl AsRef<Path>) -> BoxStoreCategory {
         idle_only: false,
         stage_only: false,
         contains_agent_store_dbs: false,
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BoxStorePeriodicCyclePlan {
+    pub seal_hydration_handoff: bool,
+    pub include_idle_only: bool,
+    pub include_store_dbs: bool,
+    pub skip_live_handle_store_dbs: bool,
+    pub include_packs: bool,
+}
+
+pub fn plan_periodic_cycle(
+    idle: bool,
+    hydration_handoff_pending: bool,
+    elapsed_since_idle_only_ms: u64,
+) -> BoxStorePeriodicCyclePlan {
+    let seal_hydration_handoff = hydration_handoff_pending && idle;
+    let include_idle_only = seal_hydration_handoff
+        || (idle && elapsed_since_idle_only_ms >= BOX_STORE_CHROME_INTERVAL_MS);
+    BoxStorePeriodicCyclePlan {
+        seal_hydration_handoff,
+        include_idle_only,
+        include_store_dbs: idle,
+        skip_live_handle_store_dbs: !seal_hydration_handoff,
+        include_packs: include_idle_only,
     }
 }
 
