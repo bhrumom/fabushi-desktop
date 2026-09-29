@@ -116,6 +116,6 @@ fn shipping_host_copy_in_mode_precedes_long_lived_runtime_bootstrap() {
         .expect("shipping Host must acquire the single-host lock");
     assert!(copy_in < crash_guard);
     assert!(copy_in < host_lock);
-    assert!(SHIPPING_HOST.contains("execute_box_copy_in_from_env"));
+    assert!(SHIPPING_HOST.contains("execute_production_box_copy_in_from_env"));
     assert!(SHIPPING_HOST.contains("std::process::exit(exit_code)"));
 }
