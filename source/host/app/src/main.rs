@@ -3412,7 +3412,69 @@ fn start_routed_provider_task(
     let shipping_box_status = forever_box.get_status(&agent_id);
     let shipping_box_available = forever_box.box_().is_available();
     let shipping_desktop_capable = forever_box.box_().inner().shared_desktop().is_some();
+    let shipping_box_resources = Arc::new(ForeverBoxRunnerResourcePort::new(
+        Arc::clone(&forever_box),
+        agent_id.clone(),
+    ));
+    let computer_use_owner = host_runner_composition.computer_use_coordination();
+    let mut computer_use_window_granted = true;
+    if prompt_role == RunnerPromptRole::ComputerUseSubagent {
+        {
+            let mut owner = computer_use_owner
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            computer_use_window_granted = owner.allocate_window(&agent_id).is_some();
+            if computer_use_window_granted {
+                owner.begin_preparation(&agent_id);
+            } else {
+                owner.mark_preparation_failed(
+                    &agent_id,
+                    mahayana_host_runtime::runner::computer_use::ComputerUsePrewarmStage::Box,
+                    "computer_window_busy",
+                );
+            }
+        }
+        if computer_use_window_granted {
+            match forever_box.box_().ensure_ready(&agent_id) {
+                Err(error) => {
+                    computer_use_owner
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner())
+                        .mark_preparation_failed(
+                            &agent_id,
+                            mahayana_host_runtime::runner::computer_use::ComputerUsePrewarmStage::Box,
+                            error.to_string(),
+                        );
+                }
+                Ok(_) if shipping_desktop_capable => {
+                    let prewarm = shipping_box_resources.execute_shell(RunnerBoxShellRequest {
+                        command: "box-chrome --sand-prepare".into(),
+                        working_directory: "/workspace".into(),
+                        tool_call_id: format!("sand-cua-browser-prepare-{agent_id}"),
+                    });
+                    let mut owner = computer_use_owner
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    match prewarm {
+                        Ok(_) => owner.mark_preparation_ready(&agent_id),
+                        Err(error) => owner.mark_preparation_failed(
+                            &agent_id,
+                            mahayana_host_runtime::runner::computer_use::ComputerUsePrewarmStage::Browser,
+                            error.to_string(),
+                        ),
+                    }
+                }
+                Ok(_) => {
+                    computer_use_owner
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner())
+                        .mark_preparation_ready(&agent_id);
+                }
+            }
+        }
+    }
     let shipping_desktop_ready = shipping_desktop_capable
+        && computer_use_window_granted
         && (shipping_box_status.vnc_url.is_some()
             || shipping_box_status
                 .windows
@@ -4020,10 +4082,7 @@ fn start_routed_provider_task(
                 mcp_review: Some(mcp_review),
             });
             let box_resources: Arc<dyn RunnerBoxResourcePort> =
-                Arc::new(ForeverBoxRunnerResourcePort::new(
-                    Arc::clone(&forever_box),
-                    agent_id.clone(),
-                ));
+                Arc::clone(&shipping_box_resources) as Arc<dyn RunnerBoxResourcePort>;
             let box_shell_gate = Arc::clone(&auto_review_gate);
             let box_shell_auth = Arc::clone(&worker_auth);
             let box_shell_controller = Arc::clone(&worker_auto_review_controller);
@@ -5043,7 +5102,9 @@ fn start_routed_provider_task(
                 });
             let cursor_auth = inference.cursor_auth_for_session(Some(&worker_session_options));
             let computer_exposure = if worker_generated_parent_agent_id.is_some() {
-                if worker_generated_subagent_type.eq_ignore_ascii_case("computeruse") {
+                if worker_generated_subagent_type.eq_ignore_ascii_case("computeruse")
+                    && computer_use_window_granted
+                {
                     ComputerToolExposure::Full
                 } else {
                     ComputerToolExposure::Disabled
@@ -5364,6 +5425,27 @@ fn start_routed_provider_task(
                 &ActivityUpdate::TurnEnded,
                 started_at_ms(),
             );
+            if prompt_role == RunnerPromptRole::ComputerUseSubagent {
+                let usage = worker_provider_usage
+                    .lock()
+                    .ok()
+                    .and_then(|usage| *usage)
+                    .map(|usage| mahayana_host_runtime::runner::turn_usage::TurnUsage {
+                        input_tokens: usage.input_tokens,
+                        output_tokens: usage.output_tokens,
+                        cache_read_tokens: usage.cache_read_tokens,
+                        cache_write_tokens: usage.cache_write_tokens,
+                        reasoning_tokens: usage.reasoning_tokens,
+                    });
+                let mut owner = computer_use_owner
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                if let Some(model_id) = worker_session_options.model_id.as_deref() {
+                    owner.record_model_id(model_id);
+                }
+                owner.record_turn_ended(usage);
+                owner.free_window(&agent_id);
+            }
             worker_transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
             worker_registry.finish_routed_provider(&worker_stream_id);
             auto_review_service.unbind_runner(
