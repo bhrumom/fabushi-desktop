@@ -65,9 +65,16 @@ fn production_state_backstop_binding_uses_canonical_agents_root_and_checkpointed
 }
 
 #[test]
-fn cloud_agent_trace_binding_fails_closed_until_generated_wire_adapter_exists() {
+fn cloud_agent_trace_binding_consumes_generated_conversation_message_wire() {
     let converter = production_cloud_agent_trace_converter();
-    let error = converter(&[vec![0x0a, 0x02, b'h', b'i']])
-        .expect_err("partial or opaque trace conversion must not ship");
-    assert!(error.contains("canonical generated ConversationMessage trace bindings"));
+    // aiserver.v1.ConversationMessage { text: "hi", type: HUMAN }
+    let rows = converter(&[vec![0x0a, 0x02, b'h', b'i', 0x10, 0x01]])
+        .expect("canonical generated ConversationMessage trace binding");
+    assert_eq!(
+        rows,
+        vec![serde_json::json!({
+            "role": "user",
+            "text": "hi",
+        })]
+    );
 }
