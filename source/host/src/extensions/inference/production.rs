@@ -70,16 +70,6 @@ impl InferenceProductionExtras {
         )
     }
 
-    pub fn cursor_auth_for_session(
-        &self,
-        session_options: Option<&SandSessionOptions>,
-    ) -> Arc<dyn CursorInferenceAuth> {
-        Arc::new(ProductionCursorInferenceAuth {
-            auth: Arc::clone(&self.auth),
-            requested_model: self.runtime.port().resolve_requested_model(session_options),
-        })
-    }
-
     pub fn create_web_search(
         &self,
         model_id: impl Into<String>,
@@ -277,6 +267,16 @@ impl ProductionInferenceExtension {
 
     pub fn record_usage(&self, provider: RoutedProvider, usage: InferenceUsage) {
         self.service.record_usage(provider, usage);
+    }
+
+    pub fn cursor_auth_for_session(
+        &self,
+        session_options: Option<&SandSessionOptions>,
+    ) -> Arc<dyn CursorInferenceAuth> {
+        Arc::new(ProductionCursorInferenceAuth {
+            auth: Arc::clone(&self.auth),
+            requested_model: self.runtime.port().resolve_requested_model(session_options),
+        })
     }
 
     pub fn create_web_search(
