@@ -246,7 +246,7 @@ use mahayana_host_runtime::runner::sand_memory::{
     MEMORY_RECENT_PROMPT_LIMIT, is_memorable_exchange,
 };
 use mahayana_host_runtime::runner::turn_memory::{
-    TurnExchange, TurnMemoryMode, run_turn_memory_with,
+    TurnMemoryMode, build_turn_memory_exchange, run_turn_memory_with,
 };
 use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt_section;
 use mahayana_host_runtime::runner::tools::sand_state_tool::{
@@ -683,6 +683,7 @@ struct ProductionAgentManagementSink {
     sessions: Arc<ProductionSessionWorkers>,
     forever_box: Arc<ForeverBoxService>,
     messaging: Arc<ProductionAgentToAgentMessaging>,
+    agent_messages: Arc<Mutex<Vec<String>>>,
     agent_id: String,
 }
 
@@ -715,9 +716,16 @@ impl AgentManagementSink for ProductionAgentManagementSink {
         images: &[AgentMessageImage],
         priority: bool,
     ) -> Result<String, ProviderSessionError> {
-        self.messaging
+        let entry_id = self
+            .messaging
             .send_to_agent(&self.agent_id, target_id, message, images, priority)
-            .map_err(ProviderSessionError::Tool)
+            .map_err(ProviderSessionError::Tool)?;
+        if !message.trim().is_empty() {
+            if let Ok(mut agent_messages) = self.agent_messages.lock() {
+                agent_messages.push(message.to_string());
+            }
+        }
+        Ok(entry_id)
     }
 
     fn create_agent(
@@ -4327,11 +4335,13 @@ fn start_routed_provider_task(
                     priority_registry.cancel_agent(target_agent_id, reason)
                 })),
             ));
+            let turn_agent_messages = Arc::new(Mutex::new(Vec::<String>::new()));
             let agent_management_sink: Arc<dyn AgentManagementSink> = Arc::new(
                 ProductionAgentManagementSink {
                     sessions: Arc::clone(&worker_sessions),
                     forever_box: Arc::clone(&forever_box),
                     messaging: agent_messaging,
+                    agent_messages: Arc::clone(&turn_agent_messages),
                     agent_id: agent_id.clone(),
                 },
             );
@@ -4777,14 +4787,20 @@ fn start_routed_provider_task(
                                     run_routed_provider_text(provider, &messages, &mut options)
                                         .map_err(|error| error.to_string())
                                 };
+                            let remembered_agent_messages = turn_agent_messages
+                                .lock()
+                                .map(|messages| messages.clone())
+                                .unwrap_or_default();
+                            let exchange = build_turn_memory_exchange(
+                                user_prompt,
+                                remembered_agent_messages,
+                                content.clone(),
+                            );
                             let _ = run_turn_memory_with(
                                 &worker_memory_store,
                                 Some(episode_db.as_ref()),
                                 runner_started_at_ms as i64,
-                                TurnExchange {
-                                    user: user_prompt,
-                                    agent: content.clone(),
-                                },
+                                exchange,
                                 TurnMemoryMode::Extract,
                                 &mut execute_memory_prompt,
                             );

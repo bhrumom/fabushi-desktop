@@ -9,7 +9,7 @@ use mahayana_host_runtime::runner::sand_memory::{
     MEMORY_EXTRACTION_PROMPT_MARKER,
 };
 use mahayana_host_runtime::runner::turn_memory::{
-    TurnExchange, TurnMemoryMode, run_turn_memory_with,
+    TurnExchange, TurnMemoryMode, build_turn_memory_exchange, run_turn_memory_with,
 };
 
 fn root(label: &str) -> std::path::PathBuf {
@@ -120,4 +120,26 @@ fn evidence_mode_clears_pending_episode_state_without_running_extraction() {
 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn frozen_turn_memory_exchange_keeps_agent_messages_before_final_assistant_text() {
+    let exchange = build_turn_memory_exchange(
+        "user prompt",
+        ["sent to peer", "   ", "second peer note"],
+        "final assistant reply",
+    );
+    assert_eq!(exchange.user, "user prompt");
+    assert_eq!(
+        exchange.agent,
+        "sent to peer\nsecond peer note\nfinal assistant reply"
+    );
+
+    let tool_only = build_turn_memory_exchange(
+        "tool-only prompt",
+        ["delegated work"],
+        "   ",
+    );
+    assert_eq!(tool_only.agent, "delegated work");
 }

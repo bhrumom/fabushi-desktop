@@ -20,6 +20,35 @@ pub struct TurnExchange {
     pub agent: String,
 }
 
+/// Build the frozen turn-memory exchange after terminal settlement.
+///
+/// Agent-to-agent messages emitted during the turn are part of the assistant
+/// side of the remembered exchange and precede the final assistant text.
+/// Empty auxiliary/final parts are omitted exactly like the Grok collector.
+pub fn build_turn_memory_exchange<I, S>(
+    user: impl Into<String>,
+    agent_messages: I,
+    assistant_text: impl Into<String>,
+) -> TurnExchange
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    let mut parts = agent_messages
+        .into_iter()
+        .map(|message| message.as_ref().to_string())
+        .filter(|message| !message.trim().is_empty())
+        .collect::<Vec<_>>();
+    let assistant_text = assistant_text.into();
+    if !assistant_text.trim().is_empty() {
+        parts.push(assistant_text);
+    }
+    TurnExchange {
+        user: user.into(),
+        agent: parts.join("\n"),
+    }
+}
+
 pub enum TurnMemoryMode<'a> {
     Extract,
     RecordEvidence(&'a mut dyn FnMut(&TurnExchange)),
