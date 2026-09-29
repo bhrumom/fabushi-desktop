@@ -25,6 +25,28 @@ pub struct SandModelExperimentState {
 
 pub const SAND_AUTOMATION_REQUEST_SOURCE: &str = "automation";
 
+pub fn read_sand_model_experiment_env_override(
+    raw: Option<&str>,
+) -> Option<SandModelExperimentState> {
+    match raw.map(str::trim).map(str::to_ascii_lowercase).as_deref() {
+        Some("control") => Some(SandModelExperimentState {
+            active: true,
+            arm: SandModelExperimentArm::Control,
+        }),
+        Some("treatment") | Some("test") => Some(SandModelExperimentState {
+            active: true,
+            arm: SandModelExperimentArm::Treatment,
+        }),
+        _ => None,
+    }
+}
+
+pub fn read_sand_model_experiment_process_override() -> Option<SandModelExperimentState> {
+    let raw = std::env::var("SAND_MODEL_EXPERIMENT_OVERRIDE").ok();
+    read_sand_model_experiment_env_override(raw.as_deref())
+}
+
+
 pub fn sand_model_experiment_opus_medium_selection() -> SandAgentModelSelection {
     SandAgentModelSelection {
         model_id: "claude-opus-4-8".into(),
