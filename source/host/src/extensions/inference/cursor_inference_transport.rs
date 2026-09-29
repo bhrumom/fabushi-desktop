@@ -19,7 +19,7 @@ use crate::extensions::auth::credential_renewer::{
 };
 use crate::extensions::auth::extension::HostAuthExtension;
 
-use super::cursor_session::sand_default_model_selection;
+use super::cursor_session::{RequestedModel, sand_default_model_selection};
 use super::provider_session::{
     ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedToolDefinition,
 };
@@ -35,6 +35,14 @@ pub trait CursorInferenceAuth: Send + Sync {
     fn machine_id(&self) -> Result<String, String>;
     fn backend_url(&self) -> Result<String, String> {
         get_configured_backend_url().map_err(|error| error.to_string())
+    }
+    fn requested_model(&self) -> RequestedModel {
+        let selection = sand_default_model_selection();
+        RequestedModel {
+            model_id: selection.model_id,
+            max_mode: Some(selection.max_mode),
+            parameters: selection.parameters,
+        }
     }
 }
 
@@ -508,8 +516,8 @@ fn checkpoint_message_to_proto(message: &CursorCheckpointMessage) -> InferenceCo
 fn encode_cursor_conversation_request(
     conversation: &[CursorCheckpointMessage],
     tools: &[RoutedToolDefinition],
+    model: &RequestedModel,
 ) -> Result<Vec<u8>, ProviderSessionError> {
-    let model = sand_default_model_selection();
     let request = InferenceStreamRequest {
         messages: conversation.iter().map(checkpoint_message_to_proto).collect(),
         tools: tools
@@ -521,11 +529,12 @@ fn encode_cursor_conversation_request(
             })
             .collect(),
         requested_model: Some(InferenceRequestedModel {
-            model_id: model.model_id,
-            max_mode: model.max_mode,
+            model_id: model.model_id.clone(),
+            max_mode: model.max_mode.unwrap_or(false),
             parameters: model
                 .parameters
-                .into_iter()
+                .iter()
+                .cloned()
                 .map(|parameter| InferenceModelParameterValue {
                     id: parameter.id,
                     value: parameter.value,
@@ -550,7 +559,25 @@ pub fn encode_cursor_inference_request(
         .iter()
         .map(provider_message_to_checkpoint)
         .collect::<Vec<_>>();
-    encode_cursor_conversation_request(&conversation, tools)
+    let selection = sand_default_model_selection();
+    let model = RequestedModel {
+        model_id: selection.model_id,
+        max_mode: Some(selection.max_mode),
+        parameters: selection.parameters,
+    };
+    encode_cursor_conversation_request(&conversation, tools, &model)
+}
+
+pub fn encode_cursor_inference_request_with_model(
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+    model: &RequestedModel,
+) -> Result<Vec<u8>, ProviderSessionError> {
+    let conversation = messages
+        .iter()
+        .map(provider_message_to_checkpoint)
+        .collect::<Vec<_>>();
+    encode_cursor_conversation_request(&conversation, tools, model)
 }
 
 pub trait CursorInferenceStreamTransport {
@@ -608,7 +635,8 @@ impl CursorInferenceTransport {
             &machine_id,
         );
         let request_id = Uuid::new_v4().to_string();
-        let body = encode_cursor_conversation_request(conversation, tools)?;
+        let requested_model = self.auth.requested_model();
+        let body = encode_cursor_conversation_request(conversation, tools, &requested_model)?;
 
         let base = Url::parse(&backend_url)
             .map_err(|error| ProviderSessionError::Configuration(error.to_string()))?;
