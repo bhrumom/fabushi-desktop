@@ -5,6 +5,7 @@ use std::thread;
 use prost::Message;
 
 use crate::cursor_backend::{resolve_sand_ghost_mode_header, send_cursor_unary};
+use crate::extensions::auth::credential_renewer::get_configured_backend_url;
 use crate::extensions::auth::extension::HostAuthExtension;
 
 use super::generated_inference_codec::{
@@ -96,10 +97,8 @@ impl SandLabelingClient {
     }
 
     fn send(&self, path: &str, body: Vec<u8>) -> Result<(), String> {
-        let backend_url = self
-            .auth
-            .backend_url()
-            .map_err(|error| error.to_string())?;
+        let backend_url =
+            get_configured_backend_url().map_err(|error| error.to_string())?;
         let access_token = self
             .auth
             .get_access_token()
