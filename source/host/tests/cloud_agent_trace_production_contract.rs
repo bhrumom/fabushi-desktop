@@ -141,12 +141,22 @@ fn production_converter_matches_frozen_no_preamble_roles_args_results_and_timest
                 started_at_ms: None,
                 completed_at_ms: None,
             },
+            FixtureToolResult {
+                tool_call_id: " ".into(),
+                tool_name: "\t".into(),
+                args: r#"{"fallback":"must-not-win"}"#.into(),
+                raw_args: "   ".into(),
+                content: Some("   ".into()),
+                result: None,
+                started_at_ms: Some(300),
+                completed_at_ms: Some(250),
+            },
         ],
     });
 
     let converter = production_cloud_agent_trace_converter();
     let rows = converter(&[human, assistant]).expect("canonical generated converter");
-    assert_eq!(rows.len(), 5);
+    assert_eq!(rows.len(), 6);
     assert_eq!(rows[0], json!({"role":"user","text":"hello"}));
     assert_eq!(
         rows[1],
@@ -175,6 +185,14 @@ fn production_converter_matches_frozen_no_preamble_roles_args_results_and_timest
                     "tool_call_id":"call-args",
                     "tool_name":"ArgsFallback",
                     "tool_args":[1,2]
+                },
+                {
+                    "tool_call_id":" ",
+                    "tool_name":"\t",
+                    "tool_args":"   ",
+                    "started_at_ms":300,
+                    "completed_at_ms":250,
+                    "duration_ms":-50
                 }
             ]
         })
@@ -218,6 +236,19 @@ fn production_converter_matches_frozen_no_preamble_roles_args_results_and_timest
             "tool_call_id":"call-args",
             "tool_name":"ArgsFallback",
             "tool_args":[1,2]
+        })
+    );
+    assert_eq!(
+        rows[5],
+        json!({
+            "role":"tool",
+            "tool_call_id":" ",
+            "tool_name":"\t",
+            "tool_args":"   ",
+            "tool_result":"   ",
+            "started_at_ms":300,
+            "completed_at_ms":250,
+            "duration_ms":-50
         })
     );
 }

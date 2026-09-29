@@ -135,24 +135,24 @@ fn apply_tool_identity_and_args(
     target: &mut Map<String, Value>,
     tool_result: &Map<String, Value>,
 ) {
-    if let Some(tool_call_id) = non_empty_string(tool_result.get("toolCallId")) {
+    if let Some(tool_call_id) = truthy_string(tool_result.get("toolCallId")) {
         target.insert(
             "tool_call_id".into(),
             Value::String(tool_call_id.to_string()),
         );
     }
-    if let Some(tool_name) = non_empty_string(tool_result.get("toolName")) {
+    if let Some(tool_name) = truthy_string(tool_result.get("toolName")) {
         target.insert("tool_name".into(), Value::String(tool_name.to_string()));
     }
-    let args = non_empty_string(tool_result.get("rawArgs"))
-        .or_else(|| non_empty_string(tool_result.get("args")));
+    let args = truthy_string(tool_result.get("rawArgs"))
+        .or_else(|| truthy_string(tool_result.get("args")));
     if let Some(args) = args {
         target.insert("tool_args".into(), parse_json_or_string(args));
     }
 }
 
 fn extract_tool_result_content(tool_result: &Map<String, Value>) -> Option<Value> {
-    if let Some(content) = non_empty_string(tool_result.get("content")) {
+    if let Some(content) = truthy_string(tool_result.get("content")) {
         return Some(parse_json_or_string(content));
     }
     let result = tool_result.get("result")?.as_object()?;
@@ -178,7 +178,7 @@ fn apply_tool_call_timestamps(
     if let (Some(started), Some(completed)) = (started, completed) {
         target.insert(
             "duration_ms".into(),
-            integer_json(completed.saturating_sub(started)),
+            integer_json(completed - started),
         );
     }
 }
@@ -187,6 +187,10 @@ fn non_empty_string(value: Option<&Value>) -> Option<&str> {
     value
         .and_then(Value::as_str)
         .filter(|value| !value.trim().is_empty())
+}
+
+fn truthy_string(value: Option<&Value>) -> Option<&str> {
+    value.and_then(Value::as_str).filter(|value| !value.is_empty())
 }
 
 fn parse_json_or_string(value: &str) -> Value {
