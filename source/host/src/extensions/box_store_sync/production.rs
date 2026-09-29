@@ -45,7 +45,7 @@ use crate::extensions::box_store_sync::box_store_sync_service::{
     BOX_HOME_DIR, BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_REL_PREFIX,
     BOX_STORE_MANIFEST_RETRY_ATTEMPTS, BOX_STORE_MANIFEST_RETRY_DELAY_MS,
     SAND_STORE_BETTER_CLI_ENV, SAND_USER_NON_ROOT_ENV, build_box_home_category,
-    is_better_cli_home_enabled, plan_periodic_cycle,
+    build_box_home_ignore, is_better_cli_home_enabled, plan_periodic_cycle,
 };
 use crate::extensions::box_store_sync::box_store_hydration::{
     BOX_STORE_HYDRATION_HANDOFF_FILE_NAME, BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH,
@@ -211,6 +211,7 @@ impl ProductionBoxStoreSyncService {
                 deps,
                 env,
                 mode,
+                started: AtomicBool::new(false),
                 stopped: AtomicBool::new(false),
                 cycle_lock: Mutex::new(()),
                 store_db_debounce: Mutex::new(StoreDbDebounceQueue::default()),
@@ -246,7 +247,9 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
     }
 
     fn start(&self) {
-        if self.inner.stopped.load(Ordering::Acquire) {
+        if self.inner.stopped.load(Ordering::Acquire)
+            || self.inner.started.swap(true, Ordering::AcqRel)
+        {
             return;
         }
 
@@ -485,6 +488,7 @@ struct ProductionBoxStoreSyncInner {
     deps: BoxStoreSyncExtensionDeps,
     env: BTreeMap<String, String>,
     mode: ProductionBoxStoreSyncMode,
+    started: AtomicBool,
     stopped: AtomicBool,
     cycle_lock: Mutex<()>,
     store_db_debounce: Mutex<StoreDbDebounceQueue>,
@@ -1090,6 +1094,7 @@ fn sync_box_home_category(
     manifest_v2: bool,
 ) -> Result<CategoryTransferSummary, String> {
     let category = build_box_home_category(BOX_HOME_DIR);
+    let ignore = build_box_home_ignore();
     let exclude_refs = category.excludes.iter().map(String::as_str).collect::<Vec<_>>();
     sync_tree_category(
         store,
@@ -1098,7 +1103,7 @@ fn sync_box_home_category(
         BOX_HOME_REL_PREFIX,
         &category.name,
         &exclude_refs,
-        None,
+        Some(&ignore),
         manifest_v2,
     )
 }
