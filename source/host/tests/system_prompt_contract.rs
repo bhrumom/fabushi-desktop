@@ -167,7 +167,7 @@ fn frozen_agent_profile_section_is_provider_bound_once() {
     assert!(section.contains("Your agent name is \"Researcher\"."));
     assert!(section.contains("Description: Investigates deeply."));
     assert!(section.contains("/home/oai/share/agents/a/profile.json"));
-    assert!(section.contains("update_state (target \"profile\", action \"set\")"));
+    assert!(section.contains("update_state tool (target \"profile\", action \"set\")"));
     assert!(section.contains("ExternalShell"));
     assert!(section.contains("/home/oai/share/agents/a/settings.json"));
     assert!(section.contains("\"hidden_from_sidebar\""));
