@@ -1058,7 +1058,8 @@ fn restore_bulk_small_from_packs(
         },
     );
 
-    sink.restored.lock().expect("pack restored lock").clone()
+    let restored = sink.restored.lock().expect("pack restored lock").clone();
+    restored
 }
 
 const SYMLINK_TRACE_STEPS: &[&str] = &[
@@ -1652,7 +1653,8 @@ pub fn download_manifest(
         );
     }
 
-    state.lock().expect("download summary mutex").clone()
+    let summary = state.lock().expect("download summary mutex").clone();
+    summary
 }
 
 pub fn remove_existing_restore_path(path: &Path) -> Result<(), String> {
