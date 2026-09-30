@@ -42,12 +42,12 @@ Status vocabulary:
 | 23 | `reportDaemonPing` | lifecycle mapper exists / generic TelemetryService event mapping exists | producer-evidence-required |
 | 24 | `reportBoxImageCheck` | lifecycle mapper exists | producer-evidence-required |
 | 25 | `enqueueBoxInfrastructureEvent` | `box_infrastructure_telemetry` + `HostStructuredLogTelemetry::report_box_log_record` cover infrastructure projection | verified-owner |
-| 26 | `reportBoxBootStage` | generic TelemetryService event mapping exists | producer-evidence-required |
-| 27 | `reportBoxBootFailure` | lifecycle mapper exists | producer-evidence-required |
-| 28 | `reportEgressTunnel` | lifecycle mapper exists | producer-evidence-required |
-| 29 | `reportHostBootFetch` | lifecycle mapper exists | producer-evidence-required |
-| 30 | `reportExecDaemonRestart` | generic TelemetryService event mapping exists | producer-evidence-required |
-| 31 | `reportSupervisorRestart` | generic TelemetryService event mapping exists | producer-evidence-required |
+| 26 | `reportBoxBootStage` | frozen method delegates to infrastructure mapping; shipping `BoxLogShipper` parses `boot_stage` from the production box telemetry stream and the unique Host log owner calls `report_box_log_record -> box_infrastructure_telemetry`; production contract verifies delivery/offset settlement and exact event | **implemented-awaiting-exact-head-ci** |
+| 27 | `reportBoxBootFailure` | delegated to the same shipping `BoxLogShipper` infrastructure owner; focused production contract now exercises strict `boot_failure` schema and exact event | **implemented-awaiting-exact-head-ci** |
+| 28 | `reportEgressTunnel` | delegated to shipping `BoxLogShipper` infrastructure owner; production contract exercises `egress_tunnel` including attempt/exit/runtime fields | **implemented-awaiting-exact-head-ci** |
+| 29 | `reportHostBootFetch` | delegated to shipping `BoxLogShipper` infrastructure owner; strict parser validates outcome/reason/version provenance and production contract verifies exact event | **implemented-awaiting-exact-head-ci** |
+| 30 | `reportExecDaemonRestart` | delegated to shipping `BoxLogShipper` infrastructure owner; production contract exercises restart attempt/runtime/cause/exit status and exact event | **implemented-awaiting-exact-head-ci** |
+| 31 | `reportSupervisorRestart` | delegated to shipping `BoxLogShipper` infrastructure owner; production contract exercises restart attempt/runtime/cause/exit status and exact event | **implemented-awaiting-exact-head-ci** |
 | 32 | `reportBoxBootStageConfirmed` | `HostStructuredLogTelemetry::report_box_boot_stage_confirmed` uses `ship_confirmed_projection` | verified-owner |
 | 33 | `reportTurnInterrupt` | delegates to `turn_telemetry_mappers.rs`; that architecture row is non-final | **delegated-nonfinal** |
 | 34 | `reportTurnAwait` | delegates to `turn_telemetry_mappers.rs`; row is non-final | **delegated-nonfinal** |
@@ -94,7 +94,7 @@ Status vocabulary:
 | 75 | `reportHostLog` | Host console forwarder calls the unique `HostStructuredLogTelemetry::report_host_log` owner and truncates to frozen max length | verified-owner |
 | 76 | `reportBoxLogBatch` | BoxLogShipper batches records into `HostStructuredLogTelemetry::report_box_log_record` | verified-owner |
 | 77 | `reportBoxLogShip` | BoxLogShipper reports via `HostStructuredLogTelemetry::report_box_log_ship` | verified-owner |
-| 78 | `reportDesktopHealth` | `DesktopHealthForwarder` is owned by `HostTelemetryService`; focused frozen facade projection still needs explicit ledger evidence | producer-evidence-required |
+| 78 | `reportDesktopHealth` | `HostTelemetryService` owns the production `DesktopHealthForwarder`; forwarder now calls typed `report_desktop_health`, preserving computed frozen level/metadata and fixed `sand.box.desktop_health`; existing JSONL/heartbeat contracts exercise revision suppression and persisted payload | **implemented-awaiting-exact-head-ci** |
 | 79 | `reportAgentOpen` | direct frozen event; production producer path must be pinned | producer-evidence-required |
 | 80 | `reportHostCrash` | Host crash marker owner exists, but ordinary fire-and-forget crash projection producer must be distinguished from confirmed exit forwarding | producer-evidence-required |
 | 81 | `reportHostProcessExitConfirmed` | crash-marker forwarding uses confirmed structured-log shipping under Host ownership | verified-owner |
@@ -165,3 +165,8 @@ The facade audit distinguished API presence from real shipping calls. Teach Reco
 ### Host event-bus failure ownership repair
 
 Frozen `SandHostEventBus` reports listener failures without a topic and capability-subscriber failures with a topic. The shipping Rust bus previously defaulted its failure reporter to a no-op even though the mapper existed. Production composition now pins exactly one failure reporter alongside the other structured-log domain reporters; `SandHostEventBus::default()` forwards real listener/subscriber failures into that reporter, which projects optional-topic semantics and calls the typed Host structured-log facade. Shutdown unpins the callback before telemetry disposal. The event-bus contract triggers both failure modes through the real default bus, while the projection contract verifies frozen field shaping.
+
+
+### Box infrastructure delegation and DesktopHealth facade ownership
+
+Frozen boot-stage/failure, egress-tunnel, host-boot-fetch, exec-daemon-restart and supervisor-restart methods all immediately delegate to the same infrastructure-event mapper. The Rust Host preserves that boundary through the shipping `BoxLogShipper`: the production box telemetry stream is strictly parsed into `BoxInfrastructureEvent`, then the unique Host structured-log owner maps and ships it. The production shipper contract now feeds every frozen infrastructure family through the real offset/delivery path and verifies the exact event names, so these rows are explicit architectural delegation rather than mapper-only evidence. DesktopHealth already had a real `HostTelemetryService` worker; it now calls a typed `report_desktop_health` facade instead of bypassing the facade via raw projection.

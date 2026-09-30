@@ -44,7 +44,14 @@ fn shipping_box_log_owner_scans_filters_maps_and_persists_offsets() {
     write(&host_log, "must not recursively ship\n");
     write(
         &infra_log,
-        "{\"kind\":\"boot_stage\",\"stage\":\"ready\",\"durationMs\":42}\n",
+        concat!(
+            "{\"kind\":\"boot_stage\",\"stage\":\"ready\",\"durationMs\":42}\n",
+            "{\"kind\":\"boot_failure\",\"stage\":\"desktop\",\"reason\":\"x_display_timeout\",\"durationMs\":43}\n",
+            "{\"kind\":\"egress_tunnel\",\"outcome\":\"restart\",\"attempt\":2,\"exitStatus\":1,\"runtimeS\":9}\n",
+            "{\"kind\":\"host_boot_fetch\",\"outcome\":\"fallback\",\"reason\":\"download_failed\",\"durationMs\":44,\"swapMs\":3,\"fromVersion\":\"0123456\",\"toVersion\":\"abcdef0\"}\n",
+            "{\"kind\":\"exec_daemon_restart\",\"restartAttempt\":1,\"runtimeS\":10,\"cause\":\"daemon_exited\",\"exitStatus\":1}\n",
+            "{\"kind\":\"supervisor_restart\",\"restartAttempt\":1,\"runtimeS\":11,\"cause\":\"supervisor_exited\",\"exitStatus\":1}\n",
+        ),
     );
     write(&excluded_log, "must be excluded\n");
     write(&browser_log, "browser started\n");
@@ -80,7 +87,7 @@ fn shipping_box_log_owner_scans_filters_maps_and_persists_offsets() {
         }),
     );
 
-    assert_eq!(shipper.poll_once().expect("poll"), 2);
+    assert_eq!(shipper.poll_once().expect("poll"), 7);
     assert_eq!(
         shipper.offset_for(&infra_log),
         Some(fs::metadata(&infra_log).expect("infra metadata").len())
@@ -95,6 +102,11 @@ fn shipping_box_log_owner_scans_filters_maps_and_persists_offsets() {
 
     let raw = fs::read_to_string(&records_path).expect("records");
     assert!(raw.contains("\"event\":\"sand.box.boot_stage\""));
+    assert!(raw.contains("\"event\":\"sand.box.boot_failure\""));
+    assert!(raw.contains("\"event\":\"sand.box.egress_tunnel\""));
+    assert!(raw.contains("\"event\":\"sand.box.host_boot_fetch\""));
+    assert!(raw.contains("\"event\":\"sand.box.exec_daemon_restart\""));
+    assert!(raw.contains("\"event\":\"sand.box.supervisor_restart\""));
     assert!(raw.contains("\"event\":\"sand.box.log\""));
     assert!(raw.contains("\"source\":\"sand-window-7/browser\""));
     assert!(raw.contains("\"event\":\"sand.box.log_ship\""));

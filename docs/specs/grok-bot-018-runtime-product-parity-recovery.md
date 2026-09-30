@@ -2404,3 +2404,10 @@ This slice does **not** make cloud reconciliation final. `sand-automation-cloud-
 - The facade audit found a real production hole: `host-event-bus-telemetry.rs` existed, but `SandHostEventBus::default()` discarded listener/subscriber failure telemetry through a no-op default reporter.
 - Production Host composition now pins one event-bus failure reporter to the unique `HostStructuredLogTelemetry` owner and clears it before telemetry disposal. Listener failures preserve the frozen no-topic shape; capability subscriber failures preserve their topic.
 - Focused behavior tests trigger both failure paths through the default shipping bus and verify the adapter/projector semantics. Structured-log remains non-final until the rest of the facade ledger is closed.
+
+
+### 2026-09-30 Box infrastructure / DesktopHealth structured-log evidence
+
+- Recorded the frozen infrastructure methods as an explicit delegation to the shipping BoxLogShipper path rather than duplicating six direct producers. The production contract now exercises boot stage/failure, egress tunnel, host boot fetch, exec-daemon restart and supervisor restart through strict parsing, Host mapping and delivery-offset settlement.
+- `DesktopHealthForwarder`, already owned by `HostTelemetryService`, now routes through typed `report_desktop_health` so its frozen level/metadata and fixed event remain under the single Host structured-log facade.
+- These entries remain awaiting exact-HEAD Actions; unrelated unresolved facade producers are not advanced by this evidence.

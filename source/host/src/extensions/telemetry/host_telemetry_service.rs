@@ -544,6 +544,18 @@ impl HostStructuredLogTelemetry {
         })
     }
 
+    pub fn report_desktop_health(
+        &self,
+        level: &'static str,
+        metadata: BTreeMap<String, String>,
+    ) -> io::Result<()> {
+        self.report_projection(&HostTelemetryProjection {
+            level: Some(level),
+            event: Some(DESKTOP_HEALTH_EVENT),
+            metadata,
+        })
+    }
+
     pub fn report_box_help(&self, report: &Value) -> io::Result<()> {
         let projection = box_help_telemetry(report);
         debug_assert_eq!(projection.event, Some(BOX_HELP_EVENT));
@@ -1014,11 +1026,7 @@ pub fn forward_desktop_health_file_to_logs(
         now_ms,
         DESKTOP_HEALTH_HEARTBEAT_MS,
         |level, metadata| {
-            let _ = logs.report_projection(&HostTelemetryProjection {
-                level: Some(level),
-                event: Some(DESKTOP_HEALTH_EVENT),
-                metadata: metadata.clone(),
-            });
+            let _ = logs.report_desktop_health(level, metadata.clone());
         },
         |revision, at_ms| {
             next_state = Some((revision, at_ms));
