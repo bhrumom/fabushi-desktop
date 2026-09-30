@@ -21,8 +21,11 @@ use mahayana_host_runtime::extensions::telemetry::local_exec_telemetry::{
     LocalExecFailedReport, LocalExecProviderReport, LocalExecRefusalCause, LocalExecRefusedReport,
 };
 use mahayana_host_runtime::extensions::telemetry::memory_synthesis_telemetry::MemorySynthesisReport;
-use mahayana_host_runtime::extensions::telemetry::revival_telemetry_mappers::SubagentRevivalReport;
+use mahayana_host_runtime::extensions::telemetry::revival_telemetry_mappers::{
+    ShellRevivalReport, SubagentRevivalReport,
+};
 use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::TurnEmptyDeliveryReport;
+use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::PendingWakeReport;
 use mahayana_host_runtime::extensions::telemetry::webauthn_proxy_telemetry::{
     WebAuthnFailureCause, WebAuthnProxyReport,
 };
@@ -191,6 +194,23 @@ fn frozen_facade_methods_route_mapper_semantics_through_single_host_owner() {
         sent_message_count: Some(1),
         is_quiet_origin: Some(false),
     }).expect("subagent facade");
+    service.logs.report_shell_revival(&ShellRevivalReport {
+        conversation_id: "agent-facade".into(),
+        outcome: "sent".into(),
+        completion_count: 1,
+        sent_message_count: Some(1),
+        is_quiet_origin: Some(true),
+        reason: None,
+    }).expect("shell revival facade");
+    service.logs.report_pending_wake(&PendingWakeReport {
+        conversation_id: "agent-facade".into(),
+        outcome: "lost".into(),
+        kind: Some("shell".into()),
+        work_id: Some("work-1".into()),
+        age_ms: Some(10.6),
+        reason: Some("agent_gone".into()),
+        is_quiet_origin: Some(true),
+    }).expect("pending wake facade");
     service.logs.report_queue_accepted(&QueueAcceptedReport {
         conversation_id: "agent-facade".into(),
         lane: "user".into(),
@@ -238,7 +258,7 @@ fn frozen_facade_methods_route_mapper_semantics_through_single_host_owner() {
     let records = text.lines().map(|line| {
         serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("facade record")
     }).collect::<Vec<_>>();
-    assert_eq!(records.len(), 12);
+    assert_eq!(records.len(), 14);
     assert_eq!(records.iter().map(|record| record.event.as_str()).collect::<Vec<_>>(), vec![
         "sand.auto_review.approval",
         "sand.automation.fire_dropped",
@@ -248,6 +268,8 @@ fn frozen_facade_methods_route_mapper_semantics_through_single_host_owner() {
         "sand.webauthn_proxy",
         "sand.memory.synthesis",
         "sand.subagent.revival",
+        "sand.shell.revival",
+        "sand.pending_wake",
         "sand.queue.accepted",
         "sand.queue.dequeued",
         "sand.queue.watchdog",
@@ -257,10 +279,14 @@ fn frozen_facade_methods_route_mapper_semantics_through_single_host_owner() {
     assert_eq!(records[2].payload["metadata"]["error_code"], "SAND-E0111");
     assert_eq!(records[5].payload["level"], "warn");
     assert_eq!(records[5].payload["metadata"]["error_code"], "SAND-E0209");
-    assert_eq!(records[9].payload["metadata"]["queue_wait_ms"], "6");
-    assert_eq!(records[10].payload["metadata"]["active_runtime_ms"], "100");
-    assert_eq!(records[11].payload["metadata"]["duration_ms"], "201");
-    assert_eq!(records[11].payload["metadata"]["ack_outstanding"], "true");
+    assert_eq!(records[8].payload["event"], "sand.shell.revival");
+    assert_eq!(records[8].payload["metadata"]["quiet_origin"], "true");
+    assert_eq!(records[9].payload["event"], "sand.pending_wake");
+    assert_eq!(records[9].payload["metadata"]["age_ms"], "11");
+    assert_eq!(records[11].payload["metadata"]["queue_wait_ms"], "6");
+    assert_eq!(records[12].payload["metadata"]["active_runtime_ms"], "100");
+    assert_eq!(records[13].payload["metadata"]["duration_ms"], "201");
+    assert_eq!(records[13].payload["metadata"]["ack_outstanding"], "true");
 
     let _ = fs::remove_dir_all(root);
 }

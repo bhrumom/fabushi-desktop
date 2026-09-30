@@ -183,13 +183,14 @@ use mahayana_host_runtime::extensions::telemetry::automation_fire_telemetry::{
     AutomationFireDroppedReport,
 };
 use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
-    QueueAcceptedReport, QueueDequeuedReport, QueueWatchdogReport,
+    PendingWakeReport as TelemetryPendingWakeReport, QueueAcceptedReport, QueueDequeuedReport,
+    QueueWatchdogReport,
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
     HostStructuredLogTelemetry, HostTelemetryApi, MessageSentReport,
 };
 use mahayana_host_runtime::extensions::telemetry::revival_telemetry_mappers::{
-    SubagentRevivalReport,
+    ShellRevivalReport, SubagentRevivalReport,
 };
 use mahayana_host_runtime::extensions::experiments::HostExperimentsExtension;
 use mahayana_host_runtime::extensions::content_search::extension::ProductionContentSearchExtension;
@@ -1228,6 +1229,19 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
         let Some(gateway) = self.gateway() else {
             return;
         };
+        let telemetry = TelemetryPendingWakeReport {
+            conversation_id: report.conversation_id.clone(),
+            outcome: report.outcome.clone(),
+            kind: Some(match report.kind {
+                PendingWakeKind::CloudAgent => "cloud-agent",
+                PendingWakeKind::Subagent => "subagent",
+                PendingWakeKind::Shell => "shell",
+            }.to_string()),
+            work_id: Some(report.work_id.clone()),
+            age_ms: report.age_ms,
+            reason: report.reason.clone(),
+            is_quiet_origin: Some(report.is_quiet_origin),
+        };
         gateway.events.publish(serde_json::json!({
             "channel": "pending-wake",
             "payload": {
@@ -1240,6 +1254,9 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
                 "isQuietOrigin": report.is_quiet_origin,
             }
         }));
+        if let Err(error) = gateway.telemetry_logs.report_pending_wake(&telemetry) {
+            eprintln!("mahayana-host pending_wake_telemetry_failed error={error}");
+        }
     }
 }
 
@@ -1331,19 +1348,32 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
         let Some(gateway) = self.gateway() else {
             return;
         };
-        let report = SubagentRevivalReport {
-            parent_agent_id: report.agent_id,
-            outcome: report.outcome,
-            completion_count: i64::try_from(report.completion_count).unwrap_or(i64::MAX),
-            subagent_type: report.subagent_type,
-            subagent_agent_id: report.subagent_agent_id,
-            reason: report.reason,
-            sent_message_count: report
-                .sent_message_count
-                .map(|count| i64::try_from(count).unwrap_or(i64::MAX)),
-            is_quiet_origin: Some(report.is_quiet_origin),
+        let completion_count = i64::try_from(report.completion_count).unwrap_or(i64::MAX);
+        let sent_message_count = report
+            .sent_message_count
+            .map(|count| i64::try_from(count).unwrap_or(i64::MAX));
+        let result = if report.kind == "shell" {
+            gateway.telemetry_logs.report_shell_revival(&ShellRevivalReport {
+                conversation_id: report.agent_id,
+                outcome: report.outcome,
+                completion_count,
+                sent_message_count,
+                is_quiet_origin: Some(report.is_quiet_origin),
+                reason: report.reason,
+            })
+        } else {
+            gateway.telemetry_logs.report_subagent_revival(&SubagentRevivalReport {
+                parent_agent_id: report.agent_id,
+                outcome: report.outcome,
+                completion_count,
+                subagent_type: report.subagent_type,
+                subagent_agent_id: report.subagent_agent_id,
+                reason: report.reason,
+                sent_message_count,
+                is_quiet_origin: Some(report.is_quiet_origin),
+            })
         };
-        if let Err(error) = gateway.telemetry_logs.report_subagent_revival(&report) {
+        if let Err(error) = result {
             eprintln!("mahayana-host background_revival_telemetry_failed error={error}");
         }
     }

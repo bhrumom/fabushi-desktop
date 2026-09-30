@@ -2366,3 +2366,11 @@ This slice does **not** make cloud reconciliation final. `sand-automation-cloud-
 - This follow-up fixes a real shipping defect for WebAuthn telemetry: its production callback previously mapped the report and only printed it to stderr. It now routes the typed WebAuthn projection through the unique Host structured-log owner/transport.
 - `host_telemetry_service_contract.rs` adds a real JSONL sink contract covering all twelve typed facade methods and representative frozen semantics (rounding, warning levels, Sand error codes, queue timing and empty-delivery fields).
 - This is intentionally not a structured-log finalization. Several facade methods still have no proven shipping producer and the eight delegated turn-mapper entries remain non-final. The structured-log manifest row therefore stays `existing-needs-parity`; exact-HEAD GitHub Actions are required after this repair commit before any newly advanced ledger row can be accepted.
+
+
+### 2026-09-30 structured-log shell/pending-wake repair
+
+- The method-by-method audit found two real shipping defects: shell revival reports were incorrectly projected as `sand.subagent.revival`, and pending-wake lifecycle reports were published only to the Gateway event bus without structured-log shipping.
+- `ProductionCompletionRevivalRuntime::report_revival` now keeps Grok's shell/subagent semantic split and routes shell completions through the unique Host `report_shell_revival` facade. PendingWakeRearm keeps its renderer-visible Gateway event and additionally routes the same report through `report_pending_wake`.
+- The Host JSONL facade contract now exercises and distinguishes both `sand.shell.revival` and `sand.pending_wake`, including quiet-origin and age rounding semantics.
+- This still does not finalize `structured-log-telemetry.ts`: Host/session/GC reporter slots are currently unpinned in shipping composition, disk pressure requires dedicated projection ownership, additional frozen facade entries still lack real producer evidence, and the eight turn-telemetry delegates remain non-final. `turn-telemetry-mappers.ts` remains out of scope until those facade blockers are resolved.

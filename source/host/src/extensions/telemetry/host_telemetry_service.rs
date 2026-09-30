@@ -69,10 +69,13 @@ use super::pressure_cpu_profiler::{
     PressureCpuProfiler, SandProfilerCaptureError, create_production_pressure_cpu_profiler,
 };
 use super::queue_telemetry_mappers::{
-    QueueAcceptedReport, QueueDequeuedReport, QueueWatchdogReport, queue_accepted_telemetry,
-    queue_dequeued_telemetry, queue_watchdog_telemetry,
+    PendingWakeReport, QueueAcceptedReport, QueueDequeuedReport, QueueWatchdogReport,
+    pending_wake_telemetry, queue_accepted_telemetry, queue_dequeued_telemetry,
+    queue_watchdog_telemetry,
 };
-use super::revival_telemetry_mappers::{SubagentRevivalReport, subagent_revival_telemetry};
+use super::revival_telemetry_mappers::{
+    ShellRevivalReport, SubagentRevivalReport, shell_revival_telemetry, subagent_revival_telemetry,
+};
 use super::sand_error_tags::{SandErrorValue, sand_error_tags};
 use super::structured_log_telemetry::{
     BOX_HELP_EVENT, CursorStructuredLogBackend, HOST_BUILT_AT_MS, ProductionStructuredLogTransport,
@@ -459,6 +462,14 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_subagent_revival(&self, report: &SubagentRevivalReport) -> io::Result<()> {
         self.report_projection(&subagent_revival_telemetry(report))
+    }
+
+    pub fn report_shell_revival(&self, report: &ShellRevivalReport) -> io::Result<()> {
+        self.report_projection(&shell_revival_telemetry(report))
+    }
+
+    pub fn report_pending_wake(&self, report: &PendingWakeReport) -> io::Result<()> {
+        self.report_projection(&pending_wake_telemetry(report))
     }
 
     pub fn report_queue_accepted(&self, report: &QueueAcceptedReport) -> io::Result<()> {
