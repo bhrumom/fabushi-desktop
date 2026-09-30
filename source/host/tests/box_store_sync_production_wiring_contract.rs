@@ -418,21 +418,21 @@ fn shipping_manifest_conflict_uses_frozen_metadata_and_unique_host_owner() {
         "fn report_manifest_write_conflict(&self, info: &BoxStoreManifestConflictInfo)"
     ));
     for field in [
-        ""store_id"",
-        ""attempts"",
-        ""accepted"",
-        ""covered"",
-        ""canonical_matches_attempt"",
-        ""live_view_changed"",
-        ""attempted_entries"",
-        ""last_base_etag"",
-        ""last_baseline_source"",
-        ""last_conflict_rel_path"",
-        ""canonical_readable"",
-        ""canonical_entry_count"",
-        ""canonical_updated_at_ms"",
-        ""canonical_writer_window_id"",
-        ""our_window_id"",
+        r#""store_id""#,
+        r#""attempts""#,
+        r#""accepted""#,
+        r#""covered""#,
+        r#""canonical_matches_attempt""#,
+        r#""live_view_changed""#,
+        r#""attempted_entries""#,
+        r#""last_base_etag""#,
+        r#""last_baseline_source""#,
+        r#""last_conflict_rel_path""#,
+        r#""canonical_readable""#,
+        r#""canonical_entry_count""#,
+        r#""canonical_updated_at_ms""#,
+        r#""canonical_writer_window_id""#,
+        r#""our_window_id""#,
     ] {
         assert!(
             production.contains(field),
@@ -440,7 +440,7 @@ fn shipping_manifest_conflict_uses_frozen_metadata_and_unique_host_owner() {
         );
     }
     assert!(production.contains(
-        "(self.deps.report_box_store_manifest_conflict)("warn", &metadata);"
+        r#"(self.deps.report_box_store_manifest_conflict)("warn", &metadata);"#
     ));
 
     let manifest = include_str!("../src/extensions/box_store_sync/box_store_manifest.rs");
