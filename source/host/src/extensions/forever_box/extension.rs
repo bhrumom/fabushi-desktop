@@ -6,6 +6,7 @@ use std::time::Duration;
 use crate::host_diagnostics::{HostDiagnostic, report_host_diagnostic};
 use crate::host_paths::get_sand_root_dir;
 use crate::runner::box_reference_docs::provision_sand_box_prompt_artifacts;
+use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use crate::r#box::box_store_backend_policy::{
     is_box_store_copy_in_enabled, is_box_store_sync_enabled,
 };
@@ -56,13 +57,41 @@ pub fn start_forever_box_extension(
     lifecycle: Arc<dyn ForeverBoxLifecycle>,
     options: ForeverBoxExtensionOptions,
 ) -> Arc<ForeverBoxService> {
-    let service = Arc::new(ForeverBoxService::new(
+    start_forever_box_extension_inner(environment, lifecycle, options, None)
+}
+
+pub fn start_forever_box_extension_with_telemetry(
+    environment: ProductionBoxEnvironment,
+    lifecycle: Arc<dyn ForeverBoxLifecycle>,
+    options: ForeverBoxExtensionOptions,
+    recreate_telemetry: HostStructuredLogTelemetry,
+) -> Arc<ForeverBoxService> {
+    start_forever_box_extension_inner(
+        environment,
+        lifecycle,
+        options,
+        Some(recreate_telemetry),
+    )
+}
+
+fn start_forever_box_extension_inner(
+    environment: ProductionBoxEnvironment,
+    lifecycle: Arc<dyn ForeverBoxLifecycle>,
+    options: ForeverBoxExtensionOptions,
+    recreate_telemetry: Option<HostStructuredLogTelemetry>,
+) -> Arc<ForeverBoxService> {
+    let service = ForeverBoxService::new(
         HostBox::new(environment),
         lifecycle,
         options.auto_update_enabled,
         options.host_bundle_auto_update_enabled,
         options.is_in_box,
-    ));
+    );
+    let service = match recreate_telemetry {
+        Some(recreate_telemetry) => service.with_recreate_telemetry(recreate_telemetry),
+        None => service,
+    };
+    let service = Arc::new(service);
 
     let report = Arc::new(|report: &super::disk_pressure_guard::DiskPressureReport| {
         let level = match report.level {

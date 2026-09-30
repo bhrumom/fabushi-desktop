@@ -80,6 +80,7 @@ use super::connector_auth_telemetry::{
     ConnectorAuthReport, connector_auth_telemetry,
 };
 use super::box_copy_in_telemetry::box_copy_in_telemetry;
+use super::box_recreate_decided_telemetry::box_recreate_decided_telemetry;
 use super::model_experiment_exposure::{
     ModelExperimentExposureAnalytics, ModelExperimentExposureExperiments,
     ModelExperimentExposureLatch, SandModelExperimentState as ExposureModelExperimentState,
@@ -694,6 +695,13 @@ impl HostStructuredLogTelemetry {
         metadata: BTreeMap<String, String>,
     ) -> io::Result<()> {
         self.report_projection(&box_copy_in_telemetry(level, metadata))
+    }
+
+    pub fn report_box_recreate_decided(
+        &self,
+        metadata: BTreeMap<String, String>,
+    ) -> io::Result<()> {
+        self.report_projection(&box_recreate_decided_telemetry(metadata))
     }
 
     pub fn report_mcp_auth_cleanup(&self, outcome: &str, removed_count: usize) -> io::Result<()> {

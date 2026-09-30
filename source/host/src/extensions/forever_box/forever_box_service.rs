@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fmt;
 use std::sync::{
     Arc, Mutex,
@@ -10,6 +11,7 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use crate::extensions::box_lifecycle::{
     BoxLifecycleClient, BoxLifecycleService, RecreateSandBoxResponse,
 };
+use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use crate::r#box::box_env::BoxEnvironmentUpdate;
 use crate::r#box::box_transfer::TransferBox;
 use crate::r#box::generated_production::ProductionBoxResourceAccessor;
@@ -68,6 +70,7 @@ pub struct ForeverBoxService {
     auto_update_enabled: bool,
     host_bundle_auto_update_enabled: bool,
     is_in_box: bool,
+    recreate_telemetry: Option<HostStructuredLogTelemetry>,
     busy: AtomicBool,
     update_in_flight: AtomicBool,
     stopped: AtomicBool,
@@ -88,11 +91,20 @@ impl ForeverBoxService {
             auto_update_enabled,
             host_bundle_auto_update_enabled,
             is_in_box,
+            recreate_telemetry: None,
             busy: AtomicBool::new(false),
             update_in_flight: AtomicBool::new(false),
             stopped: AtomicBool::new(false),
             disk_pressure_watch: Mutex::new(None),
         }
+    }
+
+    pub fn with_recreate_telemetry(
+        mut self,
+        recreate_telemetry: HostStructuredLogTelemetry,
+    ) -> Self {
+        self.recreate_telemetry = Some(recreate_telemetry);
+        self
     }
 
     pub fn start(self: &Arc<Self>) {
@@ -148,9 +160,12 @@ impl ForeverBoxService {
     }
 
     pub fn ensure(&self, agent_id: &str) -> Result<BoxStatus, ForeverBoxServiceError> {
-        self.box_
+        let status = self
+            .box_
             .ensure(agent_id)
-            .map_err(|error| ForeverBoxServiceError::Box(error.to_string()))
+            .map_err(|error| ForeverBoxServiceError::Box(error.to_string()))?;
+        self.maybe_auto_update(agent_id, status.image_update_available);
+        Ok(status)
     }
 
     pub fn capture_screenshot(
@@ -221,19 +236,59 @@ impl ForeverBoxService {
             });
         }
         let result = (|| {
-            let available = self.refresh_image_update_available()?;
+            let available = match self.refresh_image_update_available() {
+                Ok(available) => available,
+                Err(_) => {
+                    return Ok(RecreateSandBoxResponse {
+                        started: false,
+                        reason: Some("staleness-check-failed".into()),
+                    });
+                }
+            };
             if !available {
                 return Ok(RecreateSandBoxResponse {
                     started: false,
                     reason: Some("no-update-required".into()),
                 });
             }
-            self.lifecycle
-                .recreate_in_box(true, None)
-                .map_err(ForeverBoxServiceError::Lifecycle)
+            self.report_recreate_decided("hibernation_auto_update");
+            match self.lifecycle.recreate_in_box(true, None) {
+                Ok(result) => Ok(result),
+                Err(_) => Ok(RecreateSandBoxResponse {
+                    started: false,
+                    reason: Some("recreate-unavailable".into()),
+                }),
+            }
         })();
         self.update_in_flight.store(false, Ordering::Release);
         result
+    }
+
+    fn maybe_auto_update(&self, agent_id: &str, available: Option<bool>) {
+        if !self.auto_update_enabled
+            || self.host_bundle_auto_update_enabled
+            || available != Some(true)
+            || self.busy.load(Ordering::Acquire)
+        {
+            return;
+        }
+        if self.update_in_flight.swap(true, Ordering::AcqRel) {
+            return;
+        }
+        self.report_recreate_decided("auto_update");
+        let _ = self.recreate(agent_id, true, None);
+        self.update_in_flight.store(false, Ordering::Release);
+    }
+
+    fn report_recreate_decided(&self, trigger: &str) {
+        let Some(logs) = self.recreate_telemetry.as_ref() else {
+            return;
+        };
+        let _ = logs.report_box_recreate_decided(BTreeMap::from([
+            ("trigger".into(), trigger.to_string()),
+            ("mode".into(), "pod_recreate".into()),
+            ("preserved".into(), "true".into()),
+        ]));
     }
 
     fn recreate(

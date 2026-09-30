@@ -61,7 +61,7 @@ use crate::extensions::experiments::{
 };
 use crate::extensions::forever_box::{
     ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxService,
-    start_forever_box_extension,
+    start_forever_box_extension_with_telemetry,
 };
 use crate::extensions::extension_ids_generated::HostExtensionId;
 use crate::extensions::inference::production::{
@@ -962,10 +962,11 @@ pub fn start_production_host_box_extensions(
     environment: ProductionBoxEnvironment,
 ) -> ProductionHostBoxExtensions {
     let lifecycle: Arc<dyn ForeverBoxLifecycle> = core.box_lifecycle.clone();
-    let forever_box = start_forever_box_extension(
+    let forever_box = start_forever_box_extension_with_telemetry(
         environment,
         lifecycle,
         ForeverBoxExtensionOptions::from_process_env(),
+        core.telemetry.logs.clone(),
     );
     let attachment_logs = core.telemetry.logs.clone();
     let attachments = start_attachments_extension(
