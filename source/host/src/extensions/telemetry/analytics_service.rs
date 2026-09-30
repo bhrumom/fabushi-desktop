@@ -1,6 +1,21 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
+use std::sync::{Arc, Mutex, mpsc};
+use std::thread::{self, JoinHandle};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use serde_json::Value;
+use reqwest::blocking::Client;
+use serde_json::{Value, json};
+use url::Url;
+
+use crate::extensions::auth::extension::HostAuthExtension;
+use crate::extensions::browser_ua::extension::StopSubscription;
+use crate::extensions::experiments::HostExperimentsExtension;
+
+pub const SAND_PRODUCT_ANALYTICS_GATE: &str = "sand_product_analytics";
+pub const MAX_DEFERRED_ANALYTICS_EVENTS: usize = 256;
+pub const ANALYTICS_TRACK_EVENTS_PATH: &str = "aiserver.v1.AnalyticsService/TrackEvents";
+pub const FROZEN_ANALYTICS_SERVICE_BLOB: &str =
+    "4ea2919cfcc54b1c549f856188538ae032c5a522";
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProductAnalyticsEvent {
@@ -24,4 +39,330 @@ pub fn product_analytics_event(name: &str, properties: &Value) -> ProductAnalyti
         name: name.to_string(),
         properties: clean,
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AutomationRunAnalyticsReport {
+    pub conversation_id: String,
+    pub automation_id: String,
+    pub trigger: String,
+    pub outcome: String,
+    pub is_group: bool,
+    pub sent_message_count: Option<i64>,
+}
+
+pub trait AnalyticsClient: Send + Sync {
+    fn track_event(&self, name: &str, properties: &Value);
+}
+
+pub trait TelemetryService: Send + Sync {
+    fn report(&self, method: &'static str, report: &Value);
+
+    fn start_turn(&self, report: &Value) { self.report("startTurn", report); }
+    fn report_tool_call_error(&self, report: &Value) { self.report("reportToolCallError", report); }
+    fn report_tool_call_stalled(&self, report: &Value) { self.report("reportToolCallStalled", report); }
+    fn report_tool_call_started(&self, report: &Value) { self.report("reportToolCallStarted", report); }
+    fn report_agent_error(&self, report: &Value) { self.report("reportAgentError", report); }
+    fn report_bot_block(&self, report: &Value) { self.report("reportBotBlock", report); }
+    fn report_daemon_ping(&self, report: &Value) { self.report("reportDaemonPing", report); }
+    fn report_box_boot_stage(&self, report: &Value) { self.report("reportBoxBootStage", report); }
+    fn report_exec_daemon_restart(&self, report: &Value) { self.report("reportExecDaemonRestart", report); }
+    fn report_supervisor_restart(&self, report: &Value) { self.report("reportSupervisorRestart", report); }
+    fn report_turn_interrupt(&self, report: &Value) { self.report("reportTurnInterrupt", report); }
+    fn report_turn_await(&self, report: &Value) { self.report("reportTurnAwait", report); }
+    fn report_turn_retry(&self, report: &Value) { self.report("reportTurnRetry", report); }
+    fn report_user_message_received(&self, report: &Value) { self.report("reportUserMessageReceived", report); }
+    fn report_closing_send_nudge(&self, report: &Value) { self.report("reportClosingSendNudge", report); }
+    fn report_subagent_revival(&self, report: &Value) { self.report("reportSubagentRevival", report); }
+    fn report_shell_revival(&self, report: &Value) { self.report("reportShellRevival", report); }
+    fn report_computer_use_usage(&self, report: &Value) { self.report("reportComputerUseUsage", report); }
+    fn report_ttft(&self, report: &Value) { self.report("reportTtft", report); }
+    fn report_send_dispatch(&self, report: &Value) { self.report("reportSendDispatch", report); }
+    fn report_queue_accepted(&self, report: &Value) { self.report("reportQueueAccepted", report); }
+    fn report_queue_dequeued(&self, report: &Value) { self.report("reportQueueDequeued", report); }
+    fn report_queue_watchdog(&self, report: &Value) { self.report("reportQueueWatchdog", report); }
+    fn report_ack_obligation(&self, report: &Value) { self.report("reportAckObligation", report); }
+    fn report_pending_wake(&self, report: &Value) { self.report("reportPendingWake", report); }
+    fn report_turn_usage(&self, report: &Value) { self.report("reportTurnUsage", report); }
+    fn report_turn_empty_delivery(&self, report: &Value) { self.report("reportTurnEmptyDelivery", report); }
+    fn report_journal_outcome(&self, report: &Value) { self.report("reportJournalOutcome", report); }
+    fn report_auto_review_expire_sweep_failed(&self, report: &Value) { self.report("reportAutoReviewExpireSweepFailed", report); }
+    fn report_automation_lifecycle(&self, report: &Value) { self.report("reportAutomationLifecycle", report); }
+    fn report_automation_fire_dropped(&self, report: &Value) { self.report("reportAutomationFireDropped", report); }
+    fn report_automation_run(&self, report: &Value) { self.report("reportAutomationRun", report); }
+}
+
+pub struct AutomationRunAnalyticsTelemetry {
+    telemetry: Arc<dyn TelemetryService>,
+    analytics: Arc<dyn AnalyticsClient>,
+}
+
+impl AutomationRunAnalyticsTelemetry {
+    pub fn new(
+        telemetry: Arc<dyn TelemetryService>,
+        analytics: Arc<dyn AnalyticsClient>,
+    ) -> Self {
+        Self { telemetry, analytics }
+    }
+}
+
+impl TelemetryService for AutomationRunAnalyticsTelemetry {
+    fn report(&self, method: &'static str, report: &Value) {
+        if method == "reportAutomationRun" {
+            let sent_message_count = report
+                .get("sentMessageCount")
+                .or_else(|| report.get("sent_message_count"))
+                .and_then(Value::as_i64);
+            let mut properties = serde_json::Map::from_iter([
+                (
+                    "agent_id".into(),
+                    report.get("conversationId")
+                        .or_else(|| report.get("conversation_id"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
+                ),
+                (
+                    "automation_id".into(),
+                    report.get("automationId")
+                        .or_else(|| report.get("automation_id"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
+                ),
+                (
+                    "trigger".into(),
+                    report.get("trigger").cloned().unwrap_or(Value::Null),
+                ),
+                (
+                    "outcome".into(),
+                    report.get("outcome").cloned().unwrap_or(Value::Null),
+                ),
+                (
+                    "is_group".into(),
+                    report.get("isGroup")
+                        .or_else(|| report.get("is_group"))
+                        .cloned()
+                        .unwrap_or(Value::Bool(false)),
+                ),
+            ]);
+            if let Some(count) = sent_message_count {
+                properties.insert("sent_message_count".into(), json!(count));
+            }
+            self.analytics
+                .track_event("sand.automation.run", &Value::Object(properties));
+        }
+        self.telemetry.report(method, report);
+    }
+}
+
+#[derive(Debug, Clone)]
+struct QueuedAnalyticsEvent {
+    event: ProductAnalyticsEvent,
+    timestamp_ms: u64,
+}
+
+enum AnalyticsWorkerCommand {
+    Event(QueuedAnalyticsEvent),
+    Stop,
+}
+
+struct AnalyticsBackendTransport {
+    backend_url: String,
+    auth: Arc<HostAuthExtension>,
+    client: Client,
+}
+
+impl AnalyticsBackendTransport {
+    fn new(
+        backend_url: String,
+        auth: Arc<HostAuthExtension>,
+    ) -> Result<Self, String> {
+        let client = Client::builder()
+            .connect_timeout(Duration::from_secs(5))
+            .timeout(Duration::from_secs(15))
+            .build()
+            .map_err(|error| format!("build product analytics client: {error}"))?;
+        Ok(Self { backend_url, auth, client })
+    }
+
+    fn send(&self, queued: &QueuedAnalyticsEvent) -> Result<(), String> {
+        let url = Url::parse(&self.backend_url)
+            .map_err(|error| format!("invalid analytics backend URL: {error}"))?
+            .join(ANALYTICS_TRACK_EVENTS_PATH)
+            .map_err(|error| format!("join analytics endpoint: {error}"))?;
+        let token = self.auth
+            .get_access_token()
+            .map_err(|error| format!("product analytics access token: {error}"))?;
+        let event_data = queued.event.properties.iter().map(|(key, value)| {
+            let encoded = match value {
+                Value::String(value) => json!({ "stringValue": value }),
+                Value::Bool(value) => json!({ "boolValue": value }),
+                Value::Number(value) => json!({ "doubleValue": value.as_f64().unwrap_or(0.0) }),
+                _ => Value::Null,
+            };
+            (key.clone(), encoded)
+        }).collect::<serde_json::Map<_, _>>();
+        let payload = json!({
+            "events": [{
+                "eventName": queued.event.name,
+                "eventData": event_data,
+                "timestamp": queued.timestamp_ms.to_string(),
+            }]
+        });
+        let response = self.client
+            .post(url)
+            .bearer_auth(token)
+            .header("content-type", "application/json")
+            .header("connect-protocol-version", "1")
+            .header("x-ghost-mode", "true")
+            .json(&payload)
+            .send()
+            .map_err(|error| format!("product analytics transport: {error}"))?;
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Err(format!("product analytics backend status {}", response.status()))
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum AnalyticsStateKind {
+    Disabled,
+    Deferred,
+    Active,
+}
+
+pub struct ProductionAnalyticsRuntime {
+    state: Arc<Mutex<AnalyticsStateKind>>,
+    deferred: Arc<Mutex<VecDeque<QueuedAnalyticsEvent>>>,
+    sender: mpsc::Sender<AnalyticsWorkerCommand>,
+    worker: Mutex<Option<JoinHandle<()>>>,
+    gate_stop: Mutex<Option<StopSubscription>>,
+}
+
+impl ProductionAnalyticsRuntime {
+    pub fn start(
+        backend_url: String,
+        auth: Arc<HostAuthExtension>,
+        experiments: Arc<HostExperimentsExtension>,
+    ) -> Result<Arc<Self>, String> {
+        let opted_out = std::env::var("SAND_DISABLE_TELEMETRY").as_deref() == Ok("1")
+            || std::env::var("SAND_DISABLE_ANALYTICS").as_deref() == Ok("1");
+        let state = Arc::new(Mutex::new(if opted_out {
+            AnalyticsStateKind::Disabled
+        } else {
+            AnalyticsStateKind::Deferred
+        }));
+        let deferred = Arc::new(Mutex::new(VecDeque::new()));
+        let transport = AnalyticsBackendTransport::new(backend_url, auth)?;
+        let (tx, rx) = mpsc::channel();
+        let worker = thread::Builder::new()
+            .name("sand-product-analytics".into())
+            .spawn(move || {
+                while let Ok(command) = rx.recv() {
+                    match command {
+                        AnalyticsWorkerCommand::Event(event) => {
+                            if let Err(error) = transport.send(&event) {
+                                eprintln!("[sand-analytics] {error}");
+                            }
+                        }
+                        AnalyticsWorkerCommand::Stop => break,
+                    }
+                }
+            })
+            .map_err(|error| format!("start product analytics worker: {error}"))?;
+
+        let runtime = Arc::new(Self {
+            state,
+            deferred,
+            sender: tx,
+            worker: Mutex::new(Some(worker)),
+            gate_stop: Mutex::new(None),
+        });
+        if opted_out {
+            return Ok(runtime);
+        }
+
+        let gate = experiments.get_feature_gate_property(SAND_PRODUCT_ANALYTICS_GATE);
+        let weak = Arc::downgrade(&runtime);
+        let stop = gate.subscribe(Arc::new(move |enabled| {
+            if enabled {
+                if let Some(runtime) = weak.upgrade() {
+                    runtime.activate();
+                }
+            }
+        }));
+        *runtime.gate_stop.lock().unwrap_or_else(|p| p.into_inner()) = Some(stop);
+        if gate.get() {
+            runtime.activate();
+        }
+        Ok(runtime)
+    }
+
+    fn activate(&self) {
+        let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
+        if *state != AnalyticsStateKind::Deferred {
+            return;
+        }
+        *state = AnalyticsStateKind::Active;
+        drop(state);
+        let mut deferred = self.deferred.lock().unwrap_or_else(|p| p.into_inner());
+        while let Some(event) = deferred.pop_front() {
+            let _ = self.sender.send(AnalyticsWorkerCommand::Event(event));
+        }
+        drop(deferred);
+        if let Some(stop) = self.gate_stop.lock().unwrap_or_else(|p| p.into_inner()).take() {
+            stop();
+        }
+    }
+
+    pub fn can_record_events(&self) -> bool {
+        !matches!(
+            *self.state.lock().unwrap_or_else(|p| p.into_inner()),
+            AnalyticsStateKind::Disabled
+        )
+    }
+
+    pub fn track(&self, event: ProductAnalyticsEvent) {
+        let queued = QueuedAnalyticsEvent {
+            event,
+            timestamp_ms: wall_clock_now_ms(),
+        };
+        match *self.state.lock().unwrap_or_else(|p| p.into_inner()) {
+            AnalyticsStateKind::Disabled => {}
+            AnalyticsStateKind::Deferred => {
+                let mut deferred = self.deferred.lock().unwrap_or_else(|p| p.into_inner());
+                if deferred.len() < MAX_DEFERRED_ANALYTICS_EVENTS {
+                    deferred.push_back(queued);
+                }
+            }
+            AnalyticsStateKind::Active => {
+                let _ = self.sender.send(AnalyticsWorkerCommand::Event(queued));
+            }
+        }
+    }
+}
+
+impl Drop for ProductionAnalyticsRuntime {
+    fn drop(&mut self) {
+        if let Ok(stop) = self.gate_stop.get_mut() {
+            if let Some(stop) = stop.take() {
+                stop();
+            }
+        }
+        let _ = self.sender.send(AnalyticsWorkerCommand::Stop);
+        if let Ok(worker) = self.worker.get_mut() {
+            if let Some(worker) = worker.take() {
+                let _ = worker.join();
+            }
+        }
+    }
+}
+
+fn wall_clock_now_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+        .min(u64::MAX as u128) as u64
 }
