@@ -13,16 +13,7 @@ pub const INFO_KINDS: &[&str] = &[
 pub const WARN_KINDS: &[&str] =
     &["bootstrap_config_unparseable", "bootstrap_cache_read_failed"];
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct ExperimentsDiagnostic {
-    pub kind: String,
-    pub stage: Option<String>,
-    pub reason: Option<String>,
-    pub error_class: Option<String>,
-    pub gates_on_count: Option<i64>,
-    pub authenticated: Option<bool>,
-}
-
+pub use crate::extensions::experiments::ExperimentDiagnostic as ExperimentsDiagnostic;
 pub fn level_for(diagnostic: &ExperimentsDiagnostic) -> &'static str {
     if diagnostic.kind == "config_not_applied" {
         return if diagnostic.reason.as_deref() == Some("identity_unhydrated") {
