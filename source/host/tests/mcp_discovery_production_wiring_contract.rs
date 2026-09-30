@@ -1,10 +1,15 @@
 #[test]
 fn shipping_mcp_discovery_failure_uses_dedicated_producer_coordinator_and_host_owner() {
     let discovery = include_str!("../../shared/node/mcp/tools-discovery.ts");
-    assert!(discovery.contains("deps.onDiscoveryFailed?.({"));
-    assert!(discovery.contains("elapsedMs: Date.now() - startedAtMs"));
-    assert!(discovery.contains("servedStale: staleTools !== undefined"));
-    assert!(discovery.contains("if (entry.staleTools === undefined) toolsCacheEntry = null;"));
+    assert!(discovery.contains("settleMcpDiscoverySuccess({ tools, resolvedKey })"));
+    assert!(discovery.contains("settleMcpDiscoveryFailure("));
+    assert!(discovery.contains("Date.now() - startedAtMs"));
+    assert!(discovery.contains("deps.onDiscoveryFailed?.(settlement.report)"));
+    assert!(discovery.contains("if (settlement.clearCache) toolsCacheEntry = null;"));
+
+    let settlement = include_str!("../../shared/node/mcp/mcp-discovery-settlement.ts");
+    assert!(settlement.contains("servedStale: staleTools !== undefined"));
+    assert!(settlement.contains("clearCache: staleTools === undefined"));
 
     let desktop = include_str!("../../electron-main/mcp/desktop-mcp-manager.ts");
     assert!(desktop.contains("onDiscoveryFailed: options.onMcpDiscoveryFailed"));

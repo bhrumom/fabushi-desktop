@@ -23,6 +23,10 @@ import {
   type McpResultFactory,
 } from "./mcp-image-assets.js";
 import { toJsonArgs } from "./mcp-validation.js";
+import {
+  settleMcpDiscoveryFailure,
+  settleMcpDiscoverySuccess,
+} from "./mcp-discovery-settlement.js";
 
 export const MCP_TOOLS_CACHE_TTL_MS = 24 * 60 * 60 * 1_000;
 export const TOOLS_DISCOVERY_DEADLINE_MS = 120_000;
@@ -282,29 +286,29 @@ export function createMcpToolsDiscovery(
     toolsCacheEntry = entry;
     void entry.promise.then(
       ({ tools, resolvedKey }) => {
+        const settlement = settleMcpDiscoverySuccess({ tools, resolvedKey });
         if (toolsCacheEntry === entry)
-          entry.fulfilled = { tools, resolvedKey, atMs: Date.now() };
+          entry.fulfilled = {
+            ...settlement.resolution,
+            atMs: Date.now(),
+          };
       },
       (error) => {
+        const settlement = settleMcpDiscoveryFailure(
+          error,
+          Date.now() - startedAtMs,
+          staleTools,
+        );
         if (toolsCacheEntry === entry) {
-          if (entry.staleTools === undefined) toolsCacheEntry = null;
+          if (settlement.clearCache) toolsCacheEntry = null;
           else
             entry.fulfilled = {
-              tools: entry.staleTools,
+              tools: entry.staleTools ?? [],
               resolvedKey: entry.requestedKey,
               atMs: 0,
             };
         }
-        deps.onDiscoveryFailed?.({
-          errorClass:
-            error instanceof Error
-              ? error.name.length > 0
-                ? error.name
-                : "Error"
-              : typeof error,
-          elapsedMs: Date.now() - startedAtMs,
-          servedStale: staleTools !== undefined,
-        });
+        deps.onDiscoveryFailed?.(settlement.report);
       },
     );
     return entry;
