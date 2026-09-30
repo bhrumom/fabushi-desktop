@@ -7043,6 +7043,10 @@ fn main() {
         }
     };
     let host_telemetry = production_extensions.telemetry.clone();
+    let fatal_telemetry = host_telemetry.clone();
+    _process_crash_guard.set_reporter(Some(Arc::new(move |_message, _kind| {
+        fatal_telemetry.flush_for_fatal_exit();
+    })));
     let box_extensions =
         start_production_host_box_extensions(&production_extensions, production_box);
     let forever_box = Arc::clone(&box_extensions.forever_box);
@@ -8156,10 +8160,10 @@ fn main() {
     session_extension.shutdown();
     drop(teach_recording_extension);
     box_extensions.stop();
-    // CloudAgents belongs to the first production extension stage. All later
-    // Host stages settle before its frozen onStop callback, while Auth and
-    // earlier dependencies are still live.
+    // CloudAgents and Telemetry both depend on earlier production extensions.
+    // Settle them while Auth / Experiments / Inference are still live.
     production_extensions.stop_cloud_agents();
+    production_extensions.telemetry.dispose();
     if let Some(daemon) = box_exec_daemon.as_mut() {
         if let Err(error) = daemon.close() {
             eprintln!("failed to stop managed Grok box exec-daemon cleanly: {error}");
