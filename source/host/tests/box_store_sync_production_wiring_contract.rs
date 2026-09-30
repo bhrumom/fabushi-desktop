@@ -261,3 +261,54 @@ fn production_manifest_owner_consumes_frozen_retry_hydration_and_conflict_contra
     assert!(object_store.contains("base_etag.or(fallback_base_etag)"));
     assert!(object_store.contains("agent-store-etag"));
 }
+
+
+#[test]
+fn shipping_box_store_sync_core_writer_lock_is_consumed_by_every_mutating_owner() {
+    let core = include_str!("../src/extensions/box_store_sync/box_store_sync.rs");
+    for expected in [
+        "pub struct BoxStoreWriterLock",
+        "FileExt::try_lock_exclusive(&file)",
+        "BOX_STORE_WRITER_LOCK_FILE_NAME",
+        "assert_no_symlink_in_path(lock_path)",
+        "FileExt::unlock(&self.file)",
+    ] {
+        assert!(
+            core.contains(expected),
+            "box-store-sync core must retain writer-lock marker {expected}"
+        );
+    }
+
+    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    for expected in [
+        "writer_lock: Mutex<Option<BoxStoreWriterLock>>",
+        "fn ensure_writer_lock(&self) -> Result<bool, String>",
+        "BoxStoreWriterLock::try_acquire(&lock_path, &window_id)?",
+        "self.inner.release_writer_lock();",
+    ] {
+        assert!(
+            production.contains(expected),
+            "shipping ProductionBoxStoreSync owner must consume core writer-lock marker {expected}"
+        );
+    }
+    assert!(
+        production.matches("if !self.ensure_writer_lock()?").count() >= 4,
+        "snapshot, turn-end capture, clear, and forget must all fence mutation through the long-lived writer lock"
+    );
+
+    let clear = production
+        .split_once("fn clear_store_now(&self) -> Result<(), String>")
+        .map(|(_, body)| body)
+        .and_then(|body| body.split_once("fn reset_canonical_store(").map(|(clear, _)| clear))
+        .expect("clear_store_now production body");
+    let acquire = clear
+        .find("if !self.ensure_writer_lock()?")
+        .expect("clear writer-lock acquire");
+    let legacy_reset = clear
+        .find("self.reset_canonical_store(&store_id, legacy.as_ref())")
+        .expect("legacy canonical reset");
+    assert!(
+        acquire < legacy_reset,
+        "SandBoxStoreV2 legacy reset must never write before the canonical writer lock is held"
+    );
+}

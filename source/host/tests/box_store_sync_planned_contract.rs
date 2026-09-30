@@ -30,7 +30,7 @@ use mahayana_host_runtime::extensions::box_store_sync::box_store_pack_pipeline::
     BoxStorePackCategory, resolve_local_path_for_rel_path, should_build_pack,
 };
 use mahayana_host_runtime::extensions::box_store_sync::box_store_sync::{
-    BoxStoreCycleSummary, evaluate_box_store_flush,
+    BoxStoreCycleSummary, BoxStoreWriterLock, evaluate_box_store_flush,
 };
 use mahayana_host_runtime::extensions::box_store_sync::box_store_sync_service::{
     BOX_HOME_REL_PREFIX, build_box_home_category, is_better_cli_home_enabled,
@@ -332,4 +332,28 @@ fn service_flush_and_db_capture_classification_preserve_reference_priority() {
         trace.failure_phase,
         Some(StoreDbCaptureFailurePhase::ManifestCommit)
     );
+}
+
+
+#[test]
+fn box_store_writer_lock_serializes_owners_and_releases_on_drop() {
+    let root = temp_root("writer-lock");
+    let lock_path = root.join("box-store-sync.lock");
+
+    let first = BoxStoreWriterLock::try_acquire(&lock_path, "window-a")
+        .expect("first writer-lock acquire")
+        .expect("first owner must acquire");
+    assert_eq!(first.path(), lock_path.as_path());
+
+    let second = BoxStoreWriterLock::try_acquire(&lock_path, "window-b")
+        .expect("contending writer-lock acquire");
+    assert!(second.is_none(), "second owner must observe the held writer lock");
+
+    drop(first);
+    let reacquired = BoxStoreWriterLock::try_acquire(&lock_path, "window-b")
+        .expect("writer-lock reacquire")
+        .expect("writer lock must be released when the owner drops");
+    drop(reacquired);
+
+    let _ = fs::remove_dir_all(root);
 }

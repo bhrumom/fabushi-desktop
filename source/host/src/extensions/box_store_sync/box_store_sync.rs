@@ -1,4 +1,112 @@
+use std::fs::{self, File, OpenOptions};
+use std::io::{Seek, SeekFrom, Write};
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use fs2::FileExt;
+
 use super::box_store_transfer::CategoryTransferSummary;
+
+pub const BOX_STORE_WRITER_LOCK_FILE_NAME: &str = "box-store-sync.lock";
+
+#[derive(Debug)]
+pub struct BoxStoreWriterLock {
+    file: File,
+    path: PathBuf,
+}
+
+impl BoxStoreWriterLock {
+    pub fn try_acquire(lock_path: impl AsRef<Path>, window_id: &str) -> Result<Option<Self>, String> {
+        let lock_path = lock_path.as_ref();
+        if let Some(parent) = lock_path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|error| format!("create box-store writer lock parent: {error}"))?;
+        }
+        assert_no_symlink_in_path(lock_path)?;
+
+        let mut options = OpenOptions::new();
+        options.read(true).write(true).create(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        let mut file = options
+            .open(lock_path)
+            .map_err(|error| format!("open box-store writer lock: {error}"))?;
+
+        match FileExt::try_lock_exclusive(&file) {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => return Ok(None),
+            Err(error) => return Err(format!("acquire box-store writer lock: {error}")),
+        }
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(lock_path, fs::Permissions::from_mode(0o600))
+                .map_err(|error| format!("secure box-store writer lock: {error}"))?;
+        }
+
+        let acquired_at = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis()
+            .min(u128::from(u64::MAX)) as u64;
+        let owner = serde_json::json!({
+            "pid": std::process::id(),
+            "windowId": window_id,
+            "acquiredAt": acquired_at,
+        });
+        file.set_len(0)
+            .map_err(|error| format!("truncate box-store writer lock: {error}"))?;
+        file.seek(SeekFrom::Start(0))
+            .map_err(|error| format!("seek box-store writer lock: {error}"))?;
+        file.write_all(owner.to_string().as_bytes())
+            .map_err(|error| format!("write box-store writer lock owner: {error}"))?;
+        file.flush()
+            .map_err(|error| format!("flush box-store writer lock owner: {error}"))?;
+
+        Ok(Some(Self {
+            file,
+            path: lock_path.to_path_buf(),
+        }))
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+}
+
+impl Drop for BoxStoreWriterLock {
+    fn drop(&mut self) {
+        let _ = FileExt::unlock(&self.file);
+    }
+}
+
+fn assert_no_symlink_in_path(path: &Path) -> Result<(), String> {
+    let mut current = PathBuf::new();
+    for component in path.components() {
+        current.push(component.as_os_str());
+        match fs::symlink_metadata(&current) {
+            Ok(metadata) if metadata.file_type().is_symlink() => {
+                return Err(format!(
+                    "box-store writer lock path contains symlink: {}",
+                    current.display()
+                ));
+            }
+            Ok(_) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => {
+                return Err(format!(
+                    "inspect box-store writer lock path {}: {error}",
+                    current.display()
+                ));
+            }
+        }
+    }
+    Ok(())
+}
 
 pub const DEFAULT_MAX_OBJECT_BYTES: u64 = 32 * 1024 * 1024 * 1024;
 pub const DEFAULT_COPY_IN_CONCURRENCY: usize = 128;

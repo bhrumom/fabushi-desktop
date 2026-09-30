@@ -44,7 +44,9 @@ use crate::extensions::box_store_sync::box_store_transfer::{
     BOX_STORE_SNAPSHOT_TMP_SUFFIX, CategoryTransferSummary, dedupe_nested_roots,
     glob_matches_path,
 };
-use crate::extensions::box_store_sync::box_store_sync::LARGE_OBJECT_THRESHOLD_BYTES;
+use crate::extensions::box_store_sync::box_store_sync::{
+    BOX_STORE_WRITER_LOCK_FILE_NAME, BoxStoreWriterLock, LARGE_OBJECT_THRESHOLD_BYTES,
+};
 use crate::extensions::box_store_sync::box_store_sync_service::{
     BOX_HOME_DIR, BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_REL_PREFIX,
     BOX_STORE_MANIFEST_RETRY_ATTEMPTS, BOX_STORE_MANIFEST_RETRY_DELAY_MS,
@@ -250,6 +252,7 @@ impl ProductionBoxStoreSyncService {
                 started: AtomicBool::new(false),
                 stopped: AtomicBool::new(false),
                 cycle_lock: Mutex::new(()),
+                writer_lock: Mutex::new(None),
                 store_db_debounce: Mutex::new(StoreDbDebounceQueue::default()),
                 store_db_wake: Condvar::new(),
                 agent_db_capture_queues: AgentDbCaptureQueues::default(),
@@ -453,6 +456,12 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
         {
             let _ = handle.join();
         }
+        let _cycle = self
+            .inner
+            .cycle_lock
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        self.inner.release_writer_lock();
     }
 }
 
@@ -536,6 +545,7 @@ struct ProductionBoxStoreSyncInner {
     started: AtomicBool,
     stopped: AtomicBool,
     cycle_lock: Mutex<()>,
+    writer_lock: Mutex<Option<BoxStoreWriterLock>>,
     store_db_debounce: Mutex<StoreDbDebounceQueue>,
     store_db_wake: Condvar,
     agent_db_capture_queues: AgentDbCaptureQueues,
@@ -639,6 +649,39 @@ impl ProductionBoxStoreSyncInner {
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = Instant::now();
     }
 
+    fn ensure_writer_lock(&self) -> Result<bool, String> {
+        let mut slot = self
+            .writer_lock
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if slot.is_some() {
+            return Ok(true);
+        }
+        let lock_path = get_sand_root_dir().join(BOX_STORE_WRITER_LOCK_FILE_NAME);
+        let window_id = format!("mahayana-host-{}", std::process::id());
+        let Some(lock) = BoxStoreWriterLock::try_acquire(&lock_path, &window_id)? else {
+            return Ok(false);
+        };
+        *slot = Some(lock);
+        Ok(true)
+    }
+
+    fn release_writer_lock(&self) {
+        self.writer_lock
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take();
+    }
+
+    fn record_cycle_skip(&self, reason: &str) {
+        let mut status = self
+            .status
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        status.last_ok = Some(false);
+        status.last_reason = Some(reason.to_string());
+    }
+
     fn run_local_cycle(
         &self,
         chrome_only: bool,
@@ -666,7 +709,13 @@ impl ProductionBoxStoreSyncInner {
             }
         };
         if self.stopped.load(Ordering::Acquire) {
-            return Err("stopped".into());
+            self.record_cycle_skip("stopped");
+            return Ok(());
+        }
+        if !self.ensure_writer_lock()? {
+            self.log("cycle skipped (locked)");
+            self.record_cycle_skip("locked");
+            return Ok(());
         }
         let (store_id, store) = self.resolve_object_store()?;
         let manifest_v2_requested = self
@@ -929,13 +978,6 @@ impl ProductionBoxStoreSyncInner {
     }
 
     fn clear_store_now(&self) -> Result<(), String> {
-        let store_id = self.resolve_store_id()?;
-        if matches!(self.mode, ProductionBoxStoreSyncMode::SandBoxStoreV2) {
-            let legacy = self.legacy_agent_store_for_source_id(&store_id)?;
-            self.reset_canonical_store(&store_id, legacy.as_ref())
-                .map_err(|error| format!("legacy store clear failed: {error}"))?;
-        }
-
         self.stopped.store(true, Ordering::Release);
         self.store_db_debounce
             .lock()
@@ -948,6 +990,15 @@ impl ProductionBoxStoreSyncInner {
             .cycle_lock
             .lock()
             .map_err(|_| "box-store sync cycle lock poisoned".to_string())?;
+        if !self.ensure_writer_lock()? {
+            return Err("locked".into());
+        }
+        let store_id = self.resolve_store_id()?;
+        if matches!(self.mode, ProductionBoxStoreSyncMode::SandBoxStoreV2) {
+            let legacy = self.legacy_agent_store_for_source_id(&store_id)?;
+            self.reset_canonical_store(&store_id, legacy.as_ref())
+                .map_err(|error| format!("legacy store clear failed: {error}"))?;
+        }
         let store = self.object_store_for_source_id(&store_id)?;
         self.reset_canonical_store(&store_id, store.as_ref())
     }
@@ -1001,6 +1052,9 @@ impl ProductionBoxStoreSyncInner {
             .cycle_lock
             .lock()
             .map_err(|_| "box-store sync cycle lock poisoned".to_string())?;
+        if !self.ensure_writer_lock()? {
+            return Err("locked".into());
+        }
         let store_id = self.resolve_store_id()?;
         let store = self.object_store_for_source_id(&store_id)?;
         let marker_path = get_sand_root_dir().join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME);
@@ -1054,6 +1108,9 @@ impl ProductionBoxStoreSyncInner {
             .map_err(|_| "box-store sync cycle lock poisoned".to_string())?;
         if self.stopped.load(Ordering::Acquire) {
             return Err("stopped".into());
+        }
+        if !self.ensure_writer_lock()? {
+            return Err("locked".into());
         }
         let (store_id, store) = self.resolve_object_store()?;
         let manifest_v2_requested = self
