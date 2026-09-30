@@ -307,7 +307,7 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
         match &self.inner.mode {
             ProductionBoxStoreSyncMode::Disabled => {
                 self.inner.log("box-store sync disabled by SAND_BOX_STORE_SYNC");
-                self.inner.diagnostic("startup", "disabled", false);
+                self.inner.report_sync_lifecycle("warn", false, "disabled");
                 return;
             }
             ProductionBoxStoreSyncMode::UnsupportedRemote { backend } => {
@@ -425,8 +425,7 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
                     .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(handle);
                 let backend = mode_name(&self.inner.mode);
                 self.inner.log(&format!("box-store sync {backend} production slice enabled"));
-                self.inner
-                    .diagnostic("startup", &format!("enabled-{backend}"), true);
+                self.inner.report_sync_lifecycle("info", true, "enabled");
             }
             Err(error) => {
                 self.inner.log(&format!("box-store poller failed to start: {error}"));
@@ -642,19 +641,20 @@ impl ProductionBoxStoreSyncInner {
         (self.deps.report_host_extension_diagnostic)(&diagnostic);
     }
 
-    fn report_cycle_telemetry(&self, phase: &str, summary: &BoxStoreCycleSummary) {
+    fn report_cycle_telemetry(&self, _phase: &str, summary: &BoxStoreCycleSummary) {
         let Some(telemetry) = box_store_sync_cycle_telemetry(summary) else {
             return;
         };
-        let mut diagnostic = Map::new();
-        diagnostic.insert("extension".into(), Value::String("box-store-sync".into()));
-        diagnostic.insert("phase".into(), Value::String(phase.into()));
-        diagnostic.insert("backend".into(), Value::String(mode_name(&self.mode).into()));
-        diagnostic.insert("level".into(), Value::String(telemetry.level.into()));
-        for (key, value) in telemetry.metadata {
-            diagnostic.insert(key, Value::String(value));
-        }
-        (self.deps.report_host_extension_diagnostic)(&diagnostic);
+        (self.deps.report_box_store_sync_cycle)(telemetry.level, &telemetry.metadata);
+    }
+
+    fn report_sync_lifecycle(&self, level: &str, ok: bool, reason: &str) {
+        let metadata = BTreeMap::from([
+            ("ok".to_string(), ok.to_string()),
+            ("reason".to_string(), reason.to_string()),
+            ("phase".to_string(), "startup".to_string()),
+        ]);
+        (self.deps.report_box_store_sync_cycle)(level, &metadata);
     }
 
     fn elapsed_since_idle_only_sync_ms(&self) -> u64 {
