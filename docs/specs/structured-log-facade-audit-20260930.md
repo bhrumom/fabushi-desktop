@@ -72,7 +72,7 @@ Status vocabulary:
 | 54 | `reportAgentError` | shipping Host runner ack-redrive / host-upgrade-resume failure settlement and Automations fire-poll failures call `HostStructuredLogTelemetry::report_agent_error`; the single Host owner emits frozen `sand.agent.error` plus optional `sand.agent.error.detail`, preserves Sand error tags and 1024/4096 message/stack caps. Exact-HEAD `d6e9b85a8e10f810f5c46763ac300825b782f869` run `36743240109` completed `rust-host` successfully (shipping Host compile + Host/Runner contracts), and run `36743240249` completed focused Electron chat E2E successfully. | verified-owner |
 | 55 | `reportAutoReviewDisplayRecheckFailed` | direct frozen event has no canonical shipping producer evidence in current audit | producer-evidence-required |
 | 56 | `reportAutoReviewExpireSweepFailed` | generic TelemetryService event mapping exists | producer-evidence-required |
-| 57 | `reportBoxStoreSyncCycle` | direct frozen event; Box Store Sync producer path must be pinned | producer-evidence-required |
+| 57 | `reportBoxStoreSyncCycle` | shipping Box Store Sync routes the canonical `box_store_sync_cycle_telemetry` projection and enabled/disabled startup lifecycle through `BoxStoreSyncExtensionDeps::report_box_store_sync_cycle` to the single `HostStructuredLogTelemetry::report_box_store_sync_cycle` owner. The owner fixes event `sand.box_store_sync`; production wiring forbids disguising this signal as `report_host_extension_diagnostic`. Exact-HEAD `c2451bfc6adcc373da010de58e54dc397b66c136` PR runtime run `36745338651` completed `rust-host` successfully, including shipping Host compile, `box_store_sync_production_wiring_contract` and `host_telemetry_service_contract`; Desktop Chat Parity run `36745338671` also completed successfully. | verified-owner |
 | 58 | `reportBoxStoreDbCapture` | direct frozen event; Box Store Sync producer path must be pinned | producer-evidence-required |
 | 59 | `reportBoxStoreManifestConflict` | direct frozen event; Box Store Sync producer path must be pinned | producer-evidence-required |
 | 60 | `reportChromeSessionStage` | direct frozen event; producer path must be pinned | producer-evidence-required |
@@ -238,3 +238,14 @@ Current facade totals after this acceptance: **56 verified-owner / 27 producer-e
 - Linux and Windows pressure-profiler jobs passed. The renderer job passed build, production-boundary checks, Electron contracts, architecture inventory, renderer typecheck/build, co-staged runtime verification, and bundle-boundary enforcement; it failed only the final strict architecture gate because the manifest still has 59 `existing-needs-parity` rows.
 - This acceptance does not close any remaining producer-evidence row and does not permit advancing to `turn-telemetry-mappers.ts`.
 - Exact-HEAD totals after this acceptance are **61 verified-owner / 22 producer-evidence-required / 7 delegated-nonfinal = 90**.
+
+
+## Exact-HEAD Box Store Sync acceptance at `c2451bfc6adcc373da010de58e54dc397b66c136`
+
+- PR #20 remained bound to this exact HEAD when the evidence was read.
+- Rust desktop runtime PR run `36745338651` completed its `rust-host` job `109990301862` successfully. The job bound the exact tested HEAD and passed shipping Mahayana Host compilation, independent Coordinator, box-exec, full Host/Runner tests, prompt attachment, Computer takeover, and ConversationActor/CapabilityBroker steps.
+- The Host log records `box_store_sync_production_wiring_contract` 9/9 passing, including `shipping_cycle_uses_canonical_frozen_telemetry_mapper_and_host_owner`; `host_telemetry_service_contract` 12/12 passed, including `box_store_sync_facade_preserves_frozen_event_level_and_metadata`.
+- Desktop Chat Parity run `36745338671` completed Renderer typecheck/build and Focused Electron chat E2E successfully.
+- The renderer strict architecture gate on the same exact HEAD reports exactly 59 `existing-needs-parity` rows. All preceding renderer build, boundary, inventory, typecheck/build, co-staged runtime, and bundle checks passed; the final gate remains red only because authoritative remaining is nonzero.
+- Therefore row 57 `reportBoxStoreSyncCycle` is `verified-owner`. This does not close row 58 `reportBoxStoreDbCapture`, row 59 `reportBoxStoreManifestConflict`, any other direct producer gap, or any delegated-nonfinal row.
+- Current facade totals after this acceptance are **63 verified-owner / 20 producer-evidence-required / 7 delegated-nonfinal = 90**. The parent `structured-log-telemetry.ts` architecture row remains `existing-needs-parity`; `turn-telemetry-mappers.ts` remains out of scope.
