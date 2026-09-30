@@ -1,14 +1,24 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use crate::extensions::auth::extension::HostAuthExtension;
+use crate::extensions::browser_ua::extension::StopSubscription;
+use crate::extensions::experiments::{
+    HostExperimentsExtension, pin_experiments_diagnostics_reporter,
+};
+use crate::extensions::extension_ids_generated::HostExtensionId;
+use crate::extensions::inference::production::ProductionInferenceExtension;
 use crate::host_paths::get_host_crash_marker_path;
 
 use super::HostTelemetryProjection;
-use super::analytics_service::AutomationRunAnalyticsTelemetry;
+use super::analytics_service::{
+    AutomationRunAnalyticsTelemetry, ProductionAnalyticsRuntime,
+};
 use super::box_log_shipper::{
     BoxLogShipper, BoxLogShipperConfig, BoxTelemetryRecord, DeliverySettlement,
     SUPERVISOR_LOG_PATH, is_box_log_shipping_enabled,
@@ -28,6 +38,13 @@ use super::event_loop_telemetry::{
 };
 
 pub const TELEMETRY_EXTENSION_ID: &str = "telemetry";
+pub const TELEMETRY_DEPENDENCIES: &[HostExtensionId] = &[
+    HostExtensionId::Auth,
+    HostExtensionId::Experiments,
+    HostExtensionId::Inference,
+];
+pub const TELEMETRY_FLUSH_TICK: Duration = Duration::from_secs(3);
+pub const FATAL_TELEMETRY_FLUSH_TIMEOUT: Duration = Duration::from_millis(2_000);
 pub const HOST_CRASH_MARKER_FORWARD_INTERVAL: Duration = Duration::from_secs(5 * 60);
 pub const SAND_SUPERVISOR_DESKTOP_HEALTH_PATH: &str =
     "/tmp/sand-supervisor/desktop-health.json";
@@ -237,41 +254,144 @@ impl Drop for DesktopHealthForwarder {
     }
 }
 
+struct StructuredLogFlushPolling {
+    stop: mpsc::Sender<()>,
+    worker: Mutex<Option<thread::JoinHandle<()>>>,
+}
+
+impl StructuredLogFlushPolling {
+    fn start(logs: HostStructuredLogTelemetry) -> Self {
+        let (stop_tx, stop_rx) = mpsc::channel();
+        let worker = thread::Builder::new()
+            .name("sand-host-structured-log-flush".into())
+            .spawn(move || loop {
+                match stop_rx.recv_timeout(TELEMETRY_FLUSH_TICK) {
+                    Ok(()) | Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                    Err(mpsc::RecvTimeoutError::Timeout) => {
+                        let _ = logs.flush();
+                    }
+                }
+            })
+            .ok();
+        Self {
+            stop: stop_tx,
+            worker: Mutex::new(worker),
+        }
+    }
+}
+
+impl Drop for StructuredLogFlushPolling {
+    fn drop(&mut self) {
+        let _ = self.stop.send(());
+        if let Ok(mut worker) = self.worker.lock() {
+            if let Some(handle) = worker.take() {
+                let _ = handle.join();
+            }
+        }
+    }
+}
+
+struct HostTelemetryLifecycle {
+    service: Arc<HostTelemetryService>,
+    inference_stop: Mutex<Option<StopSubscription>>,
+    flush_polling: Mutex<Option<StructuredLogFlushPolling>>,
+    crash_marker_forwarder: Mutex<Option<HostCrashMarkerForwarder>>,
+    desktop_health_forwarder: Mutex<Option<DesktopHealthForwarder>>,
+    event_loop_telemetry: Mutex<Option<EventLoopTelemetryRuntime>>,
+    box_log_shipper: Mutex<Option<Arc<BoxLogShipper>>>,
+    disposed: AtomicBool,
+}
+
+impl HostTelemetryLifecycle {
+    fn dispose(&self) {
+        if self.disposed.swap(true, Ordering::AcqRel) {
+            return;
+        }
+        pin_experiments_diagnostics_reporter(None);
+        if let Ok(mut stop) = self.inference_stop.lock() {
+            if let Some(stop) = stop.take() {
+                stop();
+            }
+        }
+        if let Ok(mut shipper) = self.box_log_shipper.lock() {
+            if let Some(shipper) = shipper.take() {
+                shipper.stop_polling();
+                let _ = shipper.checkpoint_offsets();
+            }
+        }
+        self.crash_marker_forwarder.lock().ok().and_then(|mut value| value.take());
+        self.desktop_health_forwarder.lock().ok().and_then(|mut value| value.take());
+        self.event_loop_telemetry.lock().ok().and_then(|mut value| value.take());
+        self.flush_polling.lock().ok().and_then(|mut value| value.take());
+        let _ = self.service.dispose();
+    }
+}
+
+impl Drop for HostTelemetryLifecycle {
+    fn drop(&mut self) {
+        self.dispose();
+    }
+}
+
 #[derive(Clone)]
 pub struct HostTelemetryExtension {
     pub logs: HostStructuredLogTelemetry,
     pub analytics: HostProductAnalytics,
     pub brain: Arc<AutomationRunAnalyticsTelemetry>,
     records_path: PathBuf,
-    crash_marker_forwarder: Arc<HostCrashMarkerForwarder>,
-    _desktop_health_forwarder: Option<Arc<DesktopHealthForwarder>>,
-    _event_loop_telemetry: Option<Arc<EventLoopTelemetryRuntime>>,
-    _box_log_shipper: Option<Arc<BoxLogShipper>>,
+    lifecycle: Arc<HostTelemetryLifecycle>,
 }
 
 impl HostTelemetryExtension {
     pub fn records_path(&self) -> &Path {
         &self.records_path
     }
+
+    pub fn dispose(&self) {
+        self.lifecycle.dispose();
+    }
+
+    pub fn flush_for_fatal_exit(&self) {
+        let logs = self.logs.clone();
+        let (done_tx, done_rx) = mpsc::channel();
+        if thread::Builder::new()
+            .name("sand-host-fatal-telemetry-flush".into())
+            .spawn(move || {
+                let _ = logs.flush();
+                let _ = done_tx.send(());
+            })
+            .is_ok()
+        {
+            let _ = done_rx.recv_timeout(FATAL_TELEMETRY_FLUSH_TIMEOUT);
+        }
+    }
 }
 
 pub fn start_host_telemetry_extension(
     app_data_dir: &Path,
+    backend_url: String,
+    auth: Arc<HostAuthExtension>,
+    experiments: Arc<HostExperimentsExtension>,
+    inference: Arc<ProductionInferenceExtension>,
 ) -> io::Result<HostTelemetryExtension> {
-    let service = HostTelemetryService::open(
+    let service = Arc::new(HostTelemetryService::open(
         app_data_dir.join("telemetry").join("host-events.jsonl"),
-    )?;
-    let crash_marker_forwarder =
-        Arc::new(HostCrashMarkerForwarder::start(service.logs.clone()));
+    )?);
+    service.start()?;
+
     let telemetry_enabled =
         std::env::var("SAND_DISABLE_TELEMETRY").as_deref() != Ok("1");
+    let flush_polling = telemetry_enabled
+        .then(|| StructuredLogFlushPolling::start(service.logs.clone()));
+    let crash_marker_forwarder =
+        Some(HostCrashMarkerForwarder::start(service.logs.clone()));
     let desktop_health_forwarder = telemetry_enabled
-        .then(|| Arc::new(DesktopHealthForwarder::start(service.logs.clone())));
+        .then(|| DesktopHealthForwarder::start(service.logs.clone()));
     let event_loop_telemetry = telemetry_enabled.then(|| {
         let logs = service.logs.clone();
-        Arc::new(EventLoopTelemetryRuntime::start(Arc::new(move |report| {
+        EventLoopTelemetryRuntime::start(Arc::new(move |report| {
             let _ = logs.report_projection(&event_loop_window_telemetry(report));
-        })))
+        }))
     });
     let box_log_shipper = if telemetry_enabled
         && is_box_log_shipping_enabled(
@@ -311,23 +431,52 @@ pub fn start_host_telemetry_extension(
                 }
             }),
         ));
-        shipper.start()?;
+        if let Err(error) = shipper.start() {
+            let _ = service.dispose();
+            return Err(error);
+        }
         Some(shipper)
     } else {
         None
     };
+
+    let analytics_runtime = ProductionAnalyticsRuntime::start(
+        backend_url,
+        Arc::clone(&auth),
+        Arc::clone(&experiments),
+    );
+    service.analytics.attach_runtime(analytics_runtime);
+    service.analytics.mark_active("host_startup");
+
+    let model_exposure_analytics = service.analytics.clone();
+    let inference_stop = inference.on_model_experiment_applied(Arc::new(move || {
+        model_exposure_analytics.mark_active("model_experiment_applied");
+    }));
+
+    let diagnostic_logs = service.logs.clone();
+    pin_experiments_diagnostics_reporter(Some(Arc::new(move |diagnostic| {
+        let _ = diagnostic_logs.report_experiments_diagnostic(&diagnostic);
+    })));
+
     let brain = Arc::new(AutomationRunAnalyticsTelemetry::new(
         Arc::new(service.logs.clone()),
         Arc::new(service.analytics.clone()),
     ));
+    let lifecycle = Arc::new(HostTelemetryLifecycle {
+        service: Arc::clone(&service),
+        inference_stop: Mutex::new(Some(inference_stop)),
+        flush_polling: Mutex::new(flush_polling),
+        crash_marker_forwarder: Mutex::new(crash_marker_forwarder),
+        desktop_health_forwarder: Mutex::new(desktop_health_forwarder),
+        event_loop_telemetry: Mutex::new(event_loop_telemetry),
+        box_log_shipper: Mutex::new(box_log_shipper),
+        disposed: AtomicBool::new(false),
+    });
     Ok(HostTelemetryExtension {
         logs: service.logs.clone(),
         analytics: service.analytics.clone(),
         brain,
         records_path: service.records_path().to_path_buf(),
-        crash_marker_forwarder,
-        _desktop_health_forwarder: desktop_health_forwarder,
-        _event_loop_telemetry: event_loop_telemetry,
-        _box_log_shipper: box_log_shipper,
+        lifecycle,
     })
 }
