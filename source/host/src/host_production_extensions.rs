@@ -828,6 +828,7 @@ impl ProductionHostExtensions {
         let logs = self.telemetry.logs.clone();
         let diagnostic_logs = logs.clone();
         let box_store_sync_logs = logs.clone();
+        let box_store_db_capture_logs = logs.clone();
         let source_map = Arc::clone(&self.source_map);
         let token_auth = Arc::clone(&self.auth);
         let machine_auth = Arc::clone(&self.auth);
@@ -856,6 +857,9 @@ impl ProductionHostExtensions {
                 }),
                 report_box_store_sync_cycle: Arc::new(move |level, metadata| {
                     let _ = box_store_sync_logs.report_box_store_sync_cycle(level, metadata);
+                }),
+                report_box_store_db_capture: Arc::new(move |level, metadata| {
+                    let _ = box_store_db_capture_logs.report_box_store_db_capture(level, metadata);
                 }),
                 scheduling: BoxStoreScheduling::default(),
             },
