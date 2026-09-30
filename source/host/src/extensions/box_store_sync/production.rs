@@ -57,6 +57,10 @@ use crate::extensions::box_store_sync::box_store_hydration::{
     BOX_STORE_HYDRATION_HANDOFF_FILE_NAME, BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH,
     remove_hydration_handoff_marker,
 };
+use crate::extensions::box_store_sync::store_db_capture::{
+    BoxStoreDbCaptureTelemetrySummary, StoreDbCaptureOutcome,
+    aggregate_store_db_sweep_outcome, box_store_db_capture_telemetry,
+};
 use crate::extensions::box_store_sync::store_db_snapshot_upload::{
     SnapshotUploadOutcome, StoreDbSnapshotRuntimePort, StoreDbSnapshotUpload,
 };
@@ -80,7 +84,10 @@ use crate::r#box::box_store_backend_policy::{
 use crate::storage::store_db::{
     get_sand_agent_db_write_generation, has_live_sand_agent_db_handle,
 };
-use crate::extensions::box_store_sync::store_db_bundle_capture::AgentDbCaptureQueues;
+use crate::extensions::box_store_sync::store_db_bundle_capture::{
+    AgentDbCaptureQueues, StoreDbCaptureFailurePhase, StoreDbCaptureTrace,
+    create_store_db_capture_trace, record_store_db_capture_failure,
+};
 
 const SAND_BOX_STORE_ID_ENV: &str = "SAND_BOX_STORE_ID";
 const WORKSPACE_ROOT: &str = "/workspace";
