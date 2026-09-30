@@ -51,6 +51,37 @@ fn production_start_uses_auth_host_converter_real_polling_and_policy_prefetch() 
 }
 
 #[test]
+fn startup_failure_after_cloud_agents_preserves_reverse_unwind_before_auth() {
+    let auth_start = PRODUCTION_OWNER
+        .find("let auth = Arc::new(")
+        .expect("shipping Host must construct Auth before CloudAgents");
+    let cloud_start = PRODUCTION_OWNER
+        .find("let cloud_agents = start_cloud_agents_extension(")
+        .expect("shipping Host must start CloudAgents");
+    let later_fallible_start = PRODUCTION_OWNER
+        .find("let notify_bus = start_notify_bus_extension(")
+        .expect("shipping Host must have a later fallible extension start");
+    let later_failure_boundary = PRODUCTION_OWNER[later_fallible_start..]
+        .find(".map_err(|error| error.to_string())?;")
+        .map(|offset| later_fallible_start + offset)
+        .expect("later extension startup must propagate failure");
+
+    assert!(
+        auth_start < cloud_start && cloud_start < later_fallible_start,
+        "CloudAgents must start only after Auth and before the later fallible extension"
+    );
+    assert!(
+        later_fallible_start < later_failure_boundary,
+        "the later startup must retain its real failure boundary"
+    );
+    assert!(
+        EXTENSION.contains("impl Drop for CloudAgentsExtensionInner")
+            && EXTENSION.contains("self.stop();"),
+        "Rust unwind must settle the already-started CloudAgents owner exactly once"
+    );
+}
+
+#[test]
 fn cloud_agents_on_stop_is_explicit_idempotent_and_not_owned_by_the_order_table() {
     for needle in [
         "stopped: AtomicBool",
