@@ -556,7 +556,7 @@ impl SpanExporter for OtlpJsonHttpSpanExporter {
             .post(&self.options.url)
             .header("content-type", "application/json");
         for (key, value) in &self.options.headers {
-            request = request.header(key, value);
+            request = request.header(key.as_str(), value.as_str());
         }
         match request.json(&self.body(spans)).send() {
             Ok(response) if response.status().is_success() => ExportResultCode::Success,
