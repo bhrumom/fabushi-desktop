@@ -39,10 +39,8 @@ use crate::extensions::box_store_sync::box_store_manifest_format::{
     BOX_STORE_BLOBS_PREFIX, BOX_STORE_MANIFEST_REL_PATH, BOX_STORE_MANIFEST_VERSION,
     BoxStoreManifest, BoxStoreManifestEntry, SAND_MANIFEST_V2_ENV,
 };
-use crate::extensions::box_store_sync::box_store_download::BOX_STORE_RESTORE_TMP_SUFFIX;
 use crate::extensions::box_store_sync::box_store_transfer::{
-    BOX_STORE_SNAPSHOT_TMP_SUFFIX, CategoryTransferSummary, dedupe_nested_roots,
-    glob_matches_path,
+    BOX_STORE_SNAPSHOT_TMP_SUFFIX, BoxStoreTransfer, CategoryTransferSummary, StagedTransferFile,
 };
 use crate::extensions::box_store_sync::box_store_sync::{
     BOX_STORE_WRITER_LOCK_FILE_NAME, BoxStoreCycleSummary, BoxStoreWriterLock,
@@ -91,6 +89,7 @@ const WORKSPACE_REL_PREFIX: &str = "workspace";
 const CLI_CONFIG_REL_PREFIX: &str = "home/box/cli-config";
 const POLL_SLEEP_SLICE_MS: u64 = 250;
 const DEFAULT_MAX_OBJECT_BYTES: u64 = 32 * 1024 * 1024 * 1024;
+const DEFAULT_SNAPSHOT_OUT_CONCURRENCY: usize = 8;
 
 const SAND_DATA_EXCLUDES: &[&str] = &[
     "home/box/sand-data/host.lock",
@@ -245,11 +244,22 @@ impl ProductionBoxStoreSyncService {
                 | ProductionBoxStoreSyncMode::AgentStore
                 | ProductionBoxStoreSyncMode::SandBoxStoreV2
         );
+        let transfer_log = Arc::clone(&deps.log);
+        let transfer = BoxStoreTransfer::new(
+            DEFAULT_MAX_OBJECT_BYTES,
+            DEFAULT_SNAPSHOT_OUT_CONCURRENCY,
+            LARGE_OBJECT_THRESHOLD_BYTES,
+            Some(get_sand_root_dir().join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME)),
+            Arc::new(move |message| {
+                transfer_log(&format!("[box-store-sync] {message}"));
+            }),
+        );
         Self {
             inner: Arc::new(ProductionBoxStoreSyncInner {
                 deps,
                 env,
                 mode,
+                transfer,
                 started: AtomicBool::new(false),
                 stopped: AtomicBool::new(false),
                 cycle_lock: Mutex::new(()),
@@ -369,14 +379,10 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
         let handle = thread::Builder::new()
             .name("box-store-sync-poller".into())
             .spawn(move || {
-                match sweep_leaked_snapshot_temps(&poll_inner.env) {
-                    Ok(removed) if removed > 0 => {
-                        poll_inner.log(&format!("swept {removed} leaked box-store temp file(s)"));
-                    }
-                    Ok(_) => {}
-                    Err(error) => {
-                        poll_inner.log(&format!("box-store temp sweep failed: {error}"));
-                    }
+                let roots = snapshot_transfer_roots(&poll_inner.env);
+                let removed = poll_inner.transfer.sweep_leaked_temps(&roots);
+                if removed > 0 {
+                    poll_inner.log(&format!("swept {removed} leaked box-store temp file(s)"));
                 }
                 while !poll_inner.stopped.load(Ordering::Acquire) {
                     if !sleep_interruptibly(&poll_inner.stopped, interval_ms) {
@@ -543,6 +549,7 @@ struct ProductionBoxStoreSyncInner {
     deps: BoxStoreSyncExtensionDeps,
     env: BTreeMap<String, String>,
     mode: ProductionBoxStoreSyncMode,
+    transfer: BoxStoreTransfer,
     started: AtomicBool,
     stopped: AtomicBool,
     cycle_lock: Mutex<()>,
@@ -788,14 +795,19 @@ impl ProductionBoxStoreSyncInner {
         let mut store_db_complete = false;
 
         if chrome_only {
-            categories.push(sync_chrome_session(store.as_ref(), &mut entries, manifest_v2)?);
+            categories.push(sync_chrome_session(
+                &self.transfer,
+                store.as_ref(),
+                &mut entries,
+                manifest_v2,
+            )?);
         } else {
             let sand_data_excludes = sand_data_excludes();
             let sand_data_exclude_refs = sand_data_excludes
                 .iter()
                 .map(String::as_str)
                 .collect::<Vec<_>>();
-            categories.push(sync_tree_category(
+            categories.push(self.transfer.sync_tree_category(
                 store.as_ref(),
                 &mut entries,
                 &sand_root,
@@ -803,11 +815,12 @@ impl ProductionBoxStoreSyncInner {
                 "sand-data",
                 &sand_data_exclude_refs,
                 None,
+                true,
                 manifest_v2,
             )?);
             let workspace_ignore =
                 load_workspace_ignore(WORKSPACE_ROOT, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS);
-            categories.push(sync_tree_category(
+            categories.push(self.transfer.sync_tree_category(
                 store.as_ref(),
                 &mut entries,
                 Path::new(WORKSPACE_ROOT),
@@ -815,9 +828,10 @@ impl ProductionBoxStoreSyncInner {
                 "workspace",
                 &[],
                 Some(&workspace_ignore),
+                false,
                 manifest_v2,
             )?);
-            categories.push(sync_tree_category(
+            categories.push(self.transfer.sync_tree_category(
                 store.as_ref(),
                 &mut entries,
                 Path::new(CLI_CONFIG_ROOT),
@@ -825,11 +839,18 @@ impl ProductionBoxStoreSyncInner {
                 "cli-config",
                 CLI_CONFIG_EXCLUDES,
                 None,
+                false,
                 manifest_v2,
             )?);
-            categories.push(sync_chrome_session(store.as_ref(), &mut entries, manifest_v2)?);
+            categories.push(sync_chrome_session(
+                &self.transfer,
+                store.as_ref(),
+                &mut entries,
+                manifest_v2,
+            )?);
             for rel_dir in CHROME_AUTH_STATE_REL_DIRS {
                 categories.push(sync_chrome_auth_state_category(
+                    &self.transfer,
                     store.as_ref(),
                     &mut entries,
                     rel_dir,
@@ -838,6 +859,7 @@ impl ProductionBoxStoreSyncInner {
             }
             if include_idle_only {
                 categories.push(sync_chrome_profile_category(
+                    &self.transfer,
                     store.as_ref(),
                     &mut entries,
                     manifest_v2,
@@ -848,6 +870,7 @@ impl ProductionBoxStoreSyncInner {
                 self.env.get(SAND_USER_NON_ROOT_ENV).map(String::as_str),
             ) {
                 categories.push(sync_box_home_category(
+                    &self.transfer,
                     store.as_ref(),
                     &mut entries,
                     manifest_v2,
@@ -1070,7 +1093,9 @@ impl ProductionBoxStoreSyncInner {
                 .map_err(|error| format!("legacy store clear failed: {error}"))?;
         }
         let store = self.object_store_for_source_id(&store_id)?;
-        self.reset_canonical_store(&store_id, store.as_ref())
+        self.reset_canonical_store(&store_id, store.as_ref())?;
+        self.transfer.clear_local_stat();
+        Ok(())
     }
 
     fn reset_canonical_store(
@@ -1139,7 +1164,15 @@ impl ProductionBoxStoreSyncInner {
         let needle = format!("/agents/{agent_id}/");
         let own_prefix = format!("agents/{agent_id}/");
         let before = entries.len();
-        entries.retain(|path, _| !(path.contains(&needle) || path.starts_with(&own_prefix)));
+        let removed_paths = entries
+            .keys()
+            .filter(|path| path.contains(&needle) || path.starts_with(&own_prefix))
+            .cloned()
+            .collect::<Vec<_>>();
+        for path in &removed_paths {
+            entries.remove(path);
+            self.transfer.forget_local_stat_path(path);
+        }
         if entries.len() == before {
             return Ok(());
         }
@@ -1408,7 +1441,7 @@ fn sand_data_excludes() -> Vec<String> {
     excludes
 }
 
-fn sweep_leaked_snapshot_temps(env: &BTreeMap<String, String>) -> Result<usize, String> {
+fn snapshot_transfer_roots(env: &BTreeMap<String, String>) -> Vec<PathBuf> {
     let mut roots = vec![
         get_sand_root_dir(),
         PathBuf::from(WORKSPACE_ROOT),
@@ -1421,47 +1454,10 @@ fn sweep_leaked_snapshot_temps(env: &BTreeMap<String, String>) -> Result<usize, 
     ) {
         roots.push(PathBuf::from(BOX_HOME_DIR));
     }
-    let mut removed = 0usize;
-    for root in dedupe_nested_roots(roots) {
-        removed = removed.saturating_add(sweep_leaked_snapshot_temps_under(&root)?);
-    }
-    Ok(removed)
+    roots
 }
-
-fn sweep_leaked_snapshot_temps_under(root: &Path) -> Result<usize, String> {
-    let entries = match fs::read_dir(root) {
-        Ok(entries) => entries,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(0),
-        Err(error) => return Err(error.to_string()),
-    };
-    let mut removed = 0usize;
-    for entry in entries {
-        let entry = match entry {
-            Ok(entry) => entry,
-            Err(_) => continue,
-        };
-        let file_type = match entry.file_type() {
-            Ok(file_type) => file_type,
-            Err(_) => continue,
-        };
-        let path = entry.path();
-        if file_type.is_dir() {
-            removed = removed.saturating_add(sweep_leaked_snapshot_temps_under(&path)?);
-        } else if file_type.is_file() {
-            let value = path.to_string_lossy();
-            if (value.contains(BOX_STORE_SNAPSHOT_TMP_SUFFIX)
-                || value.contains(BOX_STORE_RESTORE_TMP_SUFFIX))
-                && fs::remove_file(&path).is_ok()
-            {
-                removed = removed.saturating_add(1);
-            }
-        }
-    }
-    Ok(removed)
-}
-
-
 fn sync_chrome_auth_state_category(
+    transfer: &BoxStoreTransfer,
     store: &dyn BoxObjectStore,
     manifest: &mut BoxManifestMap,
     rel_dir: &str,
@@ -1474,7 +1470,7 @@ fn sync_chrome_auth_state_category(
         .map(|cache| format!("{rel_prefix}/{cache}"))
         .collect::<Vec<_>>();
     let exclude_refs = excludes.iter().map(String::as_str).collect::<Vec<_>>();
-    sync_tree_category(
+    transfer.sync_tree_category(
         store,
         manifest,
         &root,
@@ -1482,11 +1478,13 @@ fn sync_chrome_auth_state_category(
         &format!("chrome-{}", rel_dir.to_ascii_lowercase().replace(' ', "-")),
         &exclude_refs,
         None,
+        false,
         manifest_v2,
     )
 }
 
 fn sync_chrome_profile_category(
+    transfer: &BoxStoreTransfer,
     store: &dyn BoxObjectStore,
     manifest: &mut BoxManifestMap,
     manifest_v2: bool,
@@ -1508,7 +1506,7 @@ fn sync_chrome_profile_category(
             .map(|dir| format!("{CHROME_SESSION_DB_REL_DIR}/{dir}")),
     );
     let exclude_refs = excludes.iter().map(String::as_str).collect::<Vec<_>>();
-    sync_tree_category(
+    transfer.sync_tree_category(
         store,
         manifest,
         Path::new("/home/box/chrome-profile"),
@@ -1516,11 +1514,13 @@ fn sync_chrome_profile_category(
         "chrome-profile",
         &exclude_refs,
         None,
+        false,
         manifest_v2,
     )
 }
 
 fn sync_box_home_category(
+    transfer: &BoxStoreTransfer,
     store: &dyn BoxObjectStore,
     manifest: &mut BoxManifestMap,
     manifest_v2: bool,
@@ -1528,7 +1528,7 @@ fn sync_box_home_category(
     let category = build_box_home_category(BOX_HOME_DIR);
     let ignore = build_box_home_ignore();
     let exclude_refs = category.excludes.iter().map(String::as_str).collect::<Vec<_>>();
-    sync_tree_category(
+    transfer.sync_tree_category(
         store,
         manifest,
         Path::new(BOX_HOME_DIR),
@@ -1536,48 +1536,49 @@ fn sync_box_home_category(
         &category.name,
         &exclude_refs,
         Some(&ignore),
+        false,
         manifest_v2,
     )
 }
 
 
 fn sync_chrome_session(
+    transfer: &BoxStoreTransfer,
     store: &dyn BoxObjectStore,
     manifest: &mut BoxManifestMap,
     manifest_v2: bool,
 ) -> Result<CategoryTransferSummary, String> {
-    let staged = stage_box_chrome_session().map_err(|error| error.to_string())?;
-    let mut summary = CategoryTransferSummary {
-        name: "chrome-session".into(),
-        ..CategoryTransferSummary::default()
-    };
-    for file in &staged.files {
-        summary.files_scanned += 1;
-        match sync_file(
-            store,
-            manifest,
-            &file.abs_path,
-            &file.rel_path,
-            Some(file.mode),
-            manifest_v2,
-        ) {
-            Ok((uploaded, size)) => {
-                if uploaded {
-                    summary.files_uploaded += 1;
-                    summary.bytes_uploaded = summary.bytes_uploaded.saturating_add(size);
-                } else {
-                    summary.skipped_unchanged += 1;
-                }
-            }
-            Err(error) => {
-                summary.failures += 1;
-                eprintln!("[box-store-sync] chrome staged file failed {}: {error}", file.rel_path);
-            }
+    let staged = match stage_box_chrome_session() {
+        Ok(staged) => staged,
+        Err(error) => {
+            transfer.log_message(&format!("stage chrome-session failed: {error}"));
+            return Ok(CategoryTransferSummary {
+                name: "chrome-session".into(),
+                ..CategoryTransferSummary::default()
+            });
         }
+    };
+    let files = staged
+        .files
+        .iter()
+        .map(|file| StagedTransferFile {
+            abs_path: file.abs_path.clone(),
+            rel_path: file.rel_path.clone(),
+            mode: file.mode,
+        })
+        .collect::<Vec<_>>();
+    let result = transfer.sync_staged_files(
+        store,
+        manifest,
+        "chrome-session",
+        &files,
+        staged.skipped,
+        manifest_v2,
+    );
+    if let Err(error) = staged.cleanup() {
+        transfer.log_message(&format!("stage cleanup chrome-session failed: {error}"));
     }
-    summary.failures += staged.skipped;
-    staged.cleanup().map_err(|error| error.to_string())?;
-    Ok(summary)
+    result
 }
 
 
@@ -2121,7 +2122,8 @@ fn agent_db_bundle_identity(agent_dir: &Path) -> Result<String, String> {
     Ok(fields.join("|"))
 }
 
-fn sync_tree_category(
+#[cfg(test)]
+fn test_sync_tree_category(
     store: &dyn BoxObjectStore,
     manifest: &mut BoxManifestMap,
     root: &Path,
@@ -2131,202 +2133,24 @@ fn sync_tree_category(
     ignore: Option<&WorkspaceIgnore>,
     manifest_v2: bool,
 ) -> Result<CategoryTransferSummary, String> {
-    let mut summary = CategoryTransferSummary {
-        name: name.to_string(),
-        ..CategoryTransferSummary::default()
-    };
-    let mut seen = HashSet::new();
-    let mut walk_complete = true;
-    if root.exists() {
-        walk_tree(
-            root,
-            root,
-            rel_prefix,
-            excludes,
-            ignore,
-            &mut seen,
-            &mut summary,
-            &mut walk_complete,
-            store,
-            manifest,
-            manifest_v2,
-        );
-    }
-
-    if walk_complete {
-        let prefix = format!("{rel_prefix}/");
-        let stale = manifest
-            .keys()
-            .filter(|path| path.starts_with(&prefix))
-            .filter(|path| !seen.contains(*path))
-            .filter(|path| !is_excluded(path, excludes))
-            .filter(|path| !is_agent_store_db_path(path))
-            .cloned()
-            .collect::<Vec<_>>();
-        for path in stale {
-            manifest.remove(&path);
-            summary.removed += 1;
-        }
-    }
-    Ok(summary)
-}
-
-#[allow(clippy::too_many_arguments)]
-fn walk_tree(
-    root: &Path,
-    dir: &Path,
-    rel_prefix: &str,
-    excludes: &[&str],
-    ignore: Option<&WorkspaceIgnore>,
-    seen: &mut HashSet<String>,
-    summary: &mut CategoryTransferSummary,
-    walk_complete: &mut bool,
-    store: &dyn BoxObjectStore,
-    manifest: &mut BoxManifestMap,
-    manifest_v2: bool,
-) {
-    let entries = match fs::read_dir(dir) {
-        Ok(entries) => entries,
-        Err(_) => {
-            summary.metadata_failures += 1;
-            *walk_complete = false;
-            return;
-        }
-    };
-    for entry in entries {
-        let Ok(entry) = entry else {
-            summary.metadata_failures += 1;
-            *walk_complete = false;
-            continue;
-        };
-        let path = entry.path();
-        let relative = match path.strip_prefix(root) {
-            Ok(value) => value.to_string_lossy().replace('\\', "/"),
-            Err(_) => {
-                summary.metadata_failures += 1;
-                *walk_complete = false;
-                continue;
-            }
-        };
-        let rel_path = format!("{rel_prefix}/{relative}");
-        if is_excluded(&rel_path, excludes) || is_agent_store_db_path(&rel_path) {
-            continue;
-        }
-
-        let metadata = match fs::symlink_metadata(&path) {
-            Ok(metadata) => metadata,
-            Err(_) => {
-                seen.insert(rel_path);
-                summary.metadata_failures += 1;
-                continue;
-            }
-        };
-        let file_type = metadata.file_type();
-        if file_type.is_dir() {
-            if ignore.is_some_and(|matcher| matcher.can_prune_dir(&relative)) {
-                summary.pruned_dirs += 1;
-                continue;
-            }
-            walk_tree(
-                root,
-                &path,
-                rel_prefix,
-                excludes,
-                ignore,
-                seen,
-                summary,
-                walk_complete,
-                store,
-                manifest,
-                manifest_v2,
-            );
-            continue;
-        }
-
-        if ignore.is_some_and(|matcher| matcher.ignores(&relative)) {
-            if file_type.is_file() {
-                summary.excluded_files += 1;
-                summary.excluded_bytes = summary.excluded_bytes.saturating_add(metadata.len());
-            }
-            continue;
-        }
-
-        seen.insert(rel_path.clone());
-        if file_type.is_symlink() {
-            if !manifest_v2 {
-                summary.failures += 1;
-                continue;
-            }
-            match fs::read_link(&path) {
-                Ok(target) => {
-                    manifest.insert(
-                        rel_path,
-                        BoxStoreManifestEntry::Symlink {
-                            target: target.to_string_lossy().to_string(),
-                        },
-                    );
-                }
-                Err(_) => summary.metadata_failures += 1,
-            }
-            continue;
-        }
-        if !file_type.is_file() {
-            summary.metadata_failures += 1;
-            continue;
-        }
-
-        summary.files_scanned += 1;
-        match sync_file(store, manifest, &path, &rel_path, None, manifest_v2) {
-            Ok((uploaded, size)) => {
-                if uploaded {
-                    summary.files_uploaded += 1;
-                    summary.bytes_uploaded = summary.bytes_uploaded.saturating_add(size);
-                } else {
-                    summary.skipped_unchanged += 1;
-                }
-            }
-            Err(error) if error == "oversize" => summary.oversize += 1,
-            Err(_) => summary.failures += 1,
-        }
-    }
-}
-
-fn sync_file(
-    store: &dyn BoxObjectStore,
-    manifest: &mut BoxManifestMap,
-    path: &Path,
-    rel_path: &str,
-    mode_override: Option<u32>,
-    manifest_v2: bool,
-) -> Result<(bool, u64), String> {
-    let metadata = fs::metadata(path).map_err(|error| error.to_string())?;
-    let size = metadata.len();
-    if size > DEFAULT_MAX_OBJECT_BYTES {
-        return Err("oversize".into());
-    }
-    let sha = sha256_file(path)?;
-    let mode = mode_override.unwrap_or_else(|| file_mode(&metadata));
-    let next = if manifest_v2 {
-        BoxStoreManifestEntry::File {
-            sha: sha.clone(),
-            size,
-            mode,
-        }
-    } else {
-        BoxStoreManifestEntry::LegacyFile {
-            sha: sha.clone(),
-            size,
-        }
-    };
-    if manifest.get(rel_path) == Some(&next) {
-        return Ok((false, size));
-    }
-    let blob_key = format!("{BOX_STORE_BLOBS_PREFIX}/{sha}");
-    if store.get(&blob_key)?.is_none() {
-        store.put_from_file(&blob_key, path)?;
-    }
-    manifest.insert(rel_path.to_string(), next);
-    Ok((true, size))
+    BoxStoreTransfer::new(
+        DEFAULT_MAX_OBJECT_BYTES,
+        DEFAULT_SNAPSHOT_OUT_CONCURRENCY,
+        LARGE_OBJECT_THRESHOLD_BYTES,
+        None,
+        Arc::new(|_| {}),
+    )
+    .sync_tree_category(
+        store,
+        manifest,
+        root,
+        rel_prefix,
+        name,
+        excludes,
+        ignore,
+        false,
+        manifest_v2,
+    )
 }
 
 fn sha256_file(path: &Path) -> Result<String, String> {
@@ -2479,7 +2303,7 @@ mod tests {
             SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS,
         );
         let mut manifest = BoxManifestMap::new();
-        let summary = sync_tree_category(
+        let summary = test_sync_tree_category(
             &store,
             &mut manifest,
             &workspace,
@@ -2519,7 +2343,7 @@ mod tests {
         assert_eq!(persisted.entries, manifest);
 
         fs::remove_file(workspace.join("src/main.ts")).expect("remove source file");
-        let summary = sync_tree_category(
+        let summary = test_sync_tree_category(
             &store,
             &mut manifest,
             &workspace,
@@ -2751,7 +2575,7 @@ mod tests {
 
             let store = LocalFsObjectStore::new(store_root);
             let mut manifest = BoxManifestMap::new();
-            let summary = sync_tree_category(
+            let summary = test_sync_tree_category(
                 &store,
                 &mut manifest,
                 &workspace,
