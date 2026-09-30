@@ -1,8 +1,9 @@
 use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::extensions::telemetry::analytics_service::{
+    ANALYTICS_BUFFER_LIMIT, ANALYTICS_FLUSH_INTERVAL_MS, ANALYTICS_NORMAL_FLUSH_TIMEOUT_MS,
     AnalyticsClient, AutomationRunAnalyticsTelemetry, FROZEN_ANALYTICS_SERVICE_BLOB,
-    TelemetryService, product_analytics_event,
+    MAX_DEFERRED_ANALYTICS_EVENTS, TelemetryService, product_analytics_event,
 };
 use serde_json::{Value, json};
 
@@ -191,4 +192,13 @@ fn product_event_sanitization_keeps_only_frozen_scalar_shapes() {
     assert!(!event.properties.contains_key("null"));
     assert!(!event.properties.contains_key("array"));
     assert!(!event.properties.contains_key("object"));
+}
+
+
+#[test]
+fn product_analytics_buffer_policy_matches_frozen_runtime() {
+    assert_eq!(MAX_DEFERRED_ANALYTICS_EVENTS, 256);
+    assert_eq!(ANALYTICS_BUFFER_LIMIT, 200);
+    assert_eq!(ANALYTICS_FLUSH_INTERVAL_MS, 3_000);
+    assert_eq!(ANALYTICS_NORMAL_FLUSH_TIMEOUT_MS, 2_500);
 }
