@@ -281,19 +281,13 @@ pub fn start_production_host_extensions(
     );
     let settings = start_settings_extension();
     let experiments = Arc::new(start_host_experiments_extension());
-    match ProductionAnalyticsRuntime::start(
+    let product_analytics = ProductionAnalyticsRuntime::start(
         backend_url.clone(),
         Arc::clone(&auth),
         Arc::clone(&experiments),
-    ) {
-        Ok(product_analytics) => {
-            telemetry.analytics.attach_runtime(product_analytics);
-            telemetry.analytics.mark_active("host_startup");
-        }
-        Err(error) => {
-            eprintln!("[sand-analytics] activation failed ({error})");
-        }
-    }
+    );
+    telemetry.analytics.attach_runtime(product_analytics);
+    telemetry.analytics.mark_active("host_startup");
     let statsig_bootstrap = start_authenticated_statsig_bootstrap(
         Arc::clone(&experiments),
         Arc::clone(&auth),
