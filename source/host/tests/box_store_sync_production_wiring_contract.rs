@@ -126,7 +126,12 @@ fn production_owner_wires_real_chrome_watcher_periodic_cycle_and_remote_provider
     assert!(production.contains("StoreDbSnapshotUpload::new("));
     assert!(production.contains("run_vacuum_off_thread(&source_path, &temp_path)"));
     assert!(production.contains("write_manifest("));
-    assert!(production.contains("store.put_from_file(&blob_key, path)"));
+    assert!(production.contains("transfer: BoxStoreTransfer"));
+    assert!(production.contains("self.transfer.sync_tree_category("));
+    let transfer = include_str!("../src/extensions/box_store_sync/box_store_transfer.rs");
+    assert!(transfer.contains("store.put_from_file(&key, &temp_path)"));
+    assert!(transfer.contains("for_each_bounded(candidates, concurrency"));
+    assert!(transfer.contains("SNAPSHOT_OUT_LARGE_CONCURRENCY"));
     assert!(production.contains("ProductionBoxStoreSyncMode::AgentStore"));
     assert!(production.contains("ProductionBoxStoreSyncMode::SandBoxStoreV2"));
     assert!(production.contains("resolve_box_object_store_provider("));
