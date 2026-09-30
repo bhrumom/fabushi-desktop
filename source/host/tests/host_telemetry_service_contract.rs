@@ -4,6 +4,7 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use mahayana_host_runtime::extensions::telemetry::analytics_service::TelemetryService;
 use mahayana_host_runtime::extensions::telemetry::desktop_health_forwarder::DesktopHealthForwardResult;
 use mahayana_host_runtime::extensions::telemetry::extension::{
     DESKTOP_HEALTH_EVENT, DESKTOP_HEALTH_HEARTBEAT_MS, DesktopHealthForwardState,
@@ -223,6 +224,39 @@ fn shipping_structured_logs_consume_canonical_box_identity_tags_with_event_prece
     assert_eq!(record.payload["metadata"]["cluster"], "cluster-a");
     assert_eq!(record.payload["metadata"]["detail"], "ok");
     assert!(record.payload["metadata"].get("empty").is_none());
+
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn shipping_telemetry_brain_routes_automation_run_to_product_and_structured_channels() {
+    let root = temp_root();
+    let extension = start_host_telemetry_extension(&root).expect("telemetry extension");
+
+    extension.brain.report_automation_run(&json!({
+        "conversationId": "agent-auto",
+        "automationId": "auto-7",
+        "trigger": "schedule",
+        "outcome": "ok",
+        "isGroup": false,
+        "sentMessageCount": 2
+    }));
+
+    let text = fs::read_to_string(extension.records_path()).expect("telemetry jsonl");
+    let records = text
+        .lines()
+        .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 2);
+    assert_eq!(records[0].channel, "product_analytics");
+    assert_eq!(records[0].event, "sand.automation.run");
+    assert_eq!(records[0].payload["agent_id"], "agent-auto");
+    assert_eq!(records[0].payload["automation_id"], "auto-7");
+    assert_eq!(records[0].payload["sent_message_count"], 2);
+    assert_eq!(records[1].channel, "structured_log");
+    assert_eq!(records[1].event, "sand.automation.run");
+    assert_eq!(records[1].payload["conversationId"], "agent-auto");
 
     let _ = fs::remove_dir_all(root);
 }
