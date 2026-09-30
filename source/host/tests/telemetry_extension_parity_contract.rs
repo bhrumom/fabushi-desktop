@@ -228,7 +228,16 @@ fn service_start_and_dispose_are_idempotent_and_flush_durable_records() {
 #[test]
 fn fatal_flush_and_normal_shutdown_are_shipping_wired_once() {
     assert!(SHIPPING_HOST.contains("_process_crash_guard.set_reporter(Some("));
+    assert!(SHIPPING_HOST.contains("fatal_logs.report_host_crash(kind.as_str())"));
     assert!(SHIPPING_HOST.contains("fatal_telemetry.flush_for_fatal_exit()"));
+    assert!(
+        SHIPPING_HOST
+            .find("fatal_logs.report_host_crash(kind.as_str())")
+            .expect("ordinary crash report")
+            < SHIPPING_HOST
+                .find("fatal_telemetry.flush_for_fatal_exit()")
+                .expect("fatal flush")
+    );
     assert!(SHIPPING_HOST.contains("production_extensions.telemetry.dispose()"));
     assert!(SHIPPING_HOST.contains("telemetry_api: host_telemetry.api()"));
     assert!(SHIPPING_HOST.contains("self.telemetry_api.report_message_sent(MessageSentReport"));
