@@ -55,7 +55,7 @@ Status vocabulary:
 | 36 | `reportUserMessageReceived` | delegates to `turn_telemetry_mappers.rs`; row is non-final | **delegated-nonfinal** |
 | 37 | `reportClosingSendNudge` | delegates to `turn_telemetry_mappers.rs`; manifest explicitly says shipping closing-send producer remains missing | **delegated-nonfinal** |
 | 38 | `reportSubagentRevival` | production completion revival runtime calls `HostStructuredLogTelemetry::report_subagent_revival`; typed facade owns the revival mapper and canonical transport | **implemented-awaiting-exact-head-ci** |
-| 39 | `reportShellRevival` | shipping CompletionRevivals now branches on `RevivalReport.kind` and routes shell completions through `HostStructuredLogTelemetry::report_shell_revival`; the typed frozen mapper owns `sand.shell.revival` field/level semantics and the JSONL facade contract verifies the distinct shell event | **implemented-awaiting-exact-head-ci** |
+| 39 | `reportShellRevival` | `ProductionCompletionRevivalRuntime::report_revival` branches on `RevivalReport.kind == "shell"` and routes to `HostStructuredLogTelemetry::report_shell_revival`; the typed mapper fixes `sand.shell.revival` and preserves level/fields. Exact-HEAD `3a930215…` CI disproved the prior contract because it read the event from `payload.event` instead of the persisted record event field. Commit `56afc178…` corrects that contract, but this row remains non-final until a new exact-HEAD rust-host run passes. | **implemented-awaiting-exact-head-ci** |
 | 40 | `reportTtft` | delegates to `turn_telemetry_mappers.rs`; row is non-final and manifest still requires complete dispatch-clock/trace/span provenance | **delegated-nonfinal** |
 | 41 | `reportSendDispatch` | `queue_telemetry_mappers.rs` mapper exists | producer-evidence-required |
 | 42 | `reportQueueAccepted` | shipping run-queue accepted callback calls the typed Host structured-log facade; JSONL contract covers frozen lane/depth metadata | **implemented-awaiting-exact-head-ci** |
@@ -175,3 +175,44 @@ Frozen boot-stage/failure, egress-tunnel, host-boot-fetch, exec-daemon-restart a
 ### MCP / Plugin Skills / local-permission direct facade repair
 
 The shipping domains already owned the required business signals but did not consistently route them through structured-log. `start_mcp` now reports legacy-auth cleanup outcome/count, installs the existing Plugin Skills sync reporter on the unique Host logs, and binds the existing Skill Publish edge reporter to the typed structured-log facade. The transcript/local-permission stranded callback no longer constructs an ad-hoc projection; it calls the frozen client-resource facade, restoring the fixed domain/operation/state/failure/boundary/retry-owner metadata. Focused JSONL contracts verify all four direct-event shapes while existing domain tests continue to exercise the producer callbacks.
+
+
+## Exact-HEAD producer re-audit after shell-revival CI counterexample
+
+The exact-HEAD `3a9302151c72f6c07d604dc0c35bd1d6c1a5473a` Rust runtime run `36726787963` failed in `host_telemetry_service_contract` because the test read `sand.shell.revival` from `payload.event`. The frozen Grok facade sends the mapper event as the transport message/event argument; Fabushi persists that value in `PersistedHostTelemetryRecord.event`, while `payload` contains `level` and `metadata`. The shipping producer, typed mapper and unique Host owner were already correct; the contract was wrong. The corrected contract now asserts the persisted record event and retains independent metadata/level assertions. This is not accepted as final until the new exact HEAD passes rust-host CI.
+
+The 29 `producer-evidence-required` rows were re-audited against the clean exact HEAD rather than by mapper/facade name presence. The evidence threshold remains: real shipping producer/call site → unique Host structured-log owner → frozen event/field/level/multi-event/confirmed/failure/dispose semantics → focused contract.
+
+| Frozen facade | Shipping producer finding | Owner / semantic finding | Result |
+| --- | --- | --- | --- |
+| `reportAutomationRun` | no shipping call site found; only AnalyticsService/ports registration and generic mapping | generic Host report mapping is not producer evidence | keep gap |
+| `reportHostStartup` | no shipping call site found on clean exact HEAD | typed method/mapper exists, but no production producer | keep gap |
+| `reportHostLifecycle` | `HostTelemetryExtension::create_host_lifecycle_progress` closure calls typed Host lifecycle reporter; lifecycle object emits completed/failed/stuck and disposes/rearms watchdog | real producer exists; existing lifecycle contracts prove phase/failure/stuck/dispose, but one focused shipping-owner JSONL contract is still missing | keep gap pending focused owner contract |
+| `reportDaemonPing` | no shipping call site found | generic registration only | keep gap |
+| `reportBoxImageCheck` | no shipping call site found | mapper exists only | keep gap |
+| `reportSendDispatch` | no shipping call site found | queue mapper + generic registration are insufficient | keep gap |
+| `reportAckObligation` | no shipping call site found | queue mapper + generic registration are insufficient | keep gap |
+| `reportJournalOutcome` | no shipping call site found | journal mapper + generic registration are insufficient | keep gap |
+| `reportToolCallError` | no shipping call site found | frozen error event and capped duration shaping are not proved by generic raw mapping | keep gap |
+| `reportToolCallStalled` | no shipping call site found | frozen warn + elapsed cap not proved by generic raw mapping | keep gap |
+| `reportToolCallStarted` | no shipping call site found | frozen field shaping not proved by generic raw mapping | keep gap |
+| `reportAgentError` | no shipping call site found | frozen summary + optional detail dual-event, Sand error tags and truncation are not proved by generic raw mapping | keep gap |
+| `reportAutoReviewDisplayRecheckFailed` | no shipping call site found | no typed Host producer; fixed `surface=computer` remains unevidenced | keep gap |
+| `reportAutoReviewExpireSweepFailed` | no shipping call site found | generic registration only | keep gap |
+| `reportBoxStoreSyncCycle` | no shipping call site found | no typed Host producer found | keep gap |
+| `reportBoxStoreDbCapture` | no shipping call site found | no typed Host producer found | keep gap |
+| `reportBoxStoreManifestConflict` | no shipping call site found | no typed Host producer found | keep gap |
+| `reportChromeSessionStage` | no shipping call site found | no typed Host producer found | keep gap |
+| `reportMcpDiscoveryFailed` | no shipping call site found | no Host producer proving warn/rounded elapsed/served-stale fields | keep gap |
+| `reportConnectorAuth` | Electron-main has a separate desktop telemetry producer, but no Host shipping producer through the frozen Host facade was found | Electron-main telemetry is not evidence for the unique Host structured-log owner | keep gap |
+| `reportBoxCopyIn` | no shipping call site found | no typed Host producer found | keep gap |
+| `reportBoxRecreateDecided` | no shipping call site found | no typed Host producer found | keep gap |
+| `reportGatewayCommandError` | no shipping call site found | no typed Host producer found | keep gap |
+| `reportGatewayCommandTiming` | no shipping call site found | no typed Host producer found | keep gap |
+| `reportAutomationLifecycle` | no shipping call site found | generic registration does not prove optional scheduling flags/age/run-count shaping | keep gap |
+| `reportAgentOpen` | no shipping call site found | no typed Host producer found | keep gap |
+| `reportHostCrash` | no ordinary fire-and-forget frozen producer found; confirmed process-exit forwarding is a distinct path | confirmed exit semantics cannot substitute for ordinary `reportHostCrash(kind)` | keep gap |
+| `reportInvariantViolation` | no shipping call site found | no typed Host producer found | keep gap |
+| `reportBotBlock` | no shipping call site found | generic mapping does not prove frozen two-event summary/detail behavior | keep gap |
+
+Therefore none of the 29 rows is promoted by this re-audit. `reportHostLifecycle` is the only row in this set with a clearly evidenced production producer at this exact HEAD, but it still lacks the focused single-owner shipping contract required by this ledger. The parent structured-log architecture row must remain `existing-needs-parity`, and `turn-telemetry-mappers.ts` must not start yet.
