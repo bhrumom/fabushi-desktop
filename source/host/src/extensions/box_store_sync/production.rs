@@ -1891,6 +1891,13 @@ where
     summary
 }
 
+#[derive(Debug, Clone)]
+struct ProductionStoreDbCaptureResult {
+    summary: CategoryTransferSummary,
+    agent_count: usize,
+    capture_trace: StoreDbCaptureTrace,
+}
+
 fn sync_store_db_snapshots(
     store: Arc<dyn BoxObjectStore>,
     store_id: &str,
@@ -1899,6 +1906,27 @@ fn sync_store_db_snapshots(
     skip_live_handles: bool,
     only_agent_id: Option<&str>,
 ) -> Result<CategoryTransferSummary, String> {
+    sync_store_db_snapshots_with_trace(
+        store,
+        store_id,
+        manifest,
+        sand_root,
+        skip_live_handles,
+        only_agent_id,
+    )
+    .map(|capture| capture.summary)
+}
+
+fn sync_store_db_snapshots_with_trace(
+    store: Arc<dyn BoxObjectStore>,
+    store_id: &str,
+    manifest: &mut BoxManifestMap,
+    sand_root: &Path,
+    skip_live_handles: bool,
+    only_agent_id: Option<&str>,
+) -> Result<ProductionStoreDbCaptureResult, String> {
+    let mut capture_trace = create_store_db_capture_trace();
+    let mut agent_count = 0_usize;
     let mut summary = CategoryTransferSummary {
         name: "store.db".into(),
         ..CategoryTransferSummary::default()
@@ -1912,6 +1940,7 @@ fn sync_store_db_snapshots(
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
         Err(_) => {
             summary.metadata_failures += 1;
+            record_store_db_capture_failure(&mut capture_trace, StoreDbCaptureFailurePhase::Capture);
             walk_complete = false;
             None
         }
@@ -1992,6 +2021,7 @@ fn sync_store_db_snapshots(
             let mut staged_manifest = manifest.clone();
             let mut bundle_ok = true;
             let mut present_paths = HashSet::new();
+            let mut agent_has_db = false;
             for basename in AGENT_STORE_DB_BASENAMES {
                 let source_path = agent_dir.join(basename);
                 let metadata = match fs::metadata(&source_path) {
@@ -2014,6 +2044,7 @@ fn sync_store_db_snapshots(
                 seen.insert(rel_path.clone());
                 present_paths.insert(rel_path.clone());
                 summary.files_scanned += 1;
+                agent_has_db = true;
 
                 let temp_path = PathBuf::from(format!(
                     "{}{}{}",
@@ -2021,7 +2052,12 @@ fn sync_store_db_snapshots(
                     BOX_STORE_SNAPSHOT_TMP_SUFFIX,
                     uuid::Uuid::new_v4().simple(),
                 ));
+                let capture_started_at = Instant::now();
                 if let Err(error) = uploader.run_vacuum_off_thread(&source_path, &temp_path) {
+                    capture_trace.capture_duration_ms = capture_trace.capture_duration_ms.saturating_add(
+                        capture_started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                    );
+                    record_store_db_capture_failure(&mut capture_trace, StoreDbCaptureFailurePhase::Capture);
                     uploader.discard_snapshot_temp(&temp_path, &rel_path);
                     eprintln!(
                         "[box-store-sync] store.db snapshot capture failed {rel_path}: {error}"
@@ -2030,13 +2066,20 @@ fn sync_store_db_snapshots(
                     bundle_ok = false;
                     continue;
                 }
+                capture_trace.capture_duration_ms = capture_trace.capture_duration_ms.saturating_add(
+                    capture_started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                );
 
+                let blob_upload_started_at = Instant::now();
                 let result = uploader.upload_agent_db_snapshot(
                     store_id,
                     &mut staged_manifest,
                     &rel_path,
                     &temp_path,
                     file_mode(&metadata),
+                );
+                capture_trace.blob_upload_duration_ms = capture_trace.blob_upload_duration_ms.saturating_add(
+                    blob_upload_started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
                 );
                 uploader.discard_snapshot_temp(&temp_path, &rel_path);
                 match result.outcome {
@@ -2053,9 +2096,17 @@ fn sync_store_db_snapshots(
                     }
                     SnapshotUploadOutcome::Error => {
                         summary.failures += 1;
+                        record_store_db_capture_failure(
+                            &mut capture_trace,
+                            StoreDbCaptureFailurePhase::BlobUpload,
+                        );
                         bundle_ok = false;
                     }
                 }
+            }
+
+            if agent_has_db {
+                agent_count += 1;
             }
 
             let final_identity = agent_db_bundle_identity(&agent_dir);
@@ -2098,7 +2149,11 @@ fn sync_store_db_snapshots(
         }
     }
 
-    Ok(summary)
+    Ok(ProductionStoreDbCaptureResult {
+        summary,
+        agent_count,
+        capture_trace,
+    })
 }
 
 fn agent_has_pending_db_recovery(agent_dir: &Path) -> bool {
