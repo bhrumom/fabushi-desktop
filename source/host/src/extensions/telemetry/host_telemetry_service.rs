@@ -657,6 +657,19 @@ impl HostStructuredLogTelemetry {
         })
     }
 
+    pub fn report_chrome_session_stage(
+        &self,
+        level: &str,
+        metadata: &BTreeMap<String, String>,
+    ) -> io::Result<()> {
+        let level = if level == "warn" { "warn" } else { "info" };
+        self.report_projection(&HostTelemetryProjection {
+            level: Some(level),
+            event: Some("sand.chrome_session_stage"),
+            metadata: metadata.clone(),
+        })
+    }
+
     pub fn report_mcp_auth_cleanup(&self, outcome: &str, removed_count: usize) -> io::Result<()> {
         self.report_projection(&HostTelemetryProjection {
             level: Some(if outcome == "error" { "warn" } else { "info" }),

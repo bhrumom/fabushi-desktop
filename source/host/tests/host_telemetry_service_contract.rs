@@ -934,3 +934,61 @@ fn box_store_manifest_conflict_facade_preserves_frozen_warn_event_and_metadata()
 
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn chrome_session_stage_facade_preserves_frozen_event_level_and_metadata() {
+    let root = temp_root();
+    let service =
+        HostTelemetryService::open(root.join("chrome-session-stage.jsonl")).expect("telemetry");
+    service.start().expect("start");
+
+    service
+        .logs
+        .report_chrome_session_stage(
+            "warn",
+            &BTreeMap::from([
+                ("staged".into(), "1".into()),
+                ("skipped".into(), "1".into()),
+                ("skipped_dbs".into(), "Web Data".into()),
+                ("error_class".into(), "Error".into()),
+                ("failure_db".into(), "Web Data".into()),
+                ("failure_phase".into(), "raw_copy".into()),
+                ("failure_operation".into(), "copy_source_sidecars".into()),
+                (
+                    "failure_path_stage".into(),
+                    "source_and_staged_sidecars".into(),
+                ),
+                ("failure_cause".into(), "io".into()),
+                ("errno".into(), "ENOSPC".into()),
+                ("sqlite_code".into(), "13".into()),
+            ]),
+        )
+        .expect("chrome session stage telemetry");
+
+    let text = fs::read_to_string(service.records_path()).expect("chrome session stage jsonl");
+    let record: PersistedHostTelemetryRecord =
+        serde_json::from_str(text.lines().next().expect("chrome session stage record"))
+            .expect("chrome session stage json");
+    assert_eq!(record.channel, "structured_log");
+    assert_eq!(record.event, "sand.chrome_session_stage");
+    assert_eq!(record.payload["level"], "warn");
+    assert_eq!(record.payload["metadata"]["staged"], "1");
+    assert_eq!(record.payload["metadata"]["skipped"], "1");
+    assert_eq!(record.payload["metadata"]["skipped_dbs"], "Web Data");
+    assert_eq!(record.payload["metadata"]["error_class"], "Error");
+    assert_eq!(record.payload["metadata"]["failure_db"], "Web Data");
+    assert_eq!(record.payload["metadata"]["failure_phase"], "raw_copy");
+    assert_eq!(
+        record.payload["metadata"]["failure_operation"],
+        "copy_source_sidecars"
+    );
+    assert_eq!(
+        record.payload["metadata"]["failure_path_stage"],
+        "source_and_staged_sidecars"
+    );
+    assert_eq!(record.payload["metadata"]["failure_cause"], "io");
+    assert_eq!(record.payload["metadata"]["errno"], "ENOSPC");
+    assert_eq!(record.payload["metadata"]["sqlite_code"], "13");
+
+    let _ = fs::remove_dir_all(root);
+}

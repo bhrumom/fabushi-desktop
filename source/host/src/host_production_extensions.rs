@@ -830,6 +830,7 @@ impl ProductionHostExtensions {
         let box_store_sync_logs = logs.clone();
         let box_store_db_capture_logs = logs.clone();
         let box_store_manifest_conflict_logs = logs.clone();
+        let chrome_session_stage_logs = logs.clone();
         let source_map = Arc::clone(&self.source_map);
         let token_auth = Arc::clone(&self.auth);
         let machine_auth = Arc::clone(&self.auth);
@@ -865,6 +866,9 @@ impl ProductionHostExtensions {
                 report_box_store_manifest_conflict: Arc::new(move |level, metadata| {
                     let _ = box_store_manifest_conflict_logs
                         .report_box_store_manifest_conflict(level, metadata);
+                }),
+                report_chrome_session_stage: Arc::new(move |level, metadata| {
+                    let _ = chrome_session_stage_logs.report_chrome_session_stage(level, metadata);
                 }),
                 scheduling: BoxStoreScheduling::default(),
             },

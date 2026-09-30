@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::thread;
@@ -47,6 +48,75 @@ pub struct ChromeStageReport {
     pub skipped_db_names: Vec<String>,
     pub error_class: Option<String>,
     pub failure: Option<ChromeStageFailure>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChromeSessionStageTelemetry {
+    pub level: &'static str,
+    pub metadata: BTreeMap<String, String>,
+}
+
+fn sqlite_snapshot_operation_name(operation: SqliteSnapshotOperation) -> &'static str {
+    match operation {
+        SqliteSnapshotOperation::PrepareStaged => "prepare_staged",
+        SqliteSnapshotOperation::ReadSourceMain => "read_source_main",
+        SqliteSnapshotOperation::WriteStagedMain => "write_staged_main",
+        SqliteSnapshotOperation::CopySourceSidecars => "copy_source_sidecars",
+        SqliteSnapshotOperation::VerifySourceStability => "verify_source_stability",
+        SqliteSnapshotOperation::OpenStaged => "open_staged",
+        SqliteSnapshotOperation::CheckpointStaged => "checkpoint_staged",
+        SqliteSnapshotOperation::SetStagedJournalMode => "set_staged_journal_mode",
+        SqliteSnapshotOperation::QuickCheckStaged => "quick_check_staged",
+        SqliteSnapshotOperation::CloseStaged => "close_staged",
+        SqliteSnapshotOperation::CleanupStaged => "cleanup_staged",
+        SqliteSnapshotOperation::VacuumInto => "vacuum_into",
+    }
+}
+
+fn sqlite_snapshot_path_stage_name(path_stage: SqliteSnapshotPathStage) -> &'static str {
+    match path_stage {
+        SqliteSnapshotPathStage::SourceMain => "source_main",
+        SqliteSnapshotPathStage::StagedMain => "staged_main",
+        SqliteSnapshotPathStage::StagedSidecars => "staged_sidecars",
+        SqliteSnapshotPathStage::SourceAndStagedSidecars => "source_and_staged_sidecars",
+        SqliteSnapshotPathStage::SourceOrStagedMain => "source_or_staged_main",
+    }
+}
+
+pub fn chrome_session_stage_telemetry(report: &ChromeStageReport) -> ChromeSessionStageTelemetry {
+    let mut metadata = BTreeMap::from([
+        ("staged".into(), report.staged.to_string()),
+        ("skipped".into(), report.skipped.to_string()),
+    ]);
+    if !report.skipped_db_names.is_empty() {
+        metadata.insert("skipped_dbs".into(), report.skipped_db_names.join(","));
+    }
+    if let Some(error_class) = report.error_class.as_ref() {
+        metadata.insert("error_class".into(), error_class.clone());
+    }
+    if let Some(failure) = report.failure.as_ref() {
+        metadata.insert("failure_db".into(), failure.db.clone());
+        metadata.insert("failure_phase".into(), failure.phase.clone());
+        metadata.insert(
+            "failure_operation".into(),
+            sqlite_snapshot_operation_name(failure.snapshot.operation).into(),
+        );
+        metadata.insert(
+            "failure_path_stage".into(),
+            sqlite_snapshot_path_stage_name(failure.snapshot.path_stage).into(),
+        );
+        metadata.insert("failure_cause".into(), failure.snapshot.cause.clone());
+        if let Some(errno) = failure.snapshot.errno.as_ref() {
+            metadata.insert("errno".into(), errno.clone());
+        }
+        if let Some(sqlite_code) = failure.snapshot.sqlite_code {
+            metadata.insert("sqlite_code".into(), sqlite_code.to_string());
+        }
+    }
+    ChromeSessionStageTelemetry {
+        level: if report.skipped > 0 { "warn" } else { "info" },
+        metadata,
+    }
 }
 
 #[derive(Debug)]
@@ -148,6 +218,15 @@ where
 }
 
 pub fn stage_box_chrome_session() -> std::io::Result<StagedChromeSession> {
+    stage_box_chrome_session_with_report(|_| {})
+}
+
+pub fn stage_box_chrome_session_with_report<R>(
+    report: R,
+) -> std::io::Result<StagedChromeSession>
+where
+    R: FnMut(ChromeStageReport),
+{
     stage_box_chrome_session_with(
         Path::new(CHROME_SESSION_DB_DIR),
         CHROME_SESSION_DB_REL_DIR,
@@ -179,7 +258,7 @@ pub fn stage_box_chrome_session() -> std::io::Result<StagedChromeSession> {
             }
         },
         |_| {},
-        |_| {},
+        report,
     )
 }
 

@@ -115,6 +115,7 @@ pub struct BoxStoreSyncExtensionDeps {
     pub report_box_store_sync_cycle: BoxStoreSyncTelemetryReporter,
     pub report_box_store_db_capture: BoxStoreSyncTelemetryReporter,
     pub report_box_store_manifest_conflict: BoxStoreSyncTelemetryReporter,
+    pub report_chrome_session_stage: BoxStoreSyncTelemetryReporter,
     pub scheduling: BoxStoreScheduling,
 }
 

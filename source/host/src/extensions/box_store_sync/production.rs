@@ -68,11 +68,12 @@ use crate::extensions::box_store_sync::store_db_snapshot_upload::{
 use crate::extensions::box_store_sync::chrome_session_stage::{
     CHROME_AUTH_STATE_CACHE_EXCLUDE_NAMES, CHROME_AUTH_STATE_REL_DIRS,
     CHROME_SESSION_DB_DIR, CHROME_SESSION_DB_NAMES, CHROME_SESSION_DB_REL_DIR,
-    stage_box_chrome_session,
+    chrome_session_stage_telemetry, stage_box_chrome_session_with_report,
 };
 use crate::extensions::box_store_sync::chrome_session_watcher::ChromeSessionWatcher;
 use crate::extensions::box_store_sync::extension::{
     BoxStoreSyncExtensionDeps, BoxStoreSyncService, BoxStoreSyncServiceFactory,
+    BoxStoreSyncTelemetryReporter,
 };
 use crate::extensions::box_store_sync::workspace_ignore::{
     SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS, WorkspaceIgnore, load_workspace_ignore,
@@ -915,6 +916,7 @@ impl ProductionBoxStoreSyncInner {
                 store.as_ref(),
                 &mut entries,
                 manifest_v2,
+                &self.deps.report_chrome_session_stage,
             )?);
         } else {
             let sand_data_excludes = sand_data_excludes();
@@ -962,6 +964,7 @@ impl ProductionBoxStoreSyncInner {
                 store.as_ref(),
                 &mut entries,
                 manifest_v2,
+                &self.deps.report_chrome_session_stage,
             )?);
             for rel_dir in CHROME_AUTH_STATE_REL_DIRS {
                 categories.push(sync_chrome_auth_state_category(
@@ -1848,8 +1851,12 @@ fn sync_chrome_session(
     store: &dyn BoxObjectStore,
     manifest: &mut BoxManifestMap,
     manifest_v2: bool,
+    report_chrome_session_stage: &BoxStoreSyncTelemetryReporter,
 ) -> Result<CategoryTransferSummary, String> {
-    let staged = match stage_box_chrome_session() {
+    let staged = match stage_box_chrome_session_with_report(|report| {
+        let telemetry = chrome_session_stage_telemetry(&report);
+        report_chrome_session_stage(telemetry.level, &telemetry.metadata);
+    }) {
         Ok(staged) => staged,
         Err(error) => {
             transfer.log_message(&format!("stage chrome-session failed: {error}"));

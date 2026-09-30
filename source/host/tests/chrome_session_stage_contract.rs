@@ -2,7 +2,8 @@ use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::box_store_sync::chrome_session_stage::{
-    ChromeStageRetryPolicy, stage_box_chrome_session_with,
+    ChromeStageFailure, ChromeStageReport, ChromeStageRetryPolicy,
+    chrome_session_stage_telemetry, stage_box_chrome_session_with,
 };
 use mahayana_host_runtime::extensions::box_store_sync::sqlite_snapshot::{
     SqliteSnapshotFailure, SqliteSnapshotOperation, SqliteSnapshotPathStage,
@@ -155,4 +156,50 @@ fn raw_copy_failure_reports_raw_copy_phase() {
     assert_eq!(reports[0].error_class.as_deref(),Some("raw copy failed"));
     staged.cleanup().unwrap();
     let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn canonical_stage_telemetry_matches_frozen_level_and_metadata() {
+    let ok = chrome_session_stage_telemetry(&ChromeStageReport {
+        staged: 2,
+        skipped: 0,
+        skipped_db_names: vec![],
+        error_class: None,
+        failure: None,
+    });
+    assert_eq!(ok.level, "info");
+    assert_eq!(ok.metadata["staged"], "2");
+    assert_eq!(ok.metadata["skipped"], "0");
+    assert!(!ok.metadata.contains_key("skipped_dbs"));
+
+    let warned = chrome_session_stage_telemetry(&ChromeStageReport {
+        staged: 1,
+        skipped: 2,
+        skipped_db_names: vec!["Cookies".into(), "Web Data".into()],
+        error_class: Some("Error".into()),
+        failure: Some(ChromeStageFailure {
+            db: "Web Data".into(),
+            phase: "raw_copy".into(),
+            snapshot: SqliteSnapshotFailure {
+                operation: SqliteSnapshotOperation::CopySourceSidecars,
+                path_stage: SqliteSnapshotPathStage::SourceAndStagedSidecars,
+                cause: "io".into(),
+                error_class: "Error".into(),
+                errno: Some("ENOSPC".into()),
+                sqlite_code: Some(13),
+            },
+        }),
+    });
+    assert_eq!(warned.level, "warn");
+    assert_eq!(warned.metadata["staged"], "1");
+    assert_eq!(warned.metadata["skipped"], "2");
+    assert_eq!(warned.metadata["skipped_dbs"], "Cookies,Web Data");
+    assert_eq!(warned.metadata["error_class"], "Error");
+    assert_eq!(warned.metadata["failure_db"], "Web Data");
+    assert_eq!(warned.metadata["failure_phase"], "raw_copy");
+    assert_eq!(warned.metadata["failure_operation"], "copy_source_sidecars");
+    assert_eq!(warned.metadata["failure_path_stage"], "source_and_staged_sidecars");
+    assert_eq!(warned.metadata["failure_cause"], "io");
+    assert_eq!(warned.metadata["errno"], "ENOSPC");
+    assert_eq!(warned.metadata["sqlite_code"], "13");
 }

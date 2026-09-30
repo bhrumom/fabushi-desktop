@@ -471,3 +471,52 @@ fn shipping_manifest_conflict_uses_frozen_metadata_and_unique_host_owner() {
         "canonical manifest-conflict structured telemetry must not be disguised as a Host-extension diagnostic"
     );
 }
+
+#[test]
+fn shipping_chrome_session_stage_uses_frozen_mapper_and_unique_host_owner() {
+    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    assert!(production.contains("stage_box_chrome_session_with_report(|report|"));
+    assert!(production.contains("chrome_session_stage_telemetry(&report)"));
+    assert!(production.contains(
+        "report_chrome_session_stage(telemetry.level, &telemetry.metadata);"
+    ));
+    assert!(production.contains("&self.deps.report_chrome_session_stage"));
+
+    let owner = include_str!("../src/host_production_extensions.rs");
+    assert!(owner.contains("report_chrome_session_stage: Arc::new"));
+    assert!(owner.contains(
+        "chrome_session_stage_logs.report_chrome_session_stage(level, metadata)"
+    ));
+
+    let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
+    assert!(telemetry.contains("pub fn report_chrome_session_stage("));
+    assert!(telemetry.contains(r#"event: Some("sand.chrome_session_stage")"#));
+
+    let mapper = include_str!("../src/extensions/box_store_sync/chrome_session_stage.rs");
+    for field in [
+        r#""staged""#,
+        r#""skipped""#,
+        r#""skipped_dbs""#,
+        r#""error_class""#,
+        r#""failure_db""#,
+        r#""failure_phase""#,
+        r#""failure_operation""#,
+        r#""failure_path_stage""#,
+        r#""failure_cause""#,
+        r#""errno""#,
+        r#""sqlite_code""#,
+    ] {
+        assert!(mapper.contains(field), "Chrome stage mapper missing {field}");
+    }
+    assert!(mapper.contains(r#"level: if report.skipped > 0 { "warn" } else { "info" }"#));
+
+    let stage = production
+        .split_once("fn sync_chrome_session(")
+        .map(|(_, body)| body)
+        .and_then(|body| body.split_once("#[derive(Clone)]\nstruct ProductionStoreDbSnapshotRuntime").map(|(body, _)| body))
+        .expect("shipping chrome session stage body");
+    assert!(
+        !stage.contains("report_host_extension_diagnostic"),
+        "canonical Chrome session stage telemetry must not degrade to Host-extension diagnostics"
+    );
+}
