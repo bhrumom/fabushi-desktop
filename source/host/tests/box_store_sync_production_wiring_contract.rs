@@ -283,7 +283,9 @@ fn shipping_box_store_sync_core_writer_lock_is_consumed_by_every_mutating_owner(
     for expected in [
         "writer_lock: Mutex<Option<BoxStoreWriterLock>>",
         "fn ensure_writer_lock(&self) -> Result<bool, String>",
-        "BoxStoreWriterLock::try_acquire(&lock_path, &window_id)?",
+        "match BoxStoreWriterLock::try_acquire(&lock_path, &window_id)",
+        "self.log(&format!(\"writer lock error: {error}\"))",
+        "return Ok(false);",
         "self.inner.release_writer_lock();",
     ] {
         assert!(
@@ -294,6 +296,10 @@ fn shipping_box_store_sync_core_writer_lock_is_consumed_by_every_mutating_owner(
     assert!(
         production.matches("if !self.ensure_writer_lock()?").count() >= 4,
         "snapshot, turn-end capture, clear, and forget must all fence mutation through the long-lived writer lock"
+    );
+    assert!(
+        !production.contains("BoxStoreWriterLock::try_acquire(&lock_path, &window_id)?"),
+        "writer-lock acquisition errors must be normalized to the frozen locked outcome instead of escaping the shipping service"
     );
 
     let clear = production

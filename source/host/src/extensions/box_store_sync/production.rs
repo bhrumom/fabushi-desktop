@@ -659,8 +659,13 @@ impl ProductionBoxStoreSyncInner {
         }
         let lock_path = get_sand_root_dir().join(BOX_STORE_WRITER_LOCK_FILE_NAME);
         let window_id = format!("mahayana-host-{}", std::process::id());
-        let Some(lock) = BoxStoreWriterLock::try_acquire(&lock_path, &window_id)? else {
-            return Ok(false);
+        let lock = match BoxStoreWriterLock::try_acquire(&lock_path, &window_id) {
+            Ok(Some(lock)) => lock,
+            Ok(None) => return Ok(false),
+            Err(error) => {
+                self.log(&format!("writer lock error: {error}"));
+                return Ok(false);
+            }
         };
         *slot = Some(lock);
         Ok(true)
