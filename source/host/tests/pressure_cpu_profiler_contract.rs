@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::extensions::telemetry::pressure_cpu_profiler::{
     CpuProfilerBackend, PressureCpuProfiler, PressureCpuProfilerKnobs,
+    create_production_pressure_cpu_profiler,
 };
 
 #[derive(Default)]
@@ -134,4 +135,14 @@ fn live_overrides_are_fail_closed_and_max_retention_is_at_least_one() {
     }
     assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn production_profiler_owner_consumes_live_experiment_knobs_without_starting_capture() {
+    const SERVICE: &str = include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
+    const PROFILER: &str = include_str!("../src/extensions/telemetry/pressure_cpu_profiler.rs");
+    assert!(SERVICE.contains("create_production_pressure_cpu_profiler(Arc::clone(&experiments))"));
+    assert!(PROFILER.contains("sand_pressure_cpu_profiler_config"));
+    assert!(PROFILER.contains("ProductionCpuProfilerBackend::default()"));
 }

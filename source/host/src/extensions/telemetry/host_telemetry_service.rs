@@ -52,7 +52,7 @@ use super::model_experiment_exposure::{
     ModelExperimentExposureAnalytics, ModelExperimentExposureExperiments,
     ModelExperimentExposureLatch, SandModelExperimentState as ExposureModelExperimentState,
 };
-use super::pressure_cpu_profiler::PressureCpuProfiler;
+use super::pressure_cpu_profiler::{PressureCpuProfiler, create_production_pressure_cpu_profiler};
 use super::experiments_diagnostic_telemetry::{
     ExperimentsDiagnostic, experiments_diagnostic_telemetry,
 };
@@ -918,6 +918,10 @@ impl HostTelemetryService {
                 Arc::new(move || auth_for_tracing.service().peek_access_token()),
                 Some(env!("CARGO_PKG_VERSION")),
             );
+        }
+        if hooks.pressure_profiler.is_none() {
+            hooks.pressure_profiler =
+                Some(create_production_pressure_cpu_profiler(Arc::clone(&experiments)));
         }
         Self::open_internal(
             records_path,
