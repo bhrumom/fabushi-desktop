@@ -289,11 +289,11 @@ fn frozen_facade_methods_route_mapper_semantics_through_single_host_owner() {
     assert_eq!(records[2].payload["metadata"]["error_code"], "SAND-E0111");
     assert_eq!(records[5].payload["level"], "warn");
     assert_eq!(records[5].payload["metadata"]["error_code"], "SAND-E0209");
-    assert_eq!(records[8].payload["event"], "sand.shell.revival");
+    assert_eq!(records[8].event, "sand.shell.revival");
     assert_eq!(records[8].payload["metadata"]["quiet_origin"], "true");
-    assert_eq!(records[9].payload["event"], "sand.pending_wake");
+    assert_eq!(records[9].event, "sand.pending_wake");
     assert_eq!(records[9].payload["metadata"]["age_ms"], "11");
-    assert_eq!(records[10].payload["event"], "sand.box.disk_pressure");
+    assert_eq!(records[10].event, "sand.box.disk_pressure");
     assert_eq!(records[10].payload["level"], "error");
     assert_eq!(records[10].payload["metadata"]["used_percent"], "90.0");
     assert_eq!(records[12].payload["metadata"]["queue_wait_ms"], "6");
