@@ -11,7 +11,6 @@ Status vocabulary:
 - **delegated-nonfinal** — the facade delegates to another mapped module whose own architecture row is still `existing-needs-parity`; this facade cannot be final before that delegate is final.
 - **producer-evidence-required** — a mapper/event shape exists, but this audit did not find a shipping producer through the canonical structured-log owner by the frozen facade method name; module presence alone is insufficient.
 - **stateful-gap** — the frozen API carries state/lifecycle behavior that is not represented by the current generic `TelemetryService::report` boundary.
-- verified-owner — production wiring and focused contract were added after the audit rollback, but the row remains non-final until the new exact HEAD is accepted.
 
 ## SandStructuredLogTelemetry public surface
 
