@@ -818,6 +818,89 @@ fn generate_cloud_agent_trace_schema(manifest_dir: &std::path::Path) {
         .expect("write generated CloudAgent trace schema");
 }
 
+
+fn verify_local_exec_generated_source(path: &std::path::Path, markers: &[&str]) {
+    let content = fs::read_to_string(path)
+        .unwrap_or_else(|error| panic!("read frozen local-exec generated source {}: {error}", path.display()));
+    for marker in markers {
+        assert!(
+            content.contains(marker),
+            "frozen local-exec generated source {} is missing provenance/schema marker {marker:?}",
+            path.display()
+        );
+    }
+}
+
+fn generate_agent_v1_local_exec_bindings(manifest_dir: &std::path::Path) {
+    let generated_root = manifest_dir.join("../packages/proto/generated/agent/v1");
+    let exec_source = generated_root.join("exec_pb.ts");
+    let shell_source = generated_root.join("shell_exec_pb.ts");
+    let read_source = generated_root.join("read_exec_pb.ts");
+
+    for source in [&exec_source, &shell_source, &read_source] {
+        println!("cargo:rerun-if-changed={}", source.display());
+    }
+
+    verify_local_exec_generated_source(
+        &exec_source,
+        &[
+            "Region SHA-256: fd81fa7df18ed8c8bcd43cadaad2e893a6901b64ebcfd2f95551a582a543722a",
+            "typeName = \"agent.v1.ExecClientControlMessage\"",
+            "typeName = \"agent.v1.ExecClientMessage\"",
+            "name: \"adopt_result\"",
+            "typeName = \"agent.v1.ExecServerMessage\"",
+            "name: \"adopt_args\"",
+        ],
+    );
+    verify_local_exec_generated_source(
+        &shell_source,
+        &[
+            "Region SHA-256: 7967a913a5fd54239f9de4f4294f8901b37b973393a73f559443bc04f418f5aa",
+            "typeName = \"agent.v1.ShellArgs\"",
+            "name: \"admin_command_denylist\"",
+            "typeName = \"agent.v1.ShellStream\"",
+            "name: \"sandbox_unsupported\"",
+        ],
+    );
+    verify_local_exec_generated_source(
+        &read_source,
+        &[
+            "Region SHA-256: 02569af827c77335892b43c8295700a6f03fc6dd3a920c329c157ae4e487a1f9",
+            "typeName = \"agent.v1.ReadArgs\"",
+            "typeName = \"agent.v1.ReadResult\"",
+            "name: \"invalid_file\"",
+        ],
+    );
+
+    let proto_root = manifest_dir.join("proto");
+    let proto_file = proto_root.join("agent/v1/local_exec.proto");
+    println!("cargo:rerun-if-changed={}", proto_file.display());
+
+    let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR"));
+    let descriptor_path = out_dir.join("agent_v1_local_exec_descriptor.bin");
+    let protoc = protoc_bin_vendored::protoc_bin_path().expect("vendored protoc");
+    let protoc_include = protoc_bin_vendored::include_path().expect("vendored protoc includes");
+
+    let mut config = prost_build::Config::new();
+    config
+        .protoc_executable(protoc)
+        .file_descriptor_set_path(&descriptor_path)
+        .compile_well_known_types()
+        .extern_path(".google.protobuf", "::pbjson_types");
+    config
+        .compile_protos(&[proto_file], &[proto_root, protoc_include])
+        .expect("generate canonical agent.v1 local-exec prost bindings");
+
+    let descriptor_set =
+        fs::read(&descriptor_path).expect("read canonical agent.v1 local-exec descriptor set");
+    let mut json = pbjson_build::Builder::new();
+    json.register_descriptors(&descriptor_set)
+        .expect("register canonical agent.v1 local-exec descriptors");
+    json.ignore_unknown_fields();
+    json.build(&[".agent.v1"])
+        .expect("generate protobuf-JSON serde for canonical agent.v1 local-exec bindings");
+}
+
 fn main() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR"));
     let proto_dir = manifest_dir.join("../packages/proto/generated/agent/v1");
@@ -973,4 +1056,5 @@ fn main() {
         .expect("write conversation blob GC metadata");
 
     generate_cloud_agent_trace_schema(&manifest_dir);
+    generate_agent_v1_local_exec_bindings(&manifest_dir);
 }

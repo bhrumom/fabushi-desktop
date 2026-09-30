@@ -3,8 +3,8 @@ use std::sync::Arc;
 use serde_json::Value;
 
 use super::agent_v1_exec_wire::{
-    ExecClientControlMessage, ExecClientMessage, ExecServerMessage,
-    exec_client_control_message, exec_client_message, shell_stream,
+    ExecClientControlMessage, ExecClientMessage, ExecServerMessage, ReadArgs, ShellArgs,
+    exec_client_control_message, exec_client_message, exec_server_message, shell_stream,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -69,7 +69,8 @@ pub struct ProductionLocalExecCodec;
 
 impl ProductionLocalExecCodec {
     pub fn decode_client(&self, json: Value) -> Result<ProductionExecClientMessage, String> {
-        let message = ExecClientMessage::from_json_ignoring_unknown_fields(&json)?;
+        let message: ExecClientMessage =
+            serde_json::from_value(json).map_err(|error| error.to_string())?;
         let payload = match message.message.as_ref() {
             Some(exec_client_message::Message::ShellStream(stream)) => {
                 let event = match stream.event.as_ref() {
@@ -101,17 +102,19 @@ impl ProductionLocalExecCodec {
                 ProductionExecClientPayload::ShellStream(event)
             }
             Some(exec_client_message::Message::ReadResult(result)) => {
-                ProductionExecClientPayload::ReadResult(result.to_json())
+                ProductionExecClientPayload::ReadResult(
+                    serde_json::to_value(result).map_err(|error| error.to_string())?,
+                )
             }
-            None => ProductionExecClientPayload::Other,
+            Some(_) | None => ProductionExecClientPayload::Other,
         };
         Ok(ProductionExecClientMessage { message, payload })
     }
 
     pub fn decode_control(&self, json: &Value) -> Result<GatewayExecControl, String> {
-        let control =
-            ExecClientControlMessage::from_json_ignoring_unknown_fields(json)?.message;
-        Ok(match control {
+        let control: ExecClientControlMessage =
+            serde_json::from_value(json.clone()).map_err(|error| error.to_string())?;
+        Ok(match control.message {
             Some(exec_client_control_message::Message::Throw(value)) => {
                 GatewayExecControl::Throw {
                     error: value.error,
@@ -134,7 +137,20 @@ impl ProductionLocalExecCodec {
         working_directory: &str,
         tool_call_id: &str,
     ) -> Value {
-        ExecServerMessage::shell_stream(id, command, working_directory, tool_call_id).to_json()
+        let message = ExecServerMessage {
+            id,
+            exec_id: String::new(),
+            message: Some(exec_server_message::Message::ShellStreamArgs(ShellArgs {
+                command: command.to_string(),
+                working_directory: working_directory.to_string(),
+                tool_call_id: tool_call_id.to_string(),
+                ..Default::default()
+            })),
+            span_context: None,
+            accept_hook_additional_contexts: None,
+        };
+        serde_json::to_value(message)
+            .expect("generated agent.v1 ExecServerMessage must serialize to protobuf JSON")
     }
 
     pub fn read_server_message(
@@ -146,7 +162,21 @@ impl ProductionLocalExecCodec {
         limit: Option<u32>,
         encoding_hint: Option<&str>,
     ) -> Value {
-        ExecServerMessage::read(id, path, tool_call_id, offset, limit, encoding_hint).to_json()
+        let message = ExecServerMessage {
+            id,
+            exec_id: String::new(),
+            message: Some(exec_server_message::Message::ReadArgs(ReadArgs {
+                path: path.to_string(),
+                tool_call_id: tool_call_id.to_string(),
+                offset,
+                limit,
+                encoding_hint: encoding_hint.map(str::to_string),
+            })),
+            span_context: None,
+            accept_hook_additional_contexts: None,
+        };
+        serde_json::to_value(message)
+            .expect("generated agent.v1 ExecServerMessage must serialize to protobuf JSON")
     }
 
     pub fn create_remote_accessor<M>(&self, manager: Arc<M>) -> RemoteResourceAccessor<M> {
