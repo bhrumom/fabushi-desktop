@@ -1,5 +1,5 @@
 use std::fs;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
@@ -284,5 +284,44 @@ fn pre_minted_ack_tokens_are_reusable_only_by_their_own_agent() {
         .expect("wrong agent token"));
     assert!(ack.retire_ack_run_token("agent-a", Some(&token)));
 
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn ack_owner_reports_frozen_created_coalesced_redrive_fulfilled_and_lost_outcomes() {
+    let root = temp_root("telemetry");
+    let ack = AckObligations::new(&root);
+    let reports = Arc::new(Mutex::new(Vec::new()));
+    let captured = Arc::clone(&reports);
+    ack.set_telemetry_reporter(Some(Arc::new(move |report| captured.lock().unwrap().push(report.clone()))));
+    ack.record_send("agent-a", 10.0).expect("created");
+    ack.record_send("agent-a", 20.0).expect("coalesced");
+    let ready = ack.prepare_redrive_with_telemetry("agent-a", true, AckRedriveTrigger::Idle, 30.0).expect("redrive");
+    assert!(matches!(ready, mahayana_host_runtime::extensions::transcript::ack_obligations::AckRedrivePreparation::Ready(_)));
+    let token = ack.mint_ack_run_token("agent-a").expect("token").expect("pending ack token");
+    assert!(ack.fulfill_ack_obligation("agent-a", &token).expect("fulfilled"));
+    ack.record_send("deleted", 40.0).expect("deleted created");
+    let lost = ack.prepare_redrive_with_telemetry("deleted", false, AckRedriveTrigger::Boot, 55.0).expect("lost");
+    assert!(matches!(lost, mahayana_host_runtime::extensions::transcript::ack_obligations::AckRedrivePreparation::LostAgentDeleted(_)));
+    let reports = reports.lock().unwrap();
+    let agent_a = reports.iter().filter(|report| report.conversation_id == "agent-a").collect::<Vec<_>>();
+    assert_eq!(agent_a.len(), 4);
+    assert_eq!(agent_a[0].outcome, "created");
+    assert_eq!(agent_a[0].age_ms, Some(0.0));
+    assert_eq!(agent_a[0].coalesced_count, Some(1));
+    assert_eq!(agent_a[1].outcome, "coalesced");
+    assert_eq!(agent_a[1].age_ms, Some(10.0));
+    assert_eq!(agent_a[1].coalesced_count, Some(2));
+    assert_eq!(agent_a[2].outcome, "redrive");
+    assert_eq!(agent_a[2].reason.as_deref(), Some("idle"));
+    assert_eq!(agent_a[2].redrive_attempts, Some(1));
+    assert_eq!(agent_a[3].outcome, "fulfilled");
+    assert_eq!(agent_a[3].coalesced_count, Some(2));
+    assert_eq!(agent_a[3].redrive_attempts, Some(1));
+    assert!(agent_a[3].time_to_first_visible_ack_ms.is_some());
+    let deleted = reports.iter().find(|report| report.conversation_id == "deleted" && report.outcome == "lost").expect("agent-deleted loss telemetry");
+    assert_eq!(deleted.reason.as_deref(), Some("agent_deleted"));
+    assert_eq!(deleted.age_ms, Some(15.0));
     let _ = fs::remove_dir_all(root);
 }

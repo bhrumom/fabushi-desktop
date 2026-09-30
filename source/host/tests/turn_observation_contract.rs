@@ -175,3 +175,24 @@ fn observed_bridge_wraps_success_failure_and_await_lifecycle() {
     assert_eq!(await_events[0]["blockUntilMs"], 123);
     assert_eq!(await_events[0]["outcome"], "completed");
 }
+
+
+#[test]
+fn send_dispatch_handler_receives_the_sanitized_shipping_payload() {
+    let dispatched = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&dispatched);
+    let mut observation = TurnObservation::new("agent-dispatch", None);
+    observation.set_send_dispatch_handler(Arc::new(move |event| {
+        sink.lock().unwrap().push(event);
+    }));
+    observation.observe_send_dispatch(100.0, 115.4, Some(1_000.0), 1_025.2, false, "model-a");
+    let dispatched = dispatched.lock().unwrap();
+    assert_eq!(dispatched.len(), 1);
+    assert_eq!(dispatched[0]["type"], "send-dispatch");
+    assert_eq!(dispatched[0]["agentId"], "agent-dispatch");
+    assert_eq!(dispatched[0]["hostDispatchMs"], 15);
+    assert_eq!(dispatched[0]["dispatchMs"], 25.0);
+    assert_eq!(dispatched[0]["skew"], false);
+    assert_eq!(dispatched[0]["isFork"], false);
+    assert_eq!(dispatched[0]["modelId"], "model-a");
+}

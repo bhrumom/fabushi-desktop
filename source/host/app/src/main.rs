@@ -184,7 +184,7 @@ use mahayana_host_runtime::extensions::telemetry::automation_fire_telemetry::{
 };
 use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
     PendingWakeReport as TelemetryPendingWakeReport, QueueAcceptedReport, QueueDequeuedReport,
-    QueueWatchdogReport,
+    QueueWatchdogReport, SendDispatchReport,
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
     HostBundleIdentity, HostStructuredLogTelemetry, HostTelemetryApi, MessageSentReport,
@@ -2566,7 +2566,9 @@ fn start_ack_redrive_worker(
                     let agent_exists = session_workers
                         .session_db_path(&agent_id)
                         .is_ok_and(|path| path.is_file());
-                    match ack_obligations.prepare_redrive(&agent_id, agent_exists) {
+                    match ack_obligations.prepare_redrive_with_telemetry(
+                        &agent_id, agent_exists, trigger, now_ms as f64,
+                    ) {
                         Ok(AckRedrivePreparation::Missing) => {}
                         Ok(AckRedrivePreparation::LostAgentDeleted(lost)) => {
                             events.publish(serde_json::json!({
@@ -3932,6 +3934,14 @@ fn start_routed_provider_task(
                     }));
                 })),
             );
+            let send_dispatch_logs = worker_telemetry_logs.clone();
+            let send_dispatch_conversation_id = agent_id.clone();
+            let send_dispatch_trace_id = worker_gateway_context
+                .as_ref()
+                .and_then(|context| context.trace_id.clone());
+            let send_dispatch_span_id = worker_gateway_context
+                .as_ref()
+                .and_then(|context| context.span_id.clone());
             let await_telemetry_logs = worker_telemetry_logs.clone();
             let await_conversation_id = agent_id.clone();
             let ttft_telemetry_logs = worker_telemetry_logs.clone();
@@ -3949,6 +3959,23 @@ fn start_routed_provider_task(
                 .map(|context| context.dispatch_started);
             let runner_started_at_ms = started_at_ms();
             if let Ok(mut observation) = observation.lock() {
+                observation.set_send_dispatch_handler(Arc::new(move |event| {
+                    let report = SendDispatchReport {
+                        conversation_id: send_dispatch_conversation_id.clone(),
+                        dispatch_ms: event.get("dispatchMs").and_then(serde_json::Value::as_f64),
+                        host_dispatch_ms: event.get("hostDispatchMs").and_then(serde_json::Value::as_f64).unwrap_or_default(),
+                        skew: event.get("skew").and_then(serde_json::Value::as_bool).unwrap_or(false).to_string(),
+                        skew_reason: event.get("skewReason").and_then(serde_json::Value::as_str).map(str::to_string),
+                        skew_bucket: event.get("skewBucket").and_then(serde_json::Value::as_str).map(str::to_string),
+                        is_fork: event.get("isFork").and_then(serde_json::Value::as_bool).unwrap_or(false),
+                        model_id: event.get("modelId").and_then(serde_json::Value::as_str).map(str::to_string),
+                        trace_id: send_dispatch_trace_id.clone(),
+                        span_id: send_dispatch_span_id.clone(),
+                    };
+                    if let Err(error) = send_dispatch_logs.report_send_dispatch(&report) {
+                        eprintln!("mahayana-host send_dispatch_telemetry_failed agent={} error={error}", send_dispatch_conversation_id);
+                    }
+                }));
                 observation.set_first_token_handler(Arc::new(move |event| {
                     let Some(chunk_type) = event
                         .get("chunkType")
@@ -7474,6 +7501,12 @@ fn main() {
         permission_surface_owner.can_ask_local_tool_permission(agent_id)
     }));
     let ack_obligations = transcript_manager.ack_obligations();
+    {
+        let ack_logs = host_telemetry.logs.clone();
+        ack_obligations.set_telemetry_reporter(Some(Arc::new(move |report| {
+            let _ = ack_logs.report_ack_obligation(report);
+        })));
+    }
     let cross_user_deletion_slot =
         Arc::new(Mutex::new(Weak::<ProductionCrossUserRuntime>::new()));
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {

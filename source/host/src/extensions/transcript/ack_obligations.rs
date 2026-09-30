@@ -8,10 +8,14 @@ use uuid::Uuid;
 use super::sand_ack_obligation_store::{
     AckObligation, RecordSendOutcome, SandAckObligationStore,
 };
+use crate::extensions::telemetry::queue_telemetry_mappers::AckObligationReport;
 use crate::extensions::telemetry::turn_empty_delivery_telemetry::TurnEmptyDeliveryReport;
 
 pub const MAX_ACK_REDRIVES: u64 = 3;
 pub const ACK_REDRIVE_IDLE_DELAY_MS: u64 = 5_000;
+
+pub type AckObligationTelemetryReporter =
+    Arc<dyn Fn(&AckObligationReport) + Send + Sync + 'static>;
 pub const RUNNER_PREPARE_ACK_OBLIGATION_GATEWAY_METHOD: &str =
     "runner.prepareAckObligation";
 pub const RUNNER_ROLLBACK_ACK_OBLIGATION_GATEWAY_METHOD: &str =
@@ -133,6 +137,20 @@ struct ReservationState {
 /// surrounding send path exits before the ordinary record_send call sticks, Drop
 /// recreates the obligation best-effort. An already-recorded obligation is never
 /// coalesced a second time by the guard.
+fn frozen_count(value: f64) -> i64 {
+    if !value.is_finite() {
+        return 0;
+    }
+    value.max(0.0).round().min(i64::MAX as f64) as i64
+}
+
+fn wall_clock_ms() -> f64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_secs_f64() * 1_000.0)
+        .unwrap_or_default()
+}
+
 pub struct AckSendGuard {
     obligations: Arc<AckObligations>,
     agent_id: String,
@@ -165,6 +183,7 @@ pub struct AckObligations {
     store: SandAckObligationStore,
     reservations: Mutex<HashMap<String, ReservationState>>,
     redrive_schedules: Mutex<HashMap<String, AckRedriveSchedule>>,
+    telemetry_reporter: Mutex<Option<AckObligationTelemetryReporter>>,
 }
 
 impl AckObligations {
@@ -173,11 +192,42 @@ impl AckObligations {
             store: SandAckObligationStore::new(root_dir),
             reservations: Mutex::new(HashMap::new()),
             redrive_schedules: Mutex::new(HashMap::new()),
+            telemetry_reporter: Mutex::new(None),
         }
     }
 
     pub fn store(&self) -> &SandAckObligationStore {
         &self.store
+    }
+
+    pub fn set_telemetry_reporter(&self, reporter: Option<AckObligationTelemetryReporter>) {
+        if let Ok(mut slot) = self.telemetry_reporter.lock() {
+            *slot = reporter;
+        }
+    }
+
+    fn report_telemetry(&self, report: AckObligationReport) {
+        let reporter = self
+            .telemetry_reporter
+            .lock()
+            .ok()
+            .and_then(|slot| slot.clone());
+        if let Some(reporter) = reporter {
+            reporter(&report);
+        }
+    }
+
+    fn report_recorded(&self, outcome: &RecordSendOutcome, at_ms: f64) {
+        self.report_telemetry(AckObligationReport {
+            conversation_id: outcome.obligation.agent_id.clone(),
+            outcome: if outcome.created { "created" } else { "coalesced" }.into(),
+            age_ms: Some((at_ms - outcome.obligation.created_at_ms).max(0.0)),
+            coalesced_count: Some(frozen_count(outcome.obligation.coalesced_count)),
+            redrive_attempts: None,
+            time_to_first_visible_ack_ms: None,
+            interrupt_to_replacement_ack_ms: None,
+            reason: None,
+        });
     }
 
     pub fn arm_send_guard(
@@ -200,7 +250,9 @@ impl AckObligations {
         at_ms: f64,
     ) -> io::Result<RecordSendOutcome> {
         self.clear_redrive_timer(agent_id);
-        self.store.record_send(agent_id, at_ms)
+        let outcome = self.store.record_send(agent_id, at_ms)?;
+        self.report_recorded(&outcome, at_ms);
+        Ok(outcome)
     }
 
     pub fn mint_ack_run_token(
@@ -232,10 +284,12 @@ impl AckObligations {
     ) -> io::Result<AckReservation> {
         self.clear_redrive_timer(agent_id);
         let previous = self.store.get(agent_id);
+        let outcome = self.store.record_send(agent_id, at_ms)?;
+        self.report_recorded(&outcome, at_ms);
         let RecordSendOutcome {
             obligation,
             created,
-        } = self.store.record_send(agent_id, at_ms)?;
+        } = outcome;
         let ack_token = Uuid::new_v4().to_string();
         self.reservations
             .lock()
@@ -259,9 +313,25 @@ impl AckObligations {
         if !self.token_matches_agent(agent_id, ack_token)? {
             return Ok(false);
         }
+        let obligation = self.store.get(agent_id);
         let cleared = self.store.clear(agent_id)?;
         if cleared {
             self.clear_redrive_timer(agent_id);
+            if let Some(obligation) = obligation {
+                let now_ms = wall_clock_ms();
+                self.report_telemetry(AckObligationReport {
+                    conversation_id: agent_id.to_string(),
+                    outcome: "fulfilled".into(),
+                    age_ms: Some((now_ms - obligation.created_at_ms).max(0.0)),
+                    coalesced_count: Some(frozen_count(obligation.coalesced_count)),
+                    redrive_attempts: Some(frozen_count(obligation.redrive_attempts)),
+                    time_to_first_visible_ack_ms: Some((now_ms - obligation.created_at_ms).max(0.0)),
+                    interrupt_to_replacement_ack_ms: obligation
+                        .last_interrupt_at_ms
+                        .map(|interrupted| (now_ms - interrupted).max(0.0)),
+                    reason: None,
+                });
+            }
         }
         Ok(cleared)
     }
@@ -406,6 +476,51 @@ impl AckObligations {
         })
     }
 
+    pub fn prepare_redrive_with_telemetry(
+        &self,
+        agent_id: &str,
+        agent_exists: bool,
+        trigger: AckRedriveTrigger,
+        now_ms: f64,
+    ) -> io::Result<AckRedrivePreparation> {
+        let preparation = self.prepare_redrive(agent_id, agent_exists)?;
+        match &preparation {
+            AckRedrivePreparation::Ready(obligation) => {
+                self.report_telemetry(AckObligationReport {
+                    conversation_id: agent_id.to_string(),
+                    outcome: "redrive".into(),
+                    age_ms: Some((now_ms - obligation.created_at_ms).max(0.0)),
+                    coalesced_count: Some(frozen_count(obligation.coalesced_count)),
+                    redrive_attempts: Some(frozen_count(obligation.redrive_attempts)),
+                    time_to_first_visible_ack_ms: None,
+                    interrupt_to_replacement_ack_ms: None,
+                    reason: Some(trigger.as_str().into()),
+                });
+            }
+            AckRedrivePreparation::LostAgentDeleted(obligation) => {
+                self.report_lost(obligation, "agent_deleted", now_ms);
+            }
+            AckRedrivePreparation::LostMaxRedrives(obligation) => {
+                self.report_lost(obligation, "max_redrives", now_ms);
+            }
+            AckRedrivePreparation::Missing => {}
+        }
+        Ok(preparation)
+    }
+
+    fn report_lost(&self, obligation: &AckObligation, reason: &str, now_ms: f64) {
+        self.report_telemetry(AckObligationReport {
+            conversation_id: obligation.agent_id.clone(),
+            outcome: "lost".into(),
+            age_ms: Some((now_ms - obligation.created_at_ms).max(0.0)),
+            coalesced_count: Some(frozen_count(obligation.coalesced_count)),
+            redrive_attempts: Some(frozen_count(obligation.redrive_attempts)),
+            time_to_first_visible_ack_ms: None,
+            interrupt_to_replacement_ack_ms: None,
+            reason: Some(reason.into()),
+        });
+    }
+
     pub fn clear_lost(&self, agent_id: &str) -> io::Result<bool> {
         self.clear_redrive_timer(agent_id);
         self.store.clear(agent_id)
@@ -413,7 +528,13 @@ impl AckObligations {
 
     pub fn forget_agent(&self, agent_id: &str) -> io::Result<bool> {
         self.clear_redrive_timer(agent_id);
+        let obligation = self.store.get(agent_id);
         let cleared = self.store.clear(agent_id)?;
+        if cleared {
+            if let Some(obligation) = obligation.as_ref() {
+                self.report_lost(obligation, "agent_deleted", wall_clock_ms());
+            }
+        }
         let mut reservations = self
             .reservations
             .lock()

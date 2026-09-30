@@ -46,6 +46,7 @@ pub struct TurnObservation {
     event_sink: Option<TurnObservationEventSink>,
     turn_await_sink: Option<TurnObservationEventSink>,
     first_token_sink: Option<TurnObservationEventSink>,
+    send_dispatch_sink: Option<TurnObservationEventSink>,
     turn_started_at_ms: u64,
     last_tool: Option<String>,
     recent_activity: Vec<String>,
@@ -67,6 +68,7 @@ impl TurnObservation {
             event_sink,
             turn_await_sink: None,
             first_token_sink: None,
+            send_dispatch_sink: None,
             turn_started_at_ms: now_ms(),
             last_tool: None,
             recent_activity: Vec::new(),
@@ -251,6 +253,9 @@ impl TurnObservation {
                 }
             }
         }
+        if let Some(sink) = self.send_dispatch_sink.as_ref() {
+            sink(event.clone());
+        }
         self.emit(event);
     }
 
@@ -268,6 +273,10 @@ impl TurnObservation {
 
     pub fn set_first_token_handler(&mut self, handler: TurnObservationEventSink) {
         self.first_token_sink = Some(handler);
+    }
+
+    pub fn set_send_dispatch_handler(&mut self, handler: TurnObservationEventSink) {
+        self.send_dispatch_sink = Some(handler);
     }
 
     pub fn observe_communicate_tool_call(

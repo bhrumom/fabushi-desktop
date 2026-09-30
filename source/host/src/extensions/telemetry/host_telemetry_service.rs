@@ -76,9 +76,10 @@ use super::pressure_cpu_profiler::{
     PressureCpuProfiler, SandProfilerCaptureError, create_production_pressure_cpu_profiler,
 };
 use super::queue_telemetry_mappers::{
-    PendingWakeReport, QueueAcceptedReport, QueueDequeuedReport, QueueWatchdogReport,
-    pending_wake_telemetry, queue_accepted_telemetry, queue_dequeued_telemetry,
-    queue_watchdog_telemetry,
+    AckObligationReport, PendingWakeReport, QueueAcceptedReport, QueueDequeuedReport,
+    QueueWatchdogReport, SendDispatchReport, ack_obligation_telemetry, pending_wake_telemetry,
+    queue_accepted_telemetry, queue_dequeued_telemetry, queue_watchdog_telemetry,
+    send_dispatch_telemetry,
 };
 use super::revival_telemetry_mappers::{
     ShellRevivalReport, SubagentRevivalReport, shell_revival_telemetry, subagent_revival_telemetry,
@@ -506,6 +507,14 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_conversation_gc(&self, report: &ConversationGcReport) -> io::Result<()> {
         self.report_projection(&conversation_gc_telemetry(report))
+    }
+
+    pub fn report_send_dispatch(&self, report: &SendDispatchReport) -> io::Result<()> {
+        self.report_projection(&send_dispatch_telemetry(report))
+    }
+
+    pub fn report_ack_obligation(&self, report: &AckObligationReport) -> io::Result<()> {
+        self.report_projection(&ack_obligation_telemetry(report))
     }
 
     pub fn report_queue_accepted(&self, report: &QueueAcceptedReport) -> io::Result<()> {
