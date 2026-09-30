@@ -921,9 +921,13 @@ impl HostTelemetryService {
         self.analytics.attach_runtime(analytics_runtime);
         self.analytics.mark_active("host_startup");
 
+        let exposure_experiments: Arc<dyn ModelExperimentExposureExperiments> =
+            production.experiments.clone();
+        let exposure_analytics: Arc<dyn ModelExperimentExposureAnalytics> =
+            Arc::new(self.analytics.clone());
         let exposure = Arc::new(ModelExperimentExposureLatch::new(
-            Arc::clone(&production.experiments) as Arc<dyn ModelExperimentExposureExperiments>,
-            Arc::new(self.analytics.clone()) as Arc<dyn ModelExperimentExposureAnalytics>,
+            exposure_experiments,
+            exposure_analytics,
             std::env::vars().collect(),
         ));
         let inference_exposure = Arc::clone(&exposure);
