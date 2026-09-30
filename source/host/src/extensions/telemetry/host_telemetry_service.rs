@@ -58,6 +58,7 @@ use super::host_tracing::{HostTracing, init_production_host_tracing};
 use super::lifecycle_telemetry::box_infrastructure_telemetry;
 use super::conversation_gc_telemetry::{ConversationGcReport, conversation_gc_telemetry};
 use super::host_diagnostic_telemetry::{HostDiagnostic, host_diagnostic_telemetry};
+use super::disk_pressure_telemetry::{DiskPressureReport, disk_pressure_telemetry};
 use super::session_diagnostic_telemetry::{SessionTelemetryDiagnostic, session_diagnostic_telemetry};
 use super::local_exec_telemetry::{
     LocalExecFailedReport, LocalExecProviderReport, LocalExecRefusedReport,
@@ -473,6 +474,12 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_pending_wake(&self, report: &PendingWakeReport) -> io::Result<()> {
         self.report_projection(&pending_wake_telemetry(report))
+    }
+
+    pub fn report_box_disk_pressure(&self, report: &DiskPressureReport) -> io::Result<()> {
+        let mut projection = disk_pressure_telemetry(report);
+        projection.event = Some("sand.box.disk_pressure");
+        self.report_projection(&projection)
     }
 
     pub fn report_host_diagnostic(&self, report: &HostDiagnostic) -> io::Result<()> {

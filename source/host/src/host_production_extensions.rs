@@ -122,6 +122,7 @@ use crate::extensions::telemetry::extension::{
 use crate::extensions::telemetry::memory_synthesis_telemetry::MemorySynthesisReport;
 use crate::extensions::telemetry::conversation_gc_telemetry::ConversationGcReport;
 use crate::extensions::telemetry::host_diagnostic_telemetry::HostDiagnostic;
+use crate::extensions::telemetry::disk_pressure_telemetry::DiskPressureReport;
 use crate::extensions::telemetry::session_diagnostic_telemetry::{
     SessionDiagnosticFamily, SessionTelemetryDiagnostic,
 };
@@ -236,6 +237,7 @@ fn diagnostic_string(
 trait DiagnosticValues {
     fn string_value(&self, name: &str) -> Option<String>;
     fn integer_value(&self, name: &str) -> Option<i64>;
+    fn float_value(&self, name: &str) -> Option<f64>;
 }
 
 impl DiagnosticValues for serde_json::Map<String, serde_json::Value> {
@@ -250,6 +252,10 @@ impl DiagnosticValues for serde_json::Map<String, serde_json::Value> {
 
     fn integer_value(&self, name: &str) -> Option<i64> {
         self.get(name).and_then(serde_json::Value::as_i64)
+    }
+
+    fn float_value(&self, name: &str) -> Option<f64> {
+        self.get(name).and_then(serde_json::Value::as_f64)
     }
 }
 
@@ -266,6 +272,27 @@ impl DiagnosticValues for BTreeMap<String, serde_json::Value> {
     fn integer_value(&self, name: &str) -> Option<i64> {
         self.get(name).and_then(serde_json::Value::as_i64)
     }
+
+    fn float_value(&self, name: &str) -> Option<f64> {
+        self.get(name).and_then(serde_json::Value::as_f64)
+}
+}
+
+pub fn project_box_disk_pressure(report: &DomainHostDiagnostic) -> Option<DiskPressureReport> {
+    if report.kind != "disk_pressure" {
+        return None;
+    }
+    Some(DiskPressureReport {
+        level: diagnostic_string(&report.fields, &["level"] )?,
+        volume: diagnostic_string(&report.fields, &["volume"] )?,
+        trigger: diagnostic_string(&report.fields, &["trigger"] )?,
+        total_bytes: report.fields.float_value("totalBytes")
+            .or_else(|| report.fields.float_value("total_bytes"))?,
+        available_bytes: report.fields.float_value("availableBytes")
+            .or_else(|| report.fields.float_value("available_bytes"))?,
+        used_percent: report.fields.float_value("usedPercent")
+            .or_else(|| report.fields.float_value("used_percent"))?,
+    })
 }
 
 pub fn project_host_diagnostic(report: &DomainHostDiagnostic) -> HostDiagnostic {
@@ -332,7 +359,11 @@ pub fn project_conversation_gc(report: &DomainConversationGcReport) -> Conversat
 fn pin_structured_log_domain_reporters(logs: crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry) {
     let host_logs = logs.clone();
     pin_host_diagnostics_reporter(Some(Arc::new(move |report| {
-        let _ = host_logs.report_host_diagnostic(&project_host_diagnostic(report));
+        if let Some(disk_pressure) = project_box_disk_pressure(report) {
+            let _ = host_logs.report_box_disk_pressure(&disk_pressure);
+        } else {
+            let _ = host_logs.report_host_diagnostic(&project_host_diagnostic(report));
+        }
     })));
     let session_logs = logs.clone();
     pin_session_diagnostics_reporter(Some(Arc::new(move |report| {

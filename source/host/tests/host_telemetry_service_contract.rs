@@ -12,6 +12,7 @@ use mahayana_host_runtime::extensions::telemetry::extension::{
     DESKTOP_HEALTH_EVENT, DESKTOP_HEALTH_HEARTBEAT_MS, DesktopHealthForwardState,
     TELEMETRY_EXTENSION_ID, forward_desktop_health_file_to_logs,
 };
+use mahayana_host_runtime::extensions::telemetry::disk_pressure_telemetry::DiskPressureReport;
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
     HostTelemetryService, PersistedHostTelemetryRecord,
 };
@@ -211,6 +212,14 @@ fn frozen_facade_methods_route_mapper_semantics_through_single_host_owner() {
         reason: Some("agent_gone".into()),
         is_quiet_origin: Some(true),
     }).expect("pending wake facade");
+    service.logs.report_box_disk_pressure(&DiskPressureReport {
+        level: "hard".into(),
+        volume: "/".into(),
+        trigger: "heartbeat".into(),
+        total_bytes: 1000.0,
+        available_bytes: 100.0,
+        used_percent: 90.04,
+    }).expect("disk pressure facade");
     service.logs.report_queue_accepted(&QueueAcceptedReport {
         conversation_id: "agent-facade".into(),
         lane: "user".into(),
@@ -258,7 +267,7 @@ fn frozen_facade_methods_route_mapper_semantics_through_single_host_owner() {
     let records = text.lines().map(|line| {
         serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("facade record")
     }).collect::<Vec<_>>();
-    assert_eq!(records.len(), 14);
+    assert_eq!(records.len(), 15);
     assert_eq!(records.iter().map(|record| record.event.as_str()).collect::<Vec<_>>(), vec![
         "sand.auto_review.approval",
         "sand.automation.fire_dropped",
@@ -270,6 +279,7 @@ fn frozen_facade_methods_route_mapper_semantics_through_single_host_owner() {
         "sand.subagent.revival",
         "sand.shell.revival",
         "sand.pending_wake",
+        "sand.box.disk_pressure",
         "sand.queue.accepted",
         "sand.queue.dequeued",
         "sand.queue.watchdog",
@@ -283,10 +293,13 @@ fn frozen_facade_methods_route_mapper_semantics_through_single_host_owner() {
     assert_eq!(records[8].payload["metadata"]["quiet_origin"], "true");
     assert_eq!(records[9].payload["event"], "sand.pending_wake");
     assert_eq!(records[9].payload["metadata"]["age_ms"], "11");
-    assert_eq!(records[11].payload["metadata"]["queue_wait_ms"], "6");
-    assert_eq!(records[12].payload["metadata"]["active_runtime_ms"], "100");
-    assert_eq!(records[13].payload["metadata"]["duration_ms"], "201");
-    assert_eq!(records[13].payload["metadata"]["ack_outstanding"], "true");
+    assert_eq!(records[10].payload["event"], "sand.box.disk_pressure");
+    assert_eq!(records[10].payload["level"], "error");
+    assert_eq!(records[10].payload["metadata"]["used_percent"], "90.0");
+    assert_eq!(records[12].payload["metadata"]["queue_wait_ms"], "6");
+    assert_eq!(records[13].payload["metadata"]["active_runtime_ms"], "100");
+    assert_eq!(records[14].payload["metadata"]["duration_ms"], "201");
+    assert_eq!(records[14].payload["metadata"]["ack_outstanding"], "true");
 
     let _ = fs::remove_dir_all(root);
 }

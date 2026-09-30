@@ -2383,3 +2383,10 @@ This slice does **not** make cloud reconciliation final. `sand-automation-cloud-
 - Adapter contracts verify representative Host diagnostic field aliases, all known Session-family projection machinery including store-db salvage metadata, and Conversation-GC skipped/unresolved-ref semantics.
 - The authenticated memory gate-disabled path was also tightened to call `report_memory_synthesis` directly instead of bypassing the typed facade with generic projection.
 - These repairs do not change the parent manifest status yet. Structured-log remains `existing-needs-parity` until the remaining frozen facade entries, including dedicated disk-pressure ownership and the eight still-nonfinal turn-telemetry delegates, have production evidence and exact-HEAD CI.
+
+
+### 2026-09-30 dedicated disk-pressure structured-log repair
+
+- `reportBoxDiskPressure` cannot be closed by the generic HostDiagnostic path because frozen Grok applies `diskPressureTelemetry` and then explicitly enqueues `sand.box.disk_pressure`.
+- The existing ForeverBox disk-pressure producer already supplies level/volume/trigger/total/available/used-percent fields. The unique Host diagnostic reporter adapter now recognizes that domain kind and invokes a typed `report_box_disk_pressure` facade; all other Host diagnostics continue through `report_host_diagnostic`.
+- The facade restores the fixed frozen event name and the existing mapper retains pressure-level and numeric formatting. Adapter and JSONL behavior contracts cover this path.

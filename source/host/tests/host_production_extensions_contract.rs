@@ -10,8 +10,8 @@ use mahayana_host_runtime::extensions::inference::extension::{
 use mahayana_host_runtime::extensions::inference::production::ProductionInferenceExtension;
 use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, ProductionBrowserUaLog,
-    ProductionHostExtensions, project_conversation_gc, project_host_diagnostic,
-    project_session_diagnostic,
+    ProductionHostExtensions, project_box_disk_pressure, project_conversation_gc,
+    project_host_diagnostic, project_session_diagnostic,
 };
 
 const PRODUCTION_OWNER: &str = include_str!("../src/host_production_extensions.rs");
@@ -260,6 +260,20 @@ fn structured_log_domain_reporter_adapters_preserve_frozen_fields() {
     assert_eq!(host.stage.as_deref(), Some("commit"));
     assert_eq!(host.agent_id.as_deref(), Some("agent-1"));
     assert_eq!(host.error_class.as_deref(), Some("disk"));
+
+    let disk = project_box_disk_pressure(&mahayana_host_runtime::host_diagnostics::HostDiagnostic {
+        kind: "disk_pressure".into(),
+        fields: Map::from_iter([
+            ("level".into(), json!("hard")),
+            ("volume".into(), json!("/")),
+            ("trigger".into(), json!("heartbeat")),
+            ("totalBytes".into(), json!(1000.0)),
+            ("availableBytes".into(), json!(100.0)),
+            ("usedPercent".into(), json!(90.04)),
+        ]),
+    }).expect("disk pressure projection");
+    assert_eq!(disk.level, "hard");
+    assert_eq!(disk.used_percent, 90.04);
 
     let session = project_session_diagnostic(
         &mahayana_host_runtime::extensions::session::session_diagnostics::SessionDiagnostic {
