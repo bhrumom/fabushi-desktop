@@ -308,6 +308,48 @@ fn frozen_facade_methods_route_mapper_semantics_through_single_host_owner() {
 }
 
 #[test]
+fn agent_error_facade_preserves_frozen_summary_detail_and_truncation() {
+    use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::AgentErrorReport;
+    use mahayana_host_runtime::extensions::telemetry::sand_error_tags::SandErrorValue;
+    use mahayana_host_runtime::ports::telemetry::SandErrorDetail;
+
+    let root = temp_root();
+    let service = HostTelemetryService::open(root.join("agent-error-events.jsonl"))
+        .expect("telemetry service");
+    let long_message = "m".repeat(1_100);
+    let long_stack = "s".repeat(4_200);
+    service.logs.report_agent_error(&AgentErrorReport {
+        source: "ack_redrive".into(),
+        conversation_id: "agent-error".into(),
+        request_id: Some("request-error".into()),
+        error: SandErrorValue::new("SAND-E0402"),
+        detail: Some(SandErrorDetail {
+            message: long_message,
+            stack: Some(long_stack),
+        }),
+    }).expect("agent error facade");
+
+    let text = fs::read_to_string(service.records_path()).expect("agent error jsonl");
+    let records = text.lines().map(|line| {
+        serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("agent error record")
+    }).collect::<Vec<_>>();
+    assert_eq!(records.len(), 2, "summary + detail must both ship through the Host owner");
+    assert_eq!(records[0].event, "sand.agent.error");
+    assert_eq!(records[0].payload["level"], "error");
+    assert_eq!(records[0].payload["metadata"]["source"], "ack_redrive");
+    assert_eq!(records[0].payload["metadata"]["conversation_id"], "agent-error");
+    assert_eq!(records[0].payload["metadata"]["request_id"], "request-error");
+    assert_eq!(records[0].payload["metadata"]["error_code"], "SAND-E0402");
+    assert_eq!(records[1].event, "sand.agent.error.detail");
+    assert_eq!(records[1].payload["level"], "error");
+    assert_eq!(records[1].payload["metadata"]["error_code"], "SAND-E0402");
+    assert_eq!(records[1].payload["metadata"]["error_message"].as_str().unwrap().chars().count(), 1_024);
+    assert_eq!(records[1].payload["metadata"]["error_stack"].as_str().unwrap().chars().count(), 4_096);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn desktop_health_file_forwards_through_shipping_structured_log_with_frozen_heartbeat() {
     let root = temp_root();
     fs::create_dir_all(&root).expect("telemetry root");
