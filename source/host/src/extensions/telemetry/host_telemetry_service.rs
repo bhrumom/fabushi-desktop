@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
@@ -15,6 +16,9 @@ use super::analytics_service::{
 };
 use super::box_log_ship_telemetry::{BoxLogShipReport, box_log_ship_telemetry};
 use super::box_log_shipper::BoxTelemetryRecord;
+use super::experiments_diagnostic_telemetry::{
+    ExperimentsDiagnostic, experiments_diagnostic_telemetry,
+};
 use super::lifecycle_telemetry::box_infrastructure_telemetry;
 use super::structured_log_telemetry::{BOX_HELP_EVENT, box_help_telemetry};
 
@@ -56,6 +60,13 @@ impl JsonlHostTelemetrySink {
         file.flush()
     }
 
+    fn flush(&self) -> io::Result<()> {
+        self.file
+            .lock()
+            .map_err(|_| io::Error::other("Host telemetry sink mutex poisoned"))?
+            .flush()
+    }
+
     fn path(&self) -> &Path {
         &self.path
     }
@@ -68,6 +79,10 @@ pub struct HostStructuredLogTelemetry {
 }
 
 impl HostStructuredLogTelemetry {
+    pub fn flush(&self) -> io::Result<()> {
+        self.sink.flush()
+    }
+
     pub fn report_projection(&self, projection: &HostTelemetryProjection) -> io::Result<()> {
         let mut metadata = self.identity_tags.as_ref().clone();
         metadata.extend(projection.metadata.clone());
@@ -159,6 +174,13 @@ impl HostStructuredLogTelemetry {
         })
     }
 
+    pub fn report_experiments_diagnostic(
+        &self,
+        diagnostic: &ExperimentsDiagnostic,
+    ) -> io::Result<()> {
+        self.report_projection(&experiments_diagnostic_telemetry(diagnostic))
+    }
+
     pub fn report_automation_shadow_prune(&self, report: &Value) -> io::Result<()> {
         self.sink.emit(&PersistedHostTelemetryRecord {
             channel: "structured_log".into(),
@@ -189,6 +211,13 @@ pub struct HostProductAnalytics {
 impl HostProductAnalytics {
     pub fn attach_runtime(&self, runtime: Arc<ProductionAnalyticsRuntime>) {
         *self.runtime.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(runtime);
+    }
+
+    pub fn detach_runtime(&self) {
+        self.runtime
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take();
     }
 
     pub fn mark_active(&self, reason: &str) {
@@ -286,6 +315,8 @@ pub struct HostTelemetryService {
     pub logs: HostStructuredLogTelemetry,
     pub analytics: HostProductAnalytics,
     sink: Arc<JsonlHostTelemetrySink>,
+    started: AtomicBool,
+    disposed: AtomicBool,
 }
 
 impl HostTelemetryService {
@@ -313,7 +344,35 @@ impl HostTelemetryService {
                 runtime: Arc::new(Mutex::new(None)),
             },
             sink,
+            started: AtomicBool::new(false),
+            disposed: AtomicBool::new(false),
         })
+    }
+
+    pub fn start(&self) -> io::Result<()> {
+        if self.disposed.load(Ordering::Acquire) {
+            return Err(io::Error::other("Host telemetry service is already disposed"));
+        }
+        if !self.started.swap(true, Ordering::AcqRel) {
+            self.sink.flush()?;
+        }
+        Ok(())
+    }
+
+    pub fn dispose(&self) -> io::Result<()> {
+        if self.disposed.swap(true, Ordering::AcqRel) {
+            return Ok(());
+        }
+        self.analytics.detach_runtime();
+        self.sink.flush()
+    }
+
+    pub fn is_started(&self) -> bool {
+        self.started.load(Ordering::Acquire)
+    }
+
+    pub fn is_disposed(&self) -> bool {
+        self.disposed.load(Ordering::Acquire)
     }
 
     pub fn records_path(&self) -> &Path {
