@@ -20,6 +20,8 @@ use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
 const PRODUCTION_OWNER: &str = include_str!("../src/host_production_extensions.rs");
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 const TELEMETRY_EXTENSION: &str = include_str!("../src/extensions/telemetry/extension.rs");
+const HOST_TELEMETRY_SERVICE: &str =
+    include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
 
 fn temp_root() -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -111,28 +113,58 @@ fn shipping_owner_starts_telemetry_after_auth_experiments_and_inference() {
 }
 
 #[test]
-fn telemetry_extension_owns_start_dispose_polling_diagnostics_and_subscription_cleanup() {
+fn host_telemetry_service_owns_frozen_runtime_lifecycle_and_extension_stays_thin() {
     for needle in [
-        "service.start()?",
-        "StructuredLogFlushPolling::start(service.logs.clone())",
-        "HostCrashMarkerForwarder::start(service.logs.clone())",
-        "ProductionAnalyticsRuntime::start(",
+        "subscribe_to_renewal(",
+        "get_last_renewal_event()",
+        "ModelExperimentExposureLatch::new(",
         "inference.on_model_experiment_applied(",
+        "StructuredLogFlushPolling::start(",
+        "HostCrashMarkerForwarder::start(self.logs.clone())",
+        "DesktopHealthForwarder::start(self.logs.clone())",
+        "EventLoopTelemetryRuntime::start(",
+        "profiler.on_pressure(",
+        "profiler.on_tick(",
+        "ProductionAnalyticsRuntime::start(",
         "pin_experiments_diagnostics_reporter(Some(",
         "pin_experiments_diagnostics_reporter(None)",
-        "fn flush_for_fatal_exit(&self)",
+        "set_host_bundle_identity(&self",
+        "shipper.start()",
+        "report_message_sent(&self",
+        "create_host_lifecycle_progress(",
+        "forward_console(&self",
+        "tracing.flush()",
+        "tracing.dispose()",
         "recv_timeout(FATAL_TELEMETRY_FLUSH_TIMEOUT)",
         "stop_rx.recv_timeout(HOST_CRASH_MARKER_FORWARD_INTERVAL)",
         "shipper.stop_polling()",
         "shipper.checkpoint_offsets()",
-        "self.service.logs.flush()",
-        "self.service.dispose()",
+        "self.analytics.detach_runtime()",
     ] {
         assert!(
-            TELEMETRY_EXTENSION.contains(needle),
-            "Telemetry lifecycle must own frozen behavior: {needle}"
+            HOST_TELEMETRY_SERVICE.contains(needle),
+            "HostTelemetryService must own frozen behavior: {needle}"
         );
     }
+
+    for forbidden in [
+        "struct HostTelemetryLifecycle",
+        "struct HostCrashMarkerForwarder",
+        "struct DesktopHealthForwarder",
+        "struct StructuredLogFlushPolling",
+        "ProductionAnalyticsRuntime::start(",
+        "pin_experiments_diagnostics_reporter(",
+        "on_model_experiment_applied(",
+    ] {
+        assert!(
+            !TELEMETRY_EXTENSION.contains(forbidden),
+            "extension must remain a thin assembly boundary, found {forbidden}"
+        );
+    }
+
+    assert!(TELEMETRY_EXTENSION.contains("service.start()?"));
+    assert!(TELEMETRY_EXTENSION.contains("let api = service.api();"));
+    assert!(TELEMETRY_EXTENSION.contains("api.set_host_bundle_identity("));
 }
 
 #[test]
@@ -201,4 +233,52 @@ fn fatal_flush_and_normal_shutdown_are_shipping_wired_once() {
         SHIPPING_HOST.matches("fatal_telemetry.flush_for_fatal_exit()").count(),
         1
     );
+}
+
+
+#[test]
+fn service_api_identity_then_message_sent_is_durable_and_idempotent() {
+    use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
+        HostBundleIdentity, MessageSentReport,
+    };
+
+    let root = temp_root();
+    let path = root.join("host-events-api.jsonl");
+    let service = Arc::new(HostTelemetryService::open(&path).expect("service"));
+    service.start().expect("start");
+    let api = service.api();
+    api.set_host_bundle_identity(HostBundleIdentity {
+        host_bundle_version: Some("contract-bundle".into()),
+        box_store_id: Some("contract-store".into()),
+    })
+    .expect("identity");
+    api.set_host_bundle_identity(HostBundleIdentity {
+        host_bundle_version: Some("contract-bundle".into()),
+        box_store_id: Some("contract-store".into()),
+    })
+    .expect("identity twice");
+    api.report_message_sent(MessageSentReport {
+        agent_id: "agent-1".into(),
+        prompt: Some("hello telemetry".into()),
+        attachment_paths: vec!["a.txt".into()],
+        rich_text: Some("rich".into()),
+        is_fork: false,
+        source: Some("desktop".into()),
+        is_group_room: false,
+    });
+    service.dispose().expect("dispose");
+
+    let text = fs::read_to_string(&path).expect("durable telemetry");
+    let records = text
+        .lines()
+        .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
+        .collect::<Vec<_>>();
+    let message = records
+        .iter()
+        .find(|record| record.event == "sand.message.sent")
+        .expect("message sent record");
+    assert_eq!(message.payload["agent_id"], "agent-1");
+    assert_eq!(message.payload["attachment_count"], 1);
+    assert_eq!(message.payload["source"], "desktop");
+    let _ = fs::remove_dir_all(root);
 }
