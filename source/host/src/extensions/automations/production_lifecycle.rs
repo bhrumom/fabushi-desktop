@@ -9,9 +9,7 @@ use std::time::Duration;
 use crate::extensions::auth::extension::HostAuthExtension;
 use crate::extensions::browser_ua::extension::{BrowserUaAuthApi, StopSubscription};
 use crate::extensions::notify_bus::extension::HostNotifyBusExtension;
-use crate::extensions::telemetry::agent_error_telemetry::{
-    AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
-};
+use crate::extensions::telemetry::agent_error_telemetry::AgentErrorReport;
 use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use crate::extensions::telemetry::sand_error_tags::SandErrorValue;
 use crate::ports::telemetry::sand_error_detail;
@@ -163,10 +161,7 @@ impl ProductionAutomationsLifecycle {
                 error: sand_error,
                 detail: Some(sand_error_detail(error)),
             };
-            let _ = fire_poll_telemetry.report_projection(&agent_error_telemetry(&report));
-            if let Some(detail) = agent_error_detail_telemetry(&report) {
-                let _ = fire_poll_telemetry.report_projection(&detail);
-            }
+            let _ = fire_poll_telemetry.report_agent_error(&report);
         });
         let backend = ProductionAutomationsBackendRuntime::start(
             transport,
