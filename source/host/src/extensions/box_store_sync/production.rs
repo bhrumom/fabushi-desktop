@@ -762,10 +762,6 @@ impl ProductionBoxStoreSyncInner {
                 self.log("pack maintenance round failed; preserving the committed manifest and retrying later");
             }
             categories.push(pack_summary);
-            *self
-                .last_pack_sync
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(Instant::now());
         }
 
         let files_uploaded = categories.iter().map(|value| value.files_uploaded).sum();
