@@ -1067,10 +1067,10 @@ fn save_cached_statsig_bootstrap(path: &Path, config: &str) -> Result<(), String
         fs::create_dir_all(parent)
             .map_err(|error| format!("create Statsig cache directory: {error}"))?;
     }
-    let (user_id, _) = parse_statsig_bootstrap(config)?;
+    let parsed = parse_statsig_bootstrap(config)?;
     let payload = serde_json::to_vec(&serde_json::json!({
         "config": config,
-        "userId": user_id,
+        "userId": parsed.user_id,
         "fetchedAtMs": wall_clock_now_ms(),
     }))
     .map_err(|error| format!("serialize Statsig cache: {error}"))?;
