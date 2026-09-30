@@ -7,8 +7,7 @@ use crate::gateway_server::{GatewayBridgeClose, GatewayBridgeHub};
 use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use crate::extensions::telemetry::local_exec_telemetry::{
     LocalExecFailedReport, LocalExecProviderReport, LocalExecRefusalCause,
-    LocalExecRefusedReport, local_exec_failed_telemetry,
-    local_exec_provider_telemetry, local_exec_refused_telemetry,
+    LocalExecRefusedReport,
 };
 
 use super::gateway_local_exec_sand_box::{
@@ -97,7 +96,7 @@ impl HostLocalExecExtension {
                     site: report.site,
                     conversation_id: report.conversation_id.unwrap_or_default(),
                 };
-                let _ = logs.report_projection(&local_exec_failed_telemetry(&report));
+                let _ = logs.report_local_exec_failed(&report);
             });
         GatewayLocalExecSandBox::new(self.bridge(), gate)
             .with_failure_reporter(failure_reporter)
@@ -164,7 +163,7 @@ pub fn start_local_exec_extension(
                 emptied,
             },
         };
-        let _ = provider_logs.report_projection(&local_exec_provider_telemetry(&telemetry));
+        let _ = provider_logs.report_local_exec_provider(&telemetry);
     });
     let refusal_logs = logs.clone();
     let refusal_reporter = Arc::new(move |report: BridgeRefusalReport| {
@@ -182,7 +181,7 @@ pub fn start_local_exec_extension(
             ever_registered: report.ever_registered,
             empty_for_ms: report.empty_for_ms.map(|value| value as f64),
         };
-        let _ = refusal_logs.report_projection(&local_exec_refused_telemetry(&report));
+        let _ = refusal_logs.report_local_exec_refused(&report);
     });
     HostLocalExecExtension {
         bridge: SandLocalExecBridge::production_with_reporters(

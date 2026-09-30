@@ -21,7 +21,7 @@ use mahayana_host_runtime::extensions::auto_review::sand_backend_smart_mode_clas
 };
 use mahayana_host_runtime::extensions::auth::extension::HostAuthExtension;
 use mahayana_host_runtime::extensions::telemetry::auto_review_approval_telemetry::{
-    AutoReviewApprovalReport, auto_review_approval_telemetry,
+    AutoReviewApprovalReport,
 };
 use mahayana_host_runtime::runner::auto_review_gate::{
     AutoReviewGate, AutoReviewGateDependencies, AutoReviewInstructions, ShellApprovalSurface,
@@ -180,17 +180,16 @@ use mahayana_host_runtime::extensions::inference::cursor_session::{
 use mahayana_host_runtime::extensions::inference::generated_inference_codec::InferenceReason;
 use mahayana_host_runtime::extensions::webauthn_proxy::extension::HostWebAuthnProxyExtension;
 use mahayana_host_runtime::extensions::telemetry::automation_fire_telemetry::{
-    AutomationFireDroppedReport, automation_fire_dropped_telemetry,
+    AutomationFireDroppedReport,
 };
 use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
     QueueAcceptedReport, QueueDequeuedReport, QueueWatchdogReport,
-    queue_accepted_telemetry, queue_dequeued_telemetry, queue_watchdog_telemetry,
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
     HostStructuredLogTelemetry, HostTelemetryApi, MessageSentReport,
 };
 use mahayana_host_runtime::extensions::telemetry::revival_telemetry_mappers::{
-    SubagentRevivalReport, subagent_revival_telemetry,
+    SubagentRevivalReport,
 };
 use mahayana_host_runtime::extensions::experiments::HostExperimentsExtension;
 use mahayana_host_runtime::extensions::content_search::extension::ProductionContentSearchExtension;
@@ -206,7 +205,6 @@ use mahayana_host_runtime::host_production_extensions::{
 use mahayana_host_runtime::host_production_extensions::{
     ProductionBrowserUaLog, ProductionHostExtensions,
 };
-use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::turn_empty_delivery_telemetry;
 use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
     ComputerUseUsageFields, TokenUsage as TelemetryTokenUsage, TtftFields, TurnAwaitFields,
     TurnInterruptFields, TurnRetryFields, TurnUsageFields, UserMessageReceivedFields,
@@ -1333,7 +1331,7 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
         let Some(gateway) = self.gateway() else {
             return;
         };
-        let projection = subagent_revival_telemetry(&SubagentRevivalReport {
+        let report = SubagentRevivalReport {
             parent_agent_id: report.agent_id,
             outcome: report.outcome,
             completion_count: i64::try_from(report.completion_count).unwrap_or(i64::MAX),
@@ -1344,8 +1342,8 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
                 .sent_message_count
                 .map(|count| i64::try_from(count).unwrap_or(i64::MAX)),
             is_quiet_origin: Some(report.is_quiet_origin),
-        });
-        if let Err(error) = gateway.telemetry_logs.report_projection(&projection) {
+        };
+        if let Err(error) = gateway.telemetry_logs.report_subagent_revival(&report) {
             eprintln!("mahayana-host background_revival_telemetry_failed error={error}");
         }
     }
@@ -1538,7 +1536,7 @@ impl UnifiedGatewayApi {
         let lateness_ms = fire
             .scheduled_for_ms
             .map(|value| now_ms.saturating_sub(value) as f64);
-        let projection = automation_fire_dropped_telemetry(&AutomationFireDroppedReport {
+        let report = AutomationFireDroppedReport {
             conversation_id: fire.sand_agent_id.clone(),
             trigger: if fire.event.is_some() { "event".into() } else { "schedule".into() },
             reason: reason.to_owned(),
@@ -1550,8 +1548,8 @@ impl UnifiedGatewayApi {
             fire_age_ms: Some(now_ms.saturating_sub(fire.timestamp_ms) as f64),
             has_definition_revision: Some(fire.definition_revision.is_some()),
             box_uptime_ms: None,
-        });
-        let _ = self.telemetry_logs.report_projection(&projection);
+        };
+        let _ = self.telemetry_logs.report_automation_fire_dropped(&report);
     }
 
     fn dispatch_production_backend_fire(
@@ -5398,8 +5396,7 @@ fn start_routed_provider_task(
                     stream_output_produced,
                     started_at_ms().saturating_sub(runner_started_at_ms),
                 ) {
-                    let projection = turn_empty_delivery_telemetry(&report);
-                    if let Err(error) = worker_telemetry_logs.report_projection(&projection) {
+                    if let Err(error) = worker_telemetry_logs.report_turn_empty_delivery(&report) {
                         eprintln!(
                             "mahayana-host-ack empty_delivery_telemetry_failed agent={agent_id} error={error}"
                         );
@@ -6577,7 +6574,7 @@ impl GatewayApi for UnifiedGatewayApi {
                                 event.ack_token.as_deref(),
                             );
                         }
-                        let projection = queue_watchdog_telemetry(&QueueWatchdogReport {
+                        let report = QueueWatchdogReport {
                             conversation_id: event.agent_id.clone(),
                             stage: event.stage.as_str().to_string(),
                             active_lane: Some(event.active_lane.as_str().to_string()),
@@ -6585,8 +6582,8 @@ impl GatewayApi for UnifiedGatewayApi {
                             active_runtime_ms: event.active_runtime_ms as f64,
                             waiting_user_age_ms: event.waiting_user_age_ms.map(|value| value as f64),
                             interrupted: (event.stage == WatchdogStage::Trip).then_some(interrupted),
-                        });
-                        let _ = watchdog_logs.report_projection(&projection);
+                        };
+                        let _ = watchdog_logs.report_queue_watchdog(&report);
                         watchdog_events.publish(serde_json::json!({
                             "channel": "run-queue-watchdog",
                             "payload": {
@@ -6603,7 +6600,7 @@ impl GatewayApi for UnifiedGatewayApi {
                         interrupted
                     },
                     move |event| {
-                        let projection = queue_accepted_telemetry(&QueueAcceptedReport {
+                        let report = QueueAcceptedReport {
                             conversation_id: event.agent_id.clone(),
                             lane: event.lane.as_str().to_string(),
                             source: event.source.clone(),
@@ -6612,11 +6609,11 @@ impl GatewayApi for UnifiedGatewayApi {
                             depth_agent: i64::try_from(event.depth_agent).unwrap_or(i64::MAX),
                             depth_background: i64::try_from(event.depth_background).unwrap_or(i64::MAX),
                             has_active: event.has_active,
-                        });
-                        let _ = accepted_logs.report_projection(&projection);
+                        };
+                        let _ = accepted_logs.report_queue_accepted(&report);
                     },
                     move |event| {
-                        let projection = queue_dequeued_telemetry(&QueueDequeuedReport {
+                        let report = QueueDequeuedReport {
                             conversation_id: event.agent_id.clone(),
                             lane: event.lane.as_str().to_string(),
                             source: event.source.clone(),
@@ -6626,8 +6623,8 @@ impl GatewayApi for UnifiedGatewayApi {
                             depth_user: i64::try_from(event.depth_user).unwrap_or(i64::MAX),
                             depth_agent: i64::try_from(event.depth_agent).unwrap_or(i64::MAX),
                             depth_background: i64::try_from(event.depth_background).unwrap_or(i64::MAX),
-                        });
-                        let _ = dequeued_logs.report_projection(&projection);
+                        };
+                        let _ = dequeued_logs.report_queue_dequeued(&report);
                     },
                 );
             // Dropping the guard after the complete dispatch scope mirrors
@@ -7313,7 +7310,7 @@ fn main() {
                 .map(|expires_at_ms| expires_at_ms.saturating_sub(approval.created_at_ms) as f64),
             cause,
         };
-        let _ = auto_review_logs.report_projection(&auto_review_approval_telemetry(&report));
+        let _ = auto_review_logs.report_auto_review_approval(&report);
     });
     let auto_review_extension = Arc::new(start_auto_review_extension(
         Arc::clone(&session_workers),
@@ -7399,22 +7396,20 @@ fn main() {
                 let lateness_ms = dropped.scheduled_for_ms.map(|scheduled_for_ms| {
                     (started_at_ms() as f64 - scheduled_for_ms).max(0.0)
                 });
-                let projection = automation_fire_dropped_telemetry(
-                    &AutomationFireDroppedReport {
-                        conversation_id: dropped.agent_id,
-                        trigger: dropped.trigger.as_str().to_string(),
-                        reason: dropped.reason,
-                        scheduled_for_ms: dropped.scheduled_for_ms,
-                        lateness_ms,
-                        error_type: None,
-                        error_code: None,
-                        run_uuid: dropped.run_uuid,
-                        fire_age_ms: None,
-                        has_definition_revision: None,
-                        box_uptime_ms: None,
-                    },
-                );
-                let _ = dropped_logs.report_projection(&projection);
+                let report = AutomationFireDroppedReport {
+                    conversation_id: dropped.agent_id,
+                    trigger: dropped.trigger.as_str().to_string(),
+                    reason: dropped.reason,
+                    scheduled_for_ms: dropped.scheduled_for_ms,
+                    lateness_ms,
+                    error_type: None,
+                    error_code: None,
+                    run_uuid: dropped.run_uuid,
+                    fire_age_ms: None,
+                    has_definition_revision: None,
+                    box_uptime_ms: None,
+                };
+                let _ = dropped_logs.report_automation_fire_dropped(&report);
             })));
     }
     let runner_registry = transcript_manager.runner_registry();

@@ -114,7 +114,7 @@ use crate::extensions::telemetry::memory_synthesis_telemetry::{
     MemorySynthesisReport, memory_synthesis_telemetry,
 };
 use crate::extensions::telemetry::webauthn_proxy_telemetry::{
-    WebAuthnProxyReport, webauthn_proxy_telemetry,
+    WebAuthnProxyReport,
 };
 use crate::extensions::trays::extension::{
     HostTraysExtension, start_trays_extension,
@@ -386,16 +386,12 @@ pub fn start_production_host_extensions(
             .map_err(|error| error.to_string())?;
     let box_lifecycle =
         Arc::new(start_box_lifecycle_extension(Arc::clone(&auth), &factory));
+    let webauthn_logs = telemetry.logs.clone();
     let webauthn_proxy = Arc::new(start_webauthn_proxy_extension(Arc::new(
-        |report: WebAuthnProxyReport| {
-            let projection = webauthn_proxy_telemetry(&report);
-            eprintln!(
-                "mahayana-host-webauthn level={} event={} metadata={}",
-                projection.level.unwrap_or("info"),
-                projection.event.unwrap_or("sand.webauthn_proxy"),
-                serde_json::to_string(&projection.metadata)
-                    .unwrap_or_else(|_| "{}".into()),
-            );
+        move |report: WebAuthnProxyReport| {
+            if let Err(error) = webauthn_logs.report_webauthn_proxy(&report) {
+                eprintln!("mahayana-host webauthn_proxy_telemetry_failed error={error}");
+            }
         },
     )));
 

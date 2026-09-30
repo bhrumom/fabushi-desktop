@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::extensions::inference::production::ProductionInferenceExtension;
 use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use crate::extensions::telemetry::memory_synthesis_telemetry::{
-    MemorySynthesisReport, memory_synthesis_telemetry,
+    MemorySynthesisReport,
 };
 use crate::extensions::telemetry::sand_error_tags::SandErrorValue;
 use crate::storage::agent_paths::get_sand_agents_root_dir;
@@ -122,8 +122,8 @@ pub fn create_production_memory_synthesis(
     let mut options = MemorySynthesisOptions::new(list_targets, get_target, propose);
     options.verify = Some(verify);
     options.report = Some(Arc::new(move |report| {
-        let projection = memory_synthesis_telemetry(&memory_synthesis_telemetry_report(&report));
-        let _ = logs.report_projection(&projection);
+        let report = memory_synthesis_telemetry_report(&report);
+        let _ = logs.report_memory_synthesis(&report);
     }));
     Arc::new(MemorySynthesisService::new(options))
 }

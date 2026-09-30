@@ -2,7 +2,7 @@
 
 Reference: frozen Grok 0.18 blob `5e19374e02f4984899ea48f06b1d70798bd17418`.
 
-Audited Fabushi HEAD: `28eebfe882760decbabe2c8ce83bf27d110eefca`.
+Audit lineage starts at `28eebfe882760decbabe2c8ce83bf27d110eefca`; this follow-up is prepared from exact PR HEAD `95b4f4c7ef67e9f3ef6420b78ace9404257aca55` and remains non-final until the resulting commit has exact-HEAD Actions evidence.
 
 This ledger is intentionally stricter than file-existence or mapper-existence checks. A frozen `SandStructuredLogTelemetry` entry is accepted only when its Fabushi responsibility has a real shipping producer/call site, remains under the single Host structured-log owner, preserves mapping/settlement/confirmed/dispose semantics, and has focused contract evidence.
 
@@ -19,9 +19,9 @@ Status vocabulary:
 |---:|---|---|---|
 | 1 | `setHostBundleIdentity` | `HostTelemetryService::set_host_bundle_identity` → `HostStructuredLogTelemetry` → production transport identity tags | verified-owner |
 | 2 | `startTurn` | `HostStructuredLogTelemetry::start_turn` now returns a Host-owned stateful turn handle; shipping provider thread creates it from the unique `worker_telemetry_logs`, binds stream request-id/model, accumulates real retry reports, and finalizes before renderer-visible terminal publication | **implemented-awaiting-exact-head-ci** |
-| 3 | `reportAutoReviewApproval` | `auto_review_approval_telemetry.rs` mapper exists | producer-evidence-required |
+| 3 | `reportAutoReviewApproval` | shipping auto-review settlement calls `HostStructuredLogTelemetry::report_auto_review_approval`; typed facade owns the frozen mapper and canonical transport; real JSONL facade contract covers field shaping | **implemented-awaiting-exact-head-ci** |
 | 4 | `reportAutomationRun` | automation analytics/telemetry boundary exists, but frozen structured-log facade producer must be evidenced through canonical owner | producer-evidence-required |
-| 5 | `reportAutomationFireDropped` | automation telemetry boundary exists, but frozen structured-log facade producer must be evidenced through canonical owner | producer-evidence-required |
+| 5 | `reportAutomationFireDropped` | both production backend-fire rejection and Transcript dropped-fire reporter call `HostStructuredLogTelemetry::report_automation_fire_dropped`; typed facade owns mapper/transport | **implemented-awaiting-exact-head-ci** |
 | 6 | `reportAutomationShadowPrune` | `automations/production_lifecycle.rs` calls `HostStructuredLogTelemetry::report_automation_shadow_prune` | verified-owner |
 | 7 | `reportConversationGc` | `conversation_gc_telemetry.rs` mapper exists | producer-evidence-required |
 | 8 | `reportBoxDiskPressure` | `disk_pressure_telemetry.rs` mapper exists | producer-evidence-required |
@@ -32,11 +32,11 @@ Status vocabulary:
 | 13 | `reportHostExtensionDiagnostic` | production extension composition calls `HostStructuredLogTelemetry::report_host_extension_diagnostic` | verified-owner |
 | 14 | `reportSessionDiagnostic` | session diagnostic producers exist, but canonical structured-log ownership/path must be shown explicitly | producer-evidence-required |
 | 15 | `reportSearchIndexHealth` | production content-search composition calls `HostStructuredLogTelemetry::report_search_index_health` | verified-owner |
-| 16 | `reportLocalExecRefused` | `local_exec_telemetry.rs` mapper exists; no canonical facade producer found by this audit | producer-evidence-required |
-| 17 | `reportLocalExecProvider` | `local_exec_telemetry.rs` mapper exists; no canonical facade producer found by this audit | producer-evidence-required |
-| 18 | `reportLocalExecFailed` | `local_exec_telemetry.rs` mapper exists; no canonical facade producer found by this audit | producer-evidence-required |
-| 19 | `reportWebAuthnProxy` | WebAuthn production code uses the mapper, but canonical structured-log ownership/call evidence must be pinned | producer-evidence-required |
-| 20 | `reportMemorySynthesis` | memory production code uses the mapper, but canonical structured-log ownership/call evidence must be pinned | producer-evidence-required |
+| 16 | `reportLocalExecRefused` | production Local Exec refusal reporter calls the typed Host structured-log facade; frozen mapper and Sand error tags remain under the single owner | **implemented-awaiting-exact-head-ci** |
+| 17 | `reportLocalExecProvider` | production provider lifecycle reporter calls the typed Host structured-log facade; mapper semantics remain unchanged | **implemented-awaiting-exact-head-ci** |
+| 18 | `reportLocalExecFailed` | shipping Gateway Local Exec failure reporter calls the typed Host structured-log facade; mapper semantics remain unchanged | **implemented-awaiting-exact-head-ci** |
+| 19 | `reportWebAuthnProxy` | repaired production WebAuthn callback now calls `HostStructuredLogTelemetry::report_webauthn_proxy` instead of stderr-only logging; typed mapper/error tags flow through canonical transport | **implemented-awaiting-exact-head-ci** |
+| 20 | `reportMemorySynthesis` | production memory synthesis reporter and gate-disabled path use the unique Host logs; reporter now calls the typed facade method and preserves mapper/error semantics | **implemented-awaiting-exact-head-ci** |
 | 21 | `reportHostStartup` | `lifecycle_telemetry.rs` mapper exists | producer-evidence-required |
 | 22 | `reportHostLifecycle` | `HostLifecycleProgress` reports via the service log owner, but frozen facade equivalence still needs focused contract evidence | producer-evidence-required |
 | 23 | `reportDaemonPing` | lifecycle mapper exists / generic TelemetryService event mapping exists | producer-evidence-required |
@@ -54,17 +54,17 @@ Status vocabulary:
 | 35 | `reportTurnRetry` | delegates to `turn_telemetry_mappers.rs`; row is non-final; frozen also mutates active-turn retry state | **delegated-nonfinal** |
 | 36 | `reportUserMessageReceived` | delegates to `turn_telemetry_mappers.rs`; row is non-final | **delegated-nonfinal** |
 | 37 | `reportClosingSendNudge` | delegates to `turn_telemetry_mappers.rs`; manifest explicitly says shipping closing-send producer remains missing | **delegated-nonfinal** |
-| 38 | `reportSubagentRevival` | `revival_telemetry_mappers.rs` mapper exists | producer-evidence-required |
+| 38 | `reportSubagentRevival` | production completion revival runtime calls `HostStructuredLogTelemetry::report_subagent_revival`; typed facade owns the revival mapper and canonical transport | **implemented-awaiting-exact-head-ci** |
 | 39 | `reportShellRevival` | `revival_telemetry_mappers.rs` mapper exists | producer-evidence-required |
 | 40 | `reportTtft` | delegates to `turn_telemetry_mappers.rs`; row is non-final and manifest still requires complete dispatch-clock/trace/span provenance | **delegated-nonfinal** |
 | 41 | `reportSendDispatch` | `queue_telemetry_mappers.rs` mapper exists | producer-evidence-required |
-| 42 | `reportQueueAccepted` | `queue_telemetry_mappers.rs` mapper exists | producer-evidence-required |
-| 43 | `reportQueueDequeued` | `queue_telemetry_mappers.rs` mapper exists | producer-evidence-required |
-| 44 | `reportQueueWatchdog` | `queue_telemetry_mappers.rs` mapper exists | producer-evidence-required |
+| 42 | `reportQueueAccepted` | shipping run-queue accepted callback calls the typed Host structured-log facade; JSONL contract covers frozen lane/depth metadata | **implemented-awaiting-exact-head-ci** |
+| 43 | `reportQueueDequeued` | shipping run-queue dequeue callback calls the typed Host structured-log facade; JSONL contract covers timing/depth projection | **implemented-awaiting-exact-head-ci** |
+| 44 | `reportQueueWatchdog` | shipping queue watchdog callback calls the typed Host structured-log facade after interrupt handling; JSONL contract covers warning/timing projection | **implemented-awaiting-exact-head-ci** |
 | 45 | `reportAckObligation` | `queue_telemetry_mappers.rs` mapper exists | producer-evidence-required |
 | 46 | `reportPendingWake` | pending-wake domain has producers, but canonical structured-log projection ownership needs focused proof | producer-evidence-required |
 | 47 | `reportTurnUsage` | delegates to `turn_telemetry_mappers.rs`; row is non-final and provider token-usage propagation remains open | **delegated-nonfinal** |
-| 48 | `reportTurnEmptyDelivery` | `turn_empty_delivery_telemetry.rs` mapper exists and Ack domain references it | producer-evidence-required |
+| 48 | `reportTurnEmptyDelivery` | shipping provider terminal settlement calls `HostStructuredLogTelemetry::report_turn_empty_delivery`; typed mapper remains under canonical owner and JSONL contract covers empty-delivery fields | **implemented-awaiting-exact-head-ci** |
 | 49 | `reportJournalOutcome` | `journal_outcome_telemetry.rs` mapper exists | producer-evidence-required |
 | 50 | `reportComputerUseUsage` | shipping generated-subagent settlement now consumes `settled.computer_use_usage`, maps it with existing `computer_use_usage_telemetry`, and reports through the unique `worker_telemetry_logs`; exact-HEAD CI still required | **implemented-awaiting-exact-head-ci** |
 | 51 | `reportToolCallError` | generic TelemetryService event mapping exists, but frozen field shaping/capping must be proven by shipping producer contract | producer-evidence-required |
@@ -135,3 +135,12 @@ Therefore `source/host/extensions/telemetry/structured-log-telemetry.ts` must re
 - explicitly delegated to independently final mapped modules with their production call sites and semantic contracts recorded here.
 
 This rollback does **not** invalidate the already-proven production transport work (AnalyticsService/SubmitLogs backend, auth/machine identity headers, identity hold/backstop, 3-second flush ownership, bounded buffer, failed-batch retry, replay-age filtering, confirmed shipping, pressure-profiler tick integration, and idempotent drain/dispose).
+
+
+## 2026-09-30 exact-HEAD facade ownership follow-up
+
+Prepared from PR #20 exact HEAD `95b4f4c7ef67e9f3ef6420b78ace9404257aca55`. This slice deliberately does not edit `turn_telemetry_mappers.rs` and does not mark the structured-log row final. It adds method-specific `HostStructuredLogTelemetry` facade ownership for auto-review approval, automation-fire-dropped, Local Exec refused/provider/failed, WebAuthn proxy, memory synthesis, subagent revival, queue accepted/dequeued/watchdog, and turn-empty-delivery. Their existing shipping producers now invoke those facade methods rather than bypassing the facade with mapper + generic projection.
+
+The audit also found and repairs a real WebAuthn production hole: the prior shipping callback mapped the event but only wrote it to stderr, so no structured-log transport owned the event. The repaired callback captures the unique Host telemetry logs and reports through `report_webauthn_proxy`. `host_telemetry_service_contract.rs` exercises all twelve facade methods against the real JSONL structured-log sink and asserts event names plus representative frozen rounding/error/level fields; this is behavior evidence, not source-string evidence.
+
+Rows not advanced above remain unresolved. In particular shell revival, send dispatch, ack obligation, pending wake, journal outcome, Host/session diagnostics, conversation GC, disk pressure and many direct-event facade methods still require production ownership proof or implementation. The eight turn-telemetry delegate entries also remain non-final. Therefore the parent structured-log manifest row must remain `existing-needs-parity`.

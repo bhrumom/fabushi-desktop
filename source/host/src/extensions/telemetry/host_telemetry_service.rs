@@ -31,6 +31,12 @@ use super::analytics_service::{
     AnalyticsClient, AutomationRunAnalyticsTelemetry, ProductionAnalyticsRuntime, TelemetryService,
     product_analytics_event,
 };
+use super::auto_review_approval_telemetry::{
+    AutoReviewApprovalReport, auto_review_approval_telemetry,
+};
+use super::automation_fire_telemetry::{
+    AutomationFireDroppedReport, automation_fire_dropped_telemetry,
+};
 use super::box_log_ship_telemetry::{BoxLogShipReport, box_log_ship_telemetry};
 use super::box_log_shipper::{
     BoxLogShipper, BoxLogShipperConfig, BoxTelemetryRecord, DeliverySettlement,
@@ -50,6 +56,11 @@ use super::host_crash_marker::{
 use super::host_lifecycle_progress::{HostLifecycleProgress, HostLifecycleReport, WatchdogArm};
 use super::host_tracing::{HostTracing, init_production_host_tracing};
 use super::lifecycle_telemetry::box_infrastructure_telemetry;
+use super::local_exec_telemetry::{
+    LocalExecFailedReport, LocalExecProviderReport, LocalExecRefusedReport,
+    local_exec_failed_telemetry, local_exec_provider_telemetry, local_exec_refused_telemetry,
+};
+use super::memory_synthesis_telemetry::{MemorySynthesisReport, memory_synthesis_telemetry};
 use super::model_experiment_exposure::{
     ModelExperimentExposureAnalytics, ModelExperimentExposureExperiments,
     ModelExperimentExposureLatch, SandModelExperimentState as ExposureModelExperimentState,
@@ -57,11 +68,20 @@ use super::model_experiment_exposure::{
 use super::pressure_cpu_profiler::{
     PressureCpuProfiler, SandProfilerCaptureError, create_production_pressure_cpu_profiler,
 };
+use super::queue_telemetry_mappers::{
+    QueueAcceptedReport, QueueDequeuedReport, QueueWatchdogReport, queue_accepted_telemetry,
+    queue_dequeued_telemetry, queue_watchdog_telemetry,
+};
+use super::revival_telemetry_mappers::{SubagentRevivalReport, subagent_revival_telemetry};
 use super::sand_error_tags::{SandErrorValue, sand_error_tags};
 use super::structured_log_telemetry::{
     BOX_HELP_EVENT, CursorStructuredLogBackend, HOST_BUILT_AT_MS, ProductionStructuredLogTransport,
     StructuredLogBackend, box_help_telemetry, level_from_str,
 };
+use super::turn_empty_delivery_telemetry::{
+    TurnEmptyDeliveryReport, turn_empty_delivery_telemetry,
+};
+use super::webauthn_proxy_telemetry::{WebAuthnProxyReport, webauthn_proxy_telemetry};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PersistedHostTelemetryRecord {
@@ -401,6 +421,60 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_box_log_ship(&self, report: &BoxLogShipReport) -> io::Result<()> {
         self.report_projection(&box_log_ship_telemetry(report))
+    }
+
+    pub fn report_auto_review_approval(
+        &self,
+        report: &AutoReviewApprovalReport,
+    ) -> io::Result<()> {
+        self.report_projection(&auto_review_approval_telemetry(report))
+    }
+
+    pub fn report_automation_fire_dropped(
+        &self,
+        report: &AutomationFireDroppedReport,
+    ) -> io::Result<()> {
+        self.report_projection(&automation_fire_dropped_telemetry(report))
+    }
+
+    pub fn report_local_exec_refused(&self, report: &LocalExecRefusedReport) -> io::Result<()> {
+        self.report_projection(&local_exec_refused_telemetry(report))
+    }
+
+    pub fn report_local_exec_provider(&self, report: &LocalExecProviderReport) -> io::Result<()> {
+        self.report_projection(&local_exec_provider_telemetry(report))
+    }
+
+    pub fn report_local_exec_failed(&self, report: &LocalExecFailedReport) -> io::Result<()> {
+        self.report_projection(&local_exec_failed_telemetry(report))
+    }
+
+    pub fn report_webauthn_proxy(&self, report: &WebAuthnProxyReport) -> io::Result<()> {
+        self.report_projection(&webauthn_proxy_telemetry(report))
+    }
+
+    pub fn report_memory_synthesis(&self, report: &MemorySynthesisReport) -> io::Result<()> {
+        self.report_projection(&memory_synthesis_telemetry(report))
+    }
+
+    pub fn report_subagent_revival(&self, report: &SubagentRevivalReport) -> io::Result<()> {
+        self.report_projection(&subagent_revival_telemetry(report))
+    }
+
+    pub fn report_queue_accepted(&self, report: &QueueAcceptedReport) -> io::Result<()> {
+        self.report_projection(&queue_accepted_telemetry(report))
+    }
+
+    pub fn report_queue_dequeued(&self, report: &QueueDequeuedReport) -> io::Result<()> {
+        self.report_projection(&queue_dequeued_telemetry(report))
+    }
+
+    pub fn report_queue_watchdog(&self, report: &QueueWatchdogReport) -> io::Result<()> {
+        self.report_projection(&queue_watchdog_telemetry(report))
+    }
+
+    pub fn report_turn_empty_delivery(&self, report: &TurnEmptyDeliveryReport) -> io::Result<()> {
+        self.report_projection(&turn_empty_delivery_telemetry(report))
     }
 
     pub fn report_box_help(&self, report: &Value) -> io::Result<()> {

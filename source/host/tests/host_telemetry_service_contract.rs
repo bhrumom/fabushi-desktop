@@ -15,6 +15,17 @@ use mahayana_host_runtime::extensions::telemetry::extension::{
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
     HostTelemetryService, PersistedHostTelemetryRecord,
 };
+use mahayana_host_runtime::extensions::telemetry::auto_review_approval_telemetry::AutoReviewApprovalReport;
+use mahayana_host_runtime::extensions::telemetry::automation_fire_telemetry::AutomationFireDroppedReport;
+use mahayana_host_runtime::extensions::telemetry::local_exec_telemetry::{
+    LocalExecFailedReport, LocalExecProviderReport, LocalExecRefusalCause, LocalExecRefusedReport,
+};
+use mahayana_host_runtime::extensions::telemetry::memory_synthesis_telemetry::MemorySynthesisReport;
+use mahayana_host_runtime::extensions::telemetry::revival_telemetry_mappers::SubagentRevivalReport;
+use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::TurnEmptyDeliveryReport;
+use mahayana_host_runtime::extensions::telemetry::webauthn_proxy_telemetry::{
+    WebAuthnFailureCause, WebAuthnProxyReport,
+};
 use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
     QueueAcceptedReport, queue_accepted_telemetry,
 };
@@ -106,6 +117,153 @@ fn host_telemetry_service_owns_box_help_structured_log_and_product_analytics_ing
     let _ = fs::remove_dir_all(root);
 }
 
+
+#[test]
+fn frozen_facade_methods_route_mapper_semantics_through_single_host_owner() {
+    let root = temp_root();
+    let service = HostTelemetryService::open(root.join("facade-events.jsonl"))
+        .expect("telemetry service");
+
+    service.logs.report_auto_review_approval(&AutoReviewApprovalReport {
+        event_type: "settled".into(),
+        conversation_id: "agent-facade".into(),
+        approval_id: "approval-1".into(),
+        surface: "turn".into(),
+        status: "approved".into(),
+        age_ms: 12.6,
+        ttl_ms: Some(50.2),
+        cause: Some("user".into()),
+    }).expect("auto review facade");
+    service.logs.report_automation_fire_dropped(&AutomationFireDroppedReport {
+        conversation_id: "agent-facade".into(),
+        trigger: "schedule".into(),
+        reason: "stale".into(),
+        scheduled_for_ms: Some(10.0),
+        lateness_ms: Some(20.0),
+        error_type: None,
+        error_code: None,
+        run_uuid: Some("run-1".into()),
+        fire_age_ms: Some(30.0),
+        has_definition_revision: Some(true),
+        box_uptime_ms: None,
+    }).expect("automation dropped facade");
+    service.logs.report_local_exec_refused(&LocalExecRefusedReport {
+        cause: LocalExecRefusalCause::NoProviders,
+        site: "exec".into(),
+        conversation_id: "agent-facade".into(),
+        provider_count: 0,
+        live_provider_count: 0,
+        ever_registered: false,
+        empty_for_ms: Some(99.6),
+    }).expect("local exec refused facade");
+    service.logs.report_local_exec_provider(&LocalExecProviderReport::Registered {
+        provider_id: "provider-1".into(),
+        provider_count: 1,
+    }).expect("local exec provider facade");
+    service.logs.report_local_exec_failed(&LocalExecFailedReport {
+        error_class: "spawn_enoent".into(),
+        errno: Some("ENOENT".into()),
+        site: "exec".into(),
+        conversation_id: "agent-facade".into(),
+    }).expect("local exec failed facade");
+    service.logs.report_webauthn_proxy(&WebAuthnProxyReport {
+        outcome: "failed".into(),
+        stage: "sign".into(),
+        origin_class: "https".into(),
+        ceremony_kind: "get".into(),
+        request_id: "request-1".into(),
+        elapsed_ms: 41.6,
+        provider_count: Some(1),
+        live_provider_count: Some(0),
+        cause: Some(WebAuthnFailureCause::Timeout),
+        raw_dom_error_name: None,
+        raw_sign_error_class: None,
+    }).expect("webauthn facade");
+    service.logs.report_memory_synthesis(&MemorySynthesisReport::SkippedGate)
+        .expect("memory facade");
+    service.logs.report_subagent_revival(&SubagentRevivalReport {
+        parent_agent_id: "agent-facade".into(),
+        outcome: "sent".into(),
+        completion_count: 2,
+        subagent_type: Some("task".into()),
+        subagent_agent_id: Some("child-1".into()),
+        reason: None,
+        sent_message_count: Some(1),
+        is_quiet_origin: Some(false),
+    }).expect("subagent facade");
+    service.logs.report_queue_accepted(&QueueAcceptedReport {
+        conversation_id: "agent-facade".into(),
+        lane: "user".into(),
+        source: "turn".into(),
+        position: 0,
+        depth_user: 1,
+        depth_agent: 0,
+        depth_background: 0,
+        has_active: false,
+    }).expect("queue accepted facade");
+    service.logs.report_queue_dequeued(&mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::QueueDequeuedReport {
+        conversation_id: "agent-facade".into(),
+        lane: "user".into(),
+        source: "turn".into(),
+        queue_wait_ms: 5.6,
+        accepted_to_run_ms: Some(7.4),
+        jumped_background: 0,
+        depth_user: 0,
+        depth_agent: 0,
+        depth_background: 0,
+    }).expect("queue dequeued facade");
+    service.logs.report_queue_watchdog(&mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::QueueWatchdogReport {
+        conversation_id: "agent-facade".into(),
+        stage: "trip".into(),
+        active_lane: Some("user".into()),
+        active_source: Some("turn".into()),
+        active_runtime_ms: 100.4,
+        waiting_user_age_ms: Some(9.6),
+        interrupted: Some(true),
+    }).expect("queue watchdog facade");
+    service.logs.report_turn_empty_delivery(&TurnEmptyDeliveryReport {
+        conversation_id: "agent-facade".into(),
+        request_id: Some("request-1".into()),
+        source: "turn".into(),
+        request_source: Some("composer".into()),
+        reply_nudge_attempts: Some(1),
+        redrive_attempts: Some(0),
+        tool_call_count: 2,
+        stream_output_produced: false,
+        duration_ms: 200.7,
+        ack_outstanding: true,
+    }).expect("turn empty facade");
+
+    let text = fs::read_to_string(service.records_path()).expect("facade jsonl");
+    let records = text.lines().map(|line| {
+        serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("facade record")
+    }).collect::<Vec<_>>();
+    assert_eq!(records.len(), 12);
+    assert_eq!(records.iter().map(|record| record.event.as_str()).collect::<Vec<_>>(), vec![
+        "sand.auto_review.approval",
+        "sand.automation.fire_dropped",
+        "sand.local_exec.refused",
+        "sand.local_exec.provider",
+        "sand.local_exec.exec_failed",
+        "sand.webauthn_proxy",
+        "sand.memory.synthesis",
+        "sand.subagent.revival",
+        "sand.queue.accepted",
+        "sand.queue.dequeued",
+        "sand.queue.watchdog",
+        "sand.turn.empty_delivery",
+    ]);
+    assert_eq!(records[0].payload["metadata"]["age_ms"], "13");
+    assert_eq!(records[2].payload["metadata"]["error_code"], "SAND-E0111");
+    assert_eq!(records[5].payload["level"], "warn");
+    assert_eq!(records[5].payload["metadata"]["error_code"], "SAND-E0209");
+    assert_eq!(records[9].payload["metadata"]["queue_wait_ms"], "6");
+    assert_eq!(records[10].payload["metadata"]["active_runtime_ms"], "100");
+    assert_eq!(records[11].payload["metadata"]["duration_ms"], "201");
+    assert_eq!(records[11].payload["metadata"]["ack_outstanding"], "true");
+
+    let _ = fs::remove_dir_all(root);
+}
 
 #[test]
 fn desktop_health_file_forwards_through_shipping_structured_log_with_frozen_heartbeat() {
