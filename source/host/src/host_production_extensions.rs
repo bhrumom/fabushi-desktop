@@ -245,6 +245,14 @@ pub struct ProductionHostExtensions {
     automations: Mutex<Option<Arc<ProductionAutomationsLifecycle>>>,
 }
 
+impl Drop for ProductionHostExtensions {
+    fn drop(&mut self) {
+        // CloudAgents starts after Auth and must settle before dependency
+        // owners are dropped on every return path, including startup failure.
+        self.cloud_agents.stop();
+    }
+}
+
 pub fn start_production_host_extensions(
     app_data_dir: &Path,
     events: SandHostEventBus,
@@ -416,6 +424,10 @@ pub fn start_production_host_extensions(
 
 
 impl ProductionHostExtensions {
+    pub fn stop_cloud_agents(&self) {
+        self.cloud_agents.stop();
+    }
+
     pub fn start_automations(
         &self,
         listeners: RelayListeners,
