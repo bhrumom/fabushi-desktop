@@ -41,6 +41,7 @@ use crate::extensions::box_store_sync::box_store_manifest_format::{
 };
 use crate::extensions::box_store_sync::box_store_transfer::{
     BOX_STORE_SNAPSHOT_TMP_SUFFIX, BoxStoreTransfer, CategoryTransferSummary, StagedTransferFile,
+    glob_matches_path,
 };
 use crate::extensions::box_store_sync::box_store_sync::{
     BOX_STORE_WRITER_LOCK_FILE_NAME, BoxStoreCycleSummary, BoxStoreWriterLock,
