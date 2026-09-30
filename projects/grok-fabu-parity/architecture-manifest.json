@@ -15126,18 +15126,22 @@
       "targetPath": "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "dd253148c51ff74f6c10e42e9b068a18eeb5105e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs"
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/src/extensions/telemetry/event_loop_telemetry.rs"
       ],
       "testEvidence": [
         "source/host/tests/pressure_cpu_profiler_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Host now owns the frozen pressure-profile state machine: sustained-pressure admission, minimum capture interval, capture duration, live knob overrides, retention pruning, profile write and dispose semantics behind a CpuProfilerBackend boundary. Final remains withheld until a real cross-platform production CPU-profiler backend is bound and the production pressure/tick telemetry lifecycle invokes this owner."
+      "notes": "Rust Host now owns the frozen pressure-profile state machine and the shipping lifecycle. The production backend no longer wraps sample/perf text or an ETL path in synthetic .cpuprofile JSON: macOS persists validated native sample call-graph output, Linux persists validated perf.data, and Windows persists a real WPR ETL capture; duplicate start/stop misuse fails closed, partial artifacts are cleaned on failure/dispose, and the Windows sampling interval is restored after capture. HostTelemetryService composes exactly one production profiler, real EventLoopTelemetryRuntime pressure reports pass through the live sand_enable_pressure_cpu_profiler gate into on_pressure, the real structured-log flush worker advances on_tick, live sand_pressure_cpu_profiler_config knobs drive sustained-pressure window/capture duration/min interval/retention, onCaptured observes the persisted artifact, and service dispose terminates the same owner. Exact implementation HEAD 2b9d4bb402eb497d01d1345e7c2f1140dccbbbf6 passed macOS full rust-host including the complete Host Runner contract and all later Host steps, Ubuntu and Windows real production profiler capture jobs, platform-worker, and Desktop Chat Parity. No parallel profiler runtime was introduced.",
+      "parityMode": "rust-adaptation"
     },
     {
       "referencePath": "source/host/extensions/telemetry/queue-telemetry-mappers.ts",
