@@ -14639,6 +14639,8 @@
       "testEvidence": [
         "source/host/tests/analytics_service_parity_contract.rs",
         "source/host/tests/host_telemetry_service_contract.rs",
+        "source/host/tests/structured_log_telemetry_contract.rs",
+        "source/host/tests/telemetry_extension_parity_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
@@ -15243,7 +15245,7 @@
       "targetPath": "source/host/src/extensions/telemetry/structured_log_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "5e19374e02f4984899ea48f06b1d70798bd17418",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -15253,9 +15255,11 @@
       ],
       "testEvidence": [
         "source/host/tests/host_telemetry_service_contract.rs",
+        "source/host/tests/structured_log_telemetry_contract.rs",
+        "source/host/tests/telemetry_extension_parity_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust structured-log slice now implements the exact frozen sand.box_help projection and durable Host structured-log ingress used by shipping Session. Final remains withheld for the complete structured-log event surface, identity hold/flush policies, confirmed shipping transport and disposal semantics."
+      "notes": "Frozen structured-log ownership is implemented in the shipping Mahayana Host: production AnalyticsService/SubmitLogs transport with Grok headers and platform tags, 90s host-identity hold/backstop, 3s transport-owned flush polling, bounded/replay-aged buffering with failed-batch retry, confirmed crash/boot-stage/upgrade shipping, host bundle identity including frozen host_built_at_ms, pressure-profiler tick ownership, and idempotent drain/dispose. Targeted structured-log contracts and the full Host suite passed at exact tested HEAD f1b5cb5c4bc25b53a2e6c2db2ff58489ec45166e; renderer/E2E and pressure-profiler regressions were also green except the expected final architecture gate while remaining parity items still exist."
     },
     {
       "referencePath": "source/host/extensions/telemetry/turn-empty-delivery-telemetry.ts",
