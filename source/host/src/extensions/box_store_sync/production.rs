@@ -217,7 +217,8 @@ impl ProductionBoxStoreSyncApi {
             .store_db_debounce
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        queue.schedule(agent_id.to_string(), Instant::now() + delay);
+        let queued_at = Instant::now();
+        queue.schedule(agent_id.to_string(), queued_at, queued_at + delay);
         drop(queue);
         self.inner.store_db_wake.notify_one();
         true
@@ -479,31 +480,50 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+struct StoreDbDebounceEntry {
+    queued_at: Instant,
+    deadline: Instant,
+}
+
 #[derive(Default)]
 struct StoreDbDebounceQueue {
-    pending: BTreeMap<String, Instant>,
+    pending: BTreeMap<String, StoreDbDebounceEntry>,
 }
 
 impl StoreDbDebounceQueue {
-    fn schedule(&mut self, agent_id: String, deadline: Instant) {
-        self.pending.insert(agent_id, deadline);
+    fn schedule(&mut self, agent_id: String, queued_at: Instant, deadline: Instant) {
+        self.pending.insert(
+            agent_id,
+            StoreDbDebounceEntry {
+                queued_at,
+                deadline,
+            },
+        );
     }
 
-    fn take_due(&mut self, now: Instant) -> Vec<String> {
+    fn take_due(&mut self, now: Instant) -> Vec<(String, u64)> {
         let due = self
             .pending
             .iter()
-            .filter(|(_, deadline)| **deadline <= now)
-            .map(|(agent_id, _)| agent_id.clone())
+            .filter(|(_, entry)| entry.deadline <= now)
+            .map(|(agent_id, entry)| {
+                (
+                    agent_id.clone(),
+                    now.duration_since(entry.queued_at)
+                        .as_millis()
+                        .min(u128::from(u64::MAX)) as u64,
+                )
+            })
             .collect::<Vec<_>>();
-        for agent_id in &due {
+        for (agent_id, _) in &due {
             self.pending.remove(agent_id);
         }
         due
     }
 
     fn next_deadline(&self) -> Option<Instant> {
-        self.pending.values().min().copied()
+        self.pending.values().map(|entry| entry.deadline).min()
     }
 }
 
@@ -538,11 +558,11 @@ fn run_store_db_debounce_loop(inner: Arc<ProductionBoxStoreSyncInner>) {
                 };
             }
         };
-        for agent_id in due {
+        for (agent_id, queue_duration_ms) in due {
             if inner.stopped.load(Ordering::Acquire) {
                 return;
             }
-            if let Err(error) = inner.run_local_agent_db_snapshot(&agent_id) {
+            if let Err(error) = inner.run_local_agent_db_snapshot(&agent_id, queue_duration_ms) {
                 inner.log(&format!(
                     "turn-end store.db snapshot rejected for {agent_id}: {error}"
                 ));
@@ -1206,13 +1226,21 @@ impl ProductionBoxStoreSyncInner {
         Ok(())
     }
 
-    fn run_local_agent_db_snapshot(&self, agent_id: &str) -> Result<(), String> {
+    fn run_local_agent_db_snapshot(
+        &self,
+        agent_id: &str,
+        queue_duration_ms: u64,
+    ) -> Result<(), String> {
         self.agent_db_capture_queues.run_serialized(agent_id, || {
-            self.run_local_agent_db_snapshot_unqueued(agent_id)
+            self.run_local_agent_db_snapshot_unqueued(agent_id, queue_duration_ms)
         })
     }
 
-    fn run_local_agent_db_snapshot_unqueued(&self, agent_id: &str) -> Result<(), String> {
+    fn run_local_agent_db_snapshot_unqueued(
+        &self,
+        agent_id: &str,
+        queue_duration_ms: u64,
+    ) -> Result<(), String> {
         let _cycle = self
             .cycle_lock
             .lock()
