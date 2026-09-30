@@ -56,6 +56,9 @@ use super::host_crash_marker::{
 use super::host_lifecycle_progress::{HostLifecycleProgress, HostLifecycleReport, WatchdogArm};
 use super::host_tracing::{HostTracing, init_production_host_tracing};
 use super::lifecycle_telemetry::box_infrastructure_telemetry;
+use super::conversation_gc_telemetry::{ConversationGcReport, conversation_gc_telemetry};
+use super::host_diagnostic_telemetry::{HostDiagnostic, host_diagnostic_telemetry};
+use super::session_diagnostic_telemetry::{SessionTelemetryDiagnostic, session_diagnostic_telemetry};
 use super::local_exec_telemetry::{
     LocalExecFailedReport, LocalExecProviderReport, LocalExecRefusedReport,
     local_exec_failed_telemetry, local_exec_provider_telemetry, local_exec_refused_telemetry,
@@ -470,6 +473,21 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_pending_wake(&self, report: &PendingWakeReport) -> io::Result<()> {
         self.report_projection(&pending_wake_telemetry(report))
+    }
+
+    pub fn report_host_diagnostic(&self, report: &HostDiagnostic) -> io::Result<()> {
+        self.report_projection(&host_diagnostic_telemetry(report))
+    }
+
+    pub fn report_session_diagnostic(
+        &self,
+        report: &SessionTelemetryDiagnostic,
+    ) -> io::Result<()> {
+        self.report_projection(&session_diagnostic_telemetry(report))
+    }
+
+    pub fn report_conversation_gc(&self, report: &ConversationGcReport) -> io::Result<()> {
+        self.report_projection(&conversation_gc_telemetry(report))
     }
 
     pub fn report_queue_accepted(&self, report: &QueueAcceptedReport) -> io::Result<()> {

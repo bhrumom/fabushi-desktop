@@ -8297,6 +8297,7 @@ fn main() {
     // CloudAgents and Telemetry both depend on earlier production extensions.
     // Settle them while Auth / Experiments / Inference are still live.
     production_extensions.stop_cloud_agents();
+    production_extensions.stop_structured_log_domain_reporters();
     production_extensions.telemetry.dispose();
     if let Some(daemon) = box_exec_daemon.as_mut() {
         if let Err(error) = daemon.close() {

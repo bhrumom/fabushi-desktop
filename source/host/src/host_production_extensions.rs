@@ -3,6 +3,15 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use crate::host_paths::get_sand_root_dir;
+use crate::host_diagnostics::{
+    HostDiagnostic as DomainHostDiagnostic, pin_host_diagnostics_reporter,
+};
+use crate::extensions::session::conversation_size_limits::{
+    ConversationGcReport as DomainConversationGcReport, pin_conversation_gc_reporter,
+};
+use crate::extensions::session::session_diagnostics::{
+    SessionDiagnostic as DomainSessionDiagnostic, pin_session_diagnostics_reporter,
+};
 use crate::extensions::action_audit::extension::{
     ActionAuditExtension, start_action_audit_extension,
 };
@@ -110,8 +119,11 @@ use crate::extensions::state_backstop::state_backstop_service::{
 use crate::extensions::telemetry::extension::{
     HostTelemetryExtension, start_host_telemetry_extension,
 };
-use crate::extensions::telemetry::memory_synthesis_telemetry::{
-    MemorySynthesisReport, memory_synthesis_telemetry,
+use crate::extensions::telemetry::memory_synthesis_telemetry::MemorySynthesisReport;
+use crate::extensions::telemetry::conversation_gc_telemetry::ConversationGcReport;
+use crate::extensions::telemetry::host_diagnostic_telemetry::HostDiagnostic;
+use crate::extensions::telemetry::session_diagnostic_telemetry::{
+    SessionDiagnosticFamily, SessionTelemetryDiagnostic,
 };
 use crate::extensions::telemetry::webauthn_proxy_telemetry::{
     WebAuthnProxyReport,
@@ -214,6 +226,131 @@ impl StateBackstopObjectStore for ProductionStateBackstopObjectStore {
     }
 }
 
+fn diagnostic_string(
+    values: &impl DiagnosticValues,
+    names: &[&str],
+) -> Option<String> {
+    names.iter().find_map(|name| values.string_value(name))
+}
+
+trait DiagnosticValues {
+    fn string_value(&self, name: &str) -> Option<String>;
+    fn integer_value(&self, name: &str) -> Option<i64>;
+}
+
+impl DiagnosticValues for serde_json::Map<String, serde_json::Value> {
+    fn string_value(&self, name: &str) -> Option<String> {
+        self.get(name).and_then(|value| match value {
+            serde_json::Value::String(value) => Some(value.clone()),
+            serde_json::Value::Number(value) => Some(value.to_string()),
+            serde_json::Value::Bool(value) => Some(value.to_string()),
+            _ => None,
+        })
+    }
+
+    fn integer_value(&self, name: &str) -> Option<i64> {
+        self.get(name).and_then(serde_json::Value::as_i64)
+    }
+}
+
+impl DiagnosticValues for BTreeMap<String, serde_json::Value> {
+    fn string_value(&self, name: &str) -> Option<String> {
+        self.get(name).and_then(|value| match value {
+            serde_json::Value::String(value) => Some(value.clone()),
+            serde_json::Value::Number(value) => Some(value.to_string()),
+            serde_json::Value::Bool(value) => Some(value.to_string()),
+            _ => None,
+        })
+    }
+
+    fn integer_value(&self, name: &str) -> Option<i64> {
+        self.get(name).and_then(serde_json::Value::as_i64)
+    }
+}
+
+pub fn project_host_diagnostic(report: &DomainHostDiagnostic) -> HostDiagnostic {
+    HostDiagnostic {
+        kind: report.kind.clone(),
+        stage: diagnostic_string(&report.fields, &["stage"]),
+        agent_id: diagnostic_string(&report.fields, &["agentId", "agent_id"]),
+        reason: diagnostic_string(&report.fields, &["reason"]),
+        error_class: diagnostic_string(&report.fields, &["errorClass", "error_class"]),
+    }
+}
+
+pub fn project_session_diagnostic(
+    report: &DomainSessionDiagnostic,
+) -> Option<SessionTelemetryDiagnostic> {
+    let family = match report.family.as_str() {
+        "store_db" => SessionDiagnosticFamily::StoreDb,
+        "maintenance" => SessionDiagnosticFamily::Maintenance,
+        "materialize" => SessionDiagnosticFamily::Materialize,
+        "summary_build" => SessionDiagnosticFamily::SummaryBuild,
+        _ => return None,
+    };
+    Some(SessionTelemetryDiagnostic {
+        family,
+        kind: report.kind.clone(),
+        agent_id: diagnostic_string(&report.metadata, &["agentId", "agent_id"]),
+        error_class: diagnostic_string(&report.metadata, &["errorClass", "error_class"]),
+        outcome: diagnostic_string(&report.metadata, &["outcome"]),
+        quarantine: diagnostic_string(&report.metadata, &["quarantine"]),
+        salvaged_kv: report.metadata.integer_value("salvagedKv")
+            .or_else(|| report.metadata.integer_value("salvaged_kv")),
+        salvaged_blobs: report.metadata.integer_value("salvagedBlobs")
+            .or_else(|| report.metadata.integer_value("salvaged_blobs")),
+        salvaged_transcript: report.metadata.integer_value("salvagedTranscript")
+            .or_else(|| report.metadata.integer_value("salvaged_transcript")),
+    })
+}
+
+pub fn project_conversation_gc(report: &DomainConversationGcReport) -> ConversationGcReport {
+    match report.outcome.as_str() {
+        "failed" => ConversationGcReport::Failed {
+            trigger: report.trigger.clone(),
+            agent_id: report.agent_id.clone(),
+        },
+        "skipped" => ConversationGcReport::Skipped {
+            trigger: report.trigger.clone(),
+            agent_id: report.agent_id.clone(),
+            skip_reason: report.skip_reason.clone().unwrap_or_else(|| "unknown".into()),
+            unresolved_proto_refs: report.unresolved_proto_refs.map(|value| value as f64),
+        },
+        _ => ConversationGcReport::Collected {
+            trigger: report.trigger.clone(),
+            agent_id: report.agent_id.clone(),
+            still_over_cap: report.still_over_cap,
+            deleted_rows: report.deleted_rows.unwrap_or_default() as f64,
+            deleted_bytes: report.deleted_bytes.unwrap_or_default() as f64,
+            live_rows: report.live_rows.unwrap_or_default() as f64,
+            live_bytes: report.live_bytes.unwrap_or_default() as f64,
+            vacuumed: report.vacuumed.unwrap_or(false),
+        },
+    }
+}
+
+fn pin_structured_log_domain_reporters(logs: crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry) {
+    let host_logs = logs.clone();
+    pin_host_diagnostics_reporter(Some(Arc::new(move |report| {
+        let _ = host_logs.report_host_diagnostic(&project_host_diagnostic(report));
+    })));
+    let session_logs = logs.clone();
+    pin_session_diagnostics_reporter(Some(Arc::new(move |report| {
+        if let Some(projected) = project_session_diagnostic(report) {
+            let _ = session_logs.report_session_diagnostic(&projected);
+        }
+    })));
+    pin_conversation_gc_reporter(Some(Arc::new(move |report| {
+        let _ = logs.report_conversation_gc(&project_conversation_gc(report));
+    })));
+}
+
+fn unpin_structured_log_domain_reporters() {
+    pin_conversation_gc_reporter(None);
+    pin_session_diagnostics_reporter(None);
+    pin_host_diagnostics_reporter(None);
+}
+
 pub struct ProductionHostExtensions {
     pub telemetry: HostTelemetryExtension,
     pub auth: Arc<HostAuthExtension>,
@@ -249,6 +386,8 @@ pub struct ProductionHostExtensions {
 
 impl Drop for ProductionHostExtensions {
     fn drop(&mut self) {
+        // Stop global reporter callbacks before disposing their single Host owner.
+        unpin_structured_log_domain_reporters();
         // Dependents settle while Auth / Experiments / Inference remain live.
         self.cloud_agents.stop();
         self.telemetry.dispose();
@@ -358,9 +497,7 @@ pub fn start_production_host_extensions(
         "sand_memory_dreaming",
         Arc::new(move |enabled| {
             if !enabled {
-                let _ = memory_logs.report_projection(
-                    &memory_synthesis_telemetry(&MemorySynthesisReport::SkippedGate),
-                );
+                let _ = memory_logs.report_memory_synthesis(&MemorySynthesisReport::SkippedGate);
                 return;
             }
             let synthesis = create_production_memory_synthesis(
@@ -395,6 +532,8 @@ pub fn start_production_host_extensions(
         },
     )));
 
+    pin_structured_log_domain_reporters(telemetry.logs.clone());
+
     Ok(ProductionHostExtensions {
         telemetry,
         auth,
@@ -428,6 +567,10 @@ pub fn start_production_host_extensions(
 
 
 impl ProductionHostExtensions {
+    pub fn stop_structured_log_domain_reporters(&self) {
+        unpin_structured_log_domain_reporters();
+    }
+
     pub fn stop_cloud_agents(&self) {
         self.cloud_agents.stop();
     }

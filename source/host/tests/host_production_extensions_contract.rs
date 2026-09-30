@@ -1,4 +1,6 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
+
+use serde_json::{Map, Value, json};
 
 use mahayana_host_runtime::extensions::extension_ids_generated::HostExtensionId;
 use mahayana_host_runtime::extensions::registry::HOST_EXTENSION_ORDER;
@@ -8,7 +10,8 @@ use mahayana_host_runtime::extensions::inference::extension::{
 use mahayana_host_runtime::extensions::inference::production::ProductionInferenceExtension;
 use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, ProductionBrowserUaLog,
-    ProductionHostExtensions,
+    ProductionHostExtensions, project_conversation_gc, project_host_diagnostic,
+    project_session_diagnostic,
 };
 
 const PRODUCTION_OWNER: &str = include_str!("../src/host_production_extensions.rs");
@@ -240,5 +243,64 @@ fn memory_synthesis_is_pinned_to_authenticated_statsig_and_shipping_inference() 
             MEMORY_PRODUCTION.contains(needle),
             "shipping Memory production must consume the shared inference/telemetry path: {needle}"
         );
+    }
+}
+
+#[test]
+fn structured_log_domain_reporter_adapters_preserve_frozen_fields() {
+    let host = project_host_diagnostic(&mahayana_host_runtime::host_diagnostics::HostDiagnostic {
+        kind: "send_ledger_degraded".into(),
+        fields: Map::from_iter([
+            ("stage".into(), json!("commit")),
+            ("agentId".into(), json!("agent-1")),
+            ("reason".into(), json!("io")),
+            ("errorClass".into(), json!("disk")),
+        ]),
+    });
+    assert_eq!(host.stage.as_deref(), Some("commit"));
+    assert_eq!(host.agent_id.as_deref(), Some("agent-1"));
+    assert_eq!(host.error_class.as_deref(), Some("disk"));
+
+    let session = project_session_diagnostic(
+        &mahayana_host_runtime::extensions::session::session_diagnostics::SessionDiagnostic {
+            family: "store_db".into(),
+            kind: "quarantine_copied".into(),
+            metadata: BTreeMap::from([
+                ("agentId".into(), Value::String("agent-1".into())),
+                ("outcome".into(), Value::String("recovered".into())),
+                ("salvagedKv".into(), json!(3)),
+            ]),
+        },
+    )
+    .expect("known session family");
+    assert_eq!(session.agent_id.as_deref(), Some("agent-1"));
+    assert_eq!(session.outcome.as_deref(), Some("recovered"));
+    assert_eq!(session.salvaged_kv, Some(3));
+
+    let gc = project_conversation_gc(
+        &mahayana_host_runtime::extensions::session::conversation_size_limits::ConversationGcReport {
+            trigger: "size-cap".into(),
+            agent_id: "agent-1".into(),
+            outcome: "skipped".into(),
+            skip_reason: Some("unresolved-refs".into()),
+            unresolved_proto_refs: Some(4),
+            deleted_rows: None,
+            deleted_bytes: None,
+            live_rows: None,
+            live_bytes: None,
+            vacuumed: None,
+            still_over_cap: true,
+        },
+    );
+    match gc {
+        mahayana_host_runtime::extensions::telemetry::conversation_gc_telemetry::ConversationGcReport::Skipped {
+            skip_reason,
+            unresolved_proto_refs,
+            ..
+        } => {
+            assert_eq!(skip_reason, "unresolved-refs");
+            assert_eq!(unresolved_proto_refs, Some(4.0));
+        }
+        other => panic!("unexpected GC projection: {other:?}"),
     }
 }

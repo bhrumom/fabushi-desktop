@@ -2374,3 +2374,12 @@ This slice does **not** make cloud reconciliation final. `sand-automation-cloud-
 - `ProductionCompletionRevivalRuntime::report_revival` now keeps Grok's shell/subagent semantic split and routes shell completions through the unique Host `report_shell_revival` facade. PendingWakeRearm keeps its renderer-visible Gateway event and additionally routes the same report through `report_pending_wake`.
 - The Host JSONL facade contract now exercises and distinguishes both `sand.shell.revival` and `sand.pending_wake`, including quiet-origin and age rounding semantics.
 - This still does not finalize `structured-log-telemetry.ts`: Host/session/GC reporter slots are currently unpinned in shipping composition, disk pressure requires dedicated projection ownership, additional frozen facade entries still lack real producer evidence, and the eight turn-telemetry delegates remain non-final. `turn-telemetry-mappers.ts` remains out of scope until those facade blockers are resolved.
+
+
+### 2026-09-30 Host/session/GC structured-log composition repair
+
+- The structured-log facade audit proved Host diagnostics, Session diagnostics and Conversation GC had real domain producers but no shipping reporter pin, so their telemetry was dropped before the canonical Host owner.
+- `ProductionHostExtensions` now owns one global reporter adapter per domain, installed only after successful production composition and removed before telemetry dispose (with idempotent Drop cleanup). The adapters call typed `HostStructuredLogTelemetry` facade methods; no business domain owns a second transport.
+- Adapter contracts verify representative Host diagnostic field aliases, all known Session-family projection machinery including store-db salvage metadata, and Conversation-GC skipped/unresolved-ref semantics.
+- The authenticated memory gate-disabled path was also tightened to call `report_memory_synthesis` directly instead of bypassing the typed facade with generic projection.
+- These repairs do not change the parent manifest status yet. Structured-log remains `existing-needs-parity` until the remaining frozen facade entries, including dedicated disk-pressure ownership and the eight still-nonfinal turn-telemetry delegates, have production evidence and exact-HEAD CI.
