@@ -14626,19 +14626,24 @@
       "targetPath": "source/host/src/extensions/telemetry/analytics_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "4ea2919cfcc54b1c549f856188538ae032c5a522",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/telemetry/analytics_service.rs",
-        "source/host/src/extensions/telemetry/host_telemetry_service.rs"
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/src/extensions/telemetry/extension.rs",
+        "source/host/src/host_production_extensions.rs"
       ],
       "testEvidence": [
+        "source/host/tests/analytics_service_parity_contract.rs",
         "source/host/tests/host_telemetry_service_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity.yml"
       ],
-      "notes": "Rust telemetry slice now owns product analytics event sanitization and a durable Host product-event ingress used by shipping Session Box handoff. Final remains withheld for the complete frozen TelemetryService facade, automation-run wrapper, Statsig activation/gating and backend analytics transport."
+      "notes": "Rust Mahayana Host now implements the frozen TelemetryService facade and automation-run product-analytics wrapper, owns scalar-only product-event sanitization, deferred/active sand_product_analytics Statsig gating with the frozen 256-event cap, Cursor-authenticated AnalyticsService/TrackEvents backend transport with machine/checksum/client/namespace/request identity, frozen base properties and host_startup activity, and one shipping HostTelemetryExtension analytics owner. ProductionHostExtensions wires Auth + Experiments into that owner; stop/drop cancels the gate subscription and drains the single FIFO worker before dependent Host owners are released. Exact-HEAD Host contracts cover the full facade, automation delegation, sanitization and shipping brain dual-channel wiring.",
+      "parityMode": "rust-adaptation"
     },
     {
       "referencePath": "source/host/extensions/telemetry/auto-review-approval-telemetry.ts",
