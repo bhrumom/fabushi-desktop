@@ -1,4 +1,3 @@
-import type { ConnectorAuthReport } from "../../shared/observability/connector-auth-telemetry.js";
 import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { createDashboardSandBackendMcpExec, type DashboardMcpExecClient } from "../../shared/node/cursor-backend/backend-mcp-exec.js";
@@ -13,7 +12,7 @@ export interface ProductionMcpOAuthLoopbackPorts {
   readonly getAccessToken: (options?: { backendUrl?: string }) => Promise<string>;
   readonly getMachineId: () => Promise<string>;
   readonly log: (message: string) => void;
-  readonly onConnectorAuth?: (event: ConnectorAuthReport) => void;
+  readonly onConnectorAuth?: (event: Record<string, unknown>) => void;
 }
 
 function createGeneratedBackendClient(ports: Pick<ProductionMcpOAuthLoopbackPorts, "getAccessToken" | "getMachineId">): DashboardMcpExecClient {

@@ -107,7 +107,7 @@
       "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "1dcaa1921f7c5d2ab36828451e808611d31775e2",
+      "targetBlobSha": "d3971acd23678c234734e1ed249fa7d4e4966fe6",
       "behavioralEvidence": [
         "source/electron-main/adapters/mcp-oauth.ts",
         "source/electron-main/mcp/desktop-mcp-manager.ts",
@@ -124,7 +124,8 @@
         "source/host/src/extensions/mcp/plugin_skills.rs",
         "source/host/src/extensions/mcp/production.rs",
         "source/shared/node/mcp/mcp-discovery-settlement.ts",
-        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs"
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs",
+        "source/host/src/extensions/telemetry/connector_auth_telemetry.rs"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
@@ -139,7 +140,9 @@
         "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
         "source/electron-main/mcp/mcp-runtime.contract.test.ts",
         "source/host/tests/mcp_discovery_telemetry_contract.rs",
-        "source/host/tests/mcp_discovery_production_wiring_contract.rs"
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs",
+        "source/host/tests/connector_auth_telemetry_contract.rs",
+        "source/host/tests/connector_auth_production_wiring_contract.rs"
       ],
       "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and the Mahayana Host as the owner of Plugin Skills lifecycle, cache, authenticated startup, refresh, install/uninstall resync, live-reference cleanup, and Skill Publish. The Cursor Dashboard/marketplace-dependent installed-plugin loader stays as a narrow TypeScript SDK edge in Electron Main and is reached only through the existing allowlisted, correlated Mahayana Coordinator MCP relay. This preserves the frozen Grok process and responsibility boundaries while choosing TypeScript for the Cursor Node SDK edge and Rust for Host lifecycle/state; it does not introduce a second MCP manager or collapse Coordinator/Host/Runner. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
     },
@@ -292,7 +295,7 @@
       "referencePath": "source/shared/rpc/coordinator-main.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "015dda363dc6d6cb8b0d149dec98ca611d7ebd5f",
+      "targetBlobSha": "12e0310503db0e054451a0a6c9eda212fe10fd20",
       "behavioralEvidence": [
         "source/shared/rpc/coordinator-main.ts",
         "source/electron-main/adapters/attachment-gateway.ts",
@@ -369,7 +372,7 @@
       "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "feb4a78ff0d5a40665103d4eb373bc9dd741bca5",
+      "targetBlobSha": "7126c5a132a438f7180d0627e6ea8787ecff65ff",
       "behavioralEvidence": [
         "source/electron-main/mcp/desktop-mcp-manager.ts",
         "source/shared/node/mcp/mcp-manager.ts",
@@ -397,7 +400,7 @@
       "referencePath": "source/electron-main/mcp/mcp-runtime.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "983adfc5b4b2d44bddf090c0a28d2b77186ee344",
+      "targetBlobSha": "086c3f90e772951d3548b6b16c0975a16ceacc9e",
       "behavioralEvidence": [
         "source/electron-main/mcp/mcp-runtime.ts",
         "source/electron-main/mcp/desktop-mcp-manager.ts",

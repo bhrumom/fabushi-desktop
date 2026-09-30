@@ -19,7 +19,6 @@ import {
 } from "../../connect-errors.js";
 import { brandedEnumOf } from "../../errors/bounded.js";
 import { SandError } from "../../errors/registry.js";
-import type { ConnectorAuthReport } from "../../observability/connector-auth-telemetry.js";
 import {
   renderMcpOAuthErrorPage as renderErrorPage,
   renderMcpOAuthSuccessPage as renderSuccessPage,
@@ -90,7 +89,7 @@ export function createSandMcpOAuthLoopback(deps: {
   pendingExpiry?: ExpiryPolicy;
   completionRetry?: RetryPolicy;
   bindRetry?: PollingPolicy;
-  onCallback?(event: ConnectorAuthReport): void;
+  onCallback?(event: Record<string, unknown>): void;
 }) {
   const callback = deps.loopbackRedirectUrl ?? MCP_OAUTH_LOOPBACK_CALLBACK_URL,
     redirect = new URL(callback),
