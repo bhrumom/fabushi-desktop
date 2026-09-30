@@ -186,7 +186,9 @@ use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
     QueueAcceptedReport, QueueDequeuedReport, QueueWatchdogReport,
     queue_accepted_telemetry, queue_dequeued_telemetry, queue_watchdog_telemetry,
 };
-use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
+use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
+    HostStructuredLogTelemetry, HostTelemetryApi, MessageSentReport,
+};
 use mahayana_host_runtime::extensions::telemetry::revival_telemetry_mappers::{
     SubagentRevivalReport, subagent_revival_telemetry,
 };
@@ -931,6 +933,7 @@ struct UnifiedGatewayApi {
     completion_revivals: Arc<CompletionRevivals>,
     transcript_manager: Arc<TranscriptManager>,
     telemetry_logs: HostStructuredLogTelemetry,
+    telemetry_api: HostTelemetryApi,
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
@@ -6387,6 +6390,50 @@ impl GatewayApi for UnifiedGatewayApi {
                         if accepted.get("accepted").and_then(serde_json::Value::as_bool)
                             == Some(true)
                         {
+                            if accepted.get("duplicate").and_then(serde_json::Value::as_bool)
+                                != Some(true)
+                            {
+                                if let Some(agent_id) = send_agent_id.as_deref() {
+                                    let attachment_paths = durable_args
+                                        .get("attachmentPaths")
+                                        .and_then(serde_json::Value::as_array)
+                                        .map(|values| {
+                                            values
+                                                .iter()
+                                                .filter_map(serde_json::Value::as_str)
+                                                .map(str::to_string)
+                                                .collect::<Vec<_>>()
+                                        })
+                                        .unwrap_or_default();
+                                    let is_group_room = self
+                                        .session_workers
+                                        .summarize_agent_by_id(agent_id, None)
+                                        .map_err(ProductionSendError::Internal)?
+                                        .is_some_and(|summary| summary.is_group);
+                                    self.telemetry_api.report_message_sent(MessageSentReport {
+                                        agent_id: agent_id.to_string(),
+                                        prompt: durable_args
+                                            .get("prompt")
+                                            .or_else(|| durable_args.get("text"))
+                                            .and_then(serde_json::Value::as_str)
+                                            .map(str::to_string),
+                                        attachment_paths,
+                                        rich_text: durable_args
+                                            .get("richText")
+                                            .and_then(serde_json::Value::as_str)
+                                            .map(str::to_string),
+                                        is_fork: durable_args
+                                            .get("isFork")
+                                            .and_then(serde_json::Value::as_bool)
+                                            .unwrap_or(false),
+                                        source: durable_args
+                                            .get("source")
+                                            .and_then(serde_json::Value::as_str)
+                                            .map(str::to_string),
+                                        is_group_room,
+                                    });
+                                }
+                            }
                             if let Some(agent_id) = send_agent_id.as_deref() {
                                 let direct_local = self
                                     .session_workers
@@ -7732,6 +7779,7 @@ fn main() {
             completion_revivals: Arc::clone(&completion_revivals),
             transcript_manager: Arc::clone(&transcript_manager),
             telemetry_logs: host_telemetry.logs.clone(),
+            telemetry_api: host_telemetry.api(),
             production_action_auditor: production_extensions.action_audit.clone(),
             cloud_agents: production_extensions.cloud_agents.service(),
             cloud_agent_watches: Arc::clone(&cloud_agent_watches),

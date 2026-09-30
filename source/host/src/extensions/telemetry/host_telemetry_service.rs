@@ -1099,11 +1099,14 @@ impl HostTelemetryService {
     }
 
     fn flush_for_fatal_exit_inner(&self) {
-        if let Ok(runtime) = self.runtime.lock() {
-            if let Some(shipper) = runtime.box_log_shipper.as_ref() {
-                shipper.stop_polling();
-                let _ = shipper.checkpoint_offsets();
-            }
+        let shipper = self
+            .runtime
+            .lock()
+            .ok()
+            .and_then(|mut runtime| runtime.box_log_shipper.take());
+        if let Some(shipper) = shipper {
+            shipper.stop_polling();
+            let _ = shipper.checkpoint_offsets();
         }
         let _ = self.logs.flush();
         self.flush_tracing();

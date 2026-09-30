@@ -229,6 +229,8 @@ fn fatal_flush_and_normal_shutdown_are_shipping_wired_once() {
     assert!(SHIPPING_HOST.contains("_process_crash_guard.set_reporter(Some("));
     assert!(SHIPPING_HOST.contains("fatal_telemetry.flush_for_fatal_exit()"));
     assert!(SHIPPING_HOST.contains("production_extensions.telemetry.dispose()"));
+    assert!(SHIPPING_HOST.contains("telemetry_api: host_telemetry.api()"));
+    assert!(SHIPPING_HOST.contains("self.telemetry_api.report_message_sent(MessageSentReport"));
     assert_eq!(
         SHIPPING_HOST.matches("fatal_telemetry.flush_for_fatal_exit()").count(),
         1
