@@ -681,7 +681,7 @@ impl ProductionBoxStoreSyncInner {
         outcome: StoreDbCaptureOutcome,
         capture: &ProductionStoreDbCaptureResult,
         is_committed: bool,
-        store_id: &str,
+        store_id: Option<&str>,
         duration_ms: u64,
         queue_duration_ms: u64,
     ) {
@@ -699,7 +699,7 @@ impl ProductionBoxStoreSyncInner {
             capture_duration_ms: capture.capture_trace.capture_duration_ms,
             blob_upload_duration_ms: capture.capture_trace.blob_upload_duration_ms,
             manifest_commit_duration_ms: capture.capture_trace.manifest_commit_duration_ms,
-            store_id: Some(store_id.to_string()),
+            store_id: store_id.map(str::to_string),
         });
         (self.deps.report_box_store_db_capture)(telemetry.level, &telemetry.metadata);
     }
@@ -1007,7 +1007,7 @@ impl ProductionBoxStoreSyncInner {
                     StoreDbCaptureOutcome::Error,
                     capture,
                     false,
-                    &store_id,
+                    Some(&store_id),
                     started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
                     0,
                 );
@@ -1032,7 +1032,7 @@ impl ProductionBoxStoreSyncInner {
                 outcome,
                 capture,
                 is_committed,
-                &store_id,
+                Some(&store_id),
                 started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
                 0,
             );
