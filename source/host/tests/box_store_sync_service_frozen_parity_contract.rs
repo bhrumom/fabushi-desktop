@@ -161,7 +161,7 @@ fn shipping_periodic_hydration_requires_complete_store_db_after_categories() {
         .find("sync_box_home_category(")
         .expect("last regular category");
     let store_db_pos = cycle
-        .find("let store_db_summary = sync_store_db_snapshots(")
+        .find("let capture = sync_store_db_snapshots_with_trace(")
         .expect("store db sweep");
     assert!(
         category_pos < store_db_pos,
