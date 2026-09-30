@@ -2,6 +2,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use crate::extensions::auth::extension::HostAuthExtension;
+use crate::extensions::browser_ua::extension::StopSubscription;
 use crate::extensions::experiments::HostExperimentsExtension;
 use crate::extensions::settings::settings_service::SettingsService;
 
@@ -388,8 +389,11 @@ impl ProductionInferenceExtension {
         self.runtime.port()
     }
 
-    pub fn on_model_experiment_applied(&self, listener: ModelExperimentApplied) {
-        self.runtime.on_model_experiment_applied(listener);
+    pub fn on_model_experiment_applied(
+        &self,
+        listener: ModelExperimentApplied,
+    ) -> StopSubscription {
+        self.runtime.on_model_experiment_applied(listener)
     }
 
     pub fn notify_model_experiment_applied(&self) {
