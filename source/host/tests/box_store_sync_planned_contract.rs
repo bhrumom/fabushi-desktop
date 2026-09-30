@@ -338,6 +338,8 @@ fn service_flush_and_db_capture_classification_preserve_reference_priority() {
 #[test]
 fn box_store_writer_lock_serializes_owners_and_releases_on_drop() {
     let root = temp_root("writer-lock");
+    fs::create_dir_all(&root).expect("create writer-lock test root");
+    let root = fs::canonicalize(&root).expect("canonicalize writer-lock test root");
     let lock_path = root.join("box-store-sync.lock");
 
     let first = BoxStoreWriterLock::try_acquire(&lock_path, "window-a")
