@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Condvar, Mutex, Weak, mpsc};
+use std::sync::{Arc, Condvar, Mutex, OnceLock, Weak, mpsc};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -70,6 +70,68 @@ impl HostExperimentsOptions {
 }
 
 type AuthenticatedGatePin = Arc<dyn Fn(bool) + Send + Sync>;
+
+pub const PRE_PIN_DIAGNOSTICS_BUFFER_CAP: usize = 64;
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ExperimentDiagnostic {
+    pub kind: String,
+    pub stage: Option<String>,
+    pub reason: Option<String>,
+    pub error_class: Option<String>,
+    pub gates_on_count: Option<i64>,
+    pub authenticated: Option<bool>,
+}
+
+pub type ExperimentDiagnosticReporter =
+    Arc<dyn Fn(ExperimentDiagnostic) + Send + Sync>;
+
+#[derive(Default)]
+struct ExperimentDiagnosticReporterState {
+    reporter: Option<ExperimentDiagnosticReporter>,
+    buffered: Vec<ExperimentDiagnostic>,
+}
+
+fn experiment_diagnostic_reporter_state() -> &'static Mutex<ExperimentDiagnosticReporterState> {
+    static STATE: OnceLock<Mutex<ExperimentDiagnosticReporterState>> = OnceLock::new();
+    STATE.get_or_init(|| Mutex::new(ExperimentDiagnosticReporterState::default()))
+}
+
+pub fn pin_experiments_diagnostics_reporter(
+    reporter: Option<ExperimentDiagnosticReporter>,
+) {
+    let backlog = {
+        let mut state = experiment_diagnostic_reporter_state()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        state.reporter = reporter.clone();
+        std::mem::take(&mut state.buffered)
+    };
+    if let Some(reporter) = reporter {
+        for diagnostic in backlog {
+            reporter(diagnostic);
+        }
+    }
+}
+
+pub fn report_experiments_diagnostic(diagnostic: ExperimentDiagnostic) {
+    let reporter = {
+        let mut state = experiment_diagnostic_reporter_state()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if let Some(reporter) = state.reporter.as_ref().cloned() {
+            Some(reporter)
+        } else {
+            if state.buffered.len() < PRE_PIN_DIAGNOSTICS_BUFFER_CAP {
+                state.buffered.push(diagnostic.clone());
+            }
+            None
+        }
+    };
+    if let Some(reporter) = reporter {
+        reporter(diagnostic);
+    }
+}
 
 #[derive(Debug, Clone, Default)]
 struct StatsigExperimentAssignment {
