@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use serde_json::{Map, Value};
@@ -93,6 +94,8 @@ impl Default for BoxStoreScheduling {
 
 pub type DiagnosticReporter =
     Arc<dyn Fn(&Map<String, Value>) + Send + Sync + 'static>;
+pub type BoxStoreSyncTelemetryReporter =
+    Arc<dyn Fn(&str, &BTreeMap<String, String>) + Send + Sync + 'static>;
 pub type StoreIdResolver =
     Arc<dyn Fn() -> Result<String, String> + Send + Sync + 'static>;
 pub type AccessTokenResolver =
@@ -109,6 +112,7 @@ pub struct BoxStoreSyncExtensionDeps {
     pub get_machine_id: Option<MachineIdResolver>,
     pub log: Arc<dyn Fn(&str) + Send + Sync>,
     pub report_host_extension_diagnostic: DiagnosticReporter,
+    pub report_box_store_sync_cycle: BoxStoreSyncTelemetryReporter,
     pub scheduling: BoxStoreScheduling,
 }
 
