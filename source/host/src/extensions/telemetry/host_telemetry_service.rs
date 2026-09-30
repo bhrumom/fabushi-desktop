@@ -496,6 +496,14 @@ impl HostStructuredLogTelemetry {
         self.report_projection(&host_diagnostic_telemetry(report))
     }
 
+    pub fn report_host_crash(&self, kind: &str) -> io::Result<()> {
+        self.report_projection(&HostTelemetryProjection {
+            level: Some("error"),
+            event: Some("sand.host.crash"),
+            metadata: BTreeMap::from([("kind".into(), kind.to_string())]),
+        })
+    }
+
     pub fn report_host_event_bus_failure(&self, report: &HostEventBusReport) -> io::Result<()> {
         self.report_projection(&host_event_bus_telemetry(report))
     }
