@@ -19,6 +19,7 @@ use crate::extensions::experiments::HostExperimentsExtension;
 
 pub const SAND_PRODUCT_ANALYTICS_GATE: &str = "sand_product_analytics";
 pub const MAX_DEFERRED_ANALYTICS_EVENTS: usize = 256;
+pub const ANALYTICS_NORMAL_FLUSH_TIMEOUT_MS: u64 = 2_500;
 pub const ANALYTICS_TRACK_EVENTS_PATH: &str = "aiserver.v1.AnalyticsService/TrackEvents";
 pub const FROZEN_ANALYTICS_SERVICE_BLOB: &str =
     "4ea2919cfcc54b1c549f856188538ae032c5a522";
@@ -183,14 +184,14 @@ impl AnalyticsBackendTransport {
         auth: Arc<HostAuthExtension>,
     ) -> Result<Self, String> {
         let client = Client::builder()
-            .connect_timeout(Duration::from_secs(5))
-            .timeout(Duration::from_secs(15))
+            .connect_timeout(Duration::from_millis(ANALYTICS_NORMAL_FLUSH_TIMEOUT_MS))
+            .timeout(Duration::from_millis(ANALYTICS_NORMAL_FLUSH_TIMEOUT_MS))
             .build()
             .map_err(|error| format!("build product analytics client: {error}"))?;
         Ok(Self { backend_url, auth, client })
     }
 
-    fn send(&self, queued: &QueuedAnalyticsEvent) -> Result<(), String> {
+    fn send(&self, queued: &[QueuedAnalyticsEvent]) -> Result<(), String> {
         let url = Url::parse(&self.backend_url)
             .map_err(|error| format!("invalid analytics backend URL: {error}"))?
             .join(ANALYTICS_TRACK_EVENTS_PATH)
@@ -203,22 +204,33 @@ impl AnalyticsBackendTransport {
             .map_err(|error| format!("product analytics machine id: {error}"))?;
         let ghost_mode =
             resolve_sand_ghost_mode_header(&self.backend_url, &token, &machine_id);
-        let event_data = queued.event.properties.iter().map(|(key, value)| {
-            let encoded = match value {
-                Value::String(value) => json!({ "stringValue": value }),
-                Value::Bool(value) => json!({ "boolValue": value }),
-                Value::Number(value) => json!({ "doubleValue": value.as_f64().unwrap_or(0.0) }),
-                _ => Value::Null,
-            };
-            (key.clone(), encoded)
-        }).collect::<serde_json::Map<_, _>>();
-        let payload = json!({
-            "events": [{
-                "eventName": queued.event.name,
-                "eventData": event_data,
-                "timestamp": queued.timestamp_ms.to_string(),
-            }]
-        });
+        let events = queued
+            .iter()
+            .map(|queued| {
+                let event_data = queued
+                    .event
+                    .properties
+                    .iter()
+                    .map(|(key, value)| {
+                        let encoded = match value {
+                            Value::String(value) => json!({ "stringValue": value }),
+                            Value::Bool(value) => json!({ "boolValue": value }),
+                            Value::Number(value) => {
+                                json!({ "doubleValue": value.as_f64().unwrap_or(0.0) })
+                            }
+                            _ => Value::Null,
+                        };
+                        (key.clone(), encoded)
+                    })
+                    .collect::<serde_json::Map<_, _>>();
+                json!({
+                    "eventName": queued.event.name,
+                    "eventData": event_data,
+                    "timestamp": queued.timestamp_ms.to_string(),
+                })
+            })
+            .collect::<Vec<_>>();
+        let payload = json!({ "events": events });
         let response = self.client
             .post(url)
             .bearer_auth(token)
@@ -279,13 +291,30 @@ impl ProductionAnalyticsRuntime {
             .name("sand-product-analytics".into())
             .spawn(move || {
                 while let Ok(command) = rx.recv() {
-                    match command {
-                        AnalyticsWorkerCommand::Event(event) => {
-                            if let Err(error) = transport.send(&event) {
-                                eprintln!("[sand-analytics] {error}");
+                    let AnalyticsWorkerCommand::Event(first) = command else {
+                        break;
+                    };
+                    let mut batch = vec![first];
+                    let mut stop_after_batch = false;
+                    loop {
+                        match rx.try_recv() {
+                            Ok(AnalyticsWorkerCommand::Event(event)) => batch.push(event),
+                            Ok(AnalyticsWorkerCommand::Stop) => {
+                                stop_after_batch = true;
+                                break;
+                            }
+                            Err(mpsc::TryRecvError::Empty) => break,
+                            Err(mpsc::TryRecvError::Disconnected) => {
+                                stop_after_batch = true;
+                                break;
                             }
                         }
-                        AnalyticsWorkerCommand::Stop => break,
+                    }
+                    if let Err(error) = transport.send(&batch) {
+                        eprintln!("[sand-analytics] {error}");
+                    }
+                    if stop_after_batch {
+                        break;
                     }
                 }
             })
