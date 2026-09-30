@@ -11168,18 +11168,24 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_transfer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "94244a12d0046863ae77800b62de6a3d0b4c7440",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/box_store_sync/box_store_transfer.rs"
+        "source/host/src/extensions/box_store_sync/box_store_transfer.rs",
+        "source/host/src/extensions/box_store_sync/production.rs",
+        "source/host/src/extensions/box_store_sync/box_store_sync.rs"
       ],
       "testEvidence": [
-        "source/host/tests/box_store_sync_planned_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/box_store_transfer_frozen_parity_contract.rs",
+        "source/host/tests/box_store_sync_production_wiring_contract.rs",
+        "source/host/tests/box_store_sync_service_frozen_parity_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
+      "notes": "Shipping Mahayana Host now has one canonical BoxStoreTransfer owner matching the frozen Grok 0.18 transfer responsibility and consumed by ProductionBoxStoreSyncInner. It owns no-follow regular-file reads, local stat reuse, symlink projection, bounded small-file uploads, fixed two-way large snapshot concurrency, large-file temp copy/hash/upload and free-space guard, snapshot race classification, hydration-marker/temp exclusion, workspace/category pruning only after complete walks, staged Chrome session transfer, leaked snapshot/restore temp cleanup, and cache reset/forget behavior. production.rs no longer carries a second sync_tree_category/sync_file runtime; sand-data, workspace, CLI config, Chrome/profile, better-CLI home and staged Chrome paths delegate to this owner while store.db capture and pack composition remain with their canonical owners. Exact-HEAD Rust desktop runtime run 36657169917 passed the full rust-host job at c835b0a66e79212b6c5eaa671ac837128ed47928, including the new frozen transfer contract and existing Box Store Sync production/service contracts; Desktop Chat Parity run 36657169790 passed renderer and Focused Electron E2E.",
+      "parityMode": "rust-adaptation"
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-vacuum-worker.ts",
