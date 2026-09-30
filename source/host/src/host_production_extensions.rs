@@ -107,6 +107,7 @@ use crate::extensions::state_backstop::extension::{
 use crate::extensions::state_backstop::state_backstop_service::{
     StateBackstopObjectStore, StateBackstopOptions,
 };
+use crate::extensions::telemetry::analytics_service::ProductionAnalyticsRuntime;
 use crate::extensions::telemetry::extension::{
     HostTelemetryExtension, start_host_telemetry_extension,
 };
@@ -280,6 +281,12 @@ pub fn start_production_host_extensions(
     );
     let settings = start_settings_extension();
     let experiments = Arc::new(start_host_experiments_extension());
+    let product_analytics = ProductionAnalyticsRuntime::start(
+        backend_url.clone(),
+        Arc::clone(&auth),
+        Arc::clone(&experiments),
+    )?;
+    telemetry.analytics.attach_runtime(product_analytics);
     let statsig_bootstrap = start_authenticated_statsig_bootstrap(
         Arc::clone(&experiments),
         Arc::clone(&auth),
