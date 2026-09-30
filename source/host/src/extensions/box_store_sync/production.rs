@@ -1350,6 +1350,7 @@ impl ProductionBoxStoreSyncInner {
                 "turn_end",
                 StoreDbCaptureOutcome::Skipped,
                 None,
+                0,
                 started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
                 queue_duration_ms,
             );
