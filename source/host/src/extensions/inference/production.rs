@@ -205,8 +205,25 @@ impl ProductionAgentInferenceOwner {
     ) -> RequestedModel {
         let stored_default_model =
             model_selection_from_value(self.settings.get_agent_default_model());
+        let configured_computer_use_model = self
+            .experiments
+            .get_computer_use_model_override()
+            .and_then(|config| {
+                model_selection_from_value(Some(serde_json::Value::Object(
+                    config.into_iter().collect(),
+                )))
+            });
         let stored_computer_use_model =
-            model_selection_from_value(self.settings.get_computer_use_model());
+            model_selection_from_value(self.settings.get_computer_use_model())
+                .or(configured_computer_use_model);
+        let configured_browser_use_model = self
+            .experiments
+            .get_browser_use_model_override()
+            .and_then(|config| {
+                model_selection_from_value(Some(serde_json::Value::Object(
+                    config.into_iter().collect(),
+                )))
+            });
         let env_model_override = std::env::var("SAND_AGENT_MODEL")
             .ok()
             .map(|value| value.trim().to_string())
@@ -217,15 +234,18 @@ impl ProductionAgentInferenceOwner {
         let experiment_model_override = select_sand_experiment_turn_model(
             experiment_state.as_ref(),
             request_source,
-            || None,
-            || None,
+            || self.experiments.get_configured_default_model(),
+            || self.experiments.get_configured_automations_model(),
         );
+        if experiment_model_override.is_some() {
+            let _ = self.experiments.log_sand_model_experiment_exposure();
+        }
         resolve_sand_requested_model(ResolveRequestedModelInputs {
             session_options,
             env_model_override: env_model_override.as_deref(),
             stored_default_model: stored_default_model.as_ref(),
             stored_computer_use_model: stored_computer_use_model.as_ref(),
-            stored_browser_use_model: None,
+            stored_browser_use_model: configured_browser_use_model.as_ref(),
             experiment_model_override: experiment_model_override.as_ref(),
         })
     }

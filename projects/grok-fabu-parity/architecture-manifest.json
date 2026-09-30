@@ -12269,21 +12269,24 @@
       "targetPath": "source/host/src/extensions/experiments/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "a092f9f10f733c4c3c335729b8b500de7a87b267",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/experiments/extension.rs",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/src/extensions/inference/production.rs",
         "source/host/src/extensions/session/extension.rs"
       ],
       "testEvidence": [
         "source/host/tests/extensions_experiments_contract.rs",
+        "source/host/tests/experiments_extension_lifecycle_contract.rs",
         "source/host/tests/session_extension_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host Experiments owner now preserves frozen extension dependencies, bundled convenience-gate defaults/dev overrides, disposable subscriptions, and getDynamicConfig fallback+live-override merge semantics for grok_bot_conversation_size_limits. Shipping Session consumes that dynamic config through a pinned production reader. Final is withheld for authenticated Statsig bootstrap/cache/poll/auth-renewal, async checkGate/readiness, gate properties, hydrated user identity, experiment/model-config APIs and the full frozen extension return surface."
+      "notes": "Rust Host owns the single shipping Grok Experiments lifecycle: Auth/Settings dependency order; canonical Sand-root bootstrap cache; cached/live hydration; 30s dev or 5m production jittered polling; Retry-After backoff; Auth-revision stale-response discard and coalesced renewal refresh; first-credential/unauthenticated renewal semantics; hydrated-user readiness/checkGate; mutable gate properties; frozen convenience gates; dynamic configs; strict model-config validation; model experiment state/exposure; and idempotent stop settlement. Production Inference consumes the same owner for default/automation/computer/browser model selection and exposure logging. Focused contracts exercise the return surface and cross-module shipping wiring; exact-HEAD GitHub Actions remain the acceptance authority."
     },
     {
       "referencePath": "source/host/extensions/extension-ids.generated.ts",

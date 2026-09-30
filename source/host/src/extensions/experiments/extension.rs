@@ -1,10 +1,10 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, Weak, mpsc};
+use std::sync::{Arc, Condvar, Mutex, Weak, mpsc};
 use std::thread::{self, JoinHandle};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
@@ -22,6 +22,7 @@ use crate::extensions::browser_ua::extension::{
 };
 use crate::extensions::extension_ids_generated::HostExtensionId;
 use crate::extensions::inference::sand_model_experiment::{
+    SandAgentModelParameter, SandAgentModelSelection, SandModelExperimentArm,
     SandModelExperimentState, read_sand_model_experiment_process_override,
 };
 
@@ -30,7 +31,20 @@ pub const EXPERIMENTS_DEPENDENCIES: &[HostExtensionId] =
 pub const STATSIG_BOOTSTRAP_CACHE_FILENAME: &str = "sand-statsig-bootstrap.json";
 pub const STATSIG_BOOTSTRAP_PATH: &str = "aiserver.v1.AnalyticsService/BootstrapStatsig";
 pub const STATSIG_BOOTSTRAP_TIMEOUT: Duration = Duration::from_secs(30);
-pub const STATSIG_POLL_INTERVAL: Duration = Duration::from_secs(5 * 60);
+pub const STATSIG_BASE_POLL_INTERVAL: Duration = Duration::from_secs(5 * 60);
+pub const STATSIG_MIN_POLL_INTERVAL: Duration = Duration::from_secs(30);
+pub const STATSIG_POLL_JITTER_PERCENT: u64 = 30;
+pub const GATE_READY_TIMEOUT: Duration = Duration::from_secs(10);
+pub const HYDRATED_USER_TIMEOUT: Duration = Duration::from_secs(60);
+pub const SAND_MODEL_EXPERIMENT_NAME: &str = "sand_model_selection";
+pub const SAND_DEFAULT_MODEL_CONFIG_NAME: &str = "sand_default_model";
+pub const SAND_AUTOMATIONS_MODEL_CONFIG_NAME: &str = "sand_automations_model";
+pub const SAND_COMPUTER_USE_CONFIG_NAME: &str = "sand_computer_use_playwright_config";
+pub const SAND_BROWSER_USE_CONFIG_NAME: &str = "sand_browser_use_model";
+pub const STATSIG_CLIENT_KEY: &str =
+    "client-Bm4HJ0aDjXHQVsoACMREyLNxm5p6zzuzhO50MgtoT5D";
+pub const STATSIG_LOG_EVENT_PROXY_URL: &str = "https://api3.cursor.sh/tev1/v1";
+pub const STATSIG_JS_SDK_VERSION: &str = "3.31.0";
 
 pub fn experiments_extension_id() -> HostExtensionId {
     HostExtensionId::Experiments
@@ -57,14 +71,117 @@ impl HostExperimentsOptions {
 
 type AuthenticatedGatePin = Arc<dyn Fn(bool) + Send + Sync>;
 
+#[derive(Debug, Clone, Default)]
+struct StatsigExperimentAssignment {
+    value: BTreeMap<String, Value>,
+    group_name: Option<String>,
+    rule_id: Option<String>,
+    secondary_exposures: Vec<Value>,
+}
+
+#[derive(Debug, Default)]
+struct ExperimentsReadiness {
+    has_live_statsig_bootstrap: bool,
+    is_refreshing: bool,
+    is_disposed: bool,
+    hydrated_user_id: Option<String>,
+}
+
+struct MutableGatePropertyState {
+    value: bool,
+    listeners: BTreeMap<u64, Arc<dyn Fn(bool) + Send + Sync>>,
+    next_listener_id: u64,
+}
+
+pub struct MutableGateProperty {
+    state: Arc<Mutex<MutableGatePropertyState>>,
+}
+
+impl MutableGateProperty {
+    fn new(value: bool) -> Self {
+        Self {
+            state: Arc::new(Mutex::new(MutableGatePropertyState {
+                value,
+                listeners: BTreeMap::new(),
+                next_listener_id: 0,
+            })),
+        }
+    }
+
+    pub fn get(&self) -> bool {
+        self.state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .value
+    }
+
+    pub fn subscribe(
+        &self,
+        listener: Arc<dyn Fn(bool) + Send + Sync>,
+    ) -> StopSubscription {
+        let id = {
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            state.next_listener_id = state.next_listener_id.saturating_add(1);
+            let id = state.next_listener_id;
+            state.listeners.insert(id, listener);
+            id
+        };
+        let state = Arc::downgrade(&self.state);
+        Box::new(move || {
+            if let Some(state) = state.upgrade() {
+                state
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .listeners
+                    .remove(&id);
+            }
+        })
+    }
+
+    fn set(&self, value: bool) {
+        let listeners = {
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if state.value == value {
+                return;
+            }
+            state.value = value;
+            state.listeners.values().cloned().collect::<Vec<_>>()
+        };
+        for listener in listeners {
+            listener(value);
+        }
+    }
+
+    fn clear_listeners(&self) {
+        self.state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .listeners
+            .clear();
+    }
+}
+
 struct ExperimentsState {
     options: HostExperimentsOptions,
     settings_overrides: Mutex<BTreeMap<String, bool>>,
     network_feature_gates: Mutex<BTreeMap<String, bool>>,
-    dynamic_config_overrides: Mutex<BTreeMap<String, BTreeMap<String, serde_json::Value>>>,
+    network_dynamic_configs: Mutex<BTreeMap<String, BTreeMap<String, Value>>>,
+    dynamic_config_overrides: Mutex<BTreeMap<String, BTreeMap<String, Value>>>,
+    network_experiments: Mutex<BTreeMap<String, StatsigExperimentAssignment>>,
+    statsig_user: Mutex<Option<Value>>,
     listeners: Mutex<BTreeMap<u64, Arc<dyn Fn() + Send + Sync>>>,
     next_listener_id: AtomicU64,
+    gate_properties: Mutex<BTreeMap<String, Arc<MutableGateProperty>>>,
+    readiness: Mutex<ExperimentsReadiness>,
+    readiness_changed: Condvar,
     has_authenticated_statsig_bootstrap: AtomicBool,
+    model_experiment_exposure_logged: AtomicBool,
     authenticated_gate_pins: Mutex<Vec<(String, AuthenticatedGatePin)>>,
 }
 
@@ -80,10 +197,17 @@ impl HostExperimentsExtension {
                 options,
                 settings_overrides: Mutex::new(BTreeMap::new()),
                 network_feature_gates: Mutex::new(BTreeMap::new()),
+                network_dynamic_configs: Mutex::new(BTreeMap::new()),
                 dynamic_config_overrides: Mutex::new(BTreeMap::new()),
+                network_experiments: Mutex::new(BTreeMap::new()),
+                statsig_user: Mutex::new(None),
                 listeners: Mutex::new(BTreeMap::new()),
                 next_listener_id: AtomicU64::new(0),
+                gate_properties: Mutex::new(BTreeMap::new()),
+                readiness: Mutex::new(ExperimentsReadiness::default()),
+                readiness_changed: Condvar::new(),
                 has_authenticated_statsig_bootstrap: AtomicBool::new(false),
+                model_experiment_exposure_logged: AtomicBool::new(false),
                 authenticated_gate_pins: Mutex::new(Vec::new()),
             }),
         }
@@ -121,10 +245,113 @@ impl HostExperimentsExtension {
         bundled_feature_gate_default(name)
     }
 
+    pub fn check_gate(&self, name: &str, timeout: Option<Duration>) -> bool {
+        let timeout = timeout.unwrap_or(GATE_READY_TIMEOUT);
+        let started = Instant::now();
+        let mut readiness = self
+            .state
+            .readiness
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        while !readiness.has_live_statsig_bootstrap
+            && readiness.is_refreshing
+            && !readiness.is_disposed
+        {
+            let remaining = timeout.saturating_sub(started.elapsed());
+            if remaining.is_zero() {
+                break;
+            }
+            let (next, result) = self
+                .state
+                .readiness_changed
+                .wait_timeout(readiness, remaining)
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            readiness = next;
+            if result.timed_out() {
+                break;
+            }
+        }
+        drop(readiness);
+        self.check_feature_gate(name)
+    }
+
+    pub fn get_feature_gate_property(
+        &self,
+        name: impl Into<String>,
+    ) -> Arc<MutableGateProperty> {
+        let name = name.into();
+        let current = self.check_feature_gate(&name);
+        let mut properties = self
+            .state
+            .gate_properties
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        Arc::clone(
+            properties
+                .entry(name)
+                .or_insert_with(|| Arc::new(MutableGateProperty::new(current))),
+        )
+    }
+
     pub fn has_authenticated_statsig_bootstrap(&self) -> bool {
         self.state
             .has_authenticated_statsig_bootstrap
             .load(Ordering::Acquire)
+    }
+
+    pub fn has_live_statsig_bootstrap(&self) -> bool {
+        self.state
+            .readiness
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .has_live_statsig_bootstrap
+    }
+
+    pub fn has_hydrated_statsig_user_id(&self) -> bool {
+        self.state
+            .readiness
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .hydrated_user_id
+            .as_deref()
+            .is_some_and(|value| !value.is_empty())
+    }
+
+    pub fn wait_for_hydrated_statsig_user_id(&self, timeout: Duration) -> bool {
+        let started = Instant::now();
+        let mut readiness = self
+            .state
+            .readiness
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        loop {
+            if readiness
+                .hydrated_user_id
+                .as_deref()
+                .is_some_and(|value| !value.is_empty())
+            {
+                return true;
+            }
+            if readiness.is_disposed {
+                return false;
+            }
+            let remaining = timeout.saturating_sub(started.elapsed());
+            if remaining.is_zero() {
+                return false;
+            }
+            let (next, result) = self
+                .state
+                .readiness_changed
+                .wait_timeout(readiness, remaining)
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            readiness = next;
+            if result.timed_out() {
+                return readiness
+                    .hydrated_user_id
+                    .as_deref()
+                    .is_some_and(|value| !value.is_empty());
+            }
+        }
     }
 
     pub fn pin_gate_on_authenticated_bootstrap(
@@ -156,19 +383,70 @@ impl HostExperimentsExtension {
         config: &str,
         authenticated_network: bool,
     ) -> Result<bool, String> {
-        let (user_id, gates) = parse_statsig_bootstrap(config)?;
+        self.hydrate_statsig_bootstrap_source(config, true, authenticated_network)
+    }
+
+    fn hydrate_cached_statsig_bootstrap(&self, config: &str) -> Result<(), String> {
+        self.hydrate_statsig_bootstrap_source(config, false, false)
+            .map(|_| ())
+    }
+
+    fn hydrate_statsig_bootstrap_source(
+        &self,
+        config: &str,
+        live_network: bool,
+        authenticated_network: bool,
+    ) -> Result<bool, String> {
+        let parsed = parse_statsig_bootstrap(config)?;
         *self
             .state
             .network_feature_gates
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner()) = gates;
-        let authenticated = authenticated_network
-            && user_id.as_deref().is_some_and(|value| !value.is_empty());
-        if authenticated {
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = parsed.feature_gates;
+        *self
+            .state
+            .network_dynamic_configs
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = parsed.dynamic_configs;
+        *self
+            .state
+            .network_experiments
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = parsed.experiments;
+        *self
+            .state
+            .statsig_user
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = parsed.user;
+
+        let hydrated_user_id = parsed.user_id.filter(|value| !value.is_empty());
+        let user_changed = {
+            let mut readiness = self
+                .state
+                .readiness
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            let changed = readiness.hydrated_user_id != hydrated_user_id;
+            readiness.hydrated_user_id = hydrated_user_id.clone();
+            if live_network {
+                readiness.has_live_statsig_bootstrap = true;
+            }
+            changed
+        };
+        if user_changed {
             self.state
-                .has_authenticated_statsig_bootstrap
-                .store(true, Ordering::Release);
+                .model_experiment_exposure_logged
+                .store(false, Ordering::Release);
         }
+
+        let authenticated = live_network
+            && authenticated_network
+            && hydrated_user_id.is_some();
+        self.state
+            .has_authenticated_statsig_bootstrap
+            .store(authenticated, Ordering::Release);
+
+        self.state.readiness_changed.notify_all();
         self.notify_listeners();
         if authenticated {
             let pins = std::mem::take(
@@ -185,8 +463,133 @@ impl HostExperimentsExtension {
         Ok(authenticated)
     }
 
+    fn begin_refresh(&self) -> bool {
+        let mut readiness = self
+            .state
+            .readiness
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if readiness.is_disposed {
+            return false;
+        }
+        readiness.is_refreshing = true;
+        self.state.readiness_changed.notify_all();
+        true
+    }
+
+    fn finish_refresh(&self) {
+        let mut readiness = self
+            .state
+            .readiness
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        readiness.is_refreshing = false;
+        self.state.readiness_changed.notify_all();
+    }
+
+    pub fn dispose(&self) {
+        self.state
+            .has_authenticated_statsig_bootstrap
+            .store(false, Ordering::Release);
+        self.state
+            .model_experiment_exposure_logged
+            .store(false, Ordering::Release);
+        {
+            let mut readiness = self
+                .state
+                .readiness
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            readiness.is_disposed = true;
+            readiness.is_refreshing = false;
+            readiness.has_live_statsig_bootstrap = false;
+            readiness.hydrated_user_id = None;
+        }
+        self.state.readiness_changed.notify_all();
+
+        self.state
+            .listeners
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
+        let properties = self
+            .state
+            .gate_properties
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .values()
+            .cloned()
+            .collect::<Vec<_>>();
+        for property in properties {
+            property.clear_listeners();
+        }
+        self.state
+            .authenticated_gate_pins
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
+        self.state
+            .network_feature_gates
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
+        self.state
+            .network_dynamic_configs
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
+        self.state
+            .network_experiments
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
+        *self
+            .state
+            .statsig_user
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = None;
+    }
+
     pub fn is_agent_network_enabled(&self) -> bool {
         self.check_feature_gate("sand_agent_network")
+    }
+
+    pub fn is_mcp_multi_account_enabled(&self) -> bool {
+        self.check_feature_gate("mcp_multi_account")
+    }
+
+    pub fn is_sparse_plugin_clones_enabled(&self) -> bool {
+        self.check_feature_gate("enable_sparse_plugin_clones")
+    }
+
+    pub fn is_multitask_enabled(&self) -> bool {
+        resolve_boolean_env_override(
+            std::env::var("SAND_MULTITASK").ok().as_deref(),
+            self.check_feature_gate("sand_multitask"),
+        )
+    }
+
+    pub fn is_send_message_delivery_owed_enabled(&self) -> bool {
+        self.check_feature_gate("sand_send_message_delivery_owed")
+    }
+
+    pub fn is_dynamic_tools_enabled(&self) -> bool {
+        self.check_feature_gate("grok_bot_dynamic_tools")
+    }
+
+    pub fn is_browser_use_subagent_enabled(&self) -> bool {
+        self.check_feature_gate("sand_browser_use_subagent")
+    }
+
+    pub fn is_spotlight_enabled(&self) -> bool {
+        resolve_boolean_env_override(
+            std::env::var("SAND_SPOTLIGHT").ok().as_deref(),
+            self.check_feature_gate("sand_spotlight"),
+        )
+    }
+
+    pub fn is_unicode_typing_enabled(&self) -> bool {
+        self.check_feature_gate("sand_computer_use_unicode_typing")
     }
 
     pub fn is_ua_token_kill_switch_enabled(&self) -> bool {
@@ -194,25 +597,125 @@ impl HostExperimentsExtension {
     }
 
     pub fn get_sand_model_experiment_state(&self) -> Option<SandModelExperimentState> {
-        read_sand_model_experiment_process_override()
+        if let Some(override_state) = read_sand_model_experiment_process_override() {
+            return Some(override_state);
+        }
+        if !self.has_hydrated_statsig_user_id() {
+            return None;
+        }
+        let experiments = self
+            .state
+            .network_experiments
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let assignment = experiments.get(SAND_MODEL_EXPERIMENT_NAME)?;
+        assignment.group_name.as_deref()?;
+        let enabled = assignment
+            .value
+            .get("enabled")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        Some(SandModelExperimentState {
+            active: true,
+            arm: if enabled {
+                SandModelExperimentArm::Treatment
+            } else {
+                SandModelExperimentArm::Control
+            },
+        })
     }
 
-    pub fn get_dynamic_config(
-        &self,
-        name: &str,
-    ) -> BTreeMap<String, serde_json::Value> {
+    pub fn log_sand_model_experiment_exposure(&self) -> bool {
+        if !self.has_hydrated_statsig_user_id() {
+            return false;
+        }
+        let assignment = self
+            .state
+            .network_experiments
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .get(SAND_MODEL_EXPERIMENT_NAME)
+            .cloned();
+        let Some(assignment) = assignment.filter(|value| value.group_name.is_some()) else {
+            return false;
+        };
+        let user = self
+            .state
+            .statsig_user
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        let Some(user) = user else {
+            return false;
+        };
+
+        if self
+            .state
+            .model_experiment_exposure_logged
+            .swap(true, Ordering::AcqRel)
+        {
+            return true;
+        }
+        let scheduled = spawn_statsig_model_exposure(user, assignment);
+        if !scheduled {
+            self.state
+                .model_experiment_exposure_logged
+                .store(false, Ordering::Release);
+        }
+        scheduled
+    }
+
+    pub fn get_dynamic_config(&self, name: &str) -> BTreeMap<String, Value> {
         let mut config = bundled_dynamic_config_default(name);
-        let overrides = self
+        if let Some(values) = self
+            .state
+            .network_dynamic_configs
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .get(name)
+            .cloned()
+        {
+            for (key, value) in values {
+                config.insert(key, value);
+            }
+        }
+        if let Some(values) = self
             .state
             .dynamic_config_overrides
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        if let Some(values) = overrides.get(name) {
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .get(name)
+            .cloned()
+        {
             for (key, value) in values {
-                config.insert(key.clone(), value.clone());
+                config.insert(key, value);
             }
         }
         config
+    }
+
+    pub fn get_configured_default_model(&self) -> Option<SandAgentModelSelection> {
+        configured_model_from_config(
+            self.get_dynamic_config(SAND_DEFAULT_MODEL_CONFIG_NAME),
+            self.has_hydrated_statsig_user_id(),
+        )
+    }
+
+    pub fn get_configured_automations_model(&self) -> Option<SandAgentModelSelection> {
+        configured_model_from_config(
+            self.get_dynamic_config(SAND_AUTOMATIONS_MODEL_CONFIG_NAME),
+            self.has_hydrated_statsig_user_id(),
+        )
+    }
+
+    pub fn get_computer_use_model_override(&self) -> Option<BTreeMap<String, Value>> {
+        self.check_feature_gate("sand_computer_use_playwright")
+            .then(|| self.get_dynamic_config(SAND_COMPUTER_USE_CONFIG_NAME))
+    }
+
+    pub fn get_browser_use_model_override(&self) -> Option<BTreeMap<String, Value>> {
+        self.check_feature_gate("sand_browser_use_subagent")
+            .then(|| self.get_dynamic_config(SAND_BROWSER_USE_CONFIG_NAME))
     }
 
     pub fn replace_feature_flag_overrides(&self, overrides: BTreeMap<String, bool>) {
@@ -226,7 +729,7 @@ impl HostExperimentsExtension {
 
     pub fn replace_dynamic_config_overrides(
         &self,
-        overrides: BTreeMap<String, BTreeMap<String, serde_json::Value>>,
+        overrides: BTreeMap<String, BTreeMap<String, Value>>,
     ) {
         *self
             .state
@@ -237,6 +740,18 @@ impl HostExperimentsExtension {
     }
 
     fn notify_listeners(&self) {
+        let properties = self
+            .state
+            .gate_properties
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .iter()
+            .map(|(name, property)| (name.clone(), Arc::clone(property)))
+            .collect::<Vec<_>>();
+        for (name, property) in properties {
+            property.set(self.check_feature_gate(&name));
+        }
+
         let listeners = self
             .state
             .listeners
@@ -293,6 +808,7 @@ pub struct ProductionStatsigBootstrapRuntime {
     stop: mpsc::Sender<StatsigBootstrapCommand>,
     worker: Mutex<Option<JoinHandle<()>>>,
     auth_stop: Mutex<Option<StopSubscription>>,
+    experiments: Arc<HostExperimentsExtension>,
 }
 
 impl Drop for ProductionStatsigBootstrapRuntime {
@@ -308,6 +824,7 @@ impl Drop for ProductionStatsigBootstrapRuntime {
                 let _ = worker.join();
             }
         }
+        self.experiments.dispose();
     }
 }
 
@@ -319,7 +836,7 @@ pub fn start_authenticated_statsig_bootstrap(
 ) -> Result<ProductionStatsigBootstrapRuntime, String> {
     let cache_path = cache_dir.join(STATSIG_BOOTSTRAP_CACHE_FILENAME);
     if let Some(config) = load_cached_statsig_bootstrap(&cache_path) {
-        let _ = experiments.hydrate_statsig_bootstrap(&config, false);
+        let _ = experiments.hydrate_cached_statsig_bootstrap(&config);
     }
 
     let client = Client::builder()
@@ -328,38 +845,75 @@ pub fn start_authenticated_statsig_bootstrap(
         .build()
         .map_err(|error| format!("build Statsig bootstrap client: {error}"))?;
     let (tx, rx) = mpsc::channel();
+    let auth_revision = Arc::new(AtomicU64::new(0));
+    let worker_revision = Arc::clone(&auth_revision);
     let worker_experiments = Arc::clone(&experiments);
     let worker_auth = Arc::clone(&auth);
     let worker_cache = cache_path.clone();
+    let poll_interval = statsig_poll_interval(experiments.state.options.is_dev_build);
     let worker = thread::Builder::new()
         .name("sand-experiments-statsig".into())
         .spawn(move || {
-            let refresh = || {
-                match fetch_statsig_bootstrap(
+            let refresh = || -> Option<Duration> {
+                if !worker_experiments.begin_refresh() {
+                    return None;
+                }
+                let revision = worker_revision.load(Ordering::Acquire);
+                let result = fetch_statsig_bootstrap(
                     &client,
                     &backend_url,
                     &worker_auth,
-                ) {
-                    Ok(Some((config, authenticated))) => {
-                        if worker_experiments
-                            .hydrate_statsig_bootstrap(&config, authenticated)
-                            .is_ok()
-                        {
-                            let _ = save_cached_statsig_bootstrap(&worker_cache, &config);
+                );
+                let retry_after = match result {
+                    Ok(result) => {
+                        if revision != worker_revision.load(Ordering::Acquire) {
+                            None
+                        } else if let Some(config) = result.config {
+                            if worker_experiments
+                                .hydrate_statsig_bootstrap_source(&config, true, true)
+                                .is_ok()
+                            {
+                                let _ = save_cached_statsig_bootstrap(&worker_cache, &config);
+                            }
+                            None
+                        } else {
+                            result.retry_after
                         }
                     }
-                    Ok(None) => {}
                     Err(error) => {
                         eprintln!("mahayana-host-experiments Statsig bootstrap failed: {error}");
+                        None
                     }
-                }
+                };
+                worker_experiments.finish_refresh();
+                retry_after
             };
 
-            refresh();
+            let mut next_delay = refresh()
+                .map(|delay| delay.max(poll_interval))
+                .unwrap_or(poll_interval);
             loop {
-                match rx.recv_timeout(STATSIG_POLL_INTERVAL) {
-                    Ok(StatsigBootstrapCommand::Refresh)
-                    | Err(mpsc::RecvTimeoutError::Timeout) => refresh(),
+                match rx.recv_timeout(next_delay) {
+                    Ok(StatsigBootstrapCommand::Refresh) => {
+                        let mut stop = false;
+                        while let Ok(command) = rx.try_recv() {
+                            if matches!(command, StatsigBootstrapCommand::Stop) {
+                                stop = true;
+                                break;
+                            }
+                        }
+                        if stop {
+                            break;
+                        }
+                        next_delay = refresh()
+                            .map(|delay| delay.max(poll_interval))
+                            .unwrap_or(poll_interval);
+                    }
+                    Err(mpsc::RecvTimeoutError::Timeout) => {
+                        next_delay = refresh()
+                            .map(|delay| delay.max(poll_interval))
+                            .unwrap_or(poll_interval);
+                    }
                     Ok(StatsigBootstrapCommand::Stop)
                     | Err(mpsc::RecvTimeoutError::Disconnected) => break,
                 }
@@ -368,9 +922,15 @@ pub fn start_authenticated_statsig_bootstrap(
         .map_err(|error| format!("start Statsig bootstrap worker: {error}"))?;
 
     let renewal_tx = tx.clone();
+    let renewal_experiments = Arc::clone(&experiments);
+    let renewal_revision = Arc::clone(&auth_revision);
     let auth_service = Arc::clone(auth.service());
     let subscription_id = auth_service.subscribe_to_renewal(Arc::new(move |event| {
-        if event.result.outcome == RenewalOutcome::Renewed {
+        if event.result.outcome == RenewalOutcome::Renewed
+            && (event.is_first_credential
+                || !renewal_experiments.has_authenticated_statsig_bootstrap())
+        {
+            renewal_revision.fetch_add(1, Ordering::AcqRel);
             let _ = renewal_tx.send(StatsigBootstrapCommand::Refresh);
         }
     }));
@@ -383,14 +943,21 @@ pub fn start_authenticated_statsig_bootstrap(
         stop: tx,
         worker: Mutex::new(Some(worker)),
         auth_stop: Mutex::new(Some(auth_stop)),
+        experiments,
     })
+}
+
+#[derive(Debug)]
+struct StatsigBootstrapFetchResult {
+    config: Option<String>,
+    retry_after: Option<Duration>,
 }
 
 fn fetch_statsig_bootstrap(
     client: &Client,
     backend_url: &str,
     auth: &HostAuthExtension,
-) -> Result<Option<(String, bool)>, String> {
+) -> Result<StatsigBootstrapFetchResult, String> {
     let base = Url::parse(backend_url)
         .map_err(|error| format!("invalid Statsig backend URL: {error}"))?;
     let url = base
@@ -420,15 +987,48 @@ fn fetch_statsig_bootstrap(
         .send()
         .map_err(|error| format!("Statsig bootstrap transport: {error}"))?;
     if !response.status().is_success() {
-        return Ok(None);
+        return Ok(StatsigBootstrapFetchResult {
+            config: None,
+            retry_after: parse_retry_after_header(
+                response.headers().get(reqwest::header::RETRY_AFTER),
+            ),
+        });
     }
     let payload = response
         .json::<Value>()
         .map_err(|error| format!("parse Statsig bootstrap response: {error}"))?;
-    Ok(payload
-        .get("config")
-        .and_then(Value::as_str)
-        .map(|config| (config.to_string(), access_token.is_some())))
+    Ok(StatsigBootstrapFetchResult {
+        config: payload
+            .get("config")
+            .and_then(Value::as_str)
+            .map(str::to_string),
+        retry_after: None,
+    })
+}
+
+fn parse_retry_after_header(
+    value: Option<&reqwest::header::HeaderValue>,
+) -> Option<Duration> {
+    let raw = value?.to_str().ok()?.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    if let Ok(seconds) = raw.parse::<f64>() {
+        if seconds.is_finite() {
+            let millis = (seconds.max(0.0) * 1_000.0)
+                .round()
+                .min(u64::MAX as f64) as u64;
+            return Some(Duration::from_millis(millis));
+        }
+    }
+    let when = chrono::DateTime::parse_from_rfc2822(raw)
+        .ok()?
+        .with_timezone(&chrono::Utc);
+    let delta_ms = when
+        .signed_duration_since(chrono::Utc::now())
+        .num_milliseconds()
+        .max(0) as u64;
+    Some(Duration::from_millis(delta_ms))
 }
 
 fn wall_clock_now_ms() -> u64 {
@@ -440,11 +1040,11 @@ fn wall_clock_now_ms() -> u64 {
 }
 
 pub fn create_cursor_checksum(machine_id: &str, now_ms: u64) -> String {
-    let unix_kilo_seconds = (now_ms / 1_000_000) as u32;
+    let unix_kilo_seconds = now_ms / 1_000_000;
     let shifts = [40u32, 32, 24, 16, 8, 0];
     let mut bytes = [0u8; 6];
     for (index, shift) in shifts.into_iter().enumerate() {
-        bytes[index] = ((unix_kilo_seconds >> (shift % 32)) & 0xff) as u8;
+        bytes[index] = ((unix_kilo_seconds >> shift) & 0xff) as u8;
     }
     let mut last_byte = 165u8;
     for (index, byte) in bytes.iter_mut().enumerate() {
@@ -484,18 +1084,30 @@ fn save_cached_statsig_bootstrap(path: &Path, config: &str) -> Result<(), String
         .map_err(|error| format!("commit Statsig cache: {error}"))
 }
 
-fn parse_statsig_bootstrap(
-    config: &str,
-) -> Result<(Option<String>, BTreeMap<String, bool>), String> {
+#[derive(Debug)]
+struct ParsedStatsigBootstrap {
+    user_id: Option<String>,
+    user: Option<Value>,
+    feature_gates: BTreeMap<String, bool>,
+    dynamic_configs: BTreeMap<String, BTreeMap<String, Value>>,
+    experiments: BTreeMap<String, StatsigExperimentAssignment>,
+}
+
+fn parse_statsig_bootstrap(config: &str) -> Result<ParsedStatsigBootstrap, String> {
     let parsed = serde_json::from_str::<Value>(config)
         .map_err(|error| format!("parse Statsig config: {error}"))?;
-    let user_id = parsed
+    let user = parsed
         .get("user")
+        .and_then(Value::as_object)
+        .map(|value| Value::Object(value.clone()));
+    let user_id = user
+        .as_ref()
         .and_then(Value::as_object)
         .and_then(|user| user.get("userID"))
         .and_then(Value::as_str)
         .map(str::to_string);
-    let gates = parsed
+
+    let feature_gates = parsed
         .get("feature_gates")
         .and_then(Value::as_object)
         .map(|gates| {
@@ -507,7 +1119,51 @@ fn parse_statsig_bootstrap(
                 .collect::<BTreeMap<_, _>>()
         })
         .unwrap_or_default();
-    Ok((user_id, gates))
+
+    let mut dynamic_configs = BTreeMap::new();
+    let mut experiments = BTreeMap::new();
+    if let Some(configs) = parsed.get("dynamic_configs").and_then(Value::as_object) {
+        for (name, raw) in configs {
+            let values = raw
+                .get("value")
+                .and_then(Value::as_object)
+                .map(|values| {
+                    values
+                        .iter()
+                        .map(|(key, value)| (key.clone(), value.clone()))
+                        .collect::<BTreeMap<_, _>>()
+                })
+                .unwrap_or_default();
+            dynamic_configs.insert(name.clone(), values.clone());
+            experiments.insert(
+                name.clone(),
+                StatsigExperimentAssignment {
+                    value: values,
+                    group_name: raw
+                        .get("group_name")
+                        .and_then(Value::as_str)
+                        .map(str::to_string),
+                    rule_id: raw
+                        .get("rule_id")
+                        .and_then(Value::as_str)
+                        .map(str::to_string),
+                    secondary_exposures: raw
+                        .get("secondary_exposures")
+                        .and_then(Value::as_array)
+                        .cloned()
+                        .unwrap_or_default(),
+                },
+            );
+        }
+    }
+
+    Ok(ParsedStatsigBootstrap {
+        user_id,
+        user,
+        feature_gates,
+        dynamic_configs,
+        experiments,
+    })
 }
 
 fn statsig_gate_value(value: &Value) -> Option<bool> {
@@ -531,21 +1187,180 @@ fn env_gate_override(name: &str, raw: Option<&str>) -> Option<bool> {
     None
 }
 
-fn bundled_feature_gate_default(name: &str) -> bool {
-    match name {
-        "enable_sparse_plugin_clones" | "sand_multitask" | "sand_spotlight" => true,
-        _ => false,
-    }
+fn resolve_boolean_env_override(raw: Option<&str>, fallback: bool) -> bool {
+    let Some(raw) = raw.filter(|value| !value.is_empty()) else {
+        return fallback;
+    };
+    raw != "0" && !raw.eq_ignore_ascii_case("false")
 }
 
-fn bundled_dynamic_config_default(
-    name: &str,
-) -> BTreeMap<String, serde_json::Value> {
+fn bundled_feature_gate_default(name: &str) -> bool {
+    matches!(
+        name,
+        "enable_sparse_plugin_clones"
+            | "sand_multitask"
+            | "sand_spotlight"
+            | "sand_computer_use_playwright"
+    )
+}
+
+fn bundled_dynamic_config_default(name: &str) -> BTreeMap<String, Value> {
     match name {
         "grok_bot_conversation_size_limits" => BTreeMap::from([
             ("soft_limit_mb".into(), serde_json::json!(256)),
             ("hard_limit_mb".into(), serde_json::json!(1024)),
         ]),
+        SAND_DEFAULT_MODEL_CONFIG_NAME | SAND_AUTOMATIONS_MODEL_CONFIG_NAME => {
+            BTreeMap::from([
+                ("modelId".into(), serde_json::json!("default")),
+                ("maxMode".into(), serde_json::json!(false)),
+                ("parameters".into(), serde_json::json!([])),
+            ])
+        }
+        SAND_COMPUTER_USE_CONFIG_NAME | SAND_BROWSER_USE_CONFIG_NAME => {
+            BTreeMap::from([
+                ("modelId".into(), serde_json::json!("claude-opus-4-8")),
+                ("maxMode".into(), serde_json::json!(false)),
+                (
+                    "parameters".into(),
+                    serde_json::json!([
+                        { "id": "thinking", "value": "false" },
+                        { "id": "effort", "value": "low" }
+                    ]),
+                ),
+            ])
+        }
+        "sand_model_filter" => BTreeMap::from([
+            ("allowedModelIds".into(), serde_json::json!([])),
+            ("defaultParameters".into(), serde_json::json!({})),
+        ]),
         _ => BTreeMap::new(),
     }
+}
+
+fn configured_model_from_config(
+    config: BTreeMap<String, Value>,
+    has_hydrated_statsig_user_id: bool,
+) -> Option<SandAgentModelSelection> {
+    if !has_hydrated_statsig_user_id {
+        return None;
+    }
+    let model_id = config.get("modelId")?.as_str()?.to_string();
+    let max_mode = config.get("maxMode")?.as_bool()?;
+    let raw_parameters = config.get("parameters")?.as_array()?;
+    if model_id.is_empty() {
+        return None;
+    }
+    if model_id.len() > 128
+        || model_id
+            .chars()
+            .any(|character| character.is_whitespace() || character.is_control())
+        || raw_parameters.len() > 16
+    {
+        return None;
+    }
+    let mut parameter_ids = BTreeSet::new();
+    let mut parameters = Vec::with_capacity(raw_parameters.len());
+    for raw in raw_parameters {
+        let raw = raw.as_object()?;
+        let id = raw.get("id")?.as_str()?;
+        let value = raw.get("value")?.as_str()?;
+        if id.is_empty()
+            || value.len() > 64
+            || !parameter_ids.insert(id.to_string())
+        {
+            return None;
+        }
+        parameters.push(SandAgentModelParameter {
+            id: id.to_string(),
+            value: value.to_string(),
+        });
+    }
+    let routed_model = matches!(
+        model_id.as_str(),
+        "default" | "premium" | "auto-low" | "auto-medium" | "auto-high" | "auto-smart"
+    );
+    if routed_model && (max_mode || !parameters.is_empty()) {
+        return None;
+    }
+    Some(SandAgentModelSelection {
+        model_id,
+        max_mode,
+        parameters,
+    })
+}
+
+fn statsig_poll_interval(is_dev_build: bool) -> Duration {
+    let base_ms = if is_dev_build {
+        STATSIG_MIN_POLL_INTERVAL.as_millis() as u64
+    } else {
+        STATSIG_BASE_POLL_INTERVAL
+            .max(STATSIG_MIN_POLL_INTERVAL)
+            .as_millis() as u64
+    };
+    let jitter_cap = base_ms.saturating_mul(STATSIG_POLL_JITTER_PERCENT) / 100;
+    let jitter = if jitter_cap == 0 {
+        0
+    } else {
+        (Uuid::new_v4().as_u128() % jitter_cap as u128) as u64
+    };
+    Duration::from_millis(base_ms.saturating_add(jitter))
+}
+
+fn spawn_statsig_model_exposure(
+    user: Value,
+    assignment: StatsigExperimentAssignment,
+) -> bool {
+    let rule_id = assignment.rule_id.unwrap_or_default();
+    let secondary_exposures = assignment.secondary_exposures;
+    let event = serde_json::json!({
+        "eventName": "statsig::config_exposure",
+        "user": user,
+        "time": wall_clock_now_ms(),
+        "value": Value::Null,
+        "metadata": {
+            "config": SAND_MODEL_EXPERIMENT_NAME,
+            "ruleID": rule_id,
+            "reason": "Network:Recognized"
+        },
+        "secondaryExposures": secondary_exposures
+    });
+    let payload = serde_json::json!({
+        "events": [event],
+        "statsigMetadata": {
+            "sdkType": "js-client",
+            "sdkVersion": STATSIG_JS_SDK_VERSION
+        }
+    });
+    let now = wall_clock_now_ms().to_string();
+    let session_id = Uuid::new_v4().to_string();
+    let url = format!("{}/rgstr", STATSIG_LOG_EVENT_PROXY_URL.trim_end_matches('/'));
+
+    thread::Builder::new()
+        .name("sand-experiments-exposure".into())
+        .spawn(move || {
+            let Ok(client) = Client::builder()
+                .connect_timeout(Duration::from_secs(5))
+                .timeout(Duration::from_secs(10))
+                .build()
+            else {
+                return;
+            };
+            let _ = client
+                .post(url)
+                .query(&[
+                    ("k", STATSIG_CLIENT_KEY),
+                    ("st", "js-client"),
+                    ("sv", STATSIG_JS_SDK_VERSION),
+                    ("t", now.as_str()),
+                    ("sid", session_id.as_str()),
+                ])
+                .header("statsig-event-count", "1")
+                .header("statsig-retry-count", "0")
+                .header("statsig-sdk-type", "js-client")
+                .header("statsig-sdk-version", STATSIG_JS_SDK_VERSION)
+                .json(&payload)
+                .send();
+        })
+        .is_ok()
 }

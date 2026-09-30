@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+use crate::host_paths::get_sand_root_dir;
 use crate::extensions::action_audit::extension::{
     ActionAuditExtension, start_action_audit_extension,
 };
@@ -218,7 +219,6 @@ pub struct ProductionHostExtensions {
     pub auth: Arc<HostAuthExtension>,
     pub settings: Arc<SettingsService>,
     pub experiments: Arc<HostExperimentsExtension>,
-    _statsig_bootstrap: ProductionStatsigBootstrapRuntime,
     pub browser_ua: Mutex<Option<BrowserUaExtensionRuntime>>,
     pub wallpaper: Mutex<Option<HostWallpaperExtension>>,
     pub inference: Arc<ProductionInferenceExtension>,
@@ -243,6 +243,8 @@ pub struct ProductionHostExtensions {
     box_store_sync: Mutex<Option<BoxStoreSyncExtension<ProductionBoxStoreSyncService>>>,
     state_backstop: Mutex<Option<HostStateBackstopExtension>>,
     automations: Mutex<Option<Arc<ProductionAutomationsLifecycle>>>,
+    // Keep the Experiments lifecycle owner last so dependent extensions settle first.
+    _statsig_bootstrap: ProductionStatsigBootstrapRuntime,
 }
 
 impl Drop for ProductionHostExtensions {
@@ -282,7 +284,7 @@ pub fn start_production_host_extensions(
         Arc::clone(&experiments),
         Arc::clone(&auth),
         backend_url.clone(),
-        app_data_dir.to_path_buf(),
+        get_sand_root_dir(),
     )?;
     let browser_ua = start_production_browser_ua(
         Arc::clone(&auth),
@@ -396,7 +398,6 @@ pub fn start_production_host_extensions(
         auth,
         settings,
         experiments,
-        _statsig_bootstrap: statsig_bootstrap,
         browser_ua: Mutex::new(Some(browser_ua)),
         wallpaper: Mutex::new(Some(wallpaper)),
         inference,
@@ -419,6 +420,7 @@ pub fn start_production_host_extensions(
         box_store_sync: Mutex::new(None),
         state_backstop: Mutex::new(None),
         automations: Mutex::new(None),
+        _statsig_bootstrap: statsig_bootstrap,
     })
 }
 
