@@ -7227,7 +7227,9 @@ fn main() {
     };
     let host_telemetry = production_extensions.telemetry.clone();
     let fatal_telemetry = host_telemetry.clone();
-    _process_crash_guard.set_reporter(Some(Arc::new(move |_message, _kind| {
+    let fatal_logs = host_telemetry.logs.clone();
+    _process_crash_guard.set_reporter(Some(Arc::new(move |_message, kind| {
+        let _ = fatal_logs.report_host_crash(kind.as_str());
         fatal_telemetry.flush_for_fatal_exit();
     })));
     let box_extensions =
