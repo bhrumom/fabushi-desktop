@@ -14979,7 +14979,7 @@
       "targetPath": "source/host/src/extensions/telemetry/host_telemetry_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "67367ddf770ee26c18a7204b5fe85e9406480425",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -14991,10 +14991,11 @@
       "testEvidence": [
         "source/host/tests/host_telemetry_service_contract.rs",
         "source/host/tests/telemetry_extension_parity_contract.rs",
+        "source/host/tests/host_crash_marker_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity.yml"
       ],
-      "notes": "HostTelemetryService is now the single Rust owner for the frozen service lifecycle: auth credential-renewal subscription/replay, Inference model-experiment subscription, model-experiment exposure latch, analytics activation/brain/API, flush tick, desktop-health, event-loop pressure linkage, BoxLogShipper construction and identity-gated start, crash-marker forwarding, setHostBundleIdentity including turn-trace bundle identity, message-sent analytics, HostLifecycleProgress factory, fatal-flush deadline, and idempotent disposal/rollback. extension.rs is reduced to dependency/identity assembly and service delegation; the shipping Gateway calls the service API after durable non-duplicate send acceptance. Final remains withheld: production Host tracing is still not initialized into the service (the host-tracing row still lacks its real OTLP/provider composition), the pressure profiler has no production CpuProfilerBackend instance, and Rust shipping has not yet established an equivalent global console/stdout-stderr forwarding owner. Do not mark this row implemented until those production owners are real and exact-HEAD Actions pass."
+      "notes": "HostTelemetryService is the single Rust owner for the frozen service lifecycle and public service/API boundary: auth credential-renewal replay/subscription, Inference model-experiment subscription and exposure latch, analytics activation/brain/API, structured-log flush polling, desktop-health, event-loop pressure linkage, BoxLogShipper construction and identity-gated start, crash-marker forwarding, Host bundle identity propagation, durable non-duplicate message-sent analytics, HostLifecycleProgress creation, fatal-flush settlement, and idempotent disposal/rollback. extension.rs remains a thin dependency/identity assembly boundary and does not own a parallel crash-marker or telemetry runtime. The crash-marker contract now exercises the real HostTelemetryService-owned start/stop API, forwarding, idempotency and shipper-start rollback boundary. Exact-HEAD verification passed at 99712e806d26a32e9e5d8254abb98a7e6a9c7be4: Rust desktop runtime push run 36689763490 had rust-host success with Coordinator, box-exec, independent Mahayana Host Runner and all subsequent Host contracts successful, platform-worker successful; Desktop Chat Parity run 36689772972 had Renderer typecheck/build and Focused Electron chat E2E successful. Separate remaining rows continue to track host-tracing.ts, pressure-cpu-profiler.ts and other frozen modules; those rows are not implied implemented by closing this service ownership row."
     },
     {
       "referencePath": "source/host/extensions/telemetry/host-tracing.ts",
