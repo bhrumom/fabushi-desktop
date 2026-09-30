@@ -1,7 +1,6 @@
 use std::cell::{Cell, RefCell};
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Mutex;
 
 use mahayana_host_runtime::extensions::telemetry::host_crash_marker::{
     DeleteIfUnchangedResult, FileHostCrashMarkerStore, ForwardHostCrashMarkerResult,
@@ -9,7 +8,6 @@ use mahayana_host_runtime::extensions::telemetry::host_crash_marker::{
     delete_if_unchanged, forward_host_crash_marker_with, host_crash_marker_metadata,
     parse_host_crash_marker,
 };
-use mahayana_host_runtime::extensions::telemetry::extension::forward_host_crash_marker_to_logs;
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
 
 fn signal_marker_raw() -> &'static str {
@@ -204,25 +202,47 @@ fn forwarding_preserves_defer_parse_dedupe_and_changed_marker_semantics() {
 }
 
 
+const HOST_TELEMETRY_SERVICE_SOURCE: &str =
+    include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
+const TELEMETRY_EXTENSION_SOURCE: &str =
+    include_str!("../src/extensions/telemetry/extension.rs");
+
 #[test]
-fn production_telemetry_forwarder_persists_confirmed_crash_and_deletes_marker() {
-    let marker_path = temp_marker_path("production-forward");
-    let records_path = temp_marker_path("production-forward-records");
+fn host_telemetry_service_owns_crash_marker_forwarding_start_stop_and_rollback_boundary() {
+    let marker_path = temp_marker_path("service-owned-forward");
+    let records_path = temp_marker_path("service-owned-forward-records");
     let _ = fs::remove_file(&marker_path);
     let _ = fs::remove_file(&records_path);
     fs::write(&marker_path, signal_marker_raw()).expect("write crash marker");
 
     let service = HostTelemetryService::open(&records_path).expect("telemetry service");
+    service.start().expect("telemetry service start");
     let store = FileHostCrashMarkerStore::new(&marker_path);
-    let last_handled = Mutex::new(None);
-    assert_eq!(
-        forward_host_crash_marker_to_logs(&store, &service.logs, &last_handled),
-        ForwardHostCrashMarkerResult::Delivered
+
+    assert!(
+        service
+            .start_host_crash_marker_forwarding(store.clone())
+            .expect("start crash-marker forwarding"),
+        "first service-owned start must install the runtime"
     );
     assert_eq!(store.read(), HostCrashMarkerRead::Absent);
-    assert_eq!(
-        last_handled.lock().expect("handled marker").as_deref(),
-        Some(signal_marker_raw())
+    assert!(
+        !service
+            .start_host_crash_marker_forwarding(store.clone())
+            .expect("idempotent crash-marker forwarding start"),
+        "second start must not create a parallel crash-marker runtime"
+    );
+    assert!(
+        service
+            .stop_host_crash_marker_forwarding()
+            .expect("stop crash-marker forwarding"),
+        "service stop must settle the owned forwarding runtime"
+    );
+    assert!(
+        !service
+            .stop_host_crash_marker_forwarding()
+            .expect("idempotent crash-marker forwarding stop"),
+        "second stop must observe no parallel forwarding runtime"
     );
 
     let records = fs::read_to_string(&records_path).expect("telemetry records");
@@ -237,6 +257,46 @@ fn production_telemetry_forwarder_persists_confirmed_crash_and_deletes_marker() 
     assert_eq!(record["payload"]["metadata"]["error_code"], "SAND-E0001");
     assert_eq!(record["payload"]["metadata"]["error_domain"], "registry");
     assert_eq!(record["payload"]["metadata"]["error_retryable"], "false");
+
+    service.dispose().expect("telemetry service dispose");
+    assert!(
+        service
+            .start_host_crash_marker_forwarding(store)
+            .is_err(),
+        "disposed service must reject a new crash-marker forwarding runtime"
+    );
+
+    let identity = HOST_TELEMETRY_SERVICE_SOURCE
+        .find("pub fn set_host_bundle_identity(&self")
+        .expect("service identity boundary");
+    let identity_source = &HOST_TELEMETRY_SERVICE_SOURCE[identity..];
+    let start = identity_source
+        .find("HostCrashMarkerForwarder::start(self.logs.clone())")
+        .expect("service-owned identity start");
+    let shipper = identity_source
+        .find("if let Err(error) = shipper.start()")
+        .expect("identity-gated box-log shipper start");
+    let rollback = identity_source
+        .find("runtime.crash_marker_forwarder.take();")
+        .expect("crash-marker rollback");
+    assert!(
+        start < shipper && shipper < rollback,
+        "identity must start crash forwarding before the shipper and roll it back on shipper failure"
+    );
+
+    assert!(
+        !HOST_TELEMETRY_SERVICE_SOURCE.contains("pub fn forward_host_crash_marker_to_logs("),
+        "low-level crash-marker forwarding helper must not remain a public parallel API"
+    );
+    for forbidden in [
+        "HostCrashMarkerForwarder",
+        "forward_host_crash_marker_to_logs",
+    ] {
+        assert!(
+            !TELEMETRY_EXTENSION_SOURCE.contains(forbidden),
+            "extension must stay a thin assembly boundary and not own {forbidden}"
+        );
+    }
 
     let _ = fs::remove_file(marker_path);
     let _ = fs::remove_file(records_path);

@@ -668,7 +668,7 @@ fn terminal_crash_marker_result(result: ForwardHostCrashMarkerResult) -> bool {
     )
 }
 
-pub fn forward_host_crash_marker_to_logs(
+fn forward_host_crash_marker_to_logs(
     store: &impl HostCrashMarkerStore,
     logs: &HostStructuredLogTelemetry,
     last_handled: &Mutex<Option<String>>,
@@ -710,7 +710,16 @@ struct HostCrashMarkerForwarder {
 
 impl HostCrashMarkerForwarder {
     fn start(logs: HostStructuredLogTelemetry) -> Self {
-        let store = FileHostCrashMarkerStore::new(get_host_crash_marker_path());
+        Self::start_with_store(
+            logs,
+            FileHostCrashMarkerStore::new(get_host_crash_marker_path()),
+        )
+    }
+
+    fn start_with_store(
+        logs: HostStructuredLogTelemetry,
+        store: FileHostCrashMarkerStore,
+    ) -> Self {
         let last_handled = Arc::new(Mutex::new(None));
         let initial = forward_host_crash_marker_to_logs(&store, &logs, &last_handled);
         let (stop_tx, stop_rx) = mpsc::channel();
@@ -1125,6 +1134,43 @@ impl HostTelemetryService {
         HostTelemetryApi {
             service: Arc::clone(self),
         }
+    }
+
+    pub fn start_host_crash_marker_forwarding(
+        &self,
+        store: FileHostCrashMarkerStore,
+    ) -> io::Result<bool> {
+        if self.disposed.load(Ordering::Acquire) {
+            return Err(io::Error::other("Host telemetry service is already disposed"));
+        }
+        if !self.started.load(Ordering::Acquire) {
+            return Err(io::Error::other("Host telemetry service is not started"));
+        }
+        let mut runtime = self
+            .runtime
+            .lock()
+            .map_err(|_| io::Error::other("Host telemetry runtime mutex poisoned"))?;
+        if runtime.crash_marker_forwarder.is_some() {
+            return Ok(false);
+        }
+        runtime.crash_marker_forwarder = Some(HostCrashMarkerForwarder::start_with_store(
+            self.logs.clone(),
+            store,
+        ));
+        Ok(true)
+    }
+
+    pub fn stop_host_crash_marker_forwarding(&self) -> io::Result<bool> {
+        let forwarder = {
+            let mut runtime = self
+                .runtime
+                .lock()
+                .map_err(|_| io::Error::other("Host telemetry runtime mutex poisoned"))?;
+            runtime.crash_marker_forwarder.take()
+        };
+        let stopped = forwarder.is_some();
+        drop(forwarder);
+        Ok(stopped)
     }
 
     pub fn set_host_bundle_identity(&self, identity: HostBundleIdentity) -> io::Result<()> {
