@@ -6,6 +6,7 @@ import {
 import { isDeadlineExceededConnectError } from "../../connect-errors.js";
 import { brandedEnumOf } from "../../errors/bounded.js";
 import { SandError } from "../../errors/registry.js";
+import type { ConnectorAuthReport } from "../../observability/connector-auth-telemetry.js";
 import {
   createDeadlinePolicy,
   createPollingPolicy,
@@ -72,7 +73,7 @@ export class SandMcpAuthWatchLifecycle {
         options?: { requireFreshRead: boolean },
       ): Promise<DisplayServer | undefined>;
       reload(): Promise<void>;
-      onConnectorAuth?(event: Record<string, unknown>): void;
+      onConnectorAuth?(event: ConnectorAuthReport): void;
       clock?: Clock;
     },
   ) {

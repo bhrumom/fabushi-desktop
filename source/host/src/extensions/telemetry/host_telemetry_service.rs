@@ -76,6 +76,9 @@ use super::memory_synthesis_telemetry::{MemorySynthesisReport, memory_synthesis_
 use super::mcp_discovery_telemetry::{
     McpDiscoveryFailedReport, mcp_discovery_failed_telemetry,
 };
+use super::connector_auth_telemetry::{
+    ConnectorAuthReport, connector_auth_telemetry,
+};
 use super::model_experiment_exposure::{
     ModelExperimentExposureAnalytics, ModelExperimentExposureExperiments,
     ModelExperimentExposureLatch, SandModelExperimentState as ExposureModelExperimentState,
@@ -92,7 +95,7 @@ use super::queue_telemetry_mappers::{
 use super::revival_telemetry_mappers::{
     ShellRevivalReport, SubagentRevivalReport, shell_revival_telemetry, subagent_revival_telemetry,
 };
-use super::sand_error_tags::{SandErrorValue, sand_error_tags};
+use super::sand_error_tags::{SandErrorPayloadValue, SandErrorValue, sand_error_tags};
 use super::structured_log_telemetry::{
     BOX_HELP_EVENT, CursorStructuredLogBackend, HOST_BUILT_AT_MS, ProductionStructuredLogTransport,
     StructuredLogBackend, box_help_telemetry, level_from_str,
@@ -680,6 +683,10 @@ impl HostStructuredLogTelemetry {
         self.report_projection(&mcp_discovery_failed_telemetry(report))
     }
 
+    pub fn report_connector_auth(&self, report: &ConnectorAuthReport) -> io::Result<()> {
+        self.report_projection(&connector_auth_telemetry(report, "host"))
+    }
+
     pub fn report_mcp_auth_cleanup(&self, outcome: &str, removed_count: usize) -> io::Result<()> {
         self.report_projection(&HostTelemetryProjection {
             level: Some(if outcome == "error" { "warn" } else { "info" }),
@@ -817,6 +824,125 @@ impl HostStructuredLogTelemetry {
             metadata,
         })
     }
+}
+
+pub const REPORT_CONNECTOR_AUTH_GATEWAY_METHOD: &str = "reportConnectorAuth";
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ConnectorAuthGatewayError {
+    BadRequest(String),
+    Internal(String),
+}
+
+fn connector_auth_optional_string(
+    args: &Value,
+    key: &str,
+) -> Result<Option<String>, ConnectorAuthGatewayError> {
+    match args.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(value)) => Ok(Some(value.clone())),
+        Some(_) => Err(ConnectorAuthGatewayError::BadRequest(format!(
+            "reportConnectorAuth requires string {key} when present"
+        ))),
+    }
+}
+
+fn connector_auth_error_from_json(value: &Value) -> Result<SandErrorValue, ConnectorAuthGatewayError> {
+    let object = value.as_object().ok_or_else(|| {
+        ConnectorAuthGatewayError::BadRequest(
+            "reportConnectorAuth requires object error when present".into(),
+        )
+    })?;
+    let code = object
+        .get("code")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| {
+            ConnectorAuthGatewayError::BadRequest(
+                "reportConnectorAuth error requires non-empty code".into(),
+            )
+        })?;
+    let mut error = SandErrorValue::new(code);
+    for (key, value) in object {
+        if key == "code" {
+            continue;
+        }
+        let payload = match value {
+            Value::String(value) => Some(SandErrorPayloadValue::String(value.clone())),
+            Value::Number(value) => value
+                .as_f64()
+                .filter(|value| value.is_finite())
+                .map(SandErrorPayloadValue::Number),
+            Value::Bool(value) => Some(SandErrorPayloadValue::Bool(*value)),
+            _ => None,
+        };
+        if let Some(payload) = payload {
+            error.payload.insert(key.clone(), payload);
+        }
+    }
+    Ok(error)
+}
+
+pub fn dispatch_connector_auth_gateway(
+    logs: &HostStructuredLogTelemetry,
+    method: &str,
+    args: &Value,
+) -> Option<Result<Value, ConnectorAuthGatewayError>> {
+    if method != REPORT_CONNECTOR_AUTH_GATEWAY_METHOD {
+        return None;
+    }
+    let phase = match args.get("phase").and_then(Value::as_str) {
+        Some(value) => value.to_string(),
+        None => {
+            return Some(Err(ConnectorAuthGatewayError::BadRequest(
+                "reportConnectorAuth requires string phase".into(),
+            )));
+        }
+    };
+    let outcome = match args.get("outcome").and_then(Value::as_str) {
+        Some(value) => value.to_string(),
+        None => {
+            return Some(Err(ConnectorAuthGatewayError::BadRequest(
+                "reportConnectorAuth requires string outcome".into(),
+            )));
+        }
+    };
+    let server_name = match connector_auth_optional_string(args, "serverName") {
+        Ok(value) => value,
+        Err(error) => return Some(Err(error)),
+    };
+    let server_id = match connector_auth_optional_string(args, "serverId") {
+        Ok(value) => value,
+        Err(error) => return Some(Err(error)),
+    };
+    let reauth = match args.get("reauth") {
+        None | Some(Value::Null) => None,
+        Some(Value::Bool(value)) => Some(*value),
+        Some(_) => {
+            return Some(Err(ConnectorAuthGatewayError::BadRequest(
+                "reportConnectorAuth requires boolean reauth when present".into(),
+            )));
+        }
+    };
+    let error = match args.get("error") {
+        None | Some(Value::Null) => None,
+        Some(value) => match connector_auth_error_from_json(value) {
+            Ok(value) => Some(value),
+            Err(error) => return Some(Err(error)),
+        },
+    };
+    Some(
+        logs.report_connector_auth(&ConnectorAuthReport {
+            phase,
+            outcome,
+            server_name,
+            server_id,
+            reauth,
+            error,
+        })
+        .map(|_| json!({ "reported": true }))
+        .map_err(|error| ConnectorAuthGatewayError::Internal(error.to_string())),
+    )
 }
 
 pub const REPORT_MCP_DISCOVERY_FAILED_GATEWAY_METHOD: &str = "reportMcpDiscoveryFailed";

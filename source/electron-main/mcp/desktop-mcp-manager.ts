@@ -6,6 +6,7 @@ import {
   McpStateExecResult,
 } from "../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
 import { reportDesktopEdgeFailure } from "../desktop-edge-failures.js";
+import type { ConnectorAuthReport } from "../../shared/observability/connector-auth-telemetry.js";
 import { createSandCursorBackendClient, getSandInferenceBackendUrl } from "../../shared/node/cursor-backend/cursor-inference.js";
 import {
   createAccountMcpWriter,
@@ -64,7 +65,7 @@ export interface DesktopMcpManagerOptions {
   readonly listBoxMcpServers: (serverIdentifiers: unknown) => Promise<readonly Record<string, unknown>[]>;
   readonly listBoxMcpToolsRaw: (payloadHex: string) => Promise<string>;
   readonly executeBoxMcpToolRaw: (payloadHex: string) => Promise<string>;
-  readonly onConnectorAuth: (report: unknown) => void;
+  readonly onConnectorAuth: (report: ConnectorAuthReport) => void;
   readonly onMcpDiscoveryFailed: (report: { readonly errorClass: string; readonly elapsedMs: number; readonly servedStale: boolean }) => void;
   readonly onMcpDiagnostic?: (failure: { readonly leg: string; readonly errorClass: string }) => void;
 }

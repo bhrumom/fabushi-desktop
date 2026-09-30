@@ -1,3 +1,4 @@
+import type { ConnectorAuthReport } from "../../shared/observability/connector-auth-telemetry.js";
 import { createMcpRuntime } from "../mcp/mcp-runtime.js";
 import { registerMcpDesktopIpc, type McpDesktopDeps } from "../mcp/mcp-desktop.js";
 import type { DesktopMcpManagerFacade } from "../mcp/desktop-mcp-manager.js";
@@ -44,11 +45,29 @@ function isMcpOAuthService(service: ProductionMcpService): service is Production
   return typeof (service as Partial<ProductionMcpOAuthService>).registerDesktopIpc === "function";
 }
 
-function reportConnectorAuth(context: ProductionServiceContext, report: unknown): void {
+function reportConnectorAuth(context: ProductionServiceContext, report: ConnectorAuthReport): void {
   const telemetry = context.readTelemetry()?.telemetry;
   const callback = telemetry == null ? undefined : Reflect.get(telemetry, "reportConnectorAuth");
-  if (typeof callback !== "function") return;
-  callback.call(telemetry, report);
+  if (typeof callback === "function") {
+    try {
+      callback.call(telemetry, report);
+    } catch (error) {
+      reportDesktopEdgeFailure("connector-auth-telemetry", "desktop-surface", error);
+    }
+  }
+
+  const forward = context.coordinatorLegs.legs.reportConnectorAuth;
+  if (typeof forward !== "function") {
+    reportDesktopEdgeFailure(
+      "connector-auth-telemetry",
+      "coordinator-leg-unavailable",
+      new Error("Coordinator connector-auth telemetry port is unavailable."),
+    );
+    return;
+  }
+  void Promise.resolve(forward(report)).catch((error: unknown) => {
+    reportDesktopEdgeFailure("connector-auth-telemetry", "coordinator-forward", error);
+  });
 }
 
 function reportMcpDiscoveryFailed(

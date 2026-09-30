@@ -33,6 +33,7 @@ pub mod sand_error_tags;
 pub mod memory_synthesis_telemetry;
 pub mod journal_outcome_telemetry;
 pub mod mcp_discovery_telemetry;
+pub mod connector_auth_telemetry;
 pub mod webauthn_proxy_telemetry;
 
 pub mod analytics_service;

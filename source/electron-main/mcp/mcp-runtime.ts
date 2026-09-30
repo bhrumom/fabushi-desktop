@@ -1,3 +1,5 @@
+import type { ConnectorAuthReport } from "../../shared/observability/connector-auth-telemetry.js";
+
 type McpManagerOptions = {
   readonly settingsStore: unknown;
   readonly onAccountScopeApplied: () => void;
@@ -9,7 +11,7 @@ type McpManagerOptions = {
   ) => Promise<readonly Record<string, unknown>[]>;
   readonly listBoxMcpToolsRaw: (payloadHex: string) => Promise<string>;
   readonly executeBoxMcpToolRaw: (payloadHex: string) => Promise<string>;
-  readonly onConnectorAuth: (report: unknown) => void;
+  readonly onConnectorAuth: (report: ConnectorAuthReport) => void;
   readonly onMcpDiscoveryFailed: (report: { readonly errorClass: string; readonly elapsedMs: number; readonly servedStale: boolean }) => void;
   readonly onMcpDiagnostic: (failure: {
     readonly leg: string;
@@ -35,7 +37,7 @@ type McpRuntimeDependencies<TManager> = {
   ) => Promise<readonly Record<string, unknown>[]>;
   readonly listBoxMcpToolsRaw: (payloadHex: string) => Promise<string>;
   readonly executeBoxMcpToolRaw: (payloadHex: string) => Promise<string>;
-  readonly reportConnectorAuth: (report: unknown) => void;
+  readonly reportConnectorAuth: (report: ConnectorAuthReport) => void;
   readonly reportMcpDiscoveryFailed: (report: { readonly errorClass: string; readonly elapsedMs: number; readonly servedStale: boolean }) => void;
   readonly reportDiagnostic: (leg: string, errorClass: string) => void;
   readonly cleanupLegacyAuth: (root: string) => Promise<unknown>;

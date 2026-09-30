@@ -8,6 +8,7 @@ export const COORDINATOR_MAIN_METHOD_TABLE = {
   setHostSettings: { args: "object" },
   setBoxSecrets: { args: "object" },
   refreshMcp: { args: "object" },
+  reportConnectorAuth: { args: "object" },
   reportMcpDiscoveryFailed: { args: "object" },
   loadBoxMcpServers: { args: "object" },
   listBoxMcpServers: { args: "object" },
