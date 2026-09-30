@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum StoreDbCaptureFailurePhase {
@@ -44,6 +45,15 @@ pub struct AgentDbCaptureQueues {
 
 impl AgentDbCaptureQueues {
     pub fn run_serialized<T>(&self, agent_id: &str, operation: impl FnOnce() -> T) -> T {
+        self.run_serialized_with_queue_duration(agent_id, |_| operation())
+    }
+
+    pub fn run_serialized_with_queue_duration<T>(
+        &self,
+        agent_id: &str,
+        operation: impl FnOnce(u64) -> T,
+    ) -> T {
+        let queued_at = Instant::now();
         let agent_lock = {
             let mut locks = self
                 .locks
@@ -58,7 +68,11 @@ impl AgentDbCaptureQueues {
         let guard = agent_lock
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        let result = operation();
+        let queue_duration_ms = queued_at
+            .elapsed()
+            .as_millis()
+            .min(u128::from(u64::MAX)) as u64;
+        let result = operation(queue_duration_ms);
         drop(guard);
 
         let mut locks = self
