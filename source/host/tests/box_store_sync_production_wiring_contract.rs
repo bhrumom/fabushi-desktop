@@ -121,7 +121,9 @@ fn production_owner_wires_real_chrome_watcher_periodic_cycle_and_remote_provider
     assert!(production.contains("plan.include_store_dbs"));
     assert!(production.contains("plan.skip_live_handle_store_dbs"));
     assert!(production.contains("plan.include_idle_only"));
-    assert!(production.contains("stage_box_chrome_session()"));
+    assert!(production.contains("stage_box_chrome_session_with_report(|report|"));
+    assert!(production.contains("chrome_session_stage_telemetry(&report)"));
+    assert!(production.contains("report_chrome_session_stage(telemetry.level, &telemetry.metadata);"));
     assert!(production.contains("sync_store_db_snapshots("));
     assert!(production.contains("StoreDbSnapshotUpload::new("));
     assert!(production.contains("run_vacuum_off_thread(&source_path, &temp_path)"));
