@@ -606,6 +606,18 @@ impl HostStructuredLogTelemetry {
         self.report_projection(&projection)
     }
 
+    pub fn report_box_store_sync_cycle(
+        &self,
+        level: &str,
+        metadata: &BTreeMap<String, String>,
+    ) -> io::Result<()> {
+        self.report_projection(&HostTelemetryProjection {
+            level: Some(level),
+            event: Some("sand.box_store_sync"),
+            metadata: metadata.clone(),
+        })
+    }
+
     pub fn report_mcp_auth_cleanup(&self, outcome: &str, removed_count: usize) -> io::Result<()> {
         self.report_projection(&HostTelemetryProjection {
             level: Some(if outcome == "error" { "warn" } else { "info" }),
