@@ -47,7 +47,9 @@ use mahayana_host_runtime::extensions::box_store_sync::store_db_bundle_capture::
     StoreDbCaptureFailurePhase, create_store_db_capture_trace, record_store_db_capture_failure,
 };
 use mahayana_host_runtime::extensions::box_store_sync::store_db_capture::{
-    StoreDbCaptureOutcome, aggregate_store_db_sweep_outcome,
+    BoxStoreDbCaptureTelemetrySummary, StoreDbCaptureOutcome,
+    aggregate_store_db_sweep_outcome, box_store_db_capture_telemetry,
+    box_store_db_capture_telemetry_level,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -412,4 +414,46 @@ fn box_store_writer_lock_serializes_owners_and_releases_on_drop() {
     drop(reacquired);
 
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn store_db_capture_telemetry_matches_frozen_levels_and_fields() {
+    assert_eq!(box_store_db_capture_telemetry_level(StoreDbCaptureOutcome::Error), "warn");
+    assert_eq!(box_store_db_capture_telemetry_level(StoreDbCaptureOutcome::Skipped), "warn");
+    assert_eq!(box_store_db_capture_telemetry_level(StoreDbCaptureOutcome::Oversize), "info");
+    assert_eq!(box_store_db_capture_telemetry_level(StoreDbCaptureOutcome::Uploaded), "info");
+    assert_eq!(box_store_db_capture_telemetry_level(StoreDbCaptureOutcome::Unchanged), "info");
+
+    let telemetry = box_store_db_capture_telemetry(&BoxStoreDbCaptureTelemetrySummary {
+        outcome: StoreDbCaptureOutcome::Error,
+        trigger: "turn_end",
+        failure_phase: Some(StoreDbCaptureFailurePhase::ManifestCommit),
+        is_committed: false,
+        agent_count: 1,
+        files_scanned: 2,
+        files_uploaded: 1,
+        bytes: 4096,
+        duration_ms: 23,
+        queue_duration_ms: 5,
+        capture_duration_ms: 7,
+        blob_upload_duration_ms: 8,
+        manifest_commit_duration_ms: 3,
+        store_id: Some("store-a".into()),
+    });
+    assert_eq!(telemetry.level, "warn");
+    assert_eq!(telemetry.metadata.get("outcome").map(String::as_str), Some("error"));
+    assert_eq!(telemetry.metadata.get("trigger").map(String::as_str), Some("turn_end"));
+    assert_eq!(telemetry.metadata.get("failure_phase").map(String::as_str), Some("manifest_commit"));
+    assert_eq!(telemetry.metadata.get("committed").map(String::as_str), Some("false"));
+    assert_eq!(telemetry.metadata.get("agent_count").map(String::as_str), Some("1"));
+    assert_eq!(telemetry.metadata.get("files_scanned").map(String::as_str), Some("2"));
+    assert_eq!(telemetry.metadata.get("files_uploaded").map(String::as_str), Some("1"));
+    assert_eq!(telemetry.metadata.get("bytes").map(String::as_str), Some("4096"));
+    assert_eq!(telemetry.metadata.get("duration_ms").map(String::as_str), Some("23"));
+    assert_eq!(telemetry.metadata.get("queue_duration_ms").map(String::as_str), Some("5"));
+    assert_eq!(telemetry.metadata.get("capture_duration_ms").map(String::as_str), Some("7"));
+    assert_eq!(telemetry.metadata.get("blob_upload_duration_ms").map(String::as_str), Some("8"));
+    assert_eq!(telemetry.metadata.get("manifest_commit_duration_ms").map(String::as_str), Some("3"));
+    assert_eq!(telemetry.metadata.get("store_id").map(String::as_str), Some("store-a"));
 }
