@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
-use std::io::{self, Write};
+use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
@@ -361,6 +361,80 @@ pub const SAND_SUPERVISOR_DESKTOP_HEALTH_PATH: &str =
 pub const DESKTOP_HEALTH_FORWARD_INTERVAL: Duration = Duration::from_secs(30);
 pub const DESKTOP_HEALTH_HEARTBEAT_MS: u64 = 5 * 60 * 1_000;
 pub const DESKTOP_HEALTH_EVENT: &str = "sand.box.desktop_health";
+pub const HOST_CONSOLE_FORWARD_INTERVAL: Duration = Duration::from_secs(1);
+
+struct HostConsoleForwarder {
+    stop: Option<mpsc::Sender<()>>,
+    worker: Option<thread::JoinHandle<()>>,
+}
+
+impl HostConsoleForwarder {
+    fn start(logs: HostStructuredLogTelemetry, path: PathBuf) -> Self {
+        let (stop_tx, stop_rx) = mpsc::channel();
+        let worker = thread::Builder::new()
+            .name("sand-host-console-forwarder".into())
+            .spawn(move || {
+                let mut offset = fs::metadata(&path).map(|metadata| metadata.len()).unwrap_or(0);
+                loop {
+                    match stop_rx.recv_timeout(HOST_CONSOLE_FORWARD_INTERVAL) {
+                        Ok(()) | Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                        Err(mpsc::RecvTimeoutError::Timeout) => {
+                            let Ok(mut file) = File::open(&path) else {
+                                continue;
+                            };
+                            let size = file.metadata().map(|metadata| metadata.len()).unwrap_or(0);
+                            if size < offset {
+                                offset = 0;
+                            }
+                            if file.seek(SeekFrom::Start(offset)).is_err() {
+                                continue;
+                            }
+                            let mut buffer = String::new();
+                            if file.read_to_string(&mut buffer).is_err() {
+                                continue;
+                            }
+                            offset = file.stream_position().unwrap_or(size);
+                            for line in buffer.lines().map(str::trim).filter(|line| !line.is_empty()) {
+                                let lower = line.to_ascii_lowercase();
+                                let level = if lower.contains("error")
+                                    || lower.contains("failed")
+                                    || lower.contains("panic")
+                                {
+                                    "error"
+                                } else if lower.contains("warn") {
+                                    "warn"
+                                } else {
+                                    "info"
+                                };
+                                let _ = logs.report_host_log(level, line);
+                            }
+                        }
+                    }
+                }
+            })
+            .ok();
+        Self {
+            stop: Some(stop_tx),
+            worker,
+        }
+    }
+
+    fn dispose(&mut self) {
+        if let Some(stop) = self.stop.take() {
+            let _ = stop.send(());
+        }
+        if let Some(worker) = self.worker.take() {
+            let _ = worker.join();
+        }
+    }
+}
+
+impl Drop for HostConsoleForwarder {
+    fn drop(&mut self) {
+        self.dispose();
+    }
+}
+
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct HostBundleIdentity {
@@ -792,6 +866,7 @@ struct ProductionHostTelemetryDependencies {
 #[derive(Default)]
 struct HostTelemetryRuntimeState {
     auth_renewal_subscription: Option<u64>,
+    console_forwarder: Option<HostConsoleForwarder>,
     inference_stop: Option<StopSubscription>,
     flush_polling: Option<StructuredLogFlushPolling>,
     crash_marker_forwarder: Option<HostCrashMarkerForwarder>,
@@ -908,6 +983,12 @@ impl HostTelemetryService {
             return Ok(());
         };
         let telemetry_enabled = std::env::var("SAND_DISABLE_TELEMETRY").as_deref() != Ok("1");
+        let console_path = std::env::var("SAND_HOST_LOG_FILE")
+            .ok()
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(SUPERVISOR_LOG_PATH));
         let mut runtime = self
             .runtime
             .lock()
@@ -921,6 +1002,10 @@ impl HostTelemetryService {
             let _ = self.logs.report_inference_credential_renewal(&missed);
         }
         runtime.auth_renewal_subscription = Some(renewal_id);
+        runtime.console_forwarder = Some(HostConsoleForwarder::start(
+            self.logs.clone(),
+            console_path,
+        ));
 
         let analytics_runtime = ProductionAnalyticsRuntime::start(
             production.backend_url.clone(),
@@ -1142,6 +1227,9 @@ impl HostTelemetryService {
                 let _ = shipper.checkpoint_offsets();
             }
             runtime.crash_marker_forwarder.take();
+            if let Some(mut console_forwarder) = runtime.console_forwarder.take() {
+                console_forwarder.dispose();
+            }
             runtime.desktop_health_forwarder.take();
             runtime.event_loop_telemetry.take();
             runtime.flush_polling.take();

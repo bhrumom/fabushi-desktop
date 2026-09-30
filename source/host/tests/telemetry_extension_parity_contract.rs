@@ -116,6 +116,8 @@ fn shipping_owner_starts_telemetry_after_auth_experiments_and_inference() {
 fn host_telemetry_service_owns_frozen_runtime_lifecycle_and_extension_stays_thin() {
     for needle in [
         "subscribe_to_renewal(",
+        "HostConsoleForwarder::start(",
+        "console_forwarder.dispose()",
         "get_last_renewal_event()",
         "ModelExperimentExposureLatch::new(",
         "inference.on_model_experiment_applied(",
