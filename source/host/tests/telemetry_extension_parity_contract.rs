@@ -3,15 +3,14 @@ use std::fs;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use mahayana_host_runtime::extensions::extension_ids_generated::HostExtensionId;
 use mahayana_host_runtime::extensions::experiments::{
-    ExperimentDiagnostic, PRE_PIN_DIAGNOSTICS_BUFFER_CAP,
-    pin_experiments_diagnostics_reporter, report_experiments_diagnostic,
+    ExperimentDiagnostic, PRE_PIN_DIAGNOSTICS_BUFFER_CAP, pin_experiments_diagnostics_reporter,
+    report_experiments_diagnostic,
 };
+use mahayana_host_runtime::extensions::extension_ids_generated::HostExtensionId;
 use mahayana_host_runtime::extensions::telemetry::extension::{
-    FATAL_TELEMETRY_FLUSH_TIMEOUT, HOST_CRASH_MARKER_FORWARD_INTERVAL,
-    TELEMETRY_DEPENDENCIES, TELEMETRY_EXTENSION_ID, TELEMETRY_FLUSH_TICK,
-    telemetry_identity_tags_from,
+    FATAL_TELEMETRY_FLUSH_TIMEOUT, HOST_CRASH_MARKER_FORWARD_INTERVAL, TELEMETRY_DEPENDENCIES,
+    TELEMETRY_EXTENSION_ID, TELEMETRY_FLUSH_TICK, telemetry_identity_tags_from,
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
     HostTelemetryService, PersistedHostTelemetryRecord,
@@ -50,10 +49,7 @@ fn telemetry_identity_dependencies_and_frozen_scheduling_are_explicit() {
         HOST_CRASH_MARKER_FORWARD_INTERVAL,
         Duration::from_millis(5 * 60_000)
     );
-    assert_eq!(
-        FATAL_TELEMETRY_FLUSH_TIMEOUT,
-        Duration::from_millis(2_000)
-    );
+    assert_eq!(FATAL_TELEMETRY_FLUSH_TIMEOUT, Duration::from_millis(2_000));
 }
 
 #[test]
@@ -76,7 +72,10 @@ fn telemetry_identity_includes_frozen_store_backend_policy_kind() {
         "SAND_BOX_STORE_LOCAL_DIR".to_string(),
         local_dir,
     )]));
-    assert_eq!(local.get("store_backend").map(String::as_str), Some("local-fs"));
+    assert_eq!(
+        local.get("store_backend").map(String::as_str),
+        Some("local-fs")
+    );
 
     let fallback = telemetry_identity_tags_from(&BTreeMap::new());
     assert_eq!(
@@ -87,7 +86,9 @@ fn telemetry_identity_includes_frozen_store_backend_policy_kind() {
 
 #[test]
 fn shipping_owner_starts_telemetry_after_auth_experiments_and_inference() {
-    let auth = PRODUCTION_OWNER.find("let auth = Arc::new(").expect("Auth start");
+    let auth = PRODUCTION_OWNER
+        .find("let auth = Arc::new(")
+        .expect("Auth start");
     let experiments = PRODUCTION_OWNER
         .find("let experiments = Arc::new(start_host_experiments_extension())")
         .expect("Experiments start");
@@ -121,7 +122,7 @@ fn host_telemetry_service_owns_frozen_runtime_lifecycle_and_extension_stays_thin
         "get_last_renewal_event()",
         "ModelExperimentExposureLatch::new(",
         ".on_model_experiment_applied(",
-        "StructuredLogFlushPolling::start(",
+        "ProductionStructuredLogTransport::start_with_tick(",
         "HostCrashMarkerForwarder::start(self.logs.clone())",
         "DesktopHealthForwarder::start(self.logs.clone())",
         "EventLoopTelemetryRuntime::start(",
@@ -187,10 +188,7 @@ fn experiments_diagnostics_pin_flushes_the_frozen_pre_pin_buffer() {
     let observed = observed.lock().expect("observed diagnostics");
     assert_eq!(observed.len(), PRE_PIN_DIAGNOSTICS_BUFFER_CAP);
     assert_eq!(observed.first().map(String::as_str), Some("buffered-0"));
-    assert_eq!(
-        observed.last().map(String::as_str),
-        Some("buffered-63")
-    );
+    assert_eq!(observed.last().map(String::as_str), Some("buffered-63"));
     drop(observed);
     pin_experiments_diagnostics_reporter(None);
 }
@@ -235,11 +233,12 @@ fn fatal_flush_and_normal_shutdown_are_shipping_wired_once() {
     assert!(SHIPPING_HOST.contains("telemetry_api: host_telemetry.api()"));
     assert!(SHIPPING_HOST.contains("self.telemetry_api.report_message_sent(MessageSentReport"));
     assert_eq!(
-        SHIPPING_HOST.matches("fatal_telemetry.flush_for_fatal_exit()").count(),
+        SHIPPING_HOST
+            .matches("fatal_telemetry.flush_for_fatal_exit()")
+            .count(),
         1
     );
 }
-
 
 #[test]
 fn service_api_identity_then_message_sent_is_durable_and_idempotent() {
@@ -289,11 +288,14 @@ fn service_api_identity_then_message_sent_is_durable_and_idempotent() {
     let _ = fs::remove_dir_all(root);
 }
 
-
 #[test]
 fn frozen_start_api_identity_fatal_and_dispose_order_is_shipping_wired() {
-    let start = TELEMETRY_EXTENSION.find("service.start()?").expect("service start");
-    let api = TELEMETRY_EXTENSION.find("let api = service.api();").expect("service api");
+    let start = TELEMETRY_EXTENSION
+        .find("service.start()?")
+        .expect("service start");
+    let api = TELEMETRY_EXTENSION
+        .find("let api = service.api();")
+        .expect("service api");
     let identity = TELEMETRY_EXTENSION
         .find("api.set_host_bundle_identity(HostBundleIdentity")
         .expect("bundle identity");

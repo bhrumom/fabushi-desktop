@@ -21,33 +21,33 @@ use crate::extensions::inference::production::ProductionInferenceExtension;
 use crate::extensions::inference::sand_model_experiment::SandModelExperimentArm;
 use crate::host_paths::get_host_crash_marker_path;
 use crate::ports::sand_analytics_types::sand_message_length_bucket;
-use crate::send_trace_host::set_turn_trace_host_bundle_version;
 use crate::ports::telemetry::resolve_sand_box_identity_tags;
+use crate::send_trace_host::set_turn_trace_host_bundle_version;
 
 use super::HostTelemetryProjection;
 use super::analytics_service::{
-    AnalyticsClient, AutomationRunAnalyticsTelemetry, ProductionAnalyticsRuntime,
-    TelemetryService, product_analytics_event,
+    AnalyticsClient, AutomationRunAnalyticsTelemetry, ProductionAnalyticsRuntime, TelemetryService,
+    product_analytics_event,
 };
 use super::box_log_ship_telemetry::{BoxLogShipReport, box_log_ship_telemetry};
 use super::box_log_shipper::{
     BoxLogShipper, BoxLogShipperConfig, BoxTelemetryRecord, DeliverySettlement,
     SUPERVISOR_LOG_PATH, is_box_log_shipping_enabled,
 };
-use super::desktop_health_forwarder::{
-    DesktopHealthForwardResult, forward_desktop_health_with,
-};
+use super::desktop_health_forwarder::{DesktopHealthForwardResult, forward_desktop_health_with};
 use super::event_loop_telemetry::{
     EventLoopTelemetryRuntime, EventLoopTrigger, EventLoopWindowReport, event_loop_window_telemetry,
+};
+use super::experiments_diagnostic_telemetry::{
+    ExperimentsDiagnostic, experiments_diagnostic_telemetry,
 };
 use super::host_crash_marker::{
     FileHostCrashMarkerStore, ForwardHostCrashMarkerResult, HostCrashMarkerStore,
     forward_host_crash_marker_with, host_crash_marker_metadata,
 };
-use super::host_lifecycle_progress::{
-    HostLifecycleProgress, HostLifecycleReport, WatchdogArm,
-};
+use super::host_lifecycle_progress::{HostLifecycleProgress, HostLifecycleReport, WatchdogArm};
 use super::host_tracing::{HostTracing, init_production_host_tracing};
+use super::lifecycle_telemetry::box_infrastructure_telemetry;
 use super::model_experiment_exposure::{
     ModelExperimentExposureAnalytics, ModelExperimentExposureExperiments,
     ModelExperimentExposureLatch, SandModelExperimentState as ExposureModelExperimentState,
@@ -55,11 +55,10 @@ use super::model_experiment_exposure::{
 use super::pressure_cpu_profiler::{
     PressureCpuProfiler, SandProfilerCaptureError, create_production_pressure_cpu_profiler,
 };
-use super::experiments_diagnostic_telemetry::{
-    ExperimentsDiagnostic, experiments_diagnostic_telemetry,
+use super::structured_log_telemetry::{
+    BOX_HELP_EVENT, CursorStructuredLogBackend, ProductionStructuredLogTransport,
+    StructuredLogBackend, box_help_telemetry, level_from_str,
 };
-use super::lifecycle_telemetry::box_infrastructure_telemetry;
-use super::structured_log_telemetry::{BOX_HELP_EVENT, box_help_telemetry};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PersistedHostTelemetryRecord {
@@ -79,10 +78,7 @@ impl JsonlHostTelemetrySink {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
-        let file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&path)?;
+        let file = OpenOptions::new().create(true).append(true).open(&path)?;
         Ok(Self {
             path,
             file: Mutex::new(file),
@@ -115,11 +111,17 @@ impl JsonlHostTelemetrySink {
 pub struct HostStructuredLogTelemetry {
     sink: Arc<JsonlHostTelemetrySink>,
     identity_tags: Arc<Mutex<BTreeMap<String, String>>>,
+    production_transport: Option<Arc<ProductionStructuredLogTransport>>,
+    production_backend: Option<Arc<dyn StructuredLogBackend>>,
 }
 
 impl HostStructuredLogTelemetry {
     pub fn flush(&self) -> io::Result<()> {
-        self.sink.flush()
+        self.sink.flush()?;
+        if let Some(transport) = self.production_transport.as_ref() {
+            let _ = transport.flush();
+        }
+        Ok(())
     }
 
     pub fn report_projection(&self, projection: &HostTelemetryProjection) -> io::Result<()> {
@@ -129,13 +131,71 @@ impl HostStructuredLogTelemetry {
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .clone();
         metadata.extend(projection.metadata.clone());
+        let event = projection
+            .event
+            .unwrap_or("sand.host.telemetry")
+            .to_string();
+        let level = projection.level.unwrap_or("info");
         self.sink.emit(&PersistedHostTelemetryRecord {
             channel: "structured_log".into(),
-            event: projection.event.unwrap_or("sand.host.telemetry").to_string(),
+            event: event.clone(),
             payload: json!({
-                "level": projection.level.unwrap_or("info"),
+                "level": level,
                 "metadata": metadata,
             }),
+        })?;
+        if let Some(transport) = self.production_transport.as_ref() {
+            let _ = transport.enqueue(level_from_str(level), event, projection.metadata.clone());
+        }
+        Ok(())
+    }
+
+    fn report_raw(&self, event: &str, report: &Value) -> io::Result<()> {
+        self.sink.emit(&PersistedHostTelemetryRecord {
+            channel: "structured_log".into(),
+            event: event.to_string(),
+            payload: report.clone(),
+        })?;
+        if let Some(transport) = self.production_transport.as_ref() {
+            let mut metadata = BTreeMap::new();
+            if let Some(object) = report.as_object() {
+                for (key, value) in object {
+                    match value {
+                        Value::String(value) => {
+                            metadata.insert(key.clone(), value.clone());
+                        }
+                        Value::Bool(value) => {
+                            metadata.insert(key.clone(), value.to_string());
+                        }
+                        Value::Number(value) => {
+                            metadata.insert(key.clone(), value.to_string());
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            let _ = transport.enqueue(level_from_str("info"), event.to_string(), metadata);
+        }
+        Ok(())
+    }
+
+    pub fn ship_confirmed_projection(&self, projection: &HostTelemetryProjection) -> bool {
+        let Some(backend) = self.production_backend.as_ref() else {
+            return self.report_projection(projection).is_ok();
+        };
+        let mut metadata = self
+            .identity_tags
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        metadata.extend(projection.metadata.clone());
+        self.production_transport.as_ref().is_some_and(|transport| {
+            transport.ship_confirmed(
+                backend.as_ref(),
+                level_from_str(projection.level.unwrap_or("info")),
+                projection.event.unwrap_or("sand.host.telemetry"),
+                metadata,
+            )
         })
     }
 
@@ -236,12 +296,11 @@ impl HostStructuredLogTelemetry {
         let mut metadata = BTreeMap::new();
         metadata.insert("stage".into(), stage.to_string());
         metadata.insert("duration_ms".into(), duration_ms.to_string());
-        self.report_projection(&HostTelemetryProjection {
+        self.ship_confirmed_projection(&HostTelemetryProjection {
             level: Some("info"),
             event: Some("sand.box.boot_stage_confirmed"),
             metadata,
         })
-        .is_ok()
     }
 }
 
@@ -253,7 +312,10 @@ pub struct HostProductAnalytics {
 
 impl HostProductAnalytics {
     pub fn attach_runtime(&self, runtime: Arc<ProductionAnalyticsRuntime>) {
-        *self.runtime.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(runtime);
+        *self
+            .runtime
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(runtime);
     }
 
     pub fn detach_runtime(&self) {
@@ -346,20 +408,14 @@ impl TelemetryService for HostStructuredLogTelemetry {
             "reportAutomationRun" => "sand.automation.run",
             _ => "sand.host.telemetry",
         };
-        let _ = self.sink.emit(&PersistedHostTelemetryRecord {
-            channel: "structured_log".into(),
-            event: event.into(),
-            payload: report.clone(),
-        });
+        let _ = self.report_raw(event, report);
     }
 }
-
 
 pub const TELEMETRY_FLUSH_TICK: Duration = Duration::from_secs(3);
 pub const FATAL_TELEMETRY_FLUSH_TIMEOUT: Duration = Duration::from_millis(2_000);
 pub const HOST_CRASH_MARKER_FORWARD_INTERVAL: Duration = Duration::from_secs(5 * 60);
-pub const SAND_SUPERVISOR_DESKTOP_HEALTH_PATH: &str =
-    "/tmp/sand-supervisor/desktop-health.json";
+pub const SAND_SUPERVISOR_DESKTOP_HEALTH_PATH: &str = "/tmp/sand-supervisor/desktop-health.json";
 pub const DESKTOP_HEALTH_FORWARD_INTERVAL: Duration = Duration::from_secs(30);
 pub const DESKTOP_HEALTH_HEARTBEAT_MS: u64 = 5 * 60 * 1_000;
 pub const DESKTOP_HEALTH_EVENT: &str = "sand.box.desktop_health";
@@ -376,7 +432,9 @@ impl HostConsoleForwarder {
         let worker = thread::Builder::new()
             .name("sand-host-console-forwarder".into())
             .spawn(move || {
-                let mut offset = fs::metadata(&path).map(|metadata| metadata.len()).unwrap_or(0);
+                let mut offset = fs::metadata(&path)
+                    .map(|metadata| metadata.len())
+                    .unwrap_or(0);
                 loop {
                     match stop_rx.recv_timeout(HOST_CONSOLE_FORWARD_INTERVAL) {
                         Ok(()) | Err(mpsc::RecvTimeoutError::Disconnected) => break,
@@ -396,7 +454,11 @@ impl HostConsoleForwarder {
                                 continue;
                             }
                             offset = file.stream_position().unwrap_or(size);
-                            for line in buffer.lines().map(str::trim).filter(|line| !line.is_empty()) {
+                            for line in buffer
+                                .lines()
+                                .map(str::trim)
+                                .filter(|line| !line.is_empty())
+                            {
                                 let lower = line.to_ascii_lowercase();
                                 let level = if lower.contains("error")
                                     || lower.contains("failed")
@@ -437,7 +499,6 @@ impl Drop for HostConsoleForwarder {
     }
 }
 
-
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct HostBundleIdentity {
     pub host_bundle_version: Option<String>,
@@ -476,6 +537,11 @@ impl HostStructuredLogTelemetry {
             .filter(|value| !value.is_empty())
         {
             tags.insert("box_store_id".into(), box_store_id.to_string());
+        }
+        let snapshot = tags.clone();
+        drop(tags);
+        if let Some(transport) = self.production_transport.as_ref() {
+            let _ = transport.set_identity_tags(snapshot);
         }
     }
 
@@ -543,14 +609,10 @@ impl HostStructuredLogTelemetry {
                 ("info", "completed", phase, duration_ms)
             }
             HostLifecycleReport::Failed {
-                phase,
-                duration_ms,
-                ..
+                phase, duration_ms, ..
             } => ("error", "failed", phase, duration_ms),
             HostLifecycleReport::Stuck {
-                phase,
-                duration_ms,
-                ..
+                phase, duration_ms, ..
             } => ("warn", "stuck", phase, duration_ms),
         };
         metadata.insert("outcome".into(), outcome.into());
@@ -619,12 +681,7 @@ pub fn forward_desktop_health_file_to_logs(
     let raw = fs::read_to_string(path).ok();
     let (last_revision, last_at_ms) = state
         .lock()
-        .map(|state| {
-            (
-                state.last_forwarded_revision,
-                state.last_forwarded_at_ms,
-            )
-        })
+        .map(|state| (state.last_forwarded_revision, state.last_forwarded_at_ms))
         .unwrap_or((None, None));
     let mut next_state = None;
     let result = forward_desktop_health_with(
@@ -718,10 +775,7 @@ impl HostCrashMarkerForwarder {
         )
     }
 
-    fn start_with_store(
-        logs: HostStructuredLogTelemetry,
-        store: FileHostCrashMarkerStore,
-    ) -> Self {
+    fn start_with_store(logs: HostStructuredLogTelemetry, store: FileHostCrashMarkerStore) -> Self {
         let last_handled = Arc::new(Mutex::new(None));
         let initial = forward_host_crash_marker_to_logs(&store, &logs, &last_handled);
         let (stop_tx, stop_rx) = mpsc::channel();
@@ -772,12 +826,7 @@ impl DesktopHealthForwarder {
     fn start(logs: HostStructuredLogTelemetry) -> Self {
         let path = PathBuf::from(SAND_SUPERVISOR_DESKTOP_HEALTH_PATH);
         let state = Arc::new(Mutex::new(DesktopHealthForwardState::default()));
-        let _ = forward_desktop_health_file_to_logs(
-            &path,
-            &logs,
-            &state,
-            wall_clock_now_ms(),
-        );
+        let _ = forward_desktop_health_file_to_logs(&path, &logs, &state, wall_clock_now_ms());
 
         let (stop_tx, stop_rx) = mpsc::channel();
         let worker_state = Arc::clone(&state);
@@ -836,13 +885,15 @@ impl StructuredLogFlushPolling {
         let (stop_tx, stop_rx) = mpsc::channel();
         let worker = thread::Builder::new()
             .name("sand-host-structured-log-flush".into())
-            .spawn(move || loop {
-                match stop_rx.recv_timeout(interval) {
-                    Ok(()) | Err(mpsc::RecvTimeoutError::Disconnected) => break,
-                    Err(mpsc::RecvTimeoutError::Timeout) => {
-                        let _ = logs.flush();
-                        if let Some(on_tick) = on_tick.as_ref() {
-                            on_tick();
+            .spawn(move || {
+                loop {
+                    match stop_rx.recv_timeout(interval) {
+                        Ok(()) | Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                        Err(mpsc::RecvTimeoutError::Timeout) => {
+                            let _ = logs.flush();
+                            if let Some(on_tick) = on_tick.as_ref() {
+                                on_tick();
+                            }
                         }
                     }
                 }
@@ -865,8 +916,6 @@ impl Drop for StructuredLogFlushPolling {
         }
     }
 }
-
-
 
 pub fn tick_pressure_cpu_profiler(
     profiler: Option<&Arc<Mutex<PressureCpuProfiler>>>,
@@ -949,7 +998,12 @@ impl HostTelemetryService {
         records_path: impl Into<PathBuf>,
         mut identity_tags: BTreeMap<String, String>,
     ) -> io::Result<Self> {
-        Self::open_internal(records_path, &mut identity_tags, None, HostTelemetryRuntimeHooks::default())
+        Self::open_internal(
+            records_path,
+            &mut identity_tags,
+            None,
+            HostTelemetryRuntimeHooks::default(),
+        )
     }
 
     pub fn open_production(
@@ -970,8 +1024,9 @@ impl HostTelemetryService {
             );
         }
         if hooks.pressure_profiler.is_none() {
-            hooks.pressure_profiler =
-                Some(create_production_pressure_cpu_profiler(Arc::clone(&experiments)));
+            hooks.pressure_profiler = Some(create_production_pressure_cpu_profiler(Arc::clone(
+                &experiments,
+            )));
         }
         Self::open_internal(
             records_path,
@@ -994,10 +1049,42 @@ impl HostTelemetryService {
     ) -> io::Result<Self> {
         identity_tags.retain(|_, value| !value.is_empty());
         let sink = Arc::new(JsonlHostTelemetrySink::open(records_path)?);
-        let identity_tags = Arc::new(Mutex::new(identity_tags.clone()));
+        let initial_identity_tags = identity_tags.clone();
+        let identity_tags = Arc::new(Mutex::new(initial_identity_tags.clone()));
+        let (production_backend, production_transport) =
+            if std::env::var("SAND_DISABLE_TELEMETRY").as_deref() == Ok("1") {
+                (None, None)
+            } else if let Some(production) = production.as_ref() {
+                let backend: Arc<dyn StructuredLogBackend> = Arc::new(
+                    CursorStructuredLogBackend::new(
+                        production.backend_url.clone(),
+                        Arc::clone(&production.auth),
+                    )
+                    .map_err(io::Error::other)?,
+                );
+                let pressure_tick = hooks.pressure_profiler.as_ref().map(|profiler| {
+                    let profiler = Arc::clone(profiler);
+                    Arc::new(move || {
+                        let _ = tick_pressure_cpu_profiler(
+                            Some(&profiler),
+                            wall_clock_now_ms().min(i64::MAX as u64) as i64,
+                        );
+                    }) as Arc<dyn Fn() + Send + Sync>
+                });
+                let transport = ProductionStructuredLogTransport::start_with_tick(
+                    Arc::clone(&backend),
+                    true,
+                    pressure_tick,
+                );
+                (Some(backend), Some(transport))
+            } else {
+                (None, None)
+            };
         let logs = HostStructuredLogTelemetry {
             sink: Arc::clone(&sink),
             identity_tags,
+            production_transport,
+            production_backend,
         };
         let analytics = HostProductAnalytics {
             sink: Arc::clone(&sink),
@@ -1023,7 +1110,9 @@ impl HostTelemetryService {
 
     pub fn start(&self) -> io::Result<()> {
         if self.disposed.load(Ordering::Acquire) {
-            return Err(io::Error::other("Host telemetry service is already disposed"));
+            return Err(io::Error::other(
+                "Host telemetry service is already disposed",
+            ));
         }
         if self.started.swap(true, Ordering::AcqRel) {
             return Ok(());
@@ -1049,17 +1138,18 @@ impl HostTelemetryService {
             .map_err(|_| io::Error::other("Host telemetry runtime mutex poisoned"))?;
 
         let renewal_logs = self.logs.clone();
-        let renewal_id = production.auth.service().subscribe_to_renewal(Arc::new(move |event| {
-            let _ = renewal_logs.report_inference_credential_renewal(&event);
-        }));
+        let renewal_id = production
+            .auth
+            .service()
+            .subscribe_to_renewal(Arc::new(move |event| {
+                let _ = renewal_logs.report_inference_credential_renewal(&event);
+            }));
         if let Some(missed) = production.auth.service().get_last_renewal_event() {
             let _ = self.logs.report_inference_credential_renewal(&missed);
         }
         runtime.auth_renewal_subscription = Some(renewal_id);
-        runtime.console_forwarder = Some(HostConsoleForwarder::start(
-            self.logs.clone(),
-            console_path,
-        ));
+        runtime.console_forwarder =
+            Some(HostConsoleForwarder::start(self.logs.clone(), console_path));
 
         let analytics_runtime = ProductionAnalyticsRuntime::start(
             production.backend_url.clone(),
@@ -1092,27 +1182,14 @@ impl HostTelemetryService {
         })));
 
         if telemetry_enabled {
-            let pressure_tick = self.hooks.pressure_profiler.as_ref().map(|profiler| {
-                let profiler = Arc::clone(profiler);
-                Arc::new(move || {
-                    let _ = tick_pressure_cpu_profiler(
-                        Some(&profiler),
-                        wall_clock_now_ms().min(i64::MAX as u64) as i64,
-                    );
-                }) as Arc<dyn Fn() + Send + Sync>
-            });
-            runtime.flush_polling = Some(StructuredLogFlushPolling::start(
-                self.logs.clone(),
-                pressure_tick,
-            ));
             runtime.desktop_health_forwarder =
                 Some(DesktopHealthForwarder::start(self.logs.clone()));
 
             let event_logs = self.logs.clone();
             let pressure = self.hooks.pressure_profiler.clone();
             let experiments = Arc::clone(&production.experiments);
-            runtime.event_loop_telemetry = Some(EventLoopTelemetryRuntime::start(Arc::new(
-                move |report| {
+            runtime.event_loop_telemetry =
+                Some(EventLoopTelemetryRuntime::start(Arc::new(move |report| {
                     let _ = event_logs.report_projection(&event_loop_window_telemetry(report));
                     route_pressure_cpu_profiler_event(
                         &experiments,
@@ -1120,8 +1197,7 @@ impl HostTelemetryService {
                         report,
                         wall_clock_now_ms().min(i64::MAX as u64) as i64,
                     );
-                },
-            )));
+                })));
         }
 
         if telemetry_enabled
@@ -1178,7 +1254,9 @@ impl HostTelemetryService {
         store: FileHostCrashMarkerStore,
     ) -> io::Result<bool> {
         if self.disposed.load(Ordering::Acquire) {
-            return Err(io::Error::other("Host telemetry service is already disposed"));
+            return Err(io::Error::other(
+                "Host telemetry service is already disposed",
+            ));
         }
         if !self.started.load(Ordering::Acquire) {
             return Err(io::Error::other("Host telemetry service is not started"));
@@ -1212,7 +1290,9 @@ impl HostTelemetryService {
 
     pub fn set_host_bundle_identity(&self, identity: HostBundleIdentity) -> io::Result<()> {
         if self.disposed.load(Ordering::Acquire) {
-            return Err(io::Error::other("Host telemetry service is already disposed"));
+            return Err(io::Error::other(
+                "Host telemetry service is already disposed",
+            ));
         }
         set_turn_trace_host_bundle_version(identity.host_bundle_version.as_deref());
         self.logs.set_host_bundle_identity(&identity);
@@ -1303,7 +1383,10 @@ impl HostTelemetryService {
         if let Ok(mut runtime) = self.runtime.lock() {
             if let Some(production) = self.production.as_ref() {
                 if let Some(subscription) = runtime.auth_renewal_subscription.take() {
-                    production.auth.service().unsubscribe_from_renewal(subscription);
+                    production
+                        .auth
+                        .service()
+                        .unsubscribe_from_renewal(subscription);
                 }
             }
             if let Some(stop) = runtime.inference_stop.take() {
@@ -1330,6 +1413,9 @@ impl HostTelemetryService {
             }
         }
         self.analytics.detach_runtime();
+        if let Some(transport) = self.logs.production_transport.as_ref() {
+            let _ = transport.dispose();
+        }
         self.sink.flush()?;
         if let Some(tracing) = self.hooks.tracing.as_ref() {
             tracing.dispose();
