@@ -11122,18 +11122,23 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_sync_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "d6cb55dafcfbe9e0f86d8142ae874090272741bd",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/box_store_sync/box_store_sync_service.rs"
+        "source/host/src/extensions/box_store_sync/box_store_sync_service.rs",
+        "source/host/src/extensions/box_store_sync/production.rs",
+        "source/host/src/extensions/box_store_sync/extension.rs",
+        "source/host/src/host_production_extensions.rs"
       ],
       "testEvidence": [
-        "source/host/tests/box_store_sync_planned_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/box_store_sync_service_frozen_parity_contract.rs",
+        "source/host/tests/box_store_sync_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity.yml"
       ],
-      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
+      "notes": "Shipping Mahayana Host now uses one ProductionBoxStoreSync owner for the frozen Box Store Sync service behavior: idempotent start/dispose, startup leaked-temp cleanup, canonical store-id/object-store resolution, periodic hydration handoff planning, idle-only Chrome/profile and optional better-CLI home categories, durable sand-data exclusions, category-before-store.db ordering, wait-vs-skip in-flight semantics, canonical CAS manifest writes, fullyHydrated promotion only after complete store.db capture, turn-end debounced store.db capture, durable status, canonical clear/reset including SandBoxStoreV2 legacy AgentStore reset, and forget-agent recovery. Focused source-to-production contracts plus exact-HEAD Rust desktop runtime and Desktop Chat Parity evidence prove the shipping wiring; no second Box Store Sync runtime is introduced."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-sync.ts",
