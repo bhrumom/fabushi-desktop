@@ -131,7 +131,8 @@ fn shipping_service_recovery_uses_canonical_manifest_and_object_store() {
         .nth(1)
         .expect("canonical reset implementation");
     assert!(reset.contains("prepare_canonical_manifest_reset(store)?"));
-    assert!(reset.contains("write_manifest_with_retry("));
+    assert!(reset.contains("write_manifest_with_retry_and_conflict_reporter("));
+    assert!(reset.contains("self.report_manifest_write_conflict(info)"));
     assert!(reset.contains("ManifestHydrationUpdate::ResetComplete"));
 
     let forget = production
@@ -139,7 +140,8 @@ fn shipping_service_recovery_uses_canonical_manifest_and_object_store() {
         .nth(1)
         .expect("forget_agent production implementation");
     assert!(forget.contains("load_manifest_for_write("));
-    assert!(forget.contains("write_manifest_with_retry("));
+    assert!(forget.contains("write_manifest_with_retry_and_conflict_reporter("));
+    assert!(forget.contains("self.report_manifest_write_conflict(info)"));
 
     let status = production
         .split("fn read_store_status(&self)")
