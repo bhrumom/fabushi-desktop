@@ -126,6 +126,62 @@ fn host_telemetry_service_owns_box_help_structured_log_and_product_analytics_ing
 
 
 #[test]
+fn box_store_sync_facade_preserves_frozen_event_level_and_metadata() {
+    let root = temp_root();
+    let service = HostTelemetryService::open(root.join("box-store-sync-events.jsonl"))
+        .expect("telemetry service");
+
+    service
+        .logs
+        .report_box_store_sync_cycle(
+            "info",
+            &BTreeMap::from([
+                ("ok".into(), "true".into()),
+                ("reason".into(), "enabled".into()),
+                ("phase".into(), "startup".into()),
+            ]),
+        )
+        .expect("box store startup telemetry");
+    service
+        .logs
+        .report_box_store_sync_cycle(
+            "warn",
+            &BTreeMap::from([
+                ("ok".into(), "false".into()),
+                ("reason".into(), "locked".into()),
+                ("duration_ms".into(), "17".into()),
+                ("manifest_entries".into(), "4".into()),
+                ("store_db_entries".into(), "2".into()),
+            ]),
+        )
+        .expect("box store locked telemetry");
+
+    let records = fs::read_to_string(service.records_path())
+        .expect("box store sync jsonl")
+        .lines()
+        .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
+        .collect::<Vec<_>>();
+
+    assert_eq!(records.len(), 2);
+    for record in &records {
+        assert_eq!(record.channel, "structured_log");
+        assert_eq!(record.event, "sand.box_store_sync");
+    }
+    assert_eq!(records[0].payload["level"], "info");
+    assert_eq!(records[0].payload["metadata"]["ok"], "true");
+    assert_eq!(records[0].payload["metadata"]["reason"], "enabled");
+    assert_eq!(records[0].payload["metadata"]["phase"], "startup");
+    assert_eq!(records[1].payload["level"], "warn");
+    assert_eq!(records[1].payload["metadata"]["ok"], "false");
+    assert_eq!(records[1].payload["metadata"]["reason"], "locked");
+    assert_eq!(records[1].payload["metadata"]["duration_ms"], "17");
+    assert_eq!(records[1].payload["metadata"]["manifest_entries"], "4");
+    assert_eq!(records[1].payload["metadata"]["store_db_entries"], "2");
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn frozen_facade_methods_route_mapper_semantics_through_single_host_owner() {
     let root = temp_root();
     let service = HostTelemetryService::open(root.join("facade-events.jsonl"))
