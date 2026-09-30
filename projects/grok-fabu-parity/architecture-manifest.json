@@ -12390,16 +12390,22 @@
         "source/host/src/extensions/forever_box/extension.rs",
         "source/host/src/extensions/box_lifecycle/production.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/extensions/session/box_handoff_service.rs"
+        "source/host/src/extensions/session/box_handoff_service.rs",
+        "source/host/src/extensions/telemetry/box_recreate_decided_telemetry.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/src/host_production_extensions.rs"
       ],
       "testEvidence": [
         "source/host/tests/extensions_forever_box_contract.rs",
         "source/host/tests/box_generated_production_contract.rs",
         "source/host/tests/extensions_box_lifecycle_production_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/box_handoff_service_contract.rs"
+        "source/host/tests/box_handoff_service_contract.rs",
+        "source/host/tests/box_recreate_decided_telemetry_contract.rs",
+        "source/host/tests/box_recreate_decided_production_wiring_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Final: ForeverBox owns HostBox plus the production lifecycle service, recreate/update/auto-update state, environment/MCP/resource access, generated ComputerUse screenshot capture and disposal. Shipping Session handoff now calls this screenshot owner directly; the Host constructs this exact graph and Runner resources reach authenticated ExecService through it."
+      "notes": "Final Host-local ForeverBox ownership is retained and the frozen recreate-decision telemetry is restored on the same production object: only automatic image decisions emit sand.box.recreate_decided, with exact hibernation_auto_update/auto_update triggers plus mode=pod_recreate and preserved=true after skip/staleness gates and before the lifecycle recreate request. Production Host composition injects the unique HostStructuredLogTelemetry handle directly; no Coordinator/Electron telemetry owner is introduced. Manual reset/update and skip branches remain non-events, while decline/transport failure happen after the recorded decision. Focused producer/wiring and JSONL facade contracts are GitHub-Actions evidence."
     },
     {
       "referencePath": "source/host/extensions/forever-box/host-box.ts",
@@ -15257,7 +15263,10 @@
         "source/host/src/extensions/telemetry/structured_log_telemetry.rs",
         "source/host/src/extensions/telemetry/host_telemetry_service.rs",
         "docs/specs/structured-log-facade-audit-20260930.md",
-        "source/host/src/extensions/telemetry/box_copy_in_telemetry.rs"
+        "source/host/src/extensions/telemetry/box_copy_in_telemetry.rs",
+        "source/host/src/extensions/telemetry/box_recreate_decided_telemetry.rs",
+        "source/host/src/extensions/forever_box/forever_box_service.rs",
+        "source/host/src/host_production_extensions.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_telemetry_service_contract.rs",
@@ -15265,9 +15274,12 @@
         "source/host/tests/telemetry_extension_parity_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/box_copy_in_telemetry_contract.rs",
-        "source/host/tests/box_copy_in_production_wiring_contract.rs"
+        "source/host/tests/box_copy_in_production_wiring_contract.rs",
+        "source/host/tests/box_recreate_decided_telemetry_contract.rs",
+        "source/host/tests/box_recreate_decided_production_wiring_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Production structured-log transport/backend/lifecycle remains the unique Mahayana Host owner. The frozen 90-entry SandStructuredLogTelemetry facade continues its method-by-method audit; row 69 reportBoxCopyIn now has a real shipping producer, canonical mapper, typed Host owner, exact frozen level/metadata semantics, and focused production-wiring plus JSONL contracts, pending exact-HEAD Actions before the facade ledger may mark it verified-owner. Other direct producer gaps and the nonfinal turn-telemetry-mappers delegation still keep this row existing-needs-parity; do not advance the turn mapper until direct facade gaps are cleared."
+      "notes": "Production structured-log transport/backend/lifecycle remains the unique Mahayana Host owner. Row 69 reportBoxCopyIn is verified-owner. Row 70 reportBoxRecreateDecided now has its frozen Host-local ForeverBox producer, canonical fixed info/event mapper, typed Host facade, unique production log injection, exact automatic-decision metadata/timing, skip/manual non-event behavior, and focused producer plus JSONL contracts; it remains producer-evidence-required only until exact-HEAD Actions are green. Other direct producer gaps and the nonfinal turn-telemetry-mappers delegation keep this architecture row existing-needs-parity; do not advance turn telemetry until direct facade gaps are cleared."
     },
     {
       "referencePath": "source/host/extensions/telemetry/turn-empty-delivery-telemetry.ts",
