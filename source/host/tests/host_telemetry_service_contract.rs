@@ -264,3 +264,63 @@ fn shipping_telemetry_brain_routes_automation_run_to_product_and_structured_chan
 
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn structured_log_turn_handle_preserves_frozen_start_retry_and_finalize_semantics() {
+    use mahayana_host_runtime::extensions::telemetry::sand_error_tags::SandErrorValue;
+
+    let root = temp_root();
+    let service = HostTelemetryService::open(root.join("turn-events.jsonl"))
+        .expect("telemetry service");
+    service.start().expect("telemetry start");
+
+    let mut turn = service
+        .logs
+        .start_turn("agent-turn", "user", None);
+    turn.set_request_id("request-first");
+    turn.set_request_id("request-ignored");
+    turn.note_retry(Some(125), Some("transient"));
+    turn.note_retry(Some(75), None);
+    turn.set_model("model-a");
+    turn.set_model("model-b");
+    let error = SandErrorValue::new("SAND-E0402");
+    turn.finalize(
+        "failed",
+        Some(&error),
+        Some(("provider failed", Some("synthetic stack"))),
+    );
+    turn.finalize("completed", None, None);
+
+    let text = fs::read_to_string(service.records_path()).expect("turn telemetry jsonl");
+    let records = text
+        .lines()
+        .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 3, "start + outcome + detail must each emit once");
+
+    let start = &records[0];
+    assert_eq!(start.event, "sand.turn.start");
+    assert_eq!(start.payload["metadata"]["conversation_id"], "agent-turn");
+    assert_eq!(start.payload["metadata"]["turn_type"], "user");
+    assert_eq!(start.payload["metadata"]["request_id"], "request-first");
+    assert_eq!(start.payload["metadata"]["model_intent"], "model-a");
+
+    let outcome = &records[1];
+    assert_eq!(outcome.event, "sand.turn.outcome");
+    assert_eq!(outcome.payload["metadata"]["outcome"], "error");
+    assert_eq!(outcome.payload["metadata"]["request_id"], "request-first");
+    assert_eq!(outcome.payload["metadata"]["model_intent"], "model-b");
+    assert_eq!(outcome.payload["metadata"]["retry_count"], "2");
+    assert_eq!(outcome.payload["metadata"]["backoff_total_ms"], "200");
+    assert_eq!(outcome.payload["metadata"]["retry_cause"], "transient");
+    assert_eq!(outcome.payload["metadata"]["error_code"], "SAND-E0402");
+    assert!(outcome.payload["metadata"]["duration_ms"].as_str().is_some());
+
+    let detail = &records[2];
+    assert_eq!(detail.event, "sand.turn.outcome_detail");
+    assert_eq!(detail.payload["metadata"]["error_code"], "SAND-E0402");
+    assert_eq!(detail.payload["metadata"]["error_message"], "provider failed");
+    assert_eq!(detail.payload["metadata"]["error_stack"], "synthetic stack");
+
+    let _ = fs::remove_dir_all(root);
+}

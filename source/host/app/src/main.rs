@@ -3875,6 +3875,17 @@ fn start_routed_provider_task(
         .name(format!("mahayana-runner-provider-{agent_id}"))
         .spawn(move || {
             let mut worker_routed_turn_lease = routed_turn_lease_guard;
+            let turn_type = worker_request_source
+                .clone()
+                .unwrap_or_else(|| "turn".to_string());
+            let structured_turn = Arc::new(Mutex::new(worker_telemetry_logs.start_turn(
+                agent_id.clone(),
+                turn_type,
+                worker_session_options.model_id.clone(),
+            )));
+            if let Ok(mut turn) = structured_turn.lock() {
+                turn.set_request_id(worker_stream_id.clone());
+            }
             let observation_events = worker_events.clone();
             let observation: TurnObservationHandle = TurnObservation::shared(
                 agent_id.clone(),
@@ -4851,6 +4862,7 @@ fn start_routed_provider_task(
                     );
                 });
             let retry_observation = Arc::clone(&observation);
+            let retry_structured_turn = Arc::clone(&structured_turn);
             let retry_telemetry_logs = worker_telemetry_logs.clone();
             let retry_conversation_id = agent_id.clone();
             let retry_report_sink: Arc<dyn Fn(&ProviderRetryReport) + Send + Sync> =
@@ -4860,6 +4872,11 @@ fn start_routed_provider_task(
                         ProviderRetryOutcome::Exhausted => "exhausted",
                         ProviderRetryOutcome::GaveUpIneligible => "gave_up_ineligible",
                     };
+                    if report.outcome == ProviderRetryOutcome::Retried
+                        && let Ok(mut turn) = retry_structured_turn.lock()
+                    {
+                        turn.note_retry(report.delay_ms.map(u64::from), report.cause.as_deref());
+                    }
                     if let Ok(observation) = retry_observation.lock() {
                         observation.report_turn_retry(serde_json::json!({
                             "outcome": outcome,
@@ -5503,6 +5520,24 @@ fn start_routed_provider_task(
             let _ = worker_transcript_runtime
                 .retire_idle_live_session(&worker_retire_sessions, &agent_id);
             let _ = worker_box_store_sync.schedule_store_db_snapshot(&agent_id);
+
+            if let Ok(mut turn) = structured_turn.lock() {
+                if waiting_user {
+                    turn.finalize("waiting_user", None, None);
+                } else if worker_cancellation.is_cancelled() {
+                    turn.finalize("cancelled", None, None);
+                } else if let Err(error) = result.as_ref() {
+                    let classified = classify_agent_error(error);
+                    let detail = sand_error_detail(error);
+                    turn.finalize(
+                        "failed",
+                        Some(&classified),
+                        Some((&detail.message, detail.stack.as_deref())),
+                    );
+                } else {
+                    turn.finalize("completed", None, None);
+                }
+            }
 
             if waiting_user {
                 worker_events.publish(serde_json::json!({

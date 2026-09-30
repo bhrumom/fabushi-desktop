@@ -11,13 +11,14 @@ Status vocabulary:
 - **delegated-nonfinal** — the facade delegates to another mapped module whose own architecture row is still `existing-needs-parity`; this facade cannot be final before that delegate is final.
 - **producer-evidence-required** — a mapper/event shape exists, but this audit did not find a shipping producer through the canonical structured-log owner by the frozen facade method name; module presence alone is insufficient.
 - **stateful-gap** — the frozen API carries state/lifecycle behavior that is not represented by the current generic `TelemetryService::report` boundary.
+- **implemented-awaiting-exact-head-ci** — production wiring and focused contract were added after the audit rollback, but the row remains non-final until the new exact HEAD is accepted.
 
 ## SandStructuredLogTelemetry public surface
 
 | # | Frozen API | Fabushi owner / delegation | Audit status |
 |---:|---|---|---|
 | 1 | `setHostBundleIdentity` | `HostTelemetryService::set_host_bundle_identity` → `HostStructuredLogTelemetry` → production transport identity tags | verified-owner |
-| 2 | `startTurn` | Current `TelemetryService::start_turn` only calls stateless `report("startTurn", ...)`; no `SandTurnTelemetryImpl`-equivalent state owner found | **stateful-gap** |
+| 2 | `startTurn` | `HostStructuredLogTelemetry::start_turn` now returns a Host-owned stateful turn handle; shipping provider thread creates it from the unique `worker_telemetry_logs`, binds stream request-id/model, accumulates real retry reports, and finalizes before renderer-visible terminal publication | **implemented-awaiting-exact-head-ci** |
 | 3 | `reportAutoReviewApproval` | `auto_review_approval_telemetry.rs` mapper exists | producer-evidence-required |
 | 4 | `reportAutomationRun` | automation analytics/telemetry boundary exists, but frozen structured-log facade producer must be evidenced through canonical owner | producer-evidence-required |
 | 5 | `reportAutomationFireDropped` | automation telemetry boundary exists, but frozen structured-log facade producer must be evidenced through canonical owner | producer-evidence-required |
@@ -102,7 +103,7 @@ Status vocabulary:
 | 84 | `reportHostUpgradeConfirmed` | Host Upgrade production dependency exposes confirmed reporting and current Host sink has `ship_confirmed_projection` | verified-owner |
 | 85 | `reportBoxHelp` | `HostStructuredLogTelemetry::report_box_help` exists; production call site still must be pinned | producer-evidence-required |
 | 86 | `reportBotBlock` | generic mapping does not by itself prove frozen two-event summary/detail semantics | producer-evidence-required |
-| 87 | `emitTurnEvent` | frozen internal facade helper used by returned turn handle; no equivalent stateful turn handle owner found | **stateful-gap** |
+| 87 | `emitTurnEvent` | returned Host turn handle emits start/outcome/outcome_detail through the same `HostStructuredLogTelemetry::report_projection` owner | **implemented-awaiting-exact-head-ci** |
 | 88 | `setFlushTickListener` | production transport is constructed with the pressure-profiler flush tick listener under Host ownership | verified-owner |
 | 89 | `dispose` | `HostTelemetryService::dispose` disposes pressure profiler, structured-log transport, sink/tracing; transport drain is idempotent | verified-owner |
 | 90 | `enqueue` | `HostStructuredLogTelemetry::report_projection` → `ProductionStructuredLogTransport::enqueue`; bounded/retry/identity semantics covered by focused transport contract | verified-owner |
@@ -113,18 +114,18 @@ Status vocabulary:
 
 | Frozen API | Frozen responsibility | Current audit |
 |---|---|---|
-| `noteRetry` | increments retry count, accumulates backoff, records retry cause until finalized | no equivalent owner found |
-| `setModel` | latches model and emits turn-start once | current `NoopSandTurnTelemetry::set_model` is empty; no shipping stateful equivalent found |
-| `setRequestId` | first non-empty request-id wins | current `NoopSandTurnTelemetry::set_request_id` is empty; no shipping stateful equivalent found |
-| `finalize` | one-shot finalization, duration, retry metadata, Sand error tags, outcome + optional detail event, active-turn removal | current `NoopSandTurnTelemetry::finalize` is empty; no shipping stateful equivalent found |
-| `baseTags` | canonical turn_type/conversation_id/request_id/model_intent projection | no returned turn-handle owner found |
-| `emitStart` | exactly-once turn-start emission | generic `TelemetryService::start_turn` is stateless and does not prove this latch |
+| `noteRetry` | increments retry count, accumulates backoff, records retry cause until finalized | implemented on `HostStructuredLogTurnTelemetry`; shipping `ProviderRetryReport::Retried` calls it |
+| `setModel` | latches model and emits turn-start once | implemented on Host turn handle; initial shipping `model_id` is supplied at start and later setter retains exactly-once start latch |
+| `setRequestId` | first non-empty request-id wins | implemented on Host turn handle; shipping stream id is bound immediately after creation |
+| `finalize` | one-shot finalization, duration, retry metadata, Sand error tags, outcome + optional detail event, active-turn removal | implemented; provider settlement maps waiting-user/cancel/completed/error before renderer-visible terminal publication |
+| `baseTags` | canonical turn_type/conversation_id/request_id/model_intent projection | implemented on Host turn handle |
+| `emitStart` | exactly-once turn-start emission | implemented by `start_emitted` latch; focused contract exercises late model + repeated model/finalize |
 
 ## Acceptance consequence
 
 At audited HEAD `28eebfe882760decbabe2c8ce83bf27d110eefca`, the transport/backend/lifecycle work is real and should be retained, but the frozen facade is **not fully evidenced**. In particular:
 
-1. `startTurn` / `SandTurnTelemetryImpl` stateful semantics are not represented by the current production telemetry boundary.
+1. `startTurn` / `SandTurnTelemetryImpl` stateful semantics were missing at the audited rollback HEAD; the follow-up implementation now restores them in the unique Host owner and shipping provider thread, pending exact-HEAD CI.
 2. Eight facade entries delegate to `turn-telemetry-mappers.ts`, whose manifest row is still `existing-needs-parity`.
 3. Numerous other frozen facade entries currently have mapper/event definitions without a method-specific shipping producer/call-site proof through the canonical Host owner.
 4. A generic `TelemetryService::report(method, Value)` event-name switch is not sufficient evidence for frozen field shaping, multi-event behavior, settlement callbacks, or confirmed shipping.

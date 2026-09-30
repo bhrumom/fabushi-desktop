@@ -57,6 +57,7 @@ use super::model_experiment_exposure::{
 use super::pressure_cpu_profiler::{
     PressureCpuProfiler, SandProfilerCaptureError, create_production_pressure_cpu_profiler,
 };
+use super::sand_error_tags::{SandErrorValue, sand_error_tags};
 use super::structured_log_telemetry::{
     BOX_HELP_EVENT, CursorStructuredLogBackend, HOST_BUILT_AT_MS, ProductionStructuredLogTransport,
     StructuredLogBackend, box_help_telemetry, level_from_str,
@@ -115,9 +116,187 @@ pub struct HostStructuredLogTelemetry {
     identity_tags: Arc<Mutex<BTreeMap<String, String>>>,
     production_transport: Option<Arc<ProductionStructuredLogTransport>>,
     production_backend: Option<Arc<dyn StructuredLogBackend>>,
+    active_turns: Arc<Mutex<BTreeMap<String, String>>>,
+}
+
+pub const TURN_START_EVENT: &str = "sand.turn.start";
+pub const TURN_OUTCOME_EVENT: &str = "sand.turn.outcome";
+pub const TURN_OUTCOME_DETAIL_EVENT: &str = "sand.turn.outcome_detail";
+const MAX_ERROR_DETAIL_MESSAGE_LENGTH: usize = 1_024;
+const MAX_ERROR_DETAIL_STACK_LENGTH: usize = 4_096;
+
+pub struct HostStructuredLogTurnTelemetry {
+    logs: HostStructuredLogTelemetry,
+    token: String,
+    conversation_id: String,
+    turn_type: String,
+    model: Option<String>,
+    request_id: Option<String>,
+    started_at: Instant,
+    start_emitted: bool,
+    finalized: bool,
+    retry_count: u64,
+    backoff_total_ms: u64,
+    retry_cause: Option<String>,
+}
+
+impl HostStructuredLogTurnTelemetry {
+    fn base_tags(&self) -> BTreeMap<String, String> {
+        let mut metadata = BTreeMap::from([
+            ("turn_type".into(), self.turn_type.clone()),
+            ("conversation_id".into(), self.conversation_id.clone()),
+        ]);
+        if let Some(request_id) = self.request_id.as_ref() {
+            metadata.insert("request_id".into(), request_id.clone());
+        }
+        if let Some(model) = self.model.as_ref() {
+            metadata.insert("model_intent".into(), model.clone());
+        }
+        metadata
+    }
+
+    fn emit_start(&mut self) {
+        if self.start_emitted {
+            return;
+        }
+        self.start_emitted = true;
+        let _ = self.logs.report_projection(&HostTelemetryProjection {
+            level: Some("info"),
+            event: Some(TURN_START_EVENT),
+            metadata: self.base_tags(),
+        });
+    }
+
+    pub fn set_model(&mut self, model: impl Into<String>) {
+        let model = model.into();
+        if model.is_empty() {
+            return;
+        }
+        self.model = Some(model);
+        self.emit_start();
+    }
+
+    pub fn set_request_id(&mut self, request_id: impl Into<String>) {
+        if self.request_id.is_some() {
+            return;
+        }
+        let request_id = request_id.into();
+        if !request_id.is_empty() {
+            self.request_id = Some(request_id);
+        }
+    }
+
+    pub fn note_retry(&mut self, delay_ms: Option<u64>, cause: Option<&str>) {
+        if self.finalized {
+            return;
+        }
+        self.retry_count = self.retry_count.saturating_add(1);
+        self.backoff_total_ms = self
+            .backoff_total_ms
+            .saturating_add(delay_ms.unwrap_or_default());
+        if let Some(cause) = cause.filter(|value| !value.is_empty()) {
+            self.retry_cause = Some(cause.to_string());
+        }
+    }
+
+    pub fn finalize(
+        &mut self,
+        outcome: &str,
+        error: Option<&SandErrorValue>,
+        detail: Option<(&str, Option<&str>)>,
+    ) {
+        if self.finalized {
+            return;
+        }
+        self.finalized = true;
+        self.emit_start();
+        let mut metadata = self.base_tags();
+        metadata.insert(
+            "outcome".into(),
+            if error.is_some() { "error" } else { outcome }.into(),
+        );
+        metadata.insert(
+            "duration_ms".into(),
+            self.started_at.elapsed().as_millis().to_string(),
+        );
+        if self.retry_count > 0 {
+            metadata.insert("retry_count".into(), self.retry_count.to_string());
+            metadata.insert("backoff_total_ms".into(), self.backoff_total_ms.to_string());
+            if let Some(cause) = self.retry_cause.as_ref() {
+                metadata.insert("retry_cause".into(), cause.clone());
+            }
+        }
+        if let Some(error) = error {
+            metadata.extend(sand_error_tags(error));
+        }
+        let _ = self.logs.report_projection(&HostTelemetryProjection {
+            level: Some("info"),
+            event: Some(TURN_OUTCOME_EVENT),
+            metadata,
+        });
+        if let (Some(error), Some((message, stack))) = (error, detail) {
+            let mut metadata = self.base_tags();
+            metadata.extend(sand_error_tags(error));
+            metadata.insert(
+                "error_message".into(),
+                message
+                    .chars()
+                    .take(MAX_ERROR_DETAIL_MESSAGE_LENGTH)
+                    .collect(),
+            );
+            if let Some(stack) = stack {
+                metadata.insert(
+                    "error_stack".into(),
+                    stack.chars().take(MAX_ERROR_DETAIL_STACK_LENGTH).collect(),
+                );
+            }
+            let _ = self.logs.report_projection(&HostTelemetryProjection {
+                level: Some("info"),
+                event: Some(TURN_OUTCOME_DETAIL_EVENT),
+                metadata,
+            });
+        }
+        if let Ok(mut active) = self.logs.active_turns.lock()
+            && active.get(&self.conversation_id) == Some(&self.token)
+        {
+            active.remove(&self.conversation_id);
+        }
+    }
 }
 
 impl HostStructuredLogTelemetry {
+    pub fn start_turn(
+        &self,
+        conversation_id: impl Into<String>,
+        turn_type: impl Into<String>,
+        model: Option<String>,
+    ) -> HostStructuredLogTurnTelemetry {
+        let conversation_id = conversation_id.into();
+        let token = uuid::Uuid::new_v4().to_string();
+        self.active_turns
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(conversation_id.clone(), token.clone());
+        let mut turn = HostStructuredLogTurnTelemetry {
+            logs: self.clone(),
+            token,
+            conversation_id,
+            turn_type: turn_type.into(),
+            model,
+            request_id: None,
+            started_at: Instant::now(),
+            start_emitted: false,
+            finalized: false,
+            retry_count: 0,
+            backoff_total_ms: 0,
+            retry_cause: None,
+        };
+        if turn.model.is_some() {
+            turn.emit_start();
+        }
+        turn
+    }
+
     pub fn flush(&self) -> io::Result<()> {
         self.sink.flush()?;
         if let Some(transport) = self.production_transport.as_ref() {
@@ -1102,6 +1281,7 @@ impl HostTelemetryService {
             identity_tags,
             production_transport,
             production_backend,
+            active_turns: Arc::new(Mutex::new(BTreeMap::new())),
         };
         let analytics = HostProductAnalytics {
             sink: Arc::clone(&sink),
