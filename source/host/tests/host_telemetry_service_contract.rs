@@ -57,7 +57,7 @@ fn telemetry_extension_owns_box_help_structured_log_and_product_analytics_ingres
         position: 0, depth_user: 1, depth_agent: 0, depth_background: 0, has_active: false,
     })).expect("queue telemetry");
 
-    extension
+    service
         .analytics
         .track_event(
             "sand.box_help",
