@@ -681,3 +681,31 @@ fn shipping_host_lifecycle_progress_routes_through_single_structured_log_owner()
 
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn ordinary_host_crash_uses_fire_and_forget_structured_owner() {
+    let root = temp_root();
+    let service = HostTelemetryService::open(root.join("host-crash.jsonl")).expect("telemetry");
+    service.start().expect("start");
+
+    service
+        .logs
+        .report_host_crash("panic")
+        .expect("ordinary host crash");
+
+    let text = fs::read_to_string(service.records_path()).expect("crash jsonl");
+    let records = text
+        .lines()
+        .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].channel, "structured_log");
+    assert_eq!(records[0].event, "sand.host.crash");
+    assert_eq!(records[0].payload["level"], "error");
+    assert_eq!(records[0].payload["metadata"]["kind"], "panic");
+    assert!(records[0].payload["metadata"]["error_code"].is_null());
+
+    service.dispose().expect("dispose");
+    let _ = fs::remove_dir_all(root);
+}
