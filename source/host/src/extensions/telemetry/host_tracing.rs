@@ -3,6 +3,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use prost::Message;
 use reqwest::blocking::Client;
 use reqwest::header::{HeaderName, HeaderValue};
 use serde_json::{Value, json};
@@ -76,7 +77,10 @@ impl TokenRefreshingSpanExporter {
             .lock()
             .expect("host tracing exporter poisoned");
         let Some(token) = token else {
-            return delegate.as_ref().map(|(_, exporter)| Arc::clone(exporter));
+            if let Some((_, previous)) = delegate.take() {
+                let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| previous.shutdown()));
+            }
+            return None;
         };
 
         if delegate
@@ -504,14 +508,272 @@ impl HostTracerProvider for ProductionHostTracerProvider {
     }
 }
 
-struct OtlpJsonHttpSpanExporter {
+pub const OTLP_PROTOBUF_CONTENT_TYPE: &str = "application/x-protobuf";
+
+#[derive(Clone, PartialEq, Message)]
+struct OtlpExportTraceServiceRequest {
+    #[prost(message, repeated, tag = "1")]
+    resource_spans: Vec<OtlpResourceSpans>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct OtlpResourceSpans {
+    #[prost(message, optional, tag = "1")]
+    resource: Option<OtlpResource>,
+    #[prost(message, repeated, tag = "2")]
+    scope_spans: Vec<OtlpScopeSpans>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct OtlpResource {
+    #[prost(message, repeated, tag = "1")]
+    attributes: Vec<OtlpKeyValue>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct OtlpScopeSpans {
+    #[prost(message, optional, tag = "1")]
+    scope: Option<OtlpInstrumentationScope>,
+    #[prost(message, repeated, tag = "2")]
+    spans: Vec<OtlpSpan>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct OtlpInstrumentationScope {
+    #[prost(string, tag = "1")]
+    name: String,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct OtlpKeyValue {
+    #[prost(string, tag = "1")]
+    key: String,
+    #[prost(message, optional, tag = "2")]
+    value: Option<OtlpAnyValue>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct OtlpAnyValue {
+    #[prost(oneof = "otlp_any_value::Value", tags = "1, 2, 3, 4")]
+    value: Option<otlp_any_value::Value>,
+}
+
+mod otlp_any_value {
+    use prost::Oneof;
+
+    #[derive(Clone, PartialEq, Oneof)]
+    pub enum Value {
+        #[prost(string, tag = "1")]
+        StringValue(String),
+        #[prost(bool, tag = "2")]
+        BoolValue(bool),
+        #[prost(int64, tag = "3")]
+        IntValue(i64),
+        #[prost(double, tag = "4")]
+        DoubleValue(f64),
+    }
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct OtlpSpan {
+    #[prost(bytes = "vec", tag = "1")]
+    trace_id: Vec<u8>,
+    #[prost(bytes = "vec", tag = "2")]
+    span_id: Vec<u8>,
+    #[prost(bytes = "vec", tag = "4")]
+    parent_span_id: Vec<u8>,
+    #[prost(string, tag = "5")]
+    name: String,
+    #[prost(int32, tag = "6")]
+    kind: i32,
+    #[prost(fixed64, tag = "7")]
+    start_time_unix_nano: u64,
+    #[prost(fixed64, tag = "8")]
+    end_time_unix_nano: u64,
+    #[prost(message, repeated, tag = "9")]
+    attributes: Vec<OtlpKeyValue>,
+    #[prost(message, repeated, tag = "11")]
+    events: Vec<OtlpSpanEvent>,
+    #[prost(message, optional, tag = "15")]
+    status: Option<OtlpStatus>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct OtlpSpanEvent {
+    #[prost(fixed64, tag = "1")]
+    time_unix_nano: u64,
+    #[prost(string, tag = "2")]
+    name: String,
+    #[prost(message, repeated, tag = "3")]
+    attributes: Vec<OtlpKeyValue>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct OtlpStatus {
+    #[prost(string, tag = "2")]
+    message: String,
+    #[prost(int32, tag = "3")]
+    code: i32,
+}
+
+fn decode_hex_bytes(value: &str) -> Option<Vec<u8>> {
+    if !value.len().is_multiple_of(2) {
+        return None;
+    }
+    (0..value.len())
+        .step_by(2)
+        .map(|offset| u8::from_str_radix(&value[offset..offset + 2], 16).ok())
+        .collect()
+}
+
+fn otlp_any_value_from_json(value: &Value) -> OtlpAnyValue {
+    let value = match value {
+        Value::Bool(value) => otlp_any_value::Value::BoolValue(*value),
+        Value::Number(value) => {
+            if let Some(integer) = value.as_i64() {
+                otlp_any_value::Value::IntValue(integer)
+            } else {
+                otlp_any_value::Value::DoubleValue(value.as_f64().unwrap_or_default())
+            }
+        }
+        Value::String(value) => otlp_any_value::Value::StringValue(value.clone()),
+        Value::Object(value) => {
+            if let Some(value) = value.get("stringValue").and_then(Value::as_str) {
+                otlp_any_value::Value::StringValue(value.to_string())
+            } else if let Some(value) = value.get("boolValue").and_then(Value::as_bool) {
+                otlp_any_value::Value::BoolValue(value)
+            } else if let Some(value) = value.get("intValue") {
+                let integer = value
+                    .as_i64()
+                    .or_else(|| value.as_str().and_then(|value| value.parse::<i64>().ok()))
+                    .unwrap_or_default();
+                otlp_any_value::Value::IntValue(integer)
+            } else if let Some(value) = value.get("doubleValue").and_then(Value::as_f64) {
+                otlp_any_value::Value::DoubleValue(value)
+            } else {
+                otlp_any_value::Value::StringValue(Value::Object(value.clone()).to_string())
+            }
+        }
+        _ => otlp_any_value::Value::StringValue(value.to_string()),
+    };
+    OtlpAnyValue { value: Some(value) }
+}
+
+fn otlp_key_values(value: Option<&Value>) -> Vec<OtlpKeyValue> {
+    value
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|attribute| {
+            Some(OtlpKeyValue {
+                key: attribute.get("key")?.as_str()?.to_string(),
+                value: Some(otlp_any_value_from_json(attribute.get("value")?)),
+            })
+        })
+        .collect()
+}
+
+fn json_u64(value: Option<&Value>) -> u64 {
+    value
+        .and_then(|value| value.as_u64().or_else(|| value.as_str()?.parse::<u64>().ok()))
+        .unwrap_or_default()
+}
+
+fn otlp_span_from_json(span: &Value) -> OtlpSpan {
+    let trace_id = span
+        .get("traceId")
+        .and_then(Value::as_str)
+        .and_then(decode_hex_bytes)
+        .unwrap_or_default();
+    let span_id = span
+        .get("spanId")
+        .and_then(Value::as_str)
+        .and_then(decode_hex_bytes)
+        .unwrap_or_default();
+    let parent_span_id = span
+        .get("parentSpanId")
+        .and_then(Value::as_str)
+        .and_then(decode_hex_bytes)
+        .unwrap_or_default();
+    let events = span
+        .get("events")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .map(|event| OtlpSpanEvent {
+            time_unix_nano: json_u64(event.get("timeUnixNano")),
+            name: event
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string(),
+            attributes: otlp_key_values(event.get("attributes")),
+        })
+        .collect();
+    OtlpSpan {
+        trace_id,
+        span_id,
+        parent_span_id,
+        name: span
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
+        kind: span.get("kind").and_then(Value::as_i64).unwrap_or_default() as i32,
+        start_time_unix_nano: json_u64(span.get("startTimeUnixNano")),
+        end_time_unix_nano: json_u64(span.get("endTimeUnixNano")),
+        attributes: otlp_key_values(span.get("attributes")),
+        events,
+        status: span.get("status").map(|status| OtlpStatus {
+            message: status
+                .get("message")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string(),
+            code: status.get("code").and_then(Value::as_i64).unwrap_or_default() as i32,
+        }),
+    }
+}
+
+pub fn encode_otlp_trace_request(
+    spans: &[Value],
+    resource: &HostTracingResource,
+) -> Result<Vec<u8>, String> {
+    let attributes = resource
+        .attributes
+        .iter()
+        .map(|(key, value)| OtlpKeyValue {
+            key: key.clone(),
+            value: Some(OtlpAnyValue {
+                value: Some(otlp_any_value::Value::StringValue(value.clone())),
+            }),
+        })
+        .collect();
+    let request = OtlpExportTraceServiceRequest {
+        resource_spans: vec![OtlpResourceSpans {
+            resource: Some(OtlpResource { attributes }),
+            scope_spans: vec![OtlpScopeSpans {
+                scope: Some(OtlpInstrumentationScope {
+                    name: "sand-host".into(),
+                }),
+                spans: spans.iter().map(otlp_span_from_json).collect(),
+            }],
+        }],
+    };
+    Ok(request.encode_to_vec())
+}
+
+pub struct ProductionOtlpHttpSpanExporter {
     options: SpanExporterOptions,
     resource: HostTracingResource,
     client: Client,
 }
 
-impl OtlpJsonHttpSpanExporter {
-    fn new(options: SpanExporterOptions, resource: HostTracingResource) -> Result<Self, String> {
+impl ProductionOtlpHttpSpanExporter {
+    pub fn new(
+        options: SpanExporterOptions,
+        resource: HostTracingResource,
+    ) -> Result<Self, String> {
         let client = Client::builder()
             .danger_accept_invalid_certs(!options.reject_unauthorized)
             .build()
@@ -522,38 +784,21 @@ impl OtlpJsonHttpSpanExporter {
             client,
         })
     }
-
-    fn body(&self, spans: &[Value]) -> Value {
-        let attributes = self
-            .resource
-            .attributes
-            .iter()
-            .map(|(key, value)| json!({
-                "key": key,
-                "value": {"stringValue": value},
-            }))
-            .collect::<Vec<_>>();
-        json!({
-            "resourceSpans": [{
-                "resource": {"attributes": attributes},
-                "scopeSpans": [{
-                    "scope": {"name": "sand-host"},
-                    "spans": spans,
-                }],
-            }],
-        })
-    }
 }
 
-impl SpanExporter for OtlpJsonHttpSpanExporter {
+impl SpanExporter for ProductionOtlpHttpSpanExporter {
     fn export(&self, spans: &[Value]) -> ExportResultCode {
         if spans.is_empty() {
             return ExportResultCode::Success;
         }
+        let Ok(body) = encode_otlp_trace_request(spans, &self.resource) else {
+            return ExportResultCode::Failed;
+        };
         let mut request = self
             .client
             .post(&self.options.url)
-            .header("content-type", "application/json");
+            .header("content-type", OTLP_PROTOBUF_CONTENT_TYPE)
+            .body(body);
         for (key, value) in &self.options.headers {
             let Ok(name) = HeaderName::from_bytes(key.as_bytes()) else {
                 return ExportResultCode::Failed;
@@ -563,7 +808,7 @@ impl SpanExporter for OtlpJsonHttpSpanExporter {
             };
             request = request.header(name, value);
         }
-        match request.json(&self.body(spans)).send() {
+        match request.send() {
             Ok(response) if response.status().is_success() => ExportResultCode::Success,
             _ => ExportResultCode::Failed,
         }
@@ -590,7 +835,7 @@ pub fn init_production_host_tracing(
         let resource = host_tracing_resource(service_version.as_deref());
         let resource_for_factory = resource.clone();
         let factory: SpanExporterFactory = Arc::new(move |options| {
-            OtlpJsonHttpSpanExporter::new(options.clone(), resource_for_factory.clone())
+            ProductionOtlpHttpSpanExporter::new(options.clone(), resource_for_factory.clone())
                 .map(|exporter| Arc::new(exporter) as Arc<dyn SpanExporter>)
                 .unwrap_or_else(|_| Arc::new(FailedSpanExporter))
         });

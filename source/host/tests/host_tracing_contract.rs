@@ -4,9 +4,9 @@ use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::extensions::telemetry::host_tracing::{
     ExportResultCode, HostTracerProvider, HostTracing, HostTracingInitializer,
-    ProductionHostTracerProvider, SpanExporter,
-    SpanExporterFactory, SpanExporterOptions, TokenRefreshingSpanExporter,
-    host_tracing_base_headers, host_tracing_resource, trace_export_url,
+    OTLP_PROTOBUF_CONTENT_TYPE, ProductionHostTracerProvider, ProductionOtlpHttpSpanExporter,
+    SpanExporter, SpanExporterFactory, SpanExporterOptions, TokenRefreshingSpanExporter,
+    encode_otlp_trace_request, host_tracing_base_headers, host_tracing_resource, trace_export_url,
 };
 
 #[derive(Default)]
@@ -53,7 +53,7 @@ impl HostTracerProvider for Provider {
 }
 
 #[test]
-fn token_refresh_replaces_delegate_and_keeps_last_delegate_when_token_is_missing() {
+fn token_refresh_replaces_delegate_and_revokes_stale_delegate_when_token_is_missing() {
     let token = Arc::new(Mutex::new(Some("a".to_string())));
     let created = Arc::new(Mutex::new(
         Vec::<(SpanExporterOptions, Arc<Exporter>)>::new(),
@@ -88,12 +88,8 @@ fn token_refresh_replaces_delegate_and_keeps_last_delegate_when_token_is_missing
     );
 
     *token.lock().unwrap() = None;
-    assert_eq!(exporter.export(&[]), ExportResultCode::Success);
+    assert_eq!(exporter.export(&[]), ExportResultCode::Failed);
     assert_eq!(created.lock().unwrap().len(), 1);
-
-    *token.lock().unwrap() = Some("b".into());
-    assert_eq!(exporter.export(&[]), ExportResultCode::Success);
-    assert_eq!(created.lock().unwrap().len(), 2);
     assert_eq!(
         created.lock().unwrap()[0]
             .1
@@ -101,6 +97,10 @@ fn token_refresh_replaces_delegate_and_keeps_last_delegate_when_token_is_missing
             .load(Ordering::SeqCst),
         1
     );
+
+    *token.lock().unwrap() = Some("b".into());
+    assert_eq!(exporter.export(&[]), ExportResultCode::Success);
+    assert_eq!(created.lock().unwrap().len(), 2);
 }
 
 #[test]
@@ -218,4 +218,122 @@ fn production_provider_registers_send_trace_factory_and_flushes_finished_spans()
 
     assert_eq!(concrete_exporter.exports.load(Ordering::SeqCst), 1);
     tracing.dispose();
+}
+
+
+#[test]
+fn production_otlp_backend_encodes_protobuf_and_uses_frozen_resource_shape() {
+    let resource = host_tracing_resource(Some("9.8.7"));
+    let span = serde_json::json!({
+        "traceId": "00112233445566778899aabbccddeeff",
+        "spanId": "0011223344556677",
+        "name": "sand.contract",
+        "kind": 1,
+        "startTimeUnixNano": "1000",
+        "endTimeUnixNano": "2000",
+        "attributes": [{
+            "key": "sand.test",
+            "value": {"stringValue": "yes"}
+        }],
+        "status": {"code": 1}
+    });
+    let body = encode_otlp_trace_request(&[span], &resource).expect("encode OTLP protobuf");
+    assert!(!body.is_empty());
+    assert_ne!(body.first().copied(), Some(b'{'));
+    let printable = String::from_utf8_lossy(&body);
+    assert!(printable.contains("sand-host"));
+    assert!(printable.contains("9.8.7"));
+    assert_eq!(OTLP_PROTOBUF_CONTENT_TYPE, "application/x-protobuf");
+}
+
+#[test]
+fn production_otlp_http_exporter_posts_protobuf_to_real_endpoint() {
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::thread;
+
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind local OTLP receiver");
+    let address = listener.local_addr().expect("receiver address");
+    let receiver = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().expect("accept exporter request");
+        let mut bytes = Vec::new();
+        let mut scratch = [0_u8; 4096];
+        let header_end = loop {
+            let read = stream.read(&mut scratch).expect("read request");
+            assert!(read > 0, "request closed before headers");
+            bytes.extend_from_slice(&scratch[..read]);
+            if let Some(index) = bytes.windows(4).position(|window| window == b"\r\n\r\n") {
+                break index + 4;
+            }
+        };
+        let headers = String::from_utf8_lossy(&bytes[..header_end]).to_string();
+        let content_length = headers
+            .lines()
+            .find_map(|line| {
+                let (name, value) = line.split_once(':')?;
+                name.eq_ignore_ascii_case("content-length")
+                    .then(|| value.trim().parse::<usize>().ok())
+                    .flatten()
+            })
+            .expect("content-length");
+        while bytes.len() < header_end + content_length {
+            let read = stream.read(&mut scratch).expect("read body");
+            assert!(read > 0, "request closed before body");
+            bytes.extend_from_slice(&scratch[..read]);
+        }
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+            .expect("reply");
+        (headers, bytes[header_end..header_end + content_length].to_vec())
+    });
+
+    let options = SpanExporterOptions {
+        url: format!("http://{address}/v1/traces"),
+        headers: BTreeMap::from([
+            ("authorization".into(), "Bearer contract-token".into()),
+            ("x-ghost-mode".into(), "false".into()),
+        ]),
+        reject_unauthorized: true,
+    };
+    let exporter = ProductionOtlpHttpSpanExporter::new(
+        options,
+        host_tracing_resource(Some("1.2.3")),
+    )
+    .expect("production exporter");
+    let span = serde_json::json!({
+        "traceId": "00112233445566778899aabbccddeeff",
+        "spanId": "0011223344556677",
+        "name": "sand.http.contract",
+        "kind": 1,
+        "startTimeUnixNano": "1000",
+        "endTimeUnixNano": "2000",
+        "attributes": []
+    });
+    assert_eq!(exporter.export(&[span]), ExportResultCode::Success);
+    let (headers, body) = receiver.join().expect("receiver thread");
+    assert!(headers.starts_with("POST /v1/traces HTTP/1.1"));
+    assert!(headers.to_ascii_lowercase().contains("content-type: application/x-protobuf"));
+    assert!(headers.contains("authorization: Bearer contract-token"));
+    assert!(headers.contains("x-ghost-mode: false"));
+    assert!(!body.is_empty());
+    assert_ne!(body.first().copied(), Some(b'{'));
+}
+
+#[test]
+fn shipping_host_signal_path_settles_telemetry_before_process_exit() {
+    let host_main = include_str!("../app/src/main.rs");
+    assert!(host_main.contains("Signals::new([SIGTERM, SIGINT])"));
+    assert!(host_main.contains("HostLaneRequest::StdinClosed"));
+    assert!(host_main.contains("production_extensions.telemetry.dispose();"));
+    assert!(host_main.contains("shutdown_complete.store(true, Ordering::Release);"));
+    let signal = host_main
+        .find("Signals::new([SIGTERM, SIGINT])")
+        .expect("signal installation");
+    let dispose = host_main
+        .rfind("production_extensions.telemetry.dispose();")
+        .expect("shipping telemetry disposal");
+    let settled = host_main
+        .rfind("shutdown_complete.store(true, Ordering::Release);")
+        .expect("shutdown settlement");
+    assert!(signal < dispose && dispose < settled);
 }
