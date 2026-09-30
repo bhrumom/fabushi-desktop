@@ -30,10 +30,11 @@ use crate::extensions::box_store_sync::box_store_pack_pipeline::{
     PACK_BUILD_MIN_BYTES, PACK_BUILD_MIN_MEMBERS, PACK_TMP_DIR_NAME, PACK_TMP_MAX_AGE_MS,
 };
 use crate::extensions::box_store_sync::box_store_manifest::{
-    AGENT_STORE_DB_BASENAMES, BoxManifestMap, ManifestHydrationUpdate, ManifestSaveOptions,
-    count_agent_dir_manifest_entries, count_store_db_manifest_entries, load_manifest_for_write,
-    prepare_canonical_manifest_reset, read_manifest_strict, serialize_manifest_bytes,
-    set_manifest_entry, write_manifest_with_retry,
+    AGENT_STORE_DB_BASENAMES, BoxManifestMap, BoxStoreManifestConflictInfo,
+    ManifestHydrationUpdate, ManifestSaveOptions, count_agent_dir_manifest_entries,
+    count_store_db_manifest_entries, load_manifest_for_write, prepare_canonical_manifest_reset,
+    read_manifest_strict, serialize_manifest_bytes, set_manifest_entry, write_manifest_with_retry,
+    write_manifest_with_retry_and_conflict_reporter,
 };
 use crate::extensions::box_store_sync::box_store_manifest_format::{
     BOX_STORE_BLOBS_PREFIX, BOX_STORE_MANIFEST_REL_PATH, BOX_STORE_MANIFEST_VERSION,
@@ -654,6 +655,53 @@ impl ProductionBoxStoreSyncInner {
         (self.deps.report_box_store_sync_cycle)(telemetry.level, &telemetry.metadata);
     }
 
+    fn report_manifest_write_conflict(&self, info: &BoxStoreManifestConflictInfo) {
+        let mut metadata = BTreeMap::from([
+            ("store_id".to_string(), info.store_id.clone()),
+            ("attempts".to_string(), info.attempts.to_string()),
+            ("accepted".to_string(), info.accepted.to_string()),
+            ("covered".to_string(), info.covered.to_string()),
+            (
+                "canonical_matches_attempt".to_string(),
+                info.canonical_matches_attempt.to_string(),
+            ),
+            (
+                "live_view_changed".to_string(),
+                info.live_view_changed.to_string(),
+            ),
+            (
+                "attempted_entries".to_string(),
+                info.attempted_entries.to_string(),
+            ),
+            (
+                "canonical_readable".to_string(),
+                info.canonical_readable.to_string(),
+            ),
+        ]);
+        if let Some(value) = info.last_base_etag.as_ref() {
+            metadata.insert("last_base_etag".into(), value.clone());
+        }
+        if let Some(value) = info.last_baseline_source.as_ref() {
+            metadata.insert("last_baseline_source".into(), value.clone());
+        }
+        if let Some(value) = info.last_conflict_rel_path.as_ref() {
+            metadata.insert("last_conflict_rel_path".into(), value.clone());
+        }
+        if let Some(value) = info.canonical_entry_count {
+            metadata.insert("canonical_entry_count".into(), value.to_string());
+        }
+        if let Some(value) = info.canonical_updated_at_ms {
+            metadata.insert("canonical_updated_at_ms".into(), value.to_string());
+        }
+        if let Some(value) = info.canonical_writer_window_id.as_ref() {
+            metadata.insert("canonical_writer_window_id".into(), value.clone());
+        }
+        if let Some(value) = info.our_window_id.as_ref() {
+            metadata.insert("our_window_id".into(), value.clone());
+        }
+        (self.deps.report_box_store_manifest_conflict)("warn", &metadata);
+    }
+
     fn report_store_db_capture(
         &self,
         trigger: &'static str,
@@ -966,7 +1014,7 @@ impl ProductionBoxStoreSyncInner {
             .any(|category| category.failures > 0 || category.oversize > 0);
         let writer_window_id = format!("mahayana-host-{}", std::process::id());
         let manifest_commit_started_at = Instant::now();
-        let manifest_result = write_manifest_with_retry(
+        let manifest_result = write_manifest_with_retry_and_conflict_reporter(
             store.as_ref(),
             &store_id,
             manifest_baseline,
@@ -995,6 +1043,7 @@ impl ProductionBoxStoreSyncInner {
             BOX_STORE_MANIFEST_RETRY_DELAY_MS,
             &|message| self.log(message),
             &|| self.stopped.load(Ordering::Acquire),
+            &|info| self.report_manifest_write_conflict(info),
         );
         if let Some((started_at, capture)) = store_db_capture.as_mut() {
             capture.capture_trace.manifest_commit_duration_ms = capture
@@ -1232,7 +1281,7 @@ impl ProductionBoxStoreSyncInner {
             .get(SAND_MANIFEST_V2_ENV)
             .is_some_and(|value| value == "1");
         let writer_window_id = format!("mahayana-host-{}", std::process::id());
-        write_manifest_with_retry(
+        write_manifest_with_retry_and_conflict_reporter(
             store,
             store_id,
             baseline,
@@ -1248,6 +1297,7 @@ impl ProductionBoxStoreSyncInner {
             BOX_STORE_MANIFEST_RETRY_DELAY_MS,
             &|message| self.log(message),
             &|| false,
+            &|info| self.report_manifest_write_conflict(info),
         )?;
         Ok(())
     }
@@ -1297,7 +1347,7 @@ impl ProductionBoxStoreSyncInner {
             return Ok(());
         }
         let writer_window_id = format!("mahayana-host-{}", std::process::id());
-        write_manifest_with_retry(
+        write_manifest_with_retry_and_conflict_reporter(
             store.as_ref(),
             &store_id,
             loaded.baseline,
@@ -1310,6 +1360,7 @@ impl ProductionBoxStoreSyncInner {
             BOX_STORE_MANIFEST_RETRY_DELAY_MS,
             &|message| self.log(message),
             &|| false,
+            &|info| self.report_manifest_write_conflict(info),
         )?;
         self.log(&format!(
             "forgot {agent_id} ({} entries)",
@@ -1453,7 +1504,7 @@ impl ProductionBoxStoreSyncInner {
         if entries != entries_before {
             let writer_window_id = format!("mahayana-host-{}", std::process::id());
             let manifest_commit_started_at = Instant::now();
-            let manifest_result = write_manifest_with_retry(
+            let manifest_result = write_manifest_with_retry_and_conflict_reporter(
                 store.as_ref(),
                 &store_id,
                 manifest_baseline,
@@ -1466,6 +1517,7 @@ impl ProductionBoxStoreSyncInner {
                 BOX_STORE_MANIFEST_RETRY_DELAY_MS,
                 &|message| self.log(message),
                 &|| self.stopped.load(Ordering::Acquire),
+                &|info| self.report_manifest_write_conflict(info),
             );
             capture.capture_trace.manifest_commit_duration_ms = capture
                 .capture_trace

@@ -259,6 +259,25 @@ pub struct ManifestWriteResult {
     pub fully_hydrated: Option<bool>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BoxStoreManifestConflictInfo {
+    pub store_id: String,
+    pub attempts: usize,
+    pub accepted: bool,
+    pub covered: bool,
+    pub canonical_matches_attempt: bool,
+    pub live_view_changed: bool,
+    pub attempted_entries: usize,
+    pub last_base_etag: Option<String>,
+    pub last_baseline_source: Option<String>,
+    pub last_conflict_rel_path: Option<String>,
+    pub canonical_readable: bool,
+    pub canonical_entry_count: Option<usize>,
+    pub canonical_updated_at_ms: Option<u64>,
+    pub canonical_writer_window_id: Option<String>,
+    pub our_window_id: Option<String>,
+}
+
 pub fn parse_manifest_bytes(
     bytes: &[u8],
 ) -> Result<Option<BoxStoreManifest>, BoxStoreManifestParseError> {
@@ -502,66 +521,56 @@ fn optional_string(value: Option<&str>) -> Value {
         .unwrap_or(Value::Null)
 }
 
-fn report_manifest_write_conflict(
-    store_id: &str,
-    attempts: usize,
-    accepted: bool,
-    covered: bool,
-    canonical_matches: bool,
-    attempted_entries: usize,
-    conflict: &BoxStoreCanonicalWriteConflictError,
-    canonical: Option<&BoxStoreManifest>,
-    writer_window_id: Option<&str>,
-) {
+fn report_manifest_write_conflict_diagnostic(info: &BoxStoreManifestConflictInfo) {
     let mut diagnostic = Map::new();
     diagnostic.insert("extension".into(), Value::String("box_store".into()));
     diagnostic.insert(
         "kind".into(),
         Value::String("manifest_write_conflict".into()),
     );
-    diagnostic.insert("storeId".into(), Value::String(store_id.to_string()));
-    diagnostic.insert("attempts".into(), Value::from(attempts as u64));
-    diagnostic.insert("accepted".into(), Value::Bool(accepted));
-    diagnostic.insert("covered".into(), Value::Bool(covered));
+    diagnostic.insert("storeId".into(), Value::String(info.store_id.clone()));
+    diagnostic.insert("attempts".into(), Value::from(info.attempts as u64));
+    diagnostic.insert("accepted".into(), Value::Bool(info.accepted));
+    diagnostic.insert("covered".into(), Value::Bool(info.covered));
     diagnostic.insert(
         "canonicalMatchesAttempt".into(),
-        Value::Bool(canonical_matches),
+        Value::Bool(info.canonical_matches_attempt),
     );
-    diagnostic.insert("liveViewChanged".into(), Value::Bool(false));
+    diagnostic.insert("liveViewChanged".into(), Value::Bool(info.live_view_changed));
     diagnostic.insert(
         "attemptedEntries".into(),
-        Value::from(attempted_entries as u64),
+        Value::from(info.attempted_entries as u64),
     );
     diagnostic.insert(
         "lastBaseEtag".into(),
-        optional_string(conflict.base_etag.as_deref()),
+        optional_string(info.last_base_etag.as_deref()),
     );
     diagnostic.insert(
         "lastBaselineSource".into(),
-        optional_string(conflict.baseline_source.as_deref()),
+        optional_string(info.last_baseline_source.as_deref()),
     );
     diagnostic.insert(
         "lastConflictRelPath".into(),
-        optional_string(conflict.conflict_rel_path.as_deref()),
+        optional_string(info.last_conflict_rel_path.as_deref()),
     );
-    diagnostic.insert("canonicalReadable".into(), Value::Bool(canonical.is_some()));
+    diagnostic.insert("canonicalReadable".into(), Value::Bool(info.canonical_readable));
     diagnostic.insert(
         "canonicalEntryCount".into(),
-        canonical
-            .map(|manifest| Value::from(manifest.entries.len() as u64))
+        info.canonical_entry_count
+            .map(|value| Value::from(value as u64))
             .unwrap_or(Value::Null),
     );
     diagnostic.insert(
         "canonicalUpdatedAtMs".into(),
-        canonical
-            .map(|manifest| Value::from(manifest.updated_at_ms))
+        info.canonical_updated_at_ms
+            .map(Value::from)
             .unwrap_or(Value::Null),
     );
     diagnostic.insert(
         "canonicalWriterWindowId".into(),
-        optional_string(canonical.and_then(|manifest| manifest.writer_window_id.as_deref())),
+        optional_string(info.canonical_writer_window_id.as_deref()),
     );
-    diagnostic.insert("ourWindowId".into(), optional_string(writer_window_id));
+    diagnostic.insert("ourWindowId".into(), optional_string(info.our_window_id.as_deref()));
     report_box_store_diagnostic(&diagnostic);
 }
 
@@ -578,6 +587,38 @@ pub fn write_manifest_with_retry(
     retry_delay_ms: u64,
     log: &dyn Fn(&str),
     is_disposed: &dyn Fn() -> bool,
+) -> Result<ManifestWriteResult, String> {
+    write_manifest_with_retry_and_conflict_reporter(
+        store,
+        store_id,
+        baseline,
+        entries,
+        manifest_v2,
+        writer_window_id,
+        fully_hydrated,
+        options,
+        retry_attempts,
+        retry_delay_ms,
+        log,
+        is_disposed,
+        &|_| {},
+    )
+}
+
+pub fn write_manifest_with_retry_and_conflict_reporter(
+    store: &dyn BoxObjectStore,
+    store_id: &str,
+    baseline: Option<Vec<u8>>,
+    entries: &BoxManifestMap,
+    manifest_v2: bool,
+    writer_window_id: Option<&str>,
+    fully_hydrated: Option<bool>,
+    options: ManifestSaveOptions,
+    retry_attempts: usize,
+    retry_delay_ms: u64,
+    log: &dyn Fn(&str),
+    is_disposed: &dyn Fn() -> bool,
+    on_manifest_write_conflict: &dyn Fn(&BoxStoreManifestConflictInfo),
 ) -> Result<ManifestWriteResult, String> {
     let configured_entries = configured_manifest_entries(entries, manifest_v2);
     let version = if manifest_v2 {
@@ -693,17 +734,31 @@ pub fn write_manifest_with_retry(
     });
     let accepted =
         options.accept_matching_canonical_on_conflict && canonical_matches;
-    report_manifest_write_conflict(
-        store_id,
+    let conflict_info = BoxStoreManifestConflictInfo {
+        store_id: store_id.to_string(),
         attempts,
         accepted,
         covered,
-        canonical_matches,
-        configured_entries.len(),
-        &conflict,
-        canonical_after_conflict.as_ref(),
-        writer_window_id,
-    );
+        canonical_matches_attempt: canonical_matches,
+        live_view_changed: false,
+        attempted_entries: configured_entries.len(),
+        last_base_etag: conflict.base_etag.clone(),
+        last_baseline_source: conflict.baseline_source.clone(),
+        last_conflict_rel_path: conflict.conflict_rel_path.clone(),
+        canonical_readable: canonical_after_conflict.is_some(),
+        canonical_entry_count: canonical_after_conflict
+            .as_ref()
+            .map(|manifest| manifest.entries.len()),
+        canonical_updated_at_ms: canonical_after_conflict
+            .as_ref()
+            .map(|manifest| manifest.updated_at_ms),
+        canonical_writer_window_id: canonical_after_conflict
+            .as_ref()
+            .and_then(|manifest| manifest.writer_window_id.clone()),
+        our_window_id: writer_window_id.map(str::to_string),
+    };
+    report_manifest_write_conflict_diagnostic(&conflict_info);
+    on_manifest_write_conflict(&conflict_info);
     if accepted {
         log(&format!(
             "manifest save lost a concurrent-write race; canonical manifest already covers the attempted entries (winner {})",

@@ -114,6 +114,7 @@ pub struct BoxStoreSyncExtensionDeps {
     pub report_host_extension_diagnostic: DiagnosticReporter,
     pub report_box_store_sync_cycle: BoxStoreSyncTelemetryReporter,
     pub report_box_store_db_capture: BoxStoreSyncTelemetryReporter,
+    pub report_box_store_manifest_conflict: BoxStoreSyncTelemetryReporter,
     pub scheduling: BoxStoreScheduling,
 }
 

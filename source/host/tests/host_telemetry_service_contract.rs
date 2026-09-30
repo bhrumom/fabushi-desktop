@@ -863,3 +863,74 @@ fn box_store_db_capture_facade_preserves_frozen_event_level_and_metadata() {
 
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn box_store_manifest_conflict_facade_preserves_frozen_warn_event_and_metadata() {
+    let root = temp_root();
+    let service =
+        HostTelemetryService::open(root.join("box-store-manifest-conflict.jsonl")).expect("telemetry");
+    service.start().expect("start");
+
+    service
+        .logs
+        .report_box_store_manifest_conflict(
+            "warn",
+            &BTreeMap::from([
+                ("store_id".into(), "store-a".into()),
+                ("attempts".into(), "3".into()),
+                ("accepted".into(), "false".into()),
+                ("covered".into(), "true".into()),
+                ("canonical_matches_attempt".into(), "false".into()),
+                ("live_view_changed".into(), "false".into()),
+                ("attempted_entries".into(), "7".into()),
+                ("last_base_etag".into(), "etag-a".into()),
+                ("last_baseline_source".into(), "manifest-cas".into()),
+                ("last_conflict_rel_path".into(), "conflicts/lost.json".into()),
+                ("canonical_readable".into(), "true".into()),
+                ("canonical_entry_count".into(), "8".into()),
+                ("canonical_updated_at_ms".into(), "42".into()),
+                ("canonical_writer_window_id".into(), "winner".into()),
+                ("our_window_id".into(), "loser".into()),
+            ]),
+        )
+        .expect("manifest conflict telemetry");
+
+    let text =
+        fs::read_to_string(service.records_path()).expect("manifest conflict telemetry jsonl");
+    let record: PersistedHostTelemetryRecord =
+        serde_json::from_str(text.lines().next().expect("manifest conflict record"))
+            .expect("manifest conflict json");
+    assert_eq!(record.channel, "structured_log");
+    assert_eq!(record.event, "sand.box_store_manifest_conflict");
+    assert_eq!(record.payload["level"], "warn");
+    assert_eq!(record.payload["metadata"]["store_id"], "store-a");
+    assert_eq!(record.payload["metadata"]["attempts"], "3");
+    assert_eq!(record.payload["metadata"]["accepted"], "false");
+    assert_eq!(record.payload["metadata"]["covered"], "true");
+    assert_eq!(
+        record.payload["metadata"]["canonical_matches_attempt"],
+        "false"
+    );
+    assert_eq!(record.payload["metadata"]["live_view_changed"], "false");
+    assert_eq!(record.payload["metadata"]["attempted_entries"], "7");
+    assert_eq!(record.payload["metadata"]["last_base_etag"], "etag-a");
+    assert_eq!(
+        record.payload["metadata"]["last_baseline_source"],
+        "manifest-cas"
+    );
+    assert_eq!(
+        record.payload["metadata"]["last_conflict_rel_path"],
+        "conflicts/lost.json"
+    );
+    assert_eq!(record.payload["metadata"]["canonical_readable"], "true");
+    assert_eq!(record.payload["metadata"]["canonical_entry_count"], "8");
+    assert_eq!(record.payload["metadata"]["canonical_updated_at_ms"], "42");
+    assert_eq!(
+        record.payload["metadata"]["canonical_writer_window_id"],
+        "winner"
+    );
+    assert_eq!(record.payload["metadata"]["our_window_id"], "loser");
+
+    let _ = fs::remove_dir_all(root);
+}

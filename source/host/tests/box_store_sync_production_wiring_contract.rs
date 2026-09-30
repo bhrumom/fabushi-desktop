@@ -399,3 +399,75 @@ fn shipping_store_db_capture_uses_frozen_mapper_and_unique_host_owner() {
     assert!(mapper.contains("StoreDbCaptureOutcome::Oversize"));
     assert!(mapper.contains("\"failure_phase\".into()"));
 }
+
+
+#[test]
+fn shipping_manifest_conflict_uses_frozen_metadata_and_unique_host_owner() {
+    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    assert_eq!(
+        production.matches("write_manifest_with_retry_and_conflict_reporter(").count(),
+        4,
+        "all four shipping manifest-write paths must carry the exhausted-conflict reporter"
+    );
+    assert_eq!(
+        production.matches("self.report_manifest_write_conflict(info)").count(),
+        4,
+        "every shipping manifest-write path must report through the same typed owner"
+    );
+    assert!(production.contains(
+        "fn report_manifest_write_conflict(&self, info: &BoxStoreManifestConflictInfo)"
+    ));
+    for field in [
+        ""store_id"",
+        ""attempts"",
+        ""accepted"",
+        ""covered"",
+        ""canonical_matches_attempt"",
+        ""live_view_changed"",
+        ""attempted_entries"",
+        ""last_base_etag"",
+        ""last_baseline_source"",
+        ""last_conflict_rel_path"",
+        ""canonical_readable"",
+        ""canonical_entry_count"",
+        ""canonical_updated_at_ms"",
+        ""canonical_writer_window_id"",
+        ""our_window_id"",
+    ] {
+        assert!(
+            production.contains(field),
+            "shipping manifest-conflict mapper is missing frozen field {field}"
+        );
+    }
+    assert!(production.contains(
+        "(self.deps.report_box_store_manifest_conflict)("warn", &metadata);"
+    ));
+
+    let manifest = include_str!("../src/extensions/box_store_sync/box_store_manifest.rs");
+    assert!(manifest.contains("on_manifest_write_conflict(&conflict_info);"));
+    assert!(manifest.contains("report_manifest_write_conflict_diagnostic(&conflict_info);"));
+
+    let owner = include_str!("../src/host_production_extensions.rs");
+    assert!(owner.contains("report_box_store_manifest_conflict: Arc::new"));
+    assert!(owner.contains(
+        "box_store_manifest_conflict_logs
+                        .report_box_store_manifest_conflict(level, metadata)"
+    ));
+
+    let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
+    assert!(telemetry.contains("pub fn report_box_store_manifest_conflict("));
+    assert!(telemetry.contains("event: Some("sand.box_store_manifest_conflict")"));
+
+    let report = production
+        .split_once("fn report_manifest_write_conflict(&self")
+        .map(|(_, body)| body)
+        .and_then(|body| {
+            body.split_once("fn report_store_db_capture")
+                .map(|(report, _)| report)
+        })
+        .expect("shipping manifest conflict mapper");
+    assert!(
+        !report.contains("report_host_extension_diagnostic"),
+        "canonical manifest-conflict structured telemetry must not be disguised as a Host-extension diagnostic"
+    );
+}
