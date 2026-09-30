@@ -69,7 +69,7 @@ Status vocabulary:
 | 51 | `reportToolCallError` | generic TelemetryService event mapping exists, but frozen field shaping/capping must be proven by shipping producer contract | producer-evidence-required |
 | 52 | `reportToolCallStalled` | generic TelemetryService event mapping exists, but frozen field shaping/capping must be proven by shipping producer contract | producer-evidence-required |
 | 53 | `reportToolCallStarted` | generic TelemetryService event mapping exists, but frozen field shaping must be proven by shipping producer contract | producer-evidence-required |
-| 54 | `reportAgentError` | generic mapping exists; frozen emits error + optional detail event with Sand error tags/truncation | producer-evidence-required |
+| 54 | `reportAgentError` | shipping Host runner ack-redrive / host-upgrade-resume failure settlement and Automations fire-poll failures call `HostStructuredLogTelemetry::report_agent_error`; the single Host owner emits frozen `sand.agent.error` plus optional `sand.agent.error.detail`, preserves Sand error tags and 1024/4096 message/stack caps. Exact-HEAD `d6e9b85a8e10f810f5c46763ac300825b782f869` run `36743240109` completed `rust-host` successfully (shipping Host compile + Host/Runner contracts), and run `36743240249` completed focused Electron chat E2E successfully. | verified-owner |
 | 55 | `reportAutoReviewDisplayRecheckFailed` | direct frozen event has no canonical shipping producer evidence in current audit | producer-evidence-required |
 | 56 | `reportAutoReviewExpireSweepFailed` | generic TelemetryService event mapping exists | producer-evidence-required |
 | 57 | `reportBoxStoreSyncCycle` | direct frozen event; Box Store Sync producer path must be pinned | producer-evidence-required |
