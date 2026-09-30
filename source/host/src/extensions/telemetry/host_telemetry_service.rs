@@ -191,6 +191,18 @@ impl HostProductAnalytics {
         *self.runtime.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(runtime);
     }
 
+    pub fn mark_active(&self, reason: &str) {
+        if let Some(runtime) = self
+            .runtime
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+            .cloned()
+        {
+            runtime.mark_active(reason);
+        }
+    }
+
     pub fn can_record_events(&self) -> bool {
         self.runtime
             .lock()
