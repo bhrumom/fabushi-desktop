@@ -566,7 +566,6 @@ fn run_store_db_debounce_loop(inner: Arc<ProductionBoxStoreSyncInner>) {
                 inner.log(&format!(
                     "turn-end store.db snapshot rejected for {agent_id}: {error}"
                 ));
-                inner.diagnostic("store-db-turn-end", &error, false);
             }
         }
     }
