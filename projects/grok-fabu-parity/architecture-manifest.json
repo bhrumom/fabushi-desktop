@@ -10915,7 +10915,8 @@
         "source/host/src/extensions/box_store_sync/box_store_hydration.rs",
         "source/host/src/extensions/box_store_sync/box_object_store.rs",
         "source/host/src/extensions/telemetry/host_telemetry_service.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/telemetry/box_copy_in_telemetry.rs"
       ],
       "testEvidence": [
         "source/host/tests/box_copy_in_frozen_parity_contract.rs",
@@ -10923,9 +10924,12 @@
         "source/host/tests/box_copy_in_pack_contract.rs",
         "source/host/tests/box_store_sync_production_wiring_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/box_copy_in_telemetry_contract.rs",
+        "source/host/tests/box_copy_in_production_wiring_contract.rs"
       ],
-      "notes": "Rust Mahayana Host now production-wires the frozen Grok 0.18 box-copy-in lifecycle through the canonical --box-copy-in Host entrypoint. SandBoxStoreV2 composes a separate legacy AgentStore source with the same Host auth/machine ownership; unseeded or incompletely hydrated primary stores use authoritative legacy store.db identity coverage with fail-closed migration rules, persist primary fullyHydrated=false before legacy hydration, and write the durable hydration handoff marker only after authoritative store.db restoration is complete. The shipping path preserves retry/lock semantics, pack and loose-blob restore verification, safe symlink projection with trace state, root /home/box download ownership, 750ms status throttling, stuck/slow watchdog reporting, hydrateSource/count evidence, and structured sand.box_copy_in telemetry. Focused contracts exercise migration, coverage failures, handoff state, throttling, watchdog/symlink trace, owner resolution, packs/status and hydration marker durability; GitHub Actions own all build/test acceptance."
+      "notes": "Rust Mahayana Host preserves the frozen Grok 0.18 box-copy-in lifecycle and now restores its structured-log ownership exactly: the real shipping --box-copy-in producer decides started/watchdog/terminal levels and complete metadata, omits frozen-undefined optional fields, attaches store_backend as a structured-log identity tag, and routes through the single typed HostStructuredLogTelemetry::report_box_copy_in owner plus canonical box_copy_in_telemetry mapper. No Electron or Coordinator structured-log owner is introduced. Existing hydration, retry/lock, V2 legacy migration, pack/loose restore, symlink trace, status throttling and fail-closed behavior remain production-wired; focused wiring plus direct JSONL/facade contracts are GitHub-Actions acceptance evidence.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-object-store.ts",
@@ -15252,15 +15256,18 @@
       "behavioralEvidence": [
         "source/host/src/extensions/telemetry/structured_log_telemetry.rs",
         "source/host/src/extensions/telemetry/host_telemetry_service.rs",
-        "docs/specs/structured-log-facade-audit-20260930.md"
+        "docs/specs/structured-log-facade-audit-20260930.md",
+        "source/host/src/extensions/telemetry/box_copy_in_telemetry.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_telemetry_service_contract.rs",
         "source/host/tests/structured_log_telemetry_contract.rs",
         "source/host/tests/telemetry_extension_parity_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/box_copy_in_telemetry_contract.rs",
+        "source/host/tests/box_copy_in_production_wiring_contract.rs"
       ],
-      "notes": "Production structured-log transport/backend/lifecycle is real and retained: AnalyticsService/SubmitLogs, Cursor auth/machine identity headers, host-identity hold/backstop, 3s flush ownership, bounded/replay-aged retrying buffer, confirmed shipping, Host bundle identity, pressure-profiler tick and idempotent drain/dispose. The frozen 90-entry SandStructuredLogTelemetry facade is being audited method-by-method. Stateful startTurn/SandTurnTelemetryImpl now has a real Host-owned shipping handle, and the 2026-09-30 typed-facade follow-up gives twelve additional entries explicit canonical Host facade ownership with real producers, including repair of the prior WebAuthn stderr-only production hole. The row remains existing-needs-parity because multiple facade entries still lack production producer/semantic evidence and eight methods delegate to still-nonfinal turn-telemetry-mappers.ts. See docs/specs/structured-log-facade-audit-20260930.md. Do not advance turn-telemetry-mappers until this facade audit is resolved."
+      "notes": "Production structured-log transport/backend/lifecycle remains the unique Mahayana Host owner. The frozen 90-entry SandStructuredLogTelemetry facade continues its method-by-method audit; row 69 reportBoxCopyIn now has a real shipping producer, canonical mapper, typed Host owner, exact frozen level/metadata semantics, and focused production-wiring plus JSONL contracts, pending exact-HEAD Actions before the facade ledger may mark it verified-owner. Other direct producer gaps and the nonfinal turn-telemetry-mappers delegation still keep this row existing-needs-parity; do not advance the turn mapper until direct facade gaps are cleared."
     },
     {
       "referencePath": "source/host/extensions/telemetry/turn-empty-delivery-telemetry.ts",

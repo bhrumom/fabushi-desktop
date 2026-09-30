@@ -18,6 +18,7 @@ pub struct HostTelemetryProjection {
 
 pub mod automation_shadow_prune_telemetry;
 pub mod box_log_ship_telemetry;
+pub mod box_copy_in_telemetry;
 pub mod experiments_diagnostic_telemetry;
 pub mod host_extension_diagnostic_telemetry;
 pub mod revival_telemetry_mappers;

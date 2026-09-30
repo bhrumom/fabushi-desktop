@@ -30,11 +30,12 @@ use super::box_store_manifest_format::{
 };
 use crate::extensions::auth::auth_service::HostAuthService;
 use crate::extensions::auth::credential_renewer::get_configured_backend_url;
-use crate::extensions::telemetry::HostTelemetryProjection;
 use crate::extensions::telemetry::host_telemetry_service::{
     HostStructuredLogTelemetry, HostTelemetryService,
 };
+pub use crate::extensions::telemetry::box_copy_in_telemetry::BOX_COPY_IN_EVENT as BOX_COPY_IN_TELEMETRY_EVENT;
 use crate::host_paths::{SAND_BOX_HOME_DIR, get_sand_root_dir};
+use crate::ports::telemetry::resolve_sand_box_identity_tags;
 use crate::r#box::box_store_backend_policy::{
     BoxStoreBackendKind, is_box_store_copy_in_enabled, resolve_box_store_backend_policy,
 };
@@ -49,7 +50,6 @@ pub const COPY_IN_HYDRATE_ATTEMPTS: usize = 8;
 pub const COPY_IN_STUCK_THRESHOLD_MS: u64 = 5 * 60_000;
 const COPY_IN_RETRY_BASE_MS: u64 = 1_000;
 const COPY_IN_RETRY_MAX_MS: u64 = 15_000;
-pub const BOX_COPY_IN_TELEMETRY_EVENT: &str = "sand.box_copy_in";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CopyInOutcome {
@@ -450,27 +450,27 @@ pub fn classify_copy_in_failure(result: &CopyInResult) -> &'static str {
     "unknown"
 }
 
-fn telemetry_projection(
-    level: &'static str,
-    metadata: BTreeMap<String, String>,
-) -> HostTelemetryProjection {
-    HostTelemetryProjection {
-        level: Some(level),
-        event: Some(BOX_COPY_IN_TELEMETRY_EVENT),
-        metadata,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CopyInTelemetryEvent {
+    pub level: &'static str,
+    pub metadata: BTreeMap<String, String>,
+}
+
+pub fn build_copy_in_started_telemetry() -> CopyInTelemetryEvent {
+    CopyInTelemetryEvent {
+        level: "info",
+        metadata: BTreeMap::from([
+            ("outcome".into(), "started".into()),
+            ("reason".into(), "hydrate-started".into()),
+            ("duration_ms".into(), "0".into()),
+        ]),
     }
 }
 
-fn report_copy_in_telemetry(
-    telemetry: Option<&HostStructuredLogTelemetry>,
-    level: &'static str,
+pub fn build_copy_in_result_telemetry(
     result: &CopyInResult,
     duration_ms: u64,
-    store_backend: &str,
-) {
-    let Some(telemetry) = telemetry else {
-        return;
-    };
+) -> CopyInTelemetryEvent {
     let error_summary = if result.outcome == CopyInOutcome::Failed {
         redact_copy_in_error_for_telemetry(
             result
@@ -484,10 +484,6 @@ fn report_copy_in_telemetry(
     };
     let mut metadata = BTreeMap::from([
         ("outcome".into(), format!("{:?}", result.outcome).to_ascii_lowercase()),
-        (
-            "hydrate_source".into(),
-            result.hydrate_source.clone().unwrap_or_default(),
-        ),
         ("reason".into(), bucket_copy_in_reason(result).into()),
         ("error_class".into(), classify_copy_in_failure(result).into()),
         ("error_summary".into(), error_summary),
@@ -498,12 +494,33 @@ fn report_copy_in_telemetry(
         ("verified".into(), result.verified.to_string()),
         ("failures".into(), result.failures.len().to_string()),
         ("duration_ms".into(), duration_ms.to_string()),
-        ("store_backend".into(), store_backend.to_string()),
     ]);
+    if let Some(value) = result.hydrate_source.as_ref() {
+        metadata.insert("hydrate_source".into(), value.clone());
+    }
     if let Some(value) = result.restored_store_db_entries {
         metadata.insert("restored_store_db_entries".into(), value.to_string());
     }
-    let _ = telemetry.report_projection(&telemetry_projection(level, metadata));
+    CopyInTelemetryEvent {
+        level: if result.outcome == CopyInOutcome::Failed {
+            "error"
+        } else {
+            "info"
+        },
+        metadata,
+    }
+}
+
+fn report_copy_in_telemetry(
+    telemetry: Option<&HostStructuredLogTelemetry>,
+    result: &CopyInResult,
+    duration_ms: u64,
+) {
+    let Some(telemetry) = telemetry else {
+        return;
+    };
+    let event = build_copy_in_result_telemetry(result, duration_ms);
+    let _ = telemetry.report_box_copy_in(event.level, event.metadata);
 }
 
 pub fn resolve_copy_in_download_owner_values(
@@ -676,19 +693,17 @@ pub fn execute_production_box_copy_in_from_env(
         BoxStoreBackendKind::SandBoxStoreV2 => "sand-box-store-v2",
     };
 
-    let telemetry = HostTelemetryService::open(sand_root.join("telemetry").join("host-events.jsonl"))
-        .ok()
-        .map(|service| service.logs.clone());
+    let mut telemetry_identity_tags = resolve_sand_box_identity_tags();
+    telemetry_identity_tags.insert("store_backend".into(), store_backend.into());
+    let telemetry = HostTelemetryService::open_with_identity_tags(
+        sand_root.join("telemetry").join("host-events.jsonl"),
+        telemetry_identity_tags,
+    )
+    .ok()
+    .map(|service| service.logs.clone());
     if let Some(telemetry) = telemetry.as_ref() {
-        let _ = telemetry.report_projection(&telemetry_projection(
-            "info",
-            BTreeMap::from([
-                ("outcome".into(), "started".into()),
-                ("reason".into(), "hydrate-started".into()),
-                ("duration_ms".into(), "0".into()),
-                ("store_backend".into(), store_backend.into()),
-            ]),
-        ));
+        let event = build_copy_in_started_telemetry();
+        let _ = telemetry.report_box_copy_in(event.level, event.metadata);
     }
 
     let deps = if policy.local_dir.is_some() {
@@ -700,10 +715,8 @@ pub fn execute_production_box_copy_in_from_env(
                 let result = failed_copy_in(format!("invalid production backend URL: {error}"));
                 report_copy_in_telemetry(
                     telemetry.as_ref(),
-                    "error",
                     &result,
                     started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
-                    store_backend,
                 );
                 return report_copy_in_result(&result);
             }
@@ -716,10 +729,8 @@ pub fn execute_production_box_copy_in_from_env(
                 let result = failed_copy_in(format!("failed to initialize production auth: {error}"));
                 report_copy_in_telemetry(
                     telemetry.as_ref(),
-                    "error",
                     &result,
                     started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
-                    store_backend,
                 );
                 return report_copy_in_result(&result);
             }
@@ -747,12 +758,10 @@ pub fn execute_production_box_copy_in_from_env(
                             "legacy AgentStore backend URL is not configured".into(),
                         );
                         report_copy_in_telemetry(
-                            telemetry.as_ref(),
-                            "error",
-                            &result,
-                            started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
-                            store_backend,
-                        );
+                    telemetry.as_ref(),
+                    &result,
+                    started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                );
                         return report_copy_in_result(&result);
                     }
                 },
@@ -763,12 +772,10 @@ pub fn execute_production_box_copy_in_from_env(
                             "legacy AgentStore auth token resolver is not configured".into(),
                         );
                         report_copy_in_telemetry(
-                            telemetry.as_ref(),
-                            "error",
-                            &result,
-                            started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
-                            store_backend,
-                        );
+                    telemetry.as_ref(),
+                    &result,
+                    started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                );
                         return report_copy_in_result(&result);
                     }
                 },
@@ -779,12 +786,10 @@ pub fn execute_production_box_copy_in_from_env(
                             "legacy AgentStore machine id resolver is not configured".into(),
                         );
                         report_copy_in_telemetry(
-                            telemetry.as_ref(),
-                            "error",
-                            &result,
-                            started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
-                            store_backend,
-                        );
+                    telemetry.as_ref(),
+                    &result,
+                    started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                );
                         return report_copy_in_result(&result);
                     }
                 },
@@ -795,12 +800,10 @@ pub fn execute_production_box_copy_in_from_env(
                     let result =
                         failed_copy_in(format!("legacy AgentStore provider unavailable: {error}"));
                     report_copy_in_telemetry(
-                        telemetry.as_ref(),
-                        "error",
-                        &result,
-                        started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
-                        store_backend,
-                    );
+                    telemetry.as_ref(),
+                    &result,
+                    started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                );
                     return report_copy_in_result(&result);
                 }
             }
@@ -813,12 +816,10 @@ pub fn execute_production_box_copy_in_from_env(
         Err(error) => {
             let result = failed_copy_in(format!("object-store provider unavailable: {error}"));
             report_copy_in_telemetry(
-                telemetry.as_ref(),
-                "error",
-                &result,
-                started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
-                store_backend,
-            );
+                    telemetry.as_ref(),
+                    &result,
+                    started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                );
             return report_copy_in_result(&result);
         }
     };
@@ -833,12 +834,10 @@ pub fn execute_production_box_copy_in_from_env(
                 &build_copy_in_status_from_result(&result),
             );
             report_copy_in_telemetry(
-                telemetry.as_ref(),
-                "error",
-                &result,
-                started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
-                store_backend,
-            );
+                    telemetry.as_ref(),
+                    &result,
+                    started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                );
             eprintln!("[box-copy-in] could not acquire box-store lock; failing closed");
             return BOX_COPY_IN_EXIT_FAILED;
         }
@@ -849,12 +848,10 @@ pub fn execute_production_box_copy_in_from_env(
                 &build_copy_in_status_from_result(&result),
             );
             report_copy_in_telemetry(
-                telemetry.as_ref(),
-                "error",
-                &result,
-                started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
-                store_backend,
-            );
+                    telemetry.as_ref(),
+                    &result,
+                    started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                );
             return report_copy_in_result(&result);
         }
     };
@@ -932,7 +929,6 @@ pub fn execute_production_box_copy_in_from_env(
     let watchdog_state = Arc::clone(&watch_state);
     let watchdog_telemetry = telemetry.clone();
     let watchdog_started = started_at;
-    let watchdog_store_backend = store_backend.to_string();
     let watchdog = thread::spawn(move || {
         let mut progress_events_at_last_tick = 0_u64;
         loop {
@@ -952,9 +948,6 @@ pub fn execute_production_box_copy_in_from_env(
                         stuck_threshold_ms,
                         Some(&snapshot.trace),
                     );
-                    event
-                        .metadata
-                        .insert("store_backend".into(), watchdog_store_backend.clone());
                     eprintln!(
                         "[box-copy-in] STILL copying files={}/{} bytes={} outcome={}",
                         snapshot.progress.files,
@@ -963,10 +956,7 @@ pub fn execute_production_box_copy_in_from_env(
                         event.metadata.get("outcome").map(String::as_str).unwrap_or("stuck")
                     );
                     if let Some(telemetry) = watchdog_telemetry.as_ref() {
-                        let _ = telemetry.report_projection(&telemetry_projection(
-                            event.level,
-                            event.metadata,
-                        ));
+                        let _ = telemetry.report_box_copy_in(event.level, event.metadata);
                     }
                 }
             }
@@ -1005,14 +995,8 @@ pub fn execute_production_box_copy_in_from_env(
     }
     report_copy_in_telemetry(
         telemetry.as_ref(),
-        if result.outcome == CopyInOutcome::Failed {
-            "error"
-        } else {
-            "info"
-        },
         &result,
         started_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
-        store_backend,
     );
     report_copy_in_result(&result)
 }
