@@ -6,9 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use std::sync::Arc;
 
-use mahayana_host_runtime::extensions::telemetry::analytics_service::{
-    AutomationRunAnalyticsTelemetry, TelemetryService,
-};
+use mahayana_host_runtime::extensions::telemetry::analytics_service::TelemetryService;
 use mahayana_host_runtime::extensions::telemetry::desktop_health_forwarder::DesktopHealthForwardResult;
 use mahayana_host_runtime::extensions::telemetry::extension::{
     DESKTOP_HEALTH_EVENT, DESKTOP_HEALTH_HEARTBEAT_MS, DesktopHealthForwardState,
@@ -37,7 +35,7 @@ fn temp_root() -> std::path::PathBuf {
 }
 
 #[test]
-fn telemetry_extension_owns_box_help_structured_log_and_product_analytics_ingress() {
+fn host_telemetry_service_owns_box_help_structured_log_and_product_analytics_ingress() {
     assert_eq!(TELEMETRY_EXTENSION_ID, "telemetry");
     let root = temp_root();
     let service = HostTelemetryService::open(root.join("host-events.jsonl"))
@@ -240,12 +238,7 @@ fn shipping_telemetry_brain_routes_automation_run_to_product_and_structured_chan
     let service = HostTelemetryService::open(root.join("brain-events.jsonl"))
         .expect("telemetry service");
     service.start().expect("telemetry start");
-    let brain = AutomationRunAnalyticsTelemetry::new(
-        Arc::new(service.logs.clone()),
-        Arc::new(service.analytics.clone()),
-    );
-
-    brain.report_automation_run(&json!({
+    service.brain.report_automation_run(&json!({
         "conversationId": "agent-auto",
         "automationId": "auto-7",
         "trigger": "schedule",

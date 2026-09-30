@@ -14984,13 +14984,17 @@
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/telemetry/host_telemetry_service.rs"
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/src/extensions/telemetry/extension.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_telemetry_service_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/telemetry_extension_parity_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity.yml"
       ],
-      "notes": "Rust Host telemetry service now owns durable thread-safe JSONL ingress and exposes separate structured-log and product-analytics owners to shipping Host extensions. This is real production ownership for Box handoff telemetry; final remains withheld for auth/experiments/inference integration, tracing, activation, box-log shipping, health forwarding, fatal flush and backend transport."
+      "notes": "HostTelemetryService is now the single Rust owner for the frozen service lifecycle: auth credential-renewal subscription/replay, Inference model-experiment subscription, model-experiment exposure latch, analytics activation/brain/API, flush tick, desktop-health, event-loop pressure linkage, BoxLogShipper construction and identity-gated start, crash-marker forwarding, setHostBundleIdentity including turn-trace bundle identity, message-sent analytics, HostLifecycleProgress factory, fatal-flush deadline, and idempotent disposal/rollback. extension.rs is reduced to dependency/identity assembly and service delegation; the shipping Gateway calls the service API after durable non-duplicate send acceptance. Final remains withheld: production Host tracing is still not initialized into the service (the host-tracing row still lacks its real OTLP/provider composition), the pressure profiler has no production CpuProfilerBackend instance, and Rust shipping has not yet established an equivalent global console/stdout-stderr forwarding owner. Do not mark this row implemented until those production owners are real and exact-HEAD Actions pass."
     },
     {
       "referencePath": "source/host/extensions/telemetry/host-tracing.ts",
