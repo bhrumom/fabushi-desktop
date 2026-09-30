@@ -22,6 +22,7 @@ use crate::extensions::experiments::{
 use crate::extensions::inference::production::ProductionInferenceExtension;
 use crate::extensions::inference::sand_model_experiment::SandModelExperimentArm;
 use crate::host_paths::get_host_crash_marker_path;
+use crate::gateway_server::GatewayCommandReport;
 use crate::ports::sand_analytics_types::sand_message_length_bucket;
 use crate::ports::telemetry::resolve_sand_box_identity_tags;
 use crate::send_trace_host::set_turn_trace_host_bundle_version;
@@ -61,6 +62,7 @@ use super::lifecycle_telemetry::{
 use super::conversation_gc_telemetry::{ConversationGcReport, conversation_gc_telemetry};
 use super::host_diagnostic_telemetry::{HostDiagnostic, host_diagnostic_telemetry};
 use super::host_event_bus_telemetry::{HostEventBusReport, host_event_bus_telemetry};
+use super::gateway_command_telemetry::{gateway_command_error_telemetry, gateway_command_timing_telemetry};
 use super::disk_pressure_telemetry::{DiskPressureReport, disk_pressure_telemetry};
 use super::session_diagnostic_telemetry::{SessionTelemetryDiagnostic, session_diagnostic_telemetry};
 use super::local_exec_telemetry::{
@@ -496,6 +498,14 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_host_event_bus_failure(&self, report: &HostEventBusReport) -> io::Result<()> {
         self.report_projection(&host_event_bus_telemetry(report))
+    }
+
+    pub fn report_gateway_command_timing(&self, report: &GatewayCommandReport) -> io::Result<()> {
+        self.report_projection(&gateway_command_timing_telemetry(report))
+    }
+
+    pub fn report_gateway_command_error(&self, report: &GatewayCommandReport) -> io::Result<()> {
+        self.report_projection(&gateway_command_error_telemetry(report))
     }
 
     pub fn report_session_diagnostic(

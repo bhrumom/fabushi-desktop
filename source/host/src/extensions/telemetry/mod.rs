@@ -5,6 +5,7 @@ pub mod auto_review_approval_telemetry;
 pub mod disk_pressure_telemetry;
 pub mod host_diagnostic_telemetry;
 pub mod host_event_bus_telemetry;
+pub mod gateway_command_telemetry;
 pub mod search_index_health_telemetry;
 pub mod send_trace_sampler;
 

@@ -6885,10 +6885,28 @@ impl GatewayApi for UnifiedGatewayApi {
 
     fn on_command_complete(&self, report: GatewayCommandReport) {
         log_gateway_command_report("complete", &report);
+        if let Err(error) = self.telemetry_logs.report_gateway_command_timing(&report) {
+            eprintln!(
+                "mahayana-host gateway_command_timing_telemetry_failed method={} error={error}",
+                report.method
+            );
+        }
     }
 
     fn on_command_error(&self, report: GatewayCommandReport) {
         log_gateway_command_report("error", &report);
+        if let Err(error) = self.telemetry_logs.report_gateway_command_timing(&report) {
+            eprintln!(
+                "mahayana-host gateway_command_timing_telemetry_failed method={} error={error}",
+                report.method
+            );
+        }
+        if let Err(error) = self.telemetry_logs.report_gateway_command_error(&report) {
+            eprintln!(
+                "mahayana-host gateway_command_error_telemetry_failed method={} error={error}",
+                report.method
+            );
+        }
     }
 }
 
