@@ -129,6 +129,7 @@ fn host_telemetry_service_owns_frozen_runtime_lifecycle_and_extension_stays_thin
         "pin_experiments_diagnostics_reporter(Some(",
         "pin_experiments_diagnostics_reporter(None)",
         "set_host_bundle_identity(&self",
+        "set_turn_trace_host_bundle_version(identity.host_bundle_version.as_deref())",
         "shipper.start()",
         "report_message_sent(&self",
         "create_host_lifecycle_progress(",

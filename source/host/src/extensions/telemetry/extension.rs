@@ -19,8 +19,9 @@ use super::host_telemetry_service::{
 };
 
 pub use super::host_telemetry_service::{
+    DESKTOP_HEALTH_EVENT, DESKTOP_HEALTH_HEARTBEAT_MS, DesktopHealthForwardState,
     FATAL_TELEMETRY_FLUSH_TIMEOUT, HOST_CRASH_MARKER_FORWARD_INTERVAL,
-    TELEMETRY_FLUSH_TICK,
+    TELEMETRY_FLUSH_TICK, forward_desktop_health_file_to_logs,
 };
 
 pub const TELEMETRY_EXTENSION_ID: &str = "telemetry";

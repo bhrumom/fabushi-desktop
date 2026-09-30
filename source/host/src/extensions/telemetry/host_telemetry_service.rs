@@ -21,6 +21,7 @@ use crate::extensions::inference::production::ProductionInferenceExtension;
 use crate::extensions::inference::sand_model_experiment::SandModelExperimentArm;
 use crate::host_paths::get_host_crash_marker_path;
 use crate::ports::sand_analytics_types::sand_message_length_bucket;
+use crate::send_trace_host::set_turn_trace_host_bundle_version;
 use crate::ports::telemetry::resolve_sand_box_identity_tags;
 
 use super::HostTelemetryProjection;
@@ -1033,6 +1034,7 @@ impl HostTelemetryService {
         if self.disposed.load(Ordering::Acquire) {
             return Err(io::Error::other("Host telemetry service is already disposed"));
         }
+        set_turn_trace_host_bundle_version(identity.host_bundle_version.as_deref());
         self.logs.set_host_bundle_identity(&identity);
         if self.production.is_none() {
             return Ok(());
