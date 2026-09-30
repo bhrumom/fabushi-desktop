@@ -109,7 +109,8 @@ fn box_stage_extensions_have_one_production_composition_owner() {
     for needle in [
         "pub struct ProductionHostBoxExtensions",
         "start_production_host_box_extensions(",
-        "let forever_box = start_forever_box_extension(",
+        "let forever_box = start_forever_box_extension_with_telemetry(",
+        "core.telemetry.logs.clone()",
         "let attachments = start_attachments_extension(",
         "let secrets = Arc::new(start_secrets_extension(",
     ] {
