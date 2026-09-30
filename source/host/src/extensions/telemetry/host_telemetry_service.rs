@@ -58,6 +58,7 @@ use super::host_tracing::{HostTracing, init_production_host_tracing};
 use super::lifecycle_telemetry::box_infrastructure_telemetry;
 use super::conversation_gc_telemetry::{ConversationGcReport, conversation_gc_telemetry};
 use super::host_diagnostic_telemetry::{HostDiagnostic, host_diagnostic_telemetry};
+use super::host_event_bus_telemetry::{HostEventBusReport, host_event_bus_telemetry};
 use super::disk_pressure_telemetry::{DiskPressureReport, disk_pressure_telemetry};
 use super::session_diagnostic_telemetry::{SessionTelemetryDiagnostic, session_diagnostic_telemetry};
 use super::local_exec_telemetry::{
@@ -484,6 +485,10 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_host_diagnostic(&self, report: &HostDiagnostic) -> io::Result<()> {
         self.report_projection(&host_diagnostic_telemetry(report))
+    }
+
+    pub fn report_host_event_bus_failure(&self, report: &HostEventBusReport) -> io::Result<()> {
+        self.report_projection(&host_event_bus_telemetry(report))
     }
 
     pub fn report_session_diagnostic(

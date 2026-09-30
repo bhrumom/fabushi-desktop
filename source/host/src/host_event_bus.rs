@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{
-    Arc, Mutex, Weak,
+    Arc, Mutex, OnceLock, Weak,
     atomic::{AtomicU64, Ordering},
     mpsc::{self, Receiver, Sender},
 };
@@ -9,6 +9,24 @@ use std::sync::{
 use serde_json::{Value, json};
 
 pub type HostEventFailureReporter = Arc<dyn Fn(&Value) + Send + Sync + 'static>;
+
+static HOST_EVENT_FAILURE_REPORTER: OnceLock<Mutex<Option<HostEventFailureReporter>>> = OnceLock::new();
+
+pub fn pin_host_event_failure_reporter(reporter: Option<HostEventFailureReporter>) {
+    let slot = HOST_EVENT_FAILURE_REPORTER.get_or_init(|| Mutex::new(None));
+    if let Ok(mut current) = slot.lock() {
+        *current = reporter;
+    }
+}
+
+fn report_pinned_host_event_failure(report: &Value) {
+    let reporter = HOST_EVENT_FAILURE_REPORTER
+        .get()
+        .and_then(|slot| slot.lock().ok().and_then(|current| current.clone()));
+    if let Some(reporter) = reporter {
+        reporter(report);
+    }
+}
 type HostEventListener = Arc<dyn Fn(&Value) + Send + Sync + 'static>;
 type HostCapabilityHandler =
     Arc<dyn Fn(&Value) -> Result<(), String> + Send + Sync + 'static>;
@@ -47,7 +65,7 @@ pub struct SandHostEventBus {
 
 impl Default for SandHostEventBus {
     fn default() -> Self {
-        Self::with_failure_reporter(Arc::new(|_| {}))
+        Self::with_failure_reporter(Arc::new(report_pinned_host_event_failure))
     }
 }
 

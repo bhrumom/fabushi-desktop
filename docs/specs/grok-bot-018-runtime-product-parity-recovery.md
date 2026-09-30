@@ -2397,3 +2397,10 @@ This slice does **not** make cloud reconciliation final. `sand-automation-cloud-
 - Verified real production producers for Teach Recording cap-stop/start failures and Box Help; added a focused JSONL behavior contract for their frozen event/field/level semantics.
 - Moved Host Upgrade ordinary/confirmed projection ownership into typed `HostStructuredLogTelemetry` facade methods. Production HostUpgrade now calls those methods; confirmed reporting still uses transport confirmed shipping rather than the background queue.
 - Kept Host Lifecycle non-final: the facade/service factory exists, but the shipping Host does not currently instantiate `HostLifecycleProgress`, so API presence alone is not accepted as production evidence.
+
+
+### 2026-09-30 Host event-bus structured-log repair
+
+- The facade audit found a real production hole: `host-event-bus-telemetry.rs` existed, but `SandHostEventBus::default()` discarded listener/subscriber failure telemetry through a no-op default reporter.
+- Production Host composition now pins one event-bus failure reporter to the unique `HostStructuredLogTelemetry` owner and clears it before telemetry disposal. Listener failures preserve the frozen no-topic shape; capability subscriber failures preserve their topic.
+- Focused behavior tests trigger both failure paths through the default shipping bus and verify the adapter/projector semantics. Structured-log remains non-final until the rest of the facade ledger is closed.

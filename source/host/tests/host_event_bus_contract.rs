@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use mahayana_host_runtime::host_event_bus::{
-    HostEventFailureMode, SandHostEventBus,
+    HostEventFailureMode, SandHostEventBus, pin_host_event_failure_reporter,
 };
 use serde_json::{Value, json};
 
@@ -88,5 +88,42 @@ fn listener_and_topic_failures_are_isolated_reported_and_rejectable() {
     assert!(failures.iter().any(|failure| {
         failure.get("kind").and_then(Value::as_str) == Some("subscriber_failed")
             && failure.get("topic").and_then(Value::as_str) == Some("capability")
+    }));
+}
+
+
+#[test]
+fn default_shipping_bus_forwards_failures_through_the_pinned_reporter() {
+    let failures = Arc::new(Mutex::new(Vec::<Value>::new()));
+    let failure_sink = Arc::clone(&failures);
+    pin_host_event_failure_reporter(Some(Arc::new(move |failure| {
+        failure_sink
+            .lock()
+            .expect("pinned failure sink")
+            .push(failure.clone());
+    })));
+
+    let bus = SandHostEventBus::default();
+    let _panic = bus.subscribe_listener(|_| panic!("listener boom"));
+    bus.publish(json!({"type":"event"}));
+    let _failed = bus.on("capability", |_| Err("denied".into()));
+    bus.emit_topic(
+        "capability",
+        &json!({"request":1}),
+        HostEventFailureMode::Continue,
+    )
+    .expect("continue mode");
+
+    pin_host_event_failure_reporter(None);
+    let failures = failures.lock().expect("pinned failures");
+    assert!(failures.iter().any(|failure| {
+        failure.get("kind").and_then(Value::as_str) == Some("listener_failed")
+            && failure.get("topic").is_none()
+            && failure.get("errorClass").and_then(Value::as_str) == Some("panic")
+    }));
+    assert!(failures.iter().any(|failure| {
+        failure.get("kind").and_then(Value::as_str) == Some("subscriber_failed")
+            && failure.get("topic").and_then(Value::as_str) == Some("capability")
+            && failure.get("errorClass").and_then(Value::as_str) == Some("Error")
     }));
 }

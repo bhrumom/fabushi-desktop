@@ -11,7 +11,7 @@ use mahayana_host_runtime::extensions::inference::production::ProductionInferenc
 use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, ProductionBrowserUaLog,
     ProductionHostExtensions, project_box_disk_pressure, project_conversation_gc,
-    project_host_diagnostic, project_session_diagnostic,
+    project_host_diagnostic, project_host_event_bus_failure, project_session_diagnostic,
 };
 
 const PRODUCTION_OWNER: &str = include_str!("../src/host_production_extensions.rs");
@@ -248,6 +248,20 @@ fn memory_synthesis_is_pinned_to_authenticated_statsig_and_shipping_inference() 
 
 #[test]
 fn structured_log_domain_reporter_adapters_preserve_frozen_fields() {
+    let subscriber = project_host_event_bus_failure(&json!({
+        "kind": "subscriber_failed",
+        "topic": "turn.updated",
+        "errorClass": "Error"
+    })).expect("event bus subscriber projection");
+    assert_eq!(subscriber.kind, "subscriber_failed");
+    assert_eq!(subscriber.topic.as_deref(), Some("turn.updated"));
+    assert_eq!(subscriber.error_class, "Error");
+    let listener = project_host_event_bus_failure(&json!({
+        "kind": "listener_failed",
+        "errorClass": "panic"
+    })).expect("event bus listener projection");
+    assert_eq!(listener.topic, None);
+
     let host = project_host_diagnostic(&mahayana_host_runtime::host_diagnostics::HostDiagnostic {
         kind: "send_ledger_degraded".into(),
         fields: Map::from_iter([

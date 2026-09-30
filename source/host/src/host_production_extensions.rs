@@ -122,6 +122,7 @@ use crate::extensions::telemetry::extension::{
 use crate::extensions::telemetry::memory_synthesis_telemetry::MemorySynthesisReport;
 use crate::extensions::telemetry::conversation_gc_telemetry::ConversationGcReport;
 use crate::extensions::telemetry::host_diagnostic_telemetry::HostDiagnostic;
+use crate::extensions::telemetry::host_event_bus_telemetry::HostEventBusReport;
 use crate::extensions::telemetry::disk_pressure_telemetry::DiskPressureReport;
 use crate::extensions::telemetry::session_diagnostic_telemetry::{
     SessionDiagnosticFamily, SessionTelemetryDiagnostic,
@@ -138,7 +139,7 @@ use crate::extensions::webauthn_proxy::extension::{
 use crate::extensions::wallpaper::extension::{
     HostWallpaperExtension, start_wallpaper_extension,
 };
-use crate::host_event_bus::SandHostEventBus;
+use crate::host_event_bus::{SandHostEventBus, pin_host_event_failure_reporter};
 use crate::production_binding_providers::{
     create_production_state_backstop_runtime, production_cloud_agent_trace_converter,
     production_secrets_log,
@@ -295,6 +296,20 @@ pub fn project_box_disk_pressure(report: &DomainHostDiagnostic) -> Option<DiskPr
     })
 }
 
+
+pub fn project_host_event_bus_failure(report: &serde_json::Value) -> Option<HostEventBusReport> {
+    let object = report.as_object()?;
+    Some(HostEventBusReport {
+        kind: object.get("kind")?.as_str()?.to_string(),
+        topic: object.get("topic").and_then(serde_json::Value::as_str).map(str::to_string),
+        error_class: object
+            .get("errorClass")
+            .or_else(|| object.get("error_class"))?
+            .as_str()?
+            .to_string(),
+    })
+}
+
 pub fn project_host_diagnostic(report: &DomainHostDiagnostic) -> HostDiagnostic {
     HostDiagnostic {
         kind: report.kind.clone(),
@@ -357,6 +372,12 @@ pub fn project_conversation_gc(report: &DomainConversationGcReport) -> Conversat
 }
 
 fn pin_structured_log_domain_reporters(logs: crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry) {
+    let event_logs = logs.clone();
+    pin_host_event_failure_reporter(Some(Arc::new(move |report| {
+        if let Some(projected) = project_host_event_bus_failure(report) {
+            let _ = event_logs.report_host_event_bus_failure(&projected);
+        }
+    })));
     let host_logs = logs.clone();
     pin_host_diagnostics_reporter(Some(Arc::new(move |report| {
         if let Some(disk_pressure) = project_box_disk_pressure(report) {
@@ -377,6 +398,7 @@ fn pin_structured_log_domain_reporters(logs: crate::extensions::telemetry::host_
 }
 
 fn unpin_structured_log_domain_reporters() {
+    pin_host_event_failure_reporter(None);
     pin_conversation_gc_reporter(None);
     pin_session_diagnostics_reporter(None);
     pin_host_diagnostics_reporter(None);

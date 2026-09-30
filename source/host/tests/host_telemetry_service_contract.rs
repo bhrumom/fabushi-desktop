@@ -554,7 +554,7 @@ fn direct_frozen_facade_helpers_preserve_teach_upgrade_and_box_help_semantics() 
         .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
         .collect::<Vec<_>>();
     assert_eq!(records.len(), 4);
-    assert_eq!(records[0].event, "sand.teach.recording_cap_stop_failed");
+    assert_eq!(records[0].event, "sand.teach.cap_stop_failed");
     assert_eq!(records[0].payload["level"], "warn");
     assert_eq!(records[0].payload["metadata"]["error_class"], "stop_failed");
     assert_eq!(records[1].event, "sand.teach.recording_start_failed");

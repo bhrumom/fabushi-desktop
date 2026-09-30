@@ -48,7 +48,7 @@ fn frozen_grok_small_extension_modules_preserve_behavior() {
 
     let event_bus = host_event_bus_telemetry(&HostEventBusReport {
         kind: "subscriber_failed".into(),
-        topic: "turn.updated".into(),
+        topic: Some("turn.updated".into()),
         error_class: "io".into(),
     });
     assert_eq!(event_bus.level, Some("error"));
