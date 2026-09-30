@@ -89,8 +89,10 @@ fn telemetry_extension_owns_start_dispose_polling_diagnostics_and_subscription_c
         "inference.on_model_experiment_applied(",
         "pin_experiments_diagnostics_reporter(Some(",
         "pin_experiments_diagnostics_reporter(None)",
+        "fn flush_for_fatal_exit(&self)",
         "shipper.stop_polling()",
         "shipper.checkpoint_offsets()",
+        "self.service.logs.flush()",
         "self.service.dispose()",
     ] {
         assert!(
