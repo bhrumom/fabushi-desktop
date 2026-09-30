@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, VecDeque};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use reqwest::blocking::Client;
 use serde_json::{Value, json};
@@ -19,6 +19,8 @@ use crate::extensions::experiments::HostExperimentsExtension;
 
 pub const SAND_PRODUCT_ANALYTICS_GATE: &str = "sand_product_analytics";
 pub const MAX_DEFERRED_ANALYTICS_EVENTS: usize = 256;
+pub const ANALYTICS_BUFFER_LIMIT: usize = 200;
+pub const ANALYTICS_FLUSH_INTERVAL_MS: u64 = 3_000;
 pub const ANALYTICS_NORMAL_FLUSH_TIMEOUT_MS: u64 = 2_500;
 pub const ANALYTICS_TRACK_EVENTS_PATH: &str = "aiserver.v1.AnalyticsService/TrackEvents";
 pub const FROZEN_ANALYTICS_SERVICE_BLOB: &str =
@@ -366,31 +368,60 @@ impl ProductionAnalyticsRuntime {
         let worker = match thread::Builder::new()
             .name("sand-product-analytics".into())
             .spawn(move || {
-                while let Ok(command) = rx.recv() {
-                    let AnalyticsWorkerCommand::Event(first) = command else {
-                        break;
-                    };
-                    let mut batch = vec![first];
-                    let mut stop_after_batch = false;
-                    loop {
-                        match rx.try_recv() {
-                            Ok(AnalyticsWorkerCommand::Event(event)) => batch.push(event),
-                            Ok(AnalyticsWorkerCommand::Stop) => {
-                                stop_after_batch = true;
-                                break;
-                            }
-                            Err(mpsc::TryRecvError::Empty) => break,
-                            Err(mpsc::TryRecvError::Disconnected) => {
-                                stop_after_batch = true;
-                                break;
+                let mut buffer = Vec::<QueuedAnalyticsEvent>::new();
+                let mut flush_deadline: Option<Instant> = None;
+
+                let flush = |buffer: &mut Vec<QueuedAnalyticsEvent>| {
+                    if buffer.is_empty() {
+                        return;
+                    }
+                    match transport.send(buffer) {
+                        Ok(()) => buffer.clear(),
+                        Err(error) => {
+                            eprintln!("[sand-analytics] {error}");
+                            if buffer.len() > ANALYTICS_BUFFER_LIMIT {
+                                let overflow = buffer.len() - ANALYTICS_BUFFER_LIMIT;
+                                buffer.drain(..overflow);
                             }
                         }
                     }
-                    if let Err(error) = transport.send(&batch) {
-                        eprintln!("[sand-analytics] {error}");
-                    }
-                    if stop_after_batch {
-                        break;
+                };
+
+                loop {
+                    let command = if let Some(deadline) = flush_deadline {
+                        let remaining = deadline.saturating_duration_since(Instant::now());
+                        match rx.recv_timeout(remaining) {
+                            Ok(command) => Some(command),
+                            Err(mpsc::RecvTimeoutError::Timeout) => {
+                                flush(&mut buffer);
+                                flush_deadline = None;
+                                continue;
+                            }
+                            Err(mpsc::RecvTimeoutError::Disconnected) => None,
+                        }
+                    } else {
+                        rx.recv().ok()
+                    };
+
+                    match command {
+                        Some(AnalyticsWorkerCommand::Event(event)) => {
+                            buffer.push(event);
+                            if buffer.len() >= ANALYTICS_BUFFER_LIMIT {
+                                flush(&mut buffer);
+                                flush_deadline = if buffer.is_empty() {
+                                    None
+                                } else {
+                                    Some(Instant::now() + Duration::from_millis(ANALYTICS_FLUSH_INTERVAL_MS))
+                                };
+                            } else if flush_deadline.is_none() {
+                                flush_deadline =
+                                    Some(Instant::now() + Duration::from_millis(ANALYTICS_FLUSH_INTERVAL_MS));
+                            }
+                        }
+                        Some(AnalyticsWorkerCommand::Stop) | None => {
+                            flush(&mut buffer);
+                            break;
+                        }
                     }
                 }
             }) {
