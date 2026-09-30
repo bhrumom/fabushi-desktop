@@ -6,6 +6,12 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use reqwest::blocking::Client;
 use serde_json::{Value, json};
 use url::Url;
+use uuid::Uuid;
+
+use crate::cursor_backend::{create_cursor_checksum, resolve_sand_ghost_mode_header};
+use crate::extensions::auth::credential_renewer::{
+    SAND_CLIENT_TYPE, sand_box_namespace, sand_client_version, system_now_ms,
+};
 
 use crate::extensions::auth::extension::HostAuthExtension;
 use crate::extensions::browser_ua::extension::StopSubscription;
@@ -192,6 +198,11 @@ impl AnalyticsBackendTransport {
         let token = self.auth
             .get_access_token()
             .map_err(|error| format!("product analytics access token: {error}"))?;
+        let machine_id = self.auth
+            .get_machine_id()
+            .map_err(|error| format!("product analytics machine id: {error}"))?;
+        let ghost_mode =
+            resolve_sand_ghost_mode_header(&self.backend_url, &token, &machine_id);
         let event_data = queued.event.properties.iter().map(|(key, value)| {
             let encoded = match value {
                 Value::String(value) => json!({ "stringValue": value }),
@@ -212,8 +223,14 @@ impl AnalyticsBackendTransport {
             .post(url)
             .bearer_auth(token)
             .header("content-type", "application/json")
+            .header("accept", "application/json")
             .header("connect-protocol-version", "1")
-            .header("x-ghost-mode", "true")
+            .header("x-cursor-checksum", create_cursor_checksum(&machine_id, system_now_ms()))
+            .header("x-cursor-client-type", SAND_CLIENT_TYPE)
+            .header("x-cursor-client-version", sand_client_version())
+            .header("x-sand-box-namespace", sand_box_namespace())
+            .header("x-ghost-mode", ghost_mode)
+            .header("x-request-id", Uuid::new_v4().to_string())
             .json(&payload)
             .send()
             .map_err(|error| format!("product analytics transport: {error}"))?;
@@ -235,6 +252,8 @@ enum AnalyticsStateKind {
 pub struct ProductionAnalyticsRuntime {
     state: Arc<Mutex<AnalyticsStateKind>>,
     deferred: Arc<Mutex<VecDeque<QueuedAnalyticsEvent>>>,
+    base_properties: BTreeMap<String, Value>,
+    last_active_day_keys: Mutex<BTreeMap<String, String>>,
     sender: mpsc::Sender<AnalyticsWorkerCommand>,
     worker: Mutex<Option<JoinHandle<()>>>,
     gate_stop: Mutex<Option<StopSubscription>>,
@@ -272,9 +291,23 @@ impl ProductionAnalyticsRuntime {
             })
             .map_err(|error| format!("start product analytics worker: {error}"))?;
 
+        let flavor = match sand_box_namespace() {
+            "dev" => "sand-dev",
+            "lab" => "sand-lab",
+            _ => "sand",
+        };
         let runtime = Arc::new(Self {
             state,
             deferred,
+            base_properties: BTreeMap::from([
+                ("client".into(), json!("sand")),
+                ("sand_version".into(), json!(sand_client_version())),
+                ("flavor".into(), json!(flavor)),
+                ("os".into(), json!(std::env::consts::OS)),
+                ("arch".into(), json!(std::env::consts::ARCH)),
+                ("host_in_box".into(), json!(true)),
+            ]),
+            last_active_day_keys: Mutex::new(BTreeMap::new()),
             sender: tx,
             worker: Mutex::new(Some(worker)),
             gate_stop: Mutex::new(None),
@@ -323,7 +356,32 @@ impl ProductionAnalyticsRuntime {
         )
     }
 
-    pub fn track(&self, event: ProductAnalyticsEvent) {
+
+    pub fn mark_active(&self, reason: &str) {
+        if !self.can_record_events() {
+            return;
+        }
+        let day_key = chrono::Utc::now().format("%Y-%m-%d").to_string();
+        {
+            let mut keys = self
+                .last_active_day_keys
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if keys.get(reason).is_some_and(|value| value == &day_key) {
+                return;
+            }
+            keys.insert(reason.to_string(), day_key);
+        }
+        self.track(product_analytics_event(
+            "sand.app.active",
+            &json!({ "reason": reason }),
+        ));
+    }
+
+    pub fn track(&self, mut event: ProductAnalyticsEvent) {
+        let mut enriched = self.base_properties.clone();
+        enriched.extend(event.properties);
+        event.properties = enriched;
         let queued = QueuedAnalyticsEvent {
             event,
             timestamp_ms: wall_clock_now_ms(),
