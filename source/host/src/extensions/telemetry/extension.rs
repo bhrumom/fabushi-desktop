@@ -8,6 +8,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::host_paths::get_host_crash_marker_path;
 
 use super::HostTelemetryProjection;
+use super::analytics_service::AutomationRunAnalyticsTelemetry;
 use super::box_log_shipper::{
     BoxLogShipper, BoxLogShipperConfig, BoxTelemetryRecord, DeliverySettlement,
     SUPERVISOR_LOG_PATH, is_box_log_shipping_enabled,
@@ -240,6 +241,7 @@ impl Drop for DesktopHealthForwarder {
 pub struct HostTelemetryExtension {
     pub logs: HostStructuredLogTelemetry,
     pub analytics: HostProductAnalytics,
+    pub brain: Arc<AutomationRunAnalyticsTelemetry>,
     records_path: PathBuf,
     crash_marker_forwarder: Arc<HostCrashMarkerForwarder>,
     _desktop_health_forwarder: Option<Arc<DesktopHealthForwarder>>,
@@ -314,9 +316,14 @@ pub fn start_host_telemetry_extension(
     } else {
         None
     };
+    let brain = Arc::new(AutomationRunAnalyticsTelemetry::new(
+        Arc::new(service.logs.clone()),
+        Arc::new(service.analytics.clone()),
+    ));
     Ok(HostTelemetryExtension {
         logs: service.logs.clone(),
         analytics: service.analytics.clone(),
+        brain,
         records_path: service.records_path().to_path_buf(),
         crash_marker_forwarder,
         _desktop_health_forwarder: desktop_health_forwarder,
