@@ -365,8 +365,8 @@ fn shipping_store_db_capture_uses_frozen_mapper_and_unique_host_owner() {
     assert!(production.contains("sync_store_db_snapshots_with_trace("));
     assert!(production.contains("box_store_db_capture_telemetry(&BoxStoreDbCaptureTelemetrySummary"));
     assert!(production.contains("(self.deps.report_box_store_db_capture)(telemetry.level, &telemetry.metadata);"));
-    assert!(production.contains(""flush""));
-    assert!(production.contains(""turn_end""));
+    assert!(production.contains("\"flush\""));
+    assert!(production.contains("\"turn_end\""));
     assert!(production.contains("queue_duration_ms"));
     assert!(production.contains("capture_duration_ms"));
     assert!(production.contains("blob_upload_duration_ms"));
@@ -392,10 +392,10 @@ fn shipping_store_db_capture_uses_frozen_mapper_and_unique_host_owner() {
 
     let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
     assert!(telemetry.contains("pub fn report_box_store_db_capture("));
-    assert!(telemetry.contains("event: Some("sand.box_store_db_capture")"));
+    assert!(telemetry.contains("event: Some(\"sand.box_store_db_capture\")"));
 
     let mapper = include_str!("../src/extensions/box_store_sync/store_db_capture.rs");
-    assert!(mapper.contains("StoreDbCaptureOutcome::Error | StoreDbCaptureOutcome::Skipped => "warn""));
+    assert!(mapper.contains("StoreDbCaptureOutcome::Error | StoreDbCaptureOutcome::Skipped => \"warn\""));
     assert!(mapper.contains("StoreDbCaptureOutcome::Oversize"));
-    assert!(mapper.contains("("failure_phase".into()"));
+    assert!(mapper.contains("\"failure_phase\".into()"));
 }
