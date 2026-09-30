@@ -1,6 +1,6 @@
-use std::sync::Arc;
+use std::sync::{\n    Arc,\n    atomic::{AtomicBool, Ordering},\n};
 
-use crate::extensions::auth::extension::HostAuthExtension;
+use crate::extensions::auth::extension::HostAuthExtension;\nuse crate::extensions::extension_ids_generated::HostExtensionId;
 
 use super::cloud_agents_service::{
     CloudConversationTraceConverter, SandCloudAgentManager,
@@ -24,7 +24,7 @@ pub struct CloudAgentsExtension {
 impl CloudAgentsExtension {
     pub fn new(service: Arc<SandCloudAgentManager>) -> Self {
         Self {
-            inner: Arc::new(CloudAgentsExtensionInner { service }),
+            inner: Arc::new(CloudAgentsExtensionInner {\n                service,\n                stopped: AtomicBool::new(false),\n            }),
         }
     }
 

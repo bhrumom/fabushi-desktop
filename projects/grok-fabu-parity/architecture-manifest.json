@@ -11626,23 +11626,27 @@
       "targetPath": "source/host/src/extensions/cloud_agents/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "acd264586bc6a2f16d81ae0b8bfc8e5c60ac78c0",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/cloud_agents/extension.rs",
         "source/host/src/extensions/cloud_agents/cloud_agents_service.rs",
+        "source/host/src/host_production_extensions.rs",
         "source/host/app/src/main.rs"
       ],
       "testEvidence": [
+        "source/host/tests/cloud_agents_extension_lifecycle_contract.rs",
+        "source/host/tests/cloud_agent_trace_production_contract.rs",
         "source/host/tests/cloud_agents_service_contract.rs",
         "source/host/tests/cloud_agent_model_catalog_contract.rs",
         "source/host/tests/cloud_agent_poll_loop_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-adaptation",
-      "notes": "Shipping Host now owns one CloudAgentsExtension over the production SandCloudAgentManager, real Auth/backend transport and team-admin prefetch, and injects that same manager into every direct/group/automation routed Runner composition. Drop disposes the manager once through an Arc-owned inner owner. Final remains withheld only for the external generated ConversationMessage-to-trace adapter and exact Host extension-registry lifecycle binding; transcript dump fails closed rather than fabricating trace data until that adapter is provided."
+      "notes": "Implemented against frozen Grok 0.18 extension.ts and host-extensions.ts. The shipping CloudAgents owner now exposes the HostExtensions.CloudAgents identity with Auth as its explicit dependency, starts only after the real production Auth owner exists, injects the canonical production ConversationMessage-to-trace Host converter, uses the real monotonic clock/thread sleep polling path, and prefetches team-admin policy on start. The generated ConversationMessage -> trace adapter is already production-wired and covered by cloud_agent_trace_production_contract.rs; it is not an outstanding gap. CloudAgents onStop is now explicit and exactly-once through the existing Arc-owned extension inner owner, while Drop preserves startup/error settlement without creating a second registry/runtime. Normal shipping Host shutdown stops later-started Host stages first, then settles CloudAgents while Auth is still live and before box-exec/discovery/Host-lock release, preserving the restart fault boundary. registry.rs remains only the frozen 35-slot identity/order table and is not used as a substitute for dependency/onStop lifecycle semantics."
     },
     {
       "referencePath": "source/host/extensions/cloud-agents/model-catalog-fetch.ts",
@@ -40033,4 +40037,4 @@
     }
   ],
   "generatedAt": "2026-09-29"
-}
+}\n
