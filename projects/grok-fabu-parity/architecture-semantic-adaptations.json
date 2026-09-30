@@ -107,7 +107,7 @@
       "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "025904b8c53a61b5ffb8776adf16b0f50540820d",
+      "targetBlobSha": "1dcaa1921f7c5d2ab36828451e808611d31775e2",
       "behavioralEvidence": [
         "source/electron-main/adapters/mcp-oauth.ts",
         "source/electron-main/mcp/desktop-mcp-manager.ts",
@@ -122,7 +122,9 @@
         "source/electron-main/mcp/host-plugin-skills-loader.ts",
         "source/host/src/host_production_extensions.rs",
         "source/host/src/extensions/mcp/plugin_skills.rs",
-        "source/host/src/extensions/mcp/production.rs"
+        "source/host/src/extensions/mcp/production.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
@@ -133,9 +135,13 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/box_mcp_exec_contract.rs",
         "source/host/tests/mcp_state_executor_contract.rs",
-        "source/host/tests/host_production_extensions_contract.rs"
+        "source/host/tests/host_production_extensions_contract.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs"
       ],
-      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and the Mahayana Host as the owner of Plugin Skills lifecycle, cache, authenticated startup, refresh, install/uninstall resync, live-reference cleanup, and Skill Publish. The Cursor Dashboard/marketplace-dependent installed-plugin loader stays as a narrow TypeScript SDK edge in Electron Main and is reached only through the existing allowlisted, correlated Mahayana Coordinator MCP relay. This preserves the frozen Grok process and responsibility boundaries while choosing TypeScript for the Cursor Node SDK edge and Rust for Host lifecycle/state; it does not introduce a second MCP manager or collapse Coordinator/Host/Runner."
+      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and the Mahayana Host as the owner of Plugin Skills lifecycle, cache, authenticated startup, refresh, install/uninstall resync, live-reference cleanup, and Skill Publish. The Cursor Dashboard/marketplace-dependent installed-plugin loader stays as a narrow TypeScript SDK edge in Electron Main and is reached only through the existing allowlisted, correlated Mahayana Coordinator MCP relay. This preserves the frozen Grok process and responsibility boundaries while choosing TypeScript for the Cursor Node SDK edge and Rust for Host lifecycle/state; it does not introduce a second MCP manager or collapse Coordinator/Host/Runner. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
     },
     {
       "referencePath": "source/electron-main/attachments/attachment-manager.ts",
@@ -286,22 +292,28 @@
       "referencePath": "source/shared/rpc/coordinator-main.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "cce166bbb86491418bb9be04a827b31508426262",
+      "targetBlobSha": "015dda363dc6d6cb8b0d149dec98ca611d7ebd5f",
       "behavioralEvidence": [
         "source/shared/rpc/coordinator-main.ts",
         "source/electron-main/adapters/attachment-gateway.ts",
         "source/node-agent-coordinator/src/main.rs",
         "source/electron-main/adapters/mcp-oauth.ts",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs"
       ],
       "testEvidence": [
         "source/electron-main/coordinator/coordinator-executors.test.ts",
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/box_mcp_exec_contract.rs",
-        "source/host/tests/mcp_state_executor_contract.rs"
+        "source/host/tests/mcp_state_executor_contract.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs"
       ],
-      "rationale": "Extends the frozen Coordinator-main RPC contract only for approved cross-boundary capabilities: fetchLinkMetadata plus Box MCP load/list-servers/list-tools-raw/execute-tool-raw operations. Electron remains the MCP manager owner; the calls cross the existing Coordinator protocol into the shipping Host/Box implementation with request/reply ownership preserved and no parallel transport channel."
+      "rationale": "Extends the frozen Coordinator-main RPC contract only for approved cross-boundary capabilities: fetchLinkMetadata plus Box MCP load/list-servers/list-tools-raw/execute-tool-raw operations. Electron remains the MCP manager owner; the calls cross the existing Coordinator protocol into the shipping Host/Box implementation with request/reply ownership preserved and no parallel transport channel. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
     },
     {
       "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
@@ -357,36 +369,44 @@
       "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "5bb6fb89e3763a7fb4f5d1b1526b93edf7ff12b0",
+      "targetBlobSha": "feb4a78ff0d5a40665103d4eb373bc9dd741bca5",
       "behavioralEvidence": [
         "source/electron-main/mcp/desktop-mcp-manager.ts",
         "source/shared/node/mcp/mcp-manager.ts",
         "source/electron-main/adapters/mcp-oauth.ts",
         "source/electron-main/mcp/mcp-runtime.ts",
         "source/shared/rpc/coordinator-main.ts",
-        "source/host/src/extensions/mcp/box_mcp_exec.rs"
+        "source/host/src/extensions/mcp/box_mcp_exec.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
         "source/electron-main/coordinator/coordinator-executors.test.ts",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/box_mcp_exec_contract.rs",
-        "source/host/tests/mcp_state_executor_contract.rs"
+        "source/host/tests/mcp_state_executor_contract.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs"
       ],
-      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator→Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent."
+      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator→Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
     },
     {
       "referencePath": "source/electron-main/mcp/mcp-runtime.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "4ee803ca0a2796d3bedb94b98056543df7a5e20f",
+      "targetBlobSha": "983adfc5b4b2d44bddf090c0a28d2b77186ee344",
       "behavioralEvidence": [
         "source/electron-main/mcp/mcp-runtime.ts",
         "source/electron-main/mcp/desktop-mcp-manager.ts",
         "source/electron-main/adapters/mcp-oauth.ts",
         "source/shared/rpc/coordinator-main.ts",
         "source/node-agent-coordinator/src/main.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs"
       ],
       "testEvidence": [
         "source/electron-main/coordinator/coordinator-executors.test.ts",
@@ -394,9 +414,13 @@
         "source/host/tests/box_mcp_exec_contract.rs",
         "source/host/tests/mcp_state_executor_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs"
       ],
-      "rationale": "Preserves the frozen Grok MCP runtime lifecycle while adding only the approved dependency forwarding needed by Fabushi Box MCP parity: loadBoxMcpServers, listBoxMcpServers, listBoxMcpToolsRaw, and executeBoxMcpToolRaw are passed into the single SandMcpManager created by the existing runtime. No second manager, transport, or lifecycle owner is introduced."
+      "rationale": "Preserves the frozen Grok MCP runtime lifecycle while adding only the approved dependency forwarding needed by Fabushi Box MCP parity: loadBoxMcpServers, listBoxMcpServers, listBoxMcpToolsRaw, and executeBoxMcpToolRaw are passed into the single SandMcpManager created by the existing runtime. No second manager, transport, or lifecycle owner is introduced. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
     },
     {
       "referencePath": "source/electron-main/coordinator/coordinator-runtime.ts",
@@ -413,6 +437,27 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Preserves the frozen Grok Coordinator runtime ownership/relaunch model while adapting one Fabushi-approved resource-lifetime boundary: the shipping Mahayana Host owns a managed loopback box exec-daemon on a single fixed production endpoint, so renderer-port replacement and explicit Coordinator restart must retire the previous Coordinator/Host generation completely before launching the successor. Intentional retirement is fenced from crash-relaunch accounting, and repeated renderer requests coalesce behind the same generation replacement. This prevents overlapping shipping Host generations from racing for the managed daemon without moving Host or Runner responsibilities into Electron Main or collapsing the independent Coordinator/Host/Runner failure boundaries."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/tools-discovery.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "103d530e7fdae13a4b2b56c52aac8693b633a1d4",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/tools-discovery.ts",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/electron-main/mcp/mcp-runtime.ts"
+      ],
+      "testEvidence": [
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok MCP tools discovery algorithm while extracting its success/failure settlement into a dependency-free typed helper so the exact success-no-failure-event, cold-failure clear, stale-serving, error-class, and elapsed semantics are executable contracts. The shipping producer still owns discovery/cache settlement; only failure reporting is forwarded through the dedicated Coordinator request to the unique HostStructuredLogTelemetry owner."
     }
   ]
 }
