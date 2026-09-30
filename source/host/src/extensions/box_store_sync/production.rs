@@ -704,6 +704,35 @@ impl ProductionBoxStoreSyncInner {
         (self.deps.report_box_store_db_capture)(telemetry.level, &telemetry.metadata);
     }
 
+    fn report_empty_store_db_capture(
+        &self,
+        trigger: &'static str,
+        outcome: StoreDbCaptureOutcome,
+        failure_phase: Option<StoreDbCaptureFailurePhase>,
+        duration_ms: u64,
+        queue_duration_ms: u64,
+    ) {
+        let mut capture_trace = create_store_db_capture_trace();
+        capture_trace.failure_phase = failure_phase;
+        let capture = ProductionStoreDbCaptureResult {
+            summary: CategoryTransferSummary {
+                name: "store.db".into(),
+                ..CategoryTransferSummary::default()
+            },
+            agent_count: 0,
+            capture_trace,
+        };
+        self.report_store_db_capture(
+            trigger,
+            outcome,
+            &capture,
+            false,
+            None,
+            duration_ms,
+            queue_duration_ms,
+        );
+    }
+
     fn report_sync_lifecycle(&self, level: &str, ok: bool, reason: &str) {
         let metadata = BTreeMap::from([
             ("ok".to_string(), ok.to_string()),
