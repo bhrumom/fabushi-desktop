@@ -688,6 +688,7 @@ impl ProductionBoxStoreSyncInner {
         trigger: &'static str,
         outcome: StoreDbCaptureOutcome,
         failure_phase: Option<StoreDbCaptureFailurePhase>,
+        agent_count: usize,
         duration_ms: u64,
         queue_duration_ms: u64,
     ) {
@@ -698,7 +699,7 @@ impl ProductionBoxStoreSyncInner {
                 name: "store.db".into(),
                 ..CategoryTransferSummary::default()
             },
-            agent_count: 0,
+            agent_count,
             capture_trace,
         };
         self.report_store_db_capture(
@@ -1337,6 +1338,7 @@ impl ProductionBoxStoreSyncInner {
                     "turn_end",
                     StoreDbCaptureOutcome::Error,
                     Some(StoreDbCaptureFailurePhase::Capture),
+                    1,
                     started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
                     queue_duration_ms,
                 );
@@ -1360,6 +1362,7 @@ impl ProductionBoxStoreSyncInner {
                     "turn_end",
                     StoreDbCaptureOutcome::Skipped,
                     None,
+                    0,
                     started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
                     queue_duration_ms,
                 );
@@ -1370,6 +1373,7 @@ impl ProductionBoxStoreSyncInner {
                     "turn_end",
                     StoreDbCaptureOutcome::Error,
                     Some(StoreDbCaptureFailurePhase::Capture),
+                    1,
                     started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
                     queue_duration_ms,
                 );
@@ -1383,6 +1387,7 @@ impl ProductionBoxStoreSyncInner {
                     "turn_end",
                     StoreDbCaptureOutcome::Error,
                     Some(StoreDbCaptureFailurePhase::Capture),
+                    1,
                     started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
                     queue_duration_ms,
                 );
@@ -1406,6 +1411,7 @@ impl ProductionBoxStoreSyncInner {
                     "turn_end",
                     StoreDbCaptureOutcome::Error,
                     Some(StoreDbCaptureFailurePhase::Capture),
+                    1,
                     started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
                     queue_duration_ms,
                 );
@@ -1434,6 +1440,7 @@ impl ProductionBoxStoreSyncInner {
                     "turn_end",
                     StoreDbCaptureOutcome::Error,
                     Some(StoreDbCaptureFailurePhase::Capture),
+                    1,
                     started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
                     queue_duration_ms,
                 );
@@ -1493,6 +1500,7 @@ impl ProductionBoxStoreSyncInner {
             capture.summary.files_uploaded,
             capture.summary.files_scanned,
         );
+        capture.agent_count = if outcome == StoreDbCaptureOutcome::Skipped { 0 } else { 1 };
         let is_committed = manifest_committed
             && matches!(
                 outcome,
