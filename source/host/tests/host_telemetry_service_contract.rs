@@ -4,12 +4,15 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use mahayana_host_runtime::extensions::telemetry::analytics_service::TelemetryService;
+use std::sync::Arc;
+
+use mahayana_host_runtime::extensions::telemetry::analytics_service::{
+    AutomationRunAnalyticsTelemetry, TelemetryService,
+};
 use mahayana_host_runtime::extensions::telemetry::desktop_health_forwarder::DesktopHealthForwardResult;
 use mahayana_host_runtime::extensions::telemetry::extension::{
     DESKTOP_HEALTH_EVENT, DESKTOP_HEALTH_HEARTBEAT_MS, DesktopHealthForwardState,
     TELEMETRY_EXTENSION_ID, forward_desktop_health_file_to_logs,
-    start_host_telemetry_extension,
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
     HostTelemetryService, PersistedHostTelemetryRecord,
@@ -37,9 +40,11 @@ fn temp_root() -> std::path::PathBuf {
 fn telemetry_extension_owns_box_help_structured_log_and_product_analytics_ingress() {
     assert_eq!(TELEMETRY_EXTENSION_ID, "telemetry");
     let root = temp_root();
-    let extension = start_host_telemetry_extension(&root).expect("telemetry extension");
+    let service = HostTelemetryService::open(root.join("host-events.jsonl"))
+        .expect("telemetry service");
+    service.start().expect("telemetry start");
 
-    extension
+    service
         .logs
         .report_box_help(&json!({
             "conversationId": "agent-a",
@@ -47,7 +52,7 @@ fn telemetry_extension_owns_box_help_structured_log_and_product_analytics_ingres
             "reason": "auth"
         }))
         .expect("box help log");
-    extension.logs.report_projection(&queue_accepted_telemetry(&QueueAcceptedReport {
+    service.logs.report_projection(&queue_accepted_telemetry(&QueueAcceptedReport {
         conversation_id: "agent-a".into(), lane: "user".into(), source: "turn".into(),
         position: 0, depth_user: 1, depth_agent: 0, depth_background: 0, has_active: false,
     })).expect("queue telemetry");
@@ -67,7 +72,7 @@ fn telemetry_extension_owns_box_help_structured_log_and_product_analytics_ingres
         )
         .expect("product analytics event");
 
-    let text = fs::read_to_string(extension.records_path()).expect("telemetry jsonl");
+    let text = fs::read_to_string(service.records_path()).expect("telemetry jsonl");
     let records = text
         .lines()
         .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
@@ -232,9 +237,15 @@ fn shipping_structured_logs_consume_canonical_box_identity_tags_with_event_prece
 #[test]
 fn shipping_telemetry_brain_routes_automation_run_to_product_and_structured_channels() {
     let root = temp_root();
-    let extension = start_host_telemetry_extension(&root).expect("telemetry extension");
+    let service = HostTelemetryService::open(root.join("brain-events.jsonl"))
+        .expect("telemetry service");
+    service.start().expect("telemetry start");
+    let brain = AutomationRunAnalyticsTelemetry::new(
+        Arc::new(service.logs.clone()),
+        Arc::new(service.analytics.clone()),
+    );
 
-    extension.brain.report_automation_run(&json!({
+    brain.report_automation_run(&json!({
         "conversationId": "agent-auto",
         "automationId": "auto-7",
         "trigger": "schedule",
@@ -243,7 +254,7 @@ fn shipping_telemetry_brain_routes_automation_run_to_product_and_structured_chan
         "sentMessageCount": 2
     }));
 
-    let text = fs::read_to_string(extension.records_path()).expect("telemetry jsonl");
+    let text = fs::read_to_string(service.records_path()).expect("telemetry jsonl");
     let records = text
         .lines()
         .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
