@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use reqwest::blocking::Client;
+use reqwest::header::{HeaderName, HeaderValue};
 use serde_json::{Value, json};
 
 use crate::send_trace_host::{
@@ -554,7 +555,13 @@ impl SpanExporter for OtlpJsonHttpSpanExporter {
             .post(&self.options.url)
             .header("content-type", "application/json");
         for (key, value) in &self.options.headers {
-            request = request.header(key.as_str(), value.as_str());
+            let Ok(name) = HeaderName::from_bytes(key.as_bytes()) else {
+                return ExportResultCode::Failed;
+            };
+            let Ok(value) = HeaderValue::from_str(value) else {
+                return ExportResultCode::Failed;
+            };
+            request = request.header(name, value);
         }
         match request.json(&self.body(spans)).send() {
             Ok(response) if response.status().is_success() => ExportResultCode::Success,
