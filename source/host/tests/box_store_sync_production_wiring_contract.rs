@@ -456,7 +456,7 @@ fn shipping_manifest_conflict_uses_frozen_metadata_and_unique_host_owner() {
 
     let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
     assert!(telemetry.contains("pub fn report_box_store_manifest_conflict("));
-    assert!(telemetry.contains("event: Some("sand.box_store_manifest_conflict")"));
+    assert!(telemetry.contains("event: Some(\\\"sand.box_store_manifest_conflict\\\")"));
 
     let report = production
         .split_once("fn report_manifest_write_conflict(&self")
