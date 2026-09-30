@@ -675,6 +675,35 @@ impl ProductionBoxStoreSyncInner {
         (self.deps.report_box_store_sync_cycle)(telemetry.level, &telemetry.metadata);
     }
 
+    fn report_store_db_capture(
+        &self,
+        trigger: &'static str,
+        outcome: StoreDbCaptureOutcome,
+        capture: &ProductionStoreDbCaptureResult,
+        is_committed: bool,
+        store_id: &str,
+        duration_ms: u64,
+        queue_duration_ms: u64,
+    ) {
+        let telemetry = box_store_db_capture_telemetry(&BoxStoreDbCaptureTelemetrySummary {
+            outcome,
+            trigger,
+            failure_phase: capture.capture_trace.failure_phase,
+            is_committed,
+            agent_count: capture.agent_count,
+            files_scanned: capture.summary.files_scanned,
+            files_uploaded: capture.summary.files_uploaded,
+            bytes: capture.summary.bytes_uploaded,
+            duration_ms,
+            queue_duration_ms,
+            capture_duration_ms: capture.capture_trace.capture_duration_ms,
+            blob_upload_duration_ms: capture.capture_trace.blob_upload_duration_ms,
+            manifest_commit_duration_ms: capture.capture_trace.manifest_commit_duration_ms,
+            store_id: Some(store_id.to_string()),
+        });
+        (self.deps.report_box_store_db_capture)(telemetry.level, &telemetry.metadata);
+    }
+
     fn report_sync_lifecycle(&self, level: &str, ok: bool, reason: &str) {
         let metadata = BTreeMap::from([
             ("ok".to_string(), ok.to_string()),
