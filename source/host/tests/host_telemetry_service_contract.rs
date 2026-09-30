@@ -521,3 +521,50 @@ fn structured_log_turn_handle_preserves_frozen_start_retry_and_finalize_semantic
 
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn direct_frozen_facade_helpers_preserve_teach_upgrade_and_box_help_semantics() {
+    let root = temp_root();
+    let service = HostTelemetryService::open(root.join("direct-facade-events.jsonl"))
+        .expect("telemetry service");
+
+    service.logs.report_teach_recording_cap_stop_failed(&json!({
+        "errorClass": "stop_failed"
+    })).expect("teach cap telemetry");
+    service.logs.report_teach_recording_start_failed(&json!({
+        "kind": "window",
+        "errorClass": "capture_failed",
+        "windowIndex": 2,
+        "entryPoint": "toolbar"
+    })).expect("teach start telemetry");
+    service.logs.report_host_upgrade(BTreeMap::from([
+        ("outcome".into(), "failed".into()),
+        ("from_version".into(), "1".into()),
+        ("to_version".into(), "2".into()),
+    ])).expect("host upgrade telemetry");
+    service.logs.report_box_help(&json!({
+        "conversationId": "agent-direct",
+        "snapshotCaptured": false,
+        "reason": "auth"
+    })).expect("box help telemetry");
+
+    let records = fs::read_to_string(service.records_path())
+        .expect("direct facade jsonl")
+        .lines()
+        .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 4);
+    assert_eq!(records[0].event, "sand.teach.recording_cap_stop_failed");
+    assert_eq!(records[0].payload["level"], "warn");
+    assert_eq!(records[0].payload["metadata"]["error_class"], "stop_failed");
+    assert_eq!(records[1].event, "sand.teach.recording_start_failed");
+    assert_eq!(records[1].payload["metadata"]["window_index"], "2");
+    assert_eq!(records[1].payload["metadata"]["entry_point"], "toolbar");
+    assert_eq!(records[2].event, "sand.host.upgrade");
+    assert_eq!(records[2].payload["level"], "warn");
+    assert_eq!(records[2].payload["metadata"]["outcome"], "failed");
+    assert_eq!(records[3].event, "sand.box_help");
+    assert_eq!(records[3].payload["metadata"]["conversation_id"], "agent-direct");
+
+    let _ = fs::remove_dir_all(root);
+}

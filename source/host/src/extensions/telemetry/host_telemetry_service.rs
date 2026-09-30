@@ -513,6 +513,32 @@ impl HostStructuredLogTelemetry {
         self.report_projection(&turn_empty_delivery_telemetry(report))
     }
 
+    pub fn report_host_upgrade(&self, metadata: BTreeMap<String, String>) -> io::Result<()> {
+        let level = if metadata.get("outcome").map(String::as_str) == Some("failed") {
+            "warn"
+        } else {
+            "info"
+        };
+        self.report_projection(&HostTelemetryProjection {
+            level: Some(level),
+            event: Some("sand.host.upgrade"),
+            metadata,
+        })
+    }
+
+    pub fn report_host_upgrade_confirmed(&self, metadata: BTreeMap<String, String>) -> bool {
+        let level = if metadata.get("outcome").map(String::as_str) == Some("failed") {
+            "warn"
+        } else {
+            "info"
+        };
+        self.ship_confirmed_projection(&HostTelemetryProjection {
+            level: Some(level),
+            event: Some("sand.host.upgrade"),
+            metadata,
+        })
+    }
+
     pub fn report_box_help(&self, report: &Value) -> io::Result<()> {
         let projection = box_help_telemetry(report);
         debug_assert_eq!(projection.event, Some(BOX_HELP_EVENT));

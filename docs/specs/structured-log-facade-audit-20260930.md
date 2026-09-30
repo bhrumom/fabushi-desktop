@@ -83,8 +83,8 @@ Status vocabulary:
 | 64 | `reportLocalToolPermissionStrandedRetirement` | direct frozen event; production permission retirement producer path must be pinned | producer-evidence-required |
 | 65 | `reportSkillPublishEdgeFailed` | direct frozen event; production producer path must be pinned | producer-evidence-required |
 | 66 | `reportPluginSkillsSync` | direct frozen event; production plugin-skills producer path must be pinned | producer-evidence-required |
-| 67 | `reportTeachRecordingCapStopFailed` | Host structured-log helper exists | producer-evidence-required |
-| 68 | `reportTeachRecordingStartFailed` | Host structured-log helper exists | producer-evidence-required |
+| 67 | `reportTeachRecordingCapStopFailed` | shipping TeachRecordingServiceDeps captures the unique Host logs and calls `report_teach_recording_cap_stop_failed`; dedicated JSONL facade contract verifies warn/event/error-class semantics | **implemented-awaiting-exact-head-ci** |
+| 68 | `reportTeachRecordingStartFailed` | shipping TeachRecordingServiceDeps captures the unique Host logs and calls `report_teach_recording_start_failed`; dedicated JSONL facade contract verifies warn/event/window/entry-point semantics | **implemented-awaiting-exact-head-ci** |
 | 69 | `reportBoxCopyIn` | direct frozen event; production producer path must be pinned | producer-evidence-required |
 | 70 | `reportBoxRecreateDecided` | direct frozen event; production producer path must be pinned | producer-evidence-required |
 | 71 | `reportInferenceCredentialRenewal` | `HostTelemetryService` owns auth renewal subscription and calls `report_inference_credential_renewal` | verified-owner |
@@ -99,9 +99,9 @@ Status vocabulary:
 | 80 | `reportHostCrash` | Host crash marker owner exists, but ordinary fire-and-forget crash projection producer must be distinguished from confirmed exit forwarding | producer-evidence-required |
 | 81 | `reportHostProcessExitConfirmed` | crash-marker forwarding uses confirmed structured-log shipping under Host ownership | verified-owner |
 | 82 | `reportInvariantViolation` | direct frozen event; producer path must be pinned | producer-evidence-required |
-| 83 | `reportHostUpgrade` | Host Upgrade production dependency has a shipping telemetry callback | producer-evidence-required |
-| 84 | `reportHostUpgradeConfirmed` | Host Upgrade production dependency exposes confirmed reporting and current Host sink has `ship_confirmed_projection` | verified-owner |
-| 85 | `reportBoxHelp` | `HostStructuredLogTelemetry::report_box_help` exists; production call site still must be pinned | producer-evidence-required |
+| 83 | `reportHostUpgrade` | production HostUpgrade dependency now calls typed `HostStructuredLogTelemetry::report_host_upgrade`; facade owns frozen failed=>warn/info event semantics and dedicated JSONL contract verifies ordinary shipping | **implemented-awaiting-exact-head-ci** |
+| 84 | `reportHostUpgradeConfirmed` | production HostUpgrade dependency calls typed `report_host_upgrade_confirmed`, which retains the same frozen event/level semantics but delegates to transport-owned `ship_confirmed_projection`; Host Upgrade service contract verifies the confirmed settlement path | **implemented-awaiting-exact-head-ci** |
+| 85 | `reportBoxHelp` | shipping box handoff callback captures the unique Host logs and calls typed `report_box_help`; existing Host telemetry JSONL contract verifies frozen event/conversation/snapshot/reason shaping | **implemented-awaiting-exact-head-ci** |
 | 86 | `reportBotBlock` | generic mapping does not by itself prove frozen two-event summary/detail semantics | producer-evidence-required |
 | 87 | `emitTurnEvent` | returned Host turn handle emits start/outcome/outcome_detail through the same `HostStructuredLogTelemetry::report_projection` owner | **implemented-awaiting-exact-head-ci** |
 | 88 | `setFlushTickListener` | production transport is constructed with the pressure-profiler flush tick listener under Host ownership | verified-owner |
@@ -156,3 +156,7 @@ The audit confirmed that all three domains already had real business producers, 
 ### Dedicated disk-pressure facade repair
 
 Frozen `reportBoxDiskPressure` is not equivalent to generic Host diagnostics: it uses the disk-pressure mapper and then explicitly enqueues event `sand.box.disk_pressure`. The shipping ForeverBox already emits the complete disk fields into the HostDiagnostic domain, so the single global Host reporter adapter now detects only `kind=disk_pressure`, projects those fields to `DiskPressureReport`, and calls the typed facade. The facade restores the frozen fixed event name rather than relying on the mapper's intentionally event-less projection. Focused adapter and JSONL contracts cover field preservation, hard-pressure `error` level, fixed event ownership, and one-decimal `used_percent`.
+
+### Existing direct facade evidence and Host Upgrade facade ownership
+
+The facade audit distinguished API presence from real shipping calls. Teach Recording cap-stop/start failures are wired by production `TeachRecordingServiceDeps`; Box Help is wired by the production handoff callback. A focused JSONL contract now exercises both Teach failure helpers, Box Help, and ordinary Host Upgrade semantics. Host Upgrade production no longer owns a private duplicate projection helper: both ordinary and confirmed reporting are methods on `HostStructuredLogTelemetry`; confirmed delivery still uses transport-owned confirmed shipping and remains separately covered by the Host Upgrade service settlement contract. `reportHostLifecycle` was deliberately not advanced because `create_host_lifecycle_progress` is currently not instantiated by shipping composition.

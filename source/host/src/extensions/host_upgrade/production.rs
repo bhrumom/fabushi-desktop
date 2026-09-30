@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::extensions::telemetry::HostTelemetryProjection;
 use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use crate::host_paths::get_host_upgrade_marker_path;
 
@@ -56,21 +55,6 @@ impl ProductionHostUpgradeDependencies {
         }
     }
 
-    fn host_upgrade_projection(
-        metadata: impl IntoIterator<Item = (String, String)>,
-    ) -> HostTelemetryProjection {
-        let metadata = metadata.into_iter().collect::<BTreeMap<_, _>>();
-        let level = if metadata.get("outcome").map(String::as_str) == Some("failed") {
-            "warn"
-        } else {
-            "info"
-        };
-        HostTelemetryProjection {
-            level: Some(level),
-            event: Some("sand.host.upgrade"),
-            metadata,
-        }
-    }
 }
 
 impl HostUpgradeDependencies for ProductionHostUpgradeDependencies {
@@ -136,16 +120,14 @@ impl HostUpgradeDependencies for ProductionHostUpgradeDependencies {
     }
 
     fn report_host_upgrade(&self, metadata: HashMap<String, String>) {
-        let _ = self
-            .logs
-            .report_projection(&Self::host_upgrade_projection(metadata));
+        let _ = self.logs.report_host_upgrade(metadata.into_iter().collect());
     }
 
     fn report_host_upgrade_confirmed(
         &self,
         metadata: &BTreeMap<String, String>,
     ) -> Result<bool, String> {
-        Ok(self.logs.ship_confirmed_projection(&Self::host_upgrade_projection(metadata.clone())))
+        Ok(self.logs.report_host_upgrade_confirmed(metadata.clone()))
     }
 
     fn log(&self, level: &str, message: &str) {

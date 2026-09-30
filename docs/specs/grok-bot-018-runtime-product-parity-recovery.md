@@ -2390,3 +2390,10 @@ This slice does **not** make cloud reconciliation final. `sand-automation-cloud-
 - `reportBoxDiskPressure` cannot be closed by the generic HostDiagnostic path because frozen Grok applies `diskPressureTelemetry` and then explicitly enqueues `sand.box.disk_pressure`.
 - The existing ForeverBox disk-pressure producer already supplies level/volume/trigger/total/available/used-percent fields. The unique Host diagnostic reporter adapter now recognizes that domain kind and invokes a typed `report_box_disk_pressure` facade; all other Host diagnostics continue through `report_host_diagnostic`.
 - The facade restores the fixed frozen event name and the existing mapper retains pressure-level and numeric formatting. Adapter and JSONL behavior contracts cover this path.
+
+
+### 2026-09-30 direct frozen facade evidence / Host Upgrade ownership
+
+- Verified real production producers for Teach Recording cap-stop/start failures and Box Help; added a focused JSONL behavior contract for their frozen event/field/level semantics.
+- Moved Host Upgrade ordinary/confirmed projection ownership into typed `HostStructuredLogTelemetry` facade methods. Production HostUpgrade now calls those methods; confirmed reporting still uses transport confirmed shipping rather than the background queue.
+- Kept Host Lifecycle non-final: the facade/service factory exists, but the shipping Host does not currently instantiate `HostLifecycleProgress`, so API presence alone is not accepted as production evidence.
