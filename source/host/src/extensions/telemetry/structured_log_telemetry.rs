@@ -18,6 +18,7 @@ use super::HostTelemetryProjection;
 
 pub const BOX_HELP_EVENT: &str = "sand.box_help";
 pub const SAND_LOG_KEY: &str = "sand";
+pub const HOST_BUILT_AT_MS: &str = "1786556440000";
 pub const STRUCTURED_LOG_SUBMIT_PATH: &str = "aiserver.v1.AnalyticsService/SubmitLogs";
 pub const STRUCTURED_LOG_SUBMIT_DEADLINE: Duration = Duration::from_secs(15);
 pub const HOST_IDENTITY_HOLD_BACKSTOP: Duration = Duration::from_secs(90);
@@ -67,10 +68,16 @@ pub struct CursorStructuredLogBackend {
     backend_url: String,
     auth: Arc<HostAuthExtension>,
     client: Client,
+    platform_tags: BTreeMap<String, String>,
 }
 
 impl CursorStructuredLogBackend {
-    pub fn new(backend_url: String, auth: Arc<HostAuthExtension>) -> Result<Self, String> {
+    pub fn new(
+        backend_url: String,
+        auth: Arc<HostAuthExtension>,
+        mut platform_tags: BTreeMap<String, String>,
+    ) -> Result<Self, String> {
+        platform_tags.retain(|_, value| !value.is_empty());
         let client = Client::builder()
             .connect_timeout(STRUCTURED_LOG_SUBMIT_DEADLINE)
             .timeout(STRUCTURED_LOG_SUBMIT_DEADLINE)
@@ -80,6 +87,7 @@ impl CursorStructuredLogBackend {
             backend_url,
             auth,
             client,
+            platform_tags,
         })
     }
 }
@@ -106,13 +114,17 @@ impl StructuredLogBackend for CursorStructuredLogBackend {
             .map_err(|error| format!("structured-log machine id: {error}"))?;
         let ghost_mode = resolve_sand_ghost_mode_header(&self.backend_url, &token, &machine_id);
         let payload = json!({
-            "logs": logs.iter().map(|entry| json!({
-                "level": entry.level.wire_value(),
-                "message": entry.message,
-                "metadata": entry.metadata,
-                "timestamp": entry.timestamp_ms.to_string(),
-                "key": SAND_LOG_KEY,
-            })).collect::<Vec<_>>(),
+            "logs": logs.iter().map(|entry| {
+                let mut metadata = self.platform_tags.clone();
+                metadata.extend(entry.metadata.clone());
+                json!({
+                    "level": entry.level.wire_value(),
+                    "message": entry.message,
+                    "metadata": metadata,
+                    "timestamp": entry.timestamp_ms.to_string(),
+                    "key": SAND_LOG_KEY,
+                })
+            }).collect::<Vec<_>>(),
         });
         let response = self
             .client

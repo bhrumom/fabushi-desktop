@@ -11,7 +11,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::extensions::auth::auth_service::HostAuthRenewalEvent;
-use crate::extensions::auth::credential_renewer::RenewalOutcome;
+use crate::extensions::auth::credential_renewer::{
+    RenewalOutcome, SAND_CLIENT_TYPE, sand_client_version,
+};
 use crate::extensions::auth::extension::HostAuthExtension;
 use crate::extensions::browser_ua::extension::StopSubscription;
 use crate::extensions::experiments::{
@@ -56,7 +58,7 @@ use super::pressure_cpu_profiler::{
     PressureCpuProfiler, SandProfilerCaptureError, create_production_pressure_cpu_profiler,
 };
 use super::structured_log_telemetry::{
-    BOX_HELP_EVENT, CursorStructuredLogBackend, ProductionStructuredLogTransport,
+    BOX_HELP_EVENT, CursorStructuredLogBackend, HOST_BUILT_AT_MS, ProductionStructuredLogTransport,
     StructuredLogBackend, box_help_telemetry, level_from_str,
 };
 
@@ -530,6 +532,7 @@ impl HostStructuredLogTelemetry {
         {
             tags.insert("host_bundle_version".into(), version.to_string());
         }
+        tags.insert("host_built_at_ms".into(), HOST_BUILT_AT_MS.into());
         if let Some(box_store_id) = identity
             .box_store_id
             .as_deref()
@@ -752,12 +755,11 @@ fn forward_host_crash_marker_to_logs(
             metadata.insert("error_code".into(), "SAND-E0001".into());
             metadata.insert("error_domain".into(), "registry".into());
             metadata.insert("error_retryable".into(), "false".into());
-            logs.report_projection(&HostTelemetryProjection {
+            logs.ship_confirmed_projection(&HostTelemetryProjection {
                 level: Some("error"),
                 event: Some("sand.host.crash"),
                 metadata,
             })
-            .is_ok()
         },
     )
 }
@@ -1055,10 +1057,25 @@ impl HostTelemetryService {
             if std::env::var("SAND_DISABLE_TELEMETRY").as_deref() == Ok("1") {
                 (None, None)
             } else if let Some(production) = production.as_ref() {
+                let mut platform_tags = initial_identity_tags.clone();
+                platform_tags.insert("client".into(), SAND_CLIENT_TYPE.into());
+                platform_tags.insert("client.type".into(), SAND_CLIENT_TYPE.into());
+                platform_tags.insert("client_version".into(), sand_client_version());
+                platform_tags.insert("app_version".into(), env!("CARGO_PKG_VERSION").into());
+                platform_tags.insert("arch".into(), std::env::consts::ARCH.into());
+                platform_tags.insert(
+                    "platform".into(),
+                    match std::env::consts::OS {
+                        "macos" => "darwin",
+                        other => other,
+                    }
+                    .into(),
+                );
                 let backend: Arc<dyn StructuredLogBackend> = Arc::new(
                     CursorStructuredLogBackend::new(
                         production.backend_url.clone(),
                         Arc::clone(&production.auth),
+                        platform_tags,
                     )
                     .map_err(io::Error::other)?,
                 );

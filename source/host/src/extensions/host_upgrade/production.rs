@@ -145,10 +145,7 @@ impl HostUpgradeDependencies for ProductionHostUpgradeDependencies {
         &self,
         metadata: &BTreeMap<String, String>,
     ) -> Result<bool, String> {
-        self.logs
-            .report_projection(&Self::host_upgrade_projection(metadata.clone()))
-            .map(|_| true)
-            .map_err(|error| error.to_string())
+        Ok(self.logs.ship_confirmed_projection(&Self::host_upgrade_projection(metadata.clone())))
     }
 
     fn log(&self, level: &str, message: &str) {
