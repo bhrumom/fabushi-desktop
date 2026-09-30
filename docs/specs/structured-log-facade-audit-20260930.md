@@ -87,8 +87,8 @@ Status vocabulary:
 | 69 | `reportBoxCopyIn` | direct frozen event; production producer path must be pinned | producer-evidence-required |
 | 70 | `reportBoxRecreateDecided` | direct frozen event; production producer path must be pinned | producer-evidence-required |
 | 71 | `reportInferenceCredentialRenewal` | `HostTelemetryService` owns auth renewal subscription and calls `report_inference_credential_renewal` | verified-owner |
-| 72 | `reportGatewayCommandError` | direct frozen event; production Gateway producer path must be pinned | producer-evidence-required |
-| 73 | `reportGatewayCommandTiming` | direct frozen event; production Gateway producer path must be pinned | producer-evidence-required |
+| 72 | `reportGatewayCommandError` | shipping Gateway server reports only >=500 command failures; Host main routes them once to `HostStructuredLogTelemetry::report_gateway_command_error`; the canonical mapper preserves frozen `error` level and `method/reason/error_class/errno/duration_ms/request_id/trace_id/span_id` metadata without leaking status/error/traceparent; focused JSONL contract locks the shape | **implemented-awaiting-exact-head-ci** |
+| 73 | `reportGatewayCommandTiming` | shipping Gateway server reports successful commands through Host main once to `HostStructuredLogTelemetry::report_gateway_command_timing`; canonical mapper preserves frozen `info` level and `method/duration_ms/request_id/trace_id/span_id` metadata, and failed commands do not emit an extra timing event; focused JSONL contract locks the shape | **implemented-awaiting-exact-head-ci** |
 | 74 | `reportAutomationLifecycle` | generic TelemetryService mapping exists; producer/field parity needs focused proof | producer-evidence-required |
 | 75 | `reportHostLog` | Host console forwarder calls the unique `HostStructuredLogTelemetry::report_host_log` owner and truncates to frozen max length | verified-owner |
 | 76 | `reportBoxLogBatch` | BoxLogShipper batches records into `HostStructuredLogTelemetry::report_box_log_record` | verified-owner |
