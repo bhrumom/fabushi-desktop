@@ -266,7 +266,9 @@ pub struct ProductionAnalyticsRuntime {
     deferred: Arc<Mutex<VecDeque<QueuedAnalyticsEvent>>>,
     base_properties: BTreeMap<String, Value>,
     last_active_day_keys: Mutex<BTreeMap<String, String>>,
-    sender: mpsc::Sender<AnalyticsWorkerCommand>,
+    backend_url: String,
+    auth: Arc<HostAuthExtension>,
+    sender: Mutex<Option<mpsc::Sender<AnalyticsWorkerCommand>>>,
     worker: Mutex<Option<JoinHandle<()>>>,
     gate_stop: Mutex<Option<StopSubscription>>,
 }
@@ -276,7 +278,7 @@ impl ProductionAnalyticsRuntime {
         backend_url: String,
         auth: Arc<HostAuthExtension>,
         experiments: Arc<HostExperimentsExtension>,
-    ) -> Result<Arc<Self>, String> {
+    ) -> Arc<Self> {
         let opted_out = std::env::var("SAND_DISABLE_TELEMETRY").as_deref() == Ok("1")
             || std::env::var("SAND_DISABLE_ANALYTICS").as_deref() == Ok("1");
         let state = Arc::new(Mutex::new(if opted_out {
@@ -285,9 +287,83 @@ impl ProductionAnalyticsRuntime {
             AnalyticsStateKind::Deferred
         }));
         let deferred = Arc::new(Mutex::new(VecDeque::new()));
-        let transport = AnalyticsBackendTransport::new(backend_url, auth)?;
+
+        let flavor = match sand_box_namespace() {
+            "dev" => "sand-dev",
+            "lab" => "sand-lab",
+            _ => "sand",
+        };
+        let runtime = Arc::new(Self {
+            state,
+            deferred,
+            base_properties: BTreeMap::from([
+                ("client".into(), json!("sand")),
+                ("sand_version".into(), json!(sand_client_version())),
+                ("flavor".into(), json!(flavor)),
+                ("os".into(), json!(std::env::consts::OS)),
+                ("arch".into(), json!(std::env::consts::ARCH)),
+                ("host_in_box".into(), json!(true)),
+            ]),
+            last_active_day_keys: Mutex::new(BTreeMap::new()),
+            backend_url,
+            auth,
+            sender: Mutex::new(None),
+            worker: Mutex::new(None),
+            gate_stop: Mutex::new(None),
+        });
+        if opted_out {
+            return runtime;
+        }
+
+        let gate = experiments.get_feature_gate_property(SAND_PRODUCT_ANALYTICS_GATE);
+        let weak = Arc::downgrade(&runtime);
+        let stop = gate.subscribe(Arc::new(move |enabled| {
+            if enabled {
+                if let Some(runtime) = weak.upgrade() {
+                    runtime.activate();
+                }
+            }
+        }));
+        *runtime.gate_stop.lock().unwrap_or_else(|p| p.into_inner()) = Some(stop);
+        if gate.get() {
+            runtime.activate();
+        }
+        runtime
+    }
+
+    fn activate(&self) {
+        let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
+        if *state != AnalyticsStateKind::Deferred {
+            return;
+        }
+
+        let transport = match AnalyticsBackendTransport::new(
+            self.backend_url.clone(),
+            Arc::clone(&self.auth),
+        ) {
+            Ok(transport) => transport,
+            Err(error) => {
+                eprintln!("[sand-analytics] failed to enable; disabling ({error})");
+                self.deferred
+                    .lock()
+                    .unwrap_or_else(|p| p.into_inner())
+                    .clear();
+                *state = AnalyticsStateKind::Disabled;
+                drop(state);
+                if let Some(stop) = self
+                    .gate_stop
+                    .lock()
+                    .unwrap_or_else(|p| p.into_inner())
+                    .take()
+                {
+                    stop();
+                }
+                return;
+            }
+        };
+
         let (tx, rx) = mpsc::channel();
-        let worker = thread::Builder::new()
+        let worker = match thread::Builder::new()
             .name("sand-product-analytics".into())
             .spawn(move || {
                 while let Ok(command) = rx.recv() {
@@ -317,60 +393,36 @@ impl ProductionAnalyticsRuntime {
                         break;
                     }
                 }
-            })
-            .map_err(|error| format!("start product analytics worker: {error}"))?;
-
-        let flavor = match sand_box_namespace() {
-            "dev" => "sand-dev",
-            "lab" => "sand-lab",
-            _ => "sand",
-        };
-        let runtime = Arc::new(Self {
-            state,
-            deferred,
-            base_properties: BTreeMap::from([
-                ("client".into(), json!("sand")),
-                ("sand_version".into(), json!(sand_client_version())),
-                ("flavor".into(), json!(flavor)),
-                ("os".into(), json!(std::env::consts::OS)),
-                ("arch".into(), json!(std::env::consts::ARCH)),
-                ("host_in_box".into(), json!(true)),
-            ]),
-            last_active_day_keys: Mutex::new(BTreeMap::new()),
-            sender: tx,
-            worker: Mutex::new(Some(worker)),
-            gate_stop: Mutex::new(None),
-        });
-        if opted_out {
-            return Ok(runtime);
-        }
-
-        let gate = experiments.get_feature_gate_property(SAND_PRODUCT_ANALYTICS_GATE);
-        let weak = Arc::downgrade(&runtime);
-        let stop = gate.subscribe(Arc::new(move |enabled| {
-            if enabled {
-                if let Some(runtime) = weak.upgrade() {
-                    runtime.activate();
+            }) {
+            Ok(worker) => worker,
+            Err(error) => {
+                eprintln!("[sand-analytics] failed to enable; disabling ({error})");
+                self.deferred
+                    .lock()
+                    .unwrap_or_else(|p| p.into_inner())
+                    .clear();
+                *state = AnalyticsStateKind::Disabled;
+                drop(state);
+                if let Some(stop) = self
+                    .gate_stop
+                    .lock()
+                    .unwrap_or_else(|p| p.into_inner())
+                    .take()
+                {
+                    stop();
                 }
+                return;
             }
-        }));
-        *runtime.gate_stop.lock().unwrap_or_else(|p| p.into_inner()) = Some(stop);
-        if gate.get() {
-            runtime.activate();
-        }
-        Ok(runtime)
-    }
+        };
 
-    fn activate(&self) {
-        let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
-        if *state != AnalyticsStateKind::Deferred {
-            return;
-        }
+        *self.sender.lock().unwrap_or_else(|p| p.into_inner()) = Some(tx.clone());
+        *self.worker.lock().unwrap_or_else(|p| p.into_inner()) = Some(worker);
         *state = AnalyticsStateKind::Active;
         drop(state);
+
         let mut deferred = self.deferred.lock().unwrap_or_else(|p| p.into_inner());
         while let Some(event) = deferred.pop_front() {
-            let _ = self.sender.send(AnalyticsWorkerCommand::Event(event));
+            let _ = tx.send(AnalyticsWorkerCommand::Event(event));
         }
         drop(deferred);
         if let Some(stop) = self.gate_stop.lock().unwrap_or_else(|p| p.into_inner()).take() {
@@ -424,7 +476,15 @@ impl ProductionAnalyticsRuntime {
                 }
             }
             AnalyticsStateKind::Active => {
-                let _ = self.sender.send(AnalyticsWorkerCommand::Event(queued));
+                if let Some(sender) = self
+                    .sender
+                    .lock()
+                    .unwrap_or_else(|p| p.into_inner())
+                    .as_ref()
+                    .cloned()
+                {
+                    let _ = sender.send(AnalyticsWorkerCommand::Event(queued));
+                }
             }
         }
     }
@@ -437,7 +497,11 @@ impl Drop for ProductionAnalyticsRuntime {
                 stop();
             }
         }
-        let _ = self.sender.send(AnalyticsWorkerCommand::Stop);
+        if let Ok(sender) = self.sender.get_mut() {
+            if let Some(sender) = sender.take() {
+                let _ = sender.send(AnalyticsWorkerCommand::Stop);
+            }
+        }
         if let Ok(worker) = self.worker.get_mut() {
             if let Some(worker) = worker.take() {
                 let _ = worker.join();
