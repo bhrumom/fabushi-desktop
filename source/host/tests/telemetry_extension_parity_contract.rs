@@ -120,7 +120,7 @@ fn host_telemetry_service_owns_frozen_runtime_lifecycle_and_extension_stays_thin
         "console_forwarder.dispose()",
         "get_last_renewal_event()",
         "ModelExperimentExposureLatch::new(",
-        "inference.on_model_experiment_applied(",
+        ".on_model_experiment_applied(",
         "StructuredLogFlushPolling::start(",
         "HostCrashMarkerForwarder::start(self.logs.clone())",
         "DesktopHealthForwarder::start(self.logs.clone())",
