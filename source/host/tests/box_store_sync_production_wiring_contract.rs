@@ -326,17 +326,34 @@ fn shipping_box_store_sync_core_writer_lock_is_consumed_by_every_mutating_owner(
 
 
 #[test]
-fn shipping_cycle_uses_canonical_frozen_telemetry_mapper() {
+fn shipping_cycle_uses_canonical_frozen_telemetry_mapper_and_host_owner() {
     let production = include_str!("../src/extensions/box_store_sync/production.rs");
     assert!(production.contains("fn report_cycle_telemetry(&self"));
     assert!(production.contains("box_store_sync_cycle_telemetry(summary)"));
+    assert!(production.contains("(self.deps.report_box_store_sync_cycle)(telemetry.level, &telemetry.metadata);"));
+    assert!(production.contains("self.inner.report_sync_lifecycle(\"warn\", false, \"disabled\")"));
+    assert!(production.contains("self.inner.report_sync_lifecycle(\"info\", true, \"enabled\")"));
     assert!(production.contains("total_failures = categories"));
     assert!(production.contains("metadata_failures = categories"));
     assert!(production.contains("store_db_entries: count_store_db_manifest_entries(Some(&entries))"));
     assert!(production.contains("agent_dir_entries: count_agent_dir_manifest_entries(Some(&entries))"));
     assert!(production.contains("self.report_cycle_telemetry("));
+
+    let owner = include_str!("../src/host_production_extensions.rs");
+    assert!(owner.contains("report_box_store_sync_cycle: Arc::new"));
+    assert!(owner.contains("box_store_sync_logs.report_box_store_sync_cycle(level, metadata)"));
+
+    let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
+    assert!(telemetry.contains("pub fn report_box_store_sync_cycle("));
+    assert!(telemetry.contains("event: Some(\"sand.box_store_sync\")"));
+
+    let report_cycle = production
+        .split_once("fn report_cycle_telemetry(&self")
+        .map(|(_, body)| body)
+        .and_then(|body| body.split_once("fn report_sync_lifecycle").map(|(body, _)| body))
+        .expect("shipping report_cycle_telemetry body");
     assert!(
-        !production.contains("self.diagnostic(\n            if chrome_only { \"chrome-session\" } else { \"periodic\" },\n            if ok { \"ok\" } else { \"category-failures\" },"),
-        "shipping cycle must not bypass the canonical frozen telemetry mapper"
+        !report_cycle.contains("report_host_extension_diagnostic"),
+        "canonical Box Store cycle telemetry must not be disguised as a Host extension diagnostic"
     );
 }
