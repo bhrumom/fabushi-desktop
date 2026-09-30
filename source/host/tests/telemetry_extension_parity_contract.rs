@@ -271,6 +271,7 @@ fn service_api_identity_then_message_sent_is_durable_and_idempotent() {
         source: Some("desktop".into()),
         is_group_room: false,
     });
+    api.flush_for_fatal_exit();
     service.dispose().expect("dispose");
 
     let text = fs::read_to_string(&path).expect("durable telemetry");
@@ -286,4 +287,33 @@ fn service_api_identity_then_message_sent_is_durable_and_idempotent() {
     assert_eq!(message.payload["attachment_count"], 1);
     assert_eq!(message.payload["source"], "desktop");
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn frozen_start_api_identity_fatal_and_dispose_order_is_shipping_wired() {
+    let start = TELEMETRY_EXTENSION.find("service.start()?").expect("service start");
+    let api = TELEMETRY_EXTENSION.find("let api = service.api();").expect("service api");
+    let identity = TELEMETRY_EXTENSION
+        .find("api.set_host_bundle_identity(HostBundleIdentity")
+        .expect("bundle identity");
+    assert!(start < api && api < identity);
+
+    let set_identity = HOST_TELEMETRY_SERVICE
+        .find("pub fn set_host_bundle_identity(&self")
+        .expect("identity method");
+    let trace_identity = HOST_TELEMETRY_SERVICE[set_identity..]
+        .find("set_turn_trace_host_bundle_version(identity.host_bundle_version.as_deref())")
+        .expect("turn trace identity");
+    let crash = HOST_TELEMETRY_SERVICE[set_identity..]
+        .find("HostCrashMarkerForwarder::start(self.logs.clone())")
+        .expect("crash marker after identity");
+    let shipper = HOST_TELEMETRY_SERVICE[set_identity..]
+        .find("shipper.start()")
+        .expect("box log start after identity");
+    assert!(trace_identity < crash && crash < shipper);
+
+    assert!(TELEMETRY_EXTENSION.contains("let _ = service.dispose();"));
+    assert!(SHIPPING_HOST.contains("fatal_telemetry.flush_for_fatal_exit()"));
+    assert!(SHIPPING_HOST.contains("production_extensions.telemetry.dispose()"));
 }
