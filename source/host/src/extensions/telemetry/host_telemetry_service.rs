@@ -10,7 +10,9 @@ use serde_json::{Value, json};
 use crate::ports::telemetry::resolve_sand_box_identity_tags;
 
 use super::HostTelemetryProjection;
-use super::analytics_service::product_analytics_event;
+use super::analytics_service::{
+    AnalyticsClient, ProductionAnalyticsRuntime, TelemetryService, product_analytics_event,
+};
 use super::box_log_ship_telemetry::{BoxLogShipReport, box_log_ship_telemetry};
 use super::box_log_shipper::BoxTelemetryRecord;
 use super::lifecycle_telemetry::box_infrastructure_telemetry;
@@ -181,16 +183,90 @@ impl HostStructuredLogTelemetry {
 #[derive(Clone)]
 pub struct HostProductAnalytics {
     sink: Arc<JsonlHostTelemetrySink>,
+    runtime: Arc<Mutex<Option<Arc<ProductionAnalyticsRuntime>>>>,
 }
 
 impl HostProductAnalytics {
+    pub fn attach_runtime(&self, runtime: Arc<ProductionAnalyticsRuntime>) {
+        *self.runtime.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(runtime);
+    }
+
+    pub fn can_record_events(&self) -> bool {
+        self.runtime
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+            .is_some_and(|runtime| runtime.can_record_events())
+    }
+
     pub fn track_event(&self, name: &str, properties: &Value) -> io::Result<()> {
         let event = product_analytics_event(name, properties);
         self.sink.emit(&PersistedHostTelemetryRecord {
             channel: "product_analytics".into(),
-            event: event.name,
-            payload: serde_json::to_value(event.properties).map_err(io::Error::other)?,
-        })
+            event: event.name.clone(),
+            payload: serde_json::to_value(&event.properties).map_err(io::Error::other)?,
+        })?;
+        if let Some(runtime) = self
+            .runtime
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+            .cloned()
+        {
+            runtime.track(event);
+        }
+        Ok(())
+    }
+}
+
+impl AnalyticsClient for HostProductAnalytics {
+    fn track_event(&self, name: &str, properties: &Value) {
+        let _ = HostProductAnalytics::track_event(self, name, properties);
+    }
+}
+
+impl TelemetryService for HostStructuredLogTelemetry {
+    fn report(&self, method: &'static str, report: &Value) {
+        let event = match method {
+            "startTurn" => "sand.turn.start",
+            "reportToolCallError" => "sand.tool_call.error",
+            "reportToolCallStalled" => "sand.tool_call.stalled",
+            "reportToolCallStarted" => "sand.tool_call.started",
+            "reportAgentError" => "sand.agent.error",
+            "reportBotBlock" => "sand.bot.block",
+            "reportDaemonPing" => "sand.daemon.ping",
+            "reportBoxBootStage" => "sand.box.boot_stage",
+            "reportExecDaemonRestart" => "sand.exec_daemon.restart",
+            "reportSupervisorRestart" => "sand.supervisor.restart",
+            "reportTurnInterrupt" => "sand.turn.interrupt",
+            "reportTurnAwait" => "sand.turn.await",
+            "reportTurnRetry" => "sand.turn.retry",
+            "reportUserMessageReceived" => "sand.user_message.received",
+            "reportClosingSendNudge" => "sand.closing_send_nudge",
+            "reportSubagentRevival" => "sand.subagent.revival",
+            "reportShellRevival" => "sand.shell.revival",
+            "reportComputerUseUsage" => "sand.computer_use.usage",
+            "reportTtft" => "sand.turn.ttft",
+            "reportSendDispatch" => "sand.send.dispatch",
+            "reportQueueAccepted" => "sand.queue.accepted",
+            "reportQueueDequeued" => "sand.queue.dequeued",
+            "reportQueueWatchdog" => "sand.queue.watchdog",
+            "reportAckObligation" => "sand.ack_obligation",
+            "reportPendingWake" => "sand.pending_wake",
+            "reportTurnUsage" => "sand.turn.usage",
+            "reportTurnEmptyDelivery" => "sand.turn.empty_delivery",
+            "reportJournalOutcome" => "sand.journal.outcome",
+            "reportAutoReviewExpireSweepFailed" => "sand.auto_review.expire_sweep_failed",
+            "reportAutomationLifecycle" => "sand.automation.lifecycle",
+            "reportAutomationFireDropped" => "sand.automation.fire_dropped",
+            "reportAutomationRun" => "sand.automation.run",
+            _ => "sand.host.telemetry",
+        };
+        let _ = self.sink.emit(&PersistedHostTelemetryRecord {
+            channel: "structured_log".into(),
+            event: event.into(),
+            payload: report.clone(),
+        });
     }
 }
 
@@ -222,6 +298,7 @@ impl HostTelemetryService {
             },
             analytics: HostProductAnalytics {
                 sink: Arc::clone(&sink),
+                runtime: Arc::new(Mutex::new(None)),
             },
             sink,
         })
