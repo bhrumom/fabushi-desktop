@@ -275,6 +275,7 @@ fn generated_binding_provenance_is_auditable_and_not_a_parallel_codec() {
 
 #[test]
 fn generated_codec_is_uniquely_consumed_by_shipping_manager_and_runner() {
+    let shipping_manager_compact: String = SHIPPING_MANAGER.split_whitespace().collect();
     for needle in [
         "PRODUCTION_LOCAL_EXEC_CODEC.shell_stream_server_message",
         "PRODUCTION_LOCAL_EXEC_CODEC.read_server_message",
@@ -283,7 +284,7 @@ fn generated_codec_is_uniquely_consumed_by_shipping_manager_and_runner() {
         ".create_remote_accessor(Arc::new(self.exec_manager()))",
     ] {
         assert!(
-            SHIPPING_MANAGER.contains(needle),
+            shipping_manager_compact.contains(needle),
             "shipping permissioned manager is missing generated-codec consumer: {needle}"
         );
     }
