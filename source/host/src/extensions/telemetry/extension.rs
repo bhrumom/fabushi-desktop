@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -14,6 +15,10 @@ use crate::extensions::experiments::{
 use crate::extensions::extension_ids_generated::HostExtensionId;
 use crate::extensions::inference::production::ProductionInferenceExtension;
 use crate::host_paths::get_host_crash_marker_path;
+use crate::ports::telemetry::resolve_sand_box_identity_tags_from;
+use crate::r#box::box_store_backend_policy::{
+    BoxStoreBackendKind, resolve_box_store_backend_policy,
+};
 
 use super::HostTelemetryProjection;
 use super::analytics_service::{
@@ -51,6 +56,25 @@ pub const SAND_SUPERVISOR_DESKTOP_HEALTH_PATH: &str =
 pub const DESKTOP_HEALTH_FORWARD_INTERVAL: Duration = Duration::from_secs(30);
 pub const DESKTOP_HEALTH_HEARTBEAT_MS: u64 = 5 * 60 * 1_000;
 pub const DESKTOP_HEALTH_EVENT: &str = "sand.box.desktop_health";
+
+fn box_store_backend_kind_tag(kind: BoxStoreBackendKind) -> &'static str {
+    match kind {
+        BoxStoreBackendKind::LocalFs => "local-fs",
+        BoxStoreBackendKind::SandBoxStoreV2 => "sand-box-store-v2",
+        BoxStoreBackendKind::AgentStore => "agent-store",
+    }
+}
+
+pub fn telemetry_identity_tags_from(
+    environment: &BTreeMap<String, String>,
+) -> BTreeMap<String, String> {
+    let mut tags = resolve_sand_box_identity_tags_from(environment);
+    tags.insert(
+        "store_backend".into(),
+        box_store_backend_kind_tag(resolve_box_store_backend_policy(environment).kind).into(),
+    );
+    tags
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct DesktopHealthForwardState {
@@ -384,8 +408,10 @@ pub fn start_host_telemetry_extension(
     experiments: Arc<HostExperimentsExtension>,
     inference: Arc<ProductionInferenceExtension>,
 ) -> io::Result<HostTelemetryExtension> {
-    let service = Arc::new(HostTelemetryService::open(
+    let environment = std::env::vars().collect::<BTreeMap<_, _>>();
+    let service = Arc::new(HostTelemetryService::open_with_identity_tags(
         app_data_dir.join("telemetry").join("host-events.jsonl"),
+        telemetry_identity_tags_from(&environment),
     )?);
     service.start()?;
 

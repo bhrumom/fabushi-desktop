@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -10,6 +11,7 @@ use mahayana_host_runtime::extensions::experiments::{
 use mahayana_host_runtime::extensions::telemetry::extension::{
     FATAL_TELEMETRY_FLUSH_TIMEOUT, HOST_CRASH_MARKER_FORWARD_INTERVAL,
     TELEMETRY_DEPENDENCIES, TELEMETRY_EXTENSION_ID, TELEMETRY_FLUSH_TICK,
+    telemetry_identity_tags_from,
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
     HostTelemetryService, PersistedHostTelemetryRecord,
@@ -53,6 +55,35 @@ fn telemetry_identity_dependencies_and_frozen_scheduling_are_explicit() {
 }
 
 #[test]
+fn telemetry_identity_includes_frozen_store_backend_policy_kind() {
+    let v2 = telemetry_identity_tags_from(&BTreeMap::from([
+        ("SAND_BOX_AUTH_ID".to_string(), "box-auth".to_string()),
+        ("SAND_BOX_STORE_BACKEND".to_string(), "v2".to_string()),
+    ]));
+    assert_eq!(v2.get("auth_id").map(String::as_str), Some("box-auth"));
+    assert_eq!(
+        v2.get("store_backend").map(String::as_str),
+        Some("sand-box-store-v2")
+    );
+
+    let local_dir = std::env::temp_dir()
+        .join("fabushi-telemetry-store")
+        .to_string_lossy()
+        .to_string();
+    let local = telemetry_identity_tags_from(&BTreeMap::from([(
+        "SAND_BOX_STORE_LOCAL_DIR".to_string(),
+        local_dir,
+    )]));
+    assert_eq!(local.get("store_backend").map(String::as_str), Some("local-fs"));
+
+    let fallback = telemetry_identity_tags_from(&BTreeMap::new());
+    assert_eq!(
+        fallback.get("store_backend").map(String::as_str),
+        Some("agent-store")
+    );
+}
+
+#[test]
 fn shipping_owner_starts_telemetry_after_auth_experiments_and_inference() {
     let auth = PRODUCTION_OWNER.find("let auth = Arc::new(").expect("Auth start");
     let experiments = PRODUCTION_OWNER
@@ -90,6 +121,8 @@ fn telemetry_extension_owns_start_dispose_polling_diagnostics_and_subscription_c
         "pin_experiments_diagnostics_reporter(Some(",
         "pin_experiments_diagnostics_reporter(None)",
         "fn flush_for_fatal_exit(&self)",
+        "recv_timeout(FATAL_TELEMETRY_FLUSH_TIMEOUT)",
+        "stop_rx.recv_timeout(HOST_CRASH_MARKER_FORWARD_INTERVAL)",
         "shipper.stop_polling()",
         "shipper.checkpoint_offsets()",
         "self.service.logs.flush()",
