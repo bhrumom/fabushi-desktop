@@ -11145,18 +11145,23 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_sync.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "4ec48ab3045b3633cfc4b502798bac001381dac2",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/box_store_sync/box_store_sync.rs"
+        "source/host/src/extensions/box_store_sync/box_store_sync.rs",
+        "source/host/src/extensions/box_store_sync/production.rs",
+        "source/host/src/extensions/box_store_sync/box_store_sync_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/box_store_sync_planned_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/box_store_sync_production_wiring_contract.rs",
+        "source/host/tests/box_store_sync_service_frozen_parity_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Mahayana Host now has a real owner for the frozen Box Store Sync module's core deterministic/security contract, exported from the canonical box_store_sync domain and covered by focused contracts. This row is intentionally not final: full production service/object-store/backend composition and exact frozen async lifecycle remain to be wired before implemented status."
+      "notes": "Frozen Grok 0.18 BoxStoreSync behavior is now consumed by the single shipping ProductionBoxStoreSyncService/ProductionBoxStoreSyncInner owner. The canonical Rust core owns the long-lived cross-process writer lock used by snapshot/periodic/turn-end/clear/forget mutation paths; production preserves in-flight serialize/wait-or-skip behavior, stopped/dispose settlement, ordered category pruning then store.db capture with live-handle fencing, canonical manifest CAS/conflict retry and fullyHydrated promotion/reset, and canonical clear/read/forget recovery without a parallel runtime. Focused lock contention/release and source-to-production wiring contracts are exercised by the Rust desktop runtime, with renderer and Desktop Chat Parity regression coverage."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-transfer.ts",
