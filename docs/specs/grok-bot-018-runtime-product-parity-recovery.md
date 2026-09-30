@@ -2411,3 +2411,10 @@ This slice does **not** make cloud reconciliation final. `sand-automation-cloud-
 - Recorded the frozen infrastructure methods as an explicit delegation to the shipping BoxLogShipper path rather than duplicating six direct producers. The production contract now exercises boot stage/failure, egress tunnel, host boot fetch, exec-daemon restart and supervisor restart through strict parsing, Host mapping and delivery-offset settlement.
 - `DesktopHealthForwarder`, already owned by `HostTelemetryService`, now routes through typed `report_desktop_health` so its frozen level/metadata and fixed event remain under the single Host structured-log facade.
 - These entries remain awaiting exact-HEAD Actions; unrelated unresolved facade producers are not advanced by this evidence.
+
+
+### 2026-09-30 MCP / Plugin Skills / permission structured-log repair
+
+- Wired the real MCP legacy-auth cleanup outcome/count, Plugin Skills sync reporter and Skill Publish edge reporter to the single Host structured-log facade during production MCP composition.
+- Replaced the local-tool-permission stranded-retirement ad-hoc projection with the typed frozen `sand.client_resource` facade and its exact failure metadata.
+- Added focused JSONL evidence for all four direct events; structured-log remains non-final until the remaining facade rows and exact-HEAD Actions close.

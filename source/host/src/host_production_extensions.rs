@@ -705,16 +705,36 @@ impl ProductionHostExtensions {
 
         let loader: Arc<dyn PluginSkillsLoader> =
             Arc::new(CoordinatorPluginSkillsLoader::new(relay));
-        let plugin_skills = Arc::new(SandPluginSkillsService::new(
-            sand_root_dir.to_path_buf(),
-            loader,
-        ));
+        let plugin_sync_logs = self.telemetry.logs.clone();
+        let plugin_skills = Arc::new(
+            SandPluginSkillsService::new(sand_root_dir.to_path_buf(), loader).with_reporter(
+                Arc::new(move |report| {
+                    let _ = plugin_sync_logs.report_plugin_skills_sync(
+                        &report.trigger,
+                        &report.outcome,
+                        report.changed,
+                        report.skill_count,
+                        report.error_class.as_deref(),
+                        report.duration_ms,
+                    );
+                }),
+            ),
+        );
         let plugin_port: Arc<dyn PluginSkillsPort> = plugin_skills.clone();
         let backend_for_sweep = Arc::clone(&backend);
         let service = Arc::new(McpHostService::new(backend, Some(plugin_port)));
 
         let (cleanup_outcome, removed_credentials) =
             cleanup_legacy_mcp_auth_credentials(sand_root_dir);
+        let cleanup_tag = if cleanup_outcome == LegacyMcpAuthCleanupOutcome::Error {
+            "error"
+        } else {
+            "ok"
+        };
+        let _ = self
+            .telemetry
+            .logs
+            .report_mcp_auth_cleanup(cleanup_tag, removed_credentials);
         if cleanup_outcome == LegacyMcpAuthCleanupOutcome::Error {
             eprintln!(
                 "MCP legacy auth cleanup completed with errors after removing {removed_credentials} file(s)"
@@ -756,12 +776,19 @@ impl ProductionHostExtensions {
             polling,
             Some(on_startup_sync_succeeded),
         );
-        let skill_publish = Arc::new(create_production_skill_publish(
-            sand_root_dir.to_path_buf(),
-            self.backend_url.clone(),
-            Arc::clone(&self.auth),
-            plugin_skills,
-        ));
+        let skill_edge_logs = self.telemetry.logs.clone();
+        let skill_publish = Arc::new(
+            create_production_skill_publish(
+                sand_root_dir.to_path_buf(),
+                self.backend_url.clone(),
+                Arc::clone(&self.auth),
+                plugin_skills,
+            )
+            .with_edge_reporter(Arc::new(move |failure| {
+                let _ = skill_edge_logs
+                    .report_skill_publish_edge_failed(failure.stage, &failure.error_class);
+            })),
+        );
         *slot = Some(McpExtensionRuntime::new(
             startup,
             service.clone(),

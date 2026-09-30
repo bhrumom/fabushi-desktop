@@ -77,12 +77,12 @@ Status vocabulary:
 | 58 | `reportBoxStoreDbCapture` | direct frozen event; Box Store Sync producer path must be pinned | producer-evidence-required |
 | 59 | `reportBoxStoreManifestConflict` | direct frozen event; Box Store Sync producer path must be pinned | producer-evidence-required |
 | 60 | `reportChromeSessionStage` | direct frozen event; producer path must be pinned | producer-evidence-required |
-| 61 | `reportMcpAuthCleanup` | direct frozen event; production MCP cleanup producer path must be pinned | producer-evidence-required |
+| 61 | `reportMcpAuthCleanup` | shipping `start_mcp` owns legacy-auth cleanup outcome/count and now calls typed `report_mcp_auth_cleanup`; direct JSONL contract verifies error=>warn and removed-count shaping | **implemented-awaiting-exact-head-ci** |
 | 62 | `reportMcpDiscoveryFailed` | direct frozen event; production MCP discovery producer path must be pinned | producer-evidence-required |
 | 63 | `reportConnectorAuth` | frozen connector-auth mapper + host boundary; production producer path must be pinned | producer-evidence-required |
-| 64 | `reportLocalToolPermissionStrandedRetirement` | direct frozen event; production permission retirement producer path must be pinned | producer-evidence-required |
-| 65 | `reportSkillPublishEdgeFailed` | direct frozen event; production producer path must be pinned | producer-evidence-required |
-| 66 | `reportPluginSkillsSync` | direct frozen event; production plugin-skills producer path must be pinned | producer-evidence-required |
+| 64 | `reportLocalToolPermissionStrandedRetirement` | shipping transcript bind already receives the real stranded-retirement callback; it now calls typed `report_local_tool_permission_stranded_retirement`, which owns the frozen `sand.client_resource` six-field failure projection | **implemented-awaiting-exact-head-ci** |
+| 65 | `reportSkillPublishEdgeFailed` | production `SandSkillPublishService` already exposes its edge-failure reporter; `start_mcp` now binds it to typed Host structured-log `report_skill_publish_edge_failed`; producer tests plus JSONL facade contract cover stage/error shaping | **implemented-awaiting-exact-head-ci** |
+| 66 | `reportPluginSkillsSync` | production `SandPluginSkillsService` already emits real sync outcome/changed/count/error/duration reports; `start_mcp` now installs that reporter on the unique Host logs and calls typed `report_plugin_skills_sync`; service tests plus JSONL facade contract cover success/failure shape | **implemented-awaiting-exact-head-ci** |
 | 67 | `reportTeachRecordingCapStopFailed` | shipping TeachRecordingServiceDeps captures the unique Host logs and calls `report_teach_recording_cap_stop_failed`; dedicated JSONL facade contract verifies warn/event/error-class semantics | **implemented-awaiting-exact-head-ci** |
 | 68 | `reportTeachRecordingStartFailed` | shipping TeachRecordingServiceDeps captures the unique Host logs and calls `report_teach_recording_start_failed`; dedicated JSONL facade contract verifies warn/event/window/entry-point semantics | **implemented-awaiting-exact-head-ci** |
 | 69 | `reportBoxCopyIn` | direct frozen event; production producer path must be pinned | producer-evidence-required |
@@ -170,3 +170,8 @@ Frozen `SandHostEventBus` reports listener failures without a topic and capabili
 ### Box infrastructure delegation and DesktopHealth facade ownership
 
 Frozen boot-stage/failure, egress-tunnel, host-boot-fetch, exec-daemon-restart and supervisor-restart methods all immediately delegate to the same infrastructure-event mapper. The Rust Host preserves that boundary through the shipping `BoxLogShipper`: the production box telemetry stream is strictly parsed into `BoxInfrastructureEvent`, then the unique Host structured-log owner maps and ships it. The production shipper contract now feeds every frozen infrastructure family through the real offset/delivery path and verifies the exact event names, so these rows are explicit architectural delegation rather than mapper-only evidence. DesktopHealth already had a real `HostTelemetryService` worker; it now calls a typed `report_desktop_health` facade instead of bypassing the facade via raw projection.
+
+
+### MCP / Plugin Skills / local-permission direct facade repair
+
+The shipping domains already owned the required business signals but did not consistently route them through structured-log. `start_mcp` now reports legacy-auth cleanup outcome/count, installs the existing Plugin Skills sync reporter on the unique Host logs, and binds the existing Skill Publish edge reporter to the typed structured-log facade. The transcript/local-permission stranded callback no longer constructs an ad-hoc projection; it calls the frozen client-resource facade, restoring the fixed domain/operation/state/failure/boundary/retry-owner metadata. Focused JSONL contracts verify all four direct-event shapes while existing domain tests continue to exercise the producer callbacks.

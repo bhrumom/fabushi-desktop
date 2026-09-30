@@ -562,6 +562,69 @@ impl HostStructuredLogTelemetry {
         self.report_projection(&projection)
     }
 
+    pub fn report_mcp_auth_cleanup(&self, outcome: &str, removed_count: usize) -> io::Result<()> {
+        self.report_projection(&HostTelemetryProjection {
+            level: Some(if outcome == "error" { "warn" } else { "info" }),
+            event: Some("sand.mcp_auth_cleanup"),
+            metadata: BTreeMap::from([
+                ("outcome".into(), outcome.to_string()),
+                ("removed_count".into(), removed_count.to_string()),
+            ]),
+        })
+    }
+
+    pub fn report_local_tool_permission_stranded_retirement(&self) -> io::Result<()> {
+        self.report_projection(&HostTelemetryProjection {
+            level: Some("warn"),
+            event: Some("sand.client_resource"),
+            metadata: BTreeMap::from([
+                ("domain".into(), "permissions".into()),
+                ("operation".into(), "resolveLocalToolPermission".into()),
+                ("state".into(), "failed".into()),
+                ("failure_code".into(), "permissions/stranded-ask-retired".into()),
+                ("boundary".into(), "host".into()),
+                ("retry_owner".into(), "none".into()),
+            ]),
+        })
+    }
+
+    pub fn report_skill_publish_edge_failed(&self, stage: &str, error_class: &str) -> io::Result<()> {
+        self.report_projection(&HostTelemetryProjection {
+            level: Some("warn"),
+            event: Some("sand.skill_publish.edge_failed"),
+            metadata: BTreeMap::from([
+                ("stage".into(), stage.to_string()),
+                ("error_class".into(), error_class.to_string()),
+            ]),
+        })
+    }
+
+    pub fn report_plugin_skills_sync(
+        &self,
+        trigger: &str,
+        outcome: &str,
+        changed: bool,
+        skill_count: usize,
+        error_class: Option<&str>,
+        duration_ms: i64,
+    ) -> io::Result<()> {
+        let mut metadata = BTreeMap::from([
+            ("trigger".into(), trigger.to_string()),
+            ("outcome".into(), outcome.to_string()),
+            ("changed".into(), changed.to_string()),
+            ("skill_count".into(), skill_count.to_string()),
+            ("duration_ms".into(), duration_ms.to_string()),
+        ]);
+        if let Some(error_class) = error_class {
+            metadata.insert("error_class".into(), error_class.to_string());
+        }
+        self.report_projection(&HostTelemetryProjection {
+            level: Some(if outcome == "failed" { "warn" } else { "info" }),
+            event: Some("sand.plugin_skills.sync"),
+            metadata,
+        })
+    }
+
     pub fn report_teach_recording_cap_stop_failed(&self, report: &Value) -> io::Result<()> {
         let mut metadata = BTreeMap::new();
         if let Some(error_class) = report.get("errorClass").and_then(Value::as_str) {

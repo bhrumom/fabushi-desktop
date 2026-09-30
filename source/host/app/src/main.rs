@@ -7370,12 +7370,7 @@ fn main() {
         permission_widget_responses,
         started_at_ms(),
         Some(Arc::new(move || {
-            let projection = HostTelemetryProjection {
-                level: Some("warn"),
-                event: Some("sand.local_tool_permission.stranded_retirement"),
-                metadata: std::collections::BTreeMap::new(),
-            };
-            let _ = stranded_permission_logs.report_projection(&projection);
+            let _ = stranded_permission_logs.report_local_tool_permission_stranded_retirement();
         })),
         Some(Arc::new(|message| eprintln!("{message}"))),
     );

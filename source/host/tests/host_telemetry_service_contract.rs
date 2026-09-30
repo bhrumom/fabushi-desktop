@@ -568,3 +568,42 @@ fn direct_frozen_facade_helpers_preserve_teach_upgrade_and_box_help_semantics() 
 
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn mcp_plugin_and_permission_facades_preserve_frozen_direct_event_semantics() {
+    let root = temp_root();
+    let service = HostTelemetryService::open(root.join("mcp-plugin-facade-events.jsonl"))
+        .expect("telemetry service");
+
+    service.logs.report_mcp_auth_cleanup("error", 2).expect("mcp cleanup");
+    service.logs.report_local_tool_permission_stranded_retirement().expect("stranded permission");
+    service.logs.report_skill_publish_edge_failed("upload", "timeout").expect("skill edge");
+    service.logs.report_plugin_skills_sync(
+        "auth-renewal",
+        "failed",
+        false,
+        3,
+        Some("load_failed"),
+        41,
+    ).expect("plugin skills sync");
+
+    let records = fs::read_to_string(service.records_path())
+        .expect("direct facade jsonl")
+        .lines()
+        .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 4);
+    assert_eq!(records[0].event, "sand.mcp_auth_cleanup");
+    assert_eq!(records[0].payload["level"], "warn");
+    assert_eq!(records[0].payload["metadata"]["removed_count"], "2");
+    assert_eq!(records[1].event, "sand.client_resource");
+    assert_eq!(records[1].payload["metadata"]["failure_code"], "permissions/stranded-ask-retired");
+    assert_eq!(records[2].event, "sand.skill_publish.edge_failed");
+    assert_eq!(records[2].payload["metadata"]["stage"], "upload");
+    assert_eq!(records[3].event, "sand.plugin_skills.sync");
+    assert_eq!(records[3].payload["level"], "warn");
+    assert_eq!(records[3].payload["metadata"]["duration_ms"], "41");
+
+    let _ = fs::remove_dir_all(root);
+}
