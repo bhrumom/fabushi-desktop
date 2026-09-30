@@ -85,6 +85,16 @@ fn shipping_service_has_one_owner_and_consumes_frozen_lifecycle_plan() {
         "ManifestHydrationUpdate::PromoteComplete",
         "remove_hydration_handoff_marker(&hydration_marker_path)",
         "run_local_agent_db_snapshot_unqueued",
+        "sweep_leaked_snapshot_temps(&poll_inner.env)",
+        "pub fn get_store_id(&self)",
+        "pub fn get_box_store_status(&self)",
+        "pub fn clear_box_store_now(&self)",
+        "pub fn forget_agent(&self",
+        "legacy_agent_store_for_source_id",
+        "prepare_canonical_manifest_reset",
+        "ManifestHydrationUpdate::ResetComplete",
+        "store_db_complete",
+        "sand_data_excludes()",
     ] {
         assert!(
             production.contains(marker),
@@ -102,4 +112,61 @@ fn shipping_service_has_one_owner_and_consumes_frozen_lifecycle_plan() {
             "canonical service owner is missing frozen behavior marker {marker}"
         );
     }
+}
+
+#[test]
+fn shipping_service_recovery_uses_canonical_manifest_and_object_store() {
+    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+
+    let clear = production
+        .split("fn clear_store_now(&self)")
+        .nth(1)
+        .expect("clear_store_now production implementation");
+    assert!(clear.contains("self.stopped.store(true, Ordering::Release)"));
+    assert!(clear.contains("reset_canonical_store"));
+    assert!(clear.contains("legacy_agent_store_for_source_id"));
+
+    let reset = production
+        .split("fn reset_canonical_store(")
+        .nth(1)
+        .expect("canonical reset implementation");
+    assert!(reset.contains("prepare_canonical_manifest_reset(store)?"));
+    assert!(reset.contains("write_manifest_with_retry("));
+    assert!(reset.contains("ManifestHydrationUpdate::ResetComplete"));
+
+    let forget = production
+        .split("fn forget_agent(&self")
+        .nth(1)
+        .expect("forget_agent production implementation");
+    assert!(forget.contains("load_manifest_for_write("));
+    assert!(forget.contains("write_manifest_with_retry("));
+
+    let status = production
+        .split("fn read_store_status(&self)")
+        .nth(1)
+        .expect("read_store_status production implementation");
+    assert!(status.contains("read_manifest_strict(store.as_ref())?"));
+    assert!(status.contains("count_store_db_manifest_entries"));
+    assert!(status.contains("count_agent_dir_manifest_entries"));
+}
+
+#[test]
+fn shipping_periodic_hydration_requires_complete_store_db_after_categories() {
+    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    let cycle = production
+        .split("fn run_local_cycle(")
+        .nth(1)
+        .expect("shipping cycle");
+    let category_pos = cycle
+        .find("sync_box_home_category(")
+        .expect("last regular category");
+    let store_db_pos = cycle
+        .find("let store_db_summary = sync_store_db_snapshots(")
+        .expect("store db sweep");
+    assert!(
+        category_pos < store_db_pos,
+        "frozen behavior syncs normal categories before store.db sweep"
+    );
+    assert!(cycle.contains("&& store_db_complete"));
+    assert!(cycle.contains("BOX_STORE_SAND_DATA_EXCLUDED_FILE_NAMES"));
 }
