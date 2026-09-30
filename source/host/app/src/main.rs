@@ -220,9 +220,7 @@ use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
     turn_interrupt_telemetry, turn_retry_telemetry, turn_usage_telemetry,
     user_message_received_telemetry,
 };
-use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::{
-    AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
-};
+use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::AgentErrorReport;
 use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
 use mahayana_host_runtime::extensions::transcript::turn_runtime::classify_agent_error;
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
@@ -5660,22 +5658,12 @@ fn start_routed_provider_task(
                                 error: classify_agent_error(&error),
                                 detail: Some(sand_error_detail(&error)),
                             };
-                            let summary = agent_error_telemetry(&report);
                             if let Err(telemetry_error) =
-                                worker_telemetry_logs.report_projection(&summary)
+                                worker_telemetry_logs.report_agent_error(&report)
                             {
                                 eprintln!(
                                     "mahayana-host-ack agent_error_telemetry_failed agent={agent_id} error={telemetry_error}"
                                 );
-                            }
-                            if let Some(detail) = agent_error_detail_telemetry(&report) {
-                                if let Err(telemetry_error) =
-                                    worker_telemetry_logs.report_projection(&detail)
-                                {
-                                    eprintln!(
-                                        "mahayana-host-ack agent_error_detail_telemetry_failed agent={agent_id} error={telemetry_error}"
-                                    );
-                                }
                             }
                         }
                         let mut tray = provider_failure_tray(
