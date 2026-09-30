@@ -150,6 +150,7 @@ fn extension_pins_diagnostics_starts_service_projects_api_and_disposes() {
             report_box_store_sync_cycle: Arc::new(|_, _| {}),
             report_box_store_db_capture: Arc::new(|_, _| {}),
             report_box_store_manifest_conflict: Arc::new(|_, _| {}),
+            report_chrome_session_stage: Arc::new(|_, _| {}),
             scheduling: BoxStoreScheduling::default(),
         },
     );
