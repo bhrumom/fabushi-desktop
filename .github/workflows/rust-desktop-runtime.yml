@@ -112,6 +112,56 @@ jobs:
         shell: bash
         run: cargo test -p mahayana-runtime --manifest-path source/mahayana/mahayana-rs/Cargo.toml
 
+  pressure-profiler-platform:
+    name: Pressure profiler / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: pressure-profiler-${{ matrix.os }}-1.97.1
+      - name: Enable Linux perf sampling
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v perf >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y linux-tools-common linux-tools-generic
+          fi
+          sudo sysctl -w kernel.perf_event_paranoid=-1 || true
+          perf --version
+      - name: Capture a real production pressure CPU profile
+        run: >-
+          cargo test --manifest-path source/host/Cargo.toml
+          --test pressure_cpu_profiler_contract
+          production_backend_emits_native_consumable_cpu_profile_artifact
+          -- --exact --nocapture
+
   platform-worker:
     runs-on: ubuntu-24.04
     timeout-minutes: 45

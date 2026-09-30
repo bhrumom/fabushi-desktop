@@ -38,7 +38,7 @@ use super::desktop_health_forwarder::{
     DesktopHealthForwardResult, forward_desktop_health_with,
 };
 use super::event_loop_telemetry::{
-    EventLoopTelemetryRuntime, EventLoopTrigger, event_loop_window_telemetry,
+    EventLoopTelemetryRuntime, EventLoopTrigger, EventLoopWindowReport, event_loop_window_telemetry,
 };
 use super::host_crash_marker::{
     FileHostCrashMarkerStore, ForwardHostCrashMarkerResult, HostCrashMarkerStore,
@@ -52,7 +52,9 @@ use super::model_experiment_exposure::{
     ModelExperimentExposureAnalytics, ModelExperimentExposureExperiments,
     ModelExperimentExposureLatch, SandModelExperimentState as ExposureModelExperimentState,
 };
-use super::pressure_cpu_profiler::{PressureCpuProfiler, create_production_pressure_cpu_profiler};
+use super::pressure_cpu_profiler::{
+    PressureCpuProfiler, SandProfilerCaptureError, create_production_pressure_cpu_profiler,
+};
 use super::experiments_diagnostic_telemetry::{
     ExperimentsDiagnostic, experiments_diagnostic_telemetry,
 };
@@ -813,21 +815,29 @@ impl Drop for DesktopHealthForwarder {
     }
 }
 
-struct StructuredLogFlushPolling {
+pub struct StructuredLogFlushPolling {
     stop: mpsc::Sender<()>,
     worker: Mutex<Option<thread::JoinHandle<()>>>,
 }
 
 impl StructuredLogFlushPolling {
-    fn start(
+    pub fn start(
         logs: HostStructuredLogTelemetry,
         on_tick: Option<Arc<dyn Fn() + Send + Sync>>,
+    ) -> Self {
+        Self::start_with_interval(logs, on_tick, TELEMETRY_FLUSH_TICK)
+    }
+
+    pub fn start_with_interval(
+        logs: HostStructuredLogTelemetry,
+        on_tick: Option<Arc<dyn Fn() + Send + Sync>>,
+        interval: Duration,
     ) -> Self {
         let (stop_tx, stop_rx) = mpsc::channel();
         let worker = thread::Builder::new()
             .name("sand-host-structured-log-flush".into())
             .spawn(move || loop {
-                match stop_rx.recv_timeout(TELEMETRY_FLUSH_TICK) {
+                match stop_rx.recv_timeout(interval) {
                     Ok(()) | Err(mpsc::RecvTimeoutError::Disconnected) => break,
                     Err(mpsc::RecvTimeoutError::Timeout) => {
                         let _ = logs.flush();
@@ -857,6 +867,37 @@ impl Drop for StructuredLogFlushPolling {
 }
 
 
+
+pub fn tick_pressure_cpu_profiler(
+    profiler: Option<&Arc<Mutex<PressureCpuProfiler>>>,
+    now_ms: i64,
+) -> Result<Option<PathBuf>, SandProfilerCaptureError> {
+    let Some(profiler) = profiler else {
+        return Ok(None);
+    };
+    let Ok(mut profiler) = profiler.lock() else {
+        return Ok(None);
+    };
+    profiler.on_tick(now_ms)
+}
+
+pub fn route_pressure_cpu_profiler_event(
+    experiments: &HostExperimentsExtension,
+    profiler: Option<&Arc<Mutex<PressureCpuProfiler>>>,
+    report: EventLoopWindowReport,
+    now_ms: i64,
+) {
+    if report.trigger != EventLoopTrigger::Pressure
+        || !experiments.check_feature_gate("sand_enable_pressure_cpu_profiler")
+    {
+        return;
+    }
+    if let Some(profiler) = profiler {
+        if let Ok(mut profiler) = profiler.lock() {
+            profiler.on_pressure(now_ms);
+        }
+    }
+}
 
 #[derive(Clone, Default)]
 pub struct HostTelemetryRuntimeHooks {
@@ -1054,9 +1095,10 @@ impl HostTelemetryService {
             let pressure_tick = self.hooks.pressure_profiler.as_ref().map(|profiler| {
                 let profiler = Arc::clone(profiler);
                 Arc::new(move || {
-                    if let Ok(mut profiler) = profiler.lock() {
-                        let _ = profiler.on_tick(wall_clock_now_ms().min(i64::MAX as u64) as i64);
-                    }
+                    let _ = tick_pressure_cpu_profiler(
+                        Some(&profiler),
+                        wall_clock_now_ms().min(i64::MAX as u64) as i64,
+                    );
                 }) as Arc<dyn Fn() + Send + Sync>
             });
             runtime.flush_polling = Some(StructuredLogFlushPolling::start(
@@ -1072,17 +1114,12 @@ impl HostTelemetryService {
             runtime.event_loop_telemetry = Some(EventLoopTelemetryRuntime::start(Arc::new(
                 move |report| {
                     let _ = event_logs.report_projection(&event_loop_window_telemetry(report));
-                    if report.trigger == EventLoopTrigger::Pressure
-                        && experiments.check_feature_gate("sand_enable_pressure_cpu_profiler")
-                    {
-                        if let Some(profiler) = pressure.as_ref() {
-                            if let Ok(mut profiler) = profiler.lock() {
-                                profiler.on_pressure(
-                                    wall_clock_now_ms().min(i64::MAX as u64) as i64,
-                                );
-                            }
-                        }
-                    }
+                    route_pressure_cpu_profiler_event(
+                        &experiments,
+                        pressure.as_ref(),
+                        report,
+                        wall_clock_now_ms().min(i64::MAX as u64) as i64,
+                    );
                 },
             )));
         }
