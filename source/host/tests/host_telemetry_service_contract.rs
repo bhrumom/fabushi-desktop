@@ -16,6 +16,9 @@ use mahayana_host_runtime::extensions::telemetry::disk_pressure_telemetry::DiskP
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
     HostTelemetryService, PersistedHostTelemetryRecord,
 };
+use mahayana_host_runtime::extensions::telemetry::host_lifecycle_progress::{
+    Disposable, HostLifecycleCompletion, WatchdogArm,
+};
 use mahayana_host_runtime::extensions::telemetry::auto_review_approval_telemetry::AutoReviewApprovalReport;
 use mahayana_host_runtime::extensions::telemetry::automation_fire_telemetry::AutomationFireDroppedReport;
 use mahayana_host_runtime::extensions::telemetry::local_exec_telemetry::{
@@ -604,6 +607,77 @@ fn mcp_plugin_and_permission_facades_preserve_frozen_direct_event_semantics() {
     assert_eq!(records[3].event, "sand.plugin_skills.sync");
     assert_eq!(records[3].payload["level"], "warn");
     assert_eq!(records[3].payload["metadata"]["duration_ms"], "41");
+
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn shipping_host_lifecycle_progress_routes_through_single_structured_log_owner() {
+    struct CountingDisposable(Arc<AtomicU64>);
+    impl Disposable for CountingDisposable {
+        fn dispose(&mut self) {
+            self.0.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    let root = temp_root();
+    let service = Arc::new(
+        HostTelemetryService::open(root.join("host-events.jsonl")).expect("telemetry service"),
+    );
+    service.start().expect("telemetry start");
+    let api = service.api();
+    let disposed = Arc::new(AtomicU64::new(0));
+    let watchdog: WatchdogArm = {
+        let disposed = Arc::clone(&disposed);
+        Arc::new(move |_callback| Box::new(CountingDisposable(Arc::clone(&disposed))))
+    };
+
+    let mut completed = api.create_host_lifecycle_progress(
+        api.monotonic_now_ms(),
+        Arc::clone(&watchdog),
+    );
+    completed
+        .complete(HostLifecycleCompletion {
+            phase: "plugin_graph".into(),
+            plugin_count: Some(4),
+            entry_count: None,
+        })
+        .expect("complete plugin graph lifecycle");
+    drop(completed);
+
+    let mut failed = api.create_host_lifecycle_progress(
+        api.monotonic_now_ms(),
+        Arc::clone(&watchdog),
+    );
+    failed.fail();
+    drop(failed);
+
+    let text = fs::read_to_string(service.records_path()).expect("lifecycle jsonl");
+    let records = text
+        .lines()
+        .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 2);
+
+    assert_eq!(records[0].channel, "structured_log");
+    assert_eq!(records[0].event, "sand.host.lifecycle");
+    assert_eq!(records[0].payload["level"], "info");
+    assert_eq!(records[0].payload["metadata"]["phase"], "plugin_graph");
+    assert_eq!(records[0].payload["metadata"]["outcome"], "completed");
+    assert_eq!(records[0].payload["metadata"]["plugin_count"], "4");
+
+    assert_eq!(records[1].channel, "structured_log");
+    assert_eq!(records[1].event, "sand.host.lifecycle");
+    assert_eq!(records[1].payload["level"], "error");
+    assert_eq!(records[1].payload["metadata"]["phase"], "plugin_graph");
+    assert_eq!(records[1].payload["metadata"]["outcome"], "failed");
+    assert_eq!(records[1].payload["metadata"]["error_code"], "SAND-E0303");
+
+    assert!(
+        disposed.load(Ordering::SeqCst) >= 3,
+        "completion/failure/drop must dispose or re-arm lifecycle watchdogs"
+    );
 
     let _ = fs::remove_dir_all(root);
 }
