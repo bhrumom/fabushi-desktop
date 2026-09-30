@@ -234,7 +234,7 @@ fn memory_synthesis_is_pinned_to_authenticated_statsig_and_shipping_inference() 
         "verification_system_prompt()",
         "is_cancelled()",
         "memory_synthesis_telemetry_report",
-        "report_projection",
+        "report_memory_synthesis",
     ] {
         assert!(
             MEMORY_PRODUCTION.contains(needle),
