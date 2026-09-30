@@ -1034,6 +1034,9 @@ impl HostTelemetryService {
             return Err(io::Error::other("Host telemetry service is already disposed"));
         }
         self.logs.set_host_bundle_identity(&identity);
+        if self.production.is_none() {
+            return Ok(());
+        }
         let mut runtime = self
             .runtime
             .lock()
