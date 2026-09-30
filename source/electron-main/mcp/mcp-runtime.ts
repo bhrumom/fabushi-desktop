@@ -10,6 +10,7 @@ type McpManagerOptions = {
   readonly listBoxMcpToolsRaw: (payloadHex: string) => Promise<string>;
   readonly executeBoxMcpToolRaw: (payloadHex: string) => Promise<string>;
   readonly onConnectorAuth: (report: unknown) => void;
+  readonly onMcpDiscoveryFailed: (report: { readonly errorClass: string; readonly elapsedMs: number; readonly servedStale: boolean }) => void;
   readonly onMcpDiagnostic: (failure: {
     readonly leg: string;
     readonly errorClass: string;
@@ -35,6 +36,7 @@ type McpRuntimeDependencies<TManager> = {
   readonly listBoxMcpToolsRaw: (payloadHex: string) => Promise<string>;
   readonly executeBoxMcpToolRaw: (payloadHex: string) => Promise<string>;
   readonly reportConnectorAuth: (report: unknown) => void;
+  readonly reportMcpDiscoveryFailed: (report: { readonly errorClass: string; readonly elapsedMs: number; readonly servedStale: boolean }) => void;
   readonly reportDiagnostic: (leg: string, errorClass: string) => void;
   readonly cleanupLegacyAuth: (root: string) => Promise<unknown>;
   readonly sandRootDir: () => string;
@@ -70,6 +72,7 @@ export function createMcpRuntime<
       listBoxMcpToolsRaw: deps.listBoxMcpToolsRaw,
       executeBoxMcpToolRaw: deps.executeBoxMcpToolRaw,
       onConnectorAuth: (report) => deps.reportConnectorAuth(report),
+      onMcpDiscoveryFailed: (report) => deps.reportMcpDiscoveryFailed(report),
       onMcpDiagnostic: (failure) =>
         deps.reportDiagnostic(failure.leg, failure.errorClass),
     });

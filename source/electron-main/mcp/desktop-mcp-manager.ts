@@ -65,6 +65,7 @@ export interface DesktopMcpManagerOptions {
   readonly listBoxMcpToolsRaw: (payloadHex: string) => Promise<string>;
   readonly executeBoxMcpToolRaw: (payloadHex: string) => Promise<string>;
   readonly onConnectorAuth: (report: unknown) => void;
+  readonly onMcpDiscoveryFailed: (report: { readonly errorClass: string; readonly elapsedMs: number; readonly servedStale: boolean }) => void;
   readonly onMcpDiagnostic?: (failure: { readonly leg: string; readonly errorClass: string }) => void;
 }
 
@@ -112,6 +113,7 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
     settingsStore: () => manager.settingsStoreView(),
     backendMcpExec,
   }, {
+    onDiscoveryFailed: options.onMcpDiscoveryFailed,
     boxMcpExec: {
       loadServers: async (configJson: string) => {
         await options.loadBoxMcpServers(configJson);

@@ -233,7 +233,9 @@ jobs:
           desktop/.tmp-grok-electron/source/electron-preload/coordinator-port-bridge.test.js
           desktop/.tmp-grok-electron/source/electron-preload/preload-boundaries.test.js
           desktop/.tmp-grok-electron/source/shared/foundations.test.js
+          desktop/.tmp-grok-electron/source/shared/node/mcp/tools-discovery.contract.test.js
           desktop/.tmp-grok-electron/source/electron-main/foundations.test.js
+          desktop/.tmp-grok-electron/source/electron-main/mcp/mcp-runtime.contract.test.js
           desktop/.tmp-grok-electron/source/electron-main/coordinator/coordinator-launcher.test.js
           desktop/.tmp-grok-electron/source/electron-main/coordinator/coordinator-executors.test.js
           desktop/.tmp-grok-electron/source/electron-main/local-exec/local-exec-daemon-protocol.test.js

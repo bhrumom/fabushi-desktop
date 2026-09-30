@@ -51,6 +51,24 @@ function reportConnectorAuth(context: ProductionServiceContext, report: unknown)
   callback.call(telemetry, report);
 }
 
+function reportMcpDiscoveryFailed(
+  context: ProductionServiceContext,
+  report: { readonly errorClass: string; readonly elapsedMs: number; readonly servedStale: boolean },
+): void {
+  const forward = context.coordinatorLegs.legs.reportMcpDiscoveryFailed;
+  if (typeof forward !== "function") {
+    reportDesktopEdgeFailure(
+      "mcp-discovery-telemetry",
+      "coordinator-leg-unavailable",
+      new Error("Coordinator MCP discovery telemetry port is unavailable."),
+    );
+    return;
+  }
+  void Promise.resolve(forward(report)).catch((error: unknown) => {
+    reportDesktopEdgeFailure("mcp-discovery-telemetry", "coordinator-forward", error);
+  });
+}
+
 function createTeamPopularityFetcher(context: ProductionServiceContext): () => Promise<Map<string, unknown>> {
   return async () => {
     const client: unknown = createSandCursorBackendClient(DashboardService, {
@@ -208,6 +226,7 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
       listBoxMcpToolsRaw: (payloadHex) => boxMcpRaw(context, "listBoxMcpToolsRaw", payloadHex),
       executeBoxMcpToolRaw: (payloadHex) => boxMcpRaw(context, "executeBoxMcpToolRaw", payloadHex),
       reportConnectorAuth: (report) => reportConnectorAuth(context, report),
+      reportMcpDiscoveryFailed: (report) => reportMcpDiscoveryFailed(context, report),
       reportDiagnostic: (leg, errorClass) => reportDesktopEdgeFailureClass("mcp-manager", leg, errorClass),
       cleanupLegacyAuth: (root) => cleanupLegacyMcpAuthCredentials(root),
       sandRootDir: getSandRootDir,
@@ -243,7 +262,7 @@ export function createProductionMcpOAuthAdapter(
       const rootPorts = ports.resolveRootPorts?.(context);
       const runtimeDeps = { ...ports.resolveRuntimeDeps(context), ...rootPorts?.runtime };
       requireObject(runtimeDeps, "mcpOAuth.runtimeDeps");
-      for (const method of ["createManager", "pushBoxSecrets", "ensureCursorAuthService", "getMachineId", "loadBoxMcpServers", "listBoxMcpServers", "listBoxMcpToolsRaw", "executeBoxMcpToolRaw", "reportConnectorAuth", "reportDiagnostic", "cleanupLegacyAuth", "sandRootDir", "reportFailure", "broadcast", "refreshHostMcp"] as const) {
+      for (const method of ["createManager", "pushBoxSecrets", "ensureCursorAuthService", "getMachineId", "loadBoxMcpServers", "listBoxMcpServers", "listBoxMcpToolsRaw", "executeBoxMcpToolRaw", "reportConnectorAuth", "reportMcpDiscoveryFailed", "reportDiagnostic", "cleanupLegacyAuth", "sandRootDir", "reportFailure", "broadcast", "refreshHostMcp"] as const) {
         requireFunction(runtimeDeps[method], `mcpOAuth.${method}`);
       }
       const runtime = createMcpRuntime<DesktopMcpManagerFacade>(runtimeDeps);

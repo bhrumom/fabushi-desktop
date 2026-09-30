@@ -188,6 +188,7 @@ use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
     HostBundleIdentity, HostStructuredLogTelemetry, HostTelemetryApi, MessageSentReport,
+    McpDiscoveryFailedGatewayError, dispatch_mcp_discovery_failed_gateway,
 };
 use mahayana_host_runtime::extensions::telemetry::host_lifecycle_progress::{
     HostLifecycleCompletion, production_host_lifecycle_watchdog,
@@ -5723,6 +5724,18 @@ impl GatewayApi for UnifiedGatewayApi {
         method: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+        if let Some(result) =
+            dispatch_mcp_discovery_failed_gateway(&self.telemetry_logs, method, &args)
+        {
+            return result.map_err(|error| match error {
+                McpDiscoveryFailedGatewayError::BadRequest(message) => {
+                    GatewayCommandError::BadRequest(message)
+                }
+                McpDiscoveryFailedGatewayError::Internal(message) => {
+                    GatewayCommandError::Internal(message)
+                }
+            });
+        }
         if method == "loadBoxMcpServers" {
             let config_json = args
                 .get("configJson")

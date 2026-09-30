@@ -73,6 +73,9 @@ use super::local_exec_telemetry::{
     local_exec_failed_telemetry, local_exec_provider_telemetry, local_exec_refused_telemetry,
 };
 use super::memory_synthesis_telemetry::{MemorySynthesisReport, memory_synthesis_telemetry};
+use super::mcp_discovery_telemetry::{
+    McpDiscoveryFailedReport, mcp_discovery_failed_telemetry,
+};
 use super::model_experiment_exposure::{
     ModelExperimentExposureAnalytics, ModelExperimentExposureExperiments,
     ModelExperimentExposureLatch, SandModelExperimentState as ExposureModelExperimentState,
@@ -670,6 +673,13 @@ impl HostStructuredLogTelemetry {
         })
     }
 
+    pub fn report_mcp_discovery_failed(
+        &self,
+        report: &McpDiscoveryFailedReport,
+    ) -> io::Result<()> {
+        self.report_projection(&mcp_discovery_failed_telemetry(report))
+    }
+
     pub fn report_mcp_auth_cleanup(&self, outcome: &str, removed_count: usize) -> io::Result<()> {
         self.report_projection(&HostTelemetryProjection {
             level: Some(if outcome == "error" { "warn" } else { "info" }),
@@ -807,6 +817,62 @@ impl HostStructuredLogTelemetry {
             metadata,
         })
     }
+}
+
+pub const REPORT_MCP_DISCOVERY_FAILED_GATEWAY_METHOD: &str = "reportMcpDiscoveryFailed";
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum McpDiscoveryFailedGatewayError {
+    BadRequest(String),
+    Internal(String),
+}
+
+pub fn dispatch_mcp_discovery_failed_gateway(
+    logs: &HostStructuredLogTelemetry,
+    method: &str,
+    args: &Value,
+) -> Option<Result<Value, McpDiscoveryFailedGatewayError>> {
+    if method != REPORT_MCP_DISCOVERY_FAILED_GATEWAY_METHOD {
+        return None;
+    }
+    let error_class = match args
+        .get("errorClass")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        Some(value) => value.to_string(),
+        None => {
+            return Some(Err(McpDiscoveryFailedGatewayError::BadRequest(
+                "reportMcpDiscoveryFailed requires non-empty errorClass".into(),
+            )));
+        }
+    };
+    let elapsed_ms = match args.get("elapsedMs").and_then(Value::as_f64) {
+        Some(value) if value.is_finite() && value >= 0.0 => value,
+        _ => {
+            return Some(Err(McpDiscoveryFailedGatewayError::BadRequest(
+                "reportMcpDiscoveryFailed requires finite non-negative elapsedMs".into(),
+            )));
+        }
+    };
+    let served_stale = match args.get("servedStale").and_then(Value::as_bool) {
+        Some(value) => value,
+        None => {
+            return Some(Err(McpDiscoveryFailedGatewayError::BadRequest(
+                "reportMcpDiscoveryFailed requires boolean servedStale".into(),
+            )));
+        }
+    };
+    Some(
+        logs.report_mcp_discovery_failed(&McpDiscoveryFailedReport {
+            error_class,
+            elapsed_ms,
+            served_stale,
+        })
+        .map(|_| json!({ "reported": true }))
+        .map_err(|error| McpDiscoveryFailedGatewayError::Internal(error.to_string())),
+    )
 }
 
 #[derive(Clone)]
