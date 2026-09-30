@@ -147,6 +147,7 @@ fn extension_pins_diagnostics_starts_service_projects_api_and_disposes() {
             get_machine_id: None,
             log,
             report_host_extension_diagnostic: reporter,
+            report_box_store_sync_cycle: Arc::new(|_, _| {}),
             scheduling: BoxStoreScheduling::default(),
         },
     );
