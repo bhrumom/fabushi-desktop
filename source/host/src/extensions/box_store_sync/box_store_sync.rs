@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
@@ -142,6 +143,12 @@ pub struct BoxStoreFlushEvaluation {
     pub reason: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BoxStoreCycleTelemetry {
+    pub level: &'static str,
+    pub metadata: BTreeMap<String, String>,
+}
+
 pub fn evaluate_box_store_flush(
     summary: Option<&BoxStoreCycleSummary>,
     session_category_name: &str,
@@ -194,12 +201,98 @@ fn failed(reason: &str, summary: Option<&BoxStoreCycleSummary>) -> BoxStoreFlush
     }
 }
 
-pub fn telemetry_level(summary: &BoxStoreCycleSummary) -> Option<&'static str> {
-    if summary.ok {
-        Some("info")
-    } else if summary.reason.as_deref() == Some("in-flight") {
-        None
-    } else {
-        Some("warn")
+pub fn box_store_sync_cycle_telemetry(
+    summary: &BoxStoreCycleSummary,
+) -> Option<BoxStoreCycleTelemetry> {
+    if !summary.ok {
+        if summary.reason.as_deref() == Some("in-flight") {
+            return None;
+        }
+        let metadata = BTreeMap::from([
+            ("ok".to_string(), "false".to_string()),
+            (
+                "reason".to_string(),
+                if summary.reason.as_deref() == Some("locked") {
+                    "locked".to_string()
+                } else {
+                    "error".to_string()
+                },
+            ),
+            ("duration_ms".to_string(), summary.duration_ms.to_string()),
+            (
+                "manifest_entries".to_string(),
+                summary.manifest_entries.to_string(),
+            ),
+            (
+                "store_db_entries".to_string(),
+                summary.store_db_entries.to_string(),
+            ),
+        ]);
+        return Some(BoxStoreCycleTelemetry {
+            level: "warn",
+            metadata,
+        });
     }
+
+    let excluded_files = summary
+        .categories
+        .iter()
+        .map(|category| category.excluded_files)
+        .sum::<usize>();
+    let excluded_bytes = summary
+        .categories
+        .iter()
+        .map(|category| category.excluded_bytes)
+        .sum::<u64>();
+    let pruned_dirs = summary
+        .categories
+        .iter()
+        .map(|category| category.pruned_dirs)
+        .sum::<usize>();
+    let mut metadata = BTreeMap::from([
+        ("ok".to_string(), "true".to_string()),
+        ("duration_ms".to_string(), summary.duration_ms.to_string()),
+        (
+            "files_uploaded".to_string(),
+            summary.total_files_uploaded.to_string(),
+        ),
+        (
+            "bytes_uploaded".to_string(),
+            summary.total_bytes_uploaded.to_string(),
+        ),
+        (
+            "manifest_entries".to_string(),
+            summary.manifest_entries.to_string(),
+        ),
+        ("excluded_files".to_string(), excluded_files.to_string()),
+        ("excluded_bytes".to_string(), excluded_bytes.to_string()),
+        ("pruned_dirs".to_string(), pruned_dirs.to_string()),
+        (
+            "store_db_entries".to_string(),
+            summary.store_db_entries.to_string(),
+        ),
+        (
+            "store_id".to_string(),
+            summary.store_id.clone().unwrap_or_default(),
+        ),
+        ("failures".to_string(), summary.total_failures.to_string()),
+    ]);
+    for category in &summary.categories {
+        metadata.insert(
+            format!("{}_uploaded", category.name),
+            category.files_uploaded.to_string(),
+        );
+        metadata.insert(
+            format!("{}_bytes", category.name),
+            category.bytes_uploaded.to_string(),
+        );
+    }
+    Some(BoxStoreCycleTelemetry {
+        level: "info",
+        metadata,
+    })
+}
+
+pub fn telemetry_level(summary: &BoxStoreCycleSummary) -> Option<&'static str> {
+    box_store_sync_cycle_telemetry(summary).map(|telemetry| telemetry.level)
 }

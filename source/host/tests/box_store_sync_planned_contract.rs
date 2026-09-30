@@ -30,7 +30,8 @@ use mahayana_host_runtime::extensions::box_store_sync::box_store_pack_pipeline::
     BoxStorePackCategory, resolve_local_path_for_rel_path, should_build_pack,
 };
 use mahayana_host_runtime::extensions::box_store_sync::box_store_sync::{
-    BoxStoreCycleSummary, BoxStoreWriterLock, evaluate_box_store_flush,
+    BoxStoreCycleSummary, BoxStoreWriterLock, box_store_sync_cycle_telemetry,
+    evaluate_box_store_flush,
 };
 use mahayana_host_runtime::extensions::box_store_sync::box_store_sync_service::{
     BOX_HOME_REL_PREFIX, build_box_home_category, is_better_cli_home_enabled,
@@ -334,6 +335,59 @@ fn service_flush_and_db_capture_classification_preserve_reference_priority() {
     );
 }
 
+
+#[test]
+fn box_store_cycle_telemetry_matches_frozen_metadata_and_skip_semantics() {
+    let category = CategoryTransferSummary {
+        name: "workspace".into(),
+        files_uploaded: 2,
+        bytes_uploaded: 9,
+        excluded_files: 3,
+        excluded_bytes: 11,
+        pruned_dirs: 4,
+        ..CategoryTransferSummary::default()
+    };
+    let summary = BoxStoreCycleSummary {
+        ok: true,
+        reason: None,
+        store_id: Some("store-a".into()),
+        duration_ms: 7,
+        categories: vec![category],
+        manifest_entries: 5,
+        store_db_entries: 1,
+        store_db_complete: true,
+        agent_dir_entries: 1,
+        total_files_uploaded: 2,
+        total_bytes_uploaded: 9,
+        total_failures: 0,
+        metadata_failures: 0,
+    };
+    let telemetry = box_store_sync_cycle_telemetry(&summary).expect("success telemetry");
+    assert_eq!(telemetry.level, "info");
+    assert_eq!(telemetry.metadata.get("ok").map(String::as_str), Some("true"));
+    assert_eq!(telemetry.metadata.get("duration_ms").map(String::as_str), Some("7"));
+    assert_eq!(telemetry.metadata.get("files_uploaded").map(String::as_str), Some("2"));
+    assert_eq!(telemetry.metadata.get("bytes_uploaded").map(String::as_str), Some("9"));
+    assert_eq!(telemetry.metadata.get("manifest_entries").map(String::as_str), Some("5"));
+    assert_eq!(telemetry.metadata.get("excluded_files").map(String::as_str), Some("3"));
+    assert_eq!(telemetry.metadata.get("excluded_bytes").map(String::as_str), Some("11"));
+    assert_eq!(telemetry.metadata.get("pruned_dirs").map(String::as_str), Some("4"));
+    assert_eq!(telemetry.metadata.get("store_db_entries").map(String::as_str), Some("1"));
+    assert_eq!(telemetry.metadata.get("store_id").map(String::as_str), Some("store-a"));
+    assert_eq!(telemetry.metadata.get("failures").map(String::as_str), Some("0"));
+    assert_eq!(telemetry.metadata.get("workspace_uploaded").map(String::as_str), Some("2"));
+    assert_eq!(telemetry.metadata.get("workspace_bytes").map(String::as_str), Some("9"));
+
+    let mut skipped = summary.clone();
+    skipped.ok = false;
+    skipped.reason = Some("in-flight".into());
+    assert!(box_store_sync_cycle_telemetry(&skipped).is_none());
+
+    skipped.reason = Some("locked".into());
+    let telemetry = box_store_sync_cycle_telemetry(&skipped).expect("locked telemetry");
+    assert_eq!(telemetry.level, "warn");
+    assert_eq!(telemetry.metadata.get("reason").map(String::as_str), Some("locked"));
+}
 
 #[test]
 fn box_store_writer_lock_serializes_owners_and_releases_on_drop() {

@@ -318,3 +318,20 @@ fn shipping_box_store_sync_core_writer_lock_is_consumed_by_every_mutating_owner(
         "SandBoxStoreV2 legacy reset must never write before the canonical writer lock is held"
     );
 }
+
+
+#[test]
+fn shipping_cycle_uses_canonical_frozen_telemetry_mapper() {
+    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    assert!(production.contains("fn report_cycle_telemetry(&self"));
+    assert!(production.contains("box_store_sync_cycle_telemetry(summary)"));
+    assert!(production.contains("total_failures = categories"));
+    assert!(production.contains("metadata_failures = categories"));
+    assert!(production.contains("store_db_entries: count_store_db_manifest_entries(Some(&entries))"));
+    assert!(production.contains("agent_dir_entries: count_agent_dir_manifest_entries(Some(&entries))"));
+    assert!(production.contains("self.report_cycle_telemetry("));
+    assert!(
+        !production.contains("self.diagnostic(\n            if chrome_only { \"chrome-session\" } else { \"periodic\" },\n            if ok { \"ok\" } else { \"category-failures\" },"),
+        "shipping cycle must not bypass the canonical frozen telemetry mapper"
+    );
+}

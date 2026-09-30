@@ -45,7 +45,8 @@ use crate::extensions::box_store_sync::box_store_transfer::{
     glob_matches_path,
 };
 use crate::extensions::box_store_sync::box_store_sync::{
-    BOX_STORE_WRITER_LOCK_FILE_NAME, BoxStoreWriterLock, LARGE_OBJECT_THRESHOLD_BYTES,
+    BOX_STORE_WRITER_LOCK_FILE_NAME, BoxStoreCycleSummary, BoxStoreWriterLock,
+    LARGE_OBJECT_THRESHOLD_BYTES, box_store_sync_cycle_telemetry,
 };
 use crate::extensions::box_store_sync::box_store_sync_service::{
     BOX_HOME_DIR, BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_REL_PREFIX,
@@ -633,6 +634,21 @@ impl ProductionBoxStoreSyncInner {
         (self.deps.report_host_extension_diagnostic)(&diagnostic);
     }
 
+    fn report_cycle_telemetry(&self, phase: &str, summary: &BoxStoreCycleSummary) {
+        let Some(telemetry) = box_store_sync_cycle_telemetry(summary) else {
+            return;
+        };
+        let mut diagnostic = Map::new();
+        diagnostic.insert("extension".into(), Value::String("box-store-sync".into()));
+        diagnostic.insert("phase".into(), Value::String(phase.into()));
+        diagnostic.insert("backend".into(), Value::String(mode_name(&self.mode).into()));
+        diagnostic.insert("level".into(), Value::String(telemetry.level.into()));
+        for (key, value) in telemetry.metadata {
+            diagnostic.insert(key, Value::String(value));
+        }
+        (self.deps.report_host_extension_diagnostic)(&diagnostic);
+    }
+
     fn elapsed_since_idle_only_sync_ms(&self) -> u64 {
         self.last_idle_only_sync
             .lock()
@@ -697,6 +713,7 @@ impl ProductionBoxStoreSyncInner {
         wait_for_in_flight: bool,
         accept_matching_canonical_on_conflict: bool,
     ) -> Result<(), String> {
+        let cycle_started_at = Instant::now();
         let _cycle = if wait_for_in_flight {
             self.cycle_lock
                 .lock()
@@ -720,6 +737,32 @@ impl ProductionBoxStoreSyncInner {
         if !self.ensure_writer_lock()? {
             self.log("cycle skipped (locked)");
             self.record_cycle_skip("locked");
+            let status = self
+                .status
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .clone();
+            self.report_cycle_telemetry(
+                if chrome_only { "chrome-session" } else { "periodic" },
+                &BoxStoreCycleSummary {
+                    ok: false,
+                    reason: Some("locked".into()),
+                    store_id: None,
+                    duration_ms: cycle_started_at
+                        .elapsed()
+                        .as_millis()
+                        .min(u128::from(u64::MAX)) as u64,
+                    categories: Vec::new(),
+                    manifest_entries: status.last_manifest_entries,
+                    store_db_entries: 0,
+                    store_db_complete: false,
+                    agent_dir_entries: 0,
+                    total_files_uploaded: 0,
+                    total_bytes_uploaded: 0,
+                    total_failures: 0,
+                    metadata_failures: 0,
+                },
+            );
             return Ok(());
         }
         let (store_id, store) = self.resolve_object_store()?;
@@ -891,10 +934,15 @@ impl ProductionBoxStoreSyncInner {
 
         let files_uploaded = categories.iter().map(|value| value.files_uploaded).sum();
         let bytes_uploaded = categories.iter().map(|value| value.bytes_uploaded).sum();
-        let failures = categories
+        let total_failures = categories
             .iter()
-            .map(|value| value.failures + value.oversize + value.metadata_failures)
+            .map(|value| value.failures + value.oversize)
             .sum::<usize>();
+        let metadata_failures = categories
+            .iter()
+            .map(|value| value.metadata_failures)
+            .sum::<usize>();
+        let failures = total_failures.saturating_add(metadata_failures);
         let ok = failures == 0;
         {
             let mut status = self
@@ -915,10 +963,27 @@ impl ProductionBoxStoreSyncInner {
             entries.len(),
             failures,
         ));
-        self.diagnostic(
+        let summary = BoxStoreCycleSummary {
+            ok: true,
+            reason: None,
+            store_id: Some(store_id),
+            duration_ms: cycle_started_at
+                .elapsed()
+                .as_millis()
+                .min(u128::from(u64::MAX)) as u64,
+            categories,
+            manifest_entries: entries.len(),
+            store_db_entries: count_store_db_manifest_entries(Some(&entries)),
+            store_db_complete,
+            agent_dir_entries: count_agent_dir_manifest_entries(Some(&entries)),
+            total_files_uploaded: files_uploaded,
+            total_bytes_uploaded: bytes_uploaded,
+            total_failures,
+            metadata_failures,
+        };
+        self.report_cycle_telemetry(
             if chrome_only { "chrome-session" } else { "periodic" },
-            if ok { "ok" } else { "category-failures" },
-            ok,
+            &summary,
         );
         Ok(())
     }
