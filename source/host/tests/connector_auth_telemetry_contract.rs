@@ -80,6 +80,34 @@ fn frozen_mapper_preserves_level_bounding_surface_and_error_tags() {
     );
     assert_eq!(timeout.level, Some("warn"));
     assert_eq!(timeout.metadata["connector"], "unknown");
+
+    let max_server_id = "a".repeat(128);
+    let cancelled = connector_auth_telemetry(
+        &ConnectorAuthReport {
+            phase: "token_stored".into(),
+            outcome: "cancelled".into(),
+            server_name: Some("GitHub".into()),
+            server_id: Some(max_server_id.clone()),
+            reauth: None,
+            error: None,
+        },
+        "host",
+    );
+    assert_eq!(cancelled.level, Some("info"));
+    assert_eq!(cancelled.metadata["server_id"], max_server_id);
+
+    let too_long_server_id = connector_auth_telemetry(
+        &ConnectorAuthReport {
+            phase: "flow_started".into(),
+            outcome: "ok".into(),
+            server_name: Some("GitHub".into()),
+            server_id: Some("a".repeat(129)),
+            reauth: None,
+            error: None,
+        },
+        "host",
+    );
+    assert!(!too_long_server_id.metadata.contains_key("server_id"));
 }
 
 #[test]
