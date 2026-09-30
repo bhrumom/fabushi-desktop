@@ -807,3 +807,59 @@ fn ordinary_host_crash_uses_fire_and_forget_structured_owner() {
     service.dispose().expect("dispose");
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn box_store_db_capture_facade_preserves_frozen_event_level_and_metadata() {
+    let root = temp_root();
+    let service =
+        HostTelemetryService::open(root.join("box-store-db-capture.jsonl")).expect("telemetry");
+    service.start().expect("start");
+
+    service
+        .logs
+        .report_box_store_db_capture(
+            "warn",
+            &BTreeMap::from([
+                ("outcome".into(), "error".into()),
+                ("trigger".into(), "turn_end".into()),
+                ("failure_phase".into(), "manifest_commit".into()),
+                ("committed".into(), "false".into()),
+                ("agent_count".into(), "1".into()),
+                ("files_scanned".into(), "2".into()),
+                ("files_uploaded".into(), "1".into()),
+                ("bytes".into(), "4096".into()),
+                ("duration_ms".into(), "23".into()),
+                ("queue_duration_ms".into(), "5".into()),
+                ("capture_duration_ms".into(), "7".into()),
+                ("blob_upload_duration_ms".into(), "8".into()),
+                ("manifest_commit_duration_ms".into(), "3".into()),
+                ("store_id".into(), "store-a".into()),
+            ]),
+        )
+        .expect("store db capture telemetry");
+
+    let text = fs::read_to_string(service.records_path()).expect("store db capture jsonl");
+    let record: PersistedHostTelemetryRecord =
+        serde_json::from_str(text.lines().next().expect("store db capture record"))
+            .expect("store db capture json");
+    assert_eq!(record.channel, "structured_log");
+    assert_eq!(record.event, "sand.box_store_db_capture");
+    assert_eq!(record.payload["level"], "warn");
+    assert_eq!(record.payload["metadata"]["outcome"], "error");
+    assert_eq!(record.payload["metadata"]["trigger"], "turn_end");
+    assert_eq!(record.payload["metadata"]["failure_phase"], "manifest_commit");
+    assert_eq!(record.payload["metadata"]["committed"], "false");
+    assert_eq!(record.payload["metadata"]["agent_count"], "1");
+    assert_eq!(record.payload["metadata"]["files_scanned"], "2");
+    assert_eq!(record.payload["metadata"]["files_uploaded"], "1");
+    assert_eq!(record.payload["metadata"]["bytes"], "4096");
+    assert_eq!(record.payload["metadata"]["duration_ms"], "23");
+    assert_eq!(record.payload["metadata"]["queue_duration_ms"], "5");
+    assert_eq!(record.payload["metadata"]["capture_duration_ms"], "7");
+    assert_eq!(record.payload["metadata"]["blob_upload_duration_ms"], "8");
+    assert_eq!(record.payload["metadata"]["manifest_commit_duration_ms"], "3");
+    assert_eq!(record.payload["metadata"]["store_id"], "store-a");
+
+    let _ = fs::remove_dir_all(root);
+}
