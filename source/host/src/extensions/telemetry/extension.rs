@@ -303,6 +303,16 @@ struct HostTelemetryLifecycle {
 }
 
 impl HostTelemetryLifecycle {
+    fn flush_for_fatal_exit(&self) {
+        if let Ok(shipper) = self.box_log_shipper.lock() {
+            if let Some(shipper) = shipper.as_ref() {
+                shipper.stop_polling();
+                let _ = shipper.checkpoint_offsets();
+            }
+        }
+        let _ = self.service.logs.flush();
+    }
+
     fn dispose(&self) {
         if self.disposed.swap(true, Ordering::AcqRel) {
             return;
@@ -352,12 +362,12 @@ impl HostTelemetryExtension {
     }
 
     pub fn flush_for_fatal_exit(&self) {
-        let logs = self.logs.clone();
+        let lifecycle = Arc::clone(&self.lifecycle);
         let (done_tx, done_rx) = mpsc::channel();
         if thread::Builder::new()
             .name("sand-host-fatal-telemetry-flush".into())
             .spawn(move || {
-                let _ = logs.flush();
+                lifecycle.flush_for_fatal_exit();
                 let _ = done_tx.send(());
             })
             .is_ok()
