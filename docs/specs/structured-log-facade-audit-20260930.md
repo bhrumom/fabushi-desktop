@@ -66,7 +66,7 @@ Status vocabulary:
 | 47 | `reportTurnUsage` | delegates to `turn_telemetry_mappers.rs`; row is non-final and provider token-usage propagation remains open | **delegated-nonfinal** |
 | 48 | `reportTurnEmptyDelivery` | `turn_empty_delivery_telemetry.rs` mapper exists and Ack domain references it | producer-evidence-required |
 | 49 | `reportJournalOutcome` | `journal_outcome_telemetry.rs` mapper exists | producer-evidence-required |
-| 50 | `reportComputerUseUsage` | delegates to `turn_telemetry_mappers.rs`; manifest explicitly says shipping computer-use usage remains open | **delegated-nonfinal** |
+| 50 | `reportComputerUseUsage` | shipping generated-subagent settlement now consumes `settled.computer_use_usage`, maps it with existing `computer_use_usage_telemetry`, and reports through the unique `worker_telemetry_logs`; exact-HEAD CI still required | **implemented-awaiting-exact-head-ci** |
 | 51 | `reportToolCallError` | generic TelemetryService event mapping exists, but frozen field shaping/capping must be proven by shipping producer contract | producer-evidence-required |
 | 52 | `reportToolCallStalled` | generic TelemetryService event mapping exists, but frozen field shaping/capping must be proven by shipping producer contract | producer-evidence-required |
 | 53 | `reportToolCallStarted` | generic TelemetryService event mapping exists, but frozen field shaping must be proven by shipping producer contract | producer-evidence-required |

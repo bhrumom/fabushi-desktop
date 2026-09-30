@@ -208,10 +208,11 @@ use mahayana_host_runtime::host_production_extensions::{
 };
 use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::turn_empty_delivery_telemetry;
 use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
-    TokenUsage as TelemetryTokenUsage, TtftFields, TurnAwaitFields, TurnInterruptFields,
-    TurnRetryFields, TurnUsageFields, UserMessageReceivedFields, ttft_telemetry,
-    turn_await_telemetry, turn_interrupt_telemetry, turn_retry_telemetry,
-    turn_usage_telemetry, user_message_received_telemetry,
+    ComputerUseUsageFields, TokenUsage as TelemetryTokenUsage, TtftFields, TurnAwaitFields,
+    TurnInterruptFields, TurnRetryFields, TurnUsageFields, UserMessageReceivedFields,
+    computer_use_usage_telemetry, ttft_telemetry, turn_await_telemetry,
+    turn_interrupt_telemetry, turn_retry_telemetry, turn_usage_telemetry,
+    user_message_received_telemetry,
 };
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::{
     AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
@@ -4875,7 +4876,7 @@ fn start_routed_provider_task(
                     if report.outcome == ProviderRetryOutcome::Retried
                         && let Ok(mut turn) = retry_structured_turn.lock()
                     {
-                        turn.note_retry(report.delay_ms.map(u64::from), report.cause.as_deref());
+                        turn.note_retry(report.delay_ms, Some(report.cause.as_str()));
                     }
                     if let Ok(observation) = retry_observation.lock() {
                         observation.report_turn_retry(serde_json::json!({
@@ -5417,6 +5418,31 @@ fn start_routed_provider_task(
                     generated_outcome,
                     started_at_ms(),
                 ) {
+                    if let Some(usage) = settled.computer_use_usage {
+                        let projection = computer_use_usage_telemetry(&ComputerUseUsageFields {
+                            parent_agent_id: usage.parent_agent_id,
+                            subagent_agent_id: usage.subagent_agent_id,
+                            subagent_type: usage.subagent_type,
+                            subagent_request_id: usage.subagent_request_id,
+                            model_id: usage.model_id.unwrap_or_default(),
+                            outcome: usage.outcome,
+                            duration_ms: usage.duration_ms as f64,
+                            tool_call_count: u64::try_from(usage.tool_call_count).unwrap_or(u64::MAX),
+                            turn_ended_count: usage.turn_ended_count,
+                            usage: usage.usage.map(|usage| TelemetryTokenUsage {
+                                input_tokens: usage.input_tokens,
+                                output_tokens: usage.output_tokens,
+                                cache_read_tokens: usage.cache_read_tokens,
+                                cache_write_tokens: usage.cache_write_tokens,
+                                reasoning_tokens: usage.reasoning_tokens,
+                            }),
+                        });
+                        if let Err(error) = worker_telemetry_logs.report_projection(&projection) {
+                            eprintln!(
+                                "mahayana-host computer_use_usage_telemetry_failed agent={agent_id} error={error}"
+                            );
+                        }
+                    }
                     if let Some(completion) = settled.completion {
                         worker_completion_revivals.handle_background_subagent_completion(
                             SubagentCompletion {

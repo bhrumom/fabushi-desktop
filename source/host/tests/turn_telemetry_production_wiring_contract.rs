@@ -18,6 +18,8 @@ fn shipping_host_wires_frozen_turn_telemetry_sources() {
         "merge_provider_token_usage",
         "usage_sink: Some(usage_sink)",
         "worker_provider_usage",
+        "computer_use_usage_telemetry(&ComputerUseUsageFields",
+        "settled.computer_use_usage",
         "usage_inference.record_usage(",
         "InferenceUsage {",
         "usage_provider",
