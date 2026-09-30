@@ -11,8 +11,6 @@ use crate::send_trace_host::{
     mint_traceparent, parse_traceparent, set_host_trace_factory,
 };
 
-use serde_json::Value;
-
 pub const SAND_CLIENT_TYPE: &str = "sand";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
