@@ -5,6 +5,7 @@ use mahayana_host_runtime::extensions::extension_ids_generated::HostExtensionId;
 
 const EXTENSION: &str = include_str!("../src/extensions/cloud_agents/extension.rs");
 const SERVICE: &str = include_str!("../src/extensions/cloud_agents/cloud_agents_service.rs");
+const POLL_LOOP: &str = include_str!("../src/extensions/cloud_agents/cloud_agent_poll_loop.rs");
 const PRODUCTION_OWNER: &str = include_str!("../src/host_production_extensions.rs");
 const REGISTRY: &str = include_str!("../src/extensions/registry.rs");
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
@@ -35,11 +36,21 @@ fn production_start_uses_auth_host_converter_real_polling_and_policy_prefetch() 
         "let started = Instant::now();",
         "started.elapsed().as_millis()",
         "Arc::new(std::thread::sleep)",
-        "CLOUD_AGENT_POLL_INTERVAL_MS",
+        "CloudAgentCompletionPoller::new(",
     ] {
         assert!(
             SERVICE.contains(needle),
-            "production CloudAgents must use the real clock/polling path: {needle}"
+            "production CloudAgents must construct the real clock/sleep-backed poller: {needle}"
+        );
+    }
+
+    for needle in [
+        "pub const CLOUD_AGENT_POLL_INTERVAL_MS: u64 = 10_000;",
+        "poll_interval_ms: CLOUD_AGENT_POLL_INTERVAL_MS",
+    ] {
+        assert!(
+            POLL_LOOP.contains(needle),
+            "the production poller must retain the frozen polling interval: {needle}"
         );
     }
 
