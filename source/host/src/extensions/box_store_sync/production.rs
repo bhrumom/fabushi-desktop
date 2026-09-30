@@ -1353,28 +1353,89 @@ impl ProductionBoxStoreSyncInner {
         agent_id: &str,
         queue_duration_ms: u64,
     ) -> Result<(), String> {
-        let _cycle = self
-            .cycle_lock
-            .lock()
-            .map_err(|_| "box-store sync cycle lock poisoned".to_string())?;
+        let started_at = Instant::now();
+        let _cycle = match self.cycle_lock.lock() {
+            Ok(cycle) => cycle,
+            Err(_) => {
+                self.report_empty_store_db_capture(
+                    "turn_end",
+                    StoreDbCaptureOutcome::Error,
+                    Some(StoreDbCaptureFailurePhase::Capture),
+                    started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                    queue_duration_ms,
+                );
+                return Err("box-store sync cycle lock poisoned".into());
+            }
+        };
         if self.stopped.load(Ordering::Acquire) {
-            return Err("stopped".into());
+            self.report_empty_store_db_capture(
+                "turn_end",
+                StoreDbCaptureOutcome::Skipped,
+                None,
+                started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                queue_duration_ms,
+            );
+            return Ok(());
         }
-        if !self.ensure_writer_lock()? {
-            return Err("locked".into());
+        match self.ensure_writer_lock() {
+            Ok(true) => {}
+            Ok(false) => {
+                self.report_empty_store_db_capture(
+                    "turn_end",
+                    StoreDbCaptureOutcome::Skipped,
+                    None,
+                    started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                    queue_duration_ms,
+                );
+                return Ok(());
+            }
+            Err(error) => {
+                self.report_empty_store_db_capture(
+                    "turn_end",
+                    StoreDbCaptureOutcome::Error,
+                    Some(StoreDbCaptureFailurePhase::Capture),
+                    started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                    queue_duration_ms,
+                );
+                return Err(error);
+            }
         }
-        let (store_id, store) = self.resolve_object_store()?;
+        let (store_id, store) = match self.resolve_object_store() {
+            Ok(resolved) => resolved,
+            Err(error) => {
+                self.report_empty_store_db_capture(
+                    "turn_end",
+                    StoreDbCaptureOutcome::Error,
+                    Some(StoreDbCaptureFailurePhase::Capture),
+                    started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                    queue_duration_ms,
+                );
+                return Err(error);
+            }
+        };
         let manifest_v2_requested = self
             .env
             .get(SAND_MANIFEST_V2_ENV)
             .is_some_and(|value| value == "1");
         let sand_root = get_sand_root_dir();
         let hydration_marker_path = sand_root.join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME);
-        let loaded = load_manifest_for_write(
+        let loaded = match load_manifest_for_write(
             store.as_ref(),
             manifest_v2_requested,
             Some(&hydration_marker_path),
-        )?;
+        ) {
+            Ok(loaded) => loaded,
+            Err(error) => {
+                self.report_empty_store_db_capture(
+                    "turn_end",
+                    StoreDbCaptureOutcome::Error,
+                    Some(StoreDbCaptureFailurePhase::Capture),
+                    started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                    queue_duration_ms,
+                );
+                return Err(error);
+            }
+        };
         if loaded.invalid_nonblocking {
             self.log("manifest load failed, starting empty: manifest is invalid or unreadable");
         }
@@ -1383,17 +1444,32 @@ impl ProductionBoxStoreSyncInner {
         let fully_hydrated = loaded.fully_hydrated;
         let mut entries = loaded.manifest;
         let entries_before = entries.clone();
-        let summary = sync_store_db_snapshots(
+        let mut capture = match sync_store_db_snapshots_with_trace(
             store.clone(),
             &store_id,
             &mut entries,
-            &get_sand_root_dir(),
+            &sand_root,
             false,
             Some(agent_id),
-        )?;
+        ) {
+            Ok(capture) => capture,
+            Err(error) => {
+                self.report_empty_store_db_capture(
+                    "turn_end",
+                    StoreDbCaptureOutcome::Error,
+                    Some(StoreDbCaptureFailurePhase::Capture),
+                    started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                    queue_duration_ms,
+                );
+                return Err(error);
+            }
+        };
+
+        let mut manifest_committed = true;
         if entries != entries_before {
             let writer_window_id = format!("mahayana-host-{}", std::process::id());
-            write_manifest_with_retry(
+            let manifest_commit_started_at = Instant::now();
+            let manifest_result = write_manifest_with_retry(
                 store.as_ref(),
                 &store_id,
                 manifest_baseline,
@@ -1406,23 +1482,63 @@ impl ProductionBoxStoreSyncInner {
                 BOX_STORE_MANIFEST_RETRY_DELAY_MS,
                 &|message| self.log(message),
                 &|| self.stopped.load(Ordering::Acquire),
-            )?;
+            );
+            capture.capture_trace.manifest_commit_duration_ms = capture
+                .capture_trace
+                .manifest_commit_duration_ms
+                .saturating_add(
+                    manifest_commit_started_at
+                        .elapsed()
+                        .as_millis()
+                        .min(u128::from(u64::MAX)) as u64,
+                );
+            if let Err(error) = manifest_result {
+                manifest_committed = false;
+                record_store_db_capture_failure(
+                    &mut capture.capture_trace,
+                    StoreDbCaptureFailurePhase::ManifestCommit,
+                );
+                self.report_store_db_capture(
+                    "turn_end",
+                    StoreDbCaptureOutcome::Error,
+                    &capture,
+                    false,
+                    Some(&store_id),
+                    started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                    queue_duration_ms,
+                );
+                return Err(error);
+            }
         }
-        let failures = summary.failures + summary.oversize + summary.metadata_failures;
+
+        let outcome = aggregate_store_db_sweep_outcome(
+            capture.summary.failures.saturating_add(capture.summary.metadata_failures),
+            capture.summary.oversize,
+            capture.summary.files_uploaded,
+            capture.summary.files_scanned,
+        );
+        let is_committed = manifest_committed
+            && matches!(
+                outcome,
+                StoreDbCaptureOutcome::Uploaded | StoreDbCaptureOutcome::Unchanged
+            );
+        self.report_store_db_capture(
+            "turn_end",
+            outcome,
+            &capture,
+            is_committed,
+            Some(&store_id),
+            started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+            queue_duration_ms,
+        );
+
+        let failures =
+            capture.summary.failures + capture.summary.oversize + capture.summary.metadata_failures;
         self.log(&format!(
             "turn-end store.db {agent_id}: {} file(s) / {}B uploaded, {} failure(s)",
-            summary.files_uploaded, summary.bytes_uploaded, failures
+            capture.summary.files_uploaded, capture.summary.bytes_uploaded, failures
         ));
-        self.diagnostic(
-            "store-db-turn-end",
-            if failures == 0 { "ok" } else { "category-failures" },
-            failures == 0,
-        );
-        if failures == 0 {
-            Ok(())
-        } else {
-            Err(format!("store.db capture had {failures} failure(s)"))
-        }
+        Ok(())
     }
 }
 
