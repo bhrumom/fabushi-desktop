@@ -3,7 +3,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::extensions::telemetry::host_tracing::{
-    ExportResultCode, HostTracerProvider, HostTracing, HostTracingInitializer, SpanExporter,
+    ExportResultCode, HostTracerProvider, HostTracing, HostTracingInitializer,
+    ProductionHostTracerProvider, SpanExporter,
     SpanExporterFactory, SpanExporterOptions, TokenRefreshingSpanExporter,
     host_tracing_base_headers, host_tracing_resource, trace_export_url,
 };
@@ -179,4 +180,42 @@ fn initializer_is_singleton_until_test_reset() {
     assert!(Arc::ptr_eq(&first, &second));
     assert_eq!(builds.load(Ordering::SeqCst), 1);
     initializer.reset_for_tests();
+}
+
+
+#[test]
+fn production_provider_registers_send_trace_factory_and_flushes_finished_spans() {
+    use mahayana_host_runtime::send_trace_host::{BeginTurnTraceOptions, begin_turn_trace};
+
+    let concrete_exporter = Arc::new(Exporter::default());
+    let factory: SpanExporterFactory = {
+        let concrete_exporter = Arc::clone(&concrete_exporter);
+        Arc::new(move |_| Arc::clone(&concrete_exporter) as Arc<dyn SpanExporter>)
+    };
+    let exporter = Arc::new(TokenRefreshingSpanExporter::new(
+        "https://backend/v1/traces",
+        Arc::new(|| Some("token".into())),
+        BTreeMap::new(),
+        false,
+        factory,
+    ));
+    exporter.resolve_delegate();
+    let provider = ProductionHostTracerProvider::new(Arc::clone(&exporter));
+    let tracing = HostTracing::new(provider, exporter).expect("production tracing");
+
+    let trace = begin_turn_trace(BeginTurnTraceOptions {
+        conversation_id: "agent-trace".into(),
+        turn_type: "user".into(),
+        parent_ctx: None,
+        start_time: None,
+        sample_ratio: Some(1.0),
+        attributes: BTreeMap::new(),
+    })
+    .expect("registered trace factory");
+    trace.span.set_attribute("sand.test", serde_json::json!("yes"));
+    trace.span.end();
+    tracing.flush();
+
+    assert_eq!(concrete_exporter.exports.load(Ordering::SeqCst), 1);
+    tracing.dispose();
 }

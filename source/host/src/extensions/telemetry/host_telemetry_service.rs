@@ -47,7 +47,7 @@ use super::host_crash_marker::{
 use super::host_lifecycle_progress::{
     HostLifecycleProgress, HostLifecycleReport, WatchdogArm,
 };
-use super::host_tracing::HostTracing;
+use super::host_tracing::{HostTracing, init_production_host_tracing};
 use super::model_experiment_exposure::{
     ModelExperimentExposureAnalytics, ModelExperimentExposureExperiments,
     ModelExperimentExposureLatch, SandModelExperimentState as ExposureModelExperimentState,
@@ -834,8 +834,16 @@ impl HostTelemetryService {
         auth: Arc<HostAuthExtension>,
         experiments: Arc<HostExperimentsExtension>,
         inference: Arc<ProductionInferenceExtension>,
-        hooks: HostTelemetryRuntimeHooks,
+        mut hooks: HostTelemetryRuntimeHooks,
     ) -> io::Result<Self> {
+        if hooks.tracing.is_none() {
+            let auth_for_tracing = Arc::clone(&auth);
+            hooks.tracing = init_production_host_tracing(
+                backend_url.clone(),
+                Arc::new(move || auth_for_tracing.service().peek_access_token()),
+                Some(env!("CARGO_PKG_VERSION")),
+            );
+        }
         Self::open_internal(
             records_path,
             &mut identity_tags,

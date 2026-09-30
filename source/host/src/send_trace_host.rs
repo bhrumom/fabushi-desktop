@@ -150,6 +150,12 @@ pub fn set_host_trace_factory(factory: TraceFactory) {
     }
 }
 
+pub fn clear_host_trace_factory() {
+    if let Ok(mut slot) = trace_factory_slot().lock() {
+        *slot = None;
+    }
+}
+
 pub fn set_turn_trace_host_bundle_version(version: Option<&str>) {
     let normalized = version
         .map(str::trim)
