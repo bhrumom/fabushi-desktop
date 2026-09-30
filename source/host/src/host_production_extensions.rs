@@ -287,6 +287,7 @@ pub fn start_production_host_extensions(
         Arc::clone(&experiments),
     )?;
     telemetry.analytics.attach_runtime(product_analytics);
+    telemetry.analytics.mark_active("host_startup");
     let statsig_bootstrap = start_authenticated_statsig_bootstrap(
         Arc::clone(&experiments),
         Arc::clone(&auth),
