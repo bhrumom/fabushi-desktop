@@ -46,8 +46,13 @@ fn shipping_host_reuses_content_search_local_permission_and_local_exec_owners() 
 #[test]
 fn shipping_host_reuses_the_production_telemetry_owner() {
     assert!(
-        PRODUCTION_EXTENSIONS.contains("let telemetry = start_host_telemetry_extension(app_data_dir)"),
+        PRODUCTION_EXTENSIONS.contains("let telemetry = start_host_telemetry_extension("),
         "production extension composition must start the canonical Telemetry owner"
+    );
+    assert_eq!(
+        PRODUCTION_EXTENSIONS.matches("let telemetry = start_host_telemetry_extension(").count(),
+        1,
+        "production extension composition must create exactly one Telemetry owner"
     );
     assert!(
         SHIPPING_HOST.contains("let host_telemetry = production_extensions.telemetry.clone();"),
