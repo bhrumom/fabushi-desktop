@@ -1,4 +1,7 @@
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
+
+use crate::extensions::browser_ua::extension::StopSubscription;
 
 use crate::extensions::extension_ids_generated::HostExtensionId;
 
@@ -16,10 +19,16 @@ pub trait AgentInferenceOwner: Send + Sync {}
 
 pub type ModelExperimentListener = Arc<dyn Fn() + Send + Sync>;
 
+#[derive(Default)]
+struct ModelExperimentListeners {
+    next_id: u64,
+    listeners: BTreeMap<u64, ModelExperimentListener>,
+}
+
 pub struct InferenceExtensionRuntime<P> {
     port: P,
     peek_access_token: Arc<dyn Fn() -> Option<String> + Send + Sync>,
-    listeners: Mutex<Vec<ModelExperimentListener>>,
+    listeners: Arc<Mutex<ModelExperimentListeners>>,
 }
 
 impl<P> InferenceExtensionRuntime<P> {
@@ -30,7 +39,7 @@ impl<P> InferenceExtensionRuntime<P> {
         Self {
             port,
             peek_access_token,
-            listeners: Mutex::new(Vec::new()),
+            listeners: Arc::new(Mutex::new(ModelExperimentListeners::default())),
         }
     }
 
@@ -42,11 +51,30 @@ impl<P> InferenceExtensionRuntime<P> {
         &self.port
     }
 
-    pub fn on_model_experiment_applied(&self, listener: ModelExperimentListener) {
-        self.listeners
-            .lock()
-            .expect("inference experiment listeners")
-            .push(listener);
+    pub fn on_model_experiment_applied(
+        &self,
+        listener: ModelExperimentListener,
+    ) -> StopSubscription {
+        let id = {
+            let mut state = self
+                .listeners
+                .lock()
+                .expect("inference experiment listeners");
+            state.next_id = state.next_id.saturating_add(1);
+            let id = state.next_id;
+            state.listeners.insert(id, listener);
+            id
+        };
+        let listeners = Arc::downgrade(&self.listeners);
+        Box::new(move || {
+            if let Some(listeners) = listeners.upgrade() {
+                listeners
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .listeners
+                    .remove(&id);
+            }
+        })
     }
 
     pub fn notify_model_experiment_applied(&self) {
@@ -54,7 +82,10 @@ impl<P> InferenceExtensionRuntime<P> {
             .listeners
             .lock()
             .expect("inference experiment listeners")
-            .clone();
+            .listeners
+            .values()
+            .cloned()
+            .collect::<Vec<_>>();
         for listener in listeners {
             listener();
         }
