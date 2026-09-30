@@ -95,7 +95,7 @@ Status vocabulary:
 | 77 | `reportBoxLogShip` | BoxLogShipper reports via `HostStructuredLogTelemetry::report_box_log_ship` | verified-owner |
 | 78 | `reportDesktopHealth` | `HostTelemetryService` owns the production `DesktopHealthForwarder`; forwarder now calls typed `report_desktop_health`, preserving computed frozen level/metadata and fixed `sand.box.desktop_health`; existing JSONL/heartbeat contracts exercise revision suppression and persisted payload | verified-owner |
 | 79 | `reportAgentOpen` | direct frozen event; production producer path must be pinned | producer-evidence-required |
-| 80 | `reportHostCrash` | Host crash marker owner exists, but ordinary fire-and-forget crash projection producer must be distinguished from confirmed exit forwarding | producer-evidence-required |
+| 80 | `reportHostCrash` | shipping Rust panic guard now preserves `ProcessCrashKind` and routes ordinary fire-and-forget crashes to the unique `HostStructuredLogTelemetry::report_host_crash` owner before fatal flush; JSONL contract fixes `error` + `sand.host.crash` + `{kind}`, while confirmed crash-marker forwarding remains a distinct confirmed path with SAND crash tags | **implemented-awaiting-exact-head-ci** |
 | 81 | `reportHostProcessExitConfirmed` | crash-marker forwarding uses confirmed structured-log shipping under Host ownership | verified-owner |
 | 82 | `reportInvariantViolation` | direct frozen event; producer path must be pinned | producer-evidence-required |
 | 83 | `reportHostUpgrade` | production HostUpgrade dependency now calls typed `HostStructuredLogTelemetry::report_host_upgrade`; facade owns frozen failed=>warn/info event semantics and dedicated JSONL contract verifies ordinary shipping | verified-owner |
