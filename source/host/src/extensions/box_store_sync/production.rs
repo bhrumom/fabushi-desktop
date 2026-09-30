@@ -821,6 +821,7 @@ impl ProductionBoxStoreSyncInner {
         let mut entries = loaded.manifest;
         let mut categories = Vec::new();
         let mut store_db_complete = false;
+        let mut store_db_capture: Option<(Instant, ProductionStoreDbCaptureResult)> = None;
 
         if chrome_only {
             categories.push(sync_chrome_session(
@@ -905,7 +906,8 @@ impl ProductionBoxStoreSyncInner {
                 )?);
             }
             if include_store_dbs {
-                let store_db_summary = sync_store_db_snapshots(
+                let store_db_started_at = Instant::now();
+                let capture = sync_store_db_snapshots_with_trace(
                     Arc::clone(&store),
                     &store_id,
                     &mut entries,
@@ -913,10 +915,11 @@ impl ProductionBoxStoreSyncInner {
                     skip_live_handle_store_dbs,
                     None,
                 )?;
-                store_db_complete = store_db_summary.failures == 0
-                    && store_db_summary.oversize == 0
-                    && store_db_summary.metadata_failures == 0;
-                categories.push(store_db_summary);
+                store_db_complete = capture.summary.failures == 0
+                    && capture.summary.oversize == 0
+                    && capture.summary.metadata_failures == 0;
+                categories.push(capture.summary.clone());
+                store_db_capture = Some((store_db_started_at, capture));
             }
         }
 
@@ -924,7 +927,8 @@ impl ProductionBoxStoreSyncInner {
             .iter()
             .any(|category| category.failures > 0 || category.oversize > 0);
         let writer_window_id = format!("mahayana-host-{}", std::process::id());
-        write_manifest_with_retry(
+        let manifest_commit_started_at = Instant::now();
+        let manifest_result = write_manifest_with_retry(
             store.as_ref(),
             &store_id,
             manifest_baseline,
@@ -953,7 +957,57 @@ impl ProductionBoxStoreSyncInner {
             BOX_STORE_MANIFEST_RETRY_DELAY_MS,
             &|message| self.log(message),
             &|| self.stopped.load(Ordering::Acquire),
-        )?;
+        );
+        if let Some((started_at, capture)) = store_db_capture.as_mut() {
+            capture.capture_trace.manifest_commit_duration_ms = capture
+                .capture_trace
+                .manifest_commit_duration_ms
+                .saturating_add(
+                    manifest_commit_started_at
+                        .elapsed()
+                        .as_millis()
+                        .min(u128::from(u64::MAX)) as u64,
+                );
+            if manifest_result.is_err() {
+                record_store_db_capture_failure(
+                    &mut capture.capture_trace,
+                    StoreDbCaptureFailurePhase::ManifestCommit,
+                );
+                self.report_store_db_capture(
+                    "flush",
+                    StoreDbCaptureOutcome::Error,
+                    capture,
+                    false,
+                    &store_id,
+                    started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                    0,
+                );
+            }
+        }
+        manifest_result?;
+
+        if let Some((started_at, capture)) = store_db_capture.as_ref() {
+            let outcome = aggregate_store_db_sweep_outcome(
+                capture.summary.failures.saturating_add(capture.summary.metadata_failures),
+                capture.summary.oversize,
+                capture.summary.files_uploaded,
+                capture.summary.files_scanned,
+            );
+            let is_committed = store_db_complete
+                && matches!(
+                    outcome,
+                    StoreDbCaptureOutcome::Uploaded | StoreDbCaptureOutcome::Unchanged
+                );
+            self.report_store_db_capture(
+                "flush",
+                outcome,
+                capture,
+                is_committed,
+                &store_id,
+                started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
+                0,
+            );
+        }
 
         if !chrome_only
             && hydration_marker_path.exists()
