@@ -54,24 +54,30 @@ impl AgentDbCaptureQueues {
         operation: impl FnOnce(u64) -> T,
     ) -> T {
         let queued_at = Instant::now();
-        let agent_lock = {
+        let (agent_lock, was_queued) = {
             let mut locks = self
                 .locks
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            Arc::clone(
+            let was_queued = locks.contains_key(agent_id);
+            let agent_lock = Arc::clone(
                 locks
                     .entry(agent_id.to_string())
                     .or_insert_with(|| Arc::new(Mutex::new(()))),
-            )
+            );
+            (agent_lock, was_queued)
         };
         let guard = agent_lock
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        let queue_duration_ms = queued_at
-            .elapsed()
-            .as_millis()
-            .min(u128::from(u64::MAX)) as u64;
+        let queue_duration_ms = if was_queued {
+            queued_at
+                .elapsed()
+                .as_millis()
+                .min(u128::from(u64::MAX)) as u64
+        } else {
+            0
+        };
         let result = operation(queue_duration_ms);
         drop(guard);
 
