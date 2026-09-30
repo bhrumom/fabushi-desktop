@@ -85,7 +85,7 @@ fn shipping_service_has_one_owner_and_consumes_frozen_lifecycle_plan() {
         "ManifestHydrationUpdate::PromoteComplete",
         "remove_hydration_handoff_marker(&hydration_marker_path)",
         "run_local_agent_db_snapshot_unqueued",
-        "sweep_leaked_snapshot_temps(&poll_inner.env)",
+        "poll_inner.transfer.sweep_leaked_temps(&roots)",
         "pub fn get_store_id(&self)",
         "pub fn get_box_store_status(&self)",
         "pub fn clear_box_store_now(&self)",
