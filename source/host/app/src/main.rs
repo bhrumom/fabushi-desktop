@@ -8156,6 +8156,10 @@ fn main() {
     session_extension.shutdown();
     drop(teach_recording_extension);
     box_extensions.stop();
+    // CloudAgents belongs to the first production extension stage. All later
+    // Host stages settle before its frozen onStop callback, while Auth and
+    // earlier dependencies are still live.
+    production_extensions.stop_cloud_agents();
     if let Some(daemon) = box_exec_daemon.as_mut() {
         if let Err(error) = daemon.close() {
             eprintln!("failed to stop managed Grok box exec-daemon cleanly: {error}");
