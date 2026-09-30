@@ -14640,7 +14640,7 @@
         "source/host/tests/analytics_service_parity_contract.rs",
         "source/host/tests/host_telemetry_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "notes": "Rust Mahayana Host now implements the frozen TelemetryService facade and automation-run product-analytics wrapper, owns scalar-only product-event sanitization, deferred/active sand_product_analytics Statsig gating with the frozen 256-event cap, Cursor-authenticated AnalyticsService/TrackEvents backend transport with machine/checksum/client/namespace/request identity, frozen base properties and host_startup activity, and one shipping HostTelemetryExtension analytics owner. ProductionHostExtensions wires Auth + Experiments into that owner; stop/drop cancels the gate subscription and drains the single FIFO worker before dependent Host owners are released. Exact-HEAD Host contracts cover the full facade, automation delegation, sanitization and shipping brain dual-channel wiring.",
       "parityMode": "rust-adaptation"
