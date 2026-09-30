@@ -611,6 +611,11 @@ impl HostStructuredLogTelemetry {
         level: &str,
         metadata: &BTreeMap<String, String>,
     ) -> io::Result<()> {
+        let level = match level {
+            "warn" => "warn",
+            "error" => "error",
+            _ => "info",
+        };
         self.report_projection(&HostTelemetryProjection {
             level: Some(level),
             event: Some("sand.box_store_sync"),
