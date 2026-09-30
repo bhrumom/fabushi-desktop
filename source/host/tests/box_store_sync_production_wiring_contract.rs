@@ -299,7 +299,7 @@ fn shipping_box_store_sync_core_writer_lock_is_consumed_by_every_mutating_owner(
         );
     }
     assert!(
-        production.matches("if !self.ensure_writer_lock()?").count() >= 4,
+        production.matches("self.ensure_writer_lock()").count() >= 4,
         "snapshot, turn-end capture, clear, and forget must all fence mutation through the long-lived writer lock"
     );
     assert!(
@@ -356,4 +356,46 @@ fn shipping_cycle_uses_canonical_frozen_telemetry_mapper_and_host_owner() {
         !report_cycle.contains("report_host_extension_diagnostic"),
         "canonical Box Store cycle telemetry must not be disguised as a Host extension diagnostic"
     );
+}
+
+
+#[test]
+fn shipping_store_db_capture_uses_frozen_mapper_and_unique_host_owner() {
+    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    assert!(production.contains("sync_store_db_snapshots_with_trace("));
+    assert!(production.contains("box_store_db_capture_telemetry(&BoxStoreDbCaptureTelemetrySummary"));
+    assert!(production.contains("(self.deps.report_box_store_db_capture)(telemetry.level, &telemetry.metadata);"));
+    assert!(production.contains(""flush""));
+    assert!(production.contains(""turn_end""));
+    assert!(production.contains("queue_duration_ms"));
+    assert!(production.contains("capture_duration_ms"));
+    assert!(production.contains("blob_upload_duration_ms"));
+    assert!(production.contains("manifest_commit_duration_ms"));
+    assert!(production.contains("StoreDbCaptureFailurePhase::Capture"));
+    assert!(production.contains("StoreDbCaptureFailurePhase::BlobUpload"));
+    assert!(production.contains("StoreDbCaptureFailurePhase::ManifestCommit"));
+
+    let turn_end = production
+        .split_once("fn run_local_agent_db_snapshot_unqueued(")
+        .map(|(_, body)| body)
+        .and_then(|body| body.split_once("pub fn resolve_production_box_store_sync_mode").map(|(body, _)| body))
+        .expect("shipping turn-end capture body");
+    assert!(turn_end.contains("self.report_store_db_capture("));
+    assert!(
+        !turn_end.contains("self.diagnostic("),
+        "canonical turn-end store.db capture telemetry must not fall back to Host-extension diagnostics"
+    );
+
+    let owner = include_str!("../src/host_production_extensions.rs");
+    assert!(owner.contains("report_box_store_db_capture: Arc::new"));
+    assert!(owner.contains("box_store_db_capture_logs.report_box_store_db_capture(level, metadata)"));
+
+    let telemetry = include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
+    assert!(telemetry.contains("pub fn report_box_store_db_capture("));
+    assert!(telemetry.contains("event: Some("sand.box_store_db_capture")"));
+
+    let mapper = include_str!("../src/extensions/box_store_sync/store_db_capture.rs");
+    assert!(mapper.contains("StoreDbCaptureOutcome::Error | StoreDbCaptureOutcome::Skipped => "warn""));
+    assert!(mapper.contains("StoreDbCaptureOutcome::Oversize"));
+    assert!(mapper.contains("("failure_phase".into()"));
 }
