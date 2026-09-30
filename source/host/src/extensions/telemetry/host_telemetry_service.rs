@@ -32,6 +32,9 @@ use super::analytics_service::{
     AnalyticsClient, AutomationRunAnalyticsTelemetry, ProductionAnalyticsRuntime, TelemetryService,
     product_analytics_event,
 };
+use super::agent_error_telemetry::{
+    AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
+};
 use super::auto_review_approval_telemetry::{
     AutoReviewApprovalReport, auto_review_approval_telemetry,
 };
@@ -441,6 +444,14 @@ impl HostStructuredLogTelemetry {
         report: &AutoReviewApprovalReport,
     ) -> io::Result<()> {
         self.report_projection(&auto_review_approval_telemetry(report))
+    }
+
+    pub fn report_agent_error(&self, report: &AgentErrorReport) -> io::Result<()> {
+        self.report_projection(&agent_error_telemetry(report))?;
+        if let Some(detail) = agent_error_detail_telemetry(report) {
+            self.report_projection(&detail)?;
+        }
+        Ok(())
     }
 
     pub fn report_automation_fire_dropped(
