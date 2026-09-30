@@ -18,6 +18,7 @@ pub use disk_pressure_guard::{
 pub use extension::{
     ForeverBoxExtensionOptions, is_host_bundle_auto_update_enabled,
     is_image_auto_update_enabled, start_forever_box_extension,
+    start_forever_box_extension_with_telemetry,
 };
 pub use forever_box_service::{
     ForeverBoxLifecycle, ForeverBoxService, ForeverBoxServiceError,
