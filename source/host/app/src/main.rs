@@ -187,7 +187,10 @@ use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
     QueueWatchdogReport,
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
-    HostStructuredLogTelemetry, HostTelemetryApi, MessageSentReport,
+    HostBundleIdentity, HostStructuredLogTelemetry, HostTelemetryApi, MessageSentReport,
+};
+use mahayana_host_runtime::extensions::telemetry::host_lifecycle_progress::{
+    HostLifecycleCompletion, production_host_lifecycle_watchdog,
 };
 use mahayana_host_runtime::extensions::telemetry::revival_telemetry_mappers::{
     ShellRevivalReport, SubagentRevivalReport,
@@ -199,8 +202,12 @@ use mahayana_host_runtime::extensions::host_upgrade::production::{
     ProductionHostUpgradeExtension, ProductionHostUpgradePeers,
     start_production_host_upgrade_extension,
 };
+use mahayana_host_runtime::extensions::host_upgrade::host_bundle_upgrade::{
+    SAND_BOX_HOST_VERSION_PATH, read_local_host_version,
+};
 use mahayana_host_runtime::host_production_extensions::{
-    start_production_host_box_extensions, start_production_host_extensions,
+    CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, start_production_host_box_extensions,
+    start_production_host_extensions,
 };
 #[cfg(test)]
 use mahayana_host_runtime::host_production_extensions::{
@@ -7108,6 +7115,8 @@ fn main() {
         std::process::exit(exit_code);
     }
 
+    let host_started_at_ms = started_at_ms();
+
     let _process_crash_guard =
         mahayana_host_runtime::process_crash_guard::install_process_crash_guards(
             "sand-host",
@@ -7184,6 +7193,23 @@ fn main() {
     })));
     let box_extensions =
         start_production_host_box_extensions(&production_extensions, production_box);
+    let host_lifecycle_api = host_telemetry.api();
+    let lifecycle_now_ms = host_lifecycle_api.monotonic_now_ms();
+    let lifecycle_started_at_ms = lifecycle_now_ms
+        - started_at_ms().saturating_sub(host_started_at_ms) as f64;
+    let mut host_lifecycle = host_lifecycle_api.create_host_lifecycle_progress(
+        lifecycle_started_at_ms,
+        production_host_lifecycle_watchdog(),
+    );
+    if let Err(error) = host_lifecycle.complete(HostLifecycleCompletion {
+        phase: "plugin_graph".into(),
+        plugin_count: Some(CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS.len() as u64),
+        entry_count: None,
+    }) {
+        host_lifecycle.fail();
+        eprintln!("failed to settle Mahayana Host plugin_graph lifecycle phase: {error}");
+        return;
+    }
     let forever_box = Arc::clone(&box_extensions.forever_box);
     let attachments_service = box_extensions.attachments.service();
     let secrets_extension = Arc::clone(&box_extensions.secrets);
@@ -7409,6 +7435,7 @@ fn main() {
     ) {
         Ok(extension) => extension,
         Err(error) => {
+            host_lifecycle.fail();
             eprintln!("failed to start production Notifications extension: {error}");
             return;
         }
@@ -7511,6 +7538,7 @@ fn main() {
     let gateway_config = match resolve_gateway_server_config() {
         Ok(config) => config,
         Err(error) => {
+            host_lifecycle.fail();
             eprintln!("failed to resolve Mahayana gateway configuration: {error}");
             return;
         }
@@ -7544,6 +7572,7 @@ fn main() {
     ) {
         Ok(service) => service,
         Err(error) => {
+            host_lifecycle.fail();
             eprintln!("failed to start production MCP extension: {error}");
             return;
         }
@@ -7552,45 +7581,101 @@ fn main() {
         box_store_idle_runtime.live_running_agent_ids().is_empty()
             && !box_store_idle_runtime.has_carryable_pending_wake()
     })) {
+        host_lifecycle.fail();
         eprintln!("failed to start production BoxStoreSync extension: {error}");
         return;
     }
     let box_store_sync_api = match production_extensions.box_store_sync_api() {
         Ok(Some(api)) => api,
         Ok(None) => {
+            host_lifecycle.fail();
             eprintln!("production BoxStoreSync started without an API");
             return;
         }
         Err(error) => {
+            host_lifecycle.fail();
             eprintln!("failed to access production BoxStoreSync API: {error}");
             return;
         }
     };
-    match load_initial_transcript_resiliently(|| {
+    let lifecycle_host_bundle_version = read_local_host_version(SAND_BOX_HOST_VERSION_PATH)
+        .or_else(|| {
+            std::env::var("SAND_HOST_BUNDLE_VERSION")
+                .ok()
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+        })
+        .or_else(|| Some(env!("CARGO_PKG_VERSION").to_string()));
+    let lifecycle_box_store_id = match box_store_sync_api.get_store_id() {
+        Ok(store_id) => Some(store_id),
+        Err(error) => {
+            host_lifecycle.fail();
+            eprintln!("failed to resolve production BoxStore identity: {error}");
+            return;
+        }
+    };
+    if let Err(error) = host_lifecycle_api.set_host_bundle_identity(HostBundleIdentity {
+        host_bundle_version: lifecycle_host_bundle_version,
+        box_store_id: lifecycle_box_store_id,
+    }) {
+        host_lifecycle.fail();
+        eprintln!("failed to set Mahayana Host telemetry identity: {error}");
+        return;
+    }
+    if let Err(error) = host_lifecycle.complete(HostLifecycleCompletion {
+        phase: "identity".into(),
+        plugin_count: None,
+        entry_count: None,
+    }) {
+        host_lifecycle.fail();
+        eprintln!("failed to settle Mahayana Host identity lifecycle phase: {error}");
+        return;
+    }
+    if let Err(error) = host_lifecycle.complete(HostLifecycleCompletion {
+        phase: "log_catchup".into(),
+        plugin_count: None,
+        entry_count: None,
+    }) {
+        host_lifecycle.fail();
+        eprintln!("failed to settle Mahayana Host log_catchup lifecycle phase: {error}");
+        return;
+    }
+    let initial_transcript_entry_count = match load_initial_transcript_resiliently(|| {
         ensure_initial_transcript_loaded(&session_workers, transcript_runtime.session_runtime())
     }) {
-        Ok(outcome) => match outcome.degraded {
-            Some(InitialTranscriptDegradedReason::SqliteBusy(error)) => {
-                eprintln!(
-                    "[sand-host] initial transcript load still locked after retries (kept alive): {error}"
-                );
+        Ok(outcome) => {
+            let entry_count = outcome.entry_count;
+            match outcome.degraded {
+                Some(InitialTranscriptDegradedReason::SqliteBusy(error)) => {
+                    eprintln!(
+                        "[sand-host] initial transcript load still locked after retries (kept alive): {error}"
+                    );
+                }
+                Some(InitialTranscriptDegradedReason::AgentLimit) => {
+                    eprintln!(
+                        "[sand-host] no session at the agent cap; starting without one so the roster and delete stay reachable"
+                    );
+                }
+                None => {
+                    eprintln!("[sand-host] initial transcript loaded entries={entry_count}");
+                }
             }
-            Some(InitialTranscriptDegradedReason::AgentLimit) => {
-                eprintln!(
-                    "[sand-host] no session at the agent cap; starting without one so the roster and delete stay reachable"
-                );
-            }
-            None => {
-                eprintln!(
-                    "[sand-host] initial transcript loaded entries={}",
-                    outcome.entry_count
-                );
-            }
-        },
+            entry_count
+        }
         Err(error) => {
+            host_lifecycle.fail();
             eprintln!("[sand-host] initial transcript load failed: {error}");
             return;
         }
+    };
+    if let Err(error) = host_lifecycle.complete(HostLifecycleCompletion {
+        phase: "transcript_read".into(),
+        plugin_count: None,
+        entry_count: Some(initial_transcript_entry_count as u64),
+    }) {
+        host_lifecycle.fail();
+        eprintln!("failed to settle Mahayana Host transcript_read lifecycle phase: {error}");
+        return;
     }
     let automations_lifecycle_slot =
         Arc::new(Mutex::new(Weak::<ProductionAutomationsLifecycle>::new()));
@@ -7774,6 +7859,7 @@ fn main() {
     ) {
         Ok(runtime) => runtime,
         Err(error) => {
+            host_lifecycle.fail();
             eprintln!("failed to initialize production CrossUserSharing: {error}");
             return;
         }
@@ -7825,6 +7911,7 @@ fn main() {
     ) {
         Ok(extension) => extension,
         Err(error) => {
+            host_lifecycle.fail();
             eprintln!("failed to start production HostUpgrade extension: {error}");
             return;
         }
@@ -8010,6 +8097,7 @@ fn main() {
     ) {
         Ok(runtime) => runtime,
         Err(error) => {
+            host_lifecycle.fail();
             eprintln!("failed to start production Automations extension: {error}");
             return;
         }
@@ -8080,6 +8168,7 @@ fn main() {
     }) {
         Ok(server) => server,
         Err(error) => {
+            host_lifecycle.fail();
             eprintln!("failed to start Mahayana Host gateway: {error}");
             return;
         }
@@ -8106,6 +8195,7 @@ fn main() {
         token: gateway_config.auth_token.clone(),
     };
     if let Err(error) = write_gateway_discovery(&gateway_discovery, &gateway_discovery_path) {
+        host_lifecycle.fail();
         eprintln!(
             "failed to publish Mahayana Host gateway discovery at {}: {error}",
             gateway_discovery_path.display()
@@ -8152,6 +8242,7 @@ fn main() {
     ) {
         Ok(worker) => worker,
         Err(error) => {
+            host_lifecycle.fail();
             eprintln!("failed to install Mahayana Host shutdown signal handlers: {error}");
             return;
         }
@@ -8182,6 +8273,31 @@ fn main() {
             None
         }
     };
+
+    let host_bundle_version = host_upgrade
+        .service()
+        .resolve_host_bundle_identity_version(Some(env!("CARGO_PKG_VERSION")));
+    let _ = host_telemetry.logs.report_host_startup(BTreeMap::from([
+        (
+            "auto_update".into(),
+            forever_box.is_auto_update_enabled().to_string(),
+        ),
+        (
+            "duration_ms".into(),
+            started_at_ms().saturating_sub(host_started_at_ms).to_string(),
+        ),
+        ("host_bundle_version".into(), host_bundle_version),
+    ]));
+
+    if let Err(error) = host_lifecycle.complete(HostLifecycleCompletion {
+        phase: "ready".into(),
+        plugin_count: None,
+        entry_count: None,
+    }) {
+        host_lifecycle.fail();
+        eprintln!("failed to settle Mahayana Host ready lifecycle phase: {error}");
+        return;
+    }
 
     // Runtime events travel as unsolicited JSON frames. The event worker blocks
     // in Rust instead of issuing 500 ms JSON-RPC receive requests from Electron.

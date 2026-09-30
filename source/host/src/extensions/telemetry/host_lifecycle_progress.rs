@@ -1,4 +1,6 @@
-use std::sync::Arc;
+use std::sync::{Arc, mpsc};
+use std::thread;
+use std::time::Duration;
 
 use crate::ports::telemetry::SAND_HOST_LIFECYCLE_PHASES;
 
@@ -35,8 +37,47 @@ pub enum HostLifecycleReport {
     },
 }
 
+pub const HOST_LIFECYCLE_STUCK_MS: u64 = 5 * 60_000;
+
 pub trait Disposable: Send {
     fn dispose(&mut self);
+}
+
+struct ProductionLifecycleWatchdog {
+    stop: Option<mpsc::Sender<()>>,
+    worker: Option<thread::JoinHandle<()>>,
+}
+
+impl Disposable for ProductionLifecycleWatchdog {
+    fn dispose(&mut self) {
+        if let Some(stop) = self.stop.take() {
+            let _ = stop.send(());
+        }
+        if let Some(worker) = self.worker.take() {
+            let _ = worker.join();
+        }
+    }
+}
+
+pub fn production_host_lifecycle_watchdog() -> WatchdogArm {
+    Arc::new(|listener| {
+        let (stop_tx, stop_rx) = mpsc::channel();
+        let worker = thread::Builder::new()
+            .name("sand-host-lifecycle-watchdog".into())
+            .spawn(move || {
+                if matches!(
+                    stop_rx.recv_timeout(Duration::from_millis(HOST_LIFECYCLE_STUCK_MS)),
+                    Err(mpsc::RecvTimeoutError::Timeout)
+                ) {
+                    listener();
+                }
+            })
+            .ok();
+        Box::new(ProductionLifecycleWatchdog {
+            stop: Some(stop_tx),
+            worker,
+        })
+    })
 }
 
 pub type WatchdogArm = Arc<dyn Fn(Box<dyn Fn() + Send + Sync>) -> Box<dyn Disposable> + Send + Sync>;

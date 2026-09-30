@@ -2,7 +2,7 @@
 
 Reference: frozen Grok 0.18 blob `5e19374e02f4984899ea48f06b1d70798bd17418`.
 
-Audit lineage starts at `28eebfe882760decbabe2c8ce83bf27d110eefca`; this follow-up is prepared from exact PR HEAD `95b4f4c7ef67e9f3ef6420b78ace9404257aca55` and remains non-final until the resulting commit has exact-HEAD Actions evidence.
+Audit lineage starts at `28eebfe882760decbabe2c8ce83bf27d110eefca`; earlier exact-HEAD claims were invalidated as PR #20 advanced, and this slice is rebuilt from exact PR HEAD `f771c289afd2dfbc4c20259560e515d5effe7379`; it remains non-final until the resulting commit has exact-HEAD Actions evidence.
 
 This ledger is intentionally stricter than file-existence or mapper-existence checks. A frozen `SandStructuredLogTelemetry` entry is accepted only when its Fabushi responsibility has a real shipping producer/call site, remains under the single Host structured-log owner, preserves mapping/settlement/confirmed/dispose semantics, and has focused contract evidence.
 
@@ -37,8 +37,8 @@ Status vocabulary:
 | 18 | `reportLocalExecFailed` | shipping Gateway Local Exec failure reporter calls the typed Host structured-log facade; mapper semantics remain unchanged | **implemented-awaiting-exact-head-ci** |
 | 19 | `reportWebAuthnProxy` | repaired production WebAuthn callback now calls `HostStructuredLogTelemetry::report_webauthn_proxy` instead of stderr-only logging; typed mapper/error tags flow through canonical transport | **implemented-awaiting-exact-head-ci** |
 | 20 | `reportMemorySynthesis` | production memory synthesis reporter and gate-disabled path use the unique Host logs; reporter now calls the typed facade method and preserves mapper/error semantics | **implemented-awaiting-exact-head-ci** |
-| 21 | `reportHostStartup` | `lifecycle_telemetry.rs` mapper exists | producer-evidence-required |
-| 22 | `reportHostLifecycle` | `HostLifecycleProgress` reports via the service log owner, but frozen facade equivalence still needs focused contract evidence | producer-evidence-required |
+| 21 | `reportHostStartup` | shipping `source/host/app/src/main.rs` calls the typed Host facade only after background-ready work, HostUpgrade resume and ACK-redrive setup; metadata comes from the real ForeverBox auto-update owner plus HostUpgrade bundle identity, and a focused JSONL facade contract verifies frozen startup mapping including `host_built_at_ms` | **implemented-awaiting-exact-head-ci** |
+| 22 | `reportHostLifecycle` | shipping Host main owns one `HostLifecycleProgress` across `plugin_graph → identity → log_catchup → transcript_read → ready`, uses the frozen 5-minute stuck watchdog, routes startup failure exits through `fail()`, and sends reports through the typed Host facade using `host_lifecycle_telemetry` so failed/stuck SAND error tags are preserved; the existing exact Host-owner contract plus progress contracts cover mapping/state semantics | **implemented-awaiting-exact-head-ci** |
 | 23 | `reportDaemonPing` | lifecycle mapper exists / generic TelemetryService event mapping exists | producer-evidence-required |
 | 24 | `reportBoxImageCheck` | lifecycle mapper exists | producer-evidence-required |
 | 25 | `enqueueBoxInfrastructureEvent` | `box_infrastructure_telemetry` + `HostStructuredLogTelemetry::report_box_log_record` cover infrastructure projection | verified-owner |

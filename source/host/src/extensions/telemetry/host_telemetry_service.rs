@@ -55,7 +55,9 @@ use super::host_crash_marker::{
 };
 use super::host_lifecycle_progress::{HostLifecycleProgress, HostLifecycleReport, WatchdogArm};
 use super::host_tracing::{HostTracing, init_production_host_tracing};
-use super::lifecycle_telemetry::box_infrastructure_telemetry;
+use super::lifecycle_telemetry::{
+    box_infrastructure_telemetry, host_lifecycle_telemetry, host_startup_telemetry,
+};
 use super::conversation_gc_telemetry::{ConversationGcReport, conversation_gc_telemetry};
 use super::host_diagnostic_telemetry::{HostDiagnostic, host_diagnostic_telemetry};
 use super::host_event_bus_telemetry::{HostEventBusReport, host_event_bus_telemetry};
@@ -463,6 +465,10 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_memory_synthesis(&self, report: &MemorySynthesisReport) -> io::Result<()> {
         self.report_projection(&memory_synthesis_telemetry(report))
+    }
+
+    pub fn report_host_startup(&self, metadata: BTreeMap<String, String>) -> io::Result<()> {
+        self.report_projection(&host_startup_telemetry(metadata, HOST_BUILT_AT_MS))
     }
 
     pub fn report_subagent_revival(&self, report: &SubagentRevivalReport) -> io::Result<()> {
@@ -990,37 +996,7 @@ impl HostStructuredLogTelemetry {
     }
 
     pub fn report_host_lifecycle(&self, report: HostLifecycleReport) -> io::Result<()> {
-        let mut metadata = BTreeMap::new();
-        let (level, outcome, phase, duration_ms) = match report {
-            HostLifecycleReport::Completed {
-                phase,
-                plugin_count,
-                entry_count,
-                duration_ms,
-            } => {
-                if let Some(value) = plugin_count {
-                    metadata.insert("plugin_count".into(), value.to_string());
-                }
-                if let Some(value) = entry_count {
-                    metadata.insert("entry_count".into(), value.to_string());
-                }
-                ("info", "completed", phase, duration_ms)
-            }
-            HostLifecycleReport::Failed {
-                phase, duration_ms, ..
-            } => ("error", "failed", phase, duration_ms),
-            HostLifecycleReport::Stuck {
-                phase, duration_ms, ..
-            } => ("warn", "stuck", phase, duration_ms),
-        };
-        metadata.insert("outcome".into(), outcome.into());
-        metadata.insert("phase".into(), phase);
-        metadata.insert("duration_ms".into(), duration_ms.to_string());
-        self.report_projection(&HostTelemetryProjection {
-            level: Some(level),
-            event: Some("sand.host.lifecycle"),
-            metadata,
-        })
+        self.report_projection(&host_lifecycle_telemetry(&report))
     }
 }
 

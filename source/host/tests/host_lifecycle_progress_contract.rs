@@ -39,3 +39,9 @@ fn lifecycle_progress_fails_wrong_phase_and_watchdog_reports_stuck(){
  p.fail();
  assert!(matches!(reports.lock().unwrap()[1],HostLifecycleReport::Failed{..}));
 }
+
+
+#[test]
+fn production_watchdog_matches_frozen_five_minute_idle_policy() {
+    assert_eq!(HOST_LIFECYCLE_STUCK_MS, 5 * 60_000);
+}
