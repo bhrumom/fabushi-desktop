@@ -2167,6 +2167,10 @@ fn sync_store_db_snapshots_with_trace(
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
         Err(_) => {
             summary.metadata_failures += 1;
+                    record_store_db_capture_failure(
+                        &mut capture_trace,
+                        StoreDbCaptureFailurePhase::Capture,
+                    );
             record_store_db_capture_failure(&mut capture_trace, StoreDbCaptureFailurePhase::Capture);
             walk_complete = false;
             None
@@ -2190,6 +2194,10 @@ fn sync_store_db_snapshots_with_trace(
                 Ok(entry) => entry,
                 Err(_) => {
                     summary.metadata_failures += 1;
+                    record_store_db_capture_failure(
+                        &mut capture_trace,
+                        StoreDbCaptureFailurePhase::Capture,
+                    );
                     walk_complete = false;
                     continue;
                 }
@@ -2198,6 +2206,10 @@ fn sync_store_db_snapshots_with_trace(
                 Ok(file_type) => file_type,
                 Err(_) => {
                     summary.metadata_failures += 1;
+                    record_store_db_capture_failure(
+                        &mut capture_trace,
+                        StoreDbCaptureFailurePhase::Capture,
+                    );
                     walk_complete = false;
                     continue;
                 }
@@ -2208,6 +2220,10 @@ fn sync_store_db_snapshots_with_trace(
             let agent_id = agent_entry.file_name().to_string_lossy().to_string();
             if agent_id.is_empty() {
                 summary.metadata_failures += 1;
+                    record_store_db_capture_failure(
+                        &mut capture_trace,
+                        StoreDbCaptureFailurePhase::Capture,
+                    );
                 walk_complete = false;
                 continue;
             }
@@ -2230,6 +2246,10 @@ fn sync_store_db_snapshots_with_trace(
             }
             if agent_has_pending_db_recovery(&agent_dir) {
                 summary.failures += 1;
+                record_store_db_capture_failure(
+                    &mut capture_trace,
+                    StoreDbCaptureFailurePhase::Capture,
+                );
                 blocked_from_prune.extend(bundle_paths);
                 continue;
             }
@@ -2240,6 +2260,10 @@ fn sync_store_db_snapshots_with_trace(
                         "[box-store-sync] agent db bundle identity failed {agent_id}: {error}"
                     );
                     summary.metadata_failures += 1;
+                    record_store_db_capture_failure(
+                        &mut capture_trace,
+                        StoreDbCaptureFailurePhase::Capture,
+                    );
                     blocked_from_prune.extend(bundle_paths);
                     continue;
                 }
@@ -2255,12 +2279,20 @@ fn sync_store_db_snapshots_with_trace(
                     Ok(metadata) if metadata.is_file() => metadata,
                     Ok(_) => {
                         summary.metadata_failures += 1;
+                    record_store_db_capture_failure(
+                        &mut capture_trace,
+                        StoreDbCaptureFailurePhase::Capture,
+                    );
                         bundle_ok = false;
                         continue;
                     }
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
                     Err(_) => {
                         summary.metadata_failures += 1;
+                    record_store_db_capture_failure(
+                        &mut capture_trace,
+                        StoreDbCaptureFailurePhase::Capture,
+                    );
                         bundle_ok = false;
                         continue;
                     }
@@ -2339,6 +2371,10 @@ fn sync_store_db_snapshots_with_trace(
             let final_identity = agent_db_bundle_identity(&agent_dir);
             if final_identity.as_ref().ok() != Some(&initial_identity) {
                 summary.failures += 1;
+                record_store_db_capture_failure(
+                    &mut capture_trace,
+                    StoreDbCaptureFailurePhase::Capture,
+                );
                 bundle_ok = false;
             }
             if !bundle_ok {
