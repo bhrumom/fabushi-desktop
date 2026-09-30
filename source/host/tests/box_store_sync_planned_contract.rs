@@ -1,6 +1,8 @@
 use std::collections::BTreeMap;
 use std::fs;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, mpsc};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use sha2::{Digest, Sha256};
 
@@ -44,7 +46,8 @@ use mahayana_host_runtime::extensions::box_store_sync::sand_box_store_files::{
     plan_sand_box_store_multipart_parts_from_bytes, should_use_multipart,
 };
 use mahayana_host_runtime::extensions::box_store_sync::store_db_bundle_capture::{
-    StoreDbCaptureFailurePhase, create_store_db_capture_trace, record_store_db_capture_failure,
+    AgentDbCaptureQueues, StoreDbCaptureFailurePhase, create_store_db_capture_trace,
+    record_store_db_capture_failure,
 };
 use mahayana_host_runtime::extensions::box_store_sync::store_db_capture::{
     BoxStoreDbCaptureTelemetrySummary, StoreDbCaptureOutcome,
@@ -456,4 +459,49 @@ fn store_db_capture_telemetry_matches_frozen_levels_and_fields() {
     assert_eq!(telemetry.metadata.get("blob_upload_duration_ms").map(String::as_str), Some("8"));
     assert_eq!(telemetry.metadata.get("manifest_commit_duration_ms").map(String::as_str), Some("3"));
     assert_eq!(telemetry.metadata.get("store_id").map(String::as_str), Some("store-a"));
+}
+
+
+#[test]
+fn store_db_capture_queue_duration_only_measures_same_agent_serialization_wait() {
+    let queues = Arc::new(AgentDbCaptureQueues::default());
+    let first_queues = Arc::clone(&queues);
+    let (started_tx, started_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+
+    let first = thread::spawn(move || {
+        first_queues.run_serialized_with_queue_duration("agent-a", |queue_duration_ms| {
+            assert_eq!(
+                queue_duration_ms, 0,
+                "the first capture for an agent must not report ordinary lock acquisition as queue time"
+            );
+            started_tx.send(()).expect("signal first capture started");
+            release_rx.recv().expect("release first capture");
+        });
+    });
+    started_rx.recv().expect("first capture started");
+
+    let second_queues = Arc::clone(&queues);
+    let second = thread::spawn(move || {
+        second_queues.run_serialized_with_queue_duration("agent-a", |queue_duration_ms| {
+            queue_duration_ms
+        })
+    });
+
+    thread::sleep(Duration::from_millis(25));
+    release_tx.send(()).expect("release first capture");
+    first.join().expect("first capture join");
+    let queued_ms = second.join().expect("second capture join");
+    assert!(
+        queued_ms >= 20,
+        "a capture blocked behind an in-flight capture for the same agent must report serialization wait, got {queued_ms}ms"
+    );
+
+    let unqueued = queues.run_serialized_with_queue_duration("agent-b", |queue_duration_ms| {
+        queue_duration_ms
+    });
+    assert_eq!(
+        unqueued, 0,
+        "a different agent with no predecessor must retain frozen zero queue duration"
+    );
 }
