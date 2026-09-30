@@ -15,9 +15,10 @@ use std::os::unix::fs::PermissionsExt;
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
+use crate::extensions::box_store_sync::agent_store_sand_files::AgentStoreClientDependencies;
 use crate::extensions::box_store_sync::box_object_store::{
-    BoxObjectStore, BoxObjectStoreProvider, BoxObjectStoreProviderDependencies,
-    resolve_box_object_store_provider,
+    AgentStoreObjectStoreProvider, BoxObjectStore, BoxObjectStoreProvider,
+    BoxObjectStoreProviderDependencies, resolve_box_object_store_provider,
 };
 use crate::extensions::box_store_sync::box_store_pack::{
     BOX_STORE_PACK_INDEX_KEY, BOX_STORE_PACK_RETIRED_KEY, BOX_STORE_PACKS_PREFIX,
@@ -30,15 +31,18 @@ use crate::extensions::box_store_sync::box_store_pack_pipeline::{
 };
 use crate::extensions::box_store_sync::box_store_manifest::{
     AGENT_STORE_DB_BASENAMES, BoxManifestMap, ManifestHydrationUpdate, ManifestSaveOptions,
-    load_manifest_for_write, read_manifest_strict, serialize_manifest_bytes,
+    count_agent_dir_manifest_entries, count_store_db_manifest_entries, load_manifest_for_write,
+    prepare_canonical_manifest_reset, read_manifest_strict, serialize_manifest_bytes,
     set_manifest_entry, write_manifest_with_retry,
 };
 use crate::extensions::box_store_sync::box_store_manifest_format::{
     BOX_STORE_BLOBS_PREFIX, BOX_STORE_MANIFEST_REL_PATH, BOX_STORE_MANIFEST_VERSION,
     BoxStoreManifest, BoxStoreManifestEntry, SAND_MANIFEST_V2_ENV,
 };
+use crate::extensions::box_store_sync::box_store_download::BOX_STORE_RESTORE_TMP_SUFFIX;
 use crate::extensions::box_store_sync::box_store_transfer::{
-    BOX_STORE_SNAPSHOT_TMP_SUFFIX, CategoryTransferSummary, glob_matches_path,
+    BOX_STORE_SNAPSHOT_TMP_SUFFIX, CategoryTransferSummary, dedupe_nested_roots,
+    glob_matches_path,
 };
 use crate::extensions::box_store_sync::box_store_sync::LARGE_OBJECT_THRESHOLD_BYTES;
 use crate::extensions::box_store_sync::box_store_sync_service::{
@@ -66,6 +70,7 @@ use crate::extensions::box_store_sync::extension::{
 use crate::extensions::box_store_sync::workspace_ignore::{
     SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS, WorkspaceIgnore, load_workspace_ignore,
 };
+use crate::durable_file_policy::BOX_STORE_SAND_DATA_EXCLUDED_FILE_NAMES;
 use crate::host_paths::get_sand_root_dir;
 use crate::r#box::box_store_backend_policy::{
     BoxStoreBackendKind, is_box_store_sync_enabled, resolve_box_store_backend_policy,
@@ -122,12 +127,31 @@ pub struct ProductionBoxStoreSyncStatus {
     pub last_bytes_uploaded: u64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ProductionBoxStoreDurableStatus {
+    pub durable: bool,
+    pub fully_hydrated: Option<bool>,
+    pub entry_count: usize,
+    pub store_db_entries: usize,
+    pub agent_dir_entries: usize,
+    pub total_bytes: u64,
+    pub last_snapshot_at_ms: u64,
+}
+
 #[derive(Clone)]
 pub struct ProductionBoxStoreSyncApi {
     inner: Arc<ProductionBoxStoreSyncInner>,
 }
 
 impl ProductionBoxStoreSyncApi {
+    pub fn is_enabled(&self) -> bool {
+        self.status().enabled
+    }
+
+    pub fn get_store_id(&self) -> Result<String, String> {
+        self.inner.resolve_store_id()
+    }
+
     pub fn status(&self) -> ProductionBoxStoreSyncStatus {
         self.inner
             .status
@@ -144,6 +168,18 @@ impl ProductionBoxStoreSyncApi {
         self.inner.flush_waiters.fetch_sub(1, Ordering::AcqRel);
         result?;
         Ok(self.status())
+    }
+
+    pub fn get_box_store_status(&self) -> ProductionBoxStoreDurableStatus {
+        self.inner.read_store_status()
+    }
+
+    pub fn clear_box_store_now(&self) -> Result<(), String> {
+        self.inner.clear_store_now()
+    }
+
+    pub fn forget_agent(&self, agent_id: &str) -> Result<(), String> {
+        self.inner.forget_agent(agent_id)
     }
 
     pub fn object_store_for(&self, source_id: &str) -> Result<Arc<dyn BoxObjectStore>, String> {
@@ -329,6 +365,15 @@ impl BoxStoreSyncService for ProductionBoxStoreSyncService {
         let handle = thread::Builder::new()
             .name("box-store-sync-poller".into())
             .spawn(move || {
+                match sweep_leaked_snapshot_temps(&poll_inner.env) {
+                    Ok(removed) if removed > 0 => {
+                        poll_inner.log(&format!("swept {removed} leaked box-store temp file(s)"));
+                    }
+                    Ok(_) => {}
+                    Err(error) => {
+                        poll_inner.log(&format!("box-store temp sweep failed: {error}"));
+                    }
+                }
                 while !poll_inner.stopped.load(Ordering::Acquire) {
                     if !sleep_interruptibly(&poll_inner.stopped, interval_ms) {
                         break;
@@ -501,19 +546,33 @@ struct ProductionBoxStoreSyncInner {
 }
 
 impl ProductionBoxStoreSyncInner {
-    fn resolve_object_store(&self) -> Result<(String, Arc<dyn BoxObjectStore>), String> {
-        let store_id = match &self.mode {
-            ProductionBoxStoreSyncMode::LocalFs {
-                store_id_override: Some(store_id),
-                ..
-            } => store_id.clone(),
+    fn is_active_mode(&self) -> bool {
+        matches!(
+            self.mode,
             ProductionBoxStoreSyncMode::LocalFs { .. }
                 | ProductionBoxStoreSyncMode::AgentStore
-                | ProductionBoxStoreSyncMode::SandBoxStoreV2 => {
-                (self.deps.resolve_store_id)()?
-            }
-            _ => return Err("box-store backend is not active".into()),
-        };
+                | ProductionBoxStoreSyncMode::SandBoxStoreV2
+        )
+    }
+
+    fn resolve_store_id(&self) -> Result<String, String> {
+        if let Some(store_id) = self
+            .env
+            .get(SAND_BOX_STORE_ID_ENV)
+            .map(String::as_str)
+            .map(str::trim)
+            .filter(|value| is_frozen_agent_store_source_id(value))
+        {
+            return Ok(store_id.to_string());
+        }
+        (self.deps.resolve_store_id)()
+    }
+
+    fn resolve_object_store(&self) -> Result<(String, Arc<dyn BoxObjectStore>), String> {
+        if !self.is_active_mode() {
+            return Err("box-store backend is not active".into());
+        }
+        let store_id = self.resolve_store_id()?;
         let store = self.object_store_for_source_id(&store_id)?;
         Ok((store_id, store))
     }
@@ -629,30 +688,26 @@ impl ProductionBoxStoreSyncInner {
         let fully_hydrated = loaded.fully_hydrated;
         let mut entries = loaded.manifest;
         let mut categories = Vec::new();
+        let mut store_db_complete = false;
 
         if chrome_only {
             categories.push(sync_chrome_session(store.as_ref(), &mut entries, manifest_v2)?);
         } else {
+            let sand_data_excludes = sand_data_excludes();
+            let sand_data_exclude_refs = sand_data_excludes
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>();
             categories.push(sync_tree_category(
                 store.as_ref(),
                 &mut entries,
                 &sand_root,
                 SAND_DATA_REL_PREFIX,
                 "sand-data",
-                SAND_DATA_EXCLUDES,
+                &sand_data_exclude_refs,
                 None,
                 manifest_v2,
             )?);
-            if include_store_dbs {
-                categories.push(sync_store_db_snapshots(
-                    Arc::clone(&store),
-                    &store_id,
-                    &mut entries,
-                    &sand_root,
-                    skip_live_handle_store_dbs,
-                    None,
-                )?);
-            }
             let workspace_ignore =
                 load_workspace_ignore(WORKSPACE_ROOT, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS);
             categories.push(sync_tree_category(
@@ -701,6 +756,20 @@ impl ProductionBoxStoreSyncInner {
                     manifest_v2,
                 )?);
             }
+            if include_store_dbs {
+                let store_db_summary = sync_store_db_snapshots(
+                    Arc::clone(&store),
+                    &store_id,
+                    &mut entries,
+                    &sand_root,
+                    skip_live_handle_store_dbs,
+                    None,
+                )?;
+                store_db_complete = store_db_summary.failures == 0
+                    && store_db_summary.oversize == 0
+                    && store_db_summary.metadata_failures == 0;
+                categories.push(store_db_summary);
+            }
         }
 
         let has_cycle_failures = categories
@@ -722,6 +791,7 @@ impl ProductionBoxStoreSyncInner {
                     && hydration_marker_path.exists()
                     && include_idle_only
                     && include_store_dbs
+                    && store_db_complete
                     && categories
                         .iter()
                         .all(|category| category.failures == 0 && category.oversize == 0)
@@ -741,6 +811,7 @@ impl ProductionBoxStoreSyncInner {
             && hydration_marker_path.exists()
             && include_idle_only
             && include_store_dbs
+            && store_db_complete
             && categories
                 .iter()
                 .all(|category| category.failures == 0 && category.oversize == 0)
@@ -795,6 +866,178 @@ impl ProductionBoxStoreSyncInner {
             if ok { "ok" } else { "category-failures" },
             ok,
         );
+        Ok(())
+    }
+
+    fn legacy_agent_store_for_source_id(
+        &self,
+        source_id: &str,
+    ) -> Result<Arc<dyn BoxObjectStore>, String> {
+        let provider = AgentStoreObjectStoreProvider::new(AgentStoreClientDependencies {
+            backend_url: self
+                .deps
+                .backend_url
+                .clone()
+                .ok_or_else(|| "AgentStore backend URL is not configured".to_string())?,
+            get_access_token: self
+                .deps
+                .get_access_token
+                .clone()
+                .ok_or_else(|| "AgentStore auth token resolver is not configured".to_string())?,
+            get_machine_id: self
+                .deps
+                .get_machine_id
+                .clone()
+                .ok_or_else(|| "AgentStore machine id resolver is not configured".to_string())?,
+        })?;
+        Ok(Arc::from(provider.for_store(source_id)))
+    }
+
+    fn read_store_status(&self) -> ProductionBoxStoreDurableStatus {
+        let result = (|| -> Result<ProductionBoxStoreDurableStatus, String> {
+            let store_id = self.resolve_store_id()?;
+            let store = self.object_store_for_source_id(&store_id)?;
+            let Some(manifest) = read_manifest_strict(store.as_ref())? else {
+                return Ok(ProductionBoxStoreDurableStatus::default());
+            };
+            let total_bytes = manifest
+                .entries
+                .values()
+                .map(|entry| match entry {
+                    BoxStoreManifestEntry::LegacyFile { size, .. }
+                    | BoxStoreManifestEntry::File { size, .. } => *size,
+                    BoxStoreManifestEntry::Symlink { .. } => 0,
+                })
+                .sum();
+            Ok(ProductionBoxStoreDurableStatus {
+                durable: !manifest.entries.is_empty(),
+                fully_hydrated: manifest.fully_hydrated,
+                entry_count: manifest.entries.len(),
+                store_db_entries: count_store_db_manifest_entries(Some(&manifest.entries)),
+                agent_dir_entries: count_agent_dir_manifest_entries(Some(&manifest.entries)),
+                total_bytes,
+                last_snapshot_at_ms: manifest.updated_at_ms,
+            })
+        })();
+        match result {
+            Ok(status) => status,
+            Err(error) => {
+                self.log(&format!("readStoreStatus failed: {error}"));
+                ProductionBoxStoreDurableStatus::default()
+            }
+        }
+    }
+
+    fn clear_store_now(&self) -> Result<(), String> {
+        let store_id = self.resolve_store_id()?;
+        if matches!(self.mode, ProductionBoxStoreSyncMode::SandBoxStoreV2) {
+            let legacy = self.legacy_agent_store_for_source_id(&store_id)?;
+            self.reset_canonical_store(&store_id, legacy.as_ref())
+                .map_err(|error| format!("legacy store clear failed: {error}"))?;
+        }
+
+        self.stopped.store(true, Ordering::Release);
+        self.store_db_debounce
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .pending
+            .clear();
+        self.store_db_wake.notify_all();
+
+        let _cycle = self
+            .cycle_lock
+            .lock()
+            .map_err(|_| "box-store sync cycle lock poisoned".to_string())?;
+        let store = self.object_store_for_source_id(&store_id)?;
+        self.reset_canonical_store(&store_id, store.as_ref())
+    }
+
+    fn reset_canonical_store(
+        &self,
+        store_id: &str,
+        store: &dyn BoxObjectStore,
+    ) -> Result<(), String> {
+        prepare_canonical_manifest_reset(store)?;
+        let baseline = store.get(BOX_STORE_MANIFEST_REL_PATH)?;
+        let marker_path = get_sand_root_dir().join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME);
+        remove_hydration_handoff_marker(&marker_path).map_err(|error| error.to_string())?;
+        let manifest_v2 = self
+            .env
+            .get(SAND_MANIFEST_V2_ENV)
+            .is_some_and(|value| value == "1");
+        let writer_window_id = format!("mahayana-host-{}", std::process::id());
+        write_manifest_with_retry(
+            store,
+            store_id,
+            baseline,
+            &BoxManifestMap::new(),
+            manifest_v2,
+            Some(&writer_window_id),
+            None,
+            ManifestSaveOptions {
+                hydration_update: Some(ManifestHydrationUpdate::ResetComplete),
+                ..ManifestSaveOptions::default()
+            },
+            BOX_STORE_MANIFEST_RETRY_ATTEMPTS,
+            BOX_STORE_MANIFEST_RETRY_DELAY_MS,
+            &|message| self.log(message),
+            &|| false,
+        )?;
+        Ok(())
+    }
+
+    fn forget_agent(&self, agent_id: &str) -> Result<(), String> {
+        let agent_id = agent_id.trim();
+        if agent_id.is_empty() {
+            return Ok(());
+        }
+        self.store_db_debounce
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .pending
+            .remove(agent_id);
+
+        let _cycle = self
+            .cycle_lock
+            .lock()
+            .map_err(|_| "box-store sync cycle lock poisoned".to_string())?;
+        let store_id = self.resolve_store_id()?;
+        let store = self.object_store_for_source_id(&store_id)?;
+        let marker_path = get_sand_root_dir().join(BOX_STORE_HYDRATION_HANDOFF_FILE_NAME);
+        let loaded = load_manifest_for_write(
+            store.as_ref(),
+            self.env
+                .get(SAND_MANIFEST_V2_ENV)
+                .is_some_and(|value| value == "1"),
+            Some(&marker_path),
+        )?;
+        let mut entries = loaded.manifest;
+        let needle = format!("/agents/{agent_id}/");
+        let own_prefix = format!("agents/{agent_id}/");
+        let before = entries.len();
+        entries.retain(|path, _| !(path.contains(&needle) || path.starts_with(&own_prefix)));
+        if entries.len() == before {
+            return Ok(());
+        }
+        let writer_window_id = format!("mahayana-host-{}", std::process::id());
+        write_manifest_with_retry(
+            store.as_ref(),
+            &store_id,
+            loaded.baseline,
+            &entries,
+            loaded.manifest_v2,
+            Some(&writer_window_id),
+            loaded.fully_hydrated,
+            ManifestSaveOptions::default(),
+            BOX_STORE_MANIFEST_RETRY_ATTEMPTS,
+            BOX_STORE_MANIFEST_RETRY_DELAY_MS,
+            &|message| self.log(message),
+            &|| false,
+        )?;
+        self.log(&format!(
+            "forgot {agent_id} ({} entries)",
+            before.saturating_sub(entries.len())
+        ));
         Ok(())
     }
 
@@ -1024,6 +1267,72 @@ fn write_manifest(
     )?;
     store.put(BOX_STORE_MANIFEST_REL_PATH, &bytes)
 }
+
+fn sand_data_excludes() -> Vec<String> {
+    let mut excludes = SAND_DATA_EXCLUDES
+        .iter()
+        .map(|value| (*value).to_string())
+        .collect::<Vec<_>>();
+    excludes.extend(
+        BOX_STORE_SAND_DATA_EXCLUDED_FILE_NAMES
+            .iter()
+            .map(|name| format!("{SAND_DATA_REL_PREFIX}/{name}")),
+    );
+    excludes
+}
+
+fn sweep_leaked_snapshot_temps(env: &BTreeMap<String, String>) -> Result<usize, String> {
+    let mut roots = vec![
+        get_sand_root_dir(),
+        PathBuf::from(WORKSPACE_ROOT),
+        PathBuf::from(CLI_CONFIG_ROOT),
+        PathBuf::from("/home/box/chrome-profile"),
+    ];
+    if is_better_cli_home_enabled(
+        env.get(SAND_STORE_BETTER_CLI_ENV).map(String::as_str),
+        env.get(SAND_USER_NON_ROOT_ENV).map(String::as_str),
+    ) {
+        roots.push(PathBuf::from(BOX_HOME_DIR));
+    }
+    let mut removed = 0usize;
+    for root in dedupe_nested_roots(roots) {
+        removed = removed.saturating_add(sweep_leaked_snapshot_temps_under(&root)?);
+    }
+    Ok(removed)
+}
+
+fn sweep_leaked_snapshot_temps_under(root: &Path) -> Result<usize, String> {
+    let entries = match fs::read_dir(root) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(0),
+        Err(error) => return Err(error.to_string()),
+    };
+    let mut removed = 0usize;
+    for entry in entries {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(_) => continue,
+        };
+        let file_type = match entry.file_type() {
+            Ok(file_type) => file_type,
+            Err(_) => continue,
+        };
+        let path = entry.path();
+        if file_type.is_dir() {
+            removed = removed.saturating_add(sweep_leaked_snapshot_temps_under(&path)?);
+        } else if file_type.is_file() {
+            let value = path.to_string_lossy();
+            if (value.contains(BOX_STORE_SNAPSHOT_TMP_SUFFIX)
+                || value.contains(BOX_STORE_RESTORE_TMP_SUFFIX))
+                && fs::remove_file(&path).is_ok()
+            {
+                removed = removed.saturating_add(1);
+            }
+        }
+    }
+    Ok(removed)
+}
+
 
 fn sync_chrome_auth_state_category(
     store: &dyn BoxObjectStore,
