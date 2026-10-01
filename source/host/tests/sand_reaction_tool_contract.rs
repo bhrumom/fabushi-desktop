@@ -5,8 +5,8 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::tools::sand_reaction_tool::{
-    ReactionSink, ReactionToolBridge, SAND_REACT_TO_MESSAGE_TOOL_NAME,
-    is_message_address, reaction_tool_definition,
+    CountingReactionSink, ReactionDeliveryCounter, ReactionSink, ReactionToolBridge,
+    SAND_REACT_TO_MESSAGE_TOOL_NAME, is_message_address, reaction_tool_definition,
 };
 use serde_json::{Value, json};
 
@@ -149,4 +149,20 @@ fn reaction_tool_rejects_missing_or_overlong_emoji_before_transport() {
             .is_err()
     );
     assert!(sink.reactions.lock().expect("reactions").is_empty());
+}
+
+
+#[test]
+fn successful_reactions_increment_the_per_turn_delivery_counter_only_after_sink_success() {
+    let sink = Arc::new(Sink::default());
+    let counter = ReactionDeliveryCounter::default();
+    let counted: Arc<dyn ReactionSink> =
+        Arc::new(CountingReactionSink::new(sink.clone(), counter.clone()));
+    assert_eq!(counter.count(), 0);
+    counted.react("t1u", "✅").expect("reaction");
+    assert_eq!(counter.count(), 1);
+    assert_eq!(
+        sink.reactions.lock().expect("reactions").as_slice(),
+        &[("t1u".into(), "✅".into())]
+    );
 }
