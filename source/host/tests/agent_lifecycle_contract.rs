@@ -7,7 +7,10 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     AgentDeletionRuntimeDeps, AgentLifecycleGatewayError, ProductionAgentLifecycle,
     dispatch_production_agent_lifecycle_gateway_call,
+    dispatch_production_agent_lifecycle_gateway_call_with_runtimes,
 };
+use mahayana_host_runtime::extensions::transcript::production_runtime::ProductionTranscriptRuntime;
+use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
 use serde_json::json;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -386,6 +389,70 @@ fn lifecycle_gateway_owns_create_background_and_update_agent_mutations() {
     assert_eq!(updated["title"], "Worker");
 
     store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn lifecycle_mutations_publish_through_the_single_roster_owner() {
+    let root = temp_root("roster-owner");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let transcript = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&events);
+    let roster = Arc::new(ProductionRosterEmit::new(
+        Arc::clone(&production),
+        transcript,
+        Arc::new(move |event| sink.lock().expect("events").push(event)),
+    ));
+    let deletion = AgentDeletionRuntimeDeps::default();
+
+    let created = dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
+        &production,
+        &deletion,
+        Some(Arc::clone(&roster)),
+        "createAgent",
+        &json!({"name":"Roster Agent","description":""}),
+    )
+    .expect("create handled")
+    .expect("create");
+    let agent_id = created["agent"]["id"].as_str().expect("agent id").to_string();
+    assert_eq!(events.lock().expect("events")[0]["channel"], "agents");
+
+    dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
+        &production,
+        &deletion,
+        Some(Arc::clone(&roster)),
+        "updateAgent",
+        &json!({
+            "id": agent_id,
+            "profile": {"name":"Renamed","description":"profile changed"}
+        }),
+    )
+    .expect("update handled")
+    .expect("update");
+    let observed = events.lock().expect("events").clone();
+    assert!(observed.iter().any(|event| event["channel"] == "agent-upserted"));
+    assert!(observed.iter().any(|event| event["channel"] == "profile-changed"));
+
+    dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
+        &production,
+        &deletion,
+        Some(Arc::clone(&roster)),
+        "deleteAgent",
+        &json!({"id": agent_id}),
+    )
+    .expect("delete handled")
+    .expect("delete");
+    assert_eq!(
+        events.lock().expect("events").last().expect("last event")["channel"],
+        "agents"
+    );
+
+    production.shutdown();
     let _ = fs::remove_dir_all(root);
 }
 

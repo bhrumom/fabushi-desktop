@@ -60,7 +60,7 @@ fn shipping_agent_deletion_wires_tray_and_durable_recovery_cleanup_owners() {
     assert!(TRANSCRIPT_RUNTIME.contains("pub fn clear_agent_durable_recovery"));
     assert!(TRANSCRIPT_RUNTIME.contains("store.clear_agent(agent_id)"));
     let lifecycle_dispatch = SHIPPING_HOST
-        .find("dispatch_production_agent_lifecycle_gateway_call_with_runtime(")
+        .find("dispatch_production_agent_lifecycle_gateway_call_with_runtimes(")
         .expect("shipping lifecycle dispatcher");
     let session_dispatch = SHIPPING_HOST[lifecycle_dispatch..]
         .find("dispatch_production_session_gateway_call_with_content_search(")
@@ -116,6 +116,7 @@ fn shipping_create_agent_path_consumes_nonce_and_input_policy() {
         "dispatch_production_agent_lifecycle_gateway_call_with_runtime("
     ));
     assert!(!create_block.contains("dispatch_production_session_gateway_call("));
+    assert!(create_block.contains("Some(Arc::clone(&self.roster_emit))"));
 
     let sanitized = sanitize_create_agent_args(&json!({
         "name": "Agent",

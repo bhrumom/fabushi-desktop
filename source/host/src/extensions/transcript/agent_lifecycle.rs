@@ -14,6 +14,7 @@ use crate::extensions::session::gateway::{
 };
 use crate::transcript_mutation_events::publish_transcript_mutation;
 use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::extensions::transcript::roster_emit::ProductionRosterEmit;
 
 pub type AgentDeletionHook = Arc<dyn Fn(&str) -> Result<(), String> + Send + Sync + 'static>;
 
@@ -109,21 +110,46 @@ fn map_session_gateway_error(error: SessionGatewayError) -> AgentLifecycleGatewa
 pub struct ProductionAgentLifecycle {
     store: SandAgentSessionStore,
     deletion_runtime: AgentDeletionRuntimeDeps,
+    roster: Option<Arc<ProductionRosterEmit>>,
 }
 
 impl ProductionAgentLifecycle {
     pub fn new(production: Arc<ProductionSessionWorkers>) -> Self {
-        Self::with_deletion_runtime(production, AgentDeletionRuntimeDeps::default())
+        Self::with_runtime_deps(production, AgentDeletionRuntimeDeps::default(), None)
     }
 
     pub fn with_deletion_runtime(
         production: Arc<ProductionSessionWorkers>,
         deletion_runtime: AgentDeletionRuntimeDeps,
     ) -> Self {
+        Self::with_runtime_deps(production, deletion_runtime, None)
+    }
+
+    pub fn with_runtime_deps(
+        production: Arc<ProductionSessionWorkers>,
+        deletion_runtime: AgentDeletionRuntimeDeps,
+        roster: Option<Arc<ProductionRosterEmit>>,
+    ) -> Self {
         Self {
             store: SandAgentSessionStore::new(production),
             deletion_runtime,
+            roster,
         }
+    }
+
+    fn emit_agents(&self) -> Result<(), String> {
+        if let Some(roster) = self.roster.as_ref() {
+            roster.emit_agents()?;
+        }
+        Ok(())
+    }
+
+    fn emit_agent_profile_update(&self, agent_id: &str) -> Result<(), String> {
+        if let Some(roster) = self.roster.as_ref() {
+            roster.emit_agent_update(agent_id)?;
+            roster.publish_profile_changed(agent_id);
+        }
+        Ok(())
     }
 
     fn create_agent_from_args(
@@ -159,6 +185,8 @@ impl ProductionAgentLifecycle {
                 .write_active_agent_id(&record.id)
                 .map_err(|error| AgentLifecycleGatewayError::internal(error.to_string()))?;
         }
+        self.emit_agents()
+            .map_err(AgentLifecycleGatewayError::internal)?;
 
         let summary = self
             .store
@@ -185,6 +213,8 @@ impl ProductionAgentLifecycle {
         let summary = self
             .store
             .update_agent_profile(agent_id, &update)
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        self.emit_agent_profile_update(agent_id)
             .map_err(AgentLifecycleGatewayError::internal)?;
         serde_json::to_value(summary)
             .map_err(|error| AgentLifecycleGatewayError::internal(error.to_string()))
@@ -231,6 +261,7 @@ impl ProductionAgentLifecycle {
                 ("agentId".to_string(), Value::String(new_id.clone())),
             ]);
             publish_transcript_mutation(&mutation);
+            self.emit_agents()?;
             let agent = self
                 .store
                 .summarize_agent_by_id(&new_id)?
@@ -301,6 +332,7 @@ impl ProductionAgentLifecycle {
                     .write_active_agent_id(&successor)
                     .map_err(|error| error.to_string())?;
                 let transcript = self.store.read_agent_transcript_entries(&successor)?;
+                self.emit_agents()?;
                 return Ok(json!({ "transcript": transcript }));
             }
 
@@ -317,18 +349,21 @@ impl ProductionAgentLifecycle {
                         .write_active_agent_id(&fallback_id)
                         .map_err(|error| error.to_string())?;
                     let transcript = self.store.read_agent_transcript_entries(&fallback_id)?;
+                    self.emit_agents()?;
                     return Ok(json!({ "transcript": transcript }));
                 }
                 Err(error) if error.contains("Agent limit of") => {
                     self.store
                         .clear_active_agent_id()
                         .map_err(|error| error.to_string())?;
+                    self.emit_agents()?;
                     return Ok(json!({ "transcript": [] }));
                 }
                 Err(error) => return Err(error),
             }
         }
 
+        self.emit_agents()?;
         self.current_transcript()
     }
 
@@ -367,9 +402,26 @@ pub fn dispatch_production_agent_lifecycle_gateway_call_with_runtime(
     method: &str,
     args: &Value,
 ) -> Option<Result<Value, AgentLifecycleGatewayError>> {
-    let lifecycle = ProductionAgentLifecycle::with_deletion_runtime(
+    dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
+        production,
+        deletion_runtime,
+        None,
+        method,
+        args,
+    )
+}
+
+pub fn dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
+    production: &Arc<ProductionSessionWorkers>,
+    deletion_runtime: &AgentDeletionRuntimeDeps,
+    roster: Option<Arc<ProductionRosterEmit>>,
+    method: &str,
+    args: &Value,
+) -> Option<Result<Value, AgentLifecycleGatewayError>> {
+    let lifecycle = ProductionAgentLifecycle::with_runtime_deps(
         Arc::clone(production),
         deletion_runtime.clone(),
+        roster,
     );
     let result = match method {
         "createAgent" => lifecycle.create_agent_from_args(args, true),

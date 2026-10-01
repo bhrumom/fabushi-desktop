@@ -169,6 +169,7 @@ use mahayana_host_runtime::extensions::transcript::run_scheduler::WatchdogStage;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     AgentDeletionRuntimeDeps, AgentLifecycleGatewayError,
     dispatch_production_agent_lifecycle_gateway_call_with_runtime,
+    dispatch_production_agent_lifecycle_gateway_call_with_runtimes,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderOptions,
@@ -6616,9 +6617,10 @@ impl GatewayApi for UnifiedGatewayApi {
                 if let Some(cached) = ledger.get(&nonce).cloned() {
                     return Ok(cached);
                 }
-                let minted = dispatch_production_agent_lifecycle_gateway_call_with_runtime(
+                let minted = dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
                     &self.session_workers,
                     &self.agent_deletion_runtime,
+                    Some(Arc::clone(&self.roster_emit)),
                     method,
                     &projected,
                 )
@@ -6634,9 +6636,10 @@ impl GatewayApi for UnifiedGatewayApi {
                 ledger.insert(nonce, minted.clone());
                 return Ok(minted);
             }
-            return dispatch_production_agent_lifecycle_gateway_call_with_runtime(
+            return dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
                 &self.session_workers,
                 &self.agent_deletion_runtime,
+                Some(Arc::clone(&self.roster_emit)),
                 method,
                 &projected,
             )
@@ -6898,9 +6901,10 @@ impl GatewayApi for UnifiedGatewayApi {
             .map_err(|error| GatewayCommandError::Internal(error.to_string()));
         }
         if let Some(result) =
-            dispatch_production_agent_lifecycle_gateway_call_with_runtime(
+            dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
                 &self.session_workers,
                 &self.agent_deletion_runtime,
+                Some(Arc::clone(&self.roster_emit)),
                 method,
                 &args,
             )
