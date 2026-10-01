@@ -16209,7 +16209,7 @@
       "targetPath": "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "0f6225aa658c41b3e44dd5c43f460987701745d6",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -16225,10 +16225,12 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/async_task_union_contract.rs",
         "source/host/tests/cloud_agent_background_revival_production_contract.rs",
-        "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs"
+        "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs",
+        "source/host/tests/sand_host_production_wiring_contract.rs",
+        "source/host/tests/box_generated_production_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production ports frozen marker coercion, quiet automation origin, key-based upsert, has/clear/prune semantics and part-file replacement. ProductionTranscriptRuntime owns the store under app_data_dir; getAsyncTasks projects its durable ledger into the shipping frontend-compatible async-task union, and successful agent deletion clears durable markers. Cloud-agent launch/watch/reply persist markers from the shipping shared RunnerCloudAgentWatches owner and CompletionRevivals clears them on terminal settlement while emitting async-task projection. Recreate-interrupted Shell markers now enter the same shipping CompletionRevivals path with an explicit unknown-final-state completion instead of the former Host stub. Final remains withheld for ordinary live shell rewatch and live generated-Agent subagent completion ownership."
+      "notes": "Rust production store and shipping Host now close the frozen durable-wake lifecycle for Shell, generated subagent and cloud-agent work: key-based upsert/has/clear/prune, quiet-origin preservation, startup rearm, live background-shell registration from the real field-16/field-14 shellId, generated-subagent marker persistence, async-task projection, restart recovery, and marker settlement through the single CompletionRevivals owner. Exact-HEAD Rust Host/Runner and box-daemon contracts exercise the production wiring; no second pending-wake ledger is introduced."
     },
     {
       "referencePath": "source/host/extensions/transcript/sand-upgrade-resume-store.ts",
@@ -17891,7 +17893,7 @@
       "targetPath": "source/host/src/runner/background_work.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "7b0742fa89eb580f49d76fc06f7577c74fe42c31",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -17904,10 +17906,13 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/cloud_agent_background_revival_production_contract.rs",
-        "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs"
+        "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs",
+        "source/host/tests/sand_host_production_wiring_contract.rs",
+        "source/host/tests/box_generated_production_contract.rs",
+        "source/host/tests/runner_box_tool_composition_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port owns the frozen background-work core: reviving work registry, wakeup ack/nack/suppress/completion semantics, quiet-origin propagation, shell terminal footer parsing, rewatch constants, subagent title derivation and steer-prompt formatting. Shipping Host composes RunnerCloudAgentWatches as a shared owner with generation fencing, durable pending-wake persistence, async-task projection, SandCloudAgentManager awaitCompletion polling and CompletionRevivals settlement. Recreate-interrupted Shell wakes now route through CompletionRevivals with a concrete interrupted-result projection. Final remains withheld for ordinary production shell rewatch/poll composition and the remaining generic quiet-work-origin carrier semantics."
+      "notes": "Rust Runner owns the frozen background-work lifecycle in shipping composition: shared RunnerBackgroundShellWatches/RunnerCloudAgentWatches, generation fencing, durable pending-wake registration, immediate field-16 background spawn, positive block_until_ms field-14 timed handoff of the same child, restart rearm, terminal polling/footer settlement, missing-file/permission/timeout outcomes, CompletionRevivals settlement, marker cleanup and async-task projection. Exact-HEAD contracts prove the real wire shellId reaches the unique watcher and survives the durable recovery path; no parallel watcher or wake state is used."
     },
     {
       "referencePath": "source/host/runner/bot-block-detection.ts",
@@ -19582,7 +19587,7 @@
       "targetPath": "source/host/src/sand_host.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f91142103c1055fa53b51cb6ea22f37313c4090e",
       "architecturalRole": "host/sand-host",
       "processOrPackage": "mahayana-host",
@@ -19595,9 +19600,11 @@
       "testEvidence": [
         "source/host/tests/remaining_planned_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/sand_host_production_wiring_contract.rs"
+        "source/host/tests/sand_host_production_wiring_contract.rs",
+        "source/host/tests/box_generated_production_contract.rs",
+        "source/host/tests/runner_box_tool_composition_contract.rs"
       ],
-      "notes": "Shipping GatewayApi health consumes the Rust SandHost health owner with live running-agent ids, durable pending-wake background work, Auto-review pending approvals, active-agent projection and approval-only lastBusyAt fencing. Shipping startup also restores frozen box-ready reporting after gateway discovery: boot-id marker dedupe, asynchronous confirmed telemetry, 3 attempts with 30s retry, and marker write only after delivery. Final remains withheld for frozen running-subagent/background-shell/mid-drain revival busy sources."
+      "notes": "Shipping Rust SandHost/Host composition owns live agent and background-work health, durable pending-wake busy projection, Auto-review pending approvals, active-agent projection and approval-only lastBusyAt fencing. The single production composition now includes generated-subagent durability, live background-shell registration, restart rearm, CompletionRevivals/mid-drain settlement and busy-to-idle projection, while box-ready reporting remains boot-id deduped and asynchronously retried. Exact-HEAD Host/Runner, box-daemon and production-wiring contracts cover these owners without a second Host/runtime."
     },
     {
       "referencePath": "source/host/sand-multitask.ts",
