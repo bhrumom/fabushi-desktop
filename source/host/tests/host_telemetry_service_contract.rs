@@ -992,3 +992,34 @@ fn chrome_session_stage_facade_preserves_frozen_event_level_and_metadata() {
 
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn auto_review_display_recheck_facade_matches_frozen_structured_log_contract() {
+    let root = temp_root();
+    let service = HostTelemetryService::open(root.join("auto-review-display-recheck.jsonl"))
+        .expect("telemetry service");
+
+    service
+        .logs
+        .report_auto_review_display_recheck_failed("agent-display")
+        .expect("display recheck telemetry");
+
+    let text = fs::read_to_string(service.records_path()).expect("telemetry jsonl");
+    let records = text
+        .lines()
+        .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
+        .collect::<Vec<_>>();
+
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].channel, "structured_log");
+    assert_eq!(records[0].event, "sand.auto_review.display_recheck_failed");
+    assert_eq!(records[0].payload["level"], "info");
+    assert_eq!(
+        records[0].payload["metadata"]["conversation_id"],
+        "agent-display"
+    );
+    assert_eq!(records[0].payload["metadata"]["surface"], "computer");
+
+    let _ = fs::remove_dir_all(root);
+}
