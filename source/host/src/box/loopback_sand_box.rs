@@ -209,11 +209,40 @@ impl LoopbackSandBox {
         endpoint: &BoxEndpoint,
         timeout_ms: u64,
     ) -> Result<(), LoopbackSandBoxError> {
+        let primary = endpoint.port == self.options.exec_daemon_port;
+        if !primary {
+            return self.wait_until_ready_uncoordinated(ctx, endpoint, timeout_ms);
+        }
+        self.shared
+            .foreground_ready_waits
+            .fetch_add(1, Ordering::AcqRel);
+        let result = {
+            let _poll = self
+                .shared
+                .poll_gate
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            self.wait_until_ready_uncoordinated(ctx, endpoint, timeout_ms)
+        };
+        self.shared
+            .foreground_ready_waits
+            .fetch_sub(1, Ordering::AcqRel);
+        result
+    }
+
+    fn wait_until_ready_uncoordinated<Ctx>(
+        &self,
+        ctx: &Ctx,
+        endpoint: &BoxEndpoint,
+        timeout_ms: u64,
+    ) -> Result<(), LoopbackSandBoxError> {
         let started = Instant::now();
         let target = format!("{}:{}", endpoint.host, endpoint.port);
+        let primary = endpoint.port == self.options.exec_daemon_port;
         let mut attempts = 0u64;
         let mut last_outcome = "refused".to_string();
         let mut last_cause = None::<String>;
+        let mut unready_since = None::<Instant>;
 
         while started.elapsed() < Duration::from_millis(timeout_ms) {
             attempts = attempts.saturating_add(1);
@@ -227,11 +256,92 @@ impl LoopbackSandBox {
             last_outcome = result.outcome.to_string();
             last_cause = result.cause_summary;
             if result.outcome == "ok" {
+                let now = Instant::now();
+                let mut recovery = None;
+                if primary {
+                    let mut episode = self
+                        .shared
+                        .episode
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    let watchdog_outage = episode.readiness == "unready";
+                    if attempts > 1 || watchdog_outage {
+                        let episode_start = if watchdog_outage {
+                            episode.unready_since.unwrap_or(started)
+                        } else {
+                            unready_since.unwrap_or(started)
+                        };
+                        recovery = Some(DaemonPingReport {
+                            outcome: "ok".into(),
+                            attempts: if watchdog_outage {
+                                episode.unready_attempts.saturating_add(attempts)
+                            } else {
+                                attempts
+                            },
+                            duration_ms: millis(now.duration_since(if watchdog_outage {
+                                episode_start
+                            } else {
+                                started
+                            })),
+                            unready_duration_ms: millis(now.duration_since(episode_start)),
+                            readiness_state: "ready_after_retry".into(),
+                            target: target.clone(),
+                            cause_summary: None,
+                        });
+                    }
+                    episode.readiness = "ready";
+                    episode.unready_since = None;
+                    episode.unready_attempts = 0;
+                } else if attempts > 1 {
+                    let episode_start = unready_since.unwrap_or(started);
+                    recovery = Some(DaemonPingReport {
+                        outcome: "ok".into(),
+                        attempts,
+                        duration_ms: millis(now.duration_since(started)),
+                        unready_duration_ms: millis(now.duration_since(episode_start)),
+                        readiness_state: "ready_after_retry".into(),
+                        target: target.clone(),
+                        cause_summary: None,
+                    });
+                }
+                if let Some(report) = recovery {
+                    self.report_daemon_ping(report);
+                }
+                if primary {
+                    self.start_daemon_watchdog(endpoint.clone());
+                }
                 return Ok(());
             }
+            unready_since.get_or_insert_with(Instant::now);
             if self.options.poll_interval_ms > 0 {
                 thread::sleep(Duration::from_millis(self.options.poll_interval_ms));
             }
+        }
+
+        let now = Instant::now();
+        let episode_start = unready_since.unwrap_or(started);
+        self.report_daemon_ping(DaemonPingReport {
+            outcome: last_outcome.clone(),
+            attempts,
+            duration_ms: millis(now.duration_since(started)),
+            unready_duration_ms: millis(now.duration_since(episode_start)),
+            readiness_state: daemon_ping_readiness_state(&last_outcome).into(),
+            target: target.clone(),
+            cause_summary: last_cause.clone(),
+        });
+        if primary && self.shared.watchdog_started.load(Ordering::Acquire) {
+            let mut episode = self
+                .shared
+                .episode
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if episode.readiness == "ready" {
+                episode.unready_since = Some(episode_start);
+                episode.unready_attempts = attempts;
+            } else {
+                episode.unready_attempts = episode.unready_attempts.saturating_add(attempts);
+            }
+            episode.readiness = "unready";
         }
 
         let cause = last_cause
@@ -245,6 +355,37 @@ impl LoopbackSandBox {
             ),
         )
         .into())
+    }
+
+    fn start_daemon_watchdog(&self, endpoint: BoxEndpoint) {
+        let has_telemetry = self
+            .shared
+            .telemetry
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .is_some();
+        if !has_telemetry
+            || self.options.watchdog_interval_ms == 0
+            || self
+                .shared
+                .watchdog_started
+                .swap(true, Ordering::AcqRel)
+        {
+            return;
+        }
+        {
+            let mut episode = self
+                .shared
+                .episode
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            episode.readiness = "ready";
+        }
+        let weak = Arc::downgrade(&self.shared);
+        let interval = Duration::from_millis(self.options.watchdog_interval_ms);
+        let _ = thread::Builder::new()
+            .name("mahayana-loopback-daemon-watchdog".into())
+            .spawn(move || daemon_watchdog_loop(weak, endpoint, interval));
     }
 
     pub fn ensure_ready<Ctx>(
@@ -422,5 +563,95 @@ pub fn daemon_ping_readiness_state(outcome: &str) -> &'static str {
         "refused" => "up_but_exec_refused",
         "timeout" => "up_but_exec_unresponsive",
         _ => "up_but_exec_disconnected",
+    }
+}
+
+fn millis(duration: Duration) -> u64 {
+    duration.as_millis().min(u64::MAX as u128) as u64
+}
+
+fn report_from_shared(shared: &LoopbackSharedState, report: &DaemonPingReport) {
+    let reporter = shared
+        .telemetry
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .clone();
+    if let Some(reporter) = reporter {
+        reporter(report);
+    }
+}
+
+fn daemon_watchdog_loop(
+    weak: Weak<LoopbackSharedState>,
+    endpoint: BoxEndpoint,
+    interval: Duration,
+) {
+    loop {
+        thread::sleep(interval);
+        let Some(shared) = weak.upgrade() else {
+            return;
+        };
+        if shared.foreground_ready_waits.load(Ordering::Acquire) > 0 {
+            continue;
+        }
+        let _poll = shared
+            .poll_gate
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if shared.foreground_ready_waits.load(Ordering::Acquire) > 0 {
+            continue;
+        }
+        let started = Instant::now();
+        let transport = ProductionBoxTransport::from_endpoint(&endpoint);
+        let result = ping_box_transport_classified(
+            &(),
+            &transport,
+            create_production_box_control_client,
+            DEFAULT_BOX_PING_TIMEOUT_MS,
+        );
+        let now = Instant::now();
+        let target = format!("{}:{}", endpoint.host, endpoint.port);
+        let mut report = None;
+        {
+            let mut episode = shared
+                .episode
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if result.outcome == "ok" {
+                if episode.readiness == "unready" {
+                    let since = episode.unready_since.unwrap_or(started);
+                    report = Some(DaemonPingReport {
+                        outcome: "ok".into(),
+                        attempts: episode.unready_attempts.saturating_add(1),
+                        duration_ms: millis(now.duration_since(since)),
+                        unready_duration_ms: millis(now.duration_since(since)),
+                        readiness_state: "ready_after_retry".into(),
+                        target,
+                        cause_summary: None,
+                    });
+                }
+                episode.readiness = "ready";
+                episode.unready_since = None;
+                episode.unready_attempts = 0;
+            } else if episode.readiness != "unready" {
+                episode.readiness = "unready";
+                episode.unready_since = Some(started);
+                episode.unready_attempts = 1;
+                report = Some(DaemonPingReport {
+                    outcome: result.outcome.to_string(),
+                    attempts: 1,
+                    duration_ms: millis(now.duration_since(started)),
+                    unready_duration_ms: millis(now.duration_since(started)),
+                    readiness_state: daemon_ping_readiness_state(result.outcome.as_ref()).into(),
+                    target,
+                    cause_summary: result.cause_summary,
+                });
+            } else {
+                episode.unready_attempts = episode.unready_attempts.saturating_add(1);
+            }
+        }
+        if let Some(report) = report {
+            report_from_shared(&shared, &report);
+        }
     }
 }
