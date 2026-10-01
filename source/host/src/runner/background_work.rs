@@ -673,15 +673,6 @@ impl RunnerBackgroundShellWatches {
             .map(str::to_string)
             .unwrap_or_else(|| format!("Background command {shell_id}"));
 
-        if let Some(callback) = self.on_pending.as_ref() {
-            callback(&BackgroundShellPendingWatch {
-                parent_agent_id: parent_agent_id.to_string(),
-                work_id: shell_id.to_string(),
-                title: title.clone(),
-                quiet_origin: options.quiet_origin.clone(),
-            });
-        }
-
         let key = background_shell_watch_key(parent_agent_id, shell_id);
         let armed = {
             let mut state = self
@@ -703,6 +694,18 @@ impl RunnerBackgroundShellWatches {
             state.armed.insert(key.clone(), armed.clone());
             armed
         };
+
+        // Persist/project only after this owner successfully claims the watch.
+        // Duplicate restart rearm attempts therefore cannot emit a second
+        // durable pending marker or duplicate async-task projection.
+        if let Some(callback) = self.on_pending.as_ref() {
+            callback(&BackgroundShellPendingWatch {
+                parent_agent_id: armed.parent_agent_id.clone(),
+                work_id: armed.work_id.clone(),
+                title: armed.title.clone(),
+                quiet_origin: armed.quiet_origin.clone(),
+            });
+        }
         self.emit_async_tasks_changed(parent_agent_id);
 
         let state = Arc::clone(&self.state);
