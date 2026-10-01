@@ -80,6 +80,12 @@ fn start_forever_box_extension_inner(
     options: ForeverBoxExtensionOptions,
     recreate_telemetry: Option<HostStructuredLogTelemetry>,
 ) -> Arc<ForeverBoxService> {
+    if let Some(logs) = recreate_telemetry.as_ref() {
+        let daemon_logs = logs.clone();
+        environment.loopback().set_telemetry(Arc::new(move |report| {
+            let _ = daemon_logs.report_daemon_ping(report);
+        }));
+    }
     let service = ForeverBoxService::new(
         HostBox::new(environment),
         lifecycle,
