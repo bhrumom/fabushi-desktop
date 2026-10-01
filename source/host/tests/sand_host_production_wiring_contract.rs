@@ -133,5 +133,7 @@ fn shipping_host_composes_one_durable_background_shell_rewatch_owner() {
     assert!(SHIPPING_HOST.contains("kind: PendingWakeKind::Shell"));
     assert!(SHIPPING_HOST.contains("handle_background_shell_completion(ShellCompletion"));
     assert!(SHIPPING_HOST.contains("background_shell_watches: Arc<RunnerBackgroundShellWatches>"));
+    assert!(SHIPPING_HOST.contains(".with_background_shell_watches(Arc::clone(&background_shell_watches))"));
+    assert!(SHIPPING_HOST.contains("deps.background_shell_watches"));
     assert!(!SHIPPING_HOST.contains("production shell pending-wake rearm is not wired yet"));
 }
