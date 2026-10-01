@@ -168,3 +168,13 @@ fn host_factory_adopts_remote_parents_and_turn_spans_are_fail_closed() {
         name == "sand.turn.run" && *has_parent
     }));
 }
+
+
+#[test]
+fn completed_span_api_preserves_explicit_start_and_end_contract() {
+    const SOURCE: &str = include_str!("../src/send_trace_host.rs");
+    assert!(SOURCE.contains("fn end_at(&self, _end_time_ms: f64)"));
+    assert!(SOURCE.contains("pub fn record_completed_trace_span("));
+    assert!(SOURCE.contains("start_time: Some(start_time_ms.max(0.0))"));
+    assert!(SOURCE.contains("child.span.end_at(end_time_ms.max(start_time_ms).max(0.0))"));
+}

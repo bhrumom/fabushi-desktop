@@ -41,3 +41,33 @@ fn shipping_send_acceptance_projects_durable_echoes_after_unlock_and_before_disp
         assert!(SEND_ACCEPTANCE.contains(needle), "missing frozen accepted-echo behavior: {needle}");
     }
 }
+
+
+#[test]
+fn shipping_send_acceptance_uses_gateway_context_for_frozen_completed_spans() {
+    const TRACE_HOST: &str = include_str!("../src/send_trace_host.rs");
+    const OTLP: &str = include_str!("../src/extensions/telemetry/host_tracing.rs");
+
+    for needle in [
+        "call_accept_routed_prompt(args, Some(context))",
+        "call_send_prompt(args, Some(context))",
+        "begin_send_trace(",
+        "context.traceparent.as_deref()",
+        "context.dispatch_started.elapsed().as_secs_f64() * 1_000.0",
+        "record_send_acceptance_tracing(",
+        "\"durable-append\"",
+        "\"send-ack-emit\"",
+        "\"sand.durable_append_ms\"",
+        "\"sand.durable\"",
+        "\"sand.conversation_id\"",
+        "\"sand.client_nonce\"",
+        "\"sand.ack_emit_host_ms\"",
+    ] {
+        assert!(SHIPPING_HOST.contains(needle), "missing frozen send trace wiring: {needle}");
+    }
+    assert!(!SHIPPING_HOST.contains("\"traceparent\": context.traceparent"));
+    assert!(TRACE_HOST.contains("record_completed_trace_span"));
+    assert!(TRACE_HOST.contains("end_at(end_time_ms.max(start_time_ms).max(0.0))"));
+    assert!(OTLP.contains("fn end_at(&self, end_time_ms: f64)"));
+    assert!(OTLP.contains("(end_time_ms * 1_000_000.0).round() as u128"));
+}

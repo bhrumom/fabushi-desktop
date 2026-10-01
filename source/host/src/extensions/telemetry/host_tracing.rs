@@ -309,6 +309,16 @@ impl TraceSpan for ProductionTraceSpan {
     }
 
     fn end(&self) {
+        self.end_at(
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs_f64()
+                * 1_000.0,
+        );
+    }
+
+    fn end_at(&self, end_time_ms: f64) {
         if self.ended.swap(true, Ordering::AcqRel) {
             return;
         }
@@ -327,13 +337,18 @@ impl TraceSpan for ProductionTraceSpan {
                 "value": otlp_any_value(value),
             }))
             .collect::<Vec<_>>();
+        let end_unix_nanos = if end_time_ms.is_finite() && end_time_ms >= 0.0 {
+            (end_time_ms * 1_000_000.0).round() as u128
+        } else {
+            unix_nanos()
+        };
         let mut span = json!({
             "traceId": self.context.trace_id,
             "spanId": self.context.span_id,
             "name": self.name,
             "kind": 1,
             "startTimeUnixNano": self.start_unix_nanos.to_string(),
-            "endTimeUnixNano": unix_nanos().to_string(),
+            "endTimeUnixNano": end_unix_nanos.to_string(),
             "attributes": attributes,
             "status": {
                 "code": state.status_code,
@@ -344,7 +359,7 @@ impl TraceSpan for ProductionTraceSpan {
         }
         if let Some(exception) = state.exception.as_deref() {
             span["events"] = json!([{
-                "timeUnixNano": unix_nanos().to_string(),
+                "timeUnixNano": end_unix_nanos.to_string(),
                 "name": "exception",
                 "attributes": [{
                     "key": "exception.message",

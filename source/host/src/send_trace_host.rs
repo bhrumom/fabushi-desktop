@@ -106,6 +106,12 @@ pub trait TraceSpan: Send + Sync {
     fn record_exception(&self, error: &str);
     fn set_status(&self, code: u8);
     fn end(&self);
+    /// Ends a span at an explicit epoch-millisecond timestamp. Existing test
+    /// spans may keep the default while the production OTLP span preserves the
+    /// frozen completed-span timing contract.
+    fn end_at(&self, _end_time_ms: f64) {
+        self.end();
+    }
 }
 
 pub type TraceContext = Arc<dyn Any + Send + Sync>;
@@ -197,6 +203,43 @@ pub fn adopt_remote_parent(traceparent: Option<&str>, span_name: &str) -> Option
 
 pub fn begin_send_trace(traceparent: Option<&str>) -> Option<HostTrace> {
     adopt_remote_parent(traceparent, "sand.send")
+}
+
+
+/// Records a synchronous child span whose start and end happened before the
+/// recorder is invoked. This is the Rust equivalent of Grok's bundle-scope
+/// completedSpanRecorder used by send acceptance.
+pub fn record_completed_trace_span(
+    parent: Option<&HostTrace>,
+    name: &str,
+    start_time_ms: f64,
+    end_time_ms: f64,
+    attributes: &BTreeMap<String, Value>,
+) {
+    let Some(parent) = parent else {
+        return;
+    };
+    let Some(factory) = trace_factory() else {
+        return;
+    };
+    let Some(child) = create_trace(
+        &factory,
+        TraceFactoryOptions {
+            name: name.to_string(),
+            traceparent: None,
+            parent_ctx: parent.context.clone(),
+            start_time: Some(start_time_ms.max(0.0)),
+            inheritable_attributes: BTreeMap::new(),
+        },
+    ) else {
+        return;
+    };
+    let _ = catch_unwind(AssertUnwindSafe(|| {
+        for (key, value) in attributes {
+            child.span.set_attribute(key, value.clone());
+        }
+        child.span.end_at(end_time_ms.max(start_time_ms).max(0.0));
+    }));
 }
 
 pub fn begin_gateway_command_trace(traceparent: Option<&str>, method: &str) -> Option<HostTrace> {

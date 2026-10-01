@@ -244,6 +244,9 @@ use mahayana_host_runtime::extensions::teach_recording::teach_recording_service:
     SandTeachRecordingServiceFactory, TeachRecordingApi, TeachRecordingRuntimePort, TeachStatus,
 };
 use mahayana_host_runtime::runner_context_production_provider::ProductionRunnerRequestContextSource;
+use mahayana_host_runtime::send_trace_host::{
+    HostTrace, begin_send_trace, record_completed_trace_span,
+};
 use mahayana_host_runtime::sand_activity::ActivityUpdate;
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
 use mahayana_host_runtime::runner::production_agent_checkpoint::{
@@ -1403,6 +1406,451 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
 }
 
 impl UnifiedGatewayApi {
+
+    fn call_accept_routed_prompt(
+        &self,
+        args: serde_json::Value,
+        gateway_context: Option<&GatewayCommandContext>,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+
+            self.preempt_group_member_runs_for_direct_send(&args);
+            let send_trace = begin_send_trace(
+                gateway_context.and_then(|context| context.traceparent.as_deref()),
+            );
+            let host_receipt_elapsed_ms = gateway_context
+                .map(|context| context.dispatch_started.elapsed().as_secs_f64() * 1_000.0)
+                .unwrap_or_default();
+            let host_receipt_epoch_ms =
+                system_now_ms().saturating_sub(host_receipt_elapsed_ms as u64) as f64;
+            let durable_append_timing = Mutex::new(None::<(f64, f64)>);
+            let durable_args = args.clone();
+            let acceptance_agent_id = durable_args
+                .get("agentId")
+                .or_else(|| durable_args.get("id"))
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned);
+            let acceptance_was_on_screen = acceptance_agent_id
+                .as_deref()
+                .is_some_and(|agent_id| self.addressed_chat_on_screen(agent_id));
+            let mut acceptance = self
+                .transcript_runtime
+                .accept_routed_send(&durable_args, |accepted| {
+                    let durable_append_start_epoch_ms = system_now_ms() as f64;
+                    let durable_append_started = Instant::now();
+                    let mut persisted = persist_accepted_send_prompt_context(
+                        &self.session_workers,
+                        &durable_args,
+                        accepted,
+                    )
+                    .map_err(map_session_send_error)?;
+                    *durable_append_timing
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some((
+                        durable_append_start_epoch_ms,
+                        durable_append_started.elapsed().as_secs_f64() * 1_000.0,
+                    ));
+                    persisted.mark_accepted_echoes_on_active_transcript(
+                        acceptance_was_on_screen,
+                    );
+                    Ok(persisted)
+                })
+                .map_err(map_production_send_error)?;
+            if !acceptance.duplicate {
+                if let Some(agent_id) = acceptance_agent_id.as_deref() {
+                    self.emit_persisted_send_acceptance(
+                        agent_id,
+                        &acceptance.context,
+                        true,
+                    )
+                    .map_err(map_production_send_error)?;
+                    let ack_emit_host_ms = gateway_context
+                        .map(|context| context.dispatch_started.elapsed().as_secs_f64() * 1_000.0)
+                        .unwrap_or_default();
+                    record_send_acceptance_tracing(
+                        send_trace.as_ref(),
+                        agent_id,
+                        durable_args
+                            .get("clientNonce")
+                            .and_then(serde_json::Value::as_str),
+                        &acceptance.context,
+                        *durable_append_timing
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner()),
+                        host_receipt_epoch_ms,
+                        ack_emit_host_ms,
+                    );
+                }
+            }
+
+            if !acceptance.duplicate
+                && durable_args
+                    .get("skipAckObligation")
+                    .and_then(serde_json::Value::as_bool)
+                    != Some(true)
+            {
+                let agent_id = durable_args
+                    .get("agentId")
+                    .or_else(|| durable_args.get("id"))
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty());
+                if let Some(agent_id) = agent_id {
+                    let direct_local = self
+                        .session_workers
+                        .summarize_agent_by_id(agent_id, None)
+                        .map_err(GatewayCommandError::Internal)?
+                        .is_some_and(|summary| !summary.is_group);
+                    if direct_local {
+                        let accepted_at_ms = started_at_ms() as f64;
+                        let _ack_guard = self.ack_obligations.arm_send_guard(
+                            agent_id,
+                            accepted_at_ms,
+                            true,
+                        );
+                        self.ack_obligations
+                            .record_send(agent_id, accepted_at_ms)
+                            .map_err(|error| GatewayCommandError::Internal(format!(
+                                "could not record durable ack obligation for {agent_id}: {error}"
+                            )))?;
+                    }
+                }
+            }
+
+            let context = acceptance.context;
+            let recent_user_messages = context
+                .recent_user_messages
+                .into_iter()
+                .map(|message| {
+                    let mut value = serde_json::json!({
+                        "id": message.id,
+                        "text": message.text,
+                    });
+                    if let Some(confirmed) = message.confirmed {
+                        value["confirmed"] = serde_json::Value::Bool(confirmed);
+                    }
+                    value
+                })
+                .collect::<Vec<_>>();
+            let result = Ok(serde_json::json!({
+                "accepted": true,
+                "duplicate": acceptance.duplicate,
+                "echoEntryId": context.echo_entry_id,
+                "userMessageId": context.user_message_id,
+                "recentUserMessages": recent_user_messages,
+            }));
+            if let Some(trace) = send_trace.as_ref() {
+                trace.span.end();
+            }
+            return result;
+        
+    }
+
+    fn call_send_prompt(
+        &self,
+        args: serde_json::Value,
+        gateway_context: Option<&GatewayCommandContext>,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+
+            self.preempt_group_member_runs_for_direct_send(&args);
+            let send_trace = begin_send_trace(
+                gateway_context.and_then(|context| context.traceparent.as_deref()),
+            );
+            let host_receipt_elapsed_ms = gateway_context
+                .map(|context| context.dispatch_started.elapsed().as_secs_f64() * 1_000.0)
+                .unwrap_or_default();
+            let host_receipt_epoch_ms =
+                system_now_ms().saturating_sub(host_receipt_elapsed_ms as u64) as f64;
+            let durable_append_timing = Mutex::new(None::<(f64, f64)>);
+            let durable_args = args.clone();
+            let runner_args = shape_send_prompt_media_args(&args);
+            let watchdog_registry = Arc::clone(&self.runner_registry);
+            let watchdog_ack_obligations = Arc::clone(&self.ack_obligations);
+            let watchdog_transcript_runtime = Arc::clone(&self.transcript_runtime);
+            let watchdog_events = self.events.clone();
+            let watchdog_logs = self.telemetry_logs.clone();
+            let user_message_logs = self.telemetry_logs.clone();
+            let accepted_logs = self.telemetry_logs.clone();
+            let dequeued_logs = self.telemetry_logs.clone();
+            let send_agent_id = durable_args
+                .get("agentId")
+                .or_else(|| durable_args.get("id"))
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned);
+            let send_was_in_flight = send_agent_id
+                .as_deref()
+                .is_some_and(|agent_id| self.transcript_runtime.is_agent_running(agent_id));
+            let send_addressed_on_screen = send_agent_id
+                .as_deref()
+                .is_some_and(|agent_id| self.addressed_chat_on_screen(agent_id));
+            let send_ack_guard = Mutex::new(None);
+            let persisted_send_context = Mutex::new(None::<PersistedSendContext>);
+            let send_result = self
+                .transcript_runtime
+                .execute_send_with_acceptance_observer(
+                    &durable_args,
+                    || {
+                        let persisted = persisted_send_context
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner())
+                            .clone()
+                            .ok_or_else(|| ProductionSendError::Internal(
+                                "send dispatch started before durable persistence".into(),
+                            ))?;
+                        if let Some(group_result) =
+                            self.dispatch_mirror_or_group_send_if_supported(
+                                &durable_args,
+                                &runner_args,
+                                &persisted,
+                            )?
+                        {
+                            return Ok(group_result);
+                        }
+                        call_host_lane(&self.host_tx, "sendPrompt", runner_args)
+                            .map_err(map_gateway_send_error)
+                    },
+                    |accepted| {
+                        let durable_append_start_epoch_ms = system_now_ms() as f64;
+                        let durable_append_started = Instant::now();
+                        let mut persisted = persist_accepted_send_prompt_context(
+                            &self.session_workers,
+                            &durable_args,
+                            accepted,
+                        )
+                        .map_err(map_session_send_error)?;
+                        *durable_append_timing
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some((
+                            durable_append_start_epoch_ms,
+                            durable_append_started.elapsed().as_secs_f64() * 1_000.0,
+                        ));
+                        persisted.mark_accepted_echoes_on_active_transcript(
+                            send_addressed_on_screen,
+                        );
+                        *persisted_send_context
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner()) =
+                            Some(persisted.clone());
+                        if accepted.get("accepted").and_then(serde_json::Value::as_bool)
+                            == Some(true)
+                        {
+                            if accepted.get("duplicate").and_then(serde_json::Value::as_bool)
+                                != Some(true)
+                            {
+                                if let Some(agent_id) = send_agent_id.as_deref() {
+                                    let attachment_paths = durable_args
+                                        .get("attachmentPaths")
+                                        .and_then(serde_json::Value::as_array)
+                                        .map(|values| {
+                                            values
+                                                .iter()
+                                                .filter_map(serde_json::Value::as_str)
+                                                .map(str::to_string)
+                                                .collect::<Vec<_>>()
+                                        })
+                                        .unwrap_or_default();
+                                    let is_group_room = self
+                                        .session_workers
+                                        .summarize_agent_by_id(agent_id, None)
+                                        .map_err(ProductionSendError::Internal)?
+                                        .is_some_and(|summary| summary.is_group);
+                                    self.telemetry_api.report_message_sent(MessageSentReport {
+                                        agent_id: agent_id.to_string(),
+                                        prompt: durable_args
+                                            .get("prompt")
+                                            .or_else(|| durable_args.get("text"))
+                                            .and_then(serde_json::Value::as_str)
+                                            .map(str::to_string),
+                                        attachment_paths,
+                                        rich_text: durable_args
+                                            .get("richText")
+                                            .and_then(serde_json::Value::as_str)
+                                            .map(str::to_string),
+                                        is_fork: durable_args
+                                            .get("isFork")
+                                            .and_then(serde_json::Value::as_bool)
+                                            .unwrap_or(false),
+                                        source: durable_args
+                                            .get("source")
+                                            .and_then(serde_json::Value::as_str)
+                                            .map(str::to_string),
+                                        is_group_room,
+                                    });
+                                }
+                            }
+                            if let Some(agent_id) = send_agent_id.as_deref() {
+                                let direct_local = self
+                                    .session_workers
+                                    .summarize_agent_by_id(agent_id, None)
+                                    .map_err(ProductionSendError::Internal)?
+                                    .is_some_and(|summary| !summary.is_group);
+                                if direct_local {
+                                    let fields = UserMessageReceivedFields {
+                                        conversation_id: agent_id.to_string(),
+                                        was_in_flight: send_was_in_flight,
+                                    };
+                                    if let Err(error) = user_message_logs.report_user_message_received(&fields) {
+                                        eprintln!(
+                                            "mahayana-host user_message_received_telemetry_failed agent={agent_id} error={error}"
+                                        );
+                                    }
+                                }
+                                if direct_local
+                                    && durable_args
+                                        .get("skipAckObligation")
+                                        .and_then(serde_json::Value::as_bool)
+                                        != Some(true)
+                                {
+                                    let accepted_at_ms = started_at_ms() as f64;
+                                    let guard = self.ack_obligations.arm_send_guard(
+                                        agent_id,
+                                        accepted_at_ms,
+                                        true,
+                                    );
+                                    self.ack_obligations
+                                        .record_send(agent_id, accepted_at_ms)
+                                        .map_err(|error| ProductionSendError::Internal(
+                                            format!(
+                                                "could not record durable ack obligation for {agent_id}: {error}"
+                                            )
+                                        ))?;
+                                    *send_ack_guard
+                                        .lock()
+                                        .map_err(|_| ProductionSendError::Internal(
+                                            "send ack guard slot poisoned".into()
+                                        ))? = Some(guard);
+                                }
+                            }
+                        }
+                        Ok(persisted)
+                    },
+                    |persisted| {
+                        if let Some(agent_id) = send_agent_id.as_deref() {
+                            if let Err(error) =
+                                self.emit_persisted_send_acceptance(agent_id, persisted, true)
+                            {
+                                eprintln!(
+                                    "mahayana-host send_acceptance_projection_failed agent={agent_id} error={error}"
+                                );
+                            }
+                            let ack_emit_host_ms = gateway_context
+                                .map(|context| context.dispatch_started.elapsed().as_secs_f64() * 1_000.0)
+                                .unwrap_or_default();
+                            record_send_acceptance_tracing(
+                                send_trace.as_ref(),
+                                agent_id,
+                                durable_args
+                                    .get("clientNonce")
+                                    .and_then(serde_json::Value::as_str),
+                                persisted,
+                                *durable_append_timing
+                                    .lock()
+                                    .unwrap_or_else(|poisoned| poisoned.into_inner()),
+                                host_receipt_epoch_ms,
+                                ack_emit_host_ms,
+                            );
+                        }
+                    },
+                    move |event| {
+                        let was_in_flight = event.stage == WatchdogStage::Trip
+                            && watchdog_transcript_runtime.is_agent_running(&event.agent_id);
+                        let interrupted = if event.stage == WatchdogStage::Trip {
+                            let interrupted = watchdog_registry
+                                .interrupt_wedged_run_for_watchdog(&event.agent_id);
+                            if interrupted {
+                                let _ = watchdog_ack_obligations.record_interrupt(
+                                    &event.agent_id,
+                                    started_at_ms() as f64,
+                                );
+                            }
+                            let fields = TurnInterruptFields {
+                                conversation_id: event.agent_id.clone(),
+                                reason: "watchdog".into(),
+                                had_active_run: interrupted,
+                                was_in_flight,
+                            };
+                            if let Err(error) = watchdog_logs.report_turn_interrupt(&fields) {
+                                eprintln!(
+                                    "mahayana-host turn_interrupt_telemetry_failed agent={} error={error}",
+                                    event.agent_id
+                                );
+                            }
+                            interrupted
+                        } else {
+                            false
+                        };
+                        if event.stage == WatchdogStage::Escape {
+                            let _ = watchdog_ack_obligations.retire_ack_run_token(
+                                &event.agent_id,
+                                event.ack_token.as_deref(),
+                            );
+                        }
+                        let report = QueueWatchdogReport {
+                            conversation_id: event.agent_id.clone(),
+                            stage: event.stage.as_str().to_string(),
+                            active_lane: Some(event.active_lane.as_str().to_string()),
+                            active_source: Some(event.active_source.clone()),
+                            active_runtime_ms: event.active_runtime_ms as f64,
+                            waiting_user_age_ms: event.waiting_user_age_ms.map(|value| value as f64),
+                            interrupted: (event.stage == WatchdogStage::Trip).then_some(interrupted),
+                        };
+                        let _ = watchdog_logs.report_queue_watchdog(&report);
+                        watchdog_events.publish(serde_json::json!({
+                            "channel": "run-queue-watchdog",
+                            "payload": {
+                                "agentId": event.agent_id,
+                                "stage": event.stage.as_str(),
+                                "activeLane": event.active_lane.as_str(),
+                                "activeSource": event.active_source,
+                                "activeRuntimeMs": event.active_runtime_ms,
+                                "waitingUserAgeMs": event.waiting_user_age_ms,
+                                "ackToken": event.ack_token,
+                                "interrupted": interrupted
+                            }
+                        }));
+                        interrupted
+                    },
+                    move |event| {
+                        let report = QueueAcceptedReport {
+                            conversation_id: event.agent_id.clone(),
+                            lane: event.lane.as_str().to_string(),
+                            source: event.source.clone(),
+                            position: i64::try_from(event.position).unwrap_or(i64::MAX),
+                            depth_user: i64::try_from(event.depth_user).unwrap_or(i64::MAX),
+                            depth_agent: i64::try_from(event.depth_agent).unwrap_or(i64::MAX),
+                            depth_background: i64::try_from(event.depth_background).unwrap_or(i64::MAX),
+                            has_active: event.has_active,
+                        };
+                        let _ = accepted_logs.report_queue_accepted(&report);
+                    },
+                    move |event| {
+                        let report = QueueDequeuedReport {
+                            conversation_id: event.agent_id.clone(),
+                            lane: event.lane.as_str().to_string(),
+                            source: event.source.clone(),
+                            queue_wait_ms: event.queue_wait_ms as f64,
+                            accepted_to_run_ms: event.accepted_to_run_ms.map(|value| value as f64),
+                            jumped_background: i64::try_from(event.jumped_background).unwrap_or(i64::MAX),
+                            depth_user: i64::try_from(event.depth_user).unwrap_or(i64::MAX),
+                            depth_agent: i64::try_from(event.depth_agent).unwrap_or(i64::MAX),
+                            depth_background: i64::try_from(event.depth_background).unwrap_or(i64::MAX),
+                        };
+                        let _ = dequeued_logs.report_queue_dequeued(&report);
+                    },
+                );
+            // Dropping the guard after the complete dispatch scope mirrors
+            // Grok's Symbol.dispose send guard: it only recreates a missing
+            // direct-local obligation and never double-coalesces an existing one.
+            drop(send_ack_guard);
+            if let Some(trace) = send_trace.as_ref() {
+                trace.span.end();
+            }
+            return send_result.map_err(map_production_send_error);
+        
+    }
 
     fn addressed_chat_on_screen(&self, agent_id: &str) -> bool {
         SandAgentSessionStore::new(Arc::clone(&self.session_workers))
@@ -6489,100 +6937,7 @@ impl GatewayApi for UnifiedGatewayApi {
             return Ok(project_forever_box_status(&status, handoff.as_ref()));
         }
         if method == RUNNER_ACCEPT_ROUTED_PROMPT_GATEWAY_METHOD {
-            self.preempt_group_member_runs_for_direct_send(&args);
-            let durable_args = args.clone();
-            let acceptance_agent_id = durable_args
-                .get("agentId")
-                .or_else(|| durable_args.get("id"))
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(ToOwned::to_owned);
-            let acceptance_was_on_screen = acceptance_agent_id
-                .as_deref()
-                .is_some_and(|agent_id| self.addressed_chat_on_screen(agent_id));
-            let mut acceptance = self
-                .transcript_runtime
-                .accept_routed_send(&durable_args, |accepted| {
-                    let mut persisted = persist_accepted_send_prompt_context(
-                        &self.session_workers,
-                        &durable_args,
-                        accepted,
-                    )
-                    .map_err(map_session_send_error)?;
-                    persisted.mark_accepted_echoes_on_active_transcript(
-                        acceptance_was_on_screen,
-                    );
-                    Ok(persisted)
-                })
-                .map_err(map_production_send_error)?;
-            if !acceptance.duplicate {
-                if let Some(agent_id) = acceptance_agent_id.as_deref() {
-                    self.emit_persisted_send_acceptance(
-                        agent_id,
-                        &acceptance.context,
-                        true,
-                    )
-                    .map_err(map_production_send_error)?;
-                }
-            }
-
-            if !acceptance.duplicate
-                && durable_args
-                    .get("skipAckObligation")
-                    .and_then(serde_json::Value::as_bool)
-                    != Some(true)
-            {
-                let agent_id = durable_args
-                    .get("agentId")
-                    .or_else(|| durable_args.get("id"))
-                    .and_then(serde_json::Value::as_str)
-                    .map(str::trim)
-                    .filter(|value| !value.is_empty());
-                if let Some(agent_id) = agent_id {
-                    let direct_local = self
-                        .session_workers
-                        .summarize_agent_by_id(agent_id, None)
-                        .map_err(GatewayCommandError::Internal)?
-                        .is_some_and(|summary| !summary.is_group);
-                    if direct_local {
-                        let accepted_at_ms = started_at_ms() as f64;
-                        let _ack_guard = self.ack_obligations.arm_send_guard(
-                            agent_id,
-                            accepted_at_ms,
-                            true,
-                        );
-                        self.ack_obligations
-                            .record_send(agent_id, accepted_at_ms)
-                            .map_err(|error| GatewayCommandError::Internal(format!(
-                                "could not record durable ack obligation for {agent_id}: {error}"
-                            )))?;
-                    }
-                }
-            }
-
-            let context = acceptance.context;
-            let recent_user_messages = context
-                .recent_user_messages
-                .into_iter()
-                .map(|message| {
-                    let mut value = serde_json::json!({
-                        "id": message.id,
-                        "text": message.text,
-                    });
-                    if let Some(confirmed) = message.confirmed {
-                        value["confirmed"] = serde_json::Value::Bool(confirmed);
-                    }
-                    value
-                })
-                .collect::<Vec<_>>();
-            return Ok(serde_json::json!({
-                "accepted": true,
-                "duplicate": acceptance.duplicate,
-                "echoEntryId": context.echo_entry_id,
-                "userMessageId": context.user_message_id,
-                "recentUserMessages": recent_user_messages,
-            }));
+            return self.call_accept_routed_prompt(args, None);
         }
         if method == RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD {
             return self
@@ -6708,266 +7063,7 @@ impl GatewayApi for UnifiedGatewayApi {
         // Product calls remain on its owner lane while the Runner provider
         // worker above streams through the Host event hub.
         if method == "sendPrompt" {
-            self.preempt_group_member_runs_for_direct_send(&args);
-            let durable_args = args.clone();
-            let runner_args = shape_send_prompt_media_args(&args);
-            let watchdog_registry = Arc::clone(&self.runner_registry);
-            let watchdog_ack_obligations = Arc::clone(&self.ack_obligations);
-            let watchdog_transcript_runtime = Arc::clone(&self.transcript_runtime);
-            let watchdog_events = self.events.clone();
-            let watchdog_logs = self.telemetry_logs.clone();
-            let user_message_logs = self.telemetry_logs.clone();
-            let accepted_logs = self.telemetry_logs.clone();
-            let dequeued_logs = self.telemetry_logs.clone();
-            let send_agent_id = durable_args
-                .get("agentId")
-                .or_else(|| durable_args.get("id"))
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(ToOwned::to_owned);
-            let send_was_in_flight = send_agent_id
-                .as_deref()
-                .is_some_and(|agent_id| self.transcript_runtime.is_agent_running(agent_id));
-            let send_addressed_on_screen = send_agent_id
-                .as_deref()
-                .is_some_and(|agent_id| self.addressed_chat_on_screen(agent_id));
-            let send_ack_guard = Mutex::new(None);
-            let persisted_send_context = Mutex::new(None::<PersistedSendContext>);
-            let send_result = self
-                .transcript_runtime
-                .execute_send_with_acceptance_observer(
-                    &durable_args,
-                    || {
-                        let persisted = persisted_send_context
-                            .lock()
-                            .unwrap_or_else(|poisoned| poisoned.into_inner())
-                            .clone()
-                            .ok_or_else(|| ProductionSendError::Internal(
-                                "send dispatch started before durable persistence".into(),
-                            ))?;
-                        if let Some(group_result) =
-                            self.dispatch_mirror_or_group_send_if_supported(
-                                &durable_args,
-                                &runner_args,
-                                &persisted,
-                            )?
-                        {
-                            return Ok(group_result);
-                        }
-                        call_host_lane(&self.host_tx, method, runner_args)
-                            .map_err(map_gateway_send_error)
-                    },
-                    |accepted| {
-                        let mut persisted = persist_accepted_send_prompt_context(
-                            &self.session_workers,
-                            &durable_args,
-                            accepted,
-                        )
-                        .map_err(map_session_send_error)?;
-                        persisted.mark_accepted_echoes_on_active_transcript(
-                            send_addressed_on_screen,
-                        );
-                        *persisted_send_context
-                            .lock()
-                            .unwrap_or_else(|poisoned| poisoned.into_inner()) =
-                            Some(persisted.clone());
-                        if accepted.get("accepted").and_then(serde_json::Value::as_bool)
-                            == Some(true)
-                        {
-                            if accepted.get("duplicate").and_then(serde_json::Value::as_bool)
-                                != Some(true)
-                            {
-                                if let Some(agent_id) = send_agent_id.as_deref() {
-                                    let attachment_paths = durable_args
-                                        .get("attachmentPaths")
-                                        .and_then(serde_json::Value::as_array)
-                                        .map(|values| {
-                                            values
-                                                .iter()
-                                                .filter_map(serde_json::Value::as_str)
-                                                .map(str::to_string)
-                                                .collect::<Vec<_>>()
-                                        })
-                                        .unwrap_or_default();
-                                    let is_group_room = self
-                                        .session_workers
-                                        .summarize_agent_by_id(agent_id, None)
-                                        .map_err(ProductionSendError::Internal)?
-                                        .is_some_and(|summary| summary.is_group);
-                                    self.telemetry_api.report_message_sent(MessageSentReport {
-                                        agent_id: agent_id.to_string(),
-                                        prompt: durable_args
-                                            .get("prompt")
-                                            .or_else(|| durable_args.get("text"))
-                                            .and_then(serde_json::Value::as_str)
-                                            .map(str::to_string),
-                                        attachment_paths,
-                                        rich_text: durable_args
-                                            .get("richText")
-                                            .and_then(serde_json::Value::as_str)
-                                            .map(str::to_string),
-                                        is_fork: durable_args
-                                            .get("isFork")
-                                            .and_then(serde_json::Value::as_bool)
-                                            .unwrap_or(false),
-                                        source: durable_args
-                                            .get("source")
-                                            .and_then(serde_json::Value::as_str)
-                                            .map(str::to_string),
-                                        is_group_room,
-                                    });
-                                }
-                            }
-                            if let Some(agent_id) = send_agent_id.as_deref() {
-                                let direct_local = self
-                                    .session_workers
-                                    .summarize_agent_by_id(agent_id, None)
-                                    .map_err(ProductionSendError::Internal)?
-                                    .is_some_and(|summary| !summary.is_group);
-                                if direct_local {
-                                    let fields = UserMessageReceivedFields {
-                                        conversation_id: agent_id.to_string(),
-                                        was_in_flight: send_was_in_flight,
-                                    };
-                                    if let Err(error) = user_message_logs.report_user_message_received(&fields) {
-                                        eprintln!(
-                                            "mahayana-host user_message_received_telemetry_failed agent={agent_id} error={error}"
-                                        );
-                                    }
-                                }
-                                if direct_local
-                                    && durable_args
-                                        .get("skipAckObligation")
-                                        .and_then(serde_json::Value::as_bool)
-                                        != Some(true)
-                                {
-                                    let accepted_at_ms = started_at_ms() as f64;
-                                    let guard = self.ack_obligations.arm_send_guard(
-                                        agent_id,
-                                        accepted_at_ms,
-                                        true,
-                                    );
-                                    self.ack_obligations
-                                        .record_send(agent_id, accepted_at_ms)
-                                        .map_err(|error| ProductionSendError::Internal(
-                                            format!(
-                                                "could not record durable ack obligation for {agent_id}: {error}"
-                                            )
-                                        ))?;
-                                    *send_ack_guard
-                                        .lock()
-                                        .map_err(|_| ProductionSendError::Internal(
-                                            "send ack guard slot poisoned".into()
-                                        ))? = Some(guard);
-                                }
-                            }
-                        }
-                        Ok(persisted)
-                    },
-                    |persisted| {
-                        if let Some(agent_id) = send_agent_id.as_deref() {
-                            if let Err(error) =
-                                self.emit_persisted_send_acceptance(agent_id, persisted, true)
-                            {
-                                eprintln!(
-                                    "mahayana-host send_acceptance_projection_failed agent={agent_id} error={error}"
-                                );
-                            }
-                        }
-                    },
-                    move |event| {
-                        let was_in_flight = event.stage == WatchdogStage::Trip
-                            && watchdog_transcript_runtime.is_agent_running(&event.agent_id);
-                        let interrupted = if event.stage == WatchdogStage::Trip {
-                            let interrupted = watchdog_registry
-                                .interrupt_wedged_run_for_watchdog(&event.agent_id);
-                            if interrupted {
-                                let _ = watchdog_ack_obligations.record_interrupt(
-                                    &event.agent_id,
-                                    started_at_ms() as f64,
-                                );
-                            }
-                            let fields = TurnInterruptFields {
-                                conversation_id: event.agent_id.clone(),
-                                reason: "watchdog".into(),
-                                had_active_run: interrupted,
-                                was_in_flight,
-                            };
-                            if let Err(error) = watchdog_logs.report_turn_interrupt(&fields) {
-                                eprintln!(
-                                    "mahayana-host turn_interrupt_telemetry_failed agent={} error={error}",
-                                    event.agent_id
-                                );
-                            }
-                            interrupted
-                        } else {
-                            false
-                        };
-                        if event.stage == WatchdogStage::Escape {
-                            let _ = watchdog_ack_obligations.retire_ack_run_token(
-                                &event.agent_id,
-                                event.ack_token.as_deref(),
-                            );
-                        }
-                        let report = QueueWatchdogReport {
-                            conversation_id: event.agent_id.clone(),
-                            stage: event.stage.as_str().to_string(),
-                            active_lane: Some(event.active_lane.as_str().to_string()),
-                            active_source: Some(event.active_source.clone()),
-                            active_runtime_ms: event.active_runtime_ms as f64,
-                            waiting_user_age_ms: event.waiting_user_age_ms.map(|value| value as f64),
-                            interrupted: (event.stage == WatchdogStage::Trip).then_some(interrupted),
-                        };
-                        let _ = watchdog_logs.report_queue_watchdog(&report);
-                        watchdog_events.publish(serde_json::json!({
-                            "channel": "run-queue-watchdog",
-                            "payload": {
-                                "agentId": event.agent_id,
-                                "stage": event.stage.as_str(),
-                                "activeLane": event.active_lane.as_str(),
-                                "activeSource": event.active_source,
-                                "activeRuntimeMs": event.active_runtime_ms,
-                                "waitingUserAgeMs": event.waiting_user_age_ms,
-                                "ackToken": event.ack_token,
-                                "interrupted": interrupted
-                            }
-                        }));
-                        interrupted
-                    },
-                    move |event| {
-                        let report = QueueAcceptedReport {
-                            conversation_id: event.agent_id.clone(),
-                            lane: event.lane.as_str().to_string(),
-                            source: event.source.clone(),
-                            position: i64::try_from(event.position).unwrap_or(i64::MAX),
-                            depth_user: i64::try_from(event.depth_user).unwrap_or(i64::MAX),
-                            depth_agent: i64::try_from(event.depth_agent).unwrap_or(i64::MAX),
-                            depth_background: i64::try_from(event.depth_background).unwrap_or(i64::MAX),
-                            has_active: event.has_active,
-                        };
-                        let _ = accepted_logs.report_queue_accepted(&report);
-                    },
-                    move |event| {
-                        let report = QueueDequeuedReport {
-                            conversation_id: event.agent_id.clone(),
-                            lane: event.lane.as_str().to_string(),
-                            source: event.source.clone(),
-                            queue_wait_ms: event.queue_wait_ms as f64,
-                            accepted_to_run_ms: event.accepted_to_run_ms.map(|value| value as f64),
-                            jumped_background: i64::try_from(event.jumped_background).unwrap_or(i64::MAX),
-                            depth_user: i64::try_from(event.depth_user).unwrap_or(i64::MAX),
-                            depth_agent: i64::try_from(event.depth_agent).unwrap_or(i64::MAX),
-                            depth_background: i64::try_from(event.depth_background).unwrap_or(i64::MAX),
-                        };
-                        let _ = dequeued_logs.report_queue_dequeued(&report);
-                    },
-                );
-            // Dropping the guard after the complete dispatch scope mirrors
-            // Grok's Symbol.dispose send guard: it only recreates a missing
-            // direct-local obligation and never double-coalesces an existing one.
-            drop(send_ack_guard);
-            return send_result.map_err(map_production_send_error);
+            return self.call_send_prompt(args, None);
         }
         if method == "resolveAutoReviewApproval" {
             let agent_id = args
@@ -7117,6 +7213,12 @@ impl GatewayApi for UnifiedGatewayApi {
         args: serde_json::Value,
         context: &GatewayCommandContext,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+        if method == RUNNER_ACCEPT_ROUTED_PROMPT_GATEWAY_METHOD {
+            return self.call_accept_routed_prompt(args, Some(context));
+        }
+        if method == "sendPrompt" {
+            return self.call_send_prompt(args, Some(context));
+        }
         if method == RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD {
             return start_routed_provider_task(
                 Arc::clone(&self.routed_tool_relay),
@@ -7173,6 +7275,77 @@ impl GatewayApi for UnifiedGatewayApi {
                 report.method
             );
         }
+    }
+}
+
+fn record_send_acceptance_tracing(
+    send_trace: Option<&HostTrace>,
+    agent_id: &str,
+    client_nonce: Option<&str>,
+    persisted: &PersistedSendContext,
+    durable_timing: Option<(f64, f64)>,
+    host_receipt_epoch_ms: f64,
+    ack_emit_host_ms: f64,
+) {
+    if !persisted.acceptance_effects_applied {
+        return;
+    }
+    let nonce_attributes = client_nonce
+        .filter(|value| !value.is_empty())
+        .map(|value| ("sand.client_nonce".to_string(), serde_json::Value::String(value.to_string())));
+
+    if let Some((start_epoch_ms, duration_ms)) = durable_timing {
+        let mut attributes = BTreeMap::from([
+            (
+                "sand.durable_append_ms".to_string(),
+                serde_json::json!(duration_ms.max(0.0).round()),
+            ),
+            (
+                "sand.durable".to_string(),
+                serde_json::Value::Bool(persisted.accepted_durably),
+            ),
+            (
+                "sand.conversation_id".to_string(),
+                serde_json::Value::String(agent_id.to_string()),
+            ),
+        ]);
+        if let Some((key, value)) = nonce_attributes.clone() {
+            attributes.insert(key, value);
+        }
+        record_completed_trace_span(
+            send_trace,
+            "durable-append",
+            start_epoch_ms,
+            start_epoch_ms + duration_ms.max(0.0),
+            &attributes,
+        );
+    }
+
+    let mut ack_attributes = BTreeMap::from([
+        (
+            "sand.ack_emit_host_ms".to_string(),
+            serde_json::json!(ack_emit_host_ms.max(0.0).round()),
+        ),
+        (
+            "sand.conversation_id".to_string(),
+            serde_json::Value::String(agent_id.to_string()),
+        ),
+    ]);
+    if let Some((key, value)) = nonce_attributes {
+        ack_attributes.insert(key, value);
+    }
+    record_completed_trace_span(
+        send_trace,
+        "send-ack-emit",
+        host_receipt_epoch_ms,
+        host_receipt_epoch_ms + ack_emit_host_ms.max(0.0),
+        &ack_attributes,
+    );
+    if let Some(send_trace) = send_trace {
+        send_trace.span.set_attribute(
+            "sand.ack_emit_host_ms",
+            serde_json::json!(ack_emit_host_ms.max(0.0).round()),
+        );
     }
 }
 
