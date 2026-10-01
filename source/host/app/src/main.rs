@@ -314,7 +314,7 @@ use mahayana_host_runtime::runner::sand_action_audit::{
 use mahayana_host_runtime::runner::bot_block_detection::with_bot_block_detection_sink;
 use mahayana_host_runtime::extensions::telemetry::bot_block_telemetry::BotBlockReport;
 use mahayana_host_runtime::runner::turn_observation::{
-    TurnObservation, TurnObservationHandle,
+    ToolCallTelemetryEvent, TurnObservation, TurnObservationHandle,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSource,
@@ -3963,6 +3963,45 @@ fn start_routed_provider_task(
                 .map(|context| context.dispatch_started);
             let runner_started_at_ms = started_at_ms();
             if let Ok(mut observation) = observation.lock() {
+                observation.set_request_id(worker_stream_id.clone());
+                let tool_call_logs = worker_telemetry_logs.clone();
+                observation.set_tool_call_telemetry_handler(Arc::new(move |event| {
+                    let result = match event {
+                        ToolCallTelemetryEvent::Started {
+                            conversation_id,
+                            request_id,
+                            tool_name,
+                            tool_call_id,
+                            surface,
+                        } => tool_call_logs.report_tool_call_started(
+                            &conversation_id,
+                            request_id.as_deref(),
+                            &tool_name,
+                            &tool_call_id,
+                            &surface,
+                        ),
+                        ToolCallTelemetryEvent::Error {
+                            conversation_id,
+                            request_id,
+                            tool_name,
+                            tool_call_id,
+                            error_class,
+                            duration_ms,
+                            connector,
+                        } => tool_call_logs.report_tool_call_error(
+                            &conversation_id,
+                            request_id.as_deref(),
+                            &tool_name,
+                            &tool_call_id,
+                            &error_class,
+                            duration_ms,
+                            &connector,
+                        ),
+                    };
+                    if let Err(error) = result {
+                        eprintln!("mahayana-host tool_call_telemetry_failed error={error}");
+                    }
+                }));
                 observation.set_send_dispatch_handler(Arc::new(move |event| {
                     let report = SendDispatchReport {
                         conversation_id: send_dispatch_conversation_id.clone(),
