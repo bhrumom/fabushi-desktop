@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicU64, Ordering},
+};
 
 use serde_json::{Value, json};
 
@@ -9,12 +12,50 @@ use crate::runner::routed_provider_runtime::RoutedToolBridge;
 
 pub const SAND_REACT_TO_MESSAGE_TOOL_NAME: &str = "ReactToMessage";
 
+#[derive(Clone, Default)]
+pub struct ReactionDeliveryCounter {
+    reacted_count: Arc<AtomicU64>,
+}
+
+impl ReactionDeliveryCounter {
+    pub fn count(&self) -> u64 {
+        self.reacted_count.load(Ordering::SeqCst)
+    }
+
+    fn record_success(&self) {
+        self.reacted_count.fetch_add(1, Ordering::SeqCst);
+    }
+}
+
+pub struct CountingReactionSink {
+    delegate: Arc<dyn ReactionSink>,
+    counter: ReactionDeliveryCounter,
+}
+
+impl CountingReactionSink {
+    pub fn new(delegate: Arc<dyn ReactionSink>, counter: ReactionDeliveryCounter) -> Self {
+        Self { delegate, counter }
+    }
+}
+
 pub trait ReactionSink: Send + Sync {
     fn react(
         &self,
         message_address: &str,
         emoji: &str,
     ) -> Result<(), ProviderSessionError>;
+}
+
+impl ReactionSink for CountingReactionSink {
+    fn react(
+        &self,
+        message_address: &str,
+        emoji: &str,
+    ) -> Result<(), ProviderSessionError> {
+        self.delegate.react(message_address, emoji)?;
+        self.counter.record_success();
+        Ok(())
+    }
 }
 
 pub struct ReactionToolBridge {
