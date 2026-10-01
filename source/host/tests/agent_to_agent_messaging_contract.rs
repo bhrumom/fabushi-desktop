@@ -44,3 +44,57 @@ fn priority_peer_preemption_never_interrupts_an_active_user_lane() {
     assert!(should_interrupt_priority_peer(None));
 }
 
+
+
+#[test]
+fn direct_peer_wake_materializes_file_url_images_for_runner_selected_input() {
+    let root = temp_root();
+    fs::create_dir_all(&root).expect("root");
+    let image_path = root.join("peer.png");
+    fs::write(&image_path, [1_u8, 2, 3, 4]).expect("image");
+    let image_url = url::Url::from_file_path(&image_path)
+        .expect("file url")
+        .to_string();
+
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let alpha = sessions
+        .materialize_new_session(Some(&profile("Alpha")), "user", None)
+        .expect("alpha");
+    let beta = sessions
+        .materialize_new_session(Some(&profile("Beta")), "user", None)
+        .expect("beta");
+    let wakes = Arc::new(Mutex::new(Vec::<AgentWakeRequest>::new()));
+    let service = ProductionAgentToAgentMessaging::new(
+        Arc::clone(&sessions),
+        {
+            let wakes = Arc::clone(&wakes);
+            Arc::new(move |wake| wakes.lock().expect("wakes").push(wake.clone()))
+        },
+        None,
+    );
+
+    service
+        .send_to_agent(
+            &alpha.id,
+            &beta.id,
+            "inspect this",
+            &[AgentMessageImage {
+                url: image_url,
+                alt: Some("peer image".into()),
+            }],
+            false,
+        )
+        .expect("send");
+
+    let wake = wakes.lock().expect("wakes").last().cloned().expect("wake");
+    assert_eq!(wake.selected_images.len(), 1);
+    assert_eq!(
+        wake.selected_images[0]["path"],
+        image_path.to_string_lossy().as_ref()
+    );
+    assert_eq!(wake.selected_images[0]["mimeType"], "image/png");
+    assert_eq!(wake.selected_images[0]["data"], serde_json::json!([1, 2, 3, 4]));
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
