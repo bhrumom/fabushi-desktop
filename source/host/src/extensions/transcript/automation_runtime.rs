@@ -389,6 +389,42 @@ impl AutomationRuntime {
         })
     }
 
+    /// Frozen Grok watches the active session's automation directory. The
+    /// manager retains the returned store for exactly the active-session
+    /// lifetime; the callback re-opens the store so it does not self-own its
+    /// WatchedDirectory.
+    pub fn watch_agent_automations(
+        &self,
+        agent_id: &str,
+    ) -> Result<FileAutomationStore, String> {
+        let store = self.automation_store(agent_id)?;
+        let definitions = store.list_definitions();
+        self.last_known
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .entry(agent_id.to_string())
+            .or_insert_with(|| snapshot_automations(&definitions));
+        let runtime = self.clone();
+        let watched_agent_id = agent_id.to_string();
+        store.set_on_change(Some(Arc::new(move || {
+            let _ = runtime.record_agent_store_change(&watched_agent_id);
+        })));
+        Ok(store)
+    }
+
+    fn record_agent_store_change(&self, agent_id: &str) -> Result<(), String> {
+        self.with_agent_mutation_lock(agent_id, || {
+            let current = self.automation_store(agent_id)?.list_definitions();
+            let _ = self.record_changes(
+                agent_id,
+                &current,
+                &current,
+                AutomationLifecycleSource::Agent,
+            );
+            Ok(())
+        })
+    }
+
     pub fn create_agent_automation(
         &self,
         agent_id: &str,
