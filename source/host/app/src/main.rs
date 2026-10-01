@@ -1003,6 +1003,7 @@ struct LocalRoutedRunnerDeps {
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
+    background_shell_watches: Arc<RunnerBackgroundShellWatches>,
     host_runner_composition: Arc<HostRunnerComposition>,
     box_store_sync: ProductionBoxStoreSyncApi,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
@@ -1087,6 +1088,7 @@ impl SubagentTaskSink for ProductionSubagentTaskSink {
             self.deps.production_action_auditor.clone(),
             Arc::clone(&self.deps.cloud_agents),
             Arc::clone(&self.deps.cloud_agent_watches),
+            Arc::clone(&self.deps.background_shell_watches),
             Arc::clone(&self.deps.host_runner_composition),
             self.deps.box_store_sync.clone(),
             Arc::clone(&self.deps.automations_lifecycle),
@@ -1927,6 +1929,7 @@ impl UnifiedGatewayApi {
             production_action_auditor: self.production_action_auditor.clone(),
             cloud_agents: Arc::clone(&self.cloud_agents),
             cloud_agent_watches: Arc::clone(&self.cloud_agent_watches),
+            background_shell_watches: Arc::clone(&self.background_shell_watches),
             host_runner_composition: Arc::clone(&self.host_runner_composition),
             box_store_sync: self.box_store_sync.clone(),
             automations_lifecycle: Arc::clone(&self.automations_lifecycle),
@@ -2517,6 +2520,7 @@ fn run_local_group_member_turn(
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.cloud_agent_watches,
+        deps.background_shell_watches,
         deps.host_runner_composition,
         deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
@@ -2679,6 +2683,7 @@ fn start_local_upgrade_resume_turn(
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.cloud_agent_watches,
+        deps.background_shell_watches,
         deps.host_runner_composition,
         deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
@@ -2851,6 +2856,7 @@ fn run_local_automation_turn(
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.cloud_agent_watches,
+        deps.background_shell_watches,
         deps.host_runner_composition,
         deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
@@ -2963,6 +2969,7 @@ fn run_local_background_revival_turn(
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.cloud_agent_watches,
+        deps.background_shell_watches,
         deps.host_runner_composition,
         deps.box_store_sync,
         Arc::clone(&deps.automations_lifecycle),
@@ -3541,6 +3548,7 @@ fn start_routed_provider_task(
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
+    background_shell_watches: Arc<RunnerBackgroundShellWatches>,
     host_runner_composition: Arc<HostRunnerComposition>,
     box_store_sync: ProductionBoxStoreSyncApi,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
@@ -3958,10 +3966,13 @@ fn start_routed_provider_task(
         RunnerPromptRole::OtherSubagent
     };
     let shipping_desktop_capable = forever_box.box_().inner().shared_desktop().is_some();
-    let shipping_box_resources = Arc::new(ForeverBoxRunnerResourcePort::new(
-        Arc::clone(&forever_box),
-        agent_id.clone(),
-    ));
+    let shipping_box_resources = Arc::new(
+        ForeverBoxRunnerResourcePort::new(
+            Arc::clone(&forever_box),
+            agent_id.clone(),
+        )
+        .with_background_shell_watches(Arc::clone(&background_shell_watches)),
+    );
     let computer_use_owner = host_runner_composition.computer_use_coordination();
     let mut computer_control_lease = None;
     let mut computer_use_window_granted = true;
@@ -4352,6 +4363,7 @@ fn start_routed_provider_task(
                     production_action_auditor: production_action_auditor.clone(),
                     cloud_agents: Arc::clone(&cloud_agents),
                     cloud_agent_watches: Arc::clone(&cloud_agent_watches),
+                    background_shell_watches: Arc::clone(&background_shell_watches),
                     host_runner_composition: Arc::clone(&host_runner_composition),
                     box_store_sync: box_store_sync.clone(),
                     automations_lifecycle: Arc::clone(&automations_lifecycle),
@@ -7037,6 +7049,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.production_action_auditor.clone(),
                 Arc::clone(&self.cloud_agents),
                 Arc::clone(&self.cloud_agent_watches),
+                Arc::clone(&self.background_shell_watches),
                 Arc::clone(&self.host_runner_composition),
                 self.box_store_sync.clone(),
                 Arc::clone(&self.automations_lifecycle),
@@ -7316,6 +7329,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.production_action_auditor.clone(),
                 Arc::clone(&self.cloud_agents),
                 Arc::clone(&self.cloud_agent_watches),
+                Arc::clone(&self.background_shell_watches),
                 Arc::clone(&self.host_runner_composition),
                 self.box_store_sync.clone(),
                 Arc::clone(&self.automations_lifecycle),
@@ -8499,6 +8513,7 @@ fn main() {
         production_action_auditor: production_extensions.action_audit.clone(),
         cloud_agents: production_extensions.cloud_agents.service(),
         cloud_agent_watches: Arc::clone(&cloud_agent_watches),
+        background_shell_watches: Arc::clone(&background_shell_watches),
         host_runner_composition: Arc::clone(&host_runner_composition),
         box_store_sync: box_store_sync_api.clone(),
         automations_lifecycle: Arc::clone(&automations_lifecycle_slot),
