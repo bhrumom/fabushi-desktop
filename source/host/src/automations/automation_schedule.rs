@@ -16,3 +16,81 @@ fn wall(ms:i64,zone:Option<Tz>)->Option<WallClock>{let utc=Utc.timestamp_millis_
 fn day(m:&CronMatcher,w:WallClock)->bool{if !m.month.contains(&w.month){return false;}let dom=m.day_of_month.contains(&w.day_of_month);let dow=m.day_of_week.contains(&w.day_of_week);match(m.day_of_month_restricted,m.day_of_week_restricted){(true,true)=>dom||dow,(true,false)=>dom,(false,true)=>dow,(false,false)=>true}}
 fn matches(m:&CronMatcher,w:WallClock)->bool{m.minute.contains(&w.minute)&&m.hour.contains(&w.hour)&&day(m,w)}
 pub fn compute_next_run_at(schedule:&str,after_ms:f64,fallback_time_zone:Option<&str>)->Option<f64>{if !after_ms.is_finite(){return None;}let n=normalize_schedule(schedule);if let Some(i)=parse_every_interval_ms(&n){return Some(after_ms+i as f64);}let m=compile_cron_matcher(&n)?;let zone=m.time_zone.or_else(||fallback_time_zone.and_then(|z|z.parse::<Tz>().ok()));let after=after_ms.floor()as i64;let mut cursor=after.div_euclid(MINUTE_MS)*MINUTE_MS+MINUTE_MS;let deadline=cursor.checked_add(MAX_CRON_SEARCH_MINUTES.checked_mul(MINUTE_MS)?)?;while cursor<deadline{if matches(&m,wall(cursor,zone)?){return Some(cursor as f64);}cursor=cursor.checked_add(MINUTE_MS)?;}None}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AutomationScheduleSummary {
+    pub scheduled_fires_next_7_days: usize,
+    pub fires_on_weekend: bool,
+    pub fires_overnight: bool,
+}
+
+pub fn summarize_schedule_next_7_days(
+    schedule: &str,
+    fallback_time_zone: Option<&str>,
+    start_ms: f64,
+) -> AutomationScheduleSummary {
+    const WINDOW_MS: i64 = 7 * 24 * 60 * 60_000;
+    if !start_ms.is_finite() {
+        return AutomationScheduleSummary {
+            scheduled_fires_next_7_days: 0,
+            fires_on_weekend: false,
+            fires_overnight: false,
+        };
+    }
+    let start = start_ms.floor() as i64;
+    let deadline = start.saturating_add(WINDOW_MS);
+    let normalized = normalize_schedule(schedule);
+    let interval_ms = parse_every_interval_ms(&normalized);
+    let cron_matcher = if interval_ms.is_none() {
+        compile_cron_matcher(&normalized)
+    } else {
+        None
+    };
+    let interval_fire_count = interval_ms.map(|interval| {
+        if interval <= 0 {
+            0
+        } else {
+            ((deadline - start).max(0) / interval) as usize
+        }
+    });
+    if interval_ms.is_some_and(|interval| interval < MINUTE_MS) {
+        let count = interval_fire_count.unwrap_or_default();
+        return AutomationScheduleSummary {
+            scheduled_fires_next_7_days: count,
+            fires_on_weekend: count > 0,
+            fires_overnight: count > 0,
+        };
+    }
+    let zone = cron_matcher
+        .as_ref()
+        .and_then(|matcher| matcher.time_zone)
+        .or_else(|| fallback_time_zone.and_then(|value| value.parse::<Tz>().ok()));
+    let mut cursor = start;
+    let mut count = 0usize;
+    let mut fires_on_weekend = false;
+    let mut fires_overnight = false;
+    loop {
+        let next = if let Some(interval) = interval_ms {
+            cursor.checked_add(interval)
+        } else if cron_matcher.is_some() {
+            compute_next_run_at(&normalized, cursor as f64, fallback_time_zone)
+                .filter(|value| value.is_finite())
+                .map(|value| value.floor() as i64)
+        } else {
+            None
+        };
+        let Some(next) = next else { break; };
+        if next > deadline || next <= cursor { break; }
+        let Some(clock) = wall(next, zone) else { break; };
+        count = count.saturating_add(1);
+        fires_on_weekend |= clock.day_of_week == 0 || clock.day_of_week == 6;
+        fires_overnight |= clock.hour < 7 || clock.hour >= 22;
+        cursor = next;
+    }
+    AutomationScheduleSummary {
+        scheduled_fires_next_7_days: interval_fire_count.unwrap_or(count),
+        fires_on_weekend,
+        fires_overnight,
+    }
+}
