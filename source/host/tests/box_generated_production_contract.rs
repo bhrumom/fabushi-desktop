@@ -756,6 +756,8 @@ fn forever_box_runner_resource_port_reaches_authenticated_shipping_exec_service(
             command: "echo runner-box".into(),
             working_directory: "/workspace".into(),
             tool_call_id: "runner-shell-contract".into(),
+            is_background: false,
+            block_until_ms: None,
         })
         .expect("Runner Shell through ForeverBox");
     assert_eq!(shell["kind"], "success");
