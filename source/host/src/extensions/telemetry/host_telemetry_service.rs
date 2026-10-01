@@ -42,6 +42,9 @@ use super::automation_fire_telemetry::{
     AutomationFireDroppedReport, automation_fire_dropped_telemetry,
 };
 use super::automation_lifecycle_telemetry::automation_lifecycle_telemetry;
+use super::bot_block_telemetry::{
+    BotBlockReport, bot_block_detail_telemetry, bot_block_telemetry,
+};
 use crate::extensions::transcript::automation_runtime::AutomationLifecycleEvent;
 use super::box_log_ship_telemetry::{BoxLogShipReport, box_log_ship_telemetry};
 use super::box_log_shipper::{
@@ -711,6 +714,11 @@ impl HostStructuredLogTelemetry {
         report: &AutomationLifecycleEvent,
     ) -> io::Result<()> {
         self.report_projection(&automation_lifecycle_telemetry(report))
+    }
+
+    pub fn report_bot_block(&self, report: &BotBlockReport) -> io::Result<()> {
+        self.report_projection(&bot_block_telemetry(report))?;
+        self.report_projection(&bot_block_detail_telemetry(report))
     }
 
     pub fn report_mcp_auth_cleanup(&self, outcome: &str, removed_count: usize) -> io::Result<()> {
