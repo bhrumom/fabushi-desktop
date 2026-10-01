@@ -169,7 +169,7 @@ fn deleting_active_agent_selects_existing_successor_and_returns_its_transcript()
 }
 
 #[test]
-fn deleting_non_active_agent_keeps_active_transcript_and_delete_all_clears_pointer() {
+fn deleting_non_active_agent_keeps_active_transcript_and_delete_all_creates_fallback() {
     let root = temp_root("batch");
     let production = Arc::new(ProductionSessionWorkers::with_agents_root(
         root.join("agents"),
@@ -204,12 +204,16 @@ fn deleting_non_active_agent_keeps_active_transcript_and_delete_all_clears_point
     assert_eq!(store.read_active_agent_id().as_deref(), Some(active.id.as_str()));
     assert_eq!(kept["transcript"][0]["id"], "active-entry");
 
-    let cleared = lifecycle
+    let fallback = lifecycle
         .delete_agents(std::slice::from_ref(&active.id))
         .expect("delete last active");
-    assert_eq!(store.read_active_agent_id(), None);
-    assert_eq!(cleared["transcript"], json!([]));
-    assert!(!store.active_agent_pointer_path().exists());
+    let fallback_id = store
+        .read_active_agent_id()
+        .expect("fallback becomes active");
+    assert_ne!(fallback_id, active.id);
+    assert!(store.agent_exists(&fallback_id));
+    assert_eq!(fallback["transcript"], json!([]));
+    assert!(store.active_agent_pointer_path().exists());
 
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);

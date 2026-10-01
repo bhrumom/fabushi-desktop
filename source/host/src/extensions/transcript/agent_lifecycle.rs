@@ -6,6 +6,7 @@ use serde_json::{Map, Value, json};
 
 use crate::agents::agent_clone::{clone_agent_dir, clone_agent_display_name};
 use crate::extensions::session::agent_session::SandAgentSessionStore;
+use crate::extensions::session::production::FallbackSession;
 use crate::extensions::session::gateway::{
     SessionGatewayError, optional_bool as session_optional_bool,
     optional_string as session_optional_string, parse_create_agent_profile,
@@ -303,10 +304,29 @@ impl ProductionAgentLifecycle {
                 return Ok(json!({ "transcript": transcript }));
             }
 
-            self.store
-                .clear_active_agent_id()
-                .map_err(|error| error.to_string())?;
-            return Ok(json!({ "transcript": [] }));
+            match self.store.create_fallback_session() {
+                Ok(fallback) => {
+                    let fallback_id = match fallback {
+                        FallbackSession::Existing(prepared) => prepared.agent_id,
+                        FallbackSession::Created(record) => record.id,
+                    };
+                    let _ = self
+                        .store
+                        .mark_agent_viewed(&fallback_id, system_now_ms(), false)?;
+                    self.store
+                        .write_active_agent_id(&fallback_id)
+                        .map_err(|error| error.to_string())?;
+                    let transcript = self.store.read_agent_transcript_entries(&fallback_id)?;
+                    return Ok(json!({ "transcript": transcript }));
+                }
+                Err(error) if error.contains("Agent limit of") => {
+                    self.store
+                        .clear_active_agent_id()
+                        .map_err(|error| error.to_string())?;
+                    return Ok(json!({ "transcript": [] }));
+                }
+                Err(error) => return Err(error),
+            }
         }
 
         self.current_transcript()
