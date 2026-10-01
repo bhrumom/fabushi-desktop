@@ -106,6 +106,8 @@ fn runner_box_bridge_merges_frozen_shell_and_read_with_host_tools() {
             command: "pwd".into(),
             working_directory: "/workspace/project".into(),
             tool_call_id: "shell-call".into(),
+            is_background: false,
+            block_until_ms: None,
         }]
     );
 
