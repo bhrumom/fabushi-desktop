@@ -28,6 +28,8 @@ pub type AutoReviewUpdateSink =
     Arc<dyn Fn(&str, Value) + Send + Sync + 'static>;
 pub type AutoReviewTelemetrySink =
     Arc<dyn Fn(&SandAutoReviewEvent) + Send + Sync + 'static>;
+pub type AutoReviewDisplayRecheckFailedSink =
+    Arc<dyn Fn(&str) + Send + Sync + 'static>;
 
 #[derive(Clone)]
 pub struct ProductionAutoReviewAwaitingSink {
@@ -81,6 +83,7 @@ pub struct AutoReviewService {
     settled: Mutex<(HashSet<String>, VecDeque<String>)>,
     on_update: AutoReviewUpdateSink,
     telemetry: AutoReviewTelemetrySink,
+    display_recheck_failed: Mutex<Option<AutoReviewDisplayRecheckFailedSink>>,
     host_generation: String,
 }
 
@@ -100,8 +103,19 @@ impl AutoReviewService {
             settled: Mutex::new((HashSet::new(), VecDeque::new())),
             on_update,
             telemetry,
+            display_recheck_failed: Mutex::new(None),
             host_generation: host_generation.into(),
         })
+    }
+
+    pub fn set_display_recheck_failed_sink(
+        &self,
+        sink: AutoReviewDisplayRecheckFailedSink,
+    ) {
+        *self
+            .display_recheck_failed
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(sink);
     }
 
     pub fn bind_runner(
@@ -111,6 +125,7 @@ impl AutoReviewService {
     ) -> Arc<SandAutoReviewController> {
         self.unbind_runner(agent_id, SandAutoReviewExpiryCause::SessionEnd);
 
+        let weak_display: Weak<Self> = Arc::downgrade(self);
         let controller = Arc::new(SandAutoReviewController::with_options(
             agent_id,
             self.host_generation.clone(),
@@ -119,7 +134,19 @@ impl AutoReviewService {
             approvals_resolvable,
             Arc::new(now_ms),
             Arc::new(|| Uuid::new_v4().to_string()),
-            None,
+            Some(Arc::new(move |agent_id| {
+                let Some(service) = weak_display.upgrade() else {
+                    return;
+                };
+                let sink = service
+                    .display_recheck_failed
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .clone();
+                if let Some(sink) = sink {
+                    sink(agent_id);
+                }
+            })),
         ));
         let weak: Weak<Self> = Arc::downgrade(self);
         let subscription_id = controller.subscribe(Arc::new(move |event| {
