@@ -7516,6 +7516,13 @@ fn main() {
         auto_review_update_sink,
         auto_review_telemetry_sink,
     ));
+    let auto_review_display_recheck_logs = host_telemetry.logs.clone();
+    auto_review_extension
+        .service()
+        .set_display_recheck_failed_sink(Arc::new(move |agent_id| {
+            let _ = auto_review_display_recheck_logs
+                .report_auto_review_display_recheck_failed(agent_id);
+        }));
     let transcript_event_hub = gateway_events.clone();
     let transcript_extension = start_transcript_extension(
         &app_data_dir,
