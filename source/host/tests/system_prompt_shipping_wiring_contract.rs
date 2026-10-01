@@ -57,7 +57,9 @@ fn shipping_remote_box_and_computer_owners_are_consumed_not_test_only_helpers() 
     assert!(COMPUTER_USE_OWNER.contains("pub fn release_control_lease("));
 
     for binding in [
-        "let shipping_box_resources = Arc::new(ForeverBoxRunnerResourcePort::new(",
+        "let shipping_box_resources = Arc::new(",
+        "ForeverBoxRunnerResourcePort::new(",
+        ".with_background_shell_watches(Arc::clone(&background_shell_watches))",
         "let computer_use_owner = host_runner_composition.computer_use_coordination();",
         "owner.acquire_control_lease(&agent_id)",
         ".owns_control_lease(lease)",
