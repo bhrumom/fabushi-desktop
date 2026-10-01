@@ -651,6 +651,7 @@ fn stale_queued_user_turn_is_superseded_when_latest_turn_can_recover_via_prepend
                 recent_user_messages: vec![
                     RecoveryUserMessage { id:"msg-1".into(), text:"first".into(), confirmed:None },
                 ],
+                ..PersistedSendContext::default()
             }),
         ).expect("first send")
     });
@@ -679,6 +680,7 @@ fn stale_queued_user_turn_is_superseded_when_latest_turn_can_recover_via_prepend
                         RecoveryUserMessage { id:"msg-1".into(), text:"first".into(), confirmed:None },
                         RecoveryUserMessage { id:"msg-2".into(), text:"second".into(), confirmed:None },
                     ],
+                ..PersistedSendContext::default()
                 })
             },
         ).expect("second send")
@@ -709,6 +711,7 @@ fn stale_queued_user_turn_is_superseded_when_latest_turn_can_recover_via_prepend
                         RecoveryUserMessage { id:"msg-2".into(), text:"second".into(), confirmed:None },
                         RecoveryUserMessage { id:"msg-3".into(), text:"third".into(), confirmed:None },
                     ],
+                ..PersistedSendContext::default()
                 })
             },
         ).expect("third send")
