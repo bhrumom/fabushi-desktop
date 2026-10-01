@@ -15,7 +15,7 @@ fn host_invariant_producer_reports_before_panicking() {
             .push(report.clone());
     }));
 
-    let outcome = std::panic::catch_unwind(invariant_failure);
+    let outcome = std::panic::catch_unwind(|| invariant_failure());
     assert!(outcome.is_err(), "frozen invariant still terminates the failing path");
 
     let reports = observed
