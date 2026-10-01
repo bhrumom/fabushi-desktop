@@ -1,5 +1,8 @@
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicU64, Ordering},
+};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use url::Url;
@@ -81,6 +84,75 @@ pub trait SendMessageSink: Send + Sync {
         timestamp_ms: u64,
         tool_call_id: &str,
     ) -> Result<Option<String>, ProviderSessionError>;
+}
+
+#[derive(Clone, Default)]
+pub struct SendMessageDeliveryCounter {
+    sent_message_count: Arc<AtomicU64>,
+}
+
+impl SendMessageDeliveryCounter {
+    pub fn count(&self) -> u64 {
+        self.sent_message_count.load(Ordering::SeqCst)
+    }
+
+    fn record_success(&self) {
+        self.sent_message_count.fetch_add(1, Ordering::SeqCst);
+    }
+}
+
+pub struct CountingSendMessageSink {
+    delegate: Arc<dyn SendMessageSink>,
+    counter: SendMessageDeliveryCounter,
+}
+
+impl CountingSendMessageSink {
+    pub fn new(
+        delegate: Arc<dyn SendMessageSink>,
+        counter: SendMessageDeliveryCounter,
+    ) -> Self {
+        Self { delegate, counter }
+    }
+}
+
+impl SendMessageSink for CountingSendMessageSink {
+    fn is_awaiting_user_selection(&self) -> bool {
+        self.delegate.is_awaiting_user_selection()
+    }
+
+    fn request_box_help(
+        &self,
+        request: BoxHelpRequest,
+        timestamp_ms: u64,
+        tool_call_id: &str,
+    ) -> Result<BoxHelpOutcome, ProviderSessionError> {
+        self.delegate.request_box_help(request, timestamp_ms, tool_call_id)
+    }
+
+    fn resolve_attachment_source(
+        &self,
+        source_url: &str,
+        tool_call_id: &str,
+    ) -> Result<ResolvedAttachmentSource, ProviderSessionError> {
+        self.delegate.resolve_attachment_source(source_url, tool_call_id)
+    }
+
+    fn read_media_dimensions(&self, resolved_url: &str) -> Option<(u32, u32)> {
+        self.delegate.read_media_dimensions(resolved_url)
+    }
+
+    fn send_message(
+        &self,
+        message: Value,
+        timestamp_ms: u64,
+        tool_call_id: &str,
+    ) -> Result<Option<String>, ProviderSessionError> {
+        let result = self.delegate.send_message(message, timestamp_ms, tool_call_id);
+        if result.is_ok() {
+            self.counter.record_success();
+        }
+        result
+    }
 }
 
 pub struct SendMessageToolBridge {

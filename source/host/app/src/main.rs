@@ -219,11 +219,9 @@ use mahayana_host_runtime::host_production_extensions::{
     ProductionBrowserUaLog, ProductionHostExtensions,
 };
 use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
-    ComputerUseUsageFields, TokenUsage as TelemetryTokenUsage, TtftFields, TurnAwaitFields,
-    TurnInterruptFields, TurnRetryFields, TurnUsageFields, UserMessageReceivedFields,
-    computer_use_usage_telemetry, ttft_telemetry, turn_await_telemetry,
-    turn_interrupt_telemetry, turn_retry_telemetry, turn_usage_telemetry,
-    user_message_received_telemetry,
+    ClosingSendNudgeFields, ComputerUseUsageFields, TokenUsage as TelemetryTokenUsage,
+    TtftFields, TurnAwaitFields, TurnInterruptFields, TurnRetryFields, TurnUsageFields,
+    UserMessageReceivedFields,
 };
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::AgentErrorReport;
 use mahayana_host_runtime::extensions::telemetry::journal_outcome_telemetry::JournalOutcomeReport;
@@ -359,7 +357,8 @@ use mahayana_host_runtime::runner::tools::send_message_encoding::{
 };
 use mahayana_host_runtime::runner::tools::box_help_tool::{BoxHelpOutcome, BoxHelpRequest};
 use mahayana_host_runtime::runner::tools::send_message_tool::{
-    ResolvedAttachmentSource, SendMessageSink, file_path_from_file_url,
+    CountingSendMessageSink, ResolvedAttachmentSource, SendMessageDeliveryCounter,
+    SendMessageSink, file_path_from_file_url,
 };
 use mahayana_host_runtime::selected_image_inputs::read_image_file_dimensions;
 use mahayana_host_runtime::runner::tools::sand_reaction_tool::ReactionSink;
@@ -4070,7 +4069,7 @@ fn start_routed_provider_task(
                     else {
                         return;
                     };
-                    let projection = ttft_telemetry(&TtftFields {
+                    let fields = TtftFields {
                         conversation_id: ttft_conversation_id.clone(),
                         ttft_ms: event.get("ttftMs").and_then(serde_json::Value::as_f64),
                         skew: event
@@ -4094,8 +4093,8 @@ fn start_routed_provider_task(
                             .to_string(),
                         trace_id: ttft_trace_id.clone(),
                         span_id: ttft_span_id.clone(),
-                    });
-                    if let Err(error) = ttft_telemetry_logs.report_projection(&projection) {
+                    };
+                    if let Err(error) = ttft_telemetry_logs.report_ttft(&fields) {
                         eprintln!(
                             "mahayana-host ttft_telemetry_failed agent={} error={error}",
                             ttft_conversation_id
@@ -4121,13 +4120,13 @@ fn start_routed_provider_task(
                     else {
                         return;
                     };
-                    let projection = turn_await_telemetry(&TurnAwaitFields {
+                    let fields = TurnAwaitFields {
                         conversation_id: await_conversation_id.clone(),
                         block_until_ms,
                         outcome: outcome.to_string(),
                         await_index,
-                    });
-                    if let Err(error) = await_telemetry_logs.report_projection(&projection) {
+                    };
+                    if let Err(error) = await_telemetry_logs.report_turn_await(&fields) {
                         eprintln!(
                             "mahayana-host turn_await_telemetry_failed agent={} error={error}",
                             await_conversation_id
@@ -4928,7 +4927,8 @@ fn start_routed_provider_task(
                     agent_id: agent_id.clone(),
                 },
             );
-            let send_message_sink: Arc<dyn SendMessageSink> = Arc::new(
+            let send_message_delivery_counter = SendMessageDeliveryCounter::default();
+            let base_send_message_sink: Arc<dyn SendMessageSink> = Arc::new(
                 ProductionSendMessageSink {
                     sessions: worker_sessions,
                     forever_box: Arc::clone(&forever_box),
@@ -4938,6 +4938,12 @@ fn start_routed_provider_task(
                     ack_token: worker_ack_token.clone(),
                     agent_id: agent_id.clone(),
                 },
+            );
+            let send_message_sink: Arc<dyn SendMessageSink> = Arc::new(
+                CountingSendMessageSink::new(
+                    base_send_message_sink,
+                    send_message_delivery_counter.clone(),
+                ),
             );
             let routine_post_write: Option<RoutinePostWriteCallback> =
                 automations_lifecycle
@@ -5039,7 +5045,7 @@ fn start_routed_provider_task(
                             "error": report.error,
                         }));
                     }
-                    let projection = turn_retry_telemetry(&TurnRetryFields {
+                    let fields = TurnRetryFields {
                         conversation_id: retry_conversation_id.clone(),
                         outcome: outcome.into(),
                         attempt: u64::from(report.attempt),
@@ -5049,8 +5055,8 @@ fn start_routed_provider_task(
                         cause: report.cause.clone(),
                         delay_ms: report.delay_ms.map(|value| value as f64),
                         server_paced: Some(report.server_paced),
-                    });
-                    if let Err(error) = retry_telemetry_logs.report_projection(&projection) {
+                    };
+                    if let Err(error) = retry_telemetry_logs.report_turn_retry(&fields) {
                         eprintln!(
                             "mahayana-host turn_retry_telemetry_failed agent={} error={error}",
                             retry_conversation_id
@@ -5586,7 +5592,7 @@ fn start_routed_provider_task(
                     started_at_ms(),
                 ) {
                     if let Some(usage) = settled.computer_use_usage {
-                        let projection = computer_use_usage_telemetry(&ComputerUseUsageFields {
+                        let fields = ComputerUseUsageFields {
                             parent_agent_id: usage.parent_agent_id,
                             subagent_agent_id: usage.subagent_agent_id,
                             subagent_type: usage.subagent_type,
@@ -5603,8 +5609,8 @@ fn start_routed_provider_task(
                                 cache_write_tokens: usage.cache_write_tokens,
                                 reasoning_tokens: usage.reasoning_tokens,
                             }),
-                        });
-                        if let Err(error) = worker_telemetry_logs.report_projection(&projection) {
+                        };
+                        if let Err(error) = worker_telemetry_logs.report_computer_use_usage(&fields) {
                             eprintln!(
                                 "mahayana-host computer_use_usage_telemetry_failed agent={agent_id} error={error}"
                             );
@@ -5641,7 +5647,7 @@ fn start_routed_provider_task(
                 &agent_id,
                 worker_request_source.as_deref().unwrap_or("turn"),
             );
-            let usage_projection = turn_usage_telemetry(&TurnUsageFields {
+            let usage_fields = TurnUsageFields {
                 conversation_id: usage_report.agent_id.clone(),
                 source: usage_report.source,
                 request_id: usage_report.request_id,
@@ -5659,10 +5665,25 @@ fn start_routed_provider_task(
                         cache_write_tokens: usage.cache_write_tokens,
                         reasoning_tokens: usage.reasoning_tokens,
                     }),
-            });
-            if let Err(error) = worker_telemetry_logs.report_projection(&usage_projection) {
+            };
+            if let Err(error) = worker_telemetry_logs.report_turn_usage(&usage_fields) {
                 eprintln!(
                     "mahayana-host turn_usage_telemetry_failed agent={} error={error}",
+                    agent_id
+                );
+            }
+            let sent_message_count = send_message_delivery_counter.count();
+            let closing_send_fields = ClosingSendNudgeFields {
+                conversation_id: agent_id.clone(),
+                delivered: sent_message_count > 0,
+                sent_message_count,
+                aborted: worker_cancellation.is_cancelled(),
+            };
+            if let Err(error) =
+                worker_telemetry_logs.report_closing_send_nudge(&closing_send_fields)
+            {
+                eprintln!(
+                    "mahayana-host closing_send_nudge_telemetry_failed agent={} error={error}",
                     agent_id
                 );
             }
@@ -6594,13 +6615,13 @@ impl GatewayApi for UnifiedGatewayApi {
             let cancelled = self.runner_registry.cancel_stream(stream_id, reason);
             if reason.to_ascii_lowercase().contains("superseded") {
                 if let Some(agent_id) = cancelled_agent_id.as_deref() {
-                    let projection = turn_interrupt_telemetry(&TurnInterruptFields {
+                    let fields = TurnInterruptFields {
                         conversation_id: agent_id.to_string(),
                         reason: "superseded".into(),
                         had_active_run: cancelled,
                         was_in_flight,
-                    });
-                    if let Err(error) = self.telemetry_logs.report_projection(&projection) {
+                    };
+                    if let Err(error) = self.telemetry_logs.report_turn_interrupt(&fields) {
                         eprintln!(
                             "mahayana-host superseded_turn_interrupt_telemetry_failed agent={} error={error}",
                             agent_id
@@ -6739,13 +6760,11 @@ impl GatewayApi for UnifiedGatewayApi {
                                     .map_err(ProductionSendError::Internal)?
                                     .is_some_and(|summary| !summary.is_group);
                                 if direct_local {
-                                    let projection = user_message_received_telemetry(
-                                        &UserMessageReceivedFields {
-                                            conversation_id: agent_id.to_string(),
-                                            was_in_flight: send_was_in_flight,
-                                        },
-                                    );
-                                    if let Err(error) = user_message_logs.report_projection(&projection) {
+                                    let fields = UserMessageReceivedFields {
+                                        conversation_id: agent_id.to_string(),
+                                        was_in_flight: send_was_in_flight,
+                                    };
+                                    if let Err(error) = user_message_logs.report_user_message_received(&fields) {
                                         eprintln!(
                                             "mahayana-host user_message_received_telemetry_failed agent={agent_id} error={error}"
                                         );
@@ -6792,13 +6811,13 @@ impl GatewayApi for UnifiedGatewayApi {
                                     started_at_ms() as f64,
                                 );
                             }
-                            let projection = turn_interrupt_telemetry(&TurnInterruptFields {
+                            let fields = TurnInterruptFields {
                                 conversation_id: event.agent_id.clone(),
                                 reason: "watchdog".into(),
                                 had_active_run: interrupted,
                                 was_in_flight,
-                            });
-                            if let Err(error) = watchdog_logs.report_projection(&projection) {
+                            };
+                            if let Err(error) = watchdog_logs.report_turn_interrupt(&fields) {
                                 eprintln!(
                                     "mahayana-host turn_interrupt_telemetry_failed agent={} error={error}",
                                     event.agent_id
@@ -7767,14 +7786,14 @@ fn main() {
                 let was_in_flight = transcript_runtime.is_agent_running(agent_id);
                 let had_active_run =
                     runner_registry.cancel_agent(agent_id, "agent deleted") > 0;
-                let projection = turn_interrupt_telemetry(&TurnInterruptFields {
+                let fields = TurnInterruptFields {
                     conversation_id: agent_id.to_string(),
                     reason: "agent_deleted".into(),
                     had_active_run,
                     was_in_flight,
-                });
+                };
                 telemetry_logs
-                    .report_projection(&projection)
+                    .report_turn_interrupt(&fields)
                     .map_err(|error| error.to_string())?;
                 Ok(())
             })

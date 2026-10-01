@@ -118,6 +118,13 @@ use super::structured_log_telemetry::{
 use super::turn_empty_delivery_telemetry::{
     TurnEmptyDeliveryReport, turn_empty_delivery_telemetry,
 };
+use super::turn_telemetry_mappers::{
+    ClosingSendNudgeFields, ComputerUseUsageFields, TtftFields, TurnAwaitFields,
+    TurnInterruptFields, TurnRetryFields, TurnUsageFields, UserMessageReceivedFields,
+    closing_send_nudge_telemetry, computer_use_usage_telemetry, ttft_telemetry,
+    turn_await_telemetry, turn_interrupt_telemetry, turn_retry_telemetry,
+    turn_usage_telemetry, user_message_received_telemetry,
+};
 use super::webauthn_proxy_telemetry::{WebAuthnProxyReport, webauthn_proxy_telemetry};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -688,6 +695,47 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_turn_empty_delivery(&self, report: &TurnEmptyDeliveryReport) -> io::Result<()> {
         self.report_projection(&turn_empty_delivery_telemetry(report))
+    }
+
+    pub fn report_turn_interrupt(&self, fields: &TurnInterruptFields) -> io::Result<()> {
+        self.report_projection(&turn_interrupt_telemetry(fields))
+    }
+
+    pub fn report_turn_await(&self, fields: &TurnAwaitFields) -> io::Result<()> {
+        self.report_projection(&turn_await_telemetry(fields))
+    }
+
+    pub fn report_turn_retry(&self, fields: &TurnRetryFields) -> io::Result<()> {
+        self.report_projection(&turn_retry_telemetry(fields))
+    }
+
+    pub fn report_user_message_received(
+        &self,
+        fields: &UserMessageReceivedFields,
+    ) -> io::Result<()> {
+        self.report_projection(&user_message_received_telemetry(fields))
+    }
+
+    pub fn report_closing_send_nudge(
+        &self,
+        fields: &ClosingSendNudgeFields,
+    ) -> io::Result<()> {
+        self.report_projection(&closing_send_nudge_telemetry(fields))
+    }
+
+    pub fn report_ttft(&self, fields: &TtftFields) -> io::Result<()> {
+        self.report_projection(&ttft_telemetry(fields))
+    }
+
+    pub fn report_turn_usage(&self, fields: &TurnUsageFields) -> io::Result<()> {
+        self.report_projection(&turn_usage_telemetry(fields))
+    }
+
+    pub fn report_computer_use_usage(
+        &self,
+        fields: &ComputerUseUsageFields,
+    ) -> io::Result<()> {
+        self.report_projection(&computer_use_usage_telemetry(fields))
     }
 
     pub fn report_host_upgrade(&self, metadata: BTreeMap<String, String>) -> io::Result<()> {

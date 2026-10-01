@@ -17,8 +17,9 @@ use mahayana_host_runtime::runner::tools::send_message_schema::{
     validate_send_message,
 };
 use mahayana_host_runtime::runner::tools::send_message_tool::{
-    ResolvedAttachmentSource, SAND_AWAITING_USER_SEND_MESSAGE_BLOCKED,
-    SAND_SEND_MESSAGE_TOOL_NAME, SendMessageSink, SendMessageToolBridge,
+    CountingSendMessageSink, ResolvedAttachmentSource, SAND_AWAITING_USER_SEND_MESSAGE_BLOCKED,
+    SAND_SEND_MESSAGE_TOOL_NAME, SendMessageDeliveryCounter, SendMessageSink,
+    SendMessageToolBridge,
 };
 use serde_json::{Value, json};
 use prost::Message as _;
@@ -476,4 +477,37 @@ fn agent_media_persistence_is_atomic_and_separates_images_from_attachments() {
         entry.ok().and_then(|entry| entry.file_name().into_string().ok()).is_some_and(|name| name.ends_with(".tmp"))
     }));
     let _ = std::fs::remove_dir_all(root);
+}
+
+
+struct FailingSink;
+
+impl SendMessageSink for FailingSink {
+    fn send_message(
+        &self,
+        _message: Value,
+        _timestamp_ms: u64,
+        _tool_call_id: &str,
+    ) -> Result<Option<String>, ProviderSessionError> {
+        Err(ProviderSessionError::Tool("persist failed".into()))
+    }
+}
+
+#[test]
+fn delivery_counter_tracks_only_successful_shipping_send_side_effects() {
+    let counter = SendMessageDeliveryCounter::default();
+    let success = CountingSendMessageSink::new(Arc::new(Sink::default()), counter.clone());
+    success
+        .send_message(json!({"type":"widget","widget":{"prompt":"Choose"}}), 1, "ok-1")
+        .expect("first successful send");
+    success
+        .send_message(json!({"type":"attachment","url":"file:///tmp/a"}), 2, "ok-2")
+        .expect("second successful send");
+    assert_eq!(counter.count(), 2);
+
+    let failure = CountingSendMessageSink::new(Arc::new(FailingSink), counter.clone());
+    assert!(failure
+        .send_message(json!({"type":"text","content":"not persisted"}), 3, "bad")
+        .is_err());
+    assert_eq!(counter.count(), 2, "failed persistence must not count as delivered");
 }

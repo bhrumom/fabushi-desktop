@@ -1,3 +1,9 @@
+use std::fs;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
+    HostTelemetryService, PersistedHostTelemetryRecord,
+};
 use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
     ClosingSendNudgeFields, ComputerUseUsageFields, TokenUsage, TtftFields, TurnAwaitFields,
     TurnInterruptFields, TurnRetryFields, TurnUsageFields, UserMessageReceivedFields,
@@ -152,4 +158,78 @@ fn ttft_turn_usage_and_computer_use_match_frozen_schema() {
     assert_eq!(computer.level, Some("warn"));
     assert_eq!(computer.metadata.get("duration_ms").map(String::as_str), Some("10"));
     assert_eq!(computer.metadata.get("has_usage").map(String::as_str), Some("false"));
+}
+
+
+fn telemetry_root() -> std::path::PathBuf {
+    let n = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    std::env::temp_dir().join(format!(
+        "fabushi-turn-typed-facade-{}-{n}",
+        std::process::id()
+    ))
+}
+
+#[test]
+fn typed_host_turn_facade_writes_frozen_closing_ttft_and_usage_jsonl() {
+    let root = telemetry_root();
+    let service = HostTelemetryService::open(root.join("telemetry.jsonl"))
+        .expect("telemetry service");
+
+    service
+        .logs
+        .report_closing_send_nudge(&ClosingSendNudgeFields {
+            conversation_id: "c1".into(),
+            delivered: false,
+            sent_message_count: 0,
+            aborted: false,
+        })
+        .expect("closing send");
+    service
+        .logs
+        .report_ttft(&TtftFields {
+            conversation_id: "c1".into(),
+            ttft_ms: Some(12.6),
+            skew: false,
+            skew_reason: String::new(),
+            chunk_type: "text".into(),
+            is_fork: false,
+            model_id: "model".into(),
+            trace_id: "trace".into(),
+            span_id: "span".into(),
+        })
+        .expect("ttft");
+    service
+        .logs
+        .report_turn_usage(&TurnUsageFields {
+            conversation_id: "c1".into(),
+            source: "turn".into(),
+            request_id: Some("req".into()),
+            request_id_count: 1,
+            turn_ended_seq: 9,
+            usage: Some(usage()),
+        })
+        .expect("usage");
+
+    let records = fs::read_to_string(service.records_path())
+        .expect("jsonl")
+        .lines()
+        .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 3);
+    assert_eq!(records[0].event, "sand.turn.closing_send_nudge");
+    assert_eq!(records[0].payload["level"], "warn");
+    assert_eq!(records[0].payload["metadata"]["delivered"], "false");
+    assert_eq!(records[0].payload["metadata"]["sent_message_count"], "0");
+    assert_eq!(records[1].event, "sand.ttft");
+    assert_eq!(records[1].payload["metadata"]["ttft_ms"], "13");
+    assert_eq!(records[1].payload["metadata"]["trace_id"], "trace");
+    assert_eq!(records[1].payload["metadata"]["span_id"], "span");
+    assert_eq!(records[2].event, "sand.turn.usage");
+    assert_eq!(records[2].payload["metadata"]["schema_version"], "2");
+    assert_eq!(records[2].payload["metadata"]["input_tokens"], "11");
+
+    let _ = fs::remove_dir_all(root);
 }
