@@ -420,6 +420,7 @@ fn production_exec_service_reads_through_protected_shipping_accessor() {
         exec_daemon_port: port,
         ready_timeout_ms: 5_000,
         poll_interval_ms: 0,
+        watchdog_interval_ms: 30_000,
         protected_box_paths: vec![PathBuf::from("/workspace/private")],
     });
     let mut ready = loopback
