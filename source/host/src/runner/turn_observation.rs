@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex, mpsc};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Value, json};
@@ -55,7 +54,7 @@ pub type ToolCallTelemetrySink =
     Arc<dyn Fn(ToolCallTelemetryEvent) + Send + Sync + 'static>;
 
 pub struct McpExecObservationGuard {
-    settled: Arc<AtomicBool>,
+    cancel_stall: mpsc::Sender<()>,
     started: Instant,
     emit: ToolCallTelemetrySink,
     conversation_id: String,
@@ -66,9 +65,7 @@ pub struct McpExecObservationGuard {
 
 impl McpExecObservationGuard {
     pub fn settle(self, error_class: Option<&str>) {
-        if self.settled.swap(true, Ordering::AcqRel) {
-            return;
-        }
+        let _ = self.cancel_stall.send(());
         if let Some(error_class) = error_class {
             (self.emit)(ToolCallTelemetryEvent::Error {
                 conversation_id: self.conversation_id,
@@ -116,6 +113,7 @@ pub struct TurnObservation {
     observed_tool_call_count: u64,
     await_observation_count: u64,
     pending_awaits: HashMap<String, PendingAwait>,
+    mcp_observed_tool_call_ids: HashSet<String>,
     first_token_observed: bool,
 }
 
@@ -140,6 +138,7 @@ impl TurnObservation {
             observed_tool_call_count: 0,
             await_observation_count: 0,
             pending_awaits: HashMap::new(),
+            mcp_observed_tool_call_ids: HashSet::new(),
             first_token_observed: false,
         }
     }
@@ -165,6 +164,18 @@ impl TurnObservation {
         }
     }
 
+    fn mark_mcp_tool_call(&mut self, tool_call_id: &str) {
+        if self.mcp_observed_tool_call_ids.len() >= 256 {
+            self.mcp_observed_tool_call_ids.clear();
+        }
+        self.mcp_observed_tool_call_ids
+            .insert(tool_call_id.to_string());
+    }
+
+    fn take_mcp_tool_call_marker(&mut self, tool_call_id: &str) -> bool {
+        self.mcp_observed_tool_call_ids.remove(tool_call_id)
+    }
+
     pub fn begin_mcp_exec_observation(
         &self,
         tool_call_id: &str,
@@ -184,9 +195,8 @@ impl TurnObservation {
         threshold: Duration,
     ) -> Option<McpExecObservationGuard> {
         let emit = self.tool_call_telemetry_sink.as_ref()?.clone();
-        let settled = Arc::new(AtomicBool::new(false));
-        let timer_settled = Arc::clone(&settled);
         let timer_emit = Arc::clone(&emit);
+        let (cancel_stall, stall_cancelled) = mpsc::channel();
         let conversation_id = self.conversation_id.clone();
         let request_id = self.request_id.clone();
         let tool_call_id_owned = tool_call_id.to_string();
@@ -197,8 +207,10 @@ impl TurnObservation {
             let tool_call_id = tool_call_id_owned.clone();
             let connector = connector_owned.clone();
             move || {
-                std::thread::sleep(threshold);
-                if !timer_settled.load(Ordering::Acquire) {
+                if matches!(
+                    stall_cancelled.recv_timeout(threshold),
+                    Err(mpsc::RecvTimeoutError::Timeout)
+                ) {
                     (timer_emit)(ToolCallTelemetryEvent::Stalled {
                         conversation_id,
                         request_id,
@@ -211,7 +223,7 @@ impl TurnObservation {
             }
         });
         Some(McpExecObservationGuard {
-            settled,
+            cancel_stall,
             started: Instant::now(),
             emit,
             conversation_id,
@@ -564,7 +576,8 @@ impl RoutedToolBridge for McpObservedRoutedToolBridge {
             .observation
             .lock()
             .ok()
-            .and_then(|observation| {
+            .and_then(|mut observation| {
+                observation.mark_mcp_tool_call(tool_call_id);
                 observation.begin_mcp_exec_observation(
                     tool_call_id,
                     &bounded_connector_tag(&tool.provider_identifier),
@@ -647,7 +660,8 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
             let failed = result.is_err();
             let summary = result.as_ref().ok().map(Value::to_string);
             observation.tool_completed(name, failed, summary.as_deref());
-            if failed {
+            let mcp_observed = observation.take_mcp_tool_call_marker(tool_call_id);
+            if failed && !mcp_observed {
                 observation.emit_tool_call_telemetry(ToolCallTelemetryEvent::Error {
                     conversation_id: observation.conversation_id.clone(),
                     request_id: observation.request_id.clone(),
