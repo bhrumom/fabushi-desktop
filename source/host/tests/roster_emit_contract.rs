@@ -62,6 +62,7 @@ fn production_roster_emit_publishes_full_and_incremental_ordered_events() {
     assert_eq!(first["payload"]["ordered"]["sequence"], 1);
     assert_eq!(first["payload"]["agents"][0]["name"], "First");
     assert!(first["payload"]["agents"][0]["snapshotEpoch"].is_string());
+    assert_eq!(first["payload"]["agents"][0]["snapshotSeq"], 1);
 
     write_sand_profile_file(
         get_sand_profile_path(root.join(&record.id)),
@@ -77,6 +78,11 @@ fn production_roster_emit_publishes_full_and_incremental_ordered_events() {
     assert_eq!(second["payload"]["agent"]["id"], record.id);
     assert_eq!(second["payload"]["agent"]["name"], "Renamed");
     assert_eq!(second["payload"]["ordered"]["sequence"], 2);
+    assert_eq!(
+        second["payload"]["agent"]["snapshotEpoch"],
+        first["payload"]["agents"][0]["snapshotEpoch"]
+    );
+    assert_eq!(second["payload"]["agent"]["snapshotSeq"], 2);
 
     drop(events);
     sessions.shutdown();
