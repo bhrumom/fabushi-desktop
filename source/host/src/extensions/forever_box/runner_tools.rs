@@ -9,7 +9,11 @@ use crate::r#box::box_shell_command::{
 };
 use crate::r#box::box_windows::{ShellAccessor, ShellExecutionOutcome};
 use crate::r#box::generated_production::{
-    ProductionReadArgs, ProductionReadOutput, ProductionReadResult,
+    ProductionBackgroundShellSpawnResult, ProductionReadArgs, ProductionReadOutput,
+    ProductionReadResult,
+};
+use crate::runner::background_work::{
+    BackgroundShellWatchOptions, RunnerBackgroundShellWatches,
 };
 use crate::runner::box_tool_access::{
     RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest, RunnerBoxWriteRequest,
@@ -32,6 +36,7 @@ pub struct ForeverBoxRunnerResourcePort {
     service: Arc<ForeverBoxService>,
     agent_id: String,
     coordinator: Arc<Mutex<RemoteBoxResourceCoordinator<Arc<Mutex<crate::r#box::generated_production::ProductionBoxResourceAccessor>>>>>,
+    background_shell_watches: Option<Arc<RunnerBackgroundShellWatches>>,
 }
 
 impl ForeverBoxRunnerResourcePort {
@@ -47,7 +52,16 @@ impl ForeverBoxRunnerResourcePort {
                 desktop_capable,
                 None,
             ))),
+            background_shell_watches: None,
         }
+    }
+
+    pub fn with_background_shell_watches(
+        mut self,
+        watches: Arc<RunnerBackgroundShellWatches>,
+    ) -> Self {
+        self.background_shell_watches = Some(watches);
+        self
     }
 
     fn connection(
@@ -178,6 +192,8 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
             .next()
             .unwrap_or("shell")
             .to_string();
+        let command = request.command.clone();
+        let working_directory = request.working_directory.clone();
         let args = build_host_shell_args(HostShellArgsInput {
             command: request.command,
             name: executable_name,
@@ -186,6 +202,106 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
         });
         let accessor = self.production_accessor()?;
         let mut accessor = accessor.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        if request.should_start_in_background() {
+            let watches = self.background_shell_watches.as_ref().ok_or_else(|| {
+                ProviderSessionError::Tool(
+                    "Box background Shell is unavailable without the Runner background-shell owner"
+                        .into(),
+                )
+            })?;
+            let result = accessor
+                .execute_background_shell_spawn(&(), args.into())
+                .map_err(|error| {
+                    ProviderSessionError::Tool(format!("Box background Shell failed: {error}"))
+                })?;
+            return Ok(match result {
+                ProductionBackgroundShellSpawnResult::Success {
+                    shell_id,
+                    command,
+                    working_directory,
+                    pid,
+                } => {
+                    if shell_id == 0 {
+                        return Err(ProviderSessionError::Tool(
+                            "Box background Shell returned an invalid shellId=0".into(),
+                        ));
+                    }
+                    let shell_id = shell_id.to_string();
+                    watches.watch_background_shell(
+                        &self.agent_id,
+                        &shell_id,
+                        BackgroundShellWatchOptions::new(Some(command.clone()), None),
+                    );
+                    json!({
+                        "kind": "backgrounded",
+                        "shellId": shell_id,
+                        "command": command,
+                        "workingDirectory": working_directory,
+                        "pid": pid,
+                    })
+                }
+                ProductionBackgroundShellSpawnResult::Error {
+                    command,
+                    working_directory,
+                    error,
+                } => json!({
+                    "kind": "error",
+                    "command": command,
+                    "workingDirectory": working_directory,
+                    "error": error,
+                }),
+                ProductionBackgroundShellSpawnResult::Rejected {
+                    command,
+                    working_directory,
+                    reason,
+                    is_readonly,
+                } => json!({
+                    "kind": "rejected",
+                    "command": command,
+                    "workingDirectory": working_directory,
+                    "reason": reason,
+                    "isReadonly": is_readonly,
+                }),
+                ProductionBackgroundShellSpawnResult::PermissionDenied {
+                    command,
+                    working_directory,
+                    error,
+                    is_readonly,
+                } => json!({
+                    "kind": "permissionDenied",
+                    "command": command,
+                    "workingDirectory": working_directory,
+                    "error": error,
+                    "isReadonly": is_readonly,
+                }),
+                ProductionBackgroundShellSpawnResult::SandboxUnsupported {
+                    command,
+                    working_directory,
+                    sandbox_policy_type,
+                    reason,
+                    is_readonly,
+                } => json!({
+                    "kind": "sandboxUnsupported",
+                    "command": command,
+                    "workingDirectory": working_directory,
+                    "sandboxPolicyType": sandbox_policy_type,
+                    "reason": reason,
+                    "isReadonly": is_readonly,
+                }),
+                ProductionBackgroundShellSpawnResult::Other { case } => json!({
+                    "kind": "failure",
+                    "case": case,
+                }),
+            });
+        }
+
+        if request.block_until_ms.is_some() {
+            return Err(ProviderSessionError::Tool(format!(
+                "Box Shell positive block_until_ms is not yet available on the shipping ShellStream path for command {command:?} in {working_directory:?}"
+            )));
+        }
+
         let result = accessor.execute(&(), args).map_err(|error| {
             ProviderSessionError::Tool(format!("Box Shell failed: {error}"))
         })?;
