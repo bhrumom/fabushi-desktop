@@ -62,28 +62,45 @@ fn request_pending(
 
 #[test]
 fn auto_review_gate_expires_every_non_enforcing_surface_and_keeps_enforcing_ones() {
-    let controller = Arc::new(SandAutoReviewController::new("agent-1", "host-1"));
+    let expiring = Arc::new(SandAutoReviewController::new("agent-expiring", "host-1"));
     for (surface, fingerprint) in [
-        (SandAutoReviewSurface::HostShell, "host-shell"),
         (SandAutoReviewSurface::BoxShell, "box-shell"),
         (SandAutoReviewSurface::Mcp, "mcp"),
-        (SandAutoReviewSurface::Computer, "computer"),
         (SandAutoReviewSurface::AutomationWrite, "automation-write"),
-        (SandAutoReviewSurface::CloudAgent, "cloud-agent"),
         (SandAutoReviewSurface::SubagentLaunch, "subagent-launch"),
     ] {
-        request_pending(controller.as_ref(), surface, fingerprint);
+        request_pending(expiring.as_ref(), surface, fingerprint);
     }
-    let gate = AutoReviewGate::new(Arc::new(Deps {
-        controller: controller.clone(),
+    let expiring_gate = AutoReviewGate::new(Arc::new(Deps {
+        controller: expiring.clone(),
     }));
+    let modes = expiring_gate.current_modes();
+    assert_eq!(modes.box_shell, SandAutoReviewMode::Shadow);
+    assert_eq!(modes.mcp, SandAutoReviewMode::Off);
+    assert_eq!(modes.automation_write, SandAutoReviewMode::Off);
+    assert_eq!(modes.subagent_launch, SandAutoReviewMode::Off);
+    assert!(
+        expiring.get_pending_approvals().is_empty(),
+        "every non-enforcing frozen surface must expire its pending approval"
+    );
 
-    let modes = gate.current_modes();
+    let enforcing = Arc::new(SandAutoReviewController::new("agent-enforcing", "host-1"));
+    for (surface, fingerprint) in [
+        (SandAutoReviewSurface::HostShell, "host-shell"),
+        (SandAutoReviewSurface::Computer, "computer"),
+        (SandAutoReviewSurface::CloudAgent, "cloud-agent"),
+    ] {
+        request_pending(enforcing.as_ref(), surface, fingerprint);
+    }
+    let enforcing_gate = AutoReviewGate::new(Arc::new(Deps {
+        controller: enforcing.clone(),
+    }));
+    let modes = enforcing_gate.current_modes();
     assert_eq!(modes.host_shell, SandAutoReviewMode::Enforce);
     assert_eq!(modes.computer, SandAutoReviewMode::Enforce);
     assert_eq!(modes.cloud_agent, SandAutoReviewMode::Enforce);
 
-    let remaining = controller
+    let remaining = enforcing
         .get_pending_approvals()
         .into_iter()
         .map(|approval| approval.surface)
@@ -94,15 +111,10 @@ fn auto_review_gate_expires_every_non_enforcing_surface_and_keeps_enforcing_ones
         SandAutoReviewSurface::Computer,
         SandAutoReviewSurface::CloudAgent,
     ] {
-        assert!(remaining.contains(&surface), "enforcing surface was expired: {surface:?}");
-    }
-    for surface in [
-        SandAutoReviewSurface::BoxShell,
-        SandAutoReviewSurface::Mcp,
-        SandAutoReviewSurface::AutomationWrite,
-        SandAutoReviewSurface::SubagentLaunch,
-    ] {
-        assert!(!remaining.contains(&surface), "non-enforcing surface remained pending: {surface:?}");
+        assert!(
+            remaining.contains(&surface),
+            "enforcing surface was expired: {surface:?}"
+        );
     }
 }
 
