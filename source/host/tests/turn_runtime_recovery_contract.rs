@@ -39,6 +39,7 @@ fn turn_runtime_applies_all_frozen_stale_recovery_guards() {
             message("m1", "one", None),
             message("m2", "two", None),
         ],
+        ..PersistedSendContext::default()
     };
     let latest = RecoverySend {
         epoch: 3,
