@@ -6,6 +6,11 @@ use serde_json::{Map, Value, json};
 
 use crate::agents::agent_clone::{clone_agent_dir, clone_agent_display_name};
 use crate::extensions::session::agent_session::SandAgentSessionStore;
+use crate::extensions::session::gateway::{
+    SessionGatewayError, optional_bool as session_optional_bool,
+    optional_string as session_optional_string, parse_create_agent_profile,
+    parse_profile_update,
+};
 use crate::transcript_mutation_events::publish_transcript_mutation;
 use crate::extensions::session::production::ProductionSessionWorkers;
 
@@ -73,6 +78,13 @@ impl AgentLifecycleGatewayError {
     }
 }
 
+fn map_session_gateway_error(error: SessionGatewayError) -> AgentLifecycleGatewayError {
+    match error {
+        SessionGatewayError::BadRequest(message) => AgentLifecycleGatewayError::BadRequest(message),
+        SessionGatewayError::Internal(message) => AgentLifecycleGatewayError::Internal(message),
+    }
+}
+
 pub struct ProductionAgentLifecycle {
     store: SandAgentSessionStore,
     deletion_runtime: AgentDeletionRuntimeDeps,
@@ -91,6 +103,70 @@ impl ProductionAgentLifecycle {
             store: SandAgentSessionStore::new(production),
             deletion_runtime,
         }
+    }
+
+    fn create_agent_from_args(
+        &self,
+        args: &Value,
+        activate: bool,
+    ) -> Result<Value, AgentLifecycleGatewayError> {
+        let profile = parse_create_agent_profile(args).map_err(map_session_gateway_error)?;
+        let origin = session_optional_string(args, "origin")
+            .map_err(map_session_gateway_error)?
+            .unwrap_or("user");
+        let purpose =
+            session_optional_string(args, "purpose").map_err(map_session_gateway_error)?;
+        let introduction_suppressed = session_optional_bool(args, "isIntroductionSuppressed")
+            .map_err(map_session_gateway_error)?
+            .unwrap_or(false);
+
+        let record = self
+            .store
+            .create_session(Some(&profile), origin, purpose)
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        if introduction_suppressed {
+            self.store
+                .production()
+                .set_agent_introduction_pending(&record.id, false)
+                .map_err(AgentLifecycleGatewayError::internal)?;
+        }
+        if activate {
+            self.store
+                .mark_agent_viewed(&record.id, system_now_ms(), false)
+                .map_err(AgentLifecycleGatewayError::internal)?;
+            self.store
+                .write_active_agent_id(&record.id)
+                .map_err(|error| AgentLifecycleGatewayError::internal(error.to_string()))?;
+        }
+
+        let summary = self
+            .store
+            .summarize_agent_by_id(&record.id)
+            .map_err(AgentLifecycleGatewayError::internal)?
+            .ok_or_else(|| {
+                AgentLifecycleGatewayError::internal("failed to summarize newly created agent")
+            })?;
+        let transcript = self
+            .store
+            .read_agent_transcript_entries(&record.id)
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        serde_json::to_value(summary)
+            .map_err(|error| AgentLifecycleGatewayError::internal(error.to_string()))
+            .map(|agent| json!({ "agent": agent, "transcript": transcript }))
+    }
+
+    fn update_agent_from_args(
+        &self,
+        args: &Value,
+    ) -> Result<Value, AgentLifecycleGatewayError> {
+        let agent_id = required_string(args, "id")?;
+        let update = parse_profile_update(args).map_err(map_session_gateway_error)?;
+        let summary = self
+            .store
+            .update_agent_profile(agent_id, &update)
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        serde_json::to_value(summary)
+            .map_err(|error| AgentLifecycleGatewayError::internal(error.to_string()))
     }
 
     pub fn clone_agent(&self, source_id: &str) -> Result<Value, String> {
@@ -246,6 +322,9 @@ pub fn dispatch_production_agent_lifecycle_gateway_call_with_runtime(
         deletion_runtime.clone(),
     );
     let result = match method {
+        "createAgent" => lifecycle.create_agent_from_args(args, true),
+        "createBackgroundAgent" => lifecycle.create_agent_from_args(args, false),
+        "updateAgent" => lifecycle.update_agent_from_args(args),
         "duplicateAgent" => required_string(args, "id").and_then(|agent_id| {
             lifecycle
                 .clone_agent(agent_id)

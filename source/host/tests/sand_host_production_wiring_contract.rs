@@ -84,6 +84,18 @@ fn shipping_create_agent_path_consumes_nonce_and_input_policy() {
     assert!(SHIPPING_HOST.contains(r#"method == "createAgent""#));
     assert!(SHIPPING_HOST.contains("sanitize_create_agent_args"));
     assert!(SHIPPING_HOST.contains("create_agent_nonces"));
+    let create = SHIPPING_HOST
+        .find(r#"if method == "createAgent" {"#)
+        .expect("shipping createAgent branch");
+    let secrets = SHIPPING_HOST[create..]
+        .find("dispatch_secrets_gateway_call")
+        .map(|offset| create + offset)
+        .expect("createAgent branch must finish before secrets dispatch");
+    let create_block = &SHIPPING_HOST[create..secrets];
+    assert!(create_block.contains(
+        "dispatch_production_agent_lifecycle_gateway_call_with_runtime("
+    ));
+    assert!(!create_block.contains("dispatch_production_session_gateway_call("));
 
     let sanitized = sanitize_create_agent_args(&json!({
         "name": "Agent",

@@ -534,7 +534,7 @@ pub fn dispatch_production_session_gateway_call_with_content_search(
     Some(result)
 }
 
-fn parse_create_agent_profile(args: &Value) -> Result<SandAgentProfile, SessionGatewayError> {
+pub(crate) fn parse_create_agent_profile(args: &Value) -> Result<SandAgentProfile, SessionGatewayError> {
     let name = required_string(args, "name")?;
     let description = optional_string(args, "description")?.unwrap_or_default();
     Ok(SandAgentProfile {
@@ -550,7 +550,7 @@ fn parse_create_agent_profile(args: &Value) -> Result<SandAgentProfile, SessionG
     })
 }
 
-fn parse_profile_update(args: &Value) -> Result<AgentProfileUpdate, SessionGatewayError> {
+pub(crate) fn parse_profile_update(args: &Value) -> Result<AgentProfileUpdate, SessionGatewayError> {
     let profile = args
         .get("profile")
         .and_then(Value::as_object)
@@ -615,7 +615,7 @@ fn required_string_array(
         .collect()
 }
 
-fn optional_string<'a>(
+pub(crate) fn optional_string<'a>(
     args: &'a Value,
     field: &str,
 ) -> Result<Option<&'a str>, SessionGatewayError> {
@@ -626,7 +626,7 @@ fn optional_string<'a>(
     }
 }
 
-fn optional_bool(args: &Value, field: &str) -> Result<Option<bool>, SessionGatewayError> {
+pub(crate) fn optional_bool(args: &Value, field: &str) -> Result<Option<bool>, SessionGatewayError> {
     match args.get(field) {
         None | Some(Value::Null) => Ok(None),
         Some(Value::Bool(value)) => Ok(Some(*value)),

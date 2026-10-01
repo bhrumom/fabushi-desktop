@@ -254,6 +254,81 @@ fn duplicate_agent_gateway_uses_clone_owner_and_activates_empty_copy() {
     let _ = fs::remove_dir_all(root);
 }
 
+
+#[test]
+fn lifecycle_gateway_owns_create_background_and_update_agent_mutations() {
+    let root = temp_root("create-update-owner");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+
+    let created = dispatch_production_agent_lifecycle_gateway_call(
+        &production,
+        "createAgent",
+        &json!({
+            "name":"Foreground",
+            "description":"",
+            "origin":"user",
+            "isIntroductionSuppressed":true
+        }),
+    )
+    .expect("createAgent handled")
+    .expect("foreground created");
+    let foreground_id = created["agent"]["id"]
+        .as_str()
+        .expect("foreground id")
+        .to_string();
+    assert_eq!(created["agent"]["isActive"], true);
+    assert_eq!(store.read_active_agent_id().as_deref(), Some(foreground_id.as_str()));
+    assert!(!production
+        .get_agent_introduction_pending(&foreground_id)
+        .expect("foreground introduction"));
+
+    let background = dispatch_production_agent_lifecycle_gateway_call(
+        &production,
+        "createBackgroundAgent",
+        &json!({
+            "name":"Background",
+            "description":"quiet worker",
+            "origin":"automation",
+            "isIntroductionSuppressed":true
+        }),
+    )
+    .expect("createBackgroundAgent handled")
+    .expect("background created");
+    let background_id = background["agent"]["id"]
+        .as_str()
+        .expect("background id")
+        .to_string();
+    assert_eq!(background["agent"]["isActive"], false);
+    assert_eq!(store.read_active_agent_id().as_deref(), Some(foreground_id.as_str()));
+
+    let updated = dispatch_production_agent_lifecycle_gateway_call(
+        &production,
+        "updateAgent",
+        &json!({
+            "id": background_id,
+            "profile": {
+                "name":" Background Updated ",
+                "description":" lifecycle owner ",
+                "title":" Worker ",
+                "avatarShape":" rounded ",
+                "avatarColor":" violet "
+            }
+        }),
+    )
+    .expect("updateAgent handled")
+    .expect("background updated");
+    assert_eq!(updated["name"], "Background Updated");
+    assert_eq!(updated["description"], "lifecycle owner");
+    assert_eq!(updated["title"], "Worker");
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
 #[test]
 fn shipping_gateway_contract_validates_delete_arguments_and_uses_lifecycle_owner() {
     let root = temp_root("gateway");

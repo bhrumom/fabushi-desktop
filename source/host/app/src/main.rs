@@ -6616,28 +6616,38 @@ impl GatewayApi for UnifiedGatewayApi {
                 if let Some(cached) = ledger.get(&nonce).cloned() {
                     return Ok(cached);
                 }
-                let minted = dispatch_production_session_gateway_call(
+                let minted = dispatch_production_agent_lifecycle_gateway_call_with_runtime(
                     &self.session_workers,
+                    &self.agent_deletion_runtime,
                     method,
                     &projected,
                 )
                 .ok_or_else(|| GatewayCommandError::UnknownMethod(method.to_string()))?
                 .map_err(|error| match error {
-                    SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
-                    SessionGatewayError::Internal(message) => GatewayCommandError::Internal(message),
+                    AgentLifecycleGatewayError::BadRequest(message) => {
+                        GatewayCommandError::BadRequest(message)
+                    }
+                    AgentLifecycleGatewayError::Internal(message) => {
+                        GatewayCommandError::Internal(message)
+                    }
                 })?;
                 ledger.insert(nonce, minted.clone());
                 return Ok(minted);
             }
-            return dispatch_production_session_gateway_call(
+            return dispatch_production_agent_lifecycle_gateway_call_with_runtime(
                 &self.session_workers,
+                &self.agent_deletion_runtime,
                 method,
                 &projected,
             )
             .ok_or_else(|| GatewayCommandError::UnknownMethod(method.to_string()))?
             .map_err(|error| match error {
-                SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
-                SessionGatewayError::Internal(message) => GatewayCommandError::Internal(message),
+                AgentLifecycleGatewayError::BadRequest(message) => {
+                    GatewayCommandError::BadRequest(message)
+                }
+                AgentLifecycleGatewayError::Internal(message) => {
+                    GatewayCommandError::Internal(message)
+                }
             });
         }
 
