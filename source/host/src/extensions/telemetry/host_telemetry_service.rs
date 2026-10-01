@@ -528,6 +528,32 @@ impl HostStructuredLogTelemetry {
         })
     }
 
+    pub fn report_tool_call_stalled(
+        &self,
+        conversation_id: &str,
+        request_id: Option<&str>,
+        tool_name: &str,
+        tool_call_id: &str,
+        connector: &str,
+        elapsed_ms: u64,
+    ) -> io::Result<()> {
+        let mut metadata = BTreeMap::from([
+            ("conversation_id".into(), conversation_id.to_string()),
+            ("tool_name".into(), tool_name.to_string()),
+            ("tool_call_id".into(), tool_call_id.to_string()),
+            ("connector".into(), connector.to_string()),
+            ("elapsed_ms".into(), elapsed_ms.min(86_400_000).to_string()),
+        ]);
+        if let Some(request_id) = request_id.filter(|value| !value.is_empty()) {
+            metadata.insert("request_id".into(), request_id.to_string());
+        }
+        self.report_projection(&HostTelemetryProjection {
+            level: Some("warn"),
+            event: Some("sand.tool_call.stalled"),
+            metadata,
+        })
+    }
+
     pub fn report_agent_error(&self, report: &AgentErrorReport) -> io::Result<()> {
         self.report_projection(&agent_error_telemetry(report))?;
         if let Some(detail) = agent_error_detail_telemetry(report) {
