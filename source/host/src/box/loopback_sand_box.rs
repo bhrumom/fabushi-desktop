@@ -1,10 +1,15 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{
+    Arc, Mutex, Weak,
+    atomic::{AtomicBool, AtomicUsize, Ordering},
+};
 use std::thread;
 use std::time::{Duration, Instant};
 
 use thiserror::Error;
 
+use crate::extensions::telemetry::lifecycle_telemetry::DaemonPingReport;
 use crate::ports::r#box::{SandBoxDaemonUnreachableError, is_primary_window_index};
 
 use super::box_env::{BoxEnvironmentUpdate, apply_box_environment_via_transport};
@@ -32,6 +37,46 @@ pub const DEFAULT_AUTH_TOKEN: &str = "local";
 pub const BOX_TERMINALS_FOLDER: &str = "/root/.cursor/projects/workspace/terminals";
 pub const DAEMON_READY_TIMEOUT_MS: u64 = 90_000;
 pub const DAEMON_READY_POLL_INTERVAL_MS: u64 = 500;
+pub const DAEMON_WATCHDOG_INTERVAL_MS: u64 = 30_000;
+
+pub type DaemonPingReporter = Arc<dyn Fn(&DaemonPingReport) + Send + Sync + 'static>;
+
+#[derive(Debug)]
+struct DaemonWatchdogEpisode {
+    readiness: &'static str,
+    unready_since: Option<Instant>,
+    unready_attempts: u64,
+}
+
+impl Default for DaemonWatchdogEpisode {
+    fn default() -> Self {
+        Self {
+            readiness: "unknown",
+            unready_since: None,
+            unready_attempts: 0,
+        }
+    }
+}
+
+struct LoopbackSharedState {
+    telemetry: Mutex<Option<DaemonPingReporter>>,
+    watchdog_started: AtomicBool,
+    foreground_ready_waits: AtomicUsize,
+    poll_gate: Mutex<()>,
+    episode: Mutex<DaemonWatchdogEpisode>,
+}
+
+impl Default for LoopbackSharedState {
+    fn default() -> Self {
+        Self {
+            telemetry: Mutex::new(None),
+            watchdog_started: AtomicBool::new(false),
+            foreground_ready_waits: AtomicUsize::new(0),
+            poll_gate: Mutex::new(()),
+            episode: Mutex::new(DaemonWatchdogEpisode::default()),
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LoopbackSandBoxOptions {
@@ -40,6 +85,7 @@ pub struct LoopbackSandBoxOptions {
     pub exec_daemon_port: u16,
     pub ready_timeout_ms: u64,
     pub poll_interval_ms: u64,
+    pub watchdog_interval_ms: u64,
     pub protected_box_paths: Vec<PathBuf>,
 }
 
@@ -51,6 +97,7 @@ impl Default for LoopbackSandBoxOptions {
             exec_daemon_port: EXEC_DAEMON_PORT,
             ready_timeout_ms: DAEMON_READY_TIMEOUT_MS,
             poll_interval_ms: DAEMON_READY_POLL_INTERVAL_MS,
+            watchdog_interval_ms: DAEMON_WATCHDOG_INTERVAL_MS,
             protected_box_paths: Vec::new(),
         }
     }
@@ -76,14 +123,47 @@ pub struct LoopbackReady {
     pub terminals_folder: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone)]
 pub struct LoopbackSandBox {
     options: LoopbackSandBoxOptions,
+    shared: Arc<LoopbackSharedState>,
+}
+
+impl std::fmt::Debug for LoopbackSandBox {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("LoopbackSandBox")
+            .field("options", &self.options)
+            .finish_non_exhaustive()
+    }
 }
 
 impl LoopbackSandBox {
     pub fn new(options: LoopbackSandBoxOptions) -> Self {
-        Self { options }
+        Self {
+            options,
+            shared: Arc::new(LoopbackSharedState::default()),
+        }
+    }
+
+    pub fn set_telemetry(&self, reporter: DaemonPingReporter) {
+        *self
+            .shared
+            .telemetry
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(reporter);
+    }
+
+    fn report_daemon_ping(&self, report: DaemonPingReport) {
+        let reporter = self
+            .shared
+            .telemetry
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        if let Some(reporter) = reporter {
+            reporter(&report);
+        }
     }
 
     pub fn options(&self) -> &LoopbackSandBoxOptions {
