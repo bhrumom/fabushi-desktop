@@ -5910,7 +5910,7 @@ fn start_routed_provider_task(
                 .unwrap_or_default();
             let generated_parent = worker_generated_parent_agent_id.clone();
             if let Some(parent_agent_id) = generated_parent.as_deref() {
-                let _ = runner.begin_generated_subagent(
+                if let Some(pending) = runner.begin_generated_subagent(
                     parent_agent_id,
                     "shipping-runner",
                     &agent_id,
@@ -5919,7 +5919,49 @@ fn start_routed_provider_task(
                     &generated_prompt,
                     worker_generated_lineage.clone(),
                     started_at_ms(),
-                );
+                ) {
+                    if let Some(store) = worker_transcript_runtime.pending_wake_store() {
+                        let quiet_origin = pending
+                            .quiet_origin
+                            .as_ref()
+                            .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+                            .as_ref()
+                            .and_then(coerce_quiet_origin);
+                        let written = store.mark_pending(DurablePendingWakeMarker {
+                            agent_id: pending.parent_agent_id.clone(),
+                            kind: PendingWakeKind::Subagent,
+                            work_id: pending.work_id.clone(),
+                            marked_at_ms: started_at_ms() as f64,
+                            quiet_origin,
+                            title: Some(pending.title.clone()),
+                            subagent_type: Some(pending.subagent_type.clone()),
+                            interrupted_by_recreate: false,
+                        });
+                        if !written {
+                            eprintln!(
+                                "mahayana-host pending_subagent_wake_persist_failed agent={} work={}",
+                                pending.parent_agent_id, pending.work_id
+                            );
+                        }
+                        worker_events.publish(serde_json::json!({
+                            "channel": "pending-wake",
+                            "payload": {
+                                "agentId": pending.parent_agent_id,
+                                "kind": "subagent",
+                                "workId": pending.work_id,
+                                "outcome": if written { "persisted" } else { "persist_failed" },
+                            }
+                        }));
+                        let tasks = worker_transcript_runtime.get_async_tasks(parent_agent_id, &[]);
+                        worker_events.publish(serde_json::json!({
+                            "channel": "async-tasks",
+                            "payload": {
+                                "parentAgentId": parent_agent_id,
+                                "tasks": tasks,
+                            }
+                        }));
+                    }
+                }
                 worker_transcript_runtime.begin_live_subagent(parent_agent_id);
                 publish_generated_subagents(
                     &worker_events,

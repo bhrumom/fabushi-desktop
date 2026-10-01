@@ -23,3 +23,21 @@ fn startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals()
     assert!(SHIPPING_HOST.contains("quiet_origin: marker.quiet_origin.clone()"));
     assert!(!SHIPPING_HOST.contains("production lost-subagent pending-wake revival is not wired yet"));
 }
+
+
+#[test]
+fn shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run() {
+    let dispatch = SHIPPING_HOST
+        .find("if let Some(pending) = runner.begin_generated_subagent(")
+        .expect("shipping generated subagent dispatch must expose its pending wake");
+    let provider_run = SHIPPING_HOST
+        .find("runner.run_routed_provider_with_projected_messages(")
+        .expect("shipping generated subagent must execute through the Runner");
+    assert!(dispatch < provider_run);
+    assert!(SHIPPING_HOST.contains("kind: PendingWakeKind::Subagent"));
+    assert!(SHIPPING_HOST.contains("work_id: pending.work_id.clone()"));
+    assert!(SHIPPING_HOST.contains("subagent_type: Some(pending.subagent_type.clone())"));
+    assert!(SHIPPING_HOST.contains("pending_subagent_wake_persist_failed"));
+    assert!(SHIPPING_HOST.contains("worker_transcript_runtime.get_async_tasks(parent_agent_id, &[])"));
+    assert!(SHIPPING_HOST.contains("handle_background_subagent_completion(SubagentCompletion"));
+}
