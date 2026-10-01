@@ -16258,24 +16258,33 @@
       "targetPath": "source/host/src/extensions/transcript/send_acceptance.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "0172031fbec71221fbf1136e7637d816a271822a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/send_acceptance.rs",
+        "source/host/src/extensions/transcript/send_pipeline.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
         "source/host/src/extensions/session/gateway.rs",
         "source/host/src/extensions/session/production.rs",
-        "source/host/src/extensions/session/agent_db.rs"
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/send_trace_host.rs",
+        "source/host/src/extensions/telemetry/host_tracing.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_send_acceptance_contract.rs",
+        "source/host/tests/send_acceptance_production_wiring_contract.rs",
+        "source/host/tests/routed_send_acceptance_contract.rs",
         "source/host/tests/session_gateway_contract.rs",
+        "source/host/tests/send_trace_host_contract.rs",
+        "source/host/tests/host_tracing_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production slice now owns frozen default-name detection/72-UTF16-unit prompt seeding, first-send profile preservation, awaiting-user clearing, introduction retirement and accepted-send activity persistence. Shipping persist_accepted_send_prompt invokes these side effects around the authoritative Rust transcript append, whose mutation event is the Host-side accepted-echo notification. Final is withheld for active-vs-offscreen roster emission semantics and bundle-scope durable-append/send-ack tracing span parity."
+      "notes": "Finalized against frozen Grok 0.18 on exact HEAD 3ab380ff9b1564e6f2ade8878f5d4145a941cb54. Rust shipping acceptance preserves first-send default-profile seeding with the frozen 72-UTF16-unit limit, durable addressed echo behavior, active-vs-offscreen transcript emission and roster refresh, awaiting/introduction cleanup and accepted-send activity persistence. Shipping Gateway keeps trace context typed in GatewayCommandContext and records the frozen durable-append and send-ack-emit child spans through the Host tracing owner without injecting trace fields into business JSON. Rust desktop runtime run 36824117209 rust-host job 110245856674 passed shipping Host compilation, independent Coordinator and independent Host/Runner contracts plus the remaining focused runtime checks; Desktop Chat Parity run 36824117217 passed Focused Electron chat E2E on the same SHA."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-group-fanout.ts",
