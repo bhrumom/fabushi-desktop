@@ -13,6 +13,7 @@ use mahayana_host_runtime::extensions::forever_box::forever_box_service::{
 };
 use mahayana_host_runtime::r#box::production::ProductionBoxEnvironment;
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
+use mahayana_host_runtime::extensions::telemetry::lifecycle_telemetry::DaemonPingReport;
 
 #[derive(Default)]
 struct FakeLifecycle {
@@ -246,4 +247,34 @@ fn shipping_daemon_ping_episode_uses_unique_host_structured_log_owner() {
         include_str!("../../electron-main/telemetry/desktop-structured-log-telemetry.ts");
     assert!(!electron.contains("reportDaemonPing"));
     assert!(!electron.contains("sand.box.daemon_ping"));
+
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-daemon-ping-owner-{}-{}",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos()
+    ));
+    let telemetry = HostTelemetryService::open(root.join("telemetry.jsonl"))
+        .expect("telemetry");
+    telemetry
+        .logs
+        .report_daemon_ping(&DaemonPingReport {
+            outcome: "ok".into(),
+            attempts: 3,
+            duration_ms: 40,
+            unready_duration_ms: 35,
+            readiness_state: "ready_after_retry".into(),
+            target: "127.0.0.1:1337".into(),
+            cause_summary: None,
+        })
+        .expect("daemon ping telemetry");
+    let text = fs::read_to_string(telemetry.records_path()).expect("telemetry jsonl");
+    assert!(text.contains("\"event\":\"sand.box.daemon_ping\""));
+    assert!(text.contains("\"level\":\"warn\""));
+    assert!(text.contains("\"attempts\":\"3\""));
+    assert!(text.contains("\"readiness_state\":\"ready_after_retry\""));
+    assert!(!text.contains("\"cause\""));
+    let _ = fs::remove_dir_all(root);
 }
