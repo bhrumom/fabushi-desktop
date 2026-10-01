@@ -154,7 +154,7 @@ fn frozen_decision_gates_precede_the_event_and_manual_recreate_has_no_event() {
     let hibernation = producer.split("pub fn auto_update_now").nth(1)
         .and_then(|part| part.split("fn maybe_auto_update").next()).expect("hibernation body");
     let event = hibernation.find(r#"self.report_recreate_decided("hibernation_auto_update")"#).expect("event");
-    for gate in ["if !self.is_in_box", "if !self.auto_update_enabled", "if self.busy.load", "if self.update_in_flight.swap", "self.refresh_image_update_available()", "if !available"] {
+    for gate in ["if !self.is_in_box", "if !self.auto_update_enabled", "if self.busy.load", "if self.update_in_flight.swap", "self.refresh_image_update_available_for(\"pre_hibernation\")", "if !available"] {
         assert!(hibernation.find(gate).expect("gate") < event, "{gate}");
     }
     assert!(event < hibernation.find("self.lifecycle.recreate_in_box(true, None)").expect("recreate"));
