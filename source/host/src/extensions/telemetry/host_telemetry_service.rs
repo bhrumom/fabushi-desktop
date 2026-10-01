@@ -71,7 +71,8 @@ use super::host_crash_marker::{
 use super::host_lifecycle_progress::{HostLifecycleProgress, HostLifecycleReport, WatchdogArm};
 use super::host_tracing::{HostTracing, init_production_host_tracing};
 use super::lifecycle_telemetry::{
-    box_infrastructure_telemetry, host_lifecycle_telemetry, host_startup_telemetry,
+    BoxImageCheckReport, box_image_check_telemetry, box_infrastructure_telemetry,
+    host_lifecycle_telemetry, host_startup_telemetry,
 };
 use super::conversation_gc_telemetry::{ConversationGcReport, conversation_gc_telemetry};
 use super::host_diagnostic_telemetry::{HostDiagnostic, host_diagnostic_telemetry};
@@ -824,6 +825,10 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_journal_outcome(&self, report: &JournalOutcomeReport) -> io::Result<()> {
         self.report_projection(&journal_outcome_telemetry(report))
+    }
+
+    pub fn report_box_image_check(&self, report: &BoxImageCheckReport) -> io::Result<()> {
+        self.report_projection(&box_image_check_telemetry(report))
     }
 
     pub fn report_bot_block(&self, report: &BotBlockReport) -> io::Result<()> {
