@@ -17,7 +17,9 @@ use super::routed_provider_runtime::{
 };
 use super::sand_action_audit::{AuditedRoutedToolBridge, RoutedMcpAuditConfig};
 use super::subagent_runtime::SubagentRuntime;
-use super::turn_observation::{ObservedRoutedToolBridge, TurnObservationHandle};
+use super::turn_observation::{
+    McpObservedRoutedToolBridge, ObservedRoutedToolBridge, TurnObservationHandle,
+};
 use super::tools::communicate_tool::{
     CommunicateInteractionSink, CommunicateRoutedToolBridge,
     TurnObservationCommunicateSink,
@@ -437,12 +439,19 @@ impl TurnAgentComposition {
         messages: &[ProviderMessage],
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
-        let bridge: Arc<dyn RoutedToolBridge> = match &self.action_audit {
-            Some(config) => Arc::new(AuditedRoutedToolBridge::new(
+        let bridge: Arc<dyn RoutedToolBridge> = match &self.observation {
+            Some(observation) => Arc::new(McpObservedRoutedToolBridge::new(
                 Arc::clone(&self.bridge),
-                config.clone(),
+                Arc::clone(observation),
             )),
             None => Arc::clone(&self.bridge),
+        };
+        let bridge: Arc<dyn RoutedToolBridge> = match &self.action_audit {
+            Some(config) => Arc::new(AuditedRoutedToolBridge::new(
+                bridge,
+                config.clone(),
+            )),
+            None => bridge,
         };
         let bridge: Arc<dyn RoutedToolBridge> = match &self.mcp_management_sink {
             Some(management) => Arc::new(McpManagementToolBridge::new(
