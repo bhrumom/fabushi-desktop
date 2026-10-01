@@ -20,6 +20,8 @@ use mahayana_host_runtime::extensions::telemetry::host_lifecycle_progress::{
     Disposable, HostLifecycleCompletion, WatchdogArm,
 };
 use mahayana_host_runtime::extensions::telemetry::auto_review_approval_telemetry::AutoReviewApprovalReport;
+use mahayana_host_runtime::extensions::telemetry::journal_outcome_telemetry::JournalOutcomeReport;
+use mahayana_host_runtime::extensions::telemetry::sand_error_tags::SandErrorValue;
 use mahayana_host_runtime::extensions::telemetry::automation_fire_telemetry::AutomationFireDroppedReport;
 use mahayana_host_runtime::extensions::telemetry::local_exec_telemetry::{
     LocalExecFailedReport, LocalExecProviderReport, LocalExecRefusalCause, LocalExecRefusedReport,
@@ -1105,6 +1107,47 @@ fn tool_call_facades_match_frozen_started_and_error_contracts() {
     assert_eq!(records[2].payload["metadata"]["tool_call_id"], "call-stalled");
     assert_eq!(records[2].payload["metadata"]["connector"], "github");
     assert_eq!(records[2].payload["metadata"]["elapsed_ms"], "900000");
+
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn journal_outcome_facade_matches_frozen_jsonl_contract() {
+    let root = temp_root();
+    let service = HostTelemetryService::open(root.join("journal-outcome.jsonl"))
+        .expect("telemetry service");
+
+    service
+        .logs
+        .report_journal_outcome(&JournalOutcomeReport {
+            outcome: "failed".into(),
+            op: "append".into(),
+            conversation_id: "agent-journal".into(),
+            entry_count: Some(3),
+            bytes: Some(120),
+            duration_ms: 17.6,
+            cause: Some(SandErrorValue::new("SAND-E0720").with_string("errno", "EIO")),
+        })
+        .expect("journal outcome");
+
+    let text = fs::read_to_string(service.records_path()).expect("journal outcome jsonl");
+    let record: PersistedHostTelemetryRecord =
+        serde_json::from_str(text.lines().next().expect("record")).expect("json");
+
+    assert_eq!(record.channel, "structured_log");
+    assert_eq!(record.event, "sand.journal.outcome");
+    assert_eq!(record.payload["level"], "error");
+    assert_eq!(record.payload["metadata"]["op"], "append");
+    assert_eq!(record.payload["metadata"]["outcome"], "failed");
+    assert_eq!(record.payload["metadata"]["conversation_id"], "agent-journal");
+    assert_eq!(record.payload["metadata"]["entry_count"], "3");
+    assert_eq!(record.payload["metadata"]["bytes"], "120");
+    assert_eq!(record.payload["metadata"]["duration_ms"], "18");
+    assert_eq!(record.payload["metadata"]["error_code"], "SAND-E0720");
+    assert_eq!(record.payload["metadata"]["error_domain"], "storage");
+    assert_eq!(record.payload["metadata"]["error_retryable"], "true");
+    assert_eq!(record.payload["metadata"]["errno"], "EIO");
 
     let _ = fs::remove_dir_all(root);
 }
