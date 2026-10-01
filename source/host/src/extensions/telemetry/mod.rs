@@ -27,6 +27,7 @@ pub mod session_diagnostic_telemetry;
 pub mod turn_empty_delivery_telemetry;
 
 pub mod automation_fire_telemetry;
+pub mod automation_lifecycle_telemetry;
 pub mod conversation_gc_telemetry;
 pub mod local_exec_telemetry;
 pub mod queue_telemetry_mappers;
