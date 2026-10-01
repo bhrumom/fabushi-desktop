@@ -516,7 +516,8 @@ impl AutomationRuntime {
             return Ok(None);
         };
 
-        let args = FireAutomationArgs::manual(agent_id, automation, now_ms());
+        let mut args = FireAutomationArgs::manual(agent_id, automation, now_ms());
+        args.is_group = Some(false);
         let runtime = self.clone();
         let outcome = self.run_path.fire_automation_with_on_duplicate(
             &store,
@@ -547,6 +548,7 @@ impl AutomationRuntime {
         run_uuid: Option<String>,
         coalesced_run_uuids: Vec<String>,
         fired_at_ms: f64,
+        scheduled_for_ms: Option<f64>,
         execute: Execute,
     ) -> Result<Option<FireAutomationOutcome>, String>
     where
@@ -601,6 +603,9 @@ impl AutomationRuntime {
             run_uuid,
             coalesced_run_uuids,
             fired_at_ms,
+            scheduled_for_ms,
+            is_group: Some(false),
+            sent_message_count: None,
             spend_guard_reminder: reminder,
         };
         let runtime = self.clone();
@@ -658,6 +663,7 @@ impl AutomationRuntime {
                 batch.run_uuid,
                 batch.coalesced_run_uuids,
                 now_ms(),
+                None,
                 move |prompt| {
                     execute(
                         &agent_id,
@@ -685,6 +691,7 @@ impl AutomationRuntime {
         agent_id: &str,
         automation_id: &str,
         run_uuid: String,
+        scheduled_for_ms: Option<f64>,
         execute: Execute,
     ) -> Result<Option<FireAutomationOutcome>, String>
     where
@@ -698,6 +705,7 @@ impl AutomationRuntime {
             Some(run_uuid),
             Vec::new(),
             now_ms(),
+            scheduled_for_ms,
             execute,
         )
     }
