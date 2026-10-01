@@ -1023,3 +1023,61 @@ fn auto_review_display_recheck_facade_matches_frozen_structured_log_contract() {
 
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn tool_call_facades_match_frozen_started_and_error_contracts() {
+    let root = temp_root();
+    let service = HostTelemetryService::open(root.join("tool-call-events.jsonl"))
+        .expect("telemetry service");
+
+    service
+        .logs
+        .report_tool_call_started(
+            "agent-tool",
+            Some("request-tool"),
+            "Shell",
+            "call-started",
+            "box",
+        )
+        .expect("tool started");
+    service
+        .logs
+        .report_tool_call_error(
+            "agent-tool",
+            Some("request-tool"),
+            "Read",
+            "call-failed",
+            "task_error_result",
+            91,
+            "unknown",
+        )
+        .expect("tool error");
+
+    let records = fs::read_to_string(service.records_path())
+        .expect("tool telemetry jsonl")
+        .lines()
+        .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
+        .collect::<Vec<_>>();
+
+    assert_eq!(records.len(), 2);
+    assert_eq!(records[0].event, "sand.tool_call.started");
+    assert_eq!(records[0].payload["level"], "info");
+    assert_eq!(records[0].payload["metadata"]["conversation_id"], "agent-tool");
+    assert_eq!(records[0].payload["metadata"]["request_id"], "request-tool");
+    assert_eq!(records[0].payload["metadata"]["tool_name"], "Shell");
+    assert_eq!(records[0].payload["metadata"]["tool_call_id"], "call-started");
+    assert_eq!(records[0].payload["metadata"]["surface"], "box");
+
+    assert_eq!(records[1].event, "sand.tool_call.error");
+    assert_eq!(records[1].payload["level"], "error");
+    assert_eq!(records[1].payload["metadata"]["conversation_id"], "agent-tool");
+    assert_eq!(records[1].payload["metadata"]["request_id"], "request-tool");
+    assert_eq!(records[1].payload["metadata"]["tool_name"], "Read");
+    assert_eq!(records[1].payload["metadata"]["tool_call_id"], "call-failed");
+    assert_eq!(records[1].payload["metadata"]["error_class"], "task_error_result");
+    assert_eq!(records[1].payload["metadata"]["duration_ms"], "91");
+    assert_eq!(records[1].payload["metadata"]["connector"], "unknown");
+
+    let _ = fs::remove_dir_all(root);
+}
