@@ -437,7 +437,7 @@ fn shipping_host_routes_async_task_projection_through_turn_observation_owner() {
         "set_async_tasks_provider(",
         "set_async_tasks_event_handler(",
         "publish_async_tasks_changed(",
-        "worker_transcript_runtime.get_async_tasks(owner_agent_id, &[])",
+        "get_async_tasks(owner_agent_id, &[])",
     ] {
         assert!(
             main.contains(required),
