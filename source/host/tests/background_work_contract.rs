@@ -3,8 +3,10 @@ use std::time::Duration;
 
 use mahayana_host_runtime::runner::background_work::{
     BackgroundWakeup, BackgroundWakeupPayload, BackgroundWorkRecord,
-    CloudAgentBackgroundCompletion, CloudAgentWatchOptions, CloudAgentWatchOutcome,
-    RevivingBackgroundWorkRegistry, RunnerCloudAgentWatches, SHELL_REWATCH_POLL_DEFAULT_MS,
+    BackgroundShellBackgroundCompletion, BackgroundShellWatchOptions,
+    BackgroundShellWatchOutcome, CloudAgentBackgroundCompletion, CloudAgentWatchOptions,
+    CloudAgentWatchOutcome, RevivingBackgroundWorkRegistry, RunnerBackgroundShellWatches,
+    RunnerCloudAgentWatches, SHELL_REWATCH_POLL_DEFAULT_MS,
     derive_background_subagent_title, format_steer_prompt, parse_shell_terminal_footer,
     shell_rewatch_poll_ms,
 };
@@ -277,4 +279,144 @@ fn runner_cloud_agent_watch_cancellation_fences_stale_completion() {
     std::thread::sleep(Duration::from_millis(30));
     assert!(settled.lock().expect("settled").is_empty());
     assert!(!watches.is_cloud_watch_armed("agent-a", "bc-stale"));
+}
+
+
+#[test]
+fn runner_background_shell_watches_arm_before_duplicate_and_fence_settlement() {
+    let (started_tx, started_rx) = mpsc::channel::<(String, String)>();
+    let (release_tx, release_rx) = mpsc::channel::<()>();
+    let release_rx = Arc::new(Mutex::new(release_rx));
+    let pending = Arc::new(Mutex::new(Vec::new()));
+    let settled = Arc::new(Mutex::new(Vec::<BackgroundShellBackgroundCompletion>::new()));
+    let changed = Arc::new(Mutex::new(Vec::<String>::new()));
+
+    let watches = RunnerBackgroundShellWatches::new(
+        Arc::new({
+            let release_rx = Arc::clone(&release_rx);
+            move |agent_id, shell_id, cancelled| {
+                started_tx
+                    .send((agent_id.to_string(), shell_id.to_string()))
+                    .expect("started");
+                release_rx
+                    .lock()
+                    .expect("release rx")
+                    .recv_timeout(Duration::from_secs(2))
+                    .expect("release");
+                if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+                    return None;
+                }
+                Some(BackgroundShellWatchOutcome {
+                    status: "success".into(),
+                    detail: None,
+                    output_path: Some("/term/42.txt".into()),
+                })
+            }
+        }),
+        Some({
+            let pending = Arc::clone(&pending);
+            Arc::new(move |watch| pending.lock().expect("pending").push(watch.clone()))
+        }),
+        Some({
+            let settled = Arc::clone(&settled);
+            Arc::new(move |completion| {
+                settled.lock().expect("settled").push(completion);
+            })
+        }),
+        Some({
+            let changed = Arc::clone(&changed);
+            Arc::new(move |agent_id| {
+                changed.lock().expect("changed").push(agent_id.to_string());
+            })
+        }),
+    );
+
+    let origin = json!({"automation":{"id":"routine-shell"}});
+    assert!(watches.watch_background_shell(
+        "agent-a",
+        "42",
+        BackgroundShellWatchOptions::new(Some("compile".into()), Some(origin.clone())),
+    ));
+    assert!(!watches.watch_background_shell(
+        "agent-a",
+        "42",
+        BackgroundShellWatchOptions::new(Some("compile".into()), Some(origin.clone())),
+    ));
+    assert!(watches.is_shell_watch_armed("agent-a", "42"));
+    assert!(watches.has_running_background_shell_work());
+    assert_eq!(
+        watches.pending_shell_rewatch_ids("agent-a"),
+        vec!["42".to_string()]
+    );
+    assert_eq!(
+        started_rx.recv_timeout(Duration::from_secs(2)).expect("started"),
+        ("agent-a".to_string(), "42".to_string())
+    );
+    assert_eq!(pending.lock().expect("pending").len(), 2);
+
+    release_tx.send(()).expect("release");
+    for _ in 0..100 {
+        if !watches.is_shell_watch_armed("agent-a", "42") {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    assert!(!watches.has_running_background_shell_work());
+    let settled = settled.lock().expect("settled");
+    assert_eq!(settled.len(), 1);
+    assert_eq!(settled[0].parent_agent_id, "agent-a");
+    assert_eq!(settled[0].work_id, "42");
+    assert_eq!(settled[0].title, "compile");
+    assert_eq!(settled[0].status, "success");
+    assert_eq!(settled[0].output_path.as_deref(), Some("/term/42.txt"));
+    assert_eq!(settled[0].quiet_origin, Some(origin));
+    assert!(changed.lock().expect("changed").len() >= 2);
+}
+
+#[test]
+fn runner_background_shell_watch_cancellation_stops_terminal_delivery() {
+    let (started_tx, started_rx) = mpsc::channel::<()>();
+    let (release_tx, release_rx) = mpsc::channel::<()>();
+    let release_rx = Arc::new(Mutex::new(release_rx));
+    let settled = Arc::new(Mutex::new(Vec::<BackgroundShellBackgroundCompletion>::new()));
+    let watches = RunnerBackgroundShellWatches::new(
+        Arc::new({
+            let release_rx = Arc::clone(&release_rx);
+            move |_agent_id, _shell_id, cancelled| {
+                started_tx.send(()).expect("started");
+                release_rx
+                    .lock()
+                    .expect("release")
+                    .recv_timeout(Duration::from_secs(2))
+                    .expect("release");
+                if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+                    None
+                } else {
+                    Some(BackgroundShellWatchOutcome {
+                        status: "error".into(),
+                        detail: Some("late".into()),
+                        output_path: None,
+                    })
+                }
+            }
+        }),
+        None,
+        Some({
+            let settled = Arc::clone(&settled);
+            Arc::new(move |completion| {
+                settled.lock().expect("settled").push(completion)
+            })
+        }),
+        None,
+    );
+    assert!(watches.watch_background_shell(
+        "agent-a",
+        "stale",
+        BackgroundShellWatchOptions::new(None, None),
+    ));
+    started_rx.recv_timeout(Duration::from_secs(2)).expect("started");
+    assert!(watches.cancel_shell_watch("agent-a", "stale"));
+    release_tx.send(()).expect("release");
+    std::thread::sleep(Duration::from_millis(30));
+    assert!(settled.lock().expect("settled").is_empty());
 }

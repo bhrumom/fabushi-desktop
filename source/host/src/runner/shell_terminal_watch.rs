@@ -10,6 +10,75 @@ use super::conversation_state::{
 use super::sand_prompt_markers::SAND_HIDDEN_PROMPT_MARKER;
 use super::system_prompt::build_user_message_address_note;
 
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ShellTerminalPollRead {
+    Snapshot {
+        output_path: String,
+        result: TerminalReadResult,
+    },
+    PermissionDenied {
+        output_path: Option<String>,
+    },
+    TransientFailure(String),
+}
+
+/// Blocking production poll loop for the frozen Grok shell rewatch state
+/// machine. Host supplies box readiness/read I/O and clock/delay; Runner owns
+/// terminal settlement semantics. Non-permission read failures are retried
+/// until the five-hour deadline.
+pub fn poll_shell_terminal_file<Read, Now, Delay, Cancelled>(
+    started_at_ms: u64,
+    poll_ms: u64,
+    mut read: Read,
+    mut now_ms: Now,
+    mut delay: Delay,
+    mut is_cancelled: Cancelled,
+) -> Option<ShellWatchSettlement>
+where
+    Read: FnMut() -> ShellTerminalPollRead,
+    Now: FnMut() -> u64,
+    Delay: FnMut(u64),
+    Cancelled: FnMut() -> bool,
+{
+    let mut state = ShellTerminalPollState::new(started_at_ms);
+    loop {
+        if is_cancelled() {
+            return None;
+        }
+
+        match read() {
+            ShellTerminalPollRead::Snapshot {
+                output_path,
+                result,
+            } => {
+                if let Ok(snapshot) = read_shell_terminal_snapshot(result) {
+                    if let Some(settlement) =
+                        state.observe_snapshot(now_ms(), &output_path, &snapshot)
+                    {
+                        return Some(settlement);
+                    }
+                }
+            }
+            ShellTerminalPollRead::PermissionDenied { output_path } => {
+                if output_path.is_some() {
+                    state.output_path = output_path;
+                }
+                return Some(state.permission_denied());
+            }
+            ShellTerminalPollRead::TransientFailure(_) => {}
+        }
+
+        if let Some(settlement) = state.timeout(now_ms()) {
+            return Some(settlement);
+        }
+        if is_cancelled() {
+            return None;
+        }
+        delay(poll_ms.max(1));
+    }
+}
+
 pub const GROUP_CHAT_TAG_PREFIX: &str = "[Group chat: ";
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]

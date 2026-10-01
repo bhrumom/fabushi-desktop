@@ -334,7 +334,12 @@ use mahayana_host_runtime::runner::box_tool_access::{
 };
 use mahayana_host_runtime::cloud_agents::cloud_agent_tool::{CloudAgentReviewHook, CloudAgentToolDependencies};
 use mahayana_host_runtime::runner::background_work::{
-    CloudAgentWatchOptions, RunnerCloudAgentWatches,
+    BackgroundShellWatchOptions, BackgroundShellWatchOutcome,
+    CloudAgentWatchOptions, RunnerBackgroundShellWatches, RunnerCloudAgentWatches,
+    shell_rewatch_poll_ms,
+};
+use mahayana_host_runtime::runner::shell_terminal_watch::{
+    ShellWatchStatus, poll_shell_terminal_file,
 };
 use mahayana_host_runtime::runner::coordinator_tool_relay::{
     CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
@@ -957,6 +962,7 @@ struct UnifiedGatewayApi {
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
+    background_shell_watches: Arc<RunnerBackgroundShellWatches>,
     secrets: Arc<HostSecretsExtension>,
     local_tool_permission: Arc<HostLocalToolPermissionExtension>,
     auto_review: Arc<HostAutoReviewExtension>,
@@ -1133,6 +1139,7 @@ fn publish_generated_subagents(
 struct ProductionPendingWakeRuntime {
     gateway: Arc<Mutex<Weak<UnifiedGatewayApi>>>,
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
+    background_shell_watches: Arc<RunnerBackgroundShellWatches>,
     completion_revivals: Arc<CompletionRevivals>,
 }
 
@@ -1194,12 +1201,21 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
 
     fn watch_background_shell(
         &self,
-        _agent_id: &str,
-        _work_id: &str,
-        _title: Option<&str>,
-        _quiet_origin: Option<&QuietWakeOrigin>,
+        agent_id: &str,
+        work_id: &str,
+        title: Option<&str>,
+        quiet_origin: Option<&QuietWakeOrigin>,
     ) -> Result<(), String> {
-        Err("production shell pending-wake rearm is not wired yet".into())
+        let quiet_origin = quiet_origin
+            .map(serde_json::to_value)
+            .transpose()
+            .map_err(|error| format!("could not encode quiet wake origin: {error}"))?;
+        let _ = self.background_shell_watches.watch_background_shell(
+            agent_id,
+            work_id,
+            BackgroundShellWatchOptions::new(title.map(str::to_string), quiet_origin),
+        );
+        Ok(())
     }
 
     fn deliver_recreate_interrupted_shell_notice(
@@ -7178,9 +7194,12 @@ impl GatewayApi for UnifiedGatewayApi {
             .map(|runtime| runtime.has_running_subagents())
             .unwrap_or(true);
         let has_mid_drain_revival = self.completion_revivals.has_mid_drain_revival();
+        let has_running_background_shell =
+            self.background_shell_watches.has_running_background_shell_work();
         let has_other_background_work =
             self.transcript_runtime.has_carryable_pending_wake()
                 || has_running_subagents
+                || has_running_background_shell
                 || has_mid_drain_revival;
         let mut last_busy_at_ms = self
             .last_busy_at_ms
@@ -8318,6 +8337,99 @@ fn main() {
             }));
         })),
     ));
+    let shell_watch_box = Arc::clone(&forever_box);
+    let shell_watch_pending_store = transcript_runtime.pending_wake_store().cloned();
+    let shell_watch_pending_events = gateway_events.clone();
+    let shell_watch_settled = Arc::clone(&completion_revivals);
+    let shell_watch_async_runtime = Arc::clone(&transcript_runtime);
+    let shell_watch_async_events = gateway_events.clone();
+    let background_shell_watches = Arc::new(RunnerBackgroundShellWatches::new(
+        Arc::new(move |agent_id, shell_id, cancelled| {
+            let resources = ForeverBoxRunnerResourcePort::new(
+                Arc::clone(&shell_watch_box),
+                agent_id.to_string(),
+            );
+            let poll_ms = shell_rewatch_poll_ms(
+                std::env::var("SAND_SHELL_REWATCH_POLL_MS")
+                    .ok()
+                    .as_deref(),
+            );
+            poll_shell_terminal_file(
+                started_at_ms(),
+                poll_ms,
+                || resources.read_background_shell_terminal(shell_id),
+                started_at_ms,
+                |milliseconds| thread::sleep(Duration::from_millis(milliseconds)),
+                || cancelled.load(Ordering::Acquire),
+            )
+            .map(|settlement| BackgroundShellWatchOutcome {
+                status: match settlement.status {
+                    ShellWatchStatus::Success => "success".into(),
+                    ShellWatchStatus::Error => "error".into(),
+                },
+                detail: settlement.detail,
+                output_path: settlement.output_path,
+            })
+        }),
+        shell_watch_pending_store.map(|store| {
+            Arc::new(move |pending: &mahayana_host_runtime::runner::background_work::BackgroundShellPendingWatch| {
+                let quiet_origin = pending
+                    .quiet_origin
+                    .as_ref()
+                    .and_then(coerce_quiet_origin);
+                let written = store.mark_pending(DurablePendingWakeMarker {
+                    agent_id: pending.parent_agent_id.clone(),
+                    kind: PendingWakeKind::Shell,
+                    work_id: pending.work_id.clone(),
+                    marked_at_ms: started_at_ms() as f64,
+                    quiet_origin,
+                    title: Some(pending.title.clone()),
+                    subagent_type: None,
+                    interrupted_by_recreate: false,
+                });
+                if !written {
+                    eprintln!(
+                        "mahayana-host pending_shell_wake_persist_failed agent={} work={}",
+                        pending.parent_agent_id, pending.work_id
+                    );
+                }
+                shell_watch_pending_events.publish(serde_json::json!({
+                    "channel": "pending-wake",
+                    "payload": {
+                        "agentId": pending.parent_agent_id,
+                        "kind": "shell",
+                        "workId": pending.work_id,
+                        "outcome": if written { "persisted" } else { "persist_failed" },
+                    }
+                }));
+            }) as mahayana_host_runtime::runner::background_work::BackgroundShellPendingCallback
+        }),
+        Some(Arc::new(move |completion| {
+            shell_watch_settled.handle_background_shell_completion(ShellCompletion {
+                agent_id: completion.parent_agent_id,
+                shell_id: completion.work_id,
+                title: completion.title,
+                status: completion.status,
+                detail: completion.detail,
+                output_path: completion.output_path,
+                quiet_origin: completion
+                    .quiet_origin
+                    .as_ref()
+                    .and_then(coerce_quiet_origin),
+            });
+        })),
+        Some(Arc::new(move |agent_id| {
+            let tasks = shell_watch_async_runtime.get_async_tasks(agent_id, &[]);
+            shell_watch_async_events.publish(serde_json::json!({
+                "channel": "async-tasks",
+                "payload": {
+                    "parentAgentId": agent_id,
+                    "tasks": tasks,
+                }
+            }));
+        })),
+    ));
+
     let cross_user_runner_deps = LocalRoutedRunnerDeps {
         routed_tool_relay: Arc::clone(&routed_tool_relay),
         mcp_service: Arc::clone(&mcp_service),
@@ -8512,6 +8624,7 @@ fn main() {
             production_action_auditor: production_extensions.action_audit.clone(),
             cloud_agents: production_extensions.cloud_agents.service(),
             cloud_agent_watches: Arc::clone(&cloud_agent_watches),
+            background_shell_watches: Arc::clone(&background_shell_watches),
             secrets: Arc::clone(&secrets_extension),
             local_tool_permission: Arc::clone(&local_tool_permission_extension),
             auto_review: Arc::clone(&auto_review_extension),
@@ -8530,29 +8643,21 @@ fn main() {
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) = Arc::downgrade(&gateway_api);
 
-    // Re-arm the durable CloudAgent and Subagent subsets through the single
-    // frozen PendingWakeRearm state machine. Shell watcher ownership remains
-    // explicit manifest work until its shipping owner is composed.
+    // Re-arm every durable background wake through the single frozen
+    // PendingWakeRearm state machine. Shell rewatches re-persist their marker
+    // before the asynchronous terminal poll is armed.
     if let Some(store) = transcript_runtime.pending_wake_store().cloned() {
         let rearm = PendingWakeRearm::new(
             Some(store.clone()),
             Arc::new(ProductionPendingWakeRuntime {
                 gateway: Arc::clone(&cloud_agent_completion_gateway_slot),
                 cloud_agent_watches: Arc::clone(&cloud_agent_watches),
+                background_shell_watches: Arc::clone(&background_shell_watches),
                 completion_revivals: Arc::clone(&completion_revivals),
             }),
         );
         let now_ms = started_at_ms() as f64;
-        for pending in store
-            .list_pending()
-            .into_iter()
-            .filter(|marker| {
-                matches!(
-                    marker.kind,
-                    PendingWakeKind::CloudAgent | PendingWakeKind::Subagent
-                )
-            })
-        {
+        for pending in store.list_pending() {
             rearm.rearm_pending_wake(pending, now_ms, Some("host_startup"));
         }
     }

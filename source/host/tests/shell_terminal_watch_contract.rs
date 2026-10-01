@@ -4,10 +4,11 @@ use mahayana_host_runtime::runner::background_work::{
 use mahayana_host_runtime::runner::sand_prompt_markers::SAND_HIDDEN_PROMPT_MARKER;
 use mahayana_host_runtime::runner::shell_terminal_watch::{
     ConfirmedUserTurnWatermark, MaterializedTurn, MaterializedTurnKind,
-    MaterializedUserMessage, RecentTerminalUserMessage, ShellTerminalPollState,
-    ShellWatchStatus, TerminalReadResult, WatermarkResult,
+    MaterializedUserMessage, RecentTerminalUserMessage, ShellTerminalPollRead,
+    ShellTerminalPollState, ShellWatchStatus, TerminalReadResult, WatermarkResult,
     collect_prepend_user_messages, find_confirmed_user_turn_watermark,
-    is_group_turn_prompt_text, read_shell_terminal_snapshot, turn_refs_equal,
+    is_group_turn_prompt_text, poll_shell_terminal_file, read_shell_terminal_snapshot,
+    turn_refs_equal,
 };
 
 #[test]
@@ -228,4 +229,111 @@ fn invalidated_watermark_boundary_forces_rescan() {
     }];
     let resolved = find_confirmed_user_turn_watermark(&turns, Some(&cache));
     assert_eq!(resolved.result.last_user_message_id.as_deref(), Some("new-id"));
+}
+
+
+#[test]
+fn production_poll_loop_covers_terminal_success_exit_stream_missing_permission_timeout_and_transient_retry() {
+    use std::cell::{Cell, RefCell};
+    use std::collections::VecDeque;
+
+    let run = |reads: Vec<ShellTerminalPollRead>| {
+        let queue = RefCell::new(VecDeque::from(reads));
+        let now = Cell::new(0u64);
+        poll_shell_terminal_file(
+            0,
+            1,
+            || queue.borrow_mut().pop_front().expect("poll read"),
+            || now.get(),
+            |delay| now.set(now.get().saturating_add(delay)),
+            || false,
+        )
+        .expect("settlement")
+    };
+
+    let success = run(vec![ShellTerminalPollRead::Snapshot {
+        output_path: "/term/success.txt".into(),
+        result: TerminalReadResult::SuccessText(
+            "ok\n---\nexit_code: 0\n---".into(),
+        ),
+    }]);
+    assert_eq!(success.status, ShellWatchStatus::Success);
+
+    let nonzero = run(vec![ShellTerminalPollRead::Snapshot {
+        output_path: "/term/nonzero.txt".into(),
+        result: TerminalReadResult::SuccessText(
+            "bad\n---\nexit_code: 7\n---".into(),
+        ),
+    }]);
+    assert_eq!(nonzero.status, ShellWatchStatus::Error);
+    assert_eq!(nonzero.detail.as_deref(), Some("exit_code=7"));
+
+    let stream = run(vec![ShellTerminalPollRead::Snapshot {
+        output_path: "/term/stream.txt".into(),
+        result: TerminalReadResult::SuccessText(
+            "partial\n---\nerror: pipe broke\nended_at: 1\n---".into(),
+        ),
+    }]);
+    assert!(stream
+        .detail
+        .as_deref()
+        .is_some_and(|detail| detail.contains("output stream failed")));
+
+    let missing = run(
+        (0..SHELL_REWATCH_MISSING_FILE_GIVE_UP)
+            .map(|_| ShellTerminalPollRead::Snapshot {
+                output_path: "/term/missing.txt".into(),
+                result: TerminalReadResult::FileNotFound,
+            })
+            .collect(),
+    );
+    assert!(missing
+        .detail
+        .as_deref()
+        .is_some_and(|detail| detail.contains("no longer exists")));
+
+    let denied = run(vec![ShellTerminalPollRead::PermissionDenied {
+        output_path: Some("/term/denied.txt".into()),
+    }]);
+    assert!(denied
+        .detail
+        .as_deref()
+        .is_some_and(|detail| detail.contains("no longer allowed")));
+    assert_eq!(denied.output_path.as_deref(), Some("/term/denied.txt"));
+
+    let transient_then_success = run(vec![
+        ShellTerminalPollRead::TransientFailure("box reconnecting".into()),
+        ShellTerminalPollRead::Snapshot {
+            output_path: "/term/recovered.txt".into(),
+            result: TerminalReadResult::SuccessText(
+                "ok\n---\nexit_code: 0\n---".into(),
+            ),
+        },
+    ]);
+    assert_eq!(transient_then_success.status, ShellWatchStatus::Success);
+
+    let now = Cell::new(0u64);
+    let timeout = poll_shell_terminal_file(
+        0,
+        SHELL_REWATCH_MAX_WAIT_MS,
+        || ShellTerminalPollRead::TransientFailure("still running".into()),
+        || now.get(),
+        |delay| now.set(now.get().saturating_add(delay)),
+        || false,
+    )
+    .expect("timeout");
+    assert!(timeout
+        .detail
+        .as_deref()
+        .is_some_and(|detail| detail.contains("300 minutes")));
+
+    assert!(poll_shell_terminal_file(
+        0,
+        1,
+        || ShellTerminalPollRead::TransientFailure("unused".into()),
+        || 0,
+        |_| {},
+        || true,
+    )
+    .is_none());
 }

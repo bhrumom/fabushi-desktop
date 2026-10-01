@@ -20,6 +20,7 @@ fn shipping_gateway_uses_the_grok_host_health_owner() {
     assert!(SHIPPING_HOST.contains("generated_agent_runtime"));
     assert!(SHIPPING_HOST.contains("runtime.has_running_subagents()"));
     assert!(SHIPPING_HOST.contains("completion_revivals.has_mid_drain_revival()"));
+    assert!(SHIPPING_HOST.contains("background_shell_watches.has_running_background_shell_work()"));
     assert!(SHIPPING_HOST.contains("agent_ids_with_pending_approvals()"));
     assert!(SHIPPING_HOST.contains("active_agent_id(&self.session_workers)"));
     assert!(TRANSCRIPT_RUNTIME.contains("pub fn live_running_agent_ids"));
@@ -121,4 +122,16 @@ fn shipping_host_copy_in_mode_precedes_long_lived_runtime_bootstrap() {
     assert!(copy_in < host_lock);
     assert!(SHIPPING_HOST.contains("execute_production_box_copy_in_from_env"));
     assert!(SHIPPING_HOST.contains("std::process::exit(exit_code)"));
+}
+
+
+#[test]
+fn shipping_host_composes_one_durable_background_shell_rewatch_owner() {
+    assert!(SHIPPING_HOST.contains("RunnerBackgroundShellWatches::new("));
+    assert!(SHIPPING_HOST.contains("read_background_shell_terminal(shell_id)"));
+    assert!(SHIPPING_HOST.contains("poll_shell_terminal_file("));
+    assert!(SHIPPING_HOST.contains("kind: PendingWakeKind::Shell"));
+    assert!(SHIPPING_HOST.contains("handle_background_shell_completion(ShellCompletion"));
+    assert!(SHIPPING_HOST.contains("background_shell_watches: Arc<RunnerBackgroundShellWatches>"));
+    assert!(!SHIPPING_HOST.contains("production shell pending-wake rearm is not wired yet"));
 }

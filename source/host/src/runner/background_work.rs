@@ -1,5 +1,8 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+};
 
 use serde_json::Value;
 
@@ -552,4 +555,294 @@ impl RunnerCloudAgentWatches {
 
 fn cloud_agent_watch_key(parent_agent_id: &str, bc_id: &str) -> String {
     format!("{parent_agent_id}\0{bc_id}")
+}
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct BackgroundShellWatchOptions {
+    pub title: Option<String>,
+    pub quiet_origin: Option<Value>,
+}
+
+impl BackgroundShellWatchOptions {
+    pub fn new(title: Option<String>, quiet_origin: Option<Value>) -> Self {
+        Self { title, quiet_origin }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct BackgroundShellPendingWatch {
+    pub parent_agent_id: String,
+    pub work_id: String,
+    pub title: String,
+    pub quiet_origin: Option<Value>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct BackgroundShellWatchOutcome {
+    pub status: String,
+    pub detail: Option<String>,
+    pub output_path: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct BackgroundShellBackgroundCompletion {
+    pub parent_agent_id: String,
+    pub work_id: String,
+    pub title: String,
+    pub status: String,
+    pub detail: Option<String>,
+    pub output_path: Option<String>,
+    pub quiet_origin: Option<Value>,
+}
+
+pub type BackgroundShellAwaitCallback = Arc<
+    dyn Fn(&str, &str, Arc<AtomicBool>) -> Option<BackgroundShellWatchOutcome>
+        + Send
+        + Sync,
+>;
+pub type BackgroundShellPendingCallback =
+    Arc<dyn Fn(&BackgroundShellPendingWatch) + Send + Sync>;
+pub type BackgroundShellSettledCallback =
+    Arc<dyn Fn(BackgroundShellBackgroundCompletion) + Send + Sync>;
+pub type BackgroundShellAsyncTasksChangedCallback = Arc<dyn Fn(&str) + Send + Sync>;
+
+#[derive(Clone)]
+struct ArmedBackgroundShellWatch {
+    generation: u64,
+    parent_agent_id: String,
+    work_id: String,
+    title: String,
+    quiet_origin: Option<Value>,
+    cancelled: Arc<AtomicBool>,
+}
+
+#[derive(Default)]
+struct BackgroundShellWatchState {
+    next_generation: u64,
+    armed: HashMap<String, ArmedBackgroundShellWatch>,
+}
+
+/// Single shipping owner for Grok-style background-shell terminal rewatches.
+///
+/// The durable pending marker is armed before duplicate detection, matching
+/// frozen Grok 0.18. This is important during Host recreate because
+/// PendingWakeRearm clears the old marker before invoking this owner.
+#[derive(Clone)]
+pub struct RunnerBackgroundShellWatches {
+    state: Arc<Mutex<BackgroundShellWatchState>>,
+    await_terminal: BackgroundShellAwaitCallback,
+    on_pending: Option<BackgroundShellPendingCallback>,
+    on_settled: Option<BackgroundShellSettledCallback>,
+    on_async_tasks_changed: Option<BackgroundShellAsyncTasksChangedCallback>,
+}
+
+impl RunnerBackgroundShellWatches {
+    pub fn new(
+        await_terminal: BackgroundShellAwaitCallback,
+        on_pending: Option<BackgroundShellPendingCallback>,
+        on_settled: Option<BackgroundShellSettledCallback>,
+        on_async_tasks_changed: Option<BackgroundShellAsyncTasksChangedCallback>,
+    ) -> Self {
+        Self {
+            state: Arc::new(Mutex::new(BackgroundShellWatchState::default())),
+            await_terminal,
+            on_pending,
+            on_settled,
+            on_async_tasks_changed,
+        }
+    }
+
+    pub fn watch_background_shell(
+        &self,
+        parent_agent_id: &str,
+        shell_id: &str,
+        options: BackgroundShellWatchOptions,
+    ) -> bool {
+        let parent_agent_id = parent_agent_id.trim();
+        let shell_id = shell_id.trim();
+        if parent_agent_id.is_empty() || shell_id.is_empty() {
+            return false;
+        }
+
+        let title = options
+            .title
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+            .unwrap_or_else(|| format!("Background command {shell_id}"));
+
+        if let Some(callback) = self.on_pending.as_ref() {
+            callback(&BackgroundShellPendingWatch {
+                parent_agent_id: parent_agent_id.to_string(),
+                work_id: shell_id.to_string(),
+                title: title.clone(),
+                quiet_origin: options.quiet_origin.clone(),
+            });
+        }
+
+        let key = background_shell_watch_key(parent_agent_id, shell_id);
+        let armed = {
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if state.armed.contains_key(&key) {
+                return false;
+            }
+            state.next_generation = state.next_generation.saturating_add(1);
+            let armed = ArmedBackgroundShellWatch {
+                generation: state.next_generation,
+                parent_agent_id: parent_agent_id.to_string(),
+                work_id: shell_id.to_string(),
+                title,
+                quiet_origin: options.quiet_origin,
+                cancelled: Arc::new(AtomicBool::new(false)),
+            };
+            state.armed.insert(key.clone(), armed.clone());
+            armed
+        };
+        self.emit_async_tasks_changed(parent_agent_id);
+
+        let state = Arc::clone(&self.state);
+        let await_terminal = Arc::clone(&self.await_terminal);
+        let on_settled = self.on_settled.clone();
+        let on_async_tasks_changed = self.on_async_tasks_changed.clone();
+        let generation = armed.generation;
+        let parent_agent_id = armed.parent_agent_id.clone();
+        let work_id = armed.work_id.clone();
+        let title = armed.title.clone();
+        let quiet_origin = armed.quiet_origin.clone();
+        let cancelled = Arc::clone(&armed.cancelled);
+
+        let _ = std::thread::Builder::new()
+            .name(format!("mahayana-background-shell-watch-{work_id}"))
+            .spawn(move || {
+                let outcome =
+                    await_terminal(&parent_agent_id, &work_id, Arc::clone(&cancelled));
+                if cancelled.load(Ordering::Acquire) {
+                    return;
+                }
+                let still_owned = {
+                    let mut state = state
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    let owned = state
+                        .armed
+                        .get(&key)
+                        .is_some_and(|current| current.generation == generation);
+                    if owned {
+                        state.armed.remove(&key);
+                    }
+                    owned
+                };
+                if !still_owned {
+                    return;
+                }
+                if let Some(callback) = on_async_tasks_changed.as_ref() {
+                    callback(&parent_agent_id);
+                }
+                if let (Some(callback), Some(outcome)) = (on_settled.as_ref(), outcome) {
+                    callback(BackgroundShellBackgroundCompletion {
+                        parent_agent_id,
+                        work_id,
+                        title,
+                        status: outcome.status,
+                        detail: outcome.detail,
+                        output_path: outcome.output_path,
+                        quiet_origin,
+                    });
+                }
+            });
+        true
+    }
+
+    pub fn is_shell_watch_armed(&self, parent_agent_id: &str, shell_id: &str) -> bool {
+        self.state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .armed
+            .contains_key(&background_shell_watch_key(
+                parent_agent_id.trim(),
+                shell_id.trim(),
+            ))
+    }
+
+    pub fn pending_shell_rewatch_ids(&self, parent_agent_id: &str) -> Vec<String> {
+        let mut ids = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .armed
+            .values()
+            .filter(|watch| watch.parent_agent_id == parent_agent_id)
+            .map(|watch| watch.work_id.clone())
+            .collect::<Vec<_>>();
+        ids.sort();
+        ids
+    }
+
+    pub fn has_running_background_shell_work(&self) -> bool {
+        !self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .armed
+            .is_empty()
+    }
+
+    pub fn cancel_shell_watch(&self, parent_agent_id: &str, shell_id: &str) -> bool {
+        let removed = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .armed
+            .remove(&background_shell_watch_key(
+                parent_agent_id.trim(),
+                shell_id.trim(),
+            ));
+        let Some(removed) = removed else {
+            return false;
+        };
+        removed.cancelled.store(true, Ordering::Release);
+        self.emit_async_tasks_changed(parent_agent_id);
+        true
+    }
+
+    pub fn dispose_parent(&self, parent_agent_id: &str) -> usize {
+        let removed = {
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            let keys = state
+                .armed
+                .iter()
+                .filter_map(|(key, watch)| {
+                    (watch.parent_agent_id == parent_agent_id).then_some(key.clone())
+                })
+                .collect::<Vec<_>>();
+            for key in &keys {
+                if let Some(watch) = state.armed.remove(key) {
+                    watch.cancelled.store(true, Ordering::Release);
+                }
+            }
+            keys.len()
+        };
+        if removed > 0 {
+            self.emit_async_tasks_changed(parent_agent_id);
+        }
+        removed
+    }
+
+    fn emit_async_tasks_changed(&self, parent_agent_id: &str) {
+        if let Some(callback) = self.on_async_tasks_changed.as_ref() {
+            callback(parent_agent_id);
+        }
+    }
+}
+
+fn background_shell_watch_key(parent_agent_id: &str, shell_id: &str) -> String {
+    format!("{parent_agent_id}\0{shell_id}")
 }

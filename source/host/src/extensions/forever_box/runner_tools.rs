@@ -17,6 +17,7 @@ use crate::runner::box_tool_access::{
 use crate::runner::remote_box_resources::{
     RemoteBoxResourceCoordinator, RemoteConnection,
 };
+use crate::runner::shell_terminal_watch::{ShellTerminalPollRead, TerminalReadResult};
 
 use super::forever_box_service::ForeverBoxService;
 
@@ -93,6 +94,76 @@ impl ForeverBoxRunnerResourcePort {
     ) -> Result<Arc<Mutex<crate::r#box::generated_production::ProductionBoxResourceAccessor>>, ProviderSessionError>
     {
         self.connection().map(|connection| connection.resource)
+    }
+
+    /// Read one background-shell terminal snapshot through the shipping
+    /// Host-owned ForeverBox resource. Box readiness is re-resolved on every
+    /// poll so recreate/credential rotation cannot leave a stale accessor.
+    pub fn read_background_shell_terminal(&self, shell_id: &str) -> ShellTerminalPollRead {
+        let shell_id = shell_id.trim();
+        let connection = match self.connection() {
+            Ok(connection) => connection,
+            Err(error) => return ShellTerminalPollRead::TransientFailure(error.to_string()),
+        };
+        let folder = connection.terminals_folder.trim_end_matches('/');
+        let output_path = format!("{folder}/{shell_id}.txt");
+        let mut accessor = connection
+            .resource
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let result = accessor.execute_read(
+            &(),
+            ProductionReadArgs {
+                path: output_path.clone(),
+                tool_call_id: String::new(),
+                offset: None,
+                limit: None,
+                encoding_hint: None,
+            },
+        );
+        let result = match result {
+            Ok(result) => result,
+            Err(error) => {
+                return ShellTerminalPollRead::TransientFailure(error.to_string());
+            }
+        };
+        match result {
+            ProductionReadResult::Success { output, .. } => {
+                let result = match output {
+                    ProductionReadOutput::Content(content) => {
+                        TerminalReadResult::SuccessText(content)
+                    }
+                    ProductionReadOutput::Data(data) => {
+                        TerminalReadResult::SuccessData(data)
+                    }
+                    ProductionReadOutput::None => {
+                        TerminalReadResult::SuccessText(String::new())
+                    }
+                };
+                ShellTerminalPollRead::Snapshot { output_path, result }
+            }
+            ProductionReadResult::FileNotFound { .. } => ShellTerminalPollRead::Snapshot {
+                output_path,
+                result: TerminalReadResult::FileNotFound,
+            },
+            ProductionReadResult::PermissionDenied { .. } => {
+                ShellTerminalPollRead::PermissionDenied {
+                    output_path: Some(output_path),
+                }
+            }
+            ProductionReadResult::Error { error, .. } => {
+                ShellTerminalPollRead::TransientFailure(error)
+            }
+            ProductionReadResult::Rejected { reason, .. } => {
+                ShellTerminalPollRead::TransientFailure(reason)
+            }
+            ProductionReadResult::InvalidFile { reason, .. } => {
+                ShellTerminalPollRead::TransientFailure(reason)
+            }
+            ProductionReadResult::Other { case } => {
+                ShellTerminalPollRead::TransientFailure(case)
+            }
+        }
     }
 }
 
