@@ -17,6 +17,7 @@ pub struct AgentDeletionRuntimeDeps {
     pub forget_ack: Option<AgentDeletionHook>,
     pub sharing_departure: Option<AgentDeletionHook>,
     pub clear_trays: Option<AgentDeletionHook>,
+    pub dispose_background_work: Option<AgentDeletionHook>,
     pub release_box: Option<AgentDeletionHook>,
     pub forget_handoff: Option<AgentDeletionHook>,
     pub clear_pending_wakes: Option<AgentDeletionHook>,
@@ -35,6 +36,9 @@ impl AgentDeletionRuntimeDeps {
         }
         if let Some(clear_trays) = self.clear_trays.as_ref() {
             clear_trays(agent_id)?;
+        }
+        if let Some(dispose_background_work) = self.dispose_background_work.as_ref() {
+            dispose_background_work(agent_id)?;
         }
         Ok(())
     }

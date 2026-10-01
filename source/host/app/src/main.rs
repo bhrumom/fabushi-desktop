@@ -8113,6 +8113,10 @@ fn main() {
     }
     let cross_user_deletion_slot =
         Arc::new(Mutex::new(Weak::<ProductionCrossUserRuntime>::new()));
+    let cloud_agent_deletion_watches =
+        Arc::new(Mutex::new(Weak::<RunnerCloudAgentWatches>::new()));
+    let background_shell_deletion_watches =
+        Arc::new(Mutex::new(Weak::<RunnerBackgroundShellWatches>::new()));
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {
         cancel_runner: Some({
             let runner_registry = Arc::clone(&runner_registry);
@@ -8160,6 +8164,27 @@ fn main() {
             let trays = Arc::clone(&production_extensions.trays);
             Arc::new(move |agent_id| {
                 trays.clear_for_agent(agent_id);
+                Ok(())
+            })
+        }),
+        dispose_background_work: Some({
+            let cloud_agent_watches = Arc::clone(&cloud_agent_deletion_watches);
+            let background_shell_watches = Arc::clone(&background_shell_deletion_watches);
+            Arc::new(move |agent_id| {
+                if let Some(watches) = cloud_agent_watches
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .upgrade()
+                {
+                    watches.dispose_parent(agent_id);
+                }
+                if let Some(watches) = background_shell_watches
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .upgrade()
+                {
+                    watches.dispose_parent(agent_id);
+                }
                 Ok(())
             })
         }),
@@ -8415,6 +8440,10 @@ fn main() {
     let shell_watch_settled = Arc::clone(&completion_revivals);
     let shell_watch_async_runtime = Arc::clone(&transcript_runtime);
     let shell_watch_async_events = gateway_events.clone();
+    *cloud_agent_deletion_watches
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) =
+        Arc::downgrade(&cloud_agent_watches);
     let background_shell_watches = Arc::new(RunnerBackgroundShellWatches::new(
         Arc::new(move |agent_id, shell_id, cancelled| {
             let resources = ForeverBoxRunnerResourcePort::new(
@@ -8501,6 +8530,10 @@ fn main() {
             }));
         })),
     ));
+    *background_shell_deletion_watches
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) =
+        Arc::downgrade(&background_shell_watches);
 
     let cross_user_runner_deps = LocalRoutedRunnerDeps {
         routed_tool_relay: Arc::clone(&routed_tool_relay),
