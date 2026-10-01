@@ -323,6 +323,7 @@ use mahayana_host_runtime::runner::bot_block_detection::with_bot_block_detection
 use mahayana_host_runtime::extensions::telemetry::bot_block_telemetry::BotBlockReport;
 use mahayana_host_runtime::runner::turn_observation::{
     ToolCallTelemetryEvent, TurnObservation, TurnObservationHandle,
+    async_tasks_changed_event,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSource,
@@ -1306,6 +1307,24 @@ struct ProductionCompletionRevivalRuntime {
     gateway: Arc<Mutex<Weak<UnifiedGatewayApi>>>,
 }
 
+fn publish_async_tasks_changed(
+    events: &GatewayEventHub,
+    runtime: &ProductionTranscriptRuntime,
+    agent_id: &str,
+) {
+    let tasks = runtime.get_async_tasks(agent_id, &[]);
+    match async_tasks_changed_event(agent_id, &tasks) {
+        Ok(payload) => events.publish(serde_json::json!({
+            "channel": "async-tasks",
+            "payload": payload,
+        })),
+        Err(error) => eprintln!(
+            "mahayana-host async_tasks_projection_failed agent={} error={}",
+            agent_id, error
+        ),
+    }
+}
+
 impl ProductionCompletionRevivalRuntime {
     fn gateway(&self) -> Option<Arc<UnifiedGatewayApi>> {
         self.gateway
@@ -1940,14 +1959,11 @@ impl UnifiedGatewayApi {
     }
 
     fn emit_async_tasks_for_agent(&self, agent_id: &str) {
-        let tasks = self.transcript_runtime.get_async_tasks(agent_id, &[]);
-        self.events.publish(serde_json::json!({
-            "channel": "async-tasks",
-            "payload": {
-                "parentAgentId": agent_id,
-                "tasks": tasks,
-            }
-        }));
+        publish_async_tasks_changed(
+            &self.events,
+            self.transcript_runtime.as_ref(),
+            agent_id,
+        );
     }
 
     fn refresh_production_automations(&self) {
@@ -4509,6 +4525,17 @@ fn start_routed_provider_task(
             let runner_started_at_ms = started_at_ms();
             if let Ok(mut observation) = observation.lock() {
                 observation.set_request_id(Some(worker_stream_id.clone()));
+                let async_tasks_runtime = Arc::clone(&worker_transcript_runtime);
+                observation.set_async_tasks_provider(Arc::new(move |owner_agent_id| {
+                    async_tasks_runtime.get_async_tasks(owner_agent_id, &[])
+                }));
+                let async_tasks_events = worker_events.clone();
+                observation.set_async_tasks_event_handler(Arc::new(move |payload| {
+                    async_tasks_events.publish(serde_json::json!({
+                        "channel": "async-tasks",
+                        "payload": payload,
+                    }));
+                }));
                 let tool_call_logs = worker_telemetry_logs.clone();
                 observation.set_tool_call_telemetry_handler(Arc::new(move |event| {
                     let result = match event {
@@ -5974,14 +6001,11 @@ fn start_routed_provider_task(
                                 "outcome": if written { "persisted" } else { "persist_failed" },
                             }
                         }));
-                        let tasks = worker_transcript_runtime.get_async_tasks(parent_agent_id, &[]);
-                        worker_events.publish(serde_json::json!({
-                            "channel": "async-tasks",
-                            "payload": {
-                                "parentAgentId": parent_agent_id,
-                                "tasks": tasks,
-                            }
-                        }));
+                        publish_async_tasks_changed(
+                            &worker_events,
+                            worker_transcript_runtime.as_ref(),
+                            parent_agent_id,
+                        );
                     }
                 }
                 worker_transcript_runtime.begin_live_subagent(parent_agent_id);
@@ -8500,14 +8524,11 @@ fn main() {
             });
         })),
         Some(Arc::new(move |agent_id| {
-            let tasks = cloud_watch_async_runtime.get_async_tasks(agent_id, &[]);
-            cloud_watch_async_events.publish(serde_json::json!({
-                "channel": "async-tasks",
-                "payload": {
-                    "parentAgentId": agent_id,
-                    "tasks": tasks,
-                }
-            }));
+            publish_async_tasks_changed(
+                &cloud_watch_async_events,
+                cloud_watch_async_runtime.as_ref(),
+                agent_id,
+            );
         })),
     ));
     let shell_watch_box = Arc::clone(&forever_box);
@@ -8596,14 +8617,11 @@ fn main() {
             });
         })),
         Some(Arc::new(move |agent_id| {
-            let tasks = shell_watch_async_runtime.get_async_tasks(agent_id, &[]);
-            shell_watch_async_events.publish(serde_json::json!({
-                "channel": "async-tasks",
-                "payload": {
-                    "parentAgentId": agent_id,
-                    "tasks": tasks,
-                }
-            }));
+            publish_async_tasks_changed(
+                &shell_watch_async_events,
+                shell_watch_async_runtime.as_ref(),
+                agent_id,
+            );
         })),
     ));
     *background_shell_deletion_watches

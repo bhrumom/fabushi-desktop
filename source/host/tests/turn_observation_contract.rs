@@ -4,10 +4,11 @@ use std::time::{Duration, Instant};
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
+use mahayana_host_runtime::extensions::transcript::async_task_union::AsyncTask;
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::turn_observation::{
     McpObservedRoutedToolBridge, ObservedRoutedToolBridge, RECENT_ACTIVITY_CAP, ToolActivity,
-    ToolCallTelemetryEvent, TurnObservation,
+    ToolCallTelemetryEvent, TurnObservation, async_tasks_changed_event,
 };
 use serde_json::{Value, json};
 
@@ -43,6 +44,59 @@ fn tool(name: &str) -> RoutedToolDefinition {
         description: None,
         input_schema: json!({"type":"object"}),
     }
+}
+
+#[test]
+fn async_tasks_are_sorted_and_emit_the_frozen_owner_envelope() {
+    let emitted = Arc::new(Mutex::new(Vec::<Value>::new()));
+    let emitted_sink = Arc::clone(&emitted);
+    let mut observation = TurnObservation::new("agent-async", None);
+    observation.set_async_tasks_provider(Arc::new(|owner| {
+        assert_eq!(owner, "agent-async");
+        vec![
+            AsyncTask {
+                kind: "shell".into(),
+                id: "shell-b".into(),
+                label: "Later".into(),
+                status: "running".into(),
+                started_at_ms: 20.0,
+                detail: None,
+                subagent_type: None,
+            },
+            AsyncTask {
+                kind: "subagent".into(),
+                id: "sub-a".into(),
+                label: "Earlier".into(),
+                status: "running".into(),
+                started_at_ms: 10.0,
+                detail: Some("research".into()),
+                subagent_type: Some("research".into()),
+            },
+        ]
+    }));
+    observation.set_async_tasks_event_handler(Arc::new(move |event| {
+        emitted_sink.lock().expect("events").push(event);
+    }));
+
+    let tasks = observation
+        .emit_async_tasks_changed()
+        .expect("async tasks event");
+    assert_eq!(
+        tasks.iter().map(|task| task.id.as_str()).collect::<Vec<_>>(),
+        vec!["sub-a", "shell-b"]
+    );
+    let events = emitted.lock().expect("events");
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0]["parentAgentId"], "agent-async");
+    assert_eq!(events[0]["tasks"][0]["id"], "sub-a");
+    assert_eq!(events[0]["tasks"][0]["subagentType"], "research");
+}
+
+#[test]
+fn async_task_event_rejects_an_unowned_conversation() {
+    let error = async_tasks_changed_event("", &[])
+        .expect_err("empty owner must fail closed");
+    assert_eq!(error, "async-task owner conversation id is unavailable");
 }
 
 #[test]
@@ -371,4 +425,27 @@ fn routed_mcp_failure_reports_one_specialized_error_not_generic_duplicate() {
             ..
         } if tool_call_id == "mcp-failed" && error_class == "mcp_error_result"
     ));
+}
+
+
+#[test]
+fn shipping_host_routes_async_task_projection_through_turn_observation_owner() {
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let main = std::fs::read_to_string(root.join("app/src/main.rs")).expect("shipping host main");
+    for required in [
+        "async_tasks_changed_event(",
+        "set_async_tasks_provider(",
+        "set_async_tasks_event_handler(",
+        "publish_async_tasks_changed(",
+        "worker_transcript_runtime.get_async_tasks(owner_agent_id, &[])",
+    ] {
+        assert!(
+            main.contains(required),
+            "missing production async-task observation wiring: {required}"
+        );
+    }
+    assert!(
+        main.matches("publish_async_tasks_changed(").count() >= 5,
+        "gateway, pending-wake, subagent, cloud and shell task changes must share the canonical observation envelope"
+    );
 }

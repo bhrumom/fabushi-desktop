@@ -7,6 +7,7 @@ use serde_json::{Value, json};
 use crate::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
+use crate::extensions::transcript::async_task_union::AsyncTask;
 
 use super::clock_skew_guard::{
     SEND_DISPATCH_MAX_PLAUSIBLE_MS, TTFT_MAX_PLAUSIBLE_MS,
@@ -21,6 +22,8 @@ pub const RECENT_ACTIVITY_CAP: usize = 24;
 
 pub type TurnObservationEventSink =
     Arc<dyn Fn(Value) + Send + Sync + 'static>;
+pub type AsyncTasksProvider =
+    Arc<dyn Fn(&str) -> Vec<AsyncTask> + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ToolCallTelemetryEvent {
@@ -105,6 +108,8 @@ pub struct TurnObservation {
     turn_await_sink: Option<TurnObservationEventSink>,
     first_token_sink: Option<TurnObservationEventSink>,
     send_dispatch_sink: Option<TurnObservationEventSink>,
+    async_tasks_sink: Option<TurnObservationEventSink>,
+    async_tasks_provider: Option<AsyncTasksProvider>,
     tool_call_telemetry_sink: Option<ToolCallTelemetrySink>,
     request_id: Option<String>,
     turn_started_at_ms: u64,
@@ -119,6 +124,26 @@ pub struct TurnObservation {
 
 pub type TurnObservationHandle = Arc<Mutex<TurnObservation>>;
 
+pub fn async_tasks_changed_event(
+    parent_agent_id: &str,
+    tasks: &[AsyncTask],
+) -> Result<Value, String> {
+    if parent_agent_id.trim().is_empty() {
+        return Err("async-task owner conversation id is unavailable".into());
+    }
+    let mut sorted = tasks.to_vec();
+    sorted.sort_by(|left, right| {
+        left.started_at_ms
+            .partial_cmp(&right.started_at_ms)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| left.id.cmp(&right.id))
+    });
+    Ok(json!({
+        "parentAgentId": parent_agent_id,
+        "tasks": sorted,
+    }))
+}
+
 impl TurnObservation {
     pub fn new(
         conversation_id: impl Into<String>,
@@ -130,6 +155,8 @@ impl TurnObservation {
             turn_await_sink: None,
             first_token_sink: None,
             send_dispatch_sink: None,
+            async_tasks_sink: None,
+            async_tasks_provider: None,
             tool_call_telemetry_sink: None,
             request_id: None,
             turn_started_at_ms: now_ms(),
@@ -152,6 +179,38 @@ impl TurnObservation {
 
     pub fn set_tool_call_telemetry_handler(&mut self, sink: ToolCallTelemetrySink) {
         self.tool_call_telemetry_sink = Some(sink);
+    }
+
+    pub fn set_async_tasks_provider(&mut self, provider: AsyncTasksProvider) {
+        self.async_tasks_provider = Some(provider);
+    }
+
+    pub fn set_async_tasks_event_handler(&mut self, handler: TurnObservationEventSink) {
+        self.async_tasks_sink = Some(handler);
+    }
+
+    pub fn list_async_tasks(&self) -> Vec<AsyncTask> {
+        let mut tasks = self
+            .async_tasks_provider
+            .as_ref()
+            .map(|provider| provider(&self.conversation_id))
+            .unwrap_or_default();
+        tasks.sort_by(|left, right| {
+            left.started_at_ms
+                .partial_cmp(&right.started_at_ms)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| left.id.cmp(&right.id))
+        });
+        tasks
+    }
+
+    pub fn emit_async_tasks_changed(&self) -> Result<Vec<AsyncTask>, String> {
+        let tasks = self.list_async_tasks();
+        let event = async_tasks_changed_event(&self.conversation_id, &tasks)?;
+        if let Some(sink) = self.async_tasks_sink.as_ref() {
+            sink(event);
+        }
+        Ok(tasks)
     }
 
     pub fn set_request_id(&mut self, request_id: Option<String>) {

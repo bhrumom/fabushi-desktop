@@ -16,6 +16,8 @@ pub struct AsyncTask {
     pub started_at_ms: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subagent_type: Option<String>,
 }
 
 fn kind_name(kind: PendingWakeKind) -> &'static str {
@@ -51,6 +53,11 @@ pub fn pending_wake_marker_to_async_task(marker: &DurablePendingWakeMarker) -> A
         status: "running".to_string(),
         started_at_ms: marker.marked_at_ms,
         detail,
+        subagent_type: marker
+            .subagent_type
+            .as_deref()
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned),
     }
 }
 
