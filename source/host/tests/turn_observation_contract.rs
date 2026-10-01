@@ -449,3 +449,30 @@ fn shipping_host_routes_async_task_projection_through_turn_observation_owner() {
         "gateway, pending-wake, subagent, cloud and shell task changes must share the canonical observation envelope"
     );
 }
+
+
+#[test]
+fn shipping_host_emits_send_dispatch_at_the_real_provider_dispatch_boundary() {
+    let main = fs::read_to_string("app/src/main.rs").expect("shipping host main");
+    let observation = main
+        .find("observation.observe_send_dispatch(")
+        .expect("send-dispatch observation producer");
+    let provider_dispatch = main
+        .find("runner.run_routed_provider_with_projected_messages(")
+        .expect("real provider dispatch");
+    assert!(
+        observation < provider_dispatch,
+        "send-dispatch observation must be emitted immediately before the shipping provider call"
+    );
+    for required in [
+        "worker_enter_epoch_ms",
+        "context.dispatch_started.elapsed().as_secs_f64() * 1_000.0",
+        "turn_input.options.is_fork",
+        "provider.as_str()",
+    ] {
+        assert!(
+            main.contains(required),
+            "missing frozen send-dispatch production input: {required}"
+        );
+    }
+}

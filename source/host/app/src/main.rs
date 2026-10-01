@@ -4407,6 +4407,9 @@ fn start_routed_provider_task(
     let worker_memory_service = session_workers.memory_service();
     let worker_turn_hidden = turn_hidden;
     let worker_gateway_context = gateway_context;
+    let worker_enter_epoch_ms = args
+        .get("enterEpochMs")
+        .and_then(serde_json::Value::as_f64);
     let state_sand_root = session_workers
         .memory_service()
         .agents_root_dir()
@@ -6013,6 +6016,20 @@ fn start_routed_provider_task(
                     &worker_events,
                     &worker_generated_agent_runtime,
                     parent_agent_id,
+                );
+            }
+            if let Ok(observation) = observation.lock() {
+                let dispatch_perf_ms = worker_gateway_context
+                    .as_ref()
+                    .map(|context| context.dispatch_started.elapsed().as_secs_f64() * 1_000.0)
+                    .unwrap_or_default();
+                observation.observe_send_dispatch(
+                    0.0,
+                    dispatch_perf_ms,
+                    worker_enter_epoch_ms,
+                    started_at_ms() as f64,
+                    turn_input.options.is_fork,
+                    provider.as_str(),
                 );
             }
             let result = runner.run_routed_provider_with_projected_messages(
