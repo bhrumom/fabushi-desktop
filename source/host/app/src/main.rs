@@ -144,6 +144,7 @@ use mahayana_host_runtime::extensions::transcript::automation_runtime::{
     AutomationCommandError, dispatch_automation_command,
 };
 use mahayana_host_runtime::automations::automation_status_reminder::create_automation_status_reminder;
+use mahayana_host_runtime::automations::automation_id::stable_automation_id;
 use mahayana_host_runtime::automations::automation_trigger::{trigger_matches_event, trigger_members};
 use mahayana_host_runtime::extensions::automations::listener_integrations::count_listener_platforms;
 use mahayana_host_runtime::extensions::automations::fire_delivery::{
@@ -180,7 +181,7 @@ use mahayana_host_runtime::extensions::inference::cursor_session::{
 use mahayana_host_runtime::extensions::inference::generated_inference_codec::InferenceReason;
 use mahayana_host_runtime::extensions::webauthn_proxy::extension::HostWebAuthnProxyExtension;
 use mahayana_host_runtime::extensions::telemetry::automation_fire_telemetry::{
-    AutomationFireDroppedReport,
+    AutomationFireDroppedReport, AutomationRunReport,
 };
 use mahayana_host_runtime::extensions::telemetry::agent_open_telemetry::AgentOpenReport;
 use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
@@ -7699,6 +7700,38 @@ fn main() {
             .automation_runtime()
             .set_lifecycle_reporter(Some(Arc::new(move |event| {
                 let _ = lifecycle_logs.report_automation_lifecycle(event);
+            })));
+    }
+    {
+        let run_logs = host_telemetry.logs.clone();
+        transcript_manager
+            .automation_runtime()
+            .run_path()
+            .set_run_reporter(Some(Arc::new(move |observed| {
+                let Some(is_group) = observed.is_group else {
+                    return;
+                };
+                let outcome = match observed.outcome {
+                    FireAutomationOutcome::Ok => "ok",
+                    FireAutomationOutcome::Error => "error",
+                    FireAutomationOutcome::Interrupted => "interrupted",
+                };
+                let report = AutomationRunReport {
+                    conversation_id: observed.agent_id.clone(),
+                    automation_id: stable_automation_id(
+                        &observed.agent_id,
+                        &observed.automation_id,
+                    ),
+                    trigger: observed.trigger.as_str().to_string(),
+                    outcome: outcome.into(),
+                    is_group,
+                    duration_ms: observed.duration_ms,
+                    lateness_ms: observed.lateness_ms,
+                    scheduled_for_ms: observed.scheduled_for_ms,
+                    sent_message_count: observed.sent_message_count,
+                    event_batch_size: observed.event_batch_size,
+                };
+                let _ = run_logs.report_automation_run(&report);
             })));
     }
     let runner_registry = transcript_manager.runner_registry();
