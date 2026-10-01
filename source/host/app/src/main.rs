@@ -373,7 +373,9 @@ use mahayana_host_runtime::runner::tools::send_message_tool::{
     SendMessageSink, file_path_from_file_url,
 };
 use mahayana_host_runtime::selected_image_inputs::read_image_file_dimensions;
-use mahayana_host_runtime::runner::tools::sand_reaction_tool::ReactionSink;
+use mahayana_host_runtime::runner::tools::sand_reaction_tool::{
+    CountingReactionSink, ReactionDeliveryCounter, ReactionSink,
+};
 use mahayana_host_runtime::runner::tools::sand_agent_management_tools::{
     AgentManagementRecord, AgentManagementSink,
 };
@@ -5516,12 +5518,17 @@ fn start_routed_provider_task(
                         Ok(())
                     }) as RoutinePostWriteCallback
                 });
-            let reaction_sink: Arc<dyn ReactionSink> = Arc::new(
+            let reaction_delivery_counter = ReactionDeliveryCounter::default();
+            let base_reaction_sink: Arc<dyn ReactionSink> = Arc::new(
                 ProductionReactionSink {
                     host_tx,
                     agent_id: agent_id.clone(),
                 },
             );
+            let reaction_sink: Arc<dyn ReactionSink> = Arc::new(CountingReactionSink::new(
+                base_reaction_sink,
+                reaction_delivery_counter.clone(),
+            ));
             let retry_runtime = Arc::clone(&worker_transcript_runtime);
             let retry_agent_id = agent_id.clone();
             let retry_sink: Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync> =
@@ -6230,9 +6237,10 @@ fn start_routed_provider_task(
                 );
             }
             let sent_message_count = send_message_delivery_counter.count();
+            let reacted = reaction_delivery_counter.count() > 0;
             let closing_send_fields = ClosingSendNudgeFields {
                 conversation_id: agent_id.clone(),
-                delivered: sent_message_count > 0,
+                delivered: sent_message_count > 0 || reacted,
                 sent_message_count,
                 aborted: worker_cancellation.is_cancelled(),
             };
@@ -6317,7 +6325,9 @@ fn start_routed_provider_task(
                         "streamId": stream_id,
                         "type": "completed",
                         "content": "",
-                        "waitingUser": true
+                        "waitingUser": true,
+                        "sentMessageCount": sent_message_count,
+                        "reacted": reacted
                     }
                 }));
             } else if !worker_cancellation.is_cancelled() {
@@ -6327,7 +6337,9 @@ fn start_routed_provider_task(
                         "payload": {
                             "streamId": stream_id,
                             "type": "completed",
-                            "content": content
+                            "content": content,
+                            "sentMessageCount": sent_message_count,
+                            "reacted": reacted
                         }
                     })),
                     Err(error) => {
