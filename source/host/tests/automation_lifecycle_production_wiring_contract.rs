@@ -1,4 +1,127 @@
+use std::fs;
+use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use mahayana_host_runtime::automations::automation::{AutomationRecord, AutomationSpec};
+use mahayana_host_runtime::automations::automation_id::stable_automation_id;
 use mahayana_host_runtime::automations::automation_schedule::summarize_schedule_next_7_days;
+
+use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
+use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::transcript::automation_runtime::{
+    AutomationLifecycleAction, AutomationLifecycleEvent, AutomationLifecycleSource, AutomationRuntime,
+};
+use serde_json::json;
+
+
+fn temp_root(label: &str) -> std::path::PathBuf {
+    let nonce = SystemTime::now().duration_since(UNIX_EPOCH).expect("time").as_nanos();
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-row74-{label}-{}-{nonce}",
+        std::process::id()
+    ));
+    fs::create_dir_all(&root).expect("root");
+    root
+}
+
+#[test]
+fn real_ui_producer_flushes_pending_agent_delta_before_ui_delta() {
+    let root = temp_root("producer");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = sessions.create_session(None, "user", None).expect("agent");
+    let runtime = AutomationRuntime::new(Arc::clone(&workers));
+    let captured = Arc::new(Mutex::new(Vec::<AutomationLifecycleEvent>::new()));
+    runtime.set_lifecycle_reporter(Some({
+        let captured = Arc::clone(&captured);
+        Arc::new(move |event| captured.lock().expect("events").push(event.clone()))
+    }));
+
+    let spec = AutomationSpec {
+        name: "Row 74".into(),
+        prompt: "Review".into(),
+        trigger: json!({"type":"cron","schedule":"0 9 * * *"}),
+        is_enabled: Some(true),
+    };
+    let (records, events) = runtime
+        .create_agent_automation(&agent.id, &spec)
+        .expect("create");
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].action, AutomationLifecycleAction::Created);
+    assert_eq!(events[0].source, AutomationLifecycleSource::AutomationsUi);
+    assert_eq!(
+        events[0].stable_automation_id,
+        stable_automation_id(&agent.id, &records[0].id)
+    );
+    assert!(events[0].scheduled_fires_next_7_days.is_some());
+
+    let store = sessions.automation_store_for(&agent.id).expect("store");
+    store.set_enabled(&records[0].id, false).expect("agent edit");
+    runtime
+        .update_agent_automation(
+            &agent.id,
+            &records[0].id,
+            &AutomationSpec {
+                name: "Row 74 renamed".into(),
+                ..spec
+            },
+        )
+        .expect("ui update");
+
+    let captured = captured.lock().expect("events");
+    assert_eq!(captured.len(), 3);
+    assert_eq!(captured[0].action, AutomationLifecycleAction::Created);
+    assert_eq!(captured[0].source, AutomationLifecycleSource::AutomationsUi);
+    assert_eq!(captured[1].action, AutomationLifecycleAction::Disabled);
+    assert_eq!(captured[1].source, AutomationLifecycleSource::Agent);
+    assert_eq!(captured[2].action, AutomationLifecycleAction::Updated);
+    assert_eq!(captured[2].source, AutomationLifecycleSource::AutomationsUi);
+    drop(captured);
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn real_workflow_ui_wrapper_attributes_scheduled_workflow_creation() {
+    use mahayana_host_runtime::workflows::workflow_library::{WorkflowSpec, WorkflowTrigger};
+
+    let root = temp_root("workflow");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = sessions.create_session(None, "user", None).expect("agent");
+    let runtime = AutomationRuntime::new(Arc::clone(&workers));
+    let (_workflows, events) = runtime
+        .with_workflow_ui_mutation(&agent.id, |session| {
+            session.create_agent_workflow(
+                &agent.id,
+                &WorkflowSpec {
+                    name: "Scheduled workflow".into(),
+                    description: String::new(),
+                    body: "Check queue".into(),
+                    trigger: Some(WorkflowTrigger {
+                        schedule: "0 8 * * *".into(),
+                        is_enabled: true,
+                    }),
+                    source_ref: None,
+                },
+            )
+        })
+        .expect("workflow create");
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].action, AutomationLifecycleAction::Created);
+    assert_eq!(events[0].source, AutomationLifecycleSource::WorkflowUi);
+    assert_eq!(events[0].trigger_type, "cron");
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
 
 #[test]
 fn frozen_schedule_summary_keeps_subminute_and_timezone_semantics() {
