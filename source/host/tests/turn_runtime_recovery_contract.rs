@@ -2,7 +2,8 @@ use mahayana_host_runtime::extensions::transcript::send_pipeline::{
     PersistedSendContext, RecoverySend,
 };
 use mahayana_host_runtime::extensions::transcript::turn_runtime::{
-    QueuedTurnRecoveryCheck, should_supersede_stale_turn,
+    QueuedTurnRecoveryCheck, REPLY_NUDGE_PROMPT, is_delivery_owed,
+    should_supersede_stale_turn,
 };
 use mahayana_host_runtime::runner::{
     RecoveryUserMessage, would_recover_via_prepend,
@@ -92,4 +93,14 @@ fn turn_runtime_applies_all_frozen_stale_recovery_guards() {
         image_count: 0,
         video_count: 0,
     }));
+}
+
+
+#[test]
+fn frozen_delivery_owed_treats_successful_reaction_as_user_visible_delivery() {
+    assert!(is_delivery_owed(0, false));
+    assert!(!is_delivery_owed(1, false));
+    assert!(!is_delivery_owed(0, true));
+    assert!(REPLY_NUDGE_PROMPT.contains("actually invoking the SendMessage tool"));
+    assert!(REPLY_NUDGE_PROMPT.contains("ack ≠ delivery"));
 }
