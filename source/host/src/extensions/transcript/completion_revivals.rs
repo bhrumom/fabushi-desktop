@@ -91,6 +91,18 @@ impl CompletionRevivals {
         self.state.lock().unwrap().pending_shell.get(agent_id).cloned().unwrap_or_default()
     }
 
+    /// Frozen SandHost health treats a completion revival that is actively
+    /// draining as background work even after its durable marker has been
+    /// removed. Read the single CompletionRevivals owner instead of inventing
+    /// a parallel Host-side busy flag.
+    pub fn has_mid_drain_revival(&self) -> bool {
+        let state = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        !state.reviving_subagent.is_empty() || !state.reviving_shell.is_empty()
+    }
+
     pub fn handle_background_subagent_completion(&self, completion: SubagentCompletion) {
         if self.runtime.is_agent_deleted(&completion.parent_agent_id) {
             self.runtime.report_revival(RevivalReport {
