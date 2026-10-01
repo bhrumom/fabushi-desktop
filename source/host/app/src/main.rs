@@ -4010,6 +4010,8 @@ fn start_routed_provider_task(
                         command: "box-chrome --sand-prepare".into(),
                         working_directory: "/workspace".into(),
                         tool_call_id: format!("sand-cua-browser-prepare-{agent_id}"),
+                        is_background: false,
+                        block_until_ms: None,
                     });
                     let mut owner = computer_use_owner
                         .lock()
