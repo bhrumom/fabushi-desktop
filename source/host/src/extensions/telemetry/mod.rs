@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 pub mod agent_error_telemetry;
 pub mod agent_open_telemetry;
+pub mod invariant_violation_telemetry;
 pub mod auto_review_approval_telemetry;
 pub mod disk_pressure_telemetry;
 pub mod host_diagnostic_telemetry;

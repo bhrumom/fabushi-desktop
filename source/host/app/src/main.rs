@@ -212,6 +212,7 @@ use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, start_production_host_box_extensions,
     start_production_host_extensions,
 };
+use mahayana_host_runtime::host_invariant::{install_invariant_reporter, invariant_failure};
 #[cfg(test)]
 use mahayana_host_runtime::host_production_extensions::{
     ProductionBrowserUaLog, ProductionHostExtensions,
@@ -5852,7 +5853,7 @@ impl GatewayApi for UnifiedGatewayApi {
                     api.stop(agent_id, save)
                         .map_err(|error| GatewayCommandError::BadRequest(error.to_string()))?
                 }
-                _ => unreachable!(),
+                _ => invariant_failure(),
             };
             return Ok(teach_recording_status_value(status));
         }
@@ -6199,7 +6200,7 @@ impl GatewayApi for UnifiedGatewayApi {
                         entry_count,
                     )
                 }
-                _ => unreachable!("openAgent method match is exhaustive"),
+                _ => invariant_failure(),
             };
             if let Err(error) = self.telemetry_logs.report_agent_open(&AgentOpenReport {
                 conversation_id: agent_id.to_string(),
@@ -7324,6 +7325,12 @@ fn main() {
         let _ = fatal_logs.report_host_crash(kind.as_str());
         fatal_telemetry.flush_for_fatal_exit();
     })));
+    let invariant_logs = host_telemetry.logs.clone();
+    let _invariant_reporter = install_invariant_reporter(Arc::new(move |report| {
+        if let Err(error) = invariant_logs.report_invariant_violation(report) {
+            eprintln!("mahayana-host invariant_violation_telemetry_failed error={error}");
+        }
+    }));
     let box_extensions =
         start_production_host_box_extensions(&production_extensions, production_box);
     let host_lifecycle_api = host_telemetry.api();

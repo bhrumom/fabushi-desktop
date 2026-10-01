@@ -22,6 +22,7 @@ use crate::extensions::experiments::{
 use crate::extensions::inference::production::ProductionInferenceExtension;
 use crate::extensions::inference::sand_model_experiment::SandModelExperimentArm;
 use crate::host_paths::get_host_crash_marker_path;
+use crate::host_invariant::SandInvariantReport;
 use crate::gateway_server::GatewayCommandReport;
 use crate::ports::sand_analytics_types::sand_message_length_bucket;
 use crate::ports::telemetry::resolve_sand_box_identity_tags;
@@ -36,6 +37,7 @@ use super::agent_error_telemetry::{
     AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
 };
 use super::agent_open_telemetry::{AgentOpenReport, agent_open_telemetry};
+use super::invariant_violation_telemetry::invariant_violation_telemetry;
 use super::auto_review_approval_telemetry::{
     AutoReviewApprovalReport, auto_review_approval_telemetry,
 };
@@ -719,6 +721,10 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_agent_open(&self, report: &AgentOpenReport) -> io::Result<()> {
         self.report_projection(&agent_open_telemetry(report))
+    }
+
+    pub fn report_invariant_violation(&self, report: &SandInvariantReport) -> io::Result<()> {
+        self.report_projection(&invariant_violation_telemetry(report))
     }
 
     pub fn report_bot_block(&self, report: &BotBlockReport) -> io::Result<()> {

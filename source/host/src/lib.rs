@@ -41,6 +41,7 @@ pub mod sand_quiet_work_origin;
 pub mod sha256;
 pub mod storage;
 pub mod host_diagnostics;
+pub mod host_invariant;
 pub mod host_initial_transcript_load;
 pub mod process_crash_guard;
 pub mod r#box;
