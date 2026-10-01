@@ -35,6 +35,7 @@ use super::analytics_service::{
 use super::agent_error_telemetry::{
     AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
 };
+use super::agent_open_telemetry::{AgentOpenReport, agent_open_telemetry};
 use super::auto_review_approval_telemetry::{
     AutoReviewApprovalReport, auto_review_approval_telemetry,
 };
@@ -714,6 +715,10 @@ impl HostStructuredLogTelemetry {
         report: &AutomationLifecycleEvent,
     ) -> io::Result<()> {
         self.report_projection(&automation_lifecycle_telemetry(report))
+    }
+
+    pub fn report_agent_open(&self, report: &AgentOpenReport) -> io::Result<()> {
+        self.report_projection(&agent_open_telemetry(report))
     }
 
     pub fn report_bot_block(&self, report: &BotBlockReport) -> io::Result<()> {

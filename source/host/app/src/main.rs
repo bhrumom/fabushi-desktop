@@ -182,6 +182,7 @@ use mahayana_host_runtime::extensions::webauthn_proxy::extension::HostWebAuthnPr
 use mahayana_host_runtime::extensions::telemetry::automation_fire_telemetry::{
     AutomationFireDroppedReport,
 };
+use mahayana_host_runtime::extensions::telemetry::agent_open_telemetry::AgentOpenReport;
 use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
     PendingWakeReport as TelemetryPendingWakeReport, QueueAcceptedReport, QueueDequeuedReport,
     QueueWatchdogReport, SendDispatchReport,
@@ -6140,19 +6141,75 @@ impl GatewayApi for UnifiedGatewayApi {
                 .map_err(GatewayCommandError::Internal)?;
             return Ok(serde_json::Value::Null);
         }
-        if method == "openAgent" {
+        if matches!(method, "openAgent" | "openAgentWindowed" | "openAgentTail") {
             let agent_id = args
                 .get("id")
                 .and_then(serde_json::Value::as_str)
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
-                .ok_or_else(|| GatewayCommandError::BadRequest(
-                    "openAgent requires id".into()
-                ))?;
-            return self.transcript_manager
-                .switch_agent(agent_id, started_at_ms() as f64)
-                .map(serde_json::Value::Array)
-                .map_err(GatewayCommandError::Internal);
+                .ok_or_else(|| GatewayCommandError::BadRequest(format!(
+                    "{method} requires id"
+                )))?;
+            let was_active = self.transcript_manager.active_agent_id().as_deref() == Some(agent_id);
+            let operation_started = std::time::Instant::now();
+            let now_ms = started_at_ms() as f64;
+            let (response, entry_count) = match method {
+                "openAgent" => {
+                    let entries = self
+                        .transcript_manager
+                        .switch_agent(agent_id, now_ms)
+                        .map_err(GatewayCommandError::Internal)?;
+                    let entry_count = entries.len();
+                    (serde_json::Value::Array(entries), entry_count)
+                }
+                "openAgentWindowed" => {
+                    let query = mahayana_host_runtime::extensions::session::agent_db_transcript_pages::TranscriptWindowQuery {
+                        before_seq: args.get("beforeSeq").and_then(serde_json::Value::as_i64),
+                        limit: args.get("limit").and_then(serde_json::Value::as_i64).unwrap_or(500),
+                    };
+                    let window = self
+                        .transcript_manager
+                        .open_agent_windowed(agent_id, query, now_ms)
+                        .map_err(GatewayCommandError::Internal)?;
+                    let entry_count = window.entries.len();
+                    (
+                        serde_json::json!({
+                            "entries": window.entries,
+                            "nextBeforeSeq": window.next_before_seq,
+                            "threadCounts": window.thread_counts,
+                        }),
+                        entry_count,
+                    )
+                }
+                "openAgentTail" => {
+                    let query = mahayana_host_runtime::extensions::session::agent_db_transcript_pages::TranscriptWindowQuery {
+                        before_seq: args.get("beforeSeq").and_then(serde_json::Value::as_i64),
+                        limit: args.get("limit").and_then(serde_json::Value::as_i64).unwrap_or(500),
+                    };
+                    let page = self
+                        .transcript_manager
+                        .open_agent_tail(agent_id, query, now_ms)
+                        .map_err(GatewayCommandError::Internal)?;
+                    let entry_count = page.entries.len();
+                    (
+                        serde_json::json!({
+                            "entries": page.entries,
+                            "nextBeforeSeq": page.next_before_seq,
+                        }),
+                        entry_count,
+                    )
+                }
+                _ => unreachable!("openAgent method match is exhaustive"),
+            };
+            if let Err(error) = self.telemetry_logs.report_agent_open(&AgentOpenReport {
+                conversation_id: agent_id.to_string(),
+                duration_ms: operation_started.elapsed().as_millis() as u64,
+                entry_count,
+                was_active,
+            }) {
+                eprintln!("mahayana-host agent_open_telemetry_failed error={error}");
+            }
+            return Ok(response);
         }
         if method == "getAsyncTasks" {
             let agent_id = args

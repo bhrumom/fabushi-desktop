@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -5,6 +6,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use serde_json::Value;
 
 use crate::automations::automation_store::FileAutomationStore;
+use crate::extensions::session::agent_db_transcript_pages::{
+    TranscriptPage, TranscriptWindow, TranscriptWindowQuery,
+};
 use crate::extensions::session::production::ProductionSessionWorkers;
 
 use super::ack_obligations::AckObligations;
@@ -80,6 +84,57 @@ impl TranscriptManager {
         args: &Value,
     ) -> Result<Value, ProductionSendError> {
         self.transcript_runtime.prompt_acceptance_status(args)
+    }
+
+    pub fn active_agent_id(&self) -> Option<String> {
+        self.transcript_runtime.active_agent_id(&self.session_workers)
+    }
+
+    fn prepare_live_bounded_open(
+        &self,
+        agent_id: &str,
+        now_ms: f64,
+    ) -> Result<bool, String> {
+        if self.active_agent_id().as_deref() == Some(agent_id) {
+            return Ok(true);
+        }
+        if self
+            .transcript_runtime
+            .session_runtime()
+            .is_live_session(agent_id)
+        {
+            self.switch_agent(agent_id, now_ms)?;
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    pub fn open_agent_tail(
+        &self,
+        agent_id: &str,
+        query: TranscriptWindowQuery,
+        now_ms: f64,
+    ) -> Result<TranscriptPage, String> {
+        if self.prepare_live_bounded_open(agent_id, now_ms)? {
+            return self.session_workers.read_agent_transcript_tail(agent_id, query);
+        }
+        let page = self.session_workers.read_agent_transcript_tail(agent_id, query)?;
+        self.session_workers.mark_agent_viewed(agent_id, now_ms, false)?;
+        Ok(page)
+    }
+
+    pub fn open_agent_windowed(
+        &self,
+        agent_id: &str,
+        query: TranscriptWindowQuery,
+        now_ms: f64,
+    ) -> Result<TranscriptWindow<BTreeMap<String, usize>>, String> {
+        if self.prepare_live_bounded_open(agent_id, now_ms)? {
+            return self.session_workers.read_agent_transcript_window(agent_id, query);
+        }
+        let window = self.session_workers.read_agent_transcript_window(agent_id, query)?;
+        self.session_workers.mark_agent_viewed(agent_id, now_ms, false)?;
+        Ok(window)
     }
 
     pub fn switch_agent(
