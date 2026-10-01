@@ -41,6 +41,8 @@ use super::auto_review_approval_telemetry::{
 use super::automation_fire_telemetry::{
     AutomationFireDroppedReport, automation_fire_dropped_telemetry,
 };
+use super::automation_lifecycle_telemetry::automation_lifecycle_telemetry;
+use crate::extensions::transcript::automation_runtime::AutomationLifecycleEvent;
 use super::box_log_ship_telemetry::{BoxLogShipReport, box_log_ship_telemetry};
 use super::box_log_shipper::{
     BoxLogShipper, BoxLogShipperConfig, BoxTelemetryRecord, DeliverySettlement,
@@ -702,6 +704,13 @@ impl HostStructuredLogTelemetry {
         metadata: BTreeMap<String, String>,
     ) -> io::Result<()> {
         self.report_projection(&box_recreate_decided_telemetry(metadata))
+    }
+
+    pub fn report_automation_lifecycle(
+        &self,
+        report: &AutomationLifecycleEvent,
+    ) -> io::Result<()> {
+        self.report_projection(&automation_lifecycle_telemetry(report))
     }
 
     pub fn report_mcp_auth_cleanup(&self, outcome: &str, removed_count: usize) -> io::Result<()> {
