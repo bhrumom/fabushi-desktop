@@ -7172,8 +7172,16 @@ impl GatewayApi for UnifiedGatewayApi {
         let active_agent_id = self
             .transcript_runtime
             .active_agent_id(&self.session_workers);
+        let has_running_subagents = self
+            .generated_agent_runtime
+            .lock()
+            .map(|runtime| runtime.has_running_subagents())
+            .unwrap_or(true);
+        let has_mid_drain_revival = self.completion_revivals.has_mid_drain_revival();
         let has_other_background_work =
-            self.transcript_runtime.has_carryable_pending_wake();
+            self.transcript_runtime.has_carryable_pending_wake()
+                || has_running_subagents
+                || has_mid_drain_revival;
         let mut last_busy_at_ms = self
             .last_busy_at_ms
             .lock()
