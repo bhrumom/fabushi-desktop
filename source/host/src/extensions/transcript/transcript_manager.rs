@@ -1,9 +1,10 @@
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use serde_json::Value;
 
+use crate::automations::automation_store::FileAutomationStore;
 use crate::extensions::session::production::ProductionSessionWorkers;
 
 use super::ack_obligations::AckObligations;
@@ -25,6 +26,7 @@ pub struct TranscriptManager {
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
     automation_runtime: Arc<AutomationRuntime>,
+    watched_automation_store: Mutex<Option<FileAutomationStore>>,
     shared_rooms: Arc<SharedRooms>,
     disposed: AtomicBool,
 }
@@ -43,6 +45,7 @@ impl TranscriptManager {
             runner_registry: Arc::new(TranscriptRunnerRegistry::default()),
             ack_obligations: Arc::new(AckObligations::new(root_dir)),
             automation_runtime,
+            watched_automation_store: Mutex::new(None),
             shared_rooms,
             disposed: AtomicBool::new(false),
         }
@@ -84,8 +87,19 @@ impl TranscriptManager {
         agent_id: &str,
         now_ms: f64,
     ) -> Result<Vec<Value>, String> {
-        self.transcript_runtime
-            .switch_agent(&self.session_workers, agent_id, now_ms)
+        let transcript = self
+            .transcript_runtime
+            .switch_agent(&self.session_workers, agent_id, now_ms)?;
+        let next = self.automation_runtime.watch_agent_automations(agent_id)?;
+        let previous = self
+            .watched_automation_store
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .replace(next);
+        if let Some(previous) = previous {
+            previous.set_on_change(None);
+        }
+        Ok(transcript)
     }
 
     pub fn set_window_focused(
@@ -126,6 +140,14 @@ impl TranscriptManager {
         }
         self.runner_registry
             .cancel_all("TranscriptManager disposed");
+        if let Some(store) = self
+            .watched_automation_store
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take()
+        {
+            store.set_on_change(None);
+        }
         self.session_workers.shutdown();
     }
 }
