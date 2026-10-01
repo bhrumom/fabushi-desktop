@@ -15,8 +15,10 @@ use mahayana_host_runtime::r#box::box_windows::{
     ShellAccessor, ShellExecutionOutcome,
 };
 use mahayana_host_runtime::r#box::generated_production::{
-    CONNECT_STREAM_CONTENT_TYPE, EXEC_PATH, PING_PATH, ProductionBoxExecError,
-    ProductionReadArgs, ProductionReadOutput, ProductionReadResult, ProductionShellResult,
+    BACKGROUND_SHELL_SPAWN_FIELD_NUMBER, CONNECT_STREAM_CONTENT_TYPE, EXEC_PATH, PING_PATH,
+    ProductionBackgroundShellSpawnArgs, ProductionBackgroundShellSpawnResult,
+    ProductionBoxExecError, ProductionReadArgs, ProductionReadOutput, ProductionReadResult,
+    ProductionShellResult,
 };
 use mahayana_host_runtime::r#box::box_factory::{
     format_sand_box_startup_summary, should_apply_shared_desktop,
@@ -62,6 +64,67 @@ fn connect_envelope(flags: u8, payload: &[u8]) -> Vec<u8> {
     out.extend_from_slice(&(payload.len() as u32).to_be_bytes());
     out.extend_from_slice(payload);
     out
+}
+
+fn background_shell_spawn_element(result: &[u8]) -> Vec<u8> {
+    let mut client_message = Vec::new();
+    push_len(BACKGROUND_SHELL_SPAWN_FIELD_NUMBER, result, &mut client_message);
+    let mut element = Vec::new();
+    push_len(1, &client_message, &mut element);
+    element
+}
+
+fn background_shell_spawn_success(
+    shell_id: u32,
+    command: &str,
+    working_directory: &str,
+    pid: Option<u32>,
+) -> Vec<u8> {
+    let mut success = Vec::new();
+    push_varint(1, u64::from(shell_id), &mut success);
+    push_len(2, command.as_bytes(), &mut success);
+    push_len(3, working_directory.as_bytes(), &mut success);
+    if let Some(pid) = pid {
+        push_varint(4, u64::from(pid), &mut success);
+    }
+    let mut result = Vec::new();
+    push_len(1, &success, &mut result);
+    background_shell_spawn_element(&result)
+}
+
+fn background_shell_spawn_error(
+    case: u32,
+    command: &str,
+    working_directory: &str,
+    detail: &str,
+) -> Vec<u8> {
+    let mut nested = Vec::new();
+    push_len(1, command.as_bytes(), &mut nested);
+    push_len(2, working_directory.as_bytes(), &mut nested);
+    push_len(3, detail.as_bytes(), &mut nested);
+    if case == 3 || case == 4 {
+        push_varint(4, 1, &mut nested);
+    }
+    let mut result = Vec::new();
+    push_len(case, &nested, &mut result);
+    background_shell_spawn_element(&result)
+}
+
+fn background_shell_spawn_sandbox_unsupported(
+    command: &str,
+    working_directory: &str,
+    policy_type: u32,
+    reason: &str,
+) -> Vec<u8> {
+    let mut nested = Vec::new();
+    push_len(1, command.as_bytes(), &mut nested);
+    push_len(2, working_directory.as_bytes(), &mut nested);
+    push_varint(3, u64::from(policy_type), &mut nested);
+    push_len(4, reason.as_bytes(), &mut nested);
+    push_varint(5, 1, &mut nested);
+    let mut result = Vec::new();
+    push_len(5, &nested, &mut result);
+    background_shell_spawn_element(&result)
 }
 
 fn shell_success_element(stderr: &str) -> Vec<u8> {
@@ -202,6 +265,12 @@ fn serve_exec_response(
 
     let body = &request[header_end + 4..];
     assert_eq!(body.first().copied(), Some(0), "Connect data envelope");
+    if expected_fragment == b"printf background-contract" {
+        assert!(
+            body.windows(2).any(|window| window == [0x82, 0x01]),
+            "BackgroundShellSpawn request must use frozen ExecServerMessage field 16"
+        );
+    }
     assert!(
         body.windows(expected_fragment.len())
             .any(|window| window == expected_fragment),
@@ -220,6 +289,119 @@ fn serve_exec_response(
     stream.write_all(&connect_body).expect("write Connect body");
     stream.write_all(b"\r\n0\r\n\r\n").expect("finish chunks");
     stream.flush().expect("flush response");
+}
+
+#[test]
+fn production_exec_service_background_shell_spawn_uses_frozen_field_16_and_real_shell_id() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind fake background ExecService");
+    let port = listener.local_addr().expect("local address").port();
+    let server = thread::spawn(move || {
+        serve_exec_response(
+            &listener,
+            b"printf background-contract",
+            background_shell_spawn_success(
+                4242,
+                "printf background-contract",
+                "/workspace",
+                Some(31337),
+            ),
+        );
+        serve_exec_response(
+            &listener,
+            b"background-error",
+            background_shell_spawn_error(2, "background-error", "/workspace", "spawn failed"),
+        );
+        serve_exec_response(
+            &listener,
+            b"background-rejected",
+            background_shell_spawn_error(3, "background-rejected", "/workspace", "blocked"),
+        );
+        serve_exec_response(
+            &listener,
+            b"background-permission",
+            background_shell_spawn_error(4, "background-permission", "/workspace", "denied"),
+        );
+        serve_exec_response(
+            &listener,
+            b"background-sandbox",
+            background_shell_spawn_sandbox_unsupported(
+                "background-sandbox",
+                "/workspace",
+                7,
+                "sandbox unsupported",
+            ),
+        );
+    });
+
+    let environment = ProductionBoxEnvironment::new("127.0.0.1", port, "secret");
+    let mut accessor = environment.remote_resource_accessor();
+    let spawn = |command: &str| -> ProductionBackgroundShellSpawnArgs {
+        build_host_shell_args(HostShellArgsInput {
+            command: command.into(),
+            name: command.split_whitespace().next().unwrap_or("shell").into(),
+            working_directory: "/workspace".into(),
+            tool_call_id: format!("{command}-tool"),
+        })
+        .into()
+    };
+
+    assert_eq!(
+        accessor
+            .execute_background_shell_spawn(&(), spawn("printf background-contract"))
+            .expect("typed field-16 success"),
+        ProductionBackgroundShellSpawnResult::Success {
+            shell_id: 4242,
+            command: "printf background-contract".into(),
+            working_directory: "/workspace".into(),
+            pid: Some(31337),
+        }
+    );
+    assert_eq!(
+        accessor
+            .execute_background_shell_spawn(&(), spawn("background-error"))
+            .expect("typed field-16 error"),
+        ProductionBackgroundShellSpawnResult::Error {
+            command: "background-error".into(),
+            working_directory: "/workspace".into(),
+            error: "spawn failed".into(),
+        }
+    );
+    assert_eq!(
+        accessor
+            .execute_background_shell_spawn(&(), spawn("background-rejected"))
+            .expect("typed field-16 rejected"),
+        ProductionBackgroundShellSpawnResult::Rejected {
+            command: "background-rejected".into(),
+            working_directory: "/workspace".into(),
+            reason: "blocked".into(),
+            is_readonly: true,
+        }
+    );
+    assert_eq!(
+        accessor
+            .execute_background_shell_spawn(&(), spawn("background-permission"))
+            .expect("typed field-16 permission"),
+        ProductionBackgroundShellSpawnResult::PermissionDenied {
+            command: "background-permission".into(),
+            working_directory: "/workspace".into(),
+            error: "denied".into(),
+            is_readonly: true,
+        }
+    );
+    assert_eq!(
+        accessor
+            .execute_background_shell_spawn(&(), spawn("background-sandbox"))
+            .expect("typed field-16 sandbox"),
+        ProductionBackgroundShellSpawnResult::SandboxUnsupported {
+            command: "background-sandbox".into(),
+            working_directory: "/workspace".into(),
+            sandbox_policy_type: 7,
+            reason: "sandbox unsupported".into(),
+            is_readonly: true,
+        }
+    );
+
+    server.join().expect("fake background ExecService thread");
 }
 
 #[test]
