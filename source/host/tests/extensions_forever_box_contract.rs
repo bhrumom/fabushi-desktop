@@ -221,3 +221,29 @@ fn forever_box_image_check_routes_real_outcomes_to_unique_host_owner() {
 
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn shipping_daemon_ping_episode_uses_unique_host_structured_log_owner() {
+    let extension = include_str!("../src/extensions/forever_box/extension.rs");
+    assert!(extension.contains("environment.loopback().set_telemetry(Arc::new(move |report|"));
+    assert!(extension.contains("daemon_logs.report_daemon_ping(report)"));
+
+    let producer = include_str!("../src/box/loopback_sand_box.rs");
+    assert!(producer.contains("self.report_daemon_ping(DaemonPingReport {"));
+    assert!(producer.contains("daemon_watchdog_loop(weak, endpoint, interval)"));
+    assert!(producer.contains("report_from_shared(&shared, &report)"));
+
+    let owner = include_str!("../src/extensions/telemetry/host_telemetry_service.rs");
+    assert!(owner.contains("pub fn report_daemon_ping(&self, report: &DaemonPingReport)"));
+    assert!(owner.contains("self.report_projection(&daemon_ping_telemetry(report))"));
+
+    let coordinator = include_str!("../../node-agent-coordinator/src/main.rs");
+    assert!(!coordinator.contains("reportDaemonPing"));
+    assert!(!coordinator.contains("sand.box.daemon_ping"));
+
+    let electron =
+        include_str!("../../electron-main/telemetry/desktop-structured-log-telemetry.ts");
+    assert!(!electron.contains("reportDaemonPing"));
+    assert!(!electron.contains("sand.box.daemon_ping"));
+}
