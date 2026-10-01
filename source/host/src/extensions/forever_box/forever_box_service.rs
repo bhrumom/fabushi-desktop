@@ -5,6 +5,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 use std::thread;
+use std::time::Instant;
 
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 
@@ -12,6 +13,8 @@ use crate::extensions::box_lifecycle::{
     BoxLifecycleClient, BoxLifecycleService, RecreateSandBoxResponse,
 };
 use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
+use crate::extensions::telemetry::lifecycle_telemetry::BoxImageCheckReport;
+use crate::extensions::telemetry::sand_error_tags::SandErrorValue;
 use crate::r#box::box_env::BoxEnvironmentUpdate;
 use crate::r#box::box_transfer::TransferBox;
 use crate::r#box::generated_production::ProductionBoxResourceAccessor;
@@ -115,7 +118,7 @@ impl ForeverBoxService {
         let _ = thread::Builder::new()
             .name("mahayana-forever-box-image-seed".into())
             .spawn(move || {
-                let _ = service.refresh_image_update_available();
+                let _ = service.refresh_image_update_available_for("seed");
             });
     }
 
@@ -147,12 +150,41 @@ impl ForeverBoxService {
     }
 
     pub fn refresh_image_update_available(&self) -> Result<bool, ForeverBoxServiceError> {
-        let available = self
-            .lifecycle
-            .fetch_image_update_available()
-            .map_err(ForeverBoxServiceError::Lifecycle)?;
-        self.box_.record_image_update_available(Some(available));
-        Ok(available)
+        self.refresh_image_update_available_for("manual")
+    }
+
+    pub fn refresh_image_update_available_for(
+        &self,
+        trigger: &str,
+    ) -> Result<bool, ForeverBoxServiceError> {
+        let started = Instant::now();
+        if !self.is_in_box {
+            self.report_image_check(BoxImageCheckReport::Skipped {
+                trigger: trigger.to_string(),
+                duration_ms: started.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                skip_reason: "outside_box".into(),
+            });
+            return Ok(false);
+        }
+
+        match self.lifecycle.fetch_image_update_available() {
+            Ok(available) => {
+                self.box_.record_image_update_available(Some(available));
+                self.report_image_check(BoxImageCheckReport::Answered {
+                    trigger: trigger.to_string(),
+                    duration_ms: started.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                });
+                Ok(available)
+            }
+            Err(error) => {
+                self.report_image_check(BoxImageCheckReport::Failed {
+                    trigger: trigger.to_string(),
+                    duration_ms: started.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                    error: SandErrorValue::new("SAND-E0305"),
+                });
+                Err(ForeverBoxServiceError::Lifecycle(error))
+            }
+        }
     }
 
     pub fn get_status(&self, agent_id: &str) -> BoxStatus {
@@ -236,7 +268,7 @@ impl ForeverBoxService {
             });
         }
         let result = (|| {
-            let available = match self.refresh_image_update_available() {
+            let available = match self.refresh_image_update_available_for("pre_hibernation") {
                 Ok(available) => available,
                 Err(_) => {
                     return Ok(RecreateSandBoxResponse {
@@ -289,6 +321,13 @@ impl ForeverBoxService {
             ("mode".into(), "pod_recreate".into()),
             ("preserved".into(), "true".into()),
         ]));
+    }
+
+    fn report_image_check(&self, report: BoxImageCheckReport) {
+        let Some(logs) = self.recreate_telemetry.as_ref() else {
+            return;
+        };
+        let _ = logs.report_box_image_check(&report);
     }
 
     fn recreate(
