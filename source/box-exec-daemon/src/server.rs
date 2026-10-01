@@ -2559,14 +2559,22 @@ mod tests {
             "start\nend\n",
             "timed backgrounding must transfer the same child instead of restarting it"
         );
-        assert!(
-            !runtime
+        let registry_deadline = Instant::now() + Duration::from_secs(1);
+        loop {
+            let registered = runtime
                 .background
                 .lock()
                 .expect("background registry")
-                .contains_key(&backgrounded.shell_id),
-            "settled background process must leave the single registry"
-        );
+                .contains_key(&backgrounded.shell_id);
+            if !registered {
+                break;
+            }
+            assert!(
+                Instant::now() < registry_deadline,
+                "settled background process must leave the single registry"
+            );
+            thread::sleep(Duration::from_millis(10));
+        }
     }
 
     #[cfg(unix)]
