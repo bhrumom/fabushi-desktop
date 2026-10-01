@@ -1635,7 +1635,7 @@ impl UnifiedGatewayApi {
                 agent_id,
                 automation_id,
                 run_uuid,
-                ..
+                scheduled_for_ms,
             } => {
                 let Some(provider) =
                     configured_routed_provider(&self.data_dir.join("settings.json"))
@@ -1662,6 +1662,7 @@ impl UnifiedGatewayApi {
                             &agent_id,
                             &automation_id,
                             run_uuid,
+                            scheduled_for_ms.map(|value| value as f64),
                             |prompt| {
                                 run_local_automation_turn(
                                     deps,
