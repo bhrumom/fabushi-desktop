@@ -38,6 +38,9 @@ use super::agent_error_telemetry::{
 };
 use super::agent_open_telemetry::{AgentOpenReport, agent_open_telemetry};
 use super::invariant_violation_telemetry::invariant_violation_telemetry;
+use super::journal_outcome_telemetry::{
+    JournalOutcomeReport, journal_outcome_telemetry,
+};
 use super::auto_review_approval_telemetry::{
     AutoReviewApprovalReport, auto_review_approval_telemetry,
 };
@@ -817,6 +820,10 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_invariant_violation(&self, report: &SandInvariantReport) -> io::Result<()> {
         self.report_projection(&invariant_violation_telemetry(report))
+    }
+
+    pub fn report_journal_outcome(&self, report: &JournalOutcomeReport) -> io::Result<()> {
+        self.report_projection(&journal_outcome_telemetry(report))
     }
 
     pub fn report_bot_block(&self, report: &BotBlockReport) -> io::Result<()> {
