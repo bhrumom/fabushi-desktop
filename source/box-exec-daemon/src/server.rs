@@ -18,6 +18,8 @@ pub const BOX_EXEC_DAEMON_PORT: u16 = 1337;
 pub const BOX_EXEC_DAEMON_AUTH_TOKEN: &str = "local";
 pub const BOX_TERMINAL_VIRTUAL_PREFIX: &str =
     "/root/.cursor/projects/workspace/terminals/";
+const TIMEOUT_BEHAVIOR_BACKGROUND: i32 = 2;
+const SHELL_BACKGROUND_REASON_TIMEOUT: i32 = 1;
 
 #[derive(Clone, PartialEq, prost::Message)]
 pub struct PingRequest {}
@@ -174,6 +176,14 @@ pub struct ShellArgs {
     pub timeout: i32,
     #[prost(string, tag = "4")]
     pub tool_call_id: String,
+    #[prost(bool, tag = "11")]
+    pub is_background: bool,
+    #[prost(bool, tag = "12")]
+    pub skip_approval: bool,
+    #[prost(int32, tag = "13")]
+    pub timeout_behavior: i32,
+    #[prost(int32, optional, tag = "14")]
+    pub hard_timeout: Option<i32>,
 }
 
 #[derive(Clone, PartialEq, prost::Message)]
@@ -261,7 +271,7 @@ pub struct ShellSpawnError {
 
 #[derive(Clone, PartialEq, prost::Message)]
 pub struct ShellStream {
-    #[prost(oneof = "shell_stream::Event", tags = "1, 2, 3, 4")]
+    #[prost(oneof = "shell_stream::Event", tags = "1, 2, 3, 4, 5, 6, 7")]
     pub event: Option<shell_stream::Event>,
 }
 pub mod shell_stream {
@@ -276,6 +286,12 @@ pub mod shell_stream {
         Exit(ShellStreamExit),
         #[prost(message, tag = "4")]
         Start(ShellStreamStart),
+        #[prost(message, tag = "5")]
+        Rejected(ShellRejected),
+        #[prost(message, tag = "6")]
+        PermissionDenied(ShellPermissionDenied),
+        #[prost(message, tag = "7")]
+        Backgrounded(ShellStreamBackgrounded),
     }
 }
 #[derive(Clone, PartialEq, prost::Message)]
@@ -300,6 +316,43 @@ pub struct ShellStreamExit {
     pub aborted: bool,
     #[prost(int32, optional, tag = "6")]
     pub local_execution_time_ms: Option<i32>,
+}
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct ShellRejected {
+    #[prost(string, tag = "1")]
+    pub command: String,
+    #[prost(string, tag = "2")]
+    pub working_directory: String,
+    #[prost(string, tag = "3")]
+    pub reason: String,
+    #[prost(bool, tag = "4")]
+    pub is_readonly: bool,
+}
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct ShellPermissionDenied {
+    #[prost(string, tag = "1")]
+    pub command: String,
+    #[prost(string, tag = "2")]
+    pub working_directory: String,
+    #[prost(string, tag = "3")]
+    pub error: String,
+    #[prost(bool, tag = "4")]
+    pub is_readonly: bool,
+}
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct ShellStreamBackgrounded {
+    #[prost(uint32, tag = "1")]
+    pub shell_id: u32,
+    #[prost(string, tag = "2")]
+    pub command: String,
+    #[prost(string, tag = "3")]
+    pub working_directory: String,
+    #[prost(uint32, optional, tag = "4")]
+    pub pid: Option<u32>,
+    #[prost(int32, optional, tag = "5")]
+    pub ms_to_wait: Option<i32>,
+    #[prost(int32, optional, tag = "6")]
+    pub reason: Option<i32>,
 }
 
 #[derive(Clone, PartialEq, prost::Message)]
@@ -845,33 +898,60 @@ impl BoxExecRuntime {
             None,
         ))?;
 
-        let mut child = self.spawn_shell(&args.command, &cwd)?;
-        let pid = child.id();
+        let started_at = Utc::now();
+        let started = Instant::now();
+        let mut child = Some(self.spawn_shell(&args.command, &cwd)?);
+        let pid = child.as_ref().expect("stream child").id();
         self.foreground_pids
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .insert(pid);
         let stdout = child
+            .as_mut()
+            .expect("stream child")
             .stdout
             .take()
             .ok_or_else(|| "shell stream stdout was unavailable".to_string())?;
         let stderr = child
+            .as_mut()
+            .expect("stream child")
             .stderr
             .take()
             .ok_or_else(|| "shell stream stderr was unavailable".to_string())?;
+
+        fs::create_dir_all(&self.terminals_directory).map_err(|error| error.to_string())?;
+        let stream_spool_path = self
+            .terminals_directory
+            .join(format!(".shell-stream-{pid}.tmp"));
+        let stream_spool_writer = Arc::new(Mutex::new(
+            OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .open(&stream_spool_path)
+                .map_err(|error| error.to_string())?,
+        ));
+
         let (events_tx, events_rx) = mpsc::channel::<ShellPipeEvent>();
-        let stdout_worker = spawn_stream_pipe(
+        let mut stdout_worker = Some(spawn_stream_pipe(
             stdout,
             events_tx.clone(),
             false,
-        );
-        let stderr_worker = spawn_stream_pipe(
+            Arc::clone(&stream_spool_writer),
+        ));
+        let mut stderr_worker = Some(spawn_stream_pipe(
             stderr,
-            events_tx,
+            events_tx.clone(),
             true,
-        );
-        let started = Instant::now();
+            Arc::clone(&stream_spool_writer),
+        ));
+        drop(events_tx);
+
         let timeout_ms = (args.timeout > 0).then_some(args.timeout as u64);
+        let hard_timeout_ms = args
+            .hard_timeout
+            .filter(|timeout| *timeout > 0)
+            .map(|timeout| timeout as u64);
         let mut kill_requested = false;
         let mut status = None;
         let mut stream_error = None::<String>;
@@ -904,22 +984,66 @@ impl BoxExecRuntime {
                 }
             }
             if stream_error.is_some() {
-                status = child.wait().ok();
+                status = child
+                    .as_mut()
+                    .expect("stream child")
+                    .wait()
+                    .ok();
                 break;
             }
-            match child.try_wait().map_err(|error| error.to_string())? {
+            match child
+                .as_mut()
+                .expect("stream child")
+                .try_wait()
+                .map_err(|error| error.to_string())?
+            {
                 Some(done) => {
                     status = Some(done);
                     break;
                 }
                 None => {}
             }
+
+            let hard_timeout_elapsed = hard_timeout_ms
+                .is_some_and(|timeout| started.elapsed() >= Duration::from_millis(timeout));
+            let block_timeout_elapsed = timeout_ms
+                .is_some_and(|timeout| started.elapsed() >= Duration::from_millis(timeout));
+
+            if !kill_requested
+                && !abort.load(Ordering::Acquire)
+                && !self.stopping.load(Ordering::Acquire)
+                && !hard_timeout_elapsed
+                && block_timeout_elapsed
+                && args.timeout_behavior == TIMEOUT_BEHAVIOR_BACKGROUND
+            {
+                let backgrounded = self.handoff_shell_stream_to_background(
+                    child.take().expect("stream child"),
+                    args,
+                    pid,
+                    started,
+                    started_at,
+                    stdout_worker.take().expect("stdout worker"),
+                    stderr_worker.take().expect("stderr worker"),
+                    Arc::clone(&stream_spool_writer),
+                    stream_spool_path.clone(),
+                )?;
+                emit(client_message(
+                    id,
+                    exec_id,
+                    exec_client_message::Message::ShellStream(ShellStream {
+                        event: Some(shell_stream::Event::Backgrounded(backgrounded)),
+                    }),
+                    None,
+                ))?;
+                return Ok(());
+            }
+
             if !kill_requested
                 && (abort.load(Ordering::Acquire)
                     || self.stopping.load(Ordering::Acquire)
-                    || timeout_ms.is_some_and(|timeout| {
-                        started.elapsed() >= Duration::from_millis(timeout)
-                    }))
+                    || hard_timeout_elapsed
+                    || (block_timeout_elapsed
+                        && args.timeout_behavior != TIMEOUT_BEHAVIOR_BACKGROUND))
             {
                 kill_process_group(pid);
                 kill_requested = true;
@@ -955,8 +1079,12 @@ impl BoxExecRuntime {
             }
         }
 
-        let _ = stdout_worker.join();
-        let _ = stderr_worker.join();
+        if let Some(worker) = stdout_worker.take() {
+            let _ = worker.join();
+        }
+        if let Some(worker) = stderr_worker.take() {
+            let _ = worker.join();
+        }
         while let Ok(event) = events_rx.try_recv() {
             if stream_error.is_some() {
                 break;
@@ -988,12 +1116,19 @@ impl BoxExecRuntime {
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .remove(&pid);
 
+        drop(stream_spool_writer);
+        let _ = fs::remove_file(&stream_spool_path);
+
         if let Some(error) = stream_error {
             return Err(error);
         }
         let status = match status {
             Some(status) => status,
-            None => child.wait().map_err(|error| error.to_string())?,
+            None => child
+                .as_mut()
+                .expect("stream child")
+                .wait()
+                .map_err(|error| error.to_string())?,
         };
         emit(client_message(
             id,
@@ -1010,6 +1145,184 @@ impl BoxExecRuntime {
             }),
             None,
         ))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn handoff_shell_stream_to_background(
+        &self,
+        mut child: Child,
+        args: &ShellArgs,
+        pid: u32,
+        started: Instant,
+        started_at: chrono::DateTime<Utc>,
+        stdout_worker: JoinHandle<()>,
+        stderr_worker: JoinHandle<()>,
+        stream_spool_writer: Arc<Mutex<File>>,
+        stream_spool_path: PathBuf,
+    ) -> Result<ShellStreamBackgrounded, String> {
+        let shell_id = self.next_shell_id.fetch_add(1, Ordering::Relaxed);
+        if shell_id == 0 {
+            kill_process_group(pid);
+            let _ = child.wait();
+            let _ = stdout_worker.join();
+            let _ = stderr_worker.join();
+            self.foreground_pids
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .remove(&pid);
+            let _ = fs::remove_file(&stream_spool_path);
+            return Err("background shell id space exhausted".into());
+        }
+
+        let stdin = match child.stdin.take() {
+            Some(stdin) => stdin,
+            None => {
+                kill_process_group(pid);
+                let _ = child.wait();
+                let _ = stdout_worker.join();
+                let _ = stderr_worker.join();
+                self.foreground_pids
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .remove(&pid);
+                let _ = fs::remove_file(&stream_spool_path);
+                return Err("shell stream stdin was unavailable during background handoff".into());
+            }
+        };
+        let terminal_path = self
+            .terminals_directory
+            .join(format!("{shell_id}.txt"));
+        let background_args = BackgroundShellSpawnArgs {
+            command: args.command.clone(),
+            working_directory: args.working_directory.clone(),
+            tool_call_id: args.tool_call_id.clone(),
+        };
+        let started_at_ms = started_at.timestamp_millis();
+
+        let setup = (|| -> Result<(), String> {
+            let mut current_writer = stream_spool_writer
+                .lock()
+                .map_err(|_| "shell stream output writer is poisoned".to_string())?;
+            current_writer.flush().map_err(|error| error.to_string())?;
+            let spooled = fs::read(&stream_spool_path).map_err(|error| error.to_string())?;
+            let mut terminal = OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .open(&terminal_path)
+                .map_err(|error| error.to_string())?;
+            terminal
+                .write_all(
+                    terminal_frontmatter(&background_args, Some(pid), started_at.clone()).as_bytes(),
+                )
+                .map_err(|error| error.to_string())?;
+            terminal
+                .write_all(&spooled)
+                .map_err(|error| error.to_string())?;
+            terminal.flush().map_err(|error| error.to_string())?;
+            *current_writer = OpenOptions::new()
+                .append(true)
+                .open(&terminal_path)
+                .map_err(|error| error.to_string())?;
+            Ok(())
+        })();
+
+        if let Err(error) = setup {
+            kill_process_group(pid);
+            let _ = child.wait();
+            let _ = stdout_worker.join();
+            let _ = stderr_worker.join();
+            self.foreground_pids
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .remove(&pid);
+            let _ = fs::remove_file(&stream_spool_path);
+            let _ = fs::remove_file(&terminal_path);
+            return Err(error);
+        }
+        let _ = fs::remove_file(&stream_spool_path);
+
+        let inserted = {
+            let mut processes = self
+                .background
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if processes.contains_key(&shell_id) {
+                false
+            } else {
+                processes.insert(
+                    shell_id,
+                    BackgroundProcess {
+                        stdin: Arc::new(Mutex::new(stdin)),
+                        terminal_path: terminal_path.clone(),
+                        pid,
+                    },
+                );
+                true
+            }
+        };
+        if !inserted {
+            kill_process_group(pid);
+            let _ = child.wait();
+            let _ = stdout_worker.join();
+            let _ = stderr_worker.join();
+            self.foreground_pids
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .remove(&pid);
+            let _ = fs::remove_file(&terminal_path);
+            return Err(format!("background shell id {shell_id} is already registered"));
+        }
+        self.foreground_pids
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(&pid);
+
+        let processes = Arc::clone(&self.background);
+        let footer_writer = Arc::clone(&stream_spool_writer);
+        let hard_timeout_ms = args
+            .hard_timeout
+            .filter(|timeout| *timeout > 0)
+            .map(|timeout| timeout as u64);
+        thread::spawn(move || {
+            let status = if let Some(hard_timeout_ms) = hard_timeout_ms {
+                loop {
+                    match child.try_wait() {
+                        Ok(Some(status)) => break Some(status),
+                        Ok(None) => {}
+                        Err(_) => break child.wait().ok(),
+                    }
+                    if started.elapsed() >= Duration::from_millis(hard_timeout_ms) {
+                        kill_process_group(pid);
+                        break child.wait().ok();
+                    }
+                    thread::sleep(Duration::from_millis(10));
+                }
+            } else {
+                child.wait().ok()
+            };
+            let _ = stdout_worker.join();
+            let _ = stderr_worker.join();
+            let code = status
+                .and_then(|status| status.code())
+                .unwrap_or(1);
+            if let Ok(mut writer) = footer_writer.lock() {
+                let _ = writer.write_all(terminal_footer(code, started_at_ms).as_bytes());
+                let _ = writer.flush();
+            }
+            if let Ok(mut processes) = processes.lock() {
+                processes.remove(&shell_id);
+            }
+        });
+
+        Ok(ShellStreamBackgrounded {
+            shell_id,
+            command: args.command.clone(),
+            working_directory: args.working_directory.clone(),
+            pid: Some(pid),
+            ms_to_wait: Some(args.timeout),
+            reason: Some(SHELL_BACKGROUND_REASON_TIMEOUT),
+        })
     }
 
     pub fn spawn_background(
@@ -1919,6 +2232,7 @@ fn spawn_stream_pipe<R>(
     mut reader: R,
     sender: mpsc::Sender<ShellPipeEvent>,
     stderr: bool,
+    output_writer: Arc<Mutex<File>>,
 ) -> JoinHandle<()>
 where
     R: Read + Send + 'static,
@@ -1930,14 +2244,22 @@ where
                 Ok(0) => break,
                 Ok(count) => {
                     let bytes = buffer[..count].to_vec();
+                    {
+                        let mut writer = output_writer
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner());
+                        let _ = writer.write_all(&bytes);
+                        let _ = writer.flush();
+                    }
                     let event = if stderr {
                         ShellPipeEvent::Stderr(bytes)
                     } else {
                         ShellPipeEvent::Stdout(bytes)
                     };
-                    if sender.send(event).is_err() {
-                        break;
-                    }
+                    // The ShellStream receiver intentionally disappears after a timed
+                    // background handoff. Keep draining the same child into the
+                    // canonical terminal writer instead of terminating the pipe worker.
+                    let _ = sender.send(event);
                 }
                 Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
                 Err(_) => break,
@@ -2083,6 +2405,10 @@ mod tests {
             working_directory: "/workspace".into(),
             timeout: 5_000,
             tool_call_id: String::new(),
+            is_background: false,
+            skip_approval: false,
+            timeout_behavior: 0,
+            hard_timeout: None,
         });
         let Some(shell_result::Result::Success(success)) = result.result else {
             panic!("expected shell success");
@@ -2133,6 +2459,10 @@ mod tests {
                 working_directory: "/workspace".into(),
                 timeout: 5_000,
                 tool_call_id: "stream-tool".into(),
+                is_background: false,
+                skip_approval: false,
+                timeout_behavior: 0,
+                hard_timeout: None,
             })),
         };
         let abort = AtomicBool::new(false);
@@ -2164,6 +2494,81 @@ mod tests {
         assert!(saw_exit);
     }
 
+    #[test]
+    fn shell_stream_timeout_backgrounds_the_same_process_into_terminal_registry() {
+        let (_root, runtime) = runtime();
+        let request = ExecServerMessage {
+            id: 43,
+            exec_id: "stream-background".into(),
+            message: Some(exec_server_message::Message::ShellStreamArgs(ShellArgs {
+                command: "printf 'pre\\n'; printf 'start\\n' >> run-count.txt; sleep 0.20; printf 'post\\n'; printf 'end\\n' >> run-count.txt".into(),
+                working_directory: "/workspace".into(),
+                timeout: 50,
+                tool_call_id: "stream-background-tool".into(),
+                is_background: false,
+                skip_approval: true,
+                timeout_behavior: TIMEOUT_BEHAVIOR_BACKGROUND,
+                hard_timeout: Some(2_000),
+            })),
+        };
+        let abort = AtomicBool::new(false);
+        let mut backgrounded = None;
+        runtime
+            .execute_with_emitter(request, &abort, |element| {
+                if let Some(exec_stream_element::Element::ExecClientMessage(message)) =
+                    element.element
+                {
+                    if let Some(exec_client_message::Message::ShellStream(stream)) =
+                        message.message
+                    {
+                        if let Some(shell_stream::Event::Backgrounded(event)) = stream.event {
+                            backgrounded = Some(event);
+                        }
+                    }
+                }
+                Ok(())
+            })
+            .expect("timed stream execution");
+        let backgrounded = backgrounded.expect("stream must background after the block window");
+        assert_ne!(backgrounded.shell_id, 0);
+        assert_eq!(backgrounded.ms_to_wait, Some(50));
+        assert_eq!(backgrounded.reason, Some(SHELL_BACKGROUND_REASON_TIMEOUT));
+        assert_eq!(backgrounded.command, "printf 'pre\\n'; printf 'start\\n' >> run-count.txt; sleep 0.20; printf 'post\\n'; printf 'end\\n' >> run-count.txt");
+
+        let terminal = runtime
+            .terminals_directory
+            .join(format!("{}.txt", backgrounded.shell_id));
+        let deadline = Instant::now() + Duration::from_secs(3);
+        loop {
+            let content = fs::read_to_string(&terminal).unwrap_or_default();
+            if content.contains("pre")
+                && content.contains("post")
+                && content.contains("ended_at:")
+            {
+                break;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "timed-background terminal did not settle"
+            );
+            thread::sleep(Duration::from_millis(10));
+        }
+        assert_eq!(
+            fs::read_to_string(runtime.workspace_root.join("run-count.txt"))
+                .expect("run-count"),
+            "start\nend\n",
+            "timed backgrounding must transfer the same child instead of restarting it"
+        );
+        assert!(
+            !runtime
+                .background
+                .lock()
+                .expect("background registry")
+                .contains_key(&backgrounded.shell_id),
+            "settled background process must leave the single registry"
+        );
+    }
+
     #[cfg(unix)]
     #[test]
     fn disconnect_aborts_foreground_shell_process_group() {
@@ -2187,6 +2592,10 @@ mod tests {
                 working_directory: "/workspace".into(),
                 timeout: 0,
                 tool_call_id: "abort-tool".into(),
+                is_background: false,
+                skip_approval: false,
+                timeout_behavior: 0,
+                hard_timeout: None,
             })),
         };
         let body = request.encode_to_vec();

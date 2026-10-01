@@ -214,7 +214,11 @@ impl<Ctx> BoxMcpControlClient<Ctx> for ProductionBoxControlClient {
 pub const BOX_GENERATED_PROTOBUF_VERSION: &str = "1.10.1";
 pub const BOX_GENERATED_CONNECT_VERSION: &str = "1.6.1";
 pub const BOX_GENERATED_CONNECT_NODE_VERSION: &str = "1.6.1";
+pub const SHELL_STREAM_FIELD_NUMBER: u32 = 14;
 pub const BACKGROUND_SHELL_SPAWN_FIELD_NUMBER: u32 = 16;
+pub const SHELL_STREAM_TIMEOUT_BEHAVIOR_BACKGROUND: i32 = 2;
+pub const SHELL_BACKGROUND_REASON_TIMEOUT: i32 = 1;
+pub const SHELL_BACKGROUND_REASON_USER_REQUEST: i32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProductionReadArgs {
@@ -254,6 +258,49 @@ pub enum ProductionBackgroundShellSpawnResult {
     PermissionDenied { command: String, working_directory: String, error: String, is_readonly: bool },
     SandboxUnsupported { command: String, working_directory: String, sandbox_policy_type: i32, reason: String, is_readonly: bool },
     Other { case: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProductionShellStreamArgs {
+    pub shell_args: HostShellArgs,
+    pub timeout_ms: i32,
+    pub hard_timeout_ms: Option<i32>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProductionShellStreamEvent {
+    Start,
+    Stdout(String),
+    Stderr(String),
+    Exit {
+        code: u32,
+        cwd: String,
+        aborted: bool,
+        local_execution_time_ms: Option<i32>,
+    },
+    Rejected {
+        command: String,
+        working_directory: String,
+        reason: String,
+        is_readonly: bool,
+    },
+    PermissionDenied {
+        command: String,
+        working_directory: String,
+        error: String,
+        is_readonly: bool,
+    },
+    Backgrounded {
+        shell_id: u32,
+        command: String,
+        working_directory: String,
+        pid: Option<u32>,
+        ms_to_wait: Option<i32>,
+        reason: Option<i32>,
+    },
+    Other {
+        case: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -525,6 +572,37 @@ impl ProductionBoxResourceAccessor {
         Ok(decode_background_shell_spawn_result(&protobuf_result)?)
     }
 
+    pub fn execute_shell_stream<Ctx>(
+        &mut self,
+        ctx: &Ctx,
+        args: ProductionShellStreamArgs,
+    ) -> Result<Vec<ProductionShellStreamEvent>, ProductionBoxExecError> {
+        let protobuf_args = encode_shell_stream_args(&args);
+        let messages = self.manager.create_exec_instance(ctx, |id| {
+            ProductionExecRequest::RawResource {
+                id,
+                field_number: SHELL_STREAM_FIELD_NUMBER,
+                protobuf_args,
+            }
+        })?;
+        let mut events = Vec::new();
+        for message in messages {
+            if let ProductionExecClientMessage::RawResource {
+                field_number,
+                protobuf_result,
+            } = message
+            {
+                if field_number == SHELL_STREAM_FIELD_NUMBER {
+                    events.push(decode_shell_stream_event(&protobuf_result)?);
+                }
+            }
+        }
+        if events.is_empty() {
+            return Err(ProductionBoxExecError::MissingResult("shell-stream"));
+        }
+        Ok(events)
+    }
+
     pub fn execute_shell_result<Ctx>(
         &mut self,
         ctx: &Ctx,
@@ -727,6 +805,35 @@ fn encode_shell_args(args: &HostShellArgs) -> Vec<u8> {
     body
 }
 
+pub fn encode_shell_stream_args(args: &ProductionShellStreamArgs) -> Vec<u8> {
+    let mut body = Vec::new();
+    let shell = &args.shell_args;
+    if !shell.command.is_empty() {
+        encode_len_delimited(1, shell.command.as_bytes(), &mut body);
+    }
+    if !shell.working_directory.is_empty() {
+        encode_len_delimited(2, shell.working_directory.as_bytes(), &mut body);
+    }
+    encode_int32_field(3, args.timeout_ms, &mut body);
+    if !shell.tool_call_id.is_empty() {
+        encode_len_delimited(4, shell.tool_call_id.as_bytes(), &mut body);
+    }
+    let parsing = encode_shell_parsing_result(&shell.parsing_result);
+    if !parsing.is_empty() {
+        encode_len_delimited(8, &parsing, &mut body);
+    }
+    encode_bool_field(12, shell.skip_approval, &mut body);
+    encode_int32_field(
+        13,
+        SHELL_STREAM_TIMEOUT_BEHAVIOR_BACKGROUND,
+        &mut body,
+    );
+    if let Some(hard_timeout_ms) = args.hard_timeout_ms {
+        encode_int32_field(14, hard_timeout_ms, &mut body);
+    }
+    body
+}
+
 pub fn encode_background_shell_spawn_args(args: &ProductionBackgroundShellSpawnArgs) -> Vec<u8> {
     let mut body = Vec::new();
     if !args.command.is_empty() {
@@ -861,6 +968,13 @@ fn decode_u64_field(
         skip_protobuf_field(input, &mut cursor, wire)?;
     }
     Ok(None)
+}
+
+fn decode_i32_field(
+    input: &[u8],
+    wanted: u64,
+) -> Result<Option<i32>, ProductionBoxTransportError> {
+    Ok(decode_u64_field(input, wanted)?.map(|value| value as u32 as i32))
 }
 
 fn decode_string_field(
@@ -1076,6 +1190,67 @@ pub fn decode_background_shell_spawn_result(
     }
     Ok(ProductionBackgroundShellSpawnResult::Other {
         case: "missing_background_shell_spawn_result".into(),
+    })
+}
+
+pub fn decode_shell_stream_event(
+    input: &[u8],
+) -> Result<ProductionShellStreamEvent, ProductionBoxTransportError> {
+    let mut cursor = 0usize;
+    while cursor < input.len() {
+        let key = decode_varint(input, &mut cursor)?;
+        let field = key >> 3;
+        let wire = (key & 0x07) as u8;
+        if wire == 2 {
+            let nested = decode_len_delimited(input, &mut cursor)?;
+            return match field {
+                1 => Ok(ProductionShellStreamEvent::Stdout(
+                    decode_string_field(nested, 1)?.unwrap_or_default(),
+                )),
+                2 => Ok(ProductionShellStreamEvent::Stderr(
+                    decode_string_field(nested, 1)?.unwrap_or_default(),
+                )),
+                3 => Ok(ProductionShellStreamEvent::Exit {
+                    code: decode_u64_field(nested, 1)?
+                        .unwrap_or_default()
+                        .min(u64::from(u32::MAX)) as u32,
+                    cwd: decode_string_field(nested, 2)?.unwrap_or_default(),
+                    aborted: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
+                    local_execution_time_ms: decode_i32_field(nested, 6)?,
+                }),
+                4 => Ok(ProductionShellStreamEvent::Start),
+                5 => Ok(ProductionShellStreamEvent::Rejected {
+                    command: decode_string_field(nested, 1)?.unwrap_or_default(),
+                    working_directory: decode_string_field(nested, 2)?.unwrap_or_default(),
+                    reason: decode_string_field(nested, 3)?.unwrap_or_default(),
+                    is_readonly: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
+                }),
+                6 => Ok(ProductionShellStreamEvent::PermissionDenied {
+                    command: decode_string_field(nested, 1)?.unwrap_or_default(),
+                    working_directory: decode_string_field(nested, 2)?.unwrap_or_default(),
+                    error: decode_string_field(nested, 3)?.unwrap_or_default(),
+                    is_readonly: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
+                }),
+                7 => Ok(ProductionShellStreamEvent::Backgrounded {
+                    shell_id: decode_u64_field(nested, 1)?
+                        .unwrap_or_default()
+                        .min(u64::from(u32::MAX)) as u32,
+                    command: decode_string_field(nested, 2)?.unwrap_or_default(),
+                    working_directory: decode_string_field(nested, 3)?.unwrap_or_default(),
+                    pid: decode_u64_field(nested, 4)?
+                        .map(|value| value.min(u64::from(u32::MAX)) as u32),
+                    ms_to_wait: decode_i32_field(nested, 5)?,
+                    reason: decode_i32_field(nested, 6)?,
+                }),
+                _ => Ok(ProductionShellStreamEvent::Other {
+                    case: format!("shell_stream_event_field_{field}"),
+                }),
+            };
+        }
+        skip_protobuf_field(input, &mut cursor, wire)?;
+    }
+    Ok(ProductionShellStreamEvent::Other {
+        case: "missing_shell_stream_event".into(),
     })
 }
 

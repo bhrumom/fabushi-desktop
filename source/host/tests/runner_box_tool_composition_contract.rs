@@ -132,6 +132,67 @@ fn runner_box_bridge_merges_frozen_shell_and_read_with_host_tools() {
 }
 
 #[test]
+fn runner_box_bridge_preserves_explicit_background_and_positive_block_until_semantics() {
+    let box_port = Arc::new(BoxPort::default());
+    let bridge = RunnerBoxToolBridge::new(
+        Arc::new(Upstream { collide: false }),
+        box_port.clone(),
+    );
+    let tools = bridge.list_tools().expect("tool list");
+    let shell = tools
+        .iter()
+        .find(|tool| tool.name == RUNNER_BOX_SHELL_TOOL_NAME)
+        .expect("Shell definition");
+
+    assert_eq!(shell.input_schema["properties"]["is_background"]["type"], "boolean");
+    assert_eq!(shell.input_schema["properties"]["block_until_ms"]["type"], "integer");
+    assert_eq!(shell.input_schema["properties"]["block_until_ms"]["minimum"], 0);
+
+    bridge
+        .call_tool(
+            shell,
+            json!({
+                "command":"sleep 10",
+                "is_background":true,
+                "block_until_ms":750
+            }),
+            "background-shell-call",
+        )
+        .expect("background Shell call");
+    bridge
+        .call_tool(
+            shell,
+            json!({
+                "command":"sleep 10",
+                "is_background":false,
+                "block_until_ms":75
+            }),
+            "timed-shell-call",
+        )
+        .expect("timed Shell call");
+
+    assert_eq!(
+        box_port.shells.lock().expect("shell calls").as_slice(),
+        &[
+            RunnerBoxShellRequest {
+                command: "sleep 10".into(),
+                working_directory: "/workspace".into(),
+                tool_call_id: "background-shell-call".into(),
+                is_background: true,
+                block_until_ms: Some(750),
+            },
+            RunnerBoxShellRequest {
+                command: "sleep 10".into(),
+                working_directory: "/workspace".into(),
+                tool_call_id: "timed-shell-call".into(),
+                is_background: false,
+                block_until_ms: Some(75),
+            },
+        ]
+    );
+}
+
+#[test]
 fn runner_box_bridge_preserves_upstream_dispatch_and_fails_closed_on_name_collision() {
     let box_port = Arc::new(BoxPort::default());
     let bridge = RunnerBoxToolBridge::new(

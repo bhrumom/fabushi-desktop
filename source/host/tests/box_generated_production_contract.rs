@@ -18,7 +18,8 @@ use mahayana_host_runtime::r#box::generated_production::{
     BACKGROUND_SHELL_SPAWN_FIELD_NUMBER, CONNECT_STREAM_CONTENT_TYPE, EXEC_PATH, PING_PATH,
     ProductionBackgroundShellSpawnArgs, ProductionBackgroundShellSpawnResult,
     ProductionBoxExecError, ProductionReadArgs, ProductionReadOutput, ProductionReadResult,
-    ProductionShellResult,
+    ProductionShellResult, ProductionShellStreamArgs, ProductionShellStreamEvent,
+    SHELL_BACKGROUND_REASON_TIMEOUT,
 };
 use mahayana_host_runtime::r#box::box_factory::{
     format_sand_box_startup_summary, should_apply_shared_desktop,
@@ -126,6 +127,50 @@ fn background_shell_spawn_sandbox_unsupported(
     let mut result = Vec::new();
     push_len(5, &nested, &mut result);
     background_shell_spawn_element(&result)
+}
+
+fn shell_stream_element(event_case: u32, nested: &[u8]) -> Vec<u8> {
+    let mut shell_stream = Vec::new();
+    push_len(event_case, nested, &mut shell_stream);
+    let mut client_message = Vec::new();
+    push_len(14, &shell_stream, &mut client_message);
+    let mut element = Vec::new();
+    push_len(1, &client_message, &mut element);
+    element
+}
+
+fn shell_stream_start_element() -> Vec<u8> {
+    shell_stream_element(4, &[])
+}
+
+fn shell_stream_stdout_element(data: &str) -> Vec<u8> {
+    let mut stdout = Vec::new();
+    push_len(1, data.as_bytes(), &mut stdout);
+    shell_stream_element(1, &stdout)
+}
+
+fn shell_stream_backgrounded_element(
+    shell_id: u32,
+    command: &str,
+    working_directory: &str,
+    pid: Option<u32>,
+    ms_to_wait: Option<i32>,
+    reason: Option<i32>,
+) -> Vec<u8> {
+    let mut backgrounded = Vec::new();
+    push_varint(1, u64::from(shell_id), &mut backgrounded);
+    push_len(2, command.as_bytes(), &mut backgrounded);
+    push_len(3, working_directory.as_bytes(), &mut backgrounded);
+    if let Some(pid) = pid {
+        push_varint(4, u64::from(pid), &mut backgrounded);
+    }
+    if let Some(ms_to_wait) = ms_to_wait {
+        push_varint(5, ms_to_wait as u32 as u64, &mut backgrounded);
+    }
+    if let Some(reason) = reason {
+        push_varint(6, reason as u32 as u64, &mut backgrounded);
+    }
+    shell_stream_element(7, &backgrounded)
 }
 
 fn shell_success_element(stderr: &str) -> Vec<u8> {
@@ -279,6 +324,65 @@ fn serve_exec_response(
     );
 
     let mut connect_body = connect_envelope(0, &element);
+    connect_body.extend_from_slice(&connect_envelope(0x02, br#"{}"#));
+
+    write!(
+        stream,
+        "HTTP/1.1 200 OK\r\nContent-Type: {CONNECT_STREAM_CONTENT_TYPE}\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n{:X}\r\n",
+        connect_body.len()
+    )
+    .expect("write response headers");
+    stream.write_all(&connect_body).expect("write Connect body");
+    stream.write_all(b"\r\n0\r\n\r\n").expect("finish chunks");
+    stream.flush().expect("flush response");
+}
+
+fn serve_exec_responses(
+    listener: &TcpListener,
+    expected_fragment: &[u8],
+    elements: Vec<Vec<u8>>,
+) {
+    let (mut stream, _) = listener.accept().expect("accept ExecService request");
+    let request = read_request(&mut stream);
+    let header_end = request
+        .windows(4)
+        .position(|window| window == b"\r\n\r\n")
+        .expect("header end");
+    let headers = std::str::from_utf8(&request[..header_end]).expect("headers");
+    assert!(headers.starts_with(&format!("POST {EXEC_PATH} HTTP/1.1\r\n")));
+    assert!(
+        headers
+            .lines()
+            .any(|line| line.eq_ignore_ascii_case("Authorization: Bearer secret"))
+    );
+    assert!(
+        headers.lines().any(|line| {
+            line.eq_ignore_ascii_case(&format!(
+                "Content-Type: {CONNECT_STREAM_CONTENT_TYPE}"
+            ))
+        })
+    );
+
+    let body = &request[header_end + 4..];
+    assert_eq!(body.first().copied(), Some(0), "Connect data envelope");
+    assert!(
+        body.windows(expected_fragment.len())
+            .any(|window| window == expected_fragment),
+        "request protobuf did not contain expected payload"
+    );
+    assert!(
+        body.contains(&0x72),
+        "ShellStream request must use frozen ExecServerMessage field 14"
+    );
+    assert!(
+        body.windows(2).any(|window| window == [0x68, 0x02]),
+        "ShellStream timeout_behavior must be frozen BACKGROUND=2"
+    );
+
+    let mut connect_body = Vec::new();
+    for element in elements {
+        connect_body.extend_from_slice(&connect_envelope(0, &element));
+    }
     connect_body.extend_from_slice(&connect_envelope(0x02, br#"{}"#));
 
     write!(
@@ -705,6 +809,67 @@ fn production_exec_service_computer_use_has_remote_and_no_monitor_paths() {
 }
 
 
+#[test]
+fn production_exec_service_shell_stream_uses_frozen_field_14_and_real_backgrounded_wire() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind fake stream ExecService");
+    let port = listener.local_addr().expect("local address").port();
+    let server = thread::spawn(move || {
+        serve_exec_responses(
+            &listener,
+            b"printf timed-background",
+            vec![
+                shell_stream_start_element(),
+                shell_stream_stdout_element("before\n"),
+                shell_stream_backgrounded_element(
+                    5150,
+                    "printf timed-background",
+                    "/workspace",
+                    Some(27182),
+                    Some(75),
+                    Some(SHELL_BACKGROUND_REASON_TIMEOUT),
+                ),
+            ],
+        );
+    });
+
+    let environment = ProductionBoxEnvironment::new("127.0.0.1", port, "secret");
+    let mut accessor = environment.remote_resource_accessor();
+    let events = accessor
+        .execute_shell_stream(
+            &(),
+            ProductionShellStreamArgs {
+                shell_args: build_host_shell_args(HostShellArgsInput {
+                    command: "printf timed-background".into(),
+                    name: "printf".into(),
+                    working_directory: "/workspace".into(),
+                    tool_call_id: "timed-background-direct-contract".into(),
+                }),
+                timeout_ms: 75,
+                hard_timeout_ms: None,
+            },
+        )
+        .expect("typed field-14 shell stream");
+
+    assert_eq!(
+        events,
+        vec![
+            ProductionShellStreamEvent::Start,
+            ProductionShellStreamEvent::Stdout("before\n".into()),
+            ProductionShellStreamEvent::Backgrounded {
+                shell_id: 5150,
+                command: "printf timed-background".into(),
+                working_directory: "/workspace".into(),
+                pid: Some(27182),
+                ms_to_wait: Some(75),
+                reason: Some(SHELL_BACKGROUND_REASON_TIMEOUT),
+            },
+        ],
+        "field 14 must preserve the frozen typed event stream and real shellId"
+    );
+
+    server.join().expect("fake stream ExecService thread");
+}
+
 struct NoopForeverBoxLifecycle;
 
 impl ForeverBoxLifecycle for NoopForeverBoxLifecycle {
@@ -792,6 +957,85 @@ fn forever_box_runner_resource_port_background_spawn_registers_real_shell_id_wit
     );
 
     server.join().expect("Runner background box daemon thread");
+}
+
+#[test]
+fn forever_box_runner_resource_port_positive_block_backgrounds_real_shell_id_with_unique_watcher() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind timed Runner box daemon");
+    let port = listener.local_addr().expect("local address").port();
+    let server = thread::spawn(move || {
+        serve_unary_success(&listener, PING_PATH);
+        serve_exec_responses(
+            &listener,
+            b"printf timed-runner",
+            vec![
+                shell_stream_start_element(),
+                shell_stream_stdout_element("before\n"),
+                shell_stream_backgrounded_element(
+                    5150,
+                    "printf timed-runner",
+                    "/workspace",
+                    Some(27182),
+                    Some(75),
+                    Some(SHELL_BACKGROUND_REASON_TIMEOUT),
+                ),
+            ],
+        );
+    });
+
+    let service = Arc::new(ForeverBoxService::new(
+        HostBox::new(ProductionBoxEnvironment::new("127.0.0.1", port, "secret")),
+        Arc::new(NoopForeverBoxLifecycle),
+        false,
+        false,
+        false,
+    ));
+    let pending = Arc::new(Mutex::new(Vec::<(String, String, String)>::new()));
+    let pending_capture = Arc::clone(&pending);
+    let watches = Arc::new(RunnerBackgroundShellWatches::new(
+        Arc::new(|_, _, _| None),
+        Some(Arc::new(move |watch| {
+            pending_capture
+                .lock()
+                .expect("timed pending background watch capture")
+                .push((
+                    watch.parent_agent_id.clone(),
+                    watch.work_id.clone(),
+                    watch.title.clone(),
+                ));
+        })),
+        None,
+        None,
+    ));
+    let port_adapter = ForeverBoxRunnerResourcePort::new(service, "agent-timed-runner")
+        .with_background_shell_watches(Arc::clone(&watches));
+
+    let shell = port_adapter
+        .execute_shell(RunnerBoxShellRequest {
+            command: "printf timed-runner".into(),
+            working_directory: "/workspace".into(),
+            tool_call_id: "runner-timed-shell-contract".into(),
+            is_background: false,
+            block_until_ms: Some(75),
+        })
+        .expect("Runner timed Shell through ForeverBox");
+    assert_eq!(shell["kind"], "backgrounded");
+    assert_eq!(shell["shellId"], 5150);
+    assert_eq!(shell["pid"], 27182);
+    assert_eq!(shell["blockUntilMs"], 75);
+    assert_eq!(shell["backgroundReason"], SHELL_BACKGROUND_REASON_TIMEOUT);
+    assert_eq!(shell["stdout"], "before\n");
+    assert_eq!(
+        pending.lock().expect("timed pending watches").as_slice(),
+        &[(
+            "agent-timed-runner".into(),
+            "5150".into(),
+            "printf timed-runner".into(),
+        )],
+        "positive block_until_ms must register the real field-14 shellId with the unique watcher"
+    );
+
+    server.join().expect("timed Runner box daemon thread");
 }
 
 #[test]

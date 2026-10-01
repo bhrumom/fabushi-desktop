@@ -10,7 +10,7 @@ use crate::r#box::box_shell_command::{
 use crate::r#box::box_windows::{ShellAccessor, ShellExecutionOutcome};
 use crate::r#box::generated_production::{
     ProductionBackgroundShellSpawnResult, ProductionReadArgs, ProductionReadOutput,
-    ProductionReadResult,
+    ProductionReadResult, ProductionShellStreamArgs, ProductionShellStreamEvent,
 };
 use crate::runner::background_work::{
     BackgroundShellWatchOptions, RunnerBackgroundShellWatches,
@@ -298,9 +298,138 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
             });
         }
 
-        if requested_block_until_ms.is_some() {
+        if let Some(block_until_ms) = requested_block_until_ms {
+            let watches = self.background_shell_watches.as_ref().ok_or_else(|| {
+                ProviderSessionError::Tool(
+                    "Box timed-background Shell is unavailable without the Runner background-shell owner"
+                        .into(),
+                )
+            })?;
+            let timeout_ms = i32::try_from(block_until_ms).map_err(|_| {
+                ProviderSessionError::Tool(format!(
+                    "Box Shell block_until_ms={block_until_ms} exceeds the frozen ShellStream int32 range"
+                ))
+            })?;
+            if timeout_ms <= 0 {
+                return Err(ProviderSessionError::Tool(
+                    "Box Shell positive block_until_ms must be greater than zero on the ShellStream path"
+                        .into(),
+                ));
+            }
+            let events = accessor
+                .execute_shell_stream(
+                    &(),
+                    ProductionShellStreamArgs {
+                        shell_args: args,
+                        timeout_ms,
+                        hard_timeout_ms: None,
+                    },
+                )
+                .map_err(|error| {
+                    ProviderSessionError::Tool(format!("Box timed Shell failed: {error}"))
+                })?;
+            let mut stdout = String::new();
+            let mut stderr = String::new();
+            let mut last_other = None::<String>;
+            for event in events {
+                match event {
+                    ProductionShellStreamEvent::Start => {}
+                    ProductionShellStreamEvent::Stdout(delta) => stdout.push_str(&delta),
+                    ProductionShellStreamEvent::Stderr(delta) => stderr.push_str(&delta),
+                    ProductionShellStreamEvent::Exit {
+                        code,
+                        cwd,
+                        aborted,
+                        local_execution_time_ms,
+                    } => {
+                        if code == 0 && !aborted {
+                            return Ok(json!({
+                                "kind": "success",
+                                "exitCode": code,
+                                "stdout": stdout,
+                                "stderr": stderr,
+                                "workingDirectory": cwd,
+                                "aborted": aborted,
+                                "elapsedMs": local_execution_time_ms,
+                            }));
+                        }
+                        return Ok(json!({
+                            "kind": "failure",
+                            "exitCode": code,
+                            "stdout": stdout,
+                            "stderr": stderr,
+                            "workingDirectory": cwd,
+                            "aborted": aborted,
+                            "elapsedMs": local_execution_time_ms,
+                        }));
+                    }
+                    ProductionShellStreamEvent::Rejected {
+                        command,
+                        working_directory,
+                        reason,
+                        is_readonly,
+                    } => {
+                        return Ok(json!({
+                            "kind": "rejected",
+                            "command": command,
+                            "workingDirectory": working_directory,
+                            "reason": reason,
+                            "isReadonly": is_readonly,
+                        }));
+                    }
+                    ProductionShellStreamEvent::PermissionDenied {
+                        command,
+                        working_directory,
+                        error,
+                        is_readonly,
+                    } => {
+                        return Ok(json!({
+                            "kind": "permissionDenied",
+                            "command": command,
+                            "workingDirectory": working_directory,
+                            "error": error,
+                            "isReadonly": is_readonly,
+                        }));
+                    }
+                    ProductionShellStreamEvent::Backgrounded {
+                        shell_id,
+                        command,
+                        working_directory,
+                        pid,
+                        ms_to_wait,
+                        reason,
+                    } => {
+                        if shell_id == 0 {
+                            return Err(ProviderSessionError::Tool(
+                                "Box timed Shell returned an invalid shellId=0".into(),
+                            ));
+                        }
+                        let shell_work_id = shell_id.to_string();
+                        watches.watch_background_shell(
+                            &self.agent_id,
+                            &shell_work_id,
+                            BackgroundShellWatchOptions::new(Some(command.clone()), None),
+                        );
+                        return Ok(json!({
+                            "kind": "backgrounded",
+                            "shellId": shell_id,
+                            "command": command,
+                            "workingDirectory": working_directory,
+                            "pid": pid,
+                            "blockUntilMs": ms_to_wait,
+                            "backgroundReason": reason,
+                            "stdout": stdout,
+                            "stderr": stderr,
+                        }));
+                    }
+                    ProductionShellStreamEvent::Other { case } => {
+                        last_other = Some(case);
+                    }
+                }
+            }
             return Err(ProviderSessionError::Tool(format!(
-                "Box Shell positive block_until_ms is not yet available on the shipping ShellStream path for command {command:?} in {working_directory:?}"
+                "Box timed Shell stream closed without exit/backgrounded settlement for command {command:?} in {working_directory:?}: {}",
+                last_other.unwrap_or_else(|| "no terminal event".into())
             )));
         }
 
