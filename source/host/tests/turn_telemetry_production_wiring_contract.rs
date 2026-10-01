@@ -5,20 +5,24 @@ const TRANSCRIPT_RUNTIME: &str = include_str!("../src/extensions/transcript/prod
 #[test]
 fn shipping_host_wires_frozen_turn_telemetry_sources() {
     for needle in [
-        "user_message_received_telemetry(",
+        "let fields = UserMessageReceivedFields {",
+        ".report_user_message_received(&fields)",
         "send_was_in_flight",
         "self.transcript_runtime.is_agent_running(agent_id)",
-        "turn_interrupt_telemetry(&TurnInterruptFields",
+        "let fields = TurnInterruptFields {",
+        ".report_turn_interrupt(&fields)",
         "reason: \"watchdog\".into()",
         "watchdog_transcript_runtime.is_agent_running(&event.agent_id)",
         "interrupt_wedged_run_for_watchdog(&event.agent_id)",
         "worker_transcript_runtime.settle_turn_usage(",
-        "turn_usage_telemetry(&TurnUsageFields",
+        "let usage_fields = TurnUsageFields {",
+        ".report_turn_usage(&usage_fields)",
         "ProviderTokenUsage",
         "merge_provider_token_usage",
         "usage_sink: Some(usage_sink)",
         "worker_provider_usage",
-        "computer_use_usage_telemetry(&ComputerUseUsageFields",
+        "let fields = ComputerUseUsageFields {",
+        ".report_computer_use_usage(&fields)",
         "settled.computer_use_usage",
         "usage_inference.record_usage(",
         "InferenceUsage {",
@@ -30,7 +34,8 @@ fn shipping_host_wires_frozen_turn_telemetry_sources() {
         "context.span_id.clone()",
         "dispatch_started.elapsed().as_secs_f64()",
         "observation.set_first_token_handler(",
-        "ttft_telemetry(&TtftFields",
+        "let fields = TtftFields {",
+        ".report_ttft(&fields)",
         "reason: \"agent_deleted\".into()",
         "let was_in_flight = transcript_runtime.is_agent_running(agent_id)",
         "runner_registry.cancel_agent(agent_id, \"agent deleted\") > 0",
@@ -41,7 +46,7 @@ fn shipping_host_wires_frozen_turn_telemetry_sources() {
     ] {
         assert!(
             SHIPPING_HOST.contains(needle),
-            "shipping Host must preserve frozen turn telemetry wiring: {needle}"
+            "shipping Host must preserve frozen turn telemetry wiring through the typed Host facade: {needle}"
         );
     }
 
@@ -61,7 +66,6 @@ fn shipping_host_wires_frozen_turn_telemetry_sources() {
         "Transcript runtime must own per-turn request-id tracking"
     );
 }
-
 
 #[test]
 fn shipping_turn_telemetry_uses_typed_host_facade_and_closing_send_delivery_owner() {
