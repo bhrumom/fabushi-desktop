@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Value, json};
 
@@ -40,10 +41,47 @@ pub enum ToolCallTelemetryEvent {
         duration_ms: u64,
         connector: String,
     },
+    Stalled {
+        conversation_id: String,
+        request_id: Option<String>,
+        tool_name: String,
+        tool_call_id: String,
+        connector: String,
+        elapsed_ms: u64,
+    },
 }
 
 pub type ToolCallTelemetrySink =
     Arc<dyn Fn(ToolCallTelemetryEvent) + Send + Sync + 'static>;
+
+pub struct McpExecObservationGuard {
+    settled: Arc<AtomicBool>,
+    started: Instant,
+    emit: ToolCallTelemetrySink,
+    conversation_id: String,
+    request_id: Option<String>,
+    tool_call_id: String,
+    connector: String,
+}
+
+impl McpExecObservationGuard {
+    pub fn settle(self, error_class: Option<&str>) {
+        if self.settled.swap(true, Ordering::AcqRel) {
+            return;
+        }
+        if let Some(error_class) = error_class {
+            (self.emit)(ToolCallTelemetryEvent::Error {
+                conversation_id: self.conversation_id,
+                request_id: self.request_id,
+                tool_name: MCP_TOOL_CALL_OUTLINE_NAME.into(),
+                tool_call_id: self.tool_call_id,
+                error_class: error_class.to_string(),
+                duration_ms: self.started.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                connector: self.connector,
+            });
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ToolActivity {
@@ -125,6 +163,62 @@ impl TurnObservation {
         if let Some(sink) = self.tool_call_telemetry_sink.as_ref() {
             sink(event);
         }
+    }
+
+    pub fn begin_mcp_exec_observation(
+        &self,
+        tool_call_id: &str,
+        connector: &str,
+    ) -> Option<McpExecObservationGuard> {
+        self.begin_mcp_exec_observation_with_threshold(
+            tool_call_id,
+            connector,
+            Duration::from_millis(MCP_EXEC_STALL_THRESHOLD_MS),
+        )
+    }
+
+    pub fn begin_mcp_exec_observation_with_threshold(
+        &self,
+        tool_call_id: &str,
+        connector: &str,
+        threshold: Duration,
+    ) -> Option<McpExecObservationGuard> {
+        let emit = self.tool_call_telemetry_sink.as_ref()?.clone();
+        let settled = Arc::new(AtomicBool::new(false));
+        let timer_settled = Arc::clone(&settled);
+        let timer_emit = Arc::clone(&emit);
+        let conversation_id = self.conversation_id.clone();
+        let request_id = self.request_id.clone();
+        let tool_call_id_owned = tool_call_id.to_string();
+        let connector_owned = connector.to_string();
+        std::thread::spawn({
+            let conversation_id = conversation_id.clone();
+            let request_id = request_id.clone();
+            let tool_call_id = tool_call_id_owned.clone();
+            let connector = connector_owned.clone();
+            move || {
+                std::thread::sleep(threshold);
+                if !timer_settled.swap(true, Ordering::AcqRel) {
+                    (timer_emit)(ToolCallTelemetryEvent::Stalled {
+                        conversation_id,
+                        request_id,
+                        tool_name: MCP_TOOL_CALL_OUTLINE_NAME.into(),
+                        tool_call_id,
+                        connector,
+                        elapsed_ms: threshold.as_millis().min(u64::MAX as u128) as u64,
+                    });
+                }
+            }
+        });
+        Some(McpExecObservationGuard {
+            settled,
+            started: Instant::now(),
+            emit,
+            conversation_id,
+            request_id,
+            tool_call_id: tool_call_id_owned,
+            connector: connector_owned,
+        })
     }
 
     pub fn turn_started(&mut self, at_ms: u64) {
@@ -444,6 +538,46 @@ impl TurnObservation {
     }
 }
 
+pub struct McpObservedRoutedToolBridge {
+    delegate: Arc<dyn RoutedToolBridge>,
+    observation: TurnObservationHandle,
+}
+
+impl McpObservedRoutedToolBridge {
+    pub fn new(delegate: Arc<dyn RoutedToolBridge>, observation: TurnObservationHandle) -> Self {
+        Self { delegate, observation }
+    }
+}
+
+impl RoutedToolBridge for McpObservedRoutedToolBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        self.delegate.list_tools()
+    }
+
+    fn call_tool(
+        &self,
+        tool: &RoutedToolDefinition,
+        args: Value,
+        tool_call_id: &str,
+    ) -> Result<Value, ProviderSessionError> {
+        let guard = self
+            .observation
+            .lock()
+            .ok()
+            .and_then(|observation| {
+                observation.begin_mcp_exec_observation(
+                    tool_call_id,
+                    &bounded_connector_tag(&tool.provider_identifier),
+                )
+            });
+        let result = self.delegate.call_tool(tool, args, tool_call_id);
+        if let Some(guard) = guard {
+            guard.settle(if result.is_err() { Some("mcp_error_result") } else { None });
+        }
+        result
+    }
+}
+
 pub struct ObservedRoutedToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
     observation: TurnObservationHandle,
@@ -545,6 +679,29 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
             }
         }
         result
+    }
+}
+
+fn bounded_connector_tag(provider_identifier: &str) -> String {
+    const KNOWN: &[&str] = &[
+        "asana", "atlassian", "buildkite", "confluence", "context7", "databricks",
+        "datadog", "deepwiki", "dock", "figma", "filesystem", "github", "gmail",
+        "google", "googlecalendar", "googledocs", "googledrive", "googlesheets",
+        "googleworkspace", "huggingface", "jira", "linear", "memory", "notion",
+        "playwright", "salesforce", "sentry", "sequentialthinking", "slack", "stripe",
+        "telegram", "todoist", "zoominfo",
+    ];
+    let normalized = provider_identifier
+        .to_lowercase()
+        .chars()
+        .filter(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit())
+        .collect::<String>();
+    if normalized.is_empty() {
+        "unknown".into()
+    } else if KNOWN.contains(&normalized.as_str()) {
+        normalized
+    } else {
+        "other".into()
     }
 }
 
