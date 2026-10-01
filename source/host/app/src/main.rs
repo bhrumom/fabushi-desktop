@@ -309,6 +309,8 @@ use mahayana_host_runtime::runner_production_bridge::{
 use mahayana_host_runtime::runner::sand_action_audit::{
     ActionAuditRecord, ActionAuditSink, normalize_navigation_url,
 };
+use mahayana_host_runtime::runner::bot_block_detection::with_bot_block_detection_sink;
+use mahayana_host_runtime::extensions::telemetry::bot_block_telemetry::BotBlockReport;
 use mahayana_host_runtime::runner::turn_observation::{
     TurnObservation, TurnObservationHandle,
 };
@@ -4972,7 +4974,7 @@ fn start_routed_provider_task(
                 });
             let audit_events = worker_events.clone();
             let host_action_auditor = Arc::clone(production_action_auditor.service());
-            let action_audit_sink: Arc<dyn ActionAuditSink> = Arc::new(
+            let base_action_audit_sink: Arc<dyn ActionAuditSink> = Arc::new(
                 move |record: ActionAuditRecord| {
                     audit_events.publish(serde_json::json!({
                         "channel": "runner-action-audit",
@@ -4991,6 +4993,25 @@ fn start_routed_provider_task(
                         ),
                     }
                 },
+            );
+            let bot_block_logs = telemetry_logs.clone();
+            let action_audit_sink: Arc<dyn ActionAuditSink> = with_bot_block_detection_sink(
+                base_action_audit_sink,
+                Arc::new(move |hit, record| {
+                    let report = BotBlockReport {
+                        conversation_id: record.agent_id.clone(),
+                        family: hit.family.to_string(),
+                        confidence: hit.confidence.as_str().to_string(),
+                        blocked_host: hit.blocked_host.clone(),
+                        blocked_url: hit.blocked_url.clone(),
+                    };
+                    if let Err(error) = bot_block_logs.report_bot_block(&report) {
+                        eprintln!(
+                            "mahayana-host bot_block_telemetry_failed agent={} error={error}",
+                            record.agent_id
+                        );
+                    }
+                }),
             );
             let browser_media_agent_id = agent_id.clone();
             let browser_persist_image: BrowserPersistImageCallback = Arc::new(
