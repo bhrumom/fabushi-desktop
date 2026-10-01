@@ -4,6 +4,8 @@ use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 use serde_json::{Map, Value};
 
 use crate::automations::automation::{AutomationRecord, AutomationSpec};
+use crate::automations::automation_id::stable_automation_id;
+use crate::automations::automation_schedule::summarize_schedule_next_7_days;
 use crate::automations::automation_store::FileAutomationStore;
 use crate::extensions::session::agent_session::{AgentAutomationEntry, SandAgentSessionStore};
 use crate::extensions::session::production::ProductionSessionWorkers;
@@ -240,6 +242,17 @@ pub enum AutomationLifecycleSource {
     SpendGuard,
 }
 
+impl AutomationLifecycleSource {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Agent => "agent",
+            Self::AutomationsUi => "automations_ui",
+            Self::WorkflowUi => "workflow_ui",
+            Self::SpendGuard => "spend_guard",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AutomationLifecycleAction {
     Created,
@@ -249,17 +262,37 @@ pub enum AutomationLifecycleAction {
     Deleted,
 }
 
+impl AutomationLifecycleAction {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Created => "created",
+            Self::Updated => "updated",
+            Self::Enabled => "enabled",
+            Self::Disabled => "disabled",
+            Self::Deleted => "deleted",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct AutomationLifecycleEvent {
     pub agent_id: String,
     pub action: AutomationLifecycleAction,
     pub automation_id: String,
+    pub stable_automation_id: String,
     pub automation_name: String,
     pub trigger_type: String,
     pub created_at: f64,
+    pub age_ms: f64,
     pub recorded_run_count: usize,
+    pub scheduled_fires_next_7_days: Option<usize>,
+    pub fires_on_weekend: Option<bool>,
+    pub fires_overnight: Option<bool>,
     pub source: AutomationLifecycleSource,
 }
+
+pub type AutomationLifecycleReporter =
+    Arc<dyn Fn(&AutomationLifecycleEvent) + Send + Sync + 'static>;
 
 #[derive(Clone)]
 pub struct AutomationRuntime {
@@ -270,6 +303,7 @@ pub struct AutomationRuntime {
     wakes_suspended: Arc<AtomicBool>,
     last_known: Arc<Mutex<HashMap<String, BTreeMap<String, AutomationSnapshot>>>>,
     mutation_locks: Arc<Mutex<HashMap<String, Arc<Mutex<()>>>>>,
+    lifecycle_reporter: Arc<Mutex<Option<AutomationLifecycleReporter>>>,
 }
 
 impl AutomationRuntime {
@@ -282,6 +316,7 @@ impl AutomationRuntime {
             wakes_suspended: Arc::new(AtomicBool::new(false)),
             last_known: Arc::new(Mutex::new(HashMap::new())),
             mutation_locks: Arc::new(Mutex::new(HashMap::new())),
+            lifecycle_reporter: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -295,6 +330,10 @@ impl AutomationRuntime {
 
     pub fn set_dropped_fire_reporter(&self, reporter: Option<DroppedFireReporter>) {
         self.event_fires.set_dropped_fire_reporter(reporter);
+    }
+
+    pub fn set_lifecycle_reporter(&self, reporter: Option<AutomationLifecycleReporter>) {
+        *self.lifecycle_reporter.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) = reporter;
     }
 
     /// Freeze only background automation wakes while a Host upgrade is being
@@ -435,7 +474,7 @@ impl AutomationRuntime {
                 return Ok(None);
             };
             let before = store.list_definitions();
-            self.sync_baseline(agent_id, &before);
+            let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
             Ok(Some((store, automation, before)))
         })? else {
             return Ok(None);
@@ -489,7 +528,7 @@ impl AutomationRuntime {
                 return Ok(None);
             };
             let before = store.list_definitions();
-            self.sync_baseline(agent_id, &before);
+            let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
             let guard = self.spend_guard.apply_with_store(
                 agent_id,
                 &store,
@@ -637,7 +676,7 @@ impl AutomationRuntime {
         self.with_agent_mutation_lock(agent_id, || {
             let store = self.automation_store(agent_id)?;
             let before = store.list_definitions();
-            self.sync_baseline(agent_id, &before);
+            let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
             let ack = self.spend_guard.handle_widget_answer_with_store(
                 agent_id,
                 &store,
@@ -669,7 +708,7 @@ impl AutomationRuntime {
         self.with_agent_mutation_lock(agent_id, || {
             let session = SandAgentSessionStore::new(Arc::clone(&self.sessions));
             let before = session.automation_store_for(agent_id)?.list_definitions();
-            self.sync_baseline(agent_id, &before);
+            let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
             let result = mutation(&session)?;
             let after = session.automation_store_for(agent_id)?.list_definitions();
             let events = self.record_changes(
@@ -704,7 +743,7 @@ impl AutomationRuntime {
         self.with_agent_mutation_lock(agent_id, || {
             let store = self.automation_store(agent_id)?;
             let before = store.list_definitions();
-            self.sync_baseline(agent_id, &before);
+            let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
             let result = mutation(&store)?;
             let after = store.list_definitions();
             let events = self.record_changes(agent_id, &before, &after, source);
@@ -738,12 +777,12 @@ impl AutomationRuntime {
                 Some(before) => diff_automation_action(before, after).map(map_diff_action),
             };
             if let Some(action) = action {
-                events.push(lifecycle_event(agent_id, after, action, source));
+                events.push(self.lifecycle_event(agent_id, after, action, source));
             }
         }
         for (id, before) in &previous {
             if !current.contains_key(id) {
-                events.push(lifecycle_event(
+                events.push(self.lifecycle_event(
                     agent_id,
                     before,
                     AutomationLifecycleAction::Deleted,
@@ -751,7 +790,42 @@ impl AutomationRuntime {
                 ));
             }
         }
+        let reporter = self.lifecycle_reporter.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).clone();
+        if let Some(reporter) = reporter {
+            for event in &events {
+                reporter(event);
+            }
+        }
         events
+    }
+
+    fn lifecycle_event(
+        &self,
+        agent_id: &str,
+        snapshot: &AutomationSnapshot,
+        action: AutomationLifecycleAction,
+        source: AutomationLifecycleSource,
+    ) -> AutomationLifecycleEvent {
+        let observed_at_ms = now_ms();
+        let summary = (snapshot.trigger_type == "cron").then(|| {
+            let time_zone = self.sessions.resolve_user_time_zone();
+            summarize_schedule_next_7_days(&snapshot.schedule, time_zone.as_deref(), observed_at_ms)
+        });
+        AutomationLifecycleEvent {
+            agent_id: agent_id.to_string(),
+            action,
+            automation_id: snapshot.id.clone(),
+            stable_automation_id: stable_automation_id(agent_id, &snapshot.id),
+            automation_name: snapshot.name.clone(),
+            trigger_type: snapshot.trigger_type.clone(),
+            created_at: snapshot.created_at,
+            age_ms: (observed_at_ms - snapshot.created_at).max(0.0),
+            recorded_run_count: snapshot.recorded_run_count,
+            scheduled_fires_next_7_days: summary.map(|value| value.scheduled_fires_next_7_days),
+            fires_on_weekend: summary.map(|value| value.fires_on_weekend),
+            fires_overnight: summary.map(|value| value.fires_overnight),
+            source,
+        }
     }
 
     fn sync_baseline(&self, agent_id: &str, definitions: &[AutomationRecord]) {
@@ -797,23 +871,6 @@ fn map_diff_action(action: AutomationDiffAction) -> AutomationLifecycleAction {
     }
 }
 
-fn lifecycle_event(
-    agent_id: &str,
-    snapshot: &AutomationSnapshot,
-    action: AutomationLifecycleAction,
-    source: AutomationLifecycleSource,
-) -> AutomationLifecycleEvent {
-    AutomationLifecycleEvent {
-        agent_id: agent_id.to_string(),
-        action,
-        automation_id: snapshot.id.clone(),
-        automation_name: snapshot.name.clone(),
-        trigger_type: snapshot.trigger_type.clone(),
-        created_at: snapshot.created_at,
-        recorded_run_count: snapshot.recorded_run_count,
-        source,
-    }
-}
 
 fn now_ms() -> f64 {
     use std::time::{SystemTime, UNIX_EPOCH};
