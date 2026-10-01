@@ -80,7 +80,8 @@ fn frozen_marker_projection_preserves_labels_detail_and_frontend_shape() {
             "label": "Research",
             "status": "running",
             "startedAtMs": 10.0,
-            "detail": "cursor-agent · from the durable pending-wake ledger"
+            "detail": "cursor-agent · from the durable pending-wake ledger",
+            "subagentType": "cursor-agent"
         })
     );
 }
@@ -94,6 +95,7 @@ fn merge_deduplicates_live_ownership_and_sorts_by_start_then_id() {
         status: "running".into(),
         started_at_ms: 30.0,
         detail: None,
+        subagent_type: None,
     }];
     let markers = vec![
         marker(
