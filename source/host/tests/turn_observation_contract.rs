@@ -6,7 +6,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::turn_observation::{
     ObservedRoutedToolBridge, RECENT_ACTIVITY_CAP, ToolActivity,
-    TurnObservation,
+    ToolCallTelemetryEvent, TurnObservation,
 };
 use serde_json::{Value, json};
 
@@ -195,4 +195,70 @@ fn send_dispatch_handler_receives_the_sanitized_shipping_payload() {
     assert_eq!(dispatched[0]["skew"], false);
     assert_eq!(dispatched[0]["isFork"], false);
     assert_eq!(dispatched[0]["modelId"], "model-a");
+}
+
+
+#[test]
+fn observed_bridge_emits_frozen_started_and_error_tool_call_facts() {
+    let observation = TurnObservation::shared("agent-tool", None);
+    let telemetry = Arc::new(Mutex::new(Vec::<ToolCallTelemetryEvent>::new()));
+    let telemetry_sink = Arc::clone(&telemetry);
+    {
+        let mut observation = observation.lock().unwrap();
+        observation.set_request_id(Some("request-tool".into()));
+        observation.set_tool_call_telemetry_handler(Arc::new(move |event| {
+            telemetry_sink.lock().unwrap().push(event);
+        }));
+    }
+    let bridge = ObservedRoutedToolBridge::new(Arc::new(Delegate), Arc::clone(&observation));
+
+    bridge
+        .call_tool(&tool("Shell"), json!({}), "call-started")
+        .expect("dual-surface tool");
+    assert!(
+        bridge
+            .call_tool(&tool("Read"), json!({"fail":true}), "call-failed")
+            .is_err()
+    );
+
+    let telemetry = telemetry.lock().unwrap();
+    assert!(telemetry.iter().any(|event| matches!(
+        event,
+        ToolCallTelemetryEvent::Started {
+            conversation_id,
+            request_id,
+            tool_name,
+            tool_call_id,
+            surface,
+        } if conversation_id == "agent-tool"
+            && request_id.as_deref() == Some("request-tool")
+            && tool_name == "Shell"
+            && tool_call_id == "call-started"
+            && surface == "box"
+    )));
+    assert!(telemetry.iter().any(|event| matches!(
+        event,
+        ToolCallTelemetryEvent::Error {
+            conversation_id,
+            request_id,
+            tool_name,
+            tool_call_id,
+            error_class,
+            connector,
+            ..
+        } if conversation_id == "agent-tool"
+            && request_id.as_deref() == Some("request-tool")
+            && tool_name == "Read"
+            && tool_call_id == "call-failed"
+            && error_class == "task_error_result"
+            && connector == "unknown"
+    )));
+    assert_eq!(
+        telemetry
+            .iter()
+            .filter(|event| matches!(event, ToolCallTelemetryEvent::Started { .. }))
+            .count(),
+        2,
+        "both Shell and Read are frozen dual-surface box tools"
+    );
 }
