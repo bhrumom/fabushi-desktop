@@ -17,7 +17,9 @@ use super::conversation_state_binary::{
 };
 use super::legacy_transcript_mirror::LegacyTranscriptState;
 use super::transcript_journal_codec::TranscriptCheckpoint;
-use super::transcript_mirror::{FileTranscriptMirror, TranscriptDeriver};
+use super::transcript_mirror::{
+    FileTranscriptMirror, JournalOutcomeReporter, TranscriptDeriver,
+};
 use super::transcript_mirror_router::{
     JournalEnabledReader, LegacyTranscriptMirrorPort, RoutedTranscriptMirror,
     TranscriptJournalPort, TranscriptMirrorRoute,
@@ -327,17 +329,45 @@ where
         )
     }
 
+    pub fn with_reporter(
+        transcripts_dir: impl Into<PathBuf>,
+        codec: Codec,
+        report_outcome: JournalOutcomeReporter,
+    ) -> Self {
+        Self::with_offload_pool_and_reporter(
+            transcripts_dir,
+            codec,
+            Arc::new(TranscriptMirrorOffloadPool::production()),
+            report_outcome,
+        )
+    }
+
     pub fn with_offload_pool(
         transcripts_dir: impl Into<PathBuf>,
         codec: Codec,
         offload_pool: Arc<TranscriptMirrorOffloadPool>,
     ) -> Self {
+        Self::with_offload_pool_and_reporter(
+            transcripts_dir,
+            codec,
+            offload_pool,
+            Arc::new(|_| {}),
+        )
+    }
+
+    pub fn with_offload_pool_and_reporter(
+        transcripts_dir: impl Into<PathBuf>,
+        codec: Codec,
+        offload_pool: Arc<TranscriptMirrorOffloadPool>,
+        report_outcome: JournalOutcomeReporter,
+    ) -> Self {
         let transcripts_dir = transcripts_dir.into();
         let deriver: Arc<
             dyn TranscriptDeriver<Arc<ProductionWorkerBlobStore>>
         > = Arc::new(ArtifactTranscriptOccurrenceDeriver::new(codec));
-        let journal = Arc::new(FileTranscriptMirror::new(
+        let journal = Arc::new(FileTranscriptMirror::with_reporter(
             &transcripts_dir,
+            report_outcome,
             deriver,
         ));
         Self {
