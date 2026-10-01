@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use mahayana_host_runtime::automations::automation::{AutomationRecord, AutomationSpec};
+use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::automations::automation_id::stable_automation_id;
 use mahayana_host_runtime::automations::automation_schedule::summarize_schedule_next_7_days;
 
@@ -316,7 +316,7 @@ fn production_composition_routes_to_unique_host_structured_log_owner() {
     assert!(manager.contains("watch_agent_automations(agent_id)"));
     assert!(manager.contains("previous.set_on_change(None)"));
 
-    let app = include_str!("../../app/src/main.rs");
+    let app = include_str!("../app/src/main.rs");
     assert!(app.contains(".set_lifecycle_reporter(Some(Arc::new(move |event|"));
     assert!(app.contains("lifecycle_logs.report_automation_lifecycle(event)"));
 
