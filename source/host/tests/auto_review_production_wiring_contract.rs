@@ -21,3 +21,22 @@ fn background_turns_do_not_expose_resolvable_approval_cards() {
     assert!(SHIPPING_HOST.contains("Some(\"group-member\" | \"automation\")"));
     assert!(SHIPPING_HOST.contains("let approvals_resolvable = !matches!("));
 }
+
+
+#[test]
+fn shipping_auto_review_display_recheck_uses_unique_host_structured_log_owner() {
+    assert!(SHIPPING_HOST.contains(
+        "set_display_recheck_failed_sink(Arc::new(move |agent_id|"
+    ));
+    assert!(SHIPPING_HOST.contains(
+        ".report_auto_review_display_recheck_failed(agent_id)"
+    ));
+
+    const SERVICE: &str =
+        include_str!("../src/extensions/auto_review/auto_review_service.rs");
+    assert!(SERVICE.contains("Some(Arc::new(move |agent_id|"));
+    assert!(SERVICE.contains("sink(agent_id);"));
+    assert!(!SHIPPING_HOST.contains(
+        "\"sand.auto_review.display_recheck_failed\""
+    ));
+}
