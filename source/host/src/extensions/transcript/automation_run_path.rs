@@ -61,8 +61,28 @@ pub struct FireAutomationArgs {
     pub run_uuid: Option<String>,
     pub coalesced_run_uuids: Vec<String>,
     pub fired_at_ms: f64,
+    pub scheduled_for_ms: Option<f64>,
+    pub is_group: Option<bool>,
+    pub sent_message_count: Option<i64>,
     pub spend_guard_reminder: Option<String>,
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AutomationRunObservation {
+    pub agent_id: String,
+    pub automation_id: String,
+    pub trigger: AutomationRunTrigger,
+    pub outcome: FireAutomationOutcome,
+    pub is_group: Option<bool>,
+    pub duration_ms: f64,
+    pub scheduled_for_ms: Option<f64>,
+    pub lateness_ms: Option<f64>,
+    pub sent_message_count: Option<i64>,
+    pub event_batch_size: Option<i64>,
+}
+
+pub type AutomationRunReporter =
+    Arc<dyn Fn(&AutomationRunObservation) + Send + Sync + 'static>;
 
 impl FireAutomationArgs {
     pub fn manual(agent_id: impl Into<String>, automation: AutomationRecord, fired_at_ms: f64) -> Self {
@@ -74,6 +94,9 @@ impl FireAutomationArgs {
             run_uuid: None,
             coalesced_run_uuids: Vec::new(),
             fired_at_ms,
+            scheduled_for_ms: None,
+            is_group: None,
+            sent_message_count: None,
             spend_guard_reminder: None,
         }
     }
@@ -83,9 +106,17 @@ impl FireAutomationArgs {
 pub struct AutomationRunPath {
     in_flight_automation_keys: Mutex<HashSet<String>>,
     automation_failure_occurrences: Mutex<HashMap<String, usize>>,
+    run_reporter: Mutex<Option<AutomationRunReporter>>,
 }
 
 impl AutomationRunPath {
+    pub fn set_run_reporter(&self, reporter: Option<AutomationRunReporter>) {
+        *self
+            .run_reporter
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = reporter;
+    }
+
     pub fn fire_automation_with<Execute>(
         &self,
         store: &FileAutomationStore,
@@ -190,7 +221,8 @@ impl AutomationRunPath {
             prompt.push_str(reminder);
         }
 
-        match execute(&prompt) {
+        let execution_started = Instant::now();
+        let result = match execute(&prompt) {
             Ok(AutomationExecutionResult::Completed) => {
                 finish_run(store, &args.automation.id, run_id.as_deref(), "ok", args.fired_at_ms, None)?;
                 self.clear_automation_failure_state(&args.agent_id, &args.automation.id);
@@ -224,7 +256,32 @@ impl AutomationRunPath {
                 );
                 Ok(Some(FireAutomationOutcome::Error))
             }
+        };
+        if let Ok(Some(outcome)) = result.as_ref() {
+            let scheduled_for_ms = args.scheduled_for_ms;
+            let reporter = self
+                .run_reporter
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .clone();
+            if let Some(reporter) = reporter {
+                reporter(&AutomationRunObservation {
+                    agent_id: args.agent_id.clone(),
+                    automation_id: args.automation.id.clone(),
+                    trigger: args.trigger,
+                    outcome: *outcome,
+                    is_group: args.is_group,
+                    duration_ms: execution_started.elapsed().as_secs_f64() * 1_000.0,
+                    scheduled_for_ms,
+                    lateness_ms: scheduled_for_ms
+                        .map(|scheduled| (args.fired_at_ms - scheduled).max(0.0)),
+                    sent_message_count: args.sent_message_count,
+                    event_batch_size: (!args.events.is_empty())
+                        .then_some(args.events.len().min(i64::MAX as usize) as i64),
+                });
+            }
         }
+        result
     }
 
     pub fn record_automation_failure(
