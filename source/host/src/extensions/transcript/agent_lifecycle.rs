@@ -16,8 +16,10 @@ pub struct AgentDeletionRuntimeDeps {
     pub cancel_runner: Option<AgentDeletionHook>,
     pub forget_ack: Option<AgentDeletionHook>,
     pub sharing_departure: Option<AgentDeletionHook>,
+    pub clear_trays: Option<AgentDeletionHook>,
     pub release_box: Option<AgentDeletionHook>,
     pub forget_handoff: Option<AgentDeletionHook>,
+    pub clear_pending_wakes: Option<AgentDeletionHook>,
 }
 
 impl AgentDeletionRuntimeDeps {
@@ -31,6 +33,9 @@ impl AgentDeletionRuntimeDeps {
         if let Some(sharing_departure) = self.sharing_departure.as_ref() {
             sharing_departure(agent_id)?;
         }
+        if let Some(clear_trays) = self.clear_trays.as_ref() {
+            clear_trays(agent_id)?;
+        }
         Ok(())
     }
 
@@ -40,6 +45,9 @@ impl AgentDeletionRuntimeDeps {
         }
         if let Some(forget_handoff) = self.forget_handoff.as_ref() {
             forget_handoff(agent_id)?;
+        }
+        if let Some(clear_pending_wakes) = self.clear_pending_wakes.as_ref() {
+            clear_pending_wakes(agent_id)?;
         }
         Ok(())
     }

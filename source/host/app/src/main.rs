@@ -8156,6 +8156,13 @@ fn main() {
                 Ok(())
             })
         }),
+        clear_trays: Some({
+            let trays = Arc::clone(&production_extensions.trays);
+            Arc::new(move |agent_id| {
+                trays.clear_for_agent(agent_id);
+                Ok(())
+            })
+        }),
         release_box: Some({
             let forever_box = Arc::clone(&forever_box);
             Arc::new(move |agent_id| {
@@ -8167,6 +8174,13 @@ fn main() {
             let handoff = session_handoff.clone();
             Arc::new(move |agent_id| {
                 handoff.forget(agent_id);
+                Ok(())
+            })
+        }),
+        clear_pending_wakes: Some({
+            let transcript_runtime = transcript_manager.transcript_runtime();
+            Arc::new(move |agent_id| {
+                transcript_runtime.clear_agent_durable_recovery(agent_id);
                 Ok(())
             })
         }),

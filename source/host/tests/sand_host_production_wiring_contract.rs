@@ -28,6 +28,25 @@ fn shipping_gateway_uses_the_grok_host_health_owner() {
 }
 
 #[test]
+fn shipping_agent_deletion_wires_tray_and_durable_recovery_cleanup_owners() {
+    let lifecycle = SHIPPING_HOST
+        .find("let agent_deletion_runtime = AgentDeletionRuntimeDeps {")
+        .expect("shipping Host must compose lifecycle deletion owners");
+    let gateway = SHIPPING_HOST[lifecycle..]
+        .find("let gateway_config =")
+        .map(|offset| lifecycle + offset)
+        .expect("lifecycle composition must finish before gateway start");
+    let block = &SHIPPING_HOST[lifecycle..gateway];
+    assert!(block.contains("clear_trays: Some({"));
+    assert!(block.contains("production_extensions.trays"));
+    assert!(block.contains("trays.clear_for_agent(agent_id)"));
+    assert!(block.contains("clear_pending_wakes: Some({"));
+    assert!(block.contains("transcript_runtime.clear_agent_durable_recovery(agent_id)"));
+    assert!(TRANSCRIPT_RUNTIME.contains("pub fn clear_agent_durable_recovery"));
+    assert!(TRANSCRIPT_RUNTIME.contains("store.clear_agent(agent_id)"));
+}
+
+#[test]
 fn health_keeps_approval_only_waits_from_refreshing_busy_clock() {
     let health = compute_host_health(
         ["agent-a".to_string()],

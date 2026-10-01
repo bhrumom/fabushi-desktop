@@ -44,8 +44,10 @@ fn deletion_runtime_runs_owner_hooks_around_durable_session_delete() {
             cancel_runner: Some(hook("runner", Arc::clone(&calls))),
             forget_ack: Some(hook("ack", Arc::clone(&calls))),
             sharing_departure: Some(hook("sharing", Arc::clone(&calls))),
+            clear_trays: Some(hook("trays", Arc::clone(&calls))),
             release_box: Some(hook("box", Arc::clone(&calls))),
             forget_handoff: Some(hook("handoff", Arc::clone(&calls))),
+            clear_pending_wakes: Some(hook("pending", Arc::clone(&calls))),
         },
     );
 
@@ -55,8 +57,10 @@ fn deletion_runtime_runs_owner_hooks_around_durable_session_delete() {
         format!("runner:{}", record.id),
         format!("ack:{}", record.id),
         format!("sharing:{}", record.id),
+        format!("trays:{}", record.id),
         format!("box:{}", record.id),
         format!("handoff:{}", record.id),
+        format!("pending:{}", record.id),
     ];
     assert_eq!(*calls.lock().expect("calls"), expected);
 
