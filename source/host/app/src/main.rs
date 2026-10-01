@@ -225,6 +225,8 @@ use mahayana_host_runtime::extensions::telemetry::turn_telemetry_mappers::{
     user_message_received_telemetry,
 };
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::AgentErrorReport;
+use mahayana_host_runtime::extensions::telemetry::journal_outcome_telemetry::JournalOutcomeReport;
+use mahayana_host_runtime::extensions::telemetry::sand_error_tags::SandErrorValue;
 use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
 use mahayana_host_runtime::extensions::transcript::turn_runtime::classify_agent_error;
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
@@ -3597,11 +3599,36 @@ fn start_routed_provider_task(
             )))?,
     );
     let prior_state_bytes = agent_store.latest_checkpoint_bytes().unwrap_or_default();
-    let transcript_provider = ProductionTranscriptMirrorProvider::new(
+    let journal_logs = telemetry_logs.clone();
+    let transcript_provider = ProductionTranscriptMirrorProvider::with_reporter(
         data_dir.join("transcripts"),
         GeneratedTranscriptOccurrenceCodec::new(
             RejectGeneratedToolJsonProjection,
         ),
+        Arc::new(move |outcome| {
+            let cause = (outcome.outcome == "failed").then(|| {
+                SandErrorValue::new(match outcome.op.as_str() {
+                    "append" => "SAND-E0720",
+                    "checkpoint" => "SAND-E0721",
+                    "replay" => "SAND-E0723",
+                    _ => "SAND-E0001",
+                })
+            });
+            let report = JournalOutcomeReport {
+                outcome: outcome.outcome.clone(),
+                op: outcome.op.clone(),
+                conversation_id: outcome.conversation_id.clone(),
+                entry_count: outcome
+                    .entry_count
+                    .map(|value| value.min(i64::MAX as usize) as i64),
+                bytes: outcome
+                    .bytes
+                    .map(|value| value.min(i64::MAX as u64) as i64),
+                duration_ms: outcome.duration_ms,
+                cause,
+            };
+            let _ = journal_logs.report_journal_outcome(&report);
+        }),
     );
     let journal_experiments = Arc::clone(&experiments);
     let transcript_mirror = Arc::new(
