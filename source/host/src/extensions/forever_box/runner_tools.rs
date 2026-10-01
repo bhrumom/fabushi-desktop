@@ -192,6 +192,8 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
             .next()
             .unwrap_or("shell")
             .to_string();
+        let should_start_in_background = request.should_start_in_background();
+        let requested_block_until_ms = request.block_until_ms;
         let command = request.command.clone();
         let working_directory = request.working_directory.clone();
         let args = build_host_shell_args(HostShellArgsInput {
@@ -203,7 +205,7 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
         let accessor = self.production_accessor()?;
         let mut accessor = accessor.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
-        if request.should_start_in_background() {
+        if should_start_in_background {
             let watches = self.background_shell_watches.as_ref().ok_or_else(|| {
                 ProviderSessionError::Tool(
                     "Box background Shell is unavailable without the Runner background-shell owner"
@@ -296,7 +298,7 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
             });
         }
 
-        if request.block_until_ms.is_some() {
+        if requested_block_until_ms.is_some() {
             return Err(ProviderSessionError::Tool(format!(
                 "Box Shell positive block_until_ms is not yet available on the shipping ShellStream path for command {command:?} in {working_directory:?}"
             )));
