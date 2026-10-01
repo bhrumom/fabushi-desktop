@@ -18,7 +18,7 @@ use super::box_remote_accessor::{
     BoxRemoteExecControlMessage, BoxRemoteExecEnvelope, BoxRemoteExecError, BoxRemoteExecManager,
     BoxTransportOptions, ConnectCode, create_box_transport,
 };
-use super::box_shell_command::HostShellArgs;
+use super::box_shell_command::{HostShellArgs, ShellCommandParsingResult};
 use super::box_windows::{ShellAccessor, ShellExecutionOutcome, ShellExecutionResult};
 use super::protected_path_guard::{SandProtectedPathError, assert_path_outside_protected_roots};
 use crate::ports::r#box::SandBoxNoMonitorAvailableError;
@@ -214,6 +214,7 @@ impl<Ctx> BoxMcpControlClient<Ctx> for ProductionBoxControlClient {
 pub const BOX_GENERATED_PROTOBUF_VERSION: &str = "1.10.1";
 pub const BOX_GENERATED_CONNECT_VERSION: &str = "1.6.1";
 pub const BOX_GENERATED_CONNECT_NODE_VERSION: &str = "1.6.1";
+pub const BACKGROUND_SHELL_SPAWN_FIELD_NUMBER: u32 = 16;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProductionReadArgs {
@@ -222,6 +223,37 @@ pub struct ProductionReadArgs {
     pub offset: Option<i32>,
     pub limit: Option<u32>,
     pub encoding_hint: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProductionBackgroundShellSpawnArgs {
+    pub command: String,
+    pub working_directory: String,
+    pub tool_call_id: String,
+    pub skip_approval: bool,
+    pub parsing_result: ShellCommandParsingResult,
+}
+
+impl From<HostShellArgs> for ProductionBackgroundShellSpawnArgs {
+    fn from(args: HostShellArgs) -> Self {
+        Self {
+            command: args.command,
+            working_directory: args.working_directory,
+            tool_call_id: args.tool_call_id,
+            skip_approval: args.skip_approval,
+            parsing_result: args.parsing_result,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProductionBackgroundShellSpawnResult {
+    Success { shell_id: u32, command: String, working_directory: String, pid: Option<u32> },
+    Error { command: String, working_directory: String, error: String },
+    Rejected { command: String, working_directory: String, reason: String, is_readonly: bool },
+    PermissionDenied { command: String, working_directory: String, error: String, is_readonly: bool },
+    SandboxUnsupported { command: String, working_directory: String, sandbox_policy_type: i32, reason: String, is_readonly: bool },
+    Other { case: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -307,6 +339,7 @@ pub enum ProductionBoxExecError {
     Remote(BoxRemoteExecError<ProductionBoxTransportError>),
     ProtectedPath(SandProtectedPathError),
     NoMonitor(SandBoxNoMonitorAvailableError),
+    InvalidResult(ProductionBoxTransportError),
     MissingResult(&'static str),
 }
 
@@ -316,6 +349,7 @@ impl fmt::Display for ProductionBoxExecError {
             Self::Remote(error) => error.fmt(formatter),
             Self::ProtectedPath(error) => error.fmt(formatter),
             Self::NoMonitor(error) => error.fmt(formatter),
+            Self::InvalidResult(error) => error.fmt(formatter),
             Self::MissingResult(kind) => {
                 write!(formatter, "box ExecService closed without a {kind} result")
             }
@@ -329,6 +363,7 @@ impl std::error::Error for ProductionBoxExecError {
             Self::Remote(error) => Some(error),
             Self::ProtectedPath(error) => Some(error),
             Self::NoMonitor(error) => Some(error),
+            Self::InvalidResult(error) => Some(error),
             Self::MissingResult(_) => None,
         }
     }
@@ -349,6 +384,12 @@ impl From<SandProtectedPathError> for ProductionBoxExecError {
 impl From<SandBoxNoMonitorAvailableError> for ProductionBoxExecError {
     fn from(error: SandBoxNoMonitorAvailableError) -> Self {
         Self::NoMonitor(error)
+    }
+}
+
+impl From<ProductionBoxTransportError> for ProductionBoxExecError {
+    fn from(error: ProductionBoxTransportError) -> Self {
+        Self::InvalidResult(error)
     }
 }
 
@@ -471,6 +512,17 @@ impl ProductionBoxResourceAccessor {
                 _ => None,
             })
             .ok_or(ProductionBoxExecError::MissingResult("raw-resource"))
+    }
+
+    pub fn execute_background_shell_spawn<Ctx>(
+        &mut self,
+        ctx: &Ctx,
+        args: ProductionBackgroundShellSpawnArgs,
+    ) -> Result<ProductionBackgroundShellSpawnResult, ProductionBoxExecError> {
+        let protobuf_args = encode_background_shell_spawn_args(&args);
+        let protobuf_result =
+            self.execute_raw_resource(ctx, BACKGROUND_SHELL_SPAWN_FIELD_NUMBER, protobuf_args)?;
+        Ok(decode_background_shell_spawn_result(&protobuf_result)?)
     }
 
     pub fn execute_shell_result<Ctx>(
@@ -627,12 +679,12 @@ fn encode_bool_field(field_number: u32, value: bool, out: &mut Vec<u8>) {
     }
 }
 
-fn encode_shell_parsing_result(args: &HostShellArgs) -> Vec<u8> {
+fn encode_shell_parsing_result(parsing_result: &ShellCommandParsingResult) -> Vec<u8> {
     let mut body = Vec::new();
-    if args.parsing_result.parsing_failed {
+    if parsing_result.parsing_failed {
         encode_bool_field(1, true, &mut body);
     }
-    for executable in &args.parsing_result.executable_commands {
+    for executable in &parsing_result.executable_commands {
         let mut command = Vec::new();
         if !executable.name.is_empty() {
             encode_len_delimited(1, executable.name.as_bytes(), &mut command);
@@ -647,10 +699,10 @@ fn encode_shell_parsing_result(args: &HostShellArgs) -> Vec<u8> {
         }
         encode_len_delimited(2, &command, &mut body);
     }
-    if args.parsing_result.has_redirects {
+    if parsing_result.has_redirects {
         encode_bool_field(3, true, &mut body);
     }
-    if args.parsing_result.has_command_substitution {
+    if parsing_result.has_command_substitution {
         encode_bool_field(4, true, &mut body);
     }
     body
@@ -667,9 +719,28 @@ fn encode_shell_args(args: &HostShellArgs) -> Vec<u8> {
     if !args.tool_call_id.is_empty() {
         encode_len_delimited(4, args.tool_call_id.as_bytes(), &mut body);
     }
-    let parsing = encode_shell_parsing_result(args);
+    let parsing = encode_shell_parsing_result(&args.parsing_result);
     if !parsing.is_empty() {
         encode_len_delimited(8, &parsing, &mut body);
+    }
+    encode_bool_field(12, args.skip_approval, &mut body);
+    body
+}
+
+pub fn encode_background_shell_spawn_args(args: &ProductionBackgroundShellSpawnArgs) -> Vec<u8> {
+    let mut body = Vec::new();
+    if !args.command.is_empty() {
+        encode_len_delimited(1, args.command.as_bytes(), &mut body);
+    }
+    if !args.working_directory.is_empty() {
+        encode_len_delimited(2, args.working_directory.as_bytes(), &mut body);
+    }
+    if !args.tool_call_id.is_empty() {
+        encode_len_delimited(3, args.tool_call_id.as_bytes(), &mut body);
+    }
+    let parsing = encode_shell_parsing_result(&args.parsing_result);
+    if !parsing.is_empty() {
+        encode_len_delimited(4, &parsing, &mut body);
     }
     encode_bool_field(12, args.skip_approval, &mut body);
     body
@@ -950,6 +1021,61 @@ fn decode_shell_result(
     }
     Ok(ProductionShellResult::Other {
         case: "missing_shell_result".into(),
+    })
+}
+
+pub fn decode_background_shell_spawn_result(
+    input: &[u8],
+) -> Result<ProductionBackgroundShellSpawnResult, ProductionBoxTransportError> {
+    let mut cursor = 0usize;
+    while cursor < input.len() {
+        let key = decode_varint(input, &mut cursor)?;
+        let field = key >> 3;
+        let wire = (key & 0x07) as u8;
+        if wire == 2 {
+            let nested = decode_len_delimited(input, &mut cursor)?;
+            let command = decode_string_field(nested, 1)?.unwrap_or_default();
+            let working_directory = decode_string_field(nested, 2)?.unwrap_or_default();
+            return match field {
+                1 => Ok(ProductionBackgroundShellSpawnResult::Success {
+                    shell_id: decode_u64_field(nested, 1)?.unwrap_or_default().min(u64::from(u32::MAX)) as u32,
+                    command: decode_string_field(nested, 2)?.unwrap_or_default(),
+                    working_directory: decode_string_field(nested, 3)?.unwrap_or_default(),
+                    pid: decode_u64_field(nested, 4)?.map(|value| value.min(u64::from(u32::MAX)) as u32),
+                }),
+                2 => Ok(ProductionBackgroundShellSpawnResult::Error {
+                    command,
+                    working_directory,
+                    error: decode_string_field(nested, 3)?.unwrap_or_default(),
+                }),
+                3 => Ok(ProductionBackgroundShellSpawnResult::Rejected {
+                    command,
+                    working_directory,
+                    reason: decode_string_field(nested, 3)?.unwrap_or_default(),
+                    is_readonly: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
+                }),
+                4 => Ok(ProductionBackgroundShellSpawnResult::PermissionDenied {
+                    command,
+                    working_directory,
+                    error: decode_string_field(nested, 3)?.unwrap_or_default(),
+                    is_readonly: decode_u64_field(nested, 4)?.unwrap_or_default() != 0,
+                }),
+                5 => Ok(ProductionBackgroundShellSpawnResult::SandboxUnsupported {
+                    command,
+                    working_directory,
+                    sandbox_policy_type: decode_u64_field(nested, 3)?.unwrap_or_default() as u32 as i32,
+                    reason: decode_string_field(nested, 4)?.unwrap_or_default(),
+                    is_readonly: decode_u64_field(nested, 5)?.unwrap_or_default() != 0,
+                }),
+                _ => Ok(ProductionBackgroundShellSpawnResult::Other {
+                    case: format!("background_shell_spawn_result_field_{field}"),
+                }),
+            };
+        }
+        skip_protobuf_field(input, &mut cursor, wire)?;
+    }
+    Ok(ProductionBackgroundShellSpawnResult::Other {
+        case: "missing_background_shell_spawn_result".into(),
     })
 }
 
