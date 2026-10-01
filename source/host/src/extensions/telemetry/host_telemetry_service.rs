@@ -476,6 +476,58 @@ impl HostStructuredLogTelemetry {
         })
     }
 
+    pub fn report_tool_call_started(
+        &self,
+        conversation_id: &str,
+        request_id: Option<&str>,
+        tool_name: &str,
+        tool_call_id: &str,
+        surface: &str,
+    ) -> io::Result<()> {
+        let mut metadata = BTreeMap::from([
+            ("conversation_id".into(), conversation_id.to_string()),
+            ("tool_name".into(), tool_name.to_string()),
+            ("tool_call_id".into(), tool_call_id.to_string()),
+            ("surface".into(), surface.to_string()),
+        ]);
+        if let Some(request_id) = request_id.filter(|value| !value.is_empty()) {
+            metadata.insert("request_id".into(), request_id.to_string());
+        }
+        self.report_projection(&HostTelemetryProjection {
+            level: Some("info"),
+            event: Some("sand.tool_call.started"),
+            metadata,
+        })
+    }
+
+    pub fn report_tool_call_error(
+        &self,
+        conversation_id: &str,
+        request_id: Option<&str>,
+        tool_name: &str,
+        tool_call_id: &str,
+        error_class: &str,
+        duration_ms: u64,
+        connector: &str,
+    ) -> io::Result<()> {
+        let mut metadata = BTreeMap::from([
+            ("conversation_id".into(), conversation_id.to_string()),
+            ("tool_name".into(), tool_name.to_string()),
+            ("tool_call_id".into(), tool_call_id.to_string()),
+            ("error_class".into(), error_class.to_string()),
+            ("duration_ms".into(), duration_ms.min(86_400_000).to_string()),
+            ("connector".into(), connector.to_string()),
+        ]);
+        if let Some(request_id) = request_id.filter(|value| !value.is_empty()) {
+            metadata.insert("request_id".into(), request_id.to_string());
+        }
+        self.report_projection(&HostTelemetryProjection {
+            level: Some("error"),
+            event: Some("sand.tool_call.error"),
+            metadata,
+        })
+    }
+
     pub fn report_agent_error(&self, report: &AgentErrorReport) -> io::Result<()> {
         self.report_projection(&agent_error_telemetry(report))?;
         if let Some(detail) = agent_error_detail_telemetry(report) {
