@@ -283,7 +283,7 @@ fn runner_cloud_agent_watch_cancellation_fences_stale_completion() {
 
 
 #[test]
-fn runner_background_shell_watches_arm_before_duplicate_and_fence_settlement() {
+fn runner_background_shell_watches_dedupe_before_pending_persist_and_fence_settlement() {
     let (started_tx, started_rx) = mpsc::channel::<(String, String)>();
     let (release_tx, release_rx) = mpsc::channel::<()>();
     let release_rx = Arc::new(Mutex::new(release_rx));
@@ -352,7 +352,7 @@ fn runner_background_shell_watches_arm_before_duplicate_and_fence_settlement() {
         started_rx.recv_timeout(Duration::from_secs(2)).expect("started"),
         ("agent-a".to_string(), "42".to_string())
     );
-    assert_eq!(pending.lock().expect("pending").len(), 2);
+    assert_eq!(pending.lock().expect("pending").len(), 1, "duplicate rearm must not persist/project a second pending wake");
 
     release_tx.send(()).expect("release");
     for _ in 0..100 {
