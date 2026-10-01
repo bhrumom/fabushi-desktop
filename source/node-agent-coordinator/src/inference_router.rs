@@ -408,6 +408,16 @@ pub fn prepare_agent_inbound_wake_routes(
         .get("priority")
         .and_then(Value::as_bool)
         .unwrap_or(false);
+    let selected_images = match payload.get("selectedImages") {
+        None | Some(Value::Null) => Vec::new(),
+        Some(Value::Array(values)) => values.clone(),
+        Some(_) => {
+            return Err(Failure::new(
+                "INFERENCE_AGENT_WAKE_INVALID",
+                "agent inbound wake selectedImages must be an array",
+            ));
+        }
+    };
     let member_ids = match payload.get("memberIds") {
         None | Some(Value::Null) => Vec::new(),
         Some(Value::Array(values)) => {
@@ -450,6 +460,9 @@ pub fn prepare_agent_inbound_wake_routes(
                     "priority": priority,
                 },
             });
+            if !selected_images.is_empty() && !is_group {
+                send_args["selectedImages"] = Value::Array(selected_images.clone());
+            }
             if is_group {
                 send_args["groupContext"] = serde_json::json!({
                     "groupId": target_agent_id.clone(),
