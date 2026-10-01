@@ -18,17 +18,34 @@ pub type AgentDeletionHook = Arc<dyn Fn(&str) -> Result<(), String> + Send + Syn
 
 #[derive(Clone, Default)]
 pub struct AgentDeletionRuntimeDeps {
+    pub mark_deleting: Option<AgentDeletionHook>,
+    pub clear_deleting: Option<AgentDeletionHook>,
     pub cancel_runner: Option<AgentDeletionHook>,
     pub forget_ack: Option<AgentDeletionHook>,
     pub sharing_departure: Option<AgentDeletionHook>,
     pub clear_trays: Option<AgentDeletionHook>,
     pub dispose_background_work: Option<AgentDeletionHook>,
+    pub drain_runner: Option<AgentDeletionHook>,
     pub release_box: Option<AgentDeletionHook>,
     pub forget_handoff: Option<AgentDeletionHook>,
     pub clear_pending_wakes: Option<AgentDeletionHook>,
 }
 
 impl AgentDeletionRuntimeDeps {
+    fn mark_deleting(&self, agent_id: &str) -> Result<(), String> {
+        if let Some(mark_deleting) = self.mark_deleting.as_ref() {
+            mark_deleting(agent_id)?;
+        }
+        Ok(())
+    }
+
+    fn clear_deleting(&self, agent_id: &str) -> Result<(), String> {
+        if let Some(clear_deleting) = self.clear_deleting.as_ref() {
+            clear_deleting(agent_id)?;
+        }
+        Ok(())
+    }
+
     fn before_delete(&self, agent_id: &str) -> Result<(), String> {
         if let Some(cancel_runner) = self.cancel_runner.as_ref() {
             cancel_runner(agent_id)?;
@@ -44,6 +61,9 @@ impl AgentDeletionRuntimeDeps {
         }
         if let Some(dispose_background_work) = self.dispose_background_work.as_ref() {
             dispose_background_work(agent_id)?;
+        }
+        if let Some(drain_runner) = self.drain_runner.as_ref() {
+            drain_runner(agent_id)?;
         }
         Ok(())
     }
@@ -247,9 +267,19 @@ impl ProductionAgentLifecycle {
         let active_before = self.store.read_active_agent_id();
 
         for agent_id in &ids {
-            self.deletion_runtime.before_delete(agent_id)?;
-            self.store.delete_session(agent_id)?;
-            self.deletion_runtime.after_delete(agent_id)?;
+            self.deletion_runtime.mark_deleting(agent_id)?;
+            let deleted = (|| {
+                self.deletion_runtime.before_delete(agent_id)?;
+                self.store.delete_session(agent_id)?;
+                self.deletion_runtime.after_delete(agent_id)?;
+                Ok::<(), String>(())
+            })();
+            if let Err(error) = deleted {
+                if self.store.agent_exists(agent_id) {
+                    let _ = self.deletion_runtime.clear_deleting(agent_id);
+                }
+                return Err(error);
+            }
         }
 
         if active_before

@@ -37,6 +37,10 @@ fn shipping_agent_deletion_wires_tray_and_durable_recovery_cleanup_owners() {
         .map(|offset| lifecycle + offset)
         .expect("lifecycle composition must finish before gateway start");
     let block = &SHIPPING_HOST[lifecycle..gateway];
+    assert!(block.contains("mark_deleting: Some({"));
+    assert!(block.contains("clear_deleting: Some({"));
+    assert!(block.contains("session_runtime().mark_agent_deleted(agent_id)"));
+    assert!(block.contains("session_runtime().clear_agent_deleted(agent_id)"));
     assert!(block.contains("clear_trays: Some({"));
     assert!(block.contains("production_extensions.trays"));
     assert!(block.contains("trays.clear_for_agent(agent_id)"));
@@ -46,10 +50,26 @@ fn shipping_agent_deletion_wires_tray_and_durable_recovery_cleanup_owners() {
     assert!(SHIPPING_HOST.contains("watches.dispose_parent(agent_id)"));
     assert!(SHIPPING_HOST.contains("Arc::downgrade(&cloud_agent_watches)"));
     assert!(SHIPPING_HOST.contains("Arc::downgrade(&background_shell_watches)"));
+    assert!(block.contains("drain_runner: Some({"));
+    assert!(block.contains("abort_running_subagents_for_parent(agent_id)"));
+    assert!(block.contains("runner_registry.cancel_agent(child_id, \"parent agent deleted\")"));
+    assert!(block.contains("running_subagent_ids_for_parent(agent_id).is_empty()"));
+    assert!(block.contains("!transcript_runtime.is_agent_running(agent_id)"));
     assert!(block.contains("clear_pending_wakes: Some({"));
     assert!(block.contains("transcript_runtime.clear_agent_durable_recovery(agent_id)"));
     assert!(TRANSCRIPT_RUNTIME.contains("pub fn clear_agent_durable_recovery"));
     assert!(TRANSCRIPT_RUNTIME.contains("store.clear_agent(agent_id)"));
+    let lifecycle_dispatch = SHIPPING_HOST
+        .find("dispatch_production_agent_lifecycle_gateway_call_with_runtime(")
+        .expect("shipping lifecycle dispatcher");
+    let session_dispatch = SHIPPING_HOST[lifecycle_dispatch..]
+        .find("dispatch_production_session_gateway_call_with_content_search(")
+        .map(|offset| lifecycle_dispatch + offset)
+        .expect("session dispatcher follows lifecycle dispatcher");
+    let post_lifecycle = &SHIPPING_HOST[lifecycle_dispatch..session_dispatch];
+    assert!(!post_lifecycle.contains(
+        "self.transcript_runtime.session_runtime().mark_agent_deleted"
+    ));
 }
 
 #[test]

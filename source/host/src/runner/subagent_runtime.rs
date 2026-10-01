@@ -416,6 +416,30 @@ impl SubagentRuntime {
             .any(|record| record.status == SubagentStatus::Running)
     }
 
+    pub fn running_subagent_ids_for_parent(&self, parent_agent_id: &str) -> Vec<String> {
+        let mut ids = self
+            .running
+            .iter()
+            .filter(|id| {
+                self.meta
+                    .get(*id)
+                    .is_some_and(|meta| meta.parent_agent_id == parent_agent_id)
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        ids.sort();
+        ids
+    }
+
+    pub fn abort_running_subagents_for_parent(&mut self, parent_agent_id: &str) -> Vec<String> {
+        let ids = self.running_subagent_ids_for_parent(parent_agent_id);
+        for id in &ids {
+            self.aborting.insert(id.clone());
+            self.pending_steers.remove(id);
+        }
+        ids
+    }
+
     pub fn list_subagents(&self) -> Vec<(String, SubagentRecord)> {
         let mut entries = self
             .registry

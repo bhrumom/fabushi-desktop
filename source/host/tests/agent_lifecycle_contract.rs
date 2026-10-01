@@ -41,11 +41,14 @@ fn deletion_runtime_runs_owner_hooks_around_durable_session_delete() {
     let lifecycle = ProductionAgentLifecycle::with_deletion_runtime(
         Arc::clone(&production),
         AgentDeletionRuntimeDeps {
+            mark_deleting: Some(hook("mark", Arc::clone(&calls))),
+            clear_deleting: Some(hook("rollback", Arc::clone(&calls))),
             cancel_runner: Some(hook("runner", Arc::clone(&calls))),
             forget_ack: Some(hook("ack", Arc::clone(&calls))),
             sharing_departure: Some(hook("sharing", Arc::clone(&calls))),
             clear_trays: Some(hook("trays", Arc::clone(&calls))),
             dispose_background_work: Some(hook("background", Arc::clone(&calls))),
+            drain_runner: Some(hook("drain", Arc::clone(&calls))),
             release_box: Some(hook("box", Arc::clone(&calls))),
             forget_handoff: Some(hook("handoff", Arc::clone(&calls))),
             clear_pending_wakes: Some(hook("pending", Arc::clone(&calls))),
@@ -55,16 +58,69 @@ fn deletion_runtime_runs_owner_hooks_around_durable_session_delete() {
     lifecycle.delete_agent(&record.id).expect("delete");
     assert!(!store.agent_dir_exists(&record.id));
     let expected = vec![
+        format!("mark:{}", record.id),
         format!("runner:{}", record.id),
         format!("ack:{}", record.id),
         format!("sharing:{}", record.id),
         format!("trays:{}", record.id),
         format!("background:{}", record.id),
+        format!("drain:{}", record.id),
         format!("box:{}", record.id),
         format!("handoff:{}", record.id),
         format!("pending:{}", record.id),
     ];
     assert_eq!(*calls.lock().expect("calls"), expected);
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn deletion_runtime_rolls_back_deleting_fence_when_predelete_drain_fails() {
+    let root = temp_root("runtime-rollback");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+    let calls = Arc::new(Mutex::new(Vec::<String>::new()));
+
+    let mark_calls = Arc::clone(&calls);
+    let rollback_calls = Arc::clone(&calls);
+    let lifecycle = ProductionAgentLifecycle::with_deletion_runtime(
+        Arc::clone(&production),
+        AgentDeletionRuntimeDeps {
+            mark_deleting: Some(Arc::new(move |agent_id| {
+                mark_calls
+                    .lock()
+                    .expect("mark calls")
+                    .push(format!("mark:{agent_id}"));
+                Ok(())
+            })),
+            clear_deleting: Some(Arc::new(move |agent_id| {
+                rollback_calls
+                    .lock()
+                    .expect("rollback calls")
+                    .push(format!("rollback:{agent_id}"));
+                Ok(())
+            })),
+            drain_runner: Some(Arc::new(|_| Err("drain failed".into()))),
+            ..AgentDeletionRuntimeDeps::default()
+        },
+    );
+
+    let error = lifecycle.delete_agent(&record.id).expect_err("delete must fail closed");
+    assert_eq!(error, "drain failed");
+    assert!(store.agent_exists(&record.id));
+    assert_eq!(
+        *calls.lock().expect("calls"),
+        vec![
+            format!("mark:{}", record.id),
+            format!("rollback:{}", record.id),
+        ]
+    );
 
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);

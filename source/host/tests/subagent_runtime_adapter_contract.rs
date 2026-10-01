@@ -122,6 +122,69 @@ fn runtime_steer_abort_settle_and_computer_usage_follow_frozen_lifecycle() {
     assert_eq!(runtime.get_subagent_outline("worker").len(), 1);
 }
 
+
+#[test]
+fn parent_delete_abort_targets_only_running_children_owned_by_that_parent() {
+    let mut runtime = SubagentRuntime::default();
+    for child in ["child-b", "child-a", "other-child"] {
+        runtime.register_session(child, SubagentSessionSnapshot::default());
+    }
+    runtime.dispatch_background_subagent(
+        "parent-a",
+        "box",
+        "child-a",
+        "generalPurpose",
+        "call-a",
+        "first",
+        None,
+        None,
+        10,
+    );
+    runtime.dispatch_background_subagent(
+        "parent-a",
+        "box",
+        "child-b",
+        "generalPurpose",
+        "call-b",
+        "second",
+        None,
+        None,
+        11,
+    );
+    runtime.dispatch_background_subagent(
+        "parent-b",
+        "box",
+        "other-child",
+        "generalPurpose",
+        "call-c",
+        "third",
+        None,
+        None,
+        12,
+    );
+
+    assert_eq!(
+        runtime.running_subagent_ids_for_parent("parent-a"),
+        vec!["child-a".to_string(), "child-b".to_string()]
+    );
+    assert_eq!(
+        runtime.abort_running_subagents_for_parent("parent-a"),
+        vec!["child-a".to_string(), "child-b".to_string()]
+    );
+
+    for child in ["child-a", "child-b"] {
+        let settled =
+            runtime.settle_background_subagent_turn(child, RunOutcome::Completed("late".into()), 20);
+        assert!(settled.completion.is_none());
+    }
+    assert!(runtime.running_subagent_ids_for_parent("parent-a").is_empty());
+    assert_eq!(
+        runtime.running_subagent_ids_for_parent("parent-b"),
+        vec!["other-child".to_string()]
+    );
+    assert!(runtime.is_running("other-child"));
+}
+
 #[test]
 fn completed_background_task_preserves_empty_output_fallback() {
     let mut runtime = SubagentRuntime::default();

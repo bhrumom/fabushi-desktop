@@ -6913,10 +6913,6 @@ impl GatewayApi for UnifiedGatewayApi {
                 match method {
                     "deleteAgent" => {
                         if let Some(agent_id) = args.get("id").and_then(serde_json::Value::as_str) {
-                            self.transcript_runtime
-                                .session_runtime()
-                                .mark_agent_deleted(agent_id);
-                            self.transcript_manager.clear_agent_durable_recovery(agent_id);
                             self.host_runner_composition.forget_local_tool_permission(agent_id);
                             self.delete_production_automation_schedules(agent_id);
                         }
@@ -6924,10 +6920,6 @@ impl GatewayApi for UnifiedGatewayApi {
                     "deleteAgents" => {
                         if let Some(ids) = args.get("ids").and_then(serde_json::Value::as_array) {
                             for agent_id in ids.iter().filter_map(serde_json::Value::as_str) {
-                                self.transcript_runtime
-                                    .session_runtime()
-                                    .mark_agent_deleted(agent_id);
-                                self.transcript_manager.clear_agent_durable_recovery(agent_id);
                                 self.host_runner_composition.forget_local_tool_permission(agent_id);
                                 self.delete_production_automation_schedules(agent_id);
                             }
@@ -8106,6 +8098,8 @@ fn main() {
             })));
     }
     let runner_registry = transcript_manager.runner_registry();
+    let transcript_runtime = transcript_manager.transcript_runtime();
+    let generated_agent_runtime = Arc::new(Mutex::new(SubagentRuntime::default()));
     let host_runner_composition = Arc::new(HostRunnerComposition::production(
         local_tool_permission_extension.controller(),
         Arc::clone(&session_workers),
@@ -8128,9 +8122,23 @@ fn main() {
     let background_shell_deletion_watches =
         Arc::new(Mutex::new(Weak::<RunnerBackgroundShellWatches>::new()));
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {
+        mark_deleting: Some({
+            let transcript_runtime = Arc::clone(&transcript_runtime);
+            Arc::new(move |agent_id| {
+                transcript_runtime.session_runtime().mark_agent_deleted(agent_id);
+                Ok(())
+            })
+        }),
+        clear_deleting: Some({
+            let transcript_runtime = Arc::clone(&transcript_runtime);
+            Arc::new(move |agent_id| {
+                transcript_runtime.session_runtime().clear_agent_deleted(agent_id);
+                Ok(())
+            })
+        }),
         cancel_runner: Some({
             let runner_registry = Arc::clone(&runner_registry);
-            let transcript_runtime = transcript_manager.transcript_runtime();
+            let transcript_runtime = Arc::clone(&transcript_runtime);
             let telemetry_logs = host_telemetry.logs.clone();
             Arc::new(move |agent_id| {
                 let was_in_flight = transcript_runtime.is_agent_running(agent_id);
@@ -8198,6 +8206,50 @@ fn main() {
                 Ok(())
             })
         }),
+        drain_runner: Some({
+            let runner_registry = Arc::clone(&runner_registry);
+            let transcript_runtime = Arc::clone(&transcript_runtime);
+            let generated_agent_runtime = Arc::clone(&generated_agent_runtime);
+            Arc::new(move |agent_id| {
+                let child_ids = generated_agent_runtime
+                    .lock()
+                    .map(|mut runtime| runtime.abort_running_subagents_for_parent(agent_id))
+                    .unwrap_or_default();
+                for child_id in &child_ids {
+                    let _ = runner_registry.cancel_agent(child_id, "parent agent deleted");
+                }
+
+                let deadline = Instant::now() + Duration::from_secs(30);
+                loop {
+                    let parent_streams_drained =
+                        runner_registry.active_stream_ids_for_agent(agent_id).is_empty();
+                    let child_streams_drained = child_ids.iter().all(|child_id| {
+                        runner_registry.active_stream_ids_for_agent(child_id).is_empty()
+                    });
+                    let subagents_drained = generated_agent_runtime
+                        .lock()
+                        .map(|runtime| {
+                            runtime.running_subagent_ids_for_parent(agent_id).is_empty()
+                        })
+                        .unwrap_or(false);
+                    let lifecycle_drained = !transcript_runtime.is_agent_running(agent_id);
+
+                    if parent_streams_drained
+                        && child_streams_drained
+                        && subagents_drained
+                        && lifecycle_drained
+                    {
+                        return Ok(());
+                    }
+                    if Instant::now() >= deadline {
+                        return Err(format!(
+                            "timed out draining Agent {agent_id} before delete"
+                        ));
+                    }
+                    thread::sleep(Duration::from_millis(10));
+                }
+            })
+        }),
         release_box: Some({
             let forever_box = Arc::clone(&forever_box);
             Arc::new(move |agent_id| {
@@ -8248,8 +8300,6 @@ fn main() {
         Arc::clone(&mcp_lifecycle_relay),
         box_status_loader,
     ));
-    let transcript_runtime = transcript_manager.transcript_runtime();
-    let generated_agent_runtime = Arc::new(Mutex::new(SubagentRuntime::default()));
     let box_store_idle_runtime = Arc::clone(&transcript_runtime);
     let mcp_service = match production_extensions.start_mcp(
         &app_data_dir,
