@@ -1962,3 +1962,38 @@ fn agent_inbound_group_wake_fans_out_once_per_member_with_group_context() {
     }
 }
 
+
+
+#[test]
+fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
+    let selected = json!([{
+        "data": [1, 2, 3],
+        "path": "/tmp/peer.png",
+        "mimeType": "image/png"
+    }]);
+    let routes = prepare_agent_inbound_wake_routes(&json!({
+        "agentId": "agent-target",
+        "sourceAgentId": "agent-source",
+        "prompt": "[agent] peer message",
+        "priority": true,
+        "memberIds": [],
+        "selectedImages": selected
+    }))
+    .expect("direct peer wake");
+
+    assert_eq!(routes.len(), 1);
+    let route = &routes[0];
+    assert_eq!(route.agent_id, "agent-target");
+    assert_eq!(route.send_args["requestSource"], "agent-inbound");
+    assert_eq!(route.send_args["selectedImages"], selected);
+    assert_eq!(route.send_args["agentWake"]["priority"], true);
+    assert!(route.send_args.get("groupContext").is_none());
+
+    assert!(prepare_agent_inbound_wake_routes(&json!({
+        "agentId": "agent-target",
+        "sourceAgentId": "agent-source",
+        "prompt": "[agent] peer message",
+        "selectedImages": "not-an-array"
+    }))
+    .is_err());
+}
