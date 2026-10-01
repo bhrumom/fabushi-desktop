@@ -17,6 +17,9 @@ fn shipping_gateway_uses_the_grok_host_health_owner() {
     assert!(SHIPPING_HOST.contains("compute_host_health("));
     assert!(SHIPPING_HOST.contains("live_running_agent_ids()"));
     assert!(SHIPPING_HOST.contains("has_carryable_pending_wake()"));
+    assert!(SHIPPING_HOST.contains("generated_agent_runtime"));
+    assert!(SHIPPING_HOST.contains("runtime.has_running_subagents()"));
+    assert!(SHIPPING_HOST.contains("completion_revivals.has_mid_drain_revival()"));
     assert!(SHIPPING_HOST.contains("agent_ids_with_pending_approvals()"));
     assert!(SHIPPING_HOST.contains("active_agent_id(&self.session_workers)"));
     assert!(TRANSCRIPT_RUNTIME.contains("pub fn live_running_agent_ids"));
