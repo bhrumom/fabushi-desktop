@@ -19,6 +19,14 @@ pub struct RunnerBoxShellRequest {
     pub command: String,
     pub working_directory: String,
     pub tool_call_id: String,
+    pub is_background: bool,
+    pub block_until_ms: Option<u64>,
+}
+
+impl RunnerBoxShellRequest {
+    pub fn should_start_in_background(&self) -> bool {
+        self.is_background || self.block_until_ms == Some(0)
+    }
 }
 
 pub type BoxShellAutoReviewCallback = Arc<
@@ -107,6 +115,15 @@ pub fn runner_box_tool_definitions() -> Vec<RoutedToolDefinition> {
                     "workingDirectory": {
                         "type": "string",
                         "description": "Working directory inside the box; defaults to /workspace."
+                    },
+                    "is_background": {
+                        "type": "boolean",
+                        "description": "Start the command in the background immediately."
+                    },
+                    "block_until_ms": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Wait this many milliseconds before backgrounding; 0 starts in the background immediately."
                     }
                 }
             }),
@@ -186,10 +203,24 @@ impl RunnerBoxToolBridge {
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .unwrap_or("/workspace");
+        let is_background = args
+            .get("is_background")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        let block_until_ms = match args.get("block_until_ms") {
+            None | Some(Value::Null) => None,
+            Some(value) => Some(value.as_u64().ok_or_else(|| {
+                ProviderSessionError::Tool(
+                    "Shell block_until_ms must be a non-negative integer".into(),
+                )
+            })?),
+        };
         Ok(RunnerBoxShellRequest {
             command: command.into(),
             working_directory: working_directory.into(),
             tool_call_id: tool_call_id.into(),
+            is_background,
+            block_until_ms,
         })
     }
 
