@@ -86,6 +86,7 @@ fn background_run_nudges_then_pauses_and_resume_answer_restores_only_guard_pause
             Some("scheduled-run-1".into()),
             Vec::new(),
             now_ms,
+            None,
             |prompt| {
                 assert!(prompt.contains("The app has already asked them directly"));
                 Ok(AutomationExecutionResult::Completed)
@@ -113,6 +114,7 @@ fn background_run_nudges_then_pauses_and_resume_answer_restores_only_guard_pause
             Some("scheduled-run-2".into()),
             Vec::new(),
             paused_at,
+            None,
             move |_| {
                 called_in_run.store(true, Ordering::SeqCst);
                 Ok(AutomationExecutionResult::Completed)
