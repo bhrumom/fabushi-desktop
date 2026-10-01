@@ -32,6 +32,7 @@ fn routed_prompt_admission_owns_nonce_durability_and_recovery_identity() {
                     text: "hello".into(),
                     confirmed: None,
                 }],
+                ..PersistedSendContext::default()
             })
         })
         .expect("first routed admission");
@@ -53,6 +54,7 @@ fn routed_prompt_admission_owns_nonce_durability_and_recovery_identity() {
                     text: "hello".into(),
                     confirmed: None,
                 }],
+                ..PersistedSendContext::default()
             })
         })
         .expect("duplicate routed admission");
@@ -98,6 +100,7 @@ fn routed_prompt_queue_lease_blocks_the_next_turn_until_runner_terminal() {
                 echo_entry_id: Some("user-message:1".into()),
                 user_message_id: Some("user-message:1".into()),
                 recent_user_messages: vec![],
+                ..PersistedSendContext::default()
             })
         })
         .expect("first admission");
@@ -116,6 +119,7 @@ fn routed_prompt_queue_lease_blocks_the_next_turn_until_runner_terminal() {
                 echo_entry_id: Some("user-message:2".into()),
                 user_message_id: Some("user-message:2".into()),
                 recent_user_messages: vec![],
+                ..PersistedSendContext::default()
             })
         });
         tx.send(result).expect("send second admission");
