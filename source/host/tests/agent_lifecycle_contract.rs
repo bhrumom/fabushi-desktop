@@ -420,9 +420,13 @@ fn lifecycle_mutations_publish_through_the_single_roster_owner() {
     .expect("create handled")
     .expect("create");
     let agent_id = created["agent"]["id"].as_str().expect("agent id").to_string();
+    assert!(created["agent"]["snapshotEpoch"].is_string());
+    assert!(created["agent"]["snapshotSeq"].as_u64().is_some());
+    let created_snapshot_epoch = created["agent"]["snapshotEpoch"].clone();
+    let created_snapshot_seq = created["agent"]["snapshotSeq"].as_u64().expect("created snapshot seq");
     assert_eq!(events.lock().expect("events")[0]["channel"], "agents");
 
-    dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
+    let updated = dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
         &production,
         &deletion,
         Some(Arc::clone(&roster)),
@@ -434,7 +438,22 @@ fn lifecycle_mutations_publish_through_the_single_roster_owner() {
     )
     .expect("update handled")
     .expect("update");
+    assert_eq!(updated["snapshotEpoch"], created_snapshot_epoch);
+    let updated_snapshot_seq = updated["snapshotSeq"].as_u64().expect("updated snapshot seq");
+    assert!(updated_snapshot_seq > created_snapshot_seq);
     let observed = events.lock().expect("events").clone();
+    let delta = observed
+        .iter()
+        .find(|event| event["channel"] == "agent-upserted")
+        .expect("agent-upserted event");
+    assert_eq!(delta["payload"]["agent"]["snapshotEpoch"], created_snapshot_epoch);
+    assert!(
+        delta["payload"]["agent"]["snapshotSeq"]
+            .as_u64()
+            .expect("delta snapshot seq")
+            > updated_snapshot_seq,
+        "frozen updateAgent reserves the RPC snapshot stamp before emitting the roster delta"
+    );
     assert!(observed.iter().any(|event| event["channel"] == "agent-upserted"));
     assert!(observed.iter().any(|event| event["channel"] == "profile-changed"));
 
