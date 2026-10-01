@@ -171,6 +171,8 @@ pub fn capture_browser_review_state(
         command: format!("{probe} > {probe_path}"),
         working_directory: "/workspace".into(),
         tool_call_id: format!("{tool_call_id}:auto-review-state"),
+                is_background: false,
+                block_until_ms: None,
     })?;
     if shell_result.get("kind").and_then(Value::as_str) != Some("success") {
         return Err(ProviderSessionError::Tool(
@@ -585,6 +587,8 @@ impl ProductionBrowserToolExecutor {
                 command: format!("mkdir -p {SAND_BROWSER_DRIVER_BOX_DIR}"),
                 working_directory: "/workspace".into(),
                 tool_call_id: format!("{tool_call_id}:browser-driver-dir"),
+                is_background: false,
+                block_until_ms: None,
             })?,
             "prepare browser driver directory",
         )?;
@@ -710,6 +714,8 @@ impl BrowserToolExecutor for ProductionBrowserToolExecutor {
                 command: shell_command,
                 working_directory: "/workspace".into(),
                 tool_call_id: format!("{tool_call_id}:browser-driver-run"),
+                is_background: false,
+                block_until_ms: None,
             })?,
             "run browser driver",
         )?;
