@@ -6,7 +6,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::turn_observation::{
-    ObservedRoutedToolBridge, RECENT_ACTIVITY_CAP, ToolActivity,
+    McpObservedRoutedToolBridge, ObservedRoutedToolBridge, RECENT_ACTIVITY_CAP, ToolActivity,
     ToolCallTelemetryEvent, TurnObservation,
 };
 use serde_json::{Value, json};
@@ -322,4 +322,44 @@ fn mcp_exec_observation_reports_stall_then_error_settlement() {
             && error_class == "ConnectError.Unavailable"
             && connector == "github"
     )));
+}
+
+
+#[test]
+fn routed_mcp_failure_reports_one_specialized_error_not_generic_duplicate() {
+    let observation = TurnObservation::shared("agent-mcp-dedupe", None);
+    let telemetry = Arc::new(Mutex::new(Vec::<ToolCallTelemetryEvent>::new()));
+    let telemetry_sink = Arc::clone(&telemetry);
+    observation
+        .lock()
+        .unwrap()
+        .set_tool_call_telemetry_handler(Arc::new(move |event| {
+            telemetry_sink.lock().unwrap().push(event);
+        }));
+
+    let base: Arc<dyn RoutedToolBridge> = Arc::new(Delegate);
+    let mcp: Arc<dyn RoutedToolBridge> =
+        Arc::new(McpObservedRoutedToolBridge::new(base, Arc::clone(&observation)));
+    let observed = ObservedRoutedToolBridge::new(mcp, Arc::clone(&observation));
+
+    assert!(
+        observed
+            .call_tool(&tool("RemoteMcpTool"), json!({"fail":true}), "mcp-failed")
+            .is_err()
+    );
+
+    let telemetry = telemetry.lock().unwrap();
+    let errors = telemetry
+        .iter()
+        .filter(|event| matches!(event, ToolCallTelemetryEvent::Error { .. }))
+        .collect::<Vec<_>>();
+    assert_eq!(errors.len(), 1);
+    assert!(matches!(
+        errors[0],
+        ToolCallTelemetryEvent::Error {
+            tool_call_id,
+            error_class,
+            ..
+        } if tool_call_id == "mcp-failed" && error_class == "mcp_error_result"
+    ));
 }
