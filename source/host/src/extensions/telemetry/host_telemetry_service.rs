@@ -462,6 +462,20 @@ impl HostStructuredLogTelemetry {
         self.report_projection(&auto_review_approval_telemetry(report))
     }
 
+    pub fn report_auto_review_display_recheck_failed(
+        &self,
+        conversation_id: &str,
+    ) -> io::Result<()> {
+        self.report_projection(&HostTelemetryProjection {
+            level: Some("info"),
+            event: Some("sand.auto_review.display_recheck_failed"),
+            metadata: BTreeMap::from([
+                ("conversation_id".into(), conversation_id.to_string()),
+                ("surface".into(), "computer".into()),
+            ]),
+        })
+    }
+
     pub fn report_agent_error(&self, report: &AgentErrorReport) -> io::Result<()> {
         self.report_projection(&agent_error_telemetry(report))?;
         if let Some(detail) = agent_error_detail_telemetry(report) {
