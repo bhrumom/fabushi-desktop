@@ -3997,6 +3997,21 @@ fn start_routed_provider_task(
                             duration_ms,
                             &connector,
                         ),
+                        ToolCallTelemetryEvent::Stalled {
+                            conversation_id,
+                            request_id,
+                            tool_name,
+                            tool_call_id,
+                            connector,
+                            elapsed_ms,
+                        } => tool_call_logs.report_tool_call_stalled(
+                            &conversation_id,
+                            request_id.as_deref(),
+                            &tool_name,
+                            &tool_call_id,
+                            &connector,
+                            elapsed_ms,
+                        ),
                     };
                     if let Err(error) = result {
                         eprintln!("mahayana-host tool_call_telemetry_failed error={error}");
