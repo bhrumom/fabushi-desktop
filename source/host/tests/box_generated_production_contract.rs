@@ -1,7 +1,7 @@
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -31,6 +31,7 @@ use mahayana_host_runtime::extensions::box_lifecycle::RecreateSandBoxResponse;
 use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxLifecycle, ForeverBoxRunnerResourcePort, ForeverBoxService, HostBox,
 };
+use mahayana_host_runtime::runner::background_work::RunnerBackgroundShellWatches;
 use mahayana_host_runtime::runner::box_tool_access::{
     RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest,
 };
@@ -721,6 +722,76 @@ impl ForeverBoxLifecycle for NoopForeverBoxLifecycle {
             reason: Some("not-used-by-runner-resource-contract".into()),
         })
     }
+}
+
+#[test]
+fn forever_box_runner_resource_port_background_spawn_registers_real_shell_id_with_unique_watcher() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind Runner background box daemon");
+    let port = listener.local_addr().expect("local address").port();
+    let server = thread::spawn(move || {
+        serve_unary_success(&listener, PING_PATH);
+        serve_exec_response(
+            &listener,
+            b"echo live-background",
+            background_shell_spawn_success(
+                4242,
+                "echo live-background",
+                "/workspace",
+                Some(31337),
+            ),
+        );
+    });
+
+    let service = Arc::new(ForeverBoxService::new(
+        HostBox::new(ProductionBoxEnvironment::new("127.0.0.1", port, "secret")),
+        Arc::new(NoopForeverBoxLifecycle),
+        false,
+        false,
+        false,
+    ));
+    let pending = Arc::new(Mutex::new(Vec::<(String, String, String)>::new()));
+    let pending_capture = Arc::clone(&pending);
+    let watches = Arc::new(RunnerBackgroundShellWatches::new(
+        Arc::new(|_, _, _| None),
+        Some(Arc::new(move |watch| {
+            pending_capture
+                .lock()
+                .expect("pending background watch capture")
+                .push((
+                    watch.parent_agent_id.clone(),
+                    watch.work_id.clone(),
+                    watch.title.clone(),
+                ));
+        })),
+        None,
+        None,
+    ));
+    let port_adapter = ForeverBoxRunnerResourcePort::new(service, "agent-runner")
+        .with_background_shell_watches(Arc::clone(&watches));
+
+    let shell = port_adapter
+        .execute_shell(RunnerBoxShellRequest {
+            command: "echo live-background".into(),
+            working_directory: "/workspace".into(),
+            tool_call_id: "runner-background-shell-contract".into(),
+            is_background: true,
+            block_until_ms: None,
+        })
+        .expect("Runner background Shell through ForeverBox");
+    assert_eq!(shell["kind"], "backgrounded");
+    assert_eq!(shell["shellId"], 4242);
+    assert_eq!(shell["pid"], 31337);
+    assert_eq!(
+        pending.lock().expect("pending background watches").as_slice(),
+        &[(
+            "agent-runner".into(),
+            "4242".into(),
+            "echo live-background".into(),
+        )],
+        "the real wire shellId must be registered with the unique Runner watcher"
+    );
+
+    server.join().expect("Runner background box daemon thread");
 }
 
 #[test]
