@@ -1421,7 +1421,7 @@ impl UnifiedGatewayApi {
                 .map(|context| context.dispatch_started.elapsed().as_secs_f64() * 1_000.0)
                 .unwrap_or_default();
             let host_receipt_epoch_ms =
-                system_now_ms().saturating_sub(host_receipt_elapsed_ms as u64) as f64;
+                started_at_ms().saturating_sub(host_receipt_elapsed_ms as u64) as f64;
             let durable_append_timing = Mutex::new(None::<(f64, f64)>);
             let durable_args = args.clone();
             let acceptance_agent_id = durable_args
@@ -1437,7 +1437,7 @@ impl UnifiedGatewayApi {
             let mut acceptance = self
                 .transcript_runtime
                 .accept_routed_send(&durable_args, |accepted| {
-                    let durable_append_start_epoch_ms = system_now_ms() as f64;
+                    let durable_append_start_epoch_ms = started_at_ms() as f64;
                     let durable_append_started = Instant::now();
                     let mut persisted = persist_accepted_send_prompt_context(
                         &self.session_workers,
@@ -1561,7 +1561,7 @@ impl UnifiedGatewayApi {
                 .map(|context| context.dispatch_started.elapsed().as_secs_f64() * 1_000.0)
                 .unwrap_or_default();
             let host_receipt_epoch_ms =
-                system_now_ms().saturating_sub(host_receipt_elapsed_ms as u64) as f64;
+                started_at_ms().saturating_sub(host_receipt_elapsed_ms as u64) as f64;
             let durable_append_timing = Mutex::new(None::<(f64, f64)>);
             let durable_args = args.clone();
             let runner_args = shape_send_prompt_media_args(&args);
@@ -1613,7 +1613,7 @@ impl UnifiedGatewayApi {
                             .map_err(map_gateway_send_error)
                     },
                     |accepted| {
-                        let durable_append_start_epoch_ms = system_now_ms() as f64;
+                        let durable_append_start_epoch_ms = started_at_ms() as f64;
                         let durable_append_started = Instant::now();
                         let mut persisted = persist_accepted_send_prompt_context(
                             &self.session_workers,
