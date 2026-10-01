@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
@@ -261,4 +262,64 @@ fn observed_bridge_emits_frozen_started_and_error_tool_call_facts() {
         2,
         "both Shell and Read are frozen dual-surface box tools"
     );
+}
+
+
+#[test]
+fn mcp_exec_observation_reports_stall_then_error_settlement() {
+    let mut observation = TurnObservation::new("agent-mcp", None);
+    observation.set_request_id(Some("request-mcp".into()));
+    let telemetry = Arc::new(Mutex::new(Vec::<ToolCallTelemetryEvent>::new()));
+    let telemetry_sink = Arc::clone(&telemetry);
+    observation.set_tool_call_telemetry_handler(Arc::new(move |event| {
+        telemetry_sink.lock().unwrap().push(event);
+    }));
+
+    let guard = observation
+        .begin_mcp_exec_observation_with_threshold(
+            "mcp-call-1",
+            "github",
+            Duration::from_millis(5),
+        )
+        .expect("mcp observation");
+    std::thread::sleep(Duration::from_millis(20));
+
+    {
+        let telemetry = telemetry.lock().unwrap();
+        assert!(telemetry.iter().any(|event| matches!(
+            event,
+            ToolCallTelemetryEvent::Stalled {
+                conversation_id,
+                request_id,
+                tool_name,
+                tool_call_id,
+                connector,
+                ..
+            } if conversation_id == "agent-mcp"
+                && request_id.as_deref() == Some("request-mcp")
+                && tool_name == "mcpToolCall"
+                && tool_call_id == "mcp-call-1"
+                && connector == "github"
+        )));
+    }
+
+    guard.settle(Some("ConnectError.Unavailable"));
+    let telemetry = telemetry.lock().unwrap();
+    assert!(telemetry.iter().any(|event| matches!(
+        event,
+        ToolCallTelemetryEvent::Error {
+            conversation_id,
+            request_id,
+            tool_name,
+            tool_call_id,
+            error_class,
+            connector,
+            ..
+        } if conversation_id == "agent-mcp"
+            && request_id.as_deref() == Some("request-mcp")
+            && tool_name == "mcpToolCall"
+            && tool_call_id == "mcp-call-1"
+            && error_class == "ConnectError.Unavailable"
+            && connector == "github"
+    )));
 }
