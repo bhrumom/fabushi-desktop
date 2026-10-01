@@ -1079,5 +1079,32 @@ fn tool_call_facades_match_frozen_started_and_error_contracts() {
     assert_eq!(records[1].payload["metadata"]["duration_ms"], "91");
     assert_eq!(records[1].payload["metadata"]["connector"], "unknown");
 
+    service
+        .logs
+        .report_tool_call_stalled(
+            "agent-tool",
+            Some("request-tool"),
+            "mcpToolCall",
+            "call-stalled",
+            "github",
+            900_000,
+        )
+        .expect("tool stalled");
+
+    let records = fs::read_to_string(service.records_path())
+        .expect("tool telemetry jsonl")
+        .lines()
+        .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 3);
+    assert_eq!(records[2].event, "sand.tool_call.stalled");
+    assert_eq!(records[2].payload["level"], "warn");
+    assert_eq!(records[2].payload["metadata"]["conversation_id"], "agent-tool");
+    assert_eq!(records[2].payload["metadata"]["request_id"], "request-tool");
+    assert_eq!(records[2].payload["metadata"]["tool_name"], "mcpToolCall");
+    assert_eq!(records[2].payload["metadata"]["tool_call_id"], "call-stalled");
+    assert_eq!(records[2].payload["metadata"]["connector"], "github");
+    assert_eq!(records[2].payload["metadata"]["elapsed_ms"], "900000");
+
     let _ = fs::remove_dir_all(root);
 }
