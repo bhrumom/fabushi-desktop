@@ -233,6 +233,7 @@ fn real_spend_guard_pause_reports_disabled_after_transition() {
             Some("row74-first".into()),
             Vec::new(),
             now_ms,
+            None,
             |_| Ok(AutomationExecutionResult::Completed),
         )
         .expect("first run");
@@ -248,6 +249,7 @@ fn real_spend_guard_pause_reports_disabled_after_transition() {
             Some("row74-pause".into()),
             Vec::new(),
             paused_at,
+            None,
             |_| panic!("paused routine must not execute"),
         )
         .expect("pause");
