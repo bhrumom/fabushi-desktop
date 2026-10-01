@@ -91,7 +91,9 @@ pub fn persist_accepted_send_prompt_context(
     args: &Value,
     accepted: &Value,
 ) -> Result<crate::extensions::transcript::send_pipeline::PersistedSendContext, SessionGatewayError> {
-    use crate::extensions::transcript::send_pipeline::PersistedSendContext;
+    use crate::extensions::transcript::send_pipeline::{
+        PersistedAcceptedEcho, PersistedSendContext,
+    };
 
     if accepted.get("accepted").and_then(Value::as_bool) != Some(true) {
         return Ok(PersistedSendContext::default());
@@ -154,12 +156,15 @@ pub fn persist_accepted_send_prompt_context(
                 echo_entry_id: existing_echo_id,
                 user_message_id: existing_user_message_id,
                 recent_user_messages: recent_recovery_user_messages(&existing),
+                ..PersistedSendContext::default()
             });
         }
     }
 
-    prepare_send_acceptance(session, agent_id, existing.len(), &prompt)
+    let preparation = prepare_send_acceptance(session, agent_id, existing.len(), &prompt)
         .map_err(SessionGatewayError::internal)?;
+    let needs_roster_refresh =
+        preparation.seeded_name.is_some() || preparation.awaiting_cleared;
 
     let threading = resolve_send_reply_threading(
         &existing,
@@ -229,6 +234,16 @@ pub fn persist_accepted_send_prompt_context(
         echo_entry_id: user_message_id.clone().or(first_echo_id),
         user_message_id,
         recent_user_messages: recent_recovery_user_messages(&existing),
+        accepted_echoes: staged
+            .into_iter()
+            .map(|entry| PersistedAcceptedEcho {
+                entry,
+                is_on_active_transcript: false,
+            })
+            .collect(),
+        needs_roster_refresh,
+        acceptance_effects_applied: true,
+        accepted_durably: true,
     })
 }
 

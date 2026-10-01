@@ -1,5 +1,11 @@
+use serde_json::{Value, json};
+
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::extensions::session::session_profile_files::AgentProfileUpdate;
+use crate::host_event_bus::SandHostEventBus;
+
+use super::roster_emit::ProductionRosterEmit;
+use super::send_pipeline::PersistedSendContext;
 
 pub const SAND_DEFAULT_AGENT_NAME: &str = "New Bot";
 pub const LEGACY_SAND_DEFAULT_AGENT_NAME: &str = "New Agent";
@@ -96,4 +102,90 @@ pub fn mark_accepted_send_activity(
     at_ms: f64,
 ) -> Result<bool, String> {
     session.mark_agent_activity(agent_id, at_ms)
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct AcceptedSendEchoPlan {
+    pub events: Vec<Value>,
+    pub has_offscreen_entries: bool,
+    pub needs_roster_refresh: bool,
+}
+
+/// Reconstructs the frozen send-acceptance echo race semantics without adding a
+/// second event owner. The persistence layer records whether each echo was
+/// appended while the addressed transcript was active; this function rechecks
+/// which chat is active at emit time so a switch-away race is handled exactly
+/// like Grok: active echoes broadcast, offscreen echoes emit only for direct
+/// addressed acceptance, and any offscreen persistence refreshes roster state.
+pub fn plan_accepted_send_echoes(
+    agent_id: &str,
+    addressed_chat_is_on_screen: bool,
+    direct_addressed_acceptance: bool,
+    context: &PersistedSendContext,
+) -> AcceptedSendEchoPlan {
+    if !context.acceptance_effects_applied {
+        return AcceptedSendEchoPlan::default();
+    }
+
+    let mut events = Vec::new();
+    let mut has_offscreen_entries = false;
+    for echo in &context.accepted_echoes {
+        if echo.is_on_active_transcript && addressed_chat_is_on_screen {
+            events.push(json!({
+                "channel": "transcript",
+                "payload": {
+                    "type": "appended",
+                    "agentId": agent_id,
+                    "entry": echo.entry,
+                }
+            }));
+        } else {
+            has_offscreen_entries = true;
+            if direct_addressed_acceptance {
+                events.push(json!({
+                    "channel": "transcript",
+                    "payload": {
+                        "type": "appended",
+                        "agentId": agent_id,
+                        "entry": echo.entry,
+                    }
+                }));
+            }
+        }
+    }
+
+    AcceptedSendEchoPlan {
+        events,
+        has_offscreen_entries,
+        needs_roster_refresh: context.needs_roster_refresh || has_offscreen_entries,
+    }
+}
+
+pub fn emit_accepted_send_echoes(
+    events: &SandHostEventBus,
+    roster: &ProductionRosterEmit,
+    active_agent_id: Option<&str>,
+    agent_id: &str,
+    direct_addressed_acceptance: bool,
+    context: &PersistedSendContext,
+) -> Result<AcceptedSendEchoPlan, String> {
+    let plan = plan_accepted_send_echoes(
+        agent_id,
+        active_agent_id == Some(agent_id),
+        direct_addressed_acceptance,
+        context,
+    );
+    for event in &plan.events {
+        events.publish(event.clone());
+    }
+    if plan.needs_roster_refresh {
+        roster.emit_agent_update(agent_id)?;
+    }
+    if plan.has_offscreen_entries {
+        eprintln!(
+            "[sand] send raced a chat switch away from {agent_id}: entries persisted to the addressed store off screen"
+        );
+    }
+    Ok(plan)
 }

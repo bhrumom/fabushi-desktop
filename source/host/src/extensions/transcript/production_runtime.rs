@@ -772,6 +772,44 @@ impl ProductionTranscriptRuntime {
         QueueAcceptedObserver: Fn(&QueueAccepted),
         QueueDequeuedObserver: Fn(&QueueDequeued),
     {
+        self.execute_send_with_acceptance_observer(
+            args,
+            dispatch,
+            persist_accepted,
+            |_| {},
+            on_watchdog,
+            on_queue_accepted,
+            on_queue_dequeued,
+        )
+    }
+
+    pub fn execute_send_with_acceptance_observer<
+        Dispatch,
+        Persist,
+        Persisted,
+        AcceptanceObserver,
+        Watchdog,
+        QueueAcceptedObserver,
+        QueueDequeuedObserver,
+    >(
+        &self,
+        args: &Value,
+        dispatch: Dispatch,
+        persist_accepted: Persist,
+        on_accepted: AcceptanceObserver,
+        on_watchdog: Watchdog,
+        on_queue_accepted: QueueAcceptedObserver,
+        on_queue_dequeued: QueueDequeuedObserver,
+    ) -> Result<Value, ProductionSendError>
+    where
+        Dispatch: FnOnce() -> Result<Value, ProductionSendError>,
+        Persist: Fn(&Value) -> Result<Persisted, ProductionSendError>,
+        Persisted: Into<PersistedSendContext>,
+        AcceptanceObserver: Fn(&PersistedSendContext),
+        Watchdog: Fn(&WatchdogEvent) -> bool,
+        QueueAcceptedObserver: Fn(&QueueAccepted),
+        QueueDequeuedObserver: Fn(&QueueDequeued),
+    {
         let input = parse_send_input(args)?;
         let nonce = optional_non_empty(args, "clientNonce").map(ToOwned::to_owned);
         let agent_id = input.agent_id.clone();
@@ -920,16 +958,19 @@ impl ProductionTranscriptRuntime {
                 }
             }
         }
-        if queue_accepted_event.is_some() || queue_dequeued_event.is_some() {
-            drop(state);
-            if let Some(event) = queue_accepted_event.as_ref() {
-                on_queue_accepted(event);
-            }
-            if let Some(event) = queue_dequeued_event.as_ref() {
-                on_queue_dequeued(event);
-            }
-            state = self.lock_state();
+        // Durable acceptance side effects must run after the admission lock is
+        // released and before provider dispatch. Roster projection reaches back
+        // into Transcript runtime, so invoking it from persist_accepted would
+        // self-deadlock this owner.
+        drop(state);
+        on_accepted(&persisted_send_context);
+        if let Some(event) = queue_accepted_event.as_ref() {
+            on_queue_accepted(event);
         }
+        if let Some(event) = queue_dequeued_event.as_ref() {
+            on_queue_dequeued(event);
+        }
+        state = self.lock_state();
 
         if let Some(ticket) = turn_ticket.as_ref() {
             loop {

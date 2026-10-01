@@ -7,7 +7,11 @@ use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResp
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::send_acceptance::{
     LEGACY_SAND_DEFAULT_AGENT_NAME, SAND_DEFAULT_AGENT_NAME, build_seeded_agent_name,
-    is_sand_default_agent_name, mark_accepted_send_activity, prepare_send_acceptance,
+    is_sand_default_agent_name, mark_accepted_send_activity, plan_accepted_send_echoes,
+    prepare_send_acceptance,
+};
+use mahayana_host_runtime::extensions::transcript::send_pipeline::{
+    PersistedAcceptedEcho, PersistedSendContext,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -162,4 +166,53 @@ fn production_acceptance_does_not_rename_non_default_or_non_empty_conversation()
     );
 
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn frozen_accepted_echo_race_routes_active_and_offscreen_entries_without_duplicates() {
+    let context = PersistedSendContext {
+        accepted_echoes: vec![
+            PersistedAcceptedEcho {
+                entry: serde_json::json!({"id":"active-echo"}),
+                is_on_active_transcript: true,
+            },
+            PersistedAcceptedEcho {
+                entry: serde_json::json!({"id":"offscreen-echo"}),
+                is_on_active_transcript: false,
+            },
+        ],
+        needs_roster_refresh: false,
+        acceptance_effects_applied: true,
+        accepted_durably: true,
+        ..PersistedSendContext::default()
+    };
+
+    let on_screen = plan_accepted_send_echoes("agent-a", true, true, &context);
+    assert_eq!(on_screen.events.len(), 2);
+    assert!(on_screen.has_offscreen_entries);
+    assert!(on_screen.needs_roster_refresh);
+    assert_eq!(on_screen.events[0]["channel"], "transcript");
+    assert_eq!(on_screen.events[0]["payload"]["type"], "appended");
+    assert_eq!(on_screen.events[0]["payload"]["agentId"], "agent-a");
+
+    let switched_away = plan_accepted_send_echoes("agent-a", false, true, &context);
+    assert_eq!(switched_away.events.len(), 2);
+    assert!(switched_away.has_offscreen_entries);
+    assert!(switched_away.needs_roster_refresh);
+
+    let background = plan_accepted_send_echoes("agent-a", false, false, &context);
+    assert!(background.events.is_empty());
+    assert!(background.has_offscreen_entries);
+    assert!(background.needs_roster_refresh);
+
+    let replay = plan_accepted_send_echoes(
+        "agent-a",
+        true,
+        true,
+        &PersistedSendContext::default(),
+    );
+    assert!(replay.events.is_empty());
+    assert!(!replay.has_offscreen_entries);
+    assert!(!replay.needs_roster_refresh);
 }

@@ -61,6 +61,7 @@ use mahayana_host_runtime::runner::sand_subagent_auto_review::{
     review_sand_subagent_action,
 };
 use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
+use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::agents::agent_messaging::{
@@ -123,7 +124,9 @@ use mahayana_host_runtime::extensions::transcript::send_group_fanout::{
     GroupMemberTurnExecutor, LocalGroupFanoutDisposition, collect_new_member_send_messages,
     dispatch_local_group_send,
 };
+use mahayana_host_runtime::extensions::transcript::send_acceptance::emit_accepted_send_echoes;
 use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
+use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
 use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManager;
 use mahayana_host_runtime::extensions::transcript::extension::start_transcript_extension;
 use mahayana_host_runtime::extensions::transcript::send_message_shaping::shape_send_prompt_media_args;
@@ -945,6 +948,7 @@ struct UnifiedGatewayApi {
     generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
     completion_revivals: Arc<CompletionRevivals>,
     transcript_manager: Arc<TranscriptManager>,
+    roster_emit: Arc<ProductionRosterEmit>,
     telemetry_logs: HostStructuredLogTelemetry,
     telemetry_api: HostTelemetryApi,
     production_action_auditor: ActionAuditExtension,
@@ -1399,6 +1403,38 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
 }
 
 impl UnifiedGatewayApi {
+
+    fn addressed_chat_on_screen(&self, agent_id: &str) -> bool {
+        SandAgentSessionStore::new(Arc::clone(&self.session_workers))
+            .read_active_agent_id()
+            .as_deref()
+            == Some(agent_id)
+    }
+
+    fn emit_persisted_send_acceptance(
+        &self,
+        agent_id: &str,
+        context: &PersistedSendContext,
+        direct_addressed_acceptance: bool,
+    ) -> Result<(), ProductionSendError> {
+        if !context.acceptance_effects_applied {
+            return Ok(());
+        }
+        self.trays.clear_for_agent(agent_id);
+        let active_agent_id =
+            SandAgentSessionStore::new(Arc::clone(&self.session_workers)).read_active_agent_id();
+        emit_accepted_send_echoes(
+            &self.events,
+            &self.roster_emit,
+            active_agent_id.as_deref(),
+            agent_id,
+            direct_addressed_acceptance,
+            context,
+        )
+        .map(|_| ())
+        .map_err(ProductionSendError::Internal)
+    }
+
     fn local_routed_runner_deps(&self) -> LocalRoutedRunnerDeps {
         LocalRoutedRunnerDeps {
             routed_tool_relay: Arc::clone(&self.routed_tool_relay),
@@ -6455,17 +6491,41 @@ impl GatewayApi for UnifiedGatewayApi {
         if method == RUNNER_ACCEPT_ROUTED_PROMPT_GATEWAY_METHOD {
             self.preempt_group_member_runs_for_direct_send(&args);
             let durable_args = args.clone();
-            let acceptance = self
+            let acceptance_agent_id = durable_args
+                .get("agentId")
+                .or_else(|| durable_args.get("id"))
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned);
+            let acceptance_was_on_screen = acceptance_agent_id
+                .as_deref()
+                .is_some_and(|agent_id| self.addressed_chat_on_screen(agent_id));
+            let mut acceptance = self
                 .transcript_runtime
                 .accept_routed_send(&durable_args, |accepted| {
-                    persist_accepted_send_prompt_context(
+                    let mut persisted = persist_accepted_send_prompt_context(
                         &self.session_workers,
                         &durable_args,
                         accepted,
                     )
-                    .map_err(map_session_send_error)
+                    .map_err(map_session_send_error)?;
+                    persisted.mark_accepted_echoes_on_active_transcript(
+                        acceptance_was_on_screen,
+                    );
+                    Ok(persisted)
                 })
                 .map_err(map_production_send_error)?;
+            if !acceptance.duplicate {
+                if let Some(agent_id) = acceptance_agent_id.as_deref() {
+                    self.emit_persisted_send_acceptance(
+                        agent_id,
+                        &acceptance.context,
+                        true,
+                    )
+                    .map_err(map_production_send_error)?;
+                }
+            }
 
             if !acceptance.duplicate
                 && durable_args
@@ -6669,11 +6729,14 @@ impl GatewayApi for UnifiedGatewayApi {
             let send_was_in_flight = send_agent_id
                 .as_deref()
                 .is_some_and(|agent_id| self.transcript_runtime.is_agent_running(agent_id));
+            let send_addressed_on_screen = send_agent_id
+                .as_deref()
+                .is_some_and(|agent_id| self.addressed_chat_on_screen(agent_id));
             let send_ack_guard = Mutex::new(None);
             let persisted_send_context = Mutex::new(None::<PersistedSendContext>);
             let send_result = self
                 .transcript_runtime
-                .execute_send_with_queue_observers(
+                .execute_send_with_acceptance_observer(
                     &durable_args,
                     || {
                         let persisted = persisted_send_context
@@ -6696,12 +6759,15 @@ impl GatewayApi for UnifiedGatewayApi {
                             .map_err(map_gateway_send_error)
                     },
                     |accepted| {
-                        let persisted = persist_accepted_send_prompt_context(
+                        let mut persisted = persist_accepted_send_prompt_context(
                             &self.session_workers,
                             &durable_args,
                             accepted,
                         )
                         .map_err(map_session_send_error)?;
+                        persisted.mark_accepted_echoes_on_active_transcript(
+                            send_addressed_on_screen,
+                        );
                         *persisted_send_context
                             .lock()
                             .unwrap_or_else(|poisoned| poisoned.into_inner()) =
@@ -6798,6 +6864,17 @@ impl GatewayApi for UnifiedGatewayApi {
                             }
                         }
                         Ok(persisted)
+                    },
+                    |persisted| {
+                        if let Some(agent_id) = send_agent_id.as_deref() {
+                            if let Err(error) =
+                                self.emit_persisted_send_acceptance(agent_id, persisted, true)
+                            {
+                                eprintln!(
+                                    "mahayana-host send_acceptance_projection_failed agent={agent_id} error={error}"
+                                );
+                            }
+                        }
                     },
                     move |event| {
                         let was_in_flight = event.stage == WatchdogStage::Trip
@@ -7643,6 +7720,7 @@ fn main() {
         );
     }
     let transcript_manager = transcript_extension.manager();
+    let roster_emit = transcript_extension.roster_emit();
     let content_search_extension = Arc::clone(&production_extensions.content_search);
     let permission_widget_responses =
         Arc::new(WidgetResponses::new(Arc::clone(&session_workers)));
@@ -8247,6 +8325,7 @@ fn main() {
             generated_agent_runtime: Arc::clone(&generated_agent_runtime),
             completion_revivals: Arc::clone(&completion_revivals),
             transcript_manager: Arc::clone(&transcript_manager),
+            roster_emit: Arc::clone(&roster_emit),
             telemetry_logs: host_telemetry.logs.clone(),
             telemetry_api: host_telemetry.api(),
             production_action_auditor: production_extensions.action_audit.clone(),

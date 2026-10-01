@@ -37,19 +37,43 @@ pub struct SendEchoIdentity {
     pub echo_entry_id: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PersistedAcceptedEcho {
+    pub entry: Value,
+    pub is_on_active_transcript: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct PersistedSendContext {
     pub echo_entry_id: Option<String>,
     pub user_message_id: Option<String>,
     pub recent_user_messages: Vec<RecoveryUserMessage>,
+    /// Echoes created by this exact durable admission. Duplicate/replayed
+    /// admissions intentionally leave this empty so Host does not re-emit.
+    pub accepted_echoes: Vec<PersistedAcceptedEcho>,
+    /// Frozen send-acceptance roster side effects require a refresh when the
+    /// first default profile is seeded or an awaiting-user state is cleared.
+    pub needs_roster_refresh: bool,
+    /// True only when this invocation actually applied the send-acceptance
+    /// persistence/roster side effects rather than replaying a prior nonce.
+    pub acceptance_effects_applied: bool,
+    /// The addressed echo append completed durably.
+    pub accepted_durably: bool,
+}
+
+impl PersistedSendContext {
+    pub fn mark_accepted_echoes_on_active_transcript(&mut self, is_active: bool) {
+        for echo in &mut self.accepted_echoes {
+            echo.is_on_active_transcript = is_active;
+        }
+    }
 }
 
 impl From<Option<String>> for PersistedSendContext {
     fn from(echo_entry_id: Option<String>) -> Self {
         Self {
             echo_entry_id,
-            user_message_id: None,
-            recent_user_messages: Vec::new(),
+            ..Self::default()
         }
     }
 }
