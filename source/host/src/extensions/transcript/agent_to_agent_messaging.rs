@@ -2,12 +2,13 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
-use serde_json::json;
+use serde_json::{Value, json};
 
 use crate::agents::agent_messaging::{
     AgentAddress, AgentMessageImage, build_agent_inbound_wake_prompt, clamp_agent_message,
 };
 use crate::extensions::session::production::ProductionSessionWorkers;
+use super::send_message_shaping::load_agent_inbound_images;
 use super::run_scheduler::RunLane;
 use super::transcript_entry_ids::{TranscriptEntryIdKind, next_entry_id};
 
@@ -42,6 +43,8 @@ pub struct AgentWakeRequest {
     pub prompt: String,
     pub priority: bool,
     pub member_ids: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub selected_images: Vec<Value>,
 }
 
 pub type AgentWakeSink = Arc<dyn Fn(&AgentWakeRequest) + Send + Sync + 'static>;
@@ -103,7 +106,7 @@ impl ProductionAgentToAgentMessaging {
             let _ = self.sessions.mark_agent_activity(to_agent_id, timestamp_ms as f64);
             (self.wake_sink)(&AgentWakeRequest {
                 agent_id:to_agent_id.into(), source_agent_id:from_agent_id.into(), prompt:message.clone(),
-                priority:false, member_ids:target.member_ids.clone(),
+                priority:false, member_ids:target.member_ids.clone(), selected_images:Vec::new(),
             });
             let mut notes = Vec::new();
             if !images.is_empty() {
@@ -139,9 +142,35 @@ impl ProductionAgentToAgentMessaging {
             description:sender.and_then(|a|{let v=a.description.trim();(!v.is_empty()).then(||v.to_string())}),
             is_group:false,
         };
+        let image_envelopes = images
+            .iter()
+            .map(|image| json!({"url": image.url, "alt": image.alt}))
+            .collect::<Vec<_>>();
+        let selected_images = load_agent_inbound_images(Some(&image_envelopes))
+            .into_iter()
+            .map(|image| {
+                let mut selected = serde_json::Map::new();
+                selected.insert(
+                    "data".into(),
+                    Value::Array(
+                        image
+                            .data
+                            .into_iter()
+                            .map(|byte| Value::Number(u64::from(byte).into()))
+                            .collect(),
+                    ),
+                );
+                selected.insert("path".into(), Value::String(image.path));
+                if let Some(mime_type) = image.mime_type {
+                    selected.insert("mimeType".into(), Value::String(mime_type.to_string()));
+                }
+                Value::Object(selected)
+            })
+            .collect::<Vec<_>>();
         (self.wake_sink)(&AgentWakeRequest{
             agent_id:to_agent_id.into(),source_agent_id:from_agent_id.into(),
             prompt:build_agent_inbound_wake_prompt(&from,&message,images,priority),priority,member_ids:Vec::new(),
+            selected_images,
         });
         Ok(if priority {
             format!("Sent to {} as a priority message — it will interrupt their current non-user work and wake them now. This is asynchronous; if they reply, it'll arrive later as a new message.",target.name)
