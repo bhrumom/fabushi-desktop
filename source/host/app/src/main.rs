@@ -5910,7 +5910,7 @@ fn start_routed_provider_task(
                 .unwrap_or_default();
             let generated_parent = worker_generated_parent_agent_id.clone();
             if let Some(parent_agent_id) = generated_parent.as_deref() {
-                if let Some(pending) = runner.begin_generated_subagent(
+                if let Ok(Some(pending)) = runner.begin_generated_subagent(
                     parent_agent_id,
                     "shipping-runner",
                     &agent_id,

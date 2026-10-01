@@ -28,7 +28,7 @@ fn startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals()
 #[test]
 fn shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run() {
     let dispatch = SHIPPING_HOST
-        .find("if let Some(pending) = runner.begin_generated_subagent(")
+        .find("if let Ok(Some(pending)) = runner.begin_generated_subagent(")
         .expect("shipping generated subagent dispatch must expose its pending wake");
     let provider_run = SHIPPING_HOST
         .find("runner.run_routed_provider_with_projected_messages(")
