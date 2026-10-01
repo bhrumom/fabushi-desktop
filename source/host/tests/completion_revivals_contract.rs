@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Barrier, Mutex};
 
 use mahayana_host_runtime::extensions::transcript::completion_revivals::{
     CompletionRevivalRuntimePort, CompletionRevivals, RevivalExecution, RevivalReport,
@@ -21,6 +21,7 @@ struct FakeRuntime {
     resume: Mutex<Vec<String>>,
     reports: Mutex<Vec<RevivalReport>>,
     errors: Mutex<Vec<String>>,
+    block: Mutex<Option<(Arc<Barrier>, Arc<Barrier>)>>,
 }
 impl CompletionRevivalRuntimePort for FakeRuntime {
     fn can_execute(&self)->bool{*self.can_execute.lock().unwrap()}
@@ -29,6 +30,10 @@ impl CompletionRevivalRuntimePort for FakeRuntime {
     fn clear_pending_wake(&self,a:&str,k:PendingWakeKind,w:&str){self.cleared.lock().unwrap().push((a.into(),k,w.into()));}
     fn run_background_revival(&self,a:&str,s:&str,p:&str,_:bool,_:&str)->Result<RevivalExecution,String>{
         self.runs.lock().unwrap().push((a.into(),s.into(),p.into()));
+        if let Some((entered, release)) = self.block.lock().unwrap().clone() {
+            entered.wait();
+            release.wait();
+        }
         self.next.lock().unwrap().take().unwrap_or(Ok(RevivalExecution{aborted:false,quiesced_for_upgrade:false,sent_message_count:1}))
     }
     fn mark_resume_pending_for_quiesced_revival(&self,a:&str){self.resume.lock().unwrap().push(a.into());}
@@ -114,4 +119,26 @@ fn cursor_agent_completion_clears_cloud_marker_and_errors_are_reported(){
     assert_eq!(rt.cleared.lock().unwrap()[0].1,PendingWakeKind::CloudAgent);
     assert!(rt.errors.lock().unwrap()[0].contains("Background task follow-up failed:runner failed"));
     assert_eq!(rt.reports.lock().unwrap()[0].reason.as_deref(),Some("error"));
+}
+
+
+#[test]
+fn mid_drain_revival_is_visible_to_host_health_until_delivery_settles(){
+    let rt=Arc::new(FakeRuntime::default());
+    *rt.can_execute.lock().unwrap()=true;
+    let entered=Arc::new(Barrier::new(2));
+    let release=Arc::new(Barrier::new(2));
+    *rt.block.lock().unwrap()=Some((Arc::clone(&entered),Arc::clone(&release)));
+
+    let service=Arc::new(CompletionRevivals::new(rt));
+    assert!(!service.has_mid_drain_revival());
+    let worker={
+        let service=Arc::clone(&service);
+        std::thread::spawn(move || service.handle_background_subagent_completion(sub("s-health")))
+    };
+    entered.wait();
+    assert!(service.has_mid_drain_revival());
+    release.wait();
+    worker.join().unwrap();
+    assert!(!service.has_mid_drain_revival());
 }
