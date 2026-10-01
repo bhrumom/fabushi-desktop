@@ -152,6 +152,20 @@ impl ProductionAgentLifecycle {
         Ok(())
     }
 
+    fn finalize_summary_for_rpc<T: serde::Serialize>(
+        &self,
+        summary: T,
+    ) -> Result<Value, AgentLifecycleGatewayError> {
+        if let Some(roster) = self.roster.as_ref() {
+            roster
+                .finalize_summary_for_rpc(summary)
+                .map_err(AgentLifecycleGatewayError::internal)
+        } else {
+            serde_json::to_value(summary)
+                .map_err(|error| AgentLifecycleGatewayError::internal(error.to_string()))
+        }
+    }
+
     fn create_agent_from_args(
         &self,
         args: &Value,
@@ -199,8 +213,7 @@ impl ProductionAgentLifecycle {
             .store
             .read_agent_transcript_entries(&record.id)
             .map_err(AgentLifecycleGatewayError::internal)?;
-        serde_json::to_value(summary)
-            .map_err(|error| AgentLifecycleGatewayError::internal(error.to_string()))
+        self.finalize_summary_for_rpc(summary)
             .map(|agent| json!({ "agent": agent, "transcript": transcript }))
     }
 
@@ -214,10 +227,10 @@ impl ProductionAgentLifecycle {
             .store
             .update_agent_profile(agent_id, &update)
             .map_err(AgentLifecycleGatewayError::internal)?;
+        let finalized = self.finalize_summary_for_rpc(summary)?;
         self.emit_agent_profile_update(agent_id)
             .map_err(AgentLifecycleGatewayError::internal)?;
-        serde_json::to_value(summary)
-            .map_err(|error| AgentLifecycleGatewayError::internal(error.to_string()))
+        Ok(finalized)
     }
 
     pub fn clone_agent(&self, source_id: &str) -> Result<Value, String> {
@@ -267,8 +280,11 @@ impl ProductionAgentLifecycle {
                 .summarize_agent_by_id(&new_id)?
                 .ok_or_else(|| "minted agent could not be summarized".to_string())?;
             let transcript = self.store.read_agent_transcript_entries(&new_id)?;
-            serde_json::to_value(agent)
-                .map_err(|error| error.to_string())
+            self.finalize_summary_for_rpc(agent)
+                .map_err(|error| match error {
+                    AgentLifecycleGatewayError::BadRequest(message)
+                    | AgentLifecycleGatewayError::Internal(message) => message,
+                })
                 .map(|agent| json!({ "agent": agent, "transcript": transcript }))
         })();
 
