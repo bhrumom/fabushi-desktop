@@ -7519,6 +7519,14 @@ fn main() {
                 let _ = dropped_logs.report_automation_fire_dropped(&report);
             })));
     }
+    {
+        let lifecycle_logs = host_telemetry.logs.clone();
+        transcript_manager
+            .automation_runtime()
+            .set_lifecycle_reporter(Some(Arc::new(move |event| {
+                let _ = lifecycle_logs.report_automation_lifecycle(event);
+            })));
+    }
     let runner_registry = transcript_manager.runner_registry();
     let host_runner_composition = Arc::new(HostRunnerComposition::production(
         local_tool_permission_extension.controller(),
