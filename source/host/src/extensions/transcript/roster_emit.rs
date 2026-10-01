@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::extensions::session::agent_session::SandAgentSessionStore;
@@ -120,6 +121,17 @@ impl ProductionRosterEmit {
             }
         }));
         Ok(())
+    }
+
+    pub fn finalize_summary_for_rpc<T: Serialize>(&self, summary: T) -> Result<Value, String> {
+        let mut decorated = serde_json::to_value(vec![summary])
+            .map_err(|error| format!("could not encode roster summary: {error}"))?;
+        self.transcript.decorate_agent_summaries(&mut decorated);
+        decorated
+            .as_array()
+            .and_then(|rows| rows.first())
+            .cloned()
+            .ok_or_else(|| "could not finalize roster summary for RPC".to_string())
     }
 
     pub fn publish_profile_changed(&self, agent_id: &str) {
