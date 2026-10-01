@@ -45,7 +45,8 @@ use super::auto_review_approval_telemetry::{
     AutoReviewApprovalReport, auto_review_approval_telemetry,
 };
 use super::automation_fire_telemetry::{
-    AutomationFireDroppedReport, automation_fire_dropped_telemetry,
+    AutomationFireDroppedReport, AutomationRunReport, automation_fire_dropped_telemetry,
+    automation_run_telemetry,
 };
 use super::automation_lifecycle_telemetry::automation_lifecycle_telemetry;
 use super::bot_block_telemetry::{
@@ -825,6 +826,10 @@ impl HostStructuredLogTelemetry {
 
     pub fn report_journal_outcome(&self, report: &JournalOutcomeReport) -> io::Result<()> {
         self.report_projection(&journal_outcome_telemetry(report))
+    }
+
+    pub fn report_automation_run(&self, report: &AutomationRunReport) -> io::Result<()> {
+        self.report_projection(&automation_run_telemetry(report))
     }
 
     pub fn report_box_image_check(&self, report: &BoxImageCheckReport) -> io::Result<()> {
