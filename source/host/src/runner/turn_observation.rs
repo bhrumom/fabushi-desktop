@@ -198,7 +198,7 @@ impl TurnObservation {
             let connector = connector_owned.clone();
             move || {
                 std::thread::sleep(threshold);
-                if !timer_settled.swap(true, Ordering::AcqRel) {
+                if !timer_settled.load(Ordering::Acquire) {
                     (timer_emit)(ToolCallTelemetryEvent::Stalled {
                         conversation_id,
                         request_id,
