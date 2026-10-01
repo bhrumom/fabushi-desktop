@@ -1,4 +1,6 @@
 use std::collections::BTreeMap;
+use std::fs;
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::extensions::box_lifecycle::RecreateSandBoxResponse;
@@ -10,6 +12,7 @@ use mahayana_host_runtime::extensions::forever_box::forever_box_service::{
     decode_computer_use_screenshot_base64, encode_computer_use_screenshot_request,
 };
 use mahayana_host_runtime::r#box::production::ProductionBoxEnvironment;
+use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
 
 #[derive(Default)]
 struct FakeLifecycle {
@@ -158,4 +161,63 @@ fn forever_box_screenshot_codec_matches_generated_computer_use_contract() {
         Some("YWJj")
     );
     assert_eq!(decode_computer_use_screenshot_base64(&[0x12, 0x00]), None);
+}
+
+
+#[test]
+fn forever_box_image_check_routes_real_outcomes_to_unique_host_owner() {
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-forever-box-image-check-{}-{}",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos()
+    ));
+    let telemetry = HostTelemetryService::open(root.join("telemetry.jsonl"))
+        .expect("telemetry");
+
+    let lifecycle = Arc::new(FakeLifecycle {
+        image_update_available: true,
+        recreates: Mutex::new(Vec::new()),
+    });
+    let inside = ForeverBoxService::new(
+        HostBox::new(ProductionBoxEnvironment::new("127.0.0.1", 9, "token")),
+        lifecycle,
+        true,
+        false,
+        true,
+    )
+    .with_recreate_telemetry(telemetry.logs.clone());
+    assert!(
+        inside
+            .refresh_image_update_available_for("seed")
+            .expect("image check")
+    );
+
+    let outside = ForeverBoxService::new(
+        HostBox::new(ProductionBoxEnvironment::new("127.0.0.1", 9, "token")),
+        Arc::new(FakeLifecycle::default()),
+        true,
+        false,
+        false,
+    )
+    .with_recreate_telemetry(telemetry.logs.clone());
+    assert!(
+        !outside
+            .refresh_image_update_available_for("manual")
+            .expect("outside skip")
+    );
+
+    let text = fs::read_to_string(telemetry.records_path()).expect("telemetry jsonl");
+    let lines = text.lines().collect::<Vec<_>>();
+    assert_eq!(lines.len(), 2);
+    assert!(lines[0].contains("\"event\":\"sand.box.image_check\""));
+    assert!(lines[0].contains("\"trigger\":\"seed\""));
+    assert!(lines[0].contains("\"outcome\":\"answered\""));
+    assert!(lines[1].contains("\"trigger\":\"manual\""));
+    assert!(lines[1].contains("\"outcome\":\"skipped\""));
+    assert!(lines[1].contains("\"skip_reason\":\"outside_box\""));
+
+    let _ = fs::remove_dir_all(root);
 }
