@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Value, json};
 
@@ -21,6 +21,29 @@ pub const RECENT_ACTIVITY_CAP: usize = 24;
 
 pub type TurnObservationEventSink =
     Arc<dyn Fn(Value) + Send + Sync + 'static>;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ToolCallTelemetryEvent {
+    Started {
+        conversation_id: String,
+        request_id: Option<String>,
+        tool_name: String,
+        tool_call_id: String,
+        surface: String,
+    },
+    Error {
+        conversation_id: String,
+        request_id: Option<String>,
+        tool_name: String,
+        tool_call_id: String,
+        error_class: String,
+        duration_ms: u64,
+        connector: String,
+    },
+}
+
+pub type ToolCallTelemetrySink =
+    Arc<dyn Fn(ToolCallTelemetryEvent) + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ToolActivity {
@@ -47,6 +70,8 @@ pub struct TurnObservation {
     turn_await_sink: Option<TurnObservationEventSink>,
     first_token_sink: Option<TurnObservationEventSink>,
     send_dispatch_sink: Option<TurnObservationEventSink>,
+    tool_call_telemetry_sink: Option<ToolCallTelemetrySink>,
+    request_id: Option<String>,
     turn_started_at_ms: u64,
     last_tool: Option<String>,
     recent_activity: Vec<String>,
@@ -69,6 +94,8 @@ impl TurnObservation {
             turn_await_sink: None,
             first_token_sink: None,
             send_dispatch_sink: None,
+            tool_call_telemetry_sink: None,
+            request_id: None,
             turn_started_at_ms: now_ms(),
             last_tool: None,
             recent_activity: Vec::new(),
@@ -84,6 +111,20 @@ impl TurnObservation {
         event_sink: Option<TurnObservationEventSink>,
     ) -> TurnObservationHandle {
         Arc::new(Mutex::new(Self::new(conversation_id, event_sink)))
+    }
+
+    pub fn set_tool_call_telemetry_handler(&mut self, sink: ToolCallTelemetrySink) {
+        self.tool_call_telemetry_sink = Some(sink);
+    }
+
+    pub fn set_request_id(&mut self, request_id: Option<String>) {
+        self.request_id = request_id;
+    }
+
+    fn emit_tool_call_telemetry(&self, event: ToolCallTelemetryEvent) {
+        if let Some(sink) = self.tool_call_telemetry_sink.as_ref() {
+            sink(event);
+        }
     }
 
     pub fn turn_started(&mut self, at_ms: u64) {
@@ -438,8 +479,18 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
         } else {
             tool.tool_name.as_str()
         };
+        let started = Instant::now();
         if let Ok(mut observation) = self.observation.lock() {
             observation.tool_started(name);
+            if let Some(surface) = dual_surface_tool_surface(name) {
+                observation.emit_tool_call_telemetry(ToolCallTelemetryEvent::Started {
+                    conversation_id: observation.conversation_id.clone(),
+                    request_id: observation.request_id.clone(),
+                    tool_name: name.to_string(),
+                    tool_call_id: tool_call_id.to_string(),
+                    surface: surface.to_string(),
+                });
+            }
             if name == "AwaitShell" || name == "awaitToolCall" {
                 let block_until_ms = args
                     .get("block_until_ms")
@@ -462,6 +513,17 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
             let failed = result.is_err();
             let summary = result.as_ref().ok().map(Value::to_string);
             observation.tool_completed(name, failed, summary.as_deref());
+            if failed {
+                observation.emit_tool_call_telemetry(ToolCallTelemetryEvent::Error {
+                    conversation_id: observation.conversation_id.clone(),
+                    request_id: observation.request_id.clone(),
+                    tool_name: name.to_string(),
+                    tool_call_id: tool_call_id.to_string(),
+                    error_class: "task_error_result".into(),
+                    duration_ms: started.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                    connector: "unknown".into(),
+                });
+            }
             if name == "AwaitShell" || name == "awaitToolCall" {
                 let block_until_ms = args
                     .get("block_until_ms")
@@ -483,6 +545,14 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
             }
         }
         result
+    }
+}
+
+fn dual_surface_tool_surface(tool_name: &str) -> Option<&'static str> {
+    match tool_name {
+        "Shell" | "Read" | "AwaitShell" => Some("box"),
+        "ExternalShell" | "ExternalRead" | "AwaitExternalShell" => Some("external"),
+        _ => None,
     }
 }
 
