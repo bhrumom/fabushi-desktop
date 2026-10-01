@@ -229,10 +229,10 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
                             "Box background Shell returned an invalid shellId=0".into(),
                         ));
                     }
-                    let shell_id = shell_id.to_string();
+                    let shell_work_id = shell_id.to_string();
                     watches.watch_background_shell(
                         &self.agent_id,
-                        &shell_id,
+                        &shell_work_id,
                         BackgroundShellWatchOptions::new(Some(command.clone()), None),
                     );
                     json!({
