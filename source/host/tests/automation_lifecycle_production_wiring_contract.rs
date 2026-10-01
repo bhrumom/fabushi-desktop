@@ -1,6 +1,7 @@
 use std::fs;
 use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::automations::automation::{AutomationRecord, AutomationSpec};
 use mahayana_host_runtime::automations::automation_id::stable_automation_id;
@@ -8,9 +9,16 @@ use mahayana_host_runtime::automations::automation_schedule::summarize_schedule_
 
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::transcript::automation_run_path::{
+    AutomationExecutionResult, AutomationRunTrigger,
+};
 use mahayana_host_runtime::extensions::transcript::automation_runtime::{
     AutomationLifecycleAction, AutomationLifecycleEvent, AutomationLifecycleSource, AutomationRuntime,
 };
+use mahayana_host_runtime::extensions::transcript::sand_automation_spend_guard::{
+    SPEND_GUARD_IDLE_TTL_MS, SPEND_GUARD_PAUSE_DELAY_MS,
+};
+use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManager;
 use serde_json::json;
 
 
@@ -118,6 +126,137 @@ fn real_workflow_ui_wrapper_attributes_scheduled_workflow_creation() {
     assert_eq!(events[0].action, AutomationLifecycleAction::Created);
     assert_eq!(events[0].source, AutomationLifecycleSource::WorkflowUi);
     assert_eq!(events[0].trigger_type, "cron");
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn active_store_watcher_reports_agent_change_at_change_time() {
+    let root = temp_root("watcher");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = sessions.create_session(None, "user", None).expect("agent");
+    let manager = TranscriptManager::new(root.join("transcript"), Arc::clone(&workers));
+    let runtime = manager.automation_runtime();
+    let captured = Arc::new(Mutex::new(Vec::<AutomationLifecycleEvent>::new()));
+    runtime.set_lifecycle_reporter(Some({
+        let captured = Arc::clone(&captured);
+        Arc::new(move |event| captured.lock().expect("events").push(event.clone()))
+    }));
+    let (created, _) = runtime
+        .create_agent_automation(
+            &agent.id,
+            &AutomationSpec {
+                name: "Watched".into(),
+                prompt: "Watch".into(),
+                trigger: json!({"type":"cron","schedule":"0 9 * * *"}),
+                is_enabled: Some(true),
+            },
+        )
+        .expect("create");
+    manager.switch_agent(&agent.id, 1_900_000_000_000.0).expect("switch");
+    captured.lock().expect("events").clear();
+
+    sessions
+        .automation_store_for(&agent.id)
+        .expect("store")
+        .set_enabled(&created[0].id, false)
+        .expect("agent change");
+
+    for _ in 0..40 {
+        if !captured.lock().expect("events").is_empty() {
+            break;
+        }
+        thread::sleep(Duration::from_millis(25));
+    }
+    let captured = captured.lock().expect("events");
+    assert_eq!(captured.len(), 1);
+    assert_eq!(captured[0].action, AutomationLifecycleAction::Disabled);
+    assert_eq!(captured[0].source, AutomationLifecycleSource::Agent);
+    drop(captured);
+
+    manager.dispose();
+    let _ = fs::remove_dir_all(root);
+}
+
+fn prepare_away_agent(workers: &ProductionSessionWorkers, agent_id: &str, now_ms: f64) {
+    let last_viewed = now_ms - SPEND_GUARD_IDLE_TTL_MS - 10_000.0;
+    workers.mark_agent_viewed(agent_id, last_viewed, false).expect("viewed");
+    for index in 0..15 {
+        workers
+            .mark_agent_activity(agent_id, last_viewed + index as f64 + 1.0)
+            .expect("activity");
+    }
+}
+
+#[test]
+fn real_spend_guard_pause_reports_disabled_after_transition() {
+    let root = temp_root("spend-guard");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = sessions.create_session(None, "user", None).expect("agent");
+    let runtime = AutomationRuntime::new(Arc::clone(&workers));
+    let captured = Arc::new(Mutex::new(Vec::<AutomationLifecycleEvent>::new()));
+    runtime.set_lifecycle_reporter(Some({
+        let captured = Arc::clone(&captured);
+        Arc::new(move |event| captured.lock().expect("events").push(event.clone()))
+    }));
+    let (created, _) = runtime
+        .create_agent_automation(
+            &agent.id,
+            &AutomationSpec {
+                name: "Guarded".into(),
+                prompt: "Do it".into(),
+                trigger: json!({"type":"cron","schedule":"0 9 * * *"}),
+                is_enabled: Some(true),
+            },
+        )
+        .expect("create");
+    captured.lock().expect("events").clear();
+
+    let now_ms = 1_900_000_000_000.0;
+    prepare_away_agent(&workers, &agent.id, now_ms);
+    runtime
+        .run_background_automation_with(
+            &agent.id,
+            &created[0].id,
+            AutomationRunTrigger::Schedule,
+            Vec::new(),
+            Some("row74-first".into()),
+            Vec::new(),
+            now_ms,
+            |_| Ok(AutomationExecutionResult::Completed),
+        )
+        .expect("first run");
+    captured.lock().expect("events").clear();
+
+    let paused_at = now_ms + SPEND_GUARD_PAUSE_DELAY_MS + 1.0;
+    let outcome = runtime
+        .run_background_automation_with(
+            &agent.id,
+            &created[0].id,
+            AutomationRunTrigger::Schedule,
+            Vec::new(),
+            Some("row74-pause".into()),
+            Vec::new(),
+            paused_at,
+            |_| panic!("paused routine must not execute"),
+        )
+        .expect("pause");
+    assert_eq!(outcome, None);
+    let captured = captured.lock().expect("events");
+    assert_eq!(captured.len(), 1);
+    assert_eq!(captured[0].action, AutomationLifecycleAction::Disabled);
+    assert_eq!(captured[0].source, AutomationLifecycleSource::SpendGuard);
+    drop(captured);
 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
