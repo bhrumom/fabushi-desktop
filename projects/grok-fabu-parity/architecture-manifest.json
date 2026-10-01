@@ -17874,7 +17874,7 @@
       "targetPath": "source/host/src/runner/auto_review_gate.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "d3f67282ba284a8a55c82074119ee6f01234e47a",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -17883,10 +17883,11 @@
       ],
       "testEvidence": [
         "source/host/tests/auto_review_gate_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port owns the frozen side-effect gate semantics: live/base mode resolution, expiry of every non-enforcing surface, fail-closed pending-approval fencing, cloned user allow/block instructions, and independent host/box shell approval-generation identity. Final remains withheld until the full SandAutoReviewController/classifier/tool-escalation family is production-composed into generated Agent tools and computer/MCP/shell side effects."
+      "notes": "Rust owns the frozen AutoReviewGate boundary and the shipping Host production-composes that single gate/controller across all seven frozen side-effect surfaces: host shell, box shell, MCP, Computer, automation write, cloud agent, and subagent launch. The gate resolves live/base modes, expires every non-enforcing surface while preserving enforcing approvals, fail-closes when any approval is pending, clones user allow/block instructions, and advances independent host/box-shell side-effect identities only at actual side-effect start. Exact-head 6bf7c8981bf49989b14fdf2364e88b2337b7b4a4 passed the independent Mahayana Host/Runner cargo-test step in Rust desktop runtime run 36888908420, while Desktop Chat Parity run 36888908732 completed successfully. Classifier wire generation and broader SandAutoReviewController ownership remain tracked by their own manifest rows; this row introduces no second policy/controller owner."
     },
     {
       "referencePath": "source/host/runner/background-work.ts",
