@@ -3990,7 +3990,7 @@ fn start_routed_provider_task(
                 .map(|context| context.dispatch_started);
             let runner_started_at_ms = started_at_ms();
             if let Ok(mut observation) = observation.lock() {
-                observation.set_request_id(worker_stream_id.clone());
+                observation.set_request_id(Some(worker_stream_id.clone()));
                 let tool_call_logs = worker_telemetry_logs.clone();
                 observation.set_tool_call_telemetry_handler(Arc::new(move |event| {
                     let result = match event {
