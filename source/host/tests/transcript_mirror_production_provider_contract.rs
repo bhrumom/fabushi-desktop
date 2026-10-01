@@ -1,7 +1,7 @@
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 
 use std::fs;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
@@ -90,7 +90,8 @@ fn state_bytes(
 
 #[test]
 fn shipping_runner_binds_generated_checkpoint_codec_into_file_transcript_mirror() {
-    assert!(SHIPPING_HOST.contains("ProductionTranscriptMirrorProvider::new("));
+    assert!(SHIPPING_HOST.contains("ProductionTranscriptMirrorProvider::with_reporter("));
+    assert!(SHIPPING_HOST.contains("report_journal_outcome(&report)"));
     assert!(SHIPPING_HOST.contains("GeneratedTranscriptOccurrenceCodec::new("));
     assert!(SHIPPING_HOST.contains("RejectGeneratedToolJsonProjection"));
     assert!(SHIPPING_HOST.contains(".route_for_session("));
@@ -133,8 +134,15 @@ fn provider_routes_real_worker_blob_store_through_shared_journal() {
     futures::executor::block_on(store.set_blob(&(), &[0x09], &[0x09]))
         .expect("user blob");
 
-    let provider =
-        ProductionTranscriptMirrorProvider::new(&transcripts_dir, FrozenFixtureCodec);
+    let outcomes = Arc::new(Mutex::new(Vec::new()));
+    let captured_outcomes = Arc::clone(&outcomes);
+    let provider = ProductionTranscriptMirrorProvider::with_reporter(
+        &transcripts_dir,
+        FrozenFixtureCodec,
+        Arc::new(move |outcome| {
+            captured_outcomes.lock().unwrap().push(outcome.clone());
+        }),
+    );
     let routed = provider
         .route_for_session(
             Arc::clone(&store),
@@ -177,6 +185,24 @@ fn provider_routes_real_worker_blob_store_through_shared_journal() {
     .expect("jsonl");
     assert!(jsonl.contains("hello from production provider"));
     assert!(jsonl.contains("\"role\":\"user\""));
+
+    let outcomes = outcomes.lock().unwrap();
+    assert!(outcomes.iter().any(|outcome| {
+        outcome.op == "replay"
+            && outcome.outcome == "ok"
+            && outcome.conversation_id == session.record.id
+    }));
+    assert!(outcomes.iter().any(|outcome| {
+        outcome.op == "checkpoint"
+            && outcome.outcome == "ok"
+            && outcome.entry_count == Some(1)
+    }));
+    assert!(outcomes.iter().any(|outcome| {
+        outcome.op == "append"
+            && outcome.outcome == "ok"
+            && outcome.entry_count == Some(1)
+    }));
+    drop(outcomes);
 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
