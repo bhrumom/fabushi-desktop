@@ -1,4 +1,8 @@
+use std::sync::Arc;
+
 use url::Url;
+
+use super::sand_action_audit::{ActionAuditRecord, ActionAuditSink};
 
 pub const MAX_BLOCKED_HOST_LENGTH: usize = 100;
 pub const MAX_BLOCKED_URL_LENGTH: usize = 1024;
@@ -7,6 +11,15 @@ pub const MAX_BLOCKED_URL_LENGTH: usize = 1024;
 pub enum BotBlockConfidence {
     High,
     Low,
+}
+
+impl BotBlockConfidence {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::High => "high",
+            Self::Low => "low",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -170,4 +183,44 @@ pub fn classify_bot_block_page(url: &str, title: &str) -> Option<BotBlockHit> {
         });
     }
     None
+}
+
+
+pub type BotBlockHitCallback =
+    Arc<dyn Fn(&BotBlockHit, &ActionAuditRecord) + Send + Sync + 'static>;
+
+pub struct BotBlockDetectionSink {
+    inner: Arc<dyn ActionAuditSink>,
+    on_hit: BotBlockHitCallback,
+}
+
+impl ActionAuditSink for BotBlockDetectionSink {
+    fn record(&self, record: ActionAuditRecord) {
+        // Frozen Grok records through the wrapped ActionAuditor first and only
+        // then invokes the bot-block callback for browser-navigation records.
+        self.inner.record(record.clone());
+        let Some(object) = record.action.as_object() else {
+            return;
+        };
+        if object.get("kind").and_then(serde_json::Value::as_str) != Some("browserNavigation") {
+            return;
+        }
+        let Some(url) = object.get("url").and_then(serde_json::Value::as_str) else {
+            return;
+        };
+        let title = object
+            .get("pageTitle")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default();
+        if let Some(hit) = classify_bot_block_page(url, title) {
+            (self.on_hit)(&hit, &record);
+        }
+    }
+}
+
+pub fn with_bot_block_detection_sink(
+    inner: Arc<dyn ActionAuditSink>,
+    on_hit: BotBlockHitCallback,
+) -> Arc<dyn ActionAuditSink> {
+    Arc::new(BotBlockDetectionSink { inner, on_hit })
 }
