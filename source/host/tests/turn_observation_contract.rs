@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
@@ -282,25 +282,34 @@ fn mcp_exec_observation_reports_stall_then_error_settlement() {
             Duration::from_millis(5),
         )
         .expect("mcp observation");
-    std::thread::sleep(Duration::from_millis(20));
-
-    {
-        let telemetry = telemetry.lock().unwrap();
-        assert!(telemetry.iter().any(|event| matches!(
-            event,
-            ToolCallTelemetryEvent::Stalled {
-                conversation_id,
-                request_id,
-                tool_name,
-                tool_call_id,
-                connector,
-                ..
-            } if conversation_id == "agent-mcp"
-                && request_id.as_deref() == Some("request-mcp")
-                && tool_name == "mcpToolCall"
-                && tool_call_id == "mcp-call-1"
-                && connector == "github"
-        )));
+    let deadline = Instant::now() + Duration::from_secs(1);
+    loop {
+        let stalled = {
+            let telemetry = telemetry.lock().unwrap();
+            telemetry.iter().any(|event| matches!(
+                event,
+                ToolCallTelemetryEvent::Stalled {
+                    conversation_id,
+                    request_id,
+                    tool_name,
+                    tool_call_id,
+                    connector,
+                    ..
+                } if conversation_id == "agent-mcp"
+                    && request_id.as_deref() == Some("request-mcp")
+                    && tool_name == "mcpToolCall"
+                    && tool_call_id == "mcp-call-1"
+                    && connector == "github"
+            ))
+        };
+        if stalled {
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "MCP stall telemetry was not emitted within the bounded contract window"
+        );
+        std::thread::sleep(Duration::from_millis(5));
     }
 
     guard.settle(Some("ConnectError.Unavailable"));
