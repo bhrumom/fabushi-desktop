@@ -1,13 +1,14 @@
 use std::fs;
-use std::sync::{Arc, mpsc};
+use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::automations::automation_store::FileAutomationStore;
 use mahayana_host_runtime::extensions::transcript::automation_run_path::{
-    AutomationExecutionResult, AutomationRunPath, AutomationRunTrigger, FireAutomationArgs,
-    FireAutomationOutcome, build_automation_wake_prompt, build_automation_wake_prompt_with_time_zone,
+    AutomationExecutionResult, AutomationRunObservation, AutomationRunPath, AutomationRunTrigger,
+    FireAutomationArgs, FireAutomationOutcome, build_automation_wake_prompt,
+    build_automation_wake_prompt_with_time_zone,
     build_group_automation_seed, describe_trigger_event_batch,
 };
 use serde_json::json;
@@ -217,5 +218,47 @@ fn wake_timestamp_uses_resolved_user_timezone() {
         &[],
     );
     assert!(prompt.contains("12/31/1969, 07:00:00 PM"));
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn settled_run_reports_real_timing_schedule_and_event_batch() {
+    let root = root("telemetry");
+    let store = FileAutomationStore::new(root.join("automations"));
+    let automation = create_automation(&store);
+    let path = AutomationRunPath::default();
+    let observed = Arc::new(Mutex::new(Vec::<AutomationRunObservation>::new()));
+    let observed_sink = Arc::clone(&observed);
+    path.set_run_reporter(Some(Arc::new(move |report| {
+        observed_sink.lock().unwrap().push(report.clone());
+    })));
+
+    let mut args = FireAutomationArgs::manual("agent-1", automation.clone(), 7_500.0);
+    args.trigger = AutomationRunTrigger::Event;
+    args.events = vec![json!({"source":"github"}), json!({"source":"slack"})];
+    args.scheduled_for_ms = Some(7_000.0);
+    args.is_group = Some(false);
+    args.sent_message_count = Some(2);
+
+    let outcome = path
+        .fire_automation_with(&store, args, |_| Ok(AutomationExecutionResult::Completed))
+        .expect("fire");
+    assert_eq!(outcome, Some(FireAutomationOutcome::Ok));
+
+    let observed = observed.lock().unwrap();
+    assert_eq!(observed.len(), 1);
+    let report = &observed[0];
+    assert_eq!(report.agent_id, "agent-1");
+    assert_eq!(report.automation_id, automation.id);
+    assert_eq!(report.trigger, AutomationRunTrigger::Event);
+    assert_eq!(report.outcome, FireAutomationOutcome::Ok);
+    assert_eq!(report.is_group, Some(false));
+    assert_eq!(report.scheduled_for_ms, Some(7_000.0));
+    assert_eq!(report.lateness_ms, Some(500.0));
+    assert_eq!(report.sent_message_count, Some(2));
+    assert_eq!(report.event_batch_size, Some(2));
+    assert!(report.duration_ms >= 0.0);
+
     let _ = fs::remove_dir_all(root);
 }
