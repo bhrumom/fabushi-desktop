@@ -15255,31 +15255,48 @@
       "targetPath": "source/host/src/extensions/telemetry/structured_log_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "5e19374e02f4984899ea48f06b1d70798bd17418",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/telemetry/structured_log_telemetry.rs",
         "source/host/src/extensions/telemetry/host_telemetry_service.rs",
-        "docs/specs/structured-log-facade-audit-20260930.md",
-        "source/host/src/extensions/telemetry/box_copy_in_telemetry.rs",
-        "source/host/src/extensions/telemetry/box_recreate_decided_telemetry.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/automation_run_path.rs",
+        "source/host/src/extensions/transcript/automation_runtime.rs",
+        "source/host/src/transcript_mirror/transcript_mirror.rs",
         "source/host/src/extensions/forever_box/forever_box_service.rs",
-        "source/host/src/host_production_extensions.rs"
+        "source/host/src/extensions/forever_box/extension.rs",
+        "source/host/src/box/loopback_sand_box.rs",
+        "source/host/src/extensions/auto_review/auto_review_service.rs",
+        "source/host/src/host_invariant.rs",
+        "source/host/src/runner/turn_observation.rs",
+        "source/host/src/runner/bot_block_detection.rs",
+        "source/host/src/runner/sand_action_audit.rs",
+        "docs/specs/structured-log-facade-audit-20260930.md"
       ],
       "testEvidence": [
-        "source/host/tests/host_telemetry_service_contract.rs",
         "source/host/tests/structured_log_telemetry_contract.rs",
-        "source/host/tests/telemetry_extension_parity_contract.rs",
+        "source/host/tests/host_telemetry_service_contract.rs",
+        "source/host/tests/lifecycle_telemetry_contract.rs",
+        "source/host/tests/extensions_forever_box_contract.rs",
+        "source/host/tests/automation_run_production_wiring_contract.rs",
+        "source/host/tests/automation_run_telemetry_contract.rs",
+        "source/host/tests/journal_outcome_production_wiring_contract.rs",
+        "source/host/tests/tool_call_telemetry_production_wiring_contract.rs",
+        "source/host/tests/auto_review_production_wiring_contract.rs",
+        "source/host/tests/auto_review_expire_sweep_production_wiring_contract.rs",
+        "source/host/tests/auto_review_expire_sweep_telemetry_contract.rs",
+        "source/host/tests/invariant_violation_production_wiring_contract.rs",
+        "source/host/tests/invariant_violation_telemetry_contract.rs",
+        "source/host/tests/bot_block_production_wiring_contract.rs",
+        "source/host/tests/bot_block_telemetry_contract.rs",
+        "source/host/tests/turn_telemetry_production_wiring_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/box_copy_in_telemetry_contract.rs",
-        "source/host/tests/box_copy_in_production_wiring_contract.rs",
-        "source/host/tests/box_recreate_decided_telemetry_contract.rs",
-        "source/host/tests/box_recreate_decided_production_wiring_contract.rs",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Production structured-log transport/backend/lifecycle remains the unique Mahayana Host owner. Row 69 reportBoxCopyIn is verified-owner. Row 70 reportBoxRecreateDecided now has its frozen Host-local ForeverBox producer, canonical fixed info/event mapper, typed Host facade, unique production log injection, exact automatic-decision metadata/timing, skip/manual non-event behavior, and focused producer plus JSONL contracts; it remains producer-evidence-required only until exact-HEAD Actions are green. Other direct producer gaps and the nonfinal turn-telemetry-mappers delegation keep this architecture row existing-needs-parity; do not advance turn telemetry until direct facade gaps are cleared."
+      "notes": "Finalized against frozen Grok 0.18 on exact HEAD 6088d8774641db9863c8c6ae4a2666baf3034993. The Mahayana Host remains the unique structured-log owner. Every formerly open direct facade responsibility now has a real shipping producer, typed Host boundary, canonical projection and focused production/JSONL evidence: automation run, daemon ping, box image check, journal outcome, tool-call started/error/stalled, AutoReview display-recheck/expire-sweep failure, invariant violation and bot-block summary/detail. The seven turn facade methods delegate to the now-final turn_telemetry_mappers Rust owner. Rust desktop runtime run 36818745671 rust-host job 110229491089 passed shipping Host compilation, independent Coordinator and independent Host/Runner contracts plus the focused Host suite; Desktop Chat Parity run 36818745725 passed Focused Electron chat E2E on the same SHA."
     },
     {
       "referencePath": "source/host/extensions/telemetry/turn-empty-delivery-telemetry.ts",
@@ -15305,17 +15322,31 @@
       "targetPath": "source/host/src/extensions/telemetry/turn_telemetry_mappers.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "2bff1766de6d1d7b9a3ab188d776168f684fc809",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": [],
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/turn_telemetry_mappers.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/turn_observation.rs",
+        "source/host/src/runner/tools/send_message_tool.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/turn_telemetry_mappers_contract.rs",
+        "source/host/tests/turn_telemetry_production_wiring_contract.rs",
+        "source/host/tests/send_message_tool_contract.rs",
+        "source/host/tests/runner_routed_provider_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
       "evidence": [
         "source/host/tests/turn_telemetry_mappers_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host owns the frozen turn interrupt/await/retry/user-message/closing-send/TTFT/turn-usage/computer-use telemetry projections and bounded retry error type. Shipping retry, await, direct-local user-message, watchdog interrupt, agent-deletion interrupt, superseded interrupt, turn-usage request-id lifecycle and TTFT first-token call sites now route through canonical mappers. Supersede ownership stays in Mahayana Coordinator; the Host cancelRoutedProvider boundary resolves stream-to-agent ownership, reads Transcript wasInFlight before the real cancellation, and reports hadActiveRun from cancel_stream. TurnObservation exposes the frozen-style dedicated first-token handler and shipping Host reports the resulting TTFT projection through the structured-log sink. Final parity remains withheld for closing-send nudges, computer-use usage, real provider token-usage propagation, and complete frozen TTFT dispatch-clock/trace/span provenance before exact-HEAD finalization."
+      "notes": "Finalized against frozen Grok 0.18 on exact HEAD 6088d8774641db9863c8c6ae4a2666baf3034993. Rust preserves frozen interrupt/await/retry/user-message/closing-send/TTFT/turn-usage/computer-use event, level and metadata semantics, including bounded retry error_type and stateful active-turn retry accumulation. Shipping closing-send derives delivered/sent_message_count from successful SendMessage side effects, TTFT uses the live Gateway dispatch clock plus trace/span provenance, provider token usage is merged into terminal turn usage, and computer-use usage comes from settled generated-subagent execution. Coordinator/Electron do not own duplicate turn structured-log events. Exact-HEAD rust-host and Focused Electron chat E2E both passed."
     },
     {
       "referencePath": "source/host/extensions/telemetry/webauthn-proxy-telemetry.ts",
