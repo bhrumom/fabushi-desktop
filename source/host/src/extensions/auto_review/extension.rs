@@ -14,7 +14,8 @@ use crate::runner::sand_auto_review::{
 };
 
 use super::auto_review_service::{
-    AutoReviewService, AutoReviewTelemetrySink, AutoReviewUpdateSink,
+    AutoReviewExpireSweepFailedSink, AutoReviewService, AutoReviewTelemetrySink,
+    AutoReviewUpdateSink,
 };
 
 pub const AUTO_REVIEW_DEPENDENCIES: &[HostExtensionId] = &[
@@ -87,12 +88,35 @@ pub fn start_auto_review_extension(
     on_update: AutoReviewUpdateSink,
     telemetry: AutoReviewTelemetrySink,
 ) -> HostAutoReviewExtension {
+    start_auto_review_extension_with_expire_sweep_telemetry(
+        sessions,
+        experiments,
+        settings,
+        host_generation,
+        on_update,
+        telemetry,
+        None,
+    )
+}
+
+pub fn start_auto_review_extension_with_expire_sweep_telemetry(
+    sessions: Arc<ProductionSessionWorkers>,
+    experiments: Arc<HostExperimentsExtension>,
+    settings: Arc<SettingsService>,
+    host_generation: impl Into<String>,
+    on_update: AutoReviewUpdateSink,
+    telemetry: AutoReviewTelemetrySink,
+    expire_sweep_failed: Option<AutoReviewExpireSweepFailedSink>,
+) -> HostAutoReviewExtension {
     let service = AutoReviewService::new(
         sessions,
         host_generation,
         on_update,
         telemetry,
     );
+    if let Some(expire_sweep_failed) = expire_sweep_failed {
+        service.set_expire_sweep_failed_sink(expire_sweep_failed);
+    }
     service.sweep_stale_boot_state(now_ms());
     HostAutoReviewExtension {
         service,

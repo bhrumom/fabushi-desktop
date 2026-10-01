@@ -481,6 +481,21 @@ impl HostStructuredLogTelemetry {
         })
     }
 
+    pub fn report_auto_review_expire_sweep_failed(
+        &self,
+        stage: &str,
+        error_class: &str,
+    ) -> io::Result<()> {
+        self.report_projection(&HostTelemetryProjection {
+            level: Some("warn"),
+            event: Some("sand.auto_review.expire_sweep_failed"),
+            metadata: BTreeMap::from([
+                ("stage".into(), stage.to_string()),
+                ("error_class".into(), error_class.to_string()),
+            ]),
+        })
+    }
+
     pub fn report_tool_call_started(
         &self,
         conversation_id: &str,

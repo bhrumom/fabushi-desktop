@@ -14,7 +14,7 @@ use mahayana_host_runtime::extensions::box_store_sync::production::ProductionBox
 use mahayana_host_runtime::extensions::action_audit::extension::ActionAuditExtension;
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
 use mahayana_host_runtime::extensions::auto_review::extension::{
-    HostAutoReviewExtension, start_auto_review_extension,
+    HostAutoReviewExtension, start_auto_review_extension_with_expire_sweep_telemetry,
 };
 use mahayana_host_runtime::extensions::auto_review::sand_backend_smart_mode_classifier_exec::{
     create_sand_backend_smart_mode_classifier_executor_with_cancellation,
@@ -7591,13 +7591,19 @@ fn main() {
         };
         let _ = auto_review_logs.report_auto_review_approval(&report);
     });
-    let auto_review_extension = Arc::new(start_auto_review_extension(
+    let auto_review_expire_sweep_logs = host_telemetry.logs.clone();
+    let auto_review_expire_sweep_sink = Arc::new(move |stage: &str, error_class: &str| {
+        let _ = auto_review_expire_sweep_logs
+            .report_auto_review_expire_sweep_failed(stage, error_class);
+    });
+    let auto_review_extension = Arc::new(start_auto_review_extension_with_expire_sweep_telemetry(
         Arc::clone(&session_workers),
         Arc::clone(&production_extensions.experiments),
         Arc::clone(&settings_extension),
         format!("host-{}", uuid::Uuid::new_v4()),
         auto_review_update_sink,
         auto_review_telemetry_sink,
+        Some(auto_review_expire_sweep_sink),
     ));
     let auto_review_display_recheck_logs = host_telemetry.logs.clone();
     auto_review_extension

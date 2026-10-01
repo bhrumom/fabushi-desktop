@@ -30,6 +30,8 @@ pub type AutoReviewTelemetrySink =
     Arc<dyn Fn(&SandAutoReviewEvent) + Send + Sync + 'static>;
 pub type AutoReviewDisplayRecheckFailedSink =
     Arc<dyn Fn(&str) + Send + Sync + 'static>;
+pub type AutoReviewExpireSweepFailedSink =
+    Arc<dyn Fn(&str, &str) + Send + Sync + 'static>;
 
 #[derive(Clone)]
 pub struct ProductionAutoReviewAwaitingSink {
@@ -84,6 +86,7 @@ pub struct AutoReviewService {
     on_update: AutoReviewUpdateSink,
     telemetry: AutoReviewTelemetrySink,
     display_recheck_failed: Mutex<Option<AutoReviewDisplayRecheckFailedSink>>,
+    expire_sweep_failed: Mutex<Option<AutoReviewExpireSweepFailedSink>>,
     host_generation: String,
 }
 
@@ -104,6 +107,7 @@ impl AutoReviewService {
             on_update,
             telemetry,
             display_recheck_failed: Mutex::new(None),
+            expire_sweep_failed: Mutex::new(None),
             host_generation: host_generation.into(),
         })
     }
@@ -116,6 +120,27 @@ impl AutoReviewService {
             .display_recheck_failed
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(sink);
+    }
+
+    pub fn set_expire_sweep_failed_sink(
+        &self,
+        sink: AutoReviewExpireSweepFailedSink,
+    ) {
+        *self
+            .expire_sweep_failed
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(sink);
+    }
+
+    fn report_expire_sweep_failed(&self, stage: &str) {
+        let sink = self
+            .expire_sweep_failed
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        if let Some(sink) = sink {
+            sink(stage, "Error");
+        }
     }
 
     pub fn bind_runner(
@@ -285,19 +310,33 @@ impl AutoReviewService {
     }
 
     pub fn sweep_stale_boot_state(&self, if_since_before_ms: u64) {
-        let Ok(agent_ids) = self.sessions.list_agent_record_ids() else {
-            return;
+        let agent_ids = match self.sessions.list_agent_record_ids() {
+            Ok(agent_ids) => agent_ids,
+            Err(_) => {
+                self.report_expire_sweep_failed("list_agent_record_ids");
+                return;
+            }
         };
         for agent_id in agent_ids {
-            let _ = self
+            if self
                 .sessions
-                .expire_pending_auto_review_approvals(&agent_id, None);
-            let _ = self.sessions.set_agent_awaiting_user_response_for_tab(
-                &agent_id,
-                SAND_AUTO_REVIEW_AWAITING_TAB_ID,
-                None,
-                Some(if_since_before_ms as f64),
-            );
+                .expire_pending_auto_review_approvals(&agent_id, None)
+                .is_err()
+            {
+                self.report_expire_sweep_failed("expire_pending_auto_review_approvals");
+            }
+            if self
+                .sessions
+                .set_agent_awaiting_user_response_for_tab(
+                    &agent_id,
+                    SAND_AUTO_REVIEW_AWAITING_TAB_ID,
+                    None,
+                    Some(if_since_before_ms as f64),
+                )
+                .is_err()
+            {
+                self.report_expire_sweep_failed("clear_awaiting_user_response");
+            }
         }
     }
 
