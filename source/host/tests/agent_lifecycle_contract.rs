@@ -422,7 +422,11 @@ fn shipping_gateway_contract_validates_delete_arguments_and_uses_lifecycle_owner
     .expect("handled")
     .expect("deleted");
     assert_eq!(deleted["transcript"], json!([]));
-    assert_eq!(store.read_active_agent_id(), None);
+    let fallback_id = store
+        .read_active_agent_id()
+        .expect("delete gateway activates fallback");
+    assert_ne!(fallback_id, record.id);
+    assert!(store.agent_exists(&fallback_id));
 
     assert!(dispatch_production_agent_lifecycle_gateway_call(
         &production,
