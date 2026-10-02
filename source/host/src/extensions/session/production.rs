@@ -41,7 +41,10 @@ use super::conversation_blobs_path::conversation_blobs_path;
 use super::conversation_size_limits::{
     ConversationGcTarget, ConversationSizeMaintenance, ConversationSizePolicy,
 };
-use super::session_paths::{get_agent_db_path, get_connector_secrets_root};
+use super::session_paths::{
+    get_agent_db_path, get_connector_secrets_root, get_native_conversation_db_path,
+    get_native_conversations_root,
+};
 use super::connector_secret_store::SandConnectorSecretStore;
 use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
 use super::session_store_factories::{
@@ -143,6 +146,7 @@ pub struct ProductionSessionWorkers {
     deleting_agents: Mutex<BTreeSet<String>>,
     roster_extras_cache: RosterExtrasCache,
     user_time_zone_resolver: UserTimeZoneResolver,
+    local_human_id: Option<String>,
     busy_timeout_ms: u64,
 }
 
@@ -168,9 +172,18 @@ impl ProductionSessionWorkers {
         user_time_zone_resolver: UserTimeZoneResolver,
         memory_service: Arc<MemoryService>,
     ) -> Self {
-        Self::with_agents_root_and_dependencies(
+        Self::production_with_identity_and_dependencies(None, user_time_zone_resolver, memory_service)
+    }
+
+    pub fn production_with_identity_and_dependencies(
+        local_human_id: Option<String>,
+        user_time_zone_resolver: UserTimeZoneResolver,
+        memory_service: Arc<MemoryService>,
+    ) -> Self {
+        Self::with_agents_root_identity_and_dependencies(
             get_sand_agents_root_dir(None),
             PRODUCTION_BLOB_BUSY_TIMEOUT_MS,
+            local_human_id,
             user_time_zone_resolver,
             memory_service,
         )
@@ -208,7 +221,26 @@ impl ProductionSessionWorkers {
         user_time_zone_resolver: UserTimeZoneResolver,
         memory_service: Arc<MemoryService>,
     ) -> Self {
+        Self::with_agents_root_identity_and_dependencies(
+            agents_root,
+            busy_timeout_ms,
+            None,
+            user_time_zone_resolver,
+            memory_service,
+        )
+    }
+
+    pub fn with_agents_root_identity_and_dependencies(
+        agents_root: impl Into<PathBuf>,
+        busy_timeout_ms: u64,
+        local_human_id: Option<String>,
+        user_time_zone_resolver: UserTimeZoneResolver,
+        memory_service: Arc<MemoryService>,
+    ) -> Self {
         let agents_root = agents_root.into();
+        let local_human_id = local_human_id
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty());
         Self {
             memory_service,
             agents_root,
@@ -223,6 +255,7 @@ impl ProductionSessionWorkers {
             deleting_agents: Mutex::new(BTreeSet::new()),
             roster_extras_cache: RosterExtrasCache::default(),
             user_time_zone_resolver,
+            local_human_id,
             busy_timeout_ms,
         }
     }
@@ -1172,6 +1205,277 @@ impl ProductionSessionWorkers {
         let db_path = self.existing_session_db_path(agent_id)?;
         mutate_agent_avatar_bytes(&db_path, self.busy_timeout_ms, png_bytes)?;
         self.summarize_agent_by_id(agent_id, active_agent_id)
+    }
+
+
+    pub fn local_human_id(&self) -> Result<&str, String> {
+        self.local_human_id
+            .as_deref()
+            .ok_or_else(|| "local Human identity is unavailable".to_string())
+    }
+
+    fn metadata_has_local_human(&self, metadata: &serde_json::Value) -> Result<bool, String> {
+        let local_human_id = self.local_human_id()?;
+        Ok(metadata
+            .get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(local_human_id))))
+    }
+
+    fn native_conversation_owner_key(conversation_id: &str) -> String {
+        format!("conversation:{conversation_id}")
+    }
+
+    pub fn create_human_conversation(
+        &self,
+        peer_human_id: &str,
+        title: &str,
+    ) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?;
+        let peer_human_id = peer_human_id.trim();
+        let title = title.trim();
+        if peer_human_id.is_empty() {
+            return Err("human conversation requires peerHumanId".into());
+        }
+        if local_human_id == peer_human_id {
+            return Err("human conversation participants must be distinct".into());
+        }
+        let conversation_id = loop {
+            let candidate = Uuid::new_v4().to_string();
+            if !get_native_conversations_root(&self.agents_root)
+                .join(&candidate)
+                .exists()
+            {
+                break candidate;
+            }
+        };
+        let db_path = get_native_conversation_db_path(&self.agents_root, &conversation_id)
+            .map_err(|error| error.to_string())?;
+        let conversation_dir = db_path
+            .parent()
+            .ok_or_else(|| "native conversation database has no parent".to_string())?;
+        fs::create_dir_all(conversation_dir).map_err(|error| error.to_string())?;
+        let owner = Arc::new(
+            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
+                .map_err(|error| error.to_string())?,
+        );
+        let display_title = if title.is_empty() { peer_human_id } else { title };
+        let created_at = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as f64;
+        let metadata = serde_json::json!({
+            "conversationKind": "human",
+            "conversationId": conversation_id,
+            "title": display_title,
+            "participantIds": [local_human_id, peer_human_id],
+            "createdAt": created_at,
+            "lastActivityAt": 0.0,
+        });
+        if !owner
+            .initialize_metadata_if_missing(metadata)
+            .map_err(|error| error.to_string())?
+        {
+            owner.close(false);
+            let _ = fs::remove_dir_all(conversation_dir);
+            return Err("failed to initialize native Human conversation metadata".into());
+        }
+        self.db_owners
+            .lock()
+            .map_err(|_| "conversation db owner map poisoned".to_string())?
+            .insert(Self::native_conversation_owner_key(&conversation_id), Arc::clone(&owner));
+        Ok(serde_json::json!({
+            "id": conversation_id,
+            "kind": "human",
+            "title": display_title,
+            "participantIds": [local_human_id, peer_human_id],
+        }))
+    }
+
+    pub fn open_human_conversation_db_owner(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Arc<SandAgentDb>, String> {
+        let db_path = get_native_conversation_db_path(&self.agents_root, conversation_id)
+            .map_err(|error| error.to_string())?;
+        if !db_path.is_file() {
+            return Err(format!("Human conversation missing: {conversation_id}"));
+        }
+        let key = Self::native_conversation_owner_key(conversation_id);
+        let mut owners = self
+            .db_owners
+            .lock()
+            .map_err(|_| "conversation db owner map poisoned".to_string())?;
+        if let Some(owner) = owners.get(&key) {
+            return Ok(Arc::clone(owner));
+        }
+        let owner = Arc::new(
+            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
+                .map_err(|error| error.to_string())?,
+        );
+        if owner
+            .get_metadata("conversationKind")
+            .map_err(|error| error.to_string())?
+            .and_then(|value| value.as_str().map(ToOwned::to_owned))
+            .as_deref()
+            != Some("human")
+        {
+            owner.close(false);
+            return Err(format!("Conversation is not a Human conversation: {conversation_id}"));
+        }
+        owners.insert(key, Arc::clone(&owner));
+        Ok(owner)
+    }
+
+    pub fn list_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
+        let root = get_native_conversations_root(&self.agents_root);
+        let entries = match fs::read_dir(&root) {
+            Ok(entries) => entries.filter_map(Result::ok).collect::<Vec<_>>(),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(error) => return Err(error.to_string()),
+        };
+        let mut conversations = Vec::new();
+        for entry in entries {
+            if !entry.file_type().map(|kind| kind.is_dir()).unwrap_or(false) {
+                continue;
+            }
+            let id = entry.file_name().to_string_lossy().into_owned();
+            let Ok(owner) = self.open_human_conversation_db_owner(&id) else {
+                continue;
+            };
+            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+            if !self.metadata_has_local_human(&metadata)? {
+                continue;
+            }
+            let title = metadata
+                .get("title")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("Human conversation");
+            let participant_ids = metadata
+                .get("participantIds")
+                .cloned()
+                .unwrap_or_else(|| serde_json::json!([]));
+            let updated_at = metadata
+                .get("lastActivityAt")
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or_default();
+            conversations.push(serde_json::json!({
+                "id": id,
+                "kind": "human",
+                "title": title,
+                "participantIds": participant_ids,
+                "updatedAt": updated_at,
+            }));
+        }
+        conversations.sort_by(|left, right| {
+            left.get("id")
+                .and_then(serde_json::Value::as_str)
+                .cmp(&right.get("id").and_then(serde_json::Value::as_str))
+        });
+        Ok(conversations)
+    }
+
+    pub fn append_human_message(
+        &self,
+        conversation_id: &str,
+        text: &str,
+        client_nonce: &str,
+        composed_at_ms: Option<f64>,
+    ) -> Result<serde_json::Value, String> {
+        let sender_id = self.local_human_id()?;
+        let text = text.trim();
+        let client_nonce = client_nonce.trim();
+        if text.is_empty() || client_nonce.is_empty() {
+            return Err("sendHumanMessage requires text and clientNonce".into());
+        }
+        if client_nonce.len() > 512 {
+            return Err("sendHumanMessage clientNonce is too long".into());
+        }
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let is_participant = metadata
+            .get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(sender_id)));
+        if !is_participant {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let existing = owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        if let Some(entry) = existing.iter().find(|entry| {
+            entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
+        }) {
+            let same_sender = entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
+            let same_text = entry.get("content").and_then(serde_json::Value::as_str) == Some(text);
+            if same_sender && same_text {
+                return Ok(entry.clone());
+            }
+            return Err("sendHumanMessage clientNonce already identifies different content".into());
+        }
+        let entry = serde_json::json!({
+            "id": format!("human-message:{client_nonce}"),
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": sender_id,
+            "content": text,
+            "clientNonce": client_nonce,
+            "composedAtMs": composed_at_ms,
+            "timestampMs": composed_at_ms.unwrap_or_else(|| {
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_millis() as f64
+            }),
+            "delivery": "sent",
+        });
+        if !owner
+            .append_transcript_entry(&entry)
+            .map_err(|error| error.to_string())?
+        {
+            let replay = owner
+                .get_transcript_entries()
+                .map_err(|error| error.to_string())?
+                .into_iter()
+                .find(|candidate| candidate.get("id") == entry.get("id"))
+                .ok_or_else(|| "native Human message was not durably appended".to_string())?;
+            let same_sender =
+                replay.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
+            let same_text =
+                replay.get("content").and_then(serde_json::Value::as_str) == Some(text);
+            let same_nonce =
+                replay.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce);
+            if same_sender && same_text && same_nonce {
+                return Ok(replay);
+            }
+            return Err("sendHumanMessage clientNonce already identifies different content".into());
+        }
+        let activity_at = entry
+            .get("timestampMs")
+            .and_then(serde_json::Value::as_f64)
+            .unwrap_or_default();
+        if !owner
+            .set_metadata("lastActivityAt", serde_json::json!(activity_at))
+            .map_err(|error| error.to_string())?
+        {
+            return Err("native Human message activity metadata was not durably updated".into());
+        }
+        Ok(entry)
+    }
+
+    pub fn read_human_conversation_transcript(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())
     }
 
     pub fn list_agent_summaries(

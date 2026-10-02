@@ -43,6 +43,7 @@ import {
   createCoordinatorTelemetrySinks,
 } from "./coordinator-telemetry.js";
 import { createElectronDesktopConnectivity } from "./desktop-connectivity.js";
+import { createProductionHumanIdentityStore } from "../account/human-identity.js";
 import type { BoxConnectionInfo } from "../../shared/node/egress-tunnel/box-connection.js";
 
 export interface ProductionCoordinatorAuthStatus extends CoordinatorAuthStatus {
@@ -367,6 +368,8 @@ export function createProductionCoordinatorAdapter<
       if (typeof dataDir !== "string" || dataDir.length === 0) {
         throw new Error("Production coordinator data directory is empty.");
       }
+      const humanIdentities = createProductionHumanIdentityStore(context.native.app.getPath("userData"));
+      let localHumanId: string | null = null;
       const accountService = context.requireAccount();
       requiredFunction(
         accountService?.getStatus,
@@ -489,16 +492,23 @@ export function createProductionCoordinatorAdapter<
             appVersion: context.resources.metadata.version,
             isPackaged: context.native.app.isPackaged,
             dataDir,
+            localHumanId: localHumanId ?? (() => {
+              throw new Error("Production coordinator local Human identity is unavailable before account authorization.");
+            })(),
           },
           artifactPath,
         });
 
       const accountRuntime = createCoordinatorAccountRuntime<Status>({
         createRuntime,
-        authorizeAccount: (slot, transition) =>
-          ports.account.authorizeAccount(slot, transition, context),
+        authorizeAccount: async (slot, transition) => {
+          const authorized = await ports.account.authorizeAccount(slot, transition, context);
+          localHumanId = authorized ? humanIdentities.resolve(slot) : null;
+          return authorized;
+        },
         revokeRefusedAccount: () => ports.account.revokeRefusedAccount(context),
         prepareAccountTransition: (transition) => {
+          localHumanId = null;
           context.accountLifecycle.beginTransition();
           context.hostSettingsFields.onAccountDeparted();
           return ports.account.prepareAccountTransition(transition, context);

@@ -1383,11 +1383,15 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
         supervisor.invalidate();
     }
     let _ = fs::remove_file(&state.gateway_discovery_path);
-    let mut child = Command::new(&state.host_bin)
-        .env(
-            "SAND_DATA_ROOT",
-            state.bootstrap.process_config.data_dir.trim(),
-        )
+    let mut command = Command::new(&state.host_bin);
+    command.env(
+        "SAND_DATA_ROOT",
+        state.bootstrap.process_config.data_dir.trim(),
+    );
+    if let Some(local_human_id) = state.bootstrap.process_config.local_human_id.as_deref() {
+        command.env("FABUSHI_LOCAL_HUMAN_ID", local_human_id.trim());
+    }
+    let mut child = command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

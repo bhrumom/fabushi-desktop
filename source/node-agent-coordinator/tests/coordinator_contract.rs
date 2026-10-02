@@ -413,10 +413,11 @@ fn carrier_bootstrap_and_channels_preserve_grok_process_boundaries() {
         parse_bootstrap_argument, Carrier, CarrierChannel, CarrierEnvelope,
     };
 
-    let argument = r#"--bootstrap={"processConfig":{"appVersion":"1.2.75","isPackaged":true,"dataDir":"/tmp/fabushi"}}"#;
+    let argument = r#"--bootstrap={"processConfig":{"appVersion":"1.2.75","isPackaged":true,"dataDir":"/tmp/fabushi","localHumanId":"human-local"}}"#;
     let bootstrap = parse_bootstrap_argument([argument]).expect("valid bootstrap");
     assert_eq!(bootstrap.process_config.app_version, "1.2.75");
     assert!(bootstrap.process_config.is_packaged);
+    assert_eq!(bootstrap.process_config.local_human_id.as_deref(), Some("human-local"));
 
     let mut carrier = Carrier::new(bootstrap);
     carrier
