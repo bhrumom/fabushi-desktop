@@ -402,6 +402,30 @@ pub struct CoordinatorAgentWakeRoute {
     pub send_args: Value,
 }
 
+pub const PRIORITY_AGENT_WAKE_SUPERSEDE_REASON: &str =
+    "superseded by a priority agent message";
+
+pub fn redrive_agent_inbound_after_priority_preemption(
+    send_args: &Value,
+    cancellation_message: &str,
+) -> Option<Value> {
+    if cancellation_message != PRIORITY_AGENT_WAKE_SUPERSEDE_REASON
+        || send_args.get("requestSource").and_then(Value::as_str) != Some("agent-inbound")
+    {
+        return None;
+    }
+    let wake = send_args.get("agentWake")?.as_object()?;
+    if wake.get("isRedriven").and_then(Value::as_bool) == Some(true) {
+        return None;
+    }
+    let mut redrive = send_args.clone();
+    redrive
+        .get_mut("agentWake")?
+        .as_object_mut()?
+        .insert("isRedriven".into(), Value::Bool(true));
+    Some(redrive)
+}
+
 pub fn prepare_agent_inbound_wake_routes(
     payload: &Value,
 ) -> Result<Vec<CoordinatorAgentWakeRoute>, Failure> {

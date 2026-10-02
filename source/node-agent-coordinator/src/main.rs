@@ -33,7 +33,8 @@ use mahayana_node_agent_coordinator::inference_router::{
     InferenceStreamSupersede, InferenceTaskQueue, InferenceTranscriptFile,
     RunnerInferenceEvent, StoredEntry, StoredRole, is_direct_user_send,
     parse_host_routed_prompt_acceptance, parse_runner_inference_event,
-    prepare_agent_inbound_wake_routes, should_append_user_message,
+    prepare_agent_inbound_wake_routes, redrive_agent_inbound_after_priority_preemption,
+    should_append_user_message,
     parse_send_prompt_attachments,
     prepare_workflow_run_now_route, project_runner_turn_context, project_transcript_entry,
     CoordinatorWorkflowRunNowRoute,
@@ -960,8 +961,25 @@ fn enqueue_agent_inbound_wake(
             }
             return;
         }
-        if let Err(error) = execute_local_inference(Arc::clone(&worker_state), provider, args) {
-            if error.code != "INFERENCE_PROVIDER_CANCELLED" {
+        if let Err(error) =
+            execute_local_inference(Arc::clone(&worker_state), provider, args.clone())
+        {
+            if error.code == "INFERENCE_PROVIDER_CANCELLED" {
+                if let Some(redrive_args) =
+                    redrive_agent_inbound_after_priority_preemption(&args, &error.message)
+                {
+                    if let Err(redrive_error) = enqueue_agent_inbound_wake(
+                        &worker_state,
+                        agent_id.clone(),
+                        redrive_args,
+                    ) {
+                        eprintln!(
+                            "priority peer wake redrive could not enqueue agent={}: {}: {}",
+                            agent_id, redrive_error.code, redrive_error.message
+                        );
+                    }
+                }
+            } else {
                 record_inference_error(&worker_state, provider, &agent_id, &error);
             }
         }

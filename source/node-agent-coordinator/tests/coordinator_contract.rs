@@ -13,6 +13,7 @@ use mahayana_node_agent_coordinator::supervisor::{
 };
 use mahayana_node_agent_coordinator::inference_router::{
     deleted_agent_ids_for_host_success, prepare_agent_inbound_wake_routes,
+    redrive_agent_inbound_after_priority_preemption, PRIORITY_AGENT_WAKE_SUPERSEDE_REASON,
 };
 use serde_json::json;
 
@@ -2110,4 +2111,52 @@ fn coordinator_shipping_delete_success_wires_agent_queue_purge() {
     let main = include_str!("../src/main.rs");
     assert!(main.contains("deleted_agent_ids_for_host_success(&method, &args)"));
     assert!(main.contains("dispatch_state.inference_queue.clear_agent(agent_id)"));
+}
+
+
+#[test]
+fn priority_peer_cancellation_redrives_agent_wake_exactly_once() {
+    let args = json!({
+        "agentId": "agent-target",
+        "prompt": "[agent] older peer message",
+        "appendUserMessage": false,
+        "hidden": true,
+        "requestSource": "agent-inbound",
+        "agentWake": {
+            "sourceAgentId": "agent-source",
+            "priority": false
+        }
+    });
+    let redrive = redrive_agent_inbound_after_priority_preemption(
+        &args,
+        PRIORITY_AGENT_WAKE_SUPERSEDE_REASON,
+    )
+    .expect("priority peer cancellation redrives");
+    assert_eq!(redrive["agentWake"]["isRedriven"], true);
+    assert_eq!(redrive["appendUserMessage"], false);
+
+    assert!(
+        redrive_agent_inbound_after_priority_preemption(
+            &redrive,
+            PRIORITY_AGENT_WAKE_SUPERSEDE_REASON,
+        )
+        .is_none(),
+        "redrive marker prevents loops"
+    );
+    assert!(
+        redrive_agent_inbound_after_priority_preemption(
+            &args,
+            "superseded by a newer user message",
+        )
+        .is_none(),
+        "ordinary user supersede must not redrive a peer wake"
+    );
+    assert!(
+        redrive_agent_inbound_after_priority_preemption(
+            &json!({"requestSource":"turn","agentWake":{"priority":false}}),
+            PRIORITY_AGENT_WAKE_SUPERSEDE_REASON,
+        )
+        .is_none(),
+        "non-agent turns never enter peer redrive"
+    );
 }

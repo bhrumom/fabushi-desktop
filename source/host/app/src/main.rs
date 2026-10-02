@@ -5772,7 +5772,10 @@ fn start_routed_provider_task(
                     ) {
                         return 0;
                     }
-                    priority_registry.cancel_agent(target_agent_id, reason)
+                    let direct = priority_registry.cancel_agent(target_agent_id, reason);
+                    let group_member =
+                        priority_registry.preempt_group_member_agent(target_agent_id, reason);
+                    direct.saturating_add(group_member)
                 })),
             ));
             let turn_agent_messages = Arc::new(Mutex::new(Vec::<String>::new()));

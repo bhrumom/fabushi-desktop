@@ -98,3 +98,50 @@ fn direct_peer_wake_materializes_file_url_images_for_runner_selected_input() {
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn priority_wake_is_enqueued_before_peer_steering_interrupt() {
+    let root = temp_root();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let alpha = sessions
+        .materialize_new_session(Some(&profile("Alpha")), "user", None)
+        .expect("alpha");
+    let beta = sessions
+        .materialize_new_session(Some(&profile("Beta")), "user", None)
+        .expect("beta");
+    let order = Arc::new(Mutex::new(Vec::<&'static str>::new()));
+
+    let service = ProductionAgentToAgentMessaging::new(
+        Arc::clone(&sessions),
+        {
+            let order = Arc::clone(&order);
+            Arc::new(move |_| order.lock().expect("order").push("wake"))
+        },
+        Some({
+            let order = Arc::clone(&order);
+            Arc::new(move |_, _| {
+                order.lock().expect("order").push("interrupt");
+                1
+            })
+        }),
+    );
+
+    service
+        .send_to_agent(&alpha.id, &beta.id, "urgent", &[], true)
+        .expect("send");
+    assert_eq!(*order.lock().expect("order"), vec!["wake", "interrupt"]);
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_priority_peer_steering_cancels_direct_and_group_member_runners() {
+    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
+    assert!(main.contains("priority_registry.cancel_agent(target_agent_id, reason)"));
+    assert!(main.contains(
+        "priority_registry.preempt_group_member_agent(target_agent_id, reason)"
+    ));
+}

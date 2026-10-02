@@ -134,9 +134,6 @@ impl ProductionAgentToAgentMessaging {
             "timestampMs":timestamp_ms,"fromAgent":{"id":from_agent_id,"name":sender_name},"images":image_json
         })])?;
         let _=self.sessions.mark_agent_activity(to_agent_id,timestamp_ms as f64);
-        if priority {
-            if let Some(interrupt)=self.priority_interrupt.as_ref(){ let _=interrupt(to_agent_id,PRIORITY_AGENT_MESSAGE_INTERRUPT_REASON); }
-        }
         let from=AgentAddress{
             id:from_agent_id.into(), name:sender_name,
             description:sender.and_then(|a|{let v=a.description.trim();(!v.is_empty()).then(||v.to_string())}),
@@ -172,6 +169,11 @@ impl ProductionAgentToAgentMessaging {
             prompt:build_agent_inbound_wake_prompt(&from,&message,images,priority),priority,member_ids:Vec::new(),
             selected_images,
         });
+        if priority {
+            if let Some(interrupt)=self.priority_interrupt.as_ref(){
+                let _=interrupt(to_agent_id,PRIORITY_AGENT_MESSAGE_INTERRUPT_REASON);
+            }
+        }
         Ok(if priority {
             format!("Sent to {} as a priority message — it will interrupt their current non-user work and wake them now. This is asynchronous; if they reply, it'll arrive later as a new message.",target.name)
         } else {
