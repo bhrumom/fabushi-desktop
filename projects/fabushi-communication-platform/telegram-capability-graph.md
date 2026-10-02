@@ -45,19 +45,19 @@ This graph records product capability domains observed in the frozen Telegram De
 | multi-device sync / ordering / duplicate suppression / gap recovery | update/session/data/mtproto state machinery; commerce dossier | owner-resolved under `NETWORK-SYNC-REALTIME` + message/history rows; durable state remains existing owner |
 | large histories / pagination / stale updates | history/data sparse-id/search/update code | existing transcript pagination/storage + sync infrastructure |
 | update / install / rollback | core/platform/build/update code; commerce dossier | owner-resolved as `UPDATE-INSTALL-ROLLBACK` → existing Electron update/platform owner |
-| communities / managed communities | `api/api_communities.*`, peer/community boxes, `info/community*` | extend Shared Room/group/member/admin owners after behavior research |
-| Compose AI / AI tone helpers | `api/api_compose_with_ai.*`, `boxes/compose_ai_box.*`, create/preview AI tone boxes | existing composer + Agent capability; preserve typed Agent flow rather than a Telegram-specific AI subsystem |
-| rich tasks / todo lists | `api/api_rich_tasks.*`, `api/api_todo_lists.*`, todo-list editor boxes | existing task/automation/transcript typed-event owners |
-| ringtones / notification sounds | `api/api_ringtones.*`, ringtone settings/boxes, `Resources/sounds` | existing notification/settings/resource owners |
-| self-destruct / expiry | `api/api_self_destruct.*`, self-destruction UI, message lifecycle | existing transcript/message lifecycle + permissions/settings |
-| sensitive-content policy | `api/api_sensitive_content.*`, privacy/settings surfaces | existing settings/permissions/safety policy |
-| statistics / analytics surfaces | `api/api_statistics*.*`, `statistics/*`, channel statistics info | existing product analytics/room info surfaces; applicability requires product decision |
-| usernames / websites / links | `api/api_user_names.*`, `api/api_websites.*`, deep-link/local-url handlers | existing identity/profile + product shell/navigation/security |
-| media/photo/video editor | `editor/*`, media editor scene/controllers/video | existing attachment/resource composer flow; minimal editor capability only if applicable |
-| Instant View / rich document rendering | `iv/*` | existing artifact/web/rich-content rendering owner |
-| support / moderation / report flows | `support/*`, report/moderation boxes, blocked peers | existing settings/permissions/safety/support surfaces |
-| TDE2E / end-to-end encryption research | `tde2e/*` | native identity/security/network infrastructure; protocol requirements only, no Telegram wire dependency |
-| commerce/security long tail discovered outside list | data business/credits/gifts, passport/payments/webauthn and future recursively discovered regions | resolve one capability at a time to existing owners; no broad new subsystem |
+| communities / managed communities | `api/api_communities.*`, peer/community boxes, `info/community*`; long-tail dossier | owner-resolved as `COMMUNITY-MANAGED` → existing Shared Room/member/admin + sidebar/conversation projection |
+| Compose AI / AI tone helpers | `api/api_compose_with_ai.*`, `boxes/compose_ai_box.*`, create/preview AI tone boxes; long-tail dossier | owner-resolved as `COMPOSE-AI` → existing Composer + Agent/Coordinator/Host/Runner |
+| rich tasks / todo lists | `api/api_rich_tasks.*`, `api/api_todo_lists.*`, todo-list editor boxes; long-tail dossier | owner-resolved as `RICH-TASKS-TODO` → existing Task/Automations + typed Transcript/cards + Composer |
+| ringtones / notification sounds | `api/api_ringtones.*`, ringtone settings/boxes, `Resources/sounds`; long-tail dossier | owner-resolved as `NOTIFICATION-RINGTONE` → existing notifications/settings + resource lifecycle |
+| self-destruct / expiry | `api/api_self_destruct.*`, self-destruction UI, message lifecycle; long-tail dossier | owner-resolved as `SELF-DESTRUCT-POLICY` → existing account lifecycle + settings/permissions + Transcript lifecycle |
+| sensitive-content policy | `api/api_sensitive_content.*`, privacy/settings surfaces; long-tail dossier | owner-resolved as `SENSITIVE-CONTENT` → existing settings + permissions/safety policy |
+| statistics / analytics surfaces | `api/api_statistics*.*`, `statistics/*`, channel statistics info; long-tail dossier | owner-resolved as `ROOM-STATISTICS` → existing Shared Room/room-info read-only projection |
+| usernames / websites / links | `api/api_user_names.*`, `api/api_websites.*`, deep-link/local-url handlers; long-tail dossier | owner-resolved as `IDENTITY-USERNAME-WEBSITE` → existing identity/profile + account/auth + navigation security |
+| media/photo/video editor | `editor/*`, media editor scene/controllers/video; long-tail dossier | owner-resolved as `MEDIA-EDITOR` → existing Composer + attachments/resources + media viewer |
+| Instant View / rich document rendering | `iv/*`; long-tail dossier | owner-resolved as `RICH-DOCUMENT-VIEW` → existing Artifacts + safe Web/rich-content + transcript/navigation owners |
+| support / moderation / report flows | `support/*`, report/moderation boxes, blocked peers; long-tail dossier | owner-resolved as `SUPPORT-MODERATION` → existing feedback/support + permissions/Shared Room admin + Transcript actions |
+| TDE2E / end-to-end encryption research | `tde2e/*`; long-tail dossier | owner-resolved as `TDE2E-SECURITY` → existing identity/device + native sync security + CallSession + Shared Room permissions; Telegram protocol not reused |
+| commerce/security long tail discovered outside list | recursively discovered business/credits/gifts/passport/payments/webauthn areas | resolved into named commerce/security rows; any future newly discovered domain must repeat the same owner law |
 
 ## Discovery evidence
 
@@ -123,3 +123,8 @@ The message/history cluster now has behavior dossiers and explicit owner-resolut
 ## Commerce, data lifecycle, shell quality and realtime checkpoint — 2026-10-02
 
 Formal owner-resolution now covers Premium/entitlements, credits/gifts, business workflows, payment settlement, sensitive identity-document flows, export, storage/migration/recovery, themes/language/RTL/IME/accessibility, calls/realtime signaling, network/sync/reconnect semantics, and update/install/rollback. Payment and call signaling are the two rows in this batch where no existing canonical owner safely owns the authoritative state; ADR-002 and ADR-003 define minimal infrastructure owners without creating a parallel product architecture. These rows remain research/ownership only, not implementation claims.
+
+
+## Recursive long-tail owner-resolution checkpoint — 2026-10-02
+
+Every product-capability domain currently present in this recursively discovered graph now has a formal owner-resolution row or is explicitly covered by a named aggregate row. This closes the current known graph's owner-resolution unknowns, not global P0: generated/resource/platform-packaging and third-party/license provenance are still incomplete, so source closure cannot yet prove that no additional applicable product capability is hidden outside the current inventory. Production implementation and packaged acceptance remain separate.
