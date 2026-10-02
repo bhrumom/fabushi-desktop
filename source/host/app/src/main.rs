@@ -294,7 +294,7 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
     ProviderRetryEvent, ProviderRetryOutcome, ProviderRetryReport,
 };
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
-use mahayana_host_runtime::runner::turn_run_shell::is_recovery_shaped_turn;
+use mahayana_host_runtime::runner::is_recovery_shaped_turn;
 use mahayana_host_runtime::runner::prompt_collector_glue::project_provider_messages_for_turn;
 use mahayana_host_runtime::runner::sand_memory::{
     FrozenMemorySnapshot, MEMORY_PROJECT_INJECTED_CAP, MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
