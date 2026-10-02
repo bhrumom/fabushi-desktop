@@ -63,7 +63,7 @@ A previous CMake-only scan correctly found no CMake `file(DOWNLOAD)`, `FetchCont
 
 P0 must still enumerate:
 
-1. immutable commit/digest resolution for mutable tag/branch/`latest`/bootstrap and package-manager acquisitions already inventoried from prepare/Docker/Snap;
+1. immutable build-input proof for tag/branch/`latest`/bootstrap, archive and package-manager acquisitions already inventoried from prepare/Docker/Snap (current tag→commit observations are recorded but are not historical immutability proof);
 2. dependency license expressions for those external acquisitions;
 3. copied/derived asset provenance for any Telegram resources/shaders/models actually used by Fabushi;
 4. third-party dependency/license expressions across the already closed gitlink tree and external acquisition set;

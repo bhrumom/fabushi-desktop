@@ -46,7 +46,7 @@ The exact-commit class includes, among others, Desktop App patches, zlib, libvpx
 
 Package-manager acquisition is also reachable and is not hidden by the URL inventory: the scripts invoke pip and platform package managers, while Snap declares `build-packages`/stage packages. Those package names and the package repository snapshot are provenance inputs even where no literal download URL appears in the frozen source.
 
-This closes discovery of the tracked external-acquisition **entrypoints**. It does not convert mutable refs/tags/package-manager resolution into immutable provenance. For release closure, every reachable acquisition must either resolve to an immutable digest/commit plus license evidence or be proven irrelevant to the Fabushi distributed build.
+This closes discovery of the tracked external-acquisition **entrypoints**. It does not convert mutable refs/tags/package-manager resolution into immutable provenance. `research/external-acquisition-ref-resolution.md` records the 2026-10-02 remote commit observed for the frozen scripts' version/tag refs while preserving that limitation. For release closure, every reachable acquisition must either resolve to an immutable digest/commit plus license evidence or be proven irrelevant to the Fabushi distributed build.
 
 ## Resource and shader inventory
 
