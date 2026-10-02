@@ -10,13 +10,13 @@ Complete: false
 | Telegram as research source only | specified | no Telegram Provider/network dependency |
 | Existing-owner-first absorption | specified | new owners require ADR |
 | Native Fabushi network | specified | protocol/services not yet designed |
-| Exact existing-owner inventory | recorded | evidence snapshot at PR #20 `f9546f9a77e22d8ce7dabf978eeeffa079b22915`; refresh on head change |
+| Exact existing-owner inventory | recorded | refreshed against PR #20 `556f6308c35055321395e2cf5f3446486b519255`; refresh on head change |
 | Telegram capability graph | in-progress | top-level discovery pass recorded; recursive source closure and behavior research incomplete |
 | Capability → owner mapping | blocked | full per-capability resolution still pending |
-| Conversation/message model evolution | blocked | P0 pending |
-| Native messaging infrastructure | blocked | not implemented |
-| Human messaging in existing workspace | blocked | not implemented |
-| Human + Agent unified flow | blocked | not implemented |
+| Conversation/message model evolution | partial | Human private conversation and Human/Agent transcript projection are production-wired for the first slice; broader capability mapping remains P0-open |
+| Native messaging infrastructure | partial | existing Session/Transcript SQLite owner durably accepts Human messages with clientNonce idempotency; native network/sync/reconnect/multi-device transport remains open |
+| Human messaging in existing workspace | production-wired / unaccepted | same sidebar/workspace/composer/transcript path is wired; exact-head CI and packaged acceptance remain required |
+| Human + Agent unified flow | production-wired / unaccepted | explicit Human -> Agent handoff reuses Coordinator -> Host -> Runner and persists the Agent result into the same Human transcript; verification still open |
 | Full feature absorption | blocked | not implemented |
 | Packaged acceptance | blocked | no artifact |
 | Release | blocked | ACs incomplete |
