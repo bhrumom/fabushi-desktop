@@ -119,8 +119,8 @@ pub struct TranscriptManagerServices {
 /// Session, send-pipeline, run-lifecycle and Runner registry state. The Rust
 /// port keeps those owners independent, but constructs them exactly once here
 /// so Host main does not create parallel runtime/ack/runner registries.
-type AutomationConfigChangedObserver = Arc<dyn Fn() + Send + Sync>;
-type ListenerConnectObserver = Arc<dyn Fn(&str, &str) + Send + Sync>;
+pub type AutomationConfigChangedObserver = Arc<dyn Fn() + Send + Sync>;
+pub type ListenerConnectObserver = Arc<dyn Fn(&str, &str) + Send + Sync>;
 
 pub struct TranscriptManager {
     session_workers: Arc<ProductionSessionWorkers>,
@@ -489,14 +489,18 @@ impl TranscriptManager {
         method: &str,
         args: &Value,
     ) -> Option<Result<Value, AgentLifecycleGatewayError>> {
-        dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes(
+        let result = dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes(
             &self.session_workers,
             deletion_runtime,
             self.roster_emit(),
             kickstart_created_agent,
             method,
             args,
-        )
+        );
+        if matches!(result.as_ref(), Some(Ok(_))) {
+            self.sync_memory_active_agent();
+        }
+        result
     }
 
     pub fn dispatch_session_gateway_call(
@@ -508,13 +512,23 @@ impl TranscriptManager {
         let content_search = services
             .as_ref()
             .map(|services| services.content_search.as_ref() as &dyn RosterContentSearch);
-        dispatch_production_session_gateway_call_with_content_search_and_group_chat(
+        let result = dispatch_production_session_gateway_call_with_content_search_and_group_chat(
             &self.session_workers,
             content_search,
             self.group_chat.as_ref(),
             method,
             args,
-        )
+        );
+        if matches!(result.as_ref(), Some(Ok(_))) {
+            self.sync_memory_active_agent();
+        }
+        result
+    }
+
+    fn sync_memory_active_agent(&self) {
+        self.session_workers
+            .memory_service()
+            .set_active_agent(self.active_agent_id());
     }
 
     pub fn active_agent_id(&self) -> Option<String> {
@@ -576,6 +590,7 @@ impl TranscriptManager {
         let transcript = self
             .transcript_runtime
             .switch_agent(&self.session_workers, agent_id, now_ms)?;
+        self.sync_memory_active_agent();
         let next = self.automation_runtime.watch_agent_automations(agent_id)?;
         let previous = self
             .watched_automation_store
@@ -633,6 +648,7 @@ impl TranscriptManager {
         self.set_agent_run_lifecycle_observer(None);
         self.set_automation_config_changed_observer(None);
         self.set_listener_connect_observer(None);
+        self.session_workers.memory_service().set_active_agent(None);
         if let Some(roster) = self
             .roster_emit
             .lock()

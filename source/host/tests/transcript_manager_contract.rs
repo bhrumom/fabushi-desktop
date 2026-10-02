@@ -181,6 +181,10 @@ fn manager_is_the_single_production_composition_owner() {
     manager
         .switch_agent(&agent.id, 10.0)
         .expect("switch active agent");
+    assert_eq!(
+        sessions.memory_service().active_agent_id().as_deref(),
+        Some(agent.id.as_str()),
+    );
     manager
         .set_window_focused(true, 123.0)
         .expect("manager window focus");
@@ -249,6 +253,7 @@ fn manager_is_the_single_production_composition_owner() {
         assert!(wakes.dm_preempted_wake_agent_ids.is_empty());
     }
     assert_eq!(handoff.pending_count(), 0);
+    assert_eq!(sessions.memory_service().active_agent_id(), None);
     assert_eq!(sessions.active_agent_store_owner_count(), 0);
     assert_eq!(sessions.active_agent_db_owner_count(), 0);
     assert_eq!(sessions.active_worker_count(), 0);
