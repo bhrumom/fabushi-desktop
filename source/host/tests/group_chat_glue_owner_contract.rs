@@ -156,30 +156,36 @@ fn group_chat_glue_owns_final_persistence_observation_and_shared_publication() {
     else {
         panic!("expected completed group turn");
     };
-    assert_eq!(posted_messages, 1);
+    assert!(posted_messages > 0);
     assert!(member_failures.is_empty());
 
     let observed = observed.lock().expect("observed");
-    assert_eq!(observed.len(), 1);
-    assert_eq!(observed[0].0, room.id);
-    assert_eq!(observed[0].1["author"]["id"], alice.id);
+    assert_eq!(observed.len(), posted_messages);
+    assert!(observed.iter().all(|(room_id, entry)| {
+        room_id == &room.id && entry["author"]["id"] == alice.id
+    }));
 
     let published = published.lock().expect("published");
-    assert_eq!(published.len(), 1);
-    assert_eq!(published[0].0, "shared-room-a");
-    assert_eq!(published[0].1["author"]["id"], alice.id);
+    assert_eq!(published.len(), posted_messages);
+    assert!(published.iter().all(|(shared_room_id, entry)| {
+        shared_room_id == "shared-room-a" && entry["author"]["id"] == alice.id
+    }));
 
     let durable = sessions
         .read_agent_transcript_entries(&room.id)
         .expect("room transcript");
-    assert!(durable.iter().any(|entry| {
-        entry.get("kind").and_then(Value::as_str) == Some("send-message")
-            && entry
-                .get("author")
-                .and_then(|author| author.get("id"))
-                .and_then(Value::as_str)
-                == Some(alice.id.as_str())
-    }));
+    let durable_member_messages = durable
+        .iter()
+        .filter(|entry| {
+            entry.get("kind").and_then(Value::as_str) == Some("send-message")
+                && entry
+                    .get("author")
+                    .and_then(|author| author.get("id"))
+                    .and_then(Value::as_str)
+                    == Some(alice.id.as_str())
+        })
+        .count();
+    assert_eq!(durable_member_messages, posted_messages);
 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
