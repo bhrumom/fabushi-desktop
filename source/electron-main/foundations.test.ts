@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -403,6 +403,22 @@ test("Fabushi Human identity is stable per account without persisting the raw ac
     const persisted = readFileSync(join(root, "fabushi-human-identities.json"), "utf8");
     assert.ok(persisted.includes(first));
     assert.equal(persisted.includes("account@example.com"), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("Fabushi Human identity fails closed on corrupt persisted state instead of rotating identity", () => {
+  const root = mkdtempSync(join(tmpdir(), "fabushi-human-identity-corrupt-"));
+  const path = join(root, "fabushi-human-identities.json");
+  try {
+    writeFileSync(path, "{not-json", "utf8");
+    const store = createProductionHumanIdentityStore(root);
+    assert.throws(
+      () => store.resolve("account@example.com"),
+      /Fabushi Human identity store is corrupt/,
+    );
+    assert.equal(readFileSync(path, "utf8"), "{not-json");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
