@@ -2,7 +2,7 @@
 
 Status: discovery pass; recursive closure and behavior research incomplete  
 Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`  
-Target owner snapshot: PR #20 `f9546f9a77e22d8ce7dabf978eeeffa079b22915`
+Target owner snapshot: PR #20 `556f6308c35055321395e2cf5f3446486b519255`
 
 This graph records product capability domains observed in the frozen Telegram Desktop source tree. It is intentionally not marked research-complete: the recursive submodule/download/generated/resource closure is still open, so P0 cannot yet claim that no unknown capability domain remains.
 
@@ -12,7 +12,7 @@ This graph records product capability domains observed in the frozen Telegram De
 | account / auth / sessions / multi-account | `intro`, `api/api_authorizations.*`, `data/data_authorization.h`, `storage/storage_account.*` | existing account/auth/session owners; native Human identity contract still unresolved |
 | contacts / identity / presence | `data/data_peer*`, `api/api_peer_search.*`, participant/status code | Shared Room/member + account identity + minimal presence infrastructure if required |
 | dialog list / folders / archive / pinning | `dialogs/*`, `data/data_chat_filters.*`, `data/data_folder.*`, `storage/storage_folder_archive.*` | existing sidebar / conversation list |
-| private messaging / history | `history/*`, `data/data_messages.*`, `data/data_history_messages.*`, `api/api_sending.*` | existing conversation workspace + transcript; native messaging infrastructure below |
+| private messaging / history | `history/*`, `data/data_messages.*`, `data/data_history_messages.*`, `api/api_sending.*` | researched in `projects/telegram-desktop-rust/research/message-history-lifecycle.md`; existing conversation workspace + transcript + Session SQLite selected, with minimal native transport/sync below |
 | reply / quote / forward provenance | `history/history_item*`, `data/data_reply_preview.*`, replies/thread structures | existing transcript relation/thread owner |
 | edit / delete lifecycle | `api/api_editing.*`, history/data message state | existing transcript/message lifecycle |
 | reactions | `data/data_message_reactions.*`, `api/api_who_reacted.*`, info reaction list | existing reaction/transcript owner |
