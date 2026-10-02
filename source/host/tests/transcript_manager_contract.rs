@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
+use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResponse;
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::AgentDeletionRuntimeDeps;
@@ -652,6 +653,75 @@ fn manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle() {
     let _ = fs::remove_dir_all(root);
 }
 
+
+#[test]
+fn manager_emits_active_session_automations_through_the_roster_surface() {
+    let root = temp_root();
+    fs::create_dir_all(&root).expect("root");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let manager = TranscriptManager::new(&root, Arc::clone(&sessions));
+    let events = Arc::new(Mutex::new(Vec::<Value>::new()));
+    let captured = Arc::clone(&events);
+    let roster = Arc::new(ProductionRosterEmit::new(
+        Arc::clone(&sessions),
+        manager.transcript_runtime(),
+        Arc::new(move |event| captured.lock().expect("events").push(event)),
+    ));
+    manager.bind_roster_emit(roster).expect("bind roster");
+
+    let active = sessions
+        .materialize_new_session(None, "user", None)
+        .expect("active agent");
+    let inactive = sessions
+        .materialize_new_session(None, "user", None)
+        .expect("inactive agent");
+    manager.switch_agent(&active.id, 1_000.0).expect("activate agent");
+
+    let store = SandAgentSessionStore::new(Arc::clone(&sessions));
+    let automations = store
+        .create_agent_automation(
+            &active.id,
+            &AutomationSpec {
+                name: "Morning Check".into(),
+                prompt: "Check the inbox.".into(),
+                trigger: json!({"type":"cron","schedule":"0 9 * * 1-5"}),
+                is_enabled: Some(true),
+            },
+        )
+        .expect("create automation");
+    assert_eq!(automations.len(), 1);
+
+    assert!(manager.emit_automations(&active.id).expect("emit active"));
+    let emitted = events.lock().expect("events").clone();
+    let automation_event = emitted
+        .iter()
+        .rev()
+        .find(|event| event.get("channel").and_then(Value::as_str) == Some("automations"))
+        .expect("automation event");
+    assert_eq!(
+        automation_event
+            .pointer("/payload/agentId")
+            .and_then(Value::as_str),
+        Some(active.id.as_str())
+    );
+    assert_eq!(
+        automation_event
+            .pointer("/payload/automations/0/name")
+            .and_then(Value::as_str),
+        Some("Morning Check")
+    );
+
+    let before = emitted.len();
+    assert!(!manager.emit_automations(&inactive.id).expect("skip inactive"));
+    assert_eq!(events.lock().expect("events").len(), before);
+
+    manager.dispose();
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
 
 #[test]
 fn manager_owns_box_handoff_state_and_handback_settlement() {

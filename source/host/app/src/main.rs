@@ -7785,6 +7785,9 @@ fn start_routed_provider_task(
                 &agent_id,
                 worker_ack_token.as_deref(),
             );
+            if result.is_ok() {
+                let _ = worker_transcript_manager.emit_automations(&agent_id);
+            }
             worker_routed_turn_lease.settle();
             let _ = worker_transcript_runtime
                 .retire_idle_live_session(&worker_retire_sessions, &agent_id);

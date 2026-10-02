@@ -290,6 +290,26 @@ impl ProductionRosterEmit {
         Ok(())
     }
 
+    pub fn emit_automations<T: Serialize>(
+        &self,
+        agent_id: &str,
+        automations: &T,
+    ) -> Result<bool, String> {
+        if self.active_agent_id().as_deref() != Some(agent_id) {
+            return Ok(false);
+        }
+        let automations = serde_json::to_value(automations)
+            .map_err(|error| format!("could not encode automations: {error}"))?;
+        (self.event_sink)(json!({
+            "channel": "automations",
+            "payload": {
+                "agentId": agent_id,
+                "automations": automations
+            }
+        }));
+        Ok(true)
+    }
+
     pub fn emit_agent_update(&self, agent_id: &str) -> Result<(), String> {
         if agent_id.trim().is_empty() {
             return self.emit_agents();

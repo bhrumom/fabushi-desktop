@@ -37,7 +37,7 @@ use crate::extensions::turn_execution::turn_execution_service::{
 };
 
 use super::ack_obligations::AckObligations;
-use super::automation_runtime::AutomationRuntime;
+use super::automation_runtime::{AutomationRuntime, automation_records_value};
 use super::background_wakes::BackgroundWakes;
 use super::box_handoff_resume::settle_box_handoff_state_with_sink;
 use super::client_side_tool_v2_producer::{
@@ -286,6 +286,15 @@ impl TranscriptManager {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .clone()
+    }
+
+    pub fn emit_automations(&self, agent_id: &str) -> Result<bool, String> {
+        let Some(roster) = self.roster_emit() else {
+            return Ok(false);
+        };
+        let automations =
+            automation_records_value(self.automation_runtime.get_agent_automations(agent_id)?);
+        roster.emit_automations(agent_id, &automations)
     }
 
     pub fn respond_to_widget_with<Send>(
