@@ -48,7 +48,9 @@ use super::production_runtime::{
 use super::runner_registry::TranscriptRunnerRegistry;
 use super::roster_emit::ProductionRosterEmit;
 use super::roster_search::RosterContentSearch;
+use super::sand_upgrade_resume_store::UpgradeResumeMarker;
 use super::shared_rooms::SharedRooms;
+use super::upgrade_recreate_resume::UpgradeQuiesceSummary;
 use super::widget_responses::WidgetResponses;
 use super::workflow_commands::WorkflowCommands;
 
@@ -763,6 +765,36 @@ impl TranscriptManager {
 
     pub fn clear_agent_durable_recovery(&self, agent_id: &str) {
         self.transcript_runtime.clear_agent_durable_recovery(agent_id);
+    }
+
+    pub fn live_running_agent_ids(&self) -> Vec<String> {
+        self.transcript_runtime.live_running_agent_ids()
+    }
+
+    pub fn active_turn_source(&self, agent_id: &str) -> Option<String> {
+        self.transcript_runtime.active_turn_source(agent_id)
+    }
+
+    pub fn has_carryable_pending_wake(&self) -> bool {
+        self.transcript_runtime.has_carryable_pending_wake()
+    }
+
+    pub fn quiesce_for_upgrade(&self) -> UpgradeQuiesceSummary {
+        self.transcript_runtime.quiesce_for_upgrade()
+    }
+
+    pub fn is_quiescing_for_upgrade(&self) -> bool {
+        self.transcript_runtime.is_quiescing_for_upgrade()
+    }
+
+    pub fn mark_upgrade_resume_pending(&self, marker: UpgradeResumeMarker) {
+        if let Some(store) = self.transcript_runtime.upgrade_resume_store() {
+            store.mark_pending(marker);
+        }
+    }
+
+    pub fn resume_after_recreate(&self) {
+        self.transcript_runtime.resume_after_recreate();
     }
 
     pub fn is_disposed(&self) -> bool {

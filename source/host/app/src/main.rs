@@ -1101,7 +1101,7 @@ struct ProductionCreatedAgentKickstartRuntime {
 
 impl CreatedAgentKickstartRuntimePort for ProductionCreatedAgentKickstartRuntime {
     fn is_run_ready(&self) -> bool {
-        !self.deps.transcript_runtime.is_quiescing_for_upgrade()
+        !self.deps.transcript_manager.is_quiescing_for_upgrade()
             && configured_routed_provider(&self.deps.data_dir.join("settings.json")).is_some()
     }
 
@@ -1144,15 +1144,15 @@ impl CreatedAgentKickstartRuntimePort for ProductionCreatedAgentKickstartRuntime
     }
 
     fn mark_resume_pending(&self, agent_id: &str, source: &str) -> Result<(), String> {
-        if let Some(store) = self.deps.transcript_runtime.upgrade_resume_store() {
-            store.mark_pending(UpgradeResumeMarker {
+        self.deps
+            .transcript_manager
+            .mark_upgrade_resume_pending(UpgradeResumeMarker {
                 agent_id: agent_id.to_string(),
                 marked_at_ms: started_at_ms() as f64,
                 source: Some(source.to_string()),
                 automation_id: None,
                 automation_run_id: None,
             });
-        }
         Ok(())
     }
 
@@ -1583,15 +1583,15 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
         let Some(gateway) = self.gateway() else {
             return;
         };
-        if let Some(store) = gateway.transcript_runtime.upgrade_resume_store() {
-            let _ = store.mark_pending(UpgradeResumeMarker {
+        gateway
+            .transcript_manager
+            .mark_upgrade_resume_pending(UpgradeResumeMarker {
                 agent_id: agent_id.to_string(),
                 marked_at_ms: started_at_ms() as f64,
                 source: Some("background-revival".into()),
                 automation_id: None,
                 automation_run_id: None,
             });
-        }
     }
 
     fn report_revival(&self, report: RevivalReport) {
@@ -9244,12 +9244,10 @@ impl GatewayApi for UnifiedGatewayApi {
     }
 
     fn health(&self) -> GatewayHealth {
-        let running_agent_ids = self.transcript_runtime.live_running_agent_ids();
+        let running_agent_ids = self.transcript_manager.live_running_agent_ids();
         let awaiting_approval_agent_ids =
             self.auto_review.service().agent_ids_with_pending_approvals();
-        let active_agent_id = self
-            .transcript_runtime
-            .active_agent_id(&self.session_workers);
+        let active_agent_id = self.transcript_manager.active_agent_id();
         let has_running_subagents = self
             .generated_agent_runtime
             .lock()
@@ -9259,7 +9257,7 @@ impl GatewayApi for UnifiedGatewayApi {
         let has_running_background_shell =
             self.background_shell_watches.has_running_background_shell_work();
         let has_other_background_work =
-            self.transcript_runtime.has_carryable_pending_wake()
+            self.transcript_manager.has_carryable_pending_wake()
                 || has_running_subagents
                 || has_running_background_shell
                 || has_mid_drain_revival;
@@ -9290,8 +9288,8 @@ impl GatewayApi for UnifiedGatewayApi {
             .prepare_for_upgrade()
             .map_err(GatewayCommandError::Internal)?;
         Ok(serde_json::json!({
-            "quiescing": self.transcript_runtime.is_quiescing_for_upgrade(),
-            "runningTurns": self.transcript_runtime.live_running_agent_ids().len(),
+            "quiescing": self.transcript_manager.is_quiescing_for_upgrade(),
+            "runningTurns": self.transcript_manager.live_running_agent_ids().len(),
             "resumeAgentIds": self.transcript_runtime.upgrade_resume_agent_ids(),
         }))
     }
@@ -10377,7 +10375,7 @@ fn main() {
         Arc::clone(&mcp_lifecycle_relay),
         box_status_loader,
     ));
-    let box_store_idle_runtime = Arc::clone(&transcript_runtime);
+    let box_store_idle_runtime = Arc::clone(&transcript_manager);
     let mcp_service = match production_extensions.start_mcp(
         &app_data_dir,
         Arc::clone(&mcp_lifecycle_relay),
@@ -10958,7 +10956,7 @@ fn main() {
     let host_upgrade_automation = transcript_manager.automation_runtime();
     let host_upgrade_production_automations = Arc::clone(&automations_lifecycle_slot);
     let host_upgrade_sharing = Arc::clone(&cross_user);
-    let host_upgrade_transcript = Arc::clone(&transcript_runtime);
+    let host_upgrade_transcript = Arc::clone(&transcript_manager);
     let host_upgrade_sessions = Arc::clone(&session_workers);
     let host_upgrade_resume_gateway = Arc::clone(&host_upgrade_gateway_slot);
     let host_upgrade = match start_production_host_upgrade_extension(
@@ -10990,15 +10988,13 @@ fn main() {
                 for agent_id in kickstart_agent_ids {
                     let _ = host_upgrade_sessions
                         .set_agent_introduction_pending(&agent_id, false);
-                    if let Some(store) = host_upgrade_transcript.upgrade_resume_store() {
-                        store.mark_pending(UpgradeResumeMarker {
-                            agent_id,
-                            marked_at_ms: started_at_ms() as f64,
-                            source: Some("turn".into()),
-                            automation_id: None,
-                            automation_run_id: None,
-                        });
-                    }
+                    host_upgrade_transcript.mark_upgrade_resume_pending(UpgradeResumeMarker {
+                        agent_id,
+                        marked_at_ms: started_at_ms() as f64,
+                        source: Some("turn".into()),
+                        automation_id: None,
+                        automation_run_id: None,
+                    });
                 }
                 Ok(())
             }),

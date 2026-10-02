@@ -612,3 +612,40 @@ fn manager_owns_pending_wake_rearm_and_replays_durable_wakes() {
     manager.dispose();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle() {
+    use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::UpgradeResumeMarker;
+
+    let root = temp_root();
+    fs::create_dir_all(&root).expect("root");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let manager = TranscriptManager::new(&root, Arc::clone(&sessions));
+
+    assert!(!manager.is_quiescing_for_upgrade());
+    manager.mark_upgrade_resume_pending(UpgradeResumeMarker {
+        agent_id: "agent-upgrade".into(),
+        marked_at_ms: 42.0,
+        source: Some("background-revival".into()),
+        automation_id: None,
+        automation_run_id: None,
+    });
+    assert_eq!(
+        manager.transcript_runtime().upgrade_resume_agent_ids(),
+        vec!["agent-upgrade".to_string()]
+    );
+
+    let summary = manager.quiesce_for_upgrade();
+    assert!(summary.quiescing);
+    assert_eq!(summary.running_turns, 0);
+    assert!(manager.is_quiescing_for_upgrade());
+    manager.resume_after_recreate();
+    assert!(!manager.is_quiescing_for_upgrade());
+
+    manager.dispose();
+    let _ = fs::remove_dir_all(root);
+}
