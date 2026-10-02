@@ -6,6 +6,9 @@ use crate::ports::mcp_state_executor::{
 use super::mcp_service::BoxServerStatus;
 use std::sync::Mutex;
 
+pub const MCP_TOOL_EXEC_FIELD_NUMBER: u32 = 11;
+pub const MCP_STATE_EXEC_FIELD_NUMBER: u32 = 36;
+
 pub struct ProductionBoxMcpStateLoader {
     accessor: Mutex<ProductionBoxResourceAccessor>,
 }
