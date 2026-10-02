@@ -2,7 +2,7 @@
 
 Status: researched and owner-resolved for the four earliest FBCP P0 domains; implementation/acceptance remains open
 Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
-Canonical Fabushi architecture snapshot: PR #20 `de0f1749a675729fb97017085374b96aaa2ca7bb`
+Canonical Fabushi architecture snapshot: PR #20 `bbc7b34a5f6dad46e3d4ca88fe21cc4f7932ce09`
 Captured: 2026-10-02
 
 This dossier records behavior learned from Telegram Desktop without adopting its account model, network, protocol, or product architecture. Each capability is resolved into the current Fabushi owner before any infrastructure proposal.

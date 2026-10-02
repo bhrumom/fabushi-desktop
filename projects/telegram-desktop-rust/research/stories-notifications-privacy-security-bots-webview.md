@@ -2,7 +2,7 @@
 
 Status: FBCP P0 source-informed owner-resolution dossier
 Frozen Telegram source: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
-Canonical Fabushi architecture snapshot: PR #20 `de0f1749a675729fb97017085374b96aaa2ca7bb`
+Canonical Fabushi architecture snapshot: PR #20 `bbc7b34a5f6dad46e3d4ca88fe21cc4f7932ce09`
 
 This dossier records product behavior learned from the frozen Telegram source and resolves it into the current Fabushi product architecture. Telegram wire types, MTProto, Telegram Bot APIs and Telegram WebApp runtime are research inputs only; none becomes a Fabushi runtime dependency or product truth.
 

@@ -2,7 +2,7 @@
 
 Status: discovery pass; recursive gitlink closure complete; behavior/resource/license closure still incomplete
 Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
-Target owner snapshot: PR #20 `de0f1749a675729fb97017085374b96aaa2ca7bb`
+Target owner snapshot: PR #20 `bbc7b34a5f6dad46e3d4ca88fe21cc4f7932ce09`
 
 This graph records product capability domains observed in the frozen Telegram Desktop source tree. It is intentionally not marked research-complete: recursive gitlink closure is now complete, but generated/resource/platform-packaging/license provenance and behavior-level resolution for remaining long-tail domains are still open, so P0 cannot yet claim that no unknown capability domain remains.
 
@@ -127,4 +127,4 @@ Formal owner-resolution now covers Premium/entitlements, credits/gifts, business
 
 ## Recursive long-tail owner-resolution checkpoint — 2026-10-02
 
-Every product-capability domain currently present in this recursively discovered graph now has a formal owner-resolution row or is explicitly covered by a named aggregate row. This closes the current known graph's owner-resolution unknowns, not global P0: generated/resource/platform-packaging and third-party/license provenance are still incomplete, so source closure cannot yet prove that no additional applicable product capability is hidden outside the current inventory. Production implementation and packaged acceptance remain separate.
+Every product-capability domain currently present in this recursively discovered graph now has a formal owner-resolution row or is explicitly covered by a named aggregate row. This closes the current known graph's owner-resolution unknowns, not global P0: immutable external dependency/resource/license provenance is still incomplete, so source closure cannot yet prove that no additional applicable product capability is hidden outside the current inventory. Production implementation and packaged acceptance remain separate.

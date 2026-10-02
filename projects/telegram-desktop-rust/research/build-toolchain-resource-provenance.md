@@ -32,6 +32,22 @@ A whole-tree CMake scan found no CMake `file(DOWNLOAD)`, `FetchContent`, or `Ext
 
 Therefore build-time external acquisition is a real provenance surface. Each fetched dependency must be treated as an input to research/release provenance even when it is not a root gitlink. Mutable refs such as `latest`, `master`, or branch/tag-only fetches are weaker provenance than exact commits and must not be promoted to exact-ref closure without additional evidence.
 
+## External acquisition inventory
+
+A tracked-source scan of the frozen build roots records every explicit URL acquisition entrypoint in the three build surfaces that actually fetch dependencies/tools:
+
+| Surface | URL acquisition mentions | Unique URLs | Ref quality observed |
+| --- | ---: | ---: | --- |
+| `Telegram/build/prepare/prepare.py` | 45 | 41 | mixture of exact commits, version tags, short commit IDs, mutable `master`/default branches, `latest`, versioned archives and bootstrap URLs |
+| `Telegram/build/docker/centos_env/Dockerfile` | 44 | 44 | 11 explicit exact-commit fetches, version/tag/branch clones, one versioned Boost archive, and rustup bootstrap |
+| `snap/snapcraft.yaml` | 15 | 15 | exact `source-commit` entries plus tag/branch sources and rustup bootstrap |
+
+The exact-commit class includes, among others, Desktop App patches, zlib, libvpx, Breakpad/Linux syscall support, tg_owt, TDLib/TDE2E and tlottie. The version/tag/branch class includes xz, Little-CMS, brotli, Highway, mozjpeg, Opus, dav1d, OpenH264, WebP, libavif, libjxl, rnnoise, FFmpeg/nv-codec, libheif, PipeWire, OpenAL, OpenSSL, XKB/X11 components, Qt and Ada. `prepare.py` additionally contains mutable or bootstrap surfaces including NuGet `latest`, Chromium gyp `@master`, default-branch clones such as desktop-app/lzma and FFmpeg/gas-preprocessor, and rustup installer endpoints. Snap pins some entries by commit but still uses `source-tag`/`source-branch` for others.
+
+Package-manager acquisition is also reachable and is not hidden by the URL inventory: the scripts invoke pip and platform package managers, while Snap declares `build-packages`/stage packages. Those package names and the package repository snapshot are provenance inputs even where no literal download URL appears in the frozen source.
+
+This closes discovery of the tracked external-acquisition **entrypoints**. It does not convert mutable refs/tags/package-manager resolution into immutable provenance. For release closure, every reachable acquisition must either resolve to an immutable digest/commit plus license evidence or be proven irrelevant to the Fabushi distributed build.
+
 ## Resource and shader inventory
 
 At the frozen root, `Telegram/Resources` contains 3,073 tracked files. `Telegram/shaders` contains 35 tracked shader source files. The premium 3D model generator consumes eight tracked `.obj` model inputs. The resource tree includes themes, language packs, emoji/resource QRCs, export/webview/picker HTML, sounds, Windows resources/manifests, macOS assets and update-key material.

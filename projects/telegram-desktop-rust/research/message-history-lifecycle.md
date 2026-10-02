@@ -2,7 +2,7 @@
 
 Status: researched for the first FBCP message/history slice; broader Telegram capability research remains incomplete
 Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
-Target architecture snapshot: PR #20 `de0f1749a675729fb97017085374b96aaa2ca7bb`
+Target architecture snapshot: PR #20 `bbc7b34a5f6dad46e3d4ca88fe21cc4f7932ce09`
 Capability: private messaging / message history lifecycle
 Target rule: absorb behavior into existing Fabushi owners; do not carry MTProto or Telegram product ownership into runtime.
 

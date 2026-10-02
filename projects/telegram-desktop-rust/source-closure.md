@@ -1,6 +1,6 @@
 # Telegram Frozen Source Closure Evidence
 
-Status: P0 evidence; recursive gitlink and tracked generator/packaging-root discovery complete; external-acquisition/resource-license/behavior closure not complete
+Status: P0 evidence; recursive gitlink, tracked generator/packaging roots, and external-acquisition entrypoints discovered; immutable external-resolution/resource-license/behavior closure not complete
 Frozen root: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`  
 Captured: 2026-10-02
 
@@ -50,7 +50,7 @@ The frozen root already proves these non-product-code inputs are reachable and t
 | generators/codegen | `Telegram/SourceFiles/codegen`, scheme/language/number/MIDL/update-key/DBus/AppStream/model generation references in CMake | source-level input→output map recorded in `research/build-toolchain-resource-provenance.md`; generated outputs are not Fabushi shipping inputs by default |
 | resources/assets | `Telegram/Resources` themes, language bundles, emoji, export templates, webview/picker HTML, sounds and updater/platform assets | resource roots identified; copied/derived asset and per-license review still incomplete |
 | shaders | `Telegram/shaders` | 35 tracked sources identified; QRhi `qsb` output/QRC generation mapped; copied/derived shader license provenance remains open |
-| build/packaging | `Telegram/build`, `Telegram/cmake`, `snap`, Windows/macOS/Linux packaging/update inputs | tracked platform roots mapped; explicit non-CMake network acquisition exists in prepare/Docker scripts and still requires dependency-by-dependency provenance closure |
+| build/packaging | `Telegram/build`, `Telegram/cmake`, `snap`, Windows/macOS/Linux packaging/update inputs | tracked platform roots and all explicit URL acquisition entrypoints mapped; mutable refs, package-manager resolution and dependency-by-dependency licenses remain open |
 | native third parties | direct gitlinks including `tgcalls`, `lib_webrtc`, `lib_webview`, FIDO2 and media/storage libraries | all direct/nested gitlink recursion closed, including `cppgir`→`expected-lite`; non-gitlink external acquisitions remain separate |
 
 No item in this table is an instruction to ship Telegram dependencies. It is source/provenance research required before declaring capability/source coverage complete.
@@ -63,7 +63,7 @@ A previous CMake-only scan correctly found no CMake `file(DOWNLOAD)`, `FetchCont
 
 P0 must still enumerate:
 
-1. all non-gitlink external acquisitions from prepare/Docker/Snap/helper paths, classified by exact commit vs mutable tag/branch/`latest`/URL;
+1. immutable commit/digest resolution for mutable tag/branch/`latest`/bootstrap and package-manager acquisitions already inventoried from prepare/Docker/Snap;
 2. dependency license expressions for those external acquisitions;
 3. copied/derived asset provenance for any Telegram resources/shaders/models actually used by Fabushi;
 4. third-party dependency/license expressions across the already closed gitlink tree and external acquisition set;

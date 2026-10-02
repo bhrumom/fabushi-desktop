@@ -4,7 +4,7 @@ Status: evidence snapshot; P0 not yet passed
 Project: FBCP-001 Revision 2
 Captured: 2026-10-02
 Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`
-PR #20 input: `de0f1749a675729fb97017085374b96aaa2ca7bb`
+PR #20 input: `bbc7b34a5f6dad46e3d4ca88fe21cc4f7932ce09`
 PR state at capture: open, draft, base `main`, head `refactor/grok-018-architecture-rebuild`
 
 This file records the current production owners that FBCP must absorb into. It is not an implementation-complete claim. Any later PR #20 HEAD invalidates the source conclusions below until this inventory is refreshed.
@@ -79,5 +79,5 @@ The existing channel connector path models outside platforms and delivery addres
 
 ## Refresh rule
 
-Before using this inventory for implementation, compare the live PR #20 head to `de0f1749a675729fb97017085374b96aaa2ca7bb`. If it changed, re-run the source inspection and replace stale owner evidence before coding.
-PR #20 rebaseline 2026-10-02: exact delta c2767eac..95995bdf was inspected. It changes only the Grok parity manifest, Host Transcript runner_registry/transcript_manager production ownership, and their focused contracts. It closes the former runner-registry blocker inside the same Host Transcript owner; it does not move FBCP sidebar/account/settings/media/notification/security owner roots. The later exact delta 95995bdf..de0f1749 was also inspected and changes only `source/host/src/selected_image_inputs.rs`, restoring native HEIC/HEIF-style ISO-BMFF image dimension/rotation parsing. That delta does not move any FBCP product owner. The last verified strict-gate first blocker at 95995bdf was `send-message-shaping.ts`; de0f1749 requires its own Actions result before carrying that blocker count forward.
+Before using this inventory for implementation, compare the live PR #20 head to `bbc7b34a5f6dad46e3d4ca88fe21cc4f7932ce09`. If it changed, re-run the source inspection and replace stale owner evidence before coding.
+PR #20 rebaseline 2026-10-02: exact delta c2767eac..95995bdf was inspected. It changes only the Grok parity manifest, Host Transcript runner_registry/transcript_manager production ownership, and their focused contracts. It closes the former runner-registry blocker inside the same Host Transcript owner; it does not move FBCP sidebar/account/settings/media/notification/security owner roots. The later exact delta 95995bdf..de0f1749 was also inspected and changes only `source/host/src/selected_image_inputs.rs`, restoring native HEIC/HEIF-style ISO-BMFF image dimension/rotation parsing. The subsequent de0f1749..bbc7b34a delta adds only the focused `source/host/tests/transcript_send_echo_contract.rs` parity coverage for HEIC/HEIF/AVIF primary-item rotation. Neither delta moves any FBCP product owner. The last verified strict-gate first blocker at 95995bdf was `send-message-shaping.ts`; de0f1749 requires its own Actions result before carrying that blocker count forward.

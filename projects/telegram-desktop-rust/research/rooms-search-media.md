@@ -2,7 +2,7 @@
 
 Status: researched and owner-resolved for this capability cluster; production implementation/acceptance remains open
 Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
-Canonical architecture snapshot: PR #20 `de0f1749a675729fb97017085374b96aaa2ca7bb`
+Canonical architecture snapshot: PR #20 `bbc7b34a5f6dad46e3d4ca88fe21cc4f7932ce09`
 
 Snapshot refresh note: the exact `556f6308... → c2767eac...` PR #20 delta was inspected; it only moves Agent outline-stream identity/coalescing into shipping `RosterProjection`/`ProductionRosterEmit`, so the owner paths selected in this dossier remain valid at c276.
 
