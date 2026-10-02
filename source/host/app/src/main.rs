@@ -5771,6 +5771,7 @@ fn start_routed_provider_task(
             let agent_wake_events = worker_events.clone();
             let priority_registry = Arc::clone(&worker_registry);
             let priority_runtime = Arc::clone(&worker_transcript_runtime);
+            let priority_telemetry = telemetry_logs.clone();
             let agent_message_analytics = product_analytics.clone();
             let agent_messaging = Arc::new(ProductionAgentToAgentMessaging::new(
                 Arc::clone(&worker_sessions),
@@ -5786,10 +5787,20 @@ fn start_routed_provider_task(
                     ) {
                         return 0;
                     }
+                    let was_in_flight = priority_runtime.is_agent_running(target_agent_id);
                     let direct = priority_registry.cancel_agent(target_agent_id, reason);
                     let group_member =
                         priority_registry.preempt_group_member_agent(target_agent_id, reason);
-                    direct.saturating_add(group_member)
+                    let cancelled = direct.saturating_add(group_member);
+                    if cancelled > 0 || was_in_flight {
+                        let _ = priority_telemetry.report_turn_interrupt(&TurnInterruptFields {
+                            conversation_id: target_agent_id.to_string(),
+                            reason: "agent_steer".into(),
+                            had_active_run: cancelled > 0,
+                            was_in_flight,
+                        });
+                    }
+                    cancelled
                 })),
             ).with_analytics(Arc::new(move |from_agent_id, to_agent_id, is_priority| {
                 let _ = agent_message_analytics.track_event(

@@ -147,6 +147,9 @@ fn shipping_priority_peer_steering_cancels_direct_and_group_member_runners() {
     assert!(main.contains(
         "priority_registry.preempt_group_member_agent(target_agent_id, reason)"
     ));
+    assert!(main.contains("priority_runtime.is_agent_running(target_agent_id)"));
+    assert!(main.contains("reason: \"agent_steer\".into()"));
+    assert!(main.contains("priority_telemetry.report_turn_interrupt(&TurnInterruptFields"));
 }
 
 
