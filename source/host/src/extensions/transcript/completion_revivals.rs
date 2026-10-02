@@ -91,6 +91,15 @@ impl CompletionRevivals {
         self.state.lock().unwrap().pending_shell.get(agent_id).cloned().unwrap_or_default()
     }
 
+    pub fn clear_agent_pending_completions(&self, agent_id: &str) {
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        state.pending_subagent.remove(agent_id);
+        state.pending_shell.remove(agent_id);
+    }
+
     /// Frozen SandHost health treats a completion revival that is actively
     /// draining as background work even after its durable marker has been
     /// removed. Read the single CompletionRevivals owner instead of inventing
