@@ -204,3 +204,50 @@ fn incremental_emit_falls_back_to_full_roster_before_cache_seed() {
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn shipping_roster_projection_reuses_stream_identity_and_flushes_on_finish() {
+    let root = temp_root("outline-stream");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let transcript = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    let events = Arc::new(Mutex::new(Vec::<Value>::new()));
+    let sink_events = Arc::clone(&events);
+    let emitter = ProductionRosterEmit::new(
+        Arc::clone(&sessions),
+        transcript,
+        Arc::new(move |event| sink_events.lock().expect("events").push(event)),
+    );
+    emitter.set_outline_stream_coalescing_ms(250);
+
+    emitter.apply_runner_text_delta("agent-a", "stream-a", "hello");
+    let first = events.lock().expect("events")[0].clone();
+    assert_eq!(first["channel"], "outline");
+    assert_eq!(first["payload"]["type"], "appended");
+    let item_id = first["payload"]["item"]["id"]
+        .as_str()
+        .expect("item id")
+        .to_string();
+    drop(first);
+
+    emitter.apply_runner_text_delta("agent-a", "stream-a", "hello world");
+    assert!(emitter.has_pending_outline_stream_update());
+    emitter.finish_runner_outline_stream("stream-a");
+
+    let emitted = events.lock().expect("events");
+    let updated = emitted.last().expect("updated event");
+    assert_eq!(updated["payload"]["type"], "updated");
+    assert_eq!(updated["payload"]["item"]["id"], item_id);
+    assert_eq!(updated["payload"]["item"]["text"], "hello world");
+    drop(emitted);
+
+    emitter.apply_runner_text_delta("agent-a", "stream-a", "new turn");
+    let emitted = events.lock().expect("events");
+    let appended = emitted.last().expect("new appended event");
+    assert_eq!(appended["payload"]["type"], "appended");
+    assert_ne!(appended["payload"]["item"]["id"], item_id);
+    drop(emitted);
+
+    emitter.stop_outline_stream_coalescing();
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}

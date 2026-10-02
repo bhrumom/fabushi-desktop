@@ -158,6 +158,27 @@ fn roster_coalescing_keeps_only_latest_pending_outline() {
 }
 
 #[test]
+fn roster_projection_owns_stream_item_identity_and_lifecycle() {
+    let mut roster = RosterProjection::<String>::default();
+    let (first, inserted) =
+        roster.stream_outline_item_id_or_insert_with("stream-a", || "item-a".into());
+    assert!(inserted);
+    assert_eq!(first, "item-a");
+    let (same, inserted) =
+        roster.stream_outline_item_id_or_insert_with("stream-a", || "unused".into());
+    assert!(!inserted);
+    assert_eq!(same, "item-a");
+    assert!(roster.has_outline_stream("stream-a"));
+    assert!(roster.finish_outline_stream("stream-a"));
+    assert!(!roster.has_outline_stream("stream-a"));
+    assert!(!roster.finish_outline_stream("stream-a"));
+
+    roster.stream_outline_item_id_or_insert_with("stream-b", || "item-b".into());
+    roster.clear_outline_streams();
+    assert!(!roster.has_outline_stream("stream-b"));
+}
+
+#[test]
 fn outline_stream_policy_enforces_frozen_deadline_merge_flush_and_stop_semantics() {
     let mut policy = OutlineStreamCoalescingPolicy::new(OUTLINE_STREAM_COALESCE_MS, 1_000);
 
@@ -169,9 +190,11 @@ fn outline_stream_policy_enforces_frozen_deadline_merge_flush_and_stop_semantics
     let second_deadline = second.deadline.expect("debounced deadline");
     assert!(second.flushed.is_empty());
     assert_eq!(second_deadline.at_ms, 1_450);
-    assert!(policy
-        .flush_deadline(1_449, second_deadline.generation)
-        .is_none());
+    assert!(
+        policy
+            .flush_deadline(1_449, second_deadline.generation)
+            .is_none()
+    );
     assert_eq!(
         policy
             .flush_deadline(1_450, second_deadline.generation)
@@ -187,10 +210,7 @@ fn outline_stream_policy_enforces_frozen_deadline_merge_flush_and_stop_semantics
     assert_eq!(different.flushed[0].item, "third");
     assert_eq!(different.deadline.expect("new item deadline").at_ms, 1_760);
 
-    assert_eq!(
-        policy.flush(1_520).expect("explicit flush").item,
-        "other"
-    );
+    assert_eq!(policy.flush(1_520).expect("explicit flush").item, "other");
     let immediate = policy.queue(1_800, "agent-a", "item-c", "late");
     assert_eq!(immediate.flushed.len(), 1);
     assert_eq!(immediate.flushed[0].item, "late");
