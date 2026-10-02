@@ -10,9 +10,39 @@ use crate::extensions::local_tool_permission::local_tool_permission_controller::
     SandLocalToolRequestStatus,
 };
 use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::runner::box_tool_access::BoxShellAutoReviewCallback;
 use crate::runner::computer_use::ComputerUseCoordination;
+use crate::runner::subagent_runtime::SubagentRuntime;
+use crate::runner::tools::sand_agent_management_tools::AgentManagementSink;
+use crate::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
+use crate::runner::tools::sand_state_tool::{
+    RoutineAutoReviewCallback, RoutinePostWriteCallback, SandStateWriter,
+};
+use crate::runner::tools::sand_subagent_management_tools::SubagentSteerReviewCallback;
+use crate::runner::tools::sand_task_subagent_tool::{SubagentTaskReviewCallback, SubagentTaskSink};
+use crate::runner::turn_agent_composition::TurnAgentComposition;
+use crate::runner_production_bridge::{
+    ProductionRunnerCompositionInput, create_production_runner_composition,
+};
 
 type PermissionEventSink = Arc<dyn Fn(&SandLocalToolControllerEvent) + Send + Sync>;
+
+/// Per-turn Host-owned projections that decorate the canonical Runner composition.
+///
+/// Concrete services are resolved by the shipping Host, while this owner controls
+/// the ordering and one-time projection into the Runner boundary.
+pub struct ProductionTurnCompositionHooks {
+    pub agent_management_sink: Arc<dyn AgentManagementSink>,
+    pub state_writer: Arc<dyn SandStateWriter>,
+    pub routine_auto_review: RoutineAutoReviewCallback,
+    pub box_shell_review: BoxShellAutoReviewCallback,
+    pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
+    pub subagent_task_review: Option<SubagentTaskReviewCallback>,
+    pub subagent_management_runtime: Option<Arc<Mutex<SubagentRuntime>>>,
+    pub subagent_steer_review: Option<SubagentSteerReviewCallback>,
+    pub routine_post_write: Option<RoutinePostWriteCallback>,
+    pub multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
+}
 
 pub struct HostRunnerComposition {
     controller: Arc<SandLocalToolPermissionController>,
@@ -30,8 +60,7 @@ impl HostRunnerComposition {
             if let Err(error) = persist_local_permission_event(&sessions, event) {
                 eprintln!(
                     "mahayana-host local permission transcript projection failed agent={} request={} error={error}",
-                    event.request.agent_id,
-                    event.request.id,
+                    event.request.agent_id, event.request.id,
                 );
             }
         });
@@ -48,6 +77,41 @@ impl HostRunnerComposition {
             surfaces: Mutex::new(HashMap::new()),
             computer_use: Arc::new(Mutex::new(ComputerUseCoordination::new(true))),
         }
+    }
+
+    /// Build one production turn through the canonical Host -> Runner composition owner.
+    ///
+    /// The entrypoint supplies concrete turn-scoped services; this method owns the
+    /// composition order so app/main.rs cannot grow a second Runner assembly path.
+    pub fn compose_production_turn(
+        &self,
+        input: ProductionRunnerCompositionInput,
+        hooks: ProductionTurnCompositionHooks,
+    ) -> TurnAgentComposition {
+        let mut composition = create_production_runner_composition(input)
+            .with_agent_management_sink(hooks.agent_management_sink)
+            .with_state_writer(hooks.state_writer)
+            .with_routine_auto_review(hooks.routine_auto_review)
+            .with_box_shell_review(hooks.box_shell_review);
+
+        if let Some(subagent_task_sink) = hooks.subagent_task_sink {
+            composition = composition.with_subagent_task_sink(subagent_task_sink);
+            if let Some(subagent_task_review) = hooks.subagent_task_review {
+                composition = composition.with_subagent_task_review(subagent_task_review);
+            }
+        }
+        if let Some(subagent_runtime) = hooks.subagent_management_runtime {
+            composition =
+                composition.with_subagent_management(subagent_runtime, hooks.subagent_steer_review);
+        }
+        if let Some(routine_post_write) = hooks.routine_post_write {
+            composition = composition.with_routine_post_write(routine_post_write);
+        }
+        if let Some(multitask_todo_state) = hooks.multitask_todo_state {
+            composition = composition.with_multitask_todo_state(multitask_todo_state);
+        }
+
+        composition
     }
 
     pub fn bind_local_permission_surface(&self, agent_id: &str) {

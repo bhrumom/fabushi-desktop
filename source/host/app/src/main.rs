@@ -82,7 +82,9 @@ use mahayana_host_runtime::extensions::local_tool_permission::extension::{
 use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_resolution::{
     LocalToolPermissionResolutionArgs, SandLocalToolPermissionResolutionError,
 };
-use mahayana_host_runtime::host_runner_composition::HostRunnerComposition;
+use mahayana_host_runtime::host_runner_composition::{
+    HostRunnerComposition, ProductionTurnCompositionHooks,
+};
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult,
     HandoffTelemetry, HandoffTrigger, PendingHandoff, ScreenshotPayload,
@@ -328,7 +330,6 @@ use mahayana_host_runtime::runner::sand_agent_profile_prompt::{
 };
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
-    create_production_runner_composition,
 };
 use mahayana_host_runtime::runner::sand_action_audit::{
     ActionAuditRecord, ActionAuditSink, normalize_navigation_url,
@@ -7299,7 +7300,7 @@ fn start_routed_provider_task(
             } else {
                 ComputerToolExposure::ScreenshotOnly
             };
-            let mut composition = create_production_runner_composition(
+            let composition = host_runner_composition.compose_production_turn(
                 ProductionRunnerCompositionInput {
                     provider,
                     bridge,
@@ -7334,29 +7335,19 @@ fn start_routed_provider_task(
                     }),
                     observation: Some(Arc::clone(&observation)),
                 },
-            )
-            .with_agent_management_sink(agent_management_sink)
-            .with_state_writer(state_writer)
-            .with_routine_auto_review(routine_auto_review)
-            .with_box_shell_review(box_shell_review);
-            if let Some(subagent_task_sink) = worker_subagent_task_sink {
-                composition = composition.with_subagent_task_sink(subagent_task_sink);
-                if let Some(subagent_task_review) = subagent_task_review {
-                    composition = composition.with_subagent_task_review(subagent_task_review);
-                }
-            }
-            if let Some(subagent_runtime) = worker_subagent_management_runtime {
-                composition = composition.with_subagent_management(
-                    subagent_runtime,
+                ProductionTurnCompositionHooks {
+                    agent_management_sink,
+                    state_writer,
+                    routine_auto_review,
+                    box_shell_review,
+                    subagent_task_sink: worker_subagent_task_sink,
+                    subagent_task_review,
+                    subagent_management_runtime: worker_subagent_management_runtime,
                     subagent_steer_review,
-                );
-            }
-            if let Some(routine_post_write) = routine_post_write {
-                composition = composition.with_routine_post_write(routine_post_write);
-            }
-            if let Some(todo_state) = multitask_todo_state {
-                composition = composition.with_multitask_todo_state(todo_state);
-            }
+                    routine_post_write,
+                    multitask_todo_state,
+                },
+            );
             let owner = ProductionTurnAgentOwner::new(composition)
                 .with_agent_state_checkpoint_sink(agent_state_checkpoint_sink)
                 .with_upgrade_quiesce_signal(worker_registry.upgrade_quiesce_signal());

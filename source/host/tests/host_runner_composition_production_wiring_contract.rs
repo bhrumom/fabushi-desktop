@@ -1,0 +1,51 @@
+const OWNER: &str = include_str!("../src/host_runner_composition.rs");
+const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+
+#[test]
+fn host_runner_composition_owns_turn_decoration_order() {
+    for needle in [
+        "pub struct ProductionTurnCompositionHooks",
+        "pub fn compose_production_turn(",
+        "create_production_runner_composition(input)",
+        ".with_agent_management_sink(hooks.agent_management_sink)",
+        ".with_state_writer(hooks.state_writer)",
+        ".with_routine_auto_review(hooks.routine_auto_review)",
+        ".with_box_shell_review(hooks.box_shell_review)",
+        "composition.with_subagent_task_sink(subagent_task_sink)",
+        "composition.with_subagent_management(",
+        "composition.with_routine_post_write(routine_post_write)",
+        "composition.with_multitask_todo_state(multitask_todo_state)",
+    ] {
+        assert!(
+            OWNER.contains(needle),
+            "HostRunnerComposition missing production ownership: {needle}"
+        );
+    }
+}
+
+#[test]
+fn shipping_host_has_one_runner_composition_entrypoint() {
+    assert!(
+        SHIPPING_HOST.contains("host_runner_composition.compose_production_turn("),
+        "shipping Host must delegate turn assembly to HostRunnerComposition",
+    );
+    assert!(
+        !SHIPPING_HOST.contains("create_production_runner_composition("),
+        "shipping Host must not construct a parallel Runner composition",
+    );
+    for needle in [
+        ".with_agent_management_sink(agent_management_sink)",
+        ".with_state_writer(state_writer)",
+        ".with_routine_auto_review(routine_auto_review)",
+        ".with_box_shell_review(box_shell_review)",
+        "composition.with_subagent_task_sink(",
+        "composition.with_subagent_management(",
+        "composition.with_routine_post_write(",
+        "composition.with_multitask_todo_state(",
+    ] {
+        assert!(
+            !SHIPPING_HOST.contains(needle),
+            "shipping Host still owns Runner decoration outside HostRunnerComposition: {needle}",
+        );
+    }
+}
