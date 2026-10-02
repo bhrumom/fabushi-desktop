@@ -4,6 +4,7 @@ use std::sync::{Arc, mpsc};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
@@ -22,6 +23,114 @@ fn temp_root(label: &str) -> std::path::PathBuf {
         "fabushi-production-transcript-{label}-{}-{suffix}",
         std::process::id()
     ))
+}
+
+#[test]
+fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() {
+    let root = temp_root("generated-send-message");
+    let sessions = ProductionSessionWorkers::with_agents_root(root.join("agents"), 5_000);
+    let record = sessions
+        .materialize_new_session(None, "user", None)
+        .expect("materialize Agent session");
+    let agent_id = record.id;
+    sessions
+        .append_agent_transcript_entries(
+            &agent_id,
+            &[serde_json::json!({
+                "kind": "message",
+                "id": "t0u",
+                "role": "user",
+                "content": "question",
+                "isStreaming": false,
+                "timestampMs": 1
+            })],
+        )
+        .expect("seed addressed user turn");
+    let runtime = ProductionTranscriptRuntime::new(Some(&root));
+
+    let auto_threaded = runtime
+        .append_generated_send_message(
+            &sessions,
+            &agent_id,
+            &serde_json::json!({"type":"text","content":"answer"}),
+            10,
+            Some("t0u"),
+            false,
+        )
+        .expect("append threaded SendMessage");
+    assert_eq!(auto_threaded, "t0s0");
+
+    let invalid_reply = runtime
+        .append_generated_send_message(
+            &sessions,
+            &agent_id,
+            &serde_json::json!({
+                "type":"text",
+                "content":"no dangling reply",
+                "reply_to":"missing"
+            }),
+            11,
+            None,
+            false,
+        )
+        .expect("append validated SendMessage");
+    assert_eq!(invalid_reply, "t0s1");
+
+    let attachment_one = runtime
+        .append_generated_send_message(
+            &sessions,
+            &agent_id,
+            &serde_json::json!({
+                "type":"attachment",
+                "url":"file:///persisted/one.png"
+            }),
+            12,
+            Some("t0u"),
+            true,
+        )
+        .expect("append first attachment");
+    let attachment_two = runtime
+        .append_generated_send_message(
+            &sessions,
+            &agent_id,
+            &serde_json::json!({
+                "type":"attachment",
+                "url":"file:///persisted/two.png"
+            }),
+            13,
+            Some("t0u"),
+            true,
+        )
+        .expect("append second attachment");
+    assert_eq!(attachment_one, "t0s2");
+    assert_eq!(attachment_two, "t0s3");
+
+    let entries = sessions
+        .read_agent_transcript_entries(&agent_id)
+        .expect("read persisted transcript");
+    let find = |id: &str| {
+        entries
+            .iter()
+            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(id))
+            .expect("persisted generated entry")
+    };
+    assert_eq!(find("t0s0")["message"]["reply_to"], "t0u");
+    assert_eq!(find("t0s0")["replyTo"], "t0u");
+    assert!(find("t0s1")["message"].get("reply_to").is_none());
+    assert!(find("t0s1").get("replyTo").is_none());
+    assert_eq!(find("t0s2")["message"]["reply_to"], "t0u");
+    assert_eq!(find("t0s2")["branched"], true);
+    assert_eq!(find("t0s3")["branched"], true);
+    let first_batch = find("t0s2")["batchId"]
+        .as_str()
+        .expect("first attachment batch");
+    let second_batch = find("t0s3")["batchId"]
+        .as_str()
+        .expect("second attachment batch");
+    assert!(!first_batch.is_empty());
+    assert_eq!(first_batch, second_batch);
+
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]

@@ -13,6 +13,9 @@ use super::prompt_acceptance_ledger::{
     AcceptanceRecord, PromptAcceptanceError, PromptAcceptanceLedger, SendAdmission, SendInput,
     send_input_digest,
 };
+use super::send_message_shaping::create_send_message_entry;
+use super::send_thread_stamping::{apply_auto_reply_thread, validate_ai_reply_target};
+use super::transcript_entry_ids::{TranscriptEntryIdKind, next_entry_id};
 
 pub const HOST_ACCOUNT_SLOT: &str = "host";
 
@@ -268,6 +271,33 @@ impl SendPipelineState {
 
     pub fn clear_attachment_batch_id(&mut self, agent_id: &str) {
         self.attachment_batch_ids.remove(agent_id);
+    }
+
+    pub fn prepare_generated_send_message_entry(
+        &mut self,
+        agent_id: &str,
+        entries: &[Value],
+        message: &Value,
+        reply_thread_target: Option<&str>,
+        is_fork: bool,
+        timestamp_ms: u64,
+    ) -> Value {
+        let entry_id = next_entry_id(entries, TranscriptEntryIdKind::SendMessage);
+        let validated = validate_ai_reply_target(message, Some(&entry_id), entries);
+        let threaded = apply_auto_reply_thread(&validated, reply_thread_target, entries);
+        let attachment_batch_id = (threaded.get("type").and_then(Value::as_str)
+            == Some("attachment"))
+            .then(|| self.claim_attachment_batch_id(agent_id));
+        let mut entry = create_send_message_entry(entry_id, threaded, timestamp_ms as f64);
+        if let Some(object) = entry.as_object_mut() {
+            if let Some(batch_id) = attachment_batch_id {
+                object.insert("batchId".into(), Value::String(batch_id));
+            }
+            if is_fork {
+                object.insert("branched".into(), Value::Bool(true));
+            }
+        }
+        entry
     }
 
     pub fn track_box_request_entry(
