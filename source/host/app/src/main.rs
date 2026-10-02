@@ -7218,7 +7218,7 @@ fn start_routed_provider_task(
             } else {
                 ComputerToolExposure::ScreenshotOnly
             };
-            let composition = host_runner_composition.compose_production_turn(
+            let composition = worker_host_runner_composition.compose_production_turn(
                 ProductionRunnerCompositionInput {
                     provider,
                     bridge,
@@ -7266,7 +7266,7 @@ fn start_routed_provider_task(
                     multitask_todo_state,
                 },
             );
-            let mut runner = host_runner_composition.compose_production_runner(
+            let mut runner = worker_host_runner_composition.compose_production_runner(
                 composition,
                 agent_state_checkpoint_sink,
                 worker_registry.upgrade_quiesce_signal(),
