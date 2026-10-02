@@ -351,6 +351,22 @@ impl AutomationRuntime {
         self.wakes_suspended.load(Ordering::Acquire)
     }
 
+    pub fn dispose(&self) {
+        self.suspend_wakes();
+        self.event_fires.dispose();
+        self.event_fires.set_dropped_fire_reporter(None);
+        self.run_path.set_run_reporter(None);
+        self.set_lifecycle_reporter(None);
+        self.last_known
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
+        self.mutation_locks
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
+    }
+
     fn report_fire_dropped(&self, args: &FireAutomationArgs, reason: &str) {
         self.event_fires.report_fire_dropped(DroppedFire {
             agent_id: args.agent_id.clone(),

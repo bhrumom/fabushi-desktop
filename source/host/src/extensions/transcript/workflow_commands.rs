@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use serde_json::{Map, Value};
 
@@ -8,10 +8,126 @@ use crate::extensions::session::agent_session::{
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::extensions::transcript::automation_runtime::AutomationRuntime;
 use crate::workflows::workflow_library::{WorkflowSpec, WorkflowTrigger};
-use crate::workflows::workflow_store::{WorkflowImportBatch, WorkflowRecord};
+use crate::workflows::workflow_store::{FileWorkflowStore, WorkflowImportBatch, WorkflowRecord};
 
 pub const WORKFLOW_REFERENCE_NODE_TYPE: &str = "workflowReference";
 pub const WORKFLOW_INJECTED_BODY_LIMIT: usize = 8_000;
+
+pub type WorkflowChangeReporter =
+    Arc<dyn Fn(&str, &[WorkflowRecord]) + Send + Sync + 'static>;
+
+/// Transcript-owned workflow command and active-watcher facade.
+pub struct WorkflowCommands {
+    workers: Arc<ProductionSessionWorkers>,
+    automation_runtime: Arc<AutomationRuntime>,
+    watched_workflows: Mutex<Option<(String, FileWorkflowStore)>>,
+    change_reporter: Arc<Mutex<Option<WorkflowChangeReporter>>>,
+}
+
+impl WorkflowCommands {
+    pub fn new(
+        workers: Arc<ProductionSessionWorkers>,
+        automation_runtime: Arc<AutomationRuntime>,
+    ) -> Self {
+        Self {
+            workers,
+            automation_runtime,
+            watched_workflows: Mutex::new(None),
+            change_reporter: Arc::new(Mutex::new(None)),
+        }
+    }
+
+    pub fn set_change_reporter(&self, reporter: Option<WorkflowChangeReporter>) {
+        *self
+            .change_reporter
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = reporter;
+    }
+
+    pub fn watched_agent_id(&self) -> Option<String> {
+        self.watched_workflows
+            .lock()
+            .ok()
+            .and_then(|slot| slot.as_ref().map(|(agent_id, _)| agent_id.clone()))
+    }
+
+    pub fn watch_agent_workflows(&self, agent_id: &str) -> Result<(), String> {
+        if self.watched_agent_id().as_deref() == Some(agent_id) {
+            return Ok(());
+        }
+
+        let store =
+            SandAgentSessionStore::new(Arc::clone(&self.workers)).workflow_store_for(agent_id)?;
+        let reporter = Arc::clone(&self.change_reporter);
+        let workers = Arc::clone(&self.workers);
+        let watched_agent_id = agent_id.to_string();
+        let callback_agent_id = watched_agent_id.clone();
+        store.set_on_change(Some(Arc::new(move || {
+            let reporter = reporter
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .clone();
+            let Some(reporter) = reporter else {
+                return;
+            };
+            let session = SandAgentSessionStore::new(Arc::clone(&workers));
+            if let Ok(workflows) = session.list_agent_workflows(&callback_agent_id) {
+                reporter(&callback_agent_id, &workflows);
+            }
+        })));
+
+        let previous = self
+            .watched_workflows
+            .lock()
+            .map_err(|_| "workflow watcher mutex poisoned".to_string())?
+            .replace((watched_agent_id, store));
+        if let Some((_, previous)) = previous {
+            previous.set_on_change(None);
+        }
+        Ok(())
+    }
+
+    pub fn prepare_run_now(
+        &self,
+        args: &Value,
+    ) -> Result<Option<WorkflowRunNowPlan>, WorkflowCommandError> {
+        prepare_workflow_run_now(Arc::clone(&self.workers), args)
+    }
+
+    pub fn expand_references(
+        &self,
+        agent_id: &str,
+        prompt: &str,
+        rich_text: Option<&str>,
+    ) -> Result<String, WorkflowCommandError> {
+        expand_workflow_references(Arc::clone(&self.workers), agent_id, prompt, rich_text)
+    }
+
+    pub fn dispatch(
+        &self,
+        method: &str,
+        args: &Value,
+    ) -> Option<Result<Value, WorkflowCommandError>> {
+        dispatch_workflow_command_with_runtime(
+            Arc::clone(&self.workers),
+            Some(self.automation_runtime.as_ref()),
+            method,
+            args,
+        )
+    }
+
+    pub fn dispose(&self) {
+        if let Some((_, store)) = self
+            .watched_workflows
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take()
+        {
+            store.set_on_change(None);
+        }
+        self.set_change_reporter(None);
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WorkflowRunNowPlan {

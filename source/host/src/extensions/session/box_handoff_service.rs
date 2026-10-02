@@ -135,6 +135,30 @@ impl BoxHandoffService {
             .remove(agent_id);
     }
 
+    pub fn pending_count(&self) -> usize {
+        self.pending
+            .lock()
+            .map(|pending| pending.len())
+            .unwrap_or_default()
+    }
+
+    /// Clear process-local handoff state during Host shutdown. Snapshot workers
+    /// cannot resurrect entries once their request identity is gone.
+    pub fn clear_all(&self) {
+        let agent_ids = {
+            let mut pending = self
+                .pending
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            let agent_ids = pending.keys().cloned().collect::<Vec<_>>();
+            pending.clear();
+            agent_ids
+        };
+        for agent_id in agent_ids {
+            self.notify_status(&agent_id);
+        }
+    }
+
     pub fn start(&self, request: HandoffRequest) -> HandoffStartResult {
         let request_id = {
             let mut pending = self

@@ -1787,6 +1787,14 @@ impl ProductionSessionWorkers {
     }
 
     pub fn shutdown(&self) {
+        self.shutdown_inner(false);
+    }
+
+    pub fn shutdown_with_checkpoint(&self) {
+        self.shutdown_inner(true);
+    }
+
+    fn shutdown_inner(&self, checkpoint: bool) {
         let agent_stores = self
             .agent_store_owners
             .lock()
@@ -1803,7 +1811,7 @@ impl ProductionSessionWorkers {
             .map(|mut owners| std::mem::take(&mut *owners).into_values().collect::<Vec<_>>())
             .unwrap_or_default();
         for owner in db_owners {
-            owner.close(false);
+            owner.close(checkpoint);
         }
         futures::executor::block_on(self.pool.close_all());
     }

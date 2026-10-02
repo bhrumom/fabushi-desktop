@@ -12,6 +12,7 @@ use crate::extensions::session::agent_db_transcript_pages::{
 use crate::extensions::attachments::attachments_service::AttachmentsService;
 use crate::extensions::content_search::extension::ProductionContentSearchExtension;
 use crate::extensions::memory::extension::HostMemoryExtension;
+use crate::extensions::session::box_handoff_service::BoxHandoffService;
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::extensions::telemetry::analytics_service::AutomationRunAnalyticsTelemetry;
 use crate::extensions::telemetry::host_telemetry_service::{
@@ -30,6 +31,7 @@ use super::production_runtime::{ProductionSendError, ProductionTranscriptRuntime
 use super::runner_registry::TranscriptRunnerRegistry;
 use super::shared_rooms::SharedRooms;
 use super::widget_responses::WidgetResponses;
+use super::workflow_commands::WorkflowCommands;
 
 #[derive(Clone)]
 pub struct TranscriptTurnExecutionPort {
@@ -108,7 +110,9 @@ pub struct TranscriptManager {
     automation_runtime: Arc<AutomationRuntime>,
     group_chat: Arc<GroupChatGlue>,
     widget_responses: Arc<WidgetResponses>,
+    workflow_commands: Arc<WorkflowCommands>,
     watched_automation_store: Mutex<Option<FileAutomationStore>>,
+    handoff_service: Mutex<Option<BoxHandoffService>>,
     shared_rooms: Arc<SharedRooms>,
     services: Mutex<Option<TranscriptManagerServices>>,
     disposed: AtomicBool,
@@ -124,6 +128,10 @@ impl TranscriptManager {
         let shared_rooms = Arc::new(SharedRooms::new(Arc::clone(&session_workers)));
         let group_chat = Arc::new(GroupChatGlue::new(Arc::clone(&session_workers)));
         let widget_responses = Arc::new(WidgetResponses::new(Arc::clone(&session_workers)));
+        let workflow_commands = Arc::new(WorkflowCommands::new(
+            Arc::clone(&session_workers),
+            Arc::clone(&automation_runtime),
+        ));
         Self {
             session_workers,
             transcript_runtime: Arc::new(ProductionTranscriptRuntime::new(Some(root_dir))),
@@ -132,7 +140,9 @@ impl TranscriptManager {
             automation_runtime,
             group_chat,
             widget_responses,
+            workflow_commands,
             watched_automation_store: Mutex::new(None),
+            handoff_service: Mutex::new(None),
             shared_rooms,
             services: Mutex::new(None),
             disposed: AtomicBool::new(false),
@@ -169,6 +179,22 @@ impl TranscriptManager {
 
     pub fn widget_responses(&self) -> Arc<WidgetResponses> {
         Arc::clone(&self.widget_responses)
+    }
+
+    pub fn workflow_commands(&self) -> Arc<WorkflowCommands> {
+        Arc::clone(&self.workflow_commands)
+    }
+
+    pub fn set_handoff_service(&self, handoff: BoxHandoffService) -> Result<(), String> {
+        let mut slot = self
+            .handoff_service
+            .lock()
+            .map_err(|_| "transcript handoff mutex poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("transcript handoff service already configured".into());
+        }
+        *slot = Some(handoff);
+        Ok(())
     }
 
     pub fn set_production_services(&self, services: TranscriptManagerServices) -> Result<(), String> {
@@ -303,6 +329,7 @@ impl TranscriptManager {
         if let Some(previous) = previous {
             previous.set_on_change(None);
         }
+        self.workflow_commands.watch_agent_workflows(agent_id)?;
         Ok(transcript)
     }
 
@@ -342,8 +369,22 @@ impl TranscriptManager {
         if self.disposed.swap(true, Ordering::AcqRel) {
             return;
         }
-        self.runner_registry
-            .cancel_all("TranscriptManager disposed");
+
+        self.transcript_runtime.dispose();
+
+        if let Some(handoff) = self
+            .handoff_service
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take()
+        {
+            handoff.clear_all();
+        }
+
+        self.ack_obligations.dispose();
+        self.automation_runtime.dispose();
+        self.workflow_commands.dispose();
+
         if let Some(store) = self
             .watched_automation_store
             .lock()
@@ -352,6 +393,9 @@ impl TranscriptManager {
         {
             store.set_on_change(None);
         }
-        self.session_workers.shutdown();
+
+        self.runner_registry
+            .cancel_all("TranscriptManager disposed");
+        self.session_workers.shutdown_with_checkpoint();
     }
 }

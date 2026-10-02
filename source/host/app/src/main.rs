@@ -160,8 +160,7 @@ use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::Up
 use mahayana_host_runtime::extensions::transcript::upgrade_recreate_resume::build_upgrade_resume_prompt;
 use mahayana_host_runtime::extensions::transcript::box_request_entries::resolve_box_request_entry;
 use mahayana_host_runtime::extensions::transcript::workflow_commands::{
-    WorkflowCommandError, WorkflowRunNowPlan, dispatch_workflow_command_with_runtime,
-    prepare_workflow_run_now,
+    WorkflowCommandError, WorkflowRunNowPlan,
 };
 use mahayana_host_runtime::extensions::transcript::automation_run_path::{
     AutomationExecutionResult, FireAutomationOutcome,
@@ -8528,7 +8527,10 @@ impl GatewayApi for UnifiedGatewayApi {
             return Ok(serde_json::Value::Null);
         }
         if method == "runAgentWorkflowNow" {
-            let plan = prepare_workflow_run_now(Arc::clone(&self.session_workers), &args)
+            let plan = self
+                .transcript_manager
+                .workflow_commands()
+                .prepare_run_now(&args)
                 .map_err(map_workflow_command_error)?;
             match plan {
                 None => return Ok(serde_json::Value::Null),
@@ -8596,13 +8598,11 @@ impl GatewayApi for UnifiedGatewayApi {
             }
             return result;
         }
-        let workflow_automation_runtime = self.transcript_manager.automation_runtime();
-        if let Some(result) = dispatch_workflow_command_with_runtime(
-            Arc::clone(&self.session_workers),
-            Some(workflow_automation_runtime.as_ref()),
-            method,
-            &args,
-        ) {
+        if let Some(result) = self
+            .transcript_manager
+            .workflow_commands()
+            .dispatch(method, &args)
+        {
             return result.map_err(map_workflow_command_error);
         }
         if method == "promptAcceptanceStatus" {
@@ -9979,6 +9979,9 @@ fn main() {
         );
     }
     let transcript_manager = transcript_extension.manager();
+    transcript_manager
+        .set_handoff_service(session_handoff.clone())
+        .expect("production Transcript manager handoff service must be configured exactly once");
     let roster_emit = transcript_extension.roster_emit();
     let transcript_events = transcript_extension
         .event_bridge()
@@ -11505,6 +11508,7 @@ fn main() {
     }
     cross_user.stop();
     production_extensions.notify_bus.stop();
+    drop(transcript_extension);
     session_extension.shutdown();
     drop(teach_recording_extension);
     box_extensions.stop();

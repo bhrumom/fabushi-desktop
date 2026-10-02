@@ -313,4 +313,8 @@ impl ProductionTurnDispatch {
     pub fn is_idle(&self, agent_id: &str) -> bool {
         self.scheduler.is_idle(agent_id)
     }
+
+    pub fn dispose(&mut self) {
+        self.scheduler.dispose();
+    }
 }
