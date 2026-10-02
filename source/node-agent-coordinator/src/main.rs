@@ -35,7 +35,7 @@ use mahayana_node_agent_coordinator::inference_router::{
     parse_host_routed_prompt_acceptance, parse_runner_inference_event,
     agent_inbound_failure_gateway_args, agent_inbound_wake_prefers_urgent_queue,
     prepare_agent_inbound_wake_routes, redrive_agent_inbound_after_priority_preemption,
-    should_append_user_message,
+    should_append_user_message, should_await_turn,
     parse_send_prompt_attachments,
     prepare_workflow_run_now_route, project_runner_turn_context, project_transcript_entry,
     CoordinatorWorkflowRunNowRoute,
@@ -2421,15 +2421,44 @@ fn enqueue_inference_request(
         .get("clientNonce")
         .and_then(Value::as_str)
         .map(str::to_string);
+    let await_turn = should_await_turn(&args);
     let direct_user_send = is_direct_user_send(&args);
+    let mut accepted_value = json!({
+        "accepted": true,
+        "provider": provider.as_str(),
+    });
+    if let Some(client_nonce) = client_nonce.as_ref() {
+        accepted_value["clientNonce"] = Value::String(client_nonce.clone());
+    }
+    let terminal_accepted_value = accepted_value.clone();
+    let terminal_request_id = request_id.to_string();
     let worker_state = Arc::clone(state);
     let worker_args = args;
     let task = move || {
-        if let Err(error) =
-            execute_local_inference(Arc::clone(&worker_state), provider, worker_args)
-        {
-            if error.code != "INFERENCE_PROVIDER_CANCELLED" {
-                record_inference_error(&worker_state, provider, &agent_id, &error);
+        let result = execute_local_inference(Arc::clone(&worker_state), provider, worker_args);
+        match result {
+            Ok(()) => {
+                if await_turn {
+                    worker_state.complete_request(
+                        channel,
+                        &terminal_request_id,
+                        ReplyOutcome::Ok {
+                            value: terminal_accepted_value,
+                        },
+                    );
+                }
+            }
+            Err(error) => {
+                if error.code != "INFERENCE_PROVIDER_CANCELLED" {
+                    record_inference_error(&worker_state, provider, &agent_id, &error);
+                }
+                if await_turn {
+                    worker_state.complete_request(
+                        channel,
+                        &terminal_request_id,
+                        ReplyOutcome::Failed { failure: error },
+                    );
+                }
             }
         }
     };
@@ -2439,20 +2468,14 @@ fn enqueue_inference_request(
         state.inference_queue.enqueue(&queue_key, task)
     };
     match enqueue {
-        Ok(()) => {
-            let mut value = json!({
-                "accepted": true,
-                "provider": provider.as_str(),
-            });
-            if let Some(client_nonce) = client_nonce {
-                value["clientNonce"] = Value::String(client_nonce);
-            }
-            state.complete_request(
-                channel,
-                request_id,
-                ReplyOutcome::Ok { value },
-            );
-        }
+        Ok(()) if !await_turn => state.complete_request(
+            channel,
+            request_id,
+            ReplyOutcome::Ok {
+                value: accepted_value,
+            },
+        ),
+        Ok(()) => {}
         Err(failure) => state.complete_request(
             channel,
             request_id,

@@ -6,7 +6,7 @@ use mahayana_node_agent_coordinator::inference_router::{
     ActiveInferenceStreamRegistry, CoordinatorWorkflowRunNowRoute, InferenceProvider,
     InferenceStreamSupersede, RunnerInferenceEvent, WORKFLOW_INJECTED_BODY_LIMIT,
     configured_inference_provider, host_transcript_method, is_direct_user_send,
-    should_append_user_message,
+    should_append_user_message, should_await_turn,
     parse_host_routed_prompt_acceptance, parse_runner_inference_event,
     prepare_agent_inbound_wake_routes, prepare_workflow_run_now_route, project_runner_turn_context,
 };
@@ -47,6 +47,14 @@ fn renderer_tail_alias_is_normalized_before_host_dispatch() {
     assert_eq!(host_transcript_method("openAgentTail"), "getAgentTranscriptTail");
     assert_eq!(host_transcript_method("getAgentTranscriptTail"), "getAgentTranscriptTail");
     assert_eq!(host_transcript_method("getAgentTranscriptWindow"), "getAgentTranscriptWindow");
+}
+
+#[test]
+fn coordinator_waits_for_terminal_only_when_await_turn_is_explicit_true() {
+    assert!(should_await_turn(&json!({"awaitTurn":true})));
+    assert!(!should_await_turn(&json!({"awaitTurn":false})));
+    assert!(!should_await_turn(&json!({})));
+    assert!(!should_await_turn(&json!({"awaitTurn":"true"})));
 }
 
 #[test]
@@ -287,6 +295,8 @@ fn coordinator_workflow_run_now_preserves_visible_reference_and_expanded_runner_
     };
     assert_eq!(send_args["agentId"], "agent-a");
     assert_eq!(send_args["prompt"], "@Research");
+    assert_eq!(send_args["awaitTurn"], true);
+    assert_eq!(send_args["source"], "workflow-reference");
     let rich_text: serde_json::Value =
         serde_json::from_str(send_args["richText"].as_str().expect("richText"))
             .expect("richText json");
