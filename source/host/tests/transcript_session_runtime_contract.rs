@@ -298,3 +298,89 @@ fn provider_terminal_retirement_is_safe_inside_existing_local_executor() {
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn desktop_contact_refreshes_focus_freshness_only_while_focused() {
+    let root = temp_root("desktop-contact");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&sessions));
+    let agent = store.create_session(None, "user", None).expect("agent");
+    store.write_active_agent_id(&agent.id).expect("active");
+
+    let runtime = SessionRuntime::new();
+    runtime.note_desktop_contact(100.0);
+    assert_eq!(runtime.window_focused_at_ms(), None);
+
+    runtime
+        .set_window_focused(&sessions, true, 200.0)
+        .expect("focus");
+    runtime.note_desktop_contact(350.0);
+    assert_eq!(runtime.window_focused_at_ms(), Some(350.0));
+
+    runtime
+        .set_window_focused(&sessions, false, 400.0)
+        .expect("blur");
+    runtime.note_desktop_contact(500.0);
+    assert_eq!(runtime.window_focused_at_ms(), None);
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn deferred_window_activation_is_supersedable_and_catches_up_after_shipped_entry() {
+    let runtime = SessionRuntime::new();
+    let first = runtime.schedule_deferred_activation("agent-a", Some("entry-1"));
+    let second = runtime.schedule_deferred_activation("agent-b", Some("entry-2"));
+
+    assert_eq!(runtime.pending_activation_agent_id().as_deref(), Some("agent-b"));
+    assert!(runtime.claim_deferred_activation(first, "agent-a").is_none());
+
+    let claim = runtime
+        .claim_deferred_activation(second, "agent-b")
+        .expect("latest activation claim");
+    assert_eq!(claim.shipped_through_id.as_deref(), Some("entry-2"));
+    assert_eq!(runtime.pending_activation_agent_id(), None);
+
+    let entries = vec![
+        serde_json::json!({"id":"entry-1","kind":"message"}),
+        serde_json::json!({"id":"entry-2","kind":"message"}),
+        serde_json::json!({"id":"entry-3","kind":"message"}),
+        serde_json::json!({"id":"entry-4","kind":"message"}),
+    ];
+    let catch_up = runtime.windowed_catch_up(Some("entry-2"), &entries);
+    assert_eq!(
+        catch_up
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["entry-3", "entry-4"]
+    );
+    assert!(runtime.windowed_catch_up(Some("missing"), &entries).is_empty());
+    assert_eq!(runtime.windowed_catch_up(None, &entries), entries);
+}
+
+#[test]
+fn explicit_agent_switch_cancels_pending_window_activation() {
+    let root = temp_root("activation-cancel");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&sessions));
+    let first = store.create_session(None, "user", None).expect("first");
+    let second = store.create_session(None, "user", None).expect("second");
+    store.write_active_agent_id(&first.id).expect("active");
+
+    let runtime = SessionRuntime::new();
+    let generation = runtime.schedule_deferred_activation(&second.id, None);
+    runtime
+        .switch_agent(&sessions, &first.id, 600.0)
+        .expect("explicit switch");
+    assert!(
+        runtime
+            .claim_deferred_activation(generation, &second.id)
+            .is_none()
+    );
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}

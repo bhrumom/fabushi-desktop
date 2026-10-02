@@ -2212,6 +2212,77 @@ impl UnifiedGatewayApi {
         })
     }
 
+    fn emit_session_activation_roster_updates(
+        &self,
+        agent_id: &str,
+        previous_agent_id: Option<&str>,
+    ) {
+        let _ = self.roster_emit.emit_agent_update(agent_id);
+        if let Some(previous_agent_id) = previous_agent_id
+            && previous_agent_id != agent_id
+        {
+            let _ = self.roster_emit.emit_agent_update(previous_agent_id);
+        }
+    }
+
+    fn schedule_windowed_session_activation(
+        &self,
+        agent_id: String,
+        shipped_through_id: Option<String>,
+    ) {
+        let generation = self
+            .transcript_runtime
+            .session_runtime()
+            .schedule_deferred_activation(&agent_id, shipped_through_id.as_deref());
+        let manager = Arc::clone(&self.transcript_manager);
+        let roster = Arc::clone(&self.roster_emit);
+        if let Err(error) = thread::Builder::new()
+            .name(format!("mahayana-windowed-activation-{agent_id}"))
+            .spawn(move || {
+                // Frozen Grok waits for the task boundary before activating a
+                // cold bounded read. Keep this off the request lane so the
+                // bounded payload can settle before the full Session becomes active.
+                thread::sleep(Duration::from_millis(1));
+                if manager.is_disposed() {
+                    return;
+                }
+                let runtime = manager.transcript_runtime();
+                let Some(claim) = runtime
+                    .session_runtime()
+                    .claim_deferred_activation(generation, &agent_id)
+                else {
+                    return;
+                };
+                let previous = manager.active_agent_id();
+                match manager.switch_agent(&agent_id, started_at_ms() as f64) {
+                    Ok(entries) => {
+                        for entry in runtime
+                            .session_runtime()
+                            .windowed_catch_up(claim.shipped_through_id.as_deref(), &entries)
+                        {
+                            roster.publish_transcript_appended(&agent_id, &entry);
+                        }
+                        let _ = roster.emit_agent_update(&agent_id);
+                        if let Some(previous) = previous.as_deref()
+                            && previous != agent_id
+                        {
+                            let _ = roster.emit_agent_update(previous);
+                        }
+                    }
+                    Err(error) => {
+                        eprintln!(
+                            "[sand] windowed background activation failed for {agent_id}: {error}"
+                        );
+                    }
+                }
+            })
+        {
+            eprintln!(
+                "mahayana-host windowed_activation_worker_spawn_failed agent={agent_id} error={error}"
+            );
+        }
+    }
+
     fn local_routed_runner_deps(&self) -> LocalRoutedRunnerDeps {
         LocalRoutedRunnerDeps {
             routed_tool_relay: Arc::clone(&self.routed_tool_relay),
@@ -7794,6 +7865,9 @@ impl GatewayApi for UnifiedGatewayApi {
         method: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+        self.transcript_runtime
+            .session_runtime()
+            .note_desktop_contact(started_at_ms() as f64);
         if method == "deliverToChannel" {
             let agent_id = args
                 .get("agentId")
@@ -8492,7 +8566,8 @@ impl GatewayApi for UnifiedGatewayApi {
                 .ok_or_else(|| GatewayCommandError::BadRequest(format!(
                     "{method} requires id"
                 )))?;
-            let was_active = self.transcript_manager.active_agent_id().as_deref() == Some(agent_id);
+            let previous_active_agent_id = self.transcript_manager.active_agent_id();
+            let was_active = previous_active_agent_id.as_deref() == Some(agent_id);
             let operation_started = std::time::Instant::now();
             let now_ms = started_at_ms() as f64;
             let (response, entry_count) = match method {
@@ -8543,6 +8618,31 @@ impl GatewayApi for UnifiedGatewayApi {
                 }
                 _ => invariant_failure(),
             };
+            let active_after = self.transcript_manager.active_agent_id();
+            if !was_active && active_after.as_deref() == Some(agent_id) {
+                if method == "openAgent"
+                    && let Some(entries) = response.as_array()
+                {
+                    self.roster_emit
+                        .publish_transcript_snapshot(agent_id, entries);
+                }
+                self.emit_session_activation_roster_updates(
+                    agent_id,
+                    previous_active_agent_id.as_deref(),
+                );
+            } else if !was_active && matches!(method, "openAgentWindowed" | "openAgentTail") {
+                let shipped_through_id = response
+                    .get("entries")
+                    .and_then(serde_json::Value::as_array)
+                    .and_then(|entries| entries.last())
+                    .and_then(|entry| entry.get("id"))
+                    .and_then(serde_json::Value::as_str)
+                    .map(ToOwned::to_owned);
+                self.schedule_windowed_session_activation(
+                    agent_id.to_string(),
+                    shipped_through_id,
+                );
+            }
             if let Err(error) = self.telemetry_logs.report_agent_open(&AgentOpenReport {
                 conversation_id: agent_id.to_string(),
                 duration_ms: operation_started.elapsed().as_millis() as u64,
