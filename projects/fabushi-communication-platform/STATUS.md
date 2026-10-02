@@ -1,59 +1,43 @@
-# Fabushi Bot Communication Platform — Status
+# FBCP Native Communication Absorption — Status
 
 Date: 2026-10-02  
-Spec: FBCP-001 revision 1  
-Status: active  
+Spec: FBCP-001 Revision 2  
 Complete: false
 
-| Area | Status | Evidence / note |
+| Area | Status | Note |
 | --- | --- | --- |
-| Product direction | specified | Fabushi Bot is product; Telegram capabilities are absorbed |
-| PR #20 Bot foundation | in-progress | observed head 7823c596712b674661e40925b1426d945d0e2e55 |
-| Unified product domain | blocked | P0 not executed |
-| Communication Core | blocked | not implemented |
-| Telegram capability research | blocked | TDRP-001 recursive research pending |
-| Telegram Provider | blocked | not implemented |
-| InteractionGateway | blocked | not implemented |
-| Unified Inbox/Conversation UX | blocked | not implemented |
-| Human + Agent hybrid collaboration | blocked | product contracts pending |
-| Data/AI policy enforcement | blocked | architecture + current terms policy pending |
-| Full Telegram capability absorption | blocked | no acceptance evidence |
-| Packaged application | blocked | no FBCP artifact |
-| Release | blocked | ACs not satisfied |
+| Existing architecture as sole target | specified | PR #20/canonical Fabushi is the skeleton |
+| Telegram as research source only | specified | no Telegram Provider/network dependency |
+| Existing-owner-first absorption | specified | new owners require ADR |
+| Native Fabushi network | specified | protocol/services not yet designed |
+| Exact existing-owner inventory | blocked | P0 pending |
+| Telegram capability graph | blocked | TDRP research incomplete |
+| Capability → owner mapping | blocked | P0 pending |
+| Conversation/message model evolution | blocked | P0 pending |
+| Native messaging infrastructure | blocked | not implemented |
+| Human messaging in existing workspace | blocked | not implemented |
+| Human + Agent unified flow | blocked | not implemented |
+| Full feature absorption | blocked | not implemented |
+| Packaged acceptance | blocked | no artifact |
+| Release | blocked | ACs incomplete |
 
 ## Do not report
 
-- “Telegram migration %” as overall product progress
-- file count as product completion
-- PR #20 Agent parity as proof Telegram capability exists
-- Telegram provider prototype as proof unified product exists
+- Telegram migration percentage as product progress
+- Telegram Provider progress
+- a new Communication Core as progress
+- file-count parity
+- source reading as implementation
 
-## Product progress dimensions
+## Progress dimensions
 
-Report separately:
-
-1. Bot foundation accepted
+1. existing-owner inventory
 2. Telegram research coverage
-3. product domain designed
-4. Communication Core implemented
-5. Telegram Provider implemented
-6. Agent/communication integration
-7. unified UX
-8. full Telegram capability accepted
-9. packaged cross-platform accepted
-10. release accepted
-
-## Immediate next work
-
-P0 must produce:
-
-- Bot architecture inventory
-- Telegram complete capability graph
-- unified domain contracts
-- provider boundary
-- InteractionGateway policy
-- data/AI boundary
-- permissions model
-- UI information architecture
-- persistence/identity mapping
-- ADR backlog
+3. absorption mapping
+4. model evolution designed
+5. native network designed
+6. native network implemented
+7. existing owners production-wired
+8. Human + Agent unified UX
+9. full capability acceptance
+10. packaged/release acceptance

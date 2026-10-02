@@ -1,276 +1,218 @@
-# Telegram Capability Source Research & Provider Implementation Sub-Spec
+# Telegram Desktop Capability Research Source Sub-Spec
 
 Status: active  
 Spec ID: TDRP-001  
-Revision: 3  
+Revision: 4  
 Last updated: 2026-10-02  
-Parent product spec: `FBCP-001`  
-Parent: `docs/specs/fabushi-bot-communication-platform.md`  
+Parent product: `FBCP-001`  
+Parent spec: `docs/specs/fabushi-bot-communication-platform.md`  
 Related project: `projects/telegram-desktop-rust`
 
-> 本规范不再定义“重做 Telegram Desktop”这个产品。它是 FBCP-001 的 Telegram capability source/provider 子规范：深入研究固定 Telegram Desktop 源码，完整发现通信能力和边界条件，然后将这些能力实现为 Fabushi Communication Platform 的 Telegram Provider 与相关产品域能力。
+> Telegram Desktop is a **research source**, not the Fabushi runtime/network/provider. This sub-spec studies the complete frozen Telegram Desktop source to discover capabilities, state machines, edge cases, UX and implementation lessons, then maps each capability into the existing Fabushi architecture.
 
-## 1. 最高原则
+## 1. Highest-order rules
 
-- **Fabushi Bot is the product.**
-- Telegram Desktop 是能力来源、行为 oracle、协议/平台研究对象，不是目标产品架构。
-- 不创建最终用户可见的独立 Telegram workspace/app。
-- Telegram 能力最终进入 Fabushi 的 Identity / Conversation / Messaging / Media / Calls / Search / Notifications / Settings 等产品域。
-- Telegram 独有语义通过 typed provider extension 保留。
-- 完整 Telegram 功能范围不能因为产品统一而缩水。
-- 所有 Telegram/desktop-app 自有 C++ production logic 最终由 Rust production owner 取代。
-- 非 C++ 部分按职责使用最佳架构/语言。
-- 本路线 source-informed，不是 clean-room。
+- Fabushi / PR #20 is the only target architecture.
+- Telegram Desktop is not the target product.
+- Telegram network is not the target network.
+- No Telegram Provider is required by this spec.
+- No MTProto interoperability is required by this spec.
+- No Telegram account/peer/message identity becomes Fabushi canonical identity.
+- Every Telegram capability must first resolve an `existing_owner` in the current Fabushi architecture.
+- Only when no suitable owner exists may a minimal `new_owner_proposal` be created.
+- C++ source is studied; required product responsibilities are reimplemented in Rust/best-fit Fabushi code rather than shipped from the original C++.
+- This is source-informed, not clean-room.
 
-## 2. 固定研究基线
-
-Upstream:
+## 2. Fixed research baseline
 
 `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
 
-`dev` 仅用于 drift discovery，不作为浮动实现输入。
+The upstream `dev` branch is discovery-only.
 
-机器可读记录：
+Machine-readable source provenance remains:
 
 `projects/telegram-desktop-rust/upstream.lock.json`
 
-## 3. 研究目标
+## 3. What must be researched
 
-研究单位是 capability，不是 target file。
+The source inventory must discover all product capabilities, including at minimum:
 
-每个 capability dossier 必须回答：
-
-- 用户可观察行为；
-- Telegram network/protocol contract；
-- source references；
-- state machine；
-- ordering/idempotency/retry/cancellation；
-- storage/restart；
-- permission/security；
-- platform variants；
-- failure/negative cases；
-- performance/resource constraints；
-- interaction with other capabilities；
-- target FBCP product domain；
-- provider-specific semantics that cannot be generalized；
-- C++ production regions that require Rust replacement；
-- license/provenance。
-
-## 4. Telegram capability scope
-
-至少覆盖：
-
-- account/login/multi-account
-- MTProto/TL/session/DC
-- updates/difference/recovery
-- peers/contacts
-- dialogs/archive/folders
-- messages and all supported message variants
+- accounts/auth/multi-account
+- contacts/identity/presence
+- dialogs/folders/archive
+- private messaging
+- groups/supergroups
+- channels/broadcast
+- topics/forums/threads
+- message variants
 - reply/quote/forward/edit/delete
-- drafts/scheduled/silent
 - reactions/polls
-- groups/supergroups/channels/topics
-- permissions/admin/invites
+- drafts/scheduled/silent send
 - search
-- media/upload/download/cache/streaming
-- voice/video/calls/screen sharing
+- media/file transfer/cache/streaming
+- voice/video
+- calls/screen sharing
 - stickers/GIF/custom emoji
 - Stories
-- notifications/tray/badge
+- notifications
 - settings/privacy/local lock
-- Bots/inline bots/Mini Apps/WebView
+- bots/inline interactions
+- Mini Apps/WebView concepts
 - Premium/Stars/gifts/business
-- payments/Passport/WebAuthn/tde2e where applicable
-- export/local data/migration/recovery
+- payments/security flows where applicable
+- export/local data/migration
 - themes/language/RTL/IME/accessibility
-- platform install/update/portable/sandbox
+- desktop lifecycle/install/update/recovery
+- protocol/sync concepts that reveal mature communication edge cases
 
-任何固定源码中存在但未在列表中的可达产品能力自动纳入研究范围。
+A source-discovered capability not listed above is still in scope.
 
-## 5. Target placement
+## 4. Research dossier
 
-默认不是：
+Every capability dossier must include:
 
-`telegram-next/app/ui/...`
+- capability ID/name
+- exact upstream commit
+- source references
+- user-visible behavior
+- state machine
+- ordering/idempotency/retry/cancellation
+- persistence/restart semantics
+- concurrency/thread constraints
+- negative/error cases
+- security/privacy
+- performance/resource constraints
+- platform differences
+- dependencies/resources
+- observed strengths
+- observed technical debt
+- behavioral oracle
+- C++ production responsibilities
+- candidate `existing_owner` in current Fabushi
+- absorption changes required in that owner
+- `new_owner_proposal` only if no valid existing owner
+- native-network implications
+- test scenarios
+- license/provenance
 
-而是进入 FBCP 产品：
+## 5. Owner resolution
+
+For each capability:
 
 ```text
-product/
-  identity/
-  conversations/
-  messaging/
-  media/
-  calls/
-  search/
-  notifications/
-  permissions/
-  agents/
-  automations/
-  computer/
-  plugins/
-
-communication/
-  providers/
-    telegram/
-      protocol/
-      sync/
-      storage/
-      platform/
-      extensions/
+research
+  ↓
+candidate existing owners
+  ↓
+inspect current exact-head implementation
+  ↓
+choose existing_owner
+  ↓
+define absorption_plan
 ```
 
-这只是责任方向，不是预先锁死的物理目录。
+If no owner fits:
 
-Telegram Provider 负责 network/provider truth；Product domains 负责 Fabushi product truth。
+```text
+existing_owner = none
+new_owner_proposal = <minimal responsibility>
+new_owner_adr = required
+rejected_existing_owners = required with reasons
+```
 
-## 6. C++ replacement
+A broad new `CommunicationCore`, `TelegramRuntime`, `MessengerSubsystem` or equivalent is prohibited.
 
-以下若属于 Telegram/desktop-app 自有 production logic，最终必须 Rust-owned：
+## 6. Initial absorption hypotheses
 
-- protocol/session/update state machines
-- business/domain logic
-- storage logic
-- UI business behavior
-- platform policy
-- Telegram-specific media/call orchestration
-- build/runtime tools that ship as product logic
+| Telegram capability | Candidate existing Fabushi owner |
+| --- | --- |
+| Dialog list | sidebar / conversation list |
+| Chat/history | conversation workspace / transcript |
+| Message variants | transcript model/cards |
+| Composer/draft | composer / draft state |
+| Reactions | transcript reaction model |
+| Group/member | Shared Room / member model |
+| Permissions/admin | existing permission + room controller |
+| Scheduled send | Automations + composer |
+| Attachments/media | attachments / artifacts / resource lifecycle |
+| Bot interactions | Agent/composer interaction model |
+| Search | existing search/command architecture |
+| Settings/privacy | existing settings / permission surfaces |
+| Screen sharing | Computer/realtime/call ownership after ADR |
+| Notifications | existing desktop lifecycle/notifications |
+| Calls | current calls surface if valid; otherwise minimal new call owner |
+| Channel/topic | extend room/conversation model before proposing new owner |
+| Stories | product shell or minimal Story owner after analysis |
 
-不允许：
+These are hypotheses, not acceptance evidence.
 
-- original tdesktop binary
-- Qt business UI
-- TDLib-as-client-core
-- C++ helper fallback
-- Rust wrapper around old C++ implementation
+## 7. C++ → Rust meaning
 
-第三方原生能力需逐依赖 ADR；系统 API 不视为 Telegram C++ logic。
+This project no longer means “port Telegram C++ modules into a Telegram clone.”
 
-## 7. Source inventory 的用途
+It means:
 
-仍然要求完整递归 source/dependency/resource inventory，但目的为：
+1. understand the responsibility implemented by the C++ source;
+2. decide whether Fabushi needs that responsibility;
+3. find the existing Fabushi owner;
+4. implement the required behavior in that owner, preferring Rust for native/runtime/state-machine logic;
+5. do not ship the original Telegram/desktop-app C++ implementation as the product owner.
 
-- 防止遗漏 capability；
-- C++ production logic closure；
-- provenance；
-- license；
-- build/generator understanding；
-- platform matrix。
+For non-C++ source/resources, use the best-fit language/format.
 
-不计算 source-file port percentage，不创建 source-file → target-file completion gate。
+## 8. Protocol and network research
 
-## 8. FBCP domain mapping
+MTProto/TL/session/update code remains useful research material because it exposes:
 
-每个 researched capability 必须映射到：
+- ordering
+- replay/duplicate behavior
+- gap recovery
+- multi-device synchronization
+- session failure
+- server/client clocks
+- file transfer
+- reconnect
+- durability
+- large history behavior
 
-- FBCP core domain；或
-- Telegram Provider；或
-- typed Telegram extension；或
-- platform boundary；或
-- tool/build/release responsibility。
+But Fabushi is free to design a better native protocol.
 
-映射的是**责任**，不是文件。
+No MTProto compatibility test is an acceptance requirement unless a future separate interoperability spec explicitly adds it.
 
-如果某项 Telegram 能力无法合理进入通用 Conversation/Message 模型，不得删除；必须保留 provider extension。
+## 9. P0 output
 
-## 9. Interaction with Agent plane
+P0 must produce:
 
-Telegram sync/data path 不直接调用 Agent Runtime。
+- complete recursive source/dependency/resource inventory
+- C++ production responsibility inventory
+- full Telegram capability graph
+- source → capability research coverage
+- existing-owner inventory from current PR #20/canonical architecture
+- capability → existing-owner mapping
+- absorption plan per capability
+- minimal new-owner proposals only when necessary
+- native-network requirements discovered from Telegram behavior
+- first research dossiers
+- ADR backlog
+- fail-closed capability ledger
 
-所有 communication → Agent 数据流经 FBCP `InteractionGateway`。
+## 10. Acceptance
 
-本子规范必须提供足够 metadata 让 policy 能判断：
+TDRP-001 is accepted only when:
 
-- data origin
-- Telegram account
-- conversation
-- message/attachment provenance
-- bot/client/business source
-- user action
-- provider permissions
-- retention constraints
+- research coverage is complete;
+- every capability has an owner resolution;
+- every applicable capability has an FBCP absorption plan;
+- no source area with product relevance is silently ignored;
+- C++ production responsibilities that enter Fabushi have Rust/best-fit production implementations or explicit blockers;
+- no Telegram clone/provider architecture has been introduced;
+- exact-head evidence proves the implemented Fabushi capability behavior;
+- licensing/provenance review is complete.
 
-## 10. First vertical slice
+TDRP acceptance does not by itself mean full FBCP product acceptance.
 
-本项目第一条实现链路不再是“独立 Telegram app 登录并聊天”。
+## 11. Execution environment
 
-必须嵌入 Fabushi 产品：
+All executable checks run only in GitHub Actions or `htch-runtime`.
 
-1. Fabushi product shell；
-2. Telegram sign-in；
-3. Telegram Provider session/sync；
-4. unified Identity/Conversation projection；
-5. existing Agent entries 与 Telegram private chat 同时出现在 Inbox；
-6. private chat send/receive；
-7. durable restart recovery；
-8. selected message can be explicitly handed to Agent through FBCP InteractionGateway；
-9. Agent result remains distinct from Telegram send state；
-10. user-controlled publish back to conversation。
-
-## 11. P0
-
-P0 继续完成：
-
-- recursive upstream closure；
-- C++ production-logic inventory；
-- source → capability research coverage；
-- full Telegram capability graph；
-- first research dossiers；
-- provider architecture questions；
-- source/license provenance；
-- capability ledger。
-
-新增要求：
-
-- 每项 capability 必须指出 FBCP destination；
-- 标出 generic product semantics 与 Telegram-specific extension；
-- 标出与 PR #20 现有 Bot model 的冲突/融合点；
-- 不创建 Telegram-only product shell 设计。
-
-## 12. Acceptance
-
-TDRP-001 自身 accepted 需要：
-
-- full research coverage；
-- all applicable Telegram capabilities implemented；
-- Telegram Provider interop；
-- all Telegram C++ production logic replaced；
-- no unexplained behavior gap；
-- all FBCP mappings real production-wired；
-- provider-specific semantics preserved；
-- packaged FBCP product evidence；
-- exact-head GitHub Actions/htch-runtime evidence；
-- license/API/provenance review。
-
-TDRP-001 通过不代表 FBCP-001 自动通过；FBCP 还要求 Agent/communication product integration、permissions、data boundary 和 unified UX。
-
-## 13. Execution environment
-
-所有 executable verification 仅允许：
-
-- GitHub Actions
-- `htch-runtime`
-
-禁止在本地工作站、用户 Mac/Windows 或助手本地容器运行 build/test/lint/generator/schema/benchmark/fuzz/package/acceptance。
-
-## 14. Dynamic external rules
-
-实现和 release 时必须重新读取：
-
-- https://core.telegram.org/api/terms
-- https://telegram.org/tos/bot-developers
-- https://core.telegram.org/api/bots/ai
-
-条款变化可能改变 InteractionGateway/Data Policy，但不能通过偷偷删功能来“解决”。
-
-## 15. Current status
-
-- fixed source baseline: recorded
-- recursive closure: blocked
-- research coverage: blocked
-- FBCP destination mapping: blocked
-- Telegram Provider: not implemented
-- C++ Rust replacement: not started
-- packaged product acceptance: blocked
-
-Revision 1/2 中任何“Telegram client 是目标产品”的表述均由 FBCP-001 + 本 Revision 3 取代。
+No local build/test/lint/generator/schema/benchmark/fuzz/package/acceptance.
