@@ -150,20 +150,33 @@ All builds and tests must run only in **GitHub Actions** or on **`htch-runtime`*
 
 Missing runner, OS, device, account or signing configuration is `not-configured` / `blocked`, never a passing test. Record the exact source revision, actual commands, test counts, exit codes and artifacts from the allowed execution environment.
 
-## Telegram Desktop source-informed rearchitecture — TDRP-001
+## Fabushi Bot Communication Platform — FBCP-001
 
-For Telegram rearchitecture work, read:
+For communication, Telegram, unified conversation, Human+Agent room, messaging, media, calls, identity or related product work, read:
 
-- `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md`;
-- `docs/specs/telegram-desktop-rust-equivalence-migration.md` Revision 2;
-- the project's `upstream.lock.json`, source research/capability map, capability ledger schema, `STATUS.md` and applicable task.
+- `projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md`;
+- `docs/specs/fabushi-bot-communication-platform.md`;
+- `projects/fabushi-communication-platform/architecture-map.md`;
+- current FBCP task/ADR;
+- `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md` and TDRP-001 when Telegram capability/source behavior is involved;
+- the current PR #20 / canonical Grok Bot spec when Agent Runtime boundaries are involved.
 
-The implementation model is source-informed rearchitecture, not file-by-file or module-by-module translation. Upstream source may be read deeply to understand behavior, constraints and failure semantics, but upstream folders/classes/functions are not the target architecture.
+### Product root
 
-All Telegram/desktop-app C++ production logic must ultimately be replaced by real Rust production owners. Non-C++ boundaries use the best-fit language and architecture through explicit ADRs. Do not create same-name Rust files or empty crates to manufacture progress.
+**Fabushi Bot is the product. Telegram is a complete communication capability source and provider, not a separate product/workspace.**
 
-This route is not clean-room. Do not claim that reading and rewriting GPL source in Rust automatically removes GPL obligations. License/provenance review remains a release gate.
+Do not create a final Telegram-only product shell, sidebar, settings hierarchy, conversation truth or Agent runtime.
 
-Existing Grok/Agent specifications continue to govern their own boundaries; Telegram work does not authorize deleting or rewriting unrelated Grok/Agent code.
+The existing Bot/Agent Coordinator/Host/Runner architecture remains independent from Communication Core. Telegram Provider must not call models directly. Communication → Agent data crosses only the explicit FBCP InteractionGateway/permission/policy boundary.
 
-The first gate is P0 source understanding: complete source closure, C++ production-logic inventory, source-to-capability research coverage, capability graph, research dossiers, ADR backlog and a nonempty fail-closed capability ledger.
+FBCP is an explicitly approved Fabushi product extension. Grok parity cleanup rules must not delete communication/Telegram capabilities merely because Grok 0.18 lacks a counterpart.
+
+### Telegram implementation
+
+TDRP-001 is subordinate to FBCP-001. Read Telegram source deeply to discover capabilities and behavior, but do not mirror its source architecture. All Telegram/desktop-app C++ production logic must ultimately be replaced by Rust production owners. Preserve Telegram-specific semantics with typed provider extensions rather than deleting them to fit a generic model.
+
+This route is source-informed, not clean-room. Never claim Rust automatically removes GPL obligations.
+
+### Execution
+
+All builds, lint, generators, schema checks, tests, benchmarks, fuzzing, packaging and acceptance run only in GitHub Actions or `htch-runtime`.

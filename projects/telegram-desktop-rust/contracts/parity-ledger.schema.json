@@ -1,10 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "TDRP-001 source-informed capability ledger contract",
-  "description": "Revision 2 capability-level contract. Upstream files are research evidence, not target module mappings. Schema validation is not proof of implementation or acceptance.",
+  "title": "TDRP-001 Telegram capability ledger under FBCP-001",
+  "description": "Capability-level Telegram research/provider contract subordinate to FBCP-001. Upstream files are research evidence, not target module mappings. Each capability must map into the Fabushi product, Telegram Provider, or typed extension.",
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "parent_product_id",
     "format_version",
     "project_id",
     "spec_revision",
@@ -14,18 +15,40 @@
     "capabilities"
   ],
   "properties": {
-    "format_version": {"const": 2},
-    "project_id": {"const": "TDRP-001"},
-    "spec_revision": {"const": 2},
-    "upstream_commit": {"$ref": "#/$defs/gitOid"},
-    "upstream_lock_sha256": {"$ref": "#/$defs/sha256"},
-    "research_inventory_status": {"enum": ["partial", "complete"]},
+    "format_version": {
+      "const": 2
+    },
+    "project_id": {
+      "const": "TDRP-001"
+    },
+    "spec_revision": {
+      "const": 2
+    },
+    "upstream_commit": {
+      "$ref": "#/$defs/gitOid"
+    },
+    "upstream_lock_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "research_inventory_status": {
+      "enum": [
+        "partial",
+        "complete"
+      ]
+    },
     "capabilities": {
       "type": "array",
       "minItems": 1,
-      "items": {"$ref": "#/$defs/capability"}
+      "items": {
+        "$ref": "#/$defs/capability"
+      }
     },
-    "notes": {"type": "string"}
+    "notes": {
+      "type": "string"
+    },
+    "parent_product_id": {
+      "const": "FBCP-001"
+    }
   },
   "$defs": {
     "nonEmpty": {
@@ -49,7 +72,9 @@
     "strings": {
       "type": "array",
       "uniqueItems": true,
-      "items": {"$ref": "#/$defs/nonEmpty"}
+      "items": {
+        "$ref": "#/$defs/nonEmpty"
+      }
     },
     "sourceEvidence": {
       "type": "object",
@@ -63,12 +88,24 @@
         "cpp_relevance"
       ],
       "properties": {
-        "repository": {"$ref": "#/$defs/nonEmpty"},
-        "commit": {"$ref": "#/$defs/gitOid"},
-        "path": {"$ref": "#/$defs/relativePath"},
-        "symbols": {"$ref": "#/$defs/strings"},
-        "role": {"$ref": "#/$defs/nonEmpty"},
-        "language": {"$ref": "#/$defs/nonEmpty"},
+        "repository": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "commit": {
+          "$ref": "#/$defs/gitOid"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "symbols": {
+          "$ref": "#/$defs/strings"
+        },
+        "role": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "language": {
+          "$ref": "#/$defs/nonEmpty"
+        },
         "cpp_relevance": {
           "enum": [
             "product-logic",
@@ -96,20 +133,38 @@
         "decision_record"
       ],
       "properties": {
-        "component": {"$ref": "#/$defs/nonEmpty"},
-        "language": {"$ref": "#/$defs/nonEmpty"},
-        "responsibility": {"$ref": "#/$defs/nonEmpty"},
-        "canonical_owner": {"$ref": "#/$defs/nonEmpty"},
-        "production_entrypoints": {"$ref": "#/$defs/strings"},
-        "decision_record": {"$ref": "#/$defs/relativePath"}
+        "component": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "language": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "responsibility": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "canonical_owner": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "production_entrypoints": {
+          "$ref": "#/$defs/strings"
+        },
+        "decision_record": {
+          "$ref": "#/$defs/relativePath"
+        }
       }
     },
     "cppReplacement": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["required", "status", "remaining_cpp_components"],
+      "required": [
+        "required",
+        "status",
+        "remaining_cpp_components"
+      ],
       "properties": {
-        "required": {"type": "boolean"},
+        "required": {
+          "type": "boolean"
+        },
         "status": {
           "enum": [
             "not-required",
@@ -119,17 +174,27 @@
             "blocked"
           ]
         },
-        "remaining_cpp_components": {"$ref": "#/$defs/strings"}
+        "remaining_cpp_components": {
+          "$ref": "#/$defs/strings"
+        }
       },
       "allOf": [
         {
           "if": {
-            "properties": {"status": {"const": "replaced"}},
-            "required": ["status"]
+            "properties": {
+              "status": {
+                "const": "replaced"
+              }
+            },
+            "required": [
+              "status"
+            ]
           },
           "then": {
             "properties": {
-              "remaining_cpp_components": {"maxItems": 0}
+              "remaining_cpp_components": {
+                "maxItems": 0
+              }
             }
           }
         }
@@ -146,7 +211,9 @@
         "production_path"
       ],
       "properties": {
-        "test_id": {"$ref": "#/$defs/nonEmpty"},
+        "test_id": {
+          "$ref": "#/$defs/nonEmpty"
+        },
         "kind": {
           "enum": [
             "static",
@@ -166,20 +233,43 @@
             "license"
           ]
         },
-        "scenario": {"$ref": "#/$defs/nonEmpty"},
-        "platform_cells": {"$ref": "#/$defs/strings"},
-        "production_path": {"type": "boolean"}
+        "scenario": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "platform_cells": {
+          "$ref": "#/$defs/strings"
+        },
+        "production_path": {
+          "type": "boolean"
+        }
       }
     },
     "artifact": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "uri", "sha256"],
+      "required": [
+        "name",
+        "uri",
+        "sha256"
+      ],
       "properties": {
-        "name": {"$ref": "#/$defs/nonEmpty"},
-        "uri": {"type": "string", "format": "uri"},
-        "sha256": {"$ref": "#/$defs/sha256"},
-        "github_artifact_id": {"type": ["integer", "null"], "minimum": 1}
+        "name": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "github_artifact_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
       }
     },
     "evidence": {
@@ -201,50 +291,122 @@
         "limitations"
       ],
       "properties": {
-        "evidence_id": {"$ref": "#/$defs/nonEmpty"},
-        "test_ids": {"$ref": "#/$defs/strings"},
+        "evidence_id": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "test_ids": {
+          "$ref": "#/$defs/strings"
+        },
         "result": {
-          "enum": ["passed", "failed", "blocked", "not-configured"]
+          "enum": [
+            "passed",
+            "failed",
+            "blocked",
+            "not-configured"
+          ]
         },
-        "target_commit": {"$ref": "#/$defs/gitOid"},
-        "upstream_commit": {"$ref": "#/$defs/gitOid"},
+        "target_commit": {
+          "$ref": "#/$defs/gitOid"
+        },
+        "upstream_commit": {
+          "$ref": "#/$defs/gitOid"
+        },
         "runner": {
-          "enum": ["github-actions", "htch-runtime"]
+          "enum": [
+            "github-actions",
+            "htch-runtime"
+          ]
         },
-        "device": {"$ref": "#/$defs/nonEmpty"},
-        "platform_cell": {"$ref": "#/$defs/nonEmpty"},
-        "run_url": {"type": ["string", "null"], "format": "uri"},
-        "workflow_run_id": {"type": ["integer", "null"], "minimum": 1},
-        "job_id": {"type": ["integer", "null"], "minimum": 1},
-        "command": {"$ref": "#/$defs/nonEmpty"},
-        "exit_code": {"type": ["integer", "null"]},
-        "executed_test_count": {"type": "integer", "minimum": 0},
+        "device": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "platform_cell": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "run_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "workflow_run_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "job_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "command": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "exit_code": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "executed_test_count": {
+          "type": "integer",
+          "minimum": 0
+        },
         "artifacts": {
           "type": "array",
-          "items": {"$ref": "#/$defs/artifact"}
+          "items": {
+            "$ref": "#/$defs/artifact"
+          }
         },
-        "limitations": {"$ref": "#/$defs/strings"}
+        "limitations": {
+          "$ref": "#/$defs/strings"
+        }
       },
       "allOf": [
         {
           "if": {
-            "properties": {"result": {"const": "passed"}},
-            "required": ["result"]
+            "properties": {
+              "result": {
+                "const": "passed"
+              }
+            },
+            "required": [
+              "result"
+            ]
           },
           "then": {
             "properties": {
-              "exit_code": {"const": 0},
-              "executed_test_count": {"minimum": 1}
+              "exit_code": {
+                "const": 0
+              },
+              "executed_test_count": {
+                "minimum": 1
+              }
             }
           }
         },
         {
           "if": {
-            "properties": {"runner": {"const": "htch-runtime"}},
-            "required": ["runner"]
+            "properties": {
+              "runner": {
+                "const": "htch-runtime"
+              }
+            },
+            "required": [
+              "runner"
+            ]
           },
           "then": {
-            "properties": {"device": {"const": "htch-runtime"}}
+            "properties": {
+              "device": {
+                "const": "htch-runtime"
+              }
+            }
           }
         }
       ]
@@ -261,14 +423,28 @@
         "notes"
       ],
       "properties": {
-        "reviewer": {"$ref": "#/$defs/nonEmpty"},
-        "independent": {"type": "boolean"},
-        "decision": {
-          "enum": ["accepted", "changes-required", "blocked"]
+        "reviewer": {
+          "$ref": "#/$defs/nonEmpty"
         },
-        "reviewed_target_commit": {"$ref": "#/$defs/gitOid"},
-        "evidence_ids": {"$ref": "#/$defs/strings"},
-        "notes": {"$ref": "#/$defs/nonEmpty"}
+        "independent": {
+          "type": "boolean"
+        },
+        "decision": {
+          "enum": [
+            "accepted",
+            "changes-required",
+            "blocked"
+          ]
+        },
+        "reviewed_target_commit": {
+          "$ref": "#/$defs/gitOid"
+        },
+        "evidence_ids": {
+          "$ref": "#/$defs/strings"
+        },
+        "notes": {
+          "$ref": "#/$defs/nonEmpty"
+        }
       }
     },
     "capability": {
@@ -292,11 +468,20 @@
         "review",
         "blockers",
         "implementation_commit",
-        "last_verified_commit"
+        "last_verified_commit",
+        "product_destinations",
+        "provider_responsibilities",
+        "telegram_extensions",
+        "interaction_gateway",
+        "data_policy"
       ],
       "properties": {
-        "capability_id": {"$ref": "#/$defs/nonEmpty"},
-        "name": {"$ref": "#/$defs/nonEmpty"},
+        "capability_id": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmpty"
+        },
         "state": {
           "enum": [
             "discovered",
@@ -309,52 +494,188 @@
             "blocked"
           ]
         },
-        "requirements": {"$ref": "#/$defs/strings"},
+        "requirements": {
+          "$ref": "#/$defs/strings"
+        },
         "research_dossier": {
           "anyOf": [
-            {"$ref": "#/$defs/relativePath"},
-            {"type": "null"}
+            {
+              "$ref": "#/$defs/relativePath"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "source_evidence": {
           "type": "array",
-          "items": {"$ref": "#/$defs/sourceEvidence"}
+          "items": {
+            "$ref": "#/$defs/sourceEvidence"
+          }
         },
-        "official_references": {"$ref": "#/$defs/strings"},
-        "architecture_decisions": {"$ref": "#/$defs/strings"},
+        "official_references": {
+          "$ref": "#/$defs/strings"
+        },
+        "architecture_decisions": {
+          "$ref": "#/$defs/strings"
+        },
         "target_owners": {
           "type": "array",
-          "items": {"$ref": "#/$defs/owner"}
+          "items": {
+            "$ref": "#/$defs/owner"
+          }
         },
-        "cpp_replacement": {"$ref": "#/$defs/cppReplacement"},
-        "behavior_contracts": {"$ref": "#/$defs/strings"},
-        "deviations": {"$ref": "#/$defs/strings"},
+        "cpp_replacement": {
+          "$ref": "#/$defs/cppReplacement"
+        },
+        "behavior_contracts": {
+          "$ref": "#/$defs/strings"
+        },
+        "deviations": {
+          "$ref": "#/$defs/strings"
+        },
         "tests": {
           "type": "array",
-          "items": {"$ref": "#/$defs/test"}
+          "items": {
+            "$ref": "#/$defs/test"
+          }
         },
         "evidence": {
           "type": "array",
-          "items": {"$ref": "#/$defs/evidence"}
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
         },
         "review": {
           "anyOf": [
-            {"$ref": "#/$defs/review"},
-            {"type": "null"}
+            {
+              "$ref": "#/$defs/review"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
-        "blockers": {"$ref": "#/$defs/strings"},
+        "blockers": {
+          "$ref": "#/$defs/strings"
+        },
         "implementation_commit": {
           "anyOf": [
-            {"$ref": "#/$defs/gitOid"},
-            {"type": "null"}
+            {
+              "$ref": "#/$defs/gitOid"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "last_verified_commit": {
           "anyOf": [
-            {"$ref": "#/$defs/gitOid"},
-            {"type": "null"}
+            {
+              "$ref": "#/$defs/gitOid"
+            },
+            {
+              "type": "null"
+            }
           ]
+        },
+        "product_destinations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/strings"
+            },
+            {
+              "minItems": 1
+            }
+          ]
+        },
+        "provider_responsibilities": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/strings"
+            },
+            {
+              "minItems": 1
+            }
+          ]
+        },
+        "telegram_extensions": {
+          "$ref": "#/$defs/strings"
+        },
+        "interaction_gateway": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "crosses_to_agent",
+            "routes",
+            "policy_record"
+          ],
+          "properties": {
+            "crosses_to_agent": {
+              "type": "boolean"
+            },
+            "routes": {
+              "$ref": "#/$defs/strings"
+            },
+            "policy_record": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/relativePath"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "crosses_to_agent": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "crosses_to_agent"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "routes": {
+                    "minItems": 1
+                  },
+                  "policy_record": {
+                    "$ref": "#/$defs/relativePath"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "data_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_classes",
+            "ai_ingestion",
+            "notes"
+          ],
+          "properties": {
+            "source_classes": {
+              "$ref": "#/$defs/strings"
+            },
+            "ai_ingestion": {
+              "enum": [
+                "default-deny",
+                "explicit-policy",
+                "prohibited"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
         }
       },
       "allOf": [
@@ -372,13 +693,21 @@
                 ]
               }
             },
-            "required": ["state"]
+            "required": [
+              "state"
+            ]
           },
           "then": {
             "properties": {
-              "research_dossier": {"$ref": "#/$defs/relativePath"},
-              "source_evidence": {"minItems": 1},
-              "requirements": {"minItems": 1}
+              "research_dossier": {
+                "$ref": "#/$defs/relativePath"
+              },
+              "source_evidence": {
+                "minItems": 1
+              },
+              "requirements": {
+                "minItems": 1
+              }
             }
           }
         },
@@ -395,13 +724,21 @@
                 ]
               }
             },
-            "required": ["state"]
+            "required": [
+              "state"
+            ]
           },
           "then": {
             "properties": {
-              "architecture_decisions": {"minItems": 1},
-              "target_owners": {"minItems": 1},
-              "behavior_contracts": {"minItems": 1}
+              "architecture_decisions": {
+                "minItems": 1
+              },
+              "target_owners": {
+                "minItems": 1
+              },
+              "behavior_contracts": {
+                "minItems": 1
+              }
             }
           }
         },
@@ -417,12 +754,18 @@
                 ]
               }
             },
-            "required": ["state"]
+            "required": [
+              "state"
+            ]
           },
           "then": {
             "properties": {
-              "implementation_commit": {"$ref": "#/$defs/gitOid"},
-              "tests": {"minItems": 1}
+              "implementation_commit": {
+                "$ref": "#/$defs/gitOid"
+              },
+              "tests": {
+                "minItems": 1
+              }
             }
           }
         },
@@ -436,30 +779,50 @@
                 ]
               }
             },
-            "required": ["state"]
+            "required": [
+              "state"
+            ]
           },
           "then": {
             "properties": {
-              "evidence": {"minItems": 1},
-              "last_verified_commit": {"$ref": "#/$defs/gitOid"}
+              "evidence": {
+                "minItems": 1
+              },
+              "last_verified_commit": {
+                "$ref": "#/$defs/gitOid"
+              }
             }
           }
         },
         {
           "if": {
-            "properties": {"state": {"const": "accepted"}},
-            "required": ["state"]
+            "properties": {
+              "state": {
+                "const": "accepted"
+              }
+            },
+            "required": [
+              "state"
+            ]
           },
           "then": {
             "properties": {
-              "blockers": {"maxItems": 0},
+              "blockers": {
+                "maxItems": 0
+              },
               "review": {
                 "allOf": [
-                  {"$ref": "#/$defs/review"},
+                  {
+                    "$ref": "#/$defs/review"
+                  },
                   {
                     "properties": {
-                      "independent": {"const": true},
-                      "decision": {"const": "accepted"}
+                      "independent": {
+                        "const": true
+                      },
+                      "decision": {
+                        "const": "accepted"
+                      }
                     }
                   }
                 ]
@@ -469,15 +832,25 @@
         },
         {
           "if": {
-            "properties": {"state": {"const": "blocked"}},
-            "required": ["state"]
+            "properties": {
+              "state": {
+                "const": "blocked"
+              }
+            },
+            "required": [
+              "state"
+            ]
           },
           "then": {
-            "properties": {"blockers": {"minItems": 1}}
+            "properties": {
+              "blockers": {
+                "minItems": 1
+              }
+            }
           }
         }
       ]
     }
   },
-  "$comment": "Semantic validation must reject duplicate capability/test/evidence IDs, missing research coverage, capabilities that claim design without ADRs, production-wired rows without real production entrypoints, C++ replacement marked replaced while compiled Telegram/desktop-app C++ remains, multiple canonical state owners, invented evidence, inherited old-HEAD passes, zero executed tests, unsupported not-configured platform claims, and non-independent acceptance. All executable checks are restricted to GitHub Actions or htch-runtime."
+  "$comment": "Semantic validation must reject duplicate capability/test/evidence IDs, missing research coverage, missing FBCP product destinations, capabilities that claim design without ADRs, provider behavior without canonical owners, Communication-to-Agent crossings without an InteractionGateway policy record, C++ replacement marked replaced while compiled Telegram/desktop-app C++ remains, multiple canonical state owners, invented evidence, inherited old-HEAD passes, zero executed tests, and non-independent acceptance. All executable checks are restricted to GitHub Actions or htch-runtime."
 }
