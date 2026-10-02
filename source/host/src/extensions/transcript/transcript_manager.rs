@@ -19,6 +19,7 @@ use crate::extensions::telemetry::host_telemetry_service::{
     HostProductAnalytics, HostTelemetryApi,
 };
 use crate::extensions::trays::extension::HostTraysExtension;
+use crate::extensions::trays::trays_service::PushErrorOptions;
 use crate::extensions::turn_execution::turn_execution_service::{
     TurnExecutionError, TurnExecutionRegistry, TurnExecutor,
 };
@@ -272,8 +273,21 @@ impl TranscriptManager {
         Resume: FnOnce(String) -> Result<(), String>,
     {
         self.switch_agent(agent_id, now_ms)?;
-        let Some(prompt) = self.widget_responses.submit_secret(entry_id, value, agent_id)? else {
-            return Ok(false);
+        let prompt = match self.widget_responses.submit_secret(entry_id, value, agent_id) {
+            Ok(Some(prompt)) => prompt,
+            Ok(None) => return Ok(false),
+            Err(_) => {
+                if let Some(services) = self.production_services() {
+                    services.trays.push_error(PushErrorOptions {
+                        agent_id: Some(agent_id.to_string()),
+                        title: "Could not store the secret".into(),
+                        detail: "The secure input could not write the credential to its store.".into(),
+                        dedupe_key: Some(format!("transcript-secret-store:{agent_id}:{entry_id}")),
+                        ..PushErrorOptions::default()
+                    });
+                }
+                return Ok(false);
+            }
         };
         resume(prompt)?;
         Ok(true)
