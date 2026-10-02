@@ -188,7 +188,9 @@ use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     AckObligations, AckRedrivePreparation, build_ack_redrive_empty_delivery_report,
     build_ack_redrive_send_args,
 };
-use mahayana_host_runtime::extensions::transcript::runner_registry::TranscriptRunnerRegistry;
+use mahayana_host_runtime::extensions::transcript::runner_registry::{
+    RUN_DIRECT_USER_INTERRUPT_REASON, TranscriptRunnerRegistry,
+};
 use mahayana_host_runtime::extensions::transcript::run_scheduler::WatchdogStage;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     AgentDeletionRuntimeDeps, AgentKickstartHook, AgentLifecycleGatewayError,
@@ -1645,7 +1647,7 @@ impl UnifiedGatewayApi {
         gateway_context: Option<&GatewayCommandContext>,
     ) -> Result<serde_json::Value, GatewayCommandError> {
 
-            self.preempt_group_member_runs_for_direct_send(&args);
+            let _ = self.preempt_group_member_runs_for_direct_send(&args);
             let send_trace = begin_send_trace(
                 gateway_context.and_then(|context| context.traceparent.as_deref()),
             );
@@ -1805,7 +1807,6 @@ impl UnifiedGatewayApi {
         gateway_context: Option<&GatewayCommandContext>,
     ) -> Result<serde_json::Value, GatewayCommandError> {
 
-            self.preempt_group_member_runs_for_direct_send(&args);
             let send_trace = begin_send_trace(
                 gateway_context.and_then(|context| context.traceparent.as_deref()),
             );
@@ -1819,6 +1820,9 @@ impl UnifiedGatewayApi {
             let runner_args = shape_send_prompt_media_args(&args);
             let watchdog_registry = Arc::clone(&self.runner_registry);
             let watchdog_ack_obligations = Arc::clone(&self.ack_obligations);
+            let supersede_registry = Arc::clone(&self.runner_registry);
+            let supersede_ack_obligations = Arc::clone(&self.ack_obligations);
+            let supersede_logs = self.telemetry_logs.clone();
             let watchdog_transcript_runtime = Arc::clone(&self.transcript_runtime);
             let watchdog_events = self.events.clone();
             let watchdog_logs = self.telemetry_logs.clone();
@@ -1835,6 +1839,14 @@ impl UnifiedGatewayApi {
             let send_was_in_flight = send_agent_id
                 .as_deref()
                 .is_some_and(|agent_id| self.transcript_runtime.is_agent_running(agent_id));
+            let send_is_direct_local = match send_agent_id.as_deref() {
+                Some(agent_id) => self
+                    .session_workers
+                    .summarize_agent_by_id(agent_id, None)
+                    .map_err(GatewayCommandError::Internal)?
+                    .is_some_and(|summary| !summary.is_group),
+                None => false,
+            };
             let send_addressed_on_screen = send_agent_id
                 .as_deref()
                 .is_some_and(|agent_id| self.addressed_chat_on_screen(agent_id));
@@ -1993,6 +2005,38 @@ impl UnifiedGatewayApi {
                     },
                     |persisted| {
                         if let Some(agent_id) = send_agent_id.as_deref() {
+                            if send_is_direct_local {
+                                let interrupted_group =
+                                    self.preempt_group_member_runs_for_direct_send(&durable_args);
+                                let interrupted_one_to_one = supersede_registry
+                                    .preempt_routed_agent(
+                                        agent_id,
+                                        RUN_DIRECT_USER_INTERRUPT_REASON,
+                                    )
+                                    > 0;
+                                let had_active_run =
+                                    interrupted_group || interrupted_one_to_one;
+                                if had_active_run {
+                                    if let Err(error) = supersede_ack_obligations
+                                        .record_interrupt(agent_id, started_at_ms() as f64)
+                                    {
+                                        eprintln!(
+                                            "mahayana-host supersede_ack_interrupt_failed agent={agent_id} error={error}"
+                                        );
+                                    }
+                                }
+                                let fields = TurnInterruptFields {
+                                    conversation_id: agent_id.to_string(),
+                                    reason: "superseded".into(),
+                                    had_active_run,
+                                    was_in_flight: send_was_in_flight,
+                                };
+                                if let Err(error) = supersede_logs.report_turn_interrupt(&fields) {
+                                    eprintln!(
+                                        "mahayana-host turn_interrupt_telemetry_failed agent={agent_id} error={error}"
+                                    );
+                                }
+                            }
                             if let Err(error) =
                                 self.emit_persisted_send_acceptance(agent_id, persisted, true)
                             {
@@ -2713,7 +2757,7 @@ impl UnifiedGatewayApi {
         Ok(())
     }
 
-    fn preempt_group_member_runs_for_direct_send(&self, args: &serde_json::Value) {
+    fn preempt_group_member_runs_for_direct_send(&self, args: &serde_json::Value) -> bool {
         let request_source = args
             .get("requestSource")
             .and_then(serde_json::Value::as_str)
@@ -2723,7 +2767,7 @@ impl UnifiedGatewayApi {
             && args.get("automationWake").is_none_or(serde_json::Value::is_null)
             && args.get("groupContext").is_none_or(serde_json::Value::is_null);
         if !is_direct {
-            return;
+            return false;
         }
         let Some(agent_id) = args
             .get("agentId")
@@ -2732,12 +2776,12 @@ impl UnifiedGatewayApi {
             .map(str::trim)
             .filter(|value| !value.is_empty())
         else {
-            return;
+            return false;
         };
-        let _ = self.runner_registry.preempt_group_member_agent(
+        self.runner_registry.preempt_group_member_agent(
             agent_id,
             "direct user message preempted group member turn",
-        );
+        ) > 0
     }
 
     fn persisted_user_entry(

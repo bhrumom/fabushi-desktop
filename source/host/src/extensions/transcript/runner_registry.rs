@@ -13,6 +13,7 @@ use super::transcript_manager::TranscriptTurnExecutionPort;
 
 pub const RUN_WATCHDOG_INTERRUPT_REASON: &str =
     "run-queue watchdog: releasing a wedged predecessor";
+pub const RUN_DIRECT_USER_INTERRUPT_REASON: &str = "superseded by a new user message";
 
 #[derive(Clone, Default)]
 pub struct TranscriptRunnerRegistry {
@@ -165,6 +166,17 @@ impl TranscriptRunnerRegistry {
         reason: impl Into<String>,
     ) -> usize {
         self.group_member_tasks.cancel_agent(agent_id, reason)
+    }
+
+    pub fn preempt_routed_agent(
+        &self,
+        agent_id: &str,
+        reason: impl Into<String>,
+    ) -> usize {
+        let Some(stream_id) = self.current_routed_stream_id_for_agent(agent_id) else {
+            return 0;
+        };
+        usize::from(self.routed_provider_tasks.cancel(&stream_id, reason.into()))
     }
 
     pub fn preempt_group_member_agent(
