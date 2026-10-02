@@ -6,7 +6,7 @@ use serde_json::Value;
 pub const UNBOUND_EXECUTION_MESSAGE: &str = "Sand turn execution is not bound: the host asked for a runner before the composition root handed the turn-execution extension its executor.";
 pub const DOUBLE_BIND_MESSAGE: &str = "Sand turn execution is already bound: a second executor would mint a second runner for the same agent.";
 
-pub trait TurnExecutor {
+pub trait TurnExecutor: Send {
     fn is_inference_ready(&self) -> Pin<Box<dyn Future<Output = bool> + '_>>;
     fn create_runner(&self, session: Value, hooks: Value) -> Value;
     fn create_group_member_runner(&self, session: Value, hooks: Value, overrides: Value) -> Value;
