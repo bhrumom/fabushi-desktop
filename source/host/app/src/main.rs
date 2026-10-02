@@ -5614,6 +5614,21 @@ fn start_routed_provider_task(
                     }));
                 }));
                 let tool_call_logs = worker_telemetry_logs.clone();
+                let client_side_tool_events = worker_events.clone();
+                let client_side_tool_agent_id = agent_id.clone();
+                observation.set_client_side_tool_v2_handler(Arc::new(move |projected| {
+                    if let Some(event) =
+                        mahayana_host_runtime::extensions::transcript::client_side_tool_v2_producer::publish_production_client_side_tool_v2(
+                            &client_side_tool_agent_id,
+                            projected.into_produced_value(),
+                        )
+                    {
+                        client_side_tool_events.publish(serde_json::json!({
+                            "channel": mahayana_host_runtime::extensions::transcript::client_side_tool_v2_producer::CLIENT_SIDE_TOOL_V2_FAMILY,
+                            "payload": event,
+                        }));
+                    }
+                }));
                 observation.set_tool_call_telemetry_handler(Arc::new(move |event| {
                     let result = match event {
                         ToolCallTelemetryEvent::Started {

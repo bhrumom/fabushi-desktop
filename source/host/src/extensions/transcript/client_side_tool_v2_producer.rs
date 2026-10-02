@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::sync::{Mutex, OnceLock};
 
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
@@ -6,6 +7,7 @@ use uuid::Uuid;
 
 pub const CLIENT_SIDE_TOOL_V2_WIRE_VERSION: u32 = 1;
 pub const CLIENT_SIDE_TOOL_V2_ACCOUNT_SLOT: &str = "host";
+pub const CLIENT_SIDE_TOOL_V2_FAMILY: &str = "client-side-tool-v2";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -176,4 +178,31 @@ impl ClientSideToolV2Producer {
         self.sequences.insert(agent_id.to_string(), next);
         next
     }
+}
+
+
+static PRODUCTION_CLIENT_SIDE_TOOL_V2_PRODUCER: OnceLock<Mutex<ClientSideToolV2Producer>> =
+    OnceLock::new();
+
+pub fn publish_production_client_side_tool_v2(
+    agent_id: &str,
+    produced: ClientSideToolV2ProducedValue,
+) -> Option<ClientSideToolV2TransportEvent> {
+    let producer = PRODUCTION_CLIENT_SIDE_TOOL_V2_PRODUCER
+        .get_or_init(|| Mutex::new(ClientSideToolV2Producer::new()));
+    producer
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .publish(agent_id, produced)
+}
+
+pub fn reset_production_client_side_tool_v2(
+    agent_id: &str,
+) -> Option<ClientSideToolV2TransportEvent> {
+    let producer = PRODUCTION_CLIENT_SIDE_TOOL_V2_PRODUCER
+        .get_or_init(|| Mutex::new(ClientSideToolV2Producer::new()));
+    producer
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .reset(agent_id)
 }

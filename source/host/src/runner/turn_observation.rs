@@ -8,6 +8,9 @@ use crate::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
 use crate::extensions::transcript::async_task_union::AsyncTask;
+use crate::extensions::transcript::client_side_tool_v2_projection::{
+    ProjectedClientSideToolV2, ToolProjectionPhase, project_routed_tool_call,
+};
 
 use super::clock_skew_guard::{
     SEND_DISPATCH_MAX_PLAUSIBLE_MS, TTFT_MAX_PLAUSIBLE_MS,
@@ -55,6 +58,8 @@ pub enum ToolCallTelemetryEvent {
 
 pub type ToolCallTelemetrySink =
     Arc<dyn Fn(ToolCallTelemetryEvent) + Send + Sync + 'static>;
+pub type ClientSideToolV2ProjectionSink =
+    Arc<dyn Fn(ProjectedClientSideToolV2) + Send + Sync + 'static>;
 
 pub struct McpExecObservationGuard {
     cancel_stall: mpsc::Sender<()>,
@@ -111,6 +116,7 @@ pub struct TurnObservation {
     async_tasks_sink: Option<TurnObservationEventSink>,
     async_tasks_provider: Option<AsyncTasksProvider>,
     tool_call_telemetry_sink: Option<ToolCallTelemetrySink>,
+    client_side_tool_v2_sink: Option<ClientSideToolV2ProjectionSink>,
     request_id: Option<String>,
     turn_started_at_ms: u64,
     last_tool: Option<String>,
@@ -158,6 +164,7 @@ impl TurnObservation {
             async_tasks_sink: None,
             async_tasks_provider: None,
             tool_call_telemetry_sink: None,
+            client_side_tool_v2_sink: None,
             request_id: None,
             turn_started_at_ms: now_ms(),
             last_tool: None,
@@ -179,6 +186,16 @@ impl TurnObservation {
 
     pub fn set_tool_call_telemetry_handler(&mut self, sink: ToolCallTelemetrySink) {
         self.tool_call_telemetry_sink = Some(sink);
+    }
+
+    pub fn set_client_side_tool_v2_handler(&mut self, sink: ClientSideToolV2ProjectionSink) {
+        self.client_side_tool_v2_sink = Some(sink);
+    }
+
+    fn emit_client_side_tool_v2(&self, projected: ProjectedClientSideToolV2) {
+        if let Some(sink) = self.client_side_tool_v2_sink.as_ref() {
+            sink(projected);
+        }
     }
 
     pub fn set_async_tasks_provider(&mut self, provider: AsyncTasksProvider) {
@@ -714,7 +731,37 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
             }
         }
 
+        if let Some(projected) = project_routed_tool_call(
+            ToolProjectionPhase::Started,
+            tool,
+            &args,
+            tool_call_id,
+            "",
+            None,
+        ) {
+            if let Ok(observation) = self.observation.lock() {
+                observation.emit_client_side_tool_v2(projected);
+            }
+        }
+
         let result = self.delegate.call_tool(tool, args.clone(), tool_call_id);
+
+        let projection_result = Some(match &result {
+            Ok(value) => Ok(value.clone()),
+            Err(error) => Err(error.to_string()),
+        });
+        if let Some(projected) = project_routed_tool_call(
+            ToolProjectionPhase::Completed,
+            tool,
+            &args,
+            tool_call_id,
+            "",
+            projection_result,
+        ) {
+            if let Ok(observation) = self.observation.lock() {
+                observation.emit_client_side_tool_v2(projected);
+            }
+        }
         if let Ok(mut observation) = self.observation.lock() {
             let failed = result.is_err();
             let summary = result.as_ref().ok().map(Value::to_string);
