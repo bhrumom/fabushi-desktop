@@ -2609,6 +2609,119 @@ impl UnifiedGatewayApi {
     }
 }
 
+fn post_agent_message_to_group(
+    deps: LocalRoutedRunnerDeps,
+    from_agent_id: &str,
+    group_id: &str,
+    message: &str,
+    is_priority: bool,
+) -> Result<String, String> {
+    if deps.transcript_runtime.is_quiescing_for_upgrade()
+        || configured_routed_provider(&deps.data_dir.join("settings.json")).is_none()
+    {
+        return Err("Messaging isn't available right now.".into());
+    }
+    let posted = mahayana_host_runtime::extensions::transcript::shared_rooms::SharedRooms::new(
+        Arc::clone(&deps.session_workers),
+    )
+    .post_local_agent_message(
+        from_agent_id,
+        group_id,
+        message,
+        started_at_ms() as f64,
+    )?;
+    let _ = deps.product_analytics.track_event(
+        "sand.agent_message.sent",
+        &serde_json::json!({
+            "from_agent_id": from_agent_id,
+            "to_agent_id": group_id,
+            "is_group_target": true,
+            "is_priority": is_priority,
+        }),
+    );
+    let room_id = group_id.to_string();
+    thread::Builder::new()
+        .name(format!("mahayana-agent-group-post-{room_id}"))
+        .spawn(move || {
+            if let Err(error) = run_agent_posted_group_turn(deps, &room_id) {
+                eprintln!(
+                    "mahayana-host agent_group_post_fanout_failed room={} error={error}",
+                    room_id
+                );
+            }
+        })
+        .map_err(|error| format!("could not schedule group reply turns: {error}"))?;
+    Ok(format!(
+        "Posted to \"{}\". Its members will see it and reply on their own turns.",
+        posted.group_name
+    ))
+}
+
+fn run_agent_posted_group_turn(
+    deps: LocalRoutedRunnerDeps,
+    group_id: &str,
+) -> Result<(), String> {
+    let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
+        return Err("no routed provider configured for agent-posted group turn".into());
+    };
+    let args = serde_json::json!({
+        "agentId": group_id,
+        "prompt": "[agent] group post",
+        "clientNonce": format!("agent-group:{}:{}", group_id, uuid::Uuid::new_v4()),
+        "appendUserMessage": false,
+        "hidden": true,
+        "requestSource": "agent-inbound",
+        "skipAckObligation": true,
+    });
+    let dispatch_runtime = Arc::clone(&deps.transcript_runtime);
+    let dispatch_sessions = Arc::clone(&deps.session_workers);
+    let dispatch_deps = deps.clone();
+    let room_id = group_id.to_string();
+    deps.transcript_runtime
+        .execute_send(
+            &args,
+            move || {
+                let member_deps = dispatch_deps.clone();
+                let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
+                    run_local_group_member_turn(member_deps.clone(), provider, request)
+                });
+                let epoch = dispatch_runtime.current_turn_epoch(&room_id);
+                match dispatch_local_group_send(
+                    dispatch_sessions,
+                    Arc::clone(&dispatch_runtime),
+                    &room_id,
+                    epoch,
+                    executor,
+                    None,
+                )
+                .map_err(ProductionSendError::Internal)?
+                {
+                    LocalGroupFanoutDisposition::NotGroup => {
+                        Err(ProductionSendError::Rejected(format!(
+                            "{room_id} is not a group chat."
+                        )))
+                    }
+                    LocalGroupFanoutDisposition::DeferredRemote { .. } => Ok(serde_json::json!({
+                        "accepted": true,
+                        "groupFanoutDeferred": true,
+                    })),
+                    LocalGroupFanoutDisposition::Completed {
+                        posted_messages,
+                        member_failures,
+                    } => Ok(serde_json::json!({
+                        "accepted": true,
+                        "groupFanout": true,
+                        "postedMessages": posted_messages,
+                        "memberFailureCount": member_failures.len(),
+                    })),
+                }
+            },
+            |_| Ok(PersistedSendContext::default()),
+        )
+        .map(|_| ())
+        .map_err(|error| error.to_string())
+}
+
 fn run_local_group_member_turn(
     deps: LocalRoutedRunnerDeps,
     provider: RoutedProvider,
@@ -4661,6 +4774,39 @@ fn start_routed_provider_task(
             .and_then(serde_json::Value::as_bool)
             .unwrap_or(false),
     };
+    let worker_group_post_deps = LocalRoutedRunnerDeps {
+        routed_tool_relay: Arc::clone(&routed_tool_relay),
+        mcp_service: Arc::clone(&mcp_service),
+        auth: Arc::clone(&auth),
+        auto_review: Arc::clone(&auto_review),
+        events: events.clone(),
+        host_tx: host_tx.clone(),
+        data_dir: data_dir.clone(),
+        request_context: Arc::clone(&request_context),
+        experiments: Arc::clone(&experiments),
+        settings: Arc::clone(&settings),
+        inference: Arc::clone(&inference),
+        session_workers: Arc::clone(&session_workers),
+        runner_registry: Arc::clone(&runner_registry),
+        ack_obligations: Arc::clone(&ack_obligations),
+        transcript_runtime: Arc::clone(&transcript_runtime),
+        generated_agent_runtime: Arc::clone(&generated_agent_runtime),
+        completion_revivals: Arc::clone(&completion_revivals),
+        forever_box: Arc::clone(&forever_box),
+        local_exec: Arc::clone(&local_exec),
+        local_tool_permission: Arc::clone(&local_tool_permission),
+        session_handoff: session_handoff.clone(),
+        trays: Arc::clone(&trays),
+        telemetry_logs: telemetry_logs.clone(),
+        product_analytics: product_analytics.clone(),
+        production_action_auditor: production_action_auditor.clone(),
+        cloud_agents: Arc::clone(&cloud_agents),
+        cloud_agent_watches: Arc::clone(&cloud_agent_watches),
+        background_shell_watches: Arc::clone(&background_shell_watches),
+        host_runner_composition: Arc::clone(&host_runner_composition),
+        box_store_sync: box_store_sync.clone(),
+        automations_lifecycle: Arc::clone(&automations_lifecycle),
+    };
     let worker_generated_parent_agent_id = generated_parent_agent_id.clone();
     let worker_generated_subagent_type = generated_subagent_type.clone();
     let worker_generated_tool_call_id = generated_tool_call_id.clone();
@@ -5812,7 +5958,18 @@ fn start_routed_provider_task(
                         "is_priority": is_priority,
                     }),
                 );
-            })));
+            })).with_group_post({
+                let group_deps = worker_group_post_deps.clone();
+                Arc::new(move |from_agent_id, group_id, message, is_priority| {
+                    post_agent_message_to_group(
+                        group_deps.clone(),
+                        from_agent_id,
+                        group_id,
+                        message,
+                        is_priority,
+                    )
+                })
+            }));
             let turn_agent_messages = Arc::new(Mutex::new(Vec::<String>::new()));
             let agent_management_sink: Arc<dyn AgentManagementSink> = Arc::new(
                 ProductionAgentManagementSink {

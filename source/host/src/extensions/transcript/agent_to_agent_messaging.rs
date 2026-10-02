@@ -14,7 +14,6 @@ use crate::extensions::trays::trays_service::PushErrorOptions;
 use crate::ports::telemetry::SandErrorDetail;
 use super::send_message_shaping::load_agent_inbound_images;
 use super::run_scheduler::RunLane;
-use super::shared_rooms::SharedRooms;
 use super::transcript_entry_ids::{TranscriptEntryIdKind, next_entry_id};
 
 pub const PRIORITY_AGENT_MESSAGE_INTERRUPT_REASON: &str = "superseded by a priority agent message";
@@ -99,6 +98,8 @@ pub type AgentWakeSink = Arc<dyn Fn(&AgentWakeRequest) + Send + Sync + 'static>;
 pub type PriorityInterruptSink = Arc<dyn Fn(&str, &str) -> usize + Send + Sync + 'static>;
 pub type AgentMessageAnalyticsSink =
     Arc<dyn Fn(&str, &str, bool, bool) + Send + Sync + 'static>;
+pub type GroupPostSink =
+    Arc<dyn Fn(&str, &str, &str, bool) -> Result<String, String> + Send + Sync + 'static>;
 
 pub fn should_interrupt_priority_peer(active_lane: Option<RunLane>) -> bool {
     active_lane != Some(RunLane::User)
@@ -126,20 +127,24 @@ pub fn merge_agent_inbound_queue(queued: &[AgentInboundMessage], deferred: &[Age
 
 pub struct ProductionAgentToAgentMessaging {
     sessions: Arc<ProductionSessionWorkers>,
-    shared_rooms: SharedRooms,
     wake_sink: AgentWakeSink,
     priority_interrupt: Option<PriorityInterruptSink>,
     analytics: Option<AgentMessageAnalyticsSink>,
+    group_post: Option<GroupPostSink>,
 }
 
 impl ProductionAgentToAgentMessaging {
     pub fn new(sessions: Arc<ProductionSessionWorkers>, wake_sink: AgentWakeSink, priority_interrupt: Option<PriorityInterruptSink>) -> Self {
-        let shared_rooms = SharedRooms::new(Arc::clone(&sessions));
-        Self { sessions, shared_rooms, wake_sink, priority_interrupt, analytics: None }
+        Self { sessions, wake_sink, priority_interrupt, analytics: None, group_post: None }
     }
 
     pub fn with_analytics(mut self, analytics: AgentMessageAnalyticsSink) -> Self {
         self.analytics = Some(analytics);
+        self
+    }
+
+    pub fn with_group_post(mut self, group_post: GroupPostSink) -> Self {
+        self.group_post = Some(group_post);
         self
     }
 
@@ -158,19 +163,23 @@ impl ProductionAgentToAgentMessaging {
         let timestamp_ms = now_ms();
 
         if target.is_group {
-            if message == "(pass)" {
-                return Ok("Nothing was posted: \"(pass)\" means staying silent in a group chat.".into());
-            }
-            let posted = match self.shared_rooms.post_local_agent_message(
-                from_agent_id,
-                to_agent_id,
-                &message,
-                timestamp_ms as f64,
-            ) {
-                Ok(posted) => posted,
+            let Some(group_post) = self.group_post.as_ref() else {
+                return Ok("Messaging isn't available right now.".into());
+            };
+            let ack = match group_post(from_agent_id, to_agent_id, &message, priority) {
+                Ok(ack) => ack,
                 Err(error) => return Ok(error),
             };
-            if let Some(analytics) = self.analytics.as_ref() {
+            let mut notes = Vec::new();
+            if !images.is_empty() {
+                notes.push(format!("Note: the attached image{} {} NOT delivered — group messages are text-only for now; send images to an agent directly.",
+                    if images.len()==1 {""} else {"s"}, if images.len()==1 {"was"} else {"were"}));
+            }
+            if priority { notes.push("Note: priority is 1:1 only — this post did not interrupt members.".into()); }
+            return Ok(if notes.is_empty(){ack}else{format!("{ack} {}",notes.join(" "))});
+        }
+
+        if let Some(analytics) = self.analytics.as_ref() {
                 analytics(from_agent_id, to_agent_id, true, priority);
             }
             (self.wake_sink)(&AgentWakeRequest {

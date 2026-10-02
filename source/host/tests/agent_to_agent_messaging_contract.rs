@@ -59,11 +59,20 @@ fn group_delivery_delegates_persistence_to_shared_rooms_owner() {
     let wakes=Arc::new(Mutex::new(Vec::<AgentWakeRequest>::new()));
     let analytics=Arc::new(Mutex::new(Vec::<(String,String,bool,bool)>::new()));
     let captured=Arc::clone(&analytics);
+    let group_sessions=Arc::clone(&sessions);
     let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{
         let wakes=Arc::clone(&wakes);Arc::new(move|wake|wakes.lock().expect("wakes").push(wake.clone()))
     },None).with_analytics(Arc::new(move|from,to,is_group,priority|{
         captured.lock().expect("analytics").push((from.into(),to.into(),is_group,priority));
-    }));
+    })).with_group_post({
+        let analytics=Arc::clone(&analytics);
+        Arc::new(move|from,group_id,message,priority|{
+            let posted=mahayana_host_runtime::extensions::transcript::shared_rooms::SharedRooms::new(Arc::clone(&group_sessions))
+                .post_local_agent_message(from,group_id,message,123.0)?;
+            analytics.lock().expect("analytics").push((from.into(),group_id.into(),true,priority));
+            Ok(format!("Posted to \"{}\". Its members will see it and reply on their own turns.",posted.group_name))
+        })
+    });
 
     let ack=service.send_to_agent(&alpha.id,&group.agent.id,"group hello",&[],false).expect("group post");
     assert_eq!(ack,"Posted to \"Review Room\". Its members will see it and reply on their own turns.");
@@ -76,8 +85,7 @@ fn group_delivery_delegates_persistence_to_shared_rooms_owner() {
     assert_eq!(room[0]["author"]["id"],alpha.id);
     assert_eq!(room[0]["message"]["content"],"group hello");
     assert_eq!(analytics.lock().expect("analytics").as_slice(),&[(alpha.id.clone(),group.agent.id.clone(),true,false)]);
-    let wake=wakes.lock().expect("wakes").last().cloned().expect("wake");
-    assert_eq!(wake.member_ids,vec![alpha.id.clone(),beta.id.clone()]);
+    assert!(wakes.lock().expect("wakes").is_empty(), "group posting does not emit direct-agent wake requests");
 
     let before=room.len();
     let pass=service.send_to_agent(&alpha.id,&group.agent.id,"(pass)",&[],false).expect("pass");
