@@ -1,118 +1,180 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "TDRP-001 per-file parity ledger contract",
-  "description": "Normative data contract, not an implementation or proof of parity. P0 must implement semantic validation on GitHub Actions or htch-runtime. A ledger is never considered complete from schema validation alone.",
+  "title": "TDRP-001 source-informed capability ledger contract",
+  "description": "Revision 2 capability-level contract. Upstream files are research evidence, not target module mappings. Schema validation is not proof of implementation or acceptance.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["format_version", "project_id", "upstream_commit", "upstream_lock_sha256", "inventory_status", "inventory_manifest_path", "rows"],
+  "required": [
+    "format_version",
+    "project_id",
+    "spec_revision",
+    "upstream_commit",
+    "upstream_lock_sha256",
+    "research_inventory_status",
+    "capabilities"
+  ],
   "properties": {
-    "format_version": {"const": 1},
+    "format_version": {"const": 2},
     "project_id": {"const": "TDRP-001"},
+    "spec_revision": {"const": 2},
     "upstream_commit": {"$ref": "#/$defs/gitOid"},
     "upstream_lock_sha256": {"$ref": "#/$defs/sha256"},
-    "inventory_status": {"enum": ["partial", "complete"]},
-    "inventory_manifest_path": {"$ref": "#/$defs/relativePath"},
-    "rows": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/row"}},
+    "research_inventory_status": {"enum": ["partial", "complete"]},
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/capability"}
+    },
     "notes": {"type": "string"}
   },
   "$defs": {
-    "nonEmpty": {"type": "string", "minLength": 1, "pattern": "\\S"},
-    "gitOid": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
-    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000]+$"},
-    "strings": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmpty"}},
-    "approval": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["decision_path", "decision_commit", "approved_by", "approved_on", "scope", "reason"],
-      "properties": {
-        "decision_path": {"$ref": "#/$defs/relativePath"},
-        "decision_commit": {"$ref": "#/$defs/gitOid"},
-        "approved_by": {"$ref": "#/$defs/nonEmpty"},
-        "approved_on": {"type": "string", "format": "date"},
-        "scope": {"$ref": "#/$defs/nonEmpty"},
-        "reason": {"$ref": "#/$defs/nonEmpty"}
-      }
+    "nonEmpty": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
     },
-    "source": {
+    "gitOid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000]+$"
+    },
+    "strings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/nonEmpty"}
+    },
+    "sourceEvidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["repository", "repository_commit", "mount_path", "path", "kind", "git_mode", "blob_oid", "content_sha256", "origin", "platform_conditions", "generation_inputs"],
+      "required": [
+        "repository",
+        "commit",
+        "path",
+        "role",
+        "language",
+        "cpp_relevance"
+      ],
       "properties": {
         "repository": {"$ref": "#/$defs/nonEmpty"},
-        "repository_commit": {"anyOf": [{"$ref": "#/$defs/gitOid"}, {"type": "null"}]},
-        "mount_path": {"type": "string", "description": "Empty for root repository; otherwise exact recursively mounted repository path."},
+        "commit": {"$ref": "#/$defs/gitOid"},
         "path": {"$ref": "#/$defs/relativePath"},
-        "kind": {"enum": ["git-blob", "git-symlink", "generated", "external-file"]},
-        "git_mode": {"type": ["string", "null"], "enum": ["100644", "100755", "120000", null]},
-        "blob_oid": {"anyOf": [{"$ref": "#/$defs/gitOid"}, {"type": "null"}]},
-        "content_sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
-        "origin": {"$ref": "#/$defs/nonEmpty"},
-        "platform_conditions": {"$ref": "#/$defs/strings"},
-        "generation_inputs": {"$ref": "#/$defs/strings"}
+        "symbols": {"$ref": "#/$defs/strings"},
+        "role": {"$ref": "#/$defs/nonEmpty"},
+        "language": {"$ref": "#/$defs/nonEmpty"},
+        "cpp_relevance": {
+          "enum": [
+            "product-logic",
+            "protocol",
+            "state-machine",
+            "ui",
+            "platform-policy",
+            "build-tool",
+            "third-party",
+            "test-reference",
+            "not-cpp"
+          ]
+        }
+      }
+    },
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "language",
+        "responsibility",
+        "canonical_owner",
+        "production_entrypoints",
+        "decision_record"
+      ],
+      "properties": {
+        "component": {"$ref": "#/$defs/nonEmpty"},
+        "language": {"$ref": "#/$defs/nonEmpty"},
+        "responsibility": {"$ref": "#/$defs/nonEmpty"},
+        "canonical_owner": {"$ref": "#/$defs/nonEmpty"},
+        "production_entrypoints": {"$ref": "#/$defs/strings"},
+        "decision_record": {"$ref": "#/$defs/relativePath"}
+      }
+    },
+    "cppReplacement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "status", "remaining_cpp_components"],
+      "properties": {
+        "required": {"type": "boolean"},
+        "status": {
+          "enum": [
+            "not-required",
+            "planned",
+            "partial",
+            "replaced",
+            "blocked"
+          ]
+        },
+        "remaining_cpp_components": {"$ref": "#/$defs/strings"}
       },
       "allOf": [
         {
-          "if": {"properties": {"kind": {"enum": ["git-blob", "git-symlink"]}}, "required": ["kind"]},
-          "then": {"properties": {"repository_commit": {"$ref": "#/$defs/gitOid"}, "blob_oid": {"$ref": "#/$defs/gitOid"}, "git_mode": {"enum": ["100644", "100755", "120000"]}}}
-        },
-        {
-          "if": {"properties": {"kind": {"const": "git-symlink"}}, "required": ["kind"]},
-          "then": {"properties": {"git_mode": {"const": "120000"}}}
-        },
-        {
-          "if": {"properties": {"kind": {"enum": ["generated", "external-file"]}}, "required": ["kind"]},
-          "then": {"properties": {"content_sha256": {"$ref": "#/$defs/sha256"}}}
-        },
-        {
-          "if": {"properties": {"kind": {"const": "generated"}}, "required": ["kind"]},
-          "then": {"properties": {"generation_inputs": {"minItems": 1}}}
+          "if": {
+            "properties": {"status": {"const": "replaced"}},
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "remaining_cpp_components": {"maxItems": 0}
+            }
+          }
         }
       ]
-    },
-    "symbol": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["symbol_id", "name", "source_locator", "responsibility", "target_symbols", "test_ids"],
-      "properties": {
-        "symbol_id": {"$ref": "#/$defs/nonEmpty"},
-        "name": {"$ref": "#/$defs/nonEmpty"},
-        "source_locator": {"$ref": "#/$defs/nonEmpty"},
-        "responsibility": {"$ref": "#/$defs/nonEmpty"},
-        "target_symbols": {"$ref": "#/$defs/strings"},
-        "test_ids": {"$ref": "#/$defs/strings"}
-      }
-    },
-    "target": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["path", "symbols", "canonical_owner", "production_entrypoints", "responsibility"],
-      "properties": {
-        "path": {"$ref": "#/$defs/relativePath"},
-        "symbols": {"$ref": "#/$defs/strings"},
-        "canonical_owner": {"$ref": "#/$defs/nonEmpty"},
-        "production_entrypoints": {"$ref": "#/$defs/strings"},
-        "responsibility": {"$ref": "#/$defs/nonEmpty"}
-      }
     },
     "test": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["test_id", "kind", "path_or_command", "scenario", "requirements", "platform_cells", "production_path"],
+      "required": [
+        "test_id",
+        "kind",
+        "scenario",
+        "platform_cells",
+        "production_path"
+      ],
       "properties": {
         "test_id": {"$ref": "#/$defs/nonEmpty"},
-        "kind": {"enum": ["static", "unit", "property", "contract", "differential", "integration", "e2e", "fuzz", "performance", "power", "accessibility", "migration", "packaged", "license", "resource", "generator"]},
-        "path_or_command": {"$ref": "#/$defs/nonEmpty"},
+        "kind": {
+          "enum": [
+            "static",
+            "unit",
+            "property",
+            "state-machine",
+            "contract",
+            "differential",
+            "integration",
+            "e2e",
+            "fuzz",
+            "performance",
+            "power",
+            "accessibility",
+            "migration",
+            "packaged",
+            "license"
+          ]
+        },
         "scenario": {"$ref": "#/$defs/nonEmpty"},
-        "requirements": {"allOf": [{"$ref": "#/$defs/strings"}, {"minItems": 1}]},
-        "platform_cells": {"allOf": [{"$ref": "#/$defs/strings"}, {"minItems": 1}]},
+        "platform_cells": {"$ref": "#/$defs/strings"},
         "production_path": {"type": "boolean"}
       }
     },
     "artifact": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "uri", "sha256", "github_artifact_id"],
+      "required": ["name", "uri", "sha256"],
       "properties": {
         "name": {"$ref": "#/$defs/nonEmpty"},
         "uri": {"type": "string", "format": "uri"},
@@ -123,116 +185,299 @@
     "evidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["evidence_id", "test_ids", "result", "target_commit", "upstream_commit", "upstream_lock_sha256", "runner", "device", "platform_cell", "configuration", "run_url", "workflow_run_id", "run_attempt", "job_id", "step_name", "command", "exit_code", "executed_test_count", "oracle", "artifacts", "limitations"],
+      "required": [
+        "evidence_id",
+        "test_ids",
+        "result",
+        "target_commit",
+        "upstream_commit",
+        "runner",
+        "device",
+        "platform_cell",
+        "command",
+        "exit_code",
+        "executed_test_count",
+        "artifacts",
+        "limitations"
+      ],
       "properties": {
         "evidence_id": {"$ref": "#/$defs/nonEmpty"},
-        "test_ids": {"allOf": [{"$ref": "#/$defs/strings"}, {"minItems": 1}]},
-        "result": {"enum": ["passed", "failed", "blocked", "not-configured"]},
+        "test_ids": {"$ref": "#/$defs/strings"},
+        "result": {
+          "enum": ["passed", "failed", "blocked", "not-configured"]
+        },
         "target_commit": {"$ref": "#/$defs/gitOid"},
         "upstream_commit": {"$ref": "#/$defs/gitOid"},
-        "upstream_lock_sha256": {"$ref": "#/$defs/sha256"},
-        "runner": {"enum": ["github-actions", "htch-runtime"]},
+        "runner": {
+          "enum": ["github-actions", "htch-runtime"]
+        },
         "device": {"$ref": "#/$defs/nonEmpty"},
         "platform_cell": {"$ref": "#/$defs/nonEmpty"},
-        "configuration": {"$ref": "#/$defs/nonEmpty"},
-        "run_url": {"type": "string", "format": "uri"},
+        "run_url": {"type": ["string", "null"], "format": "uri"},
         "workflow_run_id": {"type": ["integer", "null"], "minimum": 1},
-        "run_attempt": {"type": ["integer", "null"], "minimum": 1},
         "job_id": {"type": ["integer", "null"], "minimum": 1},
-        "step_name": {"$ref": "#/$defs/nonEmpty"},
         "command": {"$ref": "#/$defs/nonEmpty"},
         "exit_code": {"type": ["integer", "null"]},
         "executed_test_count": {"type": "integer", "minimum": 0},
-        "oracle": {"type": ["string", "null"]},
-        "artifacts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/artifact"}},
+        "artifacts": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/artifact"}
+        },
         "limitations": {"$ref": "#/$defs/strings"}
       },
       "allOf": [
         {
-          "if": {"properties": {"runner": {"const": "github-actions"}}, "required": ["runner"]},
-          "then": {"properties": {"workflow_run_id": {"type": "integer", "minimum": 1}, "run_attempt": {"type": "integer", "minimum": 1}, "job_id": {"type": "integer", "minimum": 1}, "run_url": {"pattern": "^https://github\\.com/bhrumom/fabushi-desktop/actions/runs/[0-9]+"}}}
+          "if": {
+            "properties": {"result": {"const": "passed"}},
+            "required": ["result"]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {"const": 0},
+              "executed_test_count": {"minimum": 1}
+            }
+          }
         },
         {
-          "if": {"properties": {"runner": {"const": "htch-runtime"}}, "required": ["runner"]},
-          "then": {"properties": {"device": {"const": "htch-runtime"}}}
-        },
-        {
-          "if": {"properties": {"result": {"const": "passed"}}, "required": ["result"]},
-          "then": {"properties": {"exit_code": {"const": 0}, "executed_test_count": {"minimum": 1}}}
+          "if": {
+            "properties": {"runner": {"const": "htch-runtime"}},
+            "required": ["runner"]
+          },
+          "then": {
+            "properties": {"device": {"const": "htch-runtime"}}
+          }
         }
       ]
     },
     "review": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["reviewer", "independent", "decision", "record_uri", "reviewed_target_commit", "evidence_ids", "notes"],
+      "required": [
+        "reviewer",
+        "independent",
+        "decision",
+        "reviewed_target_commit",
+        "evidence_ids",
+        "notes"
+      ],
       "properties": {
         "reviewer": {"$ref": "#/$defs/nonEmpty"},
         "independent": {"type": "boolean"},
-        "decision": {"enum": ["accepted", "changes-required", "blocked"]},
-        "record_uri": {"type": "string", "format": "uri"},
+        "decision": {
+          "enum": ["accepted", "changes-required", "blocked"]
+        },
         "reviewed_target_commit": {"$ref": "#/$defs/gitOid"},
-        "evidence_ids": {"allOf": [{"$ref": "#/$defs/strings"}, {"minItems": 1}]},
+        "evidence_ids": {"$ref": "#/$defs/strings"},
         "notes": {"$ref": "#/$defs/nonEmpty"}
       }
     },
-    "row": {
+    "capability": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["file_id", "source", "category", "disposition", "status", "requirements", "responsibility", "symbols", "symbol_inventory_status", "dependencies", "targets", "tests", "evidence", "review", "approval", "risk", "reason", "blockers", "implementation_commit", "last_verified_commit"],
+      "required": [
+        "capability_id",
+        "name",
+        "state",
+        "requirements",
+        "research_dossier",
+        "source_evidence",
+        "official_references",
+        "architecture_decisions",
+        "target_owners",
+        "cpp_replacement",
+        "behavior_contracts",
+        "deviations",
+        "tests",
+        "evidence",
+        "review",
+        "blockers",
+        "implementation_commit",
+        "last_verified_commit"
+      ],
       "properties": {
-        "file_id": {"$ref": "#/$defs/nonEmpty"},
-        "source": {"$ref": "#/$defs/source"},
-        "category": {"enum": ["source", "header", "schema", "generator", "generated", "resource", "shader", "build", "packaging", "test", "documentation", "license", "configuration", "dependency"]},
-        "disposition": {"enum": ["unclassified", "rust-port", "rust-library-replacement", "generated", "resource-preserved", "declarative-conversion", "build-tool-equivalent", "upstream-reference-only", "approved-native-dependency", "temporary-bridge", "not-applicable"]},
-        "status": {"enum": ["discovered", "analyzed", "mapped", "implemented", "verified", "accepted", "blocked"]},
+        "capability_id": {"$ref": "#/$defs/nonEmpty"},
+        "name": {"$ref": "#/$defs/nonEmpty"},
+        "state": {
+          "enum": [
+            "discovered",
+            "researched",
+            "designed",
+            "implemented",
+            "production-wired",
+            "verified",
+            "accepted",
+            "blocked"
+          ]
+        },
         "requirements": {"$ref": "#/$defs/strings"},
-        "responsibility": {"type": "string"},
-        "symbols": {"type": "array", "items": {"$ref": "#/$defs/symbol"}},
-        "symbol_inventory_status": {"enum": ["pending", "complete", "not-applicable"]},
-        "dependencies": {"$ref": "#/$defs/strings"},
-        "targets": {"type": "array", "items": {"$ref": "#/$defs/target"}},
-        "tests": {"type": "array", "items": {"$ref": "#/$defs/test"}},
-        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
-        "review": {"anyOf": [{"$ref": "#/$defs/review"}, {"type": "null"}]},
-        "approval": {"anyOf": [{"$ref": "#/$defs/approval"}, {"type": "null"}]},
-        "risk": {"enum": ["unassessed", "low", "medium", "high", "security-critical"]},
-        "reason": {"type": "string"},
+        "research_dossier": {
+          "anyOf": [
+            {"$ref": "#/$defs/relativePath"},
+            {"type": "null"}
+          ]
+        },
+        "source_evidence": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/sourceEvidence"}
+        },
+        "official_references": {"$ref": "#/$defs/strings"},
+        "architecture_decisions": {"$ref": "#/$defs/strings"},
+        "target_owners": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/owner"}
+        },
+        "cpp_replacement": {"$ref": "#/$defs/cppReplacement"},
+        "behavior_contracts": {"$ref": "#/$defs/strings"},
+        "deviations": {"$ref": "#/$defs/strings"},
+        "tests": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/test"}
+        },
+        "evidence": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/evidence"}
+        },
+        "review": {
+          "anyOf": [
+            {"$ref": "#/$defs/review"},
+            {"type": "null"}
+          ]
+        },
         "blockers": {"$ref": "#/$defs/strings"},
-        "implementation_commit": {"anyOf": [{"$ref": "#/$defs/gitOid"}, {"type": "null"}]},
-        "last_verified_commit": {"anyOf": [{"$ref": "#/$defs/gitOid"}, {"type": "null"}]}
+        "implementation_commit": {
+          "anyOf": [
+            {"$ref": "#/$defs/gitOid"},
+            {"type": "null"}
+          ]
+        },
+        "last_verified_commit": {
+          "anyOf": [
+            {"$ref": "#/$defs/gitOid"},
+            {"type": "null"}
+          ]
+        }
       },
       "allOf": [
         {
-          "if": {"properties": {"status": {"enum": ["analyzed", "mapped", "implemented", "verified", "accepted"]}}, "required": ["status"]},
-          "then": {"properties": {"responsibility": {"$ref": "#/$defs/nonEmpty"}, "requirements": {"minItems": 1}, "risk": {"not": {"const": "unassessed"}}, "disposition": {"not": {"const": "unclassified"}}}}
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "researched",
+                  "designed",
+                  "implemented",
+                  "production-wired",
+                  "verified",
+                  "accepted"
+                ]
+              }
+            },
+            "required": ["state"]
+          },
+          "then": {
+            "properties": {
+              "research_dossier": {"$ref": "#/$defs/relativePath"},
+              "source_evidence": {"minItems": 1},
+              "requirements": {"minItems": 1}
+            }
+          }
         },
         {
-          "if": {"properties": {"disposition": {"enum": ["not-applicable", "approved-native-dependency"]}}, "required": ["disposition"]},
-          "then": {"properties": {"reason": {"$ref": "#/$defs/nonEmpty"}, "approval": {"$ref": "#/$defs/approval"}}}
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "designed",
+                  "implemented",
+                  "production-wired",
+                  "verified",
+                  "accepted"
+                ]
+              }
+            },
+            "required": ["state"]
+          },
+          "then": {
+            "properties": {
+              "architecture_decisions": {"minItems": 1},
+              "target_owners": {"minItems": 1},
+              "behavior_contracts": {"minItems": 1}
+            }
+          }
         },
         {
-          "if": {"properties": {"disposition": {"const": "temporary-bridge"}}, "required": ["disposition"]},
-          "then": {"properties": {"status": {"not": {"const": "accepted"}}, "reason": {"$ref": "#/$defs/nonEmpty"}, "blockers": {"minItems": 1}}}
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "implemented",
+                  "production-wired",
+                  "verified",
+                  "accepted"
+                ]
+              }
+            },
+            "required": ["state"]
+          },
+          "then": {
+            "properties": {
+              "implementation_commit": {"$ref": "#/$defs/gitOid"},
+              "tests": {"minItems": 1}
+            }
+          }
         },
         {
-          "if": {"properties": {"status": {"const": "blocked"}}, "required": ["status"]},
-          "then": {"properties": {"blockers": {"minItems": 1}}}
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "verified",
+                  "accepted"
+                ]
+              }
+            },
+            "required": ["state"]
+          },
+          "then": {
+            "properties": {
+              "evidence": {"minItems": 1},
+              "last_verified_commit": {"$ref": "#/$defs/gitOid"}
+            }
+          }
         },
         {
-          "if": {"properties": {"status": {"enum": ["implemented", "verified", "accepted"]}, "disposition": {"enum": ["rust-port", "rust-library-replacement", "generated", "resource-preserved", "declarative-conversion", "build-tool-equivalent", "approved-native-dependency"]}}, "required": ["status", "disposition"]},
-          "then": {"properties": {"targets": {"minItems": 1}, "tests": {"minItems": 1}, "implementation_commit": {"$ref": "#/$defs/gitOid"}}}
+          "if": {
+            "properties": {"state": {"const": "accepted"}},
+            "required": ["state"]
+          },
+          "then": {
+            "properties": {
+              "blockers": {"maxItems": 0},
+              "review": {
+                "allOf": [
+                  {"$ref": "#/$defs/review"},
+                  {
+                    "properties": {
+                      "independent": {"const": true},
+                      "decision": {"const": "accepted"}
+                    }
+                  }
+                ]
+              }
+            }
+          }
         },
         {
-          "if": {"properties": {"status": {"enum": ["verified", "accepted"]}}, "required": ["status"]},
-          "then": {"properties": {"tests": {"minItems": 1}, "evidence": {"minItems": 1, "contains": {"type": "object", "properties": {"result": {"const": "passed"}}, "required": ["result"]}}, "last_verified_commit": {"$ref": "#/$defs/gitOid"}, "symbol_inventory_status": {"not": {"const": "pending"}}}}
-        },
-        {
-          "if": {"properties": {"status": {"const": "accepted"}}, "required": ["status"]},
-          "then": {"properties": {"blockers": {"maxItems": 0}, "disposition": {"not": {"enum": ["unclassified", "temporary-bridge"]}}, "review": {"allOf": [{"$ref": "#/$defs/review"}, {"properties": {"independent": {"const": true}, "decision": {"const": "accepted"}}}]}}}
+          "if": {
+            "properties": {"state": {"const": "blocked"}},
+            "required": ["state"]
+          },
+          "then": {
+            "properties": {"blockers": {"minItems": 1}}
+          }
         }
       ]
     }
   },
-  "$comment": "Schema format assertions must be enabled. P0 semantic checks must reject duplicate file/symbol/test/evidence IDs, missing recursive leaves/gitlinks/generated inputs, invalid mount paths, unavailable refs/URLs, invented evidence, invalid target paths or symbols, unused facades, multiple state owners, source/lock/target SHA mismatch, zero executed checks, failed required platform cells, unsupported N/A, inherited old-HEAD passes, and non-independent review. Tests/builds are restricted to GitHub Actions or htch-runtime. Past failed evidence may remain for audit, but accepted requires current exact-SHA passed evidence for every applicable requirement/test/platform cell. Schema validation alone cannot establish these cross-record or real-world facts."
+  "$comment": "Semantic validation must reject duplicate capability/test/evidence IDs, missing research coverage, capabilities that claim design without ADRs, production-wired rows without real production entrypoints, C++ replacement marked replaced while compiled Telegram/desktop-app C++ remains, multiple canonical state owners, invented evidence, inherited old-HEAD passes, zero executed tests, unsupported not-configured platform claims, and non-independent acceptance. All executable checks are restricted to GitHub Actions or htch-runtime."
 }

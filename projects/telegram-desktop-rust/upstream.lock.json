@@ -1,5 +1,5 @@
 {
-  "format_version": 1,
+  "format_version": 2,
   "project_id": "TDRP-001",
   "recorded_on": "2026-10-02",
   "status": "root-and-direct-gitlinks-frozen-recursive-closure-pending",
@@ -21,92 +21,317 @@
     "note": "Investigation baseline only. Every implementation round must read the current target HEAD again."
   },
   "source_records": [
-    {"path": ".gitmodules", "type": "blob", "oid": "97b39cb3be5fc821514c9bfae22907af55f070fe"},
-    {"path": "LICENSE", "type": "blob", "oid": "d70f4d6a87eece19c4ec184de36a8aba72b4a639"},
-    {"path": "LEGAL", "type": "blob", "oid": "09c9e383db122fe0694e73c48d6224676afe60f6"},
-    {"path": "README.md", "type": "blob", "oid": "d1bbce82ecda3059ead6bbf8b880190b55aa73fe"},
-    {"path": "CMakeLists.txt", "type": "blob", "oid": "e762a3cd5913486bff8ea492dae5fd60e4f2eb56"},
-    {"path": "Telegram", "type": "tree", "oid": "65cbf0224e75b87cd9933a6230df283b1e1426be"},
-    {"path": "Telegram/CMakeLists.txt", "type": "blob", "oid": "6678efcee78d39978bf237d19f2586669044772d"},
-    {"path": "Telegram/SourceFiles", "type": "tree", "oid": "6e29a19ac5e3f19bf72842c29dc1447c842ef97f"},
-    {"path": "Telegram/ThirdParty", "type": "tree", "oid": "f648b08bb31a4890088ca6a9aa41f3713978eda0"},
-    {"path": "Telegram/Resources", "type": "tree", "oid": "04a4a5357d010bf35bda1767c8b04955f64fc2ca"},
-    {"path": "Telegram/build", "type": "tree", "oid": "8ee8e6e76186e85bf6f5b126ad42a4ef5bbb7161"},
-    {"path": "Telegram/cmake", "type": "tree", "oid": "b88bbd7fa1b6668228d83e9ddb230bdba22661b5"},
-    {"path": "Telegram/shaders", "type": "tree", "oid": "bec8cf0f6eec6dbf670f89e78904a8527498023e"},
-    {"path": "Telegram/Telegram", "type": "tree", "oid": "a5de5b342e7deeb6e3c5b79994739f62fb88522a"},
-    {"path": ".github", "type": "tree", "oid": "18dde3dc745084d0e697a882e340ac2549b678d4"},
-    {"path": "docs", "type": "tree", "oid": "3dc18def405f365b2044e356387c9874e7522328"},
-    {"path": "lib", "type": "tree", "oid": "fbaac455ce978d52c7d0a37db6aa4c1d3518dbac"},
-    {"path": "snap", "type": "tree", "oid": "7ac57a0c8b43f7ef3f0f3719e673a3f24b8fed85"},
-    {"path": "tasks", "type": "tree", "oid": "5ca5dfd5294334bcf2bee80753bda95efeea01bc"},
-    {"path": "tools", "type": "tree", "oid": "d51900a7b113b7ce23f368d5250b2470823d22da"}
+    {
+      "path": ".gitmodules",
+      "type": "blob",
+      "oid": "97b39cb3be5fc821514c9bfae22907af55f070fe"
+    },
+    {
+      "path": "LICENSE",
+      "type": "blob",
+      "oid": "d70f4d6a87eece19c4ec184de36a8aba72b4a639"
+    },
+    {
+      "path": "LEGAL",
+      "type": "blob",
+      "oid": "09c9e383db122fe0694e73c48d6224676afe60f6"
+    },
+    {
+      "path": "README.md",
+      "type": "blob",
+      "oid": "d1bbce82ecda3059ead6bbf8b880190b55aa73fe"
+    },
+    {
+      "path": "CMakeLists.txt",
+      "type": "blob",
+      "oid": "e762a3cd5913486bff8ea492dae5fd60e4f2eb56"
+    },
+    {
+      "path": "Telegram",
+      "type": "tree",
+      "oid": "65cbf0224e75b87cd9933a6230df283b1e1426be"
+    },
+    {
+      "path": "Telegram/CMakeLists.txt",
+      "type": "blob",
+      "oid": "6678efcee78d39978bf237d19f2586669044772d"
+    },
+    {
+      "path": "Telegram/SourceFiles",
+      "type": "tree",
+      "oid": "6e29a19ac5e3f19bf72842c29dc1447c842ef97f"
+    },
+    {
+      "path": "Telegram/ThirdParty",
+      "type": "tree",
+      "oid": "f648b08bb31a4890088ca6a9aa41f3713978eda0"
+    },
+    {
+      "path": "Telegram/Resources",
+      "type": "tree",
+      "oid": "04a4a5357d010bf35bda1767c8b04955f64fc2ca"
+    },
+    {
+      "path": "Telegram/build",
+      "type": "tree",
+      "oid": "8ee8e6e76186e85bf6f5b126ad42a4ef5bbb7161"
+    },
+    {
+      "path": "Telegram/cmake",
+      "type": "tree",
+      "oid": "b88bbd7fa1b6668228d83e9ddb230bdba22661b5"
+    },
+    {
+      "path": "Telegram/shaders",
+      "type": "tree",
+      "oid": "bec8cf0f6eec6dbf670f89e78904a8527498023e"
+    },
+    {
+      "path": "Telegram/Telegram",
+      "type": "tree",
+      "oid": "a5de5b342e7deeb6e3c5b79994739f62fb88522a"
+    },
+    {
+      "path": ".github",
+      "type": "tree",
+      "oid": "18dde3dc745084d0e697a882e340ac2549b678d4"
+    },
+    {
+      "path": "docs",
+      "type": "tree",
+      "oid": "3dc18def405f365b2044e356387c9874e7522328"
+    },
+    {
+      "path": "lib",
+      "type": "tree",
+      "oid": "fbaac455ce978d52c7d0a37db6aa4c1d3518dbac"
+    },
+    {
+      "path": "snap",
+      "type": "tree",
+      "oid": "7ac57a0c8b43f7ef3f0f3719e673a3f24b8fed85"
+    },
+    {
+      "path": "tasks",
+      "type": "tree",
+      "oid": "5ca5dfd5294334bcf2bee80753bda95efeea01bc"
+    },
+    {
+      "path": "tools",
+      "type": "tree",
+      "oid": "d51900a7b113b7ce23f368d5250b2470823d22da"
+    }
   ],
   "direct_gitlinks": [
-    {"path": "cmake", "url": "https://github.com/desktop-app/cmake_helpers.git", "commit": "7a6abdae76f14d0ebb5a8d0500d7adc6d6c1e489"},
-    {"path": "Telegram/codegen", "url": "https://github.com/desktop-app/codegen.git", "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74"},
-    {"path": "Telegram/lib_base", "url": "https://github.com/desktop-app/lib_base.git", "commit": "de35c7abcbf6464a0845695a55568bdac12a5fba"},
-    {"path": "Telegram/lib_crl", "url": "https://github.com/desktop-app/lib_crl.git", "commit": "7a165302fed408c84b2d1c2513e35a21a141da44"},
-    {"path": "Telegram/lib_lottie", "url": "https://github.com/desktop-app/lib_lottie.git", "commit": "7d00b5048aff8dd93c0a9721abf50006d20682be"},
-    {"path": "Telegram/lib_qr", "url": "https://github.com/desktop-app/lib_qr.git", "commit": "6fdf60461444ba150e13ac36009c0ffce72c4c83"},
-    {"path": "Telegram/lib_rpl", "url": "https://github.com/desktop-app/lib_rpl.git", "commit": "c57cccffb01d85570decd7fccb88419c9a682e63"},
-    {"path": "Telegram/lib_spellcheck", "url": "https://github.com/desktop-app/lib_spellcheck", "commit": "3273fd25c185fb626a9836dafbd644c2bd129ee1"},
-    {"path": "Telegram/lib_storage", "url": "https://github.com/desktop-app/lib_storage.git", "commit": "ccdc72548a5065b5991b4e06e610d76bc4f6023e"},
-    {"path": "Telegram/lib_tl", "url": "https://github.com/desktop-app/lib_tl.git", "commit": "29746d31247c915a9ec870241399a9d103c39f87"},
-    {"path": "Telegram/lib_translate", "url": "https://github.com/desktop-app/lib_translate", "commit": "b23983df9dd87b6993afdcefb48daf890beb545e"},
-    {"path": "Telegram/lib_ui", "url": "https://github.com/desktop-app/lib_ui.git", "commit": "ba02da8642ee439d14e65340a319c720f0157e1b"},
-    {"path": "Telegram/lib_webrtc", "url": "https://github.com/desktop-app/lib_webrtc.git", "commit": "52636e86eaa493de670daf71959d000b281bd153"},
-    {"path": "Telegram/lib_webview", "url": "https://github.com/desktop-app/lib_webview.git", "commit": "1d68b1d8e4a3617f39e059ee0d474ac24cd2499c"},
-    {"path": "Telegram/ThirdParty/GSL", "url": "https://github.com/Microsoft/GSL.git", "commit": "87f9d768866548b5b86e72be66c60c5abd4d9b37"},
-    {"path": "Telegram/ThirdParty/MicroTeX", "url": "https://github.com/desktop-app/MicroTeX.git", "commit": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f"},
-    {"path": "Telegram/ThirdParty/QR", "url": "https://github.com/nayuki/QR-Code-generator", "commit": "720f62bddb7226106071d4728c292cb1df519ceb"},
-    {"path": "Telegram/ThirdParty/TooManyCooks", "url": "https://github.com/tzcnt/TooManyCooks.git", "commit": "b86af81982860c96295a7e95e4c60cb335615cef"},
-    {"path": "Telegram/ThirdParty/cld3", "url": "https://github.com/google/cld3", "commit": "b48dc46512566f5a2d41118c8c1116c4f96dc661"},
-    {"path": "Telegram/ThirdParty/cmark-gfm", "url": "https://github.com/desktop-app/cmark-gfm.git", "commit": "d7d4a24a9ebfa7581994ea6df0297662bfeaf413"},
-    {"path": "Telegram/ThirdParty/expected", "url": "https://github.com/TartanLlama/expected", "commit": "292eff8bd8ee230a7df1d6a1c00c4ea0eb2f0362"},
-    {"path": "Telegram/ThirdParty/fcitx5-qt", "url": "https://github.com/fcitx/fcitx5-qt.git", "commit": "0285a5d18367d8f3af80dab7e4819d5555982340"},
-    {"path": "Telegram/ThirdParty/hime", "url": "https://github.com/hime-ime/hime.git", "commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5"},
-    {"path": "Telegram/ThirdParty/hunspell", "url": "https://github.com/hunspell/hunspell", "commit": "a698d8b53cab3507d1d619d5fa08a88777abe50b"},
-    {"path": "Telegram/ThirdParty/kcoreaddons", "url": "https://github.com/KDE/kcoreaddons.git", "commit": "fd84da51b554eac25e35b1e3f373edaab3029b15"},
-    {"path": "Telegram/ThirdParty/kimageformats", "url": "https://github.com/KDE/kimageformats.git", "commit": "df82311a1081e576c4ac020204578bb8a81b21ec"},
-    {"path": "Telegram/ThirdParty/libcbor", "url": "https://github.com/PJK/libcbor.git", "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"},
-    {"path": "Telegram/ThirdParty/libfido2", "url": "https://github.com/Yubico/libfido2.git", "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8"},
-    {"path": "Telegram/ThirdParty/libprisma", "url": "https://github.com/desktop-app/libprisma.git", "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627"},
-    {"path": "Telegram/ThirdParty/lz4", "url": "https://github.com/lz4/lz4.git", "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964"},
-    {"path": "Telegram/ThirdParty/nimf", "url": "https://github.com/hamonikr/nimf.git", "commit": "498ec7ffab3ac140c2469638a14451788f03e798"},
-    {"path": "Telegram/ThirdParty/range-v3", "url": "https://github.com/ericniebler/range-v3.git", "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec"},
-    {"path": "Telegram/ThirdParty/tgcalls", "url": "https://github.com/TelegramMessenger/tgcalls.git", "commit": "1c236c09f8d8569fead14bd68000618a52051225"},
-    {"path": "Telegram/ThirdParty/xdg-desktop-portal", "url": "https://github.com/flatpak/xdg-desktop-portal.git", "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857"},
-    {"path": "Telegram/ThirdParty/xxHash", "url": "https://github.com/Cyan4973/xxHash.git", "commit": "bbb27a5efb85b92a0486cf361a8635715a53f6ba"}
+    {
+      "path": "cmake",
+      "url": "https://github.com/desktop-app/cmake_helpers.git",
+      "commit": "7a6abdae76f14d0ebb5a8d0500d7adc6d6c1e489"
+    },
+    {
+      "path": "Telegram/codegen",
+      "url": "https://github.com/desktop-app/codegen.git",
+      "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74"
+    },
+    {
+      "path": "Telegram/lib_base",
+      "url": "https://github.com/desktop-app/lib_base.git",
+      "commit": "de35c7abcbf6464a0845695a55568bdac12a5fba"
+    },
+    {
+      "path": "Telegram/lib_crl",
+      "url": "https://github.com/desktop-app/lib_crl.git",
+      "commit": "7a165302fed408c84b2d1c2513e35a21a141da44"
+    },
+    {
+      "path": "Telegram/lib_lottie",
+      "url": "https://github.com/desktop-app/lib_lottie.git",
+      "commit": "7d00b5048aff8dd93c0a9721abf50006d20682be"
+    },
+    {
+      "path": "Telegram/lib_qr",
+      "url": "https://github.com/desktop-app/lib_qr.git",
+      "commit": "6fdf60461444ba150e13ac36009c0ffce72c4c83"
+    },
+    {
+      "path": "Telegram/lib_rpl",
+      "url": "https://github.com/desktop-app/lib_rpl.git",
+      "commit": "c57cccffb01d85570decd7fccb88419c9a682e63"
+    },
+    {
+      "path": "Telegram/lib_spellcheck",
+      "url": "https://github.com/desktop-app/lib_spellcheck",
+      "commit": "3273fd25c185fb626a9836dafbd644c2bd129ee1"
+    },
+    {
+      "path": "Telegram/lib_storage",
+      "url": "https://github.com/desktop-app/lib_storage.git",
+      "commit": "ccdc72548a5065b5991b4e06e610d76bc4f6023e"
+    },
+    {
+      "path": "Telegram/lib_tl",
+      "url": "https://github.com/desktop-app/lib_tl.git",
+      "commit": "29746d31247c915a9ec870241399a9d103c39f87"
+    },
+    {
+      "path": "Telegram/lib_translate",
+      "url": "https://github.com/desktop-app/lib_translate",
+      "commit": "b23983df9dd87b6993afdcefb48daf890beb545e"
+    },
+    {
+      "path": "Telegram/lib_ui",
+      "url": "https://github.com/desktop-app/lib_ui.git",
+      "commit": "ba02da8642ee439d14e65340a319c720f0157e1b"
+    },
+    {
+      "path": "Telegram/lib_webrtc",
+      "url": "https://github.com/desktop-app/lib_webrtc.git",
+      "commit": "52636e86eaa493de670daf71959d000b281bd153"
+    },
+    {
+      "path": "Telegram/lib_webview",
+      "url": "https://github.com/desktop-app/lib_webview.git",
+      "commit": "1d68b1d8e4a3617f39e059ee0d474ac24cd2499c"
+    },
+    {
+      "path": "Telegram/ThirdParty/GSL",
+      "url": "https://github.com/Microsoft/GSL.git",
+      "commit": "87f9d768866548b5b86e72be66c60c5abd4d9b37"
+    },
+    {
+      "path": "Telegram/ThirdParty/MicroTeX",
+      "url": "https://github.com/desktop-app/MicroTeX.git",
+      "commit": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f"
+    },
+    {
+      "path": "Telegram/ThirdParty/QR",
+      "url": "https://github.com/nayuki/QR-Code-generator",
+      "commit": "720f62bddb7226106071d4728c292cb1df519ceb"
+    },
+    {
+      "path": "Telegram/ThirdParty/TooManyCooks",
+      "url": "https://github.com/tzcnt/TooManyCooks.git",
+      "commit": "b86af81982860c96295a7e95e4c60cb335615cef"
+    },
+    {
+      "path": "Telegram/ThirdParty/cld3",
+      "url": "https://github.com/google/cld3",
+      "commit": "b48dc46512566f5a2d41118c8c1116c4f96dc661"
+    },
+    {
+      "path": "Telegram/ThirdParty/cmark-gfm",
+      "url": "https://github.com/desktop-app/cmark-gfm.git",
+      "commit": "d7d4a24a9ebfa7581994ea6df0297662bfeaf413"
+    },
+    {
+      "path": "Telegram/ThirdParty/expected",
+      "url": "https://github.com/TartanLlama/expected",
+      "commit": "292eff8bd8ee230a7df1d6a1c00c4ea0eb2f0362"
+    },
+    {
+      "path": "Telegram/ThirdParty/fcitx5-qt",
+      "url": "https://github.com/fcitx/fcitx5-qt.git",
+      "commit": "0285a5d18367d8f3af80dab7e4819d5555982340"
+    },
+    {
+      "path": "Telegram/ThirdParty/hime",
+      "url": "https://github.com/hime-ime/hime.git",
+      "commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5"
+    },
+    {
+      "path": "Telegram/ThirdParty/hunspell",
+      "url": "https://github.com/hunspell/hunspell",
+      "commit": "a698d8b53cab3507d1d619d5fa08a88777abe50b"
+    },
+    {
+      "path": "Telegram/ThirdParty/kcoreaddons",
+      "url": "https://github.com/KDE/kcoreaddons.git",
+      "commit": "fd84da51b554eac25e35b1e3f373edaab3029b15"
+    },
+    {
+      "path": "Telegram/ThirdParty/kimageformats",
+      "url": "https://github.com/KDE/kimageformats.git",
+      "commit": "df82311a1081e576c4ac020204578bb8a81b21ec"
+    },
+    {
+      "path": "Telegram/ThirdParty/libcbor",
+      "url": "https://github.com/PJK/libcbor.git",
+      "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
+    },
+    {
+      "path": "Telegram/ThirdParty/libfido2",
+      "url": "https://github.com/Yubico/libfido2.git",
+      "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8"
+    },
+    {
+      "path": "Telegram/ThirdParty/libprisma",
+      "url": "https://github.com/desktop-app/libprisma.git",
+      "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627"
+    },
+    {
+      "path": "Telegram/ThirdParty/lz4",
+      "url": "https://github.com/lz4/lz4.git",
+      "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964"
+    },
+    {
+      "path": "Telegram/ThirdParty/nimf",
+      "url": "https://github.com/hamonikr/nimf.git",
+      "commit": "498ec7ffab3ac140c2469638a14451788f03e798"
+    },
+    {
+      "path": "Telegram/ThirdParty/range-v3",
+      "url": "https://github.com/ericniebler/range-v3.git",
+      "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
+    },
+    {
+      "path": "Telegram/ThirdParty/tgcalls",
+      "url": "https://github.com/TelegramMessenger/tgcalls.git",
+      "commit": "1c236c09f8d8569fead14bd68000618a52051225"
+    },
+    {
+      "path": "Telegram/ThirdParty/xdg-desktop-portal",
+      "url": "https://github.com/flatpak/xdg-desktop-portal.git",
+      "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857"
+    },
+    {
+      "path": "Telegram/ThirdParty/xxHash",
+      "url": "https://github.com/Cyan4973/xxHash.git",
+      "commit": "bbb27a5efb85b92a0486cf361a8635715a53f6ba"
+    }
   ],
   "closure": {
     "direct_gitlink_count": 35,
     "direct_gitlink_table_observed": true,
     "recursive_submodules_verified": false,
     "full_leaf_inventory_verified": false,
-    "full_symbol_inventory_verified": false,
     "build_downloads_verified": false,
     "generated_outputs_verified": false,
     "platform_matrix_verified": false,
     "dependency_licenses_verified": false,
     "total_recursive_leaf_count": null,
-    "total_source_symbol_count": null,
-    "inventory_coverage": null,
     "pending_phase": "P0",
     "pending_work": [
-      "Enumerate every root and recursively mounted submodule leaf, preserving git mode, path and blob OID.",
-      "Resolve relative submodule URLs against the parent repository and freeze nested gitlinks.",
-      "Freeze external build downloads, patches, toolchains, schema generators, parameters and output digests.",
-      "Verify source and resource licenses individually, including exceptions and asset restrictions.",
-      "Derive and verify every supported platform, architecture, build flag and distribution channel.",
-      "Create nonempty per-file and per-symbol ledgers and fail-closed validators on GitHub Actions or htch-runtime only."
-    ]
+      "Enumerate every root and recursively mounted submodule leaf, preserving repository identity, git mode, path and blob OID.",
+      "Resolve nested gitlinks and freeze external downloads, patches, generators, resources and platform build definitions.",
+      "Classify every source leaf into research capabilities or an evidence-backed non-product category.",
+      "Identify all Telegram/desktop-app C++ production logic and assign it to Rust-replacement capabilities.",
+      "Create capability research dossiers and architecture-risk/ADR backlog; do not create source-file-to-target-file mappings.",
+      "Create a nonempty capability ledger and fail-closed semantic validator on GitHub Actions or htch-runtime only.",
+      "Review source-informed GPL and third-party provenance before any release-license claim."
+    ],
+    "cpp_production_logic_inventory_verified": false,
+    "capability_graph_verified": false,
+    "research_coverage_verified": false,
+    "research_coverage": null
   },
   "license_baseline": {
-    "project_license_expression": "GPL-3.0-or-later",
+    "upstream_project_license_expression": "GPL-3.0-or-later",
     "additional_permission": "OpenSSL linking exception as worded in the frozen LEGAL file; retain its precise applicability.",
-    "third_party_review": "pending-per-file",
-    "relicense_existing_target_code": false
+    "source_informed_reimplementation": true,
+    "clean_room": false,
+    "third_party_review": "pending",
+    "distribution_license_review": "required",
+    "relicense_by_language_change": false
   },
   "approved_native_dependency_exceptions": [],
   "provenance": [
@@ -117,5 +342,13 @@
     "https://github.com/telegramdesktop/tdesktop/blob/33261535a0e747f125e0ed25486f01e556330677/.gitmodules",
     "https://github.com/telegramdesktop/tdesktop/blob/33261535a0e747f125e0ed25486f01e556330677/LEGAL",
     "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/3b1f2c5deaf47867629c96b08bf4694f973177e2"
-  ]
+  ],
+  "spec_revision": 2,
+  "method": "source-informed-rearchitecture",
+  "clean_room": false,
+  "target_spec_revision_2_baseline": {
+    "repository": "bhrumom/fabushi-desktop",
+    "commit": "58cb7f5f29ac02440bf1c5e819c43863c1d2d727",
+    "note": "Revision 2 base before replacing file/module parity with capability-based rearchitecture."
+  }
 }

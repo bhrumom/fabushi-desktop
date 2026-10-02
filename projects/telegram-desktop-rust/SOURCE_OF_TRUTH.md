@@ -1,43 +1,75 @@
-# Telegram Desktop Rust 迁移 — Source of Truth
+# Telegram Desktop Source-Informed Rearchitecture — Source of Truth
 
 Status: active  
 Date: 2026-10-02  
 Project ID: TDRP-001  
-Repository: `bhrumom/fabushi-desktop`
+Repository: bhrumom/fabushi-desktop
 
-## 最新明确要求
+## 最新要求
 
-将 `telegramdesktop/tdesktop` 使用 Rust 逐个文件、逐个模块等价迁移到本仓库，覆盖完整功能、UI、协议、数据、平台、工具与发布路径。本次工作先把完整、可验收的 Spec 持久化，不把规范落库当作实现完成。
+研究固定 Telegram Desktop 源码，完整理解功能、协议、状态机、失败语义和平台差异；不要逐文件、逐模块照抄目标结构。
+
+所有进入最终产品的 C++ 产品逻辑必须由更好的 Rust 实现替代。
+
+非 C++ 部分在理解职责后选择最合适的架构、语言和生态，不做“所有东西都强制 Rust”。
+
+完成标准是完整 capability/behavior/protocol/platform parity 和更清晰的目标架构，不是 source-file parity。
 
 ## 必须先读
 
-1. 根 [`AGENTS.md`](../../AGENTS.md)。
-2. 主规范 [`telegram-desktop-rust-equivalence-migration.md`](../../docs/specs/telegram-desktop-rust-equivalence-migration.md)，尤其范围、Rust/FFI 边界、状态所有权、P0–P8 和 AC-01…AC-14。
-3. 本文件的执行约束，以及 [`upstream.lock.json`](upstream.lock.json)、[`module-map.md`](module-map.md)、[`contracts/parity-ledger.schema.json`](contracts/parity-ledger.schema.json)、[`STATUS.md`](STATUS.md)。
-4. 之后逐工作单元读取其真实上游文件、调用链/条件分支和台账；不得只读本概述就开始写空壳代码。
+1. 根 AGENTS.md。
+2. docs/specs/telegram-desktop-rust-equivalence-migration.md Revision 2。
+3. upstream.lock.json。
+4. module-map.md。该文件现在是 source research/capability map，不是目标 module map。
+5. contracts/parity-ledger.schema.json。该 schema 现在描述 capability ledger，而不是逐文件 port ledger。
+6. STATUS.md。
+7. 当前任务与 ADR。
 
-以上是一个规范体系，不存在互相覆盖的第二套 Telegram Spec。主规范定义产品要求；本文件补充用户明确的执行场所限制和入口。若有冲突，以最新明确用户要求为首，先修改规范，不擅自猜测。
+## 关键不变量
 
-## 执行场所 — 强制约束
+- 上游源码可以深入阅读和研究。
+- 上游源码结构不是目标架构。
+- 不要求 source file → target file、class → struct、module → crate 一一对应。
+- C++ production logic 最终必须为零，由 Rust production owner 替代。
+- 非 C++ 使用 best-fit language，但业务状态 owner 必须唯一。
+- tdesktop/Qt/TDLib/原 C++ helper 不能成为最终 fallback。
+- 研究覆盖和实现完成度分开统计。
+- 这是 source-informed 路线，不是 clean-room，不得声称换成 Rust 自动摆脱 GPL。
+- 现有 Grok/Agent 继续由自身 Spec 管理；Telegram 项目不授权破坏其边界。
+- 所有 build/test/benchmark/fuzz/package/acceptance 仅允许 GitHub Actions 或 htch-runtime。
 
-**全部构建和测试只能在 GitHub Actions 或 `htch-runtime` 上执行。禁止在开发者本地电脑、Mac/Windows 工作站或助手本地工作容器运行构建、测试或验收。**
+## 固定上游
 
-该限制包含参考 C++ 客户端构建、Rust/Cargo、生成器执行、lint/fmt 检查、JSON/schema 检查、单元/合同/差分/集成/E2E、安装包验证、性能/功耗/fuzz/soak；不得以“轻量检查”“临时验证”为由本地执行。只读查看、编辑文件和 Git/API 提交不属于运行测试。
+telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677
 
-跨平台用例优先通过 GitHub Actions 的对应系统 runner 执行。旧 OS/真实设备必须以受控 GitHub Actions self-hosted runner 提供；或在 `htch-runtime` 上以适用且可证明的环境执行。未配置相应运行环境时标记 `not-configured/blocked`，不能改到用户 Mac 上直接测，不能用 Linux 编译或模拟截图代替 Windows/macOS 实测。
+dev 只用于发现 upstream drift。实现和验收不能使用浮动 dev。
 
-`htch-runtime` 证据必须记录设备标识、目标 exact SHA、源 lock 摘要、实际命令、环境、退出码、测试数量和日志/产物摘要，并归档到对应的验收记录。正式安装包的 provenance 和 canonical-main 集成门仍按主规范 §12.4/§13 执行。禁止用重新现编的包冒充已锁定 CI 安装包。
+## 当前工作方式
 
-## 固定源与现有代码
+Discover source → capability research dossier → architecture alternatives → ADR → implementation → behavior/differential tests → production wiring → packaged acceptance → independent review。
 
-- 上游：`telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`。
-- 目标调查起点：`main@3b1f2c5deaf47867629c96b08bf4694f973177e2`；每轮实际工作都须重新读取目标 HEAD。
-- 目标 Rust workspace：`telegram-rs/`，属于规划路径，初始不存在不代表缺失文件已实现。
-- 已有 Grok/Agent、Electron、Mahayana 保留自身范围和验收。本项目是依据最新要求批准的独立 Telegram Rust 项目；其业务 UI 不能永久依赖旧 Electron，亦不把 Grok 模块替代 Telegram 的源码职责。
-- 不在规范阶段删除、移动或重写既有运行代码，不自动切换用户数据或启动入口，不向其他仓库实施本项目。
+禁止：
+
+Discover file → create same-name Rust file → mark ported。
 
 ## 下一步
 
-执行 P0：在允许的运行环境完整递归展开冻结源码、外部下载和生成链；建立所有叶文件/符号/平台的台账、许可和资源处置；实现并验证 fail-closed inventory/parity 检查器。所有初始行从 `discovered` 开始。
+执行 P0 source understanding：
 
-当前只有规范与基线记录。全量递归文件数、符号数、映射覆盖率及产品通过率尚无可靠证据，必须显示 `unknown/blocked`，不能显示 100%。
+- 完整递归 source/dependency/resource inventory；
+- 标出所有 C++ production logic；
+- 建 source → capability research coverage；
+- 建 capability graph；
+- 写第一批 research dossiers；
+- 建 architecture risk/ADR backlog；
+- 建 capability ledger。
+
+P0 不做逐文件 target mapping。
+
+首个实现 vertical slice：
+
+authentication → MTProto/session → updates → storage → dialogs/history → compose/send → server update → restart recovery。
+
+## 执行环境
+
+所有构建和测试只能在 GitHub Actions 或 htch-runtime。缺环境一律 blocked/not-configured，不能移到本地电脑替代执行。

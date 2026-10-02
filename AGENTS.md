@@ -150,14 +150,20 @@ All builds and tests must run only in **GitHub Actions** or on **`htch-runtime`*
 
 Missing runner, OS, device, account or signing configuration is `not-configured` / `blocked`, never a passing test. Record the exact source revision, actual commands, test counts, exit codes and artifacts from the allowed execution environment.
 
-## Telegram Desktop Rust migration — TDRP-001
+## Telegram Desktop source-informed rearchitecture — TDRP-001
 
-For Telegram Desktop equivalence work, including the planned `telegram-rs/` workspace, read:
+For Telegram rearchitecture work, read:
 
 - `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md`;
-- `docs/specs/telegram-desktop-rust-equivalence-migration.md`;
-- the project's `upstream.lock.json`, `module-map.md`, ledger schema, `STATUS.md` and applicable task.
+- `docs/specs/telegram-desktop-rust-equivalence-migration.md` Revision 2;
+- the project's `upstream.lock.json`, source research/capability map, capability ledger schema, `STATUS.md` and applicable task.
 
-The latest explicit user request approves this separate Telegram Rust migration project. Existing Grok/Agent specifications continue to govern their own boundaries; they must not be used to exclude Telegram scope or justify a permanent C++/Qt/Electron implementation of the Telegram-owned logic. Conversely, the Telegram specification does not authorize deleting or rewriting unrelated Grok/Agent code.
+The implementation model is source-informed rearchitecture, not file-by-file or module-by-module translation. Upstream source may be read deeply to understand behavior, constraints and failure semantics, but upstream folders/classes/functions are not the target architecture.
 
-Do not treat the initial module map, spec files, empty crates, temporary bridges or other projects' CI results as Telegram parity evidence. The first implementation gate is P0: complete frozen source closure and a nonempty, fail-closed per-file ledger.
+All Telegram/desktop-app C++ production logic must ultimately be replaced by real Rust production owners. Non-C++ boundaries use the best-fit language and architecture through explicit ADRs. Do not create same-name Rust files or empty crates to manufacture progress.
+
+This route is not clean-room. Do not claim that reading and rewriting GPL source in Rust automatically removes GPL obligations. License/provenance review remains a release gate.
+
+Existing Grok/Agent specifications continue to govern their own boundaries; Telegram work does not authorize deleting or rewriting unrelated Grok/Agent code.
+
+The first gate is P0 source understanding: complete source closure, C++ production-logic inventory, source-to-capability research coverage, capability graph, research dossiers, ADR backlog and a nonempty fail-closed capability ledger.
