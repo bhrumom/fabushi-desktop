@@ -16159,7 +16159,7 @@
       "targetPath": "source/host/src/extensions/transcript/runner_registry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "4bae8fd7720cb834ca4e37ea416de61188607d34",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -16168,17 +16168,19 @@
         "source/host/src/runner/routed_provider_runtime.rs",
         "source/host/app/src/main.rs",
         "source/host/src/extensions/transcript/production_runtime.rs",
-        "source/host/src/extensions/transcript/agent_lifecycle.rs"
+        "source/host/src/extensions/transcript/agent_lifecycle.rs",
+        "source/host/src/extensions/transcript/transcript_manager.rs"
       ],
       "testEvidence": [
         "source/host/tests/runner_routed_provider_contract.rs",
         "source/host/tests/transcript_production_composition_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/agent_lifecycle_contract.rs"
+        "source/host/tests/agent_lifecycle_contract.rs",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production Runner registry owns agent-to-routed-provider stream identity, per-stream cancellation/retirement, agent-scoped watchdog interruption, agent-deletion cancellation with the frozen 'agent deleted' reason, and Host-shutdown cancellation. Final remains withheld for local compatibility Runner/group-member factory lifecycle, quiesce/upgrade hooks, exclusive-run/background/subagent draining, retry/TTFT/send telemetry and shared transport/profile hooks."
+      "notes": "Rust Mahayana Host Runner registry now owns the frozen runner execution/readiness boundary and the live run identity needed by shipping transcript composition. TranscriptManager delegates runner creation/readiness to that single registry owner; direct and group-member lanes track distinct current stream identities, stale finish cannot retire a newer run, direct-message preemption cancels only the current group-member run and preserves the consumable redrive marker, and the watchdog interrupts only the current direct/group-member predecessor. Agent deletion and Host shutdown deliberately retain broad cancellation semantics. Production Host wiring uses the same TranscriptRunnerRegistry for provider registration/finish, gateway stream cancellation, DM/group arbitration, deletion drain and watchdog handling; focused behavioral contracts cover execution ownership, current-stream identity, preemption and watchdog semantics."
     },
     {
       "referencePath": "source/host/extensions/transcript/sand-ack-obligation-store.ts",
