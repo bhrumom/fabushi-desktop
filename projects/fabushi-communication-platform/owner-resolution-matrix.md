@@ -1,8 +1,8 @@
 # FBCP P0 capability owner-resolution matrix
 
-Status: active; rows below are source-researched but not necessarily implemented or accepted  
-Frozen Telegram source: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`  
-Canonical architecture snapshot: PR #20 `c2767eac1383fd8db7be9b536e5acaf4a4d2b7f0`
+Status: active; rows below are source-researched but not necessarily implemented or accepted
+Frozen Telegram source: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
+Canonical architecture snapshot: PR #20 `95995bdf36a9687788e106c8544d292b2bb0877f`
 
 This matrix is the executable planning contract required by FBCP P0. A selected owner is not an implementation claim.
 

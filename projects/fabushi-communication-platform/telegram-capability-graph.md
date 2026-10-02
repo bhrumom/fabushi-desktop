@@ -1,8 +1,8 @@
 # TDRP/FBCP P0 — Telegram Top-Level Capability Graph (Discovery Pass)
 
-Status: discovery pass; recursive gitlink closure complete; behavior/resource/license closure still incomplete  
-Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`  
-Target owner snapshot: PR #20 `c2767eac1383fd8db7be9b536e5acaf4a4d2b7f0`
+Status: discovery pass; recursive gitlink closure complete; behavior/resource/license closure still incomplete
+Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
+Target owner snapshot: PR #20 `95995bdf36a9687788e106c8544d292b2bb0877f`
 
 This graph records product capability domains observed in the frozen Telegram Desktop source tree. It is intentionally not marked research-complete: recursive gitlink closure is now complete, but generated/resource/platform-packaging/license provenance and behavior-level resolution for remaining long-tail domains are still open, so P0 cannot yet claim that no unknown capability domain remains.
 

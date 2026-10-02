@@ -1,8 +1,8 @@
 # Stories, notifications, privacy, credential security, Bots and Mini Apps
 
-Status: FBCP P0 source-informed owner-resolution dossier  
-Frozen Telegram source: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`  
-Canonical Fabushi architecture snapshot: PR #20 `c2767eac1383fd8db7be9b536e5acaf4a4d2b7f0`
+Status: FBCP P0 source-informed owner-resolution dossier
+Frozen Telegram source: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
+Canonical Fabushi architecture snapshot: PR #20 `95995bdf36a9687788e106c8544d292b2bb0877f`
 
 This dossier records product behavior learned from the frozen Telegram source and resolves it into the current Fabushi product architecture. Telegram wire types, MTProto, Telegram Bot APIs and Telegram WebApp runtime are research inputs only; none becomes a Fabushi runtime dependency or product truth.
 
