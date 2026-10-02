@@ -8477,6 +8477,8 @@ fn main() {
         Arc::new(Mutex::new(Weak::<RunnerCloudAgentWatches>::new()));
     let background_shell_deletion_watches =
         Arc::new(Mutex::new(Weak::<RunnerBackgroundShellWatches>::new()));
+    let completion_revivals_deletion_slot =
+        Arc::new(Mutex::new(Weak::<CompletionRevivals>::new()));
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {
         mark_deleting: Some({
             let transcript_runtime = Arc::clone(&transcript_runtime);
@@ -8547,9 +8549,15 @@ fn main() {
         dispose_background_work: Some({
             let cloud_agent_watches = Arc::clone(&cloud_agent_deletion_watches);
             let background_shell_watches = Arc::clone(&background_shell_deletion_watches);
-            let completion_revivals = Arc::clone(&completion_revivals);
+            let completion_revivals = Arc::clone(&completion_revivals_deletion_slot);
             Arc::new(move |agent_id| {
-                completion_revivals.clear_agent_pending_completions(agent_id);
+                if let Some(completion_revivals) = completion_revivals
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .upgrade()
+                {
+                    completion_revivals.clear_agent_pending_completions(agent_id);
+                }
                 if let Some(watches) = cloud_agent_watches
                     .lock()
                     .unwrap_or_else(|poisoned| poisoned.into_inner())
@@ -8783,6 +8791,10 @@ fn main() {
             gateway: Arc::clone(&cloud_agent_completion_gateway_slot),
         },
     )));
+    *completion_revivals_deletion_slot
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) =
+        Arc::downgrade(&completion_revivals);
     let cloud_watch_manager = production_extensions.cloud_agents.service();
     let cloud_watch_pending_store = transcript_runtime.pending_wake_store().cloned();
     let cloud_watch_pending_events = gateway_events.clone();
