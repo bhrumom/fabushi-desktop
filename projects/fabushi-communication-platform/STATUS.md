@@ -11,8 +11,8 @@ Complete: false
 | Existing-owner-first absorption | specified | new owners require ADR |
 | Native Fabushi network | specified | protocol/services not yet designed |
 | Exact existing-owner inventory | recorded | refreshed against PR #20 `dcb19a94383833fc1ec5074f10c4bbbd28c09036`; refresh on head change |
-| Telegram capability graph | in-progress | top-level discovery pass recorded; recursive source closure and behavior research incomplete |
-| Capability → owner mapping | in-progress | formal matrix now covers message/history, relations, edit/delete, reactions, drafts, scheduled/silent send, progress, groups/members, channels, topics, search and file transfer; remaining capabilities still pending |
+| Telegram capability graph | recorded / behavior-closure open | 50 capability/aggregate rows; frozen reverse citation audit covers 40/40 SourceFiles top-level areas and 130/130 paths through relative depth two; deeper behavior exhaustiveness and legal/provenance review remain open |
+| Capability → owner mapping | recorded | all 50 current matrix rows have selected owner resolution and complete absorption/persistence/native-network/test fields; ADR-002/003 cover the only conditional minimal infrastructure exceptions |
 | Conversation/message model evolution | partial | Human private conversation and Human/Agent transcript projection are production-wired for the first slice; broader capability mapping remains P0-open |
 | Native messaging infrastructure | partial | existing Session/Transcript SQLite owner durably accepts Human messages with clientNonce idempotency; native network/sync/reconnect/multi-device transport remains open |
 | Human messaging in existing workspace | production-wired / unaccepted | same sidebar/workspace/composer/transcript path is wired; exact-head CI and packaged acceptance remain required |
