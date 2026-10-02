@@ -28,7 +28,7 @@ use mahayana_node_agent_coordinator::oauth::mcp_oauth_forwarder::{
 };
 use mahayana_node_agent_coordinator::oauth::mcp_oauth_loopback_registry::McpOAuthLoopbackRegistry;
 use mahayana_node_agent_coordinator::inference_router::{
-    host_transcript_method,
+    deleted_agent_ids_for_host_success, host_transcript_method,
     ActiveInferenceStreamRegistry, CoordinatorInferenceRouter, InferenceProvider,
     InferenceStreamSupersede, InferenceTaskQueue, InferenceTranscriptFile,
     RunnerInferenceEvent, StoredEntry, StoredRole, is_direct_user_send,
@@ -2616,6 +2616,7 @@ fn dispatch_to_host(
             },
         );
 
+    let deleted_agent_ids = deleted_agent_ids_for_host_success(&method, &args);
     let dispatch_state = Arc::clone(state);
     thread::spawn(move || {
         let command_now_ms = coordinator_now_ms();
@@ -2671,6 +2672,9 @@ fn dispatch_to_host(
                 command_spans,
                 transport_stages,
             }) => {
+                for agent_id in &deleted_agent_ids {
+                    dispatch_state.inference_queue.clear_agent(agent_id);
+                }
                 dispatch_state.complete_request(
                     pending_request.channel,
                     &pending_request.request_id,
