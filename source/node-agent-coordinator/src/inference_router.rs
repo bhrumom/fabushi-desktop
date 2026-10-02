@@ -17,6 +17,29 @@ use crate::protocol::Failure;
 pub const INFERENCE_TRANSCRIPT_SCHEMA_VERSION: u32 = 2;
 pub const INFERENCE_TRANSCRIPT_LIMIT: usize = 200;
 
+pub fn deleted_agent_ids_for_host_success(method: &str, args: &Value) -> Vec<String> {
+    match method {
+        "deleteAgent" => args
+            .get("id")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|id| !id.is_empty())
+            .map(|id| vec![id.to_string()])
+            .unwrap_or_default(),
+        "deleteAgents" => args
+            .get("ids")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(str::trim)
+            .filter(|id| !id.is_empty())
+            .map(str::to_string)
+            .collect(),
+        _ => Vec::new(),
+    }
+}
+
 /// Normalize renderer-facing transcript aliases before crossing the Host boundary.
 /// The Rust Session gateway owns `getAgentTranscriptTail`; `openAgentTail`
 /// remains a renderer/Coordinator convenience alias and must never leak to Host.
