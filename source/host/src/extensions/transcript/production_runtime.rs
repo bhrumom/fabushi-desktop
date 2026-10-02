@@ -69,6 +69,7 @@ pub fn classify_send_dispatch(
     let is_event = request_source == Some("event");
     let is_group_member = request_source == Some("group-member");
     let is_agent_inbound = request_source == Some("agent-inbound");
+    let is_human_handoff = request_source == Some("human-handoff");
     let is_kickstart = request_source == Some("kickstart");
     let is_ack_redrive =
         optional_bool(args, "ackRedrive")?.unwrap_or(false) && is_handoff_resume;
@@ -92,6 +93,8 @@ pub fn classify_send_dispatch(
             "event"
         } else if is_agent_inbound {
             "agent-inbound"
+        } else if is_human_handoff {
+            "human-handoff"
         } else if is_group_member {
             "group-member"
         } else if is_kickstart {
@@ -108,6 +111,7 @@ struct RoutedTurnLease {
     ticket: UserTurnTicket,
     generation: u64,
     is_group_member_turn: bool,
+    human_handoff_conversation_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -548,6 +552,23 @@ impl ProductionTranscriptRuntime {
             .to_string();
         let nonce = optional_non_empty(args, "clientNonce").map(ToOwned::to_owned);
         let agent_id = input.agent_id.clone();
+        let human_handoff_conversation_id =
+            optional_non_empty(args, "humanHandoffConversationId").map(ToOwned::to_owned);
+        let is_human_handoff =
+            optional_non_empty(args, "requestSource") == Some("human-handoff");
+        match (is_human_handoff, human_handoff_conversation_id.as_deref()) {
+            (true, None) => {
+                return Err(ProductionSendError::BadRequest(
+                    "human-handoff routed send requires humanHandoffConversationId".into(),
+                ));
+            }
+            (false, Some(_)) => {
+                return Err(ProductionSendError::BadRequest(
+                    "humanHandoffConversationId is only valid for requestSource=human-handoff".into(),
+                ));
+            }
+            _ => {}
+        }
         let (dispatch_lane, dispatch_source) = classify_send_dispatch(args)?;
         let dispatch_ack_token = optional_non_empty(args, "ackToken");
         let is_fork = optional_bool(args, "isFork")?.unwrap_or(false);
@@ -750,6 +771,7 @@ impl ProductionTranscriptRuntime {
                                 ticket,
                                 generation,
                                 is_group_member_turn,
+                                human_handoff_conversation_id: human_handoff_conversation_id.clone(),
                             },
                         );
                     }
@@ -831,6 +853,18 @@ impl ProductionTranscriptRuntime {
             .routed_turn_leases
             .get(stream_id)
             .is_some_and(|lease| lease.agent_id == agent_id)
+    }
+
+    pub fn routed_human_handoff_conversation_id(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+    ) -> Option<String> {
+        self.lock_state()
+            .routed_turn_leases
+            .get(stream_id)
+            .filter(|lease| lease.agent_id == agent_id)
+            .and_then(|lease| lease.human_handoff_conversation_id.clone())
     }
 
     pub fn execute_send<Dispatch, Persist, Persisted>(

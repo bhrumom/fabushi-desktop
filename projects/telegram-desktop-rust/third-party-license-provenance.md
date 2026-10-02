@@ -1,0 +1,55 @@
+# Third-party and license provenance checkpoint
+
+Frozen Telegram root: telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677
+Captured: 2026-10-02
+Status: exact-ref inventory complete for direct gitlink license-file locations; distribution legal review remains open
+
+## Root project
+
+The frozen root LEGAL states GPL version 3 or later and contains the frozen OpenSSL linking exception. Changing implementation language does not relicense source-derived work.
+
+## Direct gitlink exact-ref inventory
+
+All 35 direct gitlinks were inspected at their pinned commits using non-truncated recursive trees. The recursive gitlink chain is separately closed in source-closure.md.
+
+### Desktop App Toolkit repositories
+
+cmake_helpers, codegen, lib_base, lib_crl, lib_lottie, lib_qr, lib_rpl, lib_spellcheck, lib_storage, lib_tl, lib_translate, lib_ui, lib_webrtc and lib_webview contain no standalone LICENSE/COPYING/REUSE file in their pinned trees. Representative CMake/source files in cmake_helpers, lib_base, lib_ui, lib_webrtc and lib_webview explicitly say license/copyright information is at `desktop-app/legal/blob/master/LEGAL`. Because that reference is floating rather than pinned by the Telegram gitlink, it cannot by itself prove the legal text that applied when each frozen toolkit commit was authored.
+
+A dated remote observation on 2026-10-02 resolves `desktop-app/legal` default `master` to commit `81c3a0ebf04dca9ffc49c9a06a922fea34b01892`; its exact `LEGAL` blob is `3bfa83166c163461bd441cee602a6ace93092b14`. The pinned toolkit commits span 2024-07-07 through 2026-10-01. A history audit of `desktop-app/legal/LEGAL` over and before that interval found only the annual copyright-year revisions `fff1d91dc17b9e1375d256ffc1e095e52b48eec7` (2024, blob `1be763c8048a18bbccc6e714c917447d13411e03`), `2872096a6616a3f8fb6659d7c85f4dce5f929042` (2025, blob `ba2821f7d052b86a46175ff059339c27f33044f7`), and `81c3a0ebf04dca9ffc49c9a06a922fea34b01892` (2026, blob `3bfa83166c163461bd441cee602a6ace93092b14`). Direct diffs show the 2024→2025 and 2025→2026 changes only advance the copyright year; the GPL-3.0-or-later grant and OpenSSL linking exception are unchanged. This closes the previously floating Toolkit legal-text identity for the frozen commit date range at the source-provenance level. Final distribution/legal review remains separate.
+
+### ThirdParty repositories with exact license evidence
+
+- Microsoft/GSL@87f9d768...: LICENSE blob aa58667a... identifies MIT.
+- desktop-app/MicroTeX@61aaa7cc...: LICENSE blob 78a9eca5... identifies MIT; resource subdirectories also carry separate license files and require asset review.
+- nayuki/QR-Code-generator@720f62bd...: no standalone root license file, but pinned c/qrcodegen.c blob 86170442... contains the MIT grant.
+- tzcnt/TooManyCooks@b86af819...: LICENSE blob 36b7cd93... is Boost Software License 1.0.
+- google/cld3@b48dc465...: LICENSE blob c5899b26... is Apache License 2.0.
+- desktop-app/cmark-gfm@d7d4a24a...: COPYING blob db88a81b... contains its BSD-style redistribution grant; exact clause classification remains for legal review.
+- TartanLlama/expected@292eff8b...: COPYING blob 0e259d42... is CC0 1.0 Universal.
+- fcitx/fcitx5-qt@0285a5d1...: exact-file scan is now recorded in `research/mixed-license-per-file-provenance.md`: 88 SPDX-bearing tracked files resolve to 46 BSD-3-Clause, 40 LGPL-2.1-or-later and 2 GPL-2.0-or-later files; 20 qdbusxml2cpp-generated files and six legacy full-text LGPL widget files are tracked separately rather than guessed. Remaining untagged build/interface metadata stays open if materially reused.
+- hime-ime/hime@9b3e6f9a...: exact frozen evidence is now expanded in `research/mixed-license-per-file-provenance.md`: README defaults to LGPLv2.1 with Qt immodules under GPLv2; inspected Qt5 immodule headers carry explicit GPLv2 notices; icon COPYING files state LGPLv2.1-or-later and are digest-bounded. This source/module/asset boundary is no longer inferred from the root README alone.
+- hunspell/hunspell@a698d8b5...: exact frozen per-file evidence is now recorded in `research/license-maps/hunspell.tsv`; 854 tracked paths are mapped, with 59 files carrying the literal MPL-1.1/GPL-2.0/LGPL-2.1 tri-license header and unresolved no-file-notice rows kept explicit.
+- KDE/kcoreaddons@fd84da51...: `research/license-maps/kcoreaddons.tsv` now maps all 377 tracked paths; 200 carry explicit SPDX identifiers across LGPL/GPL/KDE accepted-license/Qt exception/CC0/BSD/MPL combinations, while untagged paths remain explicit unresolved rows.
+- KDE/kimageformats@df82311a...: `research/license-maps/kimageformats.tsv` now maps all 375 tracked paths; 52 carry explicit SPDX identifiers, including BSD-2-Clause AVIF/JXL implementation files and LGPL-2.0-or-later HEIF/legacy format handlers, while untagged paths remain explicit unresolved rows.
+- PJK/libcbor@170bee2b...: LICENSE.md blob 49e9b539... identifies MIT.
+- Yubico/libfido2@b974e7cf...: LICENSE blob 62f584be... contains a BSD-style redistribution grant; precise SPDX classification remains for legal review.
+- desktop-app/libprisma@75f26c17...: LICENSE blob 1941f980... identifies MIT.
+- lz4/lz4@5ff83968...: LICENSE blob 1b84cc30... explicitly says lib/ is BSD 2-Clause while other repository areas default to GPLv2 unless stated otherwise.
+- hamonikr/nimf@498ec7ff...: COPYING blob 341c30bd... is LGPL version 3.
+- ericniebler/range-v3@a8147793...: LICENSE.txt blob 698193e9... is Boost Software License 1.0.
+- TelegramMessenger/tgcalls@1c236c09...: LICENSE blob 65c5ca88... is LGPL version 3.
+- flatpak/xdg-desktop-portal@23a76c39...: COPYING blob 4362b491... is LGPL version 2.1; doc website also has its own LICENSE.
+- Cyan4973/xxHash@bbb27a5e...: LICENSE blob e4c5da72... identifies BSD 2-Clause for the library; CLI/tests contain separate copying/license files.
+
+## Current FBCP distribution adoption checkpoint
+
+Against PR #20 `dcb19a94383833fc1ec5074f10c4bbbd28c09036`, the current FBCP branch adds no Telegram resource/shader/model binary, does not vendor a Telegram build tree, and does not invoke Telegram's prepare/Docker/Snap acquisition surfaces from the Fabushi production/build roots. No `.qsb`, `.binobj`, `.obj`, or other binary addition appears in the FBCP delta.
+
+Accordingly, the dependencies listed above are **researched upstream provenance**, not automatically dependencies of the Fabushi distribution. Release dependency review must be driven by Fabushi's actual dependency/artifact graph. Separately, because this project is source-informed, upstream GPL/third-party source provenance and any copied/adapted production content still require legal review; independent reimplementation language does not itself determine licensing.
+
+## Why release review is still open
+
+An exact file-location inventory is not a legal compatibility conclusion. The floating Desktop App Toolkit legal reference is now historically bounded for the frozen toolkit commit range, but remaining work still includes: per-file REUSE/license mapping where researched mixed-license dependencies materially inform source-derived behavior (the pinned fcitx5-qt implementation-source mapping is now captured, while any future materially researched mixed-license set must receive the same treatment); resource/font/icon/theme/sound provenance; determining which upstream code/assets, if any, are actually copied or adapted into distributed Fabushi artifacts; and reviewing the final dependency graph of the Fabushi build rather than assuming every Telegram research dependency ships.
+
+No row in this document authorizes copying an upstream asset or source file into Fabushi. It records source-informed provenance and the evidence needed for later release counsel/review.

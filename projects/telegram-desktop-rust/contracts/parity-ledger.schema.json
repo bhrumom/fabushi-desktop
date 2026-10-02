@@ -1,0 +1,975 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TDRP-001 Telegram research-to-Fabushi absorption ledger",
+  "description": "Capability research contract for FBCP-001 Revision 2. Telegram is a research source, not a runtime provider. Every capability must resolve into the current Fabushi architecture before a new owner may be proposed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "parent_product_id",
+    "format_version",
+    "project_id",
+    "upstream_commit",
+    "upstream_lock_sha256",
+    "research_inventory_status",
+    "capabilities",
+    "spec_revision"
+  ],
+  "properties": {
+    "format_version": {
+      "const": 2
+    },
+    "project_id": {
+      "const": "TDRP-001"
+    },
+    "spec_revision": {
+      "const": 4
+    },
+    "upstream_commit": {
+      "$ref": "#/$defs/gitOid"
+    },
+    "upstream_lock_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "research_inventory_status": {
+      "enum": [
+        "partial",
+        "complete"
+      ]
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/capability"
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "parent_product_id": {
+      "const": "FBCP-001"
+    }
+  },
+  "$defs": {
+    "nonEmpty": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "gitOid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000]+$"
+    },
+    "strings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonEmpty"
+      }
+    },
+    "sourceEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "commit",
+        "path",
+        "role",
+        "language",
+        "cpp_relevance"
+      ],
+      "properties": {
+        "repository": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "commit": {
+          "$ref": "#/$defs/gitOid"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "symbols": {
+          "$ref": "#/$defs/strings"
+        },
+        "role": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "language": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "cpp_relevance": {
+          "enum": [
+            "product-logic",
+            "protocol",
+            "state-machine",
+            "ui",
+            "platform-policy",
+            "build-tool",
+            "third-party",
+            "test-reference",
+            "not-cpp"
+          ]
+        }
+      }
+    },
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "language",
+        "responsibility",
+        "canonical_owner",
+        "production_entrypoints",
+        "decision_record"
+      ],
+      "properties": {
+        "component": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "language": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "responsibility": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "canonical_owner": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "production_entrypoints": {
+          "$ref": "#/$defs/strings"
+        },
+        "decision_record": {
+          "$ref": "#/$defs/relativePath"
+        }
+      }
+    },
+    "cppReplacement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "status",
+        "remaining_cpp_components"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "not-required",
+            "planned",
+            "partial",
+            "replaced",
+            "blocked"
+          ]
+        },
+        "remaining_cpp_components": {
+          "$ref": "#/$defs/strings"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "replaced"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "remaining_cpp_components": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "test_id",
+        "kind",
+        "scenario",
+        "platform_cells",
+        "production_path"
+      ],
+      "properties": {
+        "test_id": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "kind": {
+          "enum": [
+            "static",
+            "unit",
+            "property",
+            "state-machine",
+            "contract",
+            "differential",
+            "integration",
+            "e2e",
+            "fuzz",
+            "performance",
+            "power",
+            "accessibility",
+            "migration",
+            "packaged",
+            "license"
+          ]
+        },
+        "scenario": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "platform_cells": {
+          "$ref": "#/$defs/strings"
+        },
+        "production_path": {
+          "type": "boolean"
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "uri",
+        "sha256"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "github_artifact_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "test_ids",
+        "result",
+        "target_commit",
+        "upstream_commit",
+        "runner",
+        "device",
+        "platform_cell",
+        "command",
+        "exit_code",
+        "executed_test_count",
+        "artifacts",
+        "limitations"
+      ],
+      "properties": {
+        "evidence_id": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "test_ids": {
+          "$ref": "#/$defs/strings"
+        },
+        "result": {
+          "enum": [
+            "passed",
+            "failed",
+            "blocked",
+            "not-configured"
+          ]
+        },
+        "target_commit": {
+          "$ref": "#/$defs/gitOid"
+        },
+        "upstream_commit": {
+          "$ref": "#/$defs/gitOid"
+        },
+        "runner": {
+          "enum": [
+            "github-actions",
+            "htch-runtime"
+          ]
+        },
+        "device": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "platform_cell": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "run_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "workflow_run_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "job_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "command": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "exit_code": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "executed_test_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifact"
+          }
+        },
+        "limitations": {
+          "$ref": "#/$defs/strings"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "const": "passed"
+              }
+            },
+            "required": [
+              "result"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "const": 0
+              },
+              "executed_test_count": {
+                "minimum": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "runner": {
+                "const": "htch-runtime"
+              }
+            },
+            "required": [
+              "runner"
+            ]
+          },
+          "then": {
+            "properties": {
+              "device": {
+                "const": "htch-runtime"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reviewer",
+        "independent",
+        "decision",
+        "reviewed_target_commit",
+        "evidence_ids",
+        "notes"
+      ],
+      "properties": {
+        "reviewer": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "independent": {
+          "type": "boolean"
+        },
+        "decision": {
+          "enum": [
+            "accepted",
+            "changes-required",
+            "blocked"
+          ]
+        },
+        "reviewed_target_commit": {
+          "$ref": "#/$defs/gitOid"
+        },
+        "evidence_ids": {
+          "$ref": "#/$defs/strings"
+        },
+        "notes": {
+          "$ref": "#/$defs/nonEmpty"
+        }
+      }
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_id",
+        "name",
+        "state",
+        "requirements",
+        "research_dossier",
+        "source_evidence",
+        "official_references",
+        "architecture_decisions",
+        "target_owners",
+        "cpp_replacement",
+        "behavior_contracts",
+        "deviations",
+        "tests",
+        "evidence",
+        "review",
+        "blockers",
+        "implementation_commit",
+        "last_verified_commit",
+        "owner_resolution",
+        "absorption_plan",
+        "native_network_requirements"
+      ],
+      "properties": {
+        "capability_id": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "state": {
+          "enum": [
+            "discovered",
+            "researched",
+            "designed",
+            "implemented",
+            "production-wired",
+            "verified",
+            "accepted",
+            "blocked"
+          ]
+        },
+        "requirements": {
+          "$ref": "#/$defs/strings"
+        },
+        "research_dossier": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/relativePath"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceEvidence"
+          }
+        },
+        "official_references": {
+          "$ref": "#/$defs/strings"
+        },
+        "architecture_decisions": {
+          "$ref": "#/$defs/strings"
+        },
+        "target_owners": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/owner"
+          }
+        },
+        "cpp_replacement": {
+          "$ref": "#/$defs/cppReplacement"
+        },
+        "behavior_contracts": {
+          "$ref": "#/$defs/strings"
+        },
+        "deviations": {
+          "$ref": "#/$defs/strings"
+        },
+        "tests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/test"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        },
+        "review": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/review"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "blockers": {
+          "$ref": "#/$defs/strings"
+        },
+        "implementation_commit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/gitOid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_verified_commit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/gitOid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "owner_resolution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "owner_candidates",
+            "existing_owner",
+            "selected_reason",
+            "owner_evidence_paths",
+            "rejected_existing_owners",
+            "new_owner_proposal",
+            "adr_path"
+          ],
+          "properties": {
+            "owner_candidates": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/strings"
+                },
+                {
+                  "minItems": 1
+                }
+              ]
+            },
+            "existing_owner": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/nonEmpty"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "selected_reason": {
+              "type": "string"
+            },
+            "owner_evidence_paths": {
+              "$ref": "#/$defs/strings"
+            },
+            "rejected_existing_owners": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "owner",
+                  "reason"
+                ],
+                "properties": {
+                  "owner": {
+                    "$ref": "#/$defs/nonEmpty"
+                  },
+                  "reason": {
+                    "$ref": "#/$defs/nonEmpty"
+                  }
+                }
+              }
+            },
+            "new_owner_proposal": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "name",
+                    "responsibility",
+                    "state_owned",
+                    "dependency_direction",
+                    "language"
+                  ],
+                  "properties": {
+                    "name": {
+                      "$ref": "#/$defs/nonEmpty"
+                    },
+                    "responsibility": {
+                      "$ref": "#/$defs/nonEmpty"
+                    },
+                    "state_owned": {
+                      "$ref": "#/$defs/nonEmpty"
+                    },
+                    "dependency_direction": {
+                      "$ref": "#/$defs/nonEmpty"
+                    },
+                    "language": {
+                      "$ref": "#/$defs/nonEmpty"
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "adr_path": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/relativePath"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "existing_owner": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "existing_owner"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "selected_reason": {
+                    "$ref": "#/$defs/nonEmpty"
+                  },
+                  "owner_evidence_paths": {
+                    "minItems": 1
+                  },
+                  "new_owner_proposal": {
+                    "type": "null"
+                  },
+                  "adr_path": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "existing_owner": {
+                    "type": "null"
+                  }
+                },
+                "required": [
+                  "existing_owner"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "selected_reason": {
+                    "$ref": "#/$defs/nonEmpty"
+                  },
+                  "rejected_existing_owners": {
+                    "minItems": 1
+                  },
+                  "new_owner_proposal": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "name",
+                      "responsibility",
+                      "state_owned",
+                      "dependency_direction",
+                      "language"
+                    ],
+                    "properties": {
+                      "name": {
+                        "$ref": "#/$defs/nonEmpty"
+                      },
+                      "responsibility": {
+                        "$ref": "#/$defs/nonEmpty"
+                      },
+                      "state_owned": {
+                        "$ref": "#/$defs/nonEmpty"
+                      },
+                      "dependency_direction": {
+                        "$ref": "#/$defs/nonEmpty"
+                      },
+                      "language": {
+                        "$ref": "#/$defs/nonEmpty"
+                      }
+                    }
+                  },
+                  "adr_path": {
+                    "$ref": "#/$defs/relativePath"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "absorption_plan": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "owner_changes",
+            "model_changes",
+            "ui_changes",
+            "persistence_changes",
+            "tests"
+          ],
+          "properties": {
+            "owner_changes": {
+              "$ref": "#/$defs/strings"
+            },
+            "model_changes": {
+              "$ref": "#/$defs/strings"
+            },
+            "ui_changes": {
+              "$ref": "#/$defs/strings"
+            },
+            "persistence_changes": {
+              "$ref": "#/$defs/strings"
+            },
+            "tests": {
+              "$ref": "#/$defs/strings"
+            }
+          }
+        },
+        "native_network_requirements": {
+          "$ref": "#/$defs/strings"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "researched",
+                  "designed",
+                  "implemented",
+                  "production-wired",
+                  "verified",
+                  "accepted"
+                ]
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "research_dossier": {
+                "$ref": "#/$defs/relativePath"
+              },
+              "source_evidence": {
+                "minItems": 1
+              },
+              "requirements": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "designed",
+                  "implemented",
+                  "production-wired",
+                  "verified",
+                  "accepted"
+                ]
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "architecture_decisions": {
+                "minItems": 1
+              },
+              "target_owners": {
+                "minItems": 1
+              },
+              "behavior_contracts": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "implemented",
+                  "production-wired",
+                  "verified",
+                  "accepted"
+                ]
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "implementation_commit": {
+                "$ref": "#/$defs/gitOid"
+              },
+              "tests": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "verified",
+                  "accepted"
+                ]
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidence": {
+                "minItems": 1
+              },
+              "last_verified_commit": {
+                "$ref": "#/$defs/gitOid"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "accepted"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "blockers": {
+                "maxItems": 0
+              },
+              "review": {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/review"
+                  },
+                  {
+                    "properties": {
+                      "independent": {
+                        "const": true
+                      },
+                      "decision": {
+                        "const": "accepted"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "blocked"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "blockers": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$comment": "Semantic validation must reject duplicate IDs, missing research coverage, capability rows without current-Fabushi owner candidates, new-owner proposals that skip rejected-owner analysis or ADRs, broad parallel owners such as TelegramCore/TelegramProvider/CommunicationCore/MessengerRuntime without an explicit future interoperability spec, source reading counted as implementation, duplicate product/state owners, original Telegram C++ left as the Fabushi production owner, invented evidence, inherited old-HEAD passes, zero executed tests, and non-independent acceptance. Executable checks run only on GitHub Actions or htch-runtime."
+}

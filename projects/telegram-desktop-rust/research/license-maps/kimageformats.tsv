@@ -1,0 +1,376 @@
+path	classification	evidence
+.git-blame-ignore-revs	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+.gitattributes	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+.gitignore	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+.gitlab-ci.yml	CC0-1.0	file SPDX-License-Identifier
+.kde-ci.yml	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+CMakeLists.txt	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+LICENSES/CC0-1.0.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LGPL-2.0-or-later.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LGPL-2.1-only.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LGPL-2.1-or-later.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LGPL-3.0-only.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LicenseRef-KDE-Accepted-LGPL.txt	LICENSE-TEXT	repository LICENSES text
+README.md	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/CMakeLists.txt	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/ani/test.ani	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/ani/test_1.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/ani/test_2.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/ani/test_3.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/anitest.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/fuzzyeq.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/long-runs.pic	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/pic/4x4-alpha-uncompressed.pic	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/pic/4x4-alpha.pic	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/pic/4x4-alpha.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/pic/4x4-simple-color-uncompressed.pic	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/pic/4x4-simple-color.pic	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/pic/4x4-simple-color.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/pic/long-comment.pic	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/pic/long-runs.pic	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/pic/long-runs.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/pic/short-comment.pic	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/pictest.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/read/avif/bw.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/bw.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/bwa.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/bwa.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rgb.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rgb.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rgba.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rgba.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated090.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated090.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated090_left-to-right.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated090_left-to-right.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated090_top-to-bottom.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated090_top-to-bottom.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated180.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated180.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated180_left-to-right.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated180_left-to-right.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated180_top-to-bottom.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated180_top-to-bottom.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated270.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated270.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated270_left-to-right.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated270_left-to-right.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated270_top-to-bottom.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/rotated270_top-to-bottom.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/unrotated.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/unrotated.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/unrotated_left-to-right.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/unrotated_left-to-right.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/unrotated_top-to-bottom.avif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/avif/unrotated_top-to-bottom.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/eps/bw.eps	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/eps/bw.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/eps/rgb-gimp-2.8.10.eps	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/eps/rgb-gimp-2.8.10.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/eps/rgb.eps	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/eps/rgb.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/exr/rgb-gimp.exr	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/exr/rgb-gimp.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/hdr/rgb-landscape.hdr	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/hdr/rgb-landscape.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/hdr/rgb-portrait.hdr	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/hdr/rgb-portrait.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/hdr/rgb.hdr	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/hdr/rgb.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/heif/rgb.heif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/heif/rgb.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/heif/rgba.heif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/heif/rgba.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/hej2/rgb_kcolorchooser.hej2	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/hej2/rgb_kcolorchooser.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/hej2/rgba_kolourpaint.hej2	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/hej2/rgba_kolourpaint.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation1.jxl	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation1.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation2.jxl	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation2.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation3.jxl	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation3.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation4.jxl	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation4.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation5.jxl	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation5.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation6.jxl	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation6.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation7.jxl	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation7.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation8.jxl	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/orientation8.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/rgb.jxl	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/rgb.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/rgba.jxl	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/jxl/rgba.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/kra/src.kra	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/kra/src.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/ora/src.ora	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/ora/src.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/pcx/bw.pcx	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/pcx/bw.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/pcx/ccbug_463951.pcx	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/pcx/ccbug_463951.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/pcx/indexed8.pcx	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/pcx/indexed8.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/pcx/mono.pcx	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/pcx/mono.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/pcx/rgb-gimp-2.8.10.pcx	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/pcx/rgb-gimp-2.8.10.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/pcx/rgb.pcx	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/pcx/rgb.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/16bit-rle.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/16bit-rle.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/16bit_grayscale.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/16bit_grayscale.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/16bit_photoshop.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/16bit_photoshop.psb	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/32bit-rgb.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/32bit-rgb.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/32bit_grayscale.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/32bit_grayscale.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/53alphas.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/53alphas.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/8bit-grayscale.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/8bit-grayscale.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/8bit-photoshop.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/8bit-photoshop.psb	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/adobehq-2_5.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/adobehq-2_5.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/argb16-raw-affinityphoto-1.8.5.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/argb16-raw-affinityphoto-1.8.5.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/birthday.pdd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/birthday.tif	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/bitmap.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/bitmap.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/ccbug182496.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/ccbug182496.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/cmyka-16bits.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/cmyka-16bits.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/cmyka-8bits.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/cmyka-8bits.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/duotone.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/duotone.psb	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/indexed.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/indexed.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/laba_16bit.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/laba_16bit.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/laba_8bit.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/laba_8bit.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/mch-16bits.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/mch-16bits.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/mch-8bits.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/mch-8bits.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/mch3-16bits.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/mch3-16bits.psb	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/mch3-8bits.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/mch3-8bits.psb	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/rgb-gimp-2.8.10.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/rgb-gimp-2.8.10.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/rgb16-raw-affinityphoto-1.8.5.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/psd/rgb16-raw-affinityphoto-1.8.5.psd	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/qoi/1px.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/qoi/1px.qoi	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/qoi/2px.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/qoi/2px.qoi	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/qoi/bnm_rgb.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/qoi/bnm_rgb.qoi	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/qoi/bnm_rgba.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/qoi/bnm_rgba.qoi	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/qoi/testcard.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/qoi/testcard.qoi	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/qoi/testcard_rgba.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/qoi/testcard_rgba.qoi	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/ras/rgb-gimp-2.8.10-standard.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/ras/rgb-gimp-2.8.10-standard.ras	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/raw/RAW_KODAK_C330_FORMAT_NONE_YRGB.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/raw/RAW_KODAK_C330_FORMAT_NONE_YRGB.raw	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/rgb/bw.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/rgb/bw.rgb	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/rgb/rgb-gimp-2.8.10-aggressive-rle.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/rgb/rgb-gimp-2.8.10-aggressive-rle.rgb	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/rgb/rgb-gimp-2.8.10-rle.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/rgb/rgb-gimp-2.8.10-rle.rgb	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/rgb/rgb-gimp-2.8.10-uncompressed.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/rgb/rgb-gimp-2.8.10-uncompressed.rgb	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/rgb/rgb.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/rgb/rgb.rgb	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/bw.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/bw.tga	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/bwa.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/bwa.tga	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/rgb-gimp-2.8.10-bottom-left.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/rgb-gimp-2.8.10-bottom-left.tga	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/rgb-gimp-2.8.10-rle-bottom-left.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/rgb-gimp-2.8.10-rle-bottom-left.tga	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/rgb-gimp-2.8.10-rle-top-left.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/rgb-gimp-2.8.10-rle-top-left.tga	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/rgb-gimp-2.8.10-top-left.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/rgb-gimp-2.8.10-top-left.tga	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/rgb.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/rgb.tga	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/rgba.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/tga/rgba.tga	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday16.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday16.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday16_gray.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday16_gray.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday16_grayA.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday16_grayA.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday16fp.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday16fp.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday16fp_gray.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday16fp_gray.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday16fp_grayA.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday16fp_grayA.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday32.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday32.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday32_gray.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday32_gray.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday32_grayA.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday32_grayA.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday32fp.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday32fp.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday32fp_gray.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday32fp_gray.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday32fp_grayA.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday32fp_grayA.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday_grayA.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/birthday_grayA.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/bug411327.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/bug411327.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/fruktpilot.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/fruktpilot.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/fruktpilot16_icc.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/fruktpilot16_icc.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/fruktpilot16fplin_icc.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/fruktpilot16fplin_icc.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/fruktpilot32_icc.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/fruktpilot32_icc.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/fruktpilot32fplin_icc.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/fruktpilot32fplin_icc.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/fruktpilot_icc.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/fruktpilot_icc.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/simple-bw-gimp-2.8.10.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/simple-bw-gimp-2.8.10.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/simple-bwa-gimp-2.8.10.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/simple-bwa-gimp-2.8.10.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/simple-rgb-gimp-2.8.10.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/simple-rgb-gimp-2.8.10.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/simple-rgba-gimp-2.8.10.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/read/xcf/simple-rgba-gimp-2.8.10.xcf	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/readtest.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/write/bw.eps	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/bw.pcx	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/bw.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/bw.rgb	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/bw.tga	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/bw.xv	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/bwa.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/bwa.tga	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/bwa.xv	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/rgb.eps	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/rgb.pcx	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/rgb.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/rgb.qoi	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/rgb.rgb	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/rgb.tga	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/rgb.xv	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/rgba.png	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/rgba.qoi	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/rgba.tga	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/write/rgba.xv	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/writetest.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+cmake/find-modules/FindLibRaw.cmake	BSD-3-Clause	file SPDX-License-Identifier
+metainfo.yaml	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/CMakeLists.txt	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/AUTHORS	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/CMakeLists.txt	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/ani.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/ani.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/ani.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/ani_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/avif.cpp	BSD-2-Clause	file SPDX-License-Identifier
+src/imageformats/avif.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/avif.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/avif_p.h	BSD-2-Clause	file SPDX-License-Identifier
+src/imageformats/dds-qt.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/eps.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/eps.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/eps.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/eps_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/exr.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/exr.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/exr.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/exr_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/fastmath_p.h	BSD-3-Clause	file SPDX-License-Identifier
+src/imageformats/gimp_p.h	LGPL-2.1-or-later	file SPDX-License-Identifier
+src/imageformats/hdr.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/hdr.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/hdr.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/hdr_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/heif.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/heif.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/heif.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/heif_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/jp2.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/jxl.cpp	BSD-2-Clause	file SPDX-License-Identifier
+src/imageformats/jxl.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/jxl.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/jxl_p.h	BSD-2-Clause	file SPDX-License-Identifier
+src/imageformats/kra.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/kra.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/kra.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/kra.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/ora.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/ora.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/ora.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/ora.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/pcx.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/pcx.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/pcx.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/pcx_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/pic.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/pic.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/pic.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/pic_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/psd.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/psd.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/psd.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/psd_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/qoi.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/qoi.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/qoi.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/qoi_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/ras.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/ras.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/ras.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/ras_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/raw.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/raw.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/raw.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/raw_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/rgb.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/rgb.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/rgb.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/rgb_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/rle_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/scanlineconverter.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/scanlineconverter_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/tga.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/tga.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/tga.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/tga_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/util_p.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+src/imageformats/xcf.cpp	LGPL-2.1-or-later	file SPDX-License-Identifier
+src/imageformats/xcf.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/xcf.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+src/imageformats/xcf_p.h	LGPL-2.1-or-later	file SPDX-License-Identifier
+tests/CMakeLists.txt	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+tests/format-enum.h	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+tests/imageconverter.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+tests/imagedump.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier

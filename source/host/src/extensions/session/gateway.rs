@@ -299,6 +299,48 @@ pub fn dispatch_production_session_gateway_call_with_content_search(
                 .and_then(|matches| serde_json::to_value(matches).map_err(|error| error.to_string()))
                 .map_err(SessionGatewayError::internal)
         }),
+        "listHumanConversations" => session
+            .list_human_conversations()
+            .map(Value::Array)
+            .map_err(SessionGatewayError::internal),
+        "createHumanConversation" => required_string(args, "peerHumanId").and_then(|peer_human_id| {
+            let local_human_id = session.local_human_id().map_err(SessionGatewayError::internal)?;
+            if let Some(requested) = optional_string(args, "localHumanId")? {
+                if requested != local_human_id {
+                    return Err(SessionGatewayError::bad("localHumanId does not match the authenticated Human identity"));
+                }
+            }
+            let title = optional_string(args, "title")?.unwrap_or(peer_human_id);
+            session
+                .create_human_conversation(peer_human_id, title)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "sendHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {
+            let local_human_id = session.local_human_id().map_err(SessionGatewayError::internal)?;
+            if let Some(requested) = optional_string(args, "senderId")? {
+                if requested != local_human_id {
+                    return Err(SessionGatewayError::bad("senderId does not match the authenticated Human identity"));
+                }
+            }
+            required_string(args, "text").and_then(|text| {
+                required_string(args, "clientNonce").and_then(|client_nonce| {
+                    session
+                        .append_human_message(
+                            conversation_id,
+                            text,
+                            client_nonce,
+                            optional_f64(args, "composedAtMs"),
+                        )
+                        .map_err(SessionGatewayError::internal)
+                })
+            })
+        }),
+        "getHumanConversationTranscript" => required_string(args, "conversationId").and_then(|conversation_id| {
+            session
+                .read_human_conversation_transcript(conversation_id)
+                .map(Value::Array)
+                .map_err(SessionGatewayError::internal)
+        }),
         "createGroup" => {
             required_string(args, "name").and_then(|name| {
                 let description = optional_string(args, "description")?.unwrap_or_default();

@@ -5,36 +5,50 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "56bcd9a62cb429d273c3003947e35f714d0b8927",
+      "targetBlobSha": "8efb35e7148b7df31ccf3b56482eb61d7d3bfdcb",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
-        "frontend/src/recovered/features/account/session/sign-in-status.tsx"
+        "frontend/src/recovered/features/account/session/sign-in-status.tsx",
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/electron-main/account/human-identity.ts",
+        "source/node-agent-coordinator/src/carrier.rs"
       ],
       "testEvidence": [
         "desktop/e2e/grok-parity.spec.ts",
         "desktop/e2e/mahayana-agent-workbench.spec.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/pr20-verify-once.yml"
+        ".github/workflows/pr20-verify-once.yml",
+        "source/host/tests/session_gateway_contract.rs",
+        "source/electron-main/foundations.test.ts",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell."
+      "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell. The FBCP absorption extends this existing renderer composition, not the frozen sidebar/workspace components: Human conversations are projected into the same sidebar and conversation workspace, use the same transcript/composer surfaces, route create/list/read/send through the existing Coordinator-to-Host transport, fail closed for Agent-only actions, and expose an explicit Human-to-Agent handoff through the existing sendPrompt Coordinator/Host/Runner flow. Account-generation fencing clears Human roster state on account transitions, Agent feed updates reconcile against the combined Human+Agent roster, and keyboard/sidebar ordering uses one updated-at conversation order so a live Agent event cannot eject an active Human workspace. Human-to-Agent handoff remains in the Human workspace: renderer sends an explicit human-handoff destination through the existing Coordinator/Host/Runner path, while the Host terminal boundary durably projects the trusted Agent result back into the original Human transcript; renderer code neither fabricates Agent-authored content nor navigates to a second conversation truth. The Human restart path now treats getHumanConversationTranscript as a Host-local durable Session read: account and open-request generations still fence stale completion, but Agent transport generation changes no longer discard a current Human transcript response. Agent openAgentTail remains transport-generation fenced. This is required because client-ready and transport notifications can legitimately advance the transport generation during application restart while the durable Human read is in flight; the focused Electron Human vertical-slice restart assertion is the shipping acceptance for this adaptation."
     },
     {
       "referencePath": "frontend/src/production/model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "a0700444f6d9c629a34a718df3a4d4c8bc8d5b4e",
+      "targetBlobSha": "9a90faaef705ebffff0d4be12c5e832460823dab",
       "behavioralEvidence": [
         "frontend/src/production/model.ts",
-        "frontend/src/production/coordinator-client.ts"
+        "frontend/src/production/coordinator-client.ts",
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/electron-main/account/human-identity.ts",
+        "source/node-agent-coordinator/src/carrier.rs"
       ],
       "testEvidence": [
         "desktop/e2e/grok-parity.spec.ts",
         "desktop/e2e/mahayana-agent-workbench.spec.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/pr20-verify-once.yml"
+        ".github/workflows/pr20-verify-once.yml",
+        "source/host/tests/session_gateway_contract.rs",
+        "source/electron-main/foundations.test.ts",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs"
       ],
-      "rationale": "Keeps Grok 0.18 Agent projection/filter/sort semantics while accepting the shipping Mahayana Coordinator agents event envelope { agents: [...] } in addition to the frozen direct array form. The adaptation is limited to transport normalization at the renderer projection boundary; Agent identity, hidden state, activity and ordering continue through the frozen Grok projection logic. It also normalizes authoritative Mahayana transcript echoes that carry Grok attachment contexts on user messages, preserving committed path/name/MIME/size metadata for mixed and attachment-only sends without relying on optimistic renderer state."
+      "rationale": "Keeps Grok 0.18 Agent projection/filter/sort semantics while accepting the shipping Mahayana Coordinator agents event envelope { agents: [...] } in addition to the frozen direct array form. The adaptation is limited to transport normalization at the renderer projection boundary; Agent identity, hidden state, activity and ordering continue through the frozen Grok projection logic. It also normalizes authoritative Mahayana transcript echoes that carry Grok attachment contexts on user messages, preserving committed path/name/MIME/size metadata for mixed and attachment-only sends without relying on optimistic renderer state. The FBCP absorption adds a narrow Human-conversation projection into the existing canonical RendererAgent/Conversation model so Human rows can share the recovered sidebar/workspace without introducing Telegram-prefixed or parallel conversation/message truth; Host transcript entries continue through the existing transcript projection."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
@@ -339,18 +353,25 @@
       "referencePath": "source/electron-main/coordinator/production-provider.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "dfb1f73df1939a8fe7b0d511ca1d8ee6a2df690c",
+      "targetBlobSha": "1a78bcd74f26fda2c3bc6a6e2b78bf2c71534ebf",
       "behavioralEvidence": [
         "source/electron-main/coordinator/production-provider.ts",
         "source/electron-main/coordinator/coordinator-executors.ts",
-        "source/electron-main/adapters/mcp-oauth.ts"
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/electron-main/account/human-identity.ts",
+        "source/node-agent-coordinator/src/carrier.rs",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/host/src/extensions/session/production.rs"
       ],
       "testEvidence": [
         "source/electron-main/coordinator/coordinator-executors.test.ts",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/electron-main/foundations.test.ts",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/host/tests/session_gateway_contract.rs"
       ],
-      "rationale": "Keeps the Grok production Coordinator provider graph while wiring the approved Host MCP lifecycle and Plugin Skills loader calls to the existing Electron ProductionMcpService. This is dependency injection across the established Coordinator boundary: Electron provides the Cursor SDK edge, Rust Host owns Plugin Skills lifecycle/state, and no second manager or in-process Host replacement is introduced."
+      "rationale": "Keeps the Grok production Coordinator provider graph while wiring the approved Host MCP lifecycle and Plugin Skills loader calls to the existing Electron ProductionMcpService. This is dependency injection across the established Coordinator boundary: Electron provides the Cursor SDK edge, Rust Host owns Plugin Skills lifecycle/state, and no second manager or in-process Host replacement is introduced. The FBCP Human identity extension remains inside this already-approved Coordinator production adaptation: after the frozen account authorization accepts a slot, Electron Main resolves a Fabushi-owned account-scoped Human UUID and carries only that identity projection through the existing Coordinator bootstrap into Host Session ownership. Frozen account authorization/root-provider files remain byte-identical to Grok; Renderer-provided localHumanId/senderId values are not authoritative."
     },
     {
       "referencePath": "source/electron-main/main-production-services.ts",

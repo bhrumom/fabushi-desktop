@@ -70,18 +70,6 @@ function signWithSecureTimestamp(target, identity, options = {}) {
   });
 }
 
-function findPackagedAsrBinaries(appPath) {
-  const asrRoot = path.join(appPath, 'Contents', 'Resources', 'asr');
-  if (!fs.existsSync(asrRoot)) return [];
-  const binaries = [];
-  for (const entry of fs.readdirSync(asrRoot, { withFileTypes: true })) {
-    if (!entry.isDirectory() || !entry.name.startsWith('darwin-')) continue;
-    const binary = path.join(asrRoot, entry.name, 'whisper-cli');
-    if (fs.existsSync(binary)) binaries.push(binary);
-  }
-  return binaries;
-}
-
 function restoreCanonicalNestedSignatures(context, appPath) {
   const identity = String(process.env.MACOS_CODESIGN_IDENTITY || '').trim();
   if (!identity) {
@@ -102,24 +90,11 @@ function restoreCanonicalNestedSignatures(context, appPath) {
     identifier: 'com.ombhrum.fabushi.mahayana-app-host',
   });
 
-  const asrBinaries = findPackagedAsrBinaries(appPath);
-  if (asrBinaries.length === 0) {
-    throw new Error(`Packaged macOS offline ASR executable is missing under ${path.join(appPath, 'Contents', 'Resources', 'asr')}`);
-  }
-  for (const binary of asrBinaries) {
-    signWithSecureTimestamp(binary, identity, {
-      identifier: 'com.ombhrum.fabushi.whisper-cli',
-    });
-  }
-
   // Re-sign only the outer application after touching nested code. This updates the
   // application seal while preserving electron-builder's framework/helper signatures.
   signWithSecureTimestamp(appPath, identity, { entitlements });
 
   assertCodeIdentifier(host, 'com.ombhrum.fabushi.mahayana-app-host');
-  for (const binary of asrBinaries) {
-    assertCodeIdentifier(binary, 'com.ombhrum.fabushi.whisper-cli');
-  }
   assertCodeIdentifier(appPath, 'com.ombhrum.fabushi');
   run('codesign', ['--verify', '--deep', '--strict', '--verbose=2', appPath]);
 }
