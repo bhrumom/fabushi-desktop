@@ -1981,7 +1981,12 @@ fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
         "prompt": "[agent] peer message",
         "priority": true,
         "memberIds": [],
-        "selectedImages": selected
+        "selectedImages": selected,
+        "inbound": {
+            "from": {"id":"agent-source","name":"Source"},
+            "text":"peer message",
+            "timestampMs":123
+        }
     }))
     .expect("direct peer wake");
 
@@ -1991,6 +1996,7 @@ fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
     assert_eq!(route.send_args["requestSource"], "agent-inbound");
     assert_eq!(route.send_args["selectedImages"], selected);
     assert_eq!(route.send_args["agentWake"]["priority"], true);
+    assert_eq!(route.send_args["agentWake"]["inbound"]["text"], "peer message");
     assert!(route.send_args.get("groupContext").is_none());
 
     assert!(prepare_agent_inbound_wake_routes(&json!({
@@ -2125,7 +2131,8 @@ fn priority_peer_cancellation_redrives_agent_wake_exactly_once() {
         "requestSource": "agent-inbound",
         "agentWake": {
             "sourceAgentId": "agent-source",
-            "priority": false
+            "priority": false,
+            "isDisplayed": true
         }
     });
     let redrive = redrive_agent_inbound_after_priority_preemption(
@@ -2134,6 +2141,7 @@ fn priority_peer_cancellation_redrives_agent_wake_exactly_once() {
     )
     .expect("priority peer cancellation redrives");
     assert_eq!(redrive["agentWake"]["isRedriven"], true);
+    assert_eq!(redrive["agentWake"]["isDisplayed"], true);
     assert_eq!(redrive["appendUserMessage"], false);
 
     assert!(
@@ -2162,6 +2170,21 @@ fn priority_peer_cancellation_redrives_agent_wake_exactly_once() {
     );
 }
 
+
+#[test]
+fn shipping_agent_inbound_execution_admission_is_host_owned_and_precedes_provider_dispatch() {
+    let main = include_str!("../src/main.rs");
+    let admission = main
+        .find("accept_agent_inbound_message_for_execution(&worker_state, &agent_id, &mut args)")
+        .expect("agent inbound execution admission");
+    let cursor = main[admission..]
+        .find("if provider == InferenceProvider::Cursor")
+        .map(|offset| admission + offset)
+        .expect("Cursor provider branch");
+    assert!(admission < cursor);
+    assert!(main.contains("\"acceptAgentInboundMessage\""));
+    assert!(main.contains("wake.insert(\"isDisplayed\".into(), Value::Bool(true))"));
+}
 
 #[test]
 fn shipping_cursor_agent_inbound_failure_redrives_priority_supersede_before_reporting_error() {

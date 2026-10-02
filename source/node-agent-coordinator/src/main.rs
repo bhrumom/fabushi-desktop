@@ -954,6 +954,50 @@ fn report_agent_inbound_failure_best_effort(
     }
 }
 
+fn accept_agent_inbound_message_for_execution(
+    state: &Arc<CoordinatorState>,
+    agent_id: &str,
+    args: &mut Value,
+) -> Result<bool, Failure> {
+    if args.get("requestSource").and_then(Value::as_str) != Some("agent-inbound")
+        || args.get("groupContext").is_some_and(|value| !value.is_null())
+    {
+        return Ok(true);
+    }
+    let already_displayed = args
+        .get("agentWake")
+        .and_then(Value::as_object)
+        .and_then(|wake| wake.get("isDisplayed"))
+        .and_then(Value::as_bool)
+        == Some(true);
+    if already_displayed {
+        return Ok(true);
+    }
+    let Some(inbound) = args
+        .get("agentWake")
+        .and_then(Value::as_object)
+        .and_then(|wake| wake.get("inbound"))
+        .cloned()
+    else {
+        return Ok(true);
+    };
+    let result = dispatch_gateway_value(
+        state,
+        "acceptAgentInboundMessage",
+        json!({ "agentId": agent_id, "inbound": inbound }),
+    )?;
+    if result.get("accepted").and_then(Value::as_bool) != Some(true) {
+        return Ok(false);
+    }
+    if let Some(wake) = args
+        .get_mut("agentWake")
+        .and_then(Value::as_object_mut)
+    {
+        wake.insert("isDisplayed".into(), Value::Bool(true));
+    }
+    Ok(true)
+}
+
 fn enqueue_agent_inbound_wake(
     state: &Arc<CoordinatorState>,
     agent_id: String,
@@ -969,6 +1013,15 @@ fn enqueue_agent_inbound_wake(
     let worker_state = Arc::clone(state);
     let queue_key = agent_id.clone();
     let task = move || {
+        let mut args = args;
+        match accept_agent_inbound_message_for_execution(&worker_state, &agent_id, &mut args) {
+            Ok(true) => {}
+            Ok(false) => return,
+            Err(error) => {
+                report_agent_inbound_failure_best_effort(&worker_state, &agent_id, &error);
+                return;
+            }
+        }
         if provider == InferenceProvider::Cursor {
             if let Err(error) = dispatch_gateway_value(&worker_state, "sendPrompt", args.clone()) {
                 if let Some(redrive_args) =

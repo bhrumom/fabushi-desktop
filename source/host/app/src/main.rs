@@ -71,7 +71,7 @@ use mahayana_host_runtime::agents::agent_profile::{SandAgentProfile, get_sand_pr
 use mahayana_host_runtime::agents::settings_file::get_sand_settings_path;
 use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
     AgentWakeRequest, ProductionAgentToAgentMessaging, agent_inbound_failure_report,
-    agent_inbound_failure_tray, should_interrupt_priority_peer,
+    agent_inbound_failure_tray, persist_agent_inbound_message, should_interrupt_priority_peer,
 };
 use mahayana_host_runtime::extensions::memory::agent_state::SandAgentState;
 use mahayana_host_runtime::extensions::telemetry::HostTelemetryProjection;
@@ -7579,6 +7579,28 @@ impl GatewayApi for UnifiedGatewayApi {
                 "streamId": stream_id,
                 "cancelled": cancelled,
             }));
+        }
+        if method == "acceptAgentInboundMessage" {
+            let agent_id = args
+                .get("agentId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "acceptAgentInboundMessage requires agentId".into()
+                ))?;
+            let inbound = args
+                .get("inbound")
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "acceptAgentInboundMessage requires inbound".into()
+                ))?;
+            let accepted = persist_agent_inbound_message(
+                &self.session_workers,
+                agent_id,
+                inbound,
+            )
+            .map_err(GatewayCommandError::Internal)?;
+            return Ok(serde_json::json!({ "accepted": accepted }));
         }
         if method == "reportAgentInboundFailure" {
             let agent_id = args

@@ -90,6 +90,8 @@ pub struct AgentWakeRequest {
     pub member_ids: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub selected_images: Vec<Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inbound: Option<Value>,
 }
 
 pub type AgentWakeSink = Arc<dyn Fn(&AgentWakeRequest) + Send + Sync + 'static>;
@@ -163,6 +165,7 @@ impl ProductionAgentToAgentMessaging {
             (self.wake_sink)(&AgentWakeRequest {
                 agent_id:to_agent_id.into(), source_agent_id:from_agent_id.into(), prompt:message.clone(),
                 priority:false, member_ids:target.member_ids.clone(), selected_images:Vec::new(),
+                inbound: None,
             });
             let mut notes = Vec::new();
             if !images.is_empty() {
@@ -178,21 +181,20 @@ impl ProductionAgentToAgentMessaging {
             analytics(from_agent_id, to_agent_id, priority);
         }
         let _=self.sessions.add_agent_conversation_partner(from_agent_id,to_agent_id)?;
-        let _=self.sessions.add_agent_conversation_partner(to_agent_id,from_agent_id)?;
         let source_entries=self.sessions.read_agent_transcript_entries(from_agent_id)?;
-        let target_entries=self.sessions.read_agent_transcript_entries(to_agent_id)?;
         let outbound_id=next_entry_id(&source_entries,TranscriptEntryIdKind::AssistantMessage);
-        let inbound_id=next_entry_id(&target_entries,TranscriptEntryIdKind::UserMessage);
         let image_json=serde_json::to_value(images).map_err(|e|format!("could not encode agent message images: {e}"))?;
         self.sessions.append_agent_transcript_entries(from_agent_id,&[json!({
             "kind":"message","id":outbound_id,"role":"assistant","content":message,"isStreaming":false,
             "timestampMs":timestamp_ms,"toAgent":{"id":to_agent_id,"name":target.name,"kind":"agent"},"images":image_json.clone()
         })])?;
-        self.sessions.append_agent_transcript_entries(to_agent_id,&[json!({
-            "kind":"message","id":inbound_id,"role":"user","content":message,"isStreaming":false,
-            "timestampMs":timestamp_ms,"fromAgent":{"id":from_agent_id,"name":sender_name},"images":image_json
-        })])?;
-        let _=self.sessions.mark_agent_activity(to_agent_id,timestamp_ms as f64);
+        let inbound = json!({
+            "from": {"id": from_agent_id, "name": sender_name},
+            "text": message,
+            "timestampMs": timestamp_ms,
+            "images": image_json,
+            "priority": priority,
+        });
         let from=AgentAddress{
             id:from_agent_id.into(), name:sender_name,
             description:sender.and_then(|a|{let v=a.description.trim();(!v.is_empty()).then(||v.to_string())}),
@@ -227,6 +229,7 @@ impl ProductionAgentToAgentMessaging {
             agent_id:to_agent_id.into(),source_agent_id:from_agent_id.into(),
             prompt:build_agent_inbound_wake_prompt(&from,&message,images,priority),priority,member_ids:Vec::new(),
             selected_images,
+            inbound: Some(inbound),
         });
         if priority {
             if let Some(interrupt)=self.priority_interrupt.as_ref(){
@@ -239,6 +242,66 @@ impl ProductionAgentToAgentMessaging {
             format!("Sent to {}. This is asynchronous; if they reply, it'll arrive later as a new message.",target.name)
         })
     }
+}
+
+pub fn persist_agent_inbound_message(
+    sessions: &ProductionSessionWorkers,
+    agent_id: &str,
+    inbound: &Value,
+) -> Result<bool, String> {
+    if sessions.is_agent_being_deleted(agent_id) {
+        return Ok(false);
+    }
+    let Some(target) = sessions.summarize_agent_by_id(agent_id, None)? else {
+        return Ok(false);
+    };
+    if target.is_group || target.remote_room.is_some() {
+        return Ok(false);
+    }
+    let from = inbound
+        .get("from")
+        .and_then(Value::as_object)
+        .ok_or_else(|| "agent inbound message is missing from".to_string())?;
+    let from_id = from
+        .get("id")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "agent inbound message is missing from.id".to_string())?;
+    let from_name = from
+        .get("name")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("An agent");
+    let text = inbound
+        .get("text")
+        .and_then(Value::as_str)
+        .ok_or_else(|| "agent inbound message is missing text".to_string())?;
+    let timestamp_ms = inbound
+        .get("timestampMs")
+        .and_then(Value::as_u64)
+        .unwrap_or_else(now_ms);
+    let entries = sessions.read_agent_transcript_entries(agent_id)?;
+    let entry_id = next_entry_id(&entries, TranscriptEntryIdKind::UserMessage);
+    let mut entry = json!({
+        "kind": "message",
+        "id": entry_id,
+        "role": "user",
+        "content": text,
+        "isStreaming": false,
+        "timestampMs": timestamp_ms,
+        "fromAgent": {"id": from_id, "name": from_name},
+    });
+    if let Some(images) = inbound.get("images").filter(|value| {
+        value.as_array().is_some_and(|images| !images.is_empty())
+    }) {
+        entry["images"] = images.clone();
+    }
+    let _ = sessions.add_agent_conversation_partner(agent_id, from_id)?;
+    sessions.append_agent_transcript_entries(agent_id, &[entry])?;
+    let _ = sessions.mark_agent_activity(agent_id, timestamp_ms as f64)?;
+    Ok(true)
 }
 
 fn now_ms()->u64{

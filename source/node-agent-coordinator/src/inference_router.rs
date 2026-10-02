@@ -523,6 +523,11 @@ pub fn prepare_agent_inbound_wake_routes(
             if !selected_images.is_empty() && !is_group {
                 send_args["selectedImages"] = Value::Array(selected_images.clone());
             }
+            if !is_group {
+                if let Some(inbound) = payload.get("inbound").filter(|value| !value.is_null()) {
+                    send_args["agentWake"]["inbound"] = inbound.clone();
+                }
+            }
             if is_group {
                 send_args["groupContext"] = serde_json::json!({
                     "groupId": target_agent_id.clone(),

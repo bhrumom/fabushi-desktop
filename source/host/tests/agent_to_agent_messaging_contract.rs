@@ -8,7 +8,7 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::agent_error_telemetry;
 use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
     AgentWakeRequest, ProductionAgentToAgentMessaging, agent_inbound_failure_report,
-    agent_inbound_failure_tray, should_interrupt_priority_peer,
+    agent_inbound_failure_tray, persist_agent_inbound_message, should_interrupt_priority_peer,
 };
 use mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane;
 
@@ -19,7 +19,7 @@ fn temp_root()->std::path::PathBuf{
 fn profile(name:&str)->SandAgentProfile{SandAgentProfile{name:name.into(),description:String::new(),title:String::new(),avatar_shape:String::new(),avatar_color:String::new()}}
 
 #[test]
-fn direct_delivery_writes_both_transcripts_partners_activity_and_priority_interrupt(){
+fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
     let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
@@ -30,13 +30,19 @@ fn direct_delivery_writes_both_transcripts_partners_activity_and_priority_interr
     let ack=service.send_to_agent(&alpha.id,&beta.id,"  please review  ",&[AgentMessageImage{url:"https://example.com/chart.png".into(),alt:Some("chart".into())}],true).expect("send");
     assert!(ack.contains("priority"));
     let a=sessions.read_agent_transcript_entries(&alpha.id).expect("alpha transcript");
-    let b=sessions.read_agent_transcript_entries(&beta.id).expect("beta transcript");
+    let b=sessions.read_agent_transcript_entries(&beta.id).expect("beta transcript before admission");
     assert_eq!(a.len(),1);assert_eq!(a[0]["toAgent"]["id"],beta.id);assert_eq!(a[0]["content"],"please review");
-    assert_eq!(b.len(),1);assert_eq!(b[0]["fromAgent"]["id"],alpha.id);assert_eq!(b[0]["images"][0]["url"],"https://example.com/chart.png");
+    assert!(b.is_empty(), "recipient entry is deferred until execution admission");
     assert_eq!(sessions.get_agent_conversation_partner_ids(&alpha.id).expect("a partners"),vec![beta.id.clone()]);
-    assert_eq!(sessions.get_agent_conversation_partner_ids(&beta.id).expect("b partners"),vec![alpha.id.clone()]);
+    assert!(sessions.get_agent_conversation_partner_ids(&beta.id).expect("b partners before admission").is_empty());
     assert_eq!(interrupts.load(Ordering::SeqCst),1);
-    let wake=wakes.lock().expect("wakes").last().cloned().expect("wake");assert_eq!(wake.agent_id,beta.id);assert!(wake.priority);assert!(wake.prompt.starts_with("[agent]"));
+    let wake=wakes.lock().expect("wakes").last().cloned().expect("wake");
+    assert_eq!(wake.agent_id,beta.id);assert!(wake.priority);assert!(wake.prompt.starts_with("[agent]"));
+    let inbound = wake.inbound.as_ref().expect("direct inbound envelope");
+    assert!(persist_agent_inbound_message(&sessions, &beta.id, inbound).expect("persist inbound"));
+    let b=sessions.read_agent_transcript_entries(&beta.id).expect("beta transcript after admission");
+    assert_eq!(b.len(),1);assert_eq!(b[0]["fromAgent"]["id"],alpha.id);assert_eq!(b[0]["images"][0]["url"],"https://example.com/chart.png");
+    assert_eq!(sessions.get_agent_conversation_partner_ids(&beta.id).expect("b partners after admission"),vec![alpha.id.clone()]);
     sessions.shutdown();let _=fs::remove_dir_all(root);
 }
 
