@@ -8419,7 +8419,7 @@ impl GatewayApi for UnifiedGatewayApi {
                             "awaitTurn": true,
                             "source": "workflow-reference"
                         }),
-                        gateway_context,
+                        None,
                     );
                 }
             }
