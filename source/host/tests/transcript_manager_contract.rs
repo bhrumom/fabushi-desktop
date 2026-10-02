@@ -62,6 +62,19 @@ fn manager_is_the_single_production_composition_owner() {
     let workflows_b = manager.workflow_commands();
     assert!(Arc::ptr_eq(&workflows_a, &workflows_b));
 
+    let wakes_a = manager.background_wakes();
+    let wakes_b = manager.background_wakes();
+    assert!(Arc::ptr_eq(&wakes_a, &wakes_b));
+    {
+        let mut wakes = wakes_a.lock().expect("background wakes");
+        mahayana_host_runtime::extensions::transcript::background_wakes::BackgroundWakes::enqueue(
+            &mut wakes.pending_inbound,
+            "agent-a",
+            json!({"kind":"inbound"}),
+        );
+        wakes.dm_preempted_wake_agent_ids.insert("agent-a".into());
+    }
+
     let rooms_a = manager.shared_rooms();
     let rooms_b = manager.shared_rooms();
     assert!(Arc::ptr_eq(&rooms_a, &rooms_b));
@@ -144,6 +157,16 @@ fn manager_is_the_single_production_composition_owner() {
     assert!(workflows_a.watched_agent_id().is_none());
     assert!(runtime.session_runtime().pending_activation_agent_id().is_none());
     assert!(ack_a.redrive_schedule(&agent.id).is_none());
+    {
+        let wakes = wakes_a.lock().expect("background wakes after dispose");
+        assert!(wakes.pending_inbound.is_empty());
+        assert!(wakes.pending_channel_failures.is_empty());
+        assert!(wakes.pending_event_wakes.is_empty());
+        assert!(wakes.reviving_inbound_agent_ids.is_empty());
+        assert!(wakes.reviving_channel_failure_agent_ids.is_empty());
+        assert!(wakes.reviving_event_agent_ids.is_empty());
+        assert!(wakes.dm_preempted_wake_agent_ids.is_empty());
+    }
     assert_eq!(handoff.pending_count(), 0);
     assert_eq!(sessions.active_agent_store_owner_count(), 0);
     assert_eq!(sessions.active_agent_db_owner_count(), 0);

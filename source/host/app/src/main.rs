@@ -10603,8 +10603,7 @@ fn main() {
     };
     let timeline_event_runner_deps = cross_user_runner_deps.clone();
     let timeline_event_roster = Arc::clone(&roster_emit);
-    let timeline_event_wakes =
-        Arc::new(Mutex::new(BackgroundWakes::<serde_json::Value>::default()));
+    let timeline_event_wakes = transcript_manager.background_wakes();
     let timeline_event_wakes_for_sink = Arc::clone(&timeline_event_wakes);
     roster_emit.bind_timeline_wake_sink(Some(Arc::new(move |agent_id, event| {
         let agent_id = agent_id.trim().to_string();

@@ -25,6 +25,7 @@ use crate::extensions::turn_execution::turn_execution_service::{
 
 use super::ack_obligations::AckObligations;
 use super::automation_runtime::AutomationRuntime;
+use super::background_wakes::BackgroundWakes;
 use super::client_side_tool_v2_producer::{
     ClientSideToolV2ProducedValue, ClientSideToolV2Producer, ClientSideToolV2TransportEvent,
 };
@@ -111,6 +112,7 @@ pub struct TranscriptManager {
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
     automation_runtime: Arc<AutomationRuntime>,
+    background_wakes: Arc<Mutex<BackgroundWakes<Value>>>,
     client_side_tool_v2: Mutex<ClientSideToolV2Producer>,
     group_chat: Arc<GroupChatGlue>,
     widget_responses: Arc<WidgetResponses>,
@@ -142,6 +144,7 @@ impl TranscriptManager {
             runner_registry: Arc::new(TranscriptRunnerRegistry::default()),
             ack_obligations: Arc::new(AckObligations::new(root_dir)),
             automation_runtime,
+            background_wakes: Arc::new(Mutex::new(BackgroundWakes::default())),
             client_side_tool_v2: Mutex::new(ClientSideToolV2Producer::new()),
             group_chat,
             widget_responses,
@@ -172,6 +175,10 @@ impl TranscriptManager {
 
     pub fn automation_runtime(&self) -> Arc<AutomationRuntime> {
         Arc::clone(&self.automation_runtime)
+    }
+
+    pub fn background_wakes(&self) -> Arc<Mutex<BackgroundWakes<Value>>> {
+        Arc::clone(&self.background_wakes)
     }
 
     pub fn shared_rooms(&self) -> Arc<SharedRooms> {
@@ -410,6 +417,10 @@ impl TranscriptManager {
         self.ack_obligations.dispose();
         self.automation_runtime.dispose();
         self.workflow_commands.dispose();
+        *self
+            .background_wakes
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = BackgroundWakes::default();
         *self
             .client_side_tool_v2
             .lock()
