@@ -53,6 +53,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert!(shipping.contains(&HostExtensionId::ForeverBox));
     assert!(shipping.contains(&HostExtensionId::Attachments));
     assert!(shipping.contains(&HostExtensionId::Secrets));
+    assert!(shipping.contains(&HostExtensionId::TurnExecution));
     assert_eq!(inference_extension_id(), HostExtensionId::Inference);
     assert_eq!(
         INFERENCE_DEPENDENCIES,
@@ -134,6 +135,33 @@ fn box_stage_extensions_have_one_production_composition_owner() {
     assert!(
         SHIPPING_HOST.contains("start_production_host_box_extensions(&production_extensions, production_box)"),
         "shipping Host must consume the centralized Box-stage owner"
+    );
+}
+
+
+
+#[test]
+fn turn_execution_has_one_shipping_production_owner() {
+    for needle in [
+        "HostExtensionId::TurnExecution",
+        "pub turn_execution: Arc<Mutex<TurnExecutionRegistry>>",
+        "let (_, turn_execution_registry) = turn_execution_extension()",
+        "let turn_execution = Arc::new(Mutex::new(turn_execution_registry))",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own TurnExecution lifecycle: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains(
+            "let turn_execution_registry = Arc::clone(&production_extensions.turn_execution);"
+        ),
+        "shipping Host must consume the centralized TurnExecution owner"
+    );
+    assert!(
+        !SHIPPING_HOST.contains("turn_execution_extension()"),
+        "shipping Host must not construct a second TurnExecution registry"
     );
 }
 
