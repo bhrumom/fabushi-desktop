@@ -54,6 +54,26 @@ At the frozen root, `Telegram/Resources` contains 3,073 tracked files. `Telegram
 
 A filename-based search under the Telegram resource/shader/build/cmake/snap roots found no standalone resource `LICENSE`, `COPYING`, `NOTICE` or `LEGAL` file; files named `copyright.png` are UI icons rather than license declarations. That absence is not evidence that assets are license-free. Per-asset provenance remains a release/legal blocker where Fabushi copies or adapts an upstream asset.
 
+
+### Exact Telegram/Resources blob inventory and license boundary
+
+The frozen `Telegram/Resources` tree is Git tree `04a4a5357d010bf35bda1767c8b04955f64fc2ca`. Its recursive tree response is `truncated=false`: 3,159 total tree entries and exactly 3,073 blobs. `research/telegram-resources-blob-inventory.tsv` records every blob path, Git blob SHA and byte size, so later copied/adapted evidence can be matched to an immutable upstream object rather than a filename alone.
+
+The 3,073 blobs group by top-level resource root as follows: `icons` 2,736; `animations` 113; `art` 60; `export_html` 46; `uwp` 45; `qrc` 17; `emoji` 12; `langs` 12; `sounds` 11; `update` 4; `bot_webview_shell_html` 3; `export_rich` 2; `picker_html` 2; and the remaining root-level theme/config/text files one each.
+
+Five root theme blobs are identity-bounded: `day-blue.tdesktop-theme` = `ccc3dbdf9dc6d1aed5ae02df7d9430334839900f`; `day-custom-base.tdesktop-theme` = `162d90457d8254d3eefcf772c3ca62545a97508a`; `night-custom-base.tdesktop-theme` = `5fc6424ae95aff90aad8763baa1e905cb18b9a13`; `night-green.tdesktop-theme` = `a60d844be5fb5f709e7af7a7b2fc2be9fd8e57dc`; `night.tdesktop-theme` = `96f788d13efeb7264f40f86ea39f1cb573a4dc12`.
+
+All eleven bundled sound blobs are separately identity-bounded in the TSV, including call busy/connect/end/incoming/outgoing, group-call allowed/connect/end/recording-start/start, and message-incoming. The resource tree contains no `.ttf`, `.otf`, `.woff`, or `.woff2` font binary; paths named `icons/menu/fonts*.png` are menu icons, not font payloads. Font behavior/provenance therefore belongs to the actual font/system/build dependency surfaces rather than being falsely attributed to `Telegram/Resources`.
+
+A recursive filename audit found no resource-local `LICENSE`, `COPYING`, `NOTICE`, `README`, `AUTHORS`, `OFL` or equivalent licensing document in this exact tree. The only filename match for “copyright” is `icons/menu/copyright.png`, a UI icon. Consequently the blob inventory closes **identity/inventory**, not origin/license rights. No theme, sound, icon, animation, emoji, artwork or export resource may be labeled with the root source-code license merely by inheritance; its origin/license remains unresolved unless separate upstream evidence establishes it.
+
+### Copied/adapted provenance rule
+
+Any future Fabushi production change that copies, adapts, transforms, embeds, vendors, regenerates from, or distributes a Telegram-derived source/resource must add a release-review provenance row before acceptance containing at least: upstream repository + exact commit; upstream path + immutable blob/content digest; source license/notice evidence and asset-origin evidence where applicable; Fabushi destination path + resulting digest; whether the relation is copied, adapted, translated, regenerated, or behavior-only; a concise transformation description; required notices/attribution/source-offer obligations for review; platform/package scope; and the exact Fabushi commit/artifact that distributes it.
+
+Behavior-only research must stay distinguishable from copied/adapted material. Recording an upstream file as a research source does not make it a Fabushi dependency; conversely, rewriting logic in Rust/TypeScript does not erase source-informed provenance. A release review must be generated from the **actual Fabushi dependency/artifact graph**, then joined against these provenance rows. Unknown or unmatched distributed inputs fail closed as release blockers.
+
+
 ## Platform packaging surface
 
 The frozen source contains explicit packaging inputs for all three desktop families:
