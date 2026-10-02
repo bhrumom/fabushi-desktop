@@ -2236,6 +2236,7 @@ impl UnifiedGatewayApi {
             .schedule_deferred_activation(&agent_id, shipped_through_id.as_deref());
         let manager = Arc::clone(&self.transcript_manager);
         let roster = Arc::clone(&self.roster_emit);
+        let spawn_agent_id = agent_id.clone();
         if let Err(error) = thread::Builder::new()
             .name(format!("mahayana-windowed-activation-{agent_id}"))
             .spawn(move || {
@@ -2278,7 +2279,7 @@ impl UnifiedGatewayApi {
             })
         {
             eprintln!(
-                "mahayana-host windowed_activation_worker_spawn_failed agent={agent_id} error={error}"
+                "mahayana-host windowed_activation_worker_spawn_failed agent={spawn_agent_id} error={error}"
             );
         }
     }
