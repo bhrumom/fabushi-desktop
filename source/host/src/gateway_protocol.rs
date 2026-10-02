@@ -2,43 +2,13 @@ use serde_json::{Value, json};
 
 pub const GATEWAY_PREPARE_UPGRADE_PATH: &str = "/prepare-upgrade";
 
-pub const GROK_GATEWAY_COMMANDS: &[&str] = &[
-    "getTranscript", "getAgentTranscript", "getAgentTranscriptPage", "openAgentWindowed",
-    "getAgentTranscriptWindow", "openAgentTail", "getAgentTranscriptTail", "getAgentThread",
-    "sendPrompt", "promptAcceptanceStatus", "respondToWidget", "resolveAutoReviewApproval",
-    "resolveLocalToolPermission", "dismissWidget", "submitSecret", "reactToMessage",
-    "appendConnectorCard", "listAgents", "countAgents", "searchAgents", "searchMedia",
-    "createAgent", "kickstartAgent", "requestDiskSaverAudit", "createGroup", "setGroupMembers",
-    "updateAgent", "deleteAgent", "deleteAgents", "duplicateAgent", "setAgentUnread",
-    "setAgentNotificationsEnabled", "setAgentNotifyOnUpdates", "setAgentHiddenFromSidebar",
-    "openAgent", "setWindowFocused", "getAgentMemories", "deleteAgentMemory",
-    "clearAgentMemories", "getAgentAutomations", "listAllAutomations", "isAgentNetworkEnabled",
-    "isGlobalSearchEnabled", "isEgressTunnelAvailable", "getSharingState", "createRoomFromAgent",
-    "createRoomInvite", "joinSharedRoom", "respondToRoomJoinRequest", "createSharedRoom",
-    "addOwnAgentToSharedRoom", "removeOwnAgentFromSharedRoom", "setSharedRoomTyping",
-    "leaveSharedRoom", "setAgentAutomationEnabled", "createAgentAutomation",
-    "updateAgentAutomation", "deleteAgentAutomation", "runAgentAutomationNow",
-    "broadcastToAgents", "getAgentWorkflows", "createAgentWorkflow", "updateAgentWorkflow",
-    "setAgentWorkflowEnabled", "deleteAgentWorkflow", "runAgentWorkflowNow",
-    "importAgentWorkflowText", "importAgentWorkflowUrl", "portAgentLocalSkills",
-    "getConversationOutline", "skillsCatalog", "syncPluginSkills", "getPluginSyncStatus",
-    "getSkillPublishTargets", "publishSkill", "resyncPublishedSkill", "unpublishSkill",
-    "getAgentChannels", "connectChannel", "disconnectChannel", "refreshChannel",
-    "getListenerIntegrations", "getListenerConnectUrl", "getSubagents", "getAsyncTasks",
-    "setAgentAvatarBytes", "getAgentAvatar", "getForeverBoxStatus", "getCloudAgentInfo",
-    "ensureForeverBox", "resetForeverBox", "updateForeverBox", "autoUpdateBoxNow",
-    "snapshotBoxStoreNow", "getBoxStoreStatus", "clearBoxStoreNow", "updateHostNow",
-    "getHostStatus", "setBoxMigrating", "prepareBoxForRecreate", "resumeBoxAfterRecreate", "resumeAfterRecreate",
-    "handBackForeverBox", "startTeachRecording", "stopTeachRecording",
-    "getTeachRecordingStatus", "getTrays", "dismissTray", "clearTrays", "uploadAttachment",
-    "readAttachmentImage", "readAttachmentText", "readAttachmentChunk", "getHostSettings",
-    "setHostSettings", "setBoxSecrets", "getBoxSecretsStatus", "completeMcpOAuth",
-    "requestWebAuthnCeremony", "refreshMcp", "listRoutedMcpTools", "executeRoutedMcpTool",
-    "listBoxMcpServers",
-];
+pub use crate::host_gateway_api::FROZEN_HOST_GATEWAY_METHODS as GROK_GATEWAY_COMMANDS;
+use crate::host_gateway_api::host_gateway_owner;
+
+pub const RESUME_AFTER_RECREATE_COMPAT_METHOD: &str = "resumeAfterRecreate";
 
 pub fn is_grok_gateway_command(method: &str) -> bool {
-    GROK_GATEWAY_COMMANDS.contains(&method)
+    host_gateway_owner(method).is_some() || method == RESUME_AFTER_RECREATE_COMPAT_METHOD
 }
 
 pub fn parse_command_args(body: &[u8]) -> Result<Value, serde_json::Error> {
