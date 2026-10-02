@@ -49,13 +49,13 @@ type PermissionEventSink = Arc<dyn Fn(&SandLocalToolControllerEvent) + Send + Sy
 /// Concrete services are resolved by the shipping Host, while this owner controls
 /// the ordering and one-time projection into the Runner boundary.
 pub struct ProductionTurnStateSurfaces {
-    pub state_writer: Arc<dyn SandStateWriter>,
+    pub state_writer: Option<Arc<dyn SandStateWriter>>,
     pub multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
 }
 
 pub struct ProductionTurnCompositionHooks {
     pub agent_management_sink: Arc<dyn AgentManagementSink>,
-    pub state_writer: Arc<dyn SandStateWriter>,
+    pub state_writer: Option<Arc<dyn SandStateWriter>>,
     pub routine_auto_review: RoutineAutoReviewCallback,
     pub box_shell_review: BoxShellAutoReviewCallback,
     pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
@@ -106,8 +106,15 @@ impl HostRunnerComposition {
         &self,
         sessions: &ProductionSessionWorkers,
         agent_id: &str,
+        group_member_turn: bool,
         multitask_enabled: bool,
     ) -> Result<ProductionTurnStateSurfaces, String> {
+        if group_member_turn {
+            return Ok(ProductionTurnStateSurfaces {
+                state_writer: None,
+                multitask_todo_state: None,
+            });
+        }
         let sand_root = sessions
             .memory_service()
             .agents_root_dir()
@@ -122,7 +129,7 @@ impl HostRunnerComposition {
             None
         };
         Ok(ProductionTurnStateSurfaces {
-            state_writer,
+            state_writer: Some(state_writer),
             multitask_todo_state,
         })
     }
@@ -136,9 +143,13 @@ impl HostRunnerComposition {
         sessions: &ProductionSessionWorkers,
         data_dir: &Path,
         agent_id: &str,
+        group_member_turn: bool,
         report_outcome: JournalOutcomeReporter,
         is_journal_enabled: JournalEnabledReader,
-    ) -> Result<Arc<dyn AgentStateCheckpointSink>, String> {
+    ) -> Result<Option<Arc<dyn AgentStateCheckpointSink>>, String> {
+        if group_member_turn {
+            return Ok(None);
+        }
         let agent_store = sessions.open_agent_store_owner(agent_id)?;
         let blob_store = Arc::new(sessions.create_agent_blob_store(agent_id)?);
         let prior_state_bytes = agent_store.latest_checkpoint_bytes().unwrap_or_default();
@@ -160,20 +171,22 @@ impl HostRunnerComposition {
             prior_state_bytes,
             true,
         )?;
-        Ok(Arc::new(sink))
+        Ok(Some(Arc::new(sink)))
     }
 
     /// Construct the shipping Runner facade from the composed turn and lifecycle owners.
     pub fn compose_production_runner(
         &self,
         composition: TurnAgentComposition,
-        checkpoint_sink: Arc<dyn AgentStateCheckpointSink>,
+        checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
         upgrade_quiesce_signal: Arc<AtomicBool>,
         generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
     ) -> SandAgentRunner {
-        let owner = ProductionTurnAgentOwner::new(composition)
-            .with_agent_state_checkpoint_sink(checkpoint_sink)
+        let mut owner = ProductionTurnAgentOwner::new(composition)
             .with_upgrade_quiesce_signal(upgrade_quiesce_signal);
+        if let Some(checkpoint_sink) = checkpoint_sink {
+            owner = owner.with_agent_state_checkpoint_sink(checkpoint_sink);
+        }
         SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)
     }
 
@@ -188,10 +201,12 @@ impl HostRunnerComposition {
     ) -> TurnAgentComposition {
         let mut composition = create_production_runner_composition(input)
             .with_agent_management_sink(hooks.agent_management_sink)
-            .with_state_writer(hooks.state_writer)
             .with_routine_auto_review(hooks.routine_auto_review)
             .with_box_shell_review(hooks.box_shell_review);
 
+        if let Some(state_writer) = hooks.state_writer {
+            composition = composition.with_state_writer(state_writer);
+        }
         if let Some(subagent_task_sink) = hooks.subagent_task_sink {
             composition = composition.with_subagent_task_sink(subagent_task_sink);
             if let Some(subagent_task_review) = hooks.subagent_task_review {

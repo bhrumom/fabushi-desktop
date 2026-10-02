@@ -1,5 +1,7 @@
 const OWNER: &str = include_str!("../src/host_runner_composition.rs");
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+const GENERATED_STREAM: &str = include_str!("../src/runner/generated_agent_turn_stream.rs");
+const TURN_OWNER: &str = include_str!("../src/runner/production_turn_agent_owner.rs");
 
 #[test]
 fn host_runner_composition_owns_turn_decoration_order() {
@@ -8,7 +10,8 @@ fn host_runner_composition_owns_turn_decoration_order() {
         "pub fn compose_production_turn(",
         "create_production_runner_composition(input)",
         ".with_agent_management_sink(hooks.agent_management_sink)",
-        ".with_state_writer(hooks.state_writer)",
+        "if let Some(state_writer) = hooks.state_writer",
+        "composition = composition.with_state_writer(state_writer)",
         ".with_routine_auto_review(hooks.routine_auto_review)",
         ".with_box_shell_review(hooks.box_shell_review)",
         "composition.with_subagent_task_sink(subagent_task_sink)",
@@ -66,6 +69,8 @@ fn host_runner_composition_owns_transcript_checkpoint_wiring() {
         "GeneratedTranscriptOccurrenceCodec::new(RejectGeneratedToolJsonProjection)",
         "transcript_provider.route_for_session(",
         "ProductionAgentStateCheckpointSink::new(",
+        "if group_member_turn",
+        "return Ok(None)",
     ] {
         assert!(
             OWNER.contains(needle),
@@ -97,6 +102,8 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         "pub fn compose_turn_state_surfaces(",
         ".memory_service()",
         ".agents_root_dir()",
+        "group_member_turn: bool",
+        "state_writer: None",
         "SandAgentState::new(sand_root, agent_id.to_string())",
         "sessions.open_agent_db_owner(agent_id)?",
     ] {
@@ -128,7 +135,8 @@ fn host_runner_composition_owns_shipping_runner_construction() {
     for needle in [
         "pub fn compose_production_runner(",
         "ProductionTurnAgentOwner::new(composition)",
-        ".with_agent_state_checkpoint_sink(checkpoint_sink)",
+        "if let Some(checkpoint_sink) = checkpoint_sink",
+        "owner = owner.with_agent_state_checkpoint_sink(checkpoint_sink)",
         ".with_upgrade_quiesce_signal(upgrade_quiesce_signal)",
         "SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)",
     ] {
@@ -193,5 +201,45 @@ fn host_runner_composition_owns_computer_use_session_lifecycle() {
     assert!(
         SHIPPING_HOST.contains("worker_host_runner_composition.finish_computer_use_turn("),
         "shipping Host must delegate computer-use turn settlement",
+    );
+}
+
+
+#[test]
+fn group_member_turn_keeps_generated_lifecycle_without_private_state() {
+    let group_flag = SHIPPING_HOST
+        .find("let is_group_member_turn = args")
+        .expect("shipping Host must resolve group-member identity");
+    let private_memory = SHIPPING_HOST
+        .find("let memory_store = if is_group_member_turn")
+        .expect("private memory must be explicitly gated for group-member turns");
+    assert!(
+        group_flag < private_memory,
+        "group-member identity must be known before private memory is resolved",
+    );
+    assert!(
+        OWNER.contains("return Ok(None)")
+            && OWNER.contains("state_writer: None")
+            && OWNER.contains("group_member_turn: bool"),
+        "HostRunnerComposition must omit private checkpoint/state surfaces for group-member turns",
+    );
+    assert!(
+        SHIPPING_HOST.contains("if !is_group_member_turn")
+            && SHIPPING_HOST.contains("with_persist_image_callback(browser_persist_image)")
+            && SHIPPING_HOST.contains("with_persist_image_callback(computer_persist_image)"),
+        "group-member turns must not bind private image persistence callbacks",
+    );
+    assert!(
+        GENERATED_STREAM.contains(
+            "checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>"
+        ) && GENERATED_STREAM.contains(
+            "pub checkpoint: Option<TextTurnCheckpointArtifacts>"
+        ),
+        "generated Agent lifecycle must model private checkpointing as optional",
+    );
+    assert!(
+        TURN_OWNER.contains("run_production_generated_agent_stream(")
+            && !TURN_OWNER.contains("if let Some(checkpoint_sink) = checkpoint_sink"),
+        "absence of a private checkpoint must not downgrade the turn to a raw provider path",
     );
 }

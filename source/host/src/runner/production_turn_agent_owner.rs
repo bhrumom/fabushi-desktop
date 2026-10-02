@@ -120,22 +120,18 @@ impl ProductionTurnAgentOwner {
             Arc::clone(upgrade_quiescing),
             Arc::clone(&turn_quiesced),
             move |started| {
-                if let Some(checkpoint_sink) = checkpoint_sink {
-                    run_production_generated_agent_stream(
-                        composition_for_stream,
-                        checkpoint_sink,
-                        data_dir,
-                        lifecycle_messages,
-                        provider_messages,
-                        &options,
-                        started.owner.generation,
-                        Arc::clone(&stream_upgrade_quiescing),
-                        Arc::clone(&stream_turn_quiesced),
-                        on_text_delta,
-                    )
-                } else {
-                    composition.run(data_dir, provider_messages, on_text_delta)
-                }
+                run_production_generated_agent_stream(
+                    composition_for_stream,
+                    checkpoint_sink,
+                    data_dir,
+                    lifecycle_messages,
+                    provider_messages,
+                    &options,
+                    started.owner.generation,
+                    Arc::clone(&stream_upgrade_quiescing),
+                    Arc::clone(&stream_turn_quiesced),
+                    on_text_delta,
+                )
             },
         );
         if let (Ok(content), Some(finished)) = (&result, last_finished.as_mut()) {

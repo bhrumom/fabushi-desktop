@@ -4834,6 +4834,10 @@ fn start_routed_provider_task(
             "runner.startRoutedProvider requires streamId".into()
         ))?
         .to_string();
+    let is_group_member_turn = args
+        .get("groupMemberTurn")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false);
     let request_source = args
         .get("requestSource")
         .and_then(serde_json::Value::as_str)
@@ -4993,107 +4997,112 @@ fn start_routed_provider_task(
                 "could not read production agent directory for {agent_id}: {error}"
             )))?,
     );
-    let resolve_agent_summaries = Arc::clone(&agent_summaries);
-    let resolve_agent_name: Arc<dyn Fn(&str) -> String + Send + Sync> =
-        Arc::new(move |candidate: &str| {
-            resolve_agent_summaries
-                .iter()
-                .find(|summary| summary.id == candidate)
-                .map(|summary| summary.name.trim())
-                .filter(|name| !name.is_empty())
-                .map(str::to_string)
-                .unwrap_or_else(|| candidate.to_string())
-        });
-    let user_memory_store = memory_service.user_memory_store(
-        agent_id.clone(),
-        Arc::clone(&resolve_agent_name),
-    );
-    let user_memory_recall = user_memory_store.recall(
-        MEMORY_USER_PROFILE_PROMPT_LIMIT,
-        MEMORY_USER_RECENT_PROMPT_LIMIT,
-    );
-    let user_memory_location = to_model_visible_path(&user_memory_store.get_location())
-        .to_string_lossy()
-        .into_owned();
-    let user_memory_own_shard_location =
-        to_model_visible_path(&user_memory_store.get_own_shard_location())
+    let memory_store = if is_group_member_turn {
+        None
+    } else {
+        let resolve_agent_summaries = Arc::clone(&agent_summaries);
+        let resolve_agent_name: Arc<dyn Fn(&str) -> String + Send + Sync> =
+            Arc::new(move |candidate: &str| {
+                resolve_agent_summaries
+                    .iter()
+                    .find(|summary| summary.id == candidate)
+                    .map(|summary| summary.name.trim())
+                    .filter(|name| !name.is_empty())
+                    .map(str::to_string)
+                    .unwrap_or_else(|| candidate.to_string())
+            });
+        let user_memory_store = memory_service.user_memory_store(
+            agent_id.clone(),
+            Arc::clone(&resolve_agent_name),
+        );
+        let user_memory_recall = user_memory_store.recall(
+            MEMORY_USER_PROFILE_PROMPT_LIMIT,
+            MEMORY_USER_RECENT_PROMPT_LIMIT,
+        );
+        let user_memory_location = to_model_visible_path(&user_memory_store.get_location())
+            .to_string_lossy()
+            .into_owned();
+        let user_memory_own_shard_location =
+            to_model_visible_path(&user_memory_store.get_own_shard_location())
+                .to_string_lossy()
+                .into_owned();
+
+        let project_memory_store = memory_service.project_memory_store(
+            agent_id.clone(),
+            memory_service.project_membership_for_agent(&agent_id),
+            Arc::clone(&resolve_agent_name),
+        );
+        let mut project_memory_recall = project_memory_store.recall_for_prompt(
+            MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
+            MEMORY_PROJECT_RECENT_PROMPT_LIMIT,
+            MEMORY_PROJECT_INJECTED_CAP,
+        );
+        for block in &mut project_memory_recall.injected {
+            block.own_shard_dir = to_model_visible_path(&block.own_shard_dir);
+        }
+        let projects_root_location = to_model_visible_path(&project_memory_store.get_location())
             .to_string_lossy()
             .into_owned();
 
-    let project_memory_store = memory_service.project_memory_store(
-        agent_id.clone(),
-        memory_service.project_membership_for_agent(&agent_id),
-        Arc::clone(&resolve_agent_name),
-    );
-    let mut project_memory_recall = project_memory_store.recall_for_prompt(
-        MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
-        MEMORY_PROJECT_RECENT_PROMPT_LIMIT,
-        MEMORY_PROJECT_INJECTED_CAP,
-    );
-    for block in &mut project_memory_recall.injected {
-        block.own_shard_dir = to_model_visible_path(&block.own_shard_dir);
-    }
-    let projects_root_location = to_model_visible_path(&project_memory_store.get_location())
-        .to_string_lossy()
-        .into_owned();
+        let memory_store = memory_service.store_for_agent(&agent_id);
+        let memory_recall = memory_store.recall(MEMORY_RECENT_PROMPT_LIMIT);
+        let memory_location = to_model_visible_path(&memory_store.get_location())
+            .to_string_lossy()
+            .into_owned();
 
-    let memory_store = memory_service.store_for_agent(&agent_id);
-    let memory_recall = memory_store.recall(MEMORY_RECENT_PROMPT_LIMIT);
-    let memory_location = to_model_visible_path(&memory_store.get_location())
-        .to_string_lossy()
-        .into_owned();
-
-    const FROZEN_MEMORY_COMPACTION_EPOCH: u64 = 0;
-    let frozen_memory_snapshot = session_workers
-        .get_agent_memory_prompt_snapshot(&agent_id)
-        .map_err(|error| {
-            GatewayCommandError::Internal(format!(
-                "could not read production memory prompt snapshot for {agent_id}: {error}"
-            ))
-        })?
-        .and_then(|snapshot| {
-            let epoch = snapshot.compaction_epoch;
-            (epoch.is_finite()
-                && epoch >= 0.0
-                && epoch.fract() == 0.0
-                && epoch <= u64::MAX as f64)
-                .then(|| FrozenMemorySnapshot {
-                    render: snapshot.render,
-                    compaction_epoch: epoch as u64,
-                })
-        });
-    let disable_memory_freeze = std::env::var("SAND_DISABLE_MEMORY_FREEZE").ok();
-    let resolved_memory = resolve_combined_memory_system_prompt(
-        &user_memory_recall,
-        Some(&user_memory_location),
-        Some(&user_memory_own_shard_location),
-        &project_memory_recall,
-        Some(&projects_root_location),
-        &memory_recall,
-        Some(&memory_location),
-        frozen_memory_snapshot.as_ref(),
-        FROZEN_MEMORY_COMPACTION_EPOCH,
-        is_memory_freeze_enabled(disable_memory_freeze.as_deref()),
-    );
-    if let Some(snapshot) = resolved_memory.snapshot_to_persist.as_ref() {
-        session_workers
-            .set_agent_memory_prompt_snapshot(
-                &agent_id,
-                &serde_json::json!({
-                    "render": snapshot.render,
-                    "compactionEpoch": snapshot.compaction_epoch,
-                }),
-            )
+        const FROZEN_MEMORY_COMPACTION_EPOCH: u64 = 0;
+        let frozen_memory_snapshot = session_workers
+            .get_agent_memory_prompt_snapshot(&agent_id)
             .map_err(|error| {
                 GatewayCommandError::Internal(format!(
-                    "could not persist production memory prompt snapshot for {agent_id}: {error}"
+                    "could not read production memory prompt snapshot for {agent_id}: {error}"
                 ))
-            })?;
-    }
-    append_combined_memory_system_prompt(
-        &mut provider_messages,
-        &resolved_memory.render,
-    );
+            })?
+            .and_then(|snapshot| {
+                let epoch = snapshot.compaction_epoch;
+                (epoch.is_finite()
+                    && epoch >= 0.0
+                    && epoch.fract() == 0.0
+                    && epoch <= u64::MAX as f64)
+                    .then(|| FrozenMemorySnapshot {
+                        render: snapshot.render,
+                        compaction_epoch: epoch as u64,
+                    })
+            });
+        let disable_memory_freeze = std::env::var("SAND_DISABLE_MEMORY_FREEZE").ok();
+        let resolved_memory = resolve_combined_memory_system_prompt(
+            &user_memory_recall,
+            Some(&user_memory_location),
+            Some(&user_memory_own_shard_location),
+            &project_memory_recall,
+            Some(&projects_root_location),
+            &memory_recall,
+            Some(&memory_location),
+            frozen_memory_snapshot.as_ref(),
+            FROZEN_MEMORY_COMPACTION_EPOCH,
+            is_memory_freeze_enabled(disable_memory_freeze.as_deref()),
+        );
+        if let Some(snapshot) = resolved_memory.snapshot_to_persist.as_ref() {
+            session_workers
+                .set_agent_memory_prompt_snapshot(
+                    &agent_id,
+                    &serde_json::json!({
+                        "render": snapshot.render,
+                        "compactionEpoch": snapshot.compaction_epoch,
+                    }),
+                )
+                .map_err(|error| {
+                    GatewayCommandError::Internal(format!(
+                        "could not persist production memory prompt snapshot for {agent_id}: {error}"
+                    ))
+                })?;
+        }
+        append_combined_memory_system_prompt(
+            &mut provider_messages,
+            &resolved_memory.render,
+        );
+        Some(memory_store)
+    };
     let automation_store = session_workers
         .open_automation_store(&agent_id)
         .map_err(|error| GatewayCommandError::Internal(format!(
@@ -5345,6 +5354,7 @@ fn start_routed_provider_task(
             &session_workers,
             &data_dir,
             &agent_id,
+            is_group_member_turn,
             Arc::new(move |outcome| {
                 let cause = (outcome.outcome == "failed").then(|| {
                     SandErrorValue::new(match outcome.op.as_str() {
@@ -5377,10 +5387,6 @@ fn start_routed_provider_task(
             "could not initialize production Runner checkpoint composition for {agent_id}: {error}"
         )))?;
 
-    let is_group_member_turn = args
-        .get("groupMemberTurn")
-        .and_then(serde_json::Value::as_bool)
-        .unwrap_or(false);
     let group_room_id = is_group_member_turn
         .then(|| {
             args.get("groupRoomId")
@@ -5675,7 +5681,12 @@ fn start_routed_provider_task(
         .map(ToOwned::to_owned);
     let worker_send_is_fork = turn_input.options.is_fork;
     let turn_state_surfaces = host_runner_composition
-        .compose_turn_state_surfaces(&session_workers, &agent_id, multitask_enabled)
+        .compose_turn_state_surfaces(
+            &session_workers,
+            &agent_id,
+            is_group_member_turn,
+            multitask_enabled,
+        )
         .map_err(|error| GatewayCommandError::Internal(format!(
             "could not compose production turn state surfaces for {agent_id}: {error}"
         )))?;
@@ -7061,15 +7072,18 @@ fn start_routed_provider_task(
                         }),
                     });
                 });
-            let browser_executor: Arc<dyn BrowserToolExecutor> = Arc::new(
-                ProductionBrowserToolExecutor::new(
-                    Arc::clone(&box_resources),
-                    agent_id.clone(),
-                )
-                .with_auto_review_callback(browser_auto_review)
-                .with_persist_image_callback(browser_persist_image)
-                .with_possible_navigation_callback(browser_possible_navigation),
-            );
+            let mut browser_executor_owner = ProductionBrowserToolExecutor::new(
+                Arc::clone(&box_resources),
+                agent_id.clone(),
+            )
+            .with_auto_review_callback(browser_auto_review)
+            .with_possible_navigation_callback(browser_possible_navigation);
+            if !is_group_member_turn {
+                browser_executor_owner =
+                    browser_executor_owner.with_persist_image_callback(browser_persist_image);
+            }
+            let browser_executor: Arc<dyn BrowserToolExecutor> =
+                Arc::new(browser_executor_owner);
             let computer_media_agent_id = agent_id.clone();
             let computer_persist_image: ComputerPersistImageCallback = Arc::new(
                 move |bytes, mime| {
@@ -7099,10 +7113,9 @@ fn start_routed_provider_task(
             let computer_action_audit = Arc::clone(&action_audit_sink);
             let computer_action_agent_id = agent_id.clone();
             let computer_action_turn_id = stream_id.clone();
-            let computer_executor: Arc<dyn ComputerToolExecutor> = Arc::new(
+            let mut computer_executor_owner =
                 ProductionComputerToolExecutor::new(Arc::clone(&box_resources))
                     .with_auto_review_callback(computer_auto_review)
-                    .with_persist_image_callback(computer_persist_image)
                     .with_action_report_callback(Arc::new(move |reported, _tool_call_id| {
                         let action = match reported {
                             ReportedComputerAction::Drag { x, y } => serde_json::json!({
@@ -7170,7 +7183,13 @@ fn start_routed_provider_task(
                         }
                         Ok(())
                     })),
-            );
+            ;
+            if !is_group_member_turn {
+                computer_executor_owner =
+                    computer_executor_owner.with_persist_image_callback(computer_persist_image);
+            }
+            let computer_executor: Arc<dyn ComputerToolExecutor> =
+                Arc::new(computer_executor_owner);
             let file_transfer_executor: Arc<dyn FileTransferExecutor> = Arc::new(
                 ProductionFileTransferExecutor::new(
                     Arc::clone(&forever_box),
@@ -7512,7 +7531,9 @@ fn start_routed_provider_task(
             }
 
             if !waiting_user && !worker_turn_hidden {
-                if let Ok(content) = result.as_ref() {
+                if let (Ok(content), Some(worker_memory_store)) =
+                    (result.as_ref(), worker_memory_store.as_ref())
+                {
                     if let Some(user_prompt) = lifecycle_messages
                         .iter()
                         .rev()
@@ -7586,7 +7607,7 @@ fn start_routed_provider_task(
                                 TurnMemoryMode::Extract
                             };
                             let _ = run_turn_memory_with(
-                                &worker_memory_store,
+                                worker_memory_store,
                                 Some(episode_db.as_ref()),
                                 runner_started_at_ms as i64,
                                 exchange,

@@ -31,7 +31,7 @@ pub struct GeneratedAgentTurnContext<'a> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GeneratedAgentTurnState {
-    pub checkpoint: TextTurnCheckpointArtifacts,
+    pub checkpoint: Option<TextTurnCheckpointArtifacts>,
     pub assistant_content: String,
 }
 
@@ -60,7 +60,7 @@ impl GeneratedAgentTurnStreamError {
 
 struct ProductionGeneratedAgentStreamSource {
     composition: TurnAgentComposition,
-    checkpoint_sink: Arc<dyn AgentStateCheckpointSink>,
+    checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
 }
 
 impl<'ctx>
@@ -96,14 +96,18 @@ impl<'ctx>
                     &mut forward_delta,
                 )
                 .map_err(GeneratedAgentTurnStreamError::Provider)?;
-            let checkpoint = self
-                .checkpoint_sink
-                .stage_text_turn(
-                    context.lifecycle_messages,
-                    context.options,
-                    &assistant_content,
-                )
-                .map_err(GeneratedAgentTurnStreamError::Provider)?;
+            let checkpoint = match self.checkpoint_sink.as_ref() {
+                Some(checkpoint_sink) => Some(
+                    checkpoint_sink
+                        .stage_text_turn(
+                            context.lifecycle_messages,
+                            context.options,
+                            &assistant_content,
+                        )
+                        .map_err(GeneratedAgentTurnStreamError::Provider)?,
+                ),
+                None => None,
+            };
             Ok(GeneratedAgentTurnState {
                 checkpoint,
                 assistant_content,
@@ -113,7 +117,7 @@ impl<'ctx>
 }
 
 pub struct ProductionGeneratedAgentPersistence {
-    checkpoint_sink: Arc<dyn AgentStateCheckpointSink>,
+    checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
     cancellation: RoutedProviderCancellation,
     generation: u64,
     upgrade_quiescing: Arc<AtomicBool>,
@@ -122,7 +126,7 @@ pub struct ProductionGeneratedAgentPersistence {
 
 impl ProductionGeneratedAgentPersistence {
     pub fn new(
-        checkpoint_sink: Arc<dyn AgentStateCheckpointSink>,
+        checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
         cancellation: RoutedProviderCancellation,
         generation: u64,
         upgrade_quiescing: Arc<AtomicBool>,
@@ -134,6 +138,28 @@ impl ProductionGeneratedAgentPersistence {
             generation,
             upgrade_quiescing,
             turn_quiesced,
+        }
+    }
+
+    fn persist_generated_checkpoint(
+        &self,
+        context: &GeneratedAgentTurnContext<'_>,
+        checkpoint: &GeneratedAgentTurnState,
+    ) -> Result<(), String> {
+        match (
+            self.checkpoint_sink.as_ref(),
+            checkpoint.checkpoint.as_ref(),
+        ) {
+            (Some(checkpoint_sink), Some(staged)) => checkpoint_sink
+                .persist_staged_text_turn(context.options, staged)
+                .map_err(|error| error.to_string()),
+            (None, None) => Ok(()),
+            (Some(_), None) => Err(
+                "generated Agent stream lost its required private checkpoint".into(),
+            ),
+            (None, Some(_)) => Err(
+                "generated Agent stream produced a private checkpoint for a transient turn".into(),
+            ),
         }
     }
 }
@@ -163,9 +189,7 @@ impl<'ctx>
         checkpoint: &'a GeneratedAgentTurnState,
     ) -> OuterStreamFuture<'a, Result<(), String>> {
         Box::pin(async move {
-            self.checkpoint_sink
-                .persist_staged_text_turn(context.options, &checkpoint.checkpoint)
-                .map_err(|error| error.to_string())
+            self.persist_generated_checkpoint(context, checkpoint)
         })
     }
 
@@ -175,9 +199,7 @@ impl<'ctx>
         checkpoint: &'a GeneratedAgentTurnState,
     ) -> OuterStreamFuture<'a, Result<(), String>> {
         Box::pin(async move {
-            self.checkpoint_sink
-                .persist_staged_text_turn(context.options, &checkpoint.checkpoint)
-                .map_err(|error| error.to_string())
+            self.persist_generated_checkpoint(context, checkpoint)
         })
     }
 
@@ -214,7 +236,7 @@ impl InactiveTurnAgentOutputSink for LiveDeltaSink<'_> {
 
 pub fn run_production_generated_agent_stream(
     composition: TurnAgentComposition,
-    checkpoint_sink: Arc<dyn AgentStateCheckpointSink>,
+    checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
     data_dir: &Path,
     lifecycle_messages: &[ProviderMessage],
     provider_messages: &[ProviderMessage],
@@ -233,7 +255,7 @@ pub fn run_production_generated_agent_stream(
         >,
     > = Arc::new(ProductionGeneratedAgentStreamSource {
         composition,
-        checkpoint_sink: Arc::clone(&checkpoint_sink),
+        checkpoint_sink: checkpoint_sink.clone(),
     });
     let path = InactiveTurnAgentStreamPath::new(source);
     let persistence = ProductionGeneratedAgentPersistence::new(
