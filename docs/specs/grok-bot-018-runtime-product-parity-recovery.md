@@ -108,12 +108,39 @@ Required principles:
 - UI and Electron-native boundaries should use TypeScript/React where that is the best fit for Electron/DOM APIs; runtime, coordinator, Host/Runner, provider streaming, persistence, native execution, and computer-control paths should prefer Rust where it improves correctness, performance, resource use, and maintainability;
 - a module may use another language when the reference/platform ecosystem makes that clearly superior, but the decision must be recorded in the architecture manifest and may not alter the Grok-equivalent responsibility or contract;
 - Fabushi code, services, compatibility layers, product surfaces, or background processes that have no Grok counterpart must be removed from the canonical desktop implementation unless this spec explicitly approves a Fabushi-specific extension boundary;
+- **FBCP-001 is such an explicitly approved product extension boundary.** The Fabushi Bot Communication Platform absorbs complete Telegram communication capabilities into the existing Bot product. Communication Core, unified Identity/Conversation/Messaging/Media/Calls domains, Telegram Provider, and the InteractionGateway must not be removed merely because Grok Bot 0.18 lacks those product capabilities. This approval protects the product responsibility, not any particular legacy Telegram/messaging implementation; obsolete compatibility code may still be removed when replaced by the FBCP architecture;
 - the final shipped desktop application must not retain a second parallel legacy Fabushi runtime beside the Grok-shaped architecture;
 - Fabushi branding, service endpoints, signing identity, account implementation details, and approved native capabilities may differ through narrow adapters, but those differences must not create a different desktop orchestration architecture;
 - ordinary chat, Agents, creation flow, Plugins/connectors/MCP, process lifecycle, retry/recovery, power behavior, and UI interaction must match the approved Grok reference behavior;
 - no-op mirror files, placeholder counterparts, or manifest-only status changes are not parity evidence; every completed mapping must demonstrate production wiring and the corresponding desktop product effect.
 
 The desired end state is therefore: **Grok Bot 0.18’s architecture and product behavior under Fabushi identity, implemented with the best-fit language at each boundary, with Mahayana serving as the Rust implementation of Grok-equivalent coordinator/host/runtime roles where appropriate.**
+
+## 2A. Approved Fabushi product extension — FBCP-001
+
+The latest product direction explicitly defines **Fabushi Bot as the product root**. Telegram is not a second product and is not the architecture root. Instead, the product must absorb Telegram's complete communication capability set while preserving the Bot architecture being rebuilt by this specification.
+
+Canonical product specification:
+
+`docs/specs/fabushi-bot-communication-platform.md`
+
+Telegram source/provider sub-specification:
+
+`docs/specs/telegram-desktop-rust-equivalence-migration.md`
+
+This extension obeys the following boundary rules:
+
+- Grok-equivalent Coordinator / Host / Runner / Agent lifecycle / Plugins-MCP / Computer / Automations remain the canonical Agent execution architecture.
+- FBCP owns the product communication domains: Identity, Participant, Conversation, Messaging, Media, Calls, Search, Notifications and provider bindings.
+- Telegram network/protocol state is owned by the FBCP Telegram Provider, not by the Agent Host/Runner.
+- Communication data reaches models/Agents only through the explicit FBCP InteractionGateway, permission and policy boundary.
+- The final UX is one Fabushi product shell. A standalone Telegram workspace/application is not an approved extension.
+- Telegram-specific semantics may use typed provider extensions; they must not force Coordinator/Host/Runner to become Telegram-shaped.
+- All Telegram/desktop-app C++ production logic is governed by TDRP-001 and must ultimately be replaced by Rust production owners.
+- Existing legacy Telegram/messaging compatibility code is not automatically canonical merely because the capability is approved.
+- PR #20 acceptance remains scoped to its Grok-equivalent Bot architecture requirements. It is not blocked on implementing all of FBCP. However, PR #20 changes must preserve the approved FBCP boundary and must not delete, forbid or structurally preclude that product direction.
+
+When this spec says “remove Fabushi-only behavior with no Grok counterpart”, read that rule together with this explicit FBCP exception.
 
 ## 3. Non-goals / out of scope
 
@@ -123,7 +150,7 @@ The desired end state is therefore: **Grok Bot 0.18’s architecture and product
 - Requiring every Grok TypeScript/JavaScript file to become Rust when TypeScript/React is objectively the better implementation boundary for Electron or browser UI.
 - Requiring Grok’s `node-agent-coordinator` to remain Node. The folder/domain name is architectural provenance; Mahayana may implement that role in Rust.
 - Collapsing Coordinator + Host + Runner + renderer state into one Mahayana binary simply because Rust can implement all of them.
-- Keeping `desktop/src`, `desktop/electron`, `frontend/apps/web`, `third_party/mahayana`, compatibility adapters, Mini Apps, Telegram/messaging, payments, calls, or other Fabushi-only desktop subsystems after cutover unless they are mapped to a Grok counterpart or explicitly approved as a narrow Fabushi extension.
+- Keeping legacy Fabushi-only subsystems after cutover merely because they already exist. The default remains removal unless mapped to Grok or explicitly approved. **Exception:** FBCP-001 explicitly approves the communication-platform product responsibilities (including complete Telegram capability absorption) as a first-class extension. This does not grandfather the current Telegram/messaging compatibility files, Mini Apps implementation, payments implementation, calls implementation, or any duplicate runtime; each must either become the canonical FBCP implementation or be removed/replaced.
 - Reinterpreting “same architecture” as only matching high-level concepts. Folder/domain ownership, module boundaries, dependency direction, process boundaries, protocols, lifecycle ownership, retry/cancellation semantics, and persistence ownership must be mirrored and verified.
 - Rewriting Grok behavior into a new “cleaner” architecture when that changes responsibility or observable semantics. Improvements may be proposed only after architecture parity is proven or through an explicit spec exception.
 - Treating existing Fabushi features as automatically grandfathered. If no reference counterpart or approved extension exists, the default action is removal from the desktop product/code path.
