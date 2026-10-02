@@ -336,16 +336,17 @@ fn shipping_agent_posted_group_turn_routes_through_group_chat_glue_owner() {
     let body = &SHIPPING_HOST[start..end];
 
     assert!(body.contains("dispatch_runtime.shared_group_remote_executor()"));
-    assert!(body.contains("GroupChatGlue::new(dispatch_sessions)"));
-    assert!(body.contains("group_glue.run_group_turn("));
+    assert!(body.contains("deps.transcript_manager.group_chat()"));
+    assert!(body.contains("dispatch_group_chat.run_group_turn("));
+    assert!(!body.contains("GroupChatGlue::new("));
     assert!(body.contains("remote_executor,"));
     assert!(!body.contains("dispatch_local_group_send("));
 }
 
 #[test]
 fn shipping_group_fanout_keeps_cursor_on_the_canonical_host_runner_path() {
-    assert!(SHIPPING_HOST.contains("GroupChatGlue::new(Arc::clone(&self.session_workers))"));
-    assert!(SHIPPING_HOST.contains("group_glue.run_group_turn("));
+    assert!(SHIPPING_HOST.contains("self.transcript_manager.group_chat().run_group_turn("));
+    assert!(!SHIPPING_HOST.contains("GroupChatGlue::new(Arc::clone(&self.session_workers))"));
     assert!(SHIPPING_HOST.contains("self.cross_user.remote_executor()"));
     assert!(SHIPPING_HOST.contains("run_local_group_member_turn(deps.clone(), provider, Some(&member_room_id), request)"));
     assert!(SHIPPING_HOST.contains("start_routed_provider_task("));
@@ -356,8 +357,9 @@ fn shipping_group_fanout_keeps_cursor_on_the_canonical_host_runner_path() {
 #[test]
 fn shipping_shared_room_fanout_keeps_cursor_on_the_same_canonical_runner_path() {
     assert!(SHIPPING_HOST.contains("let run_shared_room_turn: SharedRoomTurnRunner"));
-    assert!(SHIPPING_HOST.contains("GroupChatGlue::new(Arc::clone(&shared_room_sessions))"));
-    assert!(SHIPPING_HOST.contains("group_glue.run_group_turn("));
+    assert!(SHIPPING_HOST.contains("let shared_room_group_chat = transcript_manager.group_chat();"));
+    assert!(SHIPPING_HOST.contains("shared_room_group_chat.run_group_turn("));
+    assert!(!SHIPPING_HOST.contains("GroupChatGlue::new(Arc::clone(&shared_room_sessions))"));
     assert!(SHIPPING_HOST.contains("Some(&member_room_id)"));
     assert!(!SHIPPING_HOST.contains("Cursor shared-room fanout remains on the compatibility path"));
 }
