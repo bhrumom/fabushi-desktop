@@ -535,6 +535,7 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     let conversations = dispatch(&runtime, "listHumanConversations", json!({}));
     assert_eq!(conversations.as_array().map(Vec::len), Some(1));
     assert_eq!(conversations[0]["id"], conversation_id);
+    assert_eq!(conversations[0]["updatedAt"], 0.0);
 
     let first = dispatch(
         &runtime,
@@ -550,6 +551,23 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     assert_eq!(first["authorKind"], "human");
     assert_eq!(first["authorId"], "human-local");
     assert_eq!(first["clientNonce"], "human-nonce-1");
+    let human_db = runtime
+        .open_human_conversation_db_owner(&conversation_id)
+        .expect("Human conversation database");
+    assert_eq!(
+        human_db
+            .get_unread_state()
+            .expect("Human conversation unread state")
+            .unread_count,
+        0.0,
+        "outgoing Human messages must not reuse Agent unread activity semantics"
+    );
+    assert_eq!(
+        human_db
+            .get_metadata("lastActivityAt")
+            .expect("Human conversation activity metadata"),
+        Some(json!(1234.0))
+    );
 
     let replay = dispatch(
         &runtime,
@@ -570,6 +588,8 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     );
     assert_eq!(transcript.as_array().map(Vec::len), Some(1));
     assert_eq!(transcript[0]["id"], "human-message:human-nonce-1");
+    let conversations_after_send = dispatch(&runtime, "listHumanConversations", json!({}));
+    assert_eq!(conversations_after_send[0]["updatedAt"], 1234.0);
 
     let conflicting = dispatch_production_session_gateway_call(
         &runtime,

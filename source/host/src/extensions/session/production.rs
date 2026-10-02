@@ -1307,11 +1307,16 @@ impl ProductionSessionWorkers {
                 .get("participantIds")
                 .cloned()
                 .unwrap_or_else(|| serde_json::json!([]));
+            let updated_at = metadata
+                .get("lastActivityAt")
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or_default();
             conversations.push(serde_json::json!({
                 "id": id,
                 "kind": "human",
                 "title": title,
                 "participantIds": participant_ids,
+                "updatedAt": updated_at,
             }));
         }
         conversations.sort_by(|left, right| {
@@ -1399,14 +1404,16 @@ impl ProductionSessionWorkers {
             }
             return Err("sendHumanMessage clientNonce already identifies different content".into());
         }
-        owner
-            .mark_activity(
-                entry
-                    .get("timestampMs")
-                    .and_then(serde_json::Value::as_f64)
-                    .unwrap_or_default(),
-            )
-            .map_err(|error| error.to_string())?;
+        let activity_at = entry
+            .get("timestampMs")
+            .and_then(serde_json::Value::as_f64)
+            .unwrap_or_default();
+        if !owner
+            .set_metadata("lastActivityAt", serde_json::json!(activity_at))
+            .map_err(|error| error.to_string())?
+        {
+            return Err("native Human message activity metadata was not durably updated".into());
+        }
         Ok(entry)
     }
 
