@@ -8541,7 +8541,9 @@ fn main() {
         dispose_background_work: Some({
             let cloud_agent_watches = Arc::clone(&cloud_agent_deletion_watches);
             let background_shell_watches = Arc::clone(&background_shell_deletion_watches);
+            let completion_revivals = Arc::clone(&completion_revivals);
             Arc::new(move |agent_id| {
+                completion_revivals.clear_agent_pending_completions(agent_id);
                 if let Some(watches) = cloud_agent_watches
                     .lock()
                     .unwrap_or_else(|poisoned| poisoned.into_inner())
