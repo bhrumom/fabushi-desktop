@@ -56,6 +56,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert!(shipping.contains(&HostExtensionId::Secrets));
     assert!(shipping.contains(&HostExtensionId::TurnExecution));
     assert!(shipping.contains(&HostExtensionId::Session));
+    assert!(shipping.contains(&HostExtensionId::AutoReview));
     assert_eq!(inference_extension_id(), HostExtensionId::Inference);
     assert_eq!(
         INFERENCE_DEPENDENCIES,
@@ -140,6 +141,35 @@ fn box_stage_extensions_have_one_production_composition_owner() {
     );
 }
 
+
+
+#[test]
+fn auto_review_has_one_shipping_production_lifecycle_owner() {
+    for needle in [
+        "HostExtensionId::AutoReview",
+        "auto_review: Mutex<Option<Arc<HostAutoReviewExtension>>>",
+        "pub fn start_auto_review(",
+        "start_auto_review_extension_with_expire_sweep_telemetry(",
+        "pub fn stop_auto_review(&self)",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own AutoReview lifecycle: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains("production_extensions.start_auto_review("),
+        "shipping Host must start AutoReview through the centralized production owner"
+    );
+    assert!(
+        SHIPPING_HOST.contains("production_extensions.stop_auto_review()"),
+        "shipping Host must stop AutoReview through the centralized production owner"
+    );
+    assert!(
+        !SHIPPING_HOST.contains("start_auto_review_extension_with_expire_sweep_telemetry("),
+        "shipping Host must not construct a second AutoReview extension"
+    );
+}
 
 
 #[test]
