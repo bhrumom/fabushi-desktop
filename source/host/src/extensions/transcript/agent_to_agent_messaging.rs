@@ -8,7 +8,10 @@ use crate::agents::agent_messaging::{
     AgentAddress, AgentMessageImage, build_agent_inbound_wake_prompt, clamp_agent_message,
 };
 use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::extensions::telemetry::agent_error_telemetry::AgentErrorReport;
+use crate::extensions::telemetry::sand_error_tags::SandErrorValue;
 use crate::extensions::trays::trays_service::PushErrorOptions;
+use crate::ports::telemetry::SandErrorDetail;
 use super::send_message_shaping::load_agent_inbound_images;
 use super::run_scheduler::RunLane;
 use super::transcript_entry_ids::{TranscriptEntryIdKind, next_entry_id};
@@ -20,14 +23,23 @@ pub fn agent_inbound_failure_report(
     request_id: Option<&str>,
     error_code: &str,
     detail: &str,
-) -> Value {
-    json!({
-        "source": "agent",
-        "conversationId": agent_id,
-        "requestId": request_id,
-        "error": error_code,
-        "detail": detail,
-    })
+) -> AgentErrorReport {
+    let error_code = error_code.trim();
+    let error = if error_code.is_empty() {
+        SandErrorValue::new("SAND-E0406")
+    } else {
+        SandErrorValue::new("SAND-E0406").with_string("connectCode", error_code)
+    };
+    AgentErrorReport {
+        source: "agent".into(),
+        conversation_id: agent_id.to_string(),
+        request_id: request_id.map(str::to_string),
+        error,
+        detail: Some(SandErrorDetail {
+            message: detail.to_string(),
+            stack: None,
+        }),
+    }
 }
 
 pub fn agent_inbound_failure_tray(

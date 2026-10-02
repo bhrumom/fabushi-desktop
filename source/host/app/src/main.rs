@@ -7602,12 +7602,17 @@ impl GatewayApi for UnifiedGatewayApi {
                 .and_then(serde_json::Value::as_str)
                 .map(str::trim)
                 .filter(|value| !value.is_empty());
-            self.telemetry_logs.report_agent_error(&agent_inbound_failure_report(
+            if let Err(error) = self.telemetry_logs.report_agent_error(&agent_inbound_failure_report(
                 agent_id,
                 request_id,
                 error_code,
                 detail,
-            ));
+            )) {
+                eprintln!(
+                    "mahayana-host agent_inbound_failure_telemetry_failed agent={} error={error}",
+                    agent_id
+                );
+            }
             let tray = self.trays.push_error(agent_inbound_failure_tray(
                 agent_id,
                 request_id,

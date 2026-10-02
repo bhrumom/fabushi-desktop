@@ -5,6 +5,7 @@ use std::time::{SystemTime,UNIX_EPOCH};
 use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::agent_error_telemetry;
 use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
     AgentWakeRequest, ProductionAgentToAgentMessaging, agent_inbound_failure_report,
     agent_inbound_failure_tray, should_interrupt_priority_peer,
@@ -210,11 +211,17 @@ fn agent_inbound_failure_projects_frozen_telemetry_and_tray() {
         "INFERENCE_PROVIDER_FAILED",
         "provider exploded",
     );
-    assert_eq!(report["source"], "agent");
-    assert_eq!(report["conversationId"], "agent-b");
-    assert_eq!(report["requestId"], "request-1");
-    assert_eq!(report["error"], "INFERENCE_PROVIDER_FAILED");
-    assert_eq!(report["detail"], "provider exploded");
+    assert_eq!(report.source, "agent");
+    assert_eq!(report.conversation_id, "agent-b");
+    assert_eq!(report.request_id.as_deref(), Some("request-1"));
+    assert_eq!(report.error.code, "SAND-E0406");
+    assert_eq!(
+        report.detail.as_ref().map(|detail| detail.message.as_str()),
+        Some("provider exploded")
+    );
+    let telemetry = agent_error_telemetry(&report);
+    assert_eq!(telemetry.metadata["error_code"], "SAND-E0406");
+    assert_eq!(telemetry.metadata["connect_code"], "INFERENCE_PROVIDER_FAILED");
 
     let tray = agent_inbound_failure_tray(
         "agent-b",
