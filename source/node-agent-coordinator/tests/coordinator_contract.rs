@@ -2164,6 +2164,24 @@ fn priority_peer_cancellation_redrives_agent_wake_exactly_once() {
 
 
 #[test]
+fn shipping_cursor_agent_inbound_failure_redrives_priority_supersede_before_reporting_error() {
+    let main = include_str!("../src/main.rs");
+    let cursor_start = main
+        .find("if provider == InferenceProvider::Cursor")
+        .expect("shipping Cursor agent-inbound branch");
+    let local_start = main[cursor_start..]
+        .find("if let Err(error) =")
+        .map(|offset| cursor_start + offset)
+        .expect("shipping local inference branch boundary");
+    let cursor_branch = &main[cursor_start..local_start];
+    assert!(cursor_branch.contains(
+        "redrive_agent_inbound_after_priority_preemption(&args, &error.message)"
+    ));
+    assert!(cursor_branch.contains("enqueue_agent_inbound_wake("));
+    assert!(cursor_branch.contains("report_agent_inbound_failure_best_effort"));
+}
+
+#[test]
 fn agent_inbound_failure_gateway_report_preserves_host_owned_error_context() {
     let args = agent_inbound_failure_gateway_args(
         "agent-target",

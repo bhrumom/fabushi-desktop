@@ -970,8 +970,23 @@ fn enqueue_agent_inbound_wake(
     let queue_key = agent_id.clone();
     let task = move || {
         if provider == InferenceProvider::Cursor {
-            if let Err(error) = dispatch_gateway_value(&worker_state, "sendPrompt", args) {
-                report_agent_inbound_failure_best_effort(&worker_state, &agent_id, &error);
+            if let Err(error) = dispatch_gateway_value(&worker_state, "sendPrompt", args.clone()) {
+                if let Some(redrive_args) =
+                    redrive_agent_inbound_after_priority_preemption(&args, &error.message)
+                {
+                    if let Err(redrive_error) = enqueue_agent_inbound_wake(
+                        &worker_state,
+                        agent_id.clone(),
+                        redrive_args,
+                    ) {
+                        eprintln!(
+                            "priority Cursor peer wake redrive could not enqueue agent={}: {}: {}",
+                            agent_id, redrive_error.code, redrive_error.message
+                        );
+                    }
+                } else {
+                    report_agent_inbound_failure_best_effort(&worker_state, &agent_id, &error);
+                }
             }
             return;
         }
