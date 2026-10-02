@@ -237,9 +237,9 @@ impl ProductionAgentToAgentMessaging {
             }
         }
         Ok(if priority {
-            format!("Sent to {} as a priority message — it will interrupt their current non-user work and wake them now. This is asynchronous; if they reply, it'll arrive later as a new message.",target.name)
+            format!("Sent to {} as a priority message — it will interrupt their current non-user work and wake them now. This is asynchronous — if they reply, it'll arrive later as a new message that wakes you; don't wait on it now.",target.name)
         } else {
-            format!("Sent to {}. This is asynchronous; if they reply, it'll arrive later as a new message.",target.name)
+            format!("Sent to {}. This is asynchronous — if they reply, it'll arrive later as a new message that wakes you; don't wait on it now.",target.name)
         })
     }
 }

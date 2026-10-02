@@ -47,6 +47,25 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
 }
 
 #[test]
+fn direct_peer_ack_preserves_frozen_async_non_waiting_guidance() {
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
+    let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
+    let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),Arc::new(|_|{}),None);
+    let normal=service.send_to_agent(&alpha.id,&beta.id,"hello",&[],false).expect("normal");
+    assert_eq!(
+        normal,
+        "Sent to Beta. This is asynchronous — if they reply, it'll arrive later as a new message that wakes you; don't wait on it now."
+    );
+    let priority=service.send_to_agent(&alpha.id,&beta.id,"urgent",&[],true).expect("priority");
+    assert_eq!(
+        priority,
+        "Sent to Beta as a priority message — it will interrupt their current non-user work and wake them now. This is asynchronous — if they reply, it'll arrive later as a new message that wakes you; don't wait on it now."
+    );
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
 fn priority_peer_preemption_never_interrupts_an_active_user_lane() {
     assert!(!should_interrupt_priority_peer(Some(RunLane::User)));
     assert!(should_interrupt_priority_peer(Some(RunLane::Agent)));
