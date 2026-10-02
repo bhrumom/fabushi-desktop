@@ -102,3 +102,8 @@ After this dossier, the source-research blockers are narrower:
 4. preserve behavior-level capability dossiers and owner resolution independently from build provenance.
 
 The generated-source map, shader source/output shape, tracked packaging-root identification, and recursive gitlink tree are no longer unknowns.
+
+
+## Fabushi release-review reachability
+
+The formal reverse-reachability input for the current Fabushi package graph is now recorded in `research/fabushi-release-review-input.md`. That dossier separates Telegram research-only acquisition uncertainty from dependencies/assets that can actually enter a Fabushi package, and records current Fabushi-specific provenance blockers for shipping Rust resolution, the stale offline-ASR packaging authority, and distributed asset origin evidence. These blockers must be resolved on the exact release-candidate SHA; they are not closed by the Telegram research inventory itself.
