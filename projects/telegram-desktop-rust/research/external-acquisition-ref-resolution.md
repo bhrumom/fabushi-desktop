@@ -49,12 +49,41 @@ The frozen build scripts use the refs below. `git ls-remote` was used on htch-ru
 | `https://github.com/boostorg/regex.git` | `boost-1.83.0` | `4cbcd3078e6ae10d05124379623a1bf03fcb9350` | remote tag/ref observed 2026-10-02 |
 | `https://github.com/google/googletest` | `release-1.11.0` | `e2239ee6043f73722e7aa812a459f54a28552929` | remote tag/ref observed 2026-10-02 |
 
+## Mutable/default refs and direct payloads observed on 2026-10-02
+
+The following observations were captured on `htch-runtime` from the URLs and refs present in the frozen build scripts. They improve reproducibility of the research snapshot, but mutable endpoints remain historical-provenance blockers unless an actual build record proves the same content was consumed.
+
+### Default/master Git refs
+
+| Frozen input | Observed identity | Strength / limitation |
+| --- | --- | --- |
+| `desktop-app/lzma` default branch | `455a368eec2ac5d94de4de71bbf7a8a0fa0d72b7` | remote HEAD observed 2026-10-02; frozen script does not pin it |
+| `FFmpeg/gas-preprocessor` default branch | `ac1836309c2e77023c228b7184485597286289d3` | remote HEAD observed 2026-10-02; frozen script does not pin it |
+| Chromium `external/gyp@master` | `1615ec326858f8c2bd8f30b3a86ea71830409ce4` | master observed 2026-10-02; mutable branch |
+| `desktop-app/gyp` short checkout `5e2425c47b` | `5e2425c47ba62aea63b20887ce545058b2dddec6` | short commit expanded to full immutable identity |
+| `desktop-app/rnnoise` short checkout `d8ea2b0` | `d8ea2b0ec6a88f8a68d6904d75e33b4f09cb2987` | short commit expanded to full immutable identity |
+
+### Downloaded payload observations
+
+| Frozen URL/input | Bytes | SHA256 observed 2026-10-02 | Strength / limitation |
+| --- | ---: | --- | --- |
+| `https://sh.rustup.rs` | 29,915 | `7d0ea0f8eba7fa1ebfe998091cd7ec4501e33ec5ca6b884eb4d894d7da5170af` | mutable bootstrap endpoint; current-content observation only |
+| `https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe` | 12,721,664 | `6f4bef66261261fcb43131be8720bab817d403a09edec7455c371974b90bdb7e` | mutable bootstrap path; current-content observation only |
+| `https://dist.nuget.org/win-x86-commandline/latest/nuget.exe` | 8,695,632 | `992d70cac5b06c38efec91806caba64cdcc07e6d963a0959dbbbaf264d33b800` | explicit `latest`; current-content observation only |
+| `https://master.qt.io/official_releases/jom/jom_1_1_3.zip` | 1,213,852 | `128fdd846fe24f8594eed37d1d8929a0ea78df563537c0c1b1861a635013fff8` | versioned archive content observed |
+| `https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.18.tar.gz` | 5,822,590 | `3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8` | versioned archive content observed |
+| `https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.gz` | 210,975,925 | `5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9` | versioned archive content observed |
+| `https://github.com/msys2/msys2-installer/releases/download/2026-09-27/msys2-base-x86_64-20260927.sfx.exe` | 43,117,824 | `ad336cccfda47758b5e15cda993fbba421115cb0b126697daef1ee4dfe37209f` | versioned release asset content observed |
+
+The frozen acquisition entrypoint files themselves were also re-fetched by exact Telegram commit and hashed: `prepare.py` = `98099d5a1c1ca530bf906ba4b29e54696640dd3a58ca155c0a3762fba6a10571`, CentOS `Dockerfile` = `2bd57a70b63c08afc7ccf7fcd48992a4ee1a75499bf531bb52e268b208282516`, and `snapcraft.yaml` = `5640e9f7b31b0464bcd0fa2dc66b44065d40d42ae8b893bb3b6a99ae8530bd4b`. These hashes bind the research inventory to the exact frozen source inputs.
+
 ## Explicitly unresolved mutable/bootstrap surfaces
 
-- `Telegram/build/prepare/prepare.py`: NuGet `/latest/nuget.exe`; Chromium gyp `@master`; default-branch clones including `desktop-app/lzma` and `FFmpeg/gas-preprocessor`; rustup installer/bootstrap URLs; pip/package-manager resolution; any short commit must be expanded/verified before release provenance.
-- `Telegram/build/docker/centos_env/Dockerfile`: rustup bootstrap plus package-manager repository state. Its explicit full-SHA `git fetch` inputs are already immutable source identities; its tag/branch clones are only observationally resolved above.
-- `snap/snapcraft.yaml`: `source-commit` entries are immutable identities, while `source-tag`/`source-branch` and build/stage packages require the actual Snap build resolution or digest.
-- Direct archive URLs such as versioned Boost/jom/MSYS2/libiconv inputs still require content digests and license records; a version-bearing URL is not a content digest.
+- `prepare.py`: the observed NuGet `latest`, Chromium gyp `master`, `desktop-app/lzma` default branch, `FFmpeg/gas-preprocessor` default branch and rustup payloads now have dated identities above, but the frozen script still lacks immutable pins for those mutable inputs. Historical build provenance therefore remains unresolved unless an actual build record supplies the consumed commit/digest.
+- `prepare.py` and the CentOS Dockerfile still use pip and platform package managers without a repository snapshot/lock that identifies the exact package artifacts consumed.
+- `snap/snapcraft.yaml`: `source-commit` entries are immutable identities, while `source-tag`/`source-branch` and build/stage packages still require actual Snap build resolution or digest.
+- `https://code.videolan.org/videolan/dav1d.git` tag `1.5.4` remains unresolved from the original remote in this evidence set; the GitHub mirror observation is not substituted for the source URL.
+- License records are still required for every external acquisition that would enter a distributed Fabushi artifact. The hashes above are provenance identities, not license clearance.
 
 ## Closure rule
 
