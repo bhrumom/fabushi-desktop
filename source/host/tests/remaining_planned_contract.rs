@@ -2,7 +2,8 @@ use mahayana_host_runtime::extensions::telemetry::box_log_shipper::{
     classify_offset_save_errno, is_box_log_shipping_enabled, saturating_add, to_source_name,
 };
 use mahayana_host_runtime::extensions::transcript::background_wakes::{
-    BackgroundWakes, build_timeline_event_wake_prompt, distinct_channel_addresses,
+    BackgroundWakes, build_channel_inbound_wake_prompt, build_timeline_event_wake_prompt,
+    distinct_channel_addresses, distinct_inbound_channel_addresses, redrivable_inbound_envelopes,
 };
 use mahayana_host_runtime::extensions::transcript::client_side_tool_v2_projection::{
     ProjectedClientSideToolV2, ToolProjectionPhase, project_basic_tool_call,
@@ -59,6 +60,41 @@ fn background_wakes_dedupe_addresses_and_fence_parallel_revival() {
         BackgroundWakes::take_pending(&mut wakes.pending_inbound, "agent"),
         vec![1, 2]
     );
+}
+
+#[test]
+fn channel_inbound_wake_prompt_and_redrive_match_frozen_contract() {
+    let envelopes = vec![
+        serde_json::json!({
+            "address": {"platform": "slack", "chat": "C123"},
+            "sender": "Ada",
+            "text": "Status?",
+            "timestampMs": 10,
+        }),
+        serde_json::json!({
+            "address": {"platform": "slack", "chat": "C123"},
+            "sender": "Lin",
+            "text": "",
+            "reaction": {"emoji": "👍", "messageQuote": "Shipped"},
+            "timestampMs": 11,
+        }),
+    ];
+    assert_eq!(
+        distinct_inbound_channel_addresses(&envelopes),
+        vec!["slack:C123"]
+    );
+    let prompt = build_channel_inbound_wake_prompt(&envelopes);
+    assert!(prompt.starts_with("[inbound] New messages on a channel you are connected to."));
+    assert!(prompt.contains(
+        "On Slack, from slack:C123:\n  Ada: Status?\n  Lin reacted 👍 to your message: \"Shipped\""
+    ));
+    assert!(prompt.contains("Reply to them by calling SendMessage with the channel target"));
+
+    let redriven = redrivable_inbound_envelopes(&envelopes);
+    assert_eq!(redriven.len(), 2);
+    assert_eq!(redriven[0]["isDisplayed"], true);
+    assert_eq!(redriven[0]["isRedriven"], true);
+    assert!(redrivable_inbound_envelopes(&redriven).is_empty());
 }
 
 #[test]

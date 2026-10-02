@@ -105,7 +105,9 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
 use mahayana_host_runtime::extensions::transcript::background_wakes::{
-    BackgroundWakes, build_timeline_event_wake_prompt,
+    BackgroundWakes, build_channel_inbound_wake_prompt, build_timeline_event_wake_prompt,
+    distinct_inbound_channel_addresses, format_channel_address_value,
+    redrivable_inbound_envelopes,
 };
 use mahayana_host_runtime::extensions::transcript::completion_revivals::{
     CompletionRevivalRuntimePort, CompletionRevivals, RevivalExecution, RevivalReport,
@@ -132,6 +134,9 @@ use mahayana_host_runtime::extensions::transcript::send_acceptance::emit_accepte
 use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
 use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
 use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManager;
+use mahayana_host_runtime::extensions::transcript::transcript_entry_ids::{
+    TranscriptEntryIdKind, next_entry_id,
+};
 use mahayana_host_runtime::extensions::transcript::extension::start_transcript_extension;
 use mahayana_host_runtime::extensions::transcript::send_message_shaping::shape_send_prompt_media_args;
 use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
@@ -240,7 +245,7 @@ use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::AgentEr
 use mahayana_host_runtime::extensions::telemetry::journal_outcome_telemetry::JournalOutcomeReport;
 use mahayana_host_runtime::extensions::telemetry::sand_error_tags::SandErrorValue;
 use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
-use mahayana_host_runtime::extensions::transcript::turn_runtime::classify_agent_error;
+use mahayana_host_runtime::extensions::transcript::turn_runtime::{REPLY_NUDGE_PROMPT, classify_agent_error};
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
 use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxRunnerResourcePort, BoxStatus, ForeverBoxService,
@@ -970,6 +975,7 @@ struct UnifiedGatewayApi {
     completion_revivals: Arc<CompletionRevivals>,
     transcript_manager: Arc<TranscriptManager>,
     roster_emit: Arc<ProductionRosterEmit>,
+    background_wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
     telemetry_logs: HostStructuredLogTelemetry,
     product_analytics: HostProductAnalytics,
     telemetry_api: HostTelemetryApi,
@@ -3485,6 +3491,198 @@ fn run_local_background_revival_turn(
             }
         }
     }
+}
+
+fn append_channel_inbound_entries(
+    deps: &LocalRoutedRunnerDeps,
+    roster: &ProductionRosterEmit,
+    agent_id: &str,
+    envelopes: &[serde_json::Value],
+) -> Result<(), String> {
+    let mut transcript = deps
+        .session_workers
+        .read_agent_transcript_entries(agent_id)
+        .unwrap_or_default();
+    let mut entries = Vec::new();
+    for envelope in envelopes.iter().filter(|envelope| {
+        envelope.get("isDisplayed").and_then(serde_json::Value::as_bool) != Some(true)
+    }) {
+        let channel = envelope
+            .get("address")
+            .and_then(format_channel_address_value)
+            .unwrap_or_default();
+        let entry = serde_json::json!({
+            "kind": "message",
+            "id": next_entry_id(&transcript, TranscriptEntryIdKind::UserMessage),
+            "role": "user",
+            "content": envelope.get("text").and_then(serde_json::Value::as_str).unwrap_or_default(),
+            "isStreaming": false,
+            "timestampMs": envelope.get("timestampMs").cloned().unwrap_or_else(|| serde_json::Value::Number(started_at_ms().into())),
+            "channel": channel,
+            "channelSender": envelope.get("sender").cloned().unwrap_or(serde_json::Value::Null),
+        });
+        transcript.push(entry.clone());
+        entries.push(entry);
+    }
+    if entries.is_empty() {
+        return Ok(());
+    }
+    deps.session_workers
+        .append_agent_transcript_entries(agent_id, &entries)?;
+    let _ = deps
+        .session_workers
+        .mark_agent_activity(agent_id, started_at_ms() as f64);
+    let _ = roster.emit_agent_update(agent_id);
+    Ok(())
+}
+
+fn publish_channel_activity(
+    events: &GatewayEventHub,
+    agent_id: &str,
+    addresses: &[String],
+    is_active: bool,
+) {
+    for address in addresses {
+        events.publish(serde_json::json!({
+            "channel": "channel-activity",
+            "payload": {
+                "agentId": agent_id,
+                "address": address,
+                "isActive": is_active,
+            }
+        }));
+    }
+}
+
+fn run_channel_inbound_revival_worker(
+    deps: LocalRoutedRunnerDeps,
+    roster: Arc<ProductionRosterEmit>,
+    wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
+    agent_id: String,
+) {
+    loop {
+        let envelopes = {
+            let mut wakes = wakes
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            BackgroundWakes::take_pending(&mut wakes.pending_inbound, &agent_id)
+        };
+        if envelopes.is_empty() {
+            break;
+        }
+
+        let Ok(Some(summary)) = deps.session_workers.summarize_agent_by_id(&agent_id, None) else {
+            break;
+        };
+        if summary.is_group {
+            continue;
+        }
+        if let Err(error) = append_channel_inbound_entries(&deps, roster.as_ref(), &agent_id, &envelopes) {
+            eprintln!("mahayana-host channel_inbound_persist_failed agent={agent_id} error={error}");
+            continue;
+        }
+
+        let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
+            let mut state = wakes
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            let pending = state.pending_inbound.remove(&agent_id).unwrap_or_default();
+            state.pending_inbound.insert(
+                agent_id.clone(),
+                envelopes.into_iter().chain(pending).collect(),
+            );
+            break;
+        };
+        if deps.transcript_runtime.is_quiescing_for_upgrade() {
+            let mut state = wakes
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            let pending = state.pending_inbound.remove(&agent_id).unwrap_or_default();
+            state.pending_inbound.insert(
+                agent_id.clone(),
+                envelopes.into_iter().chain(pending).collect(),
+            );
+            break;
+        }
+
+        let addresses = distinct_inbound_channel_addresses(&envelopes);
+        publish_channel_activity(&deps.events, &agent_id, &addresses, true);
+        let prompt = build_channel_inbound_wake_prompt(&envelopes);
+        let result = run_local_background_revival_turn(
+            deps.clone(),
+            provider,
+            &agent_id,
+            "connector",
+            &prompt,
+            false,
+            "continue",
+        );
+        publish_channel_activity(&deps.events, &agent_id, &addresses, false);
+
+        match result {
+            Ok(execution) if execution.aborted => {
+                let preempted = {
+                    let mut state = wakes
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    state.dm_preempted_wake_agent_ids.remove(&agent_id)
+                };
+                if preempted {
+                    let redrivable = redrivable_inbound_envelopes(&envelopes);
+                    if !redrivable.is_empty() {
+                        let mut state = wakes
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner());
+                        let pending = state.pending_inbound.remove(&agent_id).unwrap_or_default();
+                        state.pending_inbound.insert(
+                            agent_id.clone(),
+                            redrivable.into_iter().chain(pending).collect(),
+                        );
+                    }
+                }
+            }
+            Ok(execution) => {
+                if execution.sent_message_count == 0 {
+                    let _ = run_local_background_revival_turn(
+                        deps.clone(),
+                        provider,
+                        &agent_id,
+                        "connector",
+                        REPLY_NUDGE_PROMPT,
+                        false,
+                        "continue",
+                    );
+                }
+                let _ = roster.emit_agent_update(&agent_id);
+            }
+            Err(error) => {
+                let classified_error = ProviderSessionError::Tool(error.clone());
+                let report = AgentErrorReport {
+                    source: "connector".into(),
+                    conversation_id: agent_id.clone(),
+                    request_id: None,
+                    error: classify_agent_error(&classified_error),
+                    detail: Some(sand_error_detail(&error)),
+                };
+                if let Err(telemetry_error) = deps.telemetry_logs.report_agent_error(&report) {
+                    eprintln!(
+                        "mahayana-host channel_inbound_telemetry_failed agent={} error={telemetry_error}",
+                        agent_id
+                    );
+                }
+                let mut tray = provider_failure_tray(&agent_id, &error, started_at_ms() as i64);
+                tray.title = "Channel message follow-up failed".into();
+                deps.trays.push_error(tray);
+            }
+        }
+    }
+    let mut state = wakes
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    BackgroundWakes::<serde_json::Value>::end_revival(
+        &mut state.reviving_inbound_agent_ids,
+        &agent_id,
+    );
 }
 
 fn start_ack_redrive_worker(
@@ -6977,6 +7175,67 @@ impl GatewayApi for UnifiedGatewayApi {
         method: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+        if method == "wakeForInbound" {
+            let agent_id = args
+                .get("agentId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "wakeForInbound requires agentId".into(),
+                ))?
+                .to_string();
+            let envelope = args
+                .get("envelope")
+                .cloned()
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "wakeForInbound requires envelope".into(),
+                ))?;
+            let should_spawn = {
+                let mut wakes = self
+                    .background_wakes
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                BackgroundWakes::enqueue(&mut wakes.pending_inbound, agent_id.clone(), envelope);
+                BackgroundWakes::<serde_json::Value>::begin_revival(
+                    &mut wakes.reviving_inbound_agent_ids,
+                    &agent_id,
+                )
+            };
+            if should_spawn {
+                let deps = self.local_routed_runner_deps();
+                let roster = Arc::clone(&self.roster_emit);
+                let wakes = Arc::clone(&self.background_wakes);
+                let worker_agent_id = agent_id.clone();
+                if let Err(error) = thread::Builder::new()
+                    .name(format!("mahayana-channel-inbound-{agent_id}"))
+                    .spawn(move || {
+                        run_channel_inbound_revival_worker(
+                            deps,
+                            roster,
+                            wakes,
+                            worker_agent_id,
+                        );
+                    })
+                {
+                    let mut wakes = self
+                        .background_wakes
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    BackgroundWakes::<serde_json::Value>::end_revival(
+                        &mut wakes.reviving_inbound_agent_ids,
+                        &agent_id,
+                    );
+                    return Err(GatewayCommandError::Internal(format!(
+                        "could not start channel inbound worker: {error}"
+                    )));
+                }
+            }
+            return Ok(serde_json::json!({
+                "queued": true,
+                "revivalStarted": should_spawn,
+            }));
+        }
         if let Some(result) =
             dispatch_connector_auth_gateway(&self.telemetry_logs, method, &args)
         {
@@ -7712,6 +7971,19 @@ impl GatewayApi for UnifiedGatewayApi {
             let was_in_flight = cancelled_agent_id
                 .as_deref()
                 .is_some_and(|agent_id| self.transcript_runtime.is_agent_running(agent_id));
+            if reason.to_ascii_lowercase().contains("superseded") {
+                if let Some(agent_id) = cancelled_agent_id.as_deref() {
+                    if self.transcript_runtime.active_turn_source(agent_id).as_deref()
+                        == Some("connector")
+                    {
+                        self.background_wakes
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner())
+                            .dm_preempted_wake_agent_ids
+                            .insert(agent_id.to_string());
+                    }
+                }
+            }
             let cancelled = self.runner_registry.cancel_stream(stream_id, reason);
             if reason.to_ascii_lowercase().contains("superseded") {
                 if let Some(agent_id) = cancelled_agent_id.as_deref() {
@@ -9658,6 +9930,7 @@ fn main() {
             completion_revivals: Arc::clone(&completion_revivals),
             transcript_manager: Arc::clone(&transcript_manager),
             roster_emit: Arc::clone(&roster_emit),
+            background_wakes: Arc::clone(&timeline_event_wakes),
             telemetry_logs: host_telemetry.logs.clone(),
             product_analytics: host_telemetry.analytics.clone(),
             telemetry_api: host_telemetry.api(),

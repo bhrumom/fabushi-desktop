@@ -3,6 +3,137 @@ use std::collections::{HashMap, HashSet};
 use serde_json::Value;
 
 pub const TIMELINE_EVENT_WAKE_CUE: &str = "[event]";
+pub const CHANNEL_INBOUND_WAKE_CUE: &str = "[inbound]";
+
+pub fn format_channel_address_value(address: &Value) -> Option<String> {
+    if let Some(raw) = address.as_str() {
+        let trimmed = raw.trim();
+        return (!trimmed.is_empty()).then(|| trimmed.to_string());
+    }
+    let platform = address.get("platform")?.as_str()?.trim();
+    let chat = address.get("chat")?.as_str()?.trim();
+    if platform.is_empty() || chat.is_empty() {
+        return None;
+    }
+    Some(format!("{platform}:{chat}"))
+}
+
+fn channel_platform_display_name(address: &Value) -> String {
+    let platform = address
+        .get("platform")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    match platform {
+        "slack" => "Slack".to_string(),
+        "discord" => "Discord".to_string(),
+        other => other.to_string(),
+    }
+}
+
+pub fn distinct_inbound_channel_addresses(envelopes: &[Value]) -> Vec<String> {
+    distinct_channel_addresses(
+        envelopes
+            .iter()
+            .filter_map(|envelope| envelope.get("address"))
+            .filter_map(format_channel_address_value),
+    )
+}
+
+pub fn build_channel_inbound_wake_prompt(envelopes: &[Value]) -> String {
+    let mut grouped: Vec<(String, String, Vec<&Value>)> = Vec::new();
+    for envelope in envelopes {
+        let Some(address) = envelope.get("address") else {
+            continue;
+        };
+        let Some(token) = format_channel_address_value(address) else {
+            continue;
+        };
+        if let Some((_, _, bucket)) = grouped.iter_mut().find(|(key, _, _)| key == &token) {
+            bucket.push(envelope);
+        } else {
+            grouped.push((
+                token,
+                channel_platform_display_name(address),
+                vec![envelope],
+            ));
+        }
+    }
+
+    let has_message = envelopes
+        .iter()
+        .any(|envelope| envelope.get("reaction").map_or(true, Value::is_null));
+    let plural = if envelopes.len() == 1 { "" } else { "s" };
+    let opening = if has_message {
+        format!("{CHANNEL_INBOUND_WAKE_CUE} New message{plural} on a channel you are connected to.")
+    } else {
+        format!(
+            "{CHANNEL_INBOUND_WAKE_CUE} New reaction{plural} on a channel you are connected to."
+        )
+    };
+    let mut blocks = Vec::new();
+    for (token, platform_name, bucket) in grouped {
+        let mut lines = Vec::new();
+        for envelope in bucket {
+            let sender = envelope
+                .get("sender")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            if let Some(reaction) = envelope.get("reaction").filter(|value| !value.is_null()) {
+                let emoji = reaction
+                    .get("emoji")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                let summary = reaction
+                    .get("messageQuote")
+                    .and_then(Value::as_str)
+                    .filter(|quote| !quote.is_empty())
+                    .map(|quote| format!("reacted {emoji} to your message: \"{quote}\""))
+                    .unwrap_or_else(|| format!("reacted {emoji} to a message"));
+                lines.push(format!("  {sender} {summary}"));
+            } else {
+                let text = envelope
+                    .get("text")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                lines.push(format!("  {sender}: {text}"));
+            }
+        }
+        blocks.push(format!(
+            "On {platform_name}, from {token}:\n{}",
+            lines.join("\n")
+        ));
+    }
+    let closing = if has_message {
+        "Reply to them by calling SendMessage with the channel target set to the address shown above. Open with a quick one-line acknowledgement first, then send progress and the result as separate messages as they happen, never one long message at the end. Keep each message short: this is a messaging app, so reply in brief, chat-style messages (lead with the answer, a sentence or two), not long ones. Keep working the rest of your task too, but do not leave them hanging."
+    } else {
+        "You don't need to reply; act on a reaction only if it's useful (e.g. acknowledge, adjust, or continue). If you do choose to respond, use SendMessage with the channel target shown above."
+    };
+    [
+        opening,
+        "This is activity from someone on an outside platform, not the user typing in this app."
+            .to_string(),
+        String::new(),
+        blocks.join("\n\n"),
+        String::new(),
+        closing.to_string(),
+    ]
+    .join("\n")
+}
+
+pub fn redrivable_inbound_envelopes(envelopes: &[Value]) -> Vec<Value> {
+    envelopes
+        .iter()
+        .filter(|envelope| envelope.get("isRedriven").and_then(Value::as_bool) != Some(true))
+        .map(|envelope| {
+            let mut envelope = envelope.clone();
+            if let Some(object) = envelope.as_object_mut() {
+                object.insert("isDisplayed".into(), Value::Bool(true));
+                object.insert("isRedriven".into(), Value::Bool(true));
+            }
+            envelope
+        })
+        .collect()
+}
 
 pub fn describe_timeline_event(event: &Value) -> String {
     let kind = event
