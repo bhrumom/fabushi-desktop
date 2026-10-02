@@ -9598,7 +9598,7 @@
         "source/host/tests/automation_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Final audited Rust port: every frozen automation-trigger export is represented in the Host owner\u2014stored-trigger parse/serialize, identity, Slack scope and event matching, GitHub event/user/CI-branch admission, Teams/Linear/Sentry/PagerDuty listener filters, group trigger matching, event descriptions and escaped trigger context blocks. Shipping SandTriggerHub and BackendRelaySource consume the same matcher; contracts cover direct platform matching, group fire admission and durable store round-trip."
+      "notes": "Final audited Rust port: every frozen automation-trigger export is represented in the Host owner—stored-trigger parse/serialize, identity, Slack scope and event matching, GitHub event/user/CI-branch admission, Teams/Linear/Sentry/PagerDuty listener filters, group trigger matching, event descriptions and escaped trigger context blocks. Shipping SandTriggerHub and BackendRelaySource consume the same matcher; contracts cover direct platform matching, group fire admission and durable store round-trip."
     },
     {
       "referencePath": "source/host/automations/automation.ts",
@@ -14416,7 +14416,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Frozen Session store-factory contract is fully mapped in Rust: dbPath\u2192agentDir automation/channel paths, agentDir\u2192sandRoot global workflow path, unavailable NO_SESSION_MEMORY semantics, and resolveUserTimeZone forwarding into both automation and workflow stores. Shipping Host SettingsService supplies the live resolver through ProductionSessionWorkers."
+      "notes": "Frozen Session store-factory contract is fully mapped in Rust: dbPath→agentDir automation/channel paths, agentDir→sandRoot global workflow path, unavailable NO_SESSION_MEMORY semantics, and resolveUserTimeZone forwarding into both automation and workflow stores. Shipping Host SettingsService supplies the live resolver through ProductionSessionWorkers."
     },
     {
       "referencePath": "source/host/extensions/session/session-summaries.ts",
@@ -14498,7 +14498,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/host_production_extensions_contract.rs"
       ],
-      "notes": "Final frozen SettingsService parity: Rust owns canonical settings.json persistence, disabled-notification normalization, MCP legacy/server-id instructions and disabled-tools/account-scope semantics, timezone, agent/computer-use model selection, auto-review, local-permission ceiling, WebAuthn, pinned/sidebar/onboarding state, feature-override subscriptions, and inference provider/usage. ProductionHostExtensions starts Settings before Experiments and retains the live Settings\u2192Experiments feature-override subscription. Exact-HEAD Rust Host cargo check, full source/host cargo test, independent Coordinator contract, renderer architecture inventory/typecheck/build and production boundary checks provide the final evidence."
+      "notes": "Final frozen SettingsService parity: Rust owns canonical settings.json persistence, disabled-notification normalization, MCP legacy/server-id instructions and disabled-tools/account-scope semantics, timezone, agent/computer-use model selection, auto-review, local-permission ceiling, WebAuthn, pinned/sidebar/onboarding state, feature-override subscriptions, and inference provider/usage. ProductionHostExtensions starts Settings before Experiments and retains the live Settings→Experiments feature-override subscription. Exact-HEAD Rust Host cargo check, full source/host cargo test, independent Coordinator contract, renderer architecture inventory/typecheck/build and production boundary checks provide the final evidence."
     },
     {
       "referencePath": "source/host/extensions/source-map/extension.ts",
