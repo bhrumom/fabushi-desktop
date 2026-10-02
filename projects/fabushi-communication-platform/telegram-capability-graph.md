@@ -2,7 +2,7 @@
 
 Status: discovery pass; recursive gitlink closure complete; behavior/resource/license closure still incomplete
 Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
-Target owner snapshot: PR #20 `95995bdf36a9687788e106c8544d292b2bb0877f`
+Target owner snapshot: PR #20 `de0f1749a675729fb97017085374b96aaa2ca7bb`
 
 This graph records product capability domains observed in the frozen Telegram Desktop source tree. It is intentionally not marked research-complete: recursive gitlink closure is now complete, but generated/resource/platform-packaging/license provenance and behavior-level resolution for remaining long-tail domains are still open, so P0 cannot yet claim that no unknown capability domain remains.
 
@@ -87,7 +87,7 @@ Representative exact paths observed at the frozen commit include:
 
 The frozen root recursive tree was enumerated with `recursive=1` and returned `truncated=false`. It contains 118 SourceFiles directories at depth <= 4 and 35 direct gitlinks. All 35 direct gitlink trees were queried at their pinned commits. Three nested gitlinks were observed:
 
-- `desktop-app/cmake_helpers/external/glib/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776` (GitLab; commit-specific recursive tree still pending);
+- `desktop-app/cmake_helpers/external/glib/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776` (GitLab; 126-entry exact-ref tree verified, with sole nested `expected-lite@95b9cb0…` recursively verified and no further gitlinks);
 - `PJK/libcbor/doxygen-theme@46111c61a9f49b7a9886127e679d4317478fab1c` (recursive GitHub tree verified, no further gitlinks);
 - `ericniebler/range-v3/doc/gh-pages@2dae74bb693e42d850fb0adcc9045c5b71fbdeae` (recursive GitHub tree verified, no further gitlinks).
 
@@ -95,8 +95,8 @@ This pass also exposed product-capability domains that were missing from the fir
 
 ## What this does not prove
 
-- the final external GitLab `cppgir@47cf94f…` recursive leaf (all GitHub-hosted gitlink recursion above it is verified);
-- build-time downloads, generated source, patches, resources, shaders or platform packaging closure;
+- non-gitlink external build acquisitions and their license/provenance closure;
+- copied/derived resource provenance and any remaining patch/helper acquisition provenance;
 - behavior/state-machine details for each capability;
 - C++ production-responsibility completeness;
 - full owner-resolution coverage;

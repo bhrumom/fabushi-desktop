@@ -2,7 +2,7 @@
 
 Status: researched and owner-resolved for polls/rich variants, media playback/streaming, and sticker/GIF/custom-emoji expression; implementation/acceptance remains open
 Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
-Canonical Fabushi architecture snapshot: PR #20 `95995bdf36a9687788e106c8544d292b2bb0877f`
+Canonical Fabushi architecture snapshot: PR #20 `de0f1749a675729fb97017085374b96aaa2ca7bb`
 
 ## MSG-POLL-RICH
 

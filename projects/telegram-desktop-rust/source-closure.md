@@ -1,6 +1,6 @@
 # Telegram Frozen Source Closure Evidence
 
-Status: P0 evidence; recursive gitlink closure complete; resource/license/behavior closure not complete  
+Status: P0 evidence; recursive gitlink and tracked generator/packaging-root discovery complete; external-acquisition/resource-license/behavior closure not complete
 Frozen root: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`  
 Captured: 2026-10-02
 
@@ -47,25 +47,26 @@ The frozen root already proves these non-product-code inputs are reachable and t
 
 | Area | Frozen evidence / responsibility | Current closure |
 | --- | --- | --- |
-| generators/codegen | `Telegram/codegen`, MTProto/scheme and language-generation references in CMake | source roots identified; generated-output-to-input map still incomplete |
+| generators/codegen | `Telegram/SourceFiles/codegen`, scheme/language/number/MIDL/update-key/DBus/AppStream/model generation references in CMake | source-level input→output map recorded in `research/build-toolchain-resource-provenance.md`; generated outputs are not Fabushi shipping inputs by default |
 | resources/assets | `Telegram/Resources` themes, language bundles, emoji, export templates, webview/picker HTML, sounds and updater/platform assets | resource roots identified; copied/derived asset and per-license review still incomplete |
-| shaders | `Telegram/shaders` | root identified; shader build inputs/outputs and license provenance still incomplete |
-| build/packaging | `Telegram/build`, `Telegram/cmake`, root `cmake`, `snap`, platform-specific packaging/update inputs | roots identified; build-time downloads and complete platform matrix still incomplete |
-| native third parties | direct gitlinks including `tgcalls`, `lib_webrtc`, `lib_webview`, FIDO2 and media/storage libraries | GitHub direct trees recursively checked; external cppgir leaf remains partial |
+| shaders | `Telegram/shaders` | 35 tracked sources identified; QRhi `qsb` output/QRC generation mapped; copied/derived shader license provenance remains open |
+| build/packaging | `Telegram/build`, `Telegram/cmake`, `snap`, Windows/macOS/Linux packaging/update inputs | tracked platform roots mapped; explicit non-CMake network acquisition exists in prepare/Docker scripts and still requires dependency-by-dependency provenance closure |
+| native third parties | direct gitlinks including `tgcalls`, `lib_webrtc`, `lib_webview`, FIDO2 and media/storage libraries | all direct/nested gitlink recursion closed, including `cppgir`→`expected-lite`; non-gitlink external acquisitions remain separate |
 
 No item in this table is an instruction to ship Telegram dependencies. It is source/provenance research required before declaring capability/source coverage complete.
 
 ## Build/resource closure still open
 
-`Telegram/CMakeLists.txt` proves that the product links or generates through codegen, lib_storage, lib_ui, lib_webrtc, lib_webview, tgcalls, FIDO2, ffmpeg, Stripe, MTProto/scheme generators, language generators, update-key generation, platform MIDL on Windows, and Apple Swift runtime. An exact frozen-tarball inventory on htch-runtime recorded 3,073 files under `Telegram/Resources`, 35 shader files, 36 files under `Telegram/build`, 30 under `Telegram/cmake`, and the Snap packaging input. The generator chain explicitly references scheme, language, numbers, MIDL, DBus, update-key, AppStream changelog and QRhi-shader generation. A targeted scan of Telegram/root CMake inputs found no `file(DOWNLOAD)`, `FetchContent`, `ExternalProject_Add`, URL-download, curl or wget primitives; this narrows the build-time-download search but does not prove every external package/license is closed.
+`Telegram/CMakeLists.txt` proves that the product links or generates through codegen, lib_storage, lib_ui, lib_webrtc, lib_webview, tgcalls, FIDO2, ffmpeg, Stripe, MTProto/scheme generators, language generators, update-key generation, platform MIDL on Windows, and Apple Swift runtime. An exact frozen-tree inventory on htch-runtime records 3,073 files under `Telegram/Resources`, 35 shader sources, eight `.obj` model inputs, 36 files under `Telegram/build`, 30 under `Telegram/cmake`, and the Snap packaging input. `research/build-toolchain-resource-provenance.md` now maps the tracked generator inputs/outputs, shader baking, model baking and Windows/macOS/Linux packaging roots.
+
+A previous CMake-only scan correctly found no CMake `file(DOWNLOAD)`, `FetchContent`, or `ExternalProject_Add`, but that scope was too narrow. The frozen `Telegram/build/prepare/prepare.py` and `Telegram/build/docker/centos_env/Dockerfile` explicitly perform network acquisition using `git clone/fetch`, PowerShell `iwr`, `wget`, and `curl`. Build-time external acquisition therefore remains a real provenance blocker and must be enumerated rather than reported absent.
 
 P0 must still enumerate:
 
-1. build-time downloads and non-gitlink external packages;
-2. generated outputs and their source inputs;
-3. patches/shaders/platform packaging inputs;
-4. dependency license expressions and copied/derived asset provenance;
-5. third-party dependency/license expressions and copied/derived asset provenance across the now-closed gitlink tree;
-6. behavior-level responsibility dossiers for each reachable product capability.
+1. all non-gitlink external acquisitions from prepare/Docker/Snap/helper paths, classified by exact commit vs mutable tag/branch/`latest`/URL;
+2. dependency license expressions for those external acquisitions;
+3. copied/derived asset provenance for any Telegram resources/shaders/models actually used by Fabushi;
+4. third-party dependency/license expressions across the already closed gitlink tree and external acquisition set;
+5. behavior-level responsibility dossiers for each reachable product capability.
 
 Until those close, source research coverage must not be reported as 100%.
