@@ -257,6 +257,7 @@ use mahayana_host_runtime::extensions::telemetry::sand_error_tags::SandErrorValu
 use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
 use mahayana_host_runtime::extensions::transcript::turn_runtime::{
     REPLY_NUDGE_PROMPT, TurnTerminalKind, classify_agent_error, project_turn_terminal,
+    should_attempt_reply_nudge,
 };
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
 use mahayana_host_runtime::extensions::forever_box::{
@@ -7426,17 +7427,54 @@ fn start_routed_provider_task(
                 );
             }
             let _ = worker_registry.mark_routed_provider_dispatched(&worker_stream_id);
-            let result = runner.run_routed_provider_with_projected_messages(
+            let turn_epoch = worker_transcript_runtime.current_turn_epoch(&agent_id);
+            let mut result = runner.run_routed_provider_with_projected_messages(
                 &data_dir,
                 &lifecycle_messages,
                 &provider_messages,
-                turn_input.options,
+                turn_input.options.clone(),
                 &mut on_text_delta,
             );
-            let waiting_user = matches!(
+            let mut waiting_user = matches!(
                 runner.last_finished().map(|finished| &finished.outcome),
                 Some(mahayana_host_runtime::runner::TerminalOutcome::WaitingUser)
             );
+            let is_user_turn = !worker_turn_hidden
+                && worker_request_source
+                    .as_deref()
+                    .is_none_or(|source| source == "turn");
+            if is_user_turn {
+                let mut reply_nudge_attempts = 0usize;
+                while should_attempt_reply_nudge(
+                    send_message_delivery_counter.count(),
+                    reaction_delivery_counter.count() > 0,
+                    reply_nudge_attempts,
+                    turn_epoch,
+                    worker_transcript_runtime.current_turn_epoch(&agent_id),
+                    worker_cancellation.is_cancelled(),
+                    waiting_user,
+                    result.is_ok(),
+                ) {
+                    reply_nudge_attempts = reply_nudge_attempts.saturating_add(1);
+                    let mut nudge_provider_messages = provider_messages.clone();
+                    nudge_provider_messages.push(ProviderMessage {
+                        role: "user".into(),
+                        content: REPLY_NUDGE_PROMPT.to_string(),
+                    });
+                    let mut suppress_hidden_nudge_delta = |_delta: &str, _accumulated: &str| {};
+                    result = runner.run_routed_provider_with_projected_messages(
+                        &data_dir,
+                        &lifecycle_messages,
+                        &nudge_provider_messages,
+                        turn_input.options.clone(),
+                        &mut suppress_hidden_nudge_delta,
+                    );
+                    waiting_user = matches!(
+                        runner.last_finished().map(|finished| &finished.outcome),
+                        Some(mahayana_host_runtime::runner::TerminalOutcome::WaitingUser)
+                    );
+                }
+            }
 
             if result.is_ok() {
                 if let Some((turn_snapshot, identity)) =

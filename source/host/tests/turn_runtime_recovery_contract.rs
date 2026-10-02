@@ -2,8 +2,9 @@ use mahayana_host_runtime::extensions::transcript::send_pipeline::{
     PersistedSendContext, RecoverySend,
 };
 use mahayana_host_runtime::extensions::transcript::turn_runtime::{
-    QueuedTurnRecoveryCheck, REPLY_NUDGE_PROMPT, TurnTerminalKind, is_delivery_owed,
-    project_turn_terminal, should_supersede_stale_turn,
+    MAX_REPLY_NUDGES, QueuedTurnRecoveryCheck, REPLY_NUDGE_PROMPT, TurnTerminalKind,
+    is_delivery_owed, project_turn_terminal, should_attempt_reply_nudge,
+    should_supersede_stale_turn,
 };
 use mahayana_host_runtime::runner::{
     RecoveryUserMessage, would_recover_via_prepend,
@@ -132,4 +133,19 @@ fn frozen_terminal_projection_keeps_delivery_and_reply_nudge_semantics_together(
     let failed = project_turn_terminal(false, false, false, 0, false);
     assert_eq!(failed.kind, TurnTerminalKind::Failed);
     assert!(!failed.reply_nudge_owed);
+}
+
+
+#[test]
+fn frozen_reply_nudge_retries_are_epoch_fenced_and_bounded() {
+    assert_eq!(MAX_REPLY_NUDGES, 3);
+    assert!(should_attempt_reply_nudge(0, false, 0, 7, 7, false, false, true));
+    assert!(should_attempt_reply_nudge(0, false, 2, 7, 7, false, false, true));
+    assert!(!should_attempt_reply_nudge(0, false, 3, 7, 7, false, false, true));
+    assert!(!should_attempt_reply_nudge(1, false, 0, 7, 7, false, false, true));
+    assert!(!should_attempt_reply_nudge(0, true, 0, 7, 7, false, false, true));
+    assert!(!should_attempt_reply_nudge(0, false, 0, 7, 8, false, false, true));
+    assert!(!should_attempt_reply_nudge(0, false, 0, 7, 7, true, false, true));
+    assert!(!should_attempt_reply_nudge(0, false, 0, 7, 7, false, true, true));
+    assert!(!should_attempt_reply_nudge(0, false, 0, 7, 7, false, false, false));
 }

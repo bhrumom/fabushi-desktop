@@ -5,6 +5,7 @@ use crate::runner::would_recover_via_prepend;
 
 use super::send_pipeline::{PersistedSendContext, RecoverySend};
 
+pub const MAX_REPLY_NUDGES: usize = 3;
 pub const REPLY_NUDGE_PROMPT: &str = "Your previous turn left the user without the result they're waiting on — you never called SendMessage that turn, or every SendMessage you tried failed to deliver. Either way they received nothing and are still waiting. Do not assume a send from an earlier turn covered it: an opening acknowledgement back then did not deliver this result (ack ≠ delivery). Deliver the result now by actually invoking the SendMessage tool — make a real tool/function call, not text you write. Plain assistant text is NEVER shown to the user; only a real SendMessage tool invocation reaches them, so if you don't call the tool they just keep seeing silence.";
 
 pub fn is_delivery_owed(sent_message_count: u64, reacted: bool) -> bool {
@@ -59,6 +60,24 @@ pub fn project_turn_terminal(
         delivered,
         reply_nudge_owed: kind == TurnTerminalKind::Completed && !delivered,
     }
+}
+
+pub fn should_attempt_reply_nudge(
+    sent_message_count: u64,
+    reacted: bool,
+    attempts: usize,
+    turn_epoch: u64,
+    current_epoch: u64,
+    cancelled: bool,
+    waiting_user: bool,
+    succeeded: bool,
+) -> bool {
+    succeeded
+        && !cancelled
+        && !waiting_user
+        && attempts < MAX_REPLY_NUDGES
+        && turn_epoch == current_epoch
+        && is_delivery_owed(sent_message_count, reacted)
 }
 
 pub fn classify_agent_error(error: &ProviderSessionError) -> SandErrorValue {
