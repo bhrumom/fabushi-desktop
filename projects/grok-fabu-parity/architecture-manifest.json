@@ -16701,7 +16701,7 @@
       "targetPath": "source/host/src/extensions/transcript/upgrade_recreate_resume.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "33cc10a01d2af277101a66c236bd32922eb3c172",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -16709,16 +16709,29 @@
         "source/host/src/extensions/transcript/upgrade_recreate_resume.rs",
         "source/host/src/extensions/transcript/production_runtime.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/extensions/transcript/sand_upgrade_resume_store.rs"
+        "source/host/src/extensions/transcript/sand_upgrade_resume_store.rs",
+        "source/host/src/extensions/transcript/transcript_manager.rs",
+        "source/host/src/extensions/transcript/runner_registry.rs",
+        "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/runner/generated_agent_turn_stream.rs",
+        "source/host/src/runner/turn_run_shell.rs",
+        "source/host/src/gateway_protocol.rs"
       ],
       "testEvidence": [
         "source/host/tests/upgrade_recreate_resume_contract.rs",
         "source/host/tests/transcript_production_composition_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/host_upgrade_production_contract.rs",
+        "source/host/tests/pending_wake_rearm_contract.rs",
+        "source/host/tests/production_turn_agent_owner_contract.rs",
+        "source/host/tests/transcript_manager_contract.rs",
+        "source/host/tests/runner_contract.rs",
+        "source/host/tests/gateway_server_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production slice owns the frozen quiescingForUpgrade state and source-specific resume prompt text. Shipping /prepare-upgrade flips the transcript runtime to quiescing=true and reports live running-agent count; Ack redrive reads the same owner and stops boot/idle recovery scheduling while quiesced. Final remains withheld for source-aware durable resume-marker capture, Runner requestQuiesce/cancelQuiesce ownership, interrupted-turn background re-enqueue, automation/background-revival resume semantics, recreate pending-wake carry, tray/telemetry error reporting and resumeAfterRecreate Gateway composition."
+      "notes": "Frozen upgrade/recreate/resume responsibilities are absorbed into the canonical TranscriptManager/Runner/Gateway graph. TranscriptManager is the single lifecycle facade: prepare-upgrade marks durable source-aware resume markers, requests routed/group Runner quiesce through TranscriptRunnerRegistry, and the shared quiesce signal reaches ProductionTurnAgentOwner, generated-stream checkpoint persistence, and terminal TurnRunFinished.quiesced_for_upgrade settlement. resumeAfterRecreate cancels Runner quiesce, merges incoming/local durable resume ids, skips gone/group sessions, resumes hidden source-specific turns with correct ack-token and automation/background-revival silence semantics, refreshes roster/automations after successful resume, and reports failures through resume telemetry plus tray errors. The Gateway carries durable cloud-agent/shell resumePendingWakes; PendingWakeRearm owns restore ordering, can-execute/locally-owned/gone/group filtering, frozen telemetry outcomes, cloud rearm, and recreate-interrupted shell notices without leaving group markers behind. Focused exact-source htch-runtime contracts cover Gateway, Host upgrade, pending-wake carry, production turn quiesce, Runner settlement, TranscriptManager delegation and source-specific resume prompts; no parallel upgrade or wake owner is introduced."
     },
     {
       "referencePath": "source/host/extensions/transcript/widget-responses.ts",
