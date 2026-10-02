@@ -642,12 +642,16 @@ fn manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle() {
         vec!["agent-upgrade".to_string()]
     );
 
+    let registry = manager.runner_registry();
+    assert!(!registry.is_quiescing_for_upgrade());
     let summary = manager.quiesce_for_upgrade();
     assert!(summary.quiescing);
     assert_eq!(summary.running_turns, 0);
     assert!(manager.is_quiescing_for_upgrade());
+    assert!(registry.is_quiescing_for_upgrade());
     manager.resume_after_recreate();
     assert!(!manager.is_quiescing_for_upgrade());
+    assert!(!registry.is_quiescing_for_upgrade());
 
     manager.dispose();
     let _ = fs::remove_dir_all(root);

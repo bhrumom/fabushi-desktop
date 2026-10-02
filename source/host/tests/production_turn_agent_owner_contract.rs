@@ -226,3 +226,43 @@ fn shipping_sand_agent_runner_owns_and_settles_generated_subagent_runtime() {
         .iter()
         .any(|(id, record)| id == "child-agent" && record.status == SubagentStatus::Done));
 }
+
+#[test]
+fn shipping_sand_agent_owner_marks_upgrade_quiesce_in_terminal_settlement() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    let signal = Arc::new(AtomicBool::new(false));
+    let composition = TurnAgentComposition::new(
+        RoutedProvider::OpenRouter,
+        Arc::new(EmptyBridge),
+        RunnerRequestContextSnapshot {
+            context: HostRequestContext {
+                os_version: "test".into(),
+                shell: None,
+                time_zone: Some("UTC".into()),
+                transcripts_folder: "/tmp/transcripts".into(),
+                user_full_name: None,
+            },
+            rules: None,
+        },
+        RoutedProviderCancellation::default(),
+        Arc::new(MemoryCheckpointStore),
+    );
+    let mut runner = SandAgentRunner::new(
+        ProductionTurnAgentOwner::new(composition)
+            .with_upgrade_quiesce_signal(Arc::clone(&signal)),
+    );
+    let signal_for_run = Arc::clone(&signal);
+    let error = runner
+        .run_with(&user_messages(), move || {
+            signal_for_run.store(true, Ordering::Release);
+            Err(ProviderSessionError::Cancelled(
+                "quiescing for forced host upgrade".into(),
+            ))
+        })
+        .expect_err("upgrade quiesce cancels the active turn");
+    assert!(matches!(error, ProviderSessionError::Cancelled(_)));
+    let finished = runner.last_finished().expect("terminal settlement");
+    assert!(finished.quiesced_for_upgrade);
+    assert!(matches!(finished.outcome, TerminalOutcome::Cancelled));
+}

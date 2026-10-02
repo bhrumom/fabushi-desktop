@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
@@ -25,6 +26,7 @@ pub struct ProductionTurnAgentOwner {
     shell: TurnRunShell,
     last_finished: Option<TurnRunFinished>,
     agent_state_checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
+    upgrade_quiescing: Arc<AtomicBool>,
 }
 
 impl ProductionTurnAgentOwner {
@@ -34,6 +36,7 @@ impl ProductionTurnAgentOwner {
             shell: TurnRunShell::default(),
             last_finished: None,
             agent_state_checkpoint_sink: None,
+            upgrade_quiescing: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -42,6 +45,11 @@ impl ProductionTurnAgentOwner {
         sink: Arc<dyn AgentStateCheckpointSink>,
     ) -> Self {
         self.agent_state_checkpoint_sink = Some(sink);
+        self
+    }
+
+    pub fn with_upgrade_quiesce_signal(mut self, signal: Arc<AtomicBool>) -> Self {
+        self.upgrade_quiescing = signal;
         self
     }
 
@@ -96,15 +104,21 @@ impl ProductionTurnAgentOwner {
             shell,
             last_finished,
             agent_state_checkpoint_sink,
+            upgrade_quiescing,
         } = self;
         let checkpoint_sink = agent_state_checkpoint_sink.clone();
         let composition_for_stream = composition.clone();
         let completion_probe = composition.clone();
+        let turn_quiesced = Arc::new(AtomicBool::new(false));
+        let stream_upgrade_quiescing = Arc::clone(upgrade_quiescing);
+        let stream_turn_quiesced = Arc::clone(&turn_quiesced);
         let result = run_owned_turn(
             shell,
             last_finished,
             lifecycle_messages,
             options.clone(),
+            Arc::clone(upgrade_quiescing),
+            Arc::clone(&turn_quiesced),
             move |started| {
                 if let Some(checkpoint_sink) = checkpoint_sink {
                     run_production_generated_agent_stream(
@@ -115,6 +129,8 @@ impl ProductionTurnAgentOwner {
                         provider_messages,
                         &options,
                         started.owner.generation,
+                        Arc::clone(&stream_upgrade_quiescing),
+                        Arc::clone(&stream_turn_quiesced),
                         on_text_delta,
                     )
                 } else {
@@ -158,11 +174,14 @@ impl ProductionTurnAgentOwner {
         // so it intentionally does not checkpoint a second time here.
         let checkpoint_sink = self.agent_state_checkpoint_sink.clone();
         let checkpoint_options = options.clone();
+        let turn_quiesced = Arc::new(AtomicBool::new(false));
         run_owned_turn(
             &mut self.shell,
             &mut self.last_finished,
             messages,
             options,
+            Arc::clone(&self.upgrade_quiescing),
+            turn_quiesced,
             move |_started| {
                 let result = execute();
                 match (result, checkpoint_sink) {
@@ -186,6 +205,8 @@ fn run_owned_turn<Execute>(
     last_finished: &mut Option<TurnRunFinished>,
     messages: &[ProviderMessage],
     options: TurnRunOptions,
+    upgrade_quiescing: Arc<AtomicBool>,
+    turn_quiesced: Arc<AtomicBool>,
     execute: Execute,
 ) -> Result<String, ProviderSessionError>
 where
@@ -204,6 +225,11 @@ where
         .map_err(turn_shell_error)?;
 
     let result = execute(&started);
+    if upgrade_quiescing.load(Ordering::Acquire) || turn_quiesced.load(Ordering::Acquire) {
+        shell
+            .mark_quiesced_for_upgrade(&started.owner)
+            .map_err(turn_shell_error)?;
+    }
     let settlement = match &result {
         Ok(_) => shell.finish_completed(&started.owner),
         Err(ProviderSessionError::Cancelled(reason))

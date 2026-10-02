@@ -886,6 +886,7 @@ impl TranscriptManager {
     }
 
     pub fn quiesce_for_upgrade(&self) -> UpgradeQuiesceSummary {
+        self.runner_registry.request_quiesce_for_upgrade();
         self.transcript_runtime.quiesce_for_upgrade()
     }
 
@@ -900,6 +901,7 @@ impl TranscriptManager {
     }
 
     pub fn resume_after_recreate(&self) {
+        self.runner_registry.cancel_quiesce_for_upgrade();
         self.transcript_runtime.resume_after_recreate();
     }
 

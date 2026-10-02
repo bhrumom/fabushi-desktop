@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use serde_json::Value;
 
@@ -30,6 +31,7 @@ pub struct TranscriptRunnerRegistry {
     routed_supersede_state: Arc<Mutex<HashMap<String, RoutedSupersedeState>>>,
     dm_preempted_group_members: Arc<Mutex<HashSet<String>>>,
     turn_execution: Arc<Mutex<Option<TranscriptTurnExecutionPort>>>,
+    quiescing_for_upgrade: Arc<AtomicBool>,
 }
 
 impl TranscriptRunnerRegistry {
@@ -42,6 +44,7 @@ impl TranscriptRunnerRegistry {
             routed_supersede_state: Arc::new(Mutex::new(HashMap::new())),
             dm_preempted_group_members: Arc::new(Mutex::new(HashSet::new())),
             turn_execution: Arc::new(Mutex::new(None)),
+            quiescing_for_upgrade: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -277,6 +280,26 @@ impl TranscriptRunnerRegistry {
 
     pub fn active_count(&self) -> usize {
         self.routed_provider_tasks.active_count() + self.group_member_tasks.active_count()
+    }
+
+    pub fn upgrade_quiesce_signal(&self) -> Arc<AtomicBool> {
+        Arc::clone(&self.quiescing_for_upgrade)
+    }
+
+    pub fn request_quiesce_for_upgrade(&self) {
+        self.quiescing_for_upgrade.store(true, Ordering::Release);
+        self.routed_provider_tasks
+            .cancel_all("quiescing for forced host upgrade");
+        self.group_member_tasks
+            .cancel_all("quiescing for forced host upgrade");
+    }
+
+    pub fn cancel_quiesce_for_upgrade(&self) {
+        self.quiescing_for_upgrade.store(false, Ordering::Release);
+    }
+
+    pub fn is_quiescing_for_upgrade(&self) -> bool {
+        self.quiescing_for_upgrade.load(Ordering::Acquire)
     }
 
     pub fn cancel_all(&self, reason: &str) {

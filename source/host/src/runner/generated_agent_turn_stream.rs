@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
@@ -115,6 +116,8 @@ pub struct ProductionGeneratedAgentPersistence {
     checkpoint_sink: Arc<dyn AgentStateCheckpointSink>,
     cancellation: RoutedProviderCancellation,
     generation: u64,
+    upgrade_quiescing: Arc<AtomicBool>,
+    turn_quiesced: Arc<AtomicBool>,
 }
 
 impl ProductionGeneratedAgentPersistence {
@@ -122,11 +125,15 @@ impl ProductionGeneratedAgentPersistence {
         checkpoint_sink: Arc<dyn AgentStateCheckpointSink>,
         cancellation: RoutedProviderCancellation,
         generation: u64,
+        upgrade_quiescing: Arc<AtomicBool>,
+        turn_quiesced: Arc<AtomicBool>,
     ) -> Self {
         Self {
             checkpoint_sink,
             cancellation,
             generation,
+            upgrade_quiescing,
+            turn_quiesced,
         }
     }
 }
@@ -183,10 +190,12 @@ impl<'ctx>
     }
 
     fn is_quiescing_for_upgrade(&self) -> bool {
-        false
+        self.upgrade_quiescing.load(Ordering::Acquire)
     }
 
-    fn mark_quiesced_for_upgrade(&self) {}
+    fn mark_quiesced_for_upgrade(&self) {
+        self.turn_quiesced.store(true, Ordering::Release);
+    }
 
     fn cancel_run(&self, cancellation: StreamCancelReason) {
         self.cancellation.cancel(cancellation.reason);
@@ -211,6 +220,8 @@ pub fn run_production_generated_agent_stream(
     provider_messages: &[ProviderMessage],
     options: &TurnRunOptions,
     generation: u64,
+    upgrade_quiescing: Arc<AtomicBool>,
+    turn_quiesced: Arc<AtomicBool>,
     on_text_delta: &mut dyn FnMut(&str, &str),
 ) -> Result<String, ProviderSessionError> {
     let cancellation = composition.cancellation();
@@ -229,6 +240,8 @@ pub fn run_production_generated_agent_stream(
         checkpoint_sink,
         cancellation,
         generation,
+        upgrade_quiescing,
+        turn_quiesced,
     );
     let hooks = NoopInactiveTurnAgentLifecycleHooks;
     let context = GeneratedAgentTurnContext {

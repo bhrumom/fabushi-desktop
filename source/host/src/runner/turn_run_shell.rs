@@ -197,6 +197,14 @@ impl TurnRunShell {
         self.quiescing_for_upgrade
     }
 
+    pub fn mark_quiesced_for_upgrade(
+        &mut self,
+        owner: &TurnOwnerToken,
+    ) -> Result<(), TurnRunShellError> {
+        self.require_owner_mut(owner)?.quiesced_for_upgrade = true;
+        Ok(())
+    }
+
     pub fn end_turn_awaiting_user(
         &mut self,
         owner: &TurnOwnerToken,

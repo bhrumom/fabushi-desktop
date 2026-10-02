@@ -7346,7 +7346,8 @@ fn start_routed_provider_task(
                 composition = composition.with_multitask_todo_state(todo_state);
             }
             let owner = ProductionTurnAgentOwner::new(composition)
-                .with_agent_state_checkpoint_sink(agent_state_checkpoint_sink);
+                .with_agent_state_checkpoint_sink(agent_state_checkpoint_sink)
+                .with_upgrade_quiesce_signal(worker_registry.upgrade_quiesce_signal());
             let mut runner = SandAgentRunner::new(owner)
                 .with_generated_agent_runtime(Arc::clone(&worker_generated_agent_runtime));
             let generated_prompt = lifecycle_messages
