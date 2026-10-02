@@ -15477,7 +15477,7 @@
       "targetPath": "source/host/src/extensions/transcript/agent_to_agent_messaging.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "3e4a1d70c52bb5a32f19df11046510ff7f7301ca",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -15489,7 +15489,8 @@
         "source/host/src/runner/turn_agent_composition.rs",
         "source/node-agent-coordinator/src/main.rs",
         "source/node-agent-coordinator/src/inference_router.rs",
-        "source/host/src/extensions/transcript/production_runtime.rs"
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/src/extensions/transcript/send_group_fanout.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_to_agent_messaging_contract.rs",
@@ -15497,10 +15498,12 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
-        "source/host/tests/transcript_production_composition_contract.rs"
+        "source/host/tests/transcript_production_composition_contract.rs",
+        "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
+        "source/host/tests/send_group_fanout_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Production SendToAgent durably writes sender/recipient transcript state, persists the conversation partner, records recipient activity and emits agent-inbound-wake-request with the frozen hidden prompt; group targets receive the durable group post. Mahayana Coordinator consumes that wake request into a hidden requestSource=agent-inbound route, serializes normal peer wakes per Agent and puts priority peer wakes on the urgent queue. Shipping Host now classifies requestSource=agent-inbound as RunLane::Agent and applies the frozen priority-peer fence: an active RunLane::User is never cancelled, while Agent/Background/idle targets remain preemptible. Exact implementation HEAD 53c5ddd03b0ad0abdea64a2d367fef6e0391d6ca passed shipping Host build, independent Mahayana Coordinator contract and independent Mahayana Host Runner contract in Rust desktop runtime run 36369832560 (rust-host job 108764549059), plus both Desktop Chat Parity jobs in run 36369832624. This row remains non-final for the durable pending-inbound/redrive lifecycle, complete group-member fanout/redrive semantics, and recipient-run selected-image materialization."
+      "notes": "Rust production parity now covers frozen Grok 0.18 agent-to-agent messaging end-to-end. Shipping SendToAgent validates targets, records sender outbound state, conversation partners, analytics and durable group posts; direct recipient transcript persistence is deferred until execution admission, records activity/roster state, carries selected images, and uses hidden isSilenceAllowed agent-inbound turns. Mahayana Coordinator preserves the user-lane priority fence, serializes normal peer work, schedules priority and one-time redriven peer wakes in frozen order without converting redriven work into semantic priority, and no longer owns a duplicate synthetic group-member fanout. Group targets are written once by the Host and executed only through Host-owned GroupChatOrchestrator; shared remote members use a ProductionTranscriptRuntime-owned late-bound GroupMemberTurnExecutor bound from the canonical CrossUser runtime, avoiding ownership cycles. Exact implementation HEAD e6eafe1e6fa8b379a32401d89cbacfa0f92bd251 passed shipping Mahayana Host build, independent Mahayana Coordinator, independent Grok box-exec daemon, shipping Host box-exec supervisor and the full independent Mahayana Host Runner integration suite in Rust desktop runtime run 36965321635; Desktop Chat Parity run 36965321697 completed successfully including production Electron boundary contracts, deterministic Mahayana Host, Renderer build/co-staging, built-bundle boundary and Focused Electron chat regression. background-wakes.ts and runner/turn-observation.ts remain separate strict rows and are not claimed here."
     },
     {
       "referencePath": "source/host/extensions/transcript/async-task-union.ts",
