@@ -16,8 +16,9 @@ use mahayana_host_runtime::extensions::transcript::shared_rooms::{
     normalize_group_message,
 };
 use mahayana_host_runtime::host_gateway_api::{
-    CREATE_AGENT_NONCE_LEDGER_CAP, CreateAgentNonceLedger, HOST_CAPABILITIES,
-    is_sand_agent_purpose, sanitize_template_id,
+    CREATE_AGENT_NONCE_LEDGER_CAP, CreateAgentNonceLedger, FROZEN_HOST_GATEWAY_METHODS,
+    HOST_CAPABILITIES, HostGatewayOwner, host_gateway_owner, is_sand_agent_purpose,
+    sanitize_template_id,
 };
 use mahayana_host_runtime::sand_host::{
     BOX_READY_REPORT_ATTEMPTS, compute_host_health, should_report_box_ready,
@@ -300,4 +301,98 @@ fn sand_host_health_does_not_refresh_busy_clock_for_approval_only_wait() {
         Some(10),
         Some("boot-1")
     ));
+}
+
+
+#[test]
+fn frozen_host_gateway_registry_is_complete_unique_and_owner_resolved() {
+    const EXPECTED_FROZEN_METHODS: &[&str] = &[
+        "getTranscript", "getAgentTranscript", "getAgentTranscriptPage",
+        "getAgentTranscriptWindow", "getAgentTranscriptTail", "getAgentThread",
+        "sendPrompt", "promptAcceptanceStatus", "respondToWidget",
+        "resolveAutoReviewApproval", "resolveLocalToolPermission", "dismissWidget",
+        "submitSecret", "reactToMessage", "appendConnectorCard", "listAgents",
+        "countAgents", "searchAgents", "searchMedia", "createAgent", "kickstartAgent",
+        "requestDiskSaverAudit", "createGroup", "setGroupMembers", "updateAgent",
+        "deleteAgent", "deleteAgents", "duplicateAgent", "setAgentUnread",
+        "setAgentNotificationsEnabled", "setAgentNotifyOnUpdates",
+        "setAgentHiddenFromSidebar", "openAgent", "openAgentWindowed", "openAgentTail",
+        "setWindowFocused", "getAgentMemories", "deleteAgentMemory", "clearAgentMemories",
+        "getAgentAutomations", "listAllAutomations", "isAgentNetworkEnabled",
+        "isGlobalSearchEnabled", "isEgressTunnelAvailable", "getSharingState",
+        "createRoomFromAgent", "createRoomInvite", "joinSharedRoom",
+        "respondToRoomJoinRequest", "createSharedRoom", "addOwnAgentToSharedRoom",
+        "removeOwnAgentFromSharedRoom", "setSharedRoomTyping", "leaveSharedRoom",
+        "setAgentAutomationEnabled", "createAgentAutomation", "updateAgentAutomation",
+        "deleteAgentAutomation", "runAgentAutomationNow", "broadcastToAgents",
+        "getAgentWorkflows", "createAgentWorkflow", "updateAgentWorkflow",
+        "setAgentWorkflowEnabled", "deleteAgentWorkflow", "runAgentWorkflowNow",
+        "importAgentWorkflowText", "importAgentWorkflowUrl", "portAgentLocalSkills",
+        "getConversationOutline", "skillsCatalog", "syncPluginSkills",
+        "getPluginSyncStatus", "getSkillPublishTargets", "publishSkill",
+        "resyncPublishedSkill", "unpublishSkill", "getAgentChannels", "connectChannel",
+        "disconnectChannel", "refreshChannel", "getListenerIntegrations",
+        "getListenerConnectUrl", "getSubagents", "getAsyncTasks", "setAgentAvatarBytes",
+        "getAgentAvatar", "getForeverBoxStatus", "getCloudAgentInfo", "ensureForeverBox",
+        "resetForeverBox", "updateForeverBox", "autoUpdateBoxNow", "snapshotBoxStoreNow",
+        "getBoxStoreStatus", "clearBoxStoreNow", "updateHostNow", "getHostStatus",
+        "setBoxMigrating", "prepareBoxForRecreate", "resumeBoxAfterRecreate",
+        "handBackForeverBox", "startTeachRecording", "stopTeachRecording",
+        "getTeachRecordingStatus", "getTrays", "dismissTray", "clearTrays",
+        "uploadAttachment", "readAttachmentImage", "readAttachmentText",
+        "readAttachmentChunk", "getHostSettings", "setHostSettings", "refreshMcp",
+        "listRoutedMcpTools", "executeRoutedMcpTool", "listBoxMcpServers",
+        "completeMcpOAuth", "requestWebAuthnCeremony", "setBoxSecrets",
+        "getBoxSecretsStatus",
+    ];
+
+    assert_eq!(FROZEN_HOST_GATEWAY_METHODS, EXPECTED_FROZEN_METHODS);
+    assert_eq!(FROZEN_HOST_GATEWAY_METHODS.len(), 122);
+
+    let mut unique = std::collections::BTreeSet::new();
+    for method in FROZEN_HOST_GATEWAY_METHODS {
+        assert!(unique.insert(*method), "duplicate frozen gateway method: {method}");
+        assert!(
+            host_gateway_owner(method).is_some(),
+            "frozen gateway method must resolve to exactly one owner: {method}"
+        );
+    }
+
+    assert_eq!(
+        host_gateway_owner("sendPrompt"),
+        Some(HostGatewayOwner::TranscriptManager)
+    );
+    assert_eq!(
+        host_gateway_owner("resolveAutoReviewApproval"),
+        Some(HostGatewayOwner::AutoReview)
+    );
+    assert_eq!(
+        host_gateway_owner("createAgent"),
+        Some(HostGatewayOwner::AgentLifecycle)
+    );
+    assert_eq!(
+        host_gateway_owner("createAgentAutomation"),
+        Some(HostGatewayOwner::Automations)
+    );
+    assert_eq!(
+        host_gateway_owner("runAgentWorkflowNow"),
+        Some(HostGatewayOwner::Workflow)
+    );
+    assert_eq!(
+        host_gateway_owner("refreshMcp"),
+        Some(HostGatewayOwner::Mcp)
+    );
+    assert_eq!(
+        host_gateway_owner("resumeBoxAfterRecreate"),
+        Some(HostGatewayOwner::HostControl)
+    );
+    assert_eq!(
+        host_gateway_owner("uploadAttachment"),
+        Some(HostGatewayOwner::Attachments)
+    );
+    assert_eq!(
+        host_gateway_owner("setBoxSecrets"),
+        Some(HostGatewayOwner::Secrets)
+    );
+    assert_eq!(host_gateway_owner("resumeAfterRecreate"), None);
 }
