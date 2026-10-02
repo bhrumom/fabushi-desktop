@@ -9,6 +9,8 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
 use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
+use mahayana_host_runtime::extensions::transcript::send_turn_dispatch::prepare_direct_turn_runner_args;
+use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
 use mahayana_host_runtime::runner::RecoveryUserMessage;
 use mahayana_host_runtime::extensions::transcript::run_scheduler::{
     QueueAccepted, QueueDequeued, RunLane, WatchdogStage,
@@ -23,6 +25,70 @@ fn temp_root(label: &str) -> std::path::PathBuf {
         "fabushi-production-transcript-{label}-{}-{suffix}",
         std::process::id()
     ))
+}
+
+#[test]
+fn direct_turn_runner_args_use_durable_history_composed_note_and_mentions() {
+    let root = temp_root("direct-turn-runner-args");
+    let sessions = ProductionSessionWorkers::with_agents_root(root.join("agents"), 5_000);
+    let primary = sessions
+        .materialize_new_session(None, "user", None)
+        .expect("primary");
+    let teammate = sessions
+        .materialize_new_session(None, "user", None)
+        .expect("teammate");
+    sessions
+        .update_agent_profile(
+            &teammate.id,
+            &mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate {
+                name: Some("Researcher".into()),
+                description: Some("Finds sources".into()),
+            },
+            None,
+        )
+        .expect("profile update");
+    sessions
+        .append_agent_transcript_entries(
+            &primary.id,
+            &[
+                serde_json::json!({
+                    "kind":"message","id":"t0u","role":"user","content":"older",
+                    "richText":{"type":"doc","content":[]},"timestampMs":1
+                }),
+                serde_json::json!({
+                    "kind":"message","id":"t1u","role":"user",
+                    "content":"@Researcher please help","timestampMs":2
+                })
+            ],
+        )
+        .expect("seed transcript");
+    let persisted = PersistedSendContext {
+        user_message_id: Some("t1u".into()),
+        accepted_durably: true,
+        ..PersistedSendContext::default()
+    };
+    let shaped = prepare_direct_turn_runner_args(
+        &sessions,
+        &primary.id,
+        &serde_json::json!({
+            "agentId":primary.id,
+            "prompt":"@Researcher please help",
+            "composedAtMs":0.0
+        }),
+        &persisted,
+    )
+    .expect("shape Runner args");
+    assert_eq!(shaped["messageId"], "t1u");
+    assert_eq!(shaped["recentUserMessages"][0]["id"], "t0u");
+    assert!(shaped["recentUserMessages"][0].get("richText").is_some());
+    let prompt = shaped["prompt"].as_str().expect("prompt");
+    assert!(prompt.contains("[Composed offline at 1970-01-01T00:00:00.000Z]"));
+    assert!(prompt.contains("[Agents mentioned in this message"));
+    assert!(prompt.contains("Researcher"));
+    assert!(prompt.ends_with("@Researcher please help"));
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]

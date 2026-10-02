@@ -139,6 +139,7 @@ use mahayana_host_runtime::extensions::transcript::send_group_fanout::{
 };
 use mahayana_host_runtime::extensions::transcript::send_acceptance::emit_accepted_send_echoes;
 use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
+use mahayana_host_runtime::extensions::transcript::send_turn_dispatch::prepare_direct_turn_runner_args;
 use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
 use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManager;
 use mahayana_host_runtime::extensions::turn_execution::extension::turn_execution_extension;
@@ -1840,7 +1841,19 @@ impl UnifiedGatewayApi {
                         {
                             return Ok(group_result);
                         }
-                        call_host_lane(&self.host_tx, "sendPrompt", runner_args)
+                        let agent_id = send_agent_id.as_deref().ok_or_else(|| {
+                            ProductionSendError::BadRequest(
+                                "sendPrompt requires agentId for direct Runner dispatch".into(),
+                            )
+                        })?;
+                        let direct_runner_args = prepare_direct_turn_runner_args(
+                            self.session_workers.as_ref(),
+                            agent_id,
+                            &runner_args,
+                            &persisted,
+                        )
+                        .map_err(ProductionSendError::Internal)?;
+                        call_host_lane(&self.host_tx, "sendPrompt", direct_runner_args)
                             .map_err(map_gateway_send_error)
                     },
                     |accepted| {
@@ -8348,13 +8361,22 @@ impl GatewayApi for UnifiedGatewayApi {
                         .map_err(GatewayCommandError::Internal)?;
                     return Ok(serde_json::Value::Null);
                 }
-                Some(WorkflowRunNowPlan::Reference { .. }) => {
-                    // A normal workflow reference is a visible user turn. Keep
-                    // it on the compatibility path until the Rust user-turn
-                    // history/context projection is complete; sending only the
-                    // expanded recipe here would silently drop conversation
-                    // history.
-                    return call_host_lane(&self.host_tx, method, args);
+                Some(WorkflowRunNowPlan::Reference {
+                    agent_id,
+                    visible_prompt,
+                    rich_text,
+                    ..
+                }) => {
+                    return self.call_send_prompt(
+                        serde_json::json!({
+                            "agentId": agent_id,
+                            "prompt": visible_prompt,
+                            "richText": rich_text,
+                            "awaitTurn": true,
+                            "source": "workflow-reference"
+                        }),
+                        gateway_context,
+                    );
                 }
             }
         }

@@ -6,7 +6,7 @@ use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionS
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::workflow_commands::{
     WORKFLOW_INJECTED_BODY_LIMIT, WorkflowRunNowPlan, build_workflow_run_prompt,
-    dispatch_workflow_command, prepare_workflow_run_now,
+    dispatch_workflow_command, expand_workflow_references, prepare_workflow_run_now,
 };
 use mahayana_host_runtime::workflows::workflow_store::WorkflowRecord;
 
@@ -216,6 +216,55 @@ fn automation_backed_workflow_creation_is_owned_by_rust_session_store() {
     let _ = fs::remove_dir_all(root);
 }
 
+
+#[test]
+fn normal_send_expands_enabled_rich_text_workflow_reference() {
+    let root = temp_root("normal-send-reference");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let session = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = session.create_session(None, "user", None).expect("agent");
+    let created = call(
+        Arc::clone(&workers),
+        "createAgentWorkflow",
+        serde_json::json!({
+            "id": agent.id,
+            "spec": {
+                "name": "Research",
+                "description": "Read sources",
+                "body": "Collect evidence and summarize."
+            }
+        }),
+    );
+    let workflow_id = created[0]["id"].as_str().expect("workflow id");
+    let rich_text = serde_json::json!({
+        "type":"doc",
+        "content":[{
+            "type":"paragraph",
+            "content":[{
+                "type":"workflowReference",
+                "attrs":{"id":workflow_id,"label":"Research"}
+            }]
+        }]
+    })
+    .to_string();
+
+    let expanded = expand_workflow_references(
+        workers.as_ref(),
+        &agent.id,
+        "also compare the results",
+        Some(&rich_text),
+    )
+    .expect("workflow expansion");
+    assert!(expanded.contains("The user invoked the \"Research\" workflow"));
+    assert!(expanded.contains("Collect evidence and summarize."));
+    assert!(expanded.ends_with("also compare the results"));
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
 
 #[test]
 fn workflow_run_now_reference_plan_matches_frozen_rich_text_and_recipe_expansion() {
