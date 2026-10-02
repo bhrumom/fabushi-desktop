@@ -50,6 +50,14 @@ These remain recorded by their literal notice rather than normalized to an SPDX 
 
 The exact tree also contains code-adjacent files with neither an SPDX identifier, a qdbus generated marker, nor the above LGPL full-text notice. They include `CMakeLists.txt` files, package config templates, DBus XML interface definitions, desktop templates, JSON templates and quickphrase metadata. They are not materialized as a guessed license assignment. Their provenance remains open if one of those files materially informs or is copied/adapted by a Fabushi production change.
 
+## `hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5`
+
+The exact pinned commit was fetched and verified on htch-runtime. Its README states `LGPLv2.1 (Qt immodules are GPLv2)`. The two Qt5 input-module public headers inspected at this exact commit, `src/qt5-im/hime-imcontext-qt.h` and `src/qt5-im/hime-qt.h`, carry an explicit GNU GPL version 2 notice, matching that repository-level exception instead of the LGPL default.
+
+The icon trees are separately licensed assets rather than being inferred from source-code licensing. `icons/30x30/COPYING`, `icons/black/COPYING`, `icons/blue/COPYING`, `icons/dark/COPYING`, `icons/gray/COPYING`, and `icons/pink/COPYING` have identical SHA-256 `acdb77f0d233c377321768b02732a200427387fb59b98876e3244a6c27633298` and state GNU LGPL v2.1 or later for the icon work. `distro/dev-tools/icons/COPYING` carries the same license statement with SHA-256 `75bbac0d99d7d4fd82ecc3b8bb0079970646ce52aa90c315f6759823dc4d8150`.
+
+This closes the previously coarse hime source-vs-Qt-immodule-vs-icon license boundary at the frozen commit. It does not imply that Fabushi ships these icons or Qt modules; current PR #26 adoption evidence still says no Telegram resource tree is distributed.
+
 ## Current closure boundary
 
-For the frozen fcitx5-qt commit, implementation-source licensing is now mapped by explicit file evidence rather than only by the two files present in `LICENSES/`. The remaining P0 mixed-license work is narrower but not closed globally: other mixed-license gitlinks (`hime`, `hunspell`, `kcoreaddons`, `kimageformats`, and any later source-derived dependency) still require exact-file mapping where behavior research depends on them, and Telegram resources/fonts/icons/themes/sounds still require their own source/license provenance.
+For the frozen fcitx5-qt commit, implementation-source licensing is now mapped by explicit file evidence rather than only by the two files present in `LICENSES/`. The remaining P0 mixed-license work is narrower but not closed globally: other mixed-license gitlinks (`hunspell`, `kcoreaddons`, `kimageformats`, and any later source-derived dependency) still require exact-file mapping where behavior research depends on them, and Telegram resources/fonts/icons/themes/sounds still require their own source/license provenance.
