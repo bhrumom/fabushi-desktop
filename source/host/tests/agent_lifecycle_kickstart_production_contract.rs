@@ -333,7 +333,7 @@ fn user_message_cancels_pending_introduction_without_starting_runner() {
     production
         .append_agent_transcript_entries(
             &record.id,
-            &[json!({"kind":"message","role":"user","content":"hello"})],
+            &[json!({"id":"user-message-1","kind":"message","role":"user","content":"hello"})],
         )
         .expect("transcript");
     let runtime = FakeKickstartRuntime {
