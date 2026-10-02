@@ -180,24 +180,6 @@ impl ProductionAgentToAgentMessaging {
         }
 
         if let Some(analytics) = self.analytics.as_ref() {
-                analytics(from_agent_id, to_agent_id, true, priority);
-            }
-            (self.wake_sink)(&AgentWakeRequest {
-                agent_id:to_agent_id.into(), source_agent_id:from_agent_id.into(), prompt:message.clone(),
-                priority:false, member_ids:posted.member_ids, selected_images:Vec::new(),
-                inbound: None,
-            });
-            let mut notes = Vec::new();
-            if !images.is_empty() {
-                notes.push(format!("Note: the attached image{} {} NOT delivered — group messages are text-only for now; send images to an agent directly.",
-                    if images.len()==1 {""} else {"s"}, if images.len()==1 {"was"} else {"were"}));
-            }
-            if priority { notes.push("Note: priority is 1:1 only — this post did not interrupt members.".into()); }
-            let ack=format!("Posted to \"{}\". Its members will see it and reply on their own turns.",posted.group_name);
-            return Ok(if notes.is_empty(){ack}else{format!("{ack} {}",notes.join(" "))});
-        }
-
-        if let Some(analytics) = self.analytics.as_ref() {
             analytics(from_agent_id, to_agent_id, false, priority);
         }
         let _=self.sessions.add_agent_conversation_partner(from_agent_id,to_agent_id)?;
