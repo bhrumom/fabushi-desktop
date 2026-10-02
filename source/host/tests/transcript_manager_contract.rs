@@ -86,7 +86,7 @@ impl TurnExecutor for ManagerFakeExecutor {
 }
 
 #[test]
-fn manager_set_turn_execution_uses_the_shipping_execution_port() {
+fn runner_registry_owns_turn_execution_and_manager_delegates_to_the_same_owner() {
     let root = temp_root();
     fs::create_dir_all(&root).expect("root");
     let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(
@@ -94,10 +94,15 @@ fn manager_set_turn_execution_uses_the_shipping_execution_port() {
         500,
     ));
     let manager = TranscriptManager::new(&root, Arc::clone(&sessions));
+    let runner_owner = manager.runner_registry();
     let (_, registry) = turn_execution_extension();
     let registry = Arc::new(Mutex::new(registry));
     manager.set_turn_execution(TranscriptTurnExecutionPort::new(Arc::clone(&registry)));
 
+    assert!(runner_owner.turn_execution().is_some());
+    assert!(!runner_owner.can_execute());
+    assert!(!runner_owner.can_execute_group_member());
+    assert!(!futures::executor::block_on(runner_owner.is_run_ready()));
     assert!(!manager.can_execute());
     assert!(!manager.can_execute_group_member());
     assert!(!futures::executor::block_on(manager.is_run_ready()));
@@ -107,6 +112,26 @@ fn manager_set_turn_execution_uses_the_shipping_execution_port() {
         .expect("turn execution registry")
         .bind_executor(Box::new(ManagerFakeExecutor))
         .expect("bind executor");
+
+    assert!(runner_owner.can_execute());
+    assert!(runner_owner.can_execute_group_member());
+    assert!(futures::executor::block_on(runner_owner.is_run_ready()));
+    assert_eq!(
+        runner_owner
+            .create_runner(json!({"id":"owned-session"}), json!({"hook":"owned"}))
+            .expect("owned runner")["kind"],
+        "runner"
+    );
+    assert_eq!(
+        runner_owner
+            .create_group_member_runner(
+                json!({"id":"owned-member"}),
+                json!({"hook":"owned-group"}),
+                json!({"model":"owned-override"}),
+            )
+            .expect("owned group runner")["kind"],
+        "group"
+    );
 
     assert!(manager.can_execute());
     assert!(manager.can_execute_group_member());

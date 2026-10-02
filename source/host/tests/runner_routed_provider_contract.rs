@@ -182,31 +182,110 @@ fn production_routed_provider_checkpoint_store_persists_durable_json() {
 
 
 #[test]
-fn transcript_runner_registry_interrupts_only_the_wedged_agents_provider_streams() {
+fn transcript_runner_registry_watchdog_interrupts_only_current_direct_and_group_runs() {
     let tasks = Arc::new(RoutedProviderTaskRegistry::default());
     let registry = TranscriptRunnerRegistry::new(Arc::clone(&tasks));
-    let first = registry
-        .register_routed_provider("agent-a", "stream-a-1")
-        .expect("first stream");
-    let second = registry
-        .register_routed_provider("agent-a", "stream-a-2")
-        .expect("second stream");
+    let stale_direct = registry
+        .register_routed_provider("agent-a", "stream-a-stale")
+        .expect("stale direct stream");
+    let current_direct = registry
+        .register_routed_provider("agent-a", "stream-a-current")
+        .expect("current direct stream");
+    let stale_group = registry
+        .register_group_member("agent-a", "group-a-stale")
+        .expect("stale group stream");
+    let current_group = registry
+        .register_group_member("agent-a", "group-a-current")
+        .expect("current group stream");
     let other = registry
         .register_routed_provider("agent-b", "stream-b")
         .expect("other stream");
 
     assert_eq!(
-        registry.active_stream_ids_for_agent("agent-a"),
-        vec!["stream-a-1".to_string(), "stream-a-2".to_string()]
+        registry.current_routed_stream_id_for_agent("agent-a").as_deref(),
+        Some("stream-a-current")
     );
+    assert_eq!(
+        registry
+            .current_group_member_stream_id_for_agent("agent-a")
+            .as_deref(),
+        Some("group-a-current")
+    );
+
     assert!(registry.interrupt_wedged_run_for_watchdog("agent-a"));
-    assert!(first.is_cancelled());
-    assert!(second.is_cancelled());
+    assert!(!stale_direct.is_cancelled());
+    assert!(current_direct.is_cancelled());
+    assert_eq!(
+        current_direct.reason().as_deref(),
+        Some(RUN_WATCHDOG_INTERRUPT_REASON)
+    );
+    assert!(!stale_group.is_cancelled());
+    assert!(current_group.is_cancelled());
+    assert_eq!(
+        current_group.reason().as_deref(),
+        Some(RUN_WATCHDOG_INTERRUPT_REASON)
+    );
     assert!(!other.is_cancelled());
     assert!(!registry.interrupt_wedged_run_for_watchdog("missing"));
 
-    registry.finish_routed_provider("stream-a-1");
-    registry.finish_routed_provider("stream-a-2");
-    registry.finish_routed_provider("stream-b");
+    for stream_id in [
+        "stream-a-stale",
+        "stream-a-current",
+        "group-a-stale",
+        "group-a-current",
+        "stream-b",
+    ] {
+        registry.finish_routed_provider(stream_id);
+    }
     assert_eq!(registry.active_count(), 0);
+}
+
+#[test]
+fn transcript_runner_registry_preempts_only_current_group_member_and_preserves_new_identity() {
+    let tasks = Arc::new(RoutedProviderTaskRegistry::default());
+    let registry = TranscriptRunnerRegistry::new(tasks);
+    let stale = registry
+        .register_group_member("agent-a", "group-stale")
+        .expect("stale group stream");
+    let current = registry
+        .register_group_member("agent-a", "group-current")
+        .expect("current group stream");
+
+    registry.finish_routed_provider("group-stale");
+    assert_eq!(
+        registry
+            .current_group_member_stream_id_for_agent("agent-a")
+            .as_deref(),
+        Some("group-current")
+    );
+    assert_eq!(
+        registry.preempt_group_member_agent("agent-a", "direct user message"),
+        1
+    );
+    assert!(!stale.is_cancelled());
+    assert!(current.is_cancelled());
+    assert!(registry.take_group_member_preempted("agent-a"));
+    assert!(!registry.take_group_member_preempted("agent-a"));
+
+    let next = registry
+        .register_group_member("agent-a", "group-next")
+        .expect("next group stream");
+    registry.finish_routed_provider("group-current");
+    assert_eq!(
+        registry
+            .current_group_member_stream_id_for_agent("agent-a")
+            .as_deref(),
+        Some("group-next")
+    );
+    assert_eq!(
+        registry.preempt_group_member_agent("agent-a", "second direct user message"),
+        1
+    );
+    assert!(next.is_cancelled());
+
+    registry.finish_routed_provider("group-next");
+    assert_eq!(
+        registry.current_group_member_stream_id_for_agent("agent-a"),
+        None
+    );
 }
