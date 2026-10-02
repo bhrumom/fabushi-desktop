@@ -89,7 +89,6 @@ use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult,
     HandoffTelemetry, HandoffTrigger, PendingHandoff, ScreenshotPayload,
 };
-use mahayana_host_runtime::extensions::session::extension::start_session_extension;
 use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
 use mahayana_host_runtime::extensions::secrets::extension::{
     HostSecretsExtension, SecretsGatewayError, dispatch_secrets_gateway_call,
@@ -10074,13 +10073,17 @@ fn main() {
         })),
         ..BoxHandoffDeps::default()
     };
-    let session_extension = start_session_extension(
-        Arc::clone(&production_extensions.experiments),
+    let (session_workers, session_handoff) = match production_extensions.start_session(
         Arc::clone(&session_workers),
         handoff_deps,
-    );
-    let session_workers = session_extension.store();
-    let session_handoff = session_extension.handoff_service();
+    ) {
+        Ok(session) => session,
+        Err(error) => {
+            host_lifecycle.fail();
+            eprintln!("failed to start production Session extension: {error}");
+            return;
+        }
+    };
     let auto_review_update_events = gateway_events.clone();
     let auto_review_update_sessions = Arc::clone(&session_workers);
     let auto_review_update_sink = Arc::new(move |agent_id: &str, update: serde_json::Value| {
@@ -11751,7 +11754,9 @@ fn main() {
     }
     production_extensions.notify_bus.stop();
     drop(transcript_extension);
-    session_extension.shutdown();
+    if let Err(error) = production_extensions.shutdown_session() {
+        eprintln!("failed to shut down production Session extension cleanly: {error}");
+    }
     drop(teach_recording_extension);
     box_extensions.stop();
     // CloudAgents and Telemetry both depend on earlier production extensions.
