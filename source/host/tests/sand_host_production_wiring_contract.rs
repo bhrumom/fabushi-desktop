@@ -10,19 +10,41 @@ use serde_json::json;
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 const TRANSCRIPT_RUNTIME: &str =
     include_str!("../src/extensions/transcript/production_runtime.rs");
+const TRANSCRIPT_MANAGER: &str =
+    include_str!("../src/extensions/transcript/transcript_manager.rs");
 
 #[test]
 fn shipping_gateway_uses_the_grok_host_health_owner() {
-    assert!(SHIPPING_HOST.contains("fn health(&self) -> GatewayHealth"));
-    assert!(SHIPPING_HOST.contains("compute_host_health("));
-    assert!(SHIPPING_HOST.contains("live_running_agent_ids()"));
-    assert!(SHIPPING_HOST.contains("has_carryable_pending_wake()"));
-    assert!(SHIPPING_HOST.contains("generated_agent_runtime"));
-    assert!(SHIPPING_HOST.contains("runtime.has_running_subagents()"));
-    assert!(SHIPPING_HOST.contains("completion_revivals.has_mid_drain_revival()"));
-    assert!(SHIPPING_HOST.contains("background_shell_watches.has_running_background_shell_work()"));
-    assert!(SHIPPING_HOST.contains("agent_ids_with_pending_approvals()"));
-    assert!(SHIPPING_HOST.contains("active_agent_id(&self.session_workers)"));
+    let health = SHIPPING_HOST
+        .find("fn health(&self) -> GatewayHealth")
+        .expect("shipping Host health owner");
+    let prepare_upgrade = SHIPPING_HOST[health..]
+        .find("fn prepare_for_upgrade(&self)")
+        .map(|offset| health + offset)
+        .expect("health owner must finish before upgrade preparation");
+    let block = &SHIPPING_HOST[health..prepare_upgrade];
+
+    assert!(block.contains("compute_host_health("));
+    assert!(block.contains("self.transcript_manager.live_running_agent_ids()"));
+    assert!(block.contains("self.transcript_manager.has_carryable_pending_wake()"));
+    assert!(block.contains("self.transcript_manager.active_agent_id()"));
+    assert!(block.contains("generated_agent_runtime"));
+    assert!(block.contains("runtime.has_running_subagents()"));
+    assert!(block.contains("completion_revivals.has_mid_drain_revival()"));
+    assert!(block.contains("background_shell_watches.has_running_background_shell_work()"));
+    assert!(block.contains("agent_ids_with_pending_approvals()"));
+    assert!(
+        !block.contains("active_agent_id(&self.session_workers)"),
+        "shipping Gateway health must consume the TranscriptManager facade rather than bypass it",
+    );
+
+    assert!(TRANSCRIPT_MANAGER.contains("pub fn active_agent_id(&self) -> Option<String>"));
+    assert!(
+        TRANSCRIPT_MANAGER.contains(
+            "self.transcript_runtime.active_agent_id(&self.session_workers)"
+        ),
+        "TranscriptManager must preserve the production Session/Transcript active-agent owner",
+    );
     assert!(TRANSCRIPT_RUNTIME.contains("pub fn live_running_agent_ids"));
     assert!(TRANSCRIPT_RUNTIME.contains("pub fn has_carryable_pending_wake"));
 }
@@ -59,17 +81,43 @@ fn shipping_agent_deletion_wires_tray_and_durable_recovery_cleanup_owners() {
     assert!(block.contains("transcript_runtime.clear_agent_durable_recovery(agent_id)"));
     assert!(TRANSCRIPT_RUNTIME.contains("pub fn clear_agent_durable_recovery"));
     assert!(TRANSCRIPT_RUNTIME.contains("store.clear_agent(agent_id)"));
+
+    assert!(
+        TRANSCRIPT_MANAGER.contains("pub fn dispatch_agent_lifecycle_gateway_call("),
+        "TranscriptManager must own the lifecycle Gateway facade",
+    );
+    assert!(
+        TRANSCRIPT_MANAGER.contains(
+            "dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes("
+        ),
+        "TranscriptManager must preserve the all-runtimes production lifecycle dispatcher",
+    );
+    for needle in [
+        "&self.session_workers",
+        "deletion_runtime",
+        "self.roster_emit()",
+        "kickstart_created_agent",
+        "method",
+        "args",
+    ] {
+        assert!(
+            TRANSCRIPT_MANAGER.contains(needle),
+            "TranscriptManager lifecycle facade missing production dependency: {needle}",
+        );
+    }
+
     let lifecycle_dispatch = SHIPPING_HOST
-        .find("dispatch_production_agent_lifecycle_gateway_call_with_runtimes(")
-        .expect("shipping lifecycle dispatcher");
+        .find(".dispatch_agent_lifecycle_gateway_call(")
+        .expect("shipping Host must consume the TranscriptManager lifecycle facade");
     let session_dispatch = SHIPPING_HOST[lifecycle_dispatch..]
-        .find("dispatch_production_session_gateway_call_with_content_search(")
+        .find(".dispatch_session_gateway_call(method, &args)")
         .map(|offset| lifecycle_dispatch + offset)
         .expect("session dispatcher follows lifecycle dispatcher");
     let post_lifecycle = &SHIPPING_HOST[lifecycle_dispatch..session_dispatch];
-    assert!(!post_lifecycle.contains(
-        "self.transcript_runtime.session_runtime().mark_agent_deleted"
-    ));
+    assert!(
+        !post_lifecycle.contains("session_runtime().mark_agent_deleted"),
+        "shipping Host must not recreate deletion state transitions after the canonical lifecycle facade",
+    );
 }
 
 #[test]
@@ -112,12 +160,21 @@ fn shipping_create_agent_path_consumes_nonce_and_input_policy() {
         .map(|offset| create + offset)
         .expect("createAgent branch must finish before secrets dispatch");
     let create_block = &SHIPPING_HOST[create..secrets];
-    assert!(create_block.contains(
-        "dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes("
-    ));
-    assert!(!create_block.contains("dispatch_production_session_gateway_call("));
-    assert!(create_block.contains("Some(Arc::clone(&self.roster_emit))"));
+    assert!(create_block.contains(".transcript_manager"));
+    assert!(create_block.contains(".dispatch_agent_lifecycle_gateway_call("));
+    assert!(create_block.contains("&self.agent_deletion_runtime"));
     assert!(create_block.contains("Some(self.created_agent_kickstart_hook())"));
+    assert!(!create_block.contains("dispatch_production_session_gateway_call("));
+    assert!(
+        !create_block.contains("dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes("),
+        "shipping Host must consume the TranscriptManager facade instead of rebuilding lifecycle dispatch",
+    );
+    assert!(
+        TRANSCRIPT_MANAGER.contains(
+            "dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes("
+        ),
+        "TranscriptManager must keep the canonical all-runtimes createAgent path",
+    );
 
     let sanitized = sanitize_create_agent_args(&json!({
         "name": "Agent",
@@ -182,7 +239,6 @@ fn shipping_host_copy_in_mode_precedes_long_lived_runtime_bootstrap() {
     assert!(SHIPPING_HOST.contains("execute_production_box_copy_in_from_env"));
     assert!(SHIPPING_HOST.contains("std::process::exit(exit_code)"));
 }
-
 
 #[test]
 fn shipping_host_composes_one_durable_background_shell_rewatch_owner() {
