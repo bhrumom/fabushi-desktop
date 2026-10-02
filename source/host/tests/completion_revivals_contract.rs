@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fs;
 use std::sync::{Arc, Barrier, Mutex};
 
 use mahayana_host_runtime::extensions::transcript::completion_revivals::{
@@ -141,4 +142,24 @@ fn mid_drain_revival_is_visible_to_host_health_until_delivery_settles(){
     release.wait();
     worker.join().unwrap();
     assert!(!service.has_mid_drain_revival());
+}
+
+
+#[test]
+fn agent_deletion_clears_in_memory_completion_queues_and_shipping_wires_owner() {
+    let rt=Arc::new(FakeRuntime::default());
+    let service=CompletionRevivals::new(rt);
+
+    service.handle_background_subagent_completion(sub("s-delete"));
+    service.handle_background_shell_completion(shell("sh-delete"));
+    assert_eq!(service.pending_subagent_completions("p").len(),1);
+    assert_eq!(service.pending_shell_completions("p").len(),1);
+
+    service.clear_agent_pending_completions("p");
+    assert!(service.pending_subagent_completions("p").is_empty());
+    assert!(service.pending_shell_completions("p").is_empty());
+
+    let manifest_dir=std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let main=fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
+    assert!(main.contains("completion_revivals.clear_agent_pending_completions(agent_id)"));
 }
