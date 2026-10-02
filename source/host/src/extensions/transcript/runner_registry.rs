@@ -83,12 +83,20 @@ impl TranscriptRunnerRegistry {
         agent_id: &str,
         reason: impl Into<String>,
     ) -> usize {
+        if self
+            .group_member_tasks
+            .active_stream_ids_for_agent(agent_id)
+            .is_empty()
+        {
+            return 0;
+        }
+        self.dm_preempted_group_members
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(agent_id.to_string());
         let cancelled = self.group_member_tasks.cancel_agent(agent_id, reason);
-        if cancelled > 0 {
-            self.dm_preempted_group_members
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .insert(agent_id.to_string());
+        if cancelled == 0 {
+            self.clear_group_member_preempted(agent_id);
         }
         cancelled
     }
