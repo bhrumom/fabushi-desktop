@@ -1,11 +1,17 @@
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+const TRANSCRIPT_MANAGER: &str = include_str!("../src/extensions/transcript/transcript_manager.rs");
+const PENDING_WAKE_REARM: &str = include_str!("../src/extensions/transcript/pending_wake_rearm.rs");
 
 #[test]
 fn shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start() {
-    assert!(SHIPPING_HOST.contains("PendingWakeRearm::new("));
-    assert!(SHIPPING_HOST.contains("for pending in store.list_pending()"));
+    assert!(TRANSCRIPT_MANAGER.contains("PendingWakeRearm::new("));
+    assert!(TRANSCRIPT_MANAGER.contains("pub fn rearm_pending_wakes(&self)"));
+    assert!(TRANSCRIPT_MANAGER.contains("owner.rearm_pending_wakes();"));
+    assert!(PENDING_WAKE_REARM.contains("for marker in store.list_pending()"));
+    assert!(PENDING_WAKE_REARM.contains("self.rearm_pending_wake(marker, now, None);"));
+    assert!(SHIPPING_HOST.contains(".bind_pending_wake_runtime(Arc::new(ProductionPendingWakeRuntime"));
+    assert!(SHIPPING_HOST.contains("transcript_manager.rearm_pending_wakes()"));
     assert!(SHIPPING_HOST.contains("background_shell_watches: Arc<RunnerBackgroundShellWatches>"));
-    assert!(SHIPPING_HOST.contains("rearm.rearm_pending_wake(pending, now_ms, Some(\"host_startup\"))"));
     assert!(SHIPPING_HOST.contains("is_cloud_watch_armed(agent_id, work_id)"));
     assert!(SHIPPING_HOST.contains("CloudAgentWatchOptions::new(quiet_origin, false)"));
     assert!(SHIPPING_HOST.contains("completion_revivals: Arc<CompletionRevivals>"));
