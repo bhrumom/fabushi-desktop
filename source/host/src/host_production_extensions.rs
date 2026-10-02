@@ -103,6 +103,10 @@ use crate::extensions::memory::production::{
 use crate::extensions::notify_bus::extension::{
     HostNotifyBusExtension, start_notify_bus_extension,
 };
+use crate::extensions::notifications::extension::{
+    HostNotificationsExtension, WindowFocusedAtSource, start_notifications_extension,
+};
+use crate::extensions::notifications::mobile_push_notifier::NotificationAgent;
 use crate::extensions::source_map::extension::start_source_map_extension;
 use crate::extensions::source_map::source_map_service::SandSourceMap;
 use crate::extensions::secrets::extension::{
@@ -157,6 +161,7 @@ use crate::extensions::box_store_sync::box_object_store::BoxObjectStore;
 /// until their real production owners exist.
 pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Auth,
+    HostExtensionId::Notifications,
     HostExtensionId::Automations,
     HostExtensionId::Telemetry,
     HostExtensionId::ContentSearch,
@@ -422,6 +427,7 @@ pub struct ProductionHostExtensions {
         SettingsSubscription<dyn Fn(BTreeMap<String, bool>) + Send + Sync + 'static>,
     pub codebase_telemetry: CodebaseTelemetryExtension,
     pub notify_bus: HostNotifyBusExtension,
+    notifications: Mutex<Option<HostNotificationsExtension>>,
     pub memory: HostMemoryExtension,
     pub managed_setup: Arc<ManagedSetupExtension>,
     pub source_map: Arc<SandSourceMap>,
@@ -608,6 +614,7 @@ pub fn start_production_host_extensions(
         _settings_feature_override_subscription: settings_feature_override_subscription,
         codebase_telemetry,
         notify_bus,
+        notifications: Mutex::new(None),
         memory,
         managed_setup,
         source_map,
@@ -634,6 +641,39 @@ impl ProductionHostExtensions {
 
     pub fn stop_cloud_agents(&self) {
         self.cloud_agents.stop();
+    }
+
+    pub fn start_notifications(
+        &self,
+        events: SandHostEventBus,
+        initial_baseline: Option<Vec<NotificationAgent>>,
+        window_focused_at: WindowFocusedAtSource,
+    ) -> Result<(), String> {
+        let mut slot = self
+            .notifications
+            .lock()
+            .map_err(|_| "production Notifications runtime lock poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("production Notifications runtime is already started".into());
+        }
+        let extension = start_notifications_extension(
+            Arc::clone(&self.auth),
+            events,
+            initial_baseline,
+            window_focused_at,
+        )?;
+        *slot = Some(extension);
+        Ok(())
+    }
+
+    pub fn stop_notifications(&self) -> Result<(), String> {
+        let extension = self
+            .notifications
+            .lock()
+            .map_err(|_| "production Notifications runtime lock poisoned".to_string())?
+            .take();
+        drop(extension);
+        Ok(())
     }
 
     pub fn start_automations(
