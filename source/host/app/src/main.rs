@@ -121,8 +121,8 @@ use mahayana_host_runtime::extensions::cross_user_sharing::production::{
 };
 use mahayana_host_runtime::groups::group_chat::{GroupDescription, GroupMember};
 use mahayana_host_runtime::extensions::transcript::send_group_fanout::{
-    GroupMemberTurnExecutor, LocalGroupFanoutDisposition, collect_new_member_send_messages,
-    dispatch_local_group_send,
+    GROUP_MEMBER_DM_PREEMPTED_ERROR, GroupMemberTurnExecutor, LocalGroupFanoutDisposition,
+    collect_new_member_send_messages, dispatch_local_group_send,
 };
 use mahayana_host_runtime::extensions::transcript::send_acceptance::emit_accepted_send_echoes;
 use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
@@ -2495,15 +2495,10 @@ impl UnifiedGatewayApi {
         else {
             return;
         };
-        for stream_id in self
-            .runner_registry
-            .active_group_member_stream_ids_for_agent(agent_id)
-        {
-            let _ = self.runner_registry.cancel_stream(
-                &stream_id,
-                "direct user message preempted group member turn",
-            );
-        }
+        let _ = self.runner_registry.preempt_group_member_agent(
+            agent_id,
+            "direct user message preempted group member turn",
+        );
     }
 
     fn persisted_user_entry(
@@ -2706,6 +2701,16 @@ fn run_local_group_member_turn(
                 match payload.get("type").and_then(serde_json::Value::as_str) {
                     Some("completed") => break,
                     Some("failed" | "cancelled") => {
+                        if deps.runner_registry.take_group_member_preempted(&member_id) {
+                            let after = deps
+                                .session_workers
+                                .read_agent_transcript_entries(&member_id)?;
+                            let sent = collect_new_member_send_messages(&before, &after);
+                            if !sent.is_empty() {
+                                return Ok(sent);
+                            }
+                            return Err(GROUP_MEMBER_DM_PREEMPTED_ERROR.to_string());
+                        }
                         return Err(payload
                             .get("message")
                             .and_then(serde_json::Value::as_str)
@@ -8493,6 +8498,7 @@ fn main() {
             let telemetry_logs = host_telemetry.logs.clone();
             Arc::new(move |agent_id| {
                 let was_in_flight = transcript_runtime.is_agent_running(agent_id);
+                runner_registry.clear_group_member_preempted(agent_id);
                 let had_group_run =
                     runner_registry.cancel_group_member_agent(agent_id, "agent deleted") > 0;
                 let had_active_run =
