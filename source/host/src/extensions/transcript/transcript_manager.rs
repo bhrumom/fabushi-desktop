@@ -9,7 +9,16 @@ use crate::automations::automation_store::FileAutomationStore;
 use crate::extensions::session::agent_db_transcript_pages::{
     TranscriptPage, TranscriptWindow, TranscriptWindowQuery,
 };
+use crate::extensions::attachments::attachments_service::AttachmentsService;
+use crate::extensions::content_search::extension::ProductionContentSearchExtension;
+use crate::extensions::memory::extension::HostMemoryExtension;
 use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::extensions::telemetry::analytics_service::AutomationRunAnalyticsTelemetry;
+use crate::extensions::telemetry::host_telemetry_service::{
+    HostProductAnalytics, HostTelemetryApi,
+};
+use crate::extensions::trays::extension::HostTraysExtension;
+use crate::extensions::turn_execution::turn_execution_service::TurnExecutionRegistry;
 
 use super::ack_obligations::AckObligations;
 use super::automation_runtime::AutomationRuntime;
@@ -17,6 +26,19 @@ use super::async_task_union::AsyncTask;
 use super::production_runtime::{ProductionSendError, ProductionTranscriptRuntime};
 use super::runner_registry::TranscriptRunnerRegistry;
 use super::shared_rooms::SharedRooms;
+
+
+#[derive(Clone)]
+pub struct TranscriptManagerServices {
+    pub telemetry: Arc<AutomationRunAnalyticsTelemetry>,
+    pub product_analytics: HostProductAnalytics,
+    pub trace_flusher: HostTelemetryApi,
+    pub memory: HostMemoryExtension,
+    pub content_search: Arc<ProductionContentSearchExtension>,
+    pub attachments: Arc<AttachmentsService>,
+    pub trays: Arc<HostTraysExtension>,
+    pub turn_execution: Arc<Mutex<TurnExecutionRegistry>>,
+}
 
 /// Production composition root for the Grok Transcript extension.
 ///
@@ -32,6 +54,7 @@ pub struct TranscriptManager {
     automation_runtime: Arc<AutomationRuntime>,
     watched_automation_store: Mutex<Option<FileAutomationStore>>,
     shared_rooms: Arc<SharedRooms>,
+    services: Mutex<Option<TranscriptManagerServices>>,
     disposed: AtomicBool,
 }
 
@@ -51,6 +74,7 @@ impl TranscriptManager {
             automation_runtime,
             watched_automation_store: Mutex::new(None),
             shared_rooms,
+            services: Mutex::new(None),
             disposed: AtomicBool::new(false),
         }
     }
@@ -77,6 +101,25 @@ impl TranscriptManager {
 
     pub fn shared_rooms(&self) -> Arc<SharedRooms> {
         Arc::clone(&self.shared_rooms)
+    }
+
+    pub fn set_production_services(&self, services: TranscriptManagerServices) -> Result<(), String> {
+        let mut slot = self
+            .services
+            .lock()
+            .map_err(|_| "transcript service composition mutex poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("transcript production services already configured".into());
+        }
+        *slot = Some(services);
+        Ok(())
+    }
+
+    pub fn production_services(&self) -> Option<TranscriptManagerServices> {
+        self.services
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone()
     }
 
     pub fn prompt_acceptance_status(

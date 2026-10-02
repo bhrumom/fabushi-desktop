@@ -37,6 +37,8 @@ use super::upgrade_recreate_resume::{
 
 const COMPLETION_CACHE_MAX: usize = 256;
 
+pub type AgentRunLifecycleObserver = Arc<dyn Fn(&str, &str) + Send + Sync>;
+
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ProductionSendError {
     #[error("{0}")]
@@ -133,6 +135,7 @@ pub struct ProductionTranscriptRuntime {
     replica_writer: HostReplicaWriter,
     shared_group_remote_executor: Mutex<Option<GroupMemberTurnExecutor>>,
     roster_snapshot_seq: AtomicU64,
+    agent_run_lifecycle_observer: Mutex<Option<AgentRunLifecycleObserver>>,
 }
 
 impl ProductionTranscriptRuntime {
@@ -173,6 +176,28 @@ impl ProductionTranscriptRuntime {
             replica_writer: HostReplicaWriter::new(),
             shared_group_remote_executor: Mutex::new(None),
             roster_snapshot_seq: AtomicU64::new(0),
+            agent_run_lifecycle_observer: Mutex::new(None),
+        }
+    }
+
+    pub fn set_agent_run_lifecycle_observer(
+        &self,
+        observer: Option<AgentRunLifecycleObserver>,
+    ) {
+        *self
+            .agent_run_lifecycle_observer
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = observer;
+    }
+
+    fn emit_agent_run_lifecycle(&self, event_type: &str, request_id: &str) {
+        let observer = self
+            .agent_run_lifecycle_observer
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        if let Some(observer) = observer {
+            observer(event_type, request_id);
         }
     }
 
@@ -682,6 +707,7 @@ impl ProductionTranscriptRuntime {
                         pipeline.finish_send(ledger, nonce.as_deref(), true);
                     }
                     drop(state);
+                    self.emit_agent_run_lifecycle("started", &stream_id);
                     self.send_settled.notify_all();
                     return Ok(RoutedSendAcceptance {
                         duplicate: false,
@@ -740,6 +766,7 @@ impl ProductionTranscriptRuntime {
             lease.is_group_member_turn,
         );
         drop(state);
+        self.emit_agent_run_lifecycle("ended", stream_id);
         self.turn_ready.notify_all();
         Ok(Some(RoutedTurnSettlement { watchdog, next }))
     }

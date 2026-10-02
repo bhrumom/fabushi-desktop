@@ -138,10 +138,13 @@ use mahayana_host_runtime::extensions::transcript::send_acceptance::emit_accepte
 use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
 use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
 use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManager;
+use mahayana_host_runtime::extensions::turn_execution::extension::turn_execution_extension;
 use mahayana_host_runtime::extensions::transcript::transcript_entry_ids::{
     TranscriptEntryIdKind, next_entry_id,
 };
-use mahayana_host_runtime::extensions::transcript::extension::start_transcript_extension;
+use mahayana_host_runtime::extensions::transcript::extension::{
+    TranscriptExtensionDeps, TranscriptExtensionEventBridge, start_production_transcript_extension,
+};
 use mahayana_host_runtime::extensions::transcript::send_message_shaping::{
     collect_inbound_images, shape_send_prompt_media_args,
 };
@@ -1044,6 +1047,7 @@ struct LocalRoutedRunnerDeps {
     auth: Arc<HostAuthExtension>,
     auto_review: Arc<HostAutoReviewExtension>,
     events: GatewayEventHub,
+    transcript_events: TranscriptExtensionEventBridge,
     host_tx: mpsc::Sender<HostLaneRequest>,
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
@@ -6666,6 +6670,8 @@ fn start_routed_provider_task(
                                 started_at_ms(),
                                 &card_tool_call_id,
                             )?;
+                            deps.transcript_events
+                                .listener_connect_card(&callback_agent_id, &platform);
                             lifecycle.watch_listener_connection(
                                 callback_agent_id.clone(),
                                 platform,
@@ -9573,11 +9579,20 @@ fn main() {
             let _ = auto_review_display_recheck_logs
                 .report_auto_review_display_recheck_failed(agent_id);
         }));
-    let transcript_event_hub = gateway_events.clone();
-    let transcript_extension = start_transcript_extension(
+    let (_, turn_execution_registry) = turn_execution_extension();
+    let turn_execution_registry = Arc::new(Mutex::new(turn_execution_registry));
+    let transcript_extension = start_production_transcript_extension(
         &app_data_dir,
         Arc::clone(&session_workers),
-        Arc::new(move |event| transcript_event_hub.publish(event)),
+        TranscriptExtensionDeps {
+            attachments: Arc::clone(&attachments_service),
+            content_search: Arc::clone(&production_extensions.content_search),
+            memory: production_extensions.memory.clone(),
+            telemetry: host_telemetry.clone(),
+            trays: Arc::clone(&production_extensions.trays),
+            turn_execution: Arc::clone(&turn_execution_registry),
+            events: gateway_events.clone(),
+        },
     );
     if let Some(error) = transcript_extension.profile_watch_error() {
         eprintln!(
@@ -9586,6 +9601,9 @@ fn main() {
     }
     let transcript_manager = transcript_extension.manager();
     let roster_emit = transcript_extension.roster_emit();
+    let transcript_events = transcript_extension
+        .event_bridge()
+        .expect("production Transcript extension must install its event bridge");
     let content_search_extension = Arc::clone(&production_extensions.content_search);
     let permission_widget_responses =
         Arc::new(WidgetResponses::new(Arc::clone(&session_workers)));
@@ -9665,9 +9683,11 @@ fn main() {
     {
         let lifecycle_logs = host_telemetry.logs.clone();
         let lifecycle_roster = Arc::clone(&roster_emit);
+        let lifecycle_transcript_events = transcript_events.clone();
         transcript_manager
             .automation_runtime()
             .set_lifecycle_reporter(Some(Arc::new(move |event| {
+                lifecycle_transcript_events.automation_config_changed();
                 lifecycle_roster.publish_timeline_event(
                     &event.agent_id,
                     serde_json::json!({
@@ -10229,6 +10249,7 @@ fn main() {
         auth: Arc::clone(&production_extensions.auth),
         auto_review: Arc::clone(&auto_review_extension),
         events: gateway_events.clone(),
+        transcript_events: transcript_events.clone(),
         host_tx: host_tx.clone(),
         data_dir: app_data_dir.clone(),
         request_context: Arc::clone(&runner_request_context),

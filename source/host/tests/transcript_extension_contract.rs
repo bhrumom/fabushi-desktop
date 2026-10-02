@@ -4,8 +4,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::extension::{
-    TRANSCRIPT_EXTENSION_DEPENDENCIES, TRANSCRIPT_EXTENSION_ID, start_transcript_extension,
+    TRANSCRIPT_EXTENSION_DEPENDENCIES, TRANSCRIPT_EXTENSION_ID, TranscriptExtensionEventBridge,
+    start_transcript_extension,
 };
+use mahayana_host_runtime::host_event_bus::SandHostEventBus;
 
 fn temp_root() -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -49,6 +51,7 @@ fn extension_composes_manager_roster_and_profile_watch_lifecycle() {
     );
     let manager = extension.manager();
     assert!(Arc::ptr_eq(&manager.session_workers(), &sessions));
+    assert_eq!(extension.roster_emit().outline_stream_coalescing_ms(), 250);
     extension.roster_emit().emit_agents().expect("emit empty roster");
     assert_eq!(
         events
@@ -70,4 +73,66 @@ fn extension_composes_manager_roster_and_profile_watch_lifecycle() {
     assert!(manager.is_disposed());
 
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn extension_event_bridge_emits_frozen_host_topics_with_identity_payloads() {
+    let bus = SandHostEventBus::default();
+    let observed = Arc::new(Mutex::new(Vec::<(String, serde_json::Value)>::new()));
+    let mut subscriptions = Vec::new();
+    for topic in [
+        "transcript.automation-config-changed",
+        "transcript.listener-connect-card",
+        "transcript.run-started",
+        "transcript.run-ended",
+    ] {
+        let observed = Arc::clone(&observed);
+        let topic_owned = topic.to_string();
+        subscriptions.push(bus.on(topic, move |payload| {
+            observed
+                .lock()
+                .expect("observed events")
+                .push((topic_owned.clone(), payload.clone()));
+            Ok(())
+        }));
+    }
+    let bridge = TranscriptExtensionEventBridge::new(bus);
+
+    bridge.automation_config_changed();
+    bridge.listener_connect_card("agent-a", "slack");
+    bridge.run_started("request-a");
+    bridge.run_ended("request-a");
+
+    let observed = observed.lock().expect("observed events");
+    assert_eq!(observed.len(), 4);
+    assert_eq!(
+        observed[0],
+        (
+            "transcript.automation-config-changed".to_string(),
+            serde_json::json!({})
+        )
+    );
+    assert_eq!(
+        observed[1],
+        (
+            "transcript.listener-connect-card".to_string(),
+            serde_json::json!({"agentId":"agent-a","platform":"slack"})
+        )
+    );
+    assert_eq!(
+        observed[2],
+        (
+            "transcript.run-started".to_string(),
+            serde_json::json!({"requestId":"request-a"})
+        )
+    );
+    assert_eq!(
+        observed[3],
+        (
+            "transcript.run-ended".to_string(),
+            serde_json::json!({"requestId":"request-a"})
+        )
+    );
+    drop(subscriptions);
 }

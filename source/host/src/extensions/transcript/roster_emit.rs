@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
@@ -25,6 +26,7 @@ pub struct ProductionRosterEmit {
     transcript: Arc<ProductionTranscriptRuntime>,
     event_sink: RosterEventSink,
     timeline_wake_sink: Mutex<Option<TimelineWakeSink>>,
+    outline_stream_coalescing_ms: AtomicU64,
     state: Mutex<RosterEmitState>,
 }
 
@@ -39,6 +41,7 @@ impl ProductionRosterEmit {
             transcript,
             event_sink,
             timeline_wake_sink: Mutex::new(None),
+            outline_stream_coalescing_ms: AtomicU64::new(0),
             state: Mutex::new(RosterEmitState::default()),
         }
     }
@@ -144,6 +147,15 @@ impl ProductionRosterEmit {
             "channel": "profile-changed",
             "payload": { "agentId": agent_id }
         }));
+    }
+
+    pub fn set_outline_stream_coalescing_ms(&self, delay_ms: u64) {
+        self.outline_stream_coalescing_ms
+            .store(delay_ms, Ordering::Release);
+    }
+
+    pub fn outline_stream_coalescing_ms(&self) -> u64 {
+        self.outline_stream_coalescing_ms.load(Ordering::Acquire)
     }
 
     pub fn bind_timeline_wake_sink(&self, sink: Option<TimelineWakeSink>) {

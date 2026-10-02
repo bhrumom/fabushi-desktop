@@ -1,4 +1,5 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
@@ -13,6 +14,14 @@ fn routed_prompt_admission_owns_nonce_durability_and_recovery_identity() {
         uuid::Uuid::new_v4()
     ));
     let runtime = ProductionTranscriptRuntime::new(Some(&root));
+    let lifecycle = Arc::new(Mutex::new(Vec::<(String, String)>::new()));
+    let lifecycle_observer = Arc::clone(&lifecycle);
+    runtime.set_agent_run_lifecycle_observer(Some(Arc::new(move |event_type, request_id| {
+        lifecycle_observer
+            .lock()
+            .expect("lifecycle")
+            .push((event_type.to_string(), request_id.to_string()));
+    })));
     let args = serde_json::json!({
         "agentId": "agent-a",
         "prompt": "hello",
@@ -42,6 +51,10 @@ fn routed_prompt_admission_owns_nonce_durability_and_recovery_identity() {
     assert_eq!(runtime.in_flight_run_count("agent-a"), 1);
     assert!(!runtime.is_turn_dispatch_idle("agent-a"));
     assert!(runtime.has_routed_turn_lease("agent-a", "stream-a"));
+    assert_eq!(
+        *lifecycle.lock().expect("lifecycle"),
+        vec![("started".to_string(), "stream-a".to_string())]
+    );
 
     let duplicate = runtime
         .accept_routed_send(&args, |_: &serde_json::Value| {
@@ -74,6 +87,13 @@ fn routed_prompt_admission_owns_nonce_durability_and_recovery_identity() {
     assert_eq!(runtime.in_flight_run_count("agent-a"), 0);
     assert!(runtime.is_turn_dispatch_idle("agent-a"));
     assert!(!runtime.has_routed_turn_lease("agent-a", "stream-a"));
+    assert_eq!(
+        *lifecycle.lock().expect("lifecycle"),
+        vec![
+            ("started".to_string(), "stream-a".to_string()),
+            ("ended".to_string(), "stream-a".to_string()),
+        ]
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }
