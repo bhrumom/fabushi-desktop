@@ -87,7 +87,6 @@ pub struct AgentWakeRequest {
     pub source_agent_id: String,
     pub prompt: String,
     pub priority: bool,
-    pub member_ids: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub selected_images: Vec<Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -229,7 +228,7 @@ impl ProductionAgentToAgentMessaging {
             .collect::<Vec<_>>();
         (self.wake_sink)(&AgentWakeRequest{
             agent_id:to_agent_id.into(),source_agent_id:from_agent_id.into(),
-            prompt:build_agent_inbound_wake_prompt(&from,&message,images,priority),priority,member_ids:Vec::new(),
+            prompt:build_agent_inbound_wake_prompt(&from,&message,images,priority),priority,
             selected_images,
             inbound: Some(inbound),
         });

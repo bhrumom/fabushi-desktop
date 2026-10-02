@@ -489,66 +489,31 @@ pub fn prepare_agent_inbound_wake_routes(
             ));
         }
     };
-    let member_ids = match payload.get("memberIds") {
-        None | Some(Value::Null) => Vec::new(),
-        Some(Value::Array(values)) => {
-            let mut seen = std::collections::BTreeSet::new();
-            values
-                .iter()
-                .filter_map(Value::as_str)
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .filter(|value| seen.insert((*value).to_string()))
-                .map(str::to_string)
-                .collect::<Vec<_>>()
-        }
-        Some(_) => {
-            return Err(Failure::new(
-                "INFERENCE_AGENT_WAKE_INVALID",
-                "agent inbound wake memberIds must be an array",
-            ));
-        }
-    };
-    let is_group = !member_ids.is_empty();
-    let targets = if is_group {
-        member_ids
-    } else {
-        vec![target_agent_id.clone()]
-    };
-    Ok(targets
-        .into_iter()
-        .map(|agent_id| {
-            let mut send_args = serde_json::json!({
-                "agentId": agent_id,
-                "prompt": prompt.clone(),
-                "_runnerPrompt": prompt.clone(),
-                "appendUserMessage": false,
-                "hidden": true,
-                "requestSource": "agent-inbound",
-                "skipAckObligation": true,
-                "agentWake": {
-                    "sourceAgentId": source_agent_id.clone(),
-                    "priority": priority,
-                },
-            });
-            if !selected_images.is_empty() && !is_group {
-                send_args["selectedImages"] = Value::Array(selected_images.clone());
-            }
-            if !is_group {
-                if let Some(inbound) = payload.get("inbound").filter(|value| !value.is_null()) {
-                    send_args["agentWake"]["inbound"] = inbound.clone();
-                }
-            }
-            if is_group {
-                send_args["groupContext"] = serde_json::json!({
-                    "groupId": target_agent_id.clone(),
-                    "sourceAgentId": source_agent_id.clone(),
-                    "backgroundWake": true,
-                });
-            }
-            CoordinatorAgentWakeRoute { agent_id, send_args }
-        })
-        .collect())
+    let mut send_args = serde_json::json!({
+        "agentId": target_agent_id.clone(),
+        "prompt": prompt.clone(),
+        "_runnerPrompt": prompt,
+        "appendUserMessage": false,
+        "hidden": true,
+        "isSilenceAllowed": true,
+        "requestSource": "agent-inbound",
+        "skipAckObligation": true,
+        "agentWake": {
+            "sourceAgentId": source_agent_id,
+            "priority": priority,
+        },
+    });
+    if !selected_images.is_empty() {
+        send_args["selectedImages"] = Value::Array(selected_images);
+    }
+    if let Some(inbound) = payload.get("inbound").filter(|value| !value.is_null()) {
+        send_args["agentWake"]["inbound"] = inbound.clone();
+    }
+    Ok(vec![CoordinatorAgentWakeRoute {
+        agent_id: target_agent_id,
+        send_args,
+    }])
+
 }
 
 

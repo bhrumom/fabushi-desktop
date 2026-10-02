@@ -281,6 +281,23 @@ fn shared_group_uses_remote_executor_without_creating_a_second_group_runtime() {
 
 
 #[test]
+fn shipping_agent_posted_group_turn_reuses_cross_user_remote_executor() {
+    let start = SHIPPING_HOST
+        .find("fn run_agent_posted_group_turn(")
+        .expect("agent-posted group turn");
+    let end = SHIPPING_HOST[start..]
+        .find("\nfn run_local_group_member_turn(")
+        .map(|offset| start + offset)
+        .expect("group member turn boundary");
+    let body = &SHIPPING_HOST[start..end];
+
+    assert!(body.contains("dispatch_deps.cross_user.remote_executor()"));
+    assert!(body.contains("dispatch_local_group_send("));
+    assert!(body.contains("remote_executor,"));
+    assert!(!body.contains("executor,\n                    None,"));
+}
+
+#[test]
 fn shipping_group_fanout_keeps_cursor_on_the_canonical_host_runner_path() {
     assert!(SHIPPING_HOST.contains("dispatch_local_group_send("));
     assert!(SHIPPING_HOST.contains("self.cross_user.remote_executor()"));

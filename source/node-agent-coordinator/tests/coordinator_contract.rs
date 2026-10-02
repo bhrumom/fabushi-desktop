@@ -1938,37 +1938,6 @@ fn inference_router_serializes_each_agent_but_allows_parallel_agents() {
 }
 
 #[test]
-fn agent_inbound_group_wake_fans_out_once_per_member_with_group_context() {
-    let routes = prepare_agent_inbound_wake_routes(&json!({
-        "agentId": "group-1",
-        "sourceAgentId": "agent-source",
-        "prompt": "[agent] group update",
-        "priority": false,
-        "memberIds": ["agent-b", "agent-c", "agent-b", ""]
-    }))
-    .expect("valid group wake");
-
-    assert_eq!(routes.len(), 2);
-    assert_eq!(routes[0].agent_id, "agent-b");
-    assert_eq!(routes[1].agent_id, "agent-c");
-    for route in routes {
-        assert_eq!(route.send_args["requestSource"], "agent-inbound");
-        assert_eq!(route.send_args["appendUserMessage"], false);
-        assert_eq!(route.send_args["hidden"], true);
-        assert_eq!(route.send_args["agentWake"]["sourceAgentId"], "agent-source");
-        assert_eq!(route.send_args["agentWake"]["priority"], false);
-        assert_eq!(route.send_args["groupContext"]["groupId"], "group-1");
-        assert_eq!(
-            route.send_args["groupContext"]["sourceAgentId"],
-            "agent-source"
-        );
-        assert_eq!(route.send_args["groupContext"]["backgroundWake"], true);
-    }
-}
-
-
-
-#[test]
 fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
     let selected = json!([{
         "data": [1, 2, 3],
@@ -1980,7 +1949,6 @@ fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
         "sourceAgentId": "agent-source",
         "prompt": "[agent] peer message",
         "priority": true,
-        "memberIds": [],
         "selectedImages": selected,
         "inbound": {
             "from": {"id":"agent-source","name":"Source"},
@@ -1994,6 +1962,9 @@ fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
     let route = &routes[0];
     assert_eq!(route.agent_id, "agent-target");
     assert_eq!(route.send_args["requestSource"], "agent-inbound");
+    assert_eq!(route.send_args["hidden"], true);
+    assert_eq!(route.send_args["isSilenceAllowed"], true);
+    assert_eq!(route.send_args["appendUserMessage"], false);
     assert_eq!(route.send_args["selectedImages"], selected);
     assert_eq!(route.send_args["agentWake"]["priority"], true);
     assert_eq!(route.send_args["agentWake"]["inbound"]["text"], "peer message");
