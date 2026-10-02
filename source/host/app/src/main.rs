@@ -256,7 +256,7 @@ use mahayana_host_runtime::extensions::telemetry::journal_outcome_telemetry::Jou
 use mahayana_host_runtime::extensions::telemetry::sand_error_tags::SandErrorValue;
 use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
 use mahayana_host_runtime::extensions::transcript::turn_runtime::{
-    TurnTerminalKind, classify_agent_error, project_turn_terminal,
+    REPLY_NUDGE_PROMPT, TurnTerminalKind, classify_agent_error, project_turn_terminal,
     shape_reply_nudge_turn_input, should_attempt_reply_nudge,
 };
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
