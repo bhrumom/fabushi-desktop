@@ -636,11 +636,11 @@ fn shipping_gateway_orders_lifecycle_owner_before_generic_session_gateway() {
     let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
     let lifecycle = main
-        .find("dispatch_production_agent_lifecycle_gateway_call_with_runtimes(")
-        .expect("lifecycle dispatcher");
+        .find(".dispatch_agent_lifecycle_gateway_call(")
+        .expect("manager-owned lifecycle dispatcher");
     let session = main
-        .find("dispatch_production_session_gateway_call_with_content_search(")
-        .expect("session dispatcher");
+        .find(".dispatch_session_gateway_call(method, &args)")
+        .expect("manager-owned session dispatcher");
     assert!(lifecycle < session, "lifecycle mutations must win before the generic session fallback");
 
     let lifecycle_source =

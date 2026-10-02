@@ -8680,6 +8680,12 @@ impl GatewayApi for UnifiedGatewayApi {
         }
         if let Some(result) = self
             .transcript_manager
+            .dispatch_memory_gateway_call(method, &args)
+        {
+            return result.map_err(GatewayCommandError::Internal);
+        }
+        if let Some(result) = self
+            .transcript_manager
             .dispatch_agent_lifecycle_gateway_call(
                 &self.agent_deletion_runtime,
                 None,

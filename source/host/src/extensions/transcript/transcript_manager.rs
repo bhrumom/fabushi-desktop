@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::automations::automation_store::FileAutomationStore;
 use crate::extensions::session::agent_db_transcript_pages::{
@@ -16,6 +16,7 @@ use crate::extensions::transcript::agent_lifecycle::{
 use crate::extensions::attachments::attachments_service::AttachmentsService;
 use crate::extensions::content_search::extension::ProductionContentSearchExtension;
 use crate::extensions::memory::extension::HostMemoryExtension;
+use crate::extensions::memory::memory_service::MemoryKind;
 use crate::extensions::session::box_handoff_service::BoxHandoffService;
 use crate::extensions::session::gateway::{
     SessionGatewayError,
@@ -567,6 +568,65 @@ impl TranscriptManager {
         self.session_workers
             .memory_service()
             .set_active_agent(self.active_agent_id());
+    }
+
+    pub fn dispatch_memory_gateway_call(
+        &self,
+        method: &str,
+        args: &Value,
+    ) -> Option<Result<Value, String>> {
+        let required = |name: &str| {
+            args.get(name)
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| format!("{method} requires {name}"))
+        };
+        match method {
+            "getAgentMemories" => Some(required("id").map(|agent_id| {
+                Value::Array(
+                    self.session_workers
+                        .memory_service()
+                        .list(agent_id)
+                        .into_iter()
+                        .map(|memory| {
+                            json!({
+                                "id": memory.id,
+                                "content": memory.content,
+                                "createdAt": memory.created_at,
+                                "kind": match memory.kind {
+                                    MemoryKind::Profile => "profile",
+                                    MemoryKind::Log => "log",
+                                },
+                            })
+                        })
+                        .collect(),
+                )
+            })),
+            "deleteAgentMemory" => Some(required("id").and_then(|agent_id| {
+                let memory_id = required("memoryId")?;
+                let removed = self
+                    .session_workers
+                    .memory_service()
+                    .remove(agent_id, memory_id)
+                    .map_err(|error| error.to_string())?;
+                if removed {
+                    self.session_workers
+                        .clear_agent_memory_prompt_snapshot(agent_id)?;
+                }
+                Ok(Value::Bool(removed))
+            })),
+            "clearAgentMemories" => Some(required("id").and_then(|agent_id| {
+                self.session_workers
+                    .memory_service()
+                    .clear(agent_id)
+                    .map_err(|error| error.to_string())?;
+                self.session_workers
+                    .clear_agent_memory_prompt_snapshot(agent_id)?;
+                Ok(Value::Null)
+            })),
+            _ => None,
+        }
     }
 
     pub fn active_agent_id(&self) -> Option<String> {

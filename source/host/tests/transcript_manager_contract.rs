@@ -4,6 +4,7 @@ use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::AgentDeletionRuntimeDeps;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
@@ -162,11 +163,20 @@ fn manager_is_the_single_production_composition_owner() {
     assert_eq!(ack_b.pending_obligations().len(), 1);
 
     let session = SandAgentSessionStore::new(Arc::clone(&sessions));
+    let member_profile = |name: &str| SandAgentProfile {
+        name: name.to_string(),
+        description: String::new(),
+        title: String::new(),
+        avatar_shape: String::new(),
+        avatar_color: String::new(),
+    };
+    let first_profile = member_profile("First member");
+    let second_profile = member_profile("Second member");
     let first_group_member = session
-        .create_session(None, "user", None)
+        .create_session(Some(&first_profile), "user", None)
         .expect("first group member");
     let second_group_member = session
-        .create_session(None, "user", None)
+        .create_session(Some(&second_profile), "user", None)
         .expect("second group member");
     let created_group = manager
         .dispatch_session_gateway_call(
@@ -178,8 +188,11 @@ fn manager_is_the_single_production_composition_owner() {
         )
         .expect("group method handled")
         .expect("manager-owned group created");
-    assert_eq!(created_group["isGroup"], true);
-    assert_eq!(created_group["memberIds"].as_array().map(Vec::len), Some(2));
+    assert_eq!(created_group["agent"]["isGroup"], true);
+    assert_eq!(
+        created_group["agent"]["memberIds"].as_array().map(Vec::len),
+        Some(2),
+    );
 
     let agent = session.create_session(None, "user", None).expect("agent");
     let avatar = manager
@@ -328,6 +341,77 @@ impl TurnExecutor for ManagerFakeExecutor {
             "overrides":overrides
         })
     }
+}
+
+#[test]
+fn manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation() {
+    use mahayana_host_runtime::extensions::memory::memory_service::MemoryKind;
+
+    let root = temp_root();
+    fs::create_dir_all(&root).expect("root");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let manager = TranscriptManager::new(&root, Arc::clone(&sessions));
+    let session = SandAgentSessionStore::new(Arc::clone(&sessions));
+    let agent = session.create_session(None, "user", None).expect("agent");
+    let stored = sessions
+        .memory_service()
+        .store_for_agent(&agent.id)
+        .add_memory("Remember this", 42, MemoryKind::Profile)
+        .expect("memory write")
+        .expect("memory record");
+    sessions
+        .set_agent_memory_prompt_snapshot(&agent.id, &json!({"fingerprint":"stale"}))
+        .expect("snapshot");
+
+    let listed = manager
+        .dispatch_memory_gateway_call("getAgentMemories", &json!({"id":agent.id}))
+        .expect("handled")
+        .expect("list");
+    assert_eq!(listed[0]["id"], stored.id);
+    assert_eq!(listed[0]["content"], "Remember this");
+    assert_eq!(listed[0]["createdAt"], 0);
+    assert_eq!(listed[0]["kind"], "profile");
+
+    let removed = manager
+        .dispatch_memory_gateway_call(
+            "deleteAgentMemory",
+            &json!({"id":agent.id,"memoryId":stored.id}),
+        )
+        .expect("handled")
+        .expect("delete");
+    assert_eq!(removed, json!(true));
+    assert!(sessions
+        .get_agent_memory_prompt_snapshot(&agent.id)
+        .expect("snapshot read")
+        .is_none());
+
+    sessions
+        .memory_service()
+        .store_for_agent(&agent.id)
+        .add_memory("Clear this", 43, MemoryKind::Log)
+        .expect("memory write")
+        .expect("memory record");
+    sessions
+        .set_agent_memory_prompt_snapshot(&agent.id, &json!({"fingerprint":"stale-again"}))
+        .expect("snapshot");
+    assert_eq!(
+        manager
+            .dispatch_memory_gateway_call("clearAgentMemories", &json!({"id":agent.id}))
+            .expect("handled")
+            .expect("clear"),
+        Value::Null,
+    );
+    assert!(sessions.memory_service().list(&agent.id).is_empty());
+    assert!(sessions
+        .get_agent_memory_prompt_snapshot(&agent.id)
+        .expect("snapshot read")
+        .is_none());
+
+    manager.dispose();
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]
