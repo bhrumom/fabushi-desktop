@@ -249,7 +249,7 @@ fn direct_delivery_records_frozen_product_analytics_fields() {
         .expect("send");
     assert_eq!(
         *events.lock().expect("analytics"),
-        vec![(alpha.id.clone(), beta.id.clone(), true)]
+        vec![(alpha.id.clone(), beta.id.clone(), false, true)]
     );
 
     sessions.shutdown();
