@@ -365,9 +365,16 @@ fn user_message_cancels_pending_introduction_without_starting_runner() {
 fn shipping_host_wires_real_kickstart_adapter_and_upgrade_quiesce_override() {
     let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
+    let manager = fs::read_to_string(
+        manifest_dir.join("src/extensions/transcript/transcript_manager.rs"),
+    )
+    .expect("transcript manager");
     assert!(main.contains("ProductionCreatedAgentKickstartRuntime"));
     assert!(main.contains("run_local_kickstart_turn"));
-    assert!(main.contains("dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes"));
+    assert!(main.contains(".dispatch_agent_lifecycle_gateway_call("));
+    assert!(main.contains("Some(self.created_agent_kickstart_hook())"));
+    assert!(manager.contains("dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes"));
+    assert!(manager.contains("kickstart_created_agent"));
     assert!(main.contains("active_turn_source(agent_id).as_deref()"));
     assert!(main.contains("source: Some(\"turn\".into())"));
     assert!(main.contains("method == \"kickstartAgent\" || method == \"requestDiskSaverAudit\""));
