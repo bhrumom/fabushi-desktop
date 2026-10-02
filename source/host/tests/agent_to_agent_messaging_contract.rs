@@ -67,6 +67,9 @@ fn group_delivery_delegates_persistence_to_shared_rooms_owner() {
     })).with_group_post({
         let analytics=Arc::clone(&analytics);
         Arc::new(move|from,group_id,message,priority|{
+            if message == "(pass)" {
+                return Ok("Nothing was posted: \"(pass)\" means staying silent in a group chat.".into());
+            }
             let posted=mahayana_host_runtime::extensions::transcript::shared_rooms::SharedRooms::new(Arc::clone(&group_sessions))
                 .post_local_agent_message(from,group_id,message,123.0)?;
             analytics.lock().expect("analytics").push((from.into(),group_id.into(),true,priority));

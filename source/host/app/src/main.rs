@@ -2616,6 +2616,9 @@ fn post_agent_message_to_group(
     message: &str,
     is_priority: bool,
 ) -> Result<String, String> {
+    if message == "(pass)" {
+        return Ok("Nothing was posted: \"(pass)\" means staying silent in a group chat.".into());
+    }
     if deps.transcript_runtime.is_quiescing_for_upgrade()
         || configured_routed_provider(&deps.data_dir.join("settings.json")).is_none()
     {
