@@ -15,6 +15,69 @@ use mahayana_host_runtime::extensions::transcript::transcript_entry_ids::{
 };
 use serde_json::json;
 
+fn iso_box(kind: &[u8; 4], body: &[u8]) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(8 + body.len());
+    bytes.extend_from_slice(&u32::try_from(8 + body.len()).expect("box size").to_be_bytes());
+    bytes.extend_from_slice(kind);
+    bytes.extend_from_slice(body);
+    bytes
+}
+
+fn primary_isobmff_image(
+    brand: &[u8; 4],
+    width: u32,
+    height: u32,
+    quarter_turns: u8,
+) -> Vec<u8> {
+    let mut ftyp_body = brand.to_vec();
+    ftyp_body.extend_from_slice(&0u32.to_be_bytes());
+    let ftyp = iso_box(b"ftyp", &ftyp_body);
+
+    let mut pitm_body = vec![0, 0, 0, 0];
+    pitm_body.extend_from_slice(&1u16.to_be_bytes());
+    let pitm = iso_box(b"pitm", &pitm_body);
+
+    let mut ispe_body = vec![0, 0, 0, 0];
+    ispe_body.extend_from_slice(&width.to_be_bytes());
+    ispe_body.extend_from_slice(&height.to_be_bytes());
+    let ispe = iso_box(b"ispe", &ispe_body);
+    let irot = iso_box(b"irot", &[quarter_turns & 3]);
+    let mut ipco_body = ispe;
+    ipco_body.extend_from_slice(&irot);
+    let ipco = iso_box(b"ipco", &ipco_body);
+
+    let mut ipma_body = vec![0, 0, 0, 0];
+    ipma_body.extend_from_slice(&1u32.to_be_bytes());
+    ipma_body.extend_from_slice(&1u16.to_be_bytes());
+    ipma_body.push(2);
+    ipma_body.push(1);
+    ipma_body.push(2);
+    let ipma = iso_box(b"ipma", &ipma_body);
+
+    let mut iprp_body = ipco;
+    iprp_body.extend_from_slice(&ipma);
+    let iprp = iso_box(b"iprp", &iprp_body);
+
+    let mut meta_body = vec![0, 0, 0, 0];
+    meta_body.extend_from_slice(&pitm);
+    meta_body.extend_from_slice(&iprp);
+    let meta = iso_box(b"meta", &meta_body);
+
+    let mut bytes = ftyp;
+    bytes.extend_from_slice(&meta);
+    bytes
+}
+
+#[test]
+fn native_isobmff_dimensions_match_frozen_primary_item_and_rotation_contract() {
+    for brand in [*b"heic", *b"heif", *b"avif"] {
+        let bytes = primary_isobmff_image(&brand, 640, 480, 1);
+        let dimensions = read_image_dimensions(&bytes).expect("native image dimensions");
+        assert_eq!(dimensions.width, 480);
+        assert_eq!(dimensions.height, 640);
+    }
+}
+
 #[test]
 fn transcript_entry_ids_match_frozen_turn_and_trailing_rules() {
     let entries = vec![
