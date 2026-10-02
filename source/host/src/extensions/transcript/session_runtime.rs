@@ -26,9 +26,8 @@ pub struct DeferredActivationClaim {
 /// Shipping Rust owner for the active Session/Transcript window state that
 /// frozen Grok keeps in transcript/session-runtime.ts.
 ///
-/// This slice deliberately owns only focus + active-agent switching. Windowed
-/// deferred activation/catch-up and the broader live-session cache stay
-/// non-final until their exact contracts are ported.
+/// This owner covers focus, active-agent switching, the live-session cache and
+/// supersedable deferred bounded-open activation/catch-up used by the shipping Host.
 #[derive(Default)]
 pub struct SessionRuntime {
     focus: Mutex<WindowFocusState>,

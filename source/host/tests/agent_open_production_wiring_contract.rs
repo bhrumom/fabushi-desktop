@@ -66,7 +66,7 @@ fn transcript_manager_is_the_shared_owner_for_switch_tail_and_windowed_open() {
 #[test]
 fn shipping_gateway_samples_was_active_before_operation_and_reports_after_success() {
     let app = include_str!("../app/src/main.rs");
-    let sample = app.find("let was_active = self.transcript_manager.active_agent_id()").expect("pre-open active sample");
+    let sample = app.find("let previous_active_agent_id = self.transcript_manager.active_agent_id();").expect("pre-open active sample");
     let operation = app.find("let (response, entry_count) = match method").expect("open operation");
     let report = app.find("self.telemetry_logs.report_agent_open(&AgentOpenReport").expect("Host report");
     assert!(sample < operation);
