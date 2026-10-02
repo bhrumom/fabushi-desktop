@@ -341,3 +341,38 @@ fn production_roster_projects_group_and_remote_room_durable_owners() {
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn production_roster_ignores_reserved_session_namespaces_without_recovery_side_effects() {
+    let root = temp_root("reserved-session-namespace");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let record = workers
+        .materialize_new_session(
+            Some(&SandAgentProfile {
+                name: "Visible Agent".into(),
+                description: String::new(),
+                title: String::new(),
+                avatar_shape: String::new(),
+                avatar_color: String::new(),
+            }),
+            "user",
+            None,
+        )
+        .expect("materialize");
+
+    let reserved = root.join(".conversations");
+    fs::create_dir_all(reserved.join("human-conversation")).expect("reserved namespace");
+
+    let listed = workers.list_agent_summaries(None).expect("list agents");
+    assert_eq!(listed.len(), 1);
+    assert_eq!(listed[0].id, record.id);
+    assert!(!reserved.join("store.db").exists());
+    assert!(workers
+        .summarize_agent_by_id(".conversations", None)
+        .expect("reserved summary")
+        .is_none());
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
