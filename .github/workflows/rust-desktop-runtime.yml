@@ -82,35 +82,43 @@ jobs:
           test -f source/mahayana/mahayana-rs/Cargo.toml
           test -f source/mahayana/codex-rs/Cargo.toml
           test -f native/mahayana-messaging/Cargo.toml
-          cargo metadata --no-deps --format-version 1 --manifest-path source/mahayana/mahayana-rs/Cargo.toml >/dev/null
+          test -f source/host/app/Cargo.lock
+          test -f source/host/Cargo.lock
+          test -f source/node-agent-coordinator/Cargo.lock
+          test -f source/box-exec-daemon/Cargo.lock
+          cargo metadata --locked --no-deps --format-version 1 --manifest-path source/mahayana/mahayana-rs/Cargo.toml >/dev/null
+          cargo metadata --locked --no-deps --format-version 1 --manifest-path source/host/app/Cargo.toml >/dev/null
+          cargo metadata --locked --no-deps --format-version 1 --manifest-path source/host/Cargo.toml >/dev/null
+          cargo metadata --locked --no-deps --format-version 1 --manifest-path source/node-agent-coordinator/Cargo.toml >/dev/null
+          cargo metadata --locked --no-deps --format-version 1 --manifest-path source/box-exec-daemon/Cargo.toml >/dev/null
       - name: Check Grok-aligned shipping Mahayana Host
         shell: bash
-        run: cargo check --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml
+        run: cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml
       - name: Test independent Mahayana Coordinator contract
         shell: bash
-        run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml
+        run: cargo test --locked --manifest-path source/node-agent-coordinator/Cargo.toml
       - name: Test independent Grok box exec daemon contract
         shell: bash
-        run: cargo test --manifest-path source/box-exec-daemon/Cargo.toml
+        run: cargo test --locked --manifest-path source/box-exec-daemon/Cargo.toml
       - name: Test shipping Host box exec daemon supervisor
         shell: bash
         run: |
           set -euo pipefail
-          cargo build --manifest-path source/box-exec-daemon/Cargo.toml --bin box-exec-daemon
+          cargo build --locked --manifest-path source/box-exec-daemon/Cargo.toml --bin box-exec-daemon
           FABUSHI_BOX_EXEC_DAEMON_TEST_BIN="$GITHUB_WORKSPACE/source/box-exec-daemon/target/debug/box-exec-daemon" \
-            cargo test --manifest-path source/host/Cargo.toml --test box_exec_daemon_process_contract
+            cargo test --locked --manifest-path source/host/Cargo.toml --test box_exec_daemon_process_contract
       - name: Test independent Mahayana Host Runner contract
         shell: bash
-        run: cargo test --manifest-path source/host/Cargo.toml
+        run: cargo test --locked --manifest-path source/host/Cargo.toml
       - name: Test Grok prompt attachment projection contract
         shell: bash
-        run: cargo test -p mahayana-feature-host grok_send_prompt_projects_attachment_context_into_user_transcript_event --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+        run: cargo test --locked -p mahayana-feature-host grok_send_prompt_projects_attachment_context_into_user_transcript_event --manifest-path source/mahayana/mahayana-rs/Cargo.toml
       - name: Test human Computer takeover lifecycle
         shell: bash
-        run: cargo test -p mahayana-feature-host computer_takeover_acquires_and_releases_a_human_control_lease --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+        run: cargo test --locked -p mahayana-feature-host computer_takeover_acquires_and_releases_a_human_control_lease --manifest-path source/mahayana/mahayana-rs/Cargo.toml
       - name: Test ConversationActor and CapabilityBroker ownership
         shell: bash
-        run: cargo test -p mahayana-runtime --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+        run: cargo test --locked -p mahayana-runtime --manifest-path source/mahayana/mahayana-rs/Cargo.toml
 
   pressure-profiler-platform:
     name: Pressure profiler / ${{ matrix.os }}
@@ -157,7 +165,7 @@ jobs:
           perf --version
       - name: Capture a real production pressure CPU profile
         run: >-
-          cargo test --manifest-path source/host/Cargo.toml
+          cargo test --locked --manifest-path source/host/Cargo.toml
           --test pressure_cpu_profiler_contract
           production_backend_emits_native_consumable_cpu_profile_artifact
           -- --exact --nocapture
@@ -192,7 +200,7 @@ jobs:
           shared-key: mahayana-platform-worker-wasm-1.97.1
       - name: Check Mahayana platform Worker
         shell: bash
-        run: cargo check --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+        run: cargo check --locked --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
 
   renderer:
     runs-on: ubuntu-24.04
