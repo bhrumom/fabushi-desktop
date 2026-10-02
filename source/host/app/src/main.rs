@@ -3286,6 +3286,7 @@ fn start_local_upgrade_resume_turn(
         "streamId": stream_id,
         "requestSource": resumed_source,
         "hidden": true,
+        "isSilenceAllowed": matches!(resumed_source.as_str(), "automation" | "background-revival"),
         "upgradeResume": true,
         "messages": [{
             "role": "user",
