@@ -15943,12 +15943,13 @@
       "targetPath": "source/host/src/extensions/transcript/profile_watch.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "24338d49e659fcc1eb07e4b447d76da32ab8c37f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/profile_watch.rs",
+        "source/host/src/extensions/transcript/extension.rs",
         "source/host/src/extensions/transcript/roster_emit.rs",
         "source/host/app/src/main.rs",
         "source/host/src/agents/agent_avatar.rs",
@@ -15962,7 +15963,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Real production watcher: Rust notify watches the agents root, follows active-agent.json, filters the frozen profile.json/settings.json/conventional-avatar family, debounces for 50 ms, invalidates avatar cache, pushes roster updates, profile-changed notifications and name-change timeline payloads. Final remains withheld until the broader Rust transcript event projection owns the exact frozen timeline-event ordering/subscription surface rather than publishing the name-change payload directly on the Gateway event hub."
+      "notes": "Production profile-watch parity is owned by the shipping Rust Transcript extension: notify follows active-agent.json and the frozen profile.json/settings.json/conventional-avatar family; a first-event 50 ms coalescing window does not slide on subsequent file events and is cancelled on active-session change; avatar invalidation and roster refresh remain in the watcher. Name tracking reads the raw trimmed profile name (blank names do not synthesize a Grok name-change). The watcher emits ordered timeline then profile-changed events through the retained TranscriptExtensionEventBridge; timeline projection continues through ProductionRosterEmit into the existing durable timeline persistence/background-wake path, while profile-changed exposes a removable subscription surface and then publishes the Gateway-facing notification. Focused contracts execute the coalescer reset/deadline semantics, raw-name behavior, ordered projection, and subscription disposal."
     },
     {
       "referencePath": "source/host/extensions/transcript/prompt-acceptance-ledger.ts",

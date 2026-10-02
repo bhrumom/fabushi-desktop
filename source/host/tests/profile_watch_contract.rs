@@ -1,15 +1,21 @@
 use std::fs;
-use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::agents::agent_profile::{
     SandAgentProfile, get_sand_profile_path, write_sand_profile_file,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::transcript::extension::TranscriptExtensionEventBridge;
+use mahayana_host_runtime::extensions::transcript::production_runtime::ProductionTranscriptRuntime;
 use mahayana_host_runtime::extensions::transcript::profile_watch::{
+    PROFILE_WATCH_DEBOUNCE_MS, ProfileWatchCoalescer, ProfileWatchEvent,
     SAND_DEFAULT_AGENT_NAME, get_agent_display_profile, is_profile_watch_filename,
-    resolve_agent_profile, watched_profile_path_agent_id,
+    profile_watch_events, read_profile_watch_name, resolve_agent_profile,
+    watched_profile_path_agent_id,
 };
+use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
+use mahayana_host_runtime::host_event_bus::SandHostEventBus;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -69,6 +75,7 @@ fn display_and_resolved_profile_match_frozen_defaulting_contract() {
     let display = get_agent_display_profile(&sessions, &record.id).expect("display");
     assert_eq!(display.name, SAND_DEFAULT_AGENT_NAME);
     assert_eq!(display.description, "description");
+    assert_eq!(read_profile_watch_name(&sessions, &record.id), None);
 
     let resolved = resolve_agent_profile(&root.join(&record.id).join("store.db"));
     assert_eq!(resolved.name, SAND_DEFAULT_AGENT_NAME);
@@ -78,6 +85,104 @@ fn display_and_resolved_profile_match_frozen_defaulting_contract() {
         resolved.settings_file_path,
         root.join(&record.id).join("settings.json")
     );
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn profile_watch_coalescing_window_is_fixed_and_session_switch_cancels_pending_emit() {
+    let started = Instant::now();
+    let mut coalescer = ProfileWatchCoalescer::default();
+
+    coalescer.schedule("agent-a", started);
+    coalescer.schedule(
+        "agent-a",
+        started + Duration::from_millis(PROFILE_WATCH_DEBOUNCE_MS - 10),
+    );
+    assert_eq!(
+        coalescer.recv_timeout(
+            started + Duration::from_millis(PROFILE_WATCH_DEBOUNCE_MS - 10)
+        ),
+        Duration::from_millis(10)
+    );
+    assert!(coalescer
+        .take_due(started + Duration::from_millis(PROFILE_WATCH_DEBOUNCE_MS - 1))
+        .is_none());
+    assert_eq!(
+        coalescer.take_due(started + Duration::from_millis(PROFILE_WATCH_DEBOUNCE_MS)),
+        Some("agent-a".to_string())
+    );
+
+    coalescer.schedule("agent-a", started);
+    coalescer.clear();
+    assert!(coalescer
+        .take_due(started + Duration::from_millis(PROFILE_WATCH_DEBOUNCE_MS * 2))
+        .is_none());
+}
+
+#[test]
+fn profile_watch_routes_timeline_before_profile_changed_through_transcript_owner() {
+    let root = temp_root("event-bridge");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let transcript = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    let projected = Arc::new(Mutex::new(Vec::new()));
+    let projected_sink = Arc::clone(&projected);
+    let roster = Arc::new(ProductionRosterEmit::new(
+        Arc::clone(&sessions),
+        transcript,
+        Arc::new(move |event| projected_sink.lock().expect("projected").push(event)),
+    ));
+
+    let bridge = TranscriptExtensionEventBridge::new(SandHostEventBus::default());
+    let _projection_subscriptions = bridge.bind_profile_watch_projection(Arc::clone(&roster));
+
+    let subscribed = Arc::new(Mutex::new(Vec::<String>::new()));
+    let subscribed_sink = Arc::clone(&subscribed);
+    let profile_subscription = bridge.subscribe_profile_changed(move |agent_id| {
+        subscribed_sink
+            .lock()
+            .expect("subscribed")
+            .push(agent_id.to_string());
+    });
+
+    let sink = bridge.profile_watch_event_sink();
+    let events = profile_watch_events("agent-a", Some(("Old", "New")));
+    assert!(matches!(events[0], ProfileWatchEvent::Timeline { .. }));
+    assert!(matches!(events[1], ProfileWatchEvent::ProfileChanged { .. }));
+    for event in events {
+        (sink)(event);
+    }
+
+    let projected = projected.lock().expect("projected");
+    assert_eq!(projected.len(), 2);
+    assert_eq!(projected[0]["channel"], "timeline");
+    assert_eq!(projected[0]["payload"]["agentId"], "agent-a");
+    assert_eq!(projected[0]["payload"]["event"]["type"], "name-changed");
+    assert_eq!(projected[0]["payload"]["event"]["from"], "Old");
+    assert_eq!(projected[0]["payload"]["event"]["to"], "New");
+    assert_eq!(projected[1]["channel"], "profile-changed");
+    assert_eq!(projected[1]["payload"]["agentId"], "agent-a");
+    drop(projected);
+
+    assert_eq!(
+        subscribed.lock().expect("subscribed").as_slice(),
+        &["agent-a".to_string()]
+    );
+
+    drop(profile_subscription);
+    for event in profile_watch_events("agent-b", None) {
+        (sink)(event);
+    }
+    assert_eq!(
+        subscribed.lock().expect("subscribed").as_slice(),
+        &["agent-a".to_string()]
+    );
+    let projected = projected.lock().expect("projected");
+    assert_eq!(projected.len(), 3);
+    assert_eq!(projected[2]["channel"], "profile-changed");
+    assert_eq!(projected[2]["payload"]["agentId"], "agent-b");
+    drop(projected);
 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
