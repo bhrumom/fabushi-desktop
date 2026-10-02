@@ -8653,11 +8653,13 @@ fn main() {
                         })
                         .unwrap_or(false);
                     let lifecycle_drained = !transcript_runtime.is_agent_running(agent_id);
+                    let dispatch_drained = transcript_runtime.is_turn_dispatch_idle(agent_id);
 
                     if parent_streams_drained
                         && child_streams_drained
                         && subagents_drained
                         && lifecycle_drained
+                        && dispatch_drained
                     {
                         return Ok(());
                     }

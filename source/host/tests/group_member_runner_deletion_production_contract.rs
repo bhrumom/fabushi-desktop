@@ -1,7 +1,9 @@
 use std::fs;
 use std::sync::Arc;
 
+use mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane;
 use mahayana_host_runtime::extensions::transcript::runner_registry::TranscriptRunnerRegistry;
+use mahayana_host_runtime::extensions::transcript::send_turn_dispatch::ProductionTurnDispatch;
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedProviderTaskRegistry;
 
 #[test]
@@ -93,4 +95,52 @@ fn shipping_group_member_turn_preemption_and_deletion_use_the_independent_owner(
     assert!(main.contains(
         "runner_registry.active_stream_ids_for_agent(agent_id).is_empty()"
     ));
+    assert!(main.contains(
+        "transcript_runtime.is_turn_dispatch_idle(agent_id)"
+    ));
+}
+
+#[test]
+fn deletion_drain_tracks_pending_exclusive_turn_dispatch_until_all_lanes_settle() {
+    let mut dispatch = ProductionTurnDispatch::with_watchdog(120_000, 30_000);
+    let (first, _, first_started) = dispatch
+        .enqueue_turn_with_start(
+            "agent-a",
+            Some("nonce-1"),
+            1_000,
+            1_000,
+            RunLane::User,
+            "turn",
+            None,
+        )
+        .expect("first turn");
+    let first_generation = first_started.expect("first starts").generation;
+
+    let (second, _, second_started) = dispatch
+        .enqueue_turn_with_start(
+            "agent-a",
+            Some("nonce-2"),
+            1_001,
+            1_001,
+            RunLane::Background,
+            "event",
+            None,
+        )
+        .expect("second turn");
+    assert!(second_started.is_none(), "second turn must remain pending");
+    assert!(!dispatch.is_idle("agent-a"));
+    assert_eq!(dispatch.queued_task_ids("agent-a"), vec![second.task_id.clone()]);
+
+    let (_, next) = dispatch.settle_and_start_next(&first, first_generation, 1_002);
+    let next = next.expect("pending turn starts after first settles");
+    assert_eq!(next.task_id, second.task_id);
+    assert!(!dispatch.is_idle("agent-a"));
+
+    let second_generation = dispatch
+        .active_generation_for(&second)
+        .expect("second generation");
+    let (_, after_second) =
+        dispatch.settle_and_start_next(&second, second_generation, 1_003);
+    assert!(after_second.is_none());
+    assert!(dispatch.is_idle("agent-a"));
 }
