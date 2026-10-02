@@ -15776,13 +15776,19 @@
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/transcript/client_side_tool_v2_projection.rs"
+        "source/host/src/extensions/transcript/client_side_tool_v2_projection.rs",
+        "source/host/src/extensions/inference/cursor_inference_transport.rs",
+        "source/host/src/extensions/inference/provider_session.rs",
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/src/runner/turn_observation.rs"
       ],
       "testEvidence": [
-        "source/host/tests/remaining_planned_contract.rs",
+        "source/host/tests/client_side_tool_v2_projection_contract.rs",
+        "source/host/tests/cursor_inference_transport_contract.rs",
+        "source/host/tests/inference_provider_session_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Mahayana Host now has a concrete owner for the frozen module's deterministic policy/state boundary and focused contract evidence. This row is intentionally non-final until the shipping Host/Transcript/Telemetry composition consumes the owner end-to-end with the generated/external adapters required by the frozen Grok graph."
+      "notes": "Rust Mahayana Host projects all 15 frozen ToolCall oneofs with case-specific params/result/error/rejected/async/reference/diff semantics and protobuf-backed payloads. Cursor and OpenRouter report real accumulated partial tool calls through the Provider-to-Runner bridge into TurnObservation and the existing ClientSideToolV2 producer, preserving stable call identity, model-call identity, Call/Partial/Result ordering and suppressing execution-time reopen. Codex remains completed-call only because the shipping direct Responses path currently observes function calls at response.output_item.done rather than a real incremental tool-call event. Focused contracts cover provider accumulation, projection/fail-closed semantics and producer ordering."
     },
     {
       "referencePath": "source/host/extensions/transcript/completion-revivals.ts",
