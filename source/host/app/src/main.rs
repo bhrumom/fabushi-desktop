@@ -170,7 +170,7 @@ use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     AgentDeletionRuntimeDeps, AgentKickstartHook, AgentLifecycleGatewayError,
     CreatedAgentKickstartRuntimePort, INTRODUCTION_FAILED_TRAY_TITLE,
     KickstartRunError, KickstartTurnOutcome, introduction_failed_tray_key,
-    run_created_agent_kickstart,
+    request_disk_saver_audit, run_created_agent_kickstart,
     dispatch_production_agent_lifecycle_gateway_call_with_runtime,
     dispatch_production_agent_lifecycle_gateway_call_with_runtimes,
     dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes,
@@ -1092,6 +1092,22 @@ impl CreatedAgentKickstartRuntimePort for ProductionCreatedAgentKickstartRuntime
         if let Err(telemetry_error) = self.deps.telemetry_logs.report_agent_error(&report) {
             eprintln!(
                 "mahayana-host kickstart_agent_error_telemetry_failed agent={agent_id} error={telemetry_error}"
+            );
+        }
+    }
+
+    fn report_disk_saver_audit_failure(&self, agent_id: &str, error: &KickstartRunError) {
+        let classified_error = ProviderSessionError::Tool(error.message.clone());
+        let report = AgentErrorReport {
+            source: "disk_saver_reaudit".into(),
+            conversation_id: agent_id.to_string(),
+            request_id: error.request_id.clone(),
+            error: classify_agent_error(&classified_error),
+            detail: Some(sand_error_detail(&error.message)),
+        };
+        if let Err(telemetry_error) = self.deps.telemetry_logs.report_agent_error(&report) {
+            eprintln!(
+                "mahayana-host disk_saver_reaudit_telemetry_failed agent={agent_id} error={telemetry_error}"
             );
         }
     }
@@ -6948,6 +6964,41 @@ impl GatewayApi for UnifiedGatewayApi {
             return Ok(serde_json::json!({
                 "url": lifecycle.get_connect_url(platform),
             }));
+        }
+
+        if method == "kickstartAgent" || method == "requestDiskSaverAudit" {
+            let agent_id = args
+                .get("id")
+                .or_else(|| args.get("agentId"))
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(format!(
+                    "{method} requires id"
+                )))?;
+            let runtime = ProductionCreatedAgentKickstartRuntime {
+                deps: self.local_routed_runner_deps(),
+                roster: Arc::clone(&self.roster_emit),
+            };
+            let in_flight = if method == "kickstartAgent" {
+                run_created_agent_kickstart(
+                    self.session_workers.as_ref(),
+                    &runtime,
+                    agent_id,
+                )
+            } else {
+                request_disk_saver_audit(
+                    self.session_workers.as_ref(),
+                    &runtime,
+                    agent_id,
+                )
+            }
+            .map_err(GatewayCommandError::Internal)?;
+            return Ok(if method == "kickstartAgent" {
+                serde_json::json!({ "isIntroductionInFlight": in_flight })
+            } else {
+                serde_json::json!({ "isAuditInFlight": in_flight })
+            });
         }
 
         if method == "createAgent" {
