@@ -12,7 +12,7 @@ This graph records product capability domains observed in the frozen Telegram De
 | account / auth / sessions / multi-account | `intro`, `api/api_authorizations.*`, `data/data_authorization.h`, `storage/storage_account.*` | existing account/auth/session owners; native Human identity contract still unresolved |
 | contacts / identity / presence | `data/data_peer*`, `api/api_peer_search.*`, participant/status code | Shared Room/member + account identity + minimal presence infrastructure if required |
 | dialog list / folders / archive / pinning | `dialogs/*`, `data/data_chat_filters.*`, `data/data_folder.*`, `storage/storage_folder_archive.*` | existing sidebar / conversation list |
-| private messaging / history | `history/*`, `data/data_messages.*`, `data/data_history_messages.*`, `api/api_sending.*` | researched in `projects/telegram-desktop-rust/research/message-history-lifecycle.md`; existing conversation workspace + transcript + Session SQLite selected, with minimal native transport/sync below |
+| private messaging / history | `history/*`, `data/data_messages.*`, `data/data_history_messages.*`, `api/api_sending.*`, `api/api_updates.*` | researched in `projects/telegram-desktop-rust/research/message-history-lifecycle.md` and `message-settlement-and-history-gap.md`; owner resolution split into `MSG-SEND-SETTLEMENT` and `MSG-HISTORY-ORDER-GAP`; existing Session/Transcript + Composer/pagination remain product owners, with minimal native transport/sync below |
 | reply / quote / forward provenance | `history/history_item*`, `data/data_reply_preview.*`, replies/thread structures | researched in `projects/telegram-desktop-rust/research/message-relations-and-settlement.md`; existing transcript relation/provenance owner selected |
 | edit / delete lifecycle | `api/api_editing.*`, history/data message state | researched in `projects/telegram-desktop-rust/research/message-relations-and-settlement.md`; existing transcript/message lifecycle selected |
 | reactions | `data/data_message_reactions.*`, `api/api_who_reacted.*`, info reaction list | researched in `projects/telegram-desktop-rust/research/message-relations-and-settlement.md`; existing reaction/transcript owner selected |
@@ -103,3 +103,8 @@ This pass also exposed product-capability domains that were missing from the fir
 - implementation or acceptance.
 
 Until those are closed, `research_inventory_status` remains partial and P0 remains open.
+
+
+## P0 behavior-resolution checkpoint — 2026-10-02
+
+The message/history cluster now has behavior dossiers and explicit owner-resolution rows for send settlement, ordered history/gap recovery, reply/quote/forward, edit/delete, reactions, drafts, scheduled/silent send, and transient send progress. This is research/ownership closure for those rows only. It does not close the global capability graph, recursive source closure, native transport/sync implementation, PR #20 strict parity, CI, or packaged acceptance.
