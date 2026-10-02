@@ -112,6 +112,9 @@ use crate::extensions::source_map::source_map_service::SandSourceMap;
 use crate::extensions::secrets::extension::{
     HostSecretsExtension, start_secrets_extension,
 };
+use crate::extensions::session::box_handoff_service::{BoxHandoffDeps, BoxHandoffService};
+use crate::extensions::session::extension::{SessionExtension, start_session_extension};
+use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::extensions::settings::extension::start_settings_extension;
 use crate::extensions::settings::settings_service::{SettingsService, SettingsSubscription};
 use crate::extensions::state_backstop::extension::{
@@ -189,6 +192,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Attachments,
     HostExtensionId::Secrets,
     HostExtensionId::TurnExecution,
+    HostExtensionId::Session,
 ];
 
 pub struct ProductionBrowserUaLog;
@@ -438,6 +442,7 @@ pub struct ProductionHostExtensions {
     pub action_audit: ActionAuditExtension,
     pub cloud_agents: CloudAgentsExtension,
     pub turn_execution: Arc<Mutex<TurnExecutionRegistry>>,
+    session: Mutex<Option<SessionExtension>>,
     backend_url: String,
     mcp: Mutex<Option<McpExtensionRuntime>>,
     box_store_sync: Mutex<Option<BoxStoreSyncExtension<ProductionBoxStoreSyncService>>>,
@@ -624,6 +629,7 @@ pub fn start_production_host_extensions(
         action_audit,
         cloud_agents,
         turn_execution,
+        session: Mutex::new(None),
         backend_url,
         mcp: Mutex::new(None),
         box_store_sync: Mutex::new(None),
@@ -641,6 +647,40 @@ impl ProductionHostExtensions {
 
     pub fn stop_cloud_agents(&self) {
         self.cloud_agents.stop();
+    }
+
+    pub fn start_session(
+        &self,
+        store: Arc<ProductionSessionWorkers>,
+        handoff_deps: BoxHandoffDeps,
+    ) -> Result<(Arc<ProductionSessionWorkers>, BoxHandoffService), String> {
+        let mut slot = self
+            .session
+            .lock()
+            .map_err(|_| "production Session runtime lock poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("production Session runtime is already started".into());
+        }
+        let extension = start_session_extension(
+            Arc::clone(&self.experiments),
+            store,
+            handoff_deps,
+        );
+        let workers = extension.store();
+        let handoff = extension.handoff_service();
+        *slot = Some(extension);
+        Ok((workers, handoff))
+    }
+
+    pub fn shutdown_session(&self) -> Result<(), String> {
+        let slot = self
+            .session
+            .lock()
+            .map_err(|_| "production Session runtime lock poisoned".to_string())?;
+        if let Some(extension) = slot.as_ref() {
+            extension.shutdown();
+        }
+        Ok(())
     }
 
     pub fn start_notifications(
