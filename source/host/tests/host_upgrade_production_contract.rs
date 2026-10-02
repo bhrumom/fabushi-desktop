@@ -102,6 +102,8 @@ fn shipping_recreate_gateway_carries_pending_wakes_and_resumes_durable_turns() {
         include_str!("../src/extensions/transcript/transcript_manager.rs");
     const TRANSCRIPT_RUNTIME: &str =
         include_str!("../src/extensions/transcript/production_runtime.rs");
+    const PENDING_WAKE_REARM: &str =
+        include_str!("../src/extensions/transcript/pending_wake_rearm.rs");
 
     assert!(GATEWAY_PROTOCOL.contains("\"resumeAfterRecreate\""));
     assert!(SHIPPING_HOST.contains("if method == \"resumeAfterRecreate\""));
@@ -113,7 +115,8 @@ fn shipping_recreate_gateway_carries_pending_wakes_and_resumes_durable_turns() {
     assert!(SHIPPING_HOST.contains("worker_transcript_manager.emit_automations(&agent_id)"));
     assert!(SHIPPING_HOST.contains("\"isSilenceAllowed\": matches!(resumed_source.as_str(), \"automation\" | \"background-revival\")"));
     assert!(TRANSCRIPT_MANAGER.contains("pub fn restore_recreate_pending_wakes"));
-    assert!(TRANSCRIPT_MANAGER.contains("owner.rearm_pending_wake(marker, now_ms, Some(\"recreate_carry\"))"));
+    assert!(TRANSCRIPT_MANAGER.contains("owner.restore_recreate_carried_pending_wakes(carried)"));
+    assert!(PENDING_WAKE_REARM.contains("self.rearm_pending_wake(marker, now_ms, Some(\"recreate_carry\"))"));
     assert!(TRANSCRIPT_RUNTIME.contains("pub fn recreate_carry_pending_wakes"));
     assert!(TRANSCRIPT_RUNTIME.contains("PendingWakeKind::CloudAgent | PendingWakeKind::Shell"));
 }
