@@ -85,6 +85,13 @@ fn direct_runner_surface_projects_created_and_settled_events_and_unbinds() {
 
     composition.unbind_local_permission_surface("agent-a");
     assert!(!composition.can_ask_local_tool_permission("agent-a"));
+    composition.bind_local_permission_surface("agent-b");
+    composition.bind_local_permission_surface("agent-c");
+    assert_eq!(composition.active_permission_surface_count(), 2);
+    composition.dispose();
+    assert_eq!(composition.active_permission_surface_count(), 0);
+    assert!(!composition.can_ask_local_tool_permission("agent-b"));
+    assert!(!composition.can_ask_local_tool_permission("agent-c"));
     let _ = fs::remove_file(path);
 }
 

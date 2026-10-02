@@ -11621,6 +11621,7 @@ fn main() {
     ack_redrive_stop.store(true, Ordering::Release);
     drop(gateway_server);
     runner_registry.cancel_all("Mahayana Host shutting down");
+    host_runner_composition.dispose();
     routed_tool_relay.cancel_all("Mahayana Host shutting down");
     mcp_lifecycle_relay.cancel_all("Mahayana Host shutting down");
     if let Err(error) = production_extensions.stop_box_store_sync() {
