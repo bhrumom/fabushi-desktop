@@ -99,7 +99,8 @@ impl ProductionTurnAgentOwner {
         } = self;
         let checkpoint_sink = agent_state_checkpoint_sink.clone();
         let composition_for_stream = composition.clone();
-        run_owned_turn(
+        let completion_probe = composition.clone();
+        let result = run_owned_turn(
             shell,
             last_finished,
             lifecycle_messages,
@@ -120,7 +121,12 @@ impl ProductionTurnAgentOwner {
                     composition.run(data_dir, provider_messages, on_text_delta)
                 }
             },
-        )
+        );
+        if let (Ok(content), Some(finished)) = (&result, last_finished.as_mut()) {
+            finished.ended_on_silent_tool_calls =
+                completion_probe.last_run_ended_on_silent_tool_calls(content);
+        }
+        result
     }
 
     /// Contract seam used by independent lifecycle tests. The shipping path

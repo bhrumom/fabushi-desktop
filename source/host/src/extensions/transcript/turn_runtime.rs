@@ -7,6 +7,7 @@ use super::send_pipeline::{PersistedSendContext, RecoverySend};
 
 pub const MAX_REPLY_NUDGES: usize = 3;
 pub const REPLY_NUDGE_PROMPT: &str = "Your previous turn left the user without the result they're waiting on — you never called SendMessage that turn, or every SendMessage you tried failed to deliver. Either way they received nothing and are still waiting. Do not assume a send from an earlier turn covered it: an opening acknowledgement back then did not deliver this result (ack ≠ delivery). Deliver the result now by actually invoking the SendMessage tool — make a real tool/function call, not text you write. Plain assistant text is NEVER shown to the user; only a real SendMessage tool invocation reaches them, so if you don't call the tool they just keep seeing silence.";
+pub const CLOSING_SEND_NUDGE_PROMPT: &str = "Your previous turn acknowledged the user and then ran tool calls, but ended without a follow-up SendMessage — the last thing the user saw is that opening acknowledgement, so whatever the tool calls produced after it never reached them. If that work produced the result or answer they are waiting on, deliver it now by actually invoking the SendMessage tool — make a real tool/function call, not text you write. Plain assistant text is NEVER shown to the user; only a real SendMessage tool invocation reaches them. If the work is genuinely unfinished, continue it and send the result once you have it.";
 
 pub fn is_delivery_owed(sent_message_count: u64, reacted: bool) -> bool {
     sent_message_count == 0 && !reacted
@@ -87,14 +88,15 @@ pub struct ReplyNudgeTurnInput {
     pub options: TurnRunOptions,
 }
 
-pub fn shape_reply_nudge_turn_input(
+fn shape_hidden_nudge_turn_input(
     lifecycle_messages: &[ProviderMessage],
     provider_messages: &[ProviderMessage],
     options: &TurnRunOptions,
+    prompt: &str,
 ) -> ReplyNudgeTurnInput {
     let nudge = ProviderMessage {
         role: "user".into(),
-        content: REPLY_NUDGE_PROMPT.to_string(),
+        content: prompt.to_string(),
     };
     let mut shaped_lifecycle_messages = lifecycle_messages.to_vec();
     shaped_lifecycle_messages.push(nudge.clone());
@@ -102,7 +104,7 @@ pub fn shape_reply_nudge_turn_input(
     shaped_provider_messages.push(nudge);
     let mut shaped_options = options.clone();
     shaped_options.message_id = None;
-    shaped_options.recent_message_text = Some(REPLY_NUDGE_PROMPT.to_string());
+    shaped_options.recent_message_text = Some(prompt.to_string());
     shaped_options.recent_user_messages.clear();
     shaped_options.is_fork = false;
     shaped_options.attachment_count = 0;
@@ -114,6 +116,32 @@ pub fn shape_reply_nudge_turn_input(
         provider_messages: shaped_provider_messages,
         options: shaped_options,
     }
+}
+
+pub fn shape_reply_nudge_turn_input(
+    lifecycle_messages: &[ProviderMessage],
+    provider_messages: &[ProviderMessage],
+    options: &TurnRunOptions,
+) -> ReplyNudgeTurnInput {
+    shape_hidden_nudge_turn_input(
+        lifecycle_messages,
+        provider_messages,
+        options,
+        REPLY_NUDGE_PROMPT,
+    )
+}
+
+pub fn shape_closing_send_nudge_turn_input(
+    lifecycle_messages: &[ProviderMessage],
+    provider_messages: &[ProviderMessage],
+    options: &TurnRunOptions,
+) -> ReplyNudgeTurnInput {
+    shape_hidden_nudge_turn_input(
+        lifecycle_messages,
+        provider_messages,
+        options,
+        CLOSING_SEND_NUDGE_PROMPT,
+    )
 }
 
 pub fn classify_agent_error(error: &ProviderSessionError) -> SandErrorValue {

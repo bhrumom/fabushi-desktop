@@ -1,6 +1,9 @@
 use std::collections::HashSet;
 
-use serde_json::Value;
+use serde_json::{Value, json};
+
+use crate::extensions::inference::cursor_inference_transport::CursorCheckpointMessage;
+use crate::extensions::inference::provider_session::RoutedProviderCheckpoint;
 
 use super::send_message_reminder_middleware::{
     CursorProviderOptions, MessageContent, MessageLike, MessagePart, ProviderOptions,
@@ -242,4 +245,184 @@ pub fn turn_ended_on_silent_tool_calls(raw_messages: &[Value]) -> bool {
         }
     }
     acked_first
+}
+
+
+fn cursor_checkpoint_messages(checkpoint: &crate::extensions::inference::cursor_inference_transport::CursorCheckpoint) -> Vec<Value> {
+    checkpoint
+        .conversation
+        .iter()
+        .map(|message| match message {
+            CursorCheckpointMessage::Text { role, text } => json!({
+                "role": role,
+                "content": text,
+            }),
+            CursorCheckpointMessage::AssistantTool { text, tool_calls } => {
+                let mut parts = Vec::new();
+                if !text.trim().is_empty() {
+                    parts.push(json!({"type":"text","text":text}));
+                }
+                parts.extend(tool_calls.iter().map(|call| {
+                    json!({
+                        "type": "tool-call",
+                        "toolName": call.tool_name,
+                        "toolCallId": call.tool_call_id,
+                        "args": serde_json::from_str::<Value>(&call.args).unwrap_or(Value::Null),
+                    })
+                }));
+                json!({"role":"assistant","content":parts})
+            }
+            CursorCheckpointMessage::ToolResult {
+                tool_call_id,
+                tool_name,
+                result,
+                is_error,
+            } => json!({
+                "role": "tool",
+                "content": [{
+                    "type": "tool-result",
+                    "toolName": tool_name,
+                    "toolCallId": tool_call_id,
+                    "args": result,
+                }],
+                "providerOptions": {
+                    "cursor": {
+                        "highLevelToolCallResult": {"isError": is_error}
+                    }
+                }
+            }),
+        })
+        .collect()
+}
+
+fn openrouter_checkpoint_messages(checkpoint: &crate::extensions::inference::provider_session::OpenRouterCheckpoint) -> Vec<Value> {
+    checkpoint
+        .conversation
+        .iter()
+        .filter_map(|message| {
+            let role = message.get("role")?.as_str()?;
+            if role == "assistant" {
+                let mut parts = Vec::new();
+                if let Some(text) = message.get("content").and_then(Value::as_str) {
+                    if !text.trim().is_empty() {
+                        parts.push(json!({"type":"text","text":text}));
+                    }
+                }
+                if let Some(calls) = message.get("tool_calls").and_then(Value::as_array) {
+                    parts.extend(calls.iter().filter_map(|call| {
+                        let function = call.get("function")?;
+                        Some(json!({
+                            "type": "tool-call",
+                            "toolName": function.get("name")?.as_str()?,
+                            "toolCallId": call.get("id")?.as_str()?,
+                            "args": function
+                                .get("arguments")
+                                .and_then(Value::as_str)
+                                .and_then(|raw| serde_json::from_str::<Value>(raw).ok())
+                                .unwrap_or(Value::Null),
+                        }))
+                    }));
+                }
+                return Some(json!({"role":"assistant","content":parts}));
+            }
+            if role == "tool" {
+                let tool_call_id = message.get("tool_call_id").and_then(Value::as_str).unwrap_or_default();
+                let result = message
+                    .get("content")
+                    .and_then(Value::as_str)
+                    .and_then(|raw| serde_json::from_str::<Value>(raw).ok())
+                    .unwrap_or(Value::Null);
+                let is_error = result.get("isError").and_then(Value::as_bool) == Some(true);
+                return Some(json!({
+                    "role":"tool",
+                    "content":[{"type":"tool-result","toolCallId":tool_call_id}],
+                    "providerOptions":{"cursor":{"highLevelToolCallResult":{"isError":is_error}}}
+                }));
+            }
+            Some(json!({
+                "role": role,
+                "content": message.get("content").and_then(Value::as_str).unwrap_or_default(),
+            }))
+        })
+        .collect()
+}
+
+fn codex_message_text(content: &Value) -> String {
+    match content {
+        Value::String(text) => text.clone(),
+        Value::Array(parts) => parts
+            .iter()
+            .filter_map(|part| part.get("text").and_then(Value::as_str))
+            .collect::<Vec<_>>()
+            .join(""),
+        _ => String::new(),
+    }
+}
+
+fn codex_checkpoint_messages(checkpoint: &crate::extensions::inference::codex_direct_responses::CodexDirectCheckpoint) -> Vec<Value> {
+    let mut messages = Vec::new();
+    let mut pending_calls = Vec::new();
+    let flush_calls = |messages: &mut Vec<Value>, pending_calls: &mut Vec<Value>| {
+        if !pending_calls.is_empty() {
+            messages.push(json!({"role":"assistant","content":std::mem::take(pending_calls)}));
+        }
+    };
+    for item in &checkpoint.input {
+        match item.get("type").and_then(Value::as_str) {
+            Some("function_call") => {
+                pending_calls.push(json!({
+                    "type":"tool-call",
+                    "toolName": item.get("name").and_then(Value::as_str).unwrap_or_default(),
+                    "toolCallId": item.get("call_id").and_then(Value::as_str).unwrap_or_default(),
+                    "args": item
+                        .get("arguments")
+                        .and_then(Value::as_str)
+                        .and_then(|raw| serde_json::from_str::<Value>(raw).ok())
+                        .unwrap_or(Value::Null),
+                }));
+            }
+            Some("function_call_output") => {
+                flush_calls(&mut messages, &mut pending_calls);
+                let result = item
+                    .get("output")
+                    .and_then(Value::as_str)
+                    .and_then(|raw| serde_json::from_str::<Value>(raw).ok())
+                    .unwrap_or(Value::Null);
+                let is_error = result.get("isError").and_then(Value::as_bool) == Some(true);
+                messages.push(json!({
+                    "role":"tool",
+                    "content":[{
+                        "type":"tool-result",
+                        "toolCallId":item.get("call_id").and_then(Value::as_str).unwrap_or_default()
+                    }],
+                    "providerOptions":{"cursor":{"highLevelToolCallResult":{"isError":is_error}}}
+                }));
+            }
+            Some("message") | None if item.get("role").and_then(Value::as_str).is_some() => {
+                flush_calls(&mut messages, &mut pending_calls);
+                messages.push(json!({
+                    "role": item.get("role").and_then(Value::as_str).unwrap_or_default(),
+                    "content": codex_message_text(item.get("content").unwrap_or(&Value::Null)),
+                }));
+            }
+            _ => {}
+        }
+    }
+    flush_calls(&mut messages, &mut pending_calls);
+    messages
+}
+
+pub fn checkpoint_ended_on_silent_tool_calls(
+    checkpoint: &RoutedProviderCheckpoint,
+    final_text: &str,
+) -> bool {
+    if final_text.len() > checkpoint.emitted_text_bytes() {
+        return false;
+    }
+    let messages = match checkpoint {
+        RoutedProviderCheckpoint::Cursor(checkpoint) => cursor_checkpoint_messages(checkpoint),
+        RoutedProviderCheckpoint::Codex(checkpoint) => codex_checkpoint_messages(checkpoint),
+        RoutedProviderCheckpoint::OpenRouter(checkpoint) => openrouter_checkpoint_messages(checkpoint),
+    };
+    turn_ended_on_silent_tool_calls(&messages)
 }

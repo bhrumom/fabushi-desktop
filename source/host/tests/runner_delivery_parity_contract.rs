@@ -9,7 +9,12 @@ use mahayana_host_runtime::runner::start_of_turn_ack_reminder_middleware::{
     START_OF_TURN_ACK_REMINDER_MESSAGE, create_start_of_turn_ack_reminder_middleware,
     has_text_send_message_since_turn_start,
 };
-use mahayana_host_runtime::runner::turn_shape::turn_ended_on_silent_tool_calls;
+use mahayana_host_runtime::extensions::inference::provider_session::{
+    OpenRouterCheckpoint, RoutedProviderCheckpoint,
+};
+use mahayana_host_runtime::runner::turn_shape::{
+    checkpoint_ended_on_silent_tool_calls, turn_ended_on_silent_tool_calls,
+};
 use mahayana_host_runtime::runner::tools::sand_computer_use_subagent::{
     COMPUTER_USE_SUBAGENT_TYPE, computer_use_subagent_description,
     create_sand_computer_use_subagent_config, is_computer_use_subagent_type,
@@ -242,6 +247,65 @@ fn turn_shape_detects_only_silent_tool_call_endings_after_visible_ack() {
             "providerOptions":{"cursor":{"sandStartOfTurnAckReminder":true}}}),
     ];
     assert!(turn_ended_on_silent_tool_calls(&reminder_tail));
+}
+
+#[test]
+fn durable_provider_checkpoint_drives_silent_tool_tail_projection() {
+    let checkpoint = RoutedProviderCheckpoint::OpenRouter(OpenRouterCheckpoint {
+        conversation: vec![
+            json!({"role":"user","content":"do it"}),
+            json!({
+                "role":"assistant",
+                "content": null,
+                "tool_calls":[{
+                    "id":"ack-1",
+                    "type":"function",
+                    "function":{"name":"SendMessage","arguments":"{\"type\":\"text\"}"}
+                }]
+            }),
+            json!({"role":"tool","tool_call_id":"ack-1","content":"{\"ok\":true}"}),
+            json!({
+                "role":"assistant",
+                "content": null,
+                "tool_calls":[{
+                    "id":"read-1",
+                    "type":"function",
+                    "function":{"name":"Read","arguments":"{}"}
+                }]
+            }),
+            json!({"role":"tool","tool_call_id":"read-1","content":"{\"value\":1}"}),
+        ],
+        text: String::new(),
+        completed_steps: 2,
+        tool_calls_completed: 2,
+    });
+    assert!(checkpoint_ended_on_silent_tool_calls(&checkpoint, ""));
+    assert!(!checkpoint_ended_on_silent_tool_calls(
+        &checkpoint,
+        "plain model text after the last checkpoint"
+    ));
+
+    let visible = RoutedProviderCheckpoint::OpenRouter(OpenRouterCheckpoint {
+        conversation: vec![
+            json!({"role":"user","content":"do it"}),
+            json!({
+                "role":"assistant","content":null,
+                "tool_calls":[{"id":"ack-1","type":"function","function":{"name":"SendMessage","arguments":"{}"}}]
+            }),
+            json!({
+                "role":"assistant","content":null,
+                "tool_calls":[{"id":"final-1","type":"function","function":{"name":"SendMessage","arguments":"{}"}}]
+            }),
+            json!({
+                "role":"assistant","content":null,
+                "tool_calls":[{"id":"read-2","type":"function","function":{"name":"Read","arguments":"{}"}}]
+            }),
+        ],
+        text: String::new(),
+        completed_steps: 3,
+        tool_calls_completed: 3,
+    });
+    assert!(!checkpoint_ended_on_silent_tool_calls(&visible, ""));
 }
 
 #[test]

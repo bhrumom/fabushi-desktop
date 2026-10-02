@@ -256,8 +256,9 @@ use mahayana_host_runtime::extensions::telemetry::journal_outcome_telemetry::Jou
 use mahayana_host_runtime::extensions::telemetry::sand_error_tags::SandErrorValue;
 use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
 use mahayana_host_runtime::extensions::transcript::turn_runtime::{
-    REPLY_NUDGE_PROMPT, TurnTerminalKind, classify_agent_error, project_turn_terminal,
-    shape_reply_nudge_turn_input, should_attempt_reply_nudge,
+    REPLY_NUDGE_PROMPT, TurnTerminalKind, classify_agent_error, is_delivery_owed,
+    project_turn_terminal, shape_closing_send_nudge_turn_input, shape_reply_nudge_turn_input,
+    should_attempt_reply_nudge,
 };
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
 use mahayana_host_runtime::extensions::forever_box::{
@@ -7476,6 +7477,51 @@ fn start_routed_provider_task(
                 }
             }
 
+            let should_attempt_closing_send_nudge = is_user_turn
+                && result.is_ok()
+                && !worker_cancellation.is_cancelled()
+                && !waiting_user
+                && turn_epoch == worker_transcript_runtime.current_turn_epoch(&agent_id)
+                && runner
+                    .last_finished()
+                    .is_some_and(|finished| finished.ended_on_silent_tool_calls);
+            if should_attempt_closing_send_nudge {
+                let nudge_input = shape_closing_send_nudge_turn_input(
+                    &lifecycle_messages,
+                    &provider_messages,
+                    &turn_input.options,
+                );
+                let mut suppress_hidden_nudge_delta = |_delta: &str, _accumulated: &str| {};
+                result = runner.run_routed_provider_with_projected_messages(
+                    &data_dir,
+                    &nudge_input.lifecycle_messages,
+                    &nudge_input.provider_messages,
+                    nudge_input.options,
+                    &mut suppress_hidden_nudge_delta,
+                );
+                waiting_user = matches!(
+                    runner.last_finished().map(|finished| &finished.outcome),
+                    Some(mahayana_host_runtime::runner::TerminalOutcome::WaitingUser)
+                );
+                let closing_send_fields = ClosingSendNudgeFields {
+                    conversation_id: agent_id.clone(),
+                    delivered: !is_delivery_owed(
+                        send_message_delivery_counter.count(),
+                        reaction_delivery_counter.count() > 0,
+                    ),
+                    sent_message_count: send_message_delivery_counter.count(),
+                    aborted: worker_cancellation.is_cancelled(),
+                };
+                if let Err(error) =
+                    worker_telemetry_logs.report_closing_send_nudge(&closing_send_fields)
+                {
+                    eprintln!(
+                        "mahayana-host closing_send_nudge_telemetry_failed agent={} error={error}",
+                        agent_id
+                    );
+                }
+            }
+
             if result.is_ok() {
                 if let Some((turn_snapshot, identity)) =
                     worker_profile_announcement.as_ref()
@@ -7719,20 +7765,6 @@ fn start_routed_provider_task(
                 sent_message_count,
                 reacted,
             );
-            let closing_send_fields = ClosingSendNudgeFields {
-                conversation_id: agent_id.clone(),
-                delivered: terminal_projection.delivered,
-                sent_message_count,
-                aborted: worker_cancellation.is_cancelled(),
-            };
-            if let Err(error) =
-                worker_telemetry_logs.report_closing_send_nudge(&closing_send_fields)
-            {
-                eprintln!(
-                    "mahayana-host closing_send_nudge_telemetry_failed agent={} error={error}",
-                    agent_id
-                );
-            }
             worker_transcript_runtime.track_runner_activity_update(
                 &agent_id,
                 &ActivityUpdate::TurnEnded,

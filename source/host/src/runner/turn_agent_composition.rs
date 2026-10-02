@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedProvider,
+    RoutedProviderCheckpoint,
 };
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
 
@@ -17,6 +18,7 @@ use super::routed_provider_runtime::{
 };
 use super::sand_action_audit::{AuditedRoutedToolBridge, RoutedMcpAuditConfig};
 use super::subagent_runtime::SubagentRuntime;
+use super::turn_shape::checkpoint_ended_on_silent_tool_calls;
 use super::turn_observation::{
     McpObservedRoutedToolBridge, ObservedRoutedToolBridge, TurnObservationHandle,
 };
@@ -44,6 +46,25 @@ use super::tools::turn_toolset::{
     TurnToolsetDependencies, build_turn_toolset, fence_turn_toolset,
 };
 
+struct ObservedRoutedProviderCheckpointStore {
+    delegate: Arc<dyn RoutedProviderCheckpointStore>,
+    latest: Arc<Mutex<Option<RoutedProviderCheckpoint>>>,
+}
+
+impl RoutedProviderCheckpointStore for ObservedRoutedProviderCheckpointStore {
+    fn persist(
+        &self,
+        checkpoint: &RoutedProviderCheckpoint,
+    ) -> Result<String, ProviderSessionError> {
+        let cursor = self.delegate.persist(checkpoint)?;
+        *self
+            .latest
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(checkpoint.clone());
+        Ok(cursor)
+    }
+}
+
 /// Shipping Runner composition for one provider-backed turn.
 ///
 /// This module deliberately owns the dependency assembly that used to be
@@ -59,6 +80,7 @@ pub struct TurnAgentComposition {
     request_context: RunnerRequestContextSnapshot,
     cancellation: RoutedProviderCancellation,
     checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
+    latest_provider_checkpoint: Arc<Mutex<Option<RoutedProviderCheckpoint>>>,
     retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
     retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
     usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
@@ -97,6 +119,12 @@ impl TurnAgentComposition {
         cancellation: RoutedProviderCancellation,
         checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     ) -> Self {
+        let latest_provider_checkpoint = Arc::new(Mutex::new(None));
+        let checkpoint_store: Arc<dyn RoutedProviderCheckpointStore> =
+            Arc::new(ObservedRoutedProviderCheckpointStore {
+                delegate: checkpoint_store,
+                latest: Arc::clone(&latest_provider_checkpoint),
+            });
         Self {
             provider,
             bridge,
@@ -104,6 +132,7 @@ impl TurnAgentComposition {
             request_context,
             cancellation,
             checkpoint_store,
+            latest_provider_checkpoint,
             retry_sink: None,
             retry_report_sink: None,
             usage_sink: None,
@@ -433,12 +462,30 @@ impl TurnAgentComposition {
         self.cancellation.clone()
     }
 
+    pub fn last_run_ended_on_silent_tool_calls(&self, final_text: &str) -> bool {
+        self.latest_provider_checkpoint
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+            .is_some_and(|checkpoint| {
+                checkpoint_ended_on_silent_tool_calls(checkpoint, final_text)
+            })
+    }
+
+    fn reset_latest_provider_checkpoint(&self) {
+        *self
+            .latest_provider_checkpoint
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = None;
+    }
+
     pub fn run(
         &self,
         data_dir: &Path,
         messages: &[ProviderMessage],
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
+        self.reset_latest_provider_checkpoint();
         let bridge: Arc<dyn RoutedToolBridge> = match &self.observation {
             Some(observation) => Arc::new(McpObservedRoutedToolBridge::new(
                 Arc::clone(&self.bridge),

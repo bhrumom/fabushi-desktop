@@ -39,6 +39,7 @@ pub struct TurnRunFinished {
     pub owner: TurnOwnerToken,
     pub outcome: TerminalOutcome,
     pub quiesced_for_upgrade: bool,
+    pub ended_on_silent_tool_calls: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -302,6 +303,7 @@ impl TurnRunShell {
             owner: finished_owner,
             outcome,
             quiesced_for_upgrade,
+            ended_on_silent_tool_calls: false,
         })
     }
 

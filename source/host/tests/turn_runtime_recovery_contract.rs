@@ -2,8 +2,9 @@ use mahayana_host_runtime::extensions::transcript::send_pipeline::{
     PersistedSendContext, RecoverySend,
 };
 use mahayana_host_runtime::extensions::transcript::turn_runtime::{
-    MAX_REPLY_NUDGES, QueuedTurnRecoveryCheck, REPLY_NUDGE_PROMPT, TurnTerminalKind,
-    is_delivery_owed, project_turn_terminal, shape_reply_nudge_turn_input,
+    CLOSING_SEND_NUDGE_PROMPT, MAX_REPLY_NUDGES, QueuedTurnRecoveryCheck, REPLY_NUDGE_PROMPT,
+    TurnTerminalKind, is_delivery_owed, project_turn_terminal,
+    shape_closing_send_nudge_turn_input, shape_reply_nudge_turn_input,
     should_attempt_reply_nudge, should_supersede_stale_turn,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::ProviderMessage;
@@ -174,6 +175,50 @@ fn reply_nudge_checkpoint_input_is_hidden_from_the_original_user_identity() {
     assert_eq!(shaped.options.message_id, None);
     assert_eq!(shaped.options.recent_message_text.as_deref(), Some(REPLY_NUDGE_PROMPT));
     assert!(shaped.options.recent_user_messages.is_empty());
+    assert!(!shaped.options.is_fork);
+    assert_eq!(shaped.options.attachment_count, 0);
+    assert_eq!(shaped.options.image_count, 0);
+    assert_eq!(shaped.options.video_count, 0);
+    assert!(!shaped.options.has_reply_context);
+}
+
+
+#[test]
+fn closing_send_nudge_uses_the_same_hidden_checkpoint_identity_rules() {
+    let lifecycle = vec![ProviderMessage {
+        role: "user".into(),
+        content: "original".into(),
+    }];
+    let provider = lifecycle.clone();
+    let options = mahayana_host_runtime::runner::TurnRunOptions {
+        inference_request_id: Some("request-2".into()),
+        message_id: Some("message-2".into()),
+        recent_message_text: Some("original".into()),
+        recent_user_messages: Vec::new(),
+        is_fork: true,
+        attachment_count: 3,
+        image_count: 1,
+        video_count: 1,
+        has_reply_context: true,
+    };
+    let shaped = shape_closing_send_nudge_turn_input(&lifecycle, &provider, &options);
+    assert_eq!(
+        shaped.lifecycle_messages.last().unwrap().content,
+        CLOSING_SEND_NUDGE_PROMPT
+    );
+    assert_eq!(
+        shaped.provider_messages.last().unwrap().content,
+        CLOSING_SEND_NUDGE_PROMPT
+    );
+    assert_eq!(
+        shaped.options.inference_request_id.as_deref(),
+        Some("request-2")
+    );
+    assert_eq!(shaped.options.message_id, None);
+    assert_eq!(
+        shaped.options.recent_message_text.as_deref(),
+        Some(CLOSING_SEND_NUDGE_PROMPT)
+    );
     assert!(!shaped.options.is_fork);
     assert_eq!(shaped.options.attachment_count, 0);
     assert_eq!(shaped.options.image_count, 0);
