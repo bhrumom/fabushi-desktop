@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::groups::group_chat::{
-    GroupDescription, GroupMember, GroupMessage, GroupSpeaker,
+    GroupDescription, GroupMember, GroupMessage, GroupSpeaker, build_group_redrive_note,
 };
 use crate::groups::group_store::{SandGroupConfig, read_sand_group_config};
 
@@ -154,7 +154,11 @@ impl GroupOrchestratorDeps for LocalGroupFanoutDeps {
         }
         let mut attempt = 1usize;
         let output = loop {
-            match executor(request.clone()) {
+            let mut attempt_request = request.clone();
+            if attempt > 1 {
+                attempt_request.prompt.push_str(build_group_redrive_note());
+            }
+            match executor(attempt_request) {
                 Ok(messages) => break messages,
                 Err(error) if error == GROUP_MEMBER_DM_PREEMPTED_ERROR => {
                     if attempt < 3 && self.is_current() {
