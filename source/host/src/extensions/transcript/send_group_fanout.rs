@@ -156,12 +156,12 @@ impl GroupOrchestratorDeps for LocalGroupFanoutDeps {
         let output = loop {
             match executor(request.clone()) {
                 Ok(messages) => break messages,
-                Err(error)
-                    if error == GROUP_MEMBER_DM_PREEMPTED_ERROR
-                        && attempt < 3
-                        && self.is_current() =>
-                {
-                    attempt += 1;
+                Err(error) if error == GROUP_MEMBER_DM_PREEMPTED_ERROR => {
+                    if attempt < 3 && self.is_current() {
+                        attempt += 1;
+                        continue;
+                    }
+                    break Vec::new();
                 }
                 Err(error) => {
                     if let Ok(mut failures) = self.member_failures.lock() {
