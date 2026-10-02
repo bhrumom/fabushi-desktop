@@ -133,6 +133,8 @@ use crate::extensions::telemetry::webauthn_proxy_telemetry::{
 use crate::extensions::trays::extension::{
     HostTraysExtension, start_trays_extension,
 };
+use crate::extensions::turn_execution::extension::turn_execution_extension;
+use crate::extensions::turn_execution::turn_execution_service::TurnExecutionRegistry;
 use crate::extensions::webauthn_proxy::extension::{
     HostWebAuthnProxyExtension, start_webauthn_proxy_extension,
 };
@@ -181,6 +183,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::ForeverBox,
     HostExtensionId::Attachments,
     HostExtensionId::Secrets,
+    HostExtensionId::TurnExecution,
 ];
 
 pub struct ProductionBrowserUaLog;
@@ -428,6 +431,7 @@ pub struct ProductionHostExtensions {
     pub webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     pub action_audit: ActionAuditExtension,
     pub cloud_agents: CloudAgentsExtension,
+    pub turn_execution: Arc<Mutex<TurnExecutionRegistry>>,
     backend_url: String,
     mcp: Mutex<Option<McpExtensionRuntime>>,
     box_store_sync: Mutex<Option<BoxStoreSyncExtension<ProductionBoxStoreSyncService>>>,
@@ -585,6 +589,9 @@ pub fn start_production_host_extensions(
         },
     )));
 
+    let (_, turn_execution_registry) = turn_execution_extension();
+    let turn_execution = Arc::new(Mutex::new(turn_execution_registry));
+
     pin_structured_log_domain_reporters(telemetry.logs.clone());
 
     Ok(ProductionHostExtensions {
@@ -609,6 +616,7 @@ pub fn start_production_host_extensions(
         webauthn_proxy,
         action_audit,
         cloud_agents,
+        turn_execution,
         backend_url,
         mcp: Mutex::new(None),
         box_store_sync: Mutex::new(None),
