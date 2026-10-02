@@ -16,7 +16,9 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, ROUTED_MCP_PROTOCOL_VERSION,
     RoutedProviderTaskRegistry, RoutedToolBridge, start_routed_mcp_server,
 };
-use mahayana_host_runtime::extensions::transcript::runner_registry::TranscriptRunnerRegistry;
+use mahayana_host_runtime::extensions::transcript::runner_registry::{
+    RUN_WATCHDOG_INTERRUPT_REASON, TranscriptRunnerRegistry,
+};
 use serde_json::{Value, json};
 
 struct FakeBridge;
