@@ -5396,6 +5396,7 @@ fn start_routed_provider_task(
     let worker_host_runner_composition = Arc::clone(&host_runner_composition);
     let worker_cancellation = cancellation.clone();
     let worker_sessions = Arc::clone(&session_workers);
+    let worker_human_handoff_sessions = Arc::clone(&session_workers);
     let worker_retire_sessions = Arc::clone(&session_workers);
     let worker_ack_obligations = Arc::clone(&ack_obligations);
     let worker_transcript_runtime = Arc::clone(&transcript_runtime);
@@ -7289,7 +7290,7 @@ fn start_routed_provider_task(
                     worker_human_handoff_conversation_id.as_deref(),
                     result.as_ref().ok().cloned(),
                 ) {
-                    match worker_sessions.append_human_agent_message(
+                    match worker_human_handoff_sessions.append_human_agent_message(
                         conversation_id,
                         &agent_id,
                         &worker_stream_id,
