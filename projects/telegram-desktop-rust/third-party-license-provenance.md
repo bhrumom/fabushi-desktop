@@ -14,7 +14,9 @@ All 35 direct gitlinks were inspected at their pinned commits using non-truncate
 
 ### Desktop App Toolkit repositories
 
-cmake_helpers, codegen, lib_base, lib_crl, lib_lottie, lib_qr, lib_rpl, lib_spellcheck, lib_storage, lib_tl, lib_translate, lib_ui, lib_webrtc and lib_webview contain no standalone LICENSE/COPYING/REUSE file in their pinned trees. Representative CMake/source files in cmake_helpers, lib_base, lib_ui, lib_webrtc and lib_webview explicitly say license/copyright information is at https://github.com/desktop-app/legal/blob/master/LEGAL. Because that reference is floating rather than pinned by the Telegram gitlink, this is a provenance fact and a release-review blocker, not an exact license-expression closure.
+cmake_helpers, codegen, lib_base, lib_crl, lib_lottie, lib_qr, lib_rpl, lib_spellcheck, lib_storage, lib_tl, lib_translate, lib_ui, lib_webrtc and lib_webview contain no standalone LICENSE/COPYING/REUSE file in their pinned trees. Representative CMake/source files in cmake_helpers, lib_base, lib_ui, lib_webrtc and lib_webview explicitly say license/copyright information is at `desktop-app/legal/blob/master/LEGAL`. Because that reference is floating rather than pinned by the Telegram gitlink, it cannot by itself prove the legal text that applied when each frozen toolkit commit was authored.
+
+A dated remote observation on 2026-10-02 resolves `desktop-app/legal` default `master` to commit `81c3a0ebf04dca9ffc49c9a06a922fea34b01892`; its exact `LEGAL` blob is `3bfa83166c163461bd441cee602a6ace93092b14`. That file states Desktop App Toolkit is GPL version 3 or later and includes the OpenSSL linking exception. This makes the current floating reference reproducible for research, but remains observational rather than historical proof for the pinned toolkit commits. Release/legal review must either establish the applicable historical legal revision or conservatively treat the researched source according to the relevant license evidence.
 
 ### ThirdParty repositories with exact license evidence
 
