@@ -5,7 +5,10 @@ use std::time::{SystemTime,UNIX_EPOCH};
 use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
-use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{AgentWakeRequest,ProductionAgentToAgentMessaging,should_interrupt_priority_peer};
+use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
+    AgentWakeRequest, ProductionAgentToAgentMessaging, agent_inbound_failure_report,
+    agent_inbound_failure_tray, should_interrupt_priority_peer,
+};
 use mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane;
 
 fn temp_root()->std::path::PathBuf{
@@ -193,4 +196,41 @@ fn shipping_agent_message_analytics_uses_canonical_product_analytics_owner() {
     assert!(main.contains("\"to_agent_id\": to_agent_id"));
     assert!(main.contains("\"is_group_target\": false"));
     assert!(main.contains("\"is_priority\": is_priority"));
+}
+
+
+#[test]
+fn agent_inbound_failure_projects_frozen_telemetry_and_tray() {
+    let report = agent_inbound_failure_report(
+        "agent-b",
+        Some("request-1"),
+        "INFERENCE_PROVIDER_FAILED",
+        "provider exploded",
+    );
+    assert_eq!(report["source"], "agent");
+    assert_eq!(report["conversationId"], "agent-b");
+    assert_eq!(report["requestId"], "request-1");
+    assert_eq!(report["error"], "INFERENCE_PROVIDER_FAILED");
+    assert_eq!(report["detail"], "provider exploded");
+
+    let tray = agent_inbound_failure_tray(
+        "agent-b",
+        Some("request-1"),
+        "INFERENCE_PROVIDER_FAILED",
+        "provider exploded",
+    );
+    assert_eq!(tray.agent_id.as_deref(), Some("agent-b"));
+    assert_eq!(tray.title, "Message from another agent failed");
+    assert_eq!(tray.detail, "provider exploded");
+    assert_eq!(tray.request_id.as_deref(), Some("request-1"));
+    assert_eq!(tray.error_kind.as_deref(), Some("INFERENCE_PROVIDER_FAILED"));
+}
+
+#[test]
+fn shipping_host_owns_agent_inbound_failure_telemetry_and_tray() {
+    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
+    assert!(main.contains("method == \"reportAgentInboundFailure\""));
+    assert!(main.contains("self.telemetry_logs.report_agent_error(&agent_inbound_failure_report("));
+    assert!(main.contains("self.trays.push_error(agent_inbound_failure_tray("));
 }

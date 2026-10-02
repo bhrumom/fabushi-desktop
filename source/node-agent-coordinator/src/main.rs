@@ -33,8 +33,8 @@ use mahayana_node_agent_coordinator::inference_router::{
     InferenceStreamSupersede, InferenceTaskQueue, InferenceTranscriptFile,
     RunnerInferenceEvent, StoredEntry, StoredRole, is_direct_user_send,
     parse_host_routed_prompt_acceptance, parse_runner_inference_event,
-    prepare_agent_inbound_wake_routes, redrive_agent_inbound_after_priority_preemption,
-    should_append_user_message,
+    agent_inbound_failure_gateway_args, prepare_agent_inbound_wake_routes,
+    redrive_agent_inbound_after_priority_preemption, should_append_user_message,
     parse_send_prompt_attachments,
     prepare_workflow_run_now_route, project_runner_turn_context, project_transcript_entry,
     CoordinatorWorkflowRunNowRoute,
@@ -937,6 +937,23 @@ fn replay_tool_events(state: &Arc<CoordinatorState>) {
     }
 }
 
+fn report_agent_inbound_failure_best_effort(
+    state: &Arc<CoordinatorState>,
+    agent_id: &str,
+    error: &Failure,
+) {
+    if let Err(report_error) = dispatch_gateway_value(
+        state,
+        "reportAgentInboundFailure",
+        agent_inbound_failure_gateway_args(agent_id, &error.code, &error.message),
+    ) {
+        eprintln!(
+            "agent inbound failure could not report agent={}: {}: {}",
+            agent_id, report_error.code, report_error.message
+        );
+    }
+}
+
 fn enqueue_agent_inbound_wake(
     state: &Arc<CoordinatorState>,
     agent_id: String,
@@ -954,10 +971,7 @@ fn enqueue_agent_inbound_wake(
     let task = move || {
         if provider == InferenceProvider::Cursor {
             if let Err(error) = dispatch_gateway_value(&worker_state, "sendPrompt", args) {
-                eprintln!(
-                    "Cursor agent inbound wake failed agent={}: {}: {}",
-                    agent_id, error.code, error.message
-                );
+                report_agent_inbound_failure_best_effort(&worker_state, &agent_id, &error);
             }
             return;
         }
@@ -980,7 +994,7 @@ fn enqueue_agent_inbound_wake(
                     }
                 }
             } else {
-                record_inference_error(&worker_state, provider, &agent_id, &error);
+                report_agent_inbound_failure_best_effort(&worker_state, &agent_id, &error);
             }
         }
     };

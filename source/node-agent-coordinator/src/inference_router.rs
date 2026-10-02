@@ -405,6 +405,18 @@ pub struct CoordinatorAgentWakeRoute {
 pub const PRIORITY_AGENT_WAKE_SUPERSEDE_REASON: &str =
     "superseded by a priority agent message";
 
+pub fn agent_inbound_failure_gateway_args(
+    agent_id: &str,
+    error_code: &str,
+    message: &str,
+) -> Value {
+    serde_json::json!({
+        "agentId": agent_id,
+        "errorCode": error_code,
+        "message": message,
+    })
+}
+
 pub fn redrive_agent_inbound_after_priority_preemption(
     send_args: &Value,
     cancellation_message: &str,

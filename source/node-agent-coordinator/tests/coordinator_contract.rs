@@ -12,8 +12,9 @@ use mahayana_node_agent_coordinator::supervisor::{
     CoordinatorSupervisor, GatewayState, HostGeneration,
 };
 use mahayana_node_agent_coordinator::inference_router::{
-    deleted_agent_ids_for_host_success, prepare_agent_inbound_wake_routes,
-    redrive_agent_inbound_after_priority_preemption, PRIORITY_AGENT_WAKE_SUPERSEDE_REASON,
+    agent_inbound_failure_gateway_args, deleted_agent_ids_for_host_success,
+    prepare_agent_inbound_wake_routes, redrive_agent_inbound_after_priority_preemption,
+    PRIORITY_AGENT_WAKE_SUPERSEDE_REASON,
 };
 use serde_json::json;
 
@@ -2159,4 +2160,17 @@ fn priority_peer_cancellation_redrives_agent_wake_exactly_once() {
         .is_none(),
         "non-agent turns never enter peer redrive"
     );
+}
+
+
+#[test]
+fn agent_inbound_failure_gateway_report_preserves_host_owned_error_context() {
+    let args = agent_inbound_failure_gateway_args(
+        "agent-target",
+        "INFERENCE_PROVIDER_FAILED",
+        "provider exploded",
+    );
+    assert_eq!(args["agentId"], "agent-target");
+    assert_eq!(args["errorCode"], "INFERENCE_PROVIDER_FAILED");
+    assert_eq!(args["message"], "provider exploded");
 }

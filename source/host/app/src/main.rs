@@ -70,7 +70,8 @@ use mahayana_host_runtime::agents::agent_messaging::{
 use mahayana_host_runtime::agents::agent_profile::{SandAgentProfile, get_sand_profile_path};
 use mahayana_host_runtime::agents::settings_file::get_sand_settings_path;
 use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
-    AgentWakeRequest, ProductionAgentToAgentMessaging, should_interrupt_priority_peer,
+    AgentWakeRequest, ProductionAgentToAgentMessaging, agent_inbound_failure_report,
+    agent_inbound_failure_tray, should_interrupt_priority_peer,
 };
 use mahayana_host_runtime::extensions::memory::agent_state::SandAgentState;
 use mahayana_host_runtime::extensions::telemetry::HostTelemetryProjection;
@@ -188,6 +189,7 @@ use mahayana_host_runtime::extensions::inference::cursor_session::{
 };
 use mahayana_host_runtime::extensions::inference::generated_inference_codec::InferenceReason;
 use mahayana_host_runtime::extensions::webauthn_proxy::extension::HostWebAuthnProxyExtension;
+use mahayana_host_runtime::extensions::telemetry::analytics_service::TelemetryService;
 use mahayana_host_runtime::extensions::telemetry::automation_fire_telemetry::{
     AutomationFireDroppedReport, AutomationRunReport,
 };
@@ -7566,6 +7568,46 @@ impl GatewayApi for UnifiedGatewayApi {
                 "streamId": stream_id,
                 "cancelled": cancelled,
             }));
+        }
+        if method == "reportAgentInboundFailure" {
+            let agent_id = args
+                .get("agentId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "reportAgentInboundFailure requires agentId".into()
+                ))?;
+            let error_code = args
+                .get("errorCode")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("INFERENCE_PROVIDER_FAILED");
+            let detail = args
+                .get("message")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("Agent inbound wake failed");
+            let request_id = args
+                .get("requestId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty());
+            self.telemetry_logs.report_agent_error(&agent_inbound_failure_report(
+                agent_id,
+                request_id,
+                error_code,
+                detail,
+            ));
+            let tray = self.trays.push_error(agent_inbound_failure_tray(
+                agent_id,
+                request_id,
+                error_code,
+                detail,
+            ));
+            return serde_json::to_value(tray).map_err(|error| {
+                GatewayCommandError::Internal(format!(
+                    "could not encode agent inbound failure tray: {error}"
+                ))
+            });
         }
         // UnifiedAppHost owns a QuickJS runtime and is intentionally !Send.
         // Product calls remain on its owner lane while the Runner provider

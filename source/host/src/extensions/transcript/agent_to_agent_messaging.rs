@@ -8,11 +8,44 @@ use crate::agents::agent_messaging::{
     AgentAddress, AgentMessageImage, build_agent_inbound_wake_prompt, clamp_agent_message,
 };
 use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::extensions::trays::trays_service::PushErrorOptions;
 use super::send_message_shaping::load_agent_inbound_images;
 use super::run_scheduler::RunLane;
 use super::transcript_entry_ids::{TranscriptEntryIdKind, next_entry_id};
 
 pub const PRIORITY_AGENT_MESSAGE_INTERRUPT_REASON: &str = "superseded by a priority agent message";
+
+pub fn agent_inbound_failure_report(
+    agent_id: &str,
+    request_id: Option<&str>,
+    error_code: &str,
+    detail: &str,
+) -> Value {
+    json!({
+        "source": "agent",
+        "conversationId": agent_id,
+        "requestId": request_id,
+        "error": error_code,
+        "detail": detail,
+    })
+}
+
+pub fn agent_inbound_failure_tray(
+    agent_id: &str,
+    request_id: Option<&str>,
+    error_code: &str,
+    detail: &str,
+) -> PushErrorOptions {
+    PushErrorOptions {
+        agent_id: Some(agent_id.to_string()),
+        title: "Message from another agent failed".into(),
+        detail: detail.to_string(),
+        request_id: request_id.map(str::to_string),
+        error_kind: (!error_code.trim().is_empty()).then(|| error_code.to_string()),
+        raw_detail: (!detail.trim().is_empty()).then(|| detail.to_string()),
+        ..PushErrorOptions::default()
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
