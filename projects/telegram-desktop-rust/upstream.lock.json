@@ -311,18 +311,21 @@
     "total_recursive_leaf_count": null,
     "pending_phase": "P0",
     "pending_work": [
-      "Enumerate every root and recursively mounted submodule leaf, preserving repository identity, git mode, path and blob OID.",
-      "Resolve nested gitlinks and freeze external downloads, patches, generators, resources and platform build definitions.",
-      "Classify every source leaf into research capabilities or an evidence-backed non-product category.",
-      "Identify all Telegram/desktop-app C++ production logic and assign it to Rust-replacement capabilities.",
-      "Create capability research dossiers and architecture-risk/ADR backlog; do not create source-file-to-target-file mappings.",
-      "Create a nonempty capability ledger and fail-closed semantic validator on GitHub Actions or htch-runtime only.",
-      "Review source-informed GPL and third-party provenance before any release-license claim."
+      "Complete the recursive upstream source/dependency/resource closure.",
+      "Classify every source leaf into Telegram capabilities and identify all Telegram/desktop-app C++ production logic.",
+      "Map every capability to an FBCP product domain, Telegram Provider responsibility, or typed Telegram extension.",
+      "Identify all Communication-to-Agent InteractionGateway implications and data/terms policy requirements.",
+      "Create capability research dossiers and provider architecture ADR questions.",
+      "Create a nonempty capability ledger with exact-head evidence on GitHub Actions or htch-runtime.",
+      "Review GPL, third-party licenses, Telegram API/Bot terms, branding and release provenance."
     ],
     "cpp_production_logic_inventory_verified": false,
     "capability_graph_verified": false,
     "research_coverage_verified": false,
-    "research_coverage": null
+    "research_coverage": null,
+    "fbc_product_destination_mapping_verified": false,
+    "provider_extension_map_verified": false,
+    "interaction_gateway_impacts_verified": false
   },
   "license_baseline": {
     "upstream_project_license_expression": "GPL-3.0-or-later",
@@ -344,11 +347,23 @@
     "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/3b1f2c5deaf47867629c96b08bf4694f973177e2"
   ],
   "spec_revision": 2,
-  "method": "source-informed-rearchitecture",
+  "method": "source-informed-capability-absorption",
   "clean_room": false,
   "target_spec_revision_2_baseline": {
     "repository": "bhrumom/fabushi-desktop",
     "commit": "58cb7f5f29ac02440bf1c5e819c43863c1d2d727",
     "note": "Revision 2 base before replacing file/module parity with capability-based rearchitecture."
+  },
+  "parent_product": {
+    "project_id": "FBCP-001",
+    "spec_path": "docs/specs/fabushi-bot-communication-platform.md",
+    "role": "telegram-capability-source-and-provider",
+    "product_root": "Fabushi Bot"
+  },
+  "product_target": "Fabushi Bot Communication Platform",
+  "target_spec_revision_3_baseline": {
+    "repository": "bhrumom/fabushi-desktop",
+    "commit": "67890443847c0c1b711c27853f7864d0215e33b0",
+    "note": "Revision 3 base before subordinating Telegram rearchitecture to FBCP-001."
   }
 }

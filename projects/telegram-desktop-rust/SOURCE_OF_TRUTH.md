@@ -1,75 +1,85 @@
-# Telegram Desktop Source-Informed Rearchitecture — Source of Truth
+# Telegram Capability Research / Provider — Source of Truth
 
 Status: active  
-Date: 2026-10-02  
 Project ID: TDRP-001  
-Repository: bhrumom/fabushi-desktop
+Date: 2026-10-02  
+Parent product: FBCP-001  
+Repository: `bhrumom/fabushi-desktop`
 
-## 最新要求
+## Role
 
-研究固定 Telegram Desktop 源码，完整理解功能、协议、状态机、失败语义和平台差异；不要逐文件、逐模块照抄目标结构。
+这个项目不再是独立 Telegram 产品项目。
 
-所有进入最终产品的 C++ 产品逻辑必须由更好的 Rust 实现替代。
+它只负责为 **Fabushi Bot Communication Platform** 提供：
 
-非 C++ 部分在理解职责后选择最合适的架构、语言和生态，不做“所有东西都强制 Rust”。
+- Telegram complete capability research；
+- fixed source provenance；
+- Telegram protocol/provider implementation；
+- Telegram-specific product semantics；
+- C++ → Rust replacement evidence；
+- Telegram interoperability / platform acceptance。
 
-完成标准是完整 capability/behavior/protocol/platform parity 和更清晰的目标架构，不是 source-file parity。
+Canonical product spec:
 
-## 必须先读
+`docs/specs/fabushi-bot-communication-platform.md`
 
-1. 根 AGENTS.md。
-2. docs/specs/telegram-desktop-rust-equivalence-migration.md Revision 2。
-3. upstream.lock.json。
-4. module-map.md。该文件现在是 source research/capability map，不是目标 module map。
-5. contracts/parity-ledger.schema.json。该 schema 现在描述 capability ledger，而不是逐文件 port ledger。
-6. STATUS.md。
-7. 当前任务与 ADR。
+Telegram sub-spec:
 
-## 关键不变量
+`docs/specs/telegram-desktop-rust-equivalence-migration.md` Revision 3。
 
-- 上游源码可以深入阅读和研究。
-- 上游源码结构不是目标架构。
-- 不要求 source file → target file、class → struct、module → crate 一一对应。
-- C++ production logic 最终必须为零，由 Rust production owner 替代。
-- 非 C++ 使用 best-fit language，但业务状态 owner 必须唯一。
-- tdesktop/Qt/TDLib/原 C++ helper 不能成为最终 fallback。
-- 研究覆盖和实现完成度分开统计。
-- 这是 source-informed 路线，不是 clean-room，不得声称换成 Rust 自动摆脱 GPL。
-- 现有 Grok/Agent 继续由自身 Spec 管理；Telegram 项目不授权破坏其边界。
-- 所有 build/test/benchmark/fuzz/package/acceptance 仅允许 GitHub Actions 或 htch-runtime。
+## Product invariant
 
-## 固定上游
-
-telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677
-
-dev 只用于发现 upstream drift。实现和验收不能使用浮动 dev。
-
-## 当前工作方式
-
-Discover source → capability research dossier → architecture alternatives → ADR → implementation → behavior/differential tests → production wiring → packaged acceptance → independent review。
+**Fabushi Bot is the product. Telegram is a communication capability source and provider.**
 
 禁止：
 
-Discover file → create same-name Rust file → mark ported。
+- 最终独立 Telegram workspace；
+- Telegram-only product shell；
+- source module mirror as target architecture；
+- source-file port percentage；
+- Telegram provider owning Agent Runtime；
+- Telegram sync directly calling models。
 
-## 下一步
+## Source research
 
-执行 P0 source understanding：
+固定上游：
 
-- 完整递归 source/dependency/resource inventory；
-- 标出所有 C++ production logic；
-- 建 source → capability research coverage；
-- 建 capability graph；
-- 写第一批 research dossiers；
-- 建 architecture risk/ADR backlog；
-- 建 capability ledger。
+`telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
 
-P0 不做逐文件 target mapping。
+研究源码时仍需要完整 inventory、capability graph、C++ production logic closure 和 provenance。
 
-首个实现 vertical slice：
+每项 capability 必须额外回答：
 
-authentication → MTProto/session → updates → storage → dialogs/history → compose/send → server update → restart recovery。
+- 它进入哪个 FBCP product domain？
+- 哪部分属于 Telegram Provider？
+- 哪部分必须作为 typed Telegram extension 保留？
+- 是否会跨 Communication → Agent boundary？
+- 对 InteractionGateway/permissions/data policy 有什么要求？
 
-## 执行环境
+## C++ rule
 
-所有构建和测试只能在 GitHub Actions 或 htch-runtime。缺环境一律 blocked/not-configured，不能移到本地电脑替代执行。
+所有 Telegram/desktop-app 自有 C++ production logic 最终必须由 Rust production owner 替代。
+
+不接受 tdesktop/Qt/TDLib/C++ helper/Rust façade 作为最终替代。
+
+## Execution environment
+
+所有 build/test/lint/generator/schema/benchmark/fuzz/package/acceptance 仅允许：
+
+- GitHub Actions
+- `htch-runtime`
+
+## Next work
+
+配合 FBCP P0：
+
+1. complete Telegram capability graph；
+2. source → capability research coverage；
+3. C++ production-logic inventory；
+4. FBCP destination mapping；
+5. generic vs Telegram-specific semantics；
+6. first research dossiers；
+7. provider ADR questions；
+8. capability ledger。
+
+首条实现不是 Telegram demo，而是嵌入 Fabushi product shell 的 provider vertical slice。
