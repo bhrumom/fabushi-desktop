@@ -15411,7 +15411,7 @@
       "targetPath": "source/host/src/extensions/transcript/agent_lifecycle.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "2c7f328eca7a7d4e41d71a0762cdc9e66795be4e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -15421,21 +15421,33 @@
         "source/host/app/src/main.rs",
         "source/host/src/agents/agent_clone.rs",
         "source/host/src/extensions/transcript/runner_registry.rs",
+        "source/host/src/extensions/transcript/completion_revivals.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/src/extensions/transcript/send_group_fanout.rs",
+        "source/host/src/extensions/transcript/send_turn_dispatch.rs",
+        "source/host/src/extensions/transcript/run_scheduler.rs",
         "source/host/src/extensions/transcript/ack_obligations.rs",
         "source/host/src/extensions/session/box_handoff_service.rs",
-        "source/host/src/extensions/forever_box/forever_box_service.rs"
+        "source/host/src/extensions/forever_box/forever_box_service.rs",
+        "source/node-agent-coordinator/src/inference_router.rs",
+        "source/node-agent-coordinator/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_lifecycle_contract.rs",
+        "source/host/tests/agent_lifecycle_kickstart_production_contract.rs",
+        "source/host/tests/group_member_runner_deletion_production_contract.rs",
+        "source/host/tests/completion_revivals_contract.rs",
+        "source/host/tests/send_group_fanout_contract.rs",
         "source/host/tests/agent_session_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/agent_clone_contract.rs",
         "source/host/tests/ack_obligations_contract.rs",
-        "source/host/tests/runner_routed_provider_contract.rs"
+        "source/host/tests/runner_routed_provider_contract.rs",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production lifecycle owns durable deleteAgent/deleteAgents active-successor behavior and duplicateAgent cloning. Shipping Host now injects real cross-extension deletion owners: every deleted agent cancels its live routed-provider streams, purges durable Ack obligations and all agent-scoped ack run tokens before directory removal, then releases the ForeverBox window and forgets pending Session handoff state after durable delete; automation/workflow files are removed with the agent directory. Final remains withheld for frozen exclusive-run/background-subagent drain, trays/pending-wake/group-runner cleanup, delete interrupt/lost telemetry, kickstart/background creation, and exact active-session replacement/roster stamp semantics."
+      "notes": "Rust production lifecycle now owns the frozen Grok 0.18 agent-lifecycle gateway surface: foreground/background create, update, unread/notify/hidden/avatar mutations, avatar reads, duplicate, deleteAgent/deleteAgents, roster snapshot stamping, and profile-change emission. Shipping Host wires onboarding and disk-saver kickstart with introduction-pending semantics, user/background exclusive lanes, empty-delivery nudge, telemetry/tray failure handling, and upgrade quiesce/resume. Deletion uses independent ordinary and group-member runner cancellation, clears group-member preemption state and pending completion/revival state, purges Coordinator inference work after successful Host deletion, disposes cloud/background-shell work, aborts child subagents, waits parent/child streams, subagents, lifecycle runs and queued turn-dispatch lanes to drain, then releases ForeverBox/handoff and clears durable recovery. background-wakes.ts remains a separate strict row and is not claimed by this status."
     },
     {
       "referencePath": "source/host/extensions/transcript/agent-run-error.ts",
