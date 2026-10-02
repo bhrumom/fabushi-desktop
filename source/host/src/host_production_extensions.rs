@@ -15,6 +15,7 @@ use crate::extensions::session::session_diagnostics::{
 use crate::extensions::action_audit::extension::{
     ActionAuditExtension, start_action_audit_extension,
 };
+use crate::extensions::attachments::attachments_service::AttachmentsService;
 use crate::extensions::attachments::extension::{
     HostAttachmentsExtension, start_attachments_extension,
 };
@@ -57,6 +58,9 @@ use crate::extensions::cloud_agents::extension::{
 };
 use crate::extensions::content_search::extension::{
     ProductionContentSearchExtension, start_production_content_search_extension,
+};
+use crate::extensions::cross_user_sharing::production::{
+    ProductionCrossUserRuntime, RemoteRequestedTurnRunner, SharedRoomTurnRunner,
 };
 use crate::extensions::codebase_telemetry::extension::{
     CodebaseTelemetryExtension, start_codebase_telemetry_extension,
@@ -152,6 +156,7 @@ use crate::extensions::transcript::extension::{
 };
 use crate::extensions::transcript::roster_emit::ProductionRosterEmit;
 use crate::extensions::transcript::transcript_manager::TranscriptManager;
+use crate::extensions::transcript::shared_rooms::SharedRooms;
 use crate::extensions::turn_execution::extension::turn_execution_extension;
 use crate::extensions::turn_execution::turn_execution_service::TurnExecutionRegistry;
 use crate::extensions::webauthn_proxy::extension::{
@@ -207,6 +212,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Session,
     HostExtensionId::AutoReview,
     HostExtensionId::Transcript,
+    HostExtensionId::CrossUserSharing,
 ];
 
 pub struct ProductionBrowserUaLog;
@@ -459,6 +465,7 @@ pub struct ProductionHostExtensions {
     session: Mutex<Option<SessionExtension>>,
     auto_review: Mutex<Option<Arc<HostAutoReviewExtension>>>,
     transcript: Mutex<Option<TranscriptExtension>>,
+    cross_user: Mutex<Option<Arc<ProductionCrossUserRuntime>>>,
     backend_url: String,
     mcp: Mutex<Option<McpExtensionRuntime>>,
     box_store_sync: Mutex<Option<BoxStoreSyncExtension<ProductionBoxStoreSyncService>>>,
@@ -648,6 +655,7 @@ pub fn start_production_host_extensions(
         session: Mutex::new(None),
         auto_review: Mutex::new(None),
         transcript: Mutex::new(None),
+        cross_user: Mutex::new(None),
         backend_url,
         mcp: Mutex::new(None),
         box_store_sync: Mutex::new(None),
@@ -665,6 +673,44 @@ impl ProductionHostExtensions {
 
     pub fn stop_cloud_agents(&self) {
         self.cloud_agents.stop();
+    }
+
+    pub fn start_cross_user(
+        &self,
+        attachments: Arc<AttachmentsService>,
+        shared_rooms: Arc<SharedRooms>,
+        run_remote_requested_turn: RemoteRequestedTurnRunner,
+        run_shared_room_turn: SharedRoomTurnRunner,
+    ) -> Result<Arc<ProductionCrossUserRuntime>, String> {
+        let mut slot = self
+            .cross_user
+            .lock()
+            .map_err(|_| "production CrossUserSharing runtime lock poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("production CrossUserSharing runtime is already started".into());
+        }
+        let runtime = ProductionCrossUserRuntime::new(
+            Arc::clone(&self.auth),
+            self.notify_bus.clone(),
+            attachments,
+            shared_rooms,
+            run_remote_requested_turn,
+            run_shared_room_turn,
+        )?;
+        *slot = Some(Arc::clone(&runtime));
+        Ok(runtime)
+    }
+
+    pub fn stop_cross_user(&self) -> Result<(), String> {
+        let runtime = self
+            .cross_user
+            .lock()
+            .map_err(|_| "production CrossUserSharing runtime lock poisoned".to_string())?
+            .take();
+        if let Some(runtime) = runtime {
+            runtime.stop();
+        }
+        Ok(())
     }
 
     pub fn start_transcript(
