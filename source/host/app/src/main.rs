@@ -1357,37 +1357,6 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
         Ok(())
     }
 
-    fn created_agent_kickstart_hook(&self) -> AgentKickstartHook {
-        let sessions = Arc::clone(&self.session_workers);
-        let runtime = ProductionCreatedAgentKickstartRuntime {
-            deps: self.local_routed_runner_deps(),
-            roster: Arc::clone(&self.roster_emit),
-        };
-        Arc::new(move |agent_id| {
-            let sessions = Arc::clone(&sessions);
-            let runtime = runtime.clone();
-            let agent_id = agent_id.to_string();
-            let thread_agent_id = agent_id.clone();
-            if let Err(error) = thread::Builder::new()
-                .name(format!("mahayana-agent-kickstart-{agent_id}"))
-                .spawn(move || {
-                    if let Err(error) =
-                        run_created_agent_kickstart(sessions.as_ref(), &runtime, &thread_agent_id)
-                    {
-                        eprintln!(
-                            "mahayana-host created_agent_kickstart_failed agent={} error={error}",
-                            thread_agent_id
-                        );
-                    }
-                })
-            {
-                eprintln!(
-                    "mahayana-host created_agent_kickstart_spawn_failed agent={agent_id} error={error}"
-                );
-            }
-        })
-    }
-
     fn emit_async_tasks_for_agent(&self, agent_id: &str) {
         if let Some(gateway) = self.gateway() {
             gateway.emit_async_tasks_for_agent(agent_id);
@@ -2048,6 +2017,37 @@ impl UnifiedGatewayApi {
         )
         .map(|_| ())
         .map_err(ProductionSendError::Internal)
+    }
+
+    fn created_agent_kickstart_hook(&self) -> AgentKickstartHook {
+        let sessions = Arc::clone(&self.session_workers);
+        let runtime = ProductionCreatedAgentKickstartRuntime {
+            deps: self.local_routed_runner_deps(),
+            roster: Arc::clone(&self.roster_emit),
+        };
+        Arc::new(move |agent_id| {
+            let sessions = Arc::clone(&sessions);
+            let runtime = runtime.clone();
+            let agent_id = agent_id.to_string();
+            let thread_agent_id = agent_id.clone();
+            if let Err(error) = thread::Builder::new()
+                .name(format!("mahayana-agent-kickstart-{agent_id}"))
+                .spawn(move || {
+                    if let Err(error) =
+                        run_created_agent_kickstart(sessions.as_ref(), &runtime, &thread_agent_id)
+                    {
+                        eprintln!(
+                            "mahayana-host created_agent_kickstart_failed agent={} error={error}",
+                            thread_agent_id
+                        );
+                    }
+                })
+            {
+                eprintln!(
+                    "mahayana-host created_agent_kickstart_spawn_failed agent={agent_id} error={error}"
+                );
+            }
+        })
     }
 
     fn local_routed_runner_deps(&self) -> LocalRoutedRunnerDeps {
