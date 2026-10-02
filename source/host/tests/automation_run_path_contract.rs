@@ -78,6 +78,11 @@ fn failed_and_interrupted_runs_settle_as_error_and_manual_failures_are_counted()
     let store = FileAutomationStore::new(root.join("automations"));
     let automation = create_automation(&store);
     let path = AutomationRunPath::default();
+    let observed = Arc::new(Mutex::new(Vec::<AutomationRunObservation>::new()));
+    let observed_sink = Arc::clone(&observed);
+    path.set_run_reporter(Some(Arc::new(move |report| {
+        observed_sink.lock().unwrap().push(report.clone());
+    })));
 
     let failed = path
         .fire_automation_with(
@@ -98,6 +103,7 @@ fn failed_and_interrupted_runs_settle_as_error_and_manual_failures_are_counted()
             |_| {
                 Ok(AutomationExecutionResult::Interrupted {
                     detail: "Interrupted by a host update; resuming after restart.".into(),
+                    quiesced_for_upgrade: true,
                 })
             },
         )
@@ -109,6 +115,11 @@ fn failed_and_interrupted_runs_settle_as_error_and_manual_failures_are_counted()
         .detail
         .as_deref()
         .is_some_and(|detail| detail.contains("host update")));
+    let observed = observed.lock().unwrap();
+    let report = observed.last().expect("interrupted run observation");
+    assert_eq!(report.automation_id, automation.id);
+    assert!(report.automation_run_id.as_deref().is_some_and(|id| !id.is_empty()));
+    assert!(report.quiesced_for_upgrade);
     let _ = fs::remove_dir_all(root);
 }
 

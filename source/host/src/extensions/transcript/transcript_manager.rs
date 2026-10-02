@@ -870,6 +870,9 @@ impl TranscriptManager {
     }
 
     pub fn quiesce_for_upgrade(&self) -> UpgradeQuiesceSummary {
+        if let Some(services) = self.production_services() {
+            services.trace_flusher.flush_tracing();
+        }
         self.runner_registry.request_quiesce_for_upgrade();
         self.transcript_runtime.quiesce_for_upgrade()
     }

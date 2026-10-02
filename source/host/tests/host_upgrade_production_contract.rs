@@ -120,3 +120,34 @@ fn shipping_recreate_gateway_carries_pending_wakes_and_resumes_durable_turns() {
     assert!(TRANSCRIPT_RUNTIME.contains("pub fn recreate_carry_pending_wakes"));
     assert!(TRANSCRIPT_RUNTIME.contains("PendingWakeKind::CloudAgent | PendingWakeKind::Shell"));
 }
+
+#[test]
+fn shipping_upgrade_resume_keeps_durable_state_and_recreate_work_accounting() {
+    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    const TRANSCRIPT_MANAGER: &str =
+        include_str!("../src/extensions/transcript/transcript_manager.rs");
+    const COMPLETION_REVIVALS: &str =
+        include_str!("../src/extensions/transcript/completion_revivals.rs");
+
+    let resume = SHIPPING_HOST
+        .find("fn resume_interrupted_upgrade_turns(&self)")
+        .expect("shipping upgrade resume owner");
+    let resume_body = &SHIPPING_HOST[resume..];
+    let can_execute = resume_body
+        .find("if !self.transcript_manager.can_execute()")
+        .expect("execution guard before durable marker settlement");
+    let clear_all = resume_body
+        .find("store.clear_all();")
+        .expect("durable marker settlement");
+    assert!(can_execute < clear_all);
+
+    assert!(TRANSCRIPT_MANAGER.contains("services.trace_flusher.flush_tracing()"));
+    assert!(COMPLETION_REVIVALS.contains("pub fn mid_drain_revival_agent_ids(&self)"));
+    assert!(SHIPPING_HOST.contains("mid_drain_revival_agent_ids()"));
+    assert!(SHIPPING_HOST.contains("has_running_background_shell_work()"));
+    assert!(SHIPPING_HOST.contains("\"runningTurns\": running_turns"));
+    assert!(SHIPPING_HOST.contains("source: \"resume\".into()"));
+    assert!(SHIPPING_HOST.contains("upgrade_resume_telemetry_failed"));
+    assert!(SHIPPING_HOST.contains("observed.quiesced_for_upgrade"));
+    assert!(SHIPPING_HOST.contains("automation_run_id: observed.automation_run_id.clone()"));
+}

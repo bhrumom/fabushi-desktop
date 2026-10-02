@@ -105,11 +105,24 @@ impl CompletionRevivals {
     /// removed. Read the single CompletionRevivals owner instead of inventing
     /// a parallel Host-side busy flag.
     pub fn has_mid_drain_revival(&self) -> bool {
+        !self.mid_drain_revival_agent_ids().is_empty()
+    }
+
+    pub fn mid_drain_revival_agent_ids(&self) -> Vec<String> {
         let state = self
             .state
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        !state.reviving_subagent.is_empty() || !state.reviving_shell.is_empty()
+        let mut agent_ids = state
+            .reviving_subagent
+            .iter()
+            .chain(state.reviving_shell.iter())
+            .cloned()
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        agent_ids.sort();
+        agent_ids
     }
 
     pub fn handle_background_subagent_completion(&self, completion: SubagentCompletion) {

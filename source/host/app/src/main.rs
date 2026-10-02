@@ -2733,6 +2733,9 @@ impl UnifiedGatewayApi {
     }
 
     fn resume_interrupted_upgrade_turns(&self) -> Result<(), String> {
+        if !self.transcript_manager.can_execute() {
+            return Ok(());
+        }
         let Some(store) = self.transcript_runtime.upgrade_resume_store() else {
             return Ok(());
         };
@@ -2811,6 +2814,20 @@ impl UnifiedGatewayApi {
             };
 
             if let Err(error) = result {
+                let classified_error = ProviderSessionError::Tool(error.clone());
+                let report = AgentErrorReport {
+                    source: "resume".into(),
+                    conversation_id: marker.agent_id.clone(),
+                    request_id: None,
+                    error: classify_agent_error(&classified_error),
+                    detail: Some(sand_error_detail(&error)),
+                };
+                if let Err(telemetry_error) = self.telemetry_logs.report_agent_error(&report) {
+                    eprintln!(
+                        "mahayana-host upgrade_resume_telemetry_failed agent={} error={telemetry_error}",
+                        marker.agent_id
+                    );
+                }
                 let mut tray =
                     provider_failure_tray(&marker.agent_id, &error, started_at_ms() as i64);
                 tray.title = "Agent failed to resume after host update".into();
@@ -3388,6 +3405,7 @@ fn automation_terminal_from_event(
         Some("completed") => Some(Ok(AutomationExecutionResult::Completed)),
         Some("cancelled") => Some(Ok(AutomationExecutionResult::Interrupted {
             detail: "Interrupted before it finished.".into(),
+            quiesced_for_upgrade: false,
         })),
         Some("failed") => Some(Err(
             payload
@@ -3501,6 +3519,7 @@ fn run_local_automation_turn(
                 .cancel_stream(&stream_id, "automation turn timed out");
             return Ok(AutomationExecutionResult::Interrupted {
                 detail: "Interrupted before it finished.".into(),
+                quiesced_for_upgrade: deps.runner_registry.is_quiescing_for_upgrade(),
             });
         }
         let wait = deadline
@@ -3508,7 +3527,14 @@ fn run_local_automation_turn(
             .min(Duration::from_millis(250));
         match receiver.recv_timeout(wait) {
             Ok(event) => {
-                if let Some(result) = automation_terminal_from_event(&event, &stream_id) {
+                if let Some(mut result) = automation_terminal_from_event(&event, &stream_id) {
+                    if let Ok(AutomationExecutionResult::Interrupted {
+                        quiesced_for_upgrade,
+                        ..
+                    }) = &mut result
+                    {
+                        *quiesced_for_upgrade = deps.runner_registry.is_quiescing_for_upgrade();
+                    }
                     return result;
                 }
             }
@@ -9448,9 +9474,17 @@ impl GatewayApi for UnifiedGatewayApi {
             .service()
             .prepare_for_upgrade()
             .map_err(GatewayCommandError::Internal)?;
+        let mut running_agent_ids = self
+            .transcript_manager
+            .live_running_agent_ids()
+            .into_iter()
+            .collect::<HashSet<_>>();
+        running_agent_ids.extend(self.completion_revivals.mid_drain_revival_agent_ids());
+        let running_turns = running_agent_ids.len()
+            + usize::from(self.background_shell_watches.has_running_background_shell_work());
         Ok(serde_json::json!({
             "quiescing": self.transcript_manager.is_quiescing_for_upgrade(),
-            "runningTurns": self.transcript_manager.live_running_agent_ids().len(),
+            "runningTurns": running_turns,
             "resumeAgentIds": self.transcript_runtime.upgrade_resume_agent_ids(),
             "resumePendingWakes": self.transcript_manager.recreate_carry_pending_wakes(),
         }))
@@ -10273,10 +10307,20 @@ fn main() {
     }
     {
         let run_logs = host_telemetry.logs.clone();
+        let run_transcript_manager = Arc::clone(&transcript_manager);
         transcript_manager
             .automation_runtime()
             .run_path()
             .set_run_reporter(Some(Arc::new(move |observed| {
+                if observed.quiesced_for_upgrade {
+                    run_transcript_manager.mark_upgrade_resume_pending(UpgradeResumeMarker {
+                        agent_id: observed.agent_id.clone(),
+                        marked_at_ms: started_at_ms() as f64,
+                        source: Some("automation".into()),
+                        automation_id: Some(observed.automation_id.clone()),
+                        automation_run_id: observed.automation_run_id.clone(),
+                    });
+                }
                 let Some(is_group) = observed.is_group else {
                     return;
                 };
@@ -11882,7 +11926,8 @@ mod tests {
         assert_eq!(
             automation_terminal_from_event(&cancelled, "automation-1"),
             Some(Ok(AutomationExecutionResult::Interrupted {
-                detail: "Interrupted before it finished.".into()
+                detail: "Interrupted before it finished.".into(),
+                quiesced_for_upgrade: false,
             }))
         );
 

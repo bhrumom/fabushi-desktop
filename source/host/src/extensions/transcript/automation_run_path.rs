@@ -43,7 +43,10 @@ impl AutomationRunTrigger {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AutomationExecutionResult {
     Completed,
-    Interrupted { detail: String },
+    Interrupted {
+        detail: String,
+        quiesced_for_upgrade: bool,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -72,6 +75,8 @@ pub struct FireAutomationArgs {
 pub struct AutomationRunObservation {
     pub agent_id: String,
     pub automation_id: String,
+    pub automation_run_id: Option<String>,
+    pub quiesced_for_upgrade: bool,
     pub trigger: AutomationRunTrigger,
     pub outcome: FireAutomationOutcome,
     pub is_group: Option<bool>,
@@ -223,13 +228,24 @@ impl AutomationRunPath {
         }
 
         let execution_started = Instant::now();
-        let result = match execute(&prompt) {
+        let execution = execute(&prompt);
+        let quiesced_for_upgrade = matches!(
+            execution.as_ref(),
+            Ok(AutomationExecutionResult::Interrupted {
+                quiesced_for_upgrade: true,
+                ..
+            })
+        );
+        let result = match execution {
             Ok(AutomationExecutionResult::Completed) => {
                 finish_run(store, &args.automation.id, run_id.as_deref(), "ok", args.fired_at_ms, None)?;
                 self.clear_automation_failure_state(&args.agent_id, &args.automation.id);
                 Ok(Some(FireAutomationOutcome::Ok))
             }
-            Ok(AutomationExecutionResult::Interrupted { detail }) => {
+            Ok(AutomationExecutionResult::Interrupted {
+                detail,
+                quiesced_for_upgrade: _,
+            }) => {
                 finish_run(
                     store,
                     &args.automation.id,
@@ -269,6 +285,8 @@ impl AutomationRunPath {
                 reporter(&AutomationRunObservation {
                     agent_id: args.agent_id.clone(),
                     automation_id: args.automation.id.clone(),
+                    automation_run_id: run_id.clone(),
+                    quiesced_for_upgrade,
                     trigger: args.trigger,
                     outcome: *outcome,
                     is_group: args.is_group,
