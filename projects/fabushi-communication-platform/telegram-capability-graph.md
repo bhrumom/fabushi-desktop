@@ -13,12 +13,12 @@ This graph records product capability domains observed in the frozen Telegram De
 | contacts / identity / presence | `data/data_peer*`, `api/api_peer_search.*`, participant/status code | Shared Room/member + account identity + minimal presence infrastructure if required |
 | dialog list / folders / archive / pinning | `dialogs/*`, `data/data_chat_filters.*`, `data/data_folder.*`, `storage/storage_folder_archive.*` | existing sidebar / conversation list |
 | private messaging / history | `history/*`, `data/data_messages.*`, `data/data_history_messages.*`, `api/api_sending.*` | researched in `projects/telegram-desktop-rust/research/message-history-lifecycle.md`; existing conversation workspace + transcript + Session SQLite selected, with minimal native transport/sync below |
-| reply / quote / forward provenance | `history/history_item*`, `data/data_reply_preview.*`, replies/thread structures | existing transcript relation/thread owner |
-| edit / delete lifecycle | `api/api_editing.*`, history/data message state | existing transcript/message lifecycle |
-| reactions | `data/data_message_reactions.*`, `api/api_who_reacted.*`, info reaction list | existing reaction/transcript owner |
+| reply / quote / forward provenance | `history/history_item*`, `data/data_reply_preview.*`, replies/thread structures | researched in `projects/telegram-desktop-rust/research/message-relations-and-settlement.md`; existing transcript relation/provenance owner selected |
+| edit / delete lifecycle | `api/api_editing.*`, history/data message state | researched in `projects/telegram-desktop-rust/research/message-relations-and-settlement.md`; existing transcript/message lifecycle selected |
+| reactions | `data/data_message_reactions.*`, `api/api_who_reacted.*`, info reaction list | researched in `projects/telegram-desktop-rust/research/message-relations-and-settlement.md`; existing reaction/transcript owner selected |
 | polls / rich message variants | `data/data_poll*`, `api/api_polls.*`, `poll/*` | existing typed transcript/card system |
-| drafts / composer / voice input | `data/data_drafts.*`, history composer/view code | existing composer/draft owner |
-| scheduled / silent send / send progress | `api/api_sending.*`, `api/api_send_progress.*`, scheduled-history code | Automations + existing composer/send action |
+| drafts / composer / voice input | `data/data_drafts.*`, history composer/view code | researched in `projects/telegram-desktop-rust/research/message-relations-and-settlement.md`; existing composer/draft owner selected |
+| scheduled / silent send / send progress | `api/api_sending.*`, `api/api_send_progress.*`, scheduled-history code | researched in `projects/telegram-desktop-rust/research/message-relations-and-settlement.md`; Automations + composer/send + ephemeral presence/progress selected |
 | groups / members / admin | `data/data_chat.*`, `data/data_groups.*`, `api/api_chat_participants.*`, `info/members` | existing Shared Room/group/member + permissions |
 | channels / broadcast | `data/data_channel.*`, history/dialog/api channel code | existing room/conversation model + broadcast policy |
 | topics / forums / threads | `data/data_forum.*`, `data/data_forum_topic.*`, `data/data_thread.*` | existing conversation/thread model |
