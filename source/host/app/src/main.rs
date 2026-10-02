@@ -1018,7 +1018,6 @@ struct LocalRoutedRunnerDeps {
     background_shell_watches: Arc<RunnerBackgroundShellWatches>,
     host_runner_composition: Arc<HostRunnerComposition>,
     box_store_sync: ProductionBoxStoreSyncApi,
-    cross_user: Arc<ProductionCrossUserRuntime>,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
 }
 
@@ -2104,7 +2103,6 @@ impl UnifiedGatewayApi {
             background_shell_watches: Arc::clone(&self.background_shell_watches),
             host_runner_composition: Arc::clone(&self.host_runner_composition),
             box_store_sync: self.box_store_sync.clone(),
-            cross_user: Arc::clone(&self.cross_user),
             automations_lifecycle: Arc::clone(&self.automations_lifecycle),
         }
     }
@@ -2686,7 +2684,6 @@ fn run_agent_posted_group_turn(
         .execute_send(
             &args,
             move || {
-                let remote_executor = dispatch_deps.cross_user.remote_executor();
                 let member_deps = dispatch_deps.clone();
                 let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
                     run_local_group_member_turn(member_deps.clone(), provider, request)
@@ -2698,7 +2695,7 @@ fn run_agent_posted_group_turn(
                     &room_id,
                     epoch,
                     executor,
-                    remote_executor,
+                    None,
                 )
                 .map_err(ProductionSendError::Internal)?
                 {
