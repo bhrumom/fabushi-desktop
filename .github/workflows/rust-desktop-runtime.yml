@@ -86,7 +86,6 @@ jobs:
           test -f source/host/Cargo.lock
           test -f source/node-agent-coordinator/Cargo.lock
           test -f source/box-exec-daemon/Cargo.lock
-          cargo metadata --locked --no-deps --format-version 1 --manifest-path source/mahayana/mahayana-rs/Cargo.toml >/dev/null
           cargo metadata --locked --no-deps --format-version 1 --manifest-path source/host/app/Cargo.toml >/dev/null
           cargo metadata --locked --no-deps --format-version 1 --manifest-path source/host/Cargo.toml >/dev/null
           cargo metadata --locked --no-deps --format-version 1 --manifest-path source/node-agent-coordinator/Cargo.toml >/dev/null
@@ -112,13 +111,13 @@ jobs:
         run: cargo test --locked --manifest-path source/host/Cargo.toml
       - name: Test Grok prompt attachment projection contract
         shell: bash
-        run: cargo test --locked -p mahayana-feature-host grok_send_prompt_projects_attachment_context_into_user_transcript_event --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+        run: cargo test -p mahayana-feature-host grok_send_prompt_projects_attachment_context_into_user_transcript_event --manifest-path source/mahayana/mahayana-rs/Cargo.toml
       - name: Test human Computer takeover lifecycle
         shell: bash
-        run: cargo test --locked -p mahayana-feature-host computer_takeover_acquires_and_releases_a_human_control_lease --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+        run: cargo test -p mahayana-feature-host computer_takeover_acquires_and_releases_a_human_control_lease --manifest-path source/mahayana/mahayana-rs/Cargo.toml
       - name: Test ConversationActor and CapabilityBroker ownership
         shell: bash
-        run: cargo test --locked -p mahayana-runtime --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+        run: cargo test -p mahayana-runtime --manifest-path source/mahayana/mahayana-rs/Cargo.toml
 
   pressure-profiler-platform:
     name: Pressure profiler / ${{ matrix.os }}
@@ -200,7 +199,7 @@ jobs:
           shared-key: mahayana-platform-worker-wasm-1.97.1
       - name: Check Mahayana platform Worker
         shell: bash
-        run: cargo check --locked --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+        run: cargo check --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
 
   renderer:
     runs-on: ubuntu-24.04
