@@ -30,7 +30,7 @@ pub use turn_settle::{
 };
 pub use turn_run_shell::{
     CheckpointBoundary, TurnCancellation, TurnOwnerToken, TurnRunFinished,
-    TurnRunOptions, TurnRunShell, TurnRunShellError, TurnRunStarted,
+    TurnRunOptions, TurnRunShell, TurnRunShellError, TurnRunStarted, is_recovery_shaped_turn,
 };
 pub use conversation_state::{
     CompletedAwaitOutcome, ContextWindowTracker, FullStreamSanitizer, HIDDEN_PROMPT_MARKER,
