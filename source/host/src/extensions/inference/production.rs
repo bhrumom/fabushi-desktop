@@ -470,6 +470,7 @@ impl ProductionInferenceExtension {
             mcp_server_url: None,
             execute_tool: &mut reject_tool,
             on_text_delta: &mut ignore_delta,
+            on_partial_tool_call: None,
             should_cancel,
         };
         let mut ignore_checkpoint =

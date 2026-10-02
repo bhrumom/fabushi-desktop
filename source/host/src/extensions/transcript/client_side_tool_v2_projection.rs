@@ -577,27 +577,245 @@ fn mcp_result(
     )
 }
 
-#[derive(Clone, Copy)]
-struct DirectMapping {
-    tool: i64,
-    name: &'static str,
-    params: Option<&'static str>,
-    result: &'static str,
+fn terminal_result<'a>(value: &'a Value) -> (&'a str, &'a Value) {
+    if let Some(case) = value.get("case").and_then(Value::as_str) {
+        return (case, value.get("value").unwrap_or(value));
+    }
+    if let Some(kind) = value.get("kind").and_then(Value::as_str) {
+        return (kind, value.get("value").unwrap_or(value));
+    }
+    if value.get("rejected").and_then(Value::as_bool) == Some(true) {
+        return ("rejected", value);
+    }
+    if value.get("isError").and_then(Value::as_bool) == Some(true)
+        || value.get("error").is_some()
+    {
+        return ("error", value);
+    }
+    ("success", value)
 }
 
-fn direct_mapping(name: &str) -> Option<DirectMapping> {
-    match name {
-        "Edit" | "editToolCall" => Some(DirectMapping { tool: TOOL_EDIT_FILE_V2, name: "Edit", params: Some("editFileV2Params"), result: "editFileV2Result" }),
-        "ListMcpResources" | "listMcpResourcesToolCall" => Some(DirectMapping { tool: TOOL_LIST_MCP_RESOURCES, name: "ListMcpResources", params: Some("listMcpResourcesParams"), result: "listMcpResourcesResult" }),
-        "ReadMcpResource" | "readMcpResourceToolCall" => Some(DirectMapping { tool: TOOL_READ_MCP_RESOURCE, name: "ReadMcpResource", params: Some("readMcpResourceParams"), result: "readMcpResourceResult" }),
-        "AskQuestion" | "askQuestionToolCall" => Some(DirectMapping { tool: TOOL_ASK_QUESTION, name: "AskQuestion", params: Some("askQuestionParams"), result: "askQuestionResult" }),
-        "McpAuth" | "mcpAuthToolCall" => Some(DirectMapping { tool: TOOL_MCP_AUTH, name: "McpAuth", params: Some("mcpAuthParams"), result: "mcpAuthResult" }),
-        "WebSearch" | "webSearchToolCall" => Some(DirectMapping { tool: TOOL_WEB_SEARCH, name: "WebSearch", params: Some("webSearchParams"), result: "webSearchResult" }),
-        "WebFetch" | "webFetchToolCall" => Some(DirectMapping { tool: TOOL_WEB_FETCH, name: "WebFetch", params: Some("webFetchParams"), result: "webFetchResult" }),
-        "Computer" | "computerUseToolCall" => Some(DirectMapping { tool: TOOL_COMPUTER_USE, name: "Computer", params: Some("computerUseParams"), result: "computerUseResult" }),
-        "GenerateImage" | "generateImageToolCall" => Some(DirectMapping { tool: TOOL_GENERATE_IMAGE, name: "GenerateImage", params: None, result: "generateImageResult" }),
-        "RecordScreen" | "recordScreenToolCall" => Some(DirectMapping { tool: TOOL_RECORD_SCREEN, name: "RecordScreen", params: Some("recordScreenParams"), result: "recordScreenResult" }),
-        "GetMcpTools" | "getMcpToolsToolCall" => Some(DirectMapping { tool: TOOL_GET_MCP_TOOLS, name: "GetMcpTools", params: Some("getMcpToolsParams"), result: "getMcpToolsResult" }),
+fn completed_error(tool: i64, call_id: &str, name: &str, value: &Value, fallback: &str) -> Option<ProjectedClientSideToolV2> {
+    result_message(tool, call_id, name, None, Some(failure_text(value, fallback)))
+}
+
+fn edit_projection(
+    phase: ToolProjectionPhase,
+    call_id: &str,
+    args: &Value,
+    result: Option<Result<Value, String>>,
+    model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    if phase != ToolProjectionPhase::Completed {
+        let path = string_field(args, &["path"])?;
+        let mut params = json!({"relativeWorkspacePath": path});
+        if let Some(content) = args.get("streamContent").and_then(Value::as_str) {
+            params["streamingContent"] = Value::String(content.to_string());
+        }
+        return call_message(
+            TOOL_EDIT_FILE_V2, call_id, "Edit", json!({"path": path}), model_call_id,
+            phase == ToolProjectionPhase::Partial, Some(("editFileV2Params", params)),
+        );
+    }
+    let value = match result? {
+        Ok(value) => value,
+        Err(error) => return result_message(TOOL_EDIT_FILE_V2, call_id, "Edit", None, Some(error)),
+    };
+    let (case, payload) = terminal_result(&value);
+    if case == "permissionDenied" {
+        return completed_error(TOOL_EDIT_FILE_V2, call_id, "Edit", payload, "Permission denied");
+    }
+    if !matches!(case, "success" | "rejected") {
+        return completed_error(TOOL_EDIT_FILE_V2, call_id, "Edit", payload, "Edit failed");
+    }
+    let before = payload.get("beforeFullFileContent").cloned().unwrap_or(Value::Null);
+    let after = payload.get("afterFullFileContent").cloned().unwrap_or(Value::Null);
+    let diff_string = string_field(payload, &["diffString"]).unwrap_or_default();
+    let mut projected = json!({
+        "fileWasCreated": before.is_null(),
+        "rejected": case == "rejected",
+        "resultForModel": string_field(payload, &["message", "reason"]).unwrap_or_default()
+    });
+    if !before.is_null() { projected["contentsBeforeEdit"] = before; }
+    if !after.is_null() { projected["contentsAfterEdit"] = after; }
+    if !diff_string.is_empty() {
+        projected["diff"] = json!({"chunks":[{"diffString":diff_string}]});
+    }
+    result_message(TOOL_EDIT_FILE_V2, call_id, "Edit", Some(("editFileV2Result", projected)), None)
+}
+
+fn list_mcp_resources_projection(
+    phase: ToolProjectionPhase, call_id: &str, args: &Value,
+    result: Option<Result<Value, String>>, model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    if phase != ToolProjectionPhase::Completed {
+        return call_message(TOOL_LIST_MCP_RESOURCES, call_id, "ListMcpResources", args.clone(), model_call_id,
+            phase == ToolProjectionPhase::Partial,
+            Some(("listMcpResourcesParams", json!({"server": args.get("server").cloned().unwrap_or(Value::Null)}))));
+    }
+    let value = match result? { Ok(v) => v, Err(e) => return result_message(TOOL_LIST_MCP_RESOURCES, call_id, "ListMcpResources", None, Some(e)) };
+    let (case,payload)=terminal_result(&value);
+    if case != "success" { return completed_error(TOOL_LIST_MCP_RESOURCES, call_id, "ListMcpResources", payload, "List MCP resources failed"); }
+    result_message(TOOL_LIST_MCP_RESOURCES, call_id, "ListMcpResources", Some(("listMcpResourcesResult", json!({"resources": payload.get("resources").cloned().unwrap_or_else(|| json!([]))}))), None)
+}
+
+fn read_mcp_resource_projection(
+    phase: ToolProjectionPhase, call_id: &str, args: &Value,
+    result: Option<Result<Value, String>>, model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    if phase != ToolProjectionPhase::Completed {
+        let server=string_field(args,&["server"])?;
+        let uri=string_field(args,&["uri"])?;
+        return call_message(TOOL_READ_MCP_RESOURCE, call_id, "ReadMcpResource", args.clone(), model_call_id,
+            phase == ToolProjectionPhase::Partial,
+            Some(("readMcpResourceParams", json!({"server":server,"uri":uri,"downloadPath":args.get("downloadPath").cloned().unwrap_or(Value::Null)}))));
+    }
+    let value=match result? {Ok(v)=>v,Err(e)=>return result_message(TOOL_READ_MCP_RESOURCE,call_id,"ReadMcpResource",None,Some(e))};
+    let (case,payload)=terminal_result(&value);
+    if case!="success" {return completed_error(TOOL_READ_MCP_RESOURCE,call_id,"ReadMcpResource",payload,"Read MCP resource failed")}
+    result_message(TOOL_READ_MCP_RESOURCE,call_id,"ReadMcpResource",Some(("readMcpResourceResult",payload.clone())),None)
+}
+
+fn ask_question_projection(
+    phase: ToolProjectionPhase, call_id: &str, args: &Value,
+    result: Option<Result<Value,String>>, model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    if phase != ToolProjectionPhase::Completed {
+        let questions=args.get("questions").and_then(Value::as_array).cloned().unwrap_or_default().into_iter().map(|q| {
+            let options=q.get("options").and_then(Value::as_array).cloned().unwrap_or_default().into_iter().map(|o| json!({
+                "id":string_field(&o,&["id"]).unwrap_or_default(), "label":string_field(&o,&["label"]).unwrap_or_default()
+            })).collect::<Vec<_>>();
+            json!({"id":string_field(&q,&["id"]).unwrap_or_default(),"prompt":string_field(&q,&["prompt"]).unwrap_or_default(),"allowMultiple":q.get("allowMultiple").and_then(Value::as_bool).unwrap_or(false),"options":options})
+        }).collect::<Vec<_>>();
+        return call_message(TOOL_ASK_QUESTION,call_id,"AskQuestion",args.clone(),model_call_id,phase==ToolProjectionPhase::Partial,
+            Some(("askQuestionParams",json!({"title":string_field(args,&["title"]).unwrap_or_default(),"questions":questions,"runAsync":args.get("runAsync").and_then(Value::as_bool).unwrap_or(false)}))));
+    }
+    let value=match result? {Ok(v)=>v,Err(e)=>return result_message(TOOL_ASK_QUESTION,call_id,"AskQuestion",None,Some(e))};
+    let (case,payload)=terminal_result(&value);
+    if matches!(case,"error"|"rejected") {return completed_error(TOOL_ASK_QUESTION,call_id,"AskQuestion",payload,"Question rejected")}
+    let answers=payload.get("answers").and_then(Value::as_array).cloned().unwrap_or_default().into_iter().map(|a| json!({
+        "questionId":string_field(&a,&["questionId"]).unwrap_or_default(),
+        "selectedOptionIds":a.get("selectedOptionIds").cloned().unwrap_or_else(||json!([])),
+        "freeformText":a.get("freeformText").cloned().unwrap_or(Value::Null)
+    })).collect::<Vec<_>>();
+    result_message(TOOL_ASK_QUESTION,call_id,"AskQuestion",Some(("askQuestionResult",json!({"isAsync":case=="async","answers":answers}))),None)
+}
+
+fn mcp_auth_projection(
+    phase: ToolProjectionPhase, call_id: &str, args: &Value,
+    result: Option<Result<Value,String>>, model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    if phase != ToolProjectionPhase::Completed {
+        let server=string_field(args,&["serverIdentifier"])?;
+        return call_message(TOOL_MCP_AUTH,call_id,"McpAuth",args.clone(),model_call_id,phase==ToolProjectionPhase::Partial,
+            Some(("mcpAuthParams",json!({"serverIdentifier":server}))));
+    }
+    let value=match result? {Ok(v)=>v,Err(e)=>return result_message(TOOL_MCP_AUTH,call_id,"McpAuth",None,Some(e))};
+    let (case,payload)=terminal_result(&value);
+    if case!="success" {return completed_error(TOOL_MCP_AUTH,call_id,"McpAuth",payload,"MCP authentication failed")}
+    result_message(TOOL_MCP_AUTH,call_id,"McpAuth",Some(("mcpAuthResult",json!({"success":true,"message":string_field(payload,&["serverIdentifier"]).unwrap_or_default()}))),None)
+}
+
+fn web_search_projection(
+    phase: ToolProjectionPhase, call_id: &str, args: &Value,
+    result: Option<Result<Value,String>>, model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    if phase != ToolProjectionPhase::Completed {
+        let term=string_field(args,&["searchTerm"])?;
+        return call_message(TOOL_WEB_SEARCH,call_id,"WebSearch",args.clone(),model_call_id,phase==ToolProjectionPhase::Partial,
+            Some(("webSearchParams",json!({"searchTerm":term}))));
+    }
+    let value=match result? {Ok(v)=>v,Err(e)=>return result_message(TOOL_WEB_SEARCH,call_id,"WebSearch",None,Some(e))};
+    let (case,payload)=terminal_result(&value);
+    if case=="error" {return completed_error(TOOL_WEB_SEARCH,call_id,"WebSearch",payload,"Web search failed")}
+    result_message(TOOL_WEB_SEARCH,call_id,"WebSearch",Some(("webSearchResult",json!({
+        "rejected":case=="rejected","isFinal":true,
+        "references":payload.get("references").cloned().unwrap_or_else(||json!([]))
+    }))),None)
+}
+
+fn web_fetch_projection(
+    phase: ToolProjectionPhase, call_id: &str, args: &Value,
+    result: Option<Result<Value,String>>, model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    if phase != ToolProjectionPhase::Completed {
+        let url=string_field(args,&["url"])?;
+        return call_message(TOOL_WEB_FETCH,call_id,"WebFetch",args.clone(),model_call_id,phase==ToolProjectionPhase::Partial,
+            Some(("webFetchParams",json!({"url":url}))));
+    }
+    let value=match result? {Ok(v)=>v,Err(e)=>return result_message(TOOL_WEB_FETCH,call_id,"WebFetch",None,Some(e))};
+    let (case,payload)=terminal_result(&value);
+    let url=string_field(payload,&["url"]).or_else(||string_field(args,&["url"])).unwrap_or_default();
+    let projected=if case=="success" {json!({"url":url,"markdown":string_field(payload,&["markdown"]).unwrap_or_default()})}
+        else {json!({"url":url,"error":failure_text(payload,"Web fetch failed")})};
+    result_message(TOOL_WEB_FETCH,call_id,"WebFetch",Some(("webFetchResult",projected)),None)
+}
+
+fn computer_use_projection(
+    phase: ToolProjectionPhase, call_id: &str, args: &Value,
+    result: Option<Result<Value,String>>, model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    if phase != ToolProjectionPhase::Completed {
+        return call_message(TOOL_COMPUTER_USE,call_id,"Computer",args.clone(),model_call_id,phase==ToolProjectionPhase::Partial,
+            Some(("computerUseParams",json!({"actions":args.get("actions").cloned().unwrap_or_else(||json!([]))}))));
+    }
+    match result? {Ok(v)=>result_message(TOOL_COMPUTER_USE,call_id,"Computer",Some(("computerUseResult",v)),None),Err(e)=>result_message(TOOL_COMPUTER_USE,call_id,"Computer",None,Some(e))}
+}
+
+fn generate_image_projection(
+    phase: ToolProjectionPhase, call_id: &str, args: &Value,
+    result: Option<Result<Value,String>>, model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    if phase != ToolProjectionPhase::Completed {
+        string_field(args,&["description"])?;
+        return call_message(TOOL_GENERATE_IMAGE,call_id,"GenerateImage",args.clone(),model_call_id,phase==ToolProjectionPhase::Partial,None);
+    }
+    match result? {Ok(v)=>result_message(TOOL_GENERATE_IMAGE,call_id,"GenerateImage",Some(("generateImageResult",v)),None),Err(e)=>result_message(TOOL_GENERATE_IMAGE,call_id,"GenerateImage",None,Some(e))}
+}
+
+fn record_screen_projection(
+    phase: ToolProjectionPhase, call_id: &str, args: &Value,
+    result: Option<Result<Value,String>>, model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    if phase != ToolProjectionPhase::Completed {
+        return call_message(TOOL_RECORD_SCREEN,call_id,"RecordScreen",args.clone(),model_call_id,phase==ToolProjectionPhase::Partial,Some(("recordScreenParams",args.clone())));
+    }
+    match result? {Ok(v)=>result_message(TOOL_RECORD_SCREEN,call_id,"RecordScreen",Some(("recordScreenResult",v)),None),Err(e)=>result_message(TOOL_RECORD_SCREEN,call_id,"RecordScreen",None,Some(e))}
+}
+
+fn get_mcp_tools_projection(
+    phase: ToolProjectionPhase, call_id: &str, args: &Value,
+    result: Option<Result<Value,String>>, model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    if phase != ToolProjectionPhase::Completed {
+        return call_message(TOOL_GET_MCP_TOOLS,call_id,"GetMcpTools",args.clone(),model_call_id,phase==ToolProjectionPhase::Partial,Some(("getMcpToolsParams",json!({
+            "server":args.get("server").cloned().unwrap_or(Value::Null),"toolName":args.get("toolName").cloned().unwrap_or(Value::Null),"pattern":args.get("pattern").cloned().unwrap_or(Value::Null)
+        }))));
+    }
+    let value=match result? {Ok(v)=>v,Err(e)=>return result_message(TOOL_GET_MCP_TOOLS,call_id,"GetMcpTools",None,Some(e))};
+    let (case,payload)=terminal_result(&value);
+    if case!="success" {return completed_error(TOOL_GET_MCP_TOOLS,call_id,"GetMcpTools",payload,"Get MCP tools failed")}
+    result_message(TOOL_GET_MCP_TOOLS,call_id,"GetMcpTools",Some(("getMcpToolsResult",json!({
+        "content":string_field(payload,&["content"]).unwrap_or_default(),"outputFilePath":payload.get("outputFilePath").cloned().unwrap_or(Value::Null)
+    }))),None)
+}
+
+fn project_remaining_tool_case(
+    phase: ToolProjectionPhase, case: &str, call_id: &str, args: &Value,
+    result: Option<Result<Value,String>>, model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    match case {
+        "Edit"|"editToolCall" => edit_projection(phase,call_id,args,result,model_call_id),
+        "ListMcpResources"|"listMcpResourcesToolCall" => list_mcp_resources_projection(phase,call_id,args,result,model_call_id),
+        "ReadMcpResource"|"readMcpResourceToolCall" => read_mcp_resource_projection(phase,call_id,args,result,model_call_id),
+        "AskQuestion"|"askQuestionToolCall" => ask_question_projection(phase,call_id,args,result,model_call_id),
+        "McpAuth"|"mcpAuthToolCall" => mcp_auth_projection(phase,call_id,args,result,model_call_id),
+        "WebSearch"|"webSearchToolCall" => web_search_projection(phase,call_id,args,result,model_call_id),
+        "WebFetch"|"webFetchToolCall" => web_fetch_projection(phase,call_id,args,result,model_call_id),
+        "Computer"|"computerUseToolCall" => computer_use_projection(phase,call_id,args,result,model_call_id),
+        "GenerateImage"|"generateImageToolCall" => generate_image_projection(phase,call_id,args,result,model_call_id),
+        "RecordScreen"|"recordScreenToolCall" => record_screen_projection(phase,call_id,args,result,model_call_id),
+        "GetMcpTools"|"getMcpToolsToolCall" => get_mcp_tools_projection(phase,call_id,args,result,model_call_id),
         _ => None,
     }
 }
@@ -645,24 +863,7 @@ pub fn project_generated_tool_case(
                 },
             }
         }
-        other => {
-            let mapping = direct_mapping(other)?;
-            match phase {
-                ToolProjectionPhase::Started | ToolProjectionPhase::Partial => call_message(
-                    mapping.tool,
-                    call_id,
-                    if surface_name.is_empty() { mapping.name } else { surface_name },
-                    args.clone(),
-                    model_call_id,
-                    phase == ToolProjectionPhase::Partial,
-                    mapping.params.map(|case| (case, args.clone())),
-                ),
-                ToolProjectionPhase::Completed => match result? {
-                    Ok(value) => result_message(mapping.tool, call_id, mapping.name, Some((mapping.result, value)), None),
-                    Err(error) => result_message(mapping.tool, call_id, mapping.name, None, Some(error)),
-                },
-            }
-        }
+        other => project_remaining_tool_case(phase, other, call_id, args, result, model_call_id),
     }
 }
 
@@ -718,6 +919,82 @@ pub fn project_routed_tool_call(
         },
         _ => project_generated_tool_case(phase, effective, call_id, args, result, model_call_id, effective),
     }
+}
+
+fn override_call_raw_args(
+    projected: ProjectedClientSideToolV2,
+    raw_arguments: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    let ProjectedClientSideToolV2::Call {
+        tool_call_id, name, model_call_id, is_streaming, mut message, ..
+    } = projected else { return None };
+    message["rawArgs"] = Value::String(raw_arguments.to_string());
+    let protobuf_bytes = encode_proto_message(CALL_TYPE, &message)?;
+    Some(ProjectedClientSideToolV2::Call {
+        tool_call_id,
+        name,
+        raw_args: raw_arguments.to_string(),
+        model_call_id,
+        is_streaming,
+        message,
+        protobuf_bytes,
+    })
+}
+
+fn partial_identity(tool: &RoutedToolDefinition) -> Option<(i64, &str)> {
+    let effective = if tool.tool_name.trim().is_empty() { tool.name.as_str() } else { tool.tool_name.as_str() };
+    if !is_internal_provider(&tool.provider_identifier) {
+        return Some((TOOL_CALL_MCP_TOOL, if tool.name.trim().is_empty() { "MCP" } else { tool.name.as_str() }));
+    }
+    match effective {
+        "Shell"|"ExternalShell" => Some((TOOL_RUN_TERMINAL_COMMAND_V2,effective)),
+        "Read"|"ExternalRead" => Some((TOOL_READ_FILE_V2,effective)),
+        "Task" => Some((TOOL_TASK_V2,"Task")),
+        "Edit"|"editToolCall" => Some((TOOL_EDIT_FILE_V2,"Edit")),
+        "ListMcpResources"|"listMcpResourcesToolCall" => Some((TOOL_LIST_MCP_RESOURCES,"ListMcpResources")),
+        "ReadMcpResource"|"readMcpResourceToolCall" => Some((TOOL_READ_MCP_RESOURCE,"ReadMcpResource")),
+        "AskQuestion"|"askQuestionToolCall" => Some((TOOL_ASK_QUESTION,"AskQuestion")),
+        "McpAuth"|"mcpAuthToolCall" => Some((TOOL_MCP_AUTH,"McpAuth")),
+        "WebSearch"|"webSearchToolCall" => Some((TOOL_WEB_SEARCH,"WebSearch")),
+        "WebFetch"|"webFetchToolCall" => Some((TOOL_WEB_FETCH,"WebFetch")),
+        "Computer"|"computerUseToolCall" => Some((TOOL_COMPUTER_USE,"Computer")),
+        "GenerateImage"|"generateImageToolCall" => Some((TOOL_GENERATE_IMAGE,"GenerateImage")),
+        "RecordScreen"|"recordScreenToolCall" => Some((TOOL_RECORD_SCREEN,"RecordScreen")),
+        "GetMcpTools"|"getMcpToolsToolCall" => Some((TOOL_GET_MCP_TOOLS,"GetMcpTools")),
+        _ => None,
+    }
+}
+
+pub fn project_routed_tool_partial_raw(
+    phase: ToolProjectionPhase,
+    tool: &RoutedToolDefinition,
+    raw_arguments: &str,
+    call_id: &str,
+    model_call_id: &str,
+) -> Option<ProjectedClientSideToolV2> {
+    if !matches!(phase, ToolProjectionPhase::Started | ToolProjectionPhase::Partial)
+        || call_id.trim().is_empty()
+    {
+        return None;
+    }
+    if let Ok(args) = serde_json::from_str::<Value>(raw_arguments) {
+        if let Some(projected) = project_routed_tool_call(
+            phase, tool, &args, call_id, model_call_id, None,
+        ) {
+            return override_call_raw_args(projected, raw_arguments);
+        }
+    }
+    let (tool_kind, name) = partial_identity(tool)?;
+    let projected = call_message(
+        tool_kind,
+        call_id,
+        name,
+        Value::Object(Map::new()),
+        model_call_id,
+        phase == ToolProjectionPhase::Partial,
+        None,
+    )?;
+    override_call_raw_args(projected, raw_arguments)
 }
 
 pub fn project_basic_tool_call(

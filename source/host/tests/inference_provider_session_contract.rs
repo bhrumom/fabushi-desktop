@@ -8,7 +8,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, ProviderTokenUsage, RoutedProvider, RoutedProviderOptions,
     RoutedToolDefinition, configured_routed_provider, decode_sse_stream,
     run_openrouter_with_transport, run_openrouter_with_transport_reporting_usage,
-    run_routed_provider_text,
+    run_openrouter_with_transport_reporting_usage_and_partials, run_routed_provider_text,
 };
 use serde_json::{Value, json};
 
@@ -70,6 +70,7 @@ fn provider_session_honors_runner_cancellation_before_provider_setup() {
             mcp_server_url: None,
             execute_tool: &mut execute_tool,
             on_text_delta: &mut on_text_delta,
+            on_partial_tool_call: None,
             should_cancel: &should_cancel,
         },
     )
@@ -273,5 +274,82 @@ fn openrouter_reports_server_usage_without_estimating_tokens() {
             cache_write_tokens: 0,
             reasoning_tokens: Some(2),
         }]
+    );
+}
+#[test]
+fn openrouter_partial_tool_callback_reports_real_accumulated_state_and_model_call_identity() {
+    let tools = vec![RoutedToolDefinition {
+        name: "Shell".into(),
+        provider_identifier: "mahayana-box".into(),
+        tool_name: "Shell".into(),
+        description: Some("shell".into()),
+        input_schema: json!({"type":"object"}),
+    }];
+    let messages = vec![ProviderMessage {
+        role: "user".into(),
+        content: "run".into(),
+    }];
+    let mut transport = FakeOpenRouterTransport {
+        responses: VecDeque::from([
+            vec![
+                json!({
+                    "id":"or-model-call-1",
+                    "choices":[{"delta":{"tool_calls":[{
+                        "index":0,"id":"or-call-1","function":{"name":"Shell","arguments":r#"{"command":"pri"#}
+                    }]}}]
+                }),
+                json!({
+                    "id":"or-model-call-1",
+                    "choices":[{"delta":{"tool_calls":[{
+                        "index":0,"function":{"arguments":r#"ntf ok"}"#}
+                    }]}}]
+                }),
+            ],
+            vec![json!({
+                "id":"or-model-call-2",
+                "choices":[{"delta":{"content":"done"}}]
+            })],
+        ]),
+        requests: Vec::new(),
+    };
+    let mut partials = Vec::new();
+    let mut calls = 0usize;
+    let output = run_openrouter_with_transport_reporting_usage_and_partials(
+        &mut transport,
+        "test-model",
+        &messages,
+        &tools,
+        &mut |_tool, args, call_id| {
+            calls += 1;
+            assert_eq!(call_id, "or-call-1");
+            assert_eq!(args, json!({"command":"printf ok"}));
+            Ok(json!({"kind":"success","stdout":"ok","exitCode":0}))
+        },
+        &mut |_delta, _accumulated| {},
+        &|| false,
+        None,
+        &mut |_checkpoint| Ok(()),
+        &mut |_usage| {},
+        &mut |partial| {
+            partials.push(partial);
+            Ok(())
+        },
+    )
+    .expect("OpenRouter partial lifecycle");
+
+    assert_eq!(output, "done");
+    assert_eq!(calls, 1);
+    assert_eq!(partials.len(), 2);
+    assert_eq!(partials[0].tool_call_id, "or-call-1");
+    assert_eq!(partials[0].tool.tool_name, "Shell");
+    assert_eq!(partials[0].raw_arguments, r#"{"command":"pri"#);
+    assert_eq!(
+        partials[0].model_call_id.as_deref(),
+        Some("or-model-call-1")
+    );
+    assert_eq!(partials[1].raw_arguments, r#"{"command":"printf ok"}"#);
+    assert_eq!(
+        partials[1].model_call_id.as_deref(),
+        Some("or-model-call-1")
     );
 }

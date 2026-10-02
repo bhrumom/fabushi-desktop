@@ -22,7 +22,8 @@ use crate::extensions::auth::extension::HostAuthExtension;
 use super::cursor_session::{RequestLineage, RequestedModel, sand_default_model_selection};
 use super::generated_inference_codec::InferenceReason;
 use super::provider_session::{
-    ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedToolDefinition,
+    ProviderMessage, ProviderPartialToolCall, ProviderSessionError, ProviderTokenUsage,
+    RoutedToolDefinition,
 };
 
 pub const CURSOR_INFERENCE_STREAM_PATH: &str =
@@ -104,6 +105,7 @@ pub struct CursorCheckpoint {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum CursorInferenceEvent {
+    ModelCallIdentity(String),
     TextDelta(String),
     ThinkingDelta {
         text: String,
@@ -734,6 +736,7 @@ impl CursorInferenceTransport {
                 )));
             }
 
+            on_event(CursorInferenceEvent::ModelCallIdentity(request_id.clone()))?;
             let mut stream = response.bytes_stream();
             let mut buffer = Vec::new();
             loop {
@@ -819,6 +822,29 @@ pub fn run_cursor_with_transport_reporting_usage(
     on_checkpoint: &mut dyn FnMut(&CursorCheckpoint) -> Result<(), ProviderSessionError>,
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
 ) -> Result<String, ProviderSessionError> {
+    let mut ignore_partial = |_partial: ProviderPartialToolCall| Ok(());
+    run_cursor_with_transport_reporting_usage_and_partials(
+        transport, messages, tools, execute_tool, on_text_delta, should_cancel,
+        resume_from, on_checkpoint, on_usage, &mut ignore_partial,
+    )
+}
+
+pub fn run_cursor_with_transport_reporting_usage_and_partials(
+    transport: &dyn CursorInferenceStreamTransport,
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&CursorCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(&CursorCheckpoint) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    on_partial_tool_call: &mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
+) -> Result<String, ProviderSessionError> {
     let tool_index = tools
         .iter()
         .map(|tool| (tool.name.clone(), tool))
@@ -857,12 +883,16 @@ pub fn run_cursor_with_transport_reporting_usage(
 
         let mut partial_calls = BTreeMap::<String, PartialCursorToolCall>::new();
         let mut step_text = String::new();
+        let mut model_call_id = String::new();
         transport.stream_conversation(
             &conversation,
             tools,
             should_cancel,
             &mut |event| {
                 match event {
+                    CursorInferenceEvent::ModelCallIdentity(identity) => {
+                        model_call_id = identity;
+                    }
                     CursorInferenceEvent::TextDelta(delta) => {
                         step_text.push_str(&delta);
                         text.push_str(&delta);
@@ -876,11 +906,11 @@ pub fn run_cursor_with_transport_reporting_usage(
                         tool_name,
                         args,
                         complete,
-                        tool_index,
+                        tool_index: stream_tool_index,
                     } => {
                         let key = cursor_tool_call_key(
                             &tool_call_id,
-                            tool_index,
+                            stream_tool_index,
                             partial_calls.len(),
                         );
                         let partial = partial_calls.entry(key).or_default();
@@ -898,6 +928,17 @@ pub fn run_cursor_with_transport_reporting_usage(
                             }
                         }
                         partial.complete |= complete;
+                        if !partial.tool_call_id.is_empty() && !partial.tool_name.is_empty() {
+                            if let Some(tool) = tool_index.get(&partial.tool_name).copied() {
+                                on_partial_tool_call(ProviderPartialToolCall {
+                                    tool: tool.clone(),
+                                    tool_call_id: partial.tool_call_id.clone(),
+                                    raw_arguments: partial.args.clone(),
+                                    model_call_id: (!model_call_id.is_empty())
+                                        .then(|| model_call_id.clone()),
+                                })?;
+                            }
+                        }
                     }
                 }
                 Ok(())
@@ -1008,6 +1049,9 @@ pub fn encode_test_response(event: CursorInferenceEvent) -> Vec<u8> {
     use inference_stream_response::Response;
 
     let response = match event {
+        CursorInferenceEvent::ModelCallIdentity(_) => {
+            panic!("model-call identity is transport metadata, not a provider frame")
+        }
         CursorInferenceEvent::TextDelta(text) => InferenceStreamResponse {
             response: Some(Response::TextPart(InferenceTextStreamPart {
                 text,

@@ -166,6 +166,14 @@ pub struct RoutedToolDefinition {
     pub input_schema: Value,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct ProviderPartialToolCall {
+    pub tool: RoutedToolDefinition,
+    pub tool_call_id: String,
+    pub raw_arguments: String,
+    pub model_call_id: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "provider", content = "checkpoint", rename_all = "kebab-case")]
 pub enum RoutedProviderCheckpoint {
@@ -998,6 +1006,7 @@ pub struct RoutedProviderOptions<'a> {
         &str,
     ) -> Result<Value, ProviderSessionError>,
     pub on_text_delta: &'a mut dyn FnMut(&str, &str),
+    pub on_partial_tool_call: Option<&'a mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>>,
     pub should_cancel: &'a dyn Fn() -> bool,
 }
 
@@ -1077,7 +1086,12 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
             let mut cursor_checkpoint = |checkpoint: &CursorCheckpoint| {
                 on_checkpoint(&RoutedProviderCheckpoint::Cursor(checkpoint.clone()))
             };
-            let result = run_cursor_with_transport_reporting_usage(
+            let mut ignore_partial = |_partial: ProviderPartialToolCall| Ok(());
+            let on_partial_tool_call = options
+                .on_partial_tool_call
+                .as_deref_mut()
+                .unwrap_or(&mut ignore_partial);
+            let result = super::cursor_inference_transport::run_cursor_with_transport_reporting_usage_and_partials(
                 &transport,
                 messages,
                 options.tools,
@@ -1087,6 +1101,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
                 resume,
                 &mut cursor_checkpoint,
                 on_usage,
+                on_partial_tool_call,
             );
             if let Ok(text) = result.as_ref() {
                 let mut labeled_messages = messages.to_vec();
@@ -1378,6 +1393,32 @@ pub fn run_openrouter_with_transport_reporting_usage(
     ) -> Result<(), ProviderSessionError>,
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
 ) -> Result<String, ProviderSessionError> {
+    let mut ignore_partial = |_partial: ProviderPartialToolCall| Ok(());
+    run_openrouter_with_transport_reporting_usage_and_partials(
+        transport, model, messages, tools, execute_tool, on_text_delta,
+        should_cancel, resume_from, on_checkpoint, on_usage, &mut ignore_partial,
+    )
+}
+
+pub fn run_openrouter_with_transport_reporting_usage_and_partials(
+    transport: &mut dyn OpenRouterTransport,
+    model: &str,
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&OpenRouterCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &OpenRouterCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    on_partial_tool_call: &mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
+) -> Result<String, ProviderSessionError> {
     let tool_index = tools
         .iter()
         .map(|tool| (tool.name.clone(), tool))
@@ -1448,6 +1489,7 @@ pub fn run_openrouter_with_transport_reporting_usage(
             BTreeMap::<usize, PartialOpenRouterToolCall>::new();
         let mut step_text = String::new();
         let mut step_usage = None::<ProviderTokenUsage>;
+        let mut step_model_call_id = String::new();
         transport.stream_response(
             &request,
             &mut |event| {
@@ -1460,6 +1502,9 @@ pub fn run_openrouter_with_transport_reporting_usage(
                     return Err(ProviderSessionError::Protocol(format!(
                         "OpenRouter stream failed: {error}"
                     )));
+                }
+                if let Some(id) = event.get("id").and_then(Value::as_str).filter(|id| !id.is_empty()) {
+                    step_model_call_id = id.to_string();
                 }
                 if let Some(usage) = provider_token_usage_from_openrouter_event(&event) {
                     step_usage = Some(usage);
@@ -1507,6 +1552,17 @@ pub fn run_openrouter_with_transport_reporting_usage(
                                 function.get("arguments").and_then(Value::as_str)
                             {
                                 partial.arguments.push_str(arguments);
+                            }
+                        }
+                        if !partial.id.is_empty() && !partial.name.is_empty() {
+                            if let Some(tool) = tool_index.get(&partial.name).copied() {
+                                on_partial_tool_call(ProviderPartialToolCall {
+                                    tool: tool.clone(),
+                                    tool_call_id: partial.id.clone(),
+                                    raw_arguments: partial.arguments.clone(),
+                                    model_call_id: (!step_model_call_id.is_empty())
+                                        .then(|| step_model_call_id.clone()),
+                                })?;
                             }
                         }
                     }
@@ -1653,7 +1709,12 @@ fn run_openrouter_provider_text_with_lifecycle_reporting_usage(
     let execute_tool = &mut *options.execute_tool;
     let on_text_delta = &mut *options.on_text_delta;
     let mut transport = OpenRouterHttpTransport::new(api_key)?;
-    run_openrouter_with_transport_reporting_usage(
+    let mut ignore_partial = |_partial: ProviderPartialToolCall| Ok(());
+    let on_partial_tool_call = options
+        .on_partial_tool_call
+        .as_deref_mut()
+        .unwrap_or(&mut ignore_partial);
+    run_openrouter_with_transport_reporting_usage_and_partials(
         &mut transport,
         &model,
         messages,
@@ -1664,6 +1725,7 @@ fn run_openrouter_provider_text_with_lifecycle_reporting_usage(
         resume_from,
         on_checkpoint,
         on_usage,
+        on_partial_tool_call,
     )
 }
 

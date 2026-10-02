@@ -7,6 +7,7 @@ use mahayana_host_runtime::extensions::inference::cursor_inference_transport::{
     encode_connect_envelope, encode_cursor_inference_request,
     encode_cursor_inference_request_with_model, encode_test_response,
     run_cursor_with_transport_reporting_usage,
+    run_cursor_with_transport_reporting_usage_and_partials,
 };
 use mahayana_host_runtime::extensions::inference::cursor_session::RequestedModel;
 use mahayana_host_runtime::extensions::inference::sand_model_experiment::SandAgentModelParameter;
@@ -299,4 +300,82 @@ fn cursor_provider_loop_executes_tools_once_and_resumes_from_accepted_checkpoint
     .expect("resume cursor provider loop");
     assert_eq!(resumed_tool_calls, 0);
     assert_eq!(resumed, "Checking  resumed");
+}
+#[test]
+fn cursor_partial_tool_callback_reports_real_accumulated_state_and_model_call_identity() {
+    let tools = vec![RoutedToolDefinition {
+        name: "Shell".into(),
+        provider_identifier: "mahayana-box".into(),
+        tool_name: "Shell".into(),
+        description: Some("shell".into()),
+        input_schema: json!({"type":"object"}),
+    }];
+    let messages = vec![ProviderMessage {
+        role: "user".into(),
+        content: "run".into(),
+    }];
+    let transport = FakeCursorTransport {
+        responses: Mutex::new(VecDeque::from([
+            vec![
+                CursorInferenceEvent::ModelCallIdentity("cursor-request-1".into()),
+                CursorInferenceEvent::ToolCall {
+                    tool_call_id: "cursor-call-1".into(),
+                    tool_name: "Shell".into(),
+                    args: r#"{"command":"pri"#.into(),
+                    complete: false,
+                    tool_index: Some(0),
+                },
+                CursorInferenceEvent::ToolCall {
+                    tool_call_id: "cursor-call-1".into(),
+                    tool_name: "Shell".into(),
+                    args: r#"{"command":"printf ok"}"#.into(),
+                    complete: true,
+                    tool_index: Some(0),
+                },
+            ],
+            vec![
+                CursorInferenceEvent::ModelCallIdentity("cursor-request-2".into()),
+                CursorInferenceEvent::Finished,
+            ],
+        ])),
+    };
+    let mut partials = Vec::new();
+    let mut calls = 0usize;
+    let output = run_cursor_with_transport_reporting_usage_and_partials(
+        &transport,
+        &messages,
+        &tools,
+        &mut |_tool, args, call_id| {
+            calls += 1;
+            assert_eq!(call_id, "cursor-call-1");
+            assert_eq!(args, json!({"command":"printf ok"}));
+            Ok(json!({"kind":"success","stdout":"ok","exitCode":0}))
+        },
+        &mut |_delta, _accumulated| {},
+        &|| false,
+        None,
+        &mut |_checkpoint| Ok(()),
+        &mut |_usage| {},
+        &mut |partial| {
+            partials.push(partial);
+            Ok(())
+        },
+    )
+    .expect("cursor partial lifecycle");
+
+    assert_eq!(output, "");
+    assert_eq!(calls, 1);
+    assert_eq!(partials.len(), 2);
+    assert_eq!(partials[0].tool_call_id, "cursor-call-1");
+    assert_eq!(partials[0].tool.tool_name, "Shell");
+    assert_eq!(partials[0].raw_arguments, r#"{"command":"pri"#);
+    assert_eq!(
+        partials[0].model_call_id.as_deref(),
+        Some("cursor-request-1")
+    );
+    assert_eq!(partials[1].raw_arguments, r#"{"command":"printf ok"}"#);
+    assert_eq!(
+        partials[1].model_call_id.as_deref(),
+        Some("cursor-request-1")
+    );
 }

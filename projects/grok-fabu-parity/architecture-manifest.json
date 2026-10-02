@@ -15771,7 +15771,7 @@
       "targetPath": "source/host/src/extensions/transcript/client_side_tool_v2_projection.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b25e4b65213b5522cb9894ceefbd50b84069b18e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",

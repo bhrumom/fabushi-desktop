@@ -5,11 +5,12 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use serde_json::{Value, json};
 
 use crate::extensions::inference::provider_session::{
-    ProviderSessionError, RoutedToolDefinition,
+    ProviderPartialToolCall, ProviderSessionError, RoutedToolDefinition,
 };
 use crate::extensions::transcript::async_task_union::AsyncTask;
 use crate::extensions::transcript::client_side_tool_v2_projection::{
     ProjectedClientSideToolV2, ToolProjectionPhase, project_routed_tool_call,
+    project_routed_tool_partial_raw,
 };
 
 use super::clock_skew_guard::{
@@ -125,6 +126,7 @@ pub struct TurnObservation {
     await_observation_count: u64,
     pending_awaits: HashMap<String, PendingAwait>,
     mcp_observed_tool_call_ids: HashSet<String>,
+    provider_streamed_tool_call_ids: HashSet<String>,
     first_token_observed: bool,
 }
 
@@ -173,6 +175,7 @@ impl TurnObservation {
             await_observation_count: 0,
             pending_awaits: HashMap::new(),
             mcp_observed_tool_call_ids: HashSet::new(),
+            provider_streamed_tool_call_ids: HashSet::new(),
             first_token_observed: false,
         }
     }
@@ -195,6 +198,29 @@ impl TurnObservation {
     fn emit_client_side_tool_v2(&self, projected: ProjectedClientSideToolV2) {
         if let Some(sink) = self.client_side_tool_v2_sink.as_ref() {
             sink(projected);
+        }
+    }
+
+    pub fn observe_provider_partial_tool_call(&mut self, partial: &ProviderPartialToolCall) {
+        if partial.tool_call_id.trim().is_empty() {
+            return;
+        }
+        let first = self
+            .provider_streamed_tool_call_ids
+            .insert(partial.tool_call_id.clone());
+        let phase = if first {
+            ToolProjectionPhase::Started
+        } else {
+            ToolProjectionPhase::Partial
+        };
+        if let Some(projected) = project_routed_tool_partial_raw(
+            phase,
+            &partial.tool,
+            &partial.raw_arguments,
+            &partial.tool_call_id,
+            partial.model_call_id.as_deref().unwrap_or_default(),
+        ) {
+            self.emit_client_side_tool_v2(projected);
         }
     }
 
@@ -642,6 +668,13 @@ impl RoutedToolBridge for McpObservedRoutedToolBridge {
         self.delegate.list_tools()
     }
 
+    fn observe_partial_tool_call(
+        &self,
+        partial: &ProviderPartialToolCall,
+    ) -> Result<(), ProviderSessionError> {
+        self.delegate.observe_partial_tool_call(partial)
+    }
+
     fn call_tool(
         &self,
         tool: &RoutedToolDefinition,
@@ -691,6 +724,16 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
         self.delegate.list_tools()
     }
 
+    fn observe_partial_tool_call(
+        &self,
+        partial: &ProviderPartialToolCall,
+    ) -> Result<(), ProviderSessionError> {
+        if let Ok(mut observation) = self.observation.lock() {
+            observation.observe_provider_partial_tool_call(partial);
+        }
+        Ok(())
+    }
+
     fn call_tool(
         &self,
         tool: &RoutedToolDefinition,
@@ -731,16 +774,23 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
             }
         }
 
-        if let Some(projected) = project_routed_tool_call(
-            ToolProjectionPhase::Started,
-            tool,
-            &args,
-            tool_call_id,
-            "",
-            None,
-        ) {
-            if let Ok(observation) = self.observation.lock() {
-                observation.emit_client_side_tool_v2(projected);
+        let provider_streamed = self
+            .observation
+            .lock()
+            .map(|observation| observation.provider_streamed_tool_call_ids.contains(tool_call_id))
+            .unwrap_or(false);
+        if !provider_streamed {
+            if let Some(projected) = project_routed_tool_call(
+                ToolProjectionPhase::Started,
+                tool,
+                &args,
+                tool_call_id,
+                "",
+                None,
+            ) {
+                if let Ok(observation) = self.observation.lock() {
+                    observation.emit_client_side_tool_v2(projected);
+                }
             }
         }
 
@@ -763,6 +813,7 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
             }
         }
         if let Ok(mut observation) = self.observation.lock() {
+            observation.provider_streamed_tool_call_ids.remove(tool_call_id);
             let failed = result.is_err();
             let summary = result.as_ref().ok().map(Value::to_string);
             observation.tool_completed(name, failed, summary.as_deref());

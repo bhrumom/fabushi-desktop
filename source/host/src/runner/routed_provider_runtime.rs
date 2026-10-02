@@ -16,8 +16,8 @@ use uuid::Uuid;
 
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedProvider,
-    RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
+    ProviderMessage, ProviderPartialToolCall, ProviderSessionError, ProviderTokenUsage,
+    RoutedProvider, RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
     run_routed_provider_text_with_lifecycle_reporting_usage,
 };
 use crate::host_request_context::HostRequestContext;
@@ -215,6 +215,12 @@ impl RoutedProviderTaskRegistry {
 
 pub trait RoutedToolBridge: Send + Sync {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError>;
+    fn observe_partial_tool_call(
+        &self,
+        _partial: &ProviderPartialToolCall,
+    ) -> Result<(), ProviderSessionError> {
+        Ok(())
+    }
     fn call_tool(
         &self,
         tool: &RoutedToolDefinition,
@@ -309,6 +315,7 @@ struct ProductionRoutedProviderAttemptExecutor<'a> {
         Value,
         &str,
     ) -> Result<Value, ProviderSessionError>,
+    on_partial_tool_call: &'a mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
     usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
 }
 
@@ -329,6 +336,7 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
             mcp_server_url: self.mcp_server_url,
             execute_tool: &mut *self.execute_tool,
             on_text_delta,
+            on_partial_tool_call: Some(&mut *self.on_partial_tool_call),
             should_cancel,
         };
         let usage_sink = self.usage_sink.clone();
@@ -428,6 +436,12 @@ pub fn run_routed_provider_in_runner(
             },
         )
     };
+    let partial_bridge = Arc::clone(&run.bridge);
+    let partial_cancellation = run.cancellation.clone();
+    let mut on_partial_tool_call = move |partial: ProviderPartialToolCall| {
+        partial_cancellation.check()?;
+        partial_bridge.observe_partial_tool_call(&partial)
+    };
     let delta_cancellation = run.cancellation.clone();
     let mut guarded_delta = |delta: &str, accumulated: &str| {
         if !delta_cancellation.is_cancelled() {
@@ -443,6 +457,7 @@ pub fn run_routed_provider_in_runner(
         mcp_server_url: mcp_url.as_deref(),
         cursor_auth: run.cursor_auth.clone(),
         execute_tool: &mut execute_tool,
+        on_partial_tool_call: &mut on_partial_tool_call,
         usage_sink: run.usage_sink.clone(),
     };
     let retry_sink = run.retry_sink.clone();

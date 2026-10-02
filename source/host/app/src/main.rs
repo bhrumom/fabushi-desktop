@@ -7239,6 +7239,7 @@ fn start_routed_provider_task(
                                         mcp_server_url: None,
                                         execute_tool: &mut reject_tool,
                                         on_text_delta: &mut ignore_delta,
+                                        on_partial_tool_call: None,
                                         should_cancel: &should_cancel,
                                     };
                                     run_routed_provider_text(provider, &messages, &mut options)
