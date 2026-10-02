@@ -26,7 +26,13 @@ fn host_runner_composition_owns_turn_decoration_order() {
 #[test]
 fn shipping_host_has_one_runner_composition_entrypoint() {
     assert!(
-        SHIPPING_HOST.contains("host_runner_composition.compose_production_turn("),
+        SHIPPING_HOST.contains(
+            "let worker_host_runner_composition = Arc::clone(&host_runner_composition);"
+        ),
+        "shipping Runner worker must use the same HostRunnerComposition owner via Arc::clone",
+    );
+    assert!(
+        SHIPPING_HOST.contains("worker_host_runner_composition.compose_production_turn("),
         "shipping Host must delegate turn assembly to HostRunnerComposition",
     );
     assert!(
@@ -132,7 +138,7 @@ fn host_runner_composition_owns_shipping_runner_construction() {
         );
     }
     assert!(
-        SHIPPING_HOST.contains("host_runner_composition.compose_production_runner("),
+        SHIPPING_HOST.contains("worker_host_runner_composition.compose_production_runner("),
         "shipping Host must delegate Runner facade construction",
     );
     for needle in [
