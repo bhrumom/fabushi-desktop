@@ -17309,7 +17309,7 @@
       "targetPath": "source/host/src/host_production_extensions.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "5b7e5f88bfac33540a4d89336a6e042d02a675f8",
       "architecturalRole": "host/host-production-extensions",
       "processOrPackage": "mahayana-host",
@@ -17340,7 +17340,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Host has a Grok-shaped host_production_extensions owner and the shipping app consumes it directly. The production graph is now staged rather than flattened: the core stage owns Auth, Telemetry, ContentSearch, Settings, Experiments, CodebaseTelemetry, ActionAudit, CloudAgents, NotifyBus, Memory, ManagedSetup, SourceMap, Trays, BoxLifecycle, WebauthnProxy, BrowserUa, LocalToolPermission, LocalExec, Inference and Wallpaper; a Box-dependent stage owns ForeverBox, Attachments and Secrets after the platform Box environment exists. app/main.rs no longer constructs second BrowserUa/Wallpaper/ForeverBox/Attachments/Secrets owners. That makes 23 frozen registry slots centrally composed with real owners. Final parity remains withheld until the remaining frozen slots are centralized with real production owners/extras bindings: Notifications, CrossUserSharing, StateBackstop, TurnExecution, Transcript, Session, Automations, MCP, BoxStoreSync, HostUpgrade, AutoReview and TeachRecording. No no-op slot is synthesized."
+      "notes": "Rust ProductionHostExtensions now owns the exact frozen 35-slot Host extension registry with one real production owner per slot and no no-op placeholders. Core, Box-dependent, and lifecycle stages remain centralized behind this owner: BrowserUa, Wallpaper, ForeverBox, Attachments, Secrets, Notifications, CrossUserSharing, StateBackstop, TurnExecution, Transcript, Session, Automations, MCP, BoxStoreSync, HostUpgrade, AutoReview, and TeachRecording are all constructed or started through ProductionHostExtensions. TurnExecution remains a single registry-owned instance and is injected internally into Transcript dependencies; shipping app/main.rs neither reconstructs nor reaches around that owner. Focused ownership contracts cover exact 35-slot registry equality, duplicate/no-op exclusion, centralized construction and teardown, and shipping consumption."
     },
     {
       "referencePath": "source/host/host-request-context.ts",
