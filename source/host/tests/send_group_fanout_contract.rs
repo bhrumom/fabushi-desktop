@@ -39,6 +39,50 @@ fn profile(name: &str) -> SandAgentProfile {
 }
 
 #[test]
+fn transcript_runtime_late_binds_the_canonical_shared_group_remote_executor() {
+    let runtime = ProductionTranscriptRuntime::new(None);
+    assert!(runtime.shared_group_remote_executor().is_none());
+
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let observed = Arc::clone(&calls);
+    let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
+        observed
+            .lock()
+            .expect("calls")
+            .push((request.member.id.clone(), request.prompt.clone()));
+        Ok(vec!["remote reply".into()])
+    });
+    runtime.bind_shared_group_remote_executor(Some(executor));
+
+    let bound = runtime
+        .shared_group_remote_executor()
+        .expect("late-bound remote executor");
+    let result = bound(mahayana_host_runtime::extensions::transcript::group_chat_orchestrator::GroupMemberTurnRequest {
+        member: mahayana_host_runtime::groups::group_chat::GroupMember {
+            id: "remote-1".into(),
+            name: "Remote".into(),
+            description: String::new(),
+        },
+        system_prompt: "system".into(),
+        prompt: "hello".into(),
+        group: mahayana_host_runtime::groups::group_chat::GroupDescription {
+            name: "Shared".into(),
+            description: String::new(),
+        },
+        peers: Vec::new(),
+        new_messages: Vec::new(),
+        shared_room_id: Some("shared-room-1".into()),
+    })
+    .expect("remote turn");
+
+    assert_eq!(result, vec!["remote reply".to_string()]);
+    assert_eq!(
+        calls.lock().expect("calls").as_slice(),
+        &[("remote-1".to_string(), "hello".to_string())]
+    );
+}
+
+#[test]
 fn local_group_fanout_reads_room_history_executes_members_and_durably_posts_authored_messages() {
     let root = temp_root("local");
     let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
@@ -279,6 +323,22 @@ fn shared_group_uses_remote_executor_without_creating_a_second_group_runtime() {
     let _ = fs::remove_dir_all(root);
 }
 
+
+#[test]
+fn shipping_agent_posted_group_turn_reads_the_transcript_owned_remote_executor() {
+    let start = SHIPPING_HOST
+        .find("fn run_agent_posted_group_turn(")
+        .expect("agent-posted group turn");
+    let end = SHIPPING_HOST[start..]
+        .find("\nfn run_local_group_member_turn(")
+        .map(|offset| start + offset)
+        .expect("group member turn boundary");
+    let body = &SHIPPING_HOST[start..end];
+
+    assert!(body.contains("dispatch_runtime.shared_group_remote_executor()"));
+    assert!(body.contains("dispatch_local_group_send("));
+    assert!(body.contains("remote_executor,"));
+}
 
 #[test]
 fn shipping_group_fanout_keeps_cursor_on_the_canonical_host_runner_path() {

@@ -17,6 +17,7 @@ use super::prompt_acceptance_ledger::{
     PromptAcceptanceLedger, SendInput,
 };
 use super::run_lifecycle::RunLifecycleState;
+use super::send_group_fanout::GroupMemberTurnExecutor;
 use super::sand_pending_wake_store::{PendingWakeKind, SandPendingWakeStore};
 use super::sand_upgrade_resume_store::{SandUpgradeResumeStore, UpgradeResumeMarker};
 use super::session_runtime::SessionRuntime;
@@ -130,6 +131,7 @@ pub struct ProductionTranscriptRuntime {
     upgrade_recreate_resume: UpgradeRecreateResume,
     session_runtime: SessionRuntime,
     replica_writer: HostReplicaWriter,
+    shared_group_remote_executor: Mutex<Option<GroupMemberTurnExecutor>>,
     roster_snapshot_seq: AtomicU64,
 }
 
@@ -169,12 +171,30 @@ impl ProductionTranscriptRuntime {
             upgrade_recreate_resume: UpgradeRecreateResume::default(),
             session_runtime: SessionRuntime::new(),
             replica_writer: HostReplicaWriter::new(),
+            shared_group_remote_executor: Mutex::new(None),
             roster_snapshot_seq: AtomicU64::new(0),
         }
     }
 
     pub fn session_runtime(&self) -> &SessionRuntime {
         &self.session_runtime
+    }
+
+    pub fn bind_shared_group_remote_executor(
+        &self,
+        executor: Option<GroupMemberTurnExecutor>,
+    ) {
+        *self
+            .shared_group_remote_executor
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = executor;
+    }
+
+    pub fn shared_group_remote_executor(&self) -> Option<GroupMemberTurnExecutor> {
+        self.shared_group_remote_executor
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone()
     }
 
     pub fn switch_agent(

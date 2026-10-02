@@ -2684,6 +2684,7 @@ fn run_agent_posted_group_turn(
         .execute_send(
             &args,
             move || {
+                let remote_executor = dispatch_runtime.shared_group_remote_executor();
                 let member_deps = dispatch_deps.clone();
                 let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
                     run_local_group_member_turn(member_deps.clone(), provider, request)
@@ -2695,7 +2696,7 @@ fn run_agent_posted_group_turn(
                     &room_id,
                     epoch,
                     executor,
-                    None,
+                    remote_executor,
                 )
                 .map_err(ProductionSendError::Internal)?
                 {
@@ -9400,6 +9401,7 @@ fn main() {
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) =
         Arc::downgrade(&cross_user);
+    transcript_runtime.bind_shared_group_remote_executor(cross_user.remote_executor());
 
     let host_upgrade_gateway_slot =
         Arc::new(Mutex::new(Weak::<UnifiedGatewayApi>::new()));
