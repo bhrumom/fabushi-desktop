@@ -19,6 +19,9 @@ use super::transcript_entry_ids::{TranscriptEntryIdKind, next_entry_id};
 pub type GroupMemberTurnExecutor =
     Arc<dyn Fn(GroupMemberTurnRequest) -> Result<Vec<String>, String> + Send + Sync + 'static>;
 
+pub const GROUP_MEMBER_DM_PREEMPTED_ERROR: &str =
+    "__sand_group_member_dm_preempted__";
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LocalGroupFanoutDisposition {
     NotGroup,
@@ -149,13 +152,23 @@ impl GroupOrchestratorDeps for LocalGroupFanoutDeps {
             self.runtime
                 .set_active_remote_member(&self.room_id, Some(&member_id));
         }
-        let output = match executor(request) {
-            Ok(messages) => messages,
-            Err(error) => {
-                if let Ok(mut failures) = self.member_failures.lock() {
-                    failures.push((member_id.clone(), error));
+        let mut attempt = 1usize;
+        let output = loop {
+            match executor(request.clone()) {
+                Ok(messages) => break messages,
+                Err(error)
+                    if error == GROUP_MEMBER_DM_PREEMPTED_ERROR
+                        && attempt < 3
+                        && self.is_current() =>
+                {
+                    attempt += 1;
                 }
-                Vec::new()
+                Err(error) => {
+                    if let Ok(mut failures) = self.member_failures.lock() {
+                        failures.push((member_id.clone(), error));
+                    }
+                    break Vec::new();
+                }
             }
         };
         if is_remote {
