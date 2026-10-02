@@ -7182,8 +7182,7 @@ fn start_routed_provider_task(
                             }
                         }
                         Ok(())
-                    })),
-            ;
+                    }));
             if !is_group_member_turn {
                 computer_executor_owner =
                     computer_executor_owner.with_persist_image_callback(computer_persist_image);
