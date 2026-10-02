@@ -16511,7 +16511,7 @@
       "targetPath": "source/host/src/extensions/transcript/session_runtime.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "18659d48c81749ddc92a5f1e25e9df86e4ca8dec",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -16530,7 +16530,7 @@
         "source/host/tests/transcript_store_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Rust Transcript runtime owns active-window focus, active TranscriptStore projection, openAgent switching, liveSessions/openSessionOnce/background-session ownership and production retirement of inactive live Sessions. openAgent retires an idle prior Session immediately; if it was running, provider terminal performs the deferred retirement after RunLifecycle becomes idle. deleteAgent/deleteAgents fence the live-session cache. Final remains withheld for deferred openAgentWindowed/openAgentTail activation + catch-up emission, boot ensureSession/fallback ordering, roster activation events and desktop-contact freshness."
+      "notes": "Shipping Rust Transcript runtime owns active-window focus and desktop-contact freshness, active TranscriptStore projection, openAgent switching/snapshot publication, liveSessions/openSessionOnce/background-session ownership, supersedable deferred openAgentWindowed/openAgentTail activation with shipped-through catch-up emission, activation roster updates, and production retirement of inactive live Sessions. Boot initial transcript loading preserves persisted-active -> visible -> record-id -> fallback ordering in host_initial_transcript_load.rs. Focused contracts cover focus/contact freshness, live-session retirement, deferred activation supersession/catch-up and production open wiring; exact-HEAD CI remains acceptance authority."
     },
     {
       "referencePath": "source/host/extensions/transcript/shared-rooms.ts",

@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use serde_json::Value;
@@ -15,12 +16,18 @@ struct WindowFocusState {
     focused_at_ms: Option<f64>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeferredActivationClaim {
+    pub generation: u64,
+    pub agent_id: String,
+    pub shipped_through_id: Option<String>,
+}
+
 /// Shipping Rust owner for the active Session/Transcript window state that
 /// frozen Grok keeps in transcript/session-runtime.ts.
 ///
-/// This slice deliberately owns only focus + active-agent switching. Windowed
-/// deferred activation/catch-up and the broader live-session cache stay
-/// non-final until their exact contracts are ported.
+/// This owner covers focus, active-agent switching, the live-session cache and
+/// supersedable deferred bounded-open activation/catch-up used by the shipping Host.
 #[derive(Default)]
 pub struct SessionRuntime {
     focus: Mutex<WindowFocusState>,
@@ -29,6 +36,8 @@ pub struct SessionRuntime {
     live_sessions: Mutex<HashSet<String>>,
     session_open_lock: Mutex<()>,
     deleted_agent_ids: Mutex<HashSet<String>>,
+    pending_activation: Mutex<Option<DeferredActivationClaim>>,
+    activation_generation: AtomicU64,
 }
 
 impl SessionRuntime {
@@ -61,6 +70,78 @@ impl SessionRuntime {
         if let Ok(mut sessions) = self.live_sessions.lock() {
             sessions.remove(agent_id);
         }
+        if self.pending_activation_agent_id().as_deref() == Some(agent_id) {
+            self.invalidate_deferred_activation();
+        }
+    }
+
+    pub fn pending_activation_agent_id(&self) -> Option<String> {
+        self.pending_activation
+            .lock()
+            .ok()
+            .and_then(|claim| claim.as_ref().map(|claim| claim.agent_id.clone()))
+    }
+
+    pub fn schedule_deferred_activation(
+        &self,
+        agent_id: &str,
+        shipped_through_id: Option<&str>,
+    ) -> u64 {
+        let generation = self
+            .activation_generation
+            .fetch_add(1, Ordering::AcqRel)
+            .wrapping_add(1);
+        let claim = DeferredActivationClaim {
+            generation,
+            agent_id: agent_id.to_string(),
+            shipped_through_id: shipped_through_id.map(ToOwned::to_owned),
+        };
+        *self
+            .pending_activation
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(claim);
+        generation
+    }
+
+    pub fn invalidate_deferred_activation(&self) {
+        *self
+            .pending_activation
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = None;
+    }
+
+    pub fn claim_deferred_activation(
+        &self,
+        generation: u64,
+        agent_id: &str,
+    ) -> Option<DeferredActivationClaim> {
+        let mut pending = self
+            .pending_activation
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let matches = pending.as_ref().is_some_and(|claim| {
+            claim.generation == generation && claim.agent_id == agent_id
+        });
+        matches.then(|| pending.take()).flatten()
+    }
+
+    pub fn windowed_catch_up(
+        &self,
+        shipped_through_id: Option<&str>,
+        entries: &[TranscriptEntry],
+    ) -> Vec<TranscriptEntry> {
+        let from = match shipped_through_id {
+            None => 0,
+            Some(shipped_through_id) => {
+                let Some(index) = entries.iter().position(|entry| {
+                    entry.get("id").and_then(Value::as_str) == Some(shipped_through_id)
+                }) else {
+                    return Vec::new();
+                };
+                index + 1
+            }
+        };
+        entries[from..].to_vec()
     }
 
     pub fn clear_agent_deleted(&self, agent_id: &str) {
@@ -222,6 +303,14 @@ impl SessionRuntime {
             .and_then(|state| state.focused_at_ms)
     }
 
+    pub fn note_desktop_contact(&self, now_ms: f64) {
+        if let Ok(mut state) = self.focus.lock()
+            && state.is_focused
+        {
+            state.focused_at_ms = Some(now_ms);
+        }
+    }
+
     pub fn active_agent_id(
         &self,
         sessions: &Arc<ProductionSessionWorkers>,
@@ -269,6 +358,7 @@ impl SessionRuntime {
         agent_id: &str,
         now_ms: f64,
     ) -> Result<Vec<Value>, String> {
+        self.invalidate_deferred_activation();
         let store = SandAgentSessionStore::new(Arc::clone(sessions));
         self.open_session_once(sessions, agent_id)?;
         let current = store.read_active_agent_id();

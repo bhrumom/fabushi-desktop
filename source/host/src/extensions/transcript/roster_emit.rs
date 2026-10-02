@@ -363,6 +363,28 @@ impl ProductionRosterEmit {
         }));
     }
 
+    pub fn publish_transcript_snapshot(&self, agent_id: &str, entries: &[Value]) {
+        (self.event_sink)(json!({
+            "channel": "transcript",
+            "payload": {
+                "type": "snapshot",
+                "activeAgentId": agent_id,
+                "entries": entries,
+            }
+        }));
+    }
+
+    pub fn publish_transcript_appended(&self, agent_id: &str, entry: &Value) {
+        (self.event_sink)(json!({
+            "channel": "transcript",
+            "payload": {
+                "type": "appended",
+                "agentId": agent_id,
+                "entry": entry,
+            }
+        }));
+    }
+
     pub fn set_outline_stream_coalescing_ms(&self, delay_ms: u64) {
         self.outline_stream.configure(delay_ms);
     }
