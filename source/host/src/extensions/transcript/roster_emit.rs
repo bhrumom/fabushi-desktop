@@ -153,12 +153,7 @@ impl ProductionRosterEmit {
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = sink;
     }
 
-    pub fn publish_name_changed(&self, agent_id: &str, from: &str, to: &str) {
-        let event = json!({
-            "type": "name-changed",
-            "from": from,
-            "to": to
-        });
+    pub fn publish_timeline_event(&self, agent_id: &str, event: Value) {
         (self.event_sink)(json!({
             "channel": "timeline",
             "payload": {
@@ -174,6 +169,17 @@ impl ProductionRosterEmit {
         if let Some(sink) = sink {
             sink(agent_id, event);
         }
+    }
+
+    pub fn publish_name_changed(&self, agent_id: &str, from: &str, to: &str) {
+        self.publish_timeline_event(
+            agent_id,
+            json!({
+                "type": "name-changed",
+                "from": from,
+                "to": to
+            }),
+        );
     }
 
     pub fn cached_agent_summaries(&self) -> Vec<Value> {

@@ -126,3 +126,86 @@ fn boot_sweep_expires_only_cards_pending_before_cutoff_across_agents() {
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn unanswered_widget_prompts_are_classified_and_marked_skipped_durably() {
+    let root = temp_root("unanswered-prompts");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let record = workers
+        .materialize_new_session(None, "user", None)
+        .expect("session");
+    workers
+        .append_agent_transcript_entries(
+            &record.id,
+            &[
+                serde_json::json!({
+                    "id":"widget-open",
+                    "kind":"send-message",
+                    "message":{
+                        "type":"widget",
+                        "widget":{
+                            "prompt":"Choose a path",
+                            "options":[{"label":"A"},{"label":"B"}]
+                        }
+                    }
+                }),
+                serde_json::json!({
+                    "id":"widget-dismissed",
+                    "kind":"send-message",
+                    "widgetDismissed":true,
+                    "message":{
+                        "type":"widget",
+                        "widget":{"prompt":"Dismissed question","options":[]}
+                    }
+                }),
+                serde_json::json!({
+                    "id":"widget-answered",
+                    "kind":"send-message",
+                    "respondedValue":"A",
+                    "message":{
+                        "type":"widget",
+                        "widget":{"prompt":"Answered question","options":[]}
+                    }
+                }),
+            ],
+        )
+        .expect("append widgets");
+
+    let widgets = WidgetResponses::new(Arc::clone(&workers));
+    let prompts = widgets
+        .collect_unanswered_question_prompts(&record.id)
+        .expect("collect");
+    assert_eq!(prompts.skipped_question_prompts, vec!["Choose a path — A / B"]);
+    assert_eq!(
+        prompts.dismissed_question_prompts,
+        vec!["Dismissed question"]
+    );
+
+    let entries = workers
+        .read_agent_transcript_entries(&record.id)
+        .expect("read");
+    let open = entries
+        .iter()
+        .find(|entry| entry["id"] == "widget-open")
+        .expect("open");
+    let dismissed = entries
+        .iter()
+        .find(|entry| entry["id"] == "widget-dismissed")
+        .expect("dismissed");
+    let answered = entries
+        .iter()
+        .find(|entry| entry["id"] == "widget-answered")
+        .expect("answered");
+    assert_eq!(open["widgetSkipped"], true);
+    assert_eq!(dismissed["widgetSkipped"], true);
+    assert!(answered.get("widgetSkipped").is_none());
+
+    let second = widgets
+        .collect_unanswered_question_prompts(&record.id)
+        .expect("collect again");
+    assert!(second.skipped_question_prompts.is_empty());
+    assert!(second.dismissed_question_prompts.is_empty());
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}

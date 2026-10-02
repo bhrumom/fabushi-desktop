@@ -113,16 +113,36 @@ fn name_change_projects_timeline_event_to_the_bound_background_wake_sink() {
     })));
 
     emitter.publish_name_changed("agent-a", "Old", "New");
+    emitter.publish_timeline_event(
+        "agent-a",
+        serde_json::json!({
+            "type":"channel-connected",
+            "label":"Slack"
+        }),
+    );
+    emitter.publish_timeline_event(
+        "agent-a",
+        serde_json::json!({
+            "type":"automation-changed",
+            "action":"updated",
+            "automationId":"auto-1",
+            "automationName":"Daily"
+        }),
+    );
 
     let emitted = emitted.lock().expect("events");
     assert_eq!(emitted[0]["channel"], "timeline");
     assert_eq!(emitted[0]["payload"]["event"]["type"], "name-changed");
     drop(emitted);
     let wakes = wakes.lock().expect("wakes");
-    assert_eq!(wakes.len(), 1);
+    assert_eq!(wakes.len(), 3);
     assert_eq!(wakes[0].0, "agent-a");
     assert_eq!(wakes[0].1["from"], "Old");
     assert_eq!(wakes[0].1["to"], "New");
+    assert_eq!(wakes[1].1["type"], "channel-connected");
+    assert_eq!(wakes[1].1["label"], "Slack");
+    assert_eq!(wakes[2].1["type"], "automation-changed");
+    assert_eq!(wakes[2].1["automationId"], "auto-1");
 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);

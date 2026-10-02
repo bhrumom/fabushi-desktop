@@ -2,8 +2,11 @@ use std::collections::{HashMap, HashSet};
 
 use serde_json::Value;
 
+use crate::connectors::channel_delivery::ChannelOutboundMessage;
+
 pub const TIMELINE_EVENT_WAKE_CUE: &str = "[event]";
 pub const CHANNEL_INBOUND_WAKE_CUE: &str = "[inbound]";
+pub const CHANNEL_DELIVERY_FAILED_WAKE_CUE: &str = "[channel-delivery-failed]";
 
 pub fn format_channel_address_value(address: &Value) -> Option<String> {
     if let Some(raw) = address.as_str() {
@@ -118,6 +121,126 @@ pub fn build_channel_inbound_wake_prompt(envelopes: &[Value]) -> String {
         closing.to_string(),
     ]
     .join("\n")
+}
+
+pub fn build_channel_outbound_message(message: &Value) -> Option<ChannelOutboundMessage> {
+    match message.get("type").and_then(Value::as_str)? {
+        "text" => {
+            let content = message.get("content").and_then(Value::as_str).unwrap_or_default();
+            let image_url = message
+                .get("images")
+                .and_then(Value::as_array)
+                .and_then(|images| {
+                    images.iter().find_map(|image| {
+                        image
+                            .get("url")
+                            .and_then(Value::as_str)
+                            .filter(|url| !url.is_empty())
+                    })
+                });
+            if let Some(url) = image_url {
+                return Some(ChannelOutboundMessage::Attachment {
+                    url: url.to_string(),
+                    caption: (!content.is_empty()).then(|| content.to_string()),
+                });
+            }
+            (!content.is_empty()).then(|| ChannelOutboundMessage::Text {
+                text: content.to_string(),
+            })
+        }
+        "attachment" => {
+            let url = message.get("url").and_then(Value::as_str).unwrap_or_default();
+            let alt = message
+                .get("alt")
+                .and_then(Value::as_str)
+                .filter(|value| !value.is_empty());
+            if !url.is_empty() {
+                return Some(ChannelOutboundMessage::Attachment {
+                    url: url.to_string(),
+                    caption: alt.map(ToOwned::to_owned),
+                });
+            }
+            alt.map(|text| ChannelOutboundMessage::Text {
+                text: text.to_string(),
+            })
+        }
+        _ => None,
+    }
+}
+
+fn channel_platform(address_token: &str) -> Option<&str> {
+    let trimmed = address_token.trim();
+    let separator = trimmed.find(':')?;
+    if separator == 0 {
+        return None;
+    }
+    let platform = trimmed[..separator].trim();
+    let chat = trimmed[separator + 1..].trim();
+    if platform.is_empty() || chat.is_empty() {
+        return None;
+    }
+    Some(platform)
+}
+
+fn channel_platform_name(platform: &str) -> &str {
+    match platform {
+        "slack" => "Slack",
+        "discord" => "Discord",
+        other => other,
+    }
+}
+
+pub fn humanize_channel_delivery_failure(address_token: &str, raw_message: &str) -> String {
+    let trimmed = raw_message.trim();
+    let Some(platform) = channel_platform(address_token) else {
+        return format!(
+            "\"{address_token}\" isn't a valid channel address, so that message wasn't delivered."
+        );
+    };
+    let lower = trimmed.to_ascii_lowercase();
+    if lower.contains("not a valid channel address") {
+        return format!(
+            "\"{address_token}\" isn't a valid channel address, so that message wasn't delivered."
+        );
+    }
+    if trimmed == "No channel delivery mechanism is registered." {
+        return "Channel messaging isn't available on this computer, so that message wasn't delivered."
+            .to_string();
+    }
+    let platform_name = channel_platform_name(platform);
+    if lower.contains("no live ") && lower.contains(" connection") {
+        return format!(
+            "{platform_name} isn't connected on this computer, so that message wasn't delivered. Connect {platform_name} (add its token) to send there."
+        );
+    }
+    format!("Couldn't deliver that message to {platform_name}: {trimmed}")
+}
+
+pub fn build_channel_delivery_failure_wake_prompt(failures: &[Value]) -> String {
+    let mut lines = vec![
+        format!(
+            "{CHANNEL_DELIVERY_FAILED_WAKE_CUE} A message you tried to send to a channel did not go through."
+        ),
+        "This is a system notice about your own outbound send, not the user typing in this app. You may have already told the user it was sent, so correct the record.".to_string(),
+    ];
+    lines.extend(failures.iter().map(|failure| {
+        format!(
+            "- To {}: {}",
+            failure
+                .get("addressToken")
+                .and_then(Value::as_str)
+                .unwrap_or_default(),
+            failure
+                .get("reason")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+        )
+    }));
+    let plural = if failures.len() == 1 { "" } else { "s" };
+    lines.push(format!(
+        "Tell the user plainly here, in this in-app chat (a SendMessage with no channel target), that the message{plural} didn't go through and why, so they aren't left believing it was delivered. Don't silently retry the same channel; if it isn't connected, offer to help connect it."
+    ));
+    lines.join("\n")
 }
 
 pub fn redrivable_inbound_envelopes(envelopes: &[Value]) -> Vec<Value> {

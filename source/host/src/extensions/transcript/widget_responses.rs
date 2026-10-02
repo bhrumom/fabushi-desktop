@@ -6,6 +6,13 @@ use crate::extensions::local_tool_permission::local_tool_permission_resolution::
     LocalToolPermissionWidgetResponses, StaleLocalToolPermissionCardSettlement,
 };
 use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::extensions::transcript::send_message_shaping::skippable_prompt_summary;
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct UnansweredQuestionPrompts {
+    pub skipped_question_prompts: Vec<String>,
+    pub dismissed_question_prompts: Vec<String>,
+}
 
 #[derive(Clone)]
 pub struct WidgetResponses {
@@ -15,6 +22,45 @@ pub struct WidgetResponses {
 impl WidgetResponses {
     pub fn new(workers: Arc<ProductionSessionWorkers>) -> Self {
         Self { workers }
+    }
+
+    pub fn collect_unanswered_question_prompts(
+        &self,
+        agent_id: &str,
+    ) -> Result<UnansweredQuestionPrompts, String> {
+        let entries = self.workers.read_agent_transcript_entries(agent_id)?;
+        let mut prompts = UnansweredQuestionPrompts::default();
+        for entry in entries {
+            if entry.get("kind").and_then(Value::as_str) != Some("send-message")
+                || entry
+                    .get("respondedValue")
+                    .is_some_and(|value| !value.is_null())
+                || entry.get("widgetSkipped").and_then(Value::as_bool) == Some(true)
+            {
+                continue;
+            }
+            let Some(message) = entry.get("message") else {
+                continue;
+            };
+            let Some(summary) = skippable_prompt_summary(message) else {
+                continue;
+            };
+            if entry.get("widgetDismissed").and_then(Value::as_bool) == Some(true) {
+                prompts.dismissed_question_prompts.push(summary);
+            } else {
+                prompts.skipped_question_prompts.push(summary);
+            }
+            let Some(entry_id) = entry.get("id").and_then(Value::as_str) else {
+                continue;
+            };
+            let mut next = entry.clone();
+            if let Some(object) = next.as_object_mut() {
+                object.insert("widgetSkipped".into(), Value::Bool(true));
+            }
+            self.workers
+                .update_agent_transcript_entry(agent_id, entry_id, &next)?;
+        }
+        Ok(prompts)
     }
 
     pub fn settle_stale_local_tool_permission_card(

@@ -65,8 +65,10 @@ use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionS
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::agents::agent_messaging::{
-    AgentAddress, AgentGroupAddress, AgentMessageImage,
+    AgentAddress, AgentGroupAddress, AgentMessageImage, build_admin_broadcast_wake_prompt,
+    clamp_agent_message,
 };
+use mahayana_host_runtime::connectors::channel_delivery::HostChannelDelivery;
 use mahayana_host_runtime::agents::agent_profile::{SandAgentProfile, get_sand_profile_path};
 use mahayana_host_runtime::agents::settings_file::get_sand_settings_path;
 use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
@@ -105,8 +107,10 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
 use mahayana_host_runtime::extensions::transcript::background_wakes::{
-    BackgroundWakes, build_channel_inbound_wake_prompt, build_timeline_event_wake_prompt,
-    distinct_inbound_channel_addresses, format_channel_address_value,
+    BackgroundWakes, build_channel_delivery_failure_wake_prompt,
+    build_channel_inbound_wake_prompt, build_channel_outbound_message,
+    build_timeline_event_wake_prompt, distinct_inbound_channel_addresses,
+    format_channel_address_value, humanize_channel_delivery_failure,
     redrivable_inbound_envelopes,
 };
 use mahayana_host_runtime::extensions::transcript::completion_revivals::{
@@ -138,7 +142,9 @@ use mahayana_host_runtime::extensions::transcript::transcript_entry_ids::{
     TranscriptEntryIdKind, next_entry_id,
 };
 use mahayana_host_runtime::extensions::transcript::extension::start_transcript_extension;
-use mahayana_host_runtime::extensions::transcript::send_message_shaping::shape_send_prompt_media_args;
+use mahayana_host_runtime::extensions::transcript::send_message_shaping::{
+    collect_inbound_images, shape_send_prompt_media_args,
+};
 use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
     build_box_handoff_resume_send_args, settle_box_handoff_state,
 };
@@ -577,6 +583,7 @@ fn resolve_production_attachment_source(
 }
 
 struct ProductionSendMessageSink {
+    host_tx: mpsc::Sender<HostLaneRequest>,
     sessions: Arc<ProductionSessionWorkers>,
     forever_box: Arc<ForeverBoxService>,
     session_handoff: BoxHandoffService,
@@ -710,6 +717,38 @@ impl SendMessageSink for ProductionSendMessageSink {
         timestamp_ms: u64,
         tool_call_id: &str,
     ) -> Result<Option<String>, ProviderSessionError> {
+        let channel_delivery = message
+            .get("channel")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|address_token| (address_token.to_string(), message.clone()));
+        if let Some((address_token, outbound_message)) = channel_delivery {
+            let host_tx = self.host_tx.clone();
+            let agent_id = self.agent_id.clone();
+            if let Err(error) = thread::Builder::new()
+                .name(format!("mahayana-channel-send-{agent_id}"))
+                .spawn(move || {
+                    if let Err(error) = call_host_lane(
+                        &host_tx,
+                        "deliverToChannel",
+                        serde_json::json!({
+                            "agentId": agent_id,
+                            "addressToken": address_token,
+                            "message": outbound_message,
+                        }),
+                    ) {
+                        eprintln!("mahayana-host channel_delivery_dispatch_failed error={error}");
+                    }
+                })
+            {
+                eprintln!(
+                    "mahayana-host channel_delivery_dispatch_spawn_failed agent={} error={error}",
+                    self.agent_id
+                );
+            }
+        }
+
         let entry_id = format!("runner-send:{tool_call_id}");
         let entry = serde_json::json!({
             "id": entry_id.clone(),
@@ -976,6 +1015,7 @@ struct UnifiedGatewayApi {
     transcript_manager: Arc<TranscriptManager>,
     roster_emit: Arc<ProductionRosterEmit>,
     background_wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
+    channel_delivery: HostChannelDelivery,
     telemetry_logs: HostStructuredLogTelemetry,
     product_analytics: HostProductAnalytics,
     telemetry_api: HostTelemetryApi,
@@ -3355,6 +3395,13 @@ fn run_local_kickstart_turn(
     }
 }
 
+#[derive(Debug, Default)]
+struct BackgroundRevivalContext {
+    selected_images: Vec<serde_json::Value>,
+    skipped_question_prompts: Vec<String>,
+    dismissed_question_prompts: Vec<String>,
+}
+
 fn run_local_background_revival_turn(
     deps: LocalRoutedRunnerDeps,
     provider: RoutedProvider,
@@ -3363,6 +3410,28 @@ fn run_local_background_revival_turn(
     prompt: &str,
     is_silence_allowed: bool,
     auto_review_epoch: &str,
+) -> Result<RevivalExecution, String> {
+    run_local_background_revival_turn_with_context(
+        deps,
+        provider,
+        agent_id,
+        source,
+        prompt,
+        is_silence_allowed,
+        auto_review_epoch,
+        BackgroundRevivalContext::default(),
+    )
+}
+
+fn run_local_background_revival_turn_with_context(
+    deps: LocalRoutedRunnerDeps,
+    provider: RoutedProvider,
+    agent_id: &str,
+    source: &str,
+    prompt: &str,
+    is_silence_allowed: bool,
+    auto_review_epoch: &str,
+    context: BackgroundRevivalContext,
 ) -> Result<RevivalExecution, String> {
     let stream_id = format!("background-revival-{}", uuid::Uuid::new_v4());
     let client_nonce = format!(
@@ -3391,7 +3460,7 @@ fn run_local_background_revival_turn(
         .map_err(|error| error.to_string())?;
 
     let receiver = deps.events.subscribe();
-    let runner_args = serde_json::json!({
+    let mut runner_args = serde_json::json!({
         "provider": provider.as_str(),
         "agentId": agent_id,
         "streamId": stream_id,
@@ -3404,6 +3473,27 @@ fn run_local_background_revival_turn(
             "content": prompt,
         }],
     });
+    if !context.selected_images.is_empty() {
+        runner_args["selectedImages"] = serde_json::Value::Array(context.selected_images);
+    }
+    if !context.skipped_question_prompts.is_empty() {
+        runner_args["skippedQuestionPrompts"] = serde_json::Value::Array(
+            context
+                .skipped_question_prompts
+                .into_iter()
+                .map(serde_json::Value::String)
+                .collect(),
+        );
+    }
+    if !context.dismissed_question_prompts.is_empty() {
+        runner_args["dismissedQuestionPrompts"] = serde_json::Value::Array(
+            context
+                .dismissed_question_prompts
+                .into_iter()
+                .map(serde_json::Value::String)
+                .collect(),
+        );
+    }
     start_routed_provider_task(
         deps.routed_tool_relay,
         deps.mcp_service,
@@ -3574,7 +3664,7 @@ fn run_channel_inbound_revival_worker(
         let Ok(Some(summary)) = deps.session_workers.summarize_agent_by_id(&agent_id, None) else {
             break;
         };
-        if summary.is_group {
+        if summary.is_group || summary.remote_room.is_some() {
             continue;
         }
         if let Err(error) = append_channel_inbound_entries(&deps, roster.as_ref(), &agent_id, &envelopes) {
@@ -3608,7 +3698,19 @@ fn run_channel_inbound_revival_worker(
         let addresses = distinct_inbound_channel_addresses(&envelopes);
         publish_channel_activity(&deps.events, &agent_id, &addresses, true);
         let prompt = build_channel_inbound_wake_prompt(&envelopes);
-        let result = run_local_background_revival_turn(
+        let widget_prompts = WidgetResponses::new(Arc::clone(&deps.session_workers))
+            .collect_unanswered_question_prompts(&agent_id)
+            .unwrap_or_default();
+        let selected_images = collect_inbound_images(&envelopes)
+            .into_iter()
+            .map(|image| {
+                serde_json::json!({
+                    "data": image.data,
+                    "mimeType": image.mime_type,
+                })
+            })
+            .collect();
+        let result = run_local_background_revival_turn_with_context(
             deps.clone(),
             provider,
             &agent_id,
@@ -3616,6 +3718,11 @@ fn run_channel_inbound_revival_worker(
             &prompt,
             false,
             "continue",
+            BackgroundRevivalContext {
+                selected_images,
+                skipped_question_prompts: widget_prompts.skipped_question_prompts,
+                dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
+            },
         );
         publish_channel_activity(&deps.events, &agent_id, &addresses, false);
 
@@ -3683,6 +3790,163 @@ fn run_channel_inbound_revival_worker(
         &mut state.reviving_inbound_agent_ids,
         &agent_id,
     );
+}
+
+fn requeue_channel_failures(
+    wakes: &Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
+    agent_id: &str,
+    failures: Vec<serde_json::Value>,
+) {
+    let mut state = wakes
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let pending = state.pending_channel_failures.remove(agent_id).unwrap_or_default();
+    state.pending_channel_failures.insert(
+        agent_id.to_string(),
+        failures.into_iter().chain(pending).collect(),
+    );
+}
+
+fn run_channel_failure_revival_worker(
+    deps: LocalRoutedRunnerDeps,
+    roster: Arc<ProductionRosterEmit>,
+    wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
+    agent_id: String,
+) {
+    loop {
+        let failures = {
+            let mut state = wakes
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            BackgroundWakes::take_pending(&mut state.pending_channel_failures, &agent_id)
+        };
+        if failures.is_empty() {
+            break;
+        }
+
+        let summary = match deps.session_workers.summarize_agent_by_id(&agent_id, None) {
+            Ok(Some(summary)) => summary,
+            Ok(None) => continue,
+            Err(error) => {
+                eprintln!(
+                    "mahayana-host channel_failure_resolve_failed agent={} error={error}",
+                    agent_id
+                );
+                requeue_channel_failures(&wakes, &agent_id, failures);
+                break;
+            }
+        };
+        if summary.is_group {
+            continue;
+        }
+        let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
+            requeue_channel_failures(&wakes, &agent_id, failures);
+            break;
+        };
+        if deps.transcript_runtime.is_quiescing_for_upgrade() {
+            requeue_channel_failures(&wakes, &agent_id, failures);
+            break;
+        }
+
+        let prompt = build_channel_delivery_failure_wake_prompt(&failures);
+        let widget_prompts = WidgetResponses::new(Arc::clone(&deps.session_workers))
+            .collect_unanswered_question_prompts(&agent_id)
+            .unwrap_or_default();
+        match run_local_background_revival_turn_with_context(
+            deps.clone(),
+            provider,
+            &agent_id,
+            "connector",
+            &prompt,
+            false,
+            "continue",
+            BackgroundRevivalContext {
+                selected_images: Vec::new(),
+                skipped_question_prompts: widget_prompts.skipped_question_prompts,
+                dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
+            },
+        ) {
+            Ok(_) => {
+                let _ = roster.emit_agent_update(&agent_id);
+            }
+            Err(error) => {
+                let classified_error = ProviderSessionError::Tool(error.clone());
+                let report = AgentErrorReport {
+                    source: "channel_failure".into(),
+                    conversation_id: agent_id.clone(),
+                    request_id: None,
+                    error: classify_agent_error(&classified_error),
+                    detail: Some(sand_error_detail(&error)),
+                };
+                if let Err(telemetry_error) = deps.telemetry_logs.report_agent_error(&report) {
+                    eprintln!(
+                        "mahayana-host channel_failure_telemetry_failed agent={} error={telemetry_error}",
+                        agent_id
+                    );
+                }
+                let mut tray = provider_failure_tray(&agent_id, &error, started_at_ms() as i64);
+                tray.title = "Delivery-failure follow-up failed".into();
+                deps.trays.push_error(tray);
+            }
+        }
+    }
+    let mut state = wakes
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    BackgroundWakes::<serde_json::Value>::end_revival(
+        &mut state.reviving_channel_failure_agent_ids,
+        &agent_id,
+    );
+}
+
+fn queue_channel_delivery_failure(
+    deps: LocalRoutedRunnerDeps,
+    roster: Arc<ProductionRosterEmit>,
+    wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
+    agent_id: String,
+    address_token: String,
+    reason: String,
+) {
+    let should_spawn = {
+        let mut state = wakes
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        BackgroundWakes::enqueue(
+            &mut state.pending_channel_failures,
+            agent_id.clone(),
+            serde_json::json!({
+                "addressToken": address_token,
+                "reason": reason,
+            }),
+        );
+        BackgroundWakes::<serde_json::Value>::begin_revival(
+            &mut state.reviving_channel_failure_agent_ids,
+            &agent_id,
+        )
+    };
+    if !should_spawn {
+        return;
+    }
+    let worker_agent_id = agent_id.clone();
+    let worker_wakes = Arc::clone(&wakes);
+    if let Err(error) = thread::Builder::new()
+        .name(format!("mahayana-channel-failure-{agent_id}"))
+        .spawn(move || {
+            run_channel_failure_revival_worker(deps, roster, worker_wakes, worker_agent_id);
+        })
+    {
+        let mut state = wakes
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        BackgroundWakes::<serde_json::Value>::end_revival(
+            &mut state.reviving_channel_failure_agent_ids,
+            &agent_id,
+        );
+        eprintln!(
+            "mahayana-host channel_failure_worker_spawn_failed agent={} error={error}",
+            agent_id
+        );
+    }
 }
 
 fn start_ack_redrive_worker(
@@ -6188,6 +6452,7 @@ fn start_routed_provider_task(
             let send_message_delivery_counter = SendMessageDeliveryCounter::default();
             let base_send_message_sink: Arc<dyn SendMessageSink> = Arc::new(
                 ProductionSendMessageSink {
+                    host_tx: host_tx.clone(),
                     sessions: worker_sessions,
                     forever_box: Arc::clone(&forever_box),
                     session_handoff: session_handoff.clone(),
@@ -7175,6 +7440,182 @@ impl GatewayApi for UnifiedGatewayApi {
         method: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+        if method == "deliverToChannel" {
+            let agent_id = args
+                .get("agentId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "deliverToChannel requires agentId".into(),
+                ))?
+                .to_string();
+            let address_token = args
+                .get("addressToken")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "deliverToChannel requires addressToken".into(),
+                ))?
+                .to_string();
+            let message = args
+                .get("message")
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "deliverToChannel requires message".into(),
+                ))?;
+            let Some(outbound) = build_channel_outbound_message(message) else {
+                return Ok(serde_json::json!({"queued": false}));
+            };
+            let delivery = self.channel_delivery.clone();
+            let deps = self.local_routed_runner_deps();
+            let roster = Arc::clone(&self.roster_emit);
+            let wakes = Arc::clone(&self.background_wakes);
+            let worker_agent_id = agent_id.clone();
+            let worker_address = address_token.clone();
+            if let Err(error) = thread::Builder::new()
+                .name(format!("mahayana-channel-delivery-{agent_id}"))
+                .spawn(move || {
+                    if let Err(error) =
+                        delivery.deliver(&worker_agent_id, &worker_address, &outbound)
+                    {
+                        let reason =
+                            humanize_channel_delivery_failure(&worker_address, &error);
+                        let mut tray = provider_failure_tray(
+                            &worker_agent_id,
+                            &reason,
+                            started_at_ms() as i64,
+                        );
+                        tray.title = "Message not delivered".into();
+                        deps.trays.push_error(tray);
+                        queue_channel_delivery_failure(
+                            deps,
+                            roster,
+                            wakes,
+                            worker_agent_id,
+                            worker_address,
+                            reason,
+                        );
+                    }
+                })
+            {
+                return Err(GatewayCommandError::Internal(format!(
+                    "could not start channel delivery worker: {error}"
+                )));
+            }
+            return Ok(serde_json::json!({"queued": true}));
+        }
+
+        if method == "broadcastToAgents" {
+            let message = args
+                .get("message")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default();
+            let text = clamp_agent_message(message);
+            if text.is_empty()
+                || self.transcript_runtime.is_quiescing_for_upgrade()
+                || configured_routed_provider(&self.data_dir.join("settings.json")).is_none()
+            {
+                return Ok(serde_json::json!({"total": 0, "scheduled": 0}));
+            }
+            let ids = match args.get("targets") {
+                Some(serde_json::Value::String(targets)) if targets == "all" => self
+                    .session_workers
+                    .list_agent_summaries(None)
+                    .map_err(GatewayCommandError::Internal)?
+                    .into_iter()
+                    .map(|summary| summary.id)
+                    .collect::<Vec<_>>(),
+                Some(serde_json::Value::Array(targets)) => {
+                    let mut ids = Vec::<String>::new();
+                    for id in targets.iter().filter_map(serde_json::Value::as_str) {
+                        let id = id.trim();
+                        if !id.is_empty() && !ids.iter().any(|known| known == id) {
+                            ids.push(id.to_string());
+                        }
+                    }
+                    ids
+                }
+                _ => {
+                    return Err(GatewayCommandError::BadRequest(
+                        "broadcastToAgents requires targets = \"all\" or an array".into(),
+                    ));
+                }
+            };
+            let total = ids.len();
+            let provider = configured_routed_provider(&self.data_dir.join("settings.json"))
+                .ok_or_else(|| GatewayCommandError::Internal(
+                    "no routed provider configured for broadcast".into(),
+                ))?;
+            let mut scheduled = 0usize;
+            for agent_id in ids {
+                let Ok(Some(summary)) =
+                    self.session_workers.summarize_agent_by_id(&agent_id, None)
+                else {
+                    continue;
+                };
+                if summary.is_group || summary.remote_room.is_some() {
+                    continue;
+                }
+                let deps = self.local_routed_runner_deps();
+                let roster = Arc::clone(&self.roster_emit);
+                let prompt = build_admin_broadcast_wake_prompt(&text);
+                let worker_agent_id = agent_id.clone();
+                let worker_provider = provider;
+                if thread::Builder::new()
+                    .name(format!("mahayana-broadcast-{agent_id}"))
+                    .spawn(move || {
+                        match run_local_background_revival_turn(
+                            deps.clone(),
+                            worker_provider,
+                            &worker_agent_id,
+                            "broadcast",
+                            &prompt,
+                            false,
+                            "continue",
+                        ) {
+                            Ok(execution) => {
+                                if !execution.aborted && execution.sent_message_count == 0 {
+                                    let _ = run_local_background_revival_turn(
+                                        deps.clone(),
+                                        worker_provider,
+                                        &worker_agent_id,
+                                        "broadcast",
+                                        REPLY_NUDGE_PROMPT,
+                                        false,
+                                        "continue",
+                                    );
+                                }
+                                let _ = roster.emit_agent_update(&worker_agent_id);
+                            }
+                            Err(error) => {
+                                let classified_error = ProviderSessionError::Tool(error.clone());
+                                let report = AgentErrorReport {
+                                    source: "broadcast".into(),
+                                    conversation_id: worker_agent_id.clone(),
+                                    request_id: None,
+                                    error: classify_agent_error(&classified_error),
+                                    detail: Some(sand_error_detail(&error)),
+                                };
+                                let _ = deps.telemetry_logs.report_agent_error(&report);
+                                let mut tray = provider_failure_tray(
+                                    &worker_agent_id,
+                                    &error,
+                                    started_at_ms() as i64,
+                                );
+                                tray.title = "Broadcast message failed".into();
+                                deps.trays.push_error(tray);
+                            }
+                        }
+                    })
+                    .is_ok()
+                {
+                    scheduled += 1;
+                }
+            }
+            return Ok(serde_json::json!({"total": total, "scheduled": scheduled}));
+        }
+
         if method == "wakeForInbound" {
             let agent_id = args
                 .get("agentId")
@@ -7801,6 +8242,34 @@ impl GatewayApi for UnifiedGatewayApi {
             }
             return result;
         }
+        let channel_timeline_context =
+            if matches!(method, "connectChannel" | "disconnectChannel") {
+                args.get("id")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .zip(
+                        args.get("platform")
+                            .and_then(serde_json::Value::as_str)
+                            .map(str::trim)
+                            .filter(|value| !value.is_empty()),
+                    )
+                    .map(|(agent_id, platform)| {
+                        let previous_label = self
+                            .session_workers
+                            .list_agent_channels(agent_id)
+                            .ok()
+                            .and_then(|channels| {
+                                channels
+                                    .into_iter()
+                                    .find(|connection| connection.platform == platform)
+                                    .map(|connection| connection.label)
+                            });
+                        (agent_id.to_string(), platform.to_string(), previous_label)
+                    })
+            } else {
+                None
+            };
         if let Some(result) =
             dispatch_production_session_gateway_call_with_content_search(
                 &self.session_workers,
@@ -7815,6 +8284,36 @@ impl GatewayApi for UnifiedGatewayApi {
             })?;
             if method == "listAgents" {
                 self.transcript_manager.decorate_agent_summaries(&mut value);
+            }
+            if let Some((agent_id, platform, previous_label)) = channel_timeline_context {
+                let current_label = value.as_array().and_then(|connections| {
+                    connections.iter().find_map(|connection| {
+                        (connection.get("platform").and_then(serde_json::Value::as_str)
+                            == Some(platform.as_str()))
+                        .then(|| {
+                            connection
+                                .get("label")
+                                .and_then(serde_json::Value::as_str)
+                                .map(ToOwned::to_owned)
+                        })
+                        .flatten()
+                    })
+                });
+                let label = current_label
+                    .or(previous_label)
+                    .unwrap_or_else(|| platform.clone());
+                let event_type = if method == "connectChannel" {
+                    "channel-connected"
+                } else {
+                    "channel-disconnected"
+                };
+                self.roster_emit.publish_timeline_event(
+                    &agent_id,
+                    serde_json::json!({
+                        "type": event_type,
+                        "label": label,
+                    }),
+                );
             }
             return Ok(value);
         }
@@ -9014,9 +9513,19 @@ fn main() {
     }
     {
         let lifecycle_logs = host_telemetry.logs.clone();
+        let lifecycle_roster = Arc::clone(&roster_emit);
         transcript_manager
             .automation_runtime()
             .set_lifecycle_reporter(Some(Arc::new(move |event| {
+                lifecycle_roster.publish_timeline_event(
+                    &event.agent_id,
+                    serde_json::json!({
+                        "type": "automation-changed",
+                        "action": event.action.as_str(),
+                        "automationId": event.automation_id.clone(),
+                        "automationName": event.automation_name.clone(),
+                    }),
+                );
                 let _ = lifecycle_logs.report_automation_lifecycle(event);
             })));
     }
@@ -9931,6 +10440,7 @@ fn main() {
             transcript_manager: Arc::clone(&transcript_manager),
             roster_emit: Arc::clone(&roster_emit),
             background_wakes: Arc::clone(&timeline_event_wakes),
+            channel_delivery: HostChannelDelivery::default(),
             telemetry_logs: host_telemetry.logs.clone(),
             product_analytics: host_telemetry.analytics.clone(),
             telemetry_api: host_telemetry.api(),
