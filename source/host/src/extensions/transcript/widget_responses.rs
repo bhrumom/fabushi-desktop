@@ -367,37 +367,13 @@ impl WidgetResponses {
             .clone();
         if let Some(auto_review) = auto_review {
             for agent_id in auto_review.agent_ids_with_pending_approvals() {
-                let pending = auto_review
-                    .agent_ids_with_pending_approvals()
-                    .into_iter()
-                    .any(|candidate| candidate == agent_id);
-                if pending {
-                    let request_ids = self
-                        .workers
-                        .read_agent_transcript_entries(&agent_id)?
-                        .into_iter()
-                        .filter_map(|entry| {
-                            (entry.pointer("/message/type").and_then(Value::as_str)
-                                == Some("auto-review-approval")
-                                && entry.pointer("/message/approval/status").and_then(Value::as_str)
-                                    == Some("pending"))
-                            .then(|| {
-                                entry
-                                    .pointer("/message/approval/requestId")
-                                    .and_then(Value::as_str)
-                                    .map(ToOwned::to_owned)
-                            })
-                            .flatten()
-                        })
-                        .collect::<Vec<_>>();
-                    for request_id in request_ids {
-                        if auto_review.expire_pending_approval(
-                            &request_id,
-                            &agent_id,
-                            SandAutoReviewExpiryCause::Other("stale_sweep".into()),
-                        )? {
-                            retired = retired.saturating_add(1);
-                        }
+                for request_id in auto_review.pending_approval_ids_for_agent(&agent_id) {
+                    if auto_review.expire_pending_approval(
+                        &request_id,
+                        &agent_id,
+                        SandAutoReviewExpiryCause::Other("stale_sweep".into()),
+                    )? {
+                        retired = retired.saturating_add(1);
                     }
                 }
             }

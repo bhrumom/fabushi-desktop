@@ -315,6 +315,22 @@ impl AutoReviewService {
         Ok(false)
     }
 
+    pub fn pending_approval_ids_for_agent(&self, agent_id: &str) -> Vec<String> {
+        let controllers = self
+            .controllers
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut ids = controllers
+            .values()
+            .flat_map(|binding| binding.controller.get_pending_approvals())
+            .filter(|approval| approval.agent_id == agent_id)
+            .map(|approval| approval.id)
+            .collect::<Vec<_>>();
+        ids.sort();
+        ids.dedup();
+        ids
+    }
+
     pub fn agent_ids_with_pending_approvals(&self) -> Vec<String> {
         let controllers = self
             .controllers
