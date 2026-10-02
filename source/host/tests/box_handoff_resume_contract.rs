@@ -250,6 +250,7 @@ fn awaiting_state_sink_preserves_tab_identity_conditional_clear_and_roster_proje
 #[test]
 fn shipping_host_wires_box_listener_mcp_resume_and_error_projection() {
     const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    const TRANSCRIPT_MANAGER: &str = include_str!("../src/extensions/transcript/transcript_manager.rs");
     assert!(SHIPPING_HOST.contains("resume_with_hidden_handoff("));
     assert!(SHIPPING_HOST.contains("run_local_background_revival_turn_with_context("));
     assert!(SHIPPING_HOST.contains("should_resume_hidden_handoff(true, is_group)"));
@@ -259,7 +260,9 @@ fn shipping_host_wires_box_listener_mcp_resume_and_error_projection() {
     assert!(SHIPPING_HOST.contains("worker_is_handoff_resume"));
     assert!(SHIPPING_HOST.contains("subscribe_to_auth_completion"));
     assert!(SHIPPING_HOST.contains("resume_after_mcp_auth("));
-    assert!(SHIPPING_HOST.contains("settle_box_handoff_state_with_sink("));
+    assert!(SHIPPING_HOST.contains(".hand_back_forever_box("));
+    assert!(TRANSCRIPT_MANAGER.contains("settle_box_handoff_state_with_sink("));
+    assert!(TRANSCRIPT_MANAGER.contains(".resolve_box_request_tracking(&end.request_id)"));
     assert!(SHIPPING_HOST.contains("source: \"resume\".into()"));
     assert!(SHIPPING_HOST.contains("BOX_HANDOFF_RESUME_TITLE"));
     assert!(SHIPPING_HOST.contains("LISTENER_CONNECT_RESUME_TITLE"));
