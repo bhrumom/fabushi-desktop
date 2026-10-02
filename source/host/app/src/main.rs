@@ -73,7 +73,6 @@ use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
     AgentWakeRequest, ProductionAgentToAgentMessaging, agent_inbound_failure_report,
     agent_inbound_failure_tray, persist_agent_inbound_message, should_interrupt_priority_peer,
 };
-use mahayana_host_runtime::extensions::memory::agent_state::SandAgentState;
 use mahayana_host_runtime::extensions::telemetry::HostTelemetryProjection;
 use mahayana_host_runtime::extensions::local_exec::extension::HostLocalExecExtension;
 use mahayana_host_runtime::extensions::local_tool_permission::extension::{
@@ -282,12 +281,11 @@ use mahayana_host_runtime::runner::turn_memory::{
 };
 use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt_section;
 use mahayana_host_runtime::runner::tools::sand_state_tool::{
-    RoutineAutoReviewCallback, RoutinePostWriteCallback, SandStateWriter,
+    RoutineAutoReviewCallback, RoutinePostWriteCallback,
 };
 use mahayana_host_runtime::runner::tools::listener_connect_cards::{
     surface_listener_connect_cards,
 };
-use mahayana_host_runtime::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BrowserAutoReviewCallback, BrowserPersistImageCallback, BrowserPossibleNavigationCallback,
     BrowserToolExecutor, ProductionBrowserToolExecutor, capture_browser_review_state,
@@ -5696,31 +5694,13 @@ fn start_routed_provider_task(
         .filter(|value| !value.is_empty())
         .map(ToOwned::to_owned);
     let worker_send_is_fork = turn_input.options.is_fork;
-    let state_sand_root = session_workers
-        .memory_service()
-        .agents_root_dir()
-        .parent()
-        .map(Path::to_path_buf)
-        .ok_or_else(|| GatewayCommandError::Internal(
-            "production memory agents root has no sand root parent".into()
-        ))?;
-    let state_writer: Arc<dyn SandStateWriter> = Arc::new(
-        SandAgentState::new(state_sand_root, agent_id.clone())
-            .map_err(|error| GatewayCommandError::Internal(format!(
-                "could not create production agent-state owner for {agent_id}: {error}"
-            )))?,
-    );
-    let multitask_todo_state: Option<Arc<dyn MultitaskTodoState>> = if multitask_enabled {
-        Some(
-            session_workers
-                .open_agent_db_owner(&agent_id)
-                .map_err(|error| GatewayCommandError::Internal(format!(
-                    "could not open production multitask todo state for {agent_id}: {error}"
-                )))?,
-        )
-    } else {
-        None
-    };
+    let turn_state_surfaces = host_runner_composition
+        .compose_turn_state_surfaces(&session_workers, &agent_id, multitask_enabled)
+        .map_err(|error| GatewayCommandError::Internal(format!(
+            "could not compose production turn state surfaces for {agent_id}: {error}"
+        )))?;
+    let state_writer = turn_state_surfaces.state_writer;
+    let multitask_todo_state = turn_state_surfaces.multitask_todo_state;
     let cloud_agent_dir = session_workers
         .session_db_path(&agent_id)
         .map_err(GatewayCommandError::Internal)?

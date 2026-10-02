@@ -10,6 +10,7 @@ use crate::extensions::local_tool_permission::local_tool_permission_controller::
     SandLocalToolControllerSubscription, SandLocalToolPermissionController,
     SandLocalToolRequestStatus,
 };
+use crate::extensions::memory::agent_state::SandAgentState;
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::runner::box_tool_access::BoxShellAutoReviewCallback;
 use crate::runner::computer_use::ComputerUseCoordination;
@@ -41,6 +42,11 @@ type PermissionEventSink = Arc<dyn Fn(&SandLocalToolControllerEvent) + Send + Sy
 ///
 /// Concrete services are resolved by the shipping Host, while this owner controls
 /// the ordering and one-time projection into the Runner boundary.
+pub struct ProductionTurnStateSurfaces {
+    pub state_writer: Arc<dyn SandStateWriter>,
+    pub multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
+}
+
 pub struct ProductionTurnCompositionHooks {
     pub agent_management_sink: Arc<dyn AgentManagementSink>,
     pub state_writer: Arc<dyn SandStateWriter>,
@@ -87,6 +93,32 @@ impl HostRunnerComposition {
             surfaces: Mutex::new(HashMap::new()),
             computer_use: Arc::new(Mutex::new(ComputerUseCoordination::new(true))),
         }
+    }
+
+    /// Resolve turn-scoped state surfaces through the canonical Host composition owner.
+    pub fn compose_turn_state_surfaces(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        agent_id: &str,
+        multitask_enabled: bool,
+    ) -> Result<ProductionTurnStateSurfaces, String> {
+        let sand_root = sessions
+            .memory_service()
+            .agents_root_dir()
+            .parent()
+            .map(Path::to_path_buf)
+            .ok_or_else(|| "production memory agents root has no sand root parent".to_string())?;
+        let state_writer: Arc<dyn SandStateWriter> =
+            Arc::new(SandAgentState::new(sand_root, agent_id.to_string())?);
+        let multitask_todo_state = if multitask_enabled {
+            Some(sessions.open_agent_db_owner(agent_id)? as Arc<dyn MultitaskTodoState>)
+        } else {
+            None
+        };
+        Ok(ProductionTurnStateSurfaces {
+            state_writer,
+            multitask_todo_state,
+        })
     }
 
     /// Compose the production transcript/checkpoint boundary for one Runner session.

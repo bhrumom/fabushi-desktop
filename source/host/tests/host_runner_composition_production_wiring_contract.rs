@@ -83,3 +83,36 @@ fn host_runner_composition_owns_transcript_checkpoint_wiring() {
         );
     }
 }
+
+#[test]
+fn host_runner_composition_owns_turn_state_surface_wiring() {
+    for needle in [
+        "pub struct ProductionTurnStateSurfaces",
+        "pub fn compose_turn_state_surfaces(",
+        ".memory_service()",
+        ".agents_root_dir()",
+        "SandAgentState::new(sand_root, agent_id.to_string())",
+        "sessions.open_agent_db_owner(agent_id)?",
+    ] {
+        assert!(
+            OWNER.contains(needle),
+            "HostRunnerComposition missing state-surface responsibility: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains(
+            ".compose_turn_state_surfaces(&session_workers, &agent_id, multitask_enabled)"
+        ),
+        "shipping Host must consume HostRunnerComposition state surfaces",
+    );
+    for needle in [
+        "SandAgentState::new(state_sand_root",
+        "could not open production multitask todo state for {agent_id}",
+        "production memory agents root has no sand root parent",
+    ] {
+        assert!(
+            !SHIPPING_HOST.contains(needle),
+            "shipping Host still owns turn state-surface composition: {needle}",
+        );
+    }
+}
