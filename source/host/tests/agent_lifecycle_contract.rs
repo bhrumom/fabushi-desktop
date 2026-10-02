@@ -524,3 +524,138 @@ fn shipping_gateway_contract_validates_delete_arguments_and_uses_lifecycle_owner
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn lifecycle_roster_owner_covers_unread_notifications_hidden_and_avatar_mutations() {
+    let root = temp_root("roster-setting-mutations");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let transcript = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&events);
+    let roster = Arc::new(ProductionRosterEmit::new(
+        Arc::clone(&production),
+        transcript,
+        Arc::new(move |event| sink.lock().expect("events").push(event)),
+    ));
+    let deletion = AgentDeletionRuntimeDeps::default();
+
+    let created = dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
+        &production,
+        &deletion,
+        Some(Arc::clone(&roster)),
+        "createAgent",
+        &json!({"name":"Settings Agent","description":""}),
+    )
+    .expect("create handled")
+    .expect("create");
+    let agent_id = created["agent"]["id"].as_str().expect("agent id").to_string();
+
+    for (method, args, field, expected) in [
+        (
+            "setAgentUnread",
+            json!({"id": agent_id, "isUnread": true, "atMs": 1234.0}),
+            "hasUnread",
+            json!(true),
+        ),
+        (
+            "setAgentNotifyOnUpdates",
+            json!({"id": agent_id, "isEnabled": false}),
+            "notifyOnUpdatesEnabled",
+            json!(false),
+        ),
+        (
+            "setAgentHiddenFromSidebar",
+            json!({"id": agent_id, "isHidden": true}),
+            "isHiddenFromSidebar",
+            json!(true),
+        ),
+    ] {
+        let before = events.lock().expect("events").len();
+        let result = dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
+            &production,
+            &deletion,
+            Some(Arc::clone(&roster)),
+            method,
+            &args,
+        )
+        .expect("setting handled")
+        .expect("setting");
+        assert_eq!(result, serde_json::Value::Null);
+        let observed = events.lock().expect("events");
+        assert!(observed.len() > before);
+        let delta = observed.last().expect("setting delta");
+        assert_eq!(delta["channel"], "agent-upserted");
+        assert_eq!(delta["payload"]["agent"][field], expected);
+    }
+
+    let png =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z2S8AAAAASUVORK5CYII=";
+    let before_avatar = events.lock().expect("events").len();
+    let avatar_summary = dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
+        &production,
+        &deletion,
+        Some(Arc::clone(&roster)),
+        "setAgentAvatarBytes",
+        &json!({"id": agent_id, "pngBase64": png}),
+    )
+    .expect("avatar handled")
+    .expect("avatar");
+    assert!(avatar_summary["snapshotEpoch"].is_string());
+    assert!(avatar_summary["snapshotSeq"].as_u64().is_some());
+
+    let observed = events.lock().expect("events").clone();
+    let avatar_events = &observed[before_avatar..];
+    assert_eq!(avatar_events.len(), 2);
+    assert_eq!(avatar_events[0]["channel"], "agent-upserted");
+    assert_eq!(avatar_events[1]["channel"], "profile-changed");
+
+    let avatar = dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
+        &production,
+        &deletion,
+        Some(Arc::clone(&roster)),
+        "getAgentAvatar",
+        &json!({"id": agent_id}),
+    )
+    .expect("get avatar handled")
+    .expect("get avatar");
+    assert!(avatar["version"].as_str().is_some_and(|value| !value.is_empty()));
+    assert!(avatar["dataUrl"]
+        .as_str()
+        .is_some_and(|value| value.starts_with("data:image/png;base64,")));
+
+    production.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_gateway_orders_lifecycle_owner_before_generic_session_gateway() {
+    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
+    let lifecycle = main
+        .find("dispatch_production_agent_lifecycle_gateway_call_with_runtimes(")
+        .expect("lifecycle dispatcher");
+    let session = main
+        .find("dispatch_production_session_gateway_call_with_content_search(")
+        .expect("session dispatcher");
+    assert!(lifecycle < session, "lifecycle mutations must win before the generic session fallback");
+
+    let lifecycle_source =
+        fs::read_to_string(manifest_dir.join("src/extensions/transcript/agent_lifecycle.rs"))
+            .expect("lifecycle source");
+    for method in [
+        "setAgentUnread",
+        "setAgentNotifyOnUpdates",
+        "setAgentHiddenFromSidebar",
+        "setAgentAvatarBytes",
+        "getAgentAvatar",
+    ] {
+        assert!(
+            lifecycle_source.contains(&format!("\"{method}\" => lifecycle.")),
+            "{method} must be owned by the production lifecycle dispatcher"
+        );
+    }
+}

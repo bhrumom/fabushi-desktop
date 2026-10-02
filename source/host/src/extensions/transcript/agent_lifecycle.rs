@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use serde_json::{Map, Value, json};
 
 use crate::agents::agent_clone::{clone_agent_dir, clone_agent_display_name};
@@ -445,6 +446,86 @@ impl ProductionAgentLifecycle {
         Ok(finalized)
     }
 
+    fn set_agent_unread_from_args(
+        &self,
+        args: &Value,
+    ) -> Result<Value, AgentLifecycleGatewayError> {
+        let agent_id = required_string(args, "id")?;
+        let is_unread = required_bool(args, "isUnread")?;
+        let at_ms = args
+            .get("atMs")
+            .and_then(Value::as_f64)
+            .unwrap_or_else(system_now_ms);
+        self.store
+            .set_session_unread(agent_id, is_unread, at_ms)
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        self.emit_agent_update(agent_id)
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        Ok(Value::Null)
+    }
+
+    fn set_agent_notify_on_updates_from_args(
+        &self,
+        args: &Value,
+    ) -> Result<Value, AgentLifecycleGatewayError> {
+        let agent_id = required_string(args, "id")?;
+        let enabled = required_bool(args, "isEnabled")?;
+        self.store
+            .set_session_notify_on_updates(agent_id, enabled)
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        self.emit_agent_update(agent_id)
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        Ok(Value::Null)
+    }
+
+    fn set_agent_hidden_from_sidebar_from_args(
+        &self,
+        args: &Value,
+    ) -> Result<Value, AgentLifecycleGatewayError> {
+        let agent_id = required_string(args, "id")?;
+        let hidden = required_bool(args, "isHidden")?;
+        self.store
+            .set_session_hidden_from_sidebar(agent_id, hidden)
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        self.emit_agent_update(agent_id)
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        Ok(Value::Null)
+    }
+
+    fn set_agent_avatar_bytes_from_args(
+        &self,
+        args: &Value,
+    ) -> Result<Value, AgentLifecycleGatewayError> {
+        let agent_id = required_string(args, "id")?;
+        let png = decode_optional_png(args)?;
+        let summary = self
+            .store
+            .set_agent_avatar_bytes(agent_id, png.as_deref())
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        let finalized = match summary {
+            Some(summary) => self.finalize_summary_for_rpc(summary)?,
+            None => Value::Null,
+        };
+        self.emit_agent_profile_update(agent_id)
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        Ok(finalized)
+    }
+
+    fn get_agent_avatar_from_args(
+        &self,
+        args: &Value,
+    ) -> Result<Value, AgentLifecycleGatewayError> {
+        let agent_id = required_string(args, "id")?;
+        let avatar = self
+            .store
+            .get_agent_avatar(agent_id)
+            .map_err(AgentLifecycleGatewayError::internal)?;
+        Ok(json!({
+            "version": avatar.version,
+            "dataUrl": avatar.data_url,
+        }))
+    }
+
     pub fn clone_agent(&self, source_id: &str) -> Result<Value, String> {
         let summary = self
             .store
@@ -674,6 +755,11 @@ pub fn dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes(
         "createAgent" => lifecycle.create_agent_from_args(args, true),
         "createBackgroundAgent" => lifecycle.create_agent_from_args(args, false),
         "updateAgent" => lifecycle.update_agent_from_args(args),
+        "setAgentUnread" => lifecycle.set_agent_unread_from_args(args),
+        "setAgentNotifyOnUpdates" => lifecycle.set_agent_notify_on_updates_from_args(args),
+        "setAgentHiddenFromSidebar" => lifecycle.set_agent_hidden_from_sidebar_from_args(args),
+        "setAgentAvatarBytes" => lifecycle.set_agent_avatar_bytes_from_args(args),
+        "getAgentAvatar" => lifecycle.get_agent_avatar_from_args(args),
         "duplicateAgent" => required_string(args, "id").and_then(|agent_id| {
             lifecycle
                 .clone_agent(agent_id)
@@ -724,6 +810,28 @@ fn required_string<'a>(
         .ok_or_else(|| {
             AgentLifecycleGatewayError::bad(format!("missing or invalid {field}"))
         })
+}
+
+fn required_bool(
+    args: &Value,
+    field: &str,
+) -> Result<bool, AgentLifecycleGatewayError> {
+    args.get(field)
+        .and_then(Value::as_bool)
+        .ok_or_else(|| AgentLifecycleGatewayError::bad(format!("missing or invalid {field}")))
+}
+
+fn decode_optional_png(args: &Value) -> Result<Option<Vec<u8>>, AgentLifecycleGatewayError> {
+    match args.get("pngBase64") {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(encoded)) => BASE64_STANDARD
+            .decode(encoded.trim())
+            .map(Some)
+            .map_err(|error| AgentLifecycleGatewayError::bad(format!("invalid pngBase64: {error}"))),
+        Some(_) => Err(AgentLifecycleGatewayError::bad(
+            "missing or invalid pngBase64",
+        )),
+    }
 }
 
 fn system_now_ms() -> f64 {
