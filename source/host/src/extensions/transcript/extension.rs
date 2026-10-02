@@ -128,6 +128,10 @@ impl TranscriptExtensionEventBridge {
         self.emit("transcript.automation-config-changed", json!({}));
     }
 
+    pub fn channel_config_changed(&self) {
+        self.emit("transcript.channel-config-changed", json!({}));
+    }
+
     pub fn listener_connect_card(&self, agent_id: &str, platform: &str) {
         self.emit(
             "transcript.listener-connect-card",
@@ -219,6 +223,10 @@ fn start_transcript_extension_with_event_bridge(
         event_sink,
     ));
     roster_emit.set_outline_stream_coalescing_ms(OUTLINE_STREAM_COALESCE_MS);
+    manager
+        .widget_responses()
+        .bind_roster(Arc::clone(&roster_emit))
+        .expect("Transcript WidgetResponses roster must be configured exactly once");
 
     let (profile_events, profile_watch_subscriptions) = if let Some(events) = events.as_ref() {
         (

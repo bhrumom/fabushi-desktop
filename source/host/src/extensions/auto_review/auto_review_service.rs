@@ -283,6 +283,38 @@ impl AutoReviewService {
         ))
     }
 
+    pub fn expire_pending_approval(
+        &self,
+        request_id: &str,
+        agent_id: &str,
+        cause: SandAutoReviewExpiryCause,
+    ) -> Result<bool, String> {
+        let owner = {
+            let controllers = self
+                .controllers
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            controllers
+                .values()
+                .find(|binding| {
+                    binding
+                        .controller
+                        .get_pending_approvals()
+                        .iter()
+                        .any(|approval| {
+                            approval.id == request_id && approval.agent_id == agent_id
+                        })
+                })
+                .map(|binding| Arc::clone(&binding.controller))
+        };
+        if let Some(owner) = owner {
+            if owner.expire_pending_approval(request_id, cause) {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
     pub fn agent_ids_with_pending_approvals(&self) -> Vec<String> {
         let controllers = self
             .controllers

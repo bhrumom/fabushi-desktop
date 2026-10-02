@@ -465,6 +465,24 @@ impl SandAutoReviewController {
         Some(resolved)
     }
 
+    pub fn expire_pending_approval(
+        &self,
+        approval_id: &str,
+        cause: SandAutoReviewExpiryCause,
+    ) -> bool {
+        let Some(reason) = self.pending_reason(approval_id) else {
+            return false;
+        };
+        self.retire(
+            approval_id,
+            cause,
+            SandAutoReviewDecision::Denied {
+                reason: format_sand_auto_review_denied_reason(&reason),
+            },
+        );
+        true
+    }
+
     pub fn get_pending_approvals(&self) -> Vec<SandAutoReviewApproval> {
         self.state
             .lock()

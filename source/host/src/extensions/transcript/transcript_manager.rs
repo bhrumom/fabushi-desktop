@@ -131,16 +131,21 @@ impl TranscriptManager {
     ) -> Self {
         let root_dir = root_dir.as_ref();
         let automation_runtime = Arc::new(AutomationRuntime::new(Arc::clone(&session_workers)));
+        let transcript_runtime = Arc::new(ProductionTranscriptRuntime::new(Some(root_dir)));
         let shared_rooms = Arc::new(SharedRooms::new(Arc::clone(&session_workers)));
         let group_chat = Arc::new(GroupChatGlue::new(Arc::clone(&session_workers)));
-        let widget_responses = Arc::new(WidgetResponses::new(Arc::clone(&session_workers)));
+        let widget_responses = Arc::new(WidgetResponses::with_runtime(
+            Arc::clone(&session_workers),
+            Arc::clone(&automation_runtime),
+            Arc::clone(&transcript_runtime),
+        ));
         let workflow_commands = Arc::new(WorkflowCommands::new(
             Arc::clone(&session_workers),
             Arc::clone(&automation_runtime),
         ));
         Self {
             session_workers,
-            transcript_runtime: Arc::new(ProductionTranscriptRuntime::new(Some(root_dir))),
+            transcript_runtime,
             runner_registry: Arc::new(TranscriptRunnerRegistry::default()),
             ack_obligations: Arc::new(AckObligations::new(root_dir)),
             automation_runtime,
@@ -212,6 +217,87 @@ impl TranscriptManager {
 
     pub fn widget_responses(&self) -> Arc<WidgetResponses> {
         Arc::clone(&self.widget_responses)
+    }
+
+    pub fn respond_to_widget_with<Send>(
+        &self,
+        entry_id: &str,
+        value: &str,
+        agent_id: &str,
+        now_ms: f64,
+        send: Send,
+    ) -> Result<bool, String>
+    where
+        Send: FnOnce(Value) -> Result<(), String>,
+    {
+        self.switch_agent(agent_id, now_ms)?;
+        self.widget_responses
+            .respond_to_widget_with(entry_id, value, agent_id, now_ms, send)
+    }
+
+    pub fn settle_stale_auto_review_card(
+        &self,
+        agent_id: &str,
+        entry_id: &str,
+        request_id: &str,
+    ) -> Result<bool, String> {
+        self.widget_responses
+            .settle_stale_auto_review_card(agent_id, entry_id, request_id)
+    }
+
+    pub fn expire_all_pending_auto_review_approval_cards(&self) -> Result<usize, String> {
+        self.widget_responses
+            .expire_all_pending_auto_review_approval_cards()
+    }
+
+    pub fn dismiss_widget(
+        &self,
+        entry_id: &str,
+        agent_id: &str,
+        now_ms: f64,
+    ) -> Result<bool, String> {
+        self.switch_agent(agent_id, now_ms)?;
+        self.widget_responses.dismiss_widget(entry_id, agent_id)
+    }
+
+    pub fn submit_secret_with<Resume>(
+        &self,
+        entry_id: &str,
+        value: &str,
+        agent_id: &str,
+        now_ms: f64,
+        resume: Resume,
+    ) -> Result<bool, String>
+    where
+        Resume: FnOnce(String) -> Result<(), String>,
+    {
+        self.switch_agent(agent_id, now_ms)?;
+        let Some(prompt) = self.widget_responses.submit_secret(entry_id, value, agent_id)? else {
+            return Ok(false);
+        };
+        resume(prompt)?;
+        Ok(true)
+    }
+
+    pub fn react_to_message_with<Resume>(
+        &self,
+        entry_id: &str,
+        emoji: &str,
+        agent_id: &str,
+        now_ms: f64,
+        resume: Resume,
+    ) -> Result<bool, String>
+    where
+        Resume: FnOnce(String) -> Result<(), String>,
+    {
+        self.switch_agent(agent_id, now_ms)?;
+        let prompt = self
+            .widget_responses
+            .react_to_message(entry_id, emoji, agent_id)?;
+        if let Some(prompt) = prompt {
+            resume(prompt)?;
+        }
+        Ok(true)
     }
 
     pub fn workflow_commands(&self) -> Arc<WorkflowCommands> {

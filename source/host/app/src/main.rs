@@ -9065,6 +9065,80 @@ impl GatewayApi for UnifiedGatewayApi {
                 ))
             });
         }
+        if method == "respondToWidget" {
+            let agent_id = required_string_arg(&args, "agentId", method)?;
+            let entry_id = required_string_arg(&args, "entryId", method)?;
+            let value = required_string_arg(&args, "value", method)?;
+            let accepted = self
+                .transcript_manager
+                .respond_to_widget_with(
+                    entry_id,
+                    value,
+                    agent_id,
+                    started_at_ms() as f64,
+                    |send_args| {
+                        self.call_send_prompt(send_args, None)
+                            .map(|_| ())
+                            .map_err(|error| error.to_string())
+                    },
+                )
+                .map_err(GatewayCommandError::Internal)?;
+            return Ok(serde_json::json!({ "accepted": accepted }));
+        }
+        if method == "dismissWidget" {
+            let agent_id = required_string_arg(&args, "agentId", method)?;
+            let entry_id = required_string_arg(&args, "entryId", method)?;
+            let accepted = self
+                .transcript_manager
+                .dismiss_widget(entry_id, agent_id, started_at_ms() as f64)
+                .map_err(GatewayCommandError::Internal)?;
+            return Ok(serde_json::json!({ "accepted": accepted }));
+        }
+        if method == "submitSecret" {
+            let agent_id = required_string_arg(&args, "agentId", method)?;
+            let entry_id = required_string_arg(&args, "entryId", method)?;
+            let value = required_string_arg(&args, "value", method)?;
+            let accepted = self
+                .transcript_manager
+                .submit_secret_with(
+                    entry_id,
+                    value,
+                    agent_id,
+                    started_at_ms() as f64,
+                    |prompt| {
+                        self.resume_with_hidden_handoff(
+                            agent_id,
+                            prompt,
+                            "Agent failed to resume after secret submission",
+                        )
+                    },
+                )
+                .map_err(GatewayCommandError::Internal)?;
+            return Ok(serde_json::json!({ "accepted": accepted }));
+        }
+        if method == "reactToMessage" {
+            let agent_id = required_string_arg(&args, "agentId", method)?;
+            let entry_id = required_string_arg(&args, "entryId", method)?;
+            let emoji = required_string_arg(&args, "emoji", method)?;
+            let accepted = self
+                .transcript_manager
+                .react_to_message_with(
+                    entry_id,
+                    emoji,
+                    agent_id,
+                    started_at_ms() as f64,
+                    |prompt| {
+                        self.resume_with_hidden_handoff(
+                            agent_id,
+                            prompt,
+                            "Agent failed to resume after reaction",
+                        )
+                    },
+                )
+                .map_err(GatewayCommandError::Internal)?;
+            return Ok(serde_json::json!({ "accepted": accepted }));
+        }
+
         // UnifiedAppHost owns a QuickJS runtime and is intentionally !Send.
         // Product calls remain on its owner lane while the Runner provider
         // worker above streams through the Host event hub.
@@ -9560,6 +9634,18 @@ fn dispatch_gateway_call(
     }
 }
 
+fn required_string_arg<'a>(
+    args: &'a serde_json::Value,
+    key: &str,
+    method: &str,
+) -> Result<&'a str, GatewayCommandError> {
+    args.get(key)
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| GatewayCommandError::BadRequest(format!("{method} requires {key}")))
+}
+
 fn started_at_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -9929,6 +10015,17 @@ fn main() {
     let transcript_events = transcript_extension
         .event_bridge()
         .expect("production Transcript extension must install its event bridge");
+    transcript_manager
+        .widget_responses()
+        .bind_auto_review(auto_review_extension.service())
+        .expect("Transcript WidgetResponses AutoReview owner must be configured exactly once");
+    let channel_config_events = transcript_events.clone();
+    transcript_manager
+        .widget_responses()
+        .bind_channel_config_changed(Arc::new(move || {
+            channel_config_events.channel_config_changed();
+        }))
+        .expect("Transcript WidgetResponses channel-config signal must be configured exactly once");
     let content_search_extension = Arc::clone(&production_extensions.content_search);
     let permission_widget_responses = transcript_manager.widget_responses();
     let stranded_permission_logs = host_telemetry.logs.clone();

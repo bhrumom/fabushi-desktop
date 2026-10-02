@@ -385,6 +385,17 @@ impl ProductionRosterEmit {
         }));
     }
 
+    pub fn publish_transcript_updated(&self, agent_id: &str, entry: &Value) {
+        (self.event_sink)(json!({
+            "channel": "transcript",
+            "payload": {
+                "type": "updated",
+                "agentId": agent_id,
+                "entry": entry,
+            }
+        }));
+    }
+
     pub fn set_outline_stream_coalescing_ms(&self, delay_ms: u64) {
         self.outline_stream.configure(delay_ms);
     }
