@@ -11,6 +11,7 @@ use mahayana_host_runtime::extensions::transcript::send_group_fanout::{
     GROUP_MEMBER_DM_PREEMPTED_ERROR, GroupMemberTurnExecutor, LocalGroupFanoutDisposition,
     dispatch_local_group_send,
 };
+use mahayana_host_runtime::groups::group_chat::build_group_redrive_note;
 use mahayana_host_runtime::groups::group_store::{
     GROUP_CONFIG_VERSION, SandGroupConfig, write_sand_group_config,
 };
@@ -342,16 +343,11 @@ fn dm_preempted_group_member_redrives_only_while_room_epoch_is_current() {
         )
         .expect("user message");
 
-    let calls = Arc::new(Mutex::new(0usize));
-    let observed = Arc::clone(&calls);
-    let executor: GroupMemberTurnExecutor = Arc::new(move |_| {
-        let mut calls = observed.lock().expect("calls");
-        *calls += 1;
-        if *calls < 3 {
-            Err(GROUP_MEMBER_DM_PREEMPTED_ERROR.into())
-        } else {
-            Ok(vec!["redriven reply".into()])
-        }
+    let prompts = Arc::new(Mutex::new(Vec::<String>::new()));
+    let observed = Arc::clone(&prompts);
+    let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
+        observed.lock().expect("prompts").push(request.prompt);
+        Err(GROUP_MEMBER_DM_PREEMPTED_ERROR.into())
     });
     let runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
     let outcome = dispatch_local_group_send(
@@ -363,11 +359,15 @@ fn dm_preempted_group_member_redrives_only_while_room_epoch_is_current() {
         None,
     )
     .expect("fanout");
-    assert_eq!(*calls.lock().expect("calls"), 3);
+    let prompts = prompts.lock().expect("prompts").clone();
+    assert_eq!(prompts.len(), 3);
+    assert!(!prompts[0].contains(build_group_redrive_note()));
+    assert!(prompts[1].ends_with(build_group_redrive_note()));
+    assert!(prompts[2].ends_with(build_group_redrive_note()));
     let LocalGroupFanoutDisposition::Completed { posted_messages, member_failures } = outcome else {
         panic!("expected completion");
     };
-    assert_eq!(posted_messages, 1);
+    assert_eq!(posted_messages, 0);
     assert!(member_failures.is_empty());
 
     let stale_calls = Arc::new(Mutex::new(0usize));
