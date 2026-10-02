@@ -93,7 +93,7 @@ AI development must follow this sequence:
 #### Stage 2 — Architecture / Plan
 - Derive the technical design from the spec.
 - Identify ownership boundaries, affected interfaces, migration needs, risks, and verification.
-- Break implementation into traceable tasks for non-trivial work.
+- Break the work into traceable tasks for non-trivial work.
 
 #### Stage 3 — Implement
 - Implement against the durable spec, not chat memory.
@@ -143,3 +143,21 @@ The detailed repository policy for this gate is:
 `docs/specs/spec-first-ai-development.md`
 
 All AI development in this repository must comply with that policy.
+
+## Build and test execution environment
+
+All builds and tests must run only in **GitHub Actions** or on **`htch-runtime`**, as required by the user. Do not run builds, linters, generators, schema checks, tests, benchmarks or acceptance on a local workstation, the user's Mac/Windows desktop, or the assistant's local working container. Read-only investigation, editing and Git/API operations are allowed.
+
+Missing runner, OS, device, account or signing configuration is `not-configured` / `blocked`, never a passing test. Record the exact source revision, actual commands, test counts, exit codes and artifacts from the allowed execution environment.
+
+## Telegram Desktop Rust migration — TDRP-001
+
+For Telegram Desktop equivalence work, including the planned `telegram-rs/` workspace, read:
+
+- `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md`;
+- `docs/specs/telegram-desktop-rust-equivalence-migration.md`;
+- the project's `upstream.lock.json`, `module-map.md`, ledger schema, `STATUS.md` and applicable task.
+
+The latest explicit user request approves this separate Telegram Rust migration project. Existing Grok/Agent specifications continue to govern their own boundaries; they must not be used to exclude Telegram scope or justify a permanent C++/Qt/Electron implementation of the Telegram-owned logic. Conversely, the Telegram specification does not authorize deleting or rewriting unrelated Grok/Agent code.
+
+Do not treat the initial module map, spec files, empty crates, temporary bridges or other projects' CI results as Telegram parity evidence. The first implementation gate is P0: complete frozen source closure and a nonempty, fail-closed per-file ledger.
