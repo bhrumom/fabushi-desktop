@@ -5230,37 +5230,20 @@ fn start_routed_provider_task(
         )
         .with_background_shell_watches(Arc::clone(&background_shell_watches)),
     );
-    let computer_use_owner = host_runner_composition.computer_use_coordination();
     let mut computer_control_lease = None;
     let mut computer_use_window_granted = true;
     if prompt_role == RunnerPromptRole::ComputerUseSubagent {
-        {
-            let mut owner = computer_use_owner
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            computer_control_lease = owner.acquire_control_lease(&agent_id);
-            computer_use_window_granted = computer_control_lease.is_some();
-            if computer_use_window_granted {
-                owner.begin_preparation(&agent_id);
-            } else {
-                owner.mark_preparation_failed(
-                    &agent_id,
-                    mahayana_host_runtime::runner::computer_use::ComputerUsePrewarmStage::Box,
-                    "computer_window_busy",
-                );
-            }
-        }
+        computer_control_lease =
+            host_runner_composition.begin_computer_use_preparation(&agent_id);
+        computer_use_window_granted = computer_control_lease.is_some();
         if computer_use_window_granted {
             match forever_box.box_().ensure_ready(&agent_id) {
                 Err(error) => {
-                    computer_use_owner
-                        .lock()
-                        .unwrap_or_else(|poisoned| poisoned.into_inner())
-                        .mark_preparation_failed(
-                            &agent_id,
-                            mahayana_host_runtime::runner::computer_use::ComputerUsePrewarmStage::Box,
-                            error.to_string(),
-                        );
+                    host_runner_composition.mark_computer_use_preparation_failed(
+                        &agent_id,
+                        mahayana_host_runtime::runner::computer_use::ComputerUsePrewarmStage::Box,
+                        error.to_string(),
+                    );
                 }
                 Ok(_) if shipping_desktop_capable => {
                     let prewarm = shipping_box_resources.execute_shell(RunnerBoxShellRequest {
@@ -5270,23 +5253,21 @@ fn start_routed_provider_task(
                         is_background: false,
                         block_until_ms: None,
                     });
-                    let mut owner = computer_use_owner
-                        .lock()
-                        .unwrap_or_else(|poisoned| poisoned.into_inner());
                     match prewarm {
-                        Ok(_) => owner.mark_preparation_ready(&agent_id),
-                        Err(error) => owner.mark_preparation_failed(
-                            &agent_id,
-                            mahayana_host_runtime::runner::computer_use::ComputerUsePrewarmStage::Browser,
-                            error.to_string(),
-                        ),
+                        Ok(_) => {
+                            host_runner_composition.mark_computer_use_preparation_ready(&agent_id);
+                        }
+                        Err(error) => {
+                            host_runner_composition.mark_computer_use_preparation_failed(
+                                &agent_id,
+                                mahayana_host_runtime::runner::computer_use::ComputerUsePrewarmStage::Browser,
+                                error.to_string(),
+                            );
+                        }
                     }
                 }
                 Ok(_) => {
-                    computer_use_owner
-                        .lock()
-                        .unwrap_or_else(|poisoned| poisoned.into_inner())
-                        .mark_preparation_ready(&agent_id);
+                    host_runner_composition.mark_computer_use_preparation_ready(&agent_id);
                 }
             }
         }
@@ -5300,9 +5281,9 @@ fn start_routed_provider_task(
                 .windows
                 .as_ref()
                 .is_some_and(|windows| !windows.is_empty()));
-    let computer_control_lease_active = computer_control_lease.as_ref().is_some_and(|lease| {
-        computer_use_owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).owns_control_lease(lease)
-    });
+    let computer_control_lease_active = computer_control_lease
+        .as_ref()
+        .is_some_and(|lease| host_runner_composition.owns_computer_control_lease(lease));
     let shipping_window_index = computer_control_lease.as_ref().map(|lease| lease.window_index())
         .or_else(|| forever_box.box_().get_agent_window_index(&agent_id));
     let human_takeover_pending = session_handoff.get(&agent_id).is_some();
@@ -7112,7 +7093,8 @@ fn start_routed_provider_task(
             let computer_control_handoff = session_handoff.clone();
             let computer_control_agent_id = agent_id.clone();
             let computer_control_lease_for_check = computer_control_lease.clone();
-            let computer_control_owner_for_check = Arc::clone(&computer_use_owner);
+            let computer_control_owner_for_check =
+                Arc::clone(&worker_host_runner_composition);
             let computer_control_box = Arc::clone(&forever_box);
             let computer_action_audit = Arc::clone(&action_audit_sink);
             let computer_action_agent_id = agent_id.clone();
@@ -7168,7 +7150,7 @@ fn start_routed_provider_task(
                             let lease = computer_control_lease_for_check.as_ref().ok_or_else(|| ProviderSessionError::Tool(
                                 "Computer input is unavailable because this Runner does not hold a ComputerControlLease.".into()
                             ))?;
-                            if !computer_control_owner_for_check.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).owns_control_lease(lease) {
+                            if !computer_control_owner_for_check.owns_computer_control_lease(lease) {
                                 return Err(ProviderSessionError::Tool(
                                     "Computer input is unavailable because this Runner's ComputerControlLease is no longer active.".into(),
                                 ));
@@ -7774,18 +7756,12 @@ fn start_routed_provider_task(
                         cache_write_tokens: usage.cache_write_tokens,
                         reasoning_tokens: usage.reasoning_tokens,
                     });
-                let mut owner = computer_use_owner
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner());
-                if let Some(model_id) = worker_session_options.model_id.as_deref() {
-                    owner.record_model_id(model_id);
-                }
-                owner.record_turn_ended(usage);
-                if let Some(lease) = computer_control_lease.as_ref() {
-                    let _ = owner.release_control_lease(lease);
-                } else {
-                    owner.free_window(&agent_id);
-                }
+                worker_host_runner_composition.finish_computer_use_turn(
+                    &agent_id,
+                    computer_control_lease.as_ref(),
+                    worker_session_options.model_id.as_deref(),
+                    usage,
+                );
             }
             worker_transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
             worker_registry.finish_routed_provider(&worker_stream_id);

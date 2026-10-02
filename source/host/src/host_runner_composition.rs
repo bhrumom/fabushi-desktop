@@ -14,7 +14,10 @@ use crate::extensions::local_tool_permission::local_tool_permission_controller::
 use crate::extensions::memory::agent_state::SandAgentState;
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::runner::box_tool_access::BoxShellAutoReviewCallback;
-use crate::runner::computer_use::ComputerUseCoordination;
+use crate::runner::TurnUsage;
+use crate::runner::computer_use::{
+    ComputerControlLease, ComputerUseCoordination, ComputerUsePrewarmStage,
+};
 use crate::runner::production_agent_checkpoint::{
     AgentStateCheckpointSink, ProductionAgentStateCheckpointSink,
 };
@@ -252,6 +255,72 @@ impl HostRunnerComposition {
 
     pub fn computer_use_coordination(&self) -> Arc<Mutex<ComputerUseCoordination>> {
         Arc::clone(&self.computer_use)
+    }
+
+    pub fn begin_computer_use_preparation(&self, agent_id: &str) -> Option<ComputerControlLease> {
+        let mut owner = self
+            .computer_use
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let lease = owner.acquire_control_lease(agent_id);
+        if lease.is_some() {
+            owner.begin_preparation(agent_id);
+        } else {
+            owner.mark_preparation_failed(
+                agent_id,
+                ComputerUsePrewarmStage::Box,
+                "computer_window_busy",
+            );
+        }
+        lease
+    }
+
+    pub fn mark_computer_use_preparation_ready(&self, agent_id: &str) {
+        self.computer_use
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .mark_preparation_ready(agent_id);
+    }
+
+    pub fn mark_computer_use_preparation_failed(
+        &self,
+        agent_id: &str,
+        stage: ComputerUsePrewarmStage,
+        error_class: impl Into<String>,
+    ) {
+        self.computer_use
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .mark_preparation_failed(agent_id, stage, error_class);
+    }
+
+    pub fn owns_computer_control_lease(&self, lease: &ComputerControlLease) -> bool {
+        self.computer_use
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .owns_control_lease(lease)
+    }
+
+    pub fn finish_computer_use_turn(
+        &self,
+        agent_id: &str,
+        lease: Option<&ComputerControlLease>,
+        model_id: Option<&str>,
+        usage: Option<TurnUsage>,
+    ) {
+        let mut owner = self
+            .computer_use
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if let Some(model_id) = model_id {
+            owner.record_model_id(model_id);
+        }
+        owner.record_turn_ended(usage);
+        if let Some(lease) = lease {
+            let _ = owner.release_control_lease(lease);
+        } else {
+            owner.free_window(agent_id);
+        }
     }
 }
 

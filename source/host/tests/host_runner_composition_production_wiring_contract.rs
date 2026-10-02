@@ -145,3 +145,47 @@ fn host_runner_composition_owns_shipping_runner_construction() {
         );
     }
 }
+
+#[test]
+fn host_runner_composition_owns_computer_use_session_lifecycle() {
+    for needle in [
+        "pub fn begin_computer_use_preparation(",
+        "owner.acquire_control_lease(agent_id)",
+        "owner.begin_preparation(agent_id)",
+        "ComputerUsePrewarmStage::Box",
+        "pub fn mark_computer_use_preparation_ready(",
+        "pub fn mark_computer_use_preparation_failed(",
+        "pub fn owns_computer_control_lease(",
+        "pub fn finish_computer_use_turn(",
+        "owner.record_model_id(model_id)",
+        "owner.record_turn_ended(usage)",
+        "owner.release_control_lease(lease)",
+        "owner.free_window(agent_id)",
+    ] {
+        assert!(
+            OWNER.contains(needle),
+            "HostRunnerComposition missing computer-use lifecycle ownership: {needle}"
+        );
+    }
+    for needle in [
+        "computer_use_coordination()",
+        ".acquire_control_lease(&agent_id)",
+        ".begin_preparation(&agent_id)",
+        ".record_turn_ended(usage)",
+        ".release_control_lease(lease)",
+        ".free_window(&agent_id)",
+    ] {
+        assert!(
+            !SHIPPING_HOST.contains(needle),
+            "shipping Host still owns computer-use session composition: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains("host_runner_composition.begin_computer_use_preparation(&agent_id)"),
+        "shipping Host must delegate computer-use preparation",
+    );
+    assert!(
+        SHIPPING_HOST.contains("worker_host_runner_composition.finish_computer_use_turn("),
+        "shipping Host must delegate computer-use turn settlement",
+    );
+}
