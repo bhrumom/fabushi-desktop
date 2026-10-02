@@ -87,7 +87,7 @@ use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permiss
 use mahayana_host_runtime::host_runner_composition::HostRunnerComposition;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult,
-    HandoffTelemetry, HandoffTrigger, PendingHandoff, ScreenshotPayload, decide_box_hand_back,
+    HandoffTelemetry, HandoffTrigger, PendingHandoff, ScreenshotPayload,
 };
 use mahayana_host_runtime::extensions::session::extension::start_session_extension;
 use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
@@ -152,7 +152,7 @@ use mahayana_host_runtime::extensions::transcript::send_message_shaping::{
 use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
     BOX_HANDOFF_RESUME_TITLE, LISTENER_CONNECT_RESUME_TITLE, MCP_AUTH_RESUME_TITLE,
     box_handoff_resume_prompt, format_mcp_account_display_name, listener_connect_resume_prompt,
-    mcp_auth_resume_prompt, settle_box_handoff_state_with_sink, should_resume_hidden_handoff,
+    mcp_auth_resume_prompt, should_resume_hidden_handoff,
 };
 use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::UpgradeResumeMarker;
 use mahayana_host_runtime::extensions::transcript::upgrade_recreate_resume::build_upgrade_resume_prompt;
@@ -646,15 +646,18 @@ impl SendMessageSink for ProductionSendMessageSink {
         timestamp_ms: u64,
         tool_call_id: &str,
     ) -> Result<BoxHelpOutcome, ProviderSessionError> {
-        let outcome = self.session_handoff.start(HandoffRequest {
-            agent_id: self.agent_id.clone(),
-            instruction: request.instruction.clone(),
-            telemetry: HandoffTelemetry {
-                reason: request.reason,
-                domain: request.domain,
-                idp_domain: request.idp_domain,
-            },
-        });
+        let outcome = self
+            .transcript_manager
+            .start_box_handoff(HandoffRequest {
+                agent_id: self.agent_id.clone(),
+                instruction: request.instruction.clone(),
+                telemetry: HandoffTelemetry {
+                    reason: request.reason,
+                    domain: request.domain,
+                    idp_domain: request.idp_domain,
+                },
+            })
+            .map_err(ProviderSessionError::Tool)?;
         match outcome {
             HandoffStartResult::AlreadyPending { request_id, instruction } => {
                 Ok(BoxHelpOutcome::AlreadyPending { request_id, instruction })
@@ -695,7 +698,9 @@ impl SendMessageSink for ProductionSendMessageSink {
                     let _ = self
                         .transcript_runtime
                         .resolve_box_request_tracking(&request_id);
-                    self.session_handoff.forget(&self.agent_id);
+                    let _ = self
+                        .transcript_manager
+                        .forget_box_handoff(&self.agent_id);
                     return Err(ProviderSessionError::Tool(format!(
                         "could not persist request_box_help for {}: {error}",
                         self.agent_id
@@ -8795,7 +8800,7 @@ impl GatewayApi for UnifiedGatewayApi {
         if method == "getForeverBoxStatus" {
             let agent_id = required_box_agent_id(method, &args)?;
             let status = self.forever_box.get_status(agent_id);
-            let handoff = self.session_handoff.get(agent_id);
+            let handoff = self.transcript_manager.box_handoff(agent_id);
             return Ok(project_forever_box_status(&status, handoff.as_ref()));
         }
         if method == "ensureForeverBox" {
@@ -8804,7 +8809,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 .forever_box
                 .ensure(agent_id)
                 .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
-            let handoff = self.session_handoff.get(agent_id);
+            let handoff = self.transcript_manager.box_handoff(agent_id);
             return Ok(project_forever_box_status(&status, handoff.as_ref()));
         }
         if method == "handBackForeverBox" {
@@ -8815,29 +8820,14 @@ impl GatewayApi for UnifiedGatewayApi {
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
                 .unwrap_or("button");
-            let handoff_trigger = HandoffTrigger::Name(trigger.to_string());
-            let decision = decide_box_hand_back(
-                self.session_handoff.get(agent_id).as_ref(),
-                &handoff_trigger,
-            );
-            self.session_handoff
-                .end(agent_id, handoff_trigger)
+            let decision = self
+                .transcript_manager
+                .hand_back_forever_box(
+                    agent_id,
+                    HandoffTrigger::Name(trigger.to_string()),
+                )
                 .map_err(GatewayCommandError::Internal)?;
             if let HandoffDecision::End(decision) = decision {
-                let _ = self
-                    .transcript_runtime
-                    .resolve_box_request_tracking(&decision.request_id);
-                if let Err(error) = settle_box_handoff_state_with_sink(
-                    &self.session_workers,
-                    &self.roster_emit,
-                    agent_id,
-                    &decision.request_id,
-                    &decision.resolution,
-                ) {
-                    eprintln!(
-                        "mahayana-host box_handoff_settlement_failed agent={agent_id} error={error}"
-                    );
-                }
                 if let Err(error) = self.resume_with_hidden_handoff(
                     agent_id,
                     box_handoff_resume_prompt(&decision.trigger).to_string(),
@@ -8849,7 +8839,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 }
             }
             let status = self.forever_box.get_status(agent_id);
-            let handoff = self.session_handoff.get(agent_id);
+            let handoff = self.transcript_manager.box_handoff(agent_id);
             return Ok(project_forever_box_status(&status, handoff.as_ref()));
         }
         if method == RUNNER_ACCEPT_ROUTED_PROMPT_GATEWAY_METHOD {

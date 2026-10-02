@@ -17,7 +17,10 @@ use crate::extensions::attachments::attachments_service::AttachmentsService;
 use crate::extensions::content_search::extension::ProductionContentSearchExtension;
 use crate::extensions::memory::extension::HostMemoryExtension;
 use crate::extensions::memory::memory_service::MemoryKind;
-use crate::extensions::session::box_handoff_service::BoxHandoffService;
+use crate::extensions::session::box_handoff_service::{
+    BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult, HandoffTrigger,
+    PendingHandoff, decide_box_hand_back,
+};
 use crate::extensions::session::gateway::{
     SessionGatewayError,
     dispatch_production_session_gateway_call_with_content_search_and_group_chat,
@@ -36,6 +39,7 @@ use crate::extensions::turn_execution::turn_execution_service::{
 use super::ack_obligations::AckObligations;
 use super::automation_runtime::AutomationRuntime;
 use super::background_wakes::BackgroundWakes;
+use super::box_handoff_resume::settle_box_handoff_state_with_sink;
 use super::client_side_tool_v2_producer::{
     ClientSideToolV2ProducedValue, ClientSideToolV2Producer, ClientSideToolV2TransportEvent,
 };
@@ -422,6 +426,60 @@ impl TranscriptManager {
         }
         *slot = Some(handoff);
         Ok(())
+    }
+
+    fn handoff_service(&self) -> Result<BoxHandoffService, String> {
+        self.handoff_service
+            .lock()
+            .map_err(|_| "transcript handoff mutex poisoned".to_string())?
+            .clone()
+            .ok_or_else(|| "transcript handoff service is not configured".to_string())
+    }
+
+    pub fn box_handoff(&self, agent_id: &str) -> Option<PendingHandoff> {
+        self.handoff_service().ok()?.get(agent_id)
+    }
+
+    pub fn start_box_handoff(
+        &self,
+        request: HandoffRequest,
+    ) -> Result<HandoffStartResult, String> {
+        Ok(self.handoff_service()?.start(request))
+    }
+
+    pub fn forget_box_handoff(&self, agent_id: &str) -> Result<(), String> {
+        self.handoff_service()?.forget(agent_id);
+        Ok(())
+    }
+
+    pub fn hand_back_forever_box(
+        &self,
+        agent_id: &str,
+        trigger: HandoffTrigger,
+    ) -> Result<HandoffDecision, String> {
+        let handoff = self.handoff_service()?;
+        let decision = decide_box_hand_back(handoff.get(agent_id).as_ref(), &trigger);
+        let HandoffDecision::End(end) = &decision else {
+            return Ok(decision);
+        };
+        if !handoff.end(agent_id, trigger)? {
+            return Ok(HandoffDecision::None);
+        }
+
+        let _ = self
+            .transcript_runtime
+            .resolve_box_request_tracking(&end.request_id);
+        let roster = self
+            .roster_emit()
+            .ok_or_else(|| "transcript roster is not configured".to_string())?;
+        settle_box_handoff_state_with_sink(
+            &self.session_workers,
+            roster.as_ref(),
+            agent_id,
+            &end.request_id,
+            &end.resolution,
+        )?;
+        Ok(decision)
     }
 
     pub fn set_production_services(&self, services: TranscriptManagerServices) -> Result<(), String> {

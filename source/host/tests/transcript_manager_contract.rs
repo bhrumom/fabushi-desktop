@@ -5,10 +5,12 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
+use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResponse;
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::AgentDeletionRuntimeDeps;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
-    BoxHandoffDeps, BoxHandoffService, HandoffRequest, HandoffTelemetry,
+    BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult,
+    HandoffTelemetry, HandoffTrigger,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::client_side_tool_v2_producer::{
@@ -645,6 +647,110 @@ fn manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle() {
     assert!(manager.is_quiescing_for_upgrade());
     manager.resume_after_recreate();
     assert!(!manager.is_quiescing_for_upgrade());
+
+    manager.dispose();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn manager_owns_box_handoff_state_and_handback_settlement() {
+    let root = temp_root();
+    fs::create_dir_all(&root).expect("root");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let manager = TranscriptManager::new(&root, Arc::clone(&sessions));
+    let roster = Arc::new(ProductionRosterEmit::new(
+        Arc::clone(&sessions),
+        manager.transcript_runtime(),
+        Arc::new(|_| {}),
+    ));
+    manager
+        .bind_roster_emit(roster)
+        .expect("bind manager roster");
+
+    let handoff = BoxHandoffService::new(BoxHandoffDeps::default());
+    manager
+        .set_handoff_service(handoff)
+        .expect("bind manager handoff owner");
+
+    let record = sessions
+        .materialize_new_session(None, "user", None)
+        .expect("materialize agent");
+    sessions
+        .set_agent_awaiting_user_response(
+            &record.id,
+            Some(&AwaitingUserResponse {
+                tab_id: "box-tab".into(),
+                reason: "box-help".into(),
+                since: 1.0,
+            }),
+        )
+        .expect("awaiting state");
+
+    let started = manager
+        .start_box_handoff(HandoffRequest {
+            agent_id: record.id.clone(),
+            instruction: "Complete the browser step".into(),
+            telemetry: HandoffTelemetry::default(),
+        })
+        .expect("start manager-owned handoff");
+    let request_id = match started {
+        HandoffStartResult::Started { request_id } => request_id,
+        HandoffStartResult::AlreadyPending { .. } => panic!("unexpected existing handoff"),
+    };
+    assert_eq!(
+        manager
+            .box_handoff(&record.id)
+            .expect("manager pending handoff")
+            .request_id,
+        request_id
+    );
+
+    let entry = json!({
+        "id": "box-manager-request",
+        "kind": "send-message",
+        "message": {"type":"text","content":"Complete the browser step"},
+        "timestampMs": 2,
+        "boxRequestId": request_id,
+        "boxInstruction": "Complete the browser step"
+    });
+    manager
+        .transcript_runtime()
+        .track_box_request_entry(&record.id, &entry);
+    sessions
+        .append_agent_transcript_entries(&record.id, &[entry])
+        .expect("persist box request");
+
+    let decision = manager
+        .hand_back_forever_box(
+            &record.id,
+            HandoffTrigger::Name("button".into()),
+        )
+        .expect("manager hand back");
+    let HandoffDecision::End(decision) = decision else {
+        panic!("expected handoff settlement");
+    };
+    assert_eq!(decision.resolution, "completed");
+    assert!(manager.box_handoff(&record.id).is_none());
+    assert!(
+        sessions
+            .get_agent_awaiting_user_response(&record.id)
+            .expect("awaiting state")
+            .is_none()
+    );
+    let entries = sessions
+        .read_agent_transcript_entries(&record.id)
+        .expect("read transcript");
+    let resolved = entries
+        .iter()
+        .find(|entry| {
+            entry.get("id").and_then(Value::as_str) == Some("box-manager-request")
+        })
+        .expect("resolved box entry");
+    assert_eq!(resolved["boxResolution"], "completed");
 
     manager.dispose();
     let _ = fs::remove_dir_all(root);
