@@ -4517,11 +4517,11 @@ fn start_routed_provider_task(
                 ))
             })?
     };
-    let cancellation = if is_group_member_turn {
+    let cancellation = (if is_group_member_turn {
         runner_registry.register_group_member(&agent_id, &stream_id)
     } else {
         runner_registry.register_routed_provider(&agent_id, &stream_id)
-    }
+    })
         .map_err(|error| {
             ack_obligations.retire_ack_run_token(&agent_id, ack_token.as_deref());
             transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
