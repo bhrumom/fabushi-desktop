@@ -1,18 +1,18 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "TDRP-001 Telegram capability ledger under FBCP-001",
-  "description": "Capability-level Telegram research/provider contract subordinate to FBCP-001. Upstream files are research evidence, not target module mappings. Each capability must map into the Fabushi product, Telegram Provider, or typed extension.",
+  "title": "TDRP-001 Telegram research-to-Fabushi absorption ledger",
+  "description": "Capability research contract for FBCP-001 Revision 2. Telegram is a research source, not a runtime provider. Every capability must resolve into the current Fabushi architecture before a new owner may be proposed.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "parent_product_id",
     "format_version",
     "project_id",
-    "spec_revision",
     "upstream_commit",
     "upstream_lock_sha256",
     "research_inventory_status",
-    "capabilities"
+    "capabilities",
+    "spec_revision"
   ],
   "properties": {
     "format_version": {
@@ -22,7 +22,7 @@
       "const": "TDRP-001"
     },
     "spec_revision": {
-      "const": 2
+      "const": 4
     },
     "upstream_commit": {
       "$ref": "#/$defs/gitOid"
@@ -469,11 +469,9 @@
         "blockers",
         "implementation_commit",
         "last_verified_commit",
-        "product_destinations",
-        "provider_responsibilities",
-        "telegram_extensions",
-        "interaction_gateway",
-        "data_policy"
+        "owner_resolution",
+        "absorption_plan",
+        "native_network_requirements"
       ],
       "properties": {
         "capability_id": {
@@ -579,45 +577,100 @@
             }
           ]
         },
-        "product_destinations": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/strings"
-            },
-            {
-              "minItems": 1
-            }
-          ]
-        },
-        "provider_responsibilities": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/strings"
-            },
-            {
-              "minItems": 1
-            }
-          ]
-        },
-        "telegram_extensions": {
-          "$ref": "#/$defs/strings"
-        },
-        "interaction_gateway": {
+        "owner_resolution": {
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "crosses_to_agent",
-            "routes",
-            "policy_record"
+            "owner_candidates",
+            "existing_owner",
+            "selected_reason",
+            "owner_evidence_paths",
+            "rejected_existing_owners",
+            "new_owner_proposal",
+            "adr_path"
           ],
           "properties": {
-            "crosses_to_agent": {
-              "type": "boolean"
+            "owner_candidates": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/strings"
+                },
+                {
+                  "minItems": 1
+                }
+              ]
             },
-            "routes": {
+            "existing_owner": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/nonEmpty"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "selected_reason": {
+              "type": "string"
+            },
+            "owner_evidence_paths": {
               "$ref": "#/$defs/strings"
             },
-            "policy_record": {
+            "rejected_existing_owners": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "owner",
+                  "reason"
+                ],
+                "properties": {
+                  "owner": {
+                    "$ref": "#/$defs/nonEmpty"
+                  },
+                  "reason": {
+                    "$ref": "#/$defs/nonEmpty"
+                  }
+                }
+              }
+            },
+            "new_owner_proposal": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "name",
+                    "responsibility",
+                    "state_owned",
+                    "dependency_direction",
+                    "language"
+                  ],
+                  "properties": {
+                    "name": {
+                      "$ref": "#/$defs/nonEmpty"
+                    },
+                    "responsibility": {
+                      "$ref": "#/$defs/nonEmpty"
+                    },
+                    "state_owned": {
+                      "$ref": "#/$defs/nonEmpty"
+                    },
+                    "dependency_direction": {
+                      "$ref": "#/$defs/nonEmpty"
+                    },
+                    "language": {
+                      "$ref": "#/$defs/nonEmpty"
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "adr_path": {
               "anyOf": [
                 {
                   "$ref": "#/$defs/relativePath"
@@ -632,20 +685,79 @@
             {
               "if": {
                 "properties": {
-                  "crosses_to_agent": {
-                    "const": true
+                  "existing_owner": {
+                    "type": "string"
                   }
                 },
                 "required": [
-                  "crosses_to_agent"
+                  "existing_owner"
                 ]
               },
               "then": {
                 "properties": {
-                  "routes": {
+                  "selected_reason": {
+                    "$ref": "#/$defs/nonEmpty"
+                  },
+                  "owner_evidence_paths": {
                     "minItems": 1
                   },
-                  "policy_record": {
+                  "new_owner_proposal": {
+                    "type": "null"
+                  },
+                  "adr_path": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "existing_owner": {
+                    "type": "null"
+                  }
+                },
+                "required": [
+                  "existing_owner"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "selected_reason": {
+                    "$ref": "#/$defs/nonEmpty"
+                  },
+                  "rejected_existing_owners": {
+                    "minItems": 1
+                  },
+                  "new_owner_proposal": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "name",
+                      "responsibility",
+                      "state_owned",
+                      "dependency_direction",
+                      "language"
+                    ],
+                    "properties": {
+                      "name": {
+                        "$ref": "#/$defs/nonEmpty"
+                      },
+                      "responsibility": {
+                        "$ref": "#/$defs/nonEmpty"
+                      },
+                      "state_owned": {
+                        "$ref": "#/$defs/nonEmpty"
+                      },
+                      "dependency_direction": {
+                        "$ref": "#/$defs/nonEmpty"
+                      },
+                      "language": {
+                        "$ref": "#/$defs/nonEmpty"
+                      }
+                    }
+                  },
+                  "adr_path": {
                     "$ref": "#/$defs/relativePath"
                   }
                 }
@@ -653,29 +765,36 @@
             }
           ]
         },
-        "data_policy": {
+        "absorption_plan": {
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "source_classes",
-            "ai_ingestion",
-            "notes"
+            "owner_changes",
+            "model_changes",
+            "ui_changes",
+            "persistence_changes",
+            "tests"
           ],
           "properties": {
-            "source_classes": {
+            "owner_changes": {
               "$ref": "#/$defs/strings"
             },
-            "ai_ingestion": {
-              "enum": [
-                "default-deny",
-                "explicit-policy",
-                "prohibited"
-              ]
+            "model_changes": {
+              "$ref": "#/$defs/strings"
             },
-            "notes": {
-              "type": "string"
+            "ui_changes": {
+              "$ref": "#/$defs/strings"
+            },
+            "persistence_changes": {
+              "$ref": "#/$defs/strings"
+            },
+            "tests": {
+              "$ref": "#/$defs/strings"
             }
           }
+        },
+        "native_network_requirements": {
+          "$ref": "#/$defs/strings"
         }
       },
       "allOf": [
@@ -852,5 +971,5 @@
       ]
     }
   },
-  "$comment": "Semantic validation must reject duplicate capability/test/evidence IDs, missing research coverage, missing FBCP product destinations, capabilities that claim design without ADRs, provider behavior without canonical owners, Communication-to-Agent crossings without an InteractionGateway policy record, C++ replacement marked replaced while compiled Telegram/desktop-app C++ remains, multiple canonical state owners, invented evidence, inherited old-HEAD passes, zero executed tests, and non-independent acceptance. All executable checks are restricted to GitHub Actions or htch-runtime."
+  "$comment": "Semantic validation must reject duplicate IDs, missing research coverage, capability rows without current-Fabushi owner candidates, new-owner proposals that skip rejected-owner analysis or ADRs, broad parallel owners such as TelegramCore/TelegramProvider/CommunicationCore/MessengerRuntime without an explicit future interoperability spec, source reading counted as implementation, duplicate product/state owners, original Telegram C++ left as the Fabushi production owner, invented evidence, inherited old-HEAD passes, zero executed tests, and non-independent acceptance. Executable checks run only on GitHub Actions or htch-runtime."
 }

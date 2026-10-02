@@ -1,690 +1,557 @@
-# Fabushi Bot Communication Platform：完整吸收 Telegram 通信能力 Spec
+# Fabushi Bot Native Communication Capability Absorption Spec
 
 Status: active  
 Spec ID: FBCP-001  
-Revision: 1  
+Revision: 2  
 Last updated: 2026-10-02  
-Owner: Fabushi Desktop / Communication Platform  
+Owner: Fabushi Desktop  
 Canonical project: `projects/fabushi-communication-platform`  
 Implementation status: **not implemented / not accepted by this spec**
 
-> **Fabushi Bot is the product. Telegram is a complete communication capability source and network integration, not a separate product, workspace, or architectural root.**
+> **Fabushi / PR #20 的现有 Bot 架构是唯一目标架构。Telegram Desktop 只是完整通信功能、成熟行为和源码实现经验的研究来源。**
 >
-> 本项目不是“做一个 Telegram 客户端，再把 Bot 接进去”，也不是“给 Telegram 加一个 AI 按钮”。目标是在现有 Fabushi Bot / Agent 产品基础上，完整吸收 Telegram Desktop 所代表的通信能力，使人、Agent、群组、频道、消息、媒体、通话、任务、Computer、Plugins/MCP 与 Automations 成为同一个产品系统中的一等能力。
+> 本项目不是做 Telegram，不依赖 Telegram 网络，不创建 Telegram Provider，也不新建一个与 Agent Runtime 平行的 Communication Core。我们研究 Telegram Desktop 的全部功能，然后把每个 capability 拆开，优先吸收到 Fabushi 现有 owner；只有当前架构确实没有合理 owner 时，才允许新增最小职责模块或基础设施服务。
 
 ## 1. 产品定义
 
-Fabushi Desktop 的唯一产品根是现有 Bot / Agent 产品。
+Fabushi Desktop 是一个原生的 Human + Agent 通信与工作产品。
 
-Telegram 提供两类输入：
+它自己的产品能力包括：
 
-1. **完整通信产品能力来源**：账号、联系人、会话、消息、群组、频道、Topic、搜索、媒体、通话、通知、Stories、Bots/Mini Apps、支付及其他冻结基线能力；
-2. **Telegram 网络 provider**：通过 Telegram API / MTProto / Bot Platform 与真实 Telegram 用户、群组、频道和 Bot 互通。
-
-最终产品不得呈现为两个并列应用：
-
-- 不允许顶层 `Bot Workspace` 与 `Telegram Workspace`；
-- 不允许把 Telegram 做成独立子应用后再 iframe/WebView/bridge 到 Bot；
-- 不允许用户必须在两套联系人、会话列表、消息模型和设置体系之间切换；
-- 不允许把 Agent Runtime 塞入 Telegram 的历史架构并让 Telegram 成为产品根。
-
-最终应该只有一个 Fabushi 产品外壳、一套统一信息架构和一套统一的产品领域模型。
-
-## 2. 与 PR #20 的关系
-
-当前设计读取时，PR #20 `refactor/grok-018-architecture-rebuild` exact HEAD 为：
-
-`7823c596712b674661e40925b1426d945d0e2e55`
-
-该 PR 提供现有 Bot 产品的关键基础：
-
-- Agent / conversation 产品模型；
-- Coordinator / Host / Runner 独立边界；
-- Shared Room；
-- Human / Agent member distinction；
-- Plugins / MCP；
-- Computer；
-- Automations；
-- async tasks / subagents；
-- transcript / composer / permissions；
-- durable runtime / lifecycle。
-
-这些能力是 **Fabushi 产品基础**，不是要被 Telegram 架构替换的临时层。
-
-从本 Spec 起，完整通信平台是一个明确批准的 Fabushi product extension。PR #20 中“没有 Grok counterpart 的 Telegram/messaging 子系统默认移除”规则，不得用于删除 FBCP-001 明确批准的 communication/Telegram provider 能力。
-
-同时，本 Spec 也不授权破坏 PR #20 的 Coordinator / Host / Runner 等核心架构边界。通信能力应接入现有产品，而不是把 Agent Runtime 重写成 Telegram runtime。
-
-每轮实现仍需重新读取 PR #20 / canonical main 的 exact HEAD；这里记录的 SHA 只是本 Revision 的设计输入，不是永久固定依赖。
-
-## 3. 产品核心模型
-
-### 3.1 Identity
-
-产品中身份是可组合的，不把网络身份和产品身份混成一个 ID。
-
-至少有：
-
-- `FabushiIdentity`
-- `HumanIdentity`
-- `AgentIdentity`
-- `TelegramUserIdentity`
-- `TelegramBotIdentity`
-- 后续 provider identity
-
-一个 Participant 可以绑定多个 provider identity，但绑定必须显式、可撤销、可审计。
-
-### 3.2 Participant
-
-`Participant` 是 Conversation 中的参与者：
-
-- Human
-- Agent
-- System / service participant（仅在明确需要时）
-
-Agent 与 Human 在会话层都是一等参与者，但权限、能力、可见数据和执行语义不同。
-
-### 3.3 Conversation
-
-`Conversation` 是产品统一会话抽象，而不是 TelegramChat 或 AgentThread 的别名。
-
-Conversation 可绑定：
-
-- Fabushi-native conversation；
-- Telegram private chat；
-- Telegram group；
-- Telegram supergroup；
-- Telegram channel；
-- Telegram topic/forum；
-- Agent private conversation；
-- hybrid human-agent room。
-
-Conversation 只定义产品层共同语义。Telegram 独有的复杂语义必须通过 typed provider extension 保留，不能为了“统一模型”丢掉权限、Topic、Channel、read state、message identity 等真实含义。
-
-### 3.4 Message / Thread / Attachment
-
-统一产品模型至少包括：
-
-- Message
-- Thread / Topic
-- Attachment
-- Reaction
-- Reply / Quote
-- Forward provenance
-- Edit / Delete state
-- Read / unread state
-- Draft
-- Scheduled send
-- Media transfer
-- Provider-specific extensions
-
-Telegram 原始 ID、random id、peer、topic、pts/qts/seq/date 等不能被通用模型抹掉；它们保存在 Telegram provider 的强类型状态中。
-
-### 3.5 Agent-native entities
-
-现有 Bot 产品的一等对象继续保留：
-
-- Agent
-- Task
-- Subagent
-- Automation
-- ComputerSession
-- Plugin / MCP capability
-- Tool call
-- Artifact
-- Permission request
-- Waiting-user state
-
-这些对象可以与 Conversation/Message 建立明确关联，但不能变成 Telegram message metadata 的附属品。
-
-## 4. 产品体验
-
-### 4.1 Unified Inbox / Sidebar
-
-用户看到的是统一列表，例如：
-
-- Alice
-- Product Team
-- Research Agent
-- Family
-- Coding Agent
-- News Channel
-- My Secretary
-
-列表可以显示 provider/Agent 类型的轻量标识，但不能要求用户先选择“进入 Telegram”或“进入 Agent”。
-
-### 4.2 Unified Conversation Surface
-
-打开任何 Conversation 都使用同一个 Fabushi conversation shell。
-
-能力按参与者/provider 动态出现：
-
-- 人类聊天：消息、媒体、搜索、通话、资料；
-- Agent：reasoning、tools、Computer、Automations、Plugins；
-- hybrid room：人类通信 + Agent 协作；
-- Channel：Telegram channel-specific actions；
-- Topic：Telegram topic-specific navigation；
-- Bot/Mini App：对应 provider extension。
-
-### 4.3 Unified Composer
-
-Composer 既是通信入口，也是工作入口。
-
-可包含：
-
-- text / rich text
-- attachments
-- emoji/stickers
-- @Human
-- @Agent
-- commands
-- tool / plugin selection
-- schedule
-- create task
-- create automation
-- reply / quote
-- provider-specific send options
-
-UI 必须按上下文保持简洁，不能把全部高级能力永久堆在主输入框。
-
-### 4.4 Unified Context Panel
-
-一个 Conversation 的上下文可以包含：
-
-- People
-- Agents
-- Files
-- Media
-- Tasks
+- Human communication
+- Agent conversation / execution
+- private chat
+- groups / rooms
+- channels / broadcast
+- topics / threads
+- messages / reactions / replies / forwards
+- contacts / identity / presence
+- files / media
+- voice / video / calls / screen sharing
+- search / notifications
+- tasks / artifacts
+- Computer
+- Plugins / MCP
 - Automations
-- Computers
-- Permissions
-- Search
-- Provider details
+- settings / privacy / permissions
+- social/content capabilities such as Stories where accepted
+- commerce/security/data-lifecycle capabilities where accepted
 
-Telegram 群资料页、频道信息、成员管理等必须被吸收到该产品信息架构，而不是打开第二套 Telegram 设置应用。
+这些能力运行在 **Fabushi 自己的身份、存储、同步、通信网络和服务端协议** 上。
 
-## 5. 产品架构
+Telegram Desktop 的作用只有：
 
-### 5.1 Product Shell
+1. 完整功能清单来源；
+2. 成熟产品行为与 edge-case 参考；
+3. 源码研究对象；
+4. 架构优缺点研究对象；
+5. performance / UX / lifecycle 参考 oracle；
+6. 帮助发现我们自己从零设计时容易遗漏的能力。
 
-现有 Fabushi Bot UI / conversation / agent workspace 是产品 shell。
+### 1.1 明确禁止的误解
 
-产品 shell 负责：
+最终架构不得出现：
 
-- navigation
-- unified inbox
-- conversation presentation
+- Telegram Provider 作为核心网络层；
+- Telegram account/session 作为 Fabushi account 的基础；
+- TelegramUserIdentity / TelegramPeerId 作为 Fabushi identity truth；
+- MTProto 作为 Fabushi 自有通信协议；
+- 独立 Telegram workspace / Telegram sidebar / Telegram settings app；
+- 与 PR #20 平行的一整套 Communication Core；
+- TelegramChat / TelegramMessage / TelegramGroup 等第二套产品模型；
+- “先完整做一个 Telegram clone，再与 Bot 融合”的实施路径。
+
+未来如果需要 **兼容 Telegram 网络**，必须作为独立 interoperability/bridge 项目另写 Spec；它不是 FBCP-001 的基础，也不能改变 Fabushi native network 的 ownership。
+
+## 2. 权威架构：PR #20 / canonical Fabushi architecture
+
+本 Revision 设计输入时，PR #20 `refactor/grok-018-architecture-rebuild` 的 exact HEAD 为：
+
+`91cbe2f26e0a81b76a08c06c7cd4895f0c4b21d2`
+
+每轮实现必须重新读取 live exact HEAD；上面的 SHA 只是 Revision 2 设计输入。
+
+PR #20 / canonical Fabushi 已经拥有或正在建立的 product owners，包括但不限于：
+
+- frontend / product shell
+- sidebar / navigation
+- conversation workspace
+- transcript / transcript cards
 - composer
-- task/agent/computer/plugin/automation surfaces
-- permission UX
-
-### 5.2 Communication Core
-
-新建独立通信领域，但它属于 Fabushi 产品：
-
-- identity
-- participants
-- conversations
-- messaging
-- media
-- calls
-- contacts
-- search
-- notifications
-- presence
-- provider bindings
-
-Communication Core 不直接调用模型，也不拥有 Agent runtime。
-
-### 5.3 Telegram Provider
-
-Telegram 能力进入 provider 边界，而不是成为产品根。
-
-Telegram Provider 负责：
-
-- Telegram authentication/account sessions
-- TL / MTProto
-- DC/session/update consistency
-- peers/contacts
-- dialogs/messages
-- groups/channels/topics
-- Telegram media
-- Telegram calls
-- Telegram notifications
-- Telegram search semantics
-- Telegram-specific Bot/Mini App/Stories/Premium/Stars/Business 等能力
-- provider-specific persistence/recovery
-
-根据 TDRP-001，Telegram/desktop-app 自有 C++ production logic 最终全部由 Rust production owner 取代。
-
-### 5.4 Agent Runtime
-
-PR #20 / canonical Bot architecture 继续负责：
-
+- Agent model
+- Shared Room / Human + Agent member model
 - Coordinator
 - Host
 - Runner
-- provider/model execution
-- tool lifecycle
-- Plugins/MCP
+- permissions / approval
+- attachments
+- Plugins / MCP
 - Computer
 - Automations
-- tasks/subagents
-- permissions
-- durable turn lifecycle
+- async tasks / subagents
+- settings
+- desktop platform / lifecycle
+- durable state / recovery
 
-Communication Core 不复制这些职责。
+**这些 owner 是默认吸收目标。**
 
-### 5.5 Interaction Gateway
+FBCP 不另起炉灶创建一套 parallel architecture。
 
-Communication Plane 与 Agent Plane 之间必须有明确的 `InteractionGateway` / `ContextBroker`。
+## 3. Capability Absorption Law
+
+Telegram 每一个 capability 都必须走同一个决策流程：
+
+```text
+Telegram capability
+      ↓
+research complete behavior
+      ↓
+find existing Fabushi owner
+      │
+      ├── owner exists
+      │      ↓
+      │   extend that owner
+      │      ↓
+      │   production wiring + tests
+      │
+      └── no valid owner
+             ↓
+      new_owner_proposal
+             ↓
+      prove why existing owners are wrong
+             ↓
+      add the smallest possible owner/service
+             ↓
+      integrate into existing architecture
+```
+
+### ABSORB-01 — Existing owner first
+
+每项 capability 必须首先填写 `existing_owner`。
+
+禁止直接因为 Telegram 有一个模块就创建新模块。
+
+### ABSORB-02 — Extend, do not duplicate
+
+如果已有 owner 能合理承担职责，就扩展它。
+
+例如：
+
+- Telegram dialog list → existing sidebar / conversation list
+- Telegram history/message → existing transcript/message model
+- Telegram composer → existing composer
+- Telegram reactions → existing transcript reaction model
+- Telegram group member → existing Shared Room / member model
+- Telegram scheduled send → existing Automations / send action
+- Telegram attachments → existing attachment/artifact/resource model
+- Telegram Bot interaction → existing Agent interaction concepts where semantically appropriate
+- Telegram settings → existing settings system
+- Telegram screen sharing → existing Computer/call/realtime capabilities where ownership合理
+
+### ABSORB-03 — New owner is an exception
+
+只有下面都成立，才允许 `new_owner_proposal`：
+
+1. 当前所有 existing owners 都已被分析；
+2. 把职责塞入现有 owner 会破坏 cohesion / lifecycle / security / performance；
+3. 新 owner 的职责无法进一步缩小；
+4. dependency direction 已定义；
+5. state ownership 唯一；
+6. ADR 已批准。
+
+禁止用一个宽泛的 `CommunicationCore`、`TelegramSubsystem`、`MessengerRuntime` 来一次性承接大量职责。
+
+### ABSORB-04 — Infrastructure is not a second product architecture
+
+Fabushi 自己的通信网络确实需要新增底层基础设施，例如：
+
+- Messaging Service
+- Presence Service
+- Sync Service
+- Media Service
+- Call Signaling
+- Push / Notification Service
+
+这些是 **支持现有产品 owner 的基础设施**，不是第二套产品模型。
+
+它们不能再拥有一份独立的 Conversation/Message/Identity 真相。
+
+## 4. Telegram 功能如何进入现有 Fabushi
+
+下面是规范性吸收方向。P0 必须以实时 PR #20 源码重新确认 exact owner。
+
+| Telegram 能力 | 优先吸收进 Fabushi 现有 owner | 可能需要的最小新增 |
+| --- | --- | --- |
+| Dialog list / archive / folder | sidebar / conversation list | folder/filter domain extension |
+| Private chat | conversation workspace | human conversation mode |
+| History / message | transcript / transcript model | human-message variants |
+| Composer | existing composer | richer send intents |
+| Reply / quote / forward | transcript cards / message relations | provenance relation types |
+| Reaction | existing reaction model | additional reaction semantics |
+| Draft | existing draft/composer state | durable cross-device sync support |
+| Scheduled message | Automations + composer | send-message automation action |
+| Group | Shared Room / group model | richer room roles/state |
+| Member | SharedRoomMember / participant | Human identity/profile fields |
+| Admin / permissions | existing permissions / room controller | room-role policy |
+| Topic / forum | conversation/thread model | topic entity if missing |
+| Channel / broadcast | room/conversation model | ChannelMode / broadcast policy |
+| Search | existing search/command surface | message/file index service |
+| Files / media | attachments + artifacts/resources | transfer/cache service |
+| Upload / download | attachment/resource lifecycle | transfer service |
+| Voice / video | resource/media UI | media pipeline |
+| Calls | existing product surface + platform runtime | call session/signaling owner if no current owner |
+| Screen sharing | Computer + call/realtime experience | realtime sharing bridge |
+| Stickers/GIF/emoji | composer / rich transcript | asset/catalog support |
+| Stories | existing product shell | minimal Story owner if no fit |
+| Bot commands/interactions | Agent/composer interaction | generic interaction primitives |
+| Mini Apps | Plugins/MCP/Web capability | secure embedded app surface only if needed |
+| Notifications | desktop lifecycle / notifications | push service |
+| Settings/privacy | existing settings / permissions | communication settings sections |
+| Saved Messages | personal conversation/workspace | none unless required |
+| Export | artifacts/data-lifecycle | export pipeline |
+| Local cache/recovery | durable state/storage owners | message/media stores |
+| Multi-device sync | durable state + native network | sync service |
+| Presence/typing | Shared Room / conversation projection | presence service |
+| Stories/Premium/Stars/Business/Payments | map by actual responsibility | smallest domain owner after ADR |
+
+这张表不是 target file map。它是 **ownership hypothesis**，必须根据实时架构验证。
+
+## 5. 核心产品模型如何成长
+
+FBCP 不要求先创建新的“通用通信模型”替换现有模型。
+
+正确方式是扩展现有 product types。
+
+### 5.1 Conversation
+
+现有 Agent conversation / group concepts 应逐步能表达：
+
+- Human private conversation
+- Agent conversation
+- group / room
+- Human + Agent hybrid room
+- channel / broadcast conversation
+- topic/thread
+
+如果当前 `Conversation` 语义不足，扩展它或拆出明确的 domain types；不要创建第二个 TelegramConversation。
+
+### 5.2 Participant / Member
+
+从现有 Human/Agent Shared Room member 继续演化：
+
+```text
+Participant / Member
+├── Human
+└── Agent
+```
+
+Fabushi 自己拥有 Human identity。
+
+不需要 TelegramUserIdentity 作为基础模型。
+
+### 5.3 Message / Transcript
+
+现有 transcript 是优先 owner。
+
+扩展以支持：
+
+- human message
+- agent message
+- rich text
+- reply / quote
+- forward provenance
+- edit/delete lifecycle
+- reactions
+- media/resource
+- read state
+- scheduled send state
+- system events
+
+Agent-specific tool/thinking/task entries继续保持 typed entries；不要为了“像 Telegram”把它们降级成纯文本消息。
+
+### 5.4 Resource
+
+把现有 attachment / Agent artifact / Computer artifact 与通信媒体能力逐步统一到共享 resource lifecycle：
+
+```text
+Resource
+├── user attachment
+├── message attachment
+├── agent artifact
+├── computer artifact
+├── image
+├── video
+├── audio
+└── file
+```
+
+必须保留 provenance，而不是复制成无来源 blob。
+
+## 6. Fabushi Native Communication Network
+
+Fabushi 通信网络是自己的基础设施，不依赖 Telegram。
+
+### 6.1 Native identity
+
+至少定义：
+
+- FabushiUserId
+- FabushiAgentId
+- ConversationId
+- MessageId
+- RoomId
+- ChannelId / mode where required
+- DeviceId
+- ResourceId
+- CallSessionId
+
+### 6.2 Native event/protocol model
+
+协议应原生支持 Human + Agent 产品，而不是模仿 MTProto wire format。
+
+候选 typed events 包括：
+
+- HumanMessage
+- AgentMessage
+- MessageEdited
+- MessageDeleted
+- ReactionChanged
+- MemberJoined/Left
+- RoleChanged
+- Typing/Presence
+- TaskCreated/Completed
+- ArtifactPublished
+- ApprovalRequested/Resolved
+- AutomationTriggered
+- CallStateChanged
+- ComputerHandoff
+
+具体 wire protocol / storage encoding / transport 由 ADR 决定。
+
+### 6.3 Native services
+
+只有在现有 Host/Coordinator/shared/platform owner 无法承担基础设施职责时，新增最小 service：
+
+- identity/auth service
+- messaging service
+- sync service
+- presence service
+- media/blob service
+- call signaling service
+- push service
+
+这些 service 提供 infrastructure contract，不拥有 renderer product state。
+
+## 7. Agent 与通信不是两套系统
+
+Human communication 和 Agent execution 在产品层共享现有 conversation/workspace，而运行职责仍保持边界。
+
+示例：
+
+```text
+Human message
+    ↓
+existing Conversation / Transcript
+    ↓
+explicit @Agent / Ask Agent
+    ↓
+existing permission / interaction boundary
+    ↓
+Coordinator
+    ↓
+Host
+    ↓
+Runner
+    ↓
+Task / Artifact / Agent output
+    ↓
+existing Conversation / Transcript
+```
+
+不需要一个独立 “InteractionGateway service” 作为新一级架构。若现有 permission/composer/coordinator-client 边界不足，可以增加一个**最小 interaction policy/adapter**，但它必须嵌入现有 flow。
+
+## 8. UX 吸收规则
+
+最终用户只使用 Fabushi 原有产品 shell 的演化版本。
+
+### Sidebar
+
+现有 sidebar 扩展为同时显示：
+
+- Human
+- Agent
+- Group
+- Channel
+- Hybrid room
+
+不是增加 Telegram sidebar。
+
+### Conversation
+
+现有 conversation workspace 扩展支持 human messaging / group / channel / topic / agent runtime。
+
+### Composer
+
+现有 composer 扩展支持：
+
+- message
+- attachment
+- @Human
+- @Agent
+- reply / quote
+- schedule
+- task / automation
+- plugin/tool affordance
+
+### Context / settings
+
+Telegram 中成熟的成员、媒体、权限、通知、隐私等能力，进入现有 info/settings surfaces；只有缺失时才新增最小 surface。
+
+## 9. TDRP-001 的角色
+
+TDRP-001 不再实现 Telegram Provider 或 Telegram 网络兼容。
 
 它负责：
 
-- explicit user invocation
-- Agent mention routing
-- attachment handoff
-- selected message/context handoff
-- permission checks
-- provider/terms policy
-- consent state
-- redaction
-- audit metadata
-- output publish policy
+- 固定 Telegram Desktop 源码基线；
+- 完整 source/dependency/resource inventory；
+- capability discovery；
+- behavior/state-machine/edge-case research；
+- C++ production responsibility inventory；
+- source-informed provenance；
+- feature coverage oracle；
+- 为每项 capability 输出 `existing_owner` 候选与 absorption requirements；
+- 识别值得保留和应该改善的设计。
 
-禁止 Telegram sync/update handler 直接调用模型。
+TDRP-001 的“C++ → Rust”含义是：
 
-## 6. 典型产品流
+> 对从 Telegram C++ 产品逻辑中研究得到、最终需要进入 Fabushi 产品的职责，用更好的 Rust 或 best-fit Fabushi 实现重新实现，不把原 C++ 作为 production dependency。
 
-### FLOW-01 — 普通 Telegram 私聊
+它不要求 MTProto interoperability。
 
-Telegram update → Telegram Provider → Communication Core → unified Conversation → UI。
+## 10. P0 — Absorption Architecture
 
-没有 Agent invocation 时，消息不进入 Agent runtime。
+P0 必须先做：
 
-### FLOW-02 — 从消息显式调用 Agent
+1. 读取 PR #20 / current canonical exact HEAD；
+2. 建立 existing-owner inventory；
+3. 完整 Telegram capability graph；
+4. 对每项 capability 进行 owner resolution；
+5. 输出 absorption plan；
+6. 只有 owner 不存在时才创建 new-owner ADR proposal；
+7. 设计 Fabushi native communication network 所需的最小 infrastructure contracts；
+8. 定义 conversation/message/member/resource 的增量演化；
+9. 定义 Human + Agent 共同使用现有 workspace 的 UX；
+10. 定义 persistence / sync / recovery ownership；
+11. 定义测试与迁移策略。
 
-用户选择消息/附件 → Ask Agent / @Agent → Interaction Gateway → Coordinator → Host/Runner → Agent result。
+## 11. 第一条 implementation vertical slice
 
-Agent result 可以：
+第一条不能是 Telegram demo，也不能先造一套 communication app。
 
-- 保持为 Fabushi task/artifact；
-- 显示在本地 Agent context；
-- 在用户明确决定且 provider policy 允许时发送回 Telegram。
+必须是：
 
-### FLOW-03 — Hybrid Room
+1. existing Fabushi app shell；
+2. existing sidebar；
+3. 新增一个 Fabushi Human identity；
+4. sidebar 同时出现 Human conversation 与 Agent；
+5. 点击 Human conversation 仍进入 existing conversation workspace；
+6. existing composer 发送 HumanMessage；
+7. Fabushi native messaging backend/service 完成 durable send/receive；
+8. message 显示在 existing transcript；
+9. 从该 Human message 显式触发现有 Agent flow；
+10. Agent 结果进入同一 existing transcript / artifact flow；
+11. restart/reconnect 恢复；
+12. 不存在第二套 sidebar/conversation/message owner。
 
-同一个 Conversation 同时存在 Human 与 Agent participant。
+这条闭环通过后，再扩展 group/channel/media/calls 等能力。
 
-Agent 的触发规则必须显式：
+## 12. Verification
 
-- mention
-- direct request
-- allowed automation
-- permitted bot/business integration
+所有 executable verification 只能运行在：
 
-不能因为 Agent 在 room 中就默认读取并处理所有消息。
+- GitHub Actions
+- `htch-runtime`
 
-### FLOW-04 — Agent 作为 Telegram Bot Identity
+禁止本地 build/test/lint/generator/schema/benchmark/fuzz/package/acceptance。
 
-Fabushi Agent 可绑定 Telegram Bot identity。
+必须验证：
 
-此时 Agent 可以通过 Telegram Bot Platform 成为真实网络参与者，但：
+- exact-head existing owner mapping；
+- no duplicate product owner；
+- new owner proposals have ADRs；
+- native network does not depend on Telegram；
+- existing Agent workflows regressions；
+- Human + Agent same-shell behavior；
+- durable send/recovery；
+- packaged app；
+- platform/security/performance/accessibility；
+- Telegram feature coverage research completeness；
+- C++ source-informed responsibilities are implemented without production C++ fallback where applicable。
 
-- identity mapping 必须显式；
-- permissions 与 room scope 分离；
-- Bot Platform 数据规则单独执行；
-- Bot 输出和 Fabushi local Agent output 不能混淆。
+## 13. Acceptance Criteria
 
-### FLOW-05 — Message → Task / Automation
+**AC-01 — Existing architecture is the only product architecture**  
+PR #20 / canonical Fabushi architecture remains the single product skeleton.
 
-用户可从任意允许的消息创建：
+**AC-02 — No Telegram network dependency**  
+Fabushi identity, messaging, sync, media, calls and push operate on Fabushi-owned infrastructure/protocols. Telegram is not a runtime provider.
 
-- task
-- reminder
-- automation
-- computer job
-- plugin workflow
+**AC-03 — Existing-owner-first absorption**  
+Every researched Telegram capability records an existing owner first; new owners exist only with approved justification.
 
-原消息作为有 provenance 的输入引用，不复制成无来源 memory。
+**AC-04 — No parallel Communication Core**  
+There is no second top-level product model/runtime containing duplicate Identity/Conversation/Message truth.
 
-### FLOW-06 — Agent execution → Communication
+**AC-05 — Complete Telegram feature coverage**  
+All applicable Telegram Desktop product capabilities are researched and either absorbed or explicitly blocked with evidence; no capability disappears because it is difficult.
 
-Agent 完成 Computer / plugin / tool 工作后，可产生 Artifact。
+**AC-06 — Human + Agent unified product**  
+Human, Agent, group, channel and hybrid rooms use the evolved Fabushi shell/workspace instead of separate applications.
 
-Artifact 可以被用户发送到 Conversation，或在明确允许的自动化中发布。
+**AC-07 — Existing capabilities are extended, not replaced casually**  
+Transcript, composer, Shared Room, attachments, Automations, Computer, Plugins/MCP, settings and other owners are reused when appropriate.
 
-“Agent 完成”与“已经向 Telegram 网络发送”是两个不同状态。
+**AC-08 — New owners are minimal**  
+Every added product/runtime/service owner has a focused responsibility and approved ADR proving existing owners were unsuitable.
 
-## 7. Permissions
+**AC-09 — Native network semantics**  
+Fabushi native protocol supports communication plus Agent-native events without forcing them into Telegram wire semantics.
 
-权限不是“Agent 全局有 GitHub/Computer”。
+**AC-10 — Source-informed C++ replacement**  
+Telegram/desktop-app C++ source may be studied, but the final Fabushi production responsibility uses Rust/best-fit implementation rather than the original C++ production code.
 
-至少同时考虑：
+**AC-11 — No duplicate state truth**  
+No parallel message, identity, room, conversation, resource or permission owner exists.
 
-- Agent identity
-- Conversation / room
-- Human principal
-- provider account
-- capability/tool
-- data scope
-- action class
-- duration
-
-例：
-
-`Coding Agent` 在 Product Team 中可以：
-
-- read explicitly routed messages
-- receive @mentions
-- use project-scoped GitHub
-- use Computer
-
-但不能自动：
-
-- read unrelated Telegram chats
-- send as the user
-- access payments
-- invite members
-- create persistent automations
-
-高风险动作需要显式 approval 或预先配置的窄权限。
-
-## 8. Telegram 完整能力吸收
-
-“Telegram complete capability integration” 不是只做消息收发。
-
-TDRP-001 必须研究并交付固定基线中适用的全部能力，至少覆盖：
-
-- startup/account/login/multi-account
-- contacts/peers
-- dialogs/archive/folders
-- messages/reply/quote/forward/edit/delete
-- drafts/scheduled/silent send
-- reactions/polls
-- groups/supergroups/channels/topics
-- members/admin/permissions/invites
-- search
-- files/photos/video/audio/voice
-- upload/download/cache/streaming
-- stickers/GIF/custom emoji
-- Stories
-- calls/video/screen sharing
-- notifications/tray/badges
-- settings/privacy/local lock
-- Bots/inline bots/Mini Apps/WebView
-- Premium/Stars/gifts/business
-- payments/passport/webauthn where applicable
-- export/local data/recovery
-- themes/i18n/RTL/IME/accessibility
-- install/update/platform integration
-
-每项能力必须进入 Fabushi 产品域。没有合适通用抽象时，可以保留 `TelegramExtension` typed capability；禁止为了架构漂亮而删除 Telegram 特性。
-
-## 9. Source-informed implementation
-
-Telegram Desktop 固定源码仍然是功能发现和行为研究来源，但不是产品架构模板。
-
-TDRP-001 负责：
-
-- 完整源码闭包；
-- capability research；
-- C++ production logic inventory；
-- behavior oracle；
-- Rust replacement；
-- Telegram provider 实现；
-- provider-specific acceptance。
-
-FBCP-001 负责：
-
-- 产品领域；
-- Bot + communication 融合；
-- unified UI；
-- identity/conversation contracts；
-- Agent interaction；
-- permissions；
-- compliance/data boundaries；
-- product acceptance。
-
-## 10. 数据与 AI 边界
-
-Telegram client data 与 Agent/model data 必须默认隔离。
-
-### DATA-01 — No implicit AI ingestion
-
-登录 Telegram、同步消息或打开 Conversation 不等于授权把该数据发送给模型、第三方 AI API、memory、training、retrieval 或 Agent runtime。
-
-### DATA-02 — Explicit routing
-
-只有明确的产品动作或经批准的 automation 才能通过 Interaction Gateway 传递上下文。
-
-### DATA-03 — Terms-aware policy
-
-Telegram Client API、Bot Platform、Business integration 的条款和可处理数据范围不同。
-
-实现和发布时必须重新读取最新官方条款；policy engine 不得把所有来源视为同一种许可。
-
-### DATA-04 — No AI scraping architecture
-
-禁止设计“后台读取所有群/频道/历史 → 建 AI dataset/global memory”的默认路径。
-
-### DATA-05 — Third-party model disclosure
-
-若上下文将发送给第三方模型/provider，必须满足当前条款、产品 privacy policy、用户授权和必要的 redaction。
-
-### DATA-06 — Search is not Agent memory
-
-通信搜索索引与 Agent memory 是不同存储/用途。不得因本地搜索需要而自动把 Telegram 数据纳入 Agent memory。
-
-官方动态参考：
-
-- https://core.telegram.org/api/terms
-- https://telegram.org/tos/bot-developers
-- https://core.telegram.org/api/bots/ai
-
-## 11. 语言和实现原则
-
-### C++ replacement
-
-所有 Telegram/desktop-app 自有 C++ production logic，最终由 Rust 取代。
-
-不得用：
-
-- C++ helper process
-- Qt business UI
-- TDLib wrapper
-- original tdesktop binary
-- Rust façade around original C++ logic
-
-冒充完成。
-
-### Best-fit non-C++
-
-其他边界选择最合适语言：
-
-- Rust：communication core、Telegram protocol/sync/storage、native logic、安全/并发/高性能路径；
-- TypeScript/React：现有产品 UI/DOM/Electron 边界在它仍为最佳选择时；
-- platform language：仅窄 OS bridge；
-- shader/resource/manifest：使用自然格式；
-- Python/Node：仅在工具/生态边界有明确 ADR 时。
-
-语言不能制造第二套业务 owner。
-
-## 12. Provider abstraction 原则
-
-不能为了未来多 provider，把 Telegram 降级到“最低公共分母”。
-
-`CommunicationProvider` 只抽象稳定公共行为：
-
-- account/session
-- identity resolution
-- conversation discovery
-- send/receive
-- media transfer
-- presence/typing where applicable
-- notifications
-- capability discovery
-
-Telegram-specific：
-
-- channels
-- forum topics
-- stories
-- stars
-- business
-- specialized message/action types
-- MTProto update semantics
-
-必须通过 typed extensions 保留。
-
-## 13. Migration strategy
-
-### P0 — Product domain and absorption design
-
-先完成：
-
-1. PR #20 / canonical Bot architecture inventory；
-2. Telegram complete capability graph；
-3. existing Bot domain ↔ communication domain collision analysis；
-4. unified Identity / Participant / Conversation / Message contracts；
-5. Telegram provider boundary；
-6. Interaction Gateway / data policy；
-7. unified Inbox / Conversation / Composer information architecture；
-8. permissions model；
-9. persistence ownership；
-10. architecture ADR backlog。
-
-### P1 — First product vertical slice
-
-必须以现有 Bot 产品为壳，而不是做 Telegram demo app：
-
-1. Fabushi 启动；
-2. Telegram account sign-in；
-3. unified sidebar 同时显示 Agent 与 Telegram human conversation；
-4. 打开 Telegram private chat；
-5. send/receive Telegram message；
-6. 从一条消息显式 Ask Agent；
-7. Agent 通过现有 Coordinator/Host/Runner 执行；
-8. 结果成为 Fabushi task/artifact；
-9. 用户明确选择是否发送结果回原 Conversation；
-10. restart 后所有 identity/conversation/task linkage 正确恢复。
-
-### P2 — Core communication completeness
-
-contacts、dialogs、groups、channels、topics、search、notifications、settings、permissions、完整 message types。
-
-### P3 — Media / calls
-
-media lifecycle、record/playback、calls/video/screen sharing、device/network recovery。
-
-### P4 — Agent-native collaboration
-
-Agent membership、@Agent、Telegram Bot identity、room-scoped permissions、group workflows、automations、Computer/artifact publish。
-
-### P5 — Long-tail Telegram completeness
-
-Stories、Bots/Mini Apps、Premium/Stars/gifts/business、payments/security/export 等冻结基线能力。
-
-### P6 — Platform/release hardening
-
-Windows/macOS/Linux、install/update/rollback、accessibility、performance/power/security、license/API/brand/signing。
-
-### P7 — Cutover
-
-删除重复 product shell、Telegram-only workspace、C++ fallback、legacy parallel messaging model 和 duplicate state owners。
-
-## 14. Verification
-
-所有构建、lint、schema、generator、test、benchmark、fuzz、package、acceptance 只能在 GitHub Actions 或 `htch-runtime`。
-
-不得使用本地构建作为验收。
-
-至少验证：
-
-- Bot existing capability regression；
-- Telegram provider behavior/protocol；
-- unified product domain；
-- identity mapping；
-- no duplicate state owner；
-- normal chat never invokes Agent unexpectedly；
-- explicit Agent handoff carries only intended context；
-- restart/reconnect；
-- human + Agent hybrid room；
-- packaged application；
-- platform UI/accessibility；
-- current Telegram terms policy configuration；
-- performance/power；
-- C++ production dependency absence。
-
-## 15. Acceptance Criteria
-
-**AC-01 — Single product root**  
-Fabushi Bot/Agent Desktop 是唯一产品根；不存在独立 Telegram app/workspace 作为最终 UX。
-
-**AC-02 — Bot foundation preserved**  
-Coordinator/Host/Runner、Agent、Computer、Plugins/MCP、Automations 等现有 Bot 核心能力继续是 canonical product capability，没有因 Telegram 集成退化。
-
-**AC-03 — Complete Telegram capability absorption**  
-TDRP-001 的全部适用 Telegram capability 已进入 Fabushi 产品，零未解释功能缺口。
-
-**AC-04 — Unified product model**  
-Identity/Participant/Conversation/Message 等核心模型统一，同时 Telegram-specific semantics 没有被最低公共分母丢失。
-
-**AC-05 — C++ replacement**  
-Telegram/desktop-app C++ production logic 为零，全部由 Rust owners 或明确允许的外部系统能力取代。
-
-**AC-06 — Unified UX**  
-Inbox、Conversation、Composer、Search、Context、Settings 是 Fabushi 产品体验，不需要切换到 Telegram 子应用。
-
-**AC-07 — Human + Agent collaboration**  
-Conversation 可以安全地承载 Human、Agent、Task、Artifact、Automation、Computer 等协作实体。
-
-**AC-08 — Permission correctness**  
-Agent 只在明确 principal/room/provider/data/tool scope 内执行；没有静默越权或代表用户隐式发送。
-
-**AC-09 — Data/AI boundary**  
-Communication data 与 Agent/model plane 默认隔离；所有跨界路径可解释、可审计、符合最新条款和用户授权。
-
-**AC-10 — Telegram interoperability**  
-真实 Telegram 客户端、群组、频道、媒体、通话及其他适用能力互通正确。
-
-**AC-11 — No duplicate architecture**  
-没有 Telegram-only product shell、第二套 conversation truth、第二套 identity owner 或 parallel agent runtime。
-
-**AC-12 — Existing Bot regression**  
-PR #20 / canonical Bot requirements 的适用能力没有因通信平台加入而退化。
+**AC-12 — Bot architecture preserved**  
+Coordinator/Host/Runner/Computer/Plugins/Automations continue to satisfy their canonical requirements.
 
 **AC-13 — Exact-head evidence**  
-所有验收绑定目标 exact SHA 和 GitHub Actions / htch-runtime 的真实 run/artifact。
+All acceptance evidence binds the exact target SHA and allowed runner.
 
-**AC-14 — Release/legal provenance**  
-Telegram source-informed provenance、GPL、API terms、Bot terms、assets、branding、signing 等均有 release review。
+**AC-14 — Packaged product acceptance**  
+A packaged Fabushi build proves Human communication + Agent work are one coherent product.
 
-**AC-15 — Independent product acceptance**  
-在 packaged build 中，通信、Agent、Computer、Plugins、Automations 和 Telegram 网络能力表现为一个连贯产品，由独立验收确认。
+## 14. Licensing / provenance
 
-## 16. 当前状态
+本路线仍然是 source-informed，不是 clean-room。
 
-本 Spec 目前只完成产品方向与架构治理定义。
+研究 Telegram Desktop GPL 源码后重新实现，不得声称“换成 Rust 就自动消除 GPL 风险”。所有 source-derived research、复制/改编、第三方依赖、资源和发布许可证义务必须记录并在 release 前审查。
 
-- PR #20 Bot foundation：进行中；
-- Telegram source research：未完成；
-- Communication Core：未实现；
-- Telegram Provider：未实现；
-- Unified product model：未实现；
-- Agent/communication Interaction Gateway：未实现；
-- Unified UX：未实现；
-- Full Telegram absorption：blocked；
-- release：blocked。
+Fabushi 自有通信网络不改变这一 provenance 事实。
 
-不得把 Spec 文件本身当作产品完成。
+## 15. Current status
 
-## 17. References
+本 Revision 只修正架构方向：
 
-- Latest explicit user direction, 2026-10-02: the product is the existing Bot product with all Telegram functionality absorbed into it, not a Telegram product with Bot integration.
-- PR #20: https://github.com/bhrumom/fabushi-desktop/pull/20
-- TDRP-001: `docs/specs/telegram-desktop-rust-equivalence-migration.md`
-- Telegram API terms: https://core.telegram.org/api/terms
-- Telegram Bot Platform terms: https://telegram.org/tos/bot-developers
-- Telegram AI bot features: https://core.telegram.org/api/bots/ai
+- existing-owner-first rule：specified
+- Telegram as research source only：specified
+- native Fabushi network：specified
+- existing owner inventory：not complete
+- Telegram capability research：not complete
+- absorption mapping：not complete
+- native messaging infrastructure：not implemented
+- Human messaging in existing workspace：not implemented
+- full feature absorption：blocked
+- release：blocked

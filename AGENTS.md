@@ -150,32 +150,42 @@ All builds and tests must run only in **GitHub Actions** or on **`htch-runtime`*
 
 Missing runner, OS, device, account or signing configuration is `not-configured` / `blocked`, never a passing test. Record the exact source revision, actual commands, test counts, exit codes and artifacts from the allowed execution environment.
 
-## Fabushi Bot Communication Platform — FBCP-001
+## Fabushi native communication capability absorption — FBCP-001
 
-For communication, Telegram, unified conversation, Human+Agent room, messaging, media, calls, identity or related product work, read:
+For messaging, rooms, channels, contacts, media, calls, identity, Telegram-source research, or Human+Agent communication work, read:
 
 - `projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md`;
 - `docs/specs/fabushi-bot-communication-platform.md`;
 - `projects/fabushi-communication-platform/architecture-map.md`;
-- current FBCP task/ADR;
-- `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md` and TDRP-001 when Telegram capability/source behavior is involved;
-- the current PR #20 / canonical Grok Bot spec when Agent Runtime boundaries are involved.
+- the current FBCP task/ADR;
+- `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md` and TDRP-001 when Telegram source behavior is involved;
+- the current PR #20 / canonical Grok Bot spec.
 
-### Product root
+### Single target architecture
 
-**Fabushi Bot is the product. Telegram is a complete communication capability source and provider, not a separate product/workspace.**
+**PR #20 / canonical Fabushi is the only target product architecture.**
 
-Do not create a final Telegram-only product shell, sidebar, settings hierarchy, conversation truth or Agent runtime.
+Telegram Desktop is a research source. Do not create a Telegram Provider, Telegram network dependency, Telegram-only product shell, or a parallel Communication Core.
 
-The existing Bot/Agent Coordinator/Host/Runner architecture remains independent from Communication Core. Telegram Provider must not call models directly. Communication → Agent data crosses only the explicit FBCP InteractionGateway/permission/policy boundary.
+For every researched capability:
 
-FBCP is an explicitly approved Fabushi product extension. Grok parity cleanup rules must not delete communication/Telegram capabilities merely because Grok 0.18 lacks a counterpart.
+1. inspect the current exact-head Fabushi architecture;
+2. list plausible current owners;
+3. select `existing_owner`;
+4. define the absorption changes;
+5. only if no owner is suitable, create a minimal `new_owner_proposal` with rejected-owner analysis and an ADR.
 
-### Telegram implementation
+Prefer extending current owners such as sidebar, conversation workspace, transcript/cards, composer, Shared Room/member model, reactions, attachments/artifacts, permissions, search, settings, Computer, Plugins/MCP, Automations, Host/Coordinator/platform boundaries.
 
-TDRP-001 is subordinate to FBCP-001. Read Telegram source deeply to discover capabilities and behavior, but do not mirror its source architecture. All Telegram/desktop-app C++ production logic must ultimately be replaced by Rust production owners. Preserve Telegram-specific semantics with typed provider extensions rather than deleting them to fit a generic model.
+Broad parallel owners such as `TelegramCore`, `TelegramRuntime`, `TelegramProvider`, `CommunicationCore`, or `MessengerRuntime` are prohibited unless a future explicit interoperability spec authorizes them.
 
-This route is source-informed, not clean-room. Never claim Rust automatically removes GPL obligations.
+### Native network
+
+Fabushi owns its communication identity, messaging, sync, presence, media, call signaling and push infrastructure. Telegram/MTProto code may be studied for mature communication behavior but is not the Fabushi runtime protocol.
+
+### Source-informed implementation
+
+TDRP-001 remains source-informed and is not clean-room. Do not claim Rust automatically removes GPL obligations. Required Telegram C++ product responsibilities are reimplemented in the appropriate Fabushi owner; original Telegram/desktop-app C++ must not remain the production owner.
 
 ### Execution
 

@@ -1,68 +1,58 @@
-# Fabushi Bot Communication Platform — Source of Truth
+# Fabushi Native Communication Capability Absorption — Source of Truth
 
 Status: active  
 Project ID: FBCP-001  
+Revision: 2  
 Date: 2026-10-02  
 Repository: `bhrumom/fabushi-desktop`
 
-## Product statement
+## Canonical statement
 
-**Fabushi Bot is the product. Telegram is a complete communication capability source and network provider, not a separate product.**
-
-最终目标是在现有 Bot / Agent 产品基础上，拥有 Telegram 的全部适用功能，并让 Human、Agent、Computer、Plugins/MCP、Automations、Tasks、Artifacts 与通信网络成为一个产品。
-
-## Authority
-
-1. latest explicit user requirement
-2. `docs/specs/fabushi-bot-communication-platform.md`
-3. applicable PR #20 / canonical Grok Bot architecture spec
-4. TDRP-001 Telegram capability research/provider sub-spec
-5. approved ADRs
-6. exact-head implementation/evidence
-7. historical chats/docs
+**PR #20 / canonical Fabushi architecture is the only target architecture. Telegram Desktop is a research source. Telegram features are decomposed and absorbed into existing Fabushi owners. Fabushi owns its communication network.**
 
 ## Must read
 
-- root `AGENTS.md`
-- `docs/specs/fabushi-bot-communication-platform.md`
-- `docs/specs/grok-bot-018-runtime-product-parity-recovery.md` when working on Bot architecture
-- `docs/specs/telegram-desktop-rust-equivalence-migration.md`
-- `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md`
-- current task / ADR / evidence
+1. root `AGENTS.md`
+2. `docs/specs/fabushi-bot-communication-platform.md`
+3. current PR #20 / canonical Grok Bot spec
+4. `docs/specs/telegram-desktop-rust-equivalence-migration.md`
+5. `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md`
+6. current P0/ADR/evidence
 
-## Non-negotiable architecture
+## Hard rules
 
-- one Fabushi product shell
-- no final Telegram-only workspace
-- existing Agent Runtime remains independent from Communication Core
-- Telegram Provider does not own Agent execution
-- Communication Core does not call models directly
-- cross-plane data goes through InteractionGateway
-- unified product Identity / Participant / Conversation / Message model
-- provider-specific Telegram semantics preserved
-- all Telegram/desktop-app C++ production logic ultimately Rust-owned
-- non-C++ boundaries use best-fit language via ADR
-- no duplicate conversation/state owner
-- all tests/builds only GitHub Actions or htch-runtime
+- no Telegram Provider as product/network foundation
+- no MTProto dependency for Fabushi native communication
+- no parallel Communication Core
+- no second sidebar/conversation/message/identity truth
+- existing owner first
+- new owner only with approved minimal-responsibility ADR
+- infrastructure services support existing owners; they do not become another product architecture
+- Human and Agent share the evolved existing product shell/workspace
+- all Telegram capabilities remain in research scope
+- source-informed C++ responsibilities are reimplemented, not shipped as original Telegram C++
+- all executable verification only GitHub Actions or htch-runtime
 
-## PR #20 integration
+## Current PR #20 design input
 
-At this revision, observed PR #20 HEAD:
+Before this Revision was aligned, current PR #20 HEAD was:
 
-`7823c596712b674661e40925b1426d945d0e2e55`
+`91cbe2f26e0a81b76a08c06c7cd4895f0c4b21d2`
 
-It already contains Human/Agent Shared Room concepts and Bot features such as Computer and Automations. FBCP is an approved product extension of that Bot foundation.
+Always reread the live exact HEAD before work.
 
-Always reread the live exact HEAD before implementation.
+## Owner resolution rule
 
-## Current next task
+For every Telegram capability:
+
+`research → existing_owner → absorption_plan`
+
+Only if no valid owner exists:
+
+`rejected_existing_owners + new_owner_proposal + ADR`.
+
+## Next task
 
 `management/tasks/P0-product-domain-and-telegram-absorption.md`
 
-P0 is architecture/research work, not a Telegram demo implementation.
-
-## Data boundary
-
-Telegram communication data is not automatically Agent/model context.
-
-Any communication → Agent transfer must be explicit, policy-checked, provenance-preserving and compatible with current Telegram terms and user permissions.
+P0 must inventory current owners before proposing any new communication domain.

@@ -311,21 +311,22 @@
     "total_recursive_leaf_count": null,
     "pending_phase": "P0",
     "pending_work": [
-      "Complete the recursive upstream source/dependency/resource closure.",
-      "Classify every source leaf into Telegram capabilities and identify all Telegram/desktop-app C++ production logic.",
-      "Map every capability to an FBCP product domain, Telegram Provider responsibility, or typed Telegram extension.",
-      "Identify all Communication-to-Agent InteractionGateway implications and data/terms policy requirements.",
-      "Create capability research dossiers and provider architecture ADR questions.",
-      "Create a nonempty capability ledger with exact-head evidence on GitHub Actions or htch-runtime.",
-      "Review GPL, third-party licenses, Telegram API/Bot terms, branding and release provenance."
+      "Complete the recursive Telegram source/dependency/resource closure.",
+      "Classify every source leaf into product capabilities and identify Telegram/desktop-app C++ production responsibilities.",
+      "Inventory current exact-head Fabushi owners from PR #20/canonical architecture.",
+      "Resolve every capability to an existing Fabushi owner and define an absorption plan.",
+      "For capabilities with no valid owner, document rejected owner candidates and create the smallest new-owner ADR proposal.",
+      "Derive Fabushi-native network requirements from mature Telegram behaviors without requiring MTProto compatibility.",
+      "Create nonempty research/absorption ledger evidence on GitHub Actions or htch-runtime.",
+      "Review GPL, third-party licenses, assets and source provenance before release."
     ],
     "cpp_production_logic_inventory_verified": false,
     "capability_graph_verified": false,
     "research_coverage_verified": false,
     "research_coverage": null,
-    "fbc_product_destination_mapping_verified": false,
-    "provider_extension_map_verified": false,
-    "interaction_gateway_impacts_verified": false
+    "existing_owner_inventory_verified": false,
+    "owner_resolution_verified": false,
+    "absorption_plan_verified": false
   },
   "license_baseline": {
     "upstream_project_license_expression": "GPL-3.0-or-later",
@@ -346,8 +347,8 @@
     "https://github.com/telegramdesktop/tdesktop/blob/33261535a0e747f125e0ed25486f01e556330677/LEGAL",
     "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/3b1f2c5deaf47867629c96b08bf4694f973177e2"
   ],
-  "spec_revision": 2,
-  "method": "source-informed-capability-absorption",
+  "spec_revision": 4,
+  "method": "source-informed-existing-owner-absorption",
   "clean_room": false,
   "target_spec_revision_2_baseline": {
     "repository": "bhrumom/fabushi-desktop",
@@ -357,13 +358,26 @@
   "parent_product": {
     "project_id": "FBCP-001",
     "spec_path": "docs/specs/fabushi-bot-communication-platform.md",
-    "role": "telegram-capability-source-and-provider",
-    "product_root": "Fabushi Bot"
+    "role": "telegram-capability-research-source",
+    "product_root": "existing Fabushi / PR #20 architecture"
   },
-  "product_target": "Fabushi Bot Communication Platform",
+  "product_target": "Fabushi native Human+Agent communication product",
   "target_spec_revision_3_baseline": {
     "repository": "bhrumom/fabushi-desktop",
     "commit": "67890443847c0c1b711c27853f7864d0215e33b0",
     "note": "Revision 3 base before subordinating Telegram rearchitecture to FBCP-001."
+  },
+  "runtime_target": {
+    "telegram_provider_required": false,
+    "mtproto_compatibility_required": false,
+    "telegram_network_dependency": false,
+    "fabushi_native_network": true,
+    "owner_policy": "existing-owner-first"
+  },
+  "target_spec_revision_4_baseline": {
+    "repository": "bhrumom/fabushi-desktop",
+    "commit": "5b77d20200999bcb6e62db065b0242016cde6bd6",
+    "pr20_design_input": "91cbe2f26e0a81b76a08c06c7cd4895f0c4b21d2",
+    "note": "Revision 4 removes Telegram Provider/network and parallel Communication Core assumptions."
   }
 }

@@ -14,22 +14,24 @@ Current source boundaries:
 
 See `MIGRATION_SOURCE.md` for the original platform extraction, `RUST_RUNTIME_SOURCE.md` for the Rust restoration provenance, and `DESKTOP_SOURCE_CLOSURE.md` for the shared source files required by the desktop build.
 
-## Fabushi Bot Communication Platform
+## Fabushi native communication capability absorption
 
 The product direction is governed by [FBCP-001](docs/specs/fabushi-bot-communication-platform.md):
 
-**Fabushi Bot is the product. Telegram is a complete communication capability source and network provider, not a separate product or workspace.**
+**The existing Fabushi / PR #20 architecture is the only target architecture. Telegram Desktop is a complete communication-product research source, not Fabushi's network, provider, or second product architecture.**
 
-The existing Bot/Agent architecture remains the product foundation. Telegram capabilities are absorbed into unified Fabushi domains such as Identity, Conversations, Messaging, Media, Calls, Search and Notifications, while Agent execution remains owned by Coordinator/Host/Runner, Computer, Plugins/MCP and Automations.
+Telegram capabilities are decomposed and absorbed into current Fabushi owners such as the sidebar, conversation workspace, transcript, composer, Shared Room/member model, attachments/artifacts, permissions, settings, Computer, Plugins/MCP and Automations. A new owner is allowed only when no current owner is suitable and an ADR justifies the smallest possible responsibility.
+
+Fabushi owns its own communication identity, network, synchronization, messaging, media, calls and push infrastructure. MTProto/Telegram networking may be studied for lessons but is not the product runtime.
 
 Start with:
 
 - [FBCP source of truth](projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md)
-- [FBCP architecture map](projects/fabushi-communication-platform/architecture-map.md)
+- [FBCP absorption map](projects/fabushi-communication-platform/architecture-map.md)
 - [FBCP status](projects/fabushi-communication-platform/STATUS.md)
-- [Telegram capability/provider sub-spec](docs/specs/telegram-desktop-rust-equivalence-migration.md)
-- [Telegram source research project](projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md)
+- [Telegram research sub-spec](docs/specs/telegram-desktop-rust-equivalence-migration.md)
+- [Telegram research project](projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md)
 
-The Telegram implementation is source-informed, not clean-room. All Telegram/desktop-app C++ production logic must ultimately be replaced by Rust owners. Other boundaries use the best-fit language through explicit architectural decisions.
+This work is source-informed, not clean-room. Source/provenance and licensing review remain release gates.
 
 All builds and tests run only in GitHub Actions or on `htch-runtime`.
