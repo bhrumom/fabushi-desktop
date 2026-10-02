@@ -2170,7 +2170,7 @@ fn shipping_cursor_agent_inbound_failure_redrives_priority_supersede_before_repo
         .find("if provider == InferenceProvider::Cursor")
         .expect("shipping Cursor agent-inbound branch");
     let local_start = main[cursor_start..]
-        .find("if let Err(error) =")
+        .find("if let Err(error) =\n            execute_local_inference")
         .map(|offset| cursor_start + offset)
         .expect("shipping local inference branch boundary");
     let cursor_branch = &main[cursor_start..local_start];
