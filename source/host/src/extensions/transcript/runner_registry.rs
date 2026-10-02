@@ -1,4 +1,5 @@
-use std::sync::Arc;
+use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
 
 use crate::extensions::inference::provider_session::ProviderSessionError;
 use crate::runner::routed_provider_runtime::{
@@ -12,6 +13,7 @@ pub const RUN_WATCHDOG_INTERRUPT_REASON: &str =
 pub struct TranscriptRunnerRegistry {
     routed_provider_tasks: Arc<RoutedProviderTaskRegistry>,
     group_member_tasks: Arc<RoutedProviderTaskRegistry>,
+    dm_preempted_group_members: Arc<Mutex<HashSet<String>>>,
 }
 
 impl TranscriptRunnerRegistry {
@@ -19,6 +21,7 @@ impl TranscriptRunnerRegistry {
         Self {
             routed_provider_tasks,
             group_member_tasks: Arc::new(RoutedProviderTaskRegistry::default()),
+            dm_preempted_group_members: Arc::new(Mutex::new(HashSet::new())),
         }
     }
 
@@ -73,6 +76,35 @@ impl TranscriptRunnerRegistry {
         reason: impl Into<String>,
     ) -> usize {
         self.group_member_tasks.cancel_agent(agent_id, reason)
+    }
+
+    pub fn preempt_group_member_agent(
+        &self,
+        agent_id: &str,
+        reason: impl Into<String>,
+    ) -> usize {
+        let cancelled = self.group_member_tasks.cancel_agent(agent_id, reason);
+        if cancelled > 0 {
+            self.dm_preempted_group_members
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .insert(agent_id.to_string());
+        }
+        cancelled
+    }
+
+    pub fn take_group_member_preempted(&self, agent_id: &str) -> bool {
+        self.dm_preempted_group_members
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(agent_id)
+    }
+
+    pub fn clear_group_member_preempted(&self, agent_id: &str) {
+        self.dm_preempted_group_members
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(agent_id);
     }
 
     pub fn active_stream_ids_for_agent(&self, agent_id: &str) -> Vec<String> {
