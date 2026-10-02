@@ -1,9 +1,11 @@
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
-use serde_json::json;
+use serde_json::{Value, json};
 
-use super::profile_watch::ProductionProfileWatch;
+use super::profile_watch::{
+    ProductionProfileWatch, ProfileWatchEvent, ProfileWatchEventSink,
+};
 use super::roster_emit::{ProductionRosterEmit, RosterEventSink};
 use super::roster_projection::OUTLINE_STREAM_COALESCE_MS;
 use super::transcript_manager::{
@@ -31,6 +33,9 @@ pub const TRANSCRIPT_EXTENSION_DEPENDENCIES: &[&str] = &[
     "turn-execution",
 ];
 
+pub const TRANSCRIPT_PROFILE_CHANGED_TOPIC: &str = "transcript.profile-changed";
+pub const TRANSCRIPT_TIMELINE_EVENT_TOPIC: &str = "transcript.timeline-event";
+
 #[derive(Clone)]
 pub struct TranscriptExtensionDeps {
     pub attachments: Arc<AttachmentsService>,
@@ -56,6 +61,67 @@ impl TranscriptExtensionEventBridge {
         let _ = self
             .events
             .emit_topic(topic, &payload, HostEventFailureMode::Continue);
+    }
+
+    pub fn profile_changed(&self, agent_id: &str) {
+        self.emit(
+            TRANSCRIPT_PROFILE_CHANGED_TOPIC,
+            json!({"agentId": agent_id}),
+        );
+    }
+
+    pub fn timeline_event(&self, agent_id: &str, event: Value) {
+        self.emit(
+            TRANSCRIPT_TIMELINE_EVENT_TOPIC,
+            json!({"agentId": agent_id, "event": event}),
+        );
+    }
+
+    pub fn profile_watch_event_sink(&self) -> ProfileWatchEventSink {
+        let bridge = self.clone();
+        Arc::new(move |event| match event {
+            ProfileWatchEvent::Timeline { agent_id, event } => {
+                bridge.timeline_event(&agent_id, event);
+            }
+            ProfileWatchEvent::ProfileChanged { agent_id } => {
+                bridge.profile_changed(&agent_id);
+            }
+        })
+    }
+
+    pub fn subscribe_profile_changed<F>(&self, listener: F) -> HostEventSubscription
+    where
+        F: Fn(&str) + Send + Sync + 'static,
+    {
+        self.events.on(TRANSCRIPT_PROFILE_CHANGED_TOPIC, move |payload| {
+            if let Some(agent_id) = payload.get("agentId").and_then(Value::as_str) {
+                listener(agent_id);
+            }
+            Ok(())
+        })
+    }
+
+    pub fn bind_profile_watch_projection(
+        &self,
+        roster: Arc<ProductionRosterEmit>,
+    ) -> Vec<HostEventSubscription> {
+        let timeline_roster = Arc::clone(&roster);
+        let timeline = self
+            .events
+            .on(TRANSCRIPT_TIMELINE_EVENT_TOPIC, move |payload| {
+                let Some(agent_id) = payload.get("agentId").and_then(Value::as_str) else {
+                    return Ok(());
+                };
+                let Some(event) = payload.get("event") else {
+                    return Ok(());
+                };
+                timeline_roster.publish_timeline_event(agent_id, event.clone());
+                Ok(())
+            });
+        let profile = self.subscribe_profile_changed(move |agent_id| {
+            roster.publish_profile_changed(agent_id);
+        });
+        vec![timeline, profile]
     }
 
     pub fn automation_config_changed(&self) {
@@ -91,6 +157,7 @@ pub struct TranscriptExtension {
     profile_watch_error: Option<String>,
     deps: Option<TranscriptExtensionDeps>,
     events: Option<TranscriptExtensionEventBridge>,
+    _profile_watch_subscriptions: Vec<HostEventSubscription>,
     _outline_stream_subscription: Option<HostEventSubscription>,
 }
 
@@ -128,6 +195,15 @@ pub fn start_transcript_extension(
     sessions: Arc<ProductionSessionWorkers>,
     event_sink: RosterEventSink,
 ) -> TranscriptExtension {
+    start_transcript_extension_with_event_bridge(root_dir, sessions, event_sink, None)
+}
+
+fn start_transcript_extension_with_event_bridge(
+    root_dir: &Path,
+    sessions: Arc<ProductionSessionWorkers>,
+    event_sink: RosterEventSink,
+    events: Option<TranscriptExtensionEventBridge>,
+) -> TranscriptExtension {
     let manager = Arc::new(TranscriptManager::new(root_dir, Arc::clone(&sessions)));
     let roster_emit = Arc::new(ProductionRosterEmit::new(
         Arc::clone(&sessions),
@@ -135,18 +211,41 @@ pub fn start_transcript_extension(
         event_sink,
     ));
     roster_emit.set_outline_stream_coalescing_ms(OUTLINE_STREAM_COALESCE_MS);
-    let (profile_watch, profile_watch_error) =
-        match ProductionProfileWatch::start(sessions, Arc::clone(&roster_emit)) {
-            Ok(watch) => (Some(watch), None),
-            Err(error) => (None, Some(error.to_string())),
-        };
+
+    let (profile_events, profile_watch_subscriptions) = if let Some(events) = events.as_ref() {
+        (
+            events.profile_watch_event_sink(),
+            events.bind_profile_watch_projection(Arc::clone(&roster_emit)),
+        )
+    } else {
+        let profile_roster = Arc::clone(&roster_emit);
+        let sink: ProfileWatchEventSink = Arc::new(move |event| match event {
+            ProfileWatchEvent::Timeline { agent_id, event } => {
+                profile_roster.publish_timeline_event(&agent_id, event);
+            }
+            ProfileWatchEvent::ProfileChanged { agent_id } => {
+                profile_roster.publish_profile_changed(&agent_id);
+            }
+        });
+        (sink, Vec::new())
+    };
+
+    let (profile_watch, profile_watch_error) = match ProductionProfileWatch::start(
+        sessions,
+        Arc::clone(&roster_emit),
+        profile_events,
+    ) {
+        Ok(watch) => (Some(watch), None),
+        Err(error) => (None, Some(error.to_string())),
+    };
     TranscriptExtension {
         manager,
         roster_emit,
         profile_watch,
         profile_watch_error,
         deps: None,
-        events: None,
+        events,
+        _profile_watch_subscriptions: profile_watch_subscriptions,
         _outline_stream_subscription: None,
     }
 }
@@ -188,11 +287,13 @@ pub fn start_production_transcript_extension(
     sessions: Arc<ProductionSessionWorkers>,
     deps: TranscriptExtensionDeps,
 ) -> TranscriptExtension {
+    let events = TranscriptExtensionEventBridge::new(deps.events.clone());
     let roster_events = deps.events.clone();
-    let mut extension = start_transcript_extension(
+    let mut extension = start_transcript_extension_with_event_bridge(
         root_dir,
         sessions,
         Arc::new(move |event| roster_events.publish(event)),
+        Some(events.clone()),
     );
     extension
         .manager
@@ -213,7 +314,6 @@ pub fn start_production_transcript_extension(
         )));
     let outline_stream_subscription =
         bind_runner_outline_stream_events(&deps.events, Arc::clone(&extension.roster_emit));
-    let events = TranscriptExtensionEventBridge::new(deps.events.clone());
     let lifecycle_events = events.clone();
     extension
         .manager
@@ -226,7 +326,6 @@ pub fn start_production_transcript_extension(
             }
         })));
     extension.deps = Some(deps);
-    extension.events = Some(events);
     extension._outline_stream_subscription = Some(outline_stream_subscription);
     extension
 }

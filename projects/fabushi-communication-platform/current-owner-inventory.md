@@ -4,7 +4,7 @@ Status: evidence snapshot; P0 not yet passed
 Project: FBCP-001 Revision 2  
 Captured: 2026-10-02  
 Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`  
-PR #20 input: `bac35e925d116e36b1b9b294499912c8e8fef52d`  
+PR #20 input: `b541e2e17a9622bc4727e788963b4aa9f9dbd6c6`  
 PR state at capture: open, draft, base `main`, head `refactor/grok-018-architecture-rebuild`
 
 This file records the current production owners that FBCP must absorb into. It is not an implementation-complete claim. Any later PR #20 HEAD invalidates the source conclusions below until this inventory is refreshed.
@@ -13,7 +13,7 @@ This file records the current production owners that FBCP must absorb into. It i
 
 The inventory was built from the exact PR #20 HEAD, starting at shipping entrypoints and following the production composition paths. Directory/name similarity by itself is not evidence. The paths below are the current owners or production seams that are actually composed by the renderer, Electron main, Coordinator, Host, and Runner.
 
-Refresh from `f9546f9a...` to `bac35e92...` inspected all seven intervening PR #20 commits. Owner-affecting production changes stayed within the existing Host Transcript/Group composition (`extension.rs`, roster projection/emission, `transcript_manager.rs`, `production_runtime.rs`, `group_chat_glue.rs`, and `send_group_fanout.rs`); the final `bac35e92...` increment only strengthened the focused group-fanout contract. These changes strengthen existing owners rather than introducing a competing FBCP product owner.
+Refresh from `f9546f9a...` to `b541e2e1...` inspected all eight intervening PR #20 commits. Owner-affecting production changes stayed within the existing Host Transcript/Group composition (`extension.rs`, roster projection/emission, `transcript_manager.rs`, `production_runtime.rs`, `group_chat_glue.rs`, `send_group_fanout.rs`, and `profile_watch.rs`). The latest increment closes profile-watch through the same Transcript owner rather than introducing a competing FBCP product owner.
 
 ## Exact-head owners
 
@@ -78,4 +78,4 @@ The existing channel connector path models outside platforms and delivery addres
 
 ## Refresh rule
 
-Before using this inventory for implementation, compare the live PR #20 head to `bac35e925d116e36b1b9b294499912c8e8fef52d`. If it changed, re-run the source inspection and replace stale owner evidence before coding.
+Before using this inventory for implementation, compare the live PR #20 head to `b541e2e17a9622bc4727e788963b4aa9f9dbd6c6`. If it changed, re-run the source inspection and replace stale owner evidence before coding.

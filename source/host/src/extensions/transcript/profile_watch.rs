@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{
@@ -7,9 +7,10 @@ use std::sync::{
     mpsc::{self, RecvTimeoutError},
 };
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
+use serde_json::{Value, json};
 
 use crate::agents::agent_avatar::{
     invalidate_avatar_data_url_cache, is_conventional_avatar_filename,
@@ -28,6 +29,55 @@ use super::roster_emit::ProductionRosterEmit;
 
 pub const PROFILE_WATCH_DEBOUNCE_MS: u64 = 50;
 pub const SAND_DEFAULT_AGENT_NAME: &str = "Grok";
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ProfileWatchEvent {
+    Timeline {
+        agent_id: String,
+        event: Value,
+    },
+    ProfileChanged {
+        agent_id: String,
+    },
+}
+
+pub type ProfileWatchEventSink = Arc<dyn Fn(ProfileWatchEvent) + Send + Sync + 'static>;
+
+#[derive(Debug, Default)]
+pub struct ProfileWatchCoalescer {
+    pending_agent_id: Option<String>,
+    deadline: Option<Instant>,
+}
+
+impl ProfileWatchCoalescer {
+    pub fn schedule(&mut self, agent_id: &str, now: Instant) {
+        self.pending_agent_id = Some(agent_id.to_string());
+        if self.deadline.is_none() {
+            self.deadline =
+                Some(now + Duration::from_millis(PROFILE_WATCH_DEBOUNCE_MS));
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.pending_agent_id = None;
+        self.deadline = None;
+    }
+
+    pub fn recv_timeout(&self, now: Instant) -> Duration {
+        self.deadline
+            .map(|deadline| deadline.saturating_duration_since(now))
+            .unwrap_or_else(|| Duration::from_millis(PROFILE_WATCH_DEBOUNCE_MS))
+    }
+
+    pub fn take_due(&mut self, now: Instant) -> Option<String> {
+        let deadline = self.deadline?;
+        if now < deadline {
+            return None;
+        }
+        self.deadline = None;
+        self.pending_agent_id.take()
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AgentDisplayProfile {
@@ -54,6 +104,7 @@ impl ProductionProfileWatch {
     pub fn start(
         sessions: Arc<ProductionSessionWorkers>,
         roster_emit: Arc<ProductionRosterEmit>,
+        event_sink: ProfileWatchEventSink,
     ) -> notify::Result<Self> {
         let agents_root = sessions.agents_root().to_path_buf();
         let _ = fs::create_dir_all(&agents_root);
@@ -81,15 +132,28 @@ impl ProductionProfileWatch {
         let worker_names = Arc::clone(&last_known_names);
         let worker_sessions = Arc::clone(&sessions);
         let worker_roster = Arc::clone(&roster_emit);
+        let worker_events = Arc::clone(&event_sink);
         let worker_root = agents_root.clone();
 
         let worker = thread::spawn(move || {
-            let mut pending = HashSet::<String>::new();
+            let mut coalescer = ProfileWatchCoalescer::default();
             while !worker_stop.load(Ordering::Acquire) {
-                match event_rx.recv_timeout(Duration::from_millis(PROFILE_WATCH_DEBOUNCE_MS)) {
+                if let Some(agent_id) = coalescer.take_due(Instant::now()) {
+                    publish_profile_watch_update(
+                        &worker_sessions,
+                        &worker_names,
+                        &worker_roster,
+                        &worker_events,
+                        &worker_root,
+                        &agent_id,
+                    );
+                    continue;
+                }
+                match event_rx.recv_timeout(coalescer.recv_timeout(Instant::now())) {
                     Ok(Ok(event)) => {
                         for path in event.paths {
                             if path == worker_root.join(ACTIVE_AGENT_FILENAME) {
+                                coalescer.clear();
                                 let active = SandAgentSessionStore::new(Arc::clone(&worker_sessions))
                                     .read_active_agent_id();
                                 if let Ok(mut watched) = worker_watched.lock() {
@@ -114,29 +178,12 @@ impl ProductionProfileWatch {
                             if watched_profile_path_agent_id(&worker_root, &path).as_deref()
                                 == Some(watched.as_str())
                             {
-                                pending.insert(watched);
+                                coalescer.schedule(&watched, Instant::now());
                             }
                         }
                     }
                     Ok(Err(_)) => {}
-                    Err(RecvTimeoutError::Timeout) => {
-                        if pending.is_empty() {
-                            continue;
-                        }
-                        let pending_agents = pending.drain().collect::<Vec<_>>();
-                        for agent_id in pending_agents {
-                            let agent_dir = worker_root.join(&agent_id);
-                            invalidate_avatar_data_url_cache(&agent_dir);
-                            let _ = worker_roster.emit_agent_update(&agent_id);
-                            record_name_change(
-                                &worker_sessions,
-                                &worker_names,
-                                &worker_roster,
-                                &agent_id,
-                            );
-                            worker_roster.publish_profile_changed(&agent_id);
-                        }
-                    }
+                    Err(RecvTimeoutError::Timeout) => continue,
                     Err(RecvTimeoutError::Disconnected) => break,
                 }
             }
@@ -226,38 +273,92 @@ pub fn resolve_agent_profile(db_path: &Path) -> ResolvedAgentProfile {
     }
 }
 
+pub fn read_profile_watch_name(
+    sessions: &Arc<ProductionSessionWorkers>,
+    agent_id: &str,
+) -> Option<String> {
+    SandAgentSessionStore::new(Arc::clone(sessions))
+        .get_agent_profile_text(agent_id)
+        .ok()
+        .flatten()
+        .map(|profile| profile.name.trim().to_string())
+        .filter(|name| !name.is_empty())
+}
+
+pub fn profile_watch_events(
+    agent_id: &str,
+    name_change: Option<(&str, &str)>,
+) -> Vec<ProfileWatchEvent> {
+    let mut events = Vec::with_capacity(if name_change.is_some() { 2 } else { 1 });
+    if let Some((from, to)) = name_change {
+        if from != to {
+            events.push(ProfileWatchEvent::Timeline {
+                agent_id: agent_id.to_string(),
+                event: json!({
+                    "type": "name-changed",
+                    "from": from,
+                    "to": to,
+                }),
+            });
+        }
+    }
+    events.push(ProfileWatchEvent::ProfileChanged {
+        agent_id: agent_id.to_string(),
+    });
+    events
+}
+
 fn seed_known_agent_name(
     sessions: &Arc<ProductionSessionWorkers>,
     names: &Arc<Mutex<HashMap<String, String>>>,
     agent_id: &str,
 ) {
-    let Some(profile) = get_agent_display_profile(sessions, agent_id) else {
+    if names
+        .lock()
+        .map(|names| names.contains_key(agent_id))
+        .unwrap_or(false)
+    {
+        return;
+    }
+    let Some(name) = read_profile_watch_name(sessions, agent_id) else {
         return;
     };
     if let Ok(mut names) = names.lock() {
-        names.entry(agent_id.to_string()).or_insert(profile.name);
+        names.entry(agent_id.to_string()).or_insert(name);
     }
 }
 
 fn record_name_change(
     sessions: &Arc<ProductionSessionWorkers>,
     names: &Arc<Mutex<HashMap<String, String>>>,
-    roster_emit: &Arc<ProductionRosterEmit>,
     agent_id: &str,
-) {
-    let Some(profile) = get_agent_display_profile(sessions, agent_id) else {
-        return;
-    };
-    if profile.name.trim().is_empty() {
-        return;
-    }
+) -> Option<(String, String)> {
+    let current = read_profile_watch_name(sessions, agent_id)?;
     let previous = names
         .lock()
         .ok()
-        .and_then(|mut names| names.insert(agent_id.to_string(), profile.name.clone()));
-    if let Some(previous) = previous {
-        if previous != profile.name {
-            roster_emit.publish_name_changed(agent_id, &previous, &profile.name);
-        }
+        .and_then(|mut names| names.insert(agent_id.to_string(), current.clone()));
+    match previous {
+        Some(previous) if previous != current => Some((previous, current)),
+        _ => None,
+    }
+}
+
+fn publish_profile_watch_update(
+    sessions: &Arc<ProductionSessionWorkers>,
+    names: &Arc<Mutex<HashMap<String, String>>>,
+    roster_emit: &Arc<ProductionRosterEmit>,
+    event_sink: &ProfileWatchEventSink,
+    agents_root: &Path,
+    agent_id: &str,
+) {
+    invalidate_avatar_data_url_cache(&agents_root.join(agent_id));
+    let _ = roster_emit.emit_agent_update(agent_id);
+    let name_change = record_name_change(sessions, names, agent_id);
+    let name_change = name_change
+        .as_ref()
+        .map(|(from, to)| (from.as_str(), to.as_str()));
+    for event in profile_watch_events(agent_id, name_change) {
+        (event_sink)(event);
     }
 }
