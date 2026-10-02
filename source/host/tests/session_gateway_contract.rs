@@ -492,3 +492,142 @@ fn production_gateway_owns_group_creation_membership_and_nested_group_rejection(
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() {
+    let root = temp_root("human-conversation");
+    let agents = root.join("agents");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let agent = runtime
+        .materialize_new_session(
+            Some(&SandAgentProfile {
+                name: "Agent peer".into(),
+                description: String::new(),
+                title: String::new(),
+                avatar_shape: String::new(),
+                avatar_color: String::new(),
+            }),
+            "user",
+            None,
+        )
+        .expect("agent");
+
+    let created = dispatch(
+        &runtime,
+        "createHumanConversation",
+        json!({
+            "localHumanId": "human-local",
+            "peerHumanId": "human-peer",
+            "title": "Human peer"
+        }),
+    );
+    let conversation_id = created["id"]
+        .as_str()
+        .expect("conversation id")
+        .to_string();
+    assert_eq!(created["kind"], "human");
+    let human_db = runtime
+        .open_human_conversation_db_owner(&conversation_id)
+        .expect("Human conversation database");
+    assert_eq!(
+        human_db.get_metadata("conversationKind").expect("kind"),
+        Some(json!("human"))
+    );
+    assert_eq!(human_db.get_metadata("agentId").expect("agent id"), None);
+    assert_eq!(human_db.get_metadata("blobEncryptionKey").expect("blob key"), None);
+    assert_eq!(human_db.get_metadata("mode").expect("agent mode"), None);
+    assert_eq!(dispatch(&runtime, "countAgents", json!({})), json!(1));
+    let agents_list = dispatch(&runtime, "listAgents", json!({}));
+    assert_eq!(agents_list.as_array().map(Vec::len), Some(1));
+    assert_eq!(agents_list[0]["id"], agent.id);
+
+    let conversations = dispatch(&runtime, "listHumanConversations", json!({}));
+    assert_eq!(conversations.as_array().map(Vec::len), Some(1));
+    assert_eq!(conversations[0]["id"], conversation_id);
+    assert_eq!(conversations[0]["updatedAt"], 0.0);
+
+    let first = dispatch(
+        &runtime,
+        "sendHumanMessage",
+        json!({
+            "conversationId": conversation_id,
+            "senderId": "human-local",
+            "text": "hello human",
+            "clientNonce": "human-nonce-1",
+            "composedAtMs": 1234
+        }),
+    );
+    assert_eq!(first["authorKind"], "human");
+    assert_eq!(first["authorId"], "human-local");
+    assert_eq!(first["clientNonce"], "human-nonce-1");
+    assert_eq!(
+        human_db
+            .get_unread_state()
+            .expect("Human conversation unread state")
+            .unread_count,
+        0.0,
+        "outgoing Human messages must not reuse Agent unread activity semantics"
+    );
+    assert_eq!(
+        human_db
+            .get_metadata("lastActivityAt")
+            .expect("Human conversation activity metadata"),
+        Some(json!(1234.0))
+    );
+
+    let replay = dispatch(
+        &runtime,
+        "sendHumanMessage",
+        json!({
+            "conversationId": conversation_id,
+            "senderId": "human-local",
+            "text": "hello human",
+            "clientNonce": "human-nonce-1",
+            "composedAtMs": 1234
+        }),
+    );
+    assert_eq!(replay, first);
+    let transcript = dispatch(
+        &runtime,
+        "getHumanConversationTranscript",
+        json!({"conversationId": conversation_id}),
+    );
+    assert_eq!(transcript.as_array().map(Vec::len), Some(1));
+    assert_eq!(transcript[0]["id"], "human-message:human-nonce-1");
+    let conversations_after_send = dispatch(&runtime, "listHumanConversations", json!({}));
+    assert_eq!(conversations_after_send[0]["updatedAt"], 1234.0);
+
+    let conflicting = dispatch_production_session_gateway_call(
+        &runtime,
+        "sendHumanMessage",
+        &json!({
+            "conversationId": conversation_id,
+            "senderId": "human-local",
+            "text": "different content",
+            "clientNonce": "human-nonce-1",
+            "composedAtMs": 1234
+        }),
+    )
+    .expect("handled Human send")
+    .expect_err("nonce collision must reject different content");
+    match conflicting {
+        SessionGatewayError::Internal(message) => {
+            assert!(message.contains("different content"));
+        }
+        other => panic!("unexpected nonce collision error: {other:?}"),
+    }
+
+    runtime.shutdown();
+
+    let restarted = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let restored = dispatch(
+        &restarted,
+        "getHumanConversationTranscript",
+        json!({"conversationId": conversation_id}),
+    );
+    assert_eq!(restored, transcript);
+    assert_eq!(dispatch(&restarted, "countAgents", json!({})), json!(1));
+    restarted.shutdown();
+    let _ = fs::remove_dir_all(root);
+}

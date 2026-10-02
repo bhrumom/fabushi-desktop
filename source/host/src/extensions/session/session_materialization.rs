@@ -87,6 +87,7 @@ pub fn list_agent_record_ids(root_dir: &Path) -> Result<Vec<String>, io::Error> 
         .filter_map(Result::ok)
         .filter_map(|entry| entry.file_type().ok().filter(|kind| kind.is_dir()).map(|_| entry))
         .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .filter(|id| !id.starts_with('.'))
         .collect::<Vec<_>>();
     ids.sort();
     Ok(ids)
