@@ -265,15 +265,6 @@ use mahayana_host_runtime::send_trace_host::{
 };
 use mahayana_host_runtime::sand_activity::ActivityUpdate;
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
-use mahayana_host_runtime::runner::production_agent_checkpoint::{
-    AgentStateCheckpointSink, ProductionAgentStateCheckpointSink,
-};
-use mahayana_host_runtime::transcript_mirror::generated_occurrence_codec::{
-    GeneratedTranscriptOccurrenceCodec, RejectGeneratedToolJsonProjection,
-};
-use mahayana_host_runtime::transcript_mirror::production_provider::{
-    ProductionTranscriptMirrorProvider,
-};
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
     ProviderRetryEvent, ProviderRetryOutcome, ProviderRetryReport,
 };
@@ -5369,78 +5360,44 @@ fn start_routed_provider_task(
         });
     }
 
-    let agent_store = session_workers
-        .open_agent_store_owner(&agent_id)
-        .map_err(|error| GatewayCommandError::Internal(format!(
-            "could not open production AgentStore for {agent_id}: {error}"
-        )))?;
-    let blob_store = Arc::new(
-        session_workers
-            .create_agent_blob_store(&agent_id)
-            .map_err(|error| GatewayCommandError::Internal(format!(
-                "could not open production Agent blob store for {agent_id}: {error}"
-            )))?,
-    );
-    let prior_state_bytes = agent_store.latest_checkpoint_bytes().unwrap_or_default();
     let journal_logs = telemetry_logs.clone();
-    let transcript_provider = ProductionTranscriptMirrorProvider::with_reporter(
-        data_dir.join("transcripts"),
-        GeneratedTranscriptOccurrenceCodec::new(
-            RejectGeneratedToolJsonProjection,
-        ),
-        Arc::new(move |outcome| {
-            let cause = (outcome.outcome == "failed").then(|| {
-                SandErrorValue::new(match outcome.op.as_str() {
-                    "append" => "SAND-E0720",
-                    "checkpoint" => "SAND-E0721",
-                    "replay" => "SAND-E0723",
-                    _ => "SAND-E0001",
-                })
-            });
-            let report = JournalOutcomeReport {
-                outcome: outcome.outcome.clone(),
-                op: outcome.op.clone(),
-                conversation_id: outcome.conversation_id.clone(),
-                entry_count: outcome
-                    .entry_count
-                    .map(|value| value.min(i64::MAX as usize) as i64),
-                bytes: outcome
-                    .bytes
-                    .map(|value| value.min(i64::MAX as u64) as i64),
-                duration_ms: outcome.duration_ms,
-                cause,
-            };
-            let _ = journal_logs.report_journal_outcome(&report);
-        }),
-    );
     let journal_experiments = Arc::clone(&experiments);
-    let transcript_mirror = Arc::new(
-        transcript_provider
-            .route_for_session(
-                Arc::clone(&blob_store),
-                &prior_state_bytes,
-                Arc::new(move || Ok(
-                    journal_experiments
-                        .check_feature_gate("sand_new_transcript_journal")
-                )),
-            )
-            .map_err(|error| GatewayCommandError::Internal(format!(
-                "could not create production transcript mirror for {agent_id}: {error}"
-            )))?,
-    );
-    let agent_state_checkpoint_sink: Arc<dyn AgentStateCheckpointSink> = Arc::new(
-        ProductionAgentStateCheckpointSink::new(
-            agent_id.clone(),
-            agent_store,
-            blob_store,
-            transcript_mirror,
-            prior_state_bytes,
-            true,
+    let agent_state_checkpoint_sink = host_runner_composition
+        .compose_production_checkpoint_sink(
+            &session_workers,
+            &data_dir,
+            &agent_id,
+            Arc::new(move |outcome| {
+                let cause = (outcome.outcome == "failed").then(|| {
+                    SandErrorValue::new(match outcome.op.as_str() {
+                        "append" => "SAND-E0720",
+                        "checkpoint" => "SAND-E0721",
+                        "replay" => "SAND-E0723",
+                        _ => "SAND-E0001",
+                    })
+                });
+                let report = JournalOutcomeReport {
+                    outcome: outcome.outcome.clone(),
+                    op: outcome.op.clone(),
+                    conversation_id: outcome.conversation_id.clone(),
+                    entry_count: outcome
+                        .entry_count
+                        .map(|value| value.min(i64::MAX as usize) as i64),
+                    bytes: outcome
+                        .bytes
+                        .map(|value| value.min(i64::MAX as u64) as i64),
+                    duration_ms: outcome.duration_ms,
+                    cause,
+                };
+                let _ = journal_logs.report_journal_outcome(&report);
+            }),
+            Arc::new(move || {
+                Ok(journal_experiments.check_feature_gate("sand_new_transcript_journal"))
+            }),
         )
         .map_err(|error| GatewayCommandError::Internal(format!(
-            "could not initialize production Agent checkpoint sink for {agent_id}: {error}"
-        )))?,
-    );
+            "could not initialize production Runner checkpoint composition for {agent_id}: {error}"
+        )))?;
 
     let is_group_member_turn = args
         .get("groupMemberTurn")

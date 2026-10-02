@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -12,6 +13,9 @@ use crate::extensions::local_tool_permission::local_tool_permission_controller::
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::runner::box_tool_access::BoxShellAutoReviewCallback;
 use crate::runner::computer_use::ComputerUseCoordination;
+use crate::runner::production_agent_checkpoint::{
+    AgentStateCheckpointSink, ProductionAgentStateCheckpointSink,
+};
 use crate::runner::subagent_runtime::SubagentRuntime;
 use crate::runner::tools::sand_agent_management_tools::AgentManagementSink;
 use crate::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
@@ -24,6 +28,12 @@ use crate::runner::turn_agent_composition::TurnAgentComposition;
 use crate::runner_production_bridge::{
     ProductionRunnerCompositionInput, create_production_runner_composition,
 };
+use crate::transcript_mirror::generated_occurrence_codec::{
+    GeneratedTranscriptOccurrenceCodec, RejectGeneratedToolJsonProjection,
+};
+use crate::transcript_mirror::production_provider::ProductionTranscriptMirrorProvider;
+use crate::transcript_mirror::transcript_mirror::JournalOutcomeReporter;
+use crate::transcript_mirror::transcript_mirror_router::JournalEnabledReader;
 
 type PermissionEventSink = Arc<dyn Fn(&SandLocalToolControllerEvent) + Send + Sync>;
 
@@ -77,6 +87,42 @@ impl HostRunnerComposition {
             surfaces: Mutex::new(HashMap::new()),
             computer_use: Arc::new(Mutex::new(ComputerUseCoordination::new(true))),
         }
+    }
+
+    /// Compose the production transcript/checkpoint boundary for one Runner session.
+    ///
+    /// Session storage and transcript-mirror implementations retain their own state;
+    /// HostRunnerComposition owns only the one-time wiring between those owners.
+    pub fn compose_production_checkpoint_sink(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        data_dir: &Path,
+        agent_id: &str,
+        report_outcome: JournalOutcomeReporter,
+        is_journal_enabled: JournalEnabledReader,
+    ) -> Result<Arc<dyn AgentStateCheckpointSink>, String> {
+        let agent_store = sessions.open_agent_store_owner(agent_id)?;
+        let blob_store = Arc::new(sessions.create_agent_blob_store(agent_id)?);
+        let prior_state_bytes = agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        let transcript_provider = ProductionTranscriptMirrorProvider::with_reporter(
+            data_dir.join("transcripts"),
+            GeneratedTranscriptOccurrenceCodec::new(RejectGeneratedToolJsonProjection),
+            report_outcome,
+        );
+        let transcript_mirror = Arc::new(transcript_provider.route_for_session(
+            Arc::clone(&blob_store),
+            &prior_state_bytes,
+            is_journal_enabled,
+        )?);
+        let sink = ProductionAgentStateCheckpointSink::new(
+            agent_id.to_string(),
+            agent_store,
+            blob_store,
+            transcript_mirror,
+            prior_state_bytes,
+            true,
+        )?;
+        Ok(Arc::new(sink))
     }
 
     /// Build one production turn through the canonical Host -> Runner composition owner.

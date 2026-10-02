@@ -49,3 +49,37 @@ fn shipping_host_has_one_runner_composition_entrypoint() {
         );
     }
 }
+
+#[test]
+fn host_runner_composition_owns_transcript_checkpoint_wiring() {
+    for needle in [
+        "pub fn compose_production_checkpoint_sink(",
+        "sessions.open_agent_store_owner(agent_id)?",
+        "sessions.create_agent_blob_store(agent_id)?",
+        "ProductionTranscriptMirrorProvider::with_reporter(",
+        "GeneratedTranscriptOccurrenceCodec::new(RejectGeneratedToolJsonProjection)",
+        "transcript_provider.route_for_session(",
+        "ProductionAgentStateCheckpointSink::new(",
+    ] {
+        assert!(
+            OWNER.contains(needle),
+            "HostRunnerComposition missing checkpoint composition responsibility: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains(".compose_production_checkpoint_sink("),
+        "shipping Host must delegate transcript/checkpoint composition",
+    );
+    for needle in [
+        "ProductionTranscriptMirrorProvider::with_reporter(",
+        "GeneratedTranscriptOccurrenceCodec::new(",
+        "ProductionAgentStateCheckpointSink::new(",
+        ".open_agent_store_owner(&agent_id)",
+        ".create_agent_blob_store(&agent_id)",
+    ] {
+        assert!(
+            !SHIPPING_HOST.contains(needle),
+            "shipping Host still owns transcript/checkpoint wiring: {needle}",
+        );
+    }
+}
