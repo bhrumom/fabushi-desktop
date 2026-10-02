@@ -34,7 +34,7 @@ Telegram 提供两类输入：
 
 当前设计读取时，PR #20 `refactor/grok-018-architecture-rebuild` exact HEAD 为：
 
-`59a06a43d20600915e79770d83773522a7c58b0c`
+`7823c596712b674661e40925b1426d945d0e2e55`
 
 该 PR 提供现有 Bot 产品的关键基础：
 

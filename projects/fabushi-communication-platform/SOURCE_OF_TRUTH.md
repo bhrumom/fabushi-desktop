@@ -49,7 +49,7 @@ Repository: `bhrumom/fabushi-desktop`
 
 At this revision, observed PR #20 HEAD:
 
-`59a06a43d20600915e79770d83773522a7c58b0c`
+`7823c596712b674661e40925b1426d945d0e2e55`
 
 It already contains Human/Agent Shared Room concepts and Bot features such as Computer and Automations. FBCP is an approved product extension of that Bot foundation.
 

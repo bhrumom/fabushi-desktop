@@ -8,7 +8,7 @@ Complete: false
 | Area | Status | Evidence / note |
 | --- | --- | --- |
 | Product direction | specified | Fabushi Bot is product; Telegram capabilities are absorbed |
-| PR #20 Bot foundation | in-progress | observed head 59a06a43d20600915e79770d83773522a7c58b0c |
+| PR #20 Bot foundation | in-progress | observed head 7823c596712b674661e40925b1426d945d0e2e55 |
 | Unified product domain | blocked | P0 not executed |
 | Communication Core | blocked | not implemented |
 | Telegram capability research | blocked | TDRP-001 recursive research pending |
