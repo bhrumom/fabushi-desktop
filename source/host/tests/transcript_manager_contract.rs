@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
+use mahayana_host_runtime::extensions::transcript::agent_lifecycle::AgentDeletionRuntimeDeps;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffRequest, HandoffTelemetry,
 };
@@ -167,6 +168,16 @@ fn manager_is_the_single_production_composition_owner() {
     assert_eq!(created_group["memberIds"].as_array().map(Vec::len), Some(2));
 
     let agent = session.create_session(None, "user", None).expect("agent");
+    let avatar = manager
+        .dispatch_agent_lifecycle_gateway_call(
+            &AgentDeletionRuntimeDeps::default(),
+            None,
+            "getAgentAvatar",
+            &json!({"id": agent.id.clone()}),
+        )
+        .expect("agent lifecycle method handled")
+        .expect("manager-owned lifecycle avatar");
+    assert!(avatar.get("version").is_some());
     manager
         .switch_agent(&agent.id, 10.0)
         .expect("switch active agent");

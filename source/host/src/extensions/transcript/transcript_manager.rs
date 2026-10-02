@@ -9,6 +9,10 @@ use crate::automations::automation_store::FileAutomationStore;
 use crate::extensions::session::agent_db_transcript_pages::{
     TranscriptPage, TranscriptWindow, TranscriptWindowQuery,
 };
+use crate::extensions::transcript::agent_lifecycle::{
+    AgentDeletionRuntimeDeps, AgentKickstartHook, AgentLifecycleGatewayError,
+    dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes,
+};
 use crate::extensions::attachments::attachments_service::AttachmentsService;
 use crate::extensions::content_search::extension::ProductionContentSearchExtension;
 use crate::extensions::memory::extension::HostMemoryExtension;
@@ -476,6 +480,23 @@ impl TranscriptManager {
         args: &Value,
     ) -> Result<Value, ProductionSendError> {
         self.transcript_runtime.prompt_acceptance_status(args)
+    }
+
+    pub fn dispatch_agent_lifecycle_gateway_call(
+        &self,
+        deletion_runtime: &AgentDeletionRuntimeDeps,
+        kickstart_created_agent: Option<AgentKickstartHook>,
+        method: &str,
+        args: &Value,
+    ) -> Option<Result<Value, AgentLifecycleGatewayError>> {
+        dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes(
+            &self.session_workers,
+            deletion_runtime,
+            self.roster_emit(),
+            kickstart_created_agent,
+            method,
+            args,
+        )
     }
 
     pub fn dispatch_session_gateway_call(

@@ -193,9 +193,6 @@ use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     CreatedAgentKickstartRuntimePort, INTRODUCTION_FAILED_TRAY_TITLE,
     KickstartRunError, KickstartTurnOutcome, introduction_failed_tray_key,
     request_disk_saver_audit, run_created_agent_kickstart,
-    dispatch_production_agent_lifecycle_gateway_call_with_runtime,
-    dispatch_production_agent_lifecycle_gateway_call_with_runtimes,
-    dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderOptions,
@@ -8360,14 +8357,14 @@ impl GatewayApi for UnifiedGatewayApi {
                 if let Some(cached) = ledger.get(&nonce).cloned() {
                     return Ok(cached);
                 }
-                let minted = dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes(
-                    &self.session_workers,
-                    &self.agent_deletion_runtime,
-                    Some(Arc::clone(&self.roster_emit)),
-                    Some(self.created_agent_kickstart_hook()),
-                    method,
-                    &projected,
-                )
+                let minted = self
+                    .transcript_manager
+                    .dispatch_agent_lifecycle_gateway_call(
+                        &self.agent_deletion_runtime,
+                        Some(self.created_agent_kickstart_hook()),
+                        method,
+                        &projected,
+                    )
                 .ok_or_else(|| GatewayCommandError::UnknownMethod(method.to_string()))?
                 .map_err(|error| match error {
                     AgentLifecycleGatewayError::BadRequest(message) => {
@@ -8380,14 +8377,14 @@ impl GatewayApi for UnifiedGatewayApi {
                 ledger.insert(nonce, minted.clone());
                 return Ok(minted);
             }
-            return dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes(
-                &self.session_workers,
-                &self.agent_deletion_runtime,
-                Some(Arc::clone(&self.roster_emit)),
-                Some(self.created_agent_kickstart_hook()),
-                method,
-                &projected,
-            )
+            return self
+                .transcript_manager
+                .dispatch_agent_lifecycle_gateway_call(
+                    &self.agent_deletion_runtime,
+                    Some(self.created_agent_kickstart_hook()),
+                    method,
+                    &projected,
+                )
             .ok_or_else(|| GatewayCommandError::UnknownMethod(method.to_string()))?
             .map_err(|error| match error {
                 AgentLifecycleGatewayError::BadRequest(message) => {
@@ -8681,11 +8678,11 @@ impl GatewayApi for UnifiedGatewayApi {
             )
             .map_err(|error| GatewayCommandError::Internal(error.to_string()));
         }
-        if let Some(result) =
-            dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
-                &self.session_workers,
+        if let Some(result) = self
+            .transcript_manager
+            .dispatch_agent_lifecycle_gateway_call(
                 &self.agent_deletion_runtime,
-                Some(Arc::clone(&self.roster_emit)),
+                None,
                 method,
                 &args,
             )
