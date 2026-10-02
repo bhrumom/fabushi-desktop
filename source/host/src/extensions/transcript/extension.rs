@@ -185,8 +185,16 @@ impl TranscriptExtension {
 
 impl Drop for TranscriptExtension {
     fn drop(&mut self) {
+        self._outline_stream_subscription.take();
+        self._profile_watch_subscriptions.clear();
+        self.profile_watch.take();
+        self.manager
+            .transcript_runtime()
+            .set_agent_run_lifecycle_observer(None);
         self.roster_emit.stop_outline_stream_coalescing();
         self.manager.dispose();
+        self.events.take();
+        self.deps.take();
     }
 }
 

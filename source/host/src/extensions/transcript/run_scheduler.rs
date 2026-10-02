@@ -454,7 +454,12 @@ impl RunScheduler {
     }
 
     pub fn dispose(&mut self) {
+        if self.disposed {
+            return;
+        }
         self.disposed = true;
+        self.queues.clear();
+        self.seen_task_ids.clear();
     }
 }
 

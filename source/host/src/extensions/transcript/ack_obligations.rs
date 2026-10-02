@@ -206,6 +206,18 @@ impl AckObligations {
         }
     }
 
+    /// Settle process-local redrive state while preserving durable obligations
+    /// that must survive Host restart.
+    pub fn dispose(&self) {
+        if let Ok(mut reservations) = self.reservations.lock() {
+            reservations.clear();
+        }
+        if let Ok(mut schedules) = self.redrive_schedules.lock() {
+            schedules.clear();
+        }
+        self.set_telemetry_reporter(None);
+    }
+
     fn report_telemetry(&self, report: AckObligationReport) {
         let reporter = self
             .telemetry_reporter

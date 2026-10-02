@@ -431,6 +431,30 @@ impl ProductionTranscriptRuntime {
         merge_async_tasks(live_tasks, &markers)
     }
 
+    /// Settle process-local Transcript runtime state before Session owners close.
+    pub fn dispose(&self) {
+        self.session_runtime.invalidate_deferred_activation();
+        self.set_agent_run_lifecycle_observer(None);
+        if let Ok(mut executor) = self.shared_group_remote_executor.lock() {
+            *executor = None;
+        }
+        if let Ok(mut publisher) = self.shared_group_room_entry_publisher.lock() {
+            *publisher = None;
+        }
+
+        {
+            let mut state = self.lock_state();
+            state.ledger.dispose();
+            state.turn_dispatch.dispose();
+            state.lifecycle = RunLifecycleState::default();
+            state.routed_turn_leases.clear();
+            state.completions.clear();
+            state.completion_order.clear();
+        }
+        self.turn_ready.notify_all();
+        self.send_settled.notify_all();
+    }
+
     pub fn prompt_acceptance_status(
         &self,
         args: &Value,
