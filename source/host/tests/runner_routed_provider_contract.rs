@@ -6,19 +6,15 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    OpenRouterCheckpoint, ProviderSessionError, RoutedProviderCheckpoint,
-    RoutedToolDefinition,
+    OpenRouterCheckpoint, ProviderSessionError, RoutedProviderCheckpoint, RoutedToolDefinition,
 };
-use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
-    RoutedProviderCheckpointStore,
+use mahayana_host_runtime::extensions::transcript::runner_registry::{
+    RUN_DIRECT_USER_INTERRUPT_REASON, RUN_WATCHDOG_INTERRUPT_REASON, TranscriptRunnerRegistry,
 };
+use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderCheckpointStore;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, ROUTED_MCP_PROTOCOL_VERSION,
     RoutedProviderTaskRegistry, RoutedToolBridge, start_routed_mcp_server,
-};
-use mahayana_host_runtime::extensions::transcript::runner_registry::{
-    RUN_DIRECT_USER_INTERRUPT_REASON, RUN_WATCHDOG_INTERRUPT_REASON,
-    TranscriptRunnerRegistry,
 };
 use serde_json::{Value, json};
 
@@ -111,14 +107,19 @@ fn runner_provider_registry_cancels_by_stream_and_retires_finished_runs() {
     assert_eq!(registry.active_count(), 0);
 }
 
-
 #[test]
 fn transcript_runner_registry_cancels_all_streams_for_deleted_agent_with_reason() {
     let tasks = Arc::new(RoutedProviderTaskRegistry::default());
     let registry = TranscriptRunnerRegistry::new(Arc::clone(&tasks));
-    let first = registry.register_routed_provider("agent-a", "delete-a-1").expect("a1");
-    let second = registry.register_routed_provider("agent-a", "delete-a-2").expect("a2");
-    let other = registry.register_routed_provider("agent-b", "delete-b").expect("b");
+    let first = registry
+        .register_routed_provider("agent-a", "delete-a-1")
+        .expect("a1");
+    let second = registry
+        .register_routed_provider("agent-a", "delete-a-2")
+        .expect("a2");
+    let other = registry
+        .register_routed_provider("agent-b", "delete-b")
+        .expect("b");
 
     assert_eq!(
         registry.agent_id_for_stream("delete-a-1").as_deref(),
@@ -174,15 +175,13 @@ fn production_routed_provider_checkpoint_store_persists_durable_json() {
         Some("json")
     );
 
-    let decoded: RoutedProviderCheckpoint = serde_json::from_slice(
-        &fs::read(cursor_path).expect("read persisted checkpoint"),
-    )
-    .expect("decode persisted checkpoint");
+    let decoded: RoutedProviderCheckpoint =
+        serde_json::from_slice(&fs::read(cursor_path).expect("read persisted checkpoint"))
+            .expect("decode persisted checkpoint");
     assert_eq!(decoded, checkpoint);
 
     fs::remove_dir_all(&root).expect("remove checkpoint fixture");
 }
-
 
 #[test]
 fn transcript_runner_registry_watchdog_interrupts_only_current_direct_and_group_runs() {
@@ -205,7 +204,9 @@ fn transcript_runner_registry_watchdog_interrupts_only_current_direct_and_group_
         .expect("other stream");
 
     assert_eq!(
-        registry.current_routed_stream_id_for_agent("agent-a").as_deref(),
+        registry
+            .current_routed_stream_id_for_agent("agent-a")
+            .as_deref(),
         Some("stream-a-current")
     );
     assert_eq!(
@@ -244,6 +245,62 @@ fn transcript_runner_registry_watchdog_interrupts_only_current_direct_and_group_
 }
 
 #[test]
+fn transcript_runner_registry_preserves_frozen_pre_dispatch_supersede_rules() {
+    let tasks = Arc::new(RoutedProviderTaskRegistry::default());
+    let registry = TranscriptRunnerRegistry::new(Arc::clone(&tasks));
+
+    let ordinary = registry
+        .register_routed_provider_with_recovery_shape("agent-a", "ordinary", false)
+        .expect("ordinary");
+    assert_eq!(
+        registry.preempt_routed_agent_for_supersede(
+            "agent-a",
+            RUN_DIRECT_USER_INTERRUPT_REASON,
+            Some(false),
+        ),
+        0,
+        "an undispatched ordinary run must survive a non-recovery supersede",
+    );
+    assert!(!ordinary.is_cancelled());
+    assert_eq!(
+        registry.preempt_routed_agent_for_supersede(
+            "agent-a",
+            RUN_DIRECT_USER_INTERRUPT_REASON,
+            Some(true),
+        ),
+        0,
+        "an undispatched ordinary run must survive even when the new turn carries recovery",
+    );
+    assert!(registry.mark_routed_provider_dispatched("ordinary"));
+    assert_eq!(
+        registry.preempt_routed_agent_for_supersede(
+            "agent-a",
+            RUN_DIRECT_USER_INTERRUPT_REASON,
+            Some(false),
+        ),
+        1,
+        "once dispatched, a direct user turn supersedes the active run",
+    );
+    assert!(ordinary.is_cancelled());
+    registry.finish_routed_provider("ordinary");
+
+    let recovery = registry
+        .register_routed_provider_with_recovery_shape("agent-a", "recovery", true)
+        .expect("recovery");
+    assert_eq!(
+        registry.preempt_routed_agent_for_supersede(
+            "agent-a",
+            RUN_DIRECT_USER_INTERRUPT_REASON,
+            Some(true),
+        ),
+        1,
+        "an undispatched recovery-shaped run may be superseded only by a recovery-carrying turn",
+    );
+    assert!(recovery.is_cancelled());
+    registry.finish_routed_provider("recovery");
+}
+
+#[test]
 fn transcript_runner_registry_preempts_only_current_one_to_one_run_for_direct_user_turn() {
     let tasks = Arc::new(RoutedProviderTaskRegistry::default());
     let registry = TranscriptRunnerRegistry::new(Arc::clone(&tasks));
@@ -277,10 +334,7 @@ fn transcript_runner_registry_preempts_only_current_one_to_one_run_for_direct_us
     );
 
     registry.finish_routed_provider("direct-current");
-    assert_eq!(
-        registry.current_routed_stream_id_for_agent("agent-a"),
-        None
-    );
+    assert_eq!(registry.current_routed_stream_id_for_agent("agent-a"), None);
 }
 
 #[test]

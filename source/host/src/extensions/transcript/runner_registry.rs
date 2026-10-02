@@ -15,12 +15,19 @@ pub const RUN_WATCHDOG_INTERRUPT_REASON: &str =
     "run-queue watchdog: releasing a wedged predecessor";
 pub const RUN_DIRECT_USER_INTERRUPT_REASON: &str = "superseded by a new user message";
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct RoutedSupersedeState {
+    dispatched: bool,
+    recovery_shaped: bool,
+}
+
 #[derive(Clone, Default)]
 pub struct TranscriptRunnerRegistry {
     routed_provider_tasks: Arc<RoutedProviderTaskRegistry>,
     group_member_tasks: Arc<RoutedProviderTaskRegistry>,
     current_routed_streams: Arc<Mutex<HashMap<String, String>>>,
     current_group_member_streams: Arc<Mutex<HashMap<String, String>>>,
+    routed_supersede_state: Arc<Mutex<HashMap<String, RoutedSupersedeState>>>,
     dm_preempted_group_members: Arc<Mutex<HashSet<String>>>,
     turn_execution: Arc<Mutex<Option<TranscriptTurnExecutionPort>>>,
 }
@@ -32,6 +39,7 @@ impl TranscriptRunnerRegistry {
             group_member_tasks: Arc::new(RoutedProviderTaskRegistry::default()),
             current_routed_streams: Arc::new(Mutex::new(HashMap::new())),
             current_group_member_streams: Arc::new(Mutex::new(HashMap::new())),
+            routed_supersede_state: Arc::new(Mutex::new(HashMap::new())),
             dm_preempted_group_members: Arc::new(Mutex::new(HashSet::new())),
             turn_execution: Arc::new(Mutex::new(None)),
         }
@@ -68,11 +76,7 @@ impl TranscriptRunnerRegistry {
         execution.is_run_ready().await
     }
 
-    pub fn create_runner(
-        &self,
-        session: Value,
-        hooks: Value,
-    ) -> Result<Value, TurnExecutionError> {
+    pub fn create_runner(&self, session: Value, hooks: Value) -> Result<Value, TurnExecutionError> {
         self.turn_execution()
             .ok_or(TurnExecutionError::Unbound)?
             .create_runner(session, hooks)
@@ -94,11 +98,42 @@ impl TranscriptRunnerRegistry {
         agent_id: &str,
         stream_id: &str,
     ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
+        self.register_routed_provider_with_recovery_shape(agent_id, stream_id, false)
+    }
+
+    pub fn register_routed_provider_with_recovery_shape(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+        recovery_shaped: bool,
+    ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
         let cancellation = self
             .routed_provider_tasks
             .register_for_agent(agent_id, stream_id)?;
+        self.routed_supersede_state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(
+                stream_id.to_string(),
+                RoutedSupersedeState {
+                    dispatched: false,
+                    recovery_shaped,
+                },
+            );
         self.note_current_stream(&self.current_routed_streams, agent_id, stream_id);
         Ok(cancellation)
+    }
+
+    pub fn mark_routed_provider_dispatched(&self, stream_id: &str) -> bool {
+        let mut states = self
+            .routed_supersede_state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let Some(state) = states.get_mut(stream_id) else {
+            return false;
+        };
+        state.dispatched = true;
+        true
     }
 
     pub fn register_group_member(
@@ -118,6 +153,10 @@ impl TranscriptRunnerRegistry {
         self.group_member_tasks.finish(stream_id);
         self.clear_current_stream_if_matches(&self.current_routed_streams, stream_id);
         self.clear_current_stream_if_matches(&self.current_group_member_streams, stream_id);
+        self.routed_supersede_state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(stream_id);
     }
 
     pub fn cancel_stream(&self, stream_id: &str, reason: impl Into<String>) -> bool {
@@ -160,30 +199,38 @@ impl TranscriptRunnerRegistry {
         self.routed_provider_tasks.cancel_agent(agent_id, reason)
     }
 
-    pub fn cancel_group_member_agent(
-        &self,
-        agent_id: &str,
-        reason: impl Into<String>,
-    ) -> usize {
+    pub fn cancel_group_member_agent(&self, agent_id: &str, reason: impl Into<String>) -> usize {
         self.group_member_tasks.cancel_agent(agent_id, reason)
     }
 
-    pub fn preempt_routed_agent(
+    pub fn preempt_routed_agent(&self, agent_id: &str, reason: impl Into<String>) -> usize {
+        self.preempt_routed_agent_for_supersede(agent_id, reason, None)
+    }
+
+    pub fn preempt_routed_agent_for_supersede(
         &self,
         agent_id: &str,
         reason: impl Into<String>,
+        carries_recovery: Option<bool>,
     ) -> usize {
         let Some(stream_id) = self.current_routed_stream_id_for_agent(agent_id) else {
             return 0;
         };
+        if let Some(carries_recovery) = carries_recovery {
+            let states = self
+                .routed_supersede_state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if let Some(state) = states.get(&stream_id) {
+                if !state.dispatched && (!carries_recovery || !state.recovery_shaped) {
+                    return 0;
+                }
+            }
+        }
         usize::from(self.routed_provider_tasks.cancel(&stream_id, reason.into()))
     }
 
-    pub fn preempt_group_member_agent(
-        &self,
-        agent_id: &str,
-        reason: impl Into<String>,
-    ) -> usize {
+    pub fn preempt_group_member_agent(&self, agent_id: &str, reason: impl Into<String>) -> usize {
         let Some(stream_id) = self.current_group_member_stream_id_for_agent(agent_id) else {
             return 0;
         };
