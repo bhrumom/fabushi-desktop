@@ -14,7 +14,13 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::extensions::transcript::client_side_tool_v2_producer::{
     ClientSideToolV2ProducedValue, ClientSideToolV2TransportKind,
 };
+use mahayana_host_runtime::extensions::transcript::pending_wake_rearm::{
+    LostSubagentWake, PendingWakeReport, PendingWakeRuntimePort,
+};
 use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
+use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
+    DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin,
+};
 use mahayana_host_runtime::extensions::transcript::transcript_manager::{
     TranscriptManager, TranscriptTurnExecutionPort,
 };
@@ -480,6 +486,127 @@ fn runner_registry_owns_turn_execution_and_manager_delegates_to_the_same_owner()
             )
             .expect("group runner")["kind"],
         "group"
+    );
+
+    manager.dispose();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[derive(Default)]
+struct ManagerPendingWakeRuntime {
+    shell_watches: Mutex<Vec<(String, String)>>,
+    reports: Mutex<Vec<PendingWakeReport>>,
+}
+
+impl PendingWakeRuntimePort for ManagerPendingWakeRuntime {
+    fn can_execute(&self) -> bool {
+        true
+    }
+
+    fn is_agent_gone(&self, _agent_id: &str) -> bool {
+        false
+    }
+
+    fn is_group_session(&self, _agent_id: &str) -> Result<bool, String> {
+        Ok(false)
+    }
+
+    fn cloud_watch_is_armed(&self, _agent_id: &str, _work_id: &str) -> bool {
+        false
+    }
+
+    fn watch_cloud_agent(
+        &self,
+        _agent_id: &str,
+        _work_id: &str,
+        _quiet_origin: Option<&QuietWakeOrigin>,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
+    fn watch_background_shell(
+        &self,
+        agent_id: &str,
+        work_id: &str,
+        _title: Option<&str>,
+        _quiet_origin: Option<&QuietWakeOrigin>,
+    ) -> Result<(), String> {
+        self.shell_watches
+            .lock()
+            .expect("shell watches")
+            .push((agent_id.to_string(), work_id.to_string()));
+        Ok(())
+    }
+
+    fn deliver_recreate_interrupted_shell_notice(
+        &self,
+        _marker: &DurablePendingWakeMarker,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
+    fn revive_lost_subagent(&self, _wake: LostSubagentWake) -> Result<(), String> {
+        Ok(())
+    }
+
+    fn emit_async_tasks_for_agent(&self, _agent_id: &str) {}
+
+    fn report_pending_wake(&self, report: PendingWakeReport) {
+        self.reports.lock().expect("pending-wake reports").push(report);
+    }
+}
+
+#[test]
+fn manager_owns_pending_wake_rearm_and_replays_durable_wakes() {
+    let root = temp_root();
+    fs::create_dir_all(&root).expect("root");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let manager = TranscriptManager::new(&root, Arc::clone(&sessions));
+    let store = manager
+        .transcript_runtime()
+        .pending_wake_store()
+        .cloned()
+        .expect("production pending-wake store");
+    store.mark_pending(DurablePendingWakeMarker {
+        agent_id: "agent-pending".into(),
+        kind: PendingWakeKind::Shell,
+        work_id: "shell-pending".into(),
+        marked_at_ms: chrono::Utc::now().timestamp_millis() as f64,
+        quiet_origin: None,
+        title: Some("Pending shell".into()),
+        subagent_type: None,
+        interrupted_by_recreate: false,
+    });
+
+    let runtime = Arc::new(ManagerPendingWakeRuntime::default());
+    manager
+        .bind_pending_wake_runtime(runtime.clone())
+        .expect("bind manager pending-wake owner");
+    assert!(
+        manager
+            .bind_pending_wake_runtime(Arc::new(ManagerPendingWakeRuntime::default()))
+            .is_err(),
+        "TranscriptManager must reject a second pending-wake owner"
+    );
+    manager
+        .rearm_pending_wakes()
+        .expect("manager-owned pending-wake rearm");
+
+    assert_eq!(
+        runtime.shell_watches.lock().expect("shell watches").as_slice(),
+        &[("agent-pending".to_string(), "shell-pending".to_string())]
+    );
+    assert!(
+        runtime
+            .reports
+            .lock()
+            .expect("pending-wake reports")
+            .iter()
+            .any(|report| report.outcome == "rearmed" && report.work_id == "shell-pending")
     );
 
     manager.dispose();

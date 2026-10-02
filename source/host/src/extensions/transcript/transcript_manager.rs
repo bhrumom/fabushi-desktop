@@ -41,6 +41,7 @@ use super::client_side_tool_v2_producer::{
 };
 use super::group_chat_glue::GroupChatGlue;
 use super::async_task_union::AsyncTask;
+use super::pending_wake_rearm::{PendingWakeRearm, PendingWakeRuntimePort};
 use super::production_runtime::{
     AgentRunLifecycleObserver, ProductionSendError, ProductionTranscriptRuntime,
 };
@@ -136,6 +137,7 @@ pub struct TranscriptManager {
     widget_responses: Arc<WidgetResponses>,
     roster_emit: Mutex<Option<Arc<ProductionRosterEmit>>>,
     workflow_commands: Arc<WorkflowCommands>,
+    pending_wakes: Mutex<Option<PendingWakeRearm>>,
     watched_automation_store: Mutex<Option<FileAutomationStore>>,
     handoff_service: Mutex<Option<BoxHandoffService>>,
     shared_rooms: Arc<SharedRooms>,
@@ -191,6 +193,7 @@ impl TranscriptManager {
             widget_responses,
             roster_emit: Mutex::new(None),
             workflow_commands,
+            pending_wakes: Mutex::new(None),
             watched_automation_store: Mutex::new(None),
             handoff_service: Mutex::new(None),
             shared_rooms,
@@ -375,6 +378,36 @@ impl TranscriptManager {
 
     pub fn workflow_commands(&self) -> Arc<WorkflowCommands> {
         Arc::clone(&self.workflow_commands)
+    }
+
+
+    pub fn bind_pending_wake_runtime(
+        &self,
+        runtime: Arc<dyn PendingWakeRuntimePort>,
+    ) -> Result<(), String> {
+        let mut slot = self
+            .pending_wakes
+            .lock()
+            .map_err(|_| "transcript pending-wake mutex poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("transcript pending-wake runtime already configured".into());
+        }
+        *slot = Some(PendingWakeRearm::new(
+            self.transcript_runtime.pending_wake_store().cloned(),
+            runtime,
+        ));
+        Ok(())
+    }
+
+    pub fn rearm_pending_wakes(&self) -> Result<(), String> {
+        let owner = self
+            .pending_wakes
+            .lock()
+            .map_err(|_| "transcript pending-wake mutex poisoned".to_string())?
+            .clone()
+            .ok_or_else(|| "transcript pending-wake runtime is not configured".to_string())?;
+        owner.rearm_pending_wakes();
+        Ok(())
     }
 
     pub fn set_handoff_service(&self, handoff: BoxHandoffService) -> Result<(), String> {
@@ -770,6 +803,10 @@ impl TranscriptManager {
         self.ack_obligations.dispose();
         self.automation_runtime.dispose();
         self.workflow_commands.dispose();
+        self.pending_wakes
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take();
         *self
             .background_wakes
             .lock()

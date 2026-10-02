@@ -118,7 +118,7 @@ use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
     DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin, coerce_quiet_origin,
 };
 use mahayana_host_runtime::extensions::transcript::pending_wake_rearm::{
-    LostSubagentWake, PendingWakeRearm, PendingWakeReport, PendingWakeRuntimePort,
+    LostSubagentWake, PendingWakeReport, PendingWakeRuntimePort,
 };
 use mahayana_host_runtime::extensions::transcript::group_chat_glue::{
     GroupMemberPreview, GroupRoomEntryObserver, group_member_reaction_target,
@@ -11131,23 +11131,20 @@ fn main() {
         }
     }));
 
-    // Re-arm every durable background wake through the single frozen
-    // PendingWakeRearm state machine. Shell rewatches re-persist their marker
-    // before the asynchronous terminal poll is armed.
-    if let Some(store) = transcript_runtime.pending_wake_store().cloned() {
-        let rearm = PendingWakeRearm::new(
-            Some(store.clone()),
-            Arc::new(ProductionPendingWakeRuntime {
-                gateway: Arc::clone(&cloud_agent_completion_gateway_slot),
-                cloud_agent_watches: Arc::clone(&cloud_agent_watches),
-                background_shell_watches: Arc::clone(&background_shell_watches),
-                completion_revivals: Arc::clone(&completion_revivals),
-            }),
-        );
-        let now_ms = started_at_ms() as f64;
-        for pending in store.list_pending() {
-            rearm.rearm_pending_wake(pending, now_ms, Some("host_startup"));
-        }
+    // Frozen TranscriptManager owns pending-wake rearm. Shipping main only
+    // supplies the process adapter after Gateway/Runner resources are live.
+    transcript_manager
+        .bind_pending_wake_runtime(Arc::new(ProductionPendingWakeRuntime {
+            gateway: Arc::clone(&cloud_agent_completion_gateway_slot),
+            cloud_agent_watches: Arc::clone(&cloud_agent_watches),
+            background_shell_watches: Arc::clone(&background_shell_watches),
+            completion_revivals: Arc::clone(&completion_revivals),
+        }))
+        .expect("TranscriptManager pending-wake runtime must be configured exactly once");
+    if let Err(error) = transcript_manager.rearm_pending_wakes() {
+        host_lifecycle.fail();
+        eprintln!("failed to rearm Transcript pending wakes: {error}");
+        return;
     }
 
     let listener_runtime = transcript_manager.automation_runtime();
