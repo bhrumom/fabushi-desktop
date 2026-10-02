@@ -130,6 +130,9 @@ impl ProductionAgentToAgentMessaging {
         let message = clamp_agent_message(text);
         if message.is_empty() { return Ok("Message was empty; nothing was sent.".into()); }
         if to_agent_id == from_agent_id { return Ok("An agent can't message itself.".into()); }
+        if self.sessions.is_agent_being_deleted(to_agent_id) {
+            return Ok("That agent no longer exists.".into());
+        }
         let roster = self.sessions.list_agent_summaries(None)?;
         let Some(target) = roster.iter().find(|agent| agent.id == to_agent_id) else { return Ok(format!("No agent found with id {to_agent_id}.")); };
         if target.remote_room.is_some() { return Ok("That is a shared chat hosted by another user; agents can't message it directly.".into()); }

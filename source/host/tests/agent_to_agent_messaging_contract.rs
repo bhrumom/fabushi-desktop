@@ -237,3 +237,31 @@ fn shipping_host_owns_agent_inbound_failure_telemetry_and_tray() {
     assert!(main.contains("self.telemetry_logs.report_agent_error(&agent_inbound_failure_report("));
     assert!(main.contains("self.trays.push_error(agent_inbound_failure_tray("));
 }
+
+
+#[test]
+fn deletion_fenced_target_uses_frozen_agent_gone_response() {
+    let root = temp_root();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let alpha = sessions
+        .materialize_new_session(Some(&profile("Alpha")), "user", None)
+        .expect("alpha");
+    let beta = sessions
+        .materialize_new_session(Some(&profile("Beta")), "user", None)
+        .expect("beta");
+    sessions.begin_agent_delete(&beta.id);
+
+    let service = ProductionAgentToAgentMessaging::new(
+        Arc::clone(&sessions),
+        Arc::new(|_| panic!("deleting target must not wake")),
+        Some(Arc::new(|_, _| panic!("deleting target must not interrupt"))),
+    );
+    let ack = service
+        .send_to_agent(&alpha.id, &beta.id, "hello", &[], false)
+        .expect("send result");
+    assert_eq!(ack, "That agent no longer exists.");
+
+    sessions.end_agent_delete(&beta.id);
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
