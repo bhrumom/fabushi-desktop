@@ -7600,6 +7600,11 @@ impl GatewayApi for UnifiedGatewayApi {
                 inbound,
             )
             .map_err(GatewayCommandError::Internal)?;
+            if accepted {
+                self.roster_emit
+                    .emit_agent_update(agent_id)
+                    .map_err(GatewayCommandError::Internal)?;
+            }
             return Ok(serde_json::json!({ "accepted": accepted }));
         }
         if method == "reportAgentInboundFailure" {
