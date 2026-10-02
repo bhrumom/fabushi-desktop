@@ -146,6 +146,12 @@ use crate::extensions::telemetry::webauthn_proxy_telemetry::{
 use crate::extensions::trays::extension::{
     HostTraysExtension, start_trays_extension,
 };
+use crate::extensions::transcript::extension::{
+    TranscriptExtension, TranscriptExtensionDeps, TranscriptExtensionEventBridge,
+    start_production_transcript_extension,
+};
+use crate::extensions::transcript::roster_emit::ProductionRosterEmit;
+use crate::extensions::transcript::transcript_manager::TranscriptManager;
 use crate::extensions::turn_execution::extension::turn_execution_extension;
 use crate::extensions::turn_execution::turn_execution_service::TurnExecutionRegistry;
 use crate::extensions::webauthn_proxy::extension::{
@@ -200,6 +206,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::TurnExecution,
     HostExtensionId::Session,
     HostExtensionId::AutoReview,
+    HostExtensionId::Transcript,
 ];
 
 pub struct ProductionBrowserUaLog;
@@ -451,6 +458,7 @@ pub struct ProductionHostExtensions {
     pub turn_execution: Arc<Mutex<TurnExecutionRegistry>>,
     session: Mutex<Option<SessionExtension>>,
     auto_review: Mutex<Option<Arc<HostAutoReviewExtension>>>,
+    transcript: Mutex<Option<TranscriptExtension>>,
     backend_url: String,
     mcp: Mutex<Option<McpExtensionRuntime>>,
     box_store_sync: Mutex<Option<BoxStoreSyncExtension<ProductionBoxStoreSyncService>>>,
@@ -639,6 +647,7 @@ pub fn start_production_host_extensions(
         turn_execution,
         session: Mutex::new(None),
         auto_review: Mutex::new(None),
+        transcript: Mutex::new(None),
         backend_url,
         mcp: Mutex::new(None),
         box_store_sync: Mutex::new(None),
@@ -656,6 +665,58 @@ impl ProductionHostExtensions {
 
     pub fn stop_cloud_agents(&self) {
         self.cloud_agents.stop();
+    }
+
+    pub fn start_transcript(
+        &self,
+        root_dir: &Path,
+        sessions: Arc<ProductionSessionWorkers>,
+        attachments: Arc<crate::extensions::attachments::attachments_service::AttachmentsService>,
+        events: SandHostEventBus,
+    ) -> Result<(
+        Arc<TranscriptManager>,
+        Arc<ProductionRosterEmit>,
+        TranscriptExtensionEventBridge,
+        Option<String>,
+    ), String> {
+        let mut slot = self
+            .transcript
+            .lock()
+            .map_err(|_| "production Transcript runtime lock poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("production Transcript runtime is already started".into());
+        }
+        let extension = start_production_transcript_extension(
+            root_dir,
+            sessions,
+            TranscriptExtensionDeps {
+                attachments,
+                content_search: Arc::clone(&self.content_search),
+                memory: self.memory.clone(),
+                telemetry: self.telemetry.clone(),
+                trays: Arc::clone(&self.trays),
+                turn_execution: Arc::clone(&self.turn_execution),
+                events,
+            },
+        );
+        let profile_watch_error = extension.profile_watch_error().map(str::to_string);
+        let manager = extension.manager();
+        let roster = extension.roster_emit();
+        let event_bridge = extension
+            .event_bridge()
+            .ok_or_else(|| "production Transcript extension did not install its event bridge".to_string())?;
+        *slot = Some(extension);
+        Ok((manager, roster, event_bridge, profile_watch_error))
+    }
+
+    pub fn stop_transcript(&self) -> Result<(), String> {
+        let extension = self
+            .transcript
+            .lock()
+            .map_err(|_| "production Transcript runtime lock poisoned".to_string())?
+            .take();
+        drop(extension);
+        Ok(())
     }
 
     pub fn start_auto_review(
