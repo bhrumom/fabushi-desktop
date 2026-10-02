@@ -8,7 +8,8 @@ use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::production_runtime::ProductionTranscriptRuntime;
 use mahayana_host_runtime::extensions::transcript::send_group_fanout::{
-    GroupMemberTurnExecutor, LocalGroupFanoutDisposition, dispatch_local_group_send,
+    GROUP_MEMBER_DM_PREEMPTED_ERROR, GroupMemberTurnExecutor, LocalGroupFanoutDisposition,
+    dispatch_local_group_send,
 };
 use mahayana_host_runtime::groups::group_store::{
     GROUP_CONFIG_VERSION, SandGroupConfig, write_sand_group_config,
@@ -305,4 +306,92 @@ fn shipping_send_prompt_routes_mirror_and_hosted_room_entries_through_cross_user
     assert!(SHIPPING_HOST.contains("publish_room_entry_and_wait(shared_room_id, &entry)"));
     assert!(SHIPPING_HOST.contains("Shared mirror rooms only support image attachments."));
     assert!(SHIPPING_HOST.contains("persisted_send_context"));
+}
+
+
+#[test]
+fn dm_preempted_group_member_redrives_only_while_room_epoch_is_current() {
+    let root = temp_root("dm-preempt");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let alice = sessions
+        .materialize_new_session(Some(&profile("Alice")), "user", None)
+        .expect("Alice");
+    let room = sessions
+        .materialize_new_session(Some(&profile("Team")), "user", None)
+        .expect("room");
+    write_sand_group_config(
+        root.join(&room.id),
+        &SandGroupConfig {
+            version: GROUP_CONFIG_VERSION,
+            member_ids: vec![alice.id.clone()],
+            remote_members: None,
+            shared_room_id: None,
+        },
+    )
+    .expect("group config");
+    sessions
+        .append_agent_transcript_entries(
+            &room.id,
+            &[json!({
+                "kind":"message",
+                "id":"dm-preempt-user",
+                "role":"user",
+                "content":"answer",
+                "timestampMs":1,
+            })],
+        )
+        .expect("user message");
+
+    let calls = Arc::new(Mutex::new(0usize));
+    let observed = Arc::clone(&calls);
+    let executor: GroupMemberTurnExecutor = Arc::new(move |_| {
+        let mut calls = observed.lock().expect("calls");
+        *calls += 1;
+        if *calls < 3 {
+            Err(GROUP_MEMBER_DM_PREEMPTED_ERROR.into())
+        } else {
+            Ok(vec!["redriven reply".into()])
+        }
+    });
+    let runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    let outcome = dispatch_local_group_send(
+        Arc::clone(&sessions),
+        Arc::clone(&runtime),
+        &room.id,
+        0,
+        executor,
+        None,
+    )
+    .expect("fanout");
+    assert_eq!(*calls.lock().expect("calls"), 3);
+    let LocalGroupFanoutDisposition::Completed { posted_messages, member_failures } = outcome else {
+        panic!("expected completion");
+    };
+    assert_eq!(posted_messages, 1);
+    assert!(member_failures.is_empty());
+
+    let stale_calls = Arc::new(Mutex::new(0usize));
+    let observed = Arc::clone(&stale_calls);
+    let stale_executor: GroupMemberTurnExecutor = Arc::new(move |_| {
+        *observed.lock().expect("stale calls") += 1;
+        Err(GROUP_MEMBER_DM_PREEMPTED_ERROR.into())
+    });
+    let stale = dispatch_local_group_send(
+        Arc::clone(&sessions),
+        Arc::clone(&runtime),
+        &room.id,
+        99,
+        stale_executor,
+        None,
+    )
+    .expect("stale fanout");
+    assert_eq!(*stale_calls.lock().expect("stale calls"), 0);
+    let LocalGroupFanoutDisposition::Completed { posted_messages, member_failures } = stale else {
+        panic!("expected stale completion");
+    };
+    assert_eq!(posted_messages, 0);
+    assert!(member_failures.is_empty());
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
 }
