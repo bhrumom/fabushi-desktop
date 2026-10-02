@@ -10,7 +10,6 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
 };
 use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
 use mahayana_host_runtime::extensions::transcript::send_turn_dispatch::prepare_direct_turn_runner_args;
-use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
 use mahayana_host_runtime::runner::RecoveryUserMessage;
 use mahayana_host_runtime::extensions::transcript::run_scheduler::{
     QueueAccepted, QueueDequeued, RunLane, WatchdogStage,
@@ -41,8 +40,11 @@ fn direct_turn_runner_args_use_durable_history_composed_note_and_mentions() {
         .update_agent_profile(
             &teammate.id,
             &mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate {
-                name: Some("Researcher".into()),
-                description: Some("Finds sources".into()),
+                name: "Researcher".into(),
+                description: "Finds sources".into(),
+                title: None,
+                avatar_shape: None,
+                avatar_color: None,
             },
             None,
         )
