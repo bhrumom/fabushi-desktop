@@ -349,9 +349,16 @@ impl ProductionAgentLifecycle {
         Ok(())
     }
 
-    fn emit_agent_profile_update(&self, agent_id: &str) -> Result<(), String> {
+    fn emit_agent_update(&self, agent_id: &str) -> Result<(), String> {
         if let Some(roster) = self.roster.as_ref() {
             roster.emit_agent_update(agent_id)?;
+        }
+        Ok(())
+    }
+
+    fn emit_agent_profile_update(&self, agent_id: &str) -> Result<(), String> {
+        self.emit_agent_update(agent_id)?;
+        if let Some(roster) = self.roster.as_ref() {
             roster.publish_profile_changed(agent_id);
         }
         Ok(())
