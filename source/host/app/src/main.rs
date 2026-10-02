@@ -613,6 +613,8 @@ struct ProductionSendMessageSink {
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     ack_token: Option<String>,
     agent_id: String,
+    reply_thread_target: Option<String>,
+    is_fork: bool,
 }
 
 impl ProductionSendMessageSink {
@@ -771,15 +773,16 @@ impl SendMessageSink for ProductionSendMessageSink {
             }
         }
 
-        let entry_id = format!("runner-send:{tool_call_id}");
-        let entry = serde_json::json!({
-            "id": entry_id.clone(),
-            "kind": "send-message",
-            "message": message,
-            "timestampMs": timestamp_ms,
-        });
-        self.sessions
-            .append_agent_transcript_entries(&self.agent_id, &[entry])
+        let entry_id = self
+            .transcript_runtime
+            .append_generated_send_message(
+                self.sessions.as_ref(),
+                &self.agent_id,
+                &message,
+                timestamp_ms,
+                self.reply_thread_target.as_deref(),
+                self.is_fork,
+            )
             .map_err(|error| ProviderSessionError::Tool(format!(
                 "could not persist SendMessage for {}: {error}",
                 self.agent_id
@@ -5575,6 +5578,14 @@ fn start_routed_provider_task(
     let worker_enter_epoch_ms = args
         .get("enterEpochMs")
         .and_then(serde_json::Value::as_f64);
+    let worker_reply_thread_target = args
+        .get("replyContext")
+        .and_then(|context| context.get("targetId"))
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
+    let worker_send_is_fork = turn_input.options.is_fork;
     let state_sand_root = session_workers
         .memory_service()
         .agents_root_dir()
@@ -6720,6 +6731,8 @@ fn start_routed_provider_task(
                     transcript_runtime: Arc::clone(&worker_transcript_runtime),
                     ack_token: worker_ack_token.clone(),
                     agent_id: agent_id.clone(),
+                    reply_thread_target: worker_reply_thread_target.clone(),
+                    is_fork: worker_send_is_fork,
                 },
             );
             let send_message_sink: Arc<dyn SendMessageSink> = Arc::new(

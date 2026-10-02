@@ -1280,6 +1280,36 @@ impl ProductionTranscriptRuntime {
             .track_box_request_entry(agent_id, entry)
     }
 
+    pub fn append_generated_send_message(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        agent_id: &str,
+        message: &Value,
+        timestamp_ms: u64,
+        reply_thread_target: Option<&str>,
+        is_fork: bool,
+    ) -> Result<String, String> {
+        let entries = sessions.read_agent_transcript_entries(agent_id)?;
+        let entry = self
+            .lock_state()
+            .pipeline
+            .prepare_generated_send_message_entry(
+                agent_id,
+                &entries,
+                message,
+                reply_thread_target,
+                is_fork,
+                timestamp_ms,
+            );
+        let entry_id = entry
+            .get("id")
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned)
+            .ok_or_else(|| "generated send pipeline did not produce an entry id".to_string())?;
+        sessions.append_agent_transcript_entries(agent_id, &[entry])?;
+        Ok(entry_id)
+    }
+
     pub fn resolve_box_request_tracking(&self, request_id: &str) -> bool {
         self.lock_state()
             .pipeline
