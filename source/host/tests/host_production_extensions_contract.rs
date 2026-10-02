@@ -36,6 +36,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     );
     assert_eq!(HOST_EXTENSION_ORDER.len(), 35);
     assert!(shipping.contains(&HostExtensionId::Auth));
+    assert!(shipping.contains(&HostExtensionId::Notifications));
     assert!(shipping.contains(&HostExtensionId::Automations));
     assert!(shipping.contains(&HostExtensionId::Settings));
     assert!(shipping.contains(&HostExtensionId::BrowserUa));
@@ -138,6 +139,31 @@ fn box_stage_extensions_have_one_production_composition_owner() {
     );
 }
 
+
+
+#[test]
+fn notifications_have_one_shipping_production_lifecycle_owner() {
+    for needle in [
+        "HostExtensionId::Notifications",
+        "notifications: Mutex<Option<HostNotificationsExtension>>",
+        "pub fn start_notifications(",
+        "start_notifications_extension(",
+        "pub fn stop_notifications(&self)",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own Notifications lifecycle: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains("production_extensions.start_notifications("),
+        "shipping Host must start Notifications through the centralized production owner"
+    );
+    assert!(
+        !SHIPPING_HOST.contains("start_notifications_extension("),
+        "shipping Host must not construct a second Notifications extension"
+    );
+}
 
 
 #[test]
