@@ -13,9 +13,7 @@ use mahayana_host_runtime::extensions::box_store_sync::box_copy_in::{
 use mahayana_host_runtime::extensions::box_store_sync::production::ProductionBoxStoreSyncApi;
 use mahayana_host_runtime::extensions::action_audit::extension::ActionAuditExtension;
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
-use mahayana_host_runtime::extensions::auto_review::extension::{
-    HostAutoReviewExtension, start_auto_review_extension_with_expire_sweep_telemetry,
-};
+use mahayana_host_runtime::extensions::auto_review::extension::HostAutoReviewExtension;
 use mahayana_host_runtime::extensions::auto_review::sand_backend_smart_mode_classifier_exec::{
     create_sand_backend_smart_mode_classifier_executor_with_cancellation,
 };
@@ -10163,15 +10161,20 @@ fn main() {
         let _ = auto_review_expire_sweep_logs
             .report_auto_review_expire_sweep_failed(stage, error_class);
     });
-    let auto_review_extension = Arc::new(start_auto_review_extension_with_expire_sweep_telemetry(
+    let auto_review_extension = match production_extensions.start_auto_review(
         Arc::clone(&session_workers),
-        Arc::clone(&production_extensions.experiments),
-        Arc::clone(&settings_extension),
         format!("host-{}", uuid::Uuid::new_v4()),
         auto_review_update_sink,
         auto_review_telemetry_sink,
         Some(auto_review_expire_sweep_sink),
-    ));
+    ) {
+        Ok(extension) => extension,
+        Err(error) => {
+            host_lifecycle.fail();
+            eprintln!("failed to start production AutoReview extension: {error}");
+            return;
+        }
+    };
     let auto_review_display_recheck_logs = host_telemetry.logs.clone();
     auto_review_extension
         .service()
@@ -11753,6 +11756,9 @@ fn main() {
         eprintln!("failed to stop production Notifications extension cleanly: {error}");
     }
     production_extensions.notify_bus.stop();
+    if let Err(error) = production_extensions.stop_auto_review() {
+        eprintln!("failed to stop production AutoReview extension cleanly: {error}");
+    }
     drop(transcript_extension);
     if let Err(error) = production_extensions.shutdown_session() {
         eprintln!("failed to shut down production Session extension cleanly: {error}");
