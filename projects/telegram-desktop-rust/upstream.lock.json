@@ -2,7 +2,7 @@
   "format_version": 2,
   "project_id": "TDRP-001",
   "recorded_on": "2026-10-02",
-  "status": "root-and-direct-gitlinks-frozen-recursive-closure-pending",
+  "status": "root-direct-gitlinks-and-github-recursive-gitlinks-frozen-external-gitlab-leaf-pending",
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
@@ -326,7 +326,36 @@
     "research_coverage": null,
     "existing_owner_inventory_verified": false,
     "owner_resolution_verified": false,
-    "absorption_plan_verified": false
+    "absorption_plan_verified": false,
+    "github_recursive_gitlinks_verified": true,
+    "direct_gitlink_tree_count_verified": 35,
+    "direct_gitlink_trees_truncated": false,
+    "nested_gitlinks_observed": [
+      {
+        "parent": "desktop-app/cmake_helpers@7a6abdae76f14d0ebb5a8d0500d7adc6d6c1e489",
+        "path": "external/glib/cppgir",
+        "url": "https://gitlab.com/mnauw/cppgir.git",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "verification": "pending-external-gitlab-tree"
+      },
+      {
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "path": "doxygen-theme",
+        "url": "https://github.com/nnen/doxygen-theme.git",
+        "commit": "46111c61a9f49b7a9886127e679d4317478fab1c",
+        "verification": "recursive-tree-no-gitlinks"
+      },
+      {
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "path": "doc/gh-pages",
+        "url": "https://github.com/ericniebler/range-v3.git",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "verification": "recursive-tree-no-gitlinks"
+      }
+    ],
+    "external_recursive_leaf_pending": [
+      "desktop-app/cmake_helpers/external/glib/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776"
+    ]
   },
   "license_baseline": {
     "upstream_project_license_expression": "GPL-3.0-or-later",
@@ -345,7 +374,10 @@
     "https://api.github.com/repos/telegramdesktop/tdesktop/git/trees/f648b08bb31a4890088ca6a9aa41f3713978eda0",
     "https://github.com/telegramdesktop/tdesktop/blob/33261535a0e747f125e0ed25486f01e556330677/.gitmodules",
     "https://github.com/telegramdesktop/tdesktop/blob/33261535a0e747f125e0ed25486f01e556330677/LEGAL",
-    "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/3b1f2c5deaf47867629c96b08bf4694f973177e2"
+    "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/3b1f2c5deaf47867629c96b08bf4694f973177e2",
+    "https://api.github.com/repos/telegramdesktop/tdesktop/git/trees/33261535a0e747f125e0ed25486f01e556330677?recursive=1",
+    "https://api.github.com/repos/nnen/doxygen-theme/git/trees/46111c61a9f49b7a9886127e679d4317478fab1c?recursive=1",
+    "https://api.github.com/repos/ericniebler/range-v3/git/trees/2dae74bb693e42d850fb0adcc9045c5b71fbdeae?recursive=1"
   ],
   "spec_revision": 4,
   "method": "source-informed-existing-owner-absorption",

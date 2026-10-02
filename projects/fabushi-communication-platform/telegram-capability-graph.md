@@ -45,6 +45,18 @@ This graph records product capability domains observed in the frozen Telegram De
 | multi-device sync / ordering / duplicate suppression / gap recovery | update/session/data/mtproto state machinery | existing durable state + minimal native sync/messaging infrastructure |
 | large histories / pagination / stale updates | history/data sparse-id/search/update code | existing transcript pagination/storage + sync infrastructure |
 | update / install / rollback | core/platform/build/update code | existing Electron/platform update owners |
+| communities / managed communities | `api/api_communities.*`, peer/community boxes, `info/community*` | extend Shared Room/group/member/admin owners after behavior research |
+| Compose AI / AI tone helpers | `api/api_compose_with_ai.*`, `boxes/compose_ai_box.*`, create/preview AI tone boxes | existing composer + Agent capability; preserve typed Agent flow rather than a Telegram-specific AI subsystem |
+| rich tasks / todo lists | `api/api_rich_tasks.*`, `api/api_todo_lists.*`, todo-list editor boxes | existing task/automation/transcript typed-event owners |
+| ringtones / notification sounds | `api/api_ringtones.*`, ringtone settings/boxes, `Resources/sounds` | existing notification/settings/resource owners |
+| self-destruct / expiry | `api/api_self_destruct.*`, self-destruction UI, message lifecycle | existing transcript/message lifecycle + permissions/settings |
+| sensitive-content policy | `api/api_sensitive_content.*`, privacy/settings surfaces | existing settings/permissions/safety policy |
+| statistics / analytics surfaces | `api/api_statistics*.*`, `statistics/*`, channel statistics info | existing product analytics/room info surfaces; applicability requires product decision |
+| usernames / websites / links | `api/api_user_names.*`, `api/api_websites.*`, deep-link/local-url handlers | existing identity/profile + product shell/navigation/security |
+| media/photo/video editor | `editor/*`, media editor scene/controllers/video | existing attachment/resource composer flow; minimal editor capability only if applicable |
+| Instant View / rich document rendering | `iv/*` | existing artifact/web/rich-content rendering owner |
+| support / moderation / report flows | `support/*`, report/moderation boxes, blocked peers | existing settings/permissions/safety/support surfaces |
+| TDE2E / end-to-end encryption research | `tde2e/*` | native identity/security/network infrastructure; protocol requirements only, no Telegram wire dependency |
 | commerce/security long tail discovered outside list | data business/credits/gifts, passport/payments/webauthn and future recursively discovered regions | resolve one capability at a time to existing owners; no broad new subsystem |
 
 ## Discovery evidence
@@ -71,9 +83,19 @@ Representative exact paths observed at the frozen commit include:
 - `Telegram/SourceFiles/inline_bots/bot_attach_web_view.cpp`
 - `Telegram/SourceFiles/platform/platform_notifications_manager.h`
 
+## Recursive-tree discovery update
+
+The frozen root recursive tree was enumerated with `recursive=1` and returned `truncated=false`. It contains 118 SourceFiles directories at depth <= 4 and 35 direct gitlinks. All 35 direct gitlink trees were queried at their pinned commits. Three nested gitlinks were observed:
+
+- `desktop-app/cmake_helpers/external/glib/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776` (GitLab; commit-specific recursive tree still pending);
+- `PJK/libcbor/doxygen-theme@46111c61a9f49b7a9886127e679d4317478fab1c` (recursive GitHub tree verified, no further gitlinks);
+- `ericniebler/range-v3/doc/gh-pages@2dae74bb693e42d850fb0adcc9045c5b71fbdeae` (recursive GitHub tree verified, no further gitlinks).
+
+This pass also exposed product-capability domains that were missing from the first discovery table, including communities, Compose AI, rich tasks/todo lists, ringtones, self-destruct, sensitive-content policy, statistics, usernames/websites, the built-in media editor, Instant View, support/moderation, and TDE2E. They are now explicitly in scope.
+
 ## What this does not prove
 
-- recursive gitlink/submodule closure;
+- the final external GitLab `cppgir@47cf94f…` recursive leaf (all GitHub-hosted gitlink recursion above it is verified);
 - build-time downloads, generated source, patches, resources, shaders or platform packaging closure;
 - behavior/state-machine details for each capability;
 - C++ production-responsibility completeness;
