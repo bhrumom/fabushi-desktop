@@ -2497,9 +2497,7 @@ impl UnifiedGatewayApi {
         };
         for stream_id in self
             .runner_registry
-            .active_stream_ids_for_agent(agent_id)
-            .into_iter()
-            .filter(|stream_id| stream_id.starts_with("group-member-"))
+            .active_group_member_stream_ids_for_agent(agent_id)
         {
             let _ = self.runner_registry.cancel_stream(
                 &stream_id,
@@ -4519,8 +4517,11 @@ fn start_routed_provider_task(
                 ))
             })?
     };
-    let cancellation = runner_registry
-        .register_routed_provider(&agent_id, &stream_id)
+    let cancellation = if is_group_member_turn {
+        runner_registry.register_group_member(&agent_id, &stream_id)
+    } else {
+        runner_registry.register_routed_provider(&agent_id, &stream_id)
+    }
         .map_err(|error| {
             ack_obligations.retire_ack_run_token(&agent_id, ack_token.as_deref());
             transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
@@ -8492,8 +8493,10 @@ fn main() {
             let telemetry_logs = host_telemetry.logs.clone();
             Arc::new(move |agent_id| {
                 let was_in_flight = transcript_runtime.is_agent_running(agent_id);
+                let had_group_run =
+                    runner_registry.cancel_group_member_agent(agent_id, "agent deleted") > 0;
                 let had_active_run =
-                    runner_registry.cancel_agent(agent_id, "agent deleted") > 0;
+                    runner_registry.cancel_agent(agent_id, "agent deleted") > 0 || had_group_run;
                 let fields = TurnInterruptFields {
                     conversation_id: agent_id.to_string(),
                     reason: "agent_deleted".into(),
