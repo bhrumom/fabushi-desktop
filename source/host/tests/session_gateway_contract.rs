@@ -527,6 +527,16 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
         .expect("conversation id")
         .to_string();
     assert_eq!(created["kind"], "human");
+    let human_db = runtime
+        .open_human_conversation_db_owner(&conversation_id)
+        .expect("Human conversation database");
+    assert_eq!(
+        human_db.get_metadata("conversationKind").expect("kind"),
+        Some(json!("human"))
+    );
+    assert_eq!(human_db.get_metadata("agentId").expect("agent id"), None);
+    assert_eq!(human_db.get_metadata("blobEncryptionKey").expect("blob key"), None);
+    assert_eq!(human_db.get_metadata("mode").expect("agent mode"), None);
     assert_eq!(dispatch(&runtime, "countAgents", json!({})), json!(1));
     let agents_list = dispatch(&runtime, "listAgents", json!({}));
     assert_eq!(agents_list.as_array().map(Vec::len), Some(1));
@@ -551,9 +561,6 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     assert_eq!(first["authorKind"], "human");
     assert_eq!(first["authorId"], "human-local");
     assert_eq!(first["clientNonce"], "human-nonce-1");
-    let human_db = runtime
-        .open_human_conversation_db_owner(&conversation_id)
-        .expect("Human conversation database");
     assert_eq!(
         human_db
             .get_unread_state()

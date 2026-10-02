@@ -1213,27 +1213,29 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "native conversation database has no parent".to_string())?;
         fs::create_dir_all(conversation_dir).map_err(|error| error.to_string())?;
         let owner = Arc::new(
-            SandAgentDb::open(&db_path, self.busy_timeout_ms)
+            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?,
         );
         let display_title = if title.is_empty() { peer_human_id } else { title };
-        for (key, value) in [
-            ("conversationKind", serde_json::json!("human")),
-            ("conversationId", serde_json::json!(conversation_id)),
-            ("title", serde_json::json!(display_title)),
-            (
-                "participantIds",
-                serde_json::json!([local_human_id, peer_human_id]),
-            ),
-        ] {
-            if !owner
-                .set_metadata(key, value)
-                .map_err(|error| error.to_string())?
-            {
-                owner.close(false);
-                let _ = fs::remove_dir_all(conversation_dir);
-                return Err(format!("failed to persist native conversation metadata: {key}"));
-            }
+        let created_at = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as f64;
+        let metadata = serde_json::json!({
+            "conversationKind": "human",
+            "conversationId": conversation_id,
+            "title": display_title,
+            "participantIds": [local_human_id, peer_human_id],
+            "createdAt": created_at,
+            "lastActivityAt": 0.0,
+        });
+        if !owner
+            .initialize_metadata_if_missing(metadata)
+            .map_err(|error| error.to_string())?
+        {
+            owner.close(false);
+            let _ = fs::remove_dir_all(conversation_dir);
+            return Err("failed to initialize native Human conversation metadata".into());
         }
         self.db_owners
             .lock()
@@ -1265,7 +1267,7 @@ impl ProductionSessionWorkers {
             return Ok(Arc::clone(owner));
         }
         let owner = Arc::new(
-            SandAgentDb::open(&db_path, self.busy_timeout_ms)
+            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?,
         );
         if owner
