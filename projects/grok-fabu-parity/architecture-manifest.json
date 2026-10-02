@@ -17392,19 +17392,24 @@
       "targetPath": "source/host/src/host_runner_composition.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "ace10619912d86f2df768b5a842c09abdb0d050c",
       "architecturalRole": "host/host-runner-composition",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/host_runner_composition.rs",
+        "source/host/src/runner/generated_agent_turn_stream.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/extensions/transcript/runner_registry.rs",
         "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_runner_composition_local_permission_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust HostRunnerComposition now owns the frozen direct-runner LocalToolPermission surface subset: one surface subscription per direct agent session, created/settled transcript projection, canAsk ownership, group-member exclusion, unbind on run settlement and forgetAgent cleanup. The broader HostRunnerComposition remains non-final for the remaining runner/mirror/memory/tool-surface composition responsibilities."
+      "notes": "Finalized after frozen Grok HostRunnerComposition comparison and shipping-owner audit. Rust HostRunnerComposition is the single per-turn composition owner for state surfaces, transcript/checkpoint routing, Runner facade construction, ordered turn decoration, LocalToolPermission subscriptions, and Computer-use preparation/settlement. Group-member turns retain the generated Agent lifecycle while omitting private state/checkpoint/memory/image/local-permission surfaces; AutoReview approvals are independently fail-closed through the existing group-member request-source binding. TranscriptRunnerRegistry remains the canonical active-run cancellation owner, while HostRunnerComposition.dispose only clears its own permission subscriptions after registry cancellation, avoiding a parallel lifecycle owner. Exact implementation parent 1e79bdad87022dcb394b9d4ecaef9508baf7497d passed htch-runtime focused contracts (2 + 8 tests, 0 failures, exit 0); its GitHub shipping Mahayana Host compile succeeded and Focused Electron Grok Agent shell/Mahayana regression plus evidence upload succeeded. This manifest commit must re-establish exact-HEAD gates before becoming the next baseline."
     },
     {
       "referencePath": "source/host/host-secret-store.ts",
