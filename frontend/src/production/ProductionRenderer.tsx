@@ -2432,9 +2432,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const page = humanConversation == null
         ? await client.call("openAgentTail", { id: agentId, limit: 200 })
         : await client.call("getHumanConversationTranscript", { conversationId: agentId });
+      // Human conversations are read from the Host-local durable Session store.
+      // A transport ready/reconnect notification may advance the Agent transport
+      // generation while this local read is in flight; that must not discard an
+      // otherwise current Human transcript. Agent tail reads remain transport-fenced.
       if (accountScopeGenerationRef.current !== accountScopeGeneration
         || openAgentRequestGenerationRef.current !== requestGeneration
-        || transportScopeGenerationRef.current !== transportScopeGeneration
+        || (humanConversation == null && transportScopeGenerationRef.current !== transportScopeGeneration)
         || accountRef.current?.kind !== "logged-in") return;
       if (humanConversation != null) {
         const projectedEntries = projectHumanConversationTranscript(page, agentName, agentId);
@@ -2456,7 +2460,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     } catch {
       if (accountScopeGenerationRef.current !== accountScopeGeneration
         || openAgentRequestGenerationRef.current !== requestGeneration
-        || transportScopeGenerationRef.current !== transportScopeGeneration
+        || (humanConversation == null && transportScopeGenerationRef.current !== transportScopeGeneration)
         || accountRef.current?.kind !== "logged-in") return;
       selectionStore.settle(agentId);
       selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });

@@ -16,11 +16,11 @@ Thirty-two direct gitlinks contain no nested gitlinks. Three contain one nested 
 
 | Parent | Nested path | Pinned commit | Result |
 | --- | --- | --- | --- |
-| `desktop-app/cmake_helpers@7a6abdae…` | `external/glib/cppgir` | `47cf94f83b54cda59018135601e19d7fb0c77776` | exact GitLab commit verified; recursive-tree endpoint reachable; paginated leaf/nested-gitlink evidence still pending |
+| `desktop-app/cmake_helpers@7a6abdae…` | `external/glib/cppgir` | `47cf94f83b54cda59018135601e19d7fb0c77776` | recursive GitLab tree fully paged: 126 entries (103 blobs, 22 trees, 1 gitlink); sole nested gitlink `expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e`; that exact GitHub tree is `truncated=false`, 55 entries, 0 further gitlinks |
 | `PJK/libcbor@170bee2b…` | `doxygen-theme` | `46111c61a9f49b7a9886127e679d4317478fab1c` | recursive tree verified, `truncated=false`, no further gitlinks |
 | `ericniebler/range-v3@a8147793…` | `doc/gh-pages` | `2dae74bb693e42d850fb0adcc9045c5b71fbdeae` | recursive tree verified, `truncated=false`, no further gitlinks |
 
-The `cppgir` parent `.gitmodules` pins its URL to `https://gitlab.com/mnauw/cppgir.git`. The pinned GitLab commit `47cf94f83b54cda59018135601e19d7fb0c77776` was independently resolved on 2026-10-02 (commit title `tools: use buffered content rather than temporary file`), and the GitLab recursive-tree API endpoint for that exact ref is reachable. However, full paginated leaf enumeration plus nested-submodule inspection was not captured into repository evidence, and direct retrieval from htch-runtime timed out. Therefore recursive submodule closure remains **not complete**; it is not inferred from the default branch or from commit existence alone.
+The `cppgir` parent `.gitmodules` pins its URL to `https://gitlab.com/mnauw/cppgir.git`. On 2026-10-02, htch-runtime read the GitLab repository-tree API at exact ref `47cf94f83b54cda59018135601e19d7fb0c77776` through all pages: 126 entries total, with exactly one mode-`160000` entry, `expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e`. The exact `cppgir/.gitmodules` maps it to `https://github.com/martinmoene/expected-lite.git`; GitHub's canonical repository is now `nonstd-lite/expected-lite`, whose exact recursive tree at `95b9cb0…` returned `truncated=false`, 55 entries and no gitlinks. The external `cppgir` recursive gitlink chain is therefore closed; this does **not** close build/resource/license provenance.
 
 ## Newly exposed capability domains
 
@@ -57,7 +57,7 @@ No item in this table is an instruction to ship Telegram dependencies. It is sou
 
 ## Build/resource closure still open
 
-`Telegram/CMakeLists.txt` proves that the product links or generates through codegen, lib_storage, lib_ui, lib_webrtc, lib_webview, tgcalls, FIDO2, ffmpeg, Stripe, MTProto/scheme generators, language generators, update-key generation, platform MIDL on Windows, and Apple Swift runtime. `Telegram/Resources` contains themes, language bundles, emoji, export templates, webview/picker HTML, sounds, update assets and platform packaging resources.
+`Telegram/CMakeLists.txt` proves that the product links or generates through codegen, lib_storage, lib_ui, lib_webrtc, lib_webview, tgcalls, FIDO2, ffmpeg, Stripe, MTProto/scheme generators, language generators, update-key generation, platform MIDL on Windows, and Apple Swift runtime. An exact frozen-tarball inventory on htch-runtime recorded 3,073 files under `Telegram/Resources`, 35 shader files, 36 files under `Telegram/build`, 30 under `Telegram/cmake`, and the Snap packaging input. The generator chain explicitly references scheme, language, numbers, MIDL, DBus, update-key, AppStream changelog and QRhi-shader generation. A targeted scan of Telegram/root CMake inputs found no `file(DOWNLOAD)`, `FetchContent`, `ExternalProject_Add`, URL-download, curl or wget primitives; this narrows the build-time-download search but does not prove every external package/license is closed.
 
 P0 must still enumerate:
 
@@ -65,7 +65,7 @@ P0 must still enumerate:
 2. generated outputs and their source inputs;
 3. patches/shaders/platform packaging inputs;
 4. dependency license expressions and copied/derived asset provenance;
-5. the external GitLab `cppgir` recursive leaf;
+5. third-party dependency/license expressions and copied/derived asset provenance across the now-closed gitlink tree;
 6. behavior-level responsibility dossiers for each reachable product capability.
 
 Until those close, source research coverage must not be reported as 100%.

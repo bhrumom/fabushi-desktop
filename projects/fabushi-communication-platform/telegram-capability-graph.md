@@ -26,12 +26,12 @@ This graph records product capability domains observed in the frozen Telegram De
 | files / upload / download | `storage/file_upload.*`, `storage/file_download*`, `data/data_document*` | researched in `projects/telegram-desktop-rust/research/rooms-search-media.md`; existing attachments/resources + minimal blob transfer selected |
 | images / video / audio / voice / streaming | `data/data_streaming.cpp`, `media/*`, preload/rotation; rich-media dossier | owner-resolved as `MEDIA-STREAM-CACHE` → existing attachments/resources + media viewer/cards; minimal transfer/cache infra below |
 | stickers / GIF / emoji / custom emoji | `chat_helpers`, data/media/UI expression areas; rich-media dossier | owner-resolved as `EXPRESSION-STICKER-GIF-EMOJI` → existing Composer + rich transcript/reaction surfaces + resource lifecycle |
-| Stories | `data/data_stories.*`, `data/data_story.*`, `media/stories`, `info/stories` | product shell or minimal Story owner after owner analysis |
-| notifications / tray / badge | platform notification manager, `tray*`, settings notifications | existing desktop notification/tray owners + push infrastructure |
-| privacy / safety / blocking | settings privacy controllers, `api/api_user_privacy.*`, blocked-peers | existing settings/permissions plus native identity policy |
-| local lock / credential / WebAuthn | cloud password, `webauthn`, platform WebAuthn | existing auth/settings/security boundaries |
-| Bots / inline interactions | `inline_bots/*`, `api/api_bot.*`, peer bot commands | existing Agent/composer interaction primitives; no Telegram Bot runtime dependency |
-| Mini Apps / WebView concepts | inline bot attach web view + `lib_webview` gitlink | existing Plugins/MCP/Web capability where semantically appropriate |
+| Stories | `data/data_stories.*`, `data/data_story.*`, `media/stories`, `info/stories`; dossier `research/stories-notifications-privacy-security-bots-webview.md` | owner-resolved as `STORY-LIFECYCLE` → existing product shell + Session durable state + attachments/resources + identity/permissions; native publication/sync remains blocker |
+| notifications / tray / badge | platform notification manager, `tray*`, settings notifications; dossier `research/stories-notifications-privacy-security-bots-webview.md` | owner-resolved as `NOTIFICATION-TRAY` → existing Electron notifications + Host notifications/trays; native push remains blocker |
+| privacy / safety / blocking | settings privacy controllers, `api/api_user_privacy.*`, blocked-peers; dossier `research/stories-notifications-privacy-security-bots-webview.md` | owner-resolved as `PRIVACY-BLOCKING` → existing settings + account/Human identity + permissions/member policy |
+| local lock / credential / WebAuthn | cloud password, `webauthn`, platform WebAuthn; dossier `research/stories-notifications-privacy-security-bots-webview.md` | owner-resolved as `LOCAL-CREDENTIAL-WEBAUTHN` → existing account/auth + secrets + Host WebAuthn proxy |
+| Bots / inline interactions | `inline_bots/*`, `api/api_bot.*`, peer bot commands; dossier `research/stories-notifications-privacy-security-bots-webview.md` | owner-resolved as `BOT-INLINE` → existing Agent + Composer + typed transcript cards + Coordinator/Host/Runner + Plugins/MCP |
+| Mini Apps / WebView concepts | inline bot attach web view + `lib_webview` gitlink; dossier `research/stories-notifications-privacy-security-bots-webview.md` | owner-resolved as `MINIAPP-WEBVIEW` → existing Plugins/MCP + plugin browser/Web surface + Electron security boundary |
 | Premium / subscriptions / credits / Stars | premium/credits data + API/settings | existing settings/product shell; domain owner requires business decision |
 | gifts | `data/data_star_gift.*`, peer gifts | product shell; owner unresolved until full behavior research |
 | business features | `data/business`, `settings/business` | existing product/workflow/settings owners by capability, not a single business subsystem by default |
@@ -113,3 +113,8 @@ The message/history cluster now has behavior dossiers and explicit owner-resolut
 ## Foundation owner-resolution checkpoint — 2026-10-02
 
 `APP-LIFECYCLE`, `ACCOUNT-AUTH-MULTI`, `CONTACT-ID-PRESENCE`, and `DIALOG-FOLDER-ARCHIVE` now have fixed-upstream behavior evidence, plausible-owner analysis, selected existing owners, exact c276 owner paths, persistence/native-network requirements and blockers in the owner-resolution matrix and foundation dossier. This closes ownership research for those rows only; it does not satisfy global P0 because many capability domains and recursive source/provenance leaves remain unresolved.
+
+
+## Stories through Mini Apps owner-resolution checkpoint — 2026-10-02
+
+`STORY-LIFECYCLE`, `NOTIFICATION-TRAY`, `PRIVACY-BLOCKING`, `LOCAL-CREDENTIAL-WEBAUTHN`, `BOT-INLINE`, and `MINIAPP-WEBVIEW` now have fixed-upstream behavior evidence, plausible-owner analysis, selected existing owners, exact c276 owner paths, persistence/native-network requirements, focused tests and explicit blockers in the formal matrix and dossier. This is P0 research/ownership progress only; none of these rows is promoted to implemented or accepted by documentation.
