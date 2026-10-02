@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
@@ -240,6 +241,7 @@ pub struct ProductionRosterEmit {
     event_sink: RosterEventSink,
     timeline_wake_sink: Mutex<Option<TimelineWakeSink>>,
     outline_stream: OutlineStreamScheduler,
+    outline_stream_items: Mutex<HashMap<String, String>>,
     state: Mutex<RosterEmitState>,
 }
 
@@ -256,6 +258,7 @@ impl ProductionRosterEmit {
             event_sink,
             timeline_wake_sink: Mutex::new(None),
             outline_stream,
+            outline_stream_items: Mutex::new(HashMap::new()),
             state: Mutex::new(RosterEmitState::default()),
         }
     }
@@ -375,12 +378,64 @@ impl ProductionRosterEmit {
         self.outline_stream.queue(agent_id, item_id, item);
     }
 
+    pub fn apply_runner_text_delta(&self, agent_id: &str, stream_id: &str, accumulated: &str) {
+        if agent_id.trim().is_empty() || stream_id.trim().is_empty() || accumulated.is_empty() {
+            return;
+        }
+        let (item_id, is_first) = {
+            let mut items = self
+                .outline_stream_items
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            match items.get(stream_id) {
+                Some(item_id) => (item_id.clone(), false),
+                None => {
+                    let item_id = uuid::Uuid::new_v4().to_string();
+                    items.insert(stream_id.to_string(), item_id.clone());
+                    (item_id, true)
+                }
+            }
+        };
+        let item = json!({
+            "kind": "assistant-text",
+            "id": item_id,
+            "text": accumulated,
+        });
+        if is_first {
+            (self.event_sink)(json!({
+                "channel": "outline",
+                "payload": {
+                    "type": "appended",
+                    "agentId": agent_id,
+                    "item": item
+                }
+            }));
+        } else {
+            self.outline_stream.queue(agent_id, &item_id, item);
+        }
+    }
+
+    pub fn finish_runner_outline_stream(&self, stream_id: &str) {
+        let removed = self
+            .outline_stream_items
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(stream_id);
+        if removed.is_some() {
+            self.outline_stream.flush();
+        }
+    }
+
     pub fn flush_outline_stream_update(&self) {
         self.outline_stream.flush();
     }
 
     pub fn stop_outline_stream_coalescing(&self) {
         self.outline_stream.stop();
+        self.outline_stream_items
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
     }
 
     pub fn has_pending_outline_stream_update(&self) -> bool {

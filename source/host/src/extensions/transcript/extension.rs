@@ -16,7 +16,9 @@ use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::extensions::telemetry::extension::HostTelemetryExtension;
 use crate::extensions::trays::extension::HostTraysExtension;
 use crate::extensions::turn_execution::turn_execution_service::TurnExecutionRegistry;
-use crate::host_event_bus::{HostEventFailureMode, SandHostEventBus};
+use crate::host_event_bus::{
+    HostEventFailureMode, HostEventSubscription, SandHostEventBus,
+};
 
 pub const TRANSCRIPT_EXTENSION_ID: &str = "transcript";
 pub const TRANSCRIPT_EXTENSION_DEPENDENCIES: &[&str] = &[
@@ -89,6 +91,7 @@ pub struct TranscriptExtension {
     profile_watch_error: Option<String>,
     deps: Option<TranscriptExtensionDeps>,
     events: Option<TranscriptExtensionEventBridge>,
+    _outline_stream_subscription: Option<HostEventSubscription>,
 }
 
 impl TranscriptExtension {
@@ -144,7 +147,40 @@ pub fn start_transcript_extension(
         profile_watch_error,
         deps: None,
         events: None,
+        _outline_stream_subscription: None,
     }
+}
+
+pub fn bind_runner_outline_stream_events(
+    events: &SandHostEventBus,
+    roster: Arc<ProductionRosterEmit>,
+) -> HostEventSubscription {
+    events.subscribe_listener(move |event| {
+        if event.get("channel").and_then(serde_json::Value::as_str) != Some("runner-inference") {
+            return;
+        }
+        let Some(payload) = event.get("payload") else {
+            return;
+        };
+        let Some(stream_id) = payload.get("streamId").and_then(serde_json::Value::as_str) else {
+            return;
+        };
+        match payload.get("type").and_then(serde_json::Value::as_str) {
+            Some("delta") => {
+                let Some(agent_id) = payload.get("agentId").and_then(serde_json::Value::as_str) else {
+                    return;
+                };
+                let Some(content) = payload.get("content").and_then(serde_json::Value::as_str) else {
+                    return;
+                };
+                roster.apply_runner_text_delta(agent_id, stream_id, content);
+            }
+            Some("completed" | "failed" | "cancelled") => {
+                roster.finish_runner_outline_stream(stream_id);
+            }
+            _ => {}
+        }
+    })
 }
 
 pub fn start_production_transcript_extension(
@@ -175,6 +211,8 @@ pub fn start_production_transcript_extension(
         .set_turn_execution(TranscriptTurnExecutionPort::new(Arc::clone(
             &deps.turn_execution,
         )));
+    let outline_stream_subscription =
+        bind_runner_outline_stream_events(&deps.events, Arc::clone(&extension.roster_emit));
     let events = TranscriptExtensionEventBridge::new(deps.events.clone());
     let lifecycle_events = events.clone();
     extension
@@ -189,5 +227,6 @@ pub fn start_production_transcript_extension(
         })));
     extension.deps = Some(deps);
     extension.events = Some(events);
+    extension._outline_stream_subscription = Some(outline_stream_subscription);
     extension
 }

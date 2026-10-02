@@ -6531,6 +6531,7 @@ fn start_routed_provider_task(
                     "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
                     "payload": {
                         "streamId": delta_stream_id,
+                        "agentId": delta_agent_id.clone(),
                         "type": "delta",
                         "content": accumulated
                     }

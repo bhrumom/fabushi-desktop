@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::extension::{
     TRANSCRIPT_EXTENSION_DEPENDENCIES, TRANSCRIPT_EXTENSION_ID, TranscriptExtensionEventBridge,
-    start_transcript_extension,
+    bind_runner_outline_stream_events, start_transcript_extension,
 };
 use mahayana_host_runtime::host_event_bus::SandHostEventBus;
 
@@ -205,6 +205,83 @@ fn extension_installs_executable_outline_stream_coalescing_on_shipping_roster_ow
     roster.stop_outline_stream_coalescing();
     assert!(!roster.has_pending_outline_stream_update());
 
+    drop(extension);
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn shipping_runner_event_bridge_feeds_outline_coalescing_and_flushes_on_terminal() {
+    let root = temp_root();
+    let agents = root.join("agents");
+    fs::create_dir_all(&agents).expect("agents root");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let bus = SandHostEventBus::default();
+    let sink_bus = bus.clone();
+    let extension = start_transcript_extension(
+        &root,
+        Arc::clone(&sessions),
+        Arc::new(move |event| sink_bus.publish(event)),
+    );
+    extension.roster_emit().set_outline_stream_coalescing_ms(60_000);
+    let _subscription =
+        bind_runner_outline_stream_events(&bus, extension.roster_emit());
+
+    let outline_events = Arc::new(Mutex::new(Vec::new()));
+    let observed = Arc::clone(&outline_events);
+    let _outline_listener = bus.subscribe_listener(move |event| {
+        if event.get("channel").and_then(serde_json::Value::as_str) == Some("outline") {
+            observed.lock().expect("outline events").push(event.clone());
+        }
+    });
+
+    bus.publish(serde_json::json!({
+        "channel": "runner-inference",
+        "payload": {
+            "streamId": "stream-a",
+            "agentId": "agent-a",
+            "type": "delta",
+            "content": "hello"
+        }
+    }));
+    bus.publish(serde_json::json!({
+        "channel": "runner-inference",
+        "payload": {
+            "streamId": "stream-a",
+            "agentId": "agent-a",
+            "type": "delta",
+            "content": "hello world"
+        }
+    }));
+
+    {
+        let events = outline_events.lock().expect("outline events");
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0]["payload"]["type"], "appended");
+        assert_eq!(events[0]["payload"]["item"]["text"], "hello");
+    }
+    assert!(extension.roster_emit().has_pending_outline_stream_update());
+
+    bus.publish(serde_json::json!({
+        "channel": "runner-inference",
+        "payload": {
+            "streamId": "stream-a",
+            "type": "completed",
+            "content": "hello world"
+        }
+    }));
+
+    let events = outline_events.lock().expect("outline events");
+    assert_eq!(events.len(), 2);
+    assert_eq!(events[1]["payload"]["type"], "updated");
+    assert_eq!(events[1]["payload"]["item"]["text"], "hello world");
+    assert_eq!(
+        events[0]["payload"]["item"]["id"],
+        events[1]["payload"]["item"]["id"]
+    );
+    assert!(!extension.roster_emit().has_pending_outline_stream_update());
+
+    drop(events);
     drop(extension);
     let _ = fs::remove_dir_all(root);
 }
