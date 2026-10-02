@@ -2,9 +2,9 @@
 
 Status: evidence snapshot; P0 not yet passed
 Project: FBCP-001 Revision 2
-Captured: 2026-10-02
+Captured: 2026-10-03
 Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`
-PR #20 input: `dcb19a94383833fc1ec5074f10c4bbbd28c09036`
+PR #20 input: `a538679392bc09531041030a98fa0880107e7d40`
 PR state at capture: open, draft, base `main`, head `refactor/grok-018-architecture-rebuild`
 
 This file records the current production owners that FBCP must absorb into. It is not an implementation-complete claim. Any later PR #20 HEAD invalidates the source conclusions below until this inventory is refreshed.
@@ -13,7 +13,7 @@ This file records the current production owners that FBCP must absorb into. It i
 
 The inventory was built from the exact PR #20 HEAD, starting at shipping entrypoints and following the production composition paths. Directory/name similarity by itself is not evidence. The paths below are the current owners or production seams that are actually composed by the renderer, Electron main, Coordinator, Host, and Runner.
 
-Refresh through `556f6308...` revalidated the live PR #20 production ownership. The delta from the prior `b541e2e1...` snapshot changes only `source/host/src/extensions/transcript/profile_watch.rs` and its focused contract; it stays inside the same Host Transcript owner and introduces no competing FBCP product owner.
+Refresh through `a538679392bc09531041030a98fa0880107e7d40` revalidated the live PR #20 production ownership. The exact `dcb19a94..a5386793` delta is 13 commits and 19 production/test/manifest files, confined to Host Transcript (`production_runtime`, `roster_emit`, `runner_registry`, `send_pipeline`, `send_turn_dispatch`, `session_runtime`, `workflow_commands`), Host Runner (`mod.rs`, `turn_run_shell.rs`), shipping Host composition, and Coordinator inference routing plus focused contracts. It does not move the renderer shell/sidebar/workspace/composer, Electron account/settings/media/notification roots, Shared Room, attachments, search, permissions, Computer, MCP, Automations, or storage owner roots. The delta strengthens the existing Transcript/Runner/Coordinator owners rather than creating a parallel communication owner.
 
 ## Exact-head owners
 
@@ -44,7 +44,7 @@ Refresh through `556f6308...` revalidated the live PR #20 production ownership. 
 | Durable local state / recovery | Existing client persistence + Host storage/SQLite recovery + state-backstop/session recovery | `source/shared/persistence.ts`; `frontend/.../draft-state.ts`; `source/host/src/storage/store_db.rs`; `sqlite_recovery.rs`; `source/host/src/extensions/state_backstop/*`; `source/host/src/extensions/session/*` | Extend existing durable/recovery mechanisms; Human messaging still needs its own durable queue contract. |
 | Account/auth precursor | Existing Cursor/Fabushi account authorization and session wiring | `source/electron-main/account/*`; `source/electron-main/auth/auth-callback-registration.ts`; account/session frontend surfaces | This is an auth/session precursor, not yet a canonical Fabushi Human identity model. |
 | External channels/connectors | Existing external connector channel address/delivery and Host connector runtime | `source/shared/channels.ts`; `source/shared/channel-messaging.ts`; `source/host/src/connectors/*` | Useful behavior reference/integration edge only. It must not be mislabeled as Fabushi native Human messaging. |
-| Calls / call signaling | No dedicated canonical product call/session owner was found in the exact-head top-level renderer, Host extensions, Host domain roots, or Electron-main roots inspected for this snapshot | inspected `frontend/src/recovered/features`, `source/host/src`, `source/host/src/extensions`, `source/electron-main` | Keep unresolved in P0. Reuse Computer/platform where appropriate; propose a minimal call-session/signaling owner only after call research and ADR. |
+| Calls / call signaling | No dedicated canonical production call/session owner exists at this exact head; Computer remains the existing screen/control integration surface | inspected `frontend/src/recovered/features`, `source/host/src`, `source/host/src/extensions`, `source/electron-main`; owner resolution `CALL-REALTIME`; `docs/adr/FBCP-ADR-003-call-session-signaling.md` | `existing_owner = none` only for call-session/signaling state. ADR-003 specifies the minimal new owner; Computer/platform remain reused integration owners. This is an approved P0 owner resolution, not an implemented call product. |
 
 ## Shipping flow facts relevant to the first vertical slice
 
@@ -79,5 +79,6 @@ The existing channel connector path models outside platforms and delivery addres
 
 ## Refresh rule
 
-Before using this inventory for implementation, compare the live PR #20 head to `dcb19a94383833fc1ec5074f10c4bbbd28c09036`. If it changed, re-run the source inspection and replace stale owner evidence before coding.
-PR #20 rebaseline 2026-10-02: exact delta c2767eac..95995bdf was inspected. It changes only the Grok parity manifest, Host Transcript runner_registry/transcript_manager production ownership, and their focused contracts. It closes the former runner-registry blocker inside the same Host Transcript owner; it does not move FBCP sidebar/account/settings/media/notification/security owner roots. The later exact delta 95995bdf..de0f1749 was also inspected and changes only `source/host/src/selected_image_inputs.rs`, restoring native HEIC/HEIF-style ISO-BMFF image dimension/rotation parsing. The subsequent de0f1749..bbc7b34a delta adds only the focused `source/host/tests/transcript_send_echo_contract.rs` parity coverage for HEIC/HEIF/AVIF primary-item rotation. The exact delta bbc7b34a..dcb19a94 changes only `projects/grok-fabu-parity/architecture-manifest.json`, accepting the send-message-shaping parity row; it does not move any FBCP product owner. The dcb19a94 exact-head renderer run `37017583630` fails the strict gate with 41 remaining `existing-needs-parity` rows, first `source/host/extensions/transcript/send-pipeline.ts`. This strict-gate evidence is independent from FBCP owner resolution and does not turn manifest status into production implementation evidence.
+Before using this inventory for implementation, compare the live PR #20 head to `a538679392bc09531041030a98fa0880107e7d40`. If it changed, re-run the source inspection and replace stale owner evidence before coding.
+
+PR #20 rebaseline 2026-10-03: the exact `dcb19a94..a5386793` delta was inspected file-by-file at the ownership boundary. It advances send-pipeline/send-turn dispatch, workflow commands, runner registry/turn shell, Coordinator inference routing, and Session runtime behavior inside the same canonical Host Transcript/Runner/Coordinator architecture. `session-runtime.ts` now has a production Rust owner with focus/contact freshness, live-session ownership, deferred bounded-open activation/catch-up, snapshot/roster activation wiring, boot fallback ordering evidence, and focused contracts; `a5386793` is the first head that marks that row implemented, and only its own Actions may accept it. No FBCP product owner root moved in this delta.

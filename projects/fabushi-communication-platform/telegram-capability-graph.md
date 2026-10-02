@@ -2,7 +2,7 @@
 
 Status: discovery pass; recursive gitlink closure complete; behavior/resource/license closure still incomplete
 Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
-Target owner snapshot: PR #20 `dcb19a94383833fc1ec5074f10c4bbbd28c09036`
+Target owner snapshot: PR #20 `a538679392bc09531041030a98fa0880107e7d40`
 
 This graph records product capability domains observed in the frozen Telegram Desktop source tree. It is intentionally not marked research-complete: recursive gitlink closure is now complete, but generated/resource/platform-packaging/license provenance and behavior-level resolution for remaining long-tail domains are still open, so P0 cannot yet claim that no unknown capability domain remains.
 
