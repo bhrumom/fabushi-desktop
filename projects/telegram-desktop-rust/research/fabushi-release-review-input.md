@@ -77,12 +77,9 @@ Those lockfiles must not be substituted for the shipping manifest roots unless C
 
 ### Release blocker RR-RUST-LOCK-01
 
-The shipping Host/Coordinator/box-exec crates are not repository-immutable from the current release command alone. A release candidate must either:
+The shipping Rust roots now carry authoritative checked-in lockfiles: `source/host/app/Cargo.lock`, `source/host/Cargo.lock`, `source/node-agent-coordinator/Cargo.lock`, and `source/box-exec-daemon/Cargo.lock`. Desktop packaging and Rust runtime CI invoke these roots with `--locked`, and CI validates that each lockfile can satisfy `cargo metadata --locked` before the shipping builds/tests run. The Mahayana workspace continues to use its existing `source/mahayana/mahayana-rs/Cargo.lock`.
 
-1. check in the authoritative lockfile(s) that actually govern these cargo invocations and build with `--locked`; or
-2. produce exact build-record evidence for every resolved crate plus registry checksum and prove that the same resolution is reused for the packaged artifact.
-
-Until one of those is true, crates.io dependency provenance for the packaged binaries is open.
+This closes RR-RUST-LOCK-01 for source resolution at a candidate HEAD; artifact acceptance still has to bind the produced binaries to that exact HEAD and its checked-in lockfile digests.
 
 ## 4. Toolchain and workflow identity
 
@@ -114,14 +111,11 @@ Git history shows it was deleted by `0d4969452379eb322978b785ac57de17072faf93` (
 
 That historical content is evidence of the old design only. It must not be silently restored as current authority after the runtime-root removal.
 
-### Release blocker RR-ASR-01
+### RR-ASR-01 resolution
 
-The current release workflow has no current-tree source of truth for the ASR engine pin it attempts to consume. Before packaged release acceptance, the canonical current owner must either:
+Current-tree ownership is the Electron account transcription path: `source/electron-main/account/cursor-transcribe.ts` (`SandTranscriptionManager`), wired by `source/electron-main/account/cursor-auth-wiring.ts` and exposed through `source/electron-main/main-edge.ts::transcribeAudio`. No current production source references an offline whisper executable or `desktop/resources/asr`.
 
-- supply a current pinned ASR manifest with immutable engine/model identities and license provenance; or
-- remove/replace the stale packaging step if offline ASR ownership moved elsewhere.
-
-The release workflow cannot be treated as reproducible while it references a deleted authority file.
+The macOS release step that read the deleted `desktop/electron/offline-asr-engine.json`, the Electron Builder `resources/asr` staging rule, and the notarization requirement for `whisper-cli` have therefore been removed rather than reviving superseded runtime roots. The stale `getOfflineAsrStatus` / Offline ASR E2E assumptions were removed with that deleted owner. This closes RR-ASR-01 as a stale release path; voice transcription acceptance now belongs to the current Cursor transcription owner.
 
 ## 6. Resource and asset provenance
 
@@ -135,11 +129,11 @@ Current Fabushi package reachability provides the decisive boundary:
 
 Therefore Telegram asset-license uncertainty is a research/legal blocker only if a Telegram-derived asset is later copied/adapted. Separately, Fabushi's own distributed icon still needs its own origin/license/ownership record for release review.
 
-### Release blocker RR-ASSET-01
+### RR-ASSET-01 resolution
 
-Create an asset-origin row for every non-generated distributed asset, beginning with `desktop/resources/icon.png`, recording creator/source, ownership/license basis, digest, package scope, and any attribution obligations.
+`desktop/resources/ASSET-PROVENANCE.md` now records the app icon's current Git blob, SHA-256, first tracked project commit, package-level proprietary rights basis, package scope, and attribution status. The record explicitly reopens if a later external source or contributor-specific rights constraint is identified.
 
-Generated/staged resources such as `resources/bin`, `resources/asr`, and `resources/computer-control` must inherit provenance from the exact build input that produced each payload, not from the destination directory name.
+Generated/staged resources such as `resources/bin` and `resources/computer-control` inherit provenance from the exact build input that produced each payload, not from the destination directory name. The obsolete `resources/asr` payload is no longer a shipping input.
 
 ## 7. Telegram external acquisition disposition
 
@@ -160,9 +154,9 @@ A candidate is not provenance-closed until all applicable items below are bound 
 - npm lockfile identity and distributed dependency/license inventory;
 - shipping Rust resolution locked or build-record pinned;
 - exact toolchain/action identities where policy requires reproducibility;
-- ASR source/model authority repaired or stale packaging removed;
-- distributed asset origin/license rows, including the app icon;
-- staged helper/binary provenance for `resources/bin`, `resources/asr`, and `resources/computer-control`;
+- ASR stale packaging removed and current Cursor transcription owner recorded;
+- distributed asset origin/license rows, including the app icon (`desktop/resources/ASSET-PROVENANCE.md`);
+- staged helper/binary provenance for `resources/bin` and `resources/computer-control`;
 - source-informed copied/adapted-material rows for any Telegram-derived material actually distributed;
 - final artifact SHA-256 and exact-head packaged acceptance evidence.
 

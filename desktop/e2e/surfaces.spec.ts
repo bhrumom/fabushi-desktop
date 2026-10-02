@@ -148,7 +148,6 @@ const safeNativeReads = [
   'getHostPinnedAgents',
   'getHostSidebarSections',
   'getAvailableModels',
-  'getOfflineAsrStatus',
   'getReviewPreferences',
   'getPrivacyModeEnabled',
   'getRuntimeAccess',
@@ -225,9 +224,6 @@ test('installed desktop exposes unified Messenger, native menu routing, browser 
       expect(settings.route).toBe('settings');
       expect(settings.section).toBe('general');
 
-      const offlineAsr = await waitForNativeEventAfterMenu(app, page, 'Offline ASR', 'open-offline-asr');
-      expect(offlineAsr.source).toBe('menu');
-
       const widgets = await waitForNativeEventAfterMenu(app, page, 'Widget Gallery', 'widget-gallery');
       expect(widgets.source).toBe('menu');
 
@@ -253,14 +249,6 @@ test('installed desktop exposes unified Messenger, native menu routing, browser 
       }, [...safeNativeReads]);
       const failures = Object.entries(results).filter(([, result]) => !result.ok);
       expect(failures, JSON.stringify(failures, null, 2)).toEqual([]);
-      const asr = results.getOfflineAsrStatus.value as { binaryPath?: string; available?: boolean };
-      if (packagedExecutable) {
-        const asrExecutable = process.platform === 'win32' ? 'whisper-cli.exe' : 'whisper-cli';
-        const asrPath = String(asr.binaryPath ?? '').replaceAll('\\', '/');
-        expect(asrPath).toContain(`/asr/${process.platform}-${process.arch}/${asrExecutable}`);
-      } else {
-        expect(results.getOfflineAsrStatus.ok).toBe(true);
-      }
     });
   } finally {
     await app.close();
