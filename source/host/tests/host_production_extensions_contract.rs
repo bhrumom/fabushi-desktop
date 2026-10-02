@@ -160,6 +160,10 @@ fn notifications_have_one_shipping_production_lifecycle_owner() {
         "shipping Host must start Notifications through the centralized production owner"
     );
     assert!(
+        SHIPPING_HOST.contains("production_extensions.stop_notifications()"),
+        "shipping Host must stop Notifications through the centralized production owner"
+    );
+    assert!(
         !SHIPPING_HOST.contains("start_notifications_extension("),
         "shipping Host must not construct a second Notifications extension"
     );
