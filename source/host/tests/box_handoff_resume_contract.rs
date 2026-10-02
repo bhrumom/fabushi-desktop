@@ -6,8 +6,10 @@ use mahayana_host_runtime::extensions::session::agent_db::read_persisted_agent_s
 use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResponse;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
-    BOX_HANDOFF_DISMISSED_PROMPT, BOX_HANDOFF_RESUME_PROMPT, BOX_HANDOFF_VIEWER_CLOSED_PROMPT,
-    box_handoff_resume_prompt, build_box_handoff_resume_send_args, settle_box_handoff_state,
+    BOX_HANDOFF_DISMISSED_PROMPT, BOX_HANDOFF_RESUME_PROMPT, BOX_HANDOFF_RESUME_TITLE,
+    BOX_HANDOFF_VIEWER_CLOSED_PROMPT, LISTENER_CONNECT_RESUME_TITLE, MCP_AUTH_RESUME_TITLE,
+    box_handoff_resume_prompt, build_box_handoff_resume_send_args,
+    format_mcp_account_display_name, settle_box_handoff_state, should_resume_hidden_handoff,
 };
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionTranscriptRuntime, classify_send_dispatch,
@@ -169,6 +171,30 @@ fn mcp_and_listener_resume_prompts_match_frozen_hidden_handoff_contract() {
     assert_eq!(args["hidden"], true);
     assert_eq!(args["skipAckObligation"], true);
     assert_eq!(args["clientNonce"], "mcp-auth-resume:agent-a:42");
+
+    assert_eq!(BOX_HANDOFF_RESUME_TITLE, "Agent failed to resume after box handoff");
+    assert_eq!(MCP_AUTH_RESUME_TITLE, "Agent failed to resume after MCP authentication");
+    assert_eq!(LISTENER_CONNECT_RESUME_TITLE, "Agent failed to resume after listener connect");
+
+    assert_eq!(
+        format_mcp_account_display_name(
+            "Calendar",
+            "  work <prod> \"quoted\" \\ [team] \n primary "
+        ),
+        "Calendar (work prod quoted team primary)"
+    );
+    assert_eq!(format_mcp_account_display_name("Calendar", "default"), "Calendar");
+    let bounded = format_mcp_account_display_name("Calendar", &"a".repeat(80));
+    let rendered_label = bounded
+        .strip_prefix("Calendar (")
+        .and_then(|value| value.strip_suffix(')'))
+        .expect("rendered account label");
+    assert_eq!(rendered_label.encode_utf16().count(), 64);
+
+    assert!(!should_resume_hidden_handoff(false, Some(false)));
+    assert!(!should_resume_hidden_handoff(true, None));
+    assert!(!should_resume_hidden_handoff(true, Some(true)));
+    assert!(should_resume_hidden_handoff(true, Some(false)));
 }
 
 #[test]
@@ -224,11 +250,18 @@ fn awaiting_state_sink_preserves_tab_identity_conditional_clear_and_roster_proje
 #[test]
 fn shipping_host_wires_box_listener_mcp_resume_and_error_projection() {
     const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
-    assert!(SHIPPING_HOST.contains("listener_connect_resume_prompt(platform)"));
+    assert!(SHIPPING_HOST.contains("resume_with_hidden_handoff("));
+    assert!(SHIPPING_HOST.contains("run_local_background_revival_turn_with_context("));
+    assert!(SHIPPING_HOST.contains("should_resume_hidden_handoff(true, is_group)"));
+    assert!(SHIPPING_HOST.contains("mint_ack_run_token(agent_id)"));
+    assert!(SHIPPING_HOST.contains("ack_token: worker_ack_token.clone()"));
+    assert!(SHIPPING_HOST.contains("\"handoff-resume\""));
+    assert!(SHIPPING_HOST.contains("worker_is_handoff_resume"));
     assert!(SHIPPING_HOST.contains("subscribe_to_auth_completion"));
     assert!(SHIPPING_HOST.contains("resume_after_mcp_auth("));
     assert!(SHIPPING_HOST.contains("settle_box_handoff_state_with_sink("));
     assert!(SHIPPING_HOST.contains("source: \"resume\".into()"));
+    assert!(SHIPPING_HOST.contains("BOX_HANDOFF_RESUME_TITLE"));
     assert!(SHIPPING_HOST.contains("LISTENER_CONNECT_RESUME_TITLE"));
     assert!(SHIPPING_HOST.contains("MCP_AUTH_RESUME_TITLE"));
     assert!(SHIPPING_HOST.contains("\"channel\": \"forever-box\""));

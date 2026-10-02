@@ -146,10 +146,9 @@ use mahayana_host_runtime::extensions::transcript::send_message_shaping::{
     collect_inbound_images, shape_send_prompt_media_args,
 };
 use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
-    LISTENER_CONNECT_RESUME_TITLE, MCP_AUTH_RESUME_TITLE,
-    build_box_handoff_resume_send_args, build_hidden_handoff_resume_send_args,
-    listener_connect_resume_prompt, mcp_auth_resume_prompt,
-    settle_box_handoff_state_with_sink,
+    BOX_HANDOFF_RESUME_TITLE, LISTENER_CONNECT_RESUME_TITLE, MCP_AUTH_RESUME_TITLE,
+    box_handoff_resume_prompt, format_mcp_account_display_name, listener_connect_resume_prompt,
+    mcp_auth_resume_prompt, settle_box_handoff_state_with_sink, should_resume_hidden_handoff,
 };
 use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::UpgradeResumeMarker;
 use mahayana_host_runtime::extensions::transcript::upgrade_recreate_resume::build_upgrade_resume_prompt;
@@ -2192,46 +2191,113 @@ impl UnifiedGatewayApi {
         }
     }
 
-    fn report_handoff_resume_error(&self, agent_id: &str, title: &str, error: &str) {
-        let classified_error = ProviderSessionError::Tool(error.to_string());
-        let report = AgentErrorReport {
-            source: "resume".into(),
-            conversation_id: agent_id.to_string(),
-            request_id: None,
-            error: classify_agent_error(&classified_error),
-            detail: Some(sand_error_detail(error)),
-        };
-        if let Err(telemetry_error) = self.telemetry_logs.report_agent_error(&report) {
-            eprintln!(
-                "mahayana-host handoff_resume_telemetry_failed agent={} error={telemetry_error}",
-                agent_id
-            );
+    fn resume_with_hidden_handoff(
+        &self,
+        agent_id: &str,
+        prompt: String,
+        error_title: &str,
+    ) -> Result<(), String> {
+        let provider = configured_routed_provider(&self.data_dir.join("settings.json"));
+        let can_execute = !self.transcript_runtime.is_quiescing_for_upgrade() && provider.is_some();
+        if !can_execute {
+            return Ok(());
         }
-        let mut tray = provider_failure_tray(agent_id, error, started_at_ms() as i64);
-        tray.title = title.to_string();
-        self.trays.push_error(tray);
-    }
+        let is_group = self
+            .session_workers
+            .summarize_agent_by_id(agent_id, None)
+            .ok()
+            .flatten()
+            .map(|summary| summary.is_group);
+        if !should_resume_hidden_handoff(true, is_group) {
+            return Ok(());
+        }
+        let Some(provider) = provider else {
+            return Ok(());
+        };
 
-    fn resume_after_listener_connect(&self, agent_id: &str, platform: &str) -> Result<(), String> {
-        let nonce = format!(
-            "listener-connect-resume:{agent_id}:{platform}:{}",
-            uuid::Uuid::new_v4()
-        );
-        match self.call(
-            "sendPrompt",
-            listener_connect_resume_args(agent_id, platform, &nonce),
-        ) {
-            Ok(_) => Ok(()),
+        let ack_token = match self.ack_obligations.mint_ack_run_token(agent_id) {
+            Ok(token) => token,
             Err(error) => {
                 let error = error.to_string();
-                self.report_handoff_resume_error(
+                report_handoff_resume_error(
+                    &self.telemetry_logs,
+                    self.trays.as_ref(),
                     agent_id,
-                    LISTENER_CONNECT_RESUME_TITLE,
+                    None,
+                    error_title,
+                    &error,
+                );
+                return Err(error);
+            }
+        };
+        let stream_id = format!("handoff-resume-{}", uuid::Uuid::new_v4());
+        let worker_agent_id = agent_id.to_string();
+        let worker_stream_id = stream_id.clone();
+        let worker_prompt = prompt;
+        let worker_error_title = error_title.to_string();
+        let worker_ack_token = ack_token.clone();
+        let worker_ack_obligations = Arc::clone(&self.ack_obligations);
+        let worker_roster = Arc::clone(&self.roster_emit);
+        let worker_logs = self.telemetry_logs.clone();
+        let worker_trays = Arc::clone(&self.trays);
+        let deps = self.local_routed_runner_deps();
+
+        match thread::Builder::new()
+            .name("mahayana-handoff-resume".into())
+            .spawn(move || {
+                let result = run_local_background_revival_turn_with_context(
+                    deps,
+                    provider,
+                    &worker_agent_id,
+                    "handoff-resume",
+                    &worker_prompt,
+                    false,
+                    "handoff-resume",
+                    BackgroundRevivalContext {
+                        stream_id: Some(worker_stream_id.clone()),
+                        ack_token: worker_ack_token.clone(),
+                        ..BackgroundRevivalContext::default()
+                    },
+                );
+                let _ = worker_roster.emit_agent_update(&worker_agent_id);
+                if let Err(error) = result {
+                    report_handoff_resume_error(
+                        &worker_logs,
+                        worker_trays.as_ref(),
+                        &worker_agent_id,
+                        Some(&worker_stream_id),
+                        &worker_error_title,
+                        &error,
+                    );
+                }
+                worker_ack_obligations
+                    .retire_ack_run_token(&worker_agent_id, worker_ack_token.as_deref());
+            })
+        {
+            Ok(_) => Ok(()),
+            Err(error) => {
+                self.ack_obligations
+                    .retire_ack_run_token(agent_id, ack_token.as_deref());
+                let error = format!("could not start handoff resume worker: {error}");
+                report_handoff_resume_error(
+                    &self.telemetry_logs,
+                    self.trays.as_ref(),
+                    agent_id,
+                    Some(&stream_id),
+                    error_title,
                     &error,
                 );
                 Err(error)
             }
         }
+    }
+
+    fn resume_after_listener_connect(&self, agent_id: &str, platform: &str) -> Result<(), String> {
+        self.resume_with_hidden_handoff(
+            agent_id,
+            listener_connect_resume_prompt(platform),
+            LISTENER_CONNECT_RESUME_TITLE,
+        )
     }
 
     fn resume_after_mcp_auth(
@@ -2240,17 +2306,12 @@ impl UnifiedGatewayApi {
         server_name: &str,
         account_key: &str,
     ) -> Result<(), String> {
-        match self.call(
-            "sendPrompt",
-            mcp_auth_resume_args(agent_id, server_name, account_key),
-        ) {
-            Ok(_) => Ok(()),
-            Err(error) => {
-                let error = error.to_string();
-                self.report_handoff_resume_error(agent_id, MCP_AUTH_RESUME_TITLE, &error);
-                Err(error)
-            }
-        }
+        let display_name = format_mcp_account_display_name(server_name, account_key);
+        self.resume_with_hidden_handoff(
+            agent_id,
+            mcp_auth_resume_prompt(&display_name),
+            MCP_AUTH_RESUME_TITLE,
+        )
     }
 
     fn dispatch_production_listener_event(&self, event: serde_json::Value) -> bool {
@@ -3099,40 +3160,6 @@ fn listener_connection_state_or_disconnected(
     }
 }
 
-fn listener_connect_resume_args(
-    agent_id: &str,
-    platform: &str,
-    client_nonce: &str,
-) -> serde_json::Value {
-    let prompt = listener_connect_resume_prompt(platform);
-    let mut args = build_hidden_handoff_resume_send_args(
-        agent_id,
-        &prompt,
-        "listener-connect-resume",
-        started_at_ms(),
-    );
-    args["clientNonce"] = serde_json::Value::String(client_nonce.to_string());
-    args
-}
-
-fn mcp_auth_resume_args(
-    agent_id: &str,
-    server_name: &str,
-    account_key: &str,
-) -> serde_json::Value {
-    let display_name = if account_key.trim().is_empty() || account_key == "default" {
-        server_name.to_string()
-    } else {
-        format!("{server_name} ({account_key})")
-    };
-    build_hidden_handoff_resume_send_args(
-        agent_id,
-        &mcp_auth_resume_prompt(&display_name),
-        "mcp-auth-resume",
-        started_at_ms(),
-    )
-}
-
 fn automation_fire_completion(
     result: Result<Option<FireAutomationOutcome>, String>,
 ) -> Option<FireCompletion> {
@@ -3459,11 +3486,40 @@ fn run_local_kickstart_turn(
     }
 }
 
+fn report_handoff_resume_error(
+    telemetry_logs: &HostStructuredLogTelemetry,
+    trays: &HostTraysExtension,
+    agent_id: &str,
+    request_id: Option<&str>,
+    title: &str,
+    error: &str,
+) {
+    let classified_error = ProviderSessionError::Tool(error.to_string());
+    let report = AgentErrorReport {
+        source: "resume".into(),
+        conversation_id: agent_id.to_string(),
+        request_id: request_id.map(str::to_string),
+        error: classify_agent_error(&classified_error),
+        detail: Some(sand_error_detail(error)),
+    };
+    if let Err(telemetry_error) = telemetry_logs.report_agent_error(&report) {
+        eprintln!(
+            "mahayana-host handoff_resume_telemetry_failed agent={} error={telemetry_error}",
+            agent_id
+        );
+    }
+    let mut tray = provider_failure_tray(agent_id, error, started_at_ms() as i64);
+    tray.title = title.to_string();
+    trays.push_error(tray);
+}
+
 #[derive(Debug, Default)]
 struct BackgroundRevivalContext {
     selected_images: Vec<serde_json::Value>,
     skipped_question_prompts: Vec<String>,
     dismissed_question_prompts: Vec<String>,
+    stream_id: Option<String>,
+    ack_token: Option<String>,
 }
 
 fn run_local_background_revival_turn(
@@ -3497,7 +3553,15 @@ fn run_local_background_revival_turn_with_context(
     auto_review_epoch: &str,
     context: BackgroundRevivalContext,
 ) -> Result<RevivalExecution, String> {
-    let stream_id = format!("background-revival-{}", uuid::Uuid::new_v4());
+    let BackgroundRevivalContext {
+        selected_images,
+        skipped_question_prompts,
+        dismissed_question_prompts,
+        stream_id,
+        ack_token,
+    } = context;
+    let stream_id =
+        stream_id.unwrap_or_else(|| format!("background-revival-{}", uuid::Uuid::new_v4()));
     let client_nonce = format!(
         "background-revival:{}:{}",
         agent_id,
@@ -3507,7 +3571,7 @@ fn run_local_background_revival_turn_with_context(
         .session_workers
         .read_agent_transcript_entries(agent_id)
         .unwrap_or_default();
-    let admission_args = serde_json::json!({
+    let mut admission_args = serde_json::json!({
         "agentId": agent_id,
         "prompt": prompt,
         "clientNonce": client_nonce,
@@ -3517,6 +3581,9 @@ fn run_local_background_revival_turn_with_context(
         "requestSource": source,
         "skipAckObligation": true,
     });
+    if let Some(ack_token) = ack_token.as_deref() {
+        admission_args["ackToken"] = serde_json::Value::String(ack_token.to_string());
+    }
     deps.transcript_runtime
         .accept_routed_send(&admission_args, |_| {
             Ok::<_, ProductionSendError>(PersistedSendContext::default())
@@ -3537,22 +3604,23 @@ fn run_local_background_revival_turn_with_context(
             "content": prompt,
         }],
     });
-    if !context.selected_images.is_empty() {
-        runner_args["selectedImages"] = serde_json::Value::Array(context.selected_images);
+    if let Some(ack_token) = ack_token {
+        runner_args["ackToken"] = serde_json::Value::String(ack_token);
     }
-    if !context.skipped_question_prompts.is_empty() {
+    if !selected_images.is_empty() {
+        runner_args["selectedImages"] = serde_json::Value::Array(selected_images);
+    }
+    if !skipped_question_prompts.is_empty() {
         runner_args["skippedQuestionPrompts"] = serde_json::Value::Array(
-            context
-                .skipped_question_prompts
+            skipped_question_prompts
                 .into_iter()
                 .map(serde_json::Value::String)
                 .collect(),
         );
     }
-    if !context.dismissed_question_prompts.is_empty() {
+    if !dismissed_question_prompts.is_empty() {
         runner_args["dismissedQuestionPrompts"] = serde_json::Value::Array(
-            context
-                .dismissed_question_prompts
+            dismissed_question_prompts
                 .into_iter()
                 .map(serde_json::Value::String)
                 .collect(),
@@ -3786,6 +3854,7 @@ fn run_channel_inbound_revival_worker(
                 selected_images,
                 skipped_question_prompts: widget_prompts.skipped_question_prompts,
                 dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
+                ..BackgroundRevivalContext::default()
             },
         );
         publish_channel_activity(&deps.events, &agent_id, &addresses, false);
@@ -3928,6 +3997,7 @@ fn run_channel_failure_revival_worker(
                 selected_images: Vec::new(),
                 skipped_question_prompts: widget_prompts.skipped_question_prompts,
                 dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
+                ..BackgroundRevivalContext::default()
             },
         ) {
             Ok(_) => {
@@ -5246,6 +5316,7 @@ fn start_routed_provider_task(
     let worker_trays = Arc::clone(&trays);
     let worker_telemetry_logs = telemetry_logs.clone();
     let worker_request_source = request_source.clone();
+    let worker_is_handoff_resume = worker_request_source.as_deref() == Some("handoff-resume");
     let worker_session_options = SandSessionOptions {
         model_id: args
             .get("modelId")
@@ -7445,7 +7516,7 @@ fn start_routed_provider_task(
                                 );
                             }
                         }
-                        if !worker_is_kickstart {
+                        if !worker_is_kickstart && !worker_is_handoff_resume {
                             let mut tray = provider_failure_tray(
                                 &agent_id,
                                 &message,
@@ -8427,17 +8498,13 @@ impl GatewayApi for UnifiedGatewayApi {
                         "mahayana-host box_handoff_settlement_failed agent={agent_id} error={error}"
                     );
                 }
-                let resume_args = build_box_handoff_resume_send_args(
+                if let Err(error) = self.resume_with_hidden_handoff(
                     agent_id,
-                    &decision.trigger,
-                    started_at_ms(),
-                );
-                if let Err(error) = self.call("sendPrompt", resume_args) {
-                    let error = error.to_string();
-                    self.report_handoff_resume_error(
-                        agent_id,
-                        "Agent failed to resume after box handoff",
-                        &error,
+                    box_handoff_resume_prompt(&decision.trigger).to_string(),
+                    BOX_HANDOFF_RESUME_TITLE,
+                ) {
+                    eprintln!(
+                        "mahayana-host box_handoff_resume_failed agent={agent_id} error={error}"
                     );
                 }
             }

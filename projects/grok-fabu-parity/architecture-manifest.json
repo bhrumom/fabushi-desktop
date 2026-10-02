@@ -15659,7 +15659,7 @@
       "targetPath": "source/host/src/extensions/transcript/box_handoff_resume.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "49676e8ba39b19ad60a135329309da5d3a2897c9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -15678,7 +15678,7 @@
         "source/host/tests/box_request_entries_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping handBackForeverBox now snapshots the frozen handoff decision before Session service settlement, clears durable awaiting-user state, resolves the matching unresolved boxRequestId transcript entry with boxResolution, and re-enters the real sendPrompt/Coordinator/Host/Runner path using the exact hidden handoff-resume prompt family without appending another user message or creating a new Ack obligation. ProductionTranscriptRuntime classifies handoff-resume as the background lane while preserving ack-redrive as its own source. Final remains withheld for the rest of frozen BoxHandoffResume: MCP-auth/listener-connect hidden resumptions, per-tab awaiting-state sink semantics, forever-box listener facade, telemetry/tray error projection, and full TranscriptManager ownership."
+      "notes": "Audited final against frozen Grok 0.18 BoxHandoffResume. Shipping handBackForeverBox settles the frozen decision, clears durable awaiting-user state through the roster-emitting AwaitingStateSink, resolves the matching boxRequestId and emits ForeverBox status. Box hand-back, MCP-auth completion and listener-connect producers all enter one Host-owned hidden handoff-resume execution path: it fail-closes while execution is unavailable, the Agent is missing or the session is a group; reserves the current Ack obligation when present; enters ProductionTranscriptRuntime's background exclusive lane; carries the same Ack token into the canonical Mahayana Runner; waits for terminal settlement; refreshes roster state; and reports failures as source=resume with the frozen per-producer tray title before retiring the reservation. MCP account labels use the frozen hostile-character stripping, whitespace collapse and 64-UTF-16-unit bound. Per-tab conditional awaiting-state mutations and the ForeverBox listener/event facade remain single Host-owned production surfaces, with focused behavioral contracts covering the frozen prompts, state races, account formatting, lane classification and shipping wiring."
     },
     {
       "referencePath": "source/host/extensions/transcript/box-request-entries.ts",

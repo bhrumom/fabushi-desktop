@@ -13,8 +13,51 @@ pub const BOX_HANDOFF_DISMISSED_PROMPT: &str =
 pub const BOX_HANDOFF_VIEWER_CLOSED_PROMPT: &str =
     "[The user closed the box desktop viewer without explicitly handing control back, so they may or may not have finished the step you asked for. Start with the read-only Screenshot tool to check the current state of the box desktop. If the step is clearly done, continue the task. If you can't tell, send the user a brief message asking whether they finished so you can keep going.]";
 
-pub const MCP_AUTH_RESUME_TITLE: &str = "Agent failed to resume after MCP authorization";
-pub const LISTENER_CONNECT_RESUME_TITLE: &str = "Agent failed to resume after listener connection";
+pub const BOX_HANDOFF_RESUME_TITLE: &str = "Agent failed to resume after box handoff";
+pub const MCP_AUTH_RESUME_TITLE: &str = "Agent failed to resume after MCP authentication";
+pub const LISTENER_CONNECT_RESUME_TITLE: &str = "Agent failed to resume after listener connect";
+pub const MAX_RENDERED_MCP_ACCOUNT_LABEL_LENGTH: usize = 64;
+
+fn format_mcp_account_label_for_prompt(raw_label: &str) -> String {
+    let inert = raw_label
+        .chars()
+        .filter(|character| {
+            let code = *character as u32;
+            let hostile_ascii = matches!(
+                *character,
+                '"' | '\'' | '`' | '\\' | '[' | ']' | '{' | '}' | '(' | ')' | '<' | '>'
+            );
+            !(matches!(code, 0x00..=0x1f | 0x7f | 0x2028 | 0x2029) || hostile_ascii)
+        })
+        .collect::<String>();
+    let collapsed = inert.split_whitespace().collect::<Vec<_>>().join(" ");
+    let mut rendered = String::new();
+    let mut utf16_units = 0usize;
+    for character in collapsed.chars() {
+        let next = character.len_utf16();
+        if utf16_units + next > MAX_RENDERED_MCP_ACCOUNT_LABEL_LENGTH {
+            break;
+        }
+        rendered.push(character);
+        utf16_units += next;
+    }
+    rendered
+}
+
+pub fn format_mcp_account_display_name(server_name: &str, account_key: &str) -> String {
+    if account_key == "default" {
+        server_name.to_string()
+    } else {
+        format!(
+            "{server_name} ({})",
+            format_mcp_account_label_for_prompt(account_key)
+        )
+    }
+}
+
+pub fn should_resume_hidden_handoff(can_execute: bool, is_group: Option<bool>) -> bool {
+    can_execute && matches!(is_group, Some(false))
+}
 
 pub fn mcp_auth_resume_prompt(display_name: &str) -> String {
     format!(
@@ -23,12 +66,12 @@ pub fn mcp_auth_resume_prompt(display_name: &str) -> String {
 }
 
 pub fn listener_connect_resume_prompt(platform: &str) -> String {
-    let display_name = if platform.eq_ignore_ascii_case("slack") {
+    let display_name = if platform == "slack" {
         "Slack"
     } else {
         "GitHub"
     };
-    let reminder = if platform.eq_ignore_ascii_case("slack") {
+    let reminder = if platform == "slack" {
         " For a channel listener, also remind them the Cursor bot must be in the channel (/invite @Cursor) or messages there can't reach it."
     } else {
         ""
