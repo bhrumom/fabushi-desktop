@@ -98,9 +98,7 @@ use mahayana_host_runtime::extensions::notifications::extension::{
     notification_agent_from_value, start_notifications_extension,
 };
 use mahayana_host_runtime::extensions::session::gateway::{
-    SessionGatewayError, dispatch_production_session_gateway_call,
-    dispatch_production_session_gateway_call_with_content_search,
-    persist_accepted_send_prompt_context,
+    SessionGatewayError, persist_accepted_send_prompt_context,
 };
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
@@ -8747,13 +8745,9 @@ impl GatewayApi for UnifiedGatewayApi {
             } else {
                 None
             };
-        if let Some(result) =
-            dispatch_production_session_gateway_call_with_content_search(
-                &self.session_workers,
-                Some(self.content_search.as_ref()),
-                method,
-                &args,
-            )
+        if let Some(result) = self
+            .transcript_manager
+            .dispatch_session_gateway_call(method, &args)
         {
             let mut value = result.map_err(|error| match error {
                 SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),

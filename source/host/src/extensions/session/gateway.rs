@@ -261,6 +261,23 @@ pub fn dispatch_production_session_gateway_call_with_content_search(
     method: &str,
     args: &Value,
 ) -> Option<Result<Value, SessionGatewayError>> {
+    let group_chat = GroupChatGlue::new(Arc::clone(session));
+    dispatch_production_session_gateway_call_with_content_search_and_group_chat(
+        session,
+        content_search,
+        &group_chat,
+        method,
+        args,
+    )
+}
+
+pub fn dispatch_production_session_gateway_call_with_content_search_and_group_chat(
+    session: &Arc<ProductionSessionWorkers>,
+    content_search: Option<&dyn RosterContentSearch>,
+    group_chat: &GroupChatGlue,
+    method: &str,
+    args: &Value,
+) -> Option<Result<Value, SessionGatewayError>> {
     let store = SandAgentSessionStore::new(Arc::clone(session));
     let result = match method {
         "countAgents" => session
@@ -303,7 +320,7 @@ pub fn dispatch_production_session_gateway_call_with_content_search(
             required_string(args, "name").and_then(|name| {
                 let description = optional_string(args, "description")?.unwrap_or_default();
                 let member_ids = required_string_array(args, "memberIds")?;
-                GroupChatGlue::new(Arc::clone(session))
+                group_chat
                     .create_group(name, description, &member_ids)
                     .map_err(map_group_chat_error)
                     .and_then(|created| {
@@ -314,7 +331,7 @@ pub fn dispatch_production_session_gateway_call_with_content_search(
         },
         "setGroupMembers" => required_string(args, "id").and_then(|group_id| {
             let member_ids = required_string_array(args, "memberIds")?;
-            GroupChatGlue::new(Arc::clone(session))
+            group_chat
                 .set_group_members(group_id, &member_ids)
                 .map_err(map_group_chat_error)
                 .and_then(|summary| {

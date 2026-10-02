@@ -13,6 +13,10 @@ use crate::extensions::attachments::attachments_service::AttachmentsService;
 use crate::extensions::content_search::extension::ProductionContentSearchExtension;
 use crate::extensions::memory::extension::HostMemoryExtension;
 use crate::extensions::session::box_handoff_service::BoxHandoffService;
+use crate::extensions::session::gateway::{
+    SessionGatewayError,
+    dispatch_production_session_gateway_call_with_content_search_and_group_chat,
+};
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::extensions::telemetry::analytics_service::AutomationRunAnalyticsTelemetry;
 use crate::extensions::telemetry::host_telemetry_service::{
@@ -37,6 +41,7 @@ use super::production_runtime::{
 };
 use super::runner_registry::TranscriptRunnerRegistry;
 use super::roster_emit::ProductionRosterEmit;
+use super::roster_search::RosterContentSearch;
 use super::shared_rooms::SharedRooms;
 use super::widget_responses::WidgetResponses;
 use super::workflow_commands::WorkflowCommands;
@@ -425,6 +430,24 @@ impl TranscriptManager {
         args: &Value,
     ) -> Result<Value, ProductionSendError> {
         self.transcript_runtime.prompt_acceptance_status(args)
+    }
+
+    pub fn dispatch_session_gateway_call(
+        &self,
+        method: &str,
+        args: &Value,
+    ) -> Option<Result<Value, SessionGatewayError>> {
+        let services = self.production_services();
+        let content_search = services
+            .as_ref()
+            .map(|services| services.content_search.as_ref() as &dyn RosterContentSearch);
+        dispatch_production_session_gateway_call_with_content_search_and_group_chat(
+            &self.session_workers,
+            content_search,
+            self.group_chat.as_ref(),
+            method,
+            args,
+        )
     }
 
     pub fn active_agent_id(&self) -> Option<String> {

@@ -124,6 +124,25 @@ fn manager_is_the_single_production_composition_owner() {
     assert_eq!(ack_b.pending_obligations().len(), 1);
 
     let session = SandAgentSessionStore::new(Arc::clone(&sessions));
+    let first_group_member = session
+        .create_session(None, "user", None)
+        .expect("first group member");
+    let second_group_member = session
+        .create_session(None, "user", None)
+        .expect("second group member");
+    let created_group = manager
+        .dispatch_session_gateway_call(
+            "createGroup",
+            &json!({
+                "name": "Manager-owned room",
+                "memberIds": [first_group_member.id, second_group_member.id],
+            }),
+        )
+        .expect("group method handled")
+        .expect("manager-owned group created");
+    assert_eq!(created_group["isGroup"], true);
+    assert_eq!(created_group["memberIds"].as_array().map(Vec::len), Some(2));
+
     let agent = session.create_session(None, "user", None).expect("agent");
     manager
         .switch_agent(&agent.id, 10.0)
