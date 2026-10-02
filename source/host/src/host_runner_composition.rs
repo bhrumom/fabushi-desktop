@@ -268,6 +268,17 @@ impl HostRunnerComposition {
             .len()
     }
 
+    /// Settle HostRunnerComposition-owned shutdown state after the canonical
+    /// Runner registry has interrupted active turns. Runner cancellation itself
+    /// remains owned by TranscriptRunnerRegistry; this owner only drops its live
+    /// local-permission subscriptions, matching the frozen composition boundary.
+    pub fn dispose(&self) {
+        self.surfaces
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
+    }
+
     pub fn computer_use_coordination(&self) -> Arc<Mutex<ComputerUseCoordination>> {
         Arc::clone(&self.computer_use)
     }
