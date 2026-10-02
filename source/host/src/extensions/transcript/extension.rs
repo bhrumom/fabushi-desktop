@@ -6,7 +6,9 @@ use serde_json::json;
 use super::profile_watch::ProductionProfileWatch;
 use super::roster_emit::{ProductionRosterEmit, RosterEventSink};
 use super::roster_projection::OUTLINE_STREAM_COALESCE_MS;
-use super::transcript_manager::{TranscriptManager, TranscriptManagerServices};
+use super::transcript_manager::{
+    TranscriptManager, TranscriptManagerServices, TranscriptTurnExecutionPort,
+};
 use crate::extensions::attachments::attachments_service::AttachmentsService;
 use crate::extensions::content_search::extension::ProductionContentSearchExtension;
 use crate::extensions::memory::extension::HostMemoryExtension;
@@ -113,6 +115,7 @@ impl TranscriptExtension {
 
 impl Drop for TranscriptExtension {
     fn drop(&mut self) {
+        self.roster_emit.stop_outline_stream_coalescing();
         self.manager.dispose();
     }
 }
@@ -167,6 +170,11 @@ pub fn start_production_transcript_extension(
             trays: Arc::clone(&deps.trays),
         })
         .expect("Transcript production services must be configured exactly once");
+    extension
+        .manager
+        .set_turn_execution(TranscriptTurnExecutionPort::new(Arc::clone(
+            &deps.turn_execution,
+        )));
     let events = TranscriptExtensionEventBridge::new(deps.events.clone());
     let lifecycle_events = events.clone();
     extension

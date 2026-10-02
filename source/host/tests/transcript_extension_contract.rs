@@ -136,3 +136,75 @@ fn extension_event_bridge_emits_frozen_host_topics_with_identity_payloads() {
     );
     drop(subscriptions);
 }
+
+
+#[test]
+fn extension_installs_executable_outline_stream_coalescing_on_shipping_roster_owner() {
+    let root = temp_root();
+    let agents = root.join("agents");
+    fs::create_dir_all(&agents).expect("agents root");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let sink_events = Arc::clone(&events);
+    let extension = start_transcript_extension(
+        &root,
+        Arc::clone(&sessions),
+        Arc::new(move |event| {
+            sink_events.lock().expect("events").push(event);
+        }),
+    );
+    let roster = extension.roster_emit();
+
+    assert_eq!(roster.outline_stream_coalescing_ms(), 250);
+    roster.set_outline_stream_coalescing_ms(60_000);
+
+    roster.queue_outline_stream_update(
+        "agent-a",
+        "item-a",
+        serde_json::json!({"id":"item-a","text":"first"}),
+    );
+    roster.queue_outline_stream_update(
+        "agent-a",
+        "item-a",
+        serde_json::json!({"id":"item-a","text":"second"}),
+    );
+    assert!(roster.has_pending_outline_stream_update());
+
+    roster.queue_outline_stream_update(
+        "agent-a",
+        "item-b",
+        serde_json::json!({"id":"item-b","text":"other"}),
+    );
+    let first_outline = events
+        .lock()
+        .expect("events")
+        .iter()
+        .find(|event| event["channel"] == "outline")
+        .cloned()
+        .expect("different item must pre-flush pending outline");
+    assert_eq!(first_outline["payload"]["item"]["id"], "item-a");
+    assert_eq!(first_outline["payload"]["item"]["text"], "second");
+
+    roster.flush_outline_stream_update();
+    let outline_events = events
+        .lock()
+        .expect("events")
+        .iter()
+        .filter(|event| event["channel"] == "outline")
+        .cloned()
+        .collect::<Vec<_>>();
+    assert_eq!(outline_events.len(), 2);
+    assert_eq!(outline_events[1]["payload"]["item"]["id"], "item-b");
+
+    roster.queue_outline_stream_update(
+        "agent-a",
+        "item-c",
+        serde_json::json!({"id":"item-c","text":"pending"}),
+    );
+    assert!(roster.has_pending_outline_stream_update());
+    roster.stop_outline_stream_coalescing();
+    assert!(!roster.has_pending_outline_stream_update());
+
+    drop(extension);
+    let _ = fs::remove_dir_all(root);
+}

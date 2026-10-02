@@ -18,6 +18,9 @@ use crate::extensions::telemetry::host_telemetry_service::{
     HostProductAnalytics, HostTelemetryApi,
 };
 use crate::extensions::trays::extension::HostTraysExtension;
+use crate::extensions::turn_execution::turn_execution_service::{
+    TurnExecutionError, TurnExecutionRegistry, TurnExecutor,
+};
 
 use super::ack_obligations::AckObligations;
 use super::automation_runtime::AutomationRuntime;
@@ -26,6 +29,57 @@ use super::production_runtime::{ProductionSendError, ProductionTranscriptRuntime
 use super::runner_registry::TranscriptRunnerRegistry;
 use super::shared_rooms::SharedRooms;
 
+#[derive(Clone)]
+pub struct TranscriptTurnExecutionPort {
+    registry: Arc<Mutex<TurnExecutionRegistry>>,
+}
+
+impl TranscriptTurnExecutionPort {
+    pub fn new(registry: Arc<Mutex<TurnExecutionRegistry>>) -> Self {
+        Self { registry }
+    }
+
+    fn executor_handle(&self) -> Result<Arc<dyn TurnExecutor>, TurnExecutionError> {
+        self.registry
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .executor_handle()
+            .ok_or(TurnExecutionError::Unbound)
+    }
+
+    pub fn can_execute(&self) -> bool {
+        self.registry
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .can_execute()
+    }
+
+    pub fn can_execute_group_member(&self) -> bool {
+        self.can_execute()
+    }
+
+    pub async fn is_run_ready(&self) -> bool {
+        let Ok(executor) = self.executor_handle() else {
+            return false;
+        };
+        executor.is_inference_ready().await
+    }
+
+    pub fn create_runner(&self, session: Value, hooks: Value) -> Result<Value, TurnExecutionError> {
+        Ok(self.executor_handle()?.create_runner(session, hooks))
+    }
+
+    pub fn create_group_member_runner(
+        &self,
+        session: Value,
+        hooks: Value,
+        overrides: Value,
+    ) -> Result<Value, TurnExecutionError> {
+        Ok(self
+            .executor_handle()?
+            .create_group_member_runner(session, hooks, overrides))
+    }
+}
 
 #[derive(Clone)]
 pub struct TranscriptManagerServices {
@@ -53,6 +107,7 @@ pub struct TranscriptManager {
     watched_automation_store: Mutex<Option<FileAutomationStore>>,
     shared_rooms: Arc<SharedRooms>,
     services: Mutex<Option<TranscriptManagerServices>>,
+    turn_execution: Mutex<Option<TranscriptTurnExecutionPort>>,
     disposed: AtomicBool,
 }
 
@@ -73,6 +128,7 @@ impl TranscriptManager {
             watched_automation_store: Mutex::new(None),
             shared_rooms,
             services: Mutex::new(None),
+            turn_execution: Mutex::new(None),
             disposed: AtomicBool::new(false),
         }
     }
@@ -118,6 +174,58 @@ impl TranscriptManager {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .clone()
+    }
+
+    pub fn set_turn_execution(&self, execution: TranscriptTurnExecutionPort) {
+        *self
+            .turn_execution
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(execution);
+    }
+
+    pub fn turn_execution(&self) -> Option<TranscriptTurnExecutionPort> {
+        self.turn_execution
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone()
+    }
+
+    pub fn can_execute(&self) -> bool {
+        self.turn_execution()
+            .is_some_and(|execution| execution.can_execute())
+    }
+
+    pub fn can_execute_group_member(&self) -> bool {
+        self.turn_execution()
+            .is_some_and(|execution| execution.can_execute_group_member())
+    }
+
+    pub async fn is_run_ready(&self) -> bool {
+        let Some(execution) = self.turn_execution() else {
+            return true;
+        };
+        execution.is_run_ready().await
+    }
+
+    pub fn create_runner(
+        &self,
+        session: Value,
+        hooks: Value,
+    ) -> Result<Value, TurnExecutionError> {
+        self.turn_execution()
+            .ok_or(TurnExecutionError::Unbound)?
+            .create_runner(session, hooks)
+    }
+
+    pub fn create_group_member_runner(
+        &self,
+        session: Value,
+        hooks: Value,
+        overrides: Value,
+    ) -> Result<Value, TurnExecutionError> {
+        self.turn_execution()
+            .ok_or(TurnExecutionError::Unbound)?
+            .create_group_member_runner(session, hooks, overrides)
     }
 
     pub fn prompt_acceptance_status(

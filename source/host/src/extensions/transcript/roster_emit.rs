@@ -1,5 +1,6 @@
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
+use std::thread::{self, JoinHandle};
+use std::time::{Duration, Instant};
 
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -9,11 +10,223 @@ use crate::extensions::session::production::ProductionSessionWorkers;
 
 use super::production_runtime::ProductionTranscriptRuntime;
 use super::replica_writer::ReplicaStamp;
+use super::roster_projection::{
+    OutlineQueueResult, OutlineStreamCoalescingPolicy, OutlineUpdate,
+};
 
 pub const ROSTER_REPLICA_KEY: &str = "roster";
 
 pub type RosterEventSink = Arc<dyn Fn(Value) + Send + Sync + 'static>;
 pub type TimelineWakeSink = Arc<dyn Fn(&str, Value) + Send + Sync + 'static>;
+
+struct OutlineStreamSchedulerState {
+    policy: Option<OutlineStreamCoalescingPolicy<Value>>,
+    shutdown: bool,
+}
+
+struct OutlineStreamScheduler {
+    started_at: Instant,
+    shared: Arc<(Mutex<OutlineStreamSchedulerState>, Condvar)>,
+    worker: Mutex<Option<JoinHandle<()>>>,
+    event_sink: RosterEventSink,
+}
+
+impl OutlineStreamScheduler {
+    fn new(event_sink: RosterEventSink) -> Self {
+        let started_at = Instant::now();
+        let shared = Arc::new((
+            Mutex::new(OutlineStreamSchedulerState {
+                policy: None,
+                shutdown: false,
+            }),
+            Condvar::new(),
+        ));
+        let worker_shared = Arc::clone(&shared);
+        let worker_sink = Arc::clone(&event_sink);
+        let worker_started_at = started_at.clone();
+        let worker = thread::Builder::new()
+            .name("fabushi-outline-coalescer".to_string())
+            .spawn(move || {
+                run_outline_stream_worker(worker_started_at, worker_shared, worker_sink)
+            })
+            .expect("outline stream coalescing worker must start");
+        Self {
+            started_at,
+            shared,
+            worker: Mutex::new(Some(worker)),
+            event_sink,
+        }
+    }
+
+    fn now_ms(&self) -> u64 {
+        monotonic_ms(&self.started_at)
+    }
+
+    fn configure(&self, delay_ms: u64) {
+        let (state, wake) = &*self.shared;
+        let mut state = state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        state.policy = Some(OutlineStreamCoalescingPolicy::new(delay_ms, self.now_ms()));
+        wake.notify_all();
+    }
+
+    fn delay_ms(&self) -> u64 {
+        let (state, _) = &*self.shared;
+        state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .policy
+            .as_ref()
+            .map_or(0, |policy| policy.delay_ms())
+    }
+
+    fn queue(&self, agent_id: &str, item_id: &str, item: Value) {
+        let now_ms = self.now_ms();
+        let (state, wake) = &*self.shared;
+        let result = {
+            let mut state = state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if let Some(policy) = state.policy.as_mut() {
+                policy.queue(now_ms, agent_id, item_id, item)
+            } else {
+                OutlineQueueResult {
+                    flushed: vec![OutlineUpdate {
+                        agent_id: agent_id.to_string(),
+                        item,
+                    }],
+                    deadline: None,
+                }
+            }
+        };
+        wake.notify_all();
+        for update in result.flushed {
+            emit_outline_update(&self.event_sink, update);
+        }
+    }
+
+    fn flush(&self) {
+        let now_ms = self.now_ms();
+        let (state, wake) = &*self.shared;
+        let update = {
+            let mut state = state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            state.policy.as_mut().and_then(|policy| policy.flush(now_ms))
+        };
+        wake.notify_all();
+        if let Some(update) = update {
+            emit_outline_update(&self.event_sink, update);
+        }
+    }
+
+    fn stop(&self) {
+        let (state, wake) = &*self.shared;
+        let mut state = state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if let Some(policy) = state.policy.as_mut() {
+            policy.stop();
+        }
+        state.policy = None;
+        wake.notify_all();
+    }
+
+    fn has_pending(&self) -> bool {
+        let (state, _) = &*self.shared;
+        state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .policy
+            .as_ref()
+            .is_some_and(|policy| policy.has_pending())
+    }
+}
+
+impl Drop for OutlineStreamScheduler {
+    fn drop(&mut self) {
+        let (state, wake) = &*self.shared;
+        {
+            let mut state = state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            state.shutdown = true;
+            wake.notify_all();
+        }
+        if let Some(worker) = self
+            .worker
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take()
+        {
+            let _ = worker.join();
+        }
+    }
+}
+
+fn run_outline_stream_worker(
+    started_at: Instant,
+    shared: Arc<(Mutex<OutlineStreamSchedulerState>, Condvar)>,
+    event_sink: RosterEventSink,
+) {
+    loop {
+        let update = {
+            let (state, wake) = &*shared;
+            let mut state = state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            loop {
+                if state.shutdown {
+                    return;
+                }
+                let Some(deadline) = state
+                    .policy
+                    .as_ref()
+                    .and_then(|policy| policy.next_deadline())
+                else {
+                    state = wake
+                        .wait(state)
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    continue;
+                };
+                let now_ms = monotonic_ms(&started_at);
+                if now_ms >= deadline.at_ms {
+                    break state
+                        .policy
+                        .as_mut()
+                        .and_then(|policy| policy.flush_deadline(now_ms, deadline.generation));
+                }
+                let wait_for = Duration::from_millis(deadline.at_ms.saturating_sub(now_ms));
+                let (next, _) = wake
+                    .wait_timeout(state, wait_for)
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                state = next;
+            }
+        };
+        if let Some(update) = update {
+            emit_outline_update(&event_sink, update);
+        }
+    }
+}
+
+fn monotonic_ms(started_at: &Instant) -> u64 {
+    started_at
+        .elapsed()
+        .as_millis()
+        .min(u128::from(u64::MAX)) as u64
+}
+
+fn emit_outline_update(event_sink: &RosterEventSink, update: OutlineUpdate<Value>) {
+    (event_sink)(json!({
+        "channel": "outline",
+        "payload": {
+            "type": "updated",
+            "agentId": update.agent_id,
+            "item": update.item
+        }
+    }));
+}
 
 #[derive(Debug, Default)]
 struct RosterEmitState {
@@ -26,7 +239,7 @@ pub struct ProductionRosterEmit {
     transcript: Arc<ProductionTranscriptRuntime>,
     event_sink: RosterEventSink,
     timeline_wake_sink: Mutex<Option<TimelineWakeSink>>,
-    outline_stream_coalescing_ms: AtomicU64,
+    outline_stream: OutlineStreamScheduler,
     state: Mutex<RosterEmitState>,
 }
 
@@ -36,12 +249,13 @@ impl ProductionRosterEmit {
         transcript: Arc<ProductionTranscriptRuntime>,
         event_sink: RosterEventSink,
     ) -> Self {
+        let outline_stream = OutlineStreamScheduler::new(Arc::clone(&event_sink));
         Self {
             sessions,
             transcript,
             event_sink,
             timeline_wake_sink: Mutex::new(None),
-            outline_stream_coalescing_ms: AtomicU64::new(0),
+            outline_stream,
             state: Mutex::new(RosterEmitState::default()),
         }
     }
@@ -150,12 +364,27 @@ impl ProductionRosterEmit {
     }
 
     pub fn set_outline_stream_coalescing_ms(&self, delay_ms: u64) {
-        self.outline_stream_coalescing_ms
-            .store(delay_ms, Ordering::Release);
+        self.outline_stream.configure(delay_ms);
     }
 
     pub fn outline_stream_coalescing_ms(&self) -> u64 {
-        self.outline_stream_coalescing_ms.load(Ordering::Acquire)
+        self.outline_stream.delay_ms()
+    }
+
+    pub fn queue_outline_stream_update(&self, agent_id: &str, item_id: &str, item: Value) {
+        self.outline_stream.queue(agent_id, item_id, item);
+    }
+
+    pub fn flush_outline_stream_update(&self) {
+        self.outline_stream.flush();
+    }
+
+    pub fn stop_outline_stream_coalescing(&self) {
+        self.outline_stream.stop();
+    }
+
+    pub fn has_pending_outline_stream_update(&self) -> bool {
+        self.outline_stream.has_pending()
     }
 
     pub fn bind_timeline_wake_sink(&self, sink: Option<TimelineWakeSink>) {

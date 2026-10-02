@@ -9,7 +9,7 @@ use mahayana_host_runtime::extensions::transcript::client_side_tool_v2_projectio
     ProjectedClientSideToolV2, ToolProjectionPhase, project_basic_tool_call,
 };
 use mahayana_host_runtime::extensions::transcript::roster_projection::{
-    OUTLINE_STREAM_COALESCE_MS, RosterProjection,
+    OUTLINE_STREAM_COALESCE_MS, OutlineStreamCoalescingPolicy, RosterProjection,
 };
 use mahayana_host_runtime::extensions::transcript::shared_rooms::{
     RoomEntryKind, can_post_to_group, decode_avatar_data_url, is_room_content_entry,
@@ -155,6 +155,59 @@ fn roster_coalescing_keeps_only_latest_pending_outline() {
     let update = roster.flush_stream_outline_update().unwrap();
     assert_eq!(update.item, "second");
     assert!(roster.flush_stream_outline_update().is_none());
+}
+
+#[test]
+fn outline_stream_policy_enforces_frozen_deadline_merge_flush_and_stop_semantics() {
+    let mut policy = OutlineStreamCoalescingPolicy::new(OUTLINE_STREAM_COALESCE_MS, 1_000);
+
+    let first = policy.queue(1_100, "agent-a", "item-a", "first");
+    assert!(first.flushed.is_empty());
+    assert_eq!(first.deadline.expect("first deadline").at_ms, 1_350);
+
+    let second = policy.queue(1_200, "agent-a", "item-a", "second");
+    let second_deadline = second.deadline.expect("debounced deadline");
+    assert!(second.flushed.is_empty());
+    assert_eq!(second_deadline.at_ms, 1_450);
+    assert!(policy
+        .flush_deadline(1_449, second_deadline.generation)
+        .is_none());
+    assert_eq!(
+        policy
+            .flush_deadline(1_450, second_deadline.generation)
+            .expect("deadline flush")
+            .item,
+        "second"
+    );
+
+    let same_window = policy.queue(1_500, "agent-a", "item-a", "third");
+    assert!(same_window.flushed.is_empty());
+    let different = policy.queue(1_510, "agent-a", "item-b", "other");
+    assert_eq!(different.flushed.len(), 1);
+    assert_eq!(different.flushed[0].item, "third");
+    assert_eq!(different.deadline.expect("new item deadline").at_ms, 1_760);
+
+    assert_eq!(
+        policy.flush(1_520).expect("explicit flush").item,
+        "other"
+    );
+    let immediate = policy.queue(1_800, "agent-a", "item-c", "late");
+    assert_eq!(immediate.flushed.len(), 1);
+    assert_eq!(immediate.flushed[0].item, "late");
+    assert!(immediate.deadline.is_none());
+
+    let pending = policy.queue(1_810, "agent-a", "item-d", "pending");
+    assert!(pending.deadline.is_some());
+    assert!(policy.has_pending());
+    policy.stop();
+    assert!(!policy.has_pending());
+    assert!(policy.next_deadline().is_none());
+    assert!(!policy.is_enabled());
+
+    let disabled = policy.queue(1_820, "agent-a", "item-e", "direct");
+    assert_eq!(disabled.flushed.len(), 1);
+    assert_eq!(disabled.flushed[0].item, "direct");
+    assert!(disabled.deadline.is_none());
 }
 
 #[test]
