@@ -263,7 +263,6 @@ use mahayana_host_runtime::send_trace_host::{
     HostTrace, begin_send_trace, record_completed_trace_span,
 };
 use mahayana_host_runtime::sand_activity::ActivityUpdate;
-use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
     ProviderRetryEvent, ProviderRetryOutcome, ProviderRetryReport,
 };
@@ -7285,11 +7284,12 @@ fn start_routed_provider_task(
                     multitask_todo_state,
                 },
             );
-            let owner = ProductionTurnAgentOwner::new(composition)
-                .with_agent_state_checkpoint_sink(agent_state_checkpoint_sink)
-                .with_upgrade_quiesce_signal(worker_registry.upgrade_quiesce_signal());
-            let mut runner = SandAgentRunner::new(owner)
-                .with_generated_agent_runtime(Arc::clone(&worker_generated_agent_runtime));
+            let mut runner = host_runner_composition.compose_production_runner(
+                composition,
+                agent_state_checkpoint_sink,
+                worker_registry.upgrade_quiesce_signal(),
+                Arc::clone(&worker_generated_agent_runtime),
+            );
             let generated_prompt = lifecycle_messages
                 .iter()
                 .rev()

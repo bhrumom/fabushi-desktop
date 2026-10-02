@@ -116,3 +116,32 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         );
     }
 }
+
+#[test]
+fn host_runner_composition_owns_shipping_runner_construction() {
+    for needle in [
+        "pub fn compose_production_runner(",
+        "ProductionTurnAgentOwner::new(composition)",
+        ".with_agent_state_checkpoint_sink(checkpoint_sink)",
+        ".with_upgrade_quiesce_signal(upgrade_quiesce_signal)",
+        "SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)",
+    ] {
+        assert!(
+            OWNER.contains(needle),
+            "HostRunnerComposition missing Runner construction responsibility: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains("host_runner_composition.compose_production_runner("),
+        "shipping Host must delegate Runner facade construction",
+    );
+    for needle in [
+        "ProductionTurnAgentOwner::new(composition)",
+        "SandAgentRunner::new(owner)",
+    ] {
+        assert!(
+            !SHIPPING_HOST.contains(needle),
+            "shipping Host still constructs the Runner owner path directly: {needle}",
+        );
+    }
+}

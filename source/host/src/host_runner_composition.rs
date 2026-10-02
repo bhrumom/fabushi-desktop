@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::Path;
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -17,6 +18,8 @@ use crate::runner::computer_use::ComputerUseCoordination;
 use crate::runner::production_agent_checkpoint::{
     AgentStateCheckpointSink, ProductionAgentStateCheckpointSink,
 };
+use crate::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
+use crate::runner::sand_agent_runner::SandAgentRunner;
 use crate::runner::subagent_runtime::SubagentRuntime;
 use crate::runner::tools::sand_agent_management_tools::AgentManagementSink;
 use crate::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
@@ -155,6 +158,20 @@ impl HostRunnerComposition {
             true,
         )?;
         Ok(Arc::new(sink))
+    }
+
+    /// Construct the shipping Runner facade from the composed turn and lifecycle owners.
+    pub fn compose_production_runner(
+        &self,
+        composition: TurnAgentComposition,
+        checkpoint_sink: Arc<dyn AgentStateCheckpointSink>,
+        upgrade_quiesce_signal: Arc<AtomicBool>,
+        generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
+    ) -> SandAgentRunner {
+        let owner = ProductionTurnAgentOwner::new(composition)
+            .with_agent_state_checkpoint_sink(checkpoint_sink)
+            .with_upgrade_quiesce_signal(upgrade_quiesce_signal);
+        SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)
     }
 
     /// Build one production turn through the canonical Host -> Runner composition owner.
