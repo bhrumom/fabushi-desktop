@@ -27,7 +27,7 @@ A dated remote observation on 2026-10-02 resolves `desktop-app/legal` default `m
 - google/cld3@b48dc465...: LICENSE blob c5899b26... is Apache License 2.0.
 - desktop-app/cmark-gfm@d7d4a24a...: COPYING blob db88a81b... contains its BSD-style redistribution grant; exact clause classification remains for legal review.
 - TartanLlama/expected@292eff8b...: COPYING blob 0e259d42... is CC0 1.0 Universal.
-- fcitx/fcitx5-qt@0285a5d1...: pinned tree carries LICENSES/BSD-3-Clause.txt and LICENSES/LGPL-2.1-or-later.txt; per-file REUSE mapping must be preserved.
+- fcitx/fcitx5-qt@0285a5d1...: exact-file scan is now recorded in `research/mixed-license-per-file-provenance.md`: 88 SPDX-bearing tracked files resolve to 46 BSD-3-Clause, 40 LGPL-2.1-or-later and 2 GPL-2.0-or-later files; 20 qdbusxml2cpp-generated files and six legacy full-text LGPL widget files are tracked separately rather than guessed. Remaining untagged build/interface metadata stays open if materially reused.
 - hime-ime/hime@9b3e6f9a...: README at the pinned commit states LGPLv2.1 with Qt immodules under GPLv2; icon subtrees carry their own COPYING files.
 - hunspell/hunspell@a698d8b5...: pinned tree contains COPYING, COPYING.LESSER, COPYING.MPL, license.hunspell and license.myspell; this is explicitly multi-license and requires per-file mapping.
 - KDE/kcoreaddons@fd84da51...: pinned LICENSES tree contains BSD, CC0, GPL, LGPL, MPL, KDE accepted-license refs and Qt exception/commercial refs; per-file REUSE mapping is required.
@@ -50,6 +50,6 @@ Accordingly, the dependencies listed above are **researched upstream provenance*
 
 ## Why release review is still open
 
-An exact file-location inventory is not a legal compatibility conclusion. The floating Desktop App Toolkit legal reference is now historically bounded for the frozen toolkit commit range, but remaining work still includes: per-file REUSE/license mapping where researched mixed-license dependencies materially inform source-derived behavior; resource/font/icon/theme/sound provenance; determining which upstream code/assets, if any, are actually copied or adapted into distributed Fabushi artifacts; and reviewing the final dependency graph of the Fabushi build rather than assuming every Telegram research dependency ships.
+An exact file-location inventory is not a legal compatibility conclusion. The floating Desktop App Toolkit legal reference is now historically bounded for the frozen toolkit commit range, but remaining work still includes: per-file REUSE/license mapping where researched mixed-license dependencies materially inform source-derived behavior (the pinned fcitx5-qt implementation-source mapping is now captured, while hime/hunspell/KDE mixed-license sets remain open); resource/font/icon/theme/sound provenance; determining which upstream code/assets, if any, are actually copied or adapted into distributed Fabushi artifacts; and reviewing the final dependency graph of the Fabushi build rather than assuming every Telegram research dependency ships.
 
 No row in this document authorizes copying an upstream asset or source file into Fabushi. It records source-informed provenance and the evidence needed for later release counsel/review.
