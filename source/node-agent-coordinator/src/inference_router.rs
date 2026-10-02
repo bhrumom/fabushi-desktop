@@ -50,6 +50,13 @@ pub fn host_transcript_method(method: &str) -> &str {
     }
 }
 
+/// Frozen send-turn semantics distinguish durable acceptance from terminal turn
+/// settlement. Only an explicit boolean true asks the Coordinator to hold the
+/// renderer request until the Host Runner publishes its terminal event.
+pub fn should_await_turn(args: &Value) -> bool {
+    args.get("awaitTurn").and_then(Value::as_bool) == Some(true)
+}
+
 /// Project the sendPrompt fields that materially define one user turn across
 /// Coordinator -> Host -> Runner without linking the Coordinator to Host types.
 /// The current message id is returned by authoritative Host/Session routed
@@ -214,6 +221,8 @@ pub fn prepare_workflow_run_now_route(
             "prompt": visible_prompt,
             "richText": rich_text,
             "_runnerPrompt": runner_prompt,
+            "awaitTurn": true,
+            "source": "workflow-reference",
         }),
     })
 }
