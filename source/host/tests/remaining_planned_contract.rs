@@ -341,13 +341,13 @@ fn frozen_host_gateway_registry_is_complete_unique_and_owner_resolved() {
         "getTeachRecordingStatus", "getTrays", "dismissTray", "clearTrays",
         "uploadAttachment", "readAttachmentImage", "readAttachmentText",
         "readAttachmentChunk", "getHostSettings", "setHostSettings", "refreshMcp",
-        "listRoutedMcpTools", "executeRoutedMcpTool", "listBoxMcpServers",
+"listBoxMcpServers",
         "completeMcpOAuth", "requestWebAuthnCeremony", "setBoxSecrets",
         "getBoxSecretsStatus",
     ];
 
     assert_eq!(FROZEN_HOST_GATEWAY_METHODS, EXPECTED_FROZEN_METHODS);
-    assert_eq!(FROZEN_HOST_GATEWAY_METHODS.len(), 122);
+    assert_eq!(FROZEN_HOST_GATEWAY_METHODS.len(), 120);
 
     let mut unique = std::collections::BTreeSet::new();
     for method in FROZEN_HOST_GATEWAY_METHODS {
@@ -394,5 +394,4 @@ fn frozen_host_gateway_registry_is_complete_unique_and_owner_resolved() {
         host_gateway_owner("setBoxSecrets"),
         Some(HostGatewayOwner::Secrets)
     );
-    assert_eq!(host_gateway_owner("resumeAfterRecreate"), None);
-}
+    assert_eq!(host_gateway_owner("resumeAfterRecreate"), None);\n    assert_eq!(host_gateway_owner("listRoutedMcpTools"), None);\n    assert_eq!(host_gateway_owner("executeRoutedMcpTool"), None);\n}

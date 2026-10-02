@@ -166,8 +166,6 @@ define_host_gateway_registry!(
     ("getHostSettings", Settings),
     ("setHostSettings", Settings),
     ("refreshMcp", Mcp),
-    ("listRoutedMcpTools", Mcp),
-    ("executeRoutedMcpTool", Mcp),
     ("listBoxMcpServers", Mcp),
     ("completeMcpOAuth", Mcp),
     ("requestWebAuthnCeremony", WebAuthn),

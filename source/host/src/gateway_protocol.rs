@@ -5,11 +5,7 @@ pub const GATEWAY_PREPARE_UPGRADE_PATH: &str = "/prepare-upgrade";
 pub use crate::host_gateway_api::FROZEN_HOST_GATEWAY_METHODS as GROK_GATEWAY_COMMANDS;
 use crate::host_gateway_api::host_gateway_owner;
 
-pub const RESUME_AFTER_RECREATE_COMPAT_METHOD: &str = "resumeAfterRecreate";
-
-pub fn is_grok_gateway_command(method: &str) -> bool {
-    host_gateway_owner(method).is_some() || method == RESUME_AFTER_RECREATE_COMPAT_METHOD
-}
+/// Fabushi-owned gateway commands that intentionally extend the frozen Grok 0.18\n/// public Host surface. Keep these outside `FROZEN_HOST_GATEWAY_METHODS` so\n/// parity checks cannot silently widen the upstream contract.\npub const FABUSHI_GATEWAY_COMPAT_COMMANDS: &[&str] = &[\n    "resumeAfterRecreate",\n    "listRoutedMcpTools",\n    "executeRoutedMcpTool",\n];\n\npub fn is_grok_gateway_command(method: &str) -> bool {\n    host_gateway_owner(method).is_some() || FABUSHI_GATEWAY_COMPAT_COMMANDS.contains(&method)\n}
 
 pub fn parse_command_args(body: &[u8]) -> Result<Value, serde_json::Error> {
     if body.is_empty() {
