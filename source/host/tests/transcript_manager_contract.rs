@@ -88,6 +88,9 @@ fn manager_is_the_single_production_composition_owner() {
         Some(agent.id.as_str())
     );
 
+    ack_a
+        .record_send(&agent.id, 10.0)
+        .expect("durable ack for redrive");
     assert!(ack_a.arm_redrive_timer(
         &agent.id,
         mahayana_host_runtime::extensions::transcript::ack_obligations::AckRedriveTrigger::Idle,
