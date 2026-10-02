@@ -438,6 +438,17 @@ pub fn redrive_agent_inbound_after_priority_preemption(
     Some(redrive)
 }
 
+pub fn agent_inbound_wake_prefers_urgent_queue(send_args: &Value) -> bool {
+    if send_args.get("requestSource").and_then(Value::as_str) != Some("agent-inbound") {
+        return false;
+    }
+    let Some(wake) = send_args.get("agentWake").and_then(Value::as_object) else {
+        return false;
+    };
+    wake.get("priority").and_then(Value::as_bool) == Some(true)
+        || wake.get("isRedriven").and_then(Value::as_bool) == Some(true)
+}
+
 pub fn prepare_agent_inbound_wake_routes(
     payload: &Value,
 ) -> Result<Vec<CoordinatorAgentWakeRoute>, Failure> {

@@ -33,8 +33,9 @@ use mahayana_node_agent_coordinator::inference_router::{
     InferenceStreamSupersede, InferenceTaskQueue, InferenceTranscriptFile,
     RunnerInferenceEvent, StoredEntry, StoredRole, is_direct_user_send,
     parse_host_routed_prompt_acceptance, parse_runner_inference_event,
-    agent_inbound_failure_gateway_args, prepare_agent_inbound_wake_routes,
-    redrive_agent_inbound_after_priority_preemption, should_append_user_message,
+    agent_inbound_failure_gateway_args, agent_inbound_wake_prefers_urgent_queue,
+    prepare_agent_inbound_wake_routes, redrive_agent_inbound_after_priority_preemption,
+    should_append_user_message,
     parse_send_prompt_attachments,
     prepare_workflow_run_now_route, project_runner_turn_context, project_transcript_entry,
     CoordinatorWorkflowRunNowRoute,
@@ -1004,12 +1005,7 @@ fn enqueue_agent_inbound_wake(
     args: Value,
 ) -> Result<(), Failure> {
     let provider = routed_inference_provider(state, &agent_id);
-    let urgent = args
-        .get("agentWake")
-        .and_then(Value::as_object)
-        .and_then(|wake| wake.get("priority"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
+    let urgent = agent_inbound_wake_prefers_urgent_queue(&args);
     let worker_state = Arc::clone(state);
     let queue_key = agent_id.clone();
     let task = move || {

@@ -12,9 +12,9 @@ use mahayana_node_agent_coordinator::supervisor::{
     CoordinatorSupervisor, GatewayState, HostGeneration,
 };
 use mahayana_node_agent_coordinator::inference_router::{
-    agent_inbound_failure_gateway_args, deleted_agent_ids_for_host_success,
-    prepare_agent_inbound_wake_routes, redrive_agent_inbound_after_priority_preemption,
-    PRIORITY_AGENT_WAKE_SUPERSEDE_REASON,
+    agent_inbound_failure_gateway_args, agent_inbound_wake_prefers_urgent_queue,
+    deleted_agent_ids_for_host_success, prepare_agent_inbound_wake_routes,
+    redrive_agent_inbound_after_priority_preemption, PRIORITY_AGENT_WAKE_SUPERSEDE_REASON,
 };
 use serde_json::json;
 
@@ -2168,6 +2168,92 @@ fn priority_peer_cancellation_redrives_agent_wake_exactly_once() {
         .is_none(),
         "non-agent turns never enter peer redrive"
     );
+}
+
+
+#[test]
+fn redriven_peer_wake_prefers_urgent_queue_without_becoming_priority() {
+    let ordinary = json!({
+        "requestSource": "agent-inbound",
+        "agentWake": {"priority": false}
+    });
+    assert!(!agent_inbound_wake_prefers_urgent_queue(&ordinary));
+
+    let priority = json!({
+        "requestSource": "agent-inbound",
+        "agentWake": {"priority": true}
+    });
+    assert!(agent_inbound_wake_prefers_urgent_queue(&priority));
+
+    let redriven = redrive_agent_inbound_after_priority_preemption(
+        &json!({
+            "requestSource": "agent-inbound",
+            "agentWake": {"priority": false, "isDisplayed": true}
+        }),
+        PRIORITY_AGENT_WAKE_SUPERSEDE_REASON,
+    )
+    .expect("redrive");
+    assert_eq!(redriven["agentWake"]["priority"], false);
+    assert_eq!(redriven["agentWake"]["isRedriven"], true);
+    assert!(agent_inbound_wake_prefers_urgent_queue(&redriven));
+
+    assert!(!agent_inbound_wake_prefers_urgent_queue(&json!({
+        "requestSource": "turn",
+        "agentWake": {"priority": false, "isRedriven": true}
+    })));
+}
+
+#[test]
+fn redriven_peer_wake_runs_after_new_priority_but_before_later_normal_work() {
+    use std::sync::{Arc, mpsc};
+    use std::time::Duration;
+
+    use mahayana_node_agent_coordinator::inference_router::InferenceTaskQueue;
+
+    let queue = Arc::new(InferenceTaskQueue::default());
+    let (events_tx, events_rx) = mpsc::channel::<&'static str>();
+    let (release_tx, release_rx) = mpsc::channel::<()>();
+
+    queue.enqueue("agent-a", {
+        let events_tx = events_tx.clone();
+        move || {
+            events_tx.send("active").expect("active");
+            release_rx.recv().expect("release");
+        }
+    }).expect("active enqueue");
+    assert_eq!(events_rx.recv_timeout(Duration::from_secs(1)).expect("active starts"), "active");
+
+    queue.enqueue("agent-a", {
+        let events_tx = events_tx.clone();
+        move || events_tx.send("later-normal").expect("later normal")
+    }).expect("later normal enqueue");
+
+    let priority = json!({
+        "requestSource": "agent-inbound",
+        "agentWake": {"priority": true}
+    });
+    assert!(agent_inbound_wake_prefers_urgent_queue(&priority));
+    queue.enqueue_urgent("agent-a", {
+        let events_tx = events_tx.clone();
+        move || events_tx.send("new-priority").expect("priority")
+    }).expect("priority enqueue");
+
+    let redriven = json!({
+        "requestSource": "agent-inbound",
+        "agentWake": {"priority": false, "isDisplayed": true, "isRedriven": true}
+    });
+    assert!(agent_inbound_wake_prefers_urgent_queue(&redriven));
+    queue.enqueue_urgent("agent-a", {
+        let events_tx = events_tx.clone();
+        move || events_tx.send("redriven-old").expect("redrive")
+    }).expect("redrive enqueue");
+
+    release_tx.send(()).expect("release active");
+    assert_eq!(events_rx.recv_timeout(Duration::from_secs(1)).expect("priority runs"), "new-priority");
+    assert_eq!(events_rx.recv_timeout(Duration::from_secs(1)).expect("redrive runs"), "redriven-old");
+    assert_eq!(events_rx.recv_timeout(Duration::from_secs(1)).expect("normal runs"), "later-normal");
+
+    queue.dispose();
 }
 
 
