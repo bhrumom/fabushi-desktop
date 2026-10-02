@@ -137,9 +137,6 @@ use mahayana_host_runtime::extensions::transcript::transcript_manager::Transcrip
 use mahayana_host_runtime::extensions::transcript::transcript_entry_ids::{
     TranscriptEntryIdKind, next_entry_id,
 };
-use mahayana_host_runtime::extensions::transcript::extension::{
-    TranscriptExtensionDeps, start_production_transcript_extension,
-};
 use mahayana_host_runtime::extensions::transcript::send_message_shaping::{
     collect_inbound_images, shape_send_prompt_media_args,
 };
@@ -10182,33 +10179,28 @@ fn main() {
             let _ = auto_review_display_recheck_logs
                 .report_auto_review_display_recheck_failed(agent_id);
         }));
-    let turn_execution_registry = Arc::clone(&production_extensions.turn_execution);
-    let transcript_extension = start_production_transcript_extension(
-        &app_data_dir,
-        Arc::clone(&session_workers),
-        TranscriptExtensionDeps {
-            attachments: Arc::clone(&attachments_service),
-            content_search: Arc::clone(&production_extensions.content_search),
-            memory: production_extensions.memory.clone(),
-            telemetry: host_telemetry.clone(),
-            trays: Arc::clone(&production_extensions.trays),
-            turn_execution: Arc::clone(&turn_execution_registry),
-            events: gateway_events.clone(),
-        },
-    );
-    if let Some(error) = transcript_extension.profile_watch_error() {
+    let (transcript_manager, roster_emit, transcript_events, transcript_profile_watch_error) =
+        match production_extensions.start_transcript(
+            &app_data_dir,
+            Arc::clone(&session_workers),
+            Arc::clone(&attachments_service),
+            gateway_events.clone(),
+        ) {
+            Ok(transcript) => transcript,
+            Err(error) => {
+                host_lifecycle.fail();
+                eprintln!("failed to start production Transcript extension: {error}");
+                return;
+            }
+        };
+    if let Some(error) = transcript_profile_watch_error {
         eprintln!(
             "[sand-host] profile watcher unavailable; roster RPC remains authoritative: {error}"
         );
     }
-    let transcript_manager = transcript_extension.manager();
     transcript_manager
         .set_handoff_service(session_handoff.clone())
         .expect("production Transcript manager handoff service must be configured exactly once");
-    let roster_emit = transcript_extension.roster_emit();
-    let transcript_events = transcript_extension
-        .event_bridge()
-        .expect("production Transcript extension must install its event bridge");
     transcript_manager
         .widget_responses()
         .bind_auto_review(auto_review_extension.service())
@@ -11759,7 +11751,9 @@ fn main() {
     if let Err(error) = production_extensions.stop_auto_review() {
         eprintln!("failed to stop production AutoReview extension cleanly: {error}");
     }
-    drop(transcript_extension);
+    if let Err(error) = production_extensions.stop_transcript() {
+        eprintln!("failed to stop production Transcript extension cleanly: {error}");
+    }
     if let Err(error) = production_extensions.shutdown_session() {
         eprintln!("failed to shut down production Session extension cleanly: {error}");
     }
