@@ -9,6 +9,9 @@ use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::extensions::transcript::inline_image_materialization::{
     InlineImage, materialize_inline_images,
 };
+use crate::extensions::transcript::transcript_entry_ids::{
+    TranscriptEntryIdKind, next_entry_id,
+};
 use crate::groups::group_store::{
     GROUP_CONFIG_VERSION, RemoteGroupMember, SandGroupConfig, read_sand_group_config,
     write_sand_group_config,
@@ -60,6 +63,12 @@ pub fn can_post_to_group(member_ids: &[String], from_agent_id: &str) -> bool {
 /// append room-local transcript state, and restamp entries after relay
 /// settlement. This keeps Session/Transcript ownership in the Host and avoids a
 /// second sharing runtime.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LocalAgentGroupPost {
+    pub group_name: String,
+    pub member_ids: Vec<String>,
+}
+
 pub struct SharedRooms {
     sessions: Arc<ProductionSessionWorkers>,
 }
@@ -71,6 +80,55 @@ impl SharedRooms {
 
     pub fn sessions(&self) -> Arc<ProductionSessionWorkers> {
         Arc::clone(&self.sessions)
+    }
+
+    pub fn post_local_agent_message(
+        &self,
+        from_agent_id: &str,
+        group_id: &str,
+        text: &str,
+        timestamp_ms: f64,
+    ) -> Result<LocalAgentGroupPost, String> {
+        let group_dir = self.sessions.agents_root().join(group_id);
+        let config = read_sand_group_config(&group_dir)
+            .ok_or_else(|| format!("{group_id} is not a group chat."))?;
+        if !can_post_to_group(&config.member_ids, from_agent_id) {
+            return Err("You can only post to a group you're a member of.".into());
+        }
+        let group = self
+            .sessions
+            .summarize_agent_by_id(group_id, None)?
+            .ok_or_else(|| format!("No group found with id {group_id}."))?;
+        let sender = self
+            .sessions
+            .summarize_agent_by_id(from_agent_id, None)?
+            .ok_or_else(|| format!("No agent found with id {from_agent_id}."))?;
+        let source_entries = self.sessions.read_agent_transcript_entries(from_agent_id)?;
+        let outbound_id = next_entry_id(&source_entries, TranscriptEntryIdKind::AssistantMessage);
+        self.sessions.append_agent_transcript_entries(from_agent_id, &[json!({
+            "kind": "message",
+            "id": outbound_id,
+            "role": "assistant",
+            "content": text,
+            "isStreaming": false,
+            "timestampMs": timestamp_ms,
+            "toAgent": {"id": group_id, "name": group.name, "kind": "group"},
+        })])?;
+
+        let room_entries = self.sessions.read_agent_transcript_entries(group_id)?;
+        let room_entry_id = next_entry_id(&room_entries, TranscriptEntryIdKind::SendMessage);
+        self.sessions.append_agent_transcript_entries(group_id, &[json!({
+            "kind": "send-message",
+            "id": room_entry_id,
+            "message": {"type": "text", "content": text},
+            "timestampMs": timestamp_ms,
+            "author": {"id": from_agent_id, "name": sender.name},
+        })])?;
+        let _ = self.sessions.mark_agent_activity(group_id, timestamp_ms)?;
+        Ok(LocalAgentGroupPost {
+            group_name: group.name,
+            member_ids: config.member_ids,
+        })
     }
 
     pub fn get_shared_room_id_for_agent(&self, agent_id: &str) -> Option<String> {

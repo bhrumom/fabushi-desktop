@@ -14,6 +14,7 @@ use crate::extensions::trays::trays_service::PushErrorOptions;
 use crate::ports::telemetry::SandErrorDetail;
 use super::send_message_shaping::load_agent_inbound_images;
 use super::run_scheduler::RunLane;
+use super::shared_rooms::SharedRooms;
 use super::transcript_entry_ids::{TranscriptEntryIdKind, next_entry_id};
 
 pub const PRIORITY_AGENT_MESSAGE_INTERRUPT_REASON: &str = "superseded by a priority agent message";
@@ -97,7 +98,7 @@ pub struct AgentWakeRequest {
 pub type AgentWakeSink = Arc<dyn Fn(&AgentWakeRequest) + Send + Sync + 'static>;
 pub type PriorityInterruptSink = Arc<dyn Fn(&str, &str) -> usize + Send + Sync + 'static>;
 pub type AgentMessageAnalyticsSink =
-    Arc<dyn Fn(&str, &str, bool) + Send + Sync + 'static>;
+    Arc<dyn Fn(&str, &str, bool, bool) + Send + Sync + 'static>;
 
 pub fn should_interrupt_priority_peer(active_lane: Option<RunLane>) -> bool {
     active_lane != Some(RunLane::User)
@@ -125,6 +126,7 @@ pub fn merge_agent_inbound_queue(queued: &[AgentInboundMessage], deferred: &[Age
 
 pub struct ProductionAgentToAgentMessaging {
     sessions: Arc<ProductionSessionWorkers>,
+    shared_rooms: SharedRooms,
     wake_sink: AgentWakeSink,
     priority_interrupt: Option<PriorityInterruptSink>,
     analytics: Option<AgentMessageAnalyticsSink>,
@@ -132,7 +134,8 @@ pub struct ProductionAgentToAgentMessaging {
 
 impl ProductionAgentToAgentMessaging {
     pub fn new(sessions: Arc<ProductionSessionWorkers>, wake_sink: AgentWakeSink, priority_interrupt: Option<PriorityInterruptSink>) -> Self {
-        Self { sessions, wake_sink, priority_interrupt, analytics: None }
+        let shared_rooms = SharedRooms::new(Arc::clone(&sessions));
+        Self { sessions, shared_rooms, wake_sink, priority_interrupt, analytics: None }
     }
 
     pub fn with_analytics(mut self, analytics: AgentMessageAnalyticsSink) -> Self {
@@ -155,16 +158,24 @@ impl ProductionAgentToAgentMessaging {
         let timestamp_ms = now_ms();
 
         if target.is_group {
-            let entries = self.sessions.read_agent_transcript_entries(to_agent_id)?;
-            let entry_id = next_entry_id(&entries, TranscriptEntryIdKind::AssistantMessage);
-            self.sessions.append_agent_transcript_entries(to_agent_id, &[json!({
-                "kind":"message","id":entry_id,"role":"assistant","content":message,"isStreaming":false,
-                "timestampMs":timestamp_ms,"fromAgent":{"id":from_agent_id,"name":sender_name},
-            })])?;
-            let _ = self.sessions.mark_agent_activity(to_agent_id, timestamp_ms as f64);
+            if message == "(pass)" {
+                return Ok("Nothing was posted: \"(pass)\" means staying silent in a group chat.".into());
+            }
+            let posted = match self.shared_rooms.post_local_agent_message(
+                from_agent_id,
+                to_agent_id,
+                &message,
+                timestamp_ms as f64,
+            ) {
+                Ok(posted) => posted,
+                Err(error) => return Ok(error),
+            };
+            if let Some(analytics) = self.analytics.as_ref() {
+                analytics(from_agent_id, to_agent_id, true, priority);
+            }
             (self.wake_sink)(&AgentWakeRequest {
                 agent_id:to_agent_id.into(), source_agent_id:from_agent_id.into(), prompt:message.clone(),
-                priority:false, member_ids:target.member_ids.clone(), selected_images:Vec::new(),
+                priority:false, member_ids:posted.member_ids, selected_images:Vec::new(),
                 inbound: None,
             });
             let mut notes = Vec::new();
@@ -173,12 +184,12 @@ impl ProductionAgentToAgentMessaging {
                     if images.len()==1 {""} else {"s"}, if images.len()==1 {"was"} else {"were"}));
             }
             if priority { notes.push("Note: priority is 1:1 only — this post did not interrupt members.".into()); }
-            let ack=format!("Posted to {}.",target.name);
+            let ack=format!("Posted to \"{}\". Its members will see it and reply on their own turns.",posted.group_name);
             return Ok(if notes.is_empty(){ack}else{format!("{ack} {}",notes.join(" "))});
         }
 
         if let Some(analytics) = self.analytics.as_ref() {
-            analytics(from_agent_id, to_agent_id, priority);
+            analytics(from_agent_id, to_agent_id, false, priority);
         }
         let _=self.sessions.add_agent_conversation_partner(from_agent_id,to_agent_id)?;
         let source_entries=self.sessions.read_agent_transcript_entries(from_agent_id)?;

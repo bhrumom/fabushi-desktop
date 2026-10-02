@@ -5802,13 +5802,13 @@ fn start_routed_provider_task(
                     }
                     cancelled
                 })),
-            ).with_analytics(Arc::new(move |from_agent_id, to_agent_id, is_priority| {
+            ).with_analytics(Arc::new(move |from_agent_id, to_agent_id, is_group_target, is_priority| {
                 let _ = agent_message_analytics.track_event(
                     "sand.agent_message.sent",
                     &serde_json::json!({
                         "from_agent_id": from_agent_id,
                         "to_agent_id": to_agent_id,
-                        "is_group_target": false,
+                        "is_group_target": is_group_target,
                         "is_priority": is_priority,
                     }),
                 );

@@ -47,6 +47,47 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
 }
 
 #[test]
+fn group_delivery_delegates_persistence_to_shared_rooms_owner() {
+    use mahayana_host_runtime::extensions::transcript::group_chat_glue::GroupChatGlue;
+
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
+    let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
+    let group=GroupChatGlue::new(Arc::clone(&sessions))
+        .create_group("Review Room","",&[alpha.id.clone(),beta.id.clone()])
+        .expect("group");
+    let wakes=Arc::new(Mutex::new(Vec::<AgentWakeRequest>::new()));
+    let analytics=Arc::new(Mutex::new(Vec::<(String,String,bool,bool)>::new()));
+    let captured=Arc::clone(&analytics);
+    let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{
+        let wakes=Arc::clone(&wakes);Arc::new(move|wake|wakes.lock().expect("wakes").push(wake.clone()))
+    },None).with_analytics(Arc::new(move|from,to,is_group,priority|{
+        captured.lock().expect("analytics").push((from.into(),to.into(),is_group,priority));
+    }));
+
+    let ack=service.send_to_agent(&alpha.id,&group.agent.id,"group hello",&[],false).expect("group post");
+    assert_eq!(ack,"Posted to \"Review Room\". Its members will see it and reply on their own turns.");
+    let sender=sessions.read_agent_transcript_entries(&alpha.id).expect("sender");
+    assert_eq!(sender.len(),1);
+    assert_eq!(sender[0]["toAgent"]["kind"],"group");
+    let room=sessions.read_agent_transcript_entries(&group.agent.id).expect("room");
+    assert_eq!(room.len(),1);
+    assert_eq!(room[0]["kind"],"send-message");
+    assert_eq!(room[0]["author"]["id"],alpha.id);
+    assert_eq!(room[0]["message"]["content"],"group hello");
+    assert_eq!(analytics.lock().expect("analytics").as_slice(),&[(alpha.id.clone(),group.agent.id.clone(),true,false)]);
+    let wake=wakes.lock().expect("wakes").last().cloned().expect("wake");
+    assert_eq!(wake.member_ids,vec![alpha.id.clone(),beta.id.clone()]);
+
+    let before=room.len();
+    let pass=service.send_to_agent(&alpha.id,&group.agent.id,"(pass)",&[],false).expect("pass");
+    assert_eq!(pass,"Nothing was posted: \"(pass)\" means staying silent in a group chat.");
+    assert_eq!(sessions.read_agent_transcript_entries(&group.agent.id).expect("room after pass").len(),before);
+
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
 fn direct_peer_ack_preserves_frozen_async_non_waiting_guidance() {
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
@@ -189,18 +230,18 @@ fn direct_delivery_records_frozen_product_analytics_fields() {
     let beta = sessions
         .materialize_new_session(Some(&profile("Beta")), "user", None)
         .expect("beta");
-    let events = Arc::new(Mutex::new(Vec::<(String, String, bool)>::new()));
+    let events = Arc::new(Mutex::new(Vec::<(String, String, bool, bool)>::new()));
     let captured = Arc::clone(&events);
     let service = ProductionAgentToAgentMessaging::new(
         Arc::clone(&sessions),
         Arc::new(|_| {}),
         None,
     )
-    .with_analytics(Arc::new(move |from, to, priority| {
+    .with_analytics(Arc::new(move |from, to, is_group_target, priority| {
         captured
             .lock()
             .expect("analytics")
-            .push((from.to_string(), to.to_string(), priority));
+            .push((from.to_string(), to.to_string(), is_group_target, priority));
     }));
 
     service
@@ -219,11 +260,11 @@ fn direct_delivery_records_frozen_product_analytics_fields() {
 fn shipping_agent_message_analytics_uses_canonical_product_analytics_owner() {
     let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
-    assert!(main.contains(".with_analytics(Arc::new(move |from_agent_id, to_agent_id, is_priority|"));
+    assert!(main.contains(".with_analytics(Arc::new(move |from_agent_id, to_agent_id, is_group_target, is_priority|"));
     assert!(main.contains("\"sand.agent_message.sent\""));
     assert!(main.contains("\"from_agent_id\": from_agent_id"));
     assert!(main.contains("\"to_agent_id\": to_agent_id"));
-    assert!(main.contains("\"is_group_target\": false"));
+    assert!(main.contains("\"is_group_target\": is_group_target"));
     assert!(main.contains("\"is_priority\": is_priority"));
 }
 
