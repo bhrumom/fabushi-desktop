@@ -11,7 +11,9 @@ use mahayana_node_agent_coordinator::renderer_port_server::{
 use mahayana_node_agent_coordinator::supervisor::{
     CoordinatorSupervisor, GatewayState, HostGeneration,
 };
-use mahayana_node_agent_coordinator::inference_router::prepare_agent_inbound_wake_routes;
+use mahayana_node_agent_coordinator::inference_router::{
+    deleted_agent_ids_for_host_success, prepare_agent_inbound_wake_routes,
+};
 use serde_json::json;
 
 #[test]
@@ -1996,4 +1998,116 @@ fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
         "selectedImages": "not-an-array"
     }))
     .is_err());
+}
+
+
+#[test]
+fn deleted_agent_purge_skips_queued_inference_and_preserves_other_agents() {
+    use std::sync::{Arc, mpsc};
+    use std::time::Duration;
+
+    use mahayana_node_agent_coordinator::inference_router::InferenceTaskQueue;
+
+    assert_eq!(
+        deleted_agent_ids_for_host_success("deleteAgent", &json!({"id":"agent-a"})),
+        vec!["agent-a".to_string()]
+    );
+    assert_eq!(
+        deleted_agent_ids_for_host_success(
+            "deleteAgents",
+            &json!({"ids":["agent-a","agent-b"]}),
+        ),
+        vec!["agent-a".to_string(), "agent-b".to_string()]
+    );
+    assert!(
+        deleted_agent_ids_for_host_success("updateAgent", &json!({"id":"agent-a"})).is_empty()
+    );
+
+    let queue = Arc::new(InferenceTaskQueue::default());
+    let (agent_tx, agent_rx) = mpsc::channel::<&'static str>();
+    let (release_tx, release_rx) = mpsc::channel::<()>();
+
+    queue
+        .enqueue("agent-a", {
+            let agent_tx = agent_tx.clone();
+            move || {
+                agent_tx.send("active-start").expect("active start");
+                release_rx.recv().expect("release active");
+                agent_tx.send("active-end").expect("active end");
+            }
+        })
+        .expect("active enqueue");
+    assert_eq!(
+        agent_rx
+            .recv_timeout(Duration::from_secs(1))
+            .expect("active task starts"),
+        "active-start"
+    );
+
+    queue
+        .enqueue("agent-a", {
+            let agent_tx = agent_tx.clone();
+            move || {
+                agent_tx.send("normal-queued").expect("normal queued");
+            }
+        })
+        .expect("normal enqueue");
+    queue
+        .enqueue_urgent("agent-a", {
+            let agent_tx = agent_tx.clone();
+            move || {
+                agent_tx.send("urgent-queued").expect("urgent queued");
+            }
+        })
+        .expect("urgent enqueue");
+
+    let (other_tx, other_rx) = mpsc::channel::<&'static str>();
+    queue
+        .enqueue("agent-b", move || {
+            other_tx.send("other-agent").expect("other agent");
+        })
+        .expect("other enqueue");
+    assert_eq!(
+        other_rx
+            .recv_timeout(Duration::from_secs(1))
+            .expect("other agent remains live"),
+        "other-agent"
+    );
+
+    assert_eq!(queue.clear_agent("agent-a"), 1);
+    release_tx.send(()).expect("release active");
+    assert_eq!(
+        agent_rx
+            .recv_timeout(Duration::from_secs(1))
+            .expect("active task may finish"),
+        "active-end"
+    );
+    assert!(
+        agent_rx.recv_timeout(Duration::from_millis(150)).is_err(),
+        "normal and urgent queued work for the deleted agent must be invalidated"
+    );
+
+    queue
+        .enqueue("agent-a", {
+            let agent_tx = agent_tx.clone();
+            move || {
+                agent_tx.send("recreated-agent").expect("recreated agent");
+            }
+        })
+        .expect("recreated enqueue");
+    assert_eq!(
+        agent_rx
+            .recv_timeout(Duration::from_secs(1))
+            .expect("fresh generation runs"),
+        "recreated-agent"
+    );
+
+    queue.dispose();
+}
+
+#[test]
+fn coordinator_shipping_delete_success_wires_agent_queue_purge() {
+    let main = include_str!("../src/main.rs");
+    assert!(main.contains("deleted_agent_ids_for_host_success(&method, &args)"));
+    assert!(main.contains("dispatch_state.inference_queue.clear_agent(agent_id)"));
 }
