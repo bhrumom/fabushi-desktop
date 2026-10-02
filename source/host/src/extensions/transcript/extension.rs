@@ -192,10 +192,6 @@ impl Drop for TranscriptExtension {
         self._outline_stream_subscription.take();
         self._profile_watch_subscriptions.clear();
         self.profile_watch.take();
-        self.manager
-            .transcript_runtime()
-            .set_agent_run_lifecycle_observer(None);
-        self.roster_emit.stop_outline_stream_coalescing();
         self.manager.dispose();
         self.events.take();
         self.deps.take();
@@ -224,9 +220,8 @@ fn start_transcript_extension_with_event_bridge(
     ));
     roster_emit.set_outline_stream_coalescing_ms(OUTLINE_STREAM_COALESCE_MS);
     manager
-        .widget_responses()
-        .bind_roster(Arc::clone(&roster_emit))
-        .expect("Transcript WidgetResponses roster must be configured exactly once");
+        .bind_roster_emit(Arc::clone(&roster_emit))
+        .expect("Transcript roster must be configured exactly once through TranscriptManager");
 
     let (profile_events, profile_watch_subscriptions) = if let Some(events) = events.as_ref() {
         (
@@ -333,7 +328,6 @@ pub fn start_production_transcript_extension(
     let lifecycle_events = events.clone();
     extension
         .manager
-        .transcript_runtime()
         .set_agent_run_lifecycle_observer(Some(Arc::new(move |event_type, request_id| {
             if event_type == "started" {
                 lifecycle_events.run_started(request_id);

@@ -10057,14 +10057,13 @@ fn main() {
                 .filter_map(|value| notification_agent_from_value(&value))
                 .collect::<Vec<_>>()
         });
-    let notification_transcript = transcript_manager.transcript_runtime();
+    let notification_transcript = Arc::clone(&transcript_manager);
     let _notifications_extension = match start_notifications_extension(
         Arc::clone(&production_extensions.auth),
         gateway_events.clone(),
         notification_baseline,
         Arc::new(move || {
             notification_transcript
-                .session_runtime()
                 .window_focused_at_ms()
                 .filter(|value| value.is_finite() && *value >= 0.0)
                 .map(|value| value as u64)

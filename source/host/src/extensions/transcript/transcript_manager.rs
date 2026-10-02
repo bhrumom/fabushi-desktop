@@ -32,8 +32,11 @@ use super::client_side_tool_v2_producer::{
 };
 use super::group_chat_glue::GroupChatGlue;
 use super::async_task_union::AsyncTask;
-use super::production_runtime::{ProductionSendError, ProductionTranscriptRuntime};
+use super::production_runtime::{
+    AgentRunLifecycleObserver, ProductionSendError, ProductionTranscriptRuntime,
+};
 use super::runner_registry::TranscriptRunnerRegistry;
+use super::roster_emit::ProductionRosterEmit;
 use super::shared_rooms::SharedRooms;
 use super::widget_responses::WidgetResponses;
 use super::workflow_commands::WorkflowCommands;
@@ -117,6 +120,7 @@ pub struct TranscriptManager {
     client_side_tool_v2: Mutex<ClientSideToolV2Producer>,
     group_chat: Arc<GroupChatGlue>,
     widget_responses: Arc<WidgetResponses>,
+    roster_emit: Mutex<Option<Arc<ProductionRosterEmit>>>,
     workflow_commands: Arc<WorkflowCommands>,
     watched_automation_store: Mutex<Option<FileAutomationStore>>,
     handoff_service: Mutex<Option<BoxHandoffService>>,
@@ -154,6 +158,7 @@ impl TranscriptManager {
             client_side_tool_v2: Mutex::new(ClientSideToolV2Producer::new()),
             group_chat,
             widget_responses,
+            roster_emit: Mutex::new(None),
             workflow_commands,
             watched_automation_store: Mutex::new(None),
             handoff_service: Mutex::new(None),
@@ -218,6 +223,26 @@ impl TranscriptManager {
 
     pub fn widget_responses(&self) -> Arc<WidgetResponses> {
         Arc::clone(&self.widget_responses)
+    }
+
+    pub fn bind_roster_emit(&self, roster: Arc<ProductionRosterEmit>) -> Result<(), String> {
+        let mut slot = self
+            .roster_emit
+            .lock()
+            .map_err(|_| "transcript roster mutex poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("transcript roster already configured".into());
+        }
+        self.widget_responses.bind_roster(Arc::clone(&roster))?;
+        *slot = Some(roster);
+        Ok(())
+    }
+
+    pub fn roster_emit(&self) -> Option<Arc<ProductionRosterEmit>> {
+        self.roster_emit
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone()
     }
 
     pub fn respond_to_widget_with<Send>(
@@ -353,6 +378,14 @@ impl TranscriptManager {
         self.runner_registry.set_turn_execution(execution);
     }
 
+    pub fn set_agent_run_lifecycle_observer(
+        &self,
+        observer: Option<AgentRunLifecycleObserver>,
+    ) {
+        self.transcript_runtime
+            .set_agent_run_lifecycle_observer(observer);
+    }
+
     pub fn turn_execution(&self) -> Option<TranscriptTurnExecutionPort> {
         self.runner_registry.turn_execution()
     }
@@ -476,6 +509,10 @@ impl TranscriptManager {
             .set_window_focused(&self.session_workers, is_focused, now_ms)
     }
 
+    pub fn window_focused_at_ms(&self) -> Option<f64> {
+        self.transcript_runtime.session_runtime().window_focused_at_ms()
+    }
+
     pub fn get_async_tasks(
         &self,
         agent_id: &str,
@@ -503,6 +540,15 @@ impl TranscriptManager {
             return;
         }
 
+        self.set_agent_run_lifecycle_observer(None);
+        if let Some(roster) = self
+            .roster_emit
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take()
+        {
+            roster.stop_outline_stream_coalescing();
+        }
         self.transcript_runtime.dispose();
 
         if let Some(handoff) = self

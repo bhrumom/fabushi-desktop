@@ -12,6 +12,7 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::extensions::transcript::client_side_tool_v2_producer::{
     ClientSideToolV2ProducedValue, ClientSideToolV2TransportKind,
 };
+use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
 use mahayana_host_runtime::extensions::transcript::transcript_manager::{
     TranscriptManager, TranscriptTurnExecutionPort,
 };
@@ -57,6 +58,19 @@ fn manager_is_the_single_production_composition_owner() {
     let widgets_a = manager.widget_responses();
     let widgets_b = manager.widget_responses();
     assert!(Arc::ptr_eq(&widgets_a, &widgets_b));
+
+    let roster = Arc::new(ProductionRosterEmit::new(
+        Arc::clone(&sessions),
+        manager.transcript_runtime(),
+        Arc::new(|_| {}),
+    ));
+    manager
+        .bind_roster_emit(Arc::clone(&roster))
+        .expect("bind manager roster");
+    assert!(Arc::ptr_eq(
+        &manager.roster_emit().expect("manager roster"),
+        &roster,
+    ));
 
     let workflows_a = manager.workflow_commands();
     let workflows_b = manager.workflow_commands();
@@ -114,6 +128,10 @@ fn manager_is_the_single_production_composition_owner() {
     manager
         .switch_agent(&agent.id, 10.0)
         .expect("switch active agent");
+    manager
+        .set_window_focused(true, 123.0)
+        .expect("manager window focus");
+    assert_eq!(manager.window_focused_at_ms(), Some(123.0));
     assert_eq!(
         workflows_a.watched_agent_id().as_deref(),
         Some(agent.id.as_str())
@@ -149,9 +167,15 @@ fn manager_is_the_single_production_composition_owner() {
         .set_handoff_service(handoff.clone())
         .expect("bind handoff");
 
+    roster.set_outline_stream_coalescing_ms(60_000);
+    roster.queue_outline_stream_update(&agent.id, "stream-item", json!({"text":"pending"}));
+    assert!(roster.has_pending_outline_stream_update());
+
     assert!(!manager.is_disposed());
     manager.dispose();
     assert!(manager.is_disposed());
+    assert!(manager.roster_emit().is_none());
+    assert!(!roster.has_pending_outline_stream_update());
     manager.dispose();
     assert_eq!(runners_a.active_count(), 0);
     assert!(workflows_a.watched_agent_id().is_none());
