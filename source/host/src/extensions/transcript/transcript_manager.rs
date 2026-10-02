@@ -115,6 +115,9 @@ pub struct TranscriptManagerServices {
 /// Session, send-pipeline, run-lifecycle and Runner registry state. The Rust
 /// port keeps those owners independent, but constructs them exactly once here
 /// so Host main does not create parallel runtime/ack/runner registries.
+type AutomationConfigChangedObserver = Arc<dyn Fn() + Send + Sync>;
+type ListenerConnectObserver = Arc<dyn Fn(&str, &str) + Send + Sync>;
+
 pub struct TranscriptManager {
     session_workers: Arc<ProductionSessionWorkers>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
@@ -131,6 +134,8 @@ pub struct TranscriptManager {
     handoff_service: Mutex<Option<BoxHandoffService>>,
     shared_rooms: Arc<SharedRooms>,
     services: Mutex<Option<TranscriptManagerServices>>,
+    automation_config_changed_observer: Mutex<Option<AutomationConfigChangedObserver>>,
+    listener_connect_observer: Mutex<Option<ListenerConnectObserver>>,
     disposed: AtomicBool,
 }
 
@@ -169,6 +174,8 @@ impl TranscriptManager {
             handoff_service: Mutex::new(None),
             shared_rooms,
             services: Mutex::new(None),
+            automation_config_changed_observer: Mutex::new(None),
+            listener_connect_observer: Mutex::new(None),
             disposed: AtomicBool::new(false),
         }
     }
@@ -391,6 +398,45 @@ impl TranscriptManager {
             .set_agent_run_lifecycle_observer(observer);
     }
 
+    pub fn set_automation_config_changed_observer(
+        &self,
+        observer: Option<AutomationConfigChangedObserver>,
+    ) {
+        *self
+            .automation_config_changed_observer
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = observer;
+    }
+
+    pub fn emit_automation_config_changed(&self) {
+        let observer = self
+            .automation_config_changed_observer
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        if let Some(observer) = observer {
+            observer();
+        }
+    }
+
+    pub fn set_listener_connect_observer(&self, observer: Option<ListenerConnectObserver>) {
+        *self
+            .listener_connect_observer
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = observer;
+    }
+
+    pub fn emit_listener_connect_card(&self, agent_id: &str, platform: &str) {
+        let observer = self
+            .listener_connect_observer
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        if let Some(observer) = observer {
+            observer(agent_id, platform);
+        }
+    }
+
     pub fn turn_execution(&self) -> Option<TranscriptTurnExecutionPort> {
         self.runner_registry.turn_execution()
     }
@@ -564,6 +610,8 @@ impl TranscriptManager {
         }
 
         self.set_agent_run_lifecycle_observer(None);
+        self.set_automation_config_changed_observer(None);
+        self.set_listener_connect_observer(None);
         if let Some(roster) = self
             .roster_emit
             .lock()

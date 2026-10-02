@@ -323,6 +323,18 @@ pub fn start_production_transcript_extension(
         .set_turn_execution(TranscriptTurnExecutionPort::new(Arc::clone(
             &deps.turn_execution,
         )));
+    let automation_events = events.clone();
+    extension
+        .manager
+        .set_automation_config_changed_observer(Some(Arc::new(move || {
+            automation_events.automation_config_changed();
+        })));
+    let listener_events = events.clone();
+    extension
+        .manager
+        .set_listener_connect_observer(Some(Arc::new(move |agent_id, platform| {
+            listener_events.listener_connect_card(agent_id, platform);
+        })));
     let outline_stream_subscription =
         bind_runner_outline_stream_events(&deps.events, Arc::clone(&extension.roster_emit));
     let lifecycle_events = events.clone();

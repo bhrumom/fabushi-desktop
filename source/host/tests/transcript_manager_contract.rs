@@ -117,6 +117,29 @@ fn manager_is_the_single_production_composition_owner() {
     assert_eq!(tool_reset.epoch, tool_call.epoch);
     assert_eq!(tool_reset.sequence, 3);
 
+    let automation_config_changed = Arc::new(Mutex::new(0usize));
+    let automation_config_changed_capture = Arc::clone(&automation_config_changed);
+    manager.set_automation_config_changed_observer(Some(Arc::new(move || {
+        *automation_config_changed_capture
+            .lock()
+            .expect("automation config observer") += 1;
+    })));
+    let listener_cards = Arc::new(Mutex::new(Vec::<(String, String)>::new()));
+    let listener_cards_capture = Arc::clone(&listener_cards);
+    manager.set_listener_connect_observer(Some(Arc::new(move |agent_id, platform| {
+        listener_cards_capture
+            .lock()
+            .expect("listener observer")
+            .push((agent_id.to_string(), platform.to_string()));
+    })));
+    manager.emit_automation_config_changed();
+    manager.emit_listener_connect_card("agent-observer", "slack");
+    assert_eq!(*automation_config_changed.lock().expect("automation count"), 1);
+    assert_eq!(
+        listener_cards.lock().expect("listener cards").as_slice(),
+        &[("agent-observer".to_string(), "slack".to_string())],
+    );
+
     let ack_a = manager.ack_obligations();
     let ack_b = manager.ack_obligations();
     assert!(Arc::ptr_eq(&ack_a, &ack_b));
@@ -195,6 +218,10 @@ fn manager_is_the_single_production_composition_owner() {
     assert!(manager.is_disposed());
     assert!(manager.roster_emit().is_none());
     assert!(!roster.has_pending_outline_stream_update());
+    manager.emit_automation_config_changed();
+    manager.emit_listener_connect_card("agent-observer", "github");
+    assert_eq!(*automation_config_changed.lock().expect("automation count"), 1);
+    assert_eq!(listener_cards.lock().expect("listener cards").len(), 1);
     manager.dispose();
     assert_eq!(runners_a.active_count(), 0);
     assert!(workflows_a.watched_agent_id().is_none());

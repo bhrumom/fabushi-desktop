@@ -144,7 +144,7 @@ use mahayana_host_runtime::extensions::transcript::transcript_entry_ids::{
     TranscriptEntryIdKind, next_entry_id,
 };
 use mahayana_host_runtime::extensions::transcript::extension::{
-    TranscriptExtensionDeps, TranscriptExtensionEventBridge, start_production_transcript_extension,
+    TranscriptExtensionDeps, start_production_transcript_extension,
 };
 use mahayana_host_runtime::extensions::transcript::send_message_shaping::{
     collect_inbound_images, shape_send_prompt_media_args,
@@ -6883,6 +6883,7 @@ fn start_routed_provider_task(
                     .map(|lifecycle| {
                     let sink = Arc::clone(&send_message_sink);
                     let callback_agent_id = agent_id.clone();
+                    let listener_connect_manager = Arc::clone(&worker_transcript_manager);
                     Arc::new(move |target: &mahayana_host_runtime::runner::sand_automation_auto_review::AutomationWriteTarget, tool_call_id: &str| {
                         if !matches!(target.operation.as_str(), "create" | "update")
                             || !target.spec.is_enabled
@@ -6923,8 +6924,8 @@ fn start_routed_provider_task(
                                 started_at_ms(),
                                 &card_tool_call_id,
                             )?;
-                            TranscriptExtensionEventBridge::new(events.clone())
-                                .listener_connect_card(&callback_agent_id, &platform);
+                            listener_connect_manager
+                                .emit_listener_connect_card(&callback_agent_id, &platform);
                             lifecycle.watch_listener_connection(
                                 callback_agent_id.clone(),
                                 platform,
@@ -10097,11 +10098,11 @@ fn main() {
     {
         let lifecycle_logs = host_telemetry.logs.clone();
         let lifecycle_roster = Arc::clone(&roster_emit);
-        let lifecycle_transcript_events = transcript_events.clone();
+        let lifecycle_transcript_manager = Arc::clone(&transcript_manager);
         transcript_manager
             .automation_runtime()
             .set_lifecycle_reporter(Some(Arc::new(move |event| {
-                lifecycle_transcript_events.automation_config_changed();
+                lifecycle_transcript_manager.emit_automation_config_changed();
                 lifecycle_roster.publish_timeline_event(
                     &event.agent_id,
                     serde_json::json!({
