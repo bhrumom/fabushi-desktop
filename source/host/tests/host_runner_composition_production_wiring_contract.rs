@@ -113,9 +113,11 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         );
     }
     assert!(
-        SHIPPING_HOST.contains(
-            ".compose_turn_state_surfaces(&session_workers, &agent_id, multitask_enabled)"
-        ),
+        SHIPPING_HOST.contains(".compose_turn_state_surfaces(")
+            && SHIPPING_HOST.contains("&session_workers,")
+            && SHIPPING_HOST.contains("&agent_id,")
+            && SHIPPING_HOST.contains("is_group_member_turn,")
+            && SHIPPING_HOST.contains("multitask_enabled,"),
         "shipping Host must consume HostRunnerComposition state surfaces",
     );
     for needle in [
@@ -241,5 +243,29 @@ fn group_member_turn_keeps_generated_lifecycle_without_private_state() {
         TURN_OWNER.contains("run_production_generated_agent_stream(")
             && !TURN_OWNER.contains("if let Some(checkpoint_sink) = checkpoint_sink"),
         "absence of a private checkpoint must not downgrade the turn to a raw provider path",
+    );
+}
+
+
+#[test]
+fn host_runner_composition_settles_only_its_owned_shutdown_surfaces() {
+    assert!(
+        OWNER.contains("pub fn dispose(&self)")
+            && OWNER.contains(".clear();"),
+        "HostRunnerComposition must dispose its live permission subscriptions",
+    );
+    let cancel = SHIPPING_HOST
+        .find("runner_registry.cancel_all(\"Mahayana Host shutting down\")")
+        .expect("shipping shutdown must interrupt canonical Runner registry");
+    let dispose = SHIPPING_HOST
+        .find("host_runner_composition.dispose();")
+        .expect("shipping shutdown must settle HostRunnerComposition");
+    assert!(
+        cancel < dispose,
+        "RunnerRegistry must interrupt active turns before composition-owned surfaces are dropped",
+    );
+    assert!(
+        !OWNER.contains("runner_registry.cancel_all"),
+        "HostRunnerComposition must not duplicate TranscriptRunnerRegistry cancellation ownership",
     );
 }
