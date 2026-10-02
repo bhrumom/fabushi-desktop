@@ -113,10 +113,11 @@ fn shipping_create_agent_path_consumes_nonce_and_input_policy() {
         .expect("createAgent branch must finish before secrets dispatch");
     let create_block = &SHIPPING_HOST[create..secrets];
     assert!(create_block.contains(
-        "dispatch_production_agent_lifecycle_gateway_call_with_runtimes("
+        "dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes("
     ));
     assert!(!create_block.contains("dispatch_production_session_gateway_call("));
     assert!(create_block.contains("Some(Arc::clone(&self.roster_emit))"));
+    assert!(create_block.contains("Some(self.created_agent_kickstart_hook())"));
 
     let sanitized = sanitize_create_agent_args(&json!({
         "name": "Agent",
