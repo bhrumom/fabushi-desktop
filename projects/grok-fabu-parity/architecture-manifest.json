@@ -16407,7 +16407,7 @@
       "targetPath": "source/host/src/extensions/transcript/send_pipeline.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b2dcfe29a3b23035bb9d5f7890bd846d01a6e592",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -16457,7 +16457,7 @@
         "source/host/tests/send_group_fanout_contract.rs",
         "source/host/tests/ack_obligations_contract.rs"
       ],
-      "notes": "Shipping Rust owns nonce admission/coalescing, durable Session echo, queue/watchdog, turn epochs, attachment batch identity, recovery sends, ack obligations, checkpoint settlement, BoxRequestEntries, and real group/mirror fanout. Frozen SendAckGuard is production-wired as a Rust RAII guard around routed admission and ordinary sendPrompt. Accepted-send context now reaches mirror/shared-room dispatch only after durable persistence; mirror publication uses the canonical CrossUser per-room queue and hosted shared-group publication precedes member fanout. Final remains withheld for remaining generated Agent media/tool execution ownership rather than room-send routing."
+      "notes": "Shipping Rust owns nonce admission/coalescing, durable Session echo, queue/watchdog, turn epochs, attachment batch identity, recovery sends, ack obligations, checkpoint settlement, BoxRequestEntries, and real group/mirror fanout. Frozen SendAckGuard is production-wired as a Rust RAII guard around routed admission and ordinary sendPrompt. Accepted-send context reaches mirror/shared-room dispatch only after durable persistence; mirror publication uses the canonical CrossUser per-room queue and hosted shared-group publication precedes member fanout. Runner-generated SendMessage now enters the same Host-owned pipeline before durable Session append: canonical send-message entry IDs are minted from the live transcript, explicit reply targets are validated, turn replyContext is auto-threaded, attachment sends share the frozen session batch identity, and fork turns stamp branched while the existing production sink retains media persistence, channel delivery, acknowledgement and activity ownership. Exact-HEAD 010ef77aa2502b6301b92b542255cff7a5285f81 evidence: Rust desktop runtime 37023792977 rust-host job 110893206875 completed success, including generated_send_message_uses_shipping_session_and_frozen_pipeline_threading; Desktop Chat Parity CI 37023792292 Focused Electron chat E2E job 110893204971 completed success through deterministic Host build, renderer/runtime/bundle checks, Grok Agent shell and Mahayana chat regression, and Playwright evidence upload. Artifact 11234776816 is bound to this exact HEAD with sha256:6bcf5dbbd1583e74e3ddd559cb567e9bb2e0c131e5e6761fca28d3ca56f0e2e8."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-thread-stamping.ts",
