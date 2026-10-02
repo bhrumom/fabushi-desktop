@@ -2,8 +2,11 @@ use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 
+use serde_json::Value;
+
 use super::sand_pending_wake_store::{
     DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin, SandPendingWakeStore,
+    coerce_marker,
 };
 
 pub const PENDING_WAKE_STALE_MAX_AGE_MS: f64 = 48.0 * 60.0 * 60.0 * 1_000.0;
@@ -138,6 +141,67 @@ impl PendingWakeRearm {
         let marker = marker_shell(agent_id, kind, work_id);
         self.report(&marker, "settled", Some("aborted"), None);
         self.runtime.emit_async_tasks_for_agent(agent_id);
+    }
+
+    pub fn restore_recreate_carried_pending_wakes(&self, carried: &[Value]) -> usize {
+        if carried.is_empty() || is_recreate_wake_carry_disabled() || !self.runtime.can_execute() {
+            return 0;
+        }
+        let Some(store) = &self.store else {
+            return 0;
+        };
+        let now_ms = (self.now_ms)();
+        let mut restored = 0usize;
+        for mut marker in carried.iter().filter_map(coerce_marker) {
+            if !matches!(marker.kind, PendingWakeKind::CloudAgent | PendingWakeKind::Shell) {
+                continue;
+            }
+            let age_ms = Some(now_ms - marker.marked_at_ms);
+            if store.has_pending(&marker.agent_id, marker.kind, &marker.work_id) {
+                self.report(&marker, "rearm_skipped", Some("locally_owned"), age_ms);
+                continue;
+            }
+            if self.runtime.is_agent_gone(&marker.agent_id) {
+                self.report(&marker, "rearm_skipped", Some("agent_gone"), age_ms);
+                continue;
+            }
+            match self.runtime.is_group_session(&marker.agent_id) {
+                Ok(true) => {
+                    self.report(&marker, "rearm_skipped", Some("group_session"), age_ms);
+                    continue;
+                }
+                Err(_) => {
+                    self.report(&marker, "rearm_failed", Some("session_unavailable"), age_ms);
+                    continue;
+                }
+                Ok(false) => {}
+            }
+            if marker.kind == PendingWakeKind::Shell {
+                marker.interrupted_by_recreate = true;
+            }
+            if !store.mark_pending(marker.clone()) {
+                self.report(&marker, "persist_failed", None, age_ms);
+            }
+            self.report(&marker, "carried", None, age_ms);
+            restored = restored.saturating_add(1);
+            match marker.kind {
+                PendingWakeKind::CloudAgent => {
+                    self.rearm_pending_wake(marker, now_ms, Some("recreate_carry"));
+                }
+                PendingWakeKind::Shell => {
+                    self.report(&marker, "dropped_with_notice", None, age_ms);
+                    if self
+                        .runtime
+                        .deliver_recreate_interrupted_shell_notice(&marker)
+                        .is_err()
+                    {
+                        self.report(&marker, "rearm_failed", Some("error"), age_ms);
+                    }
+                }
+                PendingWakeKind::Subagent => unreachable!("filtered above"),
+            }
+        }
+        restored
     }
 
     pub fn rearm_pending_wakes(&self) {

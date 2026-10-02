@@ -7861,6 +7861,9 @@ fn start_routed_provider_task(
                 worker_ack_token.as_deref(),
             );
             if result.is_ok() {
+                if worker_is_upgrade_resume {
+                    let _ = worker_transcript_manager.emit_agent_update(&agent_id);
+                }
                 let _ = worker_transcript_manager.emit_automations(&agent_id);
             }
             worker_routed_turn_lease.settle();

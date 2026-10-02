@@ -155,3 +155,55 @@ fn enqueue_refuses_gone_agents_and_appends_for_live_agents() {
     assert!(service.enqueue_pending_wake(&mut q,"live",vec![3]));
     assert_eq!(q["live"],vec![1,2,3]);
 }
+
+#[test]
+fn recreate_carry_filters_before_persisting_and_reports_frozen_outcomes() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let runtime = Arc::new(FakeRuntime::default());
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
+        .with_now(Arc::new(|| 500.0));
+
+    let live_cloud = marker("cloud", PendingWakeKind::CloudAgent, "cloud-1", 100.0);
+    let live_shell = marker("shell", PendingWakeKind::Shell, "shell-1", 110.0);
+    let local = marker("local", PendingWakeKind::CloudAgent, "local-1", 120.0);
+    let gone = marker("gone", PendingWakeKind::CloudAgent, "gone-1", 130.0);
+    let group = marker("group", PendingWakeKind::CloudAgent, "group-1", 140.0);
+    let subagent = marker("parent", PendingWakeKind::Subagent, "sub-1", 150.0);
+    store.mark_pending(local.clone());
+    runtime.gone.lock().unwrap().insert("gone".into());
+    runtime.group.lock().unwrap().insert("group".into());
+
+    let carried = vec![
+        serde_json::to_value(&live_cloud).unwrap(),
+        serde_json::to_value(&live_shell).unwrap(),
+        serde_json::to_value(&local).unwrap(),
+        serde_json::to_value(&gone).unwrap(),
+        serde_json::to_value(&group).unwrap(),
+        serde_json::to_value(&subagent).unwrap(),
+    ];
+
+    assert_eq!(service.restore_recreate_carried_pending_wakes(&carried), 0);
+    assert!(!store.has_pending("cloud", PendingWakeKind::CloudAgent, "cloud-1"));
+    *runtime.can_execute.lock().unwrap() = true;
+
+    assert_eq!(service.restore_recreate_carried_pending_wakes(&carried), 2);
+    assert!(store.has_pending("cloud", PendingWakeKind::CloudAgent, "cloud-1"));
+    assert!(store.has_pending("shell", PendingWakeKind::Shell, "shell-1"));
+    assert!(!store.has_pending("gone", PendingWakeKind::CloudAgent, "gone-1"));
+    assert!(!store.has_pending("group", PendingWakeKind::CloudAgent, "group-1"));
+    assert!(!store.has_pending("parent", PendingWakeKind::Subagent, "sub-1"));
+    assert_eq!(runtime.cloud_watches.lock().unwrap().as_slice(), &[("cloud".into(), "cloud-1".into())]);
+    assert_eq!(runtime.interrupted.lock().unwrap().as_slice(), &["shell-1".to_string()]);
+
+    let reports = runtime.reports.lock().unwrap();
+    assert!(reports.iter().any(|r| r.work_id == "local-1" && r.outcome == "rearm_skipped" && r.reason.as_deref() == Some("locally_owned")));
+    assert!(reports.iter().any(|r| r.work_id == "gone-1" && r.outcome == "rearm_skipped" && r.reason.as_deref() == Some("agent_gone")));
+    assert!(reports.iter().any(|r| r.work_id == "group-1" && r.outcome == "rearm_skipped" && r.reason.as_deref() == Some("group_session")));
+    assert!(reports.iter().any(|r| r.work_id == "cloud-1" && r.outcome == "carried"));
+    assert!(reports.iter().any(|r| r.work_id == "cloud-1" && r.outcome == "rearmed" && r.reason.as_deref() == Some("recreate_carry")));
+    assert!(reports.iter().any(|r| r.work_id == "shell-1" && r.outcome == "carried"));
+    assert!(reports.iter().any(|r| r.work_id == "shell-1" && r.outcome == "dropped_with_notice"));
+    drop(reports);
+    std::fs::remove_dir_all(dir).unwrap();
+}

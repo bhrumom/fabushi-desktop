@@ -45,8 +45,8 @@ use super::client_side_tool_v2_producer::{
 };
 use super::group_chat_glue::GroupChatGlue;
 use super::async_task_union::AsyncTask;
-use super::pending_wake_rearm::{PendingWakeRearm, PendingWakeRuntimePort, is_recreate_wake_carry_disabled};
-use super::sand_pending_wake_store::{DurablePendingWakeMarker, PendingWakeKind, coerce_marker};
+use super::pending_wake_rearm::{PendingWakeRearm, PendingWakeRuntimePort};
+use super::sand_pending_wake_store::DurablePendingWakeMarker;
 use super::production_runtime::{
     AgentRunLifecycleObserver, ProductionSendError, ProductionTranscriptRuntime,
 };
@@ -289,6 +289,14 @@ impl TranscriptManager {
             .clone()
     }
 
+    pub fn emit_agent_update(&self, agent_id: &str) -> Result<bool, String> {
+        let Some(roster) = self.roster_emit() else {
+            return Ok(false);
+        };
+        roster.emit_agent_update(agent_id)?;
+        Ok(true)
+    }
+
     pub fn emit_automations(&self, agent_id: &str) -> Result<bool, String> {
         let Some(roster) = self.roster_emit() else {
             return Ok(false);
@@ -427,37 +435,13 @@ impl TranscriptManager {
     }
 
     pub fn restore_recreate_pending_wakes(&self, carried: &[Value]) -> Result<usize, String> {
-        if carried.is_empty() || is_recreate_wake_carry_disabled() {
-            return Ok(0);
-        }
         let owner = self
             .pending_wakes
             .lock()
             .map_err(|_| "transcript pending-wake mutex poisoned".to_string())?
             .clone()
             .ok_or_else(|| "transcript pending-wake runtime is not configured".to_string())?;
-        let Some(store) = self.transcript_runtime.pending_wake_store() else {
-            return Ok(0);
-        };
-        let now_ms = chrono::Utc::now().timestamp_millis() as f64;
-        let mut restored = 0usize;
-        for mut marker in carried.iter().filter_map(coerce_marker) {
-            if !matches!(marker.kind, PendingWakeKind::CloudAgent | PendingWakeKind::Shell) {
-                continue;
-            }
-            if store.has_pending(&marker.agent_id, marker.kind, &marker.work_id) {
-                continue;
-            }
-            if marker.kind == PendingWakeKind::Shell {
-                marker.interrupted_by_recreate = true;
-            }
-            if !owner.persist_pending_wake(marker.clone()) {
-                continue;
-            }
-            owner.rearm_pending_wake(marker, now_ms, Some("recreate_carry"));
-            restored = restored.saturating_add(1);
-        }
-        Ok(restored)
+        Ok(owner.restore_recreate_carried_pending_wakes(carried))
     }
 
     pub fn set_handoff_service(&self, handoff: BoxHandoffService) -> Result<(), String> {

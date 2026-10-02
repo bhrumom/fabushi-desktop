@@ -108,6 +108,9 @@ fn shipping_recreate_gateway_carries_pending_wakes_and_resumes_durable_turns() {
     assert!(SHIPPING_HOST.contains("\"resumePendingWakes\": self.transcript_manager.recreate_carry_pending_wakes()"));
     assert!(SHIPPING_HOST.contains(".restore_recreate_pending_wakes(carried)"));
     assert!(SHIPPING_HOST.contains("self.resume_interrupted_upgrade_turns()"));
+    assert!(SHIPPING_HOST.contains("if worker_is_upgrade_resume {"));
+    assert!(SHIPPING_HOST.contains("worker_transcript_manager.emit_agent_update(&agent_id)"));
+    assert!(SHIPPING_HOST.contains("worker_transcript_manager.emit_automations(&agent_id)"));
     assert!(TRANSCRIPT_MANAGER.contains("pub fn restore_recreate_pending_wakes"));
     assert!(TRANSCRIPT_MANAGER.contains("owner.rearm_pending_wake(marker, now_ms, Some(\"recreate_carry\"))"));
     assert!(TRANSCRIPT_RUNTIME.contains("pub fn recreate_carry_pending_wakes"));
