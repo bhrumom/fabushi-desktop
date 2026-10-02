@@ -1,7 +1,7 @@
 use crate::r#box::generated_production::ProductionBoxResourceAccessor;
 use crate::ports::mcp_state_executor::{
     McpStateExecResult, McpStateSuccess, decode_canonical_mcp_state_result,
-    encode_canonical_mcp_state_args, encode_canonical_mcp_state_result,
+    encode_canonical_mcp_state_args,
 };
 use super::mcp_service::BoxServerStatus;
 use std::sync::Mutex;
@@ -53,7 +53,9 @@ pub fn decode_mcp_state_result(bytes: &[u8]) -> Result<Vec<BoxServerStatus>, Str
             } else {
                 server.status
             },
-            status_detail: None,
+            status_detail: server
+                .error_message
+                .filter(|message| !message.trim().is_empty()),
             tool_count: server.tools.len(),
         })
         .collect())
@@ -77,12 +79,14 @@ mod tests {
 
     #[test]
     fn decodes_box_server_status_without_reimplementing_tool_schema() {
-        let bytes = encode_canonical_mcp_state_result(&McpStateExecResult::Success(
+        let bytes = crate::ports::mcp_state_executor::encode_canonical_mcp_state_result(
+            &McpStateExecResult::Success(
             McpStateSuccess {
                 servers: vec![crate::ports::mcp_state_executor::McpStateServer {
                     server_name: "Calendar".into(),
                     server_identifier: "calendar".into(),
                     status: "connected".into(),
+                    error_message: Some("healthy detail".into()),
                     tools: vec![
                         crate::ports::mcp_state_executor::McpStateToolDefinition {
                             name: "search".into(),
@@ -101,12 +105,14 @@ mod tests {
                     ],
                 }],
             },
-        ))
+        ),
+        )
         .expect("encode canonical state");
         let servers = decode_mcp_state_result(&bytes).expect("decode state");
         assert_eq!(servers[0].server_identifier, "calendar");
         assert_eq!(servers[0].status, "connected");
         assert_eq!(servers[0].tool_count, 2);
+        assert_eq!(servers[0].status_detail.as_deref(), Some("healthy detail"));
     }
 }
 

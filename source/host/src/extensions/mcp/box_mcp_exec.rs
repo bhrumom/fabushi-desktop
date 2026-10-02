@@ -117,7 +117,9 @@ fn map_server(server: McpStateServer) -> BoxMcpServer {
         } else {
             server.status
         },
-        status_detail: None,
+        status_detail: server
+            .error_message
+            .filter(|message| !message.trim().is_empty()),
         tool_count: tools.len(),
         tools,
     }

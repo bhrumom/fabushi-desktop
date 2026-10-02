@@ -1,4 +1,4 @@
-use prost::{Message, Oneof};
+use prost::Message;
 use serde_json::Value;
 
 use crate::extensions::inference::provider_session::RoutedToolDefinition;
@@ -109,6 +109,7 @@ pub struct McpStateServer {
     pub server_identifier: String,
     pub server_name: String,
     pub status: String,
+    pub error_message: Option<String>,
     pub tools: Vec<McpStateToolDefinition>,
 }
 
@@ -151,6 +152,7 @@ pub fn execute_mcp_state(
                 server_identifier: tool.provider_identifier.clone(),
                 server_name: tool.provider_identifier,
                 status: "connected".into(),
+                error_message: None,
                 tools: vec![mapped],
             });
         }
@@ -267,6 +269,7 @@ pub fn decode_canonical_mcp_state_result(
             server_identifier: server.server_identifier,
             server_name: server.server_name,
             status: server.status.unwrap_or_else(|| "connected".into()),
+            error_message: server.error_message,
             tools,
         });
     }
