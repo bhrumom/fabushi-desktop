@@ -302,6 +302,13 @@ fn shipping_pressure_event_and_flush_tick_execute_the_same_profiler_owner() {
         thread::sleep(Duration::from_millis(10));
     }
     assert_eq!(backend.stops.load(Ordering::SeqCst), 1);
+    // Backend stop is an internal capture phase. Reacquiring the shared profiler owner
+    // waits for the flush-tick call to finish persisting the final artifact before the
+    // publication assertion below, without weakening the shipping ownership contract.
+    assert!(
+        !profiler.lock().unwrap().is_profiling(),
+        "flush tick must settle the shared profiler owner before artifact publication"
+    );
     assert_eq!(
         fs::read_dir(&root)
             .unwrap()
