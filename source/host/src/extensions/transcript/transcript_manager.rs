@@ -120,6 +120,7 @@ pub struct TranscriptManagerServices {
 /// port keeps those owners independent, but constructs them exactly once here
 /// so Host main does not create parallel runtime/ack/runner registries.
 pub type AutomationConfigChangedObserver = Arc<dyn Fn() + Send + Sync>;
+pub type ChannelConfigChangedObserver = Arc<dyn Fn() + Send + Sync>;
 pub type ListenerConnectObserver = Arc<dyn Fn(&str, &str) + Send + Sync>;
 
 pub struct TranscriptManager {
@@ -139,6 +140,7 @@ pub struct TranscriptManager {
     shared_rooms: Arc<SharedRooms>,
     services: Mutex<Option<TranscriptManagerServices>>,
     automation_config_changed_observer: Mutex<Option<AutomationConfigChangedObserver>>,
+    channel_config_changed_observer: Arc<Mutex<Option<ChannelConfigChangedObserver>>>,
     listener_connect_observer: Mutex<Option<ListenerConnectObserver>>,
     disposed: AtomicBool,
 }
@@ -153,11 +155,25 @@ impl TranscriptManager {
         let transcript_runtime = Arc::new(ProductionTranscriptRuntime::new(Some(root_dir)));
         let shared_rooms = Arc::new(SharedRooms::new(Arc::clone(&session_workers)));
         let group_chat = Arc::new(GroupChatGlue::new(Arc::clone(&session_workers)));
+        let channel_config_changed_observer: Arc<Mutex<Option<ChannelConfigChangedObserver>>> =
+            Arc::new(Mutex::new(None));
         let widget_responses = Arc::new(WidgetResponses::with_runtime(
             Arc::clone(&session_workers),
             Arc::clone(&automation_runtime),
             Arc::clone(&transcript_runtime),
         ));
+        let channel_config_changed_proxy = Arc::clone(&channel_config_changed_observer);
+        widget_responses
+            .bind_channel_config_changed(Arc::new(move || {
+                let observer = channel_config_changed_proxy
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .clone();
+                if let Some(observer) = observer {
+                    observer();
+                }
+            }))
+            .expect("TranscriptManager must own the WidgetResponses channel-config signal");
         let workflow_commands = Arc::new(WorkflowCommands::new(
             Arc::clone(&session_workers),
             Arc::clone(&automation_runtime),
@@ -179,6 +195,7 @@ impl TranscriptManager {
             shared_rooms,
             services: Mutex::new(None),
             automation_config_changed_observer: Mutex::new(None),
+            channel_config_changed_observer,
             listener_connect_observer: Mutex::new(None),
             disposed: AtomicBool::new(false),
         }
@@ -423,6 +440,27 @@ impl TranscriptManager {
         }
     }
 
+    pub fn set_channel_config_changed_observer(
+        &self,
+        observer: Option<ChannelConfigChangedObserver>,
+    ) {
+        *self
+            .channel_config_changed_observer
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = observer;
+    }
+
+    pub fn emit_channel_config_changed(&self) {
+        let observer = self
+            .channel_config_changed_observer
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        if let Some(observer) = observer {
+            observer();
+        }
+    }
+
     pub fn set_listener_connect_observer(&self, observer: Option<ListenerConnectObserver>) {
         *self
             .listener_connect_observer
@@ -647,6 +685,7 @@ impl TranscriptManager {
 
         self.set_agent_run_lifecycle_observer(None);
         self.set_automation_config_changed_observer(None);
+        self.set_channel_config_changed_observer(None);
         self.set_listener_connect_observer(None);
         self.session_workers.memory_service().set_active_agent(None);
         if let Some(roster) = self

@@ -133,6 +133,20 @@ fn manager_is_the_single_production_composition_owner() {
             .expect("listener observer")
             .push((agent_id.to_string(), platform.to_string()));
     })));
+    let channel_config_changed = Arc::new(Mutex::new(0usize));
+    let channel_config_changed_capture = Arc::clone(&channel_config_changed);
+    manager.set_channel_config_changed_observer(Some(Arc::new(move || {
+        *channel_config_changed_capture
+            .lock()
+            .expect("channel config observer") += 1;
+    })));
+    assert!(
+        manager
+            .widget_responses()
+            .bind_channel_config_changed(Arc::new(|| {}))
+            .is_err(),
+        "WidgetResponses channel-config signal must remain owned by TranscriptManager"
+    );
     manager.emit_automation_config_changed();
     manager.emit_listener_connect_card("agent-observer", "slack");
     assert_eq!(*automation_config_changed.lock().expect("automation count"), 1);
@@ -185,6 +199,32 @@ fn manager_is_the_single_production_composition_owner() {
         sessions.memory_service().active_agent_id().as_deref(),
         Some(agent.id.as_str()),
     );
+    sessions
+        .append_agent_transcript_entries(
+            &agent.id,
+            &[json!({
+                "id":"manager-secret-signal",
+                "kind":"send-message",
+                "message":{
+                    "type":"secret-request",
+                    "secretRequest":{
+                        "label":"Manager-owned token",
+                        "target":{"kind":"channel-credential","platform":"slack","field":"token"}
+                    }
+                }
+            })],
+        )
+        .expect("append manager-owned secret request");
+    assert!(manager
+        .submit_secret_with(
+            "manager-secret-signal",
+            "manager-secret",
+            &agent.id,
+            11.0,
+            |_| Ok(()),
+        )
+        .expect("manager-owned secret submission"));
+    assert_eq!(*channel_config_changed.lock().expect("channel count"), 1);
     manager
         .set_window_focused(true, 123.0)
         .expect("manager window focus");
@@ -234,8 +274,10 @@ fn manager_is_the_single_production_composition_owner() {
     assert!(manager.roster_emit().is_none());
     assert!(!roster.has_pending_outline_stream_update());
     manager.emit_automation_config_changed();
+    manager.emit_channel_config_changed();
     manager.emit_listener_connect_card("agent-observer", "github");
     assert_eq!(*automation_config_changed.lock().expect("automation count"), 1);
+    assert_eq!(*channel_config_changed.lock().expect("channel count"), 1);
     assert_eq!(listener_cards.lock().expect("listener cards").len(), 1);
     manager.dispose();
     assert_eq!(runners_a.active_count(), 0);

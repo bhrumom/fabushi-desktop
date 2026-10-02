@@ -329,6 +329,12 @@ pub fn start_production_transcript_extension(
         .set_automation_config_changed_observer(Some(Arc::new(move || {
             automation_events.automation_config_changed();
         })));
+    let channel_config_events = events.clone();
+    extension
+        .manager
+        .set_channel_config_changed_observer(Some(Arc::new(move || {
+            channel_config_events.channel_config_changed();
+        })));
     let listener_events = events.clone();
     extension
         .manager

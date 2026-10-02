@@ -10011,13 +10011,6 @@ fn main() {
         .widget_responses()
         .bind_auto_review(auto_review_extension.service())
         .expect("Transcript WidgetResponses AutoReview owner must be configured exactly once");
-    let channel_config_events = transcript_events.clone();
-    transcript_manager
-        .widget_responses()
-        .bind_channel_config_changed(Arc::new(move || {
-            channel_config_events.channel_config_changed();
-        }))
-        .expect("Transcript WidgetResponses channel-config signal must be configured exactly once");
     let content_search_extension = Arc::clone(&production_extensions.content_search);
     let permission_widget_responses = transcript_manager.widget_responses();
     let stranded_permission_logs = host_telemetry.logs.clone();
