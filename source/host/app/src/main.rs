@@ -139,7 +139,6 @@ use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendC
 use mahayana_host_runtime::extensions::transcript::send_turn_dispatch::prepare_direct_turn_runner_args;
 use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
 use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManager;
-use mahayana_host_runtime::extensions::turn_execution::extension::turn_execution_extension;
 use mahayana_host_runtime::extensions::transcript::transcript_entry_ids::{
     TranscriptEntryIdKind, next_entry_id,
 };
@@ -10179,8 +10178,7 @@ fn main() {
             let _ = auto_review_display_recheck_logs
                 .report_auto_review_display_recheck_failed(agent_id);
         }));
-    let (_, turn_execution_registry) = turn_execution_extension();
-    let turn_execution_registry = Arc::new(Mutex::new(turn_execution_registry));
+    let turn_execution_registry = Arc::clone(&production_extensions.turn_execution);
     let transcript_extension = start_production_transcript_extension(
         &app_data_dir,
         Arc::clone(&session_workers),
