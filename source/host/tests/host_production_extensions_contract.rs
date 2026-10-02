@@ -57,6 +57,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert!(shipping.contains(&HostExtensionId::TurnExecution));
     assert!(shipping.contains(&HostExtensionId::Session));
     assert!(shipping.contains(&HostExtensionId::AutoReview));
+    assert!(shipping.contains(&HostExtensionId::Transcript));
     assert_eq!(inference_extension_id(), HostExtensionId::Inference);
     assert_eq!(
         INFERENCE_DEPENDENCIES,
@@ -141,6 +142,39 @@ fn box_stage_extensions_have_one_production_composition_owner() {
     );
 }
 
+
+
+#[test]
+fn transcript_has_one_shipping_production_lifecycle_owner() {
+    for needle in [
+        "HostExtensionId::Transcript",
+        "transcript: Mutex<Option<TranscriptExtension>>",
+        "pub fn start_transcript(",
+        "start_production_transcript_extension(",
+        "pub fn stop_transcript(&self)",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own Transcript lifecycle: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains("production_extensions.start_transcript("),
+        "shipping Host must start Transcript through the centralized production owner"
+    );
+    assert!(
+        SHIPPING_HOST.contains("production_extensions.stop_transcript()"),
+        "shipping Host must stop Transcript through the centralized production owner"
+    );
+    assert!(
+        !SHIPPING_HOST.contains("start_production_transcript_extension("),
+        "shipping Host must not construct a second Transcript extension"
+    );
+    assert!(
+        !SHIPPING_HOST.contains("drop(transcript_extension)"),
+        "shipping Host must not own Transcript teardown"
+    );
+}
 
 
 #[test]
