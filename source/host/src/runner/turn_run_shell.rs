@@ -70,6 +70,28 @@ struct ActiveRun {
     settlement: TurnSettlement,
 }
 
+pub fn is_recovery_shaped_turn(prompt: &str, options: &TurnRunOptions) -> bool {
+    let trimmed = prompt.trim();
+    let current_message_text = options
+        .message_id
+        .as_deref()
+        .and_then(|message_id| {
+            options
+                .recent_user_messages
+                .iter()
+                .find(|message| message.id == message_id)
+                .map(|message| message.text.as_str())
+        })
+        .or(options.recent_message_text.as_deref());
+    options.message_id.is_some()
+        && !options.is_fork
+        && options.attachment_count == 0
+        && options.image_count == 0
+        && options.video_count == 0
+        && !options.has_reply_context
+        && current_message_text.is_some_and(|text| text.trim() == trimmed)
+}
+
 #[derive(Debug, Default)]
 pub struct TurnRunShell {
     active: Option<ActiveRun>,
@@ -95,6 +117,7 @@ impl TurnRunShell {
             return Err(TurnRunShellError::EmptyPrompt);
         }
         self.next_generation = self.next_generation.saturating_add(1);
+        let recovery_shaped = is_recovery_shaped_turn(trimmed, &options);
         let request_id = options
             .inference_request_id
             .filter(|value| !value.trim().is_empty())
@@ -103,24 +126,6 @@ impl TurnRunShell {
             request_id,
             generation: self.next_generation,
         };
-        let current_message_text = options
-            .message_id
-            .as_deref()
-            .and_then(|message_id| {
-                options
-                    .recent_user_messages
-                    .iter()
-                    .find(|message| message.id == message_id)
-                    .map(|message| message.text.as_str())
-            })
-            .or(options.recent_message_text.as_deref());
-        let recovery_shaped = options.message_id.is_some()
-            && !options.is_fork
-            && options.attachment_count == 0
-            && options.image_count == 0
-            && options.video_count == 0
-            && !options.has_reply_context
-            && current_message_text.is_some_and(|text| text.trim() == trimmed);
         self.active = Some(ActiveRun {
             owner: owner.clone(),
             dispatched: false,
@@ -137,7 +142,9 @@ impl TurnRunShell {
     }
 
     pub fn active_request_id(&self) -> Option<&str> {
-        self.active.as_ref().map(|run| run.owner.request_id.as_str())
+        self.active
+            .as_ref()
+            .map(|run| run.owner.request_id.as_str())
     }
 
     pub fn active_owner(&self) -> Option<&TurnOwnerToken> {
@@ -210,10 +217,13 @@ impl TurnRunShell {
         let quiescing = self.quiescing_for_upgrade;
         let run = self.require_owner_mut(owner)?;
         if run.awaiting_user_selection {
-            let cancellation = run.cancellation.clone().unwrap_or_else(|| TurnCancellation {
-                intentional: true,
-                reason: "awaiting user selection".into(),
-            });
+            let cancellation = run
+                .cancellation
+                .clone()
+                .unwrap_or_else(|| TurnCancellation {
+                    intentional: true,
+                    reason: "awaiting user selection".into(),
+                });
             return Ok(CheckpointBoundary::Cancel(cancellation));
         }
         if quiescing {
@@ -239,9 +249,7 @@ impl TurnRunShell {
     }
 
     pub fn owns_final_state(&self, owner: &TurnOwnerToken) -> bool {
-        self.active
-            .as_ref()
-            .is_some_and(|run| &run.owner == owner)
+        self.active.as_ref().is_some_and(|run| &run.owner == owner)
     }
 
     pub fn finish_completed(

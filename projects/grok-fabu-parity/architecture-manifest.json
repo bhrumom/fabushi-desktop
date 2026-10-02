@@ -16485,7 +16485,7 @@
       "targetPath": "source/host/src/extensions/transcript/send_turn_dispatch.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "bf9d48c949d4e0a7f5592141f0c1f7011433b391",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -16504,7 +16504,7 @@
         "source/host/tests/runner_routed_provider_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production dispatch serializes sends on the per-agent RunScheduler and owns watchdog deadline/Trip/Escape progression. Shipping sendPrompt now supplies explicit lane/source identity: direct user sends are User/turn while Ack redrive recovery is Background/ack-redrive, so queued user work retains frozen priority over recovery work. A wedged active generation is interrupted through the production Runner registry; after grace it is moved to the zombie fence and the next generation starts without allowing a late settle to clobber it. Final remains withheld for direct-run recovery context, workflow/composed-note expansion, complete Runner invocation ownership and detached-turn error projection."
+      "notes": "Shipping Rust send dispatch now owns durable acceptance before dispatch, direct-turn recovery/history/workflow/mention/composed-note shaping, run-lane scheduling/watchdog settlement, exact frozen pre-dispatch supersede semantics via carriesRecovery + recovery-shaped + dispatched state, ack interruption accounting, and detached Runner terminal failure projection. Focused contracts cover the direct production composition and supersede race; strict exact-HEAD CI remains the acceptance authority."
     },
     {
       "referencePath": "source/host/extensions/transcript/session-runtime.ts",

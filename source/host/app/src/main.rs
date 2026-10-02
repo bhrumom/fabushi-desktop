@@ -294,6 +294,7 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
     ProviderRetryEvent, ProviderRetryOutcome, ProviderRetryReport,
 };
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
+use mahayana_host_runtime::runner::turn_run_shell::is_recovery_shaped_turn;
 use mahayana_host_runtime::runner::prompt_collector_glue::project_provider_messages_for_turn;
 use mahayana_host_runtime::runner::sand_memory::{
     FrozenMemorySnapshot, MEMORY_PROJECT_INJECTED_CAP, MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
@@ -1988,10 +1989,19 @@ impl UnifiedGatewayApi {
                             if send_is_direct_local {
                                 let interrupted_group =
                                     self.preempt_group_member_runs_for_direct_send(&durable_args);
+                                let carries_recovery = persisted
+                                    .user_message_id
+                                    .as_deref()
+                                    .is_some_and(|value| !value.trim().is_empty())
+                                    && durable_args
+                                        .get("isFork")
+                                        .and_then(serde_json::Value::as_bool)
+                                        != Some(true);
                                 let interrupted_one_to_one = supersede_registry
-                                    .preempt_routed_agent(
+                                    .preempt_routed_agent_for_supersede(
                                         agent_id,
                                         RUN_DIRECT_USER_INTERRUPT_REASON,
+                                        Some(carries_recovery),
                                     )
                                     > 0;
                                 let had_active_run =
@@ -5391,10 +5401,19 @@ fn start_routed_provider_task(
                 ))
             })?
     };
+    let recovery_shaped = lifecycle_messages
+        .iter()
+        .rev()
+        .find(|message| message.role == "user" && !message.content.trim().is_empty())
+        .is_some_and(|message| is_recovery_shaped_turn(&message.content, &turn_input.options));
     let cancellation = (if is_group_member_turn {
         runner_registry.register_group_member(&agent_id, &stream_id)
     } else {
-        runner_registry.register_routed_provider(&agent_id, &stream_id)
+        runner_registry.register_routed_provider_with_recovery_shape(
+            &agent_id,
+            &stream_id,
+            recovery_shaped,
+        )
     })
         .map_err(|error| {
             ack_obligations.retire_ack_run_token(&agent_id, ack_token.as_deref());
@@ -7319,6 +7338,7 @@ fn start_routed_provider_task(
                     provider.as_str(),
                 );
             }
+            let _ = worker_registry.mark_routed_provider_dispatched(&worker_stream_id);
             let result = runner.run_routed_provider_with_projected_messages(
                 &data_dir,
                 &lifecycle_messages,
