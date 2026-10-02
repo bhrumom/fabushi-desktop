@@ -41,7 +41,10 @@ use super::conversation_blobs_path::conversation_blobs_path;
 use super::conversation_size_limits::{
     ConversationGcTarget, ConversationSizeMaintenance, ConversationSizePolicy,
 };
-use super::session_paths::{get_agent_db_path, get_connector_secrets_root};
+use super::session_paths::{
+    get_agent_db_path, get_connector_secrets_root, get_native_conversation_db_path,
+    get_native_conversations_root,
+};
 use super::connector_secret_store::SandConnectorSecretStore;
 use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
 use super::session_store_factories::{
@@ -1172,6 +1175,238 @@ impl ProductionSessionWorkers {
         let db_path = self.existing_session_db_path(agent_id)?;
         mutate_agent_avatar_bytes(&db_path, self.busy_timeout_ms, png_bytes)?;
         self.summarize_agent_by_id(agent_id, active_agent_id)
+    }
+
+
+    fn native_conversation_owner_key(conversation_id: &str) -> String {
+        format!("conversation:{conversation_id}")
+    }
+
+    pub fn create_human_conversation(
+        &self,
+        local_human_id: &str,
+        peer_human_id: &str,
+        title: &str,
+    ) -> Result<serde_json::Value, String> {
+        let local_human_id = local_human_id.trim();
+        let peer_human_id = peer_human_id.trim();
+        let title = title.trim();
+        if local_human_id.is_empty() || peer_human_id.is_empty() {
+            return Err("human conversation requires localHumanId and peerHumanId".into());
+        }
+        if local_human_id == peer_human_id {
+            return Err("human conversation participants must be distinct".into());
+        }
+        let conversation_id = loop {
+            let candidate = Uuid::new_v4().to_string();
+            if !get_native_conversations_root(&self.agents_root)
+                .join(&candidate)
+                .exists()
+            {
+                break candidate;
+            }
+        };
+        let db_path = get_native_conversation_db_path(&self.agents_root, &conversation_id)
+            .map_err(|error| error.to_string())?;
+        let conversation_dir = db_path
+            .parent()
+            .ok_or_else(|| "native conversation database has no parent".to_string())?;
+        fs::create_dir_all(conversation_dir).map_err(|error| error.to_string())?;
+        let owner = Arc::new(
+            SandAgentDb::open(&db_path, self.busy_timeout_ms)
+                .map_err(|error| error.to_string())?,
+        );
+        let display_title = if title.is_empty() { peer_human_id } else { title };
+        for (key, value) in [
+            ("conversationKind", serde_json::json!("human")),
+            ("conversationId", serde_json::json!(conversation_id)),
+            ("title", serde_json::json!(display_title)),
+            (
+                "participantIds",
+                serde_json::json!([local_human_id, peer_human_id]),
+            ),
+        ] {
+            if !owner
+                .set_metadata(key, value)
+                .map_err(|error| error.to_string())?
+            {
+                owner.close(false);
+                let _ = fs::remove_dir_all(conversation_dir);
+                return Err(format!("failed to persist native conversation metadata: {key}"));
+            }
+        }
+        self.db_owners
+            .lock()
+            .map_err(|_| "conversation db owner map poisoned".to_string())?
+            .insert(Self::native_conversation_owner_key(&conversation_id), Arc::clone(&owner));
+        Ok(serde_json::json!({
+            "id": conversation_id,
+            "kind": "human",
+            "title": display_title,
+            "participantIds": [local_human_id, peer_human_id],
+        }))
+    }
+
+    pub fn open_human_conversation_db_owner(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Arc<SandAgentDb>, String> {
+        let db_path = get_native_conversation_db_path(&self.agents_root, conversation_id)
+            .map_err(|error| error.to_string())?;
+        if !db_path.is_file() {
+            return Err(format!("Human conversation missing: {conversation_id}"));
+        }
+        let key = Self::native_conversation_owner_key(conversation_id);
+        let mut owners = self
+            .db_owners
+            .lock()
+            .map_err(|_| "conversation db owner map poisoned".to_string())?;
+        if let Some(owner) = owners.get(&key) {
+            return Ok(Arc::clone(owner));
+        }
+        let owner = Arc::new(
+            SandAgentDb::open(&db_path, self.busy_timeout_ms)
+                .map_err(|error| error.to_string())?,
+        );
+        if owner
+            .get_metadata("conversationKind")
+            .map_err(|error| error.to_string())?
+            .and_then(|value| value.as_str().map(ToOwned::to_owned))
+            .as_deref()
+            != Some("human")
+        {
+            owner.close(false);
+            return Err(format!("Conversation is not a Human conversation: {conversation_id}"));
+        }
+        owners.insert(key, Arc::clone(&owner));
+        Ok(owner)
+    }
+
+    pub fn list_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
+        let root = get_native_conversations_root(&self.agents_root);
+        let entries = match fs::read_dir(&root) {
+            Ok(entries) => entries.filter_map(Result::ok).collect::<Vec<_>>(),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(error) => return Err(error.to_string()),
+        };
+        let mut conversations = Vec::new();
+        for entry in entries {
+            if !entry.file_type().map(|kind| kind.is_dir()).unwrap_or(false) {
+                continue;
+            }
+            let id = entry.file_name().to_string_lossy().into_owned();
+            let Ok(owner) = self.open_human_conversation_db_owner(&id) else {
+                continue;
+            };
+            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+            let title = metadata
+                .get("title")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("Human conversation");
+            let participant_ids = metadata
+                .get("participantIds")
+                .cloned()
+                .unwrap_or_else(|| serde_json::json!([]));
+            conversations.push(serde_json::json!({
+                "id": id,
+                "kind": "human",
+                "title": title,
+                "participantIds": participant_ids,
+            }));
+        }
+        conversations.sort_by(|left, right| {
+            left.get("id")
+                .and_then(serde_json::Value::as_str)
+                .cmp(&right.get("id").and_then(serde_json::Value::as_str))
+        });
+        Ok(conversations)
+    }
+
+    pub fn append_human_message(
+        &self,
+        conversation_id: &str,
+        sender_id: &str,
+        text: &str,
+        client_nonce: &str,
+        composed_at_ms: Option<f64>,
+    ) -> Result<serde_json::Value, String> {
+        let sender_id = sender_id.trim();
+        let text = text.trim();
+        let client_nonce = client_nonce.trim();
+        if sender_id.is_empty() || text.is_empty() || client_nonce.is_empty() {
+            return Err("sendHumanMessage requires senderId, text, and clientNonce".into());
+        }
+        if client_nonce.len() > 512 {
+            return Err("sendHumanMessage clientNonce is too long".into());
+        }
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let is_participant = metadata
+            .get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(sender_id)));
+        if !is_participant {
+            return Err("sendHumanMessage senderId is not a conversation participant".into());
+        }
+        let existing = owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        if let Some(entry) = existing.iter().find(|entry| {
+            entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
+        }) {
+            let same_sender = entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
+            let same_text = entry.get("content").and_then(serde_json::Value::as_str) == Some(text);
+            if same_sender && same_text {
+                return Ok(entry.clone());
+            }
+            return Err("sendHumanMessage clientNonce already identifies different content".into());
+        }
+        let entry = serde_json::json!({
+            "id": format!("human-message:{client_nonce}"),
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": sender_id,
+            "content": text,
+            "clientNonce": client_nonce,
+            "composedAtMs": composed_at_ms,
+            "timestampMs": composed_at_ms.unwrap_or_else(|| {
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_millis() as f64
+            }),
+            "delivery": "sent",
+        });
+        if !owner
+            .append_transcript_entry(&entry)
+            .map_err(|error| error.to_string())?
+        {
+            let replay = owner
+                .get_transcript_entries()
+                .map_err(|error| error.to_string())?
+                .into_iter()
+                .find(|candidate| candidate.get("id") == entry.get("id"));
+            return replay.ok_or_else(|| "native Human message was not durably appended".to_string());
+        }
+        owner
+            .mark_activity(
+                entry
+                    .get("timestampMs")
+                    .and_then(serde_json::Value::as_f64)
+                    .unwrap_or_default(),
+            )
+            .map_err(|error| error.to_string())?;
+        Ok(entry)
+    }
+
+    pub fn read_human_conversation_transcript(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        self.open_human_conversation_db_owner(conversation_id)?
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())
     }
 
     pub fn list_agent_summaries(

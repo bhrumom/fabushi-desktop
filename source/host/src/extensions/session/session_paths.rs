@@ -19,6 +19,7 @@ pub const CONVERSATION_BLOBS_FILENAME: &str = "conversation-blobs.db";
 pub const SAND_CONVERSATION_ROOT_SLOT_ID: &[u8] = b"sand-live-conversation-root-v1__";
 pub const STALE_ROOT_CLEANUP_VERSION: u32 = 1;
 pub const ACTIVE_AGENT_FILENAME: &str = "active-agent.json";
+pub const NATIVE_CONVERSATIONS_DIRNAME: &str = ".conversations";
 pub const HIDDEN_ENTRY_REPAIR_VERSION: u32 = 1;
 pub const LEGACY_GROUP_MEMBERS_DIRNAME: &str = "members";
 pub const CONNECTOR_SECRETS_DIRNAME: &str = "connector-secrets";
@@ -82,6 +83,20 @@ pub fn get_agent_db_path(
 ) -> Result<PathBuf, SandInvalidAgentIdError> {
     assert_valid_sand_agent_id(agent_id)?;
     Ok(root_dir.join(agent_id).join(STORE_FILENAME))
+}
+
+pub fn get_native_conversations_root(root_dir: &Path) -> PathBuf {
+    root_dir.join(NATIVE_CONVERSATIONS_DIRNAME)
+}
+
+pub fn get_native_conversation_db_path(
+    root_dir: &Path,
+    conversation_id: &str,
+) -> Result<PathBuf, SandInvalidAgentIdError> {
+    assert_valid_sand_agent_id(conversation_id)?;
+    Ok(get_native_conversations_root(root_dir)
+        .join(conversation_id)
+        .join(STORE_FILENAME))
 }
 
 pub fn get_connector_secrets_root(agents_root_dir: Option<&Path>) -> PathBuf {
