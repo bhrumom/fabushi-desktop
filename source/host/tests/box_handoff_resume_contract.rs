@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_db::read_persisted_agent_serde_snapshot;
@@ -8,7 +9,10 @@ use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
     BOX_HANDOFF_DISMISSED_PROMPT, BOX_HANDOFF_RESUME_PROMPT, BOX_HANDOFF_VIEWER_CLOSED_PROMPT,
     box_handoff_resume_prompt, build_box_handoff_resume_send_args, settle_box_handoff_state,
 };
-use mahayana_host_runtime::extensions::transcript::production_runtime::classify_send_dispatch;
+use mahayana_host_runtime::extensions::transcript::production_runtime::{
+    ProductionTranscriptRuntime, classify_send_dispatch,
+};
+use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
 use mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -136,4 +140,96 @@ fn production_handoff_settlement_clears_awaiting_and_resolves_matching_box_entry
 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn mcp_and_listener_resume_prompts_match_frozen_hidden_handoff_contract() {
+    use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
+        build_hidden_handoff_resume_send_args, listener_connect_resume_prompt,
+        mcp_auth_resume_prompt,
+    };
+
+    let mcp = mcp_auth_resume_prompt("Calendar (work)");
+    assert_eq!(
+        mcp,
+        "[The \"Calendar (work)\" MCP server finished authorizing — it's connected and its tools are available now. Your first action is a SendMessage telling the user it's connected, then pick up whatever you paused to authorize it. If there was nothing else to do, just confirm it's ready and ask what they'd like to do with it. Remember: nothing reaches the user unless it's inside a SendMessage.]"
+    );
+
+    let slack = listener_connect_resume_prompt("slack");
+    assert!(slack.starts_with("[Slack is now connected"));
+    assert!(slack.contains("/invite @Cursor"));
+    let github = listener_connect_resume_prompt("github");
+    assert!(github.starts_with("[GitHub is now connected"));
+    assert!(!github.contains("/invite @Cursor"));
+
+    let args = build_hidden_handoff_resume_send_args("agent-a", &mcp, "mcp-auth-resume", 42);
+    assert_eq!(args["appendUserMessage"], false);
+    assert_eq!(args["awaitTurn"], false);
+    assert_eq!(args["requestSource"], "handoff-resume");
+    assert_eq!(args["hidden"], true);
+    assert_eq!(args["skipAckObligation"], true);
+    assert_eq!(args["clientNonce"], "mcp-auth-resume:agent-a:42");
+}
+
+#[test]
+fn awaiting_state_sink_preserves_tab_identity_conditional_clear_and_roster_projection() {
+    use mahayana_host_runtime::extensions::transcript::box_handoff_resume::AwaitingStateSink;
+
+    let root = temp_root("awaiting-sink");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let record = sessions
+        .materialize_new_session(None, "user", None)
+        .expect("materialize agent");
+    let transcript = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let sink_events = Arc::clone(&events);
+    let roster = ProductionRosterEmit::new(
+        Arc::clone(&sessions),
+        transcript,
+        Arc::new(move |event| sink_events.lock().expect("events").push(event)),
+    );
+    let sink = AwaitingStateSink::new(sessions.as_ref(), &roster);
+
+    assert!(sink.try_set_for_tab(
+        &record.id,
+        "tab-a",
+        &AwaitingUserResponse {
+            tab_id: "tab-a".into(),
+            reason: "question".into(),
+            since: 100.0,
+        },
+    ));
+    let awaiting = sessions
+        .get_agent_awaiting_user_response(&record.id)
+        .expect("awaiting")
+        .expect("state");
+    assert_eq!(awaiting.tab_id, "tab-a");
+    assert!(!sink.clear_for_tab(&record.id, "tab-b", None));
+    assert!(sessions
+        .get_agent_awaiting_user_response(&record.id)
+        .expect("awaiting")
+        .is_some());
+    assert!(!sink.clear_for_tab(&record.id, "tab-a", Some(50.0)));
+    assert!(sink.clear_for_tab(&record.id, "tab-a", Some(150.0)));
+    assert!(sessions
+        .get_agent_awaiting_user_response(&record.id)
+        .expect("awaiting")
+        .is_none());
+    assert!(!events.lock().expect("events").is_empty());
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_host_wires_box_listener_mcp_resume_and_error_projection() {
+    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    assert!(SHIPPING_HOST.contains("listener_connect_resume_prompt(platform)"));
+    assert!(SHIPPING_HOST.contains("subscribe_to_auth_completion"));
+    assert!(SHIPPING_HOST.contains("resume_after_mcp_auth("));
+    assert!(SHIPPING_HOST.contains("settle_box_handoff_state_with_sink("));
+    assert!(SHIPPING_HOST.contains("source: \"resume\".into()"));
+    assert!(SHIPPING_HOST.contains("LISTENER_CONNECT_RESUME_TITLE"));
+    assert!(SHIPPING_HOST.contains("MCP_AUTH_RESUME_TITLE"));
+    assert!(SHIPPING_HOST.contains("\"channel\": \"forever-box\""));
 }

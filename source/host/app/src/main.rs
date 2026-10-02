@@ -146,7 +146,10 @@ use mahayana_host_runtime::extensions::transcript::send_message_shaping::{
     collect_inbound_images, shape_send_prompt_media_args,
 };
 use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
-    build_box_handoff_resume_send_args, settle_box_handoff_state,
+    LISTENER_CONNECT_RESUME_TITLE, MCP_AUTH_RESUME_TITLE,
+    build_box_handoff_resume_send_args, build_hidden_handoff_resume_send_args,
+    listener_connect_resume_prompt, mcp_auth_resume_prompt,
+    settle_box_handoff_state_with_sink,
 };
 use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::UpgradeResumeMarker;
 use mahayana_host_runtime::extensions::transcript::upgrade_recreate_resume::build_upgrade_resume_prompt;
@@ -2189,17 +2192,65 @@ impl UnifiedGatewayApi {
         }
     }
 
+    fn report_handoff_resume_error(&self, agent_id: &str, title: &str, error: &str) {
+        let classified_error = ProviderSessionError::Tool(error.to_string());
+        let report = AgentErrorReport {
+            source: "resume".into(),
+            conversation_id: agent_id.to_string(),
+            request_id: None,
+            error: classify_agent_error(&classified_error),
+            detail: Some(sand_error_detail(error)),
+        };
+        if let Err(telemetry_error) = self.telemetry_logs.report_agent_error(&report) {
+            eprintln!(
+                "mahayana-host handoff_resume_telemetry_failed agent={} error={telemetry_error}",
+                agent_id
+            );
+        }
+        let mut tray = provider_failure_tray(agent_id, error, started_at_ms() as i64);
+        tray.title = title.to_string();
+        self.trays.push_error(tray);
+    }
+
     fn resume_after_listener_connect(&self, agent_id: &str, platform: &str) -> Result<(), String> {
         let nonce = format!(
             "listener-connect-resume:{agent_id}:{platform}:{}",
             uuid::Uuid::new_v4()
         );
-        self.call(
+        match self.call(
             "sendPrompt",
             listener_connect_resume_args(agent_id, platform, &nonce),
-        )
-        .map(|_| ())
-        .map_err(|error| error.to_string())
+        ) {
+            Ok(_) => Ok(()),
+            Err(error) => {
+                let error = error.to_string();
+                self.report_handoff_resume_error(
+                    agent_id,
+                    LISTENER_CONNECT_RESUME_TITLE,
+                    &error,
+                );
+                Err(error)
+            }
+        }
+    }
+
+    fn resume_after_mcp_auth(
+        &self,
+        agent_id: &str,
+        server_name: &str,
+        account_key: &str,
+    ) -> Result<(), String> {
+        match self.call(
+            "sendPrompt",
+            mcp_auth_resume_args(agent_id, server_name, account_key),
+        ) {
+            Ok(_) => Ok(()),
+            Err(error) => {
+                let error = error.to_string();
+                self.report_handoff_resume_error(agent_id, MCP_AUTH_RESUME_TITLE, &error);
+                Err(error)
+            }
+        }
     }
 
     fn dispatch_production_listener_event(&self, event: serde_json::Value) -> bool {
@@ -3053,20 +3104,33 @@ fn listener_connect_resume_args(
     platform: &str,
     client_nonce: &str,
 ) -> serde_json::Value {
-    let prompt = if platform == "slack" {
-        "Slack is connected. Continue configuring the listener from where you left off. If this routine listens in a Slack channel, make sure the bot is invited to that channel."
+    let prompt = listener_connect_resume_prompt(platform);
+    let mut args = build_hidden_handoff_resume_send_args(
+        agent_id,
+        &prompt,
+        "listener-connect-resume",
+        started_at_ms(),
+    );
+    args["clientNonce"] = serde_json::Value::String(client_nonce.to_string());
+    args
+}
+
+fn mcp_auth_resume_args(
+    agent_id: &str,
+    server_name: &str,
+    account_key: &str,
+) -> serde_json::Value {
+    let display_name = if account_key.trim().is_empty() || account_key == "default" {
+        server_name.to_string()
     } else {
-        "The integration is connected. Continue configuring the listener from where you left off."
+        format!("{server_name} ({account_key})")
     };
-    serde_json::json!({
-        "agentId": agent_id,
-        "prompt": prompt,
-        "clientNonce": client_nonce,
-        "appendUserMessage": false,
-        "hidden": true,
-        "requestSource": "handoff-resume",
-        "awaitTurn": false,
-    })
+    build_hidden_handoff_resume_send_args(
+        agent_id,
+        &mcp_auth_resume_prompt(&display_name),
+        "mcp-auth-resume",
+        started_at_ms(),
+    )
 }
 
 fn automation_fire_completion(
@@ -8352,8 +8416,9 @@ impl GatewayApi for UnifiedGatewayApi {
                 let _ = self
                     .transcript_runtime
                     .resolve_box_request_tracking(&decision.request_id);
-                if let Err(error) = settle_box_handoff_state(
+                if let Err(error) = settle_box_handoff_state_with_sink(
                     &self.session_workers,
+                    &self.roster_emit,
                     agent_id,
                     &decision.request_id,
                     &decision.resolution,
@@ -8368,8 +8433,11 @@ impl GatewayApi for UnifiedGatewayApi {
                     started_at_ms(),
                 );
                 if let Err(error) = self.call("sendPrompt", resume_args) {
-                    eprintln!(
-                        "mahayana-host box_handoff_resume_failed agent={agent_id} error={error}"
+                    let error = error.to_string();
+                    self.report_handoff_resume_error(
+                        agent_id,
+                        "Agent failed to resume after box handoff",
+                        &error,
                     );
                 }
             }
@@ -10465,6 +10533,58 @@ fn main() {
     *cloud_agent_completion_gateway_slot
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) = Arc::downgrade(&gateway_api);
+
+    let mcp_auth_gateway = Arc::downgrade(&gateway_api);
+    let _mcp_auth_unsubscribe = mcp_service.subscribe_to_auth_completion(Arc::new(move |event| {
+        if event
+            .get("outcome")
+            .or_else(|| event.get("status"))
+            .and_then(serde_json::Value::as_str)
+            == Some("cancelled")
+        {
+            return;
+        }
+        let requesting_agent_id = event
+            .get("requestingAgentId")
+            .or_else(|| event.get("requesting_agent_id"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        let server_name = event
+            .get("serverName")
+            .or_else(|| event.get("server_name"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        let account_key = event
+            .get("accountKey")
+            .or_else(|| event.get("account_key"))
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("default");
+        let server_id = event
+            .get("serverId")
+            .or_else(|| event.get("server_id"))
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default();
+        if !server_id.is_empty() {
+            if let Some(gateway) = mcp_auth_gateway.upgrade() {
+                gateway
+                    .mcp_service
+                    .note_auth_completed_elsewhere(server_id, account_key);
+            }
+        }
+        let (Some(agent_id), Some(server_name)) = (requesting_agent_id, server_name) else {
+            return;
+        };
+        let Some(gateway) = mcp_auth_gateway.upgrade() else {
+            return;
+        };
+        if let Err(error) = gateway.resume_after_mcp_auth(agent_id, server_name, account_key) {
+            eprintln!(
+                "mahayana-host mcp_auth_resume_failed agent={agent_id} error={error}"
+            );
+        }
+    }));
 
     // Re-arm every durable background wake through the single frozen
     // PendingWakeRearm state machine. Shell rewatches re-persist their marker
