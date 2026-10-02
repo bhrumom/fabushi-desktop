@@ -165,7 +165,6 @@ pub fn start_production_transcript_extension(
             content_search: Arc::clone(&deps.content_search),
             attachments: Arc::clone(&deps.attachments),
             trays: Arc::clone(&deps.trays),
-            turn_execution: Arc::clone(&deps.turn_execution),
         })
         .expect("Transcript production services must be configured exactly once");
     let events = TranscriptExtensionEventBridge::new(deps.events.clone());

@@ -18,7 +18,6 @@ use crate::extensions::telemetry::host_telemetry_service::{
     HostProductAnalytics, HostTelemetryApi,
 };
 use crate::extensions::trays::extension::HostTraysExtension;
-use crate::extensions::turn_execution::turn_execution_service::TurnExecutionRegistry;
 
 use super::ack_obligations::AckObligations;
 use super::automation_runtime::AutomationRuntime;
@@ -37,7 +36,6 @@ pub struct TranscriptManagerServices {
     pub content_search: Arc<ProductionContentSearchExtension>,
     pub attachments: Arc<AttachmentsService>,
     pub trays: Arc<HostTraysExtension>,
-    pub turn_execution: Arc<Mutex<TurnExecutionRegistry>>,
 }
 
 /// Production composition root for the Grok Transcript extension.

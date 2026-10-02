@@ -1047,7 +1047,6 @@ struct LocalRoutedRunnerDeps {
     auth: Arc<HostAuthExtension>,
     auto_review: Arc<HostAutoReviewExtension>,
     events: GatewayEventHub,
-    transcript_events: TranscriptExtensionEventBridge,
     host_tx: mpsc::Sender<HostLaneRequest>,
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
@@ -6670,7 +6669,7 @@ fn start_routed_provider_task(
                                 started_at_ms(),
                                 &card_tool_call_id,
                             )?;
-                            deps.transcript_events
+                            TranscriptExtensionEventBridge::new(events.clone())
                                 .listener_connect_card(&callback_agent_id, &platform);
                             lifecycle.watch_listener_connection(
                                 callback_agent_id.clone(),
@@ -10249,7 +10248,6 @@ fn main() {
         auth: Arc::clone(&production_extensions.auth),
         auto_review: Arc::clone(&auto_review_extension),
         events: gateway_events.clone(),
-        transcript_events: transcript_events.clone(),
         host_tx: host_tx.clone(),
         data_dir: app_data_dir.clone(),
         request_context: Arc::clone(&runner_request_context),
