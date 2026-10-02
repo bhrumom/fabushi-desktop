@@ -145,3 +145,52 @@ fn shipping_priority_peer_steering_cancels_direct_and_group_member_runners() {
         "priority_registry.preempt_group_member_agent(target_agent_id, reason)"
     ));
 }
+
+
+#[test]
+fn direct_delivery_records_frozen_product_analytics_fields() {
+    let root = temp_root();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let alpha = sessions
+        .materialize_new_session(Some(&profile("Alpha")), "user", None)
+        .expect("alpha");
+    let beta = sessions
+        .materialize_new_session(Some(&profile("Beta")), "user", None)
+        .expect("beta");
+    let events = Arc::new(Mutex::new(Vec::<(String, String, bool)>::new()));
+    let captured = Arc::clone(&events);
+    let service = ProductionAgentToAgentMessaging::new(
+        Arc::clone(&sessions),
+        Arc::new(|_| {}),
+        None,
+    )
+    .with_analytics(Arc::new(move |from, to, priority| {
+        captured
+            .lock()
+            .expect("analytics")
+            .push((from.to_string(), to.to_string(), priority));
+    }));
+
+    service
+        .send_to_agent(&alpha.id, &beta.id, "hello", &[], true)
+        .expect("send");
+    assert_eq!(
+        *events.lock().expect("analytics"),
+        vec![(alpha.id.clone(), beta.id.clone(), true)]
+    );
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_agent_message_analytics_uses_canonical_product_analytics_owner() {
+    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
+    assert!(main.contains(".with_analytics(Arc::new(move |from_agent_id, to_agent_id, is_priority|"));
+    assert!(main.contains("\"sand.agent_message.sent\""));
+    assert!(main.contains("\"from_agent_id\": from_agent_id"));
+    assert!(main.contains("\"to_agent_id\": to_agent_id"));
+    assert!(main.contains("\"is_group_target\": false"));
+    assert!(main.contains("\"is_priority\": is_priority"));
+}

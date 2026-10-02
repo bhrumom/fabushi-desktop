@@ -197,8 +197,8 @@ use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
     QueueWatchdogReport, SendDispatchReport,
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
-    ConnectorAuthGatewayError, HostBundleIdentity, HostStructuredLogTelemetry, HostTelemetryApi,
-    MessageSentReport, McpDiscoveryFailedGatewayError, dispatch_connector_auth_gateway,
+    ConnectorAuthGatewayError, HostBundleIdentity, HostProductAnalytics, HostStructuredLogTelemetry,
+    HostTelemetryApi, MessageSentReport, McpDiscoveryFailedGatewayError, dispatch_connector_auth_gateway,
     dispatch_mcp_discovery_failed_gateway,
 };
 use mahayana_host_runtime::extensions::telemetry::host_lifecycle_progress::{
@@ -966,6 +966,7 @@ struct UnifiedGatewayApi {
     transcript_manager: Arc<TranscriptManager>,
     roster_emit: Arc<ProductionRosterEmit>,
     telemetry_logs: HostStructuredLogTelemetry,
+    product_analytics: HostProductAnalytics,
     telemetry_api: HostTelemetryApi,
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
@@ -1008,6 +1009,7 @@ struct LocalRoutedRunnerDeps {
     session_handoff: BoxHandoffService,
     trays: Arc<HostTraysExtension>,
     telemetry_logs: HostStructuredLogTelemetry,
+    product_analytics: HostProductAnalytics,
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
@@ -1201,6 +1203,7 @@ impl SubagentTaskSink for ProductionSubagentTaskSink {
             self.deps.session_handoff.clone(),
             Arc::clone(&self.deps.trays),
             self.deps.telemetry_logs.clone(),
+            self.deps.product_analytics.clone(),
             self.deps.production_action_auditor.clone(),
             Arc::clone(&self.deps.cloud_agents),
             Arc::clone(&self.deps.cloud_agent_watches),
@@ -2091,6 +2094,7 @@ impl UnifiedGatewayApi {
             session_handoff: self.session_handoff.clone(),
             trays: Arc::clone(&self.trays),
             telemetry_logs: self.telemetry_logs.clone(),
+            product_analytics: self.product_analytics.clone(),
             production_action_auditor: self.production_action_auditor.clone(),
             cloud_agents: Arc::clone(&self.cloud_agents),
             cloud_agent_watches: Arc::clone(&self.cloud_agent_watches),
@@ -2672,6 +2676,7 @@ fn run_local_group_member_turn(
         deps.session_handoff,
         deps.trays,
         deps.telemetry_logs,
+        deps.product_analytics,
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.cloud_agent_watches,
@@ -2845,6 +2850,7 @@ fn start_local_upgrade_resume_turn(
         deps.session_handoff,
         deps.trays,
         deps.telemetry_logs,
+        deps.product_analytics,
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.cloud_agent_watches,
@@ -3018,6 +3024,7 @@ fn run_local_automation_turn(
         deps.session_handoff,
         deps.trays,
         deps.telemetry_logs,
+        deps.product_analytics,
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.cloud_agent_watches,
@@ -3122,6 +3129,7 @@ fn run_local_kickstart_turn(
         deps.session_handoff,
         deps.trays,
         deps.telemetry_logs,
+        deps.product_analytics,
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.cloud_agent_watches,
@@ -3292,6 +3300,7 @@ fn run_local_background_revival_turn(
         deps.session_handoff,
         deps.trays,
         deps.telemetry_logs,
+        deps.product_analytics,
         deps.production_action_auditor,
         deps.cloud_agents,
         deps.cloud_agent_watches,
@@ -3871,6 +3880,7 @@ fn start_routed_provider_task(
     session_handoff: BoxHandoffService,
     trays: Arc<HostTraysExtension>,
     telemetry_logs: HostStructuredLogTelemetry,
+    product_analytics: HostProductAnalytics,
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     cloud_agent_watches: Arc<RunnerCloudAgentWatches>,
@@ -4691,6 +4701,7 @@ fn start_routed_provider_task(
                     session_handoff: session_handoff.clone(),
                     trays: Arc::clone(&trays),
                     telemetry_logs: telemetry_logs.clone(),
+                    product_analytics: product_analytics.clone(),
                     production_action_auditor: production_action_auditor.clone(),
                     cloud_agents: Arc::clone(&cloud_agents),
                     cloud_agent_watches: Arc::clone(&cloud_agent_watches),
@@ -5758,6 +5769,7 @@ fn start_routed_provider_task(
             let agent_wake_events = worker_events.clone();
             let priority_registry = Arc::clone(&worker_registry);
             let priority_runtime = Arc::clone(&worker_transcript_runtime);
+            let agent_message_analytics = product_analytics.clone();
             let agent_messaging = Arc::new(ProductionAgentToAgentMessaging::new(
                 Arc::clone(&worker_sessions),
                 Arc::new(move |request: &AgentWakeRequest| {
@@ -5777,7 +5789,17 @@ fn start_routed_provider_task(
                         priority_registry.preempt_group_member_agent(target_agent_id, reason);
                     direct.saturating_add(group_member)
                 })),
-            ));
+            ).with_analytics(Arc::new(move |from_agent_id, to_agent_id, is_priority| {
+                let _ = agent_message_analytics.track_event(
+                    "sand.agent_message.sent",
+                    &serde_json::json!({
+                        "from_agent_id": from_agent_id,
+                        "to_agent_id": to_agent_id,
+                        "is_group_target": false,
+                        "is_priority": is_priority,
+                    }),
+                );
+            })));
             let turn_agent_messages = Arc::new(Mutex::new(Vec::<String>::new()));
             let agent_management_sink: Arc<dyn AgentManagementSink> = Arc::new(
                 ProductionAgentManagementSink {
@@ -7460,6 +7482,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.session_handoff.clone(),
                 Arc::clone(&self.trays),
                 self.telemetry_logs.clone(),
+                self.product_analytics.clone(),
                 self.production_action_auditor.clone(),
                 Arc::clone(&self.cloud_agents),
                 Arc::clone(&self.cloud_agent_watches),
@@ -7740,6 +7763,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.session_handoff.clone(),
                 Arc::clone(&self.trays),
                 self.telemetry_logs.clone(),
+                self.product_analytics.clone(),
                 self.production_action_auditor.clone(),
                 Arc::clone(&self.cloud_agents),
                 Arc::clone(&self.cloud_agent_watches),
@@ -9042,6 +9066,7 @@ fn main() {
         session_handoff: session_handoff.clone(),
         trays: Arc::clone(&production_extensions.trays),
         telemetry_logs: host_telemetry.logs.clone(),
+        product_analytics: host_telemetry.analytics.clone(),
         production_action_auditor: production_extensions.action_audit.clone(),
         cloud_agents: production_extensions.cloud_agents.service(),
         cloud_agent_watches: Arc::clone(&cloud_agent_watches),
@@ -9231,6 +9256,7 @@ fn main() {
             transcript_manager: Arc::clone(&transcript_manager),
             roster_emit: Arc::clone(&roster_emit),
             telemetry_logs: host_telemetry.logs.clone(),
+            product_analytics: host_telemetry.analytics.clone(),
             telemetry_api: host_telemetry.api(),
             production_action_auditor: production_extensions.action_audit.clone(),
             cloud_agents: production_extensions.cloud_agents.service(),

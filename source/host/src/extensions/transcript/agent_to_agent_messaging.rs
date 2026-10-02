@@ -49,6 +49,8 @@ pub struct AgentWakeRequest {
 
 pub type AgentWakeSink = Arc<dyn Fn(&AgentWakeRequest) + Send + Sync + 'static>;
 pub type PriorityInterruptSink = Arc<dyn Fn(&str, &str) -> usize + Send + Sync + 'static>;
+pub type AgentMessageAnalyticsSink =
+    Arc<dyn Fn(&str, &str, bool) + Send + Sync + 'static>;
 
 pub fn should_interrupt_priority_peer(active_lane: Option<RunLane>) -> bool {
     active_lane != Some(RunLane::User)
@@ -78,11 +80,17 @@ pub struct ProductionAgentToAgentMessaging {
     sessions: Arc<ProductionSessionWorkers>,
     wake_sink: AgentWakeSink,
     priority_interrupt: Option<PriorityInterruptSink>,
+    analytics: Option<AgentMessageAnalyticsSink>,
 }
 
 impl ProductionAgentToAgentMessaging {
     pub fn new(sessions: Arc<ProductionSessionWorkers>, wake_sink: AgentWakeSink, priority_interrupt: Option<PriorityInterruptSink>) -> Self {
-        Self { sessions, wake_sink, priority_interrupt }
+        Self { sessions, wake_sink, priority_interrupt, analytics: None }
+    }
+
+    pub fn with_analytics(mut self, analytics: AgentMessageAnalyticsSink) -> Self {
+        self.analytics = Some(analytics);
+        self
     }
 
     pub fn send_to_agent(&self, from_agent_id: &str, to_agent_id: &str, text: &str, images: &[AgentMessageImage], priority: bool) -> Result<String, String> {
@@ -118,6 +126,9 @@ impl ProductionAgentToAgentMessaging {
             return Ok(if notes.is_empty(){ack}else{format!("{ack} {}",notes.join(" "))});
         }
 
+        if let Some(analytics) = self.analytics.as_ref() {
+            analytics(from_agent_id, to_agent_id, priority);
+        }
         let _=self.sessions.add_agent_conversation_partner(from_agent_id,to_agent_id)?;
         let _=self.sessions.add_agent_conversation_partner(to_agent_id,from_agent_id)?;
         let source_entries=self.sessions.read_agent_transcript_entries(from_agent_id)?;
