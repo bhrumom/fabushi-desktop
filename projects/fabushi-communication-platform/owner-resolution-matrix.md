@@ -2,7 +2,7 @@
 
 Status: active; rows below are source-researched but not necessarily implemented or accepted
 Frozen Telegram source: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
-Canonical architecture snapshot: PR #20 `bbc7b34a5f6dad46e3d4ca88fe21cc4f7932ce09`
+Canonical architecture snapshot: PR #20 `dcb19a94383833fc1ec5074f10c4bbbd28c09036`
 
 This matrix is the executable planning contract required by FBCP P0. A selected owner is not an implementation claim.
 

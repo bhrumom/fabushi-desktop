@@ -2,7 +2,7 @@
 
 Status: researched for reply/quote/forward, edit/delete, reactions, drafts, scheduled/silent send, and send progress; implementation/acceptance remains open
 Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`
-Target architecture snapshot: PR #20 `bbc7b34a5f6dad46e3d4ca88fe21cc4f7932ce09`
+Target architecture snapshot: PR #20 `dcb19a94383833fc1ec5074f10c4bbbd28c09036`
 FBCP work snapshot inspected: `dc6a14e20d1a9a1f9efcc0b4de59542a3a9969b8`
 
 Snapshot refresh note: the exact `556f6308... → c2767eac...` PR #20 delta was inspected; it only moves Agent outline-stream identity/coalescing into shipping `RosterProjection`/`ProductionRosterEmit`, so the owner paths selected in this dossier remain valid at c276.
