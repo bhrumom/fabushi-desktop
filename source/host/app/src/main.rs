@@ -256,9 +256,9 @@ use mahayana_host_runtime::extensions::telemetry::journal_outcome_telemetry::Jou
 use mahayana_host_runtime::extensions::telemetry::sand_error_tags::SandErrorValue;
 use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
 use mahayana_host_runtime::extensions::transcript::turn_runtime::{
-    REPLY_NUDGE_PROMPT, TurnTerminalKind, classify_agent_error, is_delivery_owed,
-    project_turn_terminal, shape_closing_send_nudge_turn_input, shape_reply_nudge_turn_input,
-    should_attempt_reply_nudge,
+    REPLY_NUDGE_PROMPT, TurnTerminalKind, build_turn_empty_delivery_report,
+    classify_agent_error, is_delivery_owed, project_turn_terminal,
+    shape_closing_send_nudge_turn_input, shape_reply_nudge_turn_input, should_attempt_reply_nudge,
 };
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
 use mahayana_host_runtime::extensions::forever_box::{
@@ -7440,12 +7440,16 @@ fn start_routed_provider_task(
                 runner.last_finished().map(|finished| &finished.outcome),
                 Some(mahayana_host_runtime::runner::TerminalOutcome::WaitingUser)
             );
+            let mut reply_nudge_attempts = 0usize;
+            let mut stream_output_produced = result
+                .as_ref()
+                .ok()
+                .is_some_and(|content| !content.is_empty());
             let is_user_turn = !worker_turn_hidden
                 && worker_request_source
                     .as_deref()
                     .is_none_or(|source| source == "turn");
             if is_user_turn {
-                let mut reply_nudge_attempts = 0usize;
                 while should_attempt_reply_nudge(
                     send_message_delivery_counter.count(),
                     reaction_delivery_counter.count() > 0,
@@ -7470,6 +7474,10 @@ fn start_routed_provider_task(
                         nudge_input.options,
                         &mut suppress_hidden_nudge_delta,
                     );
+                    stream_output_produced |= result
+                        .as_ref()
+                        .ok()
+                        .is_some_and(|content| !content.is_empty());
                     waiting_user = matches!(
                         runner.last_finished().map(|finished| &finished.outcome),
                         Some(mahayana_host_runtime::runner::TerminalOutcome::WaitingUser)
@@ -7499,6 +7507,10 @@ fn start_routed_provider_task(
                     nudge_input.options,
                     &mut suppress_hidden_nudge_delta,
                 );
+                stream_output_produced |= result
+                    .as_ref()
+                    .ok()
+                    .is_some_and(|content| !content.is_empty());
                 waiting_user = matches!(
                     runner.last_finished().map(|finished| &finished.outcome),
                     Some(mahayana_host_runtime::runner::TerminalOutcome::WaitingUser)
@@ -7519,6 +7531,36 @@ fn start_routed_provider_task(
                         "mahayana-host closing_send_nudge_telemetry_failed agent={} error={error}",
                         agent_id
                     );
+                }
+            }
+
+            if is_user_turn {
+                let observed_tool_call_count = observation
+                    .lock()
+                    .map(|observation| observation.observed_tool_call_count())
+                    .unwrap_or_default();
+                if let Some(report) = build_turn_empty_delivery_report(
+                    &agent_id,
+                    Some(&worker_stream_id),
+                    worker_request_source.as_deref().or(Some("turn")),
+                    reply_nudge_attempts,
+                    observed_tool_call_count,
+                    stream_output_produced,
+                    started_at_ms().saturating_sub(runner_started_at_ms),
+                    worker_ack_obligations.store().get(&agent_id).is_some(),
+                    send_message_delivery_counter.count(),
+                    reaction_delivery_counter.count() > 0,
+                    waiting_user,
+                    worker_cancellation.is_cancelled(),
+                    result.is_ok(),
+                    turn_epoch,
+                    worker_transcript_runtime.current_turn_epoch(&agent_id),
+                ) {
+                    if let Err(error) = worker_telemetry_logs.report_turn_empty_delivery(&report) {
+                        eprintln!(
+                            "mahayana-host empty_delivery_telemetry_failed agent={agent_id} error={error}"
+                        );
+                    }
                 }
             }
 

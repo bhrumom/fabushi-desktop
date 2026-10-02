@@ -3,7 +3,7 @@ use mahayana_host_runtime::extensions::transcript::send_pipeline::{
 };
 use mahayana_host_runtime::extensions::transcript::turn_runtime::{
     CLOSING_SEND_NUDGE_PROMPT, MAX_REPLY_NUDGES, QueuedTurnRecoveryCheck, REPLY_NUDGE_PROMPT,
-    TurnTerminalKind, is_delivery_owed, project_turn_terminal,
+    TurnTerminalKind, build_turn_empty_delivery_report, is_delivery_owed, project_turn_terminal,
     shape_closing_send_nudge_turn_input, shape_reply_nudge_turn_input,
     should_attempt_reply_nudge, should_supersede_stale_turn,
 };
@@ -224,4 +224,58 @@ fn closing_send_nudge_uses_the_same_hidden_checkpoint_identity_rules() {
     assert_eq!(shaped.options.image_count, 0);
     assert_eq!(shaped.options.video_count, 0);
     assert!(!shaped.options.has_reply_context);
+}
+
+
+#[test]
+fn ordinary_turn_empty_delivery_report_requires_a_settled_same_epoch_delivery_debt() {
+    let report = build_turn_empty_delivery_report(
+        "agent-1",
+        Some("request-1"),
+        Some("turn"),
+        3,
+        4,
+        true,
+        1250,
+        true,
+        0,
+        false,
+        false,
+        false,
+        true,
+        8,
+        8,
+    )
+    .expect("empty delivery report");
+    assert_eq!(report.conversation_id, "agent-1");
+    assert_eq!(report.request_id.as_deref(), Some("request-1"));
+    assert_eq!(report.source, "turn");
+    assert_eq!(report.request_source.as_deref(), Some("turn"));
+    assert_eq!(report.reply_nudge_attempts, Some(3));
+    assert_eq!(report.redrive_attempts, None);
+    assert_eq!(report.tool_call_count, 4);
+    assert!(report.stream_output_produced);
+    assert_eq!(report.duration_ms, 1250.0);
+    assert!(report.ack_outstanding);
+
+    assert!(build_turn_empty_delivery_report(
+        "agent-1", Some("request-1"), Some("turn"), 3, 4, false, 1, false,
+        1, false, false, false, true, 8, 8,
+    ).is_none());
+    assert!(build_turn_empty_delivery_report(
+        "agent-1", Some("request-1"), Some("turn"), 3, 4, false, 1, false,
+        0, true, false, false, true, 8, 8,
+    ).is_none());
+    assert!(build_turn_empty_delivery_report(
+        "agent-1", Some("request-1"), Some("turn"), 3, 4, false, 1, false,
+        0, false, true, false, true, 8, 8,
+    ).is_none());
+    assert!(build_turn_empty_delivery_report(
+        "agent-1", Some("request-1"), Some("turn"), 3, 4, false, 1, false,
+        0, false, false, true, true, 8, 8,
+    ).is_none());
+    assert!(build_turn_empty_delivery_report(
+        "agent-1", Some("request-1"), Some("turn"), 3, 4, false, 1, false,
+        0, false, false, false, true, 8, 9,
+    ).is_none());
 }

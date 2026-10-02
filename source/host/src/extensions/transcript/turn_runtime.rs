@@ -1,5 +1,6 @@
 use crate::extensions::inference::provider_session::{ProviderMessage, ProviderSessionError};
 use crate::extensions::telemetry::sand_error_tags::SandErrorValue;
+use crate::extensions::telemetry::turn_empty_delivery_telemetry::TurnEmptyDeliveryReport;
 use crate::runner::{StreamFailureKind, TransientStreamError, TurnRunOptions};
 use crate::runner::would_recover_via_prepend;
 
@@ -61,6 +62,51 @@ pub fn project_turn_terminal(
         delivered,
         reply_nudge_owed: kind == TurnTerminalKind::Completed && !delivered,
     }
+}
+
+pub fn build_turn_empty_delivery_report(
+    conversation_id: &str,
+    request_id: Option<&str>,
+    request_source: Option<&str>,
+    reply_nudge_attempts: usize,
+    tool_call_count: u64,
+    stream_output_produced: bool,
+    duration_ms: u64,
+    ack_outstanding: bool,
+    sent_message_count: u64,
+    reacted: bool,
+    waiting_user: bool,
+    cancelled: bool,
+    succeeded: bool,
+    turn_epoch: u64,
+    current_epoch: u64,
+) -> Option<TurnEmptyDeliveryReport> {
+    if !succeeded
+        || cancelled
+        || waiting_user
+        || turn_epoch != current_epoch
+        || !is_delivery_owed(sent_message_count, reacted)
+    {
+        return None;
+    }
+    Some(TurnEmptyDeliveryReport {
+        conversation_id: conversation_id.to_string(),
+        request_id: request_id
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned),
+        source: "turn".into(),
+        request_source: request_source
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned),
+        reply_nudge_attempts: Some(reply_nudge_attempts.min(i64::MAX as usize) as i64),
+        redrive_attempts: None,
+        tool_call_count: tool_call_count.min(i64::MAX as u64) as i64,
+        stream_output_produced,
+        duration_ms: duration_ms as f64,
+        ack_outstanding,
+    })
 }
 
 pub fn should_attempt_reply_nudge(
