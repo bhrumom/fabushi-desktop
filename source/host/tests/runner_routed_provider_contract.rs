@@ -17,7 +17,8 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
     RoutedProviderTaskRegistry, RoutedToolBridge, start_routed_mcp_server,
 };
 use mahayana_host_runtime::extensions::transcript::runner_registry::{
-    RUN_WATCHDOG_INTERRUPT_REASON, TranscriptRunnerRegistry,
+    RUN_DIRECT_USER_INTERRUPT_REASON, RUN_WATCHDOG_INTERRUPT_REASON,
+    TranscriptRunnerRegistry,
 };
 use serde_json::{Value, json};
 
@@ -240,6 +241,46 @@ fn transcript_runner_registry_watchdog_interrupts_only_current_direct_and_group_
         registry.finish_routed_provider(stream_id);
     }
     assert_eq!(registry.active_count(), 0);
+}
+
+#[test]
+fn transcript_runner_registry_preempts_only_current_one_to_one_run_for_direct_user_turn() {
+    let tasks = Arc::new(RoutedProviderTaskRegistry::default());
+    let registry = TranscriptRunnerRegistry::new(Arc::clone(&tasks));
+    let stale = registry
+        .register_routed_provider("agent-a", "direct-stale")
+        .expect("stale direct stream");
+    let current = registry
+        .register_routed_provider("agent-a", "direct-current")
+        .expect("current direct stream");
+
+    registry.finish_routed_provider("direct-stale");
+    assert_eq!(
+        registry
+            .current_routed_stream_id_for_agent("agent-a")
+            .as_deref(),
+        Some("direct-current")
+    );
+    assert_eq!(
+        registry.preempt_routed_agent("agent-a", RUN_DIRECT_USER_INTERRUPT_REASON),
+        1
+    );
+    assert!(!stale.is_cancelled());
+    assert!(current.is_cancelled());
+    assert_eq!(
+        current.reason().as_deref(),
+        Some(RUN_DIRECT_USER_INTERRUPT_REASON)
+    );
+    assert_eq!(
+        registry.preempt_routed_agent("missing", RUN_DIRECT_USER_INTERRUPT_REASON),
+        0
+    );
+
+    registry.finish_routed_provider("direct-current");
+    assert_eq!(
+        registry.current_routed_stream_id_for_agent("agent-a"),
+        None
+    );
 }
 
 #[test]
