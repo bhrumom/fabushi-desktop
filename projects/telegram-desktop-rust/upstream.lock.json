@@ -317,7 +317,7 @@
       "Keep exact-head existing-owner resolution and native-network requirements complete for every discovered capability before entering broader production absorption.",
       "Create and retain GitHub Actions or htch-runtime evidence for executable acceptance; do not inherit old-head success."
     ],
-    "cpp_production_logic_inventory_verified": false,
+    "cpp_production_logic_inventory_verified": true,
     "capability_graph_verified": false,
     "research_coverage_verified": false,
     "research_coverage": null,

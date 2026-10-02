@@ -10,7 +10,7 @@ Complete: false
 | Telegram role as research source | specified | no runtime provider |
 | Fixed upstream baseline | recorded | 33261535a0e747f125e0ed25486f01e556330677 |
 | Recursive source closure | partial | root + 35 direct gitlinks + all nested gitlinks including `cppgir`→`expected-lite` verified; tracked generator/packaging roots and external-acquisition entrypoints mapped; immutable external resolution and resource/license closure remain |
-| C++ responsibility inventory | blocked | P0 pending |
+| C++ responsibility inventory | recorded | all 40 frozen `SourceFiles` top-level areas classified by product/state, protocol/security, UI, platform, persistence/media, tooling/test responsibility; third-party/build roots separately classified; implementation remains open |
 | Full capability graph | in-progress | recursive root discovery added missing communities/AI/todo/ringtone/self-destruct/statistics/editor/IV/support/TDE2E domains; behavior dossiers still pending |
 | Current Fabushi owner inventory | recorded | refreshed against exact PR #20 `dcb19a94383833fc1ec5074f10c4bbbd28c09036`; must refresh if PR #20 moves |
 | Capability → existing owner mapping | in-progress | message/history lifecycle now resolves to existing transcript/session/composer/pagination owners; remaining capabilities pending |
