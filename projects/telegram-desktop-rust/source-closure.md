@@ -74,7 +74,7 @@ P0 must still close:
 1. historical immutable build-input evidence only where needed to understand a source-derived behavior/build responsibility, while recording explicit non-adoption for Telegram-only dependencies not used by Fabushi;
 2. dependency/license review for dependencies actually adopted by distributed Fabushi, plus source-informed GPL/third-party review;
 3. copied/derived provenance for any upstream resource/shader/model/source content that a future or current production change actually copies or adapts; the current FBCP branch has no such Telegram resource/shader/model payload;
-4. mixed-license/per-file provenance needed to interpret researched upstream sources where the selected behavior depends on those files; the floating `desktop-app/legal` reference is historically bounded and the pinned fcitx5-qt implementation-source mapping is now captured in `research/mixed-license-per-file-provenance.md`, while hunspell/KDE and broader resource-level mixed-license cases remain open;
+4. mixed-license/per-file provenance needed to interpret researched upstream sources where the selected behavior depends on those files; the floating `desktop-app/legal` reference is historically bounded and the pinned fcitx5-qt, hunspell, kcoreaddons and kimageformats per-file mappings are now captured in `research/mixed-license-per-file-provenance.md` and `research/license-maps/*.tsv`, while broader resource-level mixed-license cases remain open;
 5. behavior-level source-to-responsibility dossiers until no reachable product capability remains unknown.
 
 Until those close, source research coverage must not be reported as 100%.

@@ -58,6 +58,21 @@ The icon trees are separately licensed assets rather than being inferred from so
 
 This closes the previously coarse hime source-vs-Qt-immodule-vs-icon license boundary at the frozen commit. It does not imply that Fabushi ships these icons or Qt modules; current PR #26 adoption evidence still says no Telegram resource tree is distributed.
 
+
+## `hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b`
+
+The exact pinned commit was fetched and verified on htch-runtime; it contains 854 tracked files. Because this tree does not use SPDX identifiers, the exact per-file map is recorded in `research/license-maps/hunspell.tsv` rather than inferring one repository-wide license. The scanner records every tracked path and classifies explicit file-header evidence separately from files with no detected notice.
+
+The core Hunspell/parser/tool implementation is predominantly covered by the literal `MPL 1.1/GPL 2.0/LGPL 2.1` tri-license header: 59 tracked files match that exact header at the frozen commit. `README.md` independently describes Hunspell as licensed under an LGPL/GPL/MPL tri-license. The repository also carries distinct top-level `COPYING`, `COPYING.LESSER`, `COPYING.MPL`, `license.hunspell`, and `license.myspell` texts. Files without an explicit detected file-local notice remain `UNRESOLVED-NO-FILE-NOTICE` in the map; that is an evidence state, not an inferred license.
+
+## `KDE/kcoreaddons@fd84da51b554eac25e35b1e3f373edaab3029b15`
+
+The exact pinned commit was fetched and verified on htch-runtime; it contains 377 tracked files. `research/license-maps/kcoreaddons.tsv` records every tracked path. Exactly 200 files carry explicit SPDX identifiers at this commit. Observed identifiers include `LGPL-2.0-or-later` (104), `LGPL-2.0-only` (45), `LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL` (23), `GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL` (12), `LGPL-2.1-only WITH Qt-LGPL-exception-1.1 OR LicenseRef-Qt-Commercial` (5), `LGPL-2.1-only` (4), `CC0-1.0` (3), plus one each of `MPL-1.1 OR GPL-2.0-or-later OR LGPL-2.1-or-later`, `LGPL-2.0-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL`, `BSD-3-Clause`, and `BSD-2-Clause`. Untagged paths remain explicitly unresolved rather than inheriting a neighboring file's license.
+
+## `KDE/kimageformats@df82311a1081e576c4ac020204578bb8a81b21ec`
+
+The exact pinned commit was fetched and verified on htch-runtime; it contains 375 tracked files. `research/license-maps/kimageformats.tsv` records every tracked path. Exactly 52 files carry explicit SPDX identifiers: 34 `LGPL-2.0-or-later`, 8 `LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL`, 4 `BSD-2-Clause`, 3 `LGPL-2.1-or-later`, 2 `BSD-3-Clause`, and 1 `CC0-1.0`. Product-relevant format implementations demonstrate the mixed boundary directly: `avif.cpp/.h` and `jxl.cpp/.h` are BSD-2-Clause, while `heif.cpp/.h` and most legacy format handlers are LGPL-2.0-or-later. Untagged metadata/build paths remain explicit unresolved rows.
+
 ## Current closure boundary
 
-For the frozen fcitx5-qt commit, implementation-source licensing is now mapped by explicit file evidence rather than only by the two files present in `LICENSES/`. The remaining P0 mixed-license work is narrower but not closed globally: other mixed-license gitlinks (`hunspell`, `kcoreaddons`, `kimageformats`, and any later source-derived dependency) still require exact-file mapping where behavior research depends on them, and Telegram resources/fonts/icons/themes/sounds still require their own source/license provenance.
+For the frozen fcitx5-qt commit, implementation-source licensing is now mapped by explicit file evidence rather than only by the two files present in `LICENSES/`. The remaining P0 mixed-license work is narrower but not closed globally: any later source-derived mixed-license dependency still requires the same exact-file treatment where behavior research depends on it, and Telegram resources/fonts/icons/themes/sounds still require their own source/license provenance.

@@ -1,0 +1,141 @@
+path	classification	evidence
+.git-blame-ignore-revs	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+.gitignore	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+.gitlab-ci.yml	CC0-1.0	file SPDX-License-Identifier
+.kde-ci.yml	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+CMakeLists.txt	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+KF5CoreAddonsConfig.cmake.in	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+KF5CoreAddonsMacros.cmake	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+LICENSES/BSD-2-Clause.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/BSD-3-Clause.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/CC0-1.0.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/GPL-2.0-only.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/GPL-2.0-or-later.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/GPL-3.0-only.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LGPL-2.0-only.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LGPL-2.0-or-later.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LGPL-2.1-only.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LGPL-2.1-or-later.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LGPL-3.0-only.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LicenseRef-KDE-Accepted-GPL.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LicenseRef-KDE-Accepted-LGPL.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/LicenseRef-Qt-Commercial.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/MPL-1.1.txt	LICENSE-TEXT	repository LICENSES text
+LICENSES/Qt-LGPL-exception-1.1.txt	LICENSE-TEXT	repository LICENSES text
+README.md	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/CMakeLists.txt	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/ConfigureChecks.cmake	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/alwaysunloadplugin.cpp	GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL	file SPDX-License-Identifier
+autotests/alwaysunloadplugin.h	GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL	file SPDX-License-Identifier
+autotests/config-tests.h.in	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/appui1rc	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/appuirc	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/fakeplugin.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/foo1rc	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/foorc	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/hiddenplugin.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/os-release	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/servicetypes/bad-groups-input.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/servicetypes/bad-groups-servicetype.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/servicetypes/bool-servicetype.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/servicetypes/example-input.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/servicetypes/example-servicetype.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/servicetypes/fake-kdedmodule.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/servicetypes/fake-kdevelopplugin.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/servicetypes/invalid-missing-servicetype.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/testmetadata.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/data/twostepsparsetest.desktop	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/desktoptojsontest.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/jsonplugin.cpp	GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL	file SPDX-License-Identifier
+autotests/jsonplugin.h	GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL	file SPDX-License-Identifier
+autotests/jsonplugin.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/jsonplugin2.cpp	GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL	file SPDX-License-Identifier
+autotests/jsonplugin2.h	GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL	file SPDX-License-Identifier
+autotests/jsonplugin2.json	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/kaboutdataapplicationdatatest.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kaboutdatatest.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kautosavefiletest.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kautosavefiletest.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kcompositejobtest.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kcompositejobtest.h	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kdelibs4configmigratortest.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kdelibs4migrationtest.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kdirwatch_benchmarktest.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kdirwatch_test_utils.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kdirwatch_unittest.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kfileutilstest.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kfileutilstest.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kformattest.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kformattest.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kfuzzymatchertest.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kfuzzymatchertest.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kjobtest.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kjobtest.h	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/klibexectest.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/klistopenfilesjobtest_unix.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/klistopenfilesjobtest_unix.h	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/klistopenfilesjobtest_win.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/klistopenfilesjobtest_win.h	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kmacroexpandertest.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kmemoryinfotest.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kmemoryinfotest.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/knetworkmountstestcanonical.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/knetworkmountstestcanonical.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/knetworkmountstestnoconfig.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/knetworkmountstestnoconfig.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/knetworkmountstestpaths.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/knetworkmountstestpaths.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/knetworkmountsteststatic.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/knetworkmountsteststatic.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kosreleasetest.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/kpluginclass.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/kpluginfactorytest.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/kpluginloadertest.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/kpluginmetadatatest.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/kprocesslisttest.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kprocesslisttest.h	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kprocesstest.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kprocesstest_helper.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kprocesstest_helper.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/krandomtest.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kruntimeplatformtest.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kshareddatacachetest.cpp	LGPL-2.0-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/kshelltest.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/kstringhandlertest.cpp	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/kstringhandlertest.h	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+autotests/ktexttohtmlbenchmarktest.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/ktexttohtmltest.cpp	LGPL-2.0-only	file SPDX-License-Identifier
+autotests/ktexttohtmltest.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kurlmimedatatest.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kurlmimedatatest.h	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/kusertest.cpp	LGPL-2.0-or-later	file SPDX-License-Identifier
+autotests/multiplugin.cpp	GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL	file SPDX-License-Identifier
+autotests/multiplugin.h	GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL	file SPDX-License-Identifier
+autotests/pluginwithoutmetadata.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/qtplugin.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/statickpluginclass.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/statickpluginclass_2.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/staticpluginwithoutmetadata.cpp	LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL	file SPDX-License-Identifier
+autotests/unversionedplugin.cpp	GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL	file SPDX-License-Identifier
+autotests/unversionedplugin.h	GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL	file SPDX-License-Identifier
+autotests/versionedplugin.cpp	GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL	file SPDX-License-Identifier
+autotests/versionedplugin.h	GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL	file SPDX-License-Identifier
+cmake/FindFAM.cmake	BSD-3-Clause	file SPDX-License-Identifier
+cmake/FindProcstat.cmake	BSD-2-Clause	file SPDX-License-Identifier
+docs/Doxyfile.local	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+metainfo.yaml	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/af/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/ar/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/as/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/ast/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/az/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/be/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/be@latin/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/bg/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/bn/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/bn_IN/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/br/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/bs/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/ca/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identifier in file
+poqm/ca@valencia/kcoreaddons5_qt.po	UNRESOLVED-NO-SPDX	no SPDX-License-Identi
+...[truncated 19567 chars]

@@ -1,0 +1,136 @@
+path	classification	evidence
+.clang-format	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+.gitignore	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+.travis.yml	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+ABOUT-NLS	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+AUTHORS	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+COPYING	GPL-2.0-license-text	top-level license text
+COPYING.LESSER	LGPL-2.1-license-text	top-level license text
+COPYING.MPL	MPL-1.1-license-text	top-level license text
+ChangeLog	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+ChangeLog.O	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+Makefile.am	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+NEWS	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+README	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+README.md	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+RELEASING.md	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+THANKS	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+appveyor.yml	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+config.rpath	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+configure.ac	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+hunspell.pc.in	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+license.hunspell	MPL-1.1 OR GPL-2.0-or-later OR LGPL-2.1-or-later	file header tri-license
+license.myspell	MySpell-license-text	top-level license text
+m4/ChangeLog	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+m4/README	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+m4/ax_cxx_compile_stdcxx.m4	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+m4/ax_cxx_compile_stdcxx_11.m4	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+m4/gettext.m4	GPL-NOTICE	file-local notice
+m4/iconv.m4	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+m4/lib-ld.m4	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+m4/lib-link.m4	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+m4/lib-prefix.m4	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+m4/nls.m4	GPL-NOTICE	file-local notice
+m4/po.m4	GPL-NOTICE	file-local notice
+m4/progtest.m4	GPL-NOTICE	file-local notice
+m4/visibility.m4	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+man/Makefile.am	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+man/hu/Makefile.am	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+man/hu/hunspell.1	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+man/hu/hunspell.5	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+man/hunspell.1	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+man/hunspell.3	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+man/hunspell.5	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+man/hunzip.1	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+man/hzip.1	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+msvc/.gitignore	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+msvc/Hunspell.rc	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+msvc/Hunspell.sln	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+msvc/config.h	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+msvc/hunspell.vcxproj	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+msvc/libhunspell.vcxproj	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+msvc/testparser.vcxproj	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+oss-fuzz-build.sh	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/.gitignore	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ChangeLog	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/LINGUAS	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/Makefile.in.in	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/Makevars	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/POTFILES.in	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/Rules-quot	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/an.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ar.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ast.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/az.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/be.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/bg.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/boldquot.sed	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/br.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ca.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ckb.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/co.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/cs.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/da.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/de.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/de_CH.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/el.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/en@boldquot.header	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/en@quot.header	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/eo.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/es.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/et.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/eu.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/fa.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/fi.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/fr.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/fur.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/fy.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/gl.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/he.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/hi.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/hr.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ht.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/hu.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/hunspell.pot	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/hy.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/id.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ie.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ilo.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/insert-header.sin	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/is.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/it.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ka.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/kab.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/kk.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/kn.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ko.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ky.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ln.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/lt.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/lv.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/mk.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/mn.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/my.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/nb_NO.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/nl.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/nl_BE.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/oc.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/pa.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/pl.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/pt.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/pt_BR.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/pt_PT.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/quot.sed	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/remove-potcdate.sin	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ro.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ru.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/si.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/sk.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/sl.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/sq.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/stamp-po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/sv.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/ta.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/tg.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90 lines
+po/tok.po	UNRESOLVED-NO-FILE-NOTICE	no explicit license notice detected in first 90
+...[truncated 72879 chars]
