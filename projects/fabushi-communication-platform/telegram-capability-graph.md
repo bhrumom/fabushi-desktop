@@ -2,16 +2,16 @@
 
 Status: discovery pass; recursive closure and behavior research incomplete  
 Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`  
-Target owner snapshot: PR #20 `556f6308c35055321395e2cf5f3446486b519255`
+Target owner snapshot: PR #20 `c2767eac1383fd8db7be9b536e5acaf4a4d2b7f0`
 
 This graph records product capability domains observed in the frozen Telegram Desktop source tree. It is intentionally not marked research-complete: the recursive submodule/download/generated/resource closure is still open, so P0 cannot yet claim that no unknown capability domain remains.
 
 | Capability domain | Representative frozen source regions | Initial Fabushi owner candidates |
 | --- | --- | --- |
-| startup / app lifecycle | `SourceFiles/main*`, `core`, `window`, `platform` | existing product shell + Electron/platform lifecycle |
-| account / auth / sessions / multi-account | `intro`, `api/api_authorizations.*`, `data/data_authorization.h`, `storage/storage_account.*` | existing account/auth/session owners; native Human identity contract still unresolved |
-| contacts / identity / presence | `data/data_peer*`, `api/api_peer_search.*`, participant/status code | Shared Room/member + account identity + minimal presence infrastructure if required |
-| dialog list / folders / archive / pinning | `dialogs/*`, `data/data_chat_filters.*`, `data/data_folder.*`, `storage/storage_folder_archive.*` | existing sidebar / conversation list |
+| startup / app lifecycle | `main.cpp`, `main/main_domain.cpp`, `core`, `window`, `platform`; dossier `research/foundations-lifecycle-identity-dialogs.md` | owner-resolved as `APP-LIFECYCLE` → existing Electron main/platform lifecycle; native communication resume remains blocker |
+| account / auth / sessions / multi-account | `main/main_account.cpp`, `main/main_domain.cpp`, `api/api_authorizations.cpp`, storage/intro; foundation dossier | owner-resolved as `ACCOUNT-AUTH-MULTI` → existing Electron account/auth + Host Session; local Human identity exists, native multi-device session/revocation remains blocker |
+| contacts / identity / presence | `data/data_lastseen_status.h`, `data/data_peer_values.cpp`, peer/member/search areas; foundation dossier | owner-resolved as `CONTACT-ID-PRESENCE` → Human identity/account + Shared Room/member, with minimal ephemeral presence infra; no dedicated current presence owner |
+| dialog list / folders / archive / pinning | `dialogs/dialogs_main_list.cpp`, `data/data_chat_filters.cpp`, `data/data_folder.cpp`; foundation dossier | owner-resolved as `DIALOG-FOLDER-ARCHIVE` → existing sidebar/conversation-list owner; Agent-only schema generalization + native list sync remain blockers |
 | private messaging / history | `history/*`, `data/data_messages.*`, `data/data_history_messages.*`, `api/api_sending.*`, `api/api_updates.*` | researched in `projects/telegram-desktop-rust/research/message-history-lifecycle.md` and `message-settlement-and-history-gap.md`; owner resolution split into `MSG-SEND-SETTLEMENT` and `MSG-HISTORY-ORDER-GAP`; existing Session/Transcript + Composer/pagination remain product owners, with minimal native transport/sync below |
 | reply / quote / forward provenance | `history/history_item*`, `data/data_reply_preview.*`, replies/thread structures | researched in `projects/telegram-desktop-rust/research/message-relations-and-settlement.md`; existing transcript relation/provenance owner selected |
 | edit / delete lifecycle | `api/api_editing.*`, history/data message state | researched in `projects/telegram-desktop-rust/research/message-relations-and-settlement.md`; existing transcript/message lifecycle selected |
@@ -108,3 +108,8 @@ Until those are closed, `research_inventory_status` remains partial and P0 remai
 ## P0 behavior-resolution checkpoint — 2026-10-02
 
 The message/history cluster now has behavior dossiers and explicit owner-resolution rows for send settlement, ordered history/gap recovery, reply/quote/forward, edit/delete, reactions, drafts, scheduled/silent send, and transient send progress. This is research/ownership closure for those rows only. It does not close the global capability graph, recursive source closure, native transport/sync implementation, PR #20 strict parity, CI, or packaged acceptance.
+
+
+## Foundation owner-resolution checkpoint — 2026-10-02
+
+`APP-LIFECYCLE`, `ACCOUNT-AUTH-MULTI`, `CONTACT-ID-PRESENCE`, and `DIALOG-FOLDER-ARCHIVE` now have fixed-upstream behavior evidence, plausible-owner analysis, selected existing owners, exact c276 owner paths, persistence/native-network requirements and blockers in the owner-resolution matrix and foundation dossier. This closes ownership research for those rows only; it does not satisfy global P0 because many capability domains and recursive source/provenance leaves remain unresolved.

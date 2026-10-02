@@ -1,9 +1,11 @@
 # Telegram send settlement and history-gap research dossier
 
-Status: researched and owner-resolved for Fabushi send/receive settlement and ordered history-gap recovery; implementation/acceptance remains open  
-Frozen upstream: telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677  
-Target architecture snapshot: PR #20 556f6308c35055321395e2cf5f3446486b519255  
+Status: researched and owner-resolved for Fabushi send/receive settlement and ordered history-gap recovery; implementation/acceptance remains open
+Frozen upstream: telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677
+Target architecture snapshot: PR #20 c2767eac1383fd8db7be9b536e5acaf4a4d2b7f0
 FBCP source snapshot inspected: PR #26 parent fc2c49a6ca4501444c4ba239f9788d35e46138e1
+
+Snapshot refresh note: the exact `556f6308... → c2767eac...` PR #20 delta was inspected; it only moves Agent outline-stream identity/coalescing into shipping `RosterProjection`/`ProductionRosterEmit`, so the owner paths selected in this dossier remain valid at c276.
 
 This dossier narrows the first message/history research into two executable P0 contracts: one logical outgoing message must survive transport settlement without duplication, and one ordered conversation history must recover gaps without creating a second history owner. Telegram identifiers and MTProto state are evidence only; Fabushi keeps its own identity, protocol, network, and product model.
 

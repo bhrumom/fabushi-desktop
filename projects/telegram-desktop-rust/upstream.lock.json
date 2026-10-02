@@ -2,7 +2,7 @@
   "format_version": 2,
   "project_id": "TDRP-001",
   "recorded_on": "2026-10-02",
-  "status": "root-direct-gitlinks-and-github-recursive-gitlinks-frozen-external-gitlab-leaf-pending",
+  "status": "root-direct-gitlinks-and-github-recursive-gitlinks-frozen-cppgir-commit-verified-leaf-pagination-pending",
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
@@ -336,7 +336,7 @@
         "path": "external/glib/cppgir",
         "url": "https://gitlab.com/mnauw/cppgir.git",
         "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
-        "verification": "pending-external-gitlab-tree"
+        "verification": "commit-verified-recursive-tree-endpoint-reachable-pagination-pending"
       },
       {
         "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",

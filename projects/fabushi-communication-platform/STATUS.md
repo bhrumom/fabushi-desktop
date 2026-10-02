@@ -10,7 +10,7 @@ Complete: false
 | Telegram as research source only | specified | no Telegram Provider/network dependency |
 | Existing-owner-first absorption | specified | new owners require ADR |
 | Native Fabushi network | specified | protocol/services not yet designed |
-| Exact existing-owner inventory | recorded | refreshed against PR #20 `556f6308c35055321395e2cf5f3446486b519255`; refresh on head change |
+| Exact existing-owner inventory | recorded | refreshed against PR #20 `c2767eac1383fd8db7be9b536e5acaf4a4d2b7f0`; refresh on head change |
 | Telegram capability graph | in-progress | top-level discovery pass recorded; recursive source closure and behavior research incomplete |
 | Capability → owner mapping | in-progress | formal matrix now covers message/history, relations, edit/delete, reactions, drafts, scheduled/silent send, progress, groups/members, channels, topics, search and file transfer; remaining capabilities still pending |
 | Conversation/message model evolution | partial | Human private conversation and Human/Agent transcript projection are production-wired for the first slice; broader capability mapping remains P0-open |

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
@@ -12,7 +11,7 @@ use crate::extensions::session::production::ProductionSessionWorkers;
 use super::production_runtime::ProductionTranscriptRuntime;
 use super::replica_writer::ReplicaStamp;
 use super::roster_projection::{
-    OutlineQueueResult, OutlineStreamCoalescingPolicy, OutlineUpdate,
+    OutlineQueueResult, OutlineStreamCoalescingPolicy, OutlineUpdate, RosterProjection,
 };
 
 pub const ROSTER_REPLICA_KEY: &str = "roster";
@@ -47,9 +46,7 @@ impl OutlineStreamScheduler {
         let worker_started_at = started_at.clone();
         let worker = thread::Builder::new()
             .name("fabushi-outline-coalescer".to_string())
-            .spawn(move || {
-                run_outline_stream_worker(worker_started_at, worker_shared, worker_sink)
-            })
+            .spawn(move || run_outline_stream_worker(worker_started_at, worker_shared, worker_sink))
             .expect("outline stream coalescing worker must start");
         Self {
             started_at,
@@ -114,7 +111,10 @@ impl OutlineStreamScheduler {
             let mut state = state
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            state.policy.as_mut().and_then(|policy| policy.flush(now_ms))
+            state
+                .policy
+                .as_mut()
+                .and_then(|policy| policy.flush(now_ms))
         };
         wake.notify_all();
         if let Some(update) = update {
@@ -212,10 +212,7 @@ fn run_outline_stream_worker(
 }
 
 fn monotonic_ms(started_at: &Instant) -> u64 {
-    started_at
-        .elapsed()
-        .as_millis()
-        .min(u128::from(u64::MAX)) as u64
+    started_at.elapsed().as_millis().min(u128::from(u64::MAX)) as u64
 }
 
 fn emit_outline_update(event_sink: &RosterEventSink, update: OutlineUpdate<Value>) {
@@ -241,7 +238,7 @@ pub struct ProductionRosterEmit {
     event_sink: RosterEventSink,
     timeline_wake_sink: Mutex<Option<TimelineWakeSink>>,
     outline_stream: OutlineStreamScheduler,
-    outline_stream_items: Mutex<HashMap<String, String>>,
+    projection: Mutex<RosterProjection<Value>>,
     state: Mutex<RosterEmitState>,
 }
 
@@ -258,7 +255,7 @@ impl ProductionRosterEmit {
             event_sink,
             timeline_wake_sink: Mutex::new(None),
             outline_stream,
-            outline_stream_items: Mutex::new(HashMap::new()),
+            projection: Mutex::new(RosterProjection::default()),
             state: Mutex::new(RosterEmitState::default()),
         }
     }
@@ -382,20 +379,11 @@ impl ProductionRosterEmit {
         if agent_id.trim().is_empty() || stream_id.trim().is_empty() || accumulated.is_empty() {
             return;
         }
-        let (item_id, is_first) = {
-            let mut items = self
-                .outline_stream_items
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            match items.get(stream_id) {
-                Some(item_id) => (item_id.clone(), false),
-                None => {
-                    let item_id = uuid::Uuid::new_v4().to_string();
-                    items.insert(stream_id.to_string(), item_id.clone());
-                    (item_id, true)
-                }
-            }
-        };
+        let (item_id, is_first) = self
+            .projection
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .stream_outline_item_id_or_insert_with(stream_id, || uuid::Uuid::new_v4().to_string());
         let item = json!({
             "kind": "assistant-text",
             "id": item_id,
@@ -417,11 +405,11 @@ impl ProductionRosterEmit {
 
     pub fn finish_runner_outline_stream(&self, stream_id: &str) {
         let removed = self
-            .outline_stream_items
+            .projection
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .remove(stream_id);
-        if removed.is_some() {
+            .finish_outline_stream(stream_id);
+        if removed {
             self.outline_stream.flush();
         }
     }
@@ -432,10 +420,10 @@ impl ProductionRosterEmit {
 
     pub fn stop_outline_stream_coalescing(&self) {
         self.outline_stream.stop();
-        self.outline_stream_items
+        self.projection
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .clear();
+            .clear_outline_streams();
     }
 
     pub fn has_pending_outline_stream_update(&self) -> bool {

@@ -16,11 +16,11 @@ Thirty-two direct gitlinks contain no nested gitlinks. Three contain one nested 
 
 | Parent | Nested path | Pinned commit | Result |
 | --- | --- | --- | --- |
-| `desktop-app/cmake_helpers@7a6abdae…` | `external/glib/cppgir` | `47cf94f83b54cda59018135601e19d7fb0c77776` | URL resolves to GitLab; commit-specific recursive tree still pending |
+| `desktop-app/cmake_helpers@7a6abdae…` | `external/glib/cppgir` | `47cf94f83b54cda59018135601e19d7fb0c77776` | exact GitLab commit verified; recursive-tree endpoint reachable; paginated leaf/nested-gitlink evidence still pending |
 | `PJK/libcbor@170bee2b…` | `doxygen-theme` | `46111c61a9f49b7a9886127e679d4317478fab1c` | recursive tree verified, `truncated=false`, no further gitlinks |
 | `ericniebler/range-v3@a8147793…` | `doc/gh-pages` | `2dae74bb693e42d850fb0adcc9045c5b71fbdeae` | recursive tree verified, `truncated=false`, no further gitlinks |
 
-The `cppgir` parent `.gitmodules` pins its URL to `https://gitlab.com/mnauw/cppgir.git`. The available GitHub connector cannot prove that GitLab commit tree and the web fetch did not expose the commit-specific raw `.gitmodules`. Therefore recursive submodule closure remains **not complete** rather than being inferred from the current default branch.
+The `cppgir` parent `.gitmodules` pins its URL to `https://gitlab.com/mnauw/cppgir.git`. The pinned GitLab commit `47cf94f83b54cda59018135601e19d7fb0c77776` was independently resolved on 2026-10-02 (commit title `tools: use buffered content rather than temporary file`), and the GitLab recursive-tree API endpoint for that exact ref is reachable. However, full paginated leaf enumeration plus nested-submodule inspection was not captured into repository evidence, and direct retrieval from htch-runtime timed out. Therefore recursive submodule closure remains **not complete**; it is not inferred from the default branch or from commit existence alone.
 
 ## Newly exposed capability domains
 
@@ -40,6 +40,20 @@ The recursive frozen root and `Telegram/CMakeLists.txt` exposed additional reach
 - TDE2E security/protocol behavior.
 
 These are capability inputs only. They do not authorize Telegram-prefixed product owners.
+
+## Build/resource closure checkpoint
+
+The frozen root already proves these non-product-code inputs are reachable and therefore cannot be omitted from provenance closure:
+
+| Area | Frozen evidence / responsibility | Current closure |
+| --- | --- | --- |
+| generators/codegen | `Telegram/codegen`, MTProto/scheme and language-generation references in CMake | source roots identified; generated-output-to-input map still incomplete |
+| resources/assets | `Telegram/Resources` themes, language bundles, emoji, export templates, webview/picker HTML, sounds and updater/platform assets | resource roots identified; copied/derived asset and per-license review still incomplete |
+| shaders | `Telegram/shaders` | root identified; shader build inputs/outputs and license provenance still incomplete |
+| build/packaging | `Telegram/build`, `Telegram/cmake`, root `cmake`, `snap`, platform-specific packaging/update inputs | roots identified; build-time downloads and complete platform matrix still incomplete |
+| native third parties | direct gitlinks including `tgcalls`, `lib_webrtc`, `lib_webview`, FIDO2 and media/storage libraries | GitHub direct trees recursively checked; external cppgir leaf remains partial |
+
+No item in this table is an instruction to ship Telegram dependencies. It is source/provenance research required before declaring capability/source coverage complete.
 
 ## Build/resource closure still open
 

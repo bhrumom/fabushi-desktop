@@ -16034,18 +16034,21 @@
       "targetPath": "source/host/src/extensions/transcript/roster_projection.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "a4d7278bde1c246d9fcdee63f62b437538acb5a2",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/transcript/roster_projection.rs"
+        "source/host/src/extensions/transcript/roster_projection.rs",
+        "source/host/src/extensions/transcript/roster_emit.rs"
       ],
       "testEvidence": [
         "source/host/tests/remaining_planned_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/roster_emit_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Mahayana Host now has a concrete owner for the frozen module's deterministic policy/state boundary and focused contract evidence. This row is intentionally non-final until the shipping Host/Transcript/Telemetry composition consumes the owner end-to-end with the generated/external adapters required by the frozen Grok graph."
+      "notes": "Rust Mahayana Host owns the frozen roster-projection stream state and 250ms outline coalescing boundary. Shipping ProductionRosterEmit now consumes RosterProjection for stream-to-outline item identity, preserving the same item across deltas, flushing the pending update when a stream ends, and clearing stream identity on stop; roster/profile/search/ordered-emission responsibilities continue through their canonical Rust owners rather than a second projection runtime."
     },
     {
       "referencePath": "source/host/extensions/transcript/roster-search.ts",

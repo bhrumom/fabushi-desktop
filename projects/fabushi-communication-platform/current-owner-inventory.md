@@ -1,10 +1,10 @@
 # FBCP P0 — Exact-HEAD Current Owner Inventory
 
-Status: evidence snapshot; P0 not yet passed  
-Project: FBCP-001 Revision 2  
-Captured: 2026-10-02  
-Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`  
-PR #20 input: `556f6308c35055321395e2cf5f3446486b519255`  
+Status: evidence snapshot; P0 not yet passed
+Project: FBCP-001 Revision 2
+Captured: 2026-10-02
+Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`
+PR #20 input: `c2767eac1383fd8db7be9b536e5acaf4a4d2b7f0`
 PR state at capture: open, draft, base `main`, head `refactor/grok-018-architecture-rebuild`
 
 This file records the current production owners that FBCP must absorb into. It is not an implementation-complete claim. Any later PR #20 HEAD invalidates the source conclusions below until this inventory is refreshed.
@@ -21,6 +21,7 @@ Refresh through `556f6308...` revalidated the live PR #20 production ownership. 
 | --- | --- | --- | --- |
 | Product shell | React production renderer | `frontend/src/main.tsx`; `frontend/src/production/bootstrap.tsx`; `frontend/src/production/ProductionRenderer.tsx` | Extend this shell; do not add a Telegram shell. |
 | Sidebar / navigation | Existing conversation sidebar, currently Agent-shaped | `frontend/src/recovered/features/conversation/workspace/sidebar.tsx`; `frontend/src/production/sidebar-model.ts`; composition in `ProductionRenderer.tsx` | Evolve row model from Agent-only semantics to Human/Agent/Group/Channel/Topic without a second sidebar. |
+| Agent roster / outline projection | Host Transcript `RosterProjection` consumed by shipping `ProductionRosterEmit` | `source/host/src/extensions/transcript/roster_projection.rs`; `source/host/src/extensions/transcript/roster_emit.rs`; focused evidence in `source/host/tests/roster_emit_contract.rs` | This remains the Agent roster/outline projection owner. It is reusable evidence for projection/coalescing behavior but is not a canonical Human contacts/presence owner. |
 | Conversation workspace | Existing conversation workspace mounted by `ProductionRenderer` | `frontend/src/production/ProductionRenderer.tsx`; `frontend/src/recovered/features/conversation/workspace/*` | Human conversations must enter this workspace. |
 | Transcript / cards | Existing typed transcript entry union + card resolver + strengthened Host transcript extension/production runtime at current PR #20 | `frontend/src/recovered/features/conversation/workspace/model.ts`; `frontend/src/recovered/features/conversation/workspace/transcript.tsx`; `frontend/src/recovered/features/conversation/cards/transcript-card/*`; `source/host/src/extensions/transcript/extension.rs` | Add Human-message semantics to this transcript; preserve tool/thinking/permission/task typed entries. |
 | Composer / drafts | Existing composer, client-persisted drafts, submission queue | `frontend/src/recovered/features/conversation/workspace/composer.tsx`; `draft-state.ts`; `submission.ts`; `ProductionRenderer.tsx` | Generalize send intent; current shipping submit path is still Agent `sendPrompt`. |
@@ -78,4 +79,4 @@ The existing channel connector path models outside platforms and delivery addres
 
 ## Refresh rule
 
-Before using this inventory for implementation, compare the live PR #20 head to `556f6308c35055321395e2cf5f3446486b519255`. If it changed, re-run the source inspection and replace stale owner evidence before coding.
+Before using this inventory for implementation, compare the live PR #20 head to `c2767eac1383fd8db7be9b536e5acaf4a4d2b7f0`. If it changed, re-run the source inspection and replace stale owner evidence before coding.

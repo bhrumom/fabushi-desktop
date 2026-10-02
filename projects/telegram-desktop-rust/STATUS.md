@@ -12,7 +12,7 @@ Complete: false
 | Recursive source closure | in-progress | root + 35 direct gitlinks + GitHub nested recursion verified; external `cppgir@47cf94f…` leaf and build/generated/license closure remain |
 | C++ responsibility inventory | blocked | P0 pending |
 | Full capability graph | in-progress | recursive root discovery added missing communities/AI/todo/ringtone/self-destruct/statistics/editor/IV/support/TDE2E domains; behavior dossiers still pending |
-| Current Fabushi owner inventory | recorded | refreshed against exact PR #20 `556f6308c35055321395e2cf5f3446486b519255`; must refresh if PR #20 moves |
+| Current Fabushi owner inventory | recorded | refreshed against exact PR #20 `c2767eac1383fd8db7be9b536e5acaf4a4d2b7f0`; must refresh if PR #20 moves |
 | Capability → existing owner mapping | in-progress | message/history lifecycle now resolves to existing transcript/session/composer/pagination owners; remaining capabilities pending |
 | Absorption plans | in-progress | message/history lifecycle dossier records concrete owner/model/persistence/native-sync changes; remaining capabilities pending |
 | Minimal new-owner proposals | blocked | only if required |
