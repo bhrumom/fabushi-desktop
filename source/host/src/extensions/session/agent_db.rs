@@ -97,7 +97,6 @@ pub type AgentDbBusyCallback = Arc<dyn Fn(&str, &str) + Send + Sync + 'static>;
 pub struct SandAgentDbOptions {
     pub recovery: DbRecoveryOptions,
     pub on_busy_error: Option<AgentDbBusyCallback>,
-    pub seed_default_agent_metadata: bool,
 }
 
 impl Default for SandAgentDbOptions {
@@ -105,7 +104,6 @@ impl Default for SandAgentDbOptions {
         Self {
             recovery: DbRecoveryOptions::default(),
             on_busy_error: None,
-            seed_default_agent_metadata: true,
         }
     }
 }
@@ -243,13 +241,20 @@ impl SandAgentDb {
     ) -> Result<Self, AgentDbProjectionError> {
         let mut options = SandAgentDbOptions::default();
         options.recovery.busy_timeout_ms = busy_timeout_ms;
-        options.seed_default_agent_metadata = false;
-        Self::open_with_options(db_path, options)
+        Self::open_with_options_and_seed(db_path, options, false)
     }
 
     pub fn open_with_options(
         db_path: impl AsRef<Path>,
         options: SandAgentDbOptions,
+    ) -> Result<Self, AgentDbProjectionError> {
+        Self::open_with_options_and_seed(db_path, options, true)
+    }
+
+    fn open_with_options_and_seed(
+        db_path: impl AsRef<Path>,
+        options: SandAgentDbOptions,
+        seed_default_agent_metadata: bool,
     ) -> Result<Self, AgentDbProjectionError> {
         let db_path = resolve_agent_db_path(db_path.as_ref());
         let agent_dir_name = db_path
@@ -273,7 +278,7 @@ impl SandAgentDb {
             handle_registered: AtomicBool::new(true),
             closed: AtomicBool::new(false),
         };
-        if owner.options.seed_default_agent_metadata {
+        if seed_default_agent_metadata {
             if let Err(error) = owner.seed_default_metadata_if_missing() {
                 owner.close(false);
                 return Err(error);
