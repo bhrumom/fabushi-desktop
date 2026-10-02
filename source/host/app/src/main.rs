@@ -10169,7 +10169,7 @@ fn main() {
         Arc::new(Mutex::new(Weak::<RunnerBackgroundShellWatches>::new()));
     let completion_revivals_deletion_slot =
         Arc::new(Mutex::new(Weak::<CompletionRevivals>::new()));
-    let box_store_sync_deletion_slot = Arc::new(Mutex::new(None));
+    let box_store_sync_deletion_slot = Arc::new(Mutex::new(None::<ProductionBoxStoreSyncApi>));
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {
         mark_deleting: Some({
             let transcript_runtime = Arc::clone(&transcript_runtime);
