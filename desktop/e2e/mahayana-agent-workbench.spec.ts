@@ -250,9 +250,16 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   // relying on the retired compatibility Host's synthetic roster.
   const roster = page.getByRole('region', { name: 'Agent list' });
   const primary = roster.getByRole('button', { name: 'New chat', exact: true });
+  const emptyRoster = roster.getByText('No saved agents yet.', { exact: true });
+  await expect.poll(async () => {
+    const count = await primary.count();
+    if (count > 0) return 'present';
+    return await emptyRoster.isVisible().catch(() => false) ? 'empty' : 'pending';
+  }, { timeout: 15_000 }).not.toBe('pending');
   if (await primary.count() === 0) {
     await page.getByRole('button', { name: 'New', exact: true }).click();
   }
+  await expect(primary).toHaveCount(1, { timeout: 15_000 });
   await expect(primary).toBeVisible({ timeout: 15_000 });
 }
 
