@@ -154,11 +154,10 @@ impl ProductionAgentToAgentMessaging {
         if self.sessions.is_agent_being_deleted(to_agent_id) {
             return Ok("That agent no longer exists.".into());
         }
-        let roster = self.sessions.list_agent_summaries(None)?;
-        let Some(target) = roster.iter().find(|agent| agent.id == to_agent_id) else { return Ok(format!("No agent found with id {to_agent_id}.")); };
+        let Some(target) = self.sessions.summarize_agent_by_id(to_agent_id, None)? else { return Ok(format!("No agent found with id {to_agent_id}.")); };
         if target.remote_room.is_some() { return Ok("That is a shared chat hosted by another user; agents can't message it directly.".into()); }
-        let sender = roster.iter().find(|agent| agent.id == from_agent_id);
-        let sender_name = sender.map(|a| a.name.clone()).unwrap_or_else(|| "An agent".into());
+        let sender = self.sessions.summarize_agent_by_id(from_agent_id, None)?;
+        let sender_name = sender.as_ref().map(|a| a.name.clone()).unwrap_or_else(|| "An agent".into());
         let timestamp_ms = now_ms();
 
         if target.is_group {
@@ -198,7 +197,7 @@ impl ProductionAgentToAgentMessaging {
         });
         let from=AgentAddress{
             id:from_agent_id.into(), name:sender_name,
-            description:sender.and_then(|a|{let v=a.description.trim();(!v.is_empty()).then(||v.to_string())}),
+            description:sender.as_ref().and_then(|a|{let v=a.description.trim();(!v.is_empty()).then(||v.to_string())}),
             is_group:false,
         };
         let image_envelopes = images
