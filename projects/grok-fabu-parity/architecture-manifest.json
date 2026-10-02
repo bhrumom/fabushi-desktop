@@ -16605,7 +16605,7 @@
       "targetPath": "source/host/src/extensions/transcript/transcript_manager.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "ba7d44283613ad8f74486a21b8cb62850304c923",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -16622,10 +16622,13 @@
         "source/host/tests/transcript_production_composition_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/transcript_extension_contract.rs"
+        "source/host/tests/transcript_extension_contract.rs",
+        "source/host/tests/widget_responses_full_contract.rs",
+        "source/host/tests/workflow_commands_contract.rs",
+        "source/host/tests/box_handoff_resume_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust TranscriptManager is now the shipping composition root for the shared Session workers, ProductionTranscriptRuntime, TranscriptRunnerRegistry and AckObligations. Host main no longer constructs those transcript owners independently, and promptAcceptanceStatus/openAgent/setWindowFocused/getAsyncTasks/roster decoration/durable-recovery cleanup now enter through the manager facade. Final remains withheld until the remaining frozen delegated domains (automation/background wakes/group/shared rooms/widgets/workflows/client-side-tool-v2), attachment/memory/content-search setters, lifecycle observers and exact dispose/onStop extension composition are ported."
+      "notes": "Final: shipping Rust TranscriptManager is the single Host composition/delegation owner for Session workers, ProductionTranscriptRuntime, Runner registry, ack obligations, Automations/background wakes, Shared Rooms/group chat, WidgetResponses, WorkflowCommands, client-side-tool-v2, pending-wake rearm, upgrade/recreate resume and Box handoff. Production services (telemetry, product analytics, trace flushing, memory, content search, attachments and trays) are bound once through TranscriptManagerServices; observer/profile/workflow/automation/handoff/runtime/runner/session teardown is settled by manager dispose. Gateway calls for lifecycle/session/memory/widgets/workflows and shipping run-now flow enter through this manager-owned composition. Exact-head focused contracts and shipping CI cover the production wiring; delegated domain rows retain their own independent parity status."
     },
     {
       "referencePath": "source/host/extensions/transcript/transcript-store.ts",
@@ -16708,7 +16711,7 @@
       "targetPath": "source/host/src/extensions/transcript/widget_responses.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "24732616830d9873fd904df6c7a4a6fdc68a1118",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -16719,16 +16722,18 @@
       ],
       "testEvidence": [
         "source/host/tests/widget_responses_local_tool_permission_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/widget_responses_full_contract.rs",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
-      "notes": "Rust Transcript now owns the durable LocalToolPermission subset of frozen WidgetResponses: stale-card retirement, already-settled detection, exact agent/entry/request fencing, and best-effort boot sweep across durable agent DBs with ifPendingBeforeMs support. Final remains withheld for the rest of WidgetResponses: generic widget answers/dismissal, AutoReview cards, secret submission, reactions, skipped-question collection, active-session live projection/roster emission and spend-guard integration."
+      "notes": "Final: Rust WidgetResponses is manager-owned and production-wired for skipped-question collection, generic widget answer/dismissal, dismiss-on-move-on fencing, response rollback, spend-guard integration, AutoReview stale-card settlement/sweep, LocalToolPermission settlement/sweep, secret submission with channel-config change signaling, reactions, durable transcript mutation, active-session projection and roster emission. Exact-head focused contracts exercise these behaviors through the production Session/Transcript owners."
     },
     {
       "referencePath": "source/host/extensions/transcript/workflow-commands.ts",
       "targetPath": "source/host/src/extensions/transcript/workflow_commands.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "5390355ef177c2631923b1c71b3aaa0fa5b70dba",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -16744,9 +16749,10 @@
         "source/host/tests/agent_session_contract.rs",
         "source/host/tests/workflow_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
-      "notes": "Production Rust Transcript command layer now intercepts the frozen Host Gateway workflow CRUD, enable/disable, Markdown import, URL/live-source import and local-skill port commands with the exact args.id/workflowId/spec/markdown/url/name wire contract and delegates to the shipping Rust Session/FileWorkflowStore owner. Automation-backed createAgentWorkflow remains on the compatibility owner so frozen user_action + sand.automation.created telemetry is not lost; runAgentWorkflowNow also remains there until automation/background run execution, workflow reference expansion/mentioned-agent context and mutation/watch composition are migrated. This row stays non-final until those execution responsibilities are production-wired and tested."
+      "notes": "Final: Rust WorkflowCommands is manager-owned and shipping-wired for workflow watch/dispose lifecycle, CRUD/enable-disable/import/local-skill commands, Automation-backed mutation ownership, run-now planning, rich-text workflow-reference expansion and the normal send path. Shipping Host routes runAgentWorkflowNow through TranscriptManager.workflow_commands(); send_turn_dispatch applies workflow expansion and mentioned-agent context before Runner dispatch, preserving the existing Session/Automation/Group owners instead of creating a parallel workflow runtime."
     },
     {
       "referencePath": "source/host/extensions/trays/extension.ts",
