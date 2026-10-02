@@ -34,6 +34,13 @@ pub const SAND_DISK_SAVER_KICKSTART_PROMPT: &str = concat!(
     "Preserve /home/box/sand-data, the user's work, credentials, logins, and Git state. Delete or modify nothing until the user confirms a plan.\n",
     "Skip greetings and getting-started questions: your first message should already carry the audit's findings and the approval you need. Nothing reaches the user unless it's inside a SendMessage. Don't mention this cue."
 );
+pub const SAND_DISK_SAVER_REAUDIT_PROMPT: &str = concat!(
+    "[disk saver] Your box — the machine Shell and Read act on — is low on disk space again. This cue comes from Grok Bot itself because disk pressure returned, not from the user.\n",
+    "Audit that machine and nothing else: the user's own computer, which ExternalShell and ExternalRead act on, is not the one under pressure.\n",
+    "Start with a read-only inspection over Shell from /workspace outward. Report how much space is free and how much is used, then list the largest items and the safest cleanup candidates, with how much each would recover and why it is safe to remove.\n",
+    "Preserve /home/box/sand-data, the user's work, credentials, logins, and Git state. Delete or modify nothing until the user confirms a plan.\n",
+    "Deliver the fresh findings with SendMessage even if they match your last audit. Don't mention this cue."
+);
 pub const REPLY_NUDGE_PROMPT: &str =
     "Your previous turn left the user without the result they're waiting on — you never called SendMessage that turn, or every SendMessage you tried failed to deliver. Either way they received nothing and are still waiting. Do not assume a send from an earlier turn covered it: an opening acknowledgement back then did not deliver this result (ack ≠ delivery). Deliver the result now by actually invoking the SendMessage tool — make a real tool/function call, not text you write. Plain assistant text is NEVER shown to the user; only a real SendMessage tool invocation reaches them, so if you don't call the tool they just keep seeing silence.";
 pub const INTRODUCTION_FAILED_TRAY_TITLE: &str = "Your agent couldn't introduce itself";
@@ -85,6 +92,9 @@ pub trait CreatedAgentKickstartRuntimePort: Send + Sync {
     ) -> Result<KickstartTurnOutcome, KickstartRunError>;
     fn mark_resume_pending(&self, agent_id: &str, source: &str) -> Result<(), String>;
     fn report_failure(&self, agent_id: &str, error: &KickstartRunError);
+    fn report_disk_saver_audit_failure(&self, agent_id: &str, error: &KickstartRunError) {
+        self.report_failure(agent_id, error);
+    }
     fn push_introduction_failure(&self, agent_id: &str, error: &KickstartRunError);
     fn emit_agent_update(&self, agent_id: &str) -> Result<(), String>;
 }
@@ -150,6 +160,53 @@ pub fn run_created_agent_kickstart(
         sessions.set_agent_introduction_pending(agent_id, false)?;
     }
 
+    runtime.emit_agent_update(agent_id)?;
+    Ok(true)
+}
+
+pub fn request_disk_saver_audit(
+    sessions: &ProductionSessionWorkers,
+    runtime: &dyn CreatedAgentKickstartRuntimePort,
+    agent_id: &str,
+) -> Result<bool, String> {
+    let purpose = sessions
+        .open_agent_db_owner(agent_id)?
+        .get_agent_purpose()
+        .map_err(|error| error.to_string())?;
+    if purpose.as_deref() != Some("disk-saver") || runtime.is_disallowed_session(agent_id) {
+        return Ok(false);
+    }
+    if sessions.get_agent_introduction_pending(agent_id)? {
+        return run_created_agent_kickstart(sessions, runtime, agent_id);
+    }
+    if !runtime.is_run_ready() || !runtime.can_execute() {
+        return Ok(false);
+    }
+    if runtime.is_run_in_flight(agent_id) {
+        return Ok(true);
+    }
+
+    let first = match runtime.run_hidden(agent_id, SAND_DISK_SAVER_REAUDIT_PROMPT, "event") {
+        Ok(outcome) => outcome,
+        Err(error) => {
+            runtime.report_disk_saver_audit_failure(agent_id, &error);
+            return Ok(true);
+        }
+    };
+    if first.quiesced_for_upgrade {
+        runtime.mark_resume_pending(agent_id, "event")?;
+    } else if !first.aborted && first.sent_message_count == 0 {
+        let retry = match runtime.run_hidden(agent_id, REPLY_NUDGE_PROMPT, "event") {
+            Ok(outcome) => outcome,
+            Err(error) => {
+                runtime.report_disk_saver_audit_failure(agent_id, &error);
+                return Ok(true);
+            }
+        };
+        if retry.quiesced_for_upgrade {
+            runtime.mark_resume_pending(agent_id, "event")?;
+        }
+    }
     runtime.emit_agent_update(agent_id)?;
     Ok(true)
 }
