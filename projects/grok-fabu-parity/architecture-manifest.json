@@ -16363,7 +16363,7 @@
       "targetPath": "source/host/src/extensions/transcript/send_message_shaping.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "7a8cc4a98a26b1ac25231b64c2ce3c79e617f23c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -16371,15 +16371,17 @@
         "source/host/src/extensions/transcript/send_message_shaping.rs",
         "source/host/src/extensions/session/gateway.rs",
         "source/host/src/selected_image_inputs.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/agent_to_agent_messaging.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_send_echo_contract.rs",
         "source/host/tests/session_gateway_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/agent_to_agent_messaging_contract.rs"
       ],
-      "notes": "Rust ports frozen reaction/thread/message shaping, attachment channel splitting, selected-video descriptors, image/video/file MIME projection, inbound image handling, file-size helpers and common image dimensions. Shipping Host sendPrompt now executes the frozen attachment channel split before crossing into Coordinator: image files are materialized as selectedImages bytes/path/mimeType, videos become selectedVideos path/mimeType/filename/fps descriptors, and only non-media paths/names remain in attachmentPaths/attachmentNames; durable Session echo still retains the original attachments. Final remains withheld for native HEIC/HEIF/AVIF dimension parity and the exact generated Agent media consumer surface."
+      "notes": "Rust ports frozen reaction/thread/message shaping, attachment channel splitting, selected-video descriptors, image/video/file MIME projection, inbound image handling, file-size helpers and image dimensions. Shipping Host sendPrompt executes the frozen attachment channel split before Coordinator dispatch: image files become selectedImages bytes/path/mimeType, videos become selectedVideos path/mimeType/filename/fps descriptors, and only non-media paths/names remain in attachmentPaths/attachmentNames while durable Session echo retains the original attachments. Native ISO-BMFF dimensions now match frozen HEIC/HEIF/AVIF primary-item ispe/irot semantics, including quarter-turn width/height projection. The exact generated Agent media consumer is ProductionAgentToAgentMessaging: local file:// Agent images are materialized by load_agent_inbound_images into the recipient AgentWakeRequest.selected_images while the original image metadata remains in the inbound transcript envelope. Exact-HEAD rust-host coverage proves both native_isobmff_dimensions_match_frozen_primary_item_and_rotation_contract and direct_peer_wake_materializes_file_url_images_for_runner_selected_input."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-not-persisted-error.ts",
