@@ -447,7 +447,7 @@ use mahayana_unified_app_host::{
     PlatformRequestHost, UnifiedAppHost, default_unified_app_data_dir, dispatch_json,
     is_platform_request_json,
 };
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
