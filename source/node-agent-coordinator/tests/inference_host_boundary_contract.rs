@@ -173,40 +173,40 @@ fn only_direct_user_sends_supersede_the_active_provider_turn() {
 }
 
 #[test]
-fn agent_inbound_wake_routes_one_to_one_and_group_members_without_user_echo() {
+fn agent_inbound_wake_routes_only_the_addressed_session_without_user_echo() {
     let direct = prepare_agent_inbound_wake_routes(&json!({
         "agentId":"agent-b",
         "sourceAgentId":"agent-a",
         "prompt":"hidden inbound prompt",
-        "priority":true,
-        "memberIds":[]
+        "priority":true
     }))
     .expect("direct wake");
     assert_eq!(direct.len(), 1);
     assert_eq!(direct[0].agent_id, "agent-b");
     assert_eq!(direct[0].send_args["appendUserMessage"], false);
     assert_eq!(direct[0].send_args["hidden"], true);
+    assert_eq!(direct[0].send_args["isSilenceAllowed"], true);
     assert_eq!(direct[0].send_args["requestSource"], "agent-inbound");
     assert_eq!(direct[0].send_args["agentWake"]["sourceAgentId"], "agent-a");
     assert_eq!(direct[0].send_args["agentWake"]["priority"], true);
     assert!(direct[0].send_args.get("groupContext").is_none());
 
+    // Group destinations are routed once to the group session itself. Host-owned
+    // GroupChatOrchestrator is the only owner allowed to fan out member turns.
     let group = prepare_agent_inbound_wake_routes(&json!({
         "agentId":"group-1",
         "sourceAgentId":"agent-a",
         "prompt":"group wake",
-        "priority":false,
-        "memberIds":["member-1","member-2","member-1",""]
+        "priority":false
     }))
     .expect("group wake");
-    assert_eq!(group.iter().map(|route| route.agent_id.as_str()).collect::<Vec<_>>(), vec!["member-1", "member-2"]);
-    for route in group {
-        assert_eq!(route.send_args["appendUserMessage"], false);
-        assert_eq!(route.send_args["groupContext"]["groupId"], "group-1");
-        assert_eq!(route.send_args["groupContext"]["sourceAgentId"], "agent-a");
-        assert_eq!(route.send_args["groupContext"]["backgroundWake"], true);
-        assert!(!is_direct_user_send(&route.send_args));
-    }
+    assert_eq!(group.len(), 1);
+    assert_eq!(group[0].agent_id, "group-1");
+    assert_eq!(group[0].send_args["appendUserMessage"], false);
+    assert_eq!(group[0].send_args["hidden"], true);
+    assert_eq!(group[0].send_args["isSilenceAllowed"], true);
+    assert!(group[0].send_args.get("groupContext").is_none());
+    assert!(!is_direct_user_send(&group[0].send_args));
 
     assert!(prepare_agent_inbound_wake_routes(&json!({
         "agentId":"agent-b",
