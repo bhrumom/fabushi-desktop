@@ -53,6 +53,7 @@ fn deletion_runtime_runs_owner_hooks_around_durable_session_delete() {
             dispose_background_work: Some(hook("background", Arc::clone(&calls))),
             drain_runner: Some(hook("drain", Arc::clone(&calls))),
             release_box: Some(hook("box", Arc::clone(&calls))),
+            forget_agent_state: Some(hook("forgotten", Arc::clone(&calls))),
             forget_handoff: Some(hook("handoff", Arc::clone(&calls))),
             clear_pending_wakes: Some(hook("pending", Arc::clone(&calls))),
         },
@@ -69,6 +70,7 @@ fn deletion_runtime_runs_owner_hooks_around_durable_session_delete() {
         format!("background:{}", record.id),
         format!("drain:{}", record.id),
         format!("box:{}", record.id),
+        format!("forgotten:{}", record.id),
         format!("handoff:{}", record.id),
         format!("pending:{}", record.id),
     ];

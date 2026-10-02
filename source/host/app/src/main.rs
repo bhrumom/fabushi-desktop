@@ -10169,6 +10169,7 @@ fn main() {
         Arc::new(Mutex::new(Weak::<RunnerBackgroundShellWatches>::new()));
     let completion_revivals_deletion_slot =
         Arc::new(Mutex::new(Weak::<CompletionRevivals>::new()));
+    let box_store_sync_deletion_slot = Arc::new(Mutex::new(None));
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {
         mark_deleting: Some({
             let transcript_runtime = Arc::clone(&transcript_runtime);
@@ -10318,6 +10319,21 @@ fn main() {
                 Ok(())
             })
         }),
+        forget_agent_state: Some({
+            let box_store_sync_slot = Arc::clone(&box_store_sync_deletion_slot);
+            let forever_box = Arc::clone(&forever_box);
+            Arc::new(move |agent_id| {
+                if let Some(api) = box_store_sync_slot
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .clone()
+                {
+                    api.forget_agent(agent_id)?;
+                }
+                forever_box.forget_disk_pressure_agent(agent_id);
+                Ok(())
+            })
+        }),
         forget_handoff: Some({
             let handoff = session_handoff.clone();
             Arc::new(move |agent_id| {
@@ -10395,6 +10411,9 @@ fn main() {
             return;
         }
     };
+    *box_store_sync_deletion_slot
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(box_store_sync_api.clone());
     let lifecycle_host_bundle_version = read_local_host_version(SAND_BOX_HOST_VERSION_PATH)
         .or_else(|| {
             std::env::var("SAND_HOST_BUNDLE_VERSION")

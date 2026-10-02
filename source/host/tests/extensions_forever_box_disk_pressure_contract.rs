@@ -167,6 +167,13 @@ fn reminder_episode_claim_commit_and_restart_match_frozen_ledger_semantics() {
     );
     assert!(episodes.commit("agent-a", "claim-a2"));
     assert_eq!(episodes.claim("agent-a", "claim-a3"), None);
+    episodes.forget_agent("agent-b");
+    let durable = fs::read_to_string(root.join("host-disk-pressure-reminders.json"))
+        .expect("durable reminder ledger");
+    assert!(
+        !durable.contains("agent-b"),
+        "forgetAgent must remove the Agent from persisted pending/handled reminder state"
+    );
 
     let restored = DiskPressureReminderEpisodes::new(Some(&root), None, None);
     assert_eq!(

@@ -223,6 +223,7 @@ pub struct AgentDeletionRuntimeDeps {
     pub dispose_background_work: Option<AgentDeletionHook>,
     pub drain_runner: Option<AgentDeletionHook>,
     pub release_box: Option<AgentDeletionHook>,
+    pub forget_agent_state: Option<AgentDeletionHook>,
     pub forget_handoff: Option<AgentDeletionHook>,
     pub clear_pending_wakes: Option<AgentDeletionHook>,
 }
@@ -267,6 +268,9 @@ impl AgentDeletionRuntimeDeps {
     fn after_delete(&self, agent_id: &str) -> Result<(), String> {
         if let Some(release_box) = self.release_box.as_ref() {
             release_box(agent_id)?;
+        }
+        if let Some(forget_agent_state) = self.forget_agent_state.as_ref() {
+            forget_agent_state(agent_id)?;
         }
         if let Some(forget_handoff) = self.forget_handoff.as_ref() {
             forget_handoff(agent_id)?;

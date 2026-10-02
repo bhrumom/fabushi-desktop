@@ -359,6 +359,14 @@ impl ForeverBoxService {
         self.box_.release_window(agent_id);
     }
 
+    pub fn forget_disk_pressure_agent(&self, agent_id: &str) {
+        if let Ok(watch) = self.disk_pressure_watch.lock() {
+            if let Some(watch) = watch.as_ref() {
+                watch.reminder_episodes().forget_agent(agent_id);
+            }
+        }
+    }
+
     pub fn apply_environment(
         &self,
         update: &BoxEnvironmentUpdate,
