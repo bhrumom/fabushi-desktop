@@ -4,7 +4,7 @@ Status: evidence snapshot; P0 not yet passed
 Project: FBCP-001 Revision 2  
 Captured: 2026-10-02  
 Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`  
-PR #20 input: `f9546f9a77e22d8ce7dabf978eeeffa079b22915`  
+PR #20 input: `bac35e925d116e36b1b9b294499912c8e8fef52d`  
 PR state at capture: open, draft, base `main`, head `refactor/grok-018-architecture-rebuild`
 
 This file records the current production owners that FBCP must absorb into. It is not an implementation-complete claim. Any later PR #20 HEAD invalidates the source conclusions below until this inventory is refreshed.
@@ -12,6 +12,8 @@ This file records the current production owners that FBCP must absorb into. It i
 ## Method
 
 The inventory was built from the exact PR #20 HEAD, starting at shipping entrypoints and following the production composition paths. Directory/name similarity by itself is not evidence. The paths below are the current owners or production seams that are actually composed by the renderer, Electron main, Coordinator, Host, and Runner.
+
+Refresh from `f9546f9a...` to `bac35e92...` inspected all seven intervening PR #20 commits. Owner-affecting production changes stayed within the existing Host Transcript/Group composition (`extension.rs`, roster projection/emission, `transcript_manager.rs`, `production_runtime.rs`, `group_chat_glue.rs`, and `send_group_fanout.rs`); the final `bac35e92...` increment only strengthened the focused group-fanout contract. These changes strengthen existing owners rather than introducing a competing FBCP product owner.
 
 ## Exact-head owners
 
@@ -23,7 +25,7 @@ The inventory was built from the exact PR #20 HEAD, starting at shipping entrypo
 | Transcript / cards | Existing typed transcript entry union + card resolver + strengthened Host transcript extension/production runtime at current PR #20 | `frontend/src/recovered/features/conversation/workspace/model.ts`; `frontend/src/recovered/features/conversation/workspace/transcript.tsx`; `frontend/src/recovered/features/conversation/cards/transcript-card/*`; `source/host/src/extensions/transcript/extension.rs` | Add Human-message semantics to this transcript; preserve tool/thinking/permission/task typed entries. |
 | Composer / drafts | Existing composer, client-persisted drafts, submission queue | `frontend/src/recovered/features/conversation/workspace/composer.tsx`; `draft-state.ts`; `submission.ts`; `ProductionRenderer.tsx` | Generalize send intent; current shipping submit path is still Agent `sendPrompt`. |
 | Reply / thread relation | Existing reply/thread projection | `frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts`; `source/shared/transcript.ts`; `source/shared/transcript-threads.ts` | Extend existing relation/provenance types; no Telegram-specific message model. |
-| Shared Room / groups / members | Existing Shared Room UI/provider plus Host group domain/store | `frontend/src/recovered/features/agent-info/shared-room/*`; `frontend/src/recovered/features/agent-info/group-members/*`; `source/host/src/groups/group_chat.rs`; `group_store.rs`; `remote_room_store.rs` | Extend participant/member model to Human + Agent; do not create TelegramGroup/TelegramUser truth. |
+| Shared Room / groups / members | Existing Shared Room UI/provider plus Host GroupChatGlue/orchestrator and group domain/store | `frontend/src/recovered/features/agent-info/shared-room/*`; `frontend/src/recovered/features/agent-info/group-members/*`; `source/host/src/extensions/transcript/group_chat_glue.rs`; `source/host/src/extensions/transcript/group_chat_orchestrator.rs`; `source/host/src/extensions/transcript/send_group_fanout.rs`; `source/host/src/groups/group_chat.rs`; `group_store.rs`; `remote_room_store.rs` | Extend participant/member model to Human + Agent through this shipping owner; do not create TelegramGroup/TelegramUser truth. |
 | Reactions | Existing transcript reaction root/actions/picker | `frontend/src/production/reaction-root.ts`; `frontend/src/recovered/features/conversation/cards/transcript-card/reaction-actions.ts`; `reaction-picker.tsx` | Reuse reaction owner and expand actor identity semantics. |
 | Attachments / resource ingress | Existing composer attachment lifecycle + Electron attachment manager + Host attachment extension | `frontend/src/recovered/features/conversation/workspace/desktop.ts`; `source/electron-main/attachments/attachment-manager.ts`; `source/host/src/extensions/attachments/*`; `source/host/src/attachment_paths.rs` | Extend shared resource lifecycle for Human messages/media; do not duplicate blob truth. |
 | Agent artifacts / rich results | Existing transcript-card/tool/artifact surfaces | `frontend/src/recovered/features/conversation/cards/*`; `frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer*`; Runner tool-result projections | Human messaging must coexist with these typed Agent-native results. |
@@ -76,4 +78,4 @@ The existing channel connector path models outside platforms and delivery addres
 
 ## Refresh rule
 
-Before using this inventory for implementation, compare the live PR #20 head to `f9546f9a77e22d8ce7dabf978eeeffa079b22915`. If it changed, re-run the source inspection and replace stale owner evidence before coding.
+Before using this inventory for implementation, compare the live PR #20 head to `bac35e925d116e36b1b9b294499912c8e8fef52d`. If it changed, re-run the source inspection and replace stale owner evidence before coding.

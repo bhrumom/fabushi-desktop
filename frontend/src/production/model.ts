@@ -519,7 +519,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     kind: "message",
     id,
     role,
-    author: role === "assistant" ? agentName : "You",
+    author: role === "assistant" ? (stringValue(value.authorName) ?? agentName) : "You",
     text,
     timestampMs,
     ...(attachments.length === 0 ? {} : { attachments }),

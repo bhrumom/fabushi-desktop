@@ -2046,20 +2046,17 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         agentId: targetAgent.id,
         prompt: `Continue from this Human conversation and help with the user's explicit handoff request. Preserve the Human/Agent distinction and use tools or artifacts when useful.\n\nHuman conversation: ${activeAgent.name}\n\n${transcriptContext}`,
         directAddressedAcceptance: true,
+        requestSource: "human-handoff",
+        humanHandoffConversationId: activeAgent.id,
         attachmentPaths: [],
         attachmentNames: [],
         clientNonce,
         enterEpochMs: now,
         composedAtMs: now
       });
-      // The target Agent may have been opened before the Human handoff. Drop
-      // that local snapshot so openAgentTail must re-read the authoritative
-      // transcript containing this explicit handoff and its Runner response.
-      const refreshedEntries = { ...entriesByAgentRef.current };
-      delete refreshedEntries[targetAgent.id];
-      entriesByAgentRef.current = refreshedEntries;
-      setEntriesByAgent(refreshedEntries);
-      await openAgent(targetAgent.id);
+      // Host/Runner durably projects the trusted Agent result into this Human
+      // transcript. Renderer state never fabricates an Agent-authored message
+      // and the user remains in the same conversation workspace.
       setNotice(null);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : String(error));

@@ -99,6 +99,71 @@ fn routed_prompt_admission_owns_nonce_durability_and_recovery_identity() {
 }
 
 #[test]
+fn human_handoff_admission_binds_destination_to_the_host_owned_turn_lease() {
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-routed-human-handoff-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let runtime = ProductionTranscriptRuntime::new(Some(&root));
+    let args = serde_json::json!({
+        "agentId": "agent-a",
+        "prompt": "continue this Human conversation",
+        "clientNonce": "human-handoff-nonce",
+        "streamId": "human-handoff-stream",
+        "requestSource": "human-handoff",
+        "humanHandoffConversationId": "human-conversation:abc"
+    });
+    runtime
+        .accept_routed_send(&args, |_| {
+            Ok::<_, ProductionSendError>(PersistedSendContext::default())
+        })
+        .expect("Human handoff admission");
+    assert_eq!(
+        runtime
+            .routed_human_handoff_conversation_id("agent-a", "human-handoff-stream")
+            .as_deref(),
+        Some("human-conversation:abc")
+    );
+    runtime
+        .settle_routed_turn("agent-a", "human-handoff-stream", 10_000)
+        .expect("settlement")
+        .expect("lease");
+    assert_eq!(
+        runtime.routed_human_handoff_conversation_id("agent-a", "human-handoff-stream"),
+        None
+    );
+
+    let missing_destination = serde_json::json!({
+        "agentId": "agent-a",
+        "prompt": "missing destination",
+        "clientNonce": "missing-destination",
+        "streamId": "missing-destination-stream",
+        "requestSource": "human-handoff"
+    });
+    assert!(matches!(
+        runtime.accept_routed_send(&missing_destination, |_| {
+            Ok::<_, ProductionSendError>(PersistedSendContext::default())
+        }),
+        Err(ProductionSendError::BadRequest(_))
+    ));
+
+    let forged_destination = serde_json::json!({
+        "agentId": "agent-a",
+        "prompt": "not a handoff",
+        "clientNonce": "forged-destination",
+        "streamId": "forged-destination-stream",
+        "humanHandoffConversationId": "human-conversation:abc"
+    });
+    assert!(matches!(
+        runtime.accept_routed_send(&forged_destination, |_| {
+            Ok::<_, ProductionSendError>(PersistedSendContext::default())
+        }),
+        Err(ProductionSendError::BadRequest(_))
+    ));
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn routed_prompt_queue_lease_blocks_the_next_turn_until_runner_terminal() {
     use std::sync::{Arc, mpsc};
     use std::time::Duration;

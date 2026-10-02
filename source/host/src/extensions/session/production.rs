@@ -1464,6 +1464,100 @@ impl ProductionSessionWorkers {
         Ok(entry)
     }
 
+    pub fn append_human_agent_message(
+        &self,
+        conversation_id: &str,
+        agent_id: &str,
+        stream_id: &str,
+        content: &str,
+        completed_at_ms: f64,
+    ) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?;
+        let conversation_id = conversation_id.trim();
+        let agent_id = agent_id.trim();
+        let stream_id = stream_id.trim();
+        let content = content.trim();
+        if conversation_id.is_empty()
+            || agent_id.is_empty()
+            || stream_id.is_empty()
+            || content.is_empty()
+        {
+            return Err(
+                "Human handoff Agent result requires conversationId, agentId, streamId, and content"
+                    .into(),
+            );
+        }
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let is_participant = metadata
+            .get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(local_human_id)));
+        if !is_participant {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+
+        let entry_id = format!("human-agent-message:{stream_id}");
+        let existing = owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        if let Some(entry) = existing.iter().find(|entry| {
+            entry.get("id").and_then(serde_json::Value::as_str) == Some(entry_id.as_str())
+        }) {
+            let same_agent =
+                entry.get("authorId").and_then(serde_json::Value::as_str) == Some(agent_id);
+            let same_content =
+                entry.get("content").and_then(serde_json::Value::as_str) == Some(content);
+            let same_stream =
+                entry.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
+            if same_agent && same_content && same_stream {
+                return Ok(entry.clone());
+            }
+            return Err("Human handoff stream already identifies different Agent content".into());
+        }
+
+        let entry = serde_json::json!({
+            "id": entry_id,
+            "kind": "message",
+            "role": "assistant",
+            "authorKind": "agent",
+            "authorId": agent_id,
+            "authorName": agent_id,
+            "content": content,
+            "sourceStreamId": stream_id,
+            "timestampMs": completed_at_ms,
+            "delivery": "sent",
+        });
+        if !owner
+            .append_transcript_entry(&entry)
+            .map_err(|error| error.to_string())?
+        {
+            let replay = owner
+                .get_transcript_entries()
+                .map_err(|error| error.to_string())?
+                .into_iter()
+                .find(|candidate| candidate.get("id") == entry.get("id"))
+                .ok_or_else(|| "Human handoff Agent result was not durably appended".to_string())?;
+            let same_agent =
+                replay.get("authorId").and_then(serde_json::Value::as_str) == Some(agent_id);
+            let same_content =
+                replay.get("content").and_then(serde_json::Value::as_str) == Some(content);
+            let same_stream =
+                replay.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
+            if same_agent && same_content && same_stream {
+                return Ok(replay);
+            }
+            return Err("Human handoff stream already identifies different Agent content".into());
+        }
+        if !owner
+            .set_metadata("lastActivityAt", serde_json::json!(completed_at_ms))
+            .map_err(|error| error.to_string())?
+        {
+            return Err("Human handoff Agent activity metadata was not durably updated".into());
+        }
+        Ok(entry)
+    }
+
     pub fn read_human_conversation_transcript(
         &self,
         conversation_id: &str,

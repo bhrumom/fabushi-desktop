@@ -1662,6 +1662,26 @@ impl UnifiedGatewayApi {
             let acceptance_was_on_screen = acceptance_agent_id
                 .as_deref()
                 .is_some_and(|agent_id| self.addressed_chat_on_screen(agent_id));
+            if durable_args
+                .get("requestSource")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                == Some("human-handoff")
+            {
+                let conversation_id = durable_args
+                    .get("humanHandoffConversationId")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .ok_or_else(|| {
+                        GatewayCommandError::BadRequest(
+                            "human-handoff requires humanHandoffConversationId".into(),
+                        )
+                    })?;
+                self.session_workers
+                    .read_human_conversation_transcript(conversation_id)
+                    .map_err(GatewayCommandError::BadRequest)?;
+            }
             let mut acceptance = self
                 .transcript_runtime
                 .accept_routed_send(&durable_args, |accepted| {
@@ -4719,6 +4739,8 @@ fn start_routed_provider_task(
     transcript_runtime
         .require_routed_turn_lease(&agent_id, &stream_id)
         .map_err(map_production_send_error)?;
+    let human_handoff_conversation_id =
+        transcript_runtime.routed_human_handoff_conversation_id(&agent_id, &stream_id);
     let routed_turn_lease_guard = RoutedTurnLeaseGuard::new(
         Arc::clone(&transcript_runtime),
         agent_id.clone(),
@@ -5381,6 +5403,7 @@ fn start_routed_provider_task(
     let worker_trays = Arc::clone(&trays);
     let worker_telemetry_logs = telemetry_logs.clone();
     let worker_request_source = request_source.clone();
+    let worker_human_handoff_conversation_id = human_handoff_conversation_id.clone();
     let worker_group_room_id = group_room_id.clone();
     let worker_group_member_name = group_member_name.clone();
     let worker_is_handoff_resume = worker_request_source.as_deref() == Some("handoff-resume");
@@ -7249,7 +7272,7 @@ fn start_routed_provider_task(
                     provider.as_str(),
                 );
             }
-            let result = runner.run_routed_provider_with_projected_messages(
+            let mut result = runner.run_routed_provider_with_projected_messages(
                 &data_dir,
                 &lifecycle_messages,
                 &provider_messages,
@@ -7260,6 +7283,35 @@ fn start_routed_provider_task(
                 runner.last_finished().map(|finished| &finished.outcome),
                 Some(mahayana_host_runtime::runner::TerminalOutcome::WaitingUser)
             );
+
+            if !waiting_user && !worker_cancellation.is_cancelled() {
+                if let (Some(conversation_id), Some(content)) = (
+                    worker_human_handoff_conversation_id.as_deref(),
+                    result.as_ref().ok().cloned(),
+                ) {
+                    match worker_sessions.append_human_agent_message(
+                        conversation_id,
+                        &agent_id,
+                        &worker_stream_id,
+                        &content,
+                        started_at_ms() as f64,
+                    ) {
+                        Ok(entry) => worker_events.publish(serde_json::json!({
+                            "channel": "transcript",
+                            "payload": {
+                                "type": "appended",
+                                "agentId": conversation_id,
+                                "entry": entry,
+                            }
+                        })),
+                        Err(error) => {
+                            result = Err(ProviderSessionError::Tool(format!(
+                                "could not persist Human handoff Agent result: {error}"
+                            )));
+                        }
+                    }
+                }
+            }
 
             if result.is_ok() {
                 if let Some((turn_snapshot, identity)) =

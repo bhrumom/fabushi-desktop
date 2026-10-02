@@ -609,15 +609,69 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
         }),
     );
     assert_eq!(replay, first);
+
+    let agent_result = runtime
+        .append_human_agent_message(
+            &conversation_id,
+            &agent.id,
+            "runner-stream-1",
+            "trusted Agent result",
+            2345.0,
+        )
+        .expect("Host-internal Agent result projection");
+    assert_eq!(agent_result["role"], "assistant");
+    assert_eq!(agent_result["authorKind"], "agent");
+    assert_eq!(agent_result["authorId"], agent.id);
+    assert_eq!(agent_result["sourceStreamId"], "runner-stream-1");
+    assert_eq!(
+        runtime
+            .append_human_agent_message(
+                &conversation_id,
+                &agent.id,
+                "runner-stream-1",
+                "trusted Agent result",
+                2345.0,
+            )
+            .expect("idempotent Agent result replay"),
+        agent_result
+    );
+    assert!(
+        runtime
+            .append_human_agent_message(
+                &conversation_id,
+                &agent.id,
+                "runner-stream-1",
+                "different Agent result",
+                2345.0,
+            )
+            .is_err(),
+        "one Runner stream must not identify different Human-transcript content"
+    );
+    assert!(
+        dispatch_production_session_gateway_call(
+            &runtime,
+            "appendHumanAgentMessage",
+            &json!({
+                "conversationId": conversation_id,
+                "agentId": agent.id,
+                "streamId": "renderer-forgery",
+                "content": "forged"
+            }),
+        )
+        .is_none(),
+        "trusted Agent result projection must not be renderer-callable"
+    );
+
     let transcript = dispatch(
         &runtime,
         "getHumanConversationTranscript",
         json!({"conversationId": conversation_id}),
     );
-    assert_eq!(transcript.as_array().map(Vec::len), Some(1));
+    assert_eq!(transcript.as_array().map(Vec::len), Some(2));
     assert_eq!(transcript[0]["id"], "human-message:human-nonce-1");
+    assert_eq!(transcript[1], agent_result);
     let conversations_after_send = dispatch(&runtime, "listHumanConversations", json!({}));
-    assert_eq!(conversations_after_send[0]["updatedAt"], 1234.0);
+    assert_eq!(conversations_after_send[0]["updatedAt"], 2345.0);
 
     let conflicting = dispatch_production_session_gateway_call(
         &runtime,

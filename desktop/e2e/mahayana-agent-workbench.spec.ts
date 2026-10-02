@@ -496,12 +496,26 @@ test('Human conversation shares the Agent workspace, survives restart, and expli
     await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Alice', exact: true }).click();
     await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible({ timeout: 10_000 });
 
-    // Explicit Human -> Agent continuation stays on the existing sendPrompt
-    // path. The local inference backend validates the authenticated Runner
-    // request and emits the same Hermes-style assistant turn as ordinary Agent chat.
+    // Explicit Human -> Agent continuation stays on the existing
+    // Coordinator -> Host -> Runner path, but the trusted Host terminal
+    // projection must land back in this same Human workspace.
+    const assistantReply = '收到：请分析这个任务';
     await page.getByRole('button', { name: 'Ask Agent', exact: true }).click();
-    await expectHermesAssistantTurn(page, '收到：请分析这个任务');
+    await expectHermesAssistantTurn(page, assistantReply);
+    await expect(page.getByText('Human', { exact: true })).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Prompt' })).toBeVisible();
+
+    // A second restart proves the Agent-authored result is not renderer-only
+    // state: it must be replayed from the durable Human Session transcript.
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Alice', exact: true }).click();
+    await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible({ timeout: 10_000 });
+    await expectHermesAssistantTurn(page, assistantReply);
+    await expect(page.getByText('Human', { exact: true })).toBeVisible();
   } finally {
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });
