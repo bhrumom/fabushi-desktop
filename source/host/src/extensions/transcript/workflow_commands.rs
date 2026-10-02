@@ -73,6 +73,94 @@ pub fn prepare_workflow_run_now(
     }))
 }
 
+pub fn expand_workflow_references(
+    workers: Arc<ProductionSessionWorkers>,
+    agent_id: &str,
+    prompt: &str,
+    rich_text: Option<&str>,
+) -> Result<String, WorkflowCommandError> {
+    let Some(rich_text) = rich_text.map(str::trim).filter(|value| !value.is_empty()) else {
+        return Ok(prompt.to_string());
+    };
+    let parsed: Value = match serde_json::from_str(rich_text) {
+        Ok(value) => value,
+        Err(_) => return Ok(prompt.to_string()),
+    };
+    let mut references = Vec::<(String, Option<String>)>::new();
+    collect_workflow_reference_nodes(&parsed, &mut references);
+    if references.is_empty() {
+        return Ok(prompt.to_string());
+    }
+
+    let store = SandAgentSessionStore::new(workers);
+    let mut blocks = Vec::new();
+    for (workflow_id, teach_queue_scope) in references {
+        let Some(workflow) = store
+            .get_agent_workflow(agent_id, &workflow_id)
+            .map_err(WorkflowCommandError::Internal)?
+        else {
+            continue;
+        };
+        if !workflow.is_enabled_for_agent && workflow.source != "automation" {
+            continue;
+        }
+        let mut block = build_workflow_run_prompt(&workflow);
+        if workflow.id == "learn-from-demonstration" {
+            if let Some(scope) = teach_queue_scope
+                .filter(|value| value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit()))
+            {
+                block.push_str("\n\nTeach recording queue scope: ");
+                block.push_str(&scope);
+            }
+        }
+        blocks.push(block);
+    }
+    if blocks.is_empty() {
+        Ok(prompt.to_string())
+    } else if prompt.is_empty() {
+        Ok(blocks.join("\n\n"))
+    } else {
+        Ok(format!("{}\n\n{prompt}", blocks.join("\n\n")))
+    }
+}
+
+fn collect_workflow_reference_nodes(
+    value: &Value,
+    output: &mut Vec<(String, Option<String>)>,
+) {
+    match value {
+        Value::Array(values) => {
+            for value in values {
+                collect_workflow_reference_nodes(value, output);
+            }
+        }
+        Value::Object(object) => {
+            if object.get("type").and_then(Value::as_str) == Some(WORKFLOW_REFERENCE_NODE_TYPE) {
+                if let Some(attrs) = object.get("attrs").and_then(Value::as_object) {
+                    if let Some(id) = attrs
+                        .get("id")
+                        .and_then(Value::as_str)
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty())
+                    {
+                        let scope = attrs
+                            .get("teachQueueScope")
+                            .and_then(Value::as_str)
+                            .map(str::trim)
+                            .filter(|value| !value.is_empty())
+                            .map(ToOwned::to_owned);
+                        output.push((id.to_string(), scope));
+                    }
+                }
+            }
+            for value in object.values() {
+                collect_workflow_reference_nodes(value, output);
+            }
+        }
+        _ => {}
+    }
+}
+
 pub fn build_workflow_run_prompt(workflow: &WorkflowRecord) -> String {
     let identity = match workflow.source.as_str() {
         "managed" => format!("managed skill id {}", workflow.id),
