@@ -236,6 +236,74 @@ fn session_has_one_shipping_production_lifecycle_owner() {
 
 
 #[test]
+fn cross_user_host_upgrade_and_teach_recording_have_one_shipping_owner() {
+    for needle in [
+        "HostExtensionId::CrossUserSharing",
+        "cross_user: Mutex<Option<Arc<ProductionCrossUserRuntime>>>",
+        "pub fn start_cross_user(",
+        "pub fn start_cross_user_background_work(&self)",
+        "pub fn stop_cross_user(&self)",
+        "HostExtensionId::HostUpgrade",
+        "host_upgrade: Mutex<Option<Arc<ProductionHostUpgradeExtension>>>",
+        "pub fn start_host_upgrade(",
+        "start_production_host_upgrade_extension(",
+        "pub fn stop_host_upgrade(&self)",
+        "HostExtensionId::TeachRecording",
+        "teach_recording: Mutex<Option<TeachRecordingExtension<SandTeachRecordingService>>>",
+        "pub fn start_teach_recording(",
+        "create_teach_recording_extension(&factory, deps)",
+        "pub fn stop_teach_recording(&self)",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own the frozen lifecycle: {needle}"
+        );
+    }
+    for required in [
+        "production_extensions.start_cross_user(",
+        "production_extensions.start_cross_user_background_work()",
+        "production_extensions.start_host_upgrade(",
+        "production_extensions.start_teach_recording(",
+        "production_extensions.stop_cross_user()",
+        "production_extensions.stop_host_upgrade()",
+        "production_extensions.stop_teach_recording()",
+    ] {
+        assert!(
+            SHIPPING_HOST.contains(required),
+            "shipping Host must consume the centralized owner: {required}"
+        );
+    }
+    for forbidden in [
+        "ProductionCrossUserRuntime::new(",
+        "start_production_host_upgrade_extension(",
+        "create_teach_recording_extension(",
+    ] {
+        assert!(
+            !SHIPPING_HOST.contains(forbidden),
+            "shipping Host must not construct a duplicate owner: {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn shipping_production_composition_covers_the_exact_frozen_35_slots() {
+    let frozen = HOST_EXTENSION_ORDER.iter().copied().collect::<BTreeSet<_>>();
+    let shipping = CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS
+        .iter()
+        .copied()
+        .collect::<BTreeSet<_>>();
+    assert_eq!(CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS.len(), 35);
+    assert_eq!(shipping.len(), 35, "shipping production registry must not duplicate slots");
+    assert_eq!(shipping, frozen, "shipping production registry must cover the exact frozen slots");
+    assert!(
+        !PRODUCTION_OWNER.contains("NoopProductionExtension")
+            && !PRODUCTION_OWNER.contains("no_op_production_extension"),
+        "no frozen slot may be satisfied by a no-op placeholder"
+    );
+}
+
+
+#[test]
 fn notifications_have_one_shipping_production_lifecycle_owner() {
     for needle in [
         "HostExtensionId::Notifications",

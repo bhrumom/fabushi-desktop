@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::thread;
 
 use crate::host_paths::get_sand_root_dir;
 use crate::host_diagnostics::{
@@ -77,6 +78,10 @@ use crate::extensions::extension_ids_generated::HostExtensionId;
 use crate::extensions::inference::production::{
     ProductionInferenceExtension, start_production_inference_extension,
 };
+use crate::extensions::host_upgrade::production::{
+    ProductionHostUpgradeExtension, ProductionHostUpgradePeers,
+    start_production_host_upgrade_extension,
+};
 use crate::extensions::managed_setup::extension::{
     ManagedSetupExtension, start_managed_setup_extension,
 };
@@ -133,6 +138,15 @@ use crate::extensions::state_backstop::extension::{
 use crate::extensions::state_backstop::state_backstop_service::{
     StateBackstopObjectStore, StateBackstopOptions,
 };
+use crate::extensions::teach_recording::extension::{
+    CAP_SLACK_MS, TeachRecordingExtension, TeachRecordingServiceDeps,
+    create_teach_recording_extension, load_teach_queue_key,
+};
+use crate::extensions::teach_recording::teach_recording_service::{
+    LEARN_SKILL_NAME, ProductionTeachRecordingRuntime, SAND_TEACH_MAX_DURATION_MS,
+    SandTeachRecordingService, SandTeachRecordingServiceFactory, TeachRecordingApi,
+    TeachRecordingRuntimePort,
+};
 use crate::extensions::telemetry::extension::{
     HostTelemetryExtension, start_host_telemetry_extension,
 };
@@ -173,46 +187,47 @@ use crate::production_binding_providers::{
 use crate::r#box::production::ProductionBoxEnvironment;
 use crate::extensions::box_store_sync::box_object_store::BoxObjectStore;
 
-/// Grok-shaped owner for the production extension subset that is already
-/// shipping in the Rust Host.
+/// Canonical Grok-shaped production extension registry for the Rust Host.
 ///
-/// This is deliberately not presented as the complete frozen 35-slot registry:
-/// missing extension implementations stay visible in the architecture manifest
-/// until their real production owners exist.
+/// All frozen Grok 0.18 slots are backed by real production owners. Owners that
+/// need transcript, Gateway, or Box dependencies are staged here and started
+/// only when those dependencies become available.
 pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
-    HostExtensionId::Auth,
     HostExtensionId::Notifications,
-    HostExtensionId::Automations,
-    HostExtensionId::Telemetry,
     HostExtensionId::ContentSearch,
-    HostExtensionId::Settings,
-    HostExtensionId::Experiments,
-    HostExtensionId::CodebaseTelemetry,
-    HostExtensionId::ActionAudit,
-    HostExtensionId::CloudAgents,
-    HostExtensionId::NotifyBus,
     HostExtensionId::Memory,
-    HostExtensionId::ManagedSetup,
-    HostExtensionId::Mcp,
-    HostExtensionId::SourceMap,
-    HostExtensionId::Trays,
-    HostExtensionId::BoxLifecycle,
-    HostExtensionId::BoxStoreSync,
+    HostExtensionId::CrossUserSharing,
     HostExtensionId::StateBackstop,
-    HostExtensionId::WebauthnProxy,
+    HostExtensionId::SourceMap,
+    HostExtensionId::Telemetry,
+    HostExtensionId::Trays,
+    HostExtensionId::Auth,
+    HostExtensionId::Experiments,
     HostExtensionId::BrowserUa,
-    HostExtensionId::LocalToolPermission,
-    HostExtensionId::LocalExec,
     HostExtensionId::Inference,
-    HostExtensionId::Wallpaper,
-    HostExtensionId::ForeverBox,
+    HostExtensionId::LocalExec,
+    HostExtensionId::LocalToolPermission,
     HostExtensionId::Attachments,
+    HostExtensionId::ForeverBox,
     HostExtensionId::Secrets,
     HostExtensionId::TurnExecution,
-    HostExtensionId::Session,
-    HostExtensionId::AutoReview,
     HostExtensionId::Transcript,
-    HostExtensionId::CrossUserSharing,
+    HostExtensionId::Session,
+    HostExtensionId::Automations,
+    HostExtensionId::Settings,
+    HostExtensionId::BoxLifecycle,
+    HostExtensionId::ManagedSetup,
+    HostExtensionId::Mcp,
+    HostExtensionId::BoxStoreSync,
+    HostExtensionId::CloudAgents,
+    HostExtensionId::ActionAudit,
+    HostExtensionId::HostUpgrade,
+    HostExtensionId::AutoReview,
+    HostExtensionId::CodebaseTelemetry,
+    HostExtensionId::TeachRecording,
+    HostExtensionId::WebauthnProxy,
+    HostExtensionId::NotifyBus,
+    HostExtensionId::Wallpaper,
 ];
 
 pub struct ProductionBrowserUaLog;
@@ -466,6 +481,8 @@ pub struct ProductionHostExtensions {
     auto_review: Mutex<Option<Arc<HostAutoReviewExtension>>>,
     transcript: Mutex<Option<TranscriptExtension>>,
     cross_user: Mutex<Option<Arc<ProductionCrossUserRuntime>>>,
+    host_upgrade: Mutex<Option<Arc<ProductionHostUpgradeExtension>>>,
+    teach_recording: Mutex<Option<TeachRecordingExtension<SandTeachRecordingService>>>,
     backend_url: String,
     mcp: Mutex<Option<McpExtensionRuntime>>,
     box_store_sync: Mutex<Option<BoxStoreSyncExtension<ProductionBoxStoreSyncService>>>,
@@ -477,6 +494,10 @@ pub struct ProductionHostExtensions {
 
 impl Drop for ProductionHostExtensions {
     fn drop(&mut self) {
+        let _ = self.stop_teach_recording();
+        let _ = self.stop_host_upgrade();
+        let _ = self.stop_cross_user();
+        let _ = self.stop_auto_review();
         // Stop global reporter callbacks before disposing their single Host owner.
         unpin_structured_log_domain_reporters();
         // Dependents settle while Auth / Experiments / Inference remain live.
@@ -656,6 +677,8 @@ pub fn start_production_host_extensions(
         auto_review: Mutex::new(None),
         transcript: Mutex::new(None),
         cross_user: Mutex::new(None),
+        host_upgrade: Mutex::new(None),
+        teach_recording: Mutex::new(None),
         backend_url,
         mcp: Mutex::new(None),
         box_store_sync: Mutex::new(None),
@@ -699,6 +722,17 @@ impl ProductionHostExtensions {
         )?;
         *slot = Some(Arc::clone(&runtime));
         Ok(runtime)
+    }
+
+    pub fn start_cross_user_background_work(&self) -> Result<(), String> {
+        let runtime = self
+            .cross_user
+            .lock()
+            .map_err(|_| "production CrossUserSharing runtime lock poisoned".to_string())?
+            .as_ref()
+            .cloned()
+            .ok_or_else(|| "production CrossUserSharing runtime is not started".to_string())?;
+        runtime.start_background_work(Arc::clone(&self.experiments))
     }
 
     pub fn stop_cross_user(&self) -> Result<(), String> {
@@ -836,6 +870,111 @@ impl ProductionHostExtensions {
         if let Some(extension) = slot.as_ref() {
             extension.shutdown();
         }
+        Ok(())
+    }
+
+    pub fn start_host_upgrade(
+        &self,
+        peers: ProductionHostUpgradePeers,
+    ) -> Result<Arc<ProductionHostUpgradeExtension>, String> {
+        let mut slot = self
+            .host_upgrade
+            .lock()
+            .map_err(|_| "production HostUpgrade runtime lock poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("production HostUpgrade runtime is already started".into());
+        }
+        let extension = start_production_host_upgrade_extension(
+            peers,
+            self.telemetry.logs.clone(),
+            Arc::new(|| Ok(())),
+        )?;
+        *slot = Some(Arc::clone(&extension));
+        Ok(extension)
+    }
+
+    pub fn stop_host_upgrade(&self) -> Result<(), String> {
+        let extension = self
+            .host_upgrade
+            .lock()
+            .map_err(|_| "production HostUpgrade runtime lock poisoned".to_string())?
+            .take();
+        if let Some(extension) = extension {
+            extension.stop_background_work();
+        }
+        Ok(())
+    }
+
+    pub fn start_teach_recording(
+        &self,
+        forever_box: Arc<ForeverBoxService>,
+        sessions: Arc<ProductionSessionWorkers>,
+        send_learning_prompt: Arc<
+            dyn Fn(&str, &str, &str, Option<&str>) -> Result<(), String> + Send + Sync
+        >,
+    ) -> Result<TeachRecordingApi, String> {
+        let mut slot = self
+            .teach_recording
+            .lock()
+            .map_err(|_| "production TeachRecording runtime lock poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("production TeachRecording runtime is already started".into());
+        }
+        let runtime: Arc<dyn TeachRecordingRuntimePort> =
+            Arc::new(ProductionTeachRecordingRuntime::new(forever_box));
+        let factory = SandTeachRecordingServiceFactory::new(runtime);
+        let experiments = Arc::clone(&self.experiments);
+        let managed_setup = Arc::clone(&self.managed_setup);
+        let analytics_started = self.telemetry.analytics.clone();
+        let analytics_stopped = self.telemetry.analytics.clone();
+        let cap_logs = self.telemetry.logs.clone();
+        let start_logs = self.telemetry.logs.clone();
+        let deps = TeachRecordingServiceDeps {
+            is_enabled: Arc::new(move || {
+                experiments.check_feature_gate("sand_teach_by_demonstration")
+            }),
+            cap_delay_ms: SAND_TEACH_MAX_DURATION_MS + CAP_SLACK_MS,
+            send_learning_prompt,
+            list_agent_ids: Arc::new(move || sessions.list_agent_record_ids()),
+            queue_signature_key: Arc::new(|| load_teach_queue_key(None)),
+            ensure_learning_workflow: Arc::new(move || {
+                Ok(managed_setup.ensure_managed_skill(LEARN_SKILL_NAME))
+            }),
+            track_recording_started: Arc::new(move |event| {
+                let _ = analytics_started.track_event("sand.teach.recording_started", &event);
+            }),
+            track_recording_stopped: Arc::new(move |event| {
+                let _ = analytics_stopped.track_event("sand.teach.recording_stopped", &event);
+            }),
+            report_cap_stop_failed: Arc::new(move |event| {
+                let _ = cap_logs.report_teach_recording_cap_stop_failed(&event);
+            }),
+            report_start_failed: Arc::new(move |event| {
+                let _ = start_logs.report_teach_recording_start_failed(&event);
+            }),
+        };
+        let extension = create_teach_recording_extension(&factory, deps);
+        let api = extension.api();
+        let recovery_service = Arc::clone(extension.service());
+        thread::Builder::new()
+            .name("mahayana-teach-recording-recovery".into())
+            .spawn(move || {
+                if let Err(error) = recovery_service.recover_pending() {
+                    eprintln!("teach-recording: pending delivery recovery failed: {error}");
+                }
+            })
+            .map_err(|error| format!("could not start TeachRecording recovery worker: {error}"))?;
+        *slot = Some(extension);
+        Ok(api)
+    }
+
+    pub fn stop_teach_recording(&self) -> Result<(), String> {
+        let extension = self
+            .teach_recording
+            .lock()
+            .map_err(|_| "production TeachRecording runtime lock poisoned".to_string())?
+            .take();
+        drop(extension);
         Ok(())
     }
 

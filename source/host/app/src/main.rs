@@ -223,7 +223,6 @@ use mahayana_host_runtime::extensions::content_search::extension::ProductionCont
 use mahayana_host_runtime::extensions::trays::extension::HostTraysExtension;
 use mahayana_host_runtime::extensions::host_upgrade::production::{
     ProductionHostUpgradeExtension, ProductionHostUpgradePeers,
-    start_production_host_upgrade_extension,
 };
 use mahayana_host_runtime::extensions::host_upgrade::host_bundle_upgrade::{
     SAND_BOX_HOST_VERSION_PATH, read_local_host_version,
@@ -255,13 +254,8 @@ use mahayana_host_runtime::ports::telemetry::sand_error_detail;
 use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxRunnerResourcePort, BoxStatus, ForeverBoxService,
 };
-use mahayana_host_runtime::extensions::teach_recording::extension::{
-    CAP_SLACK_MS, TeachRecordingServiceDeps, create_teach_recording_extension,
-    load_teach_queue_key,
-};
 use mahayana_host_runtime::extensions::teach_recording::teach_recording_service::{
-    LEARN_SKILL_NAME, ProductionTeachRecordingRuntime, SAND_TEACH_MAX_DURATION_MS,
-    SandTeachRecordingServiceFactory, TeachRecordingApi, TeachRecordingRuntimePort, TeachStatus,
+    TeachRecordingApi, TeachStatus,
 };
 use mahayana_host_runtime::runner_context_production_provider::ProductionRunnerRequestContextSource;
 use mahayana_host_runtime::send_trace_host::{
@@ -11121,9 +11115,7 @@ fn main() {
             }
         },
     );
-    let cross_user = match ProductionCrossUserRuntime::new(
-        Arc::clone(&production_extensions.auth),
-        production_extensions.notify_bus.clone(),
+    let cross_user = match production_extensions.start_cross_user(
         Arc::clone(&attachments_service),
         transcript_manager.shared_rooms(),
         run_remote_requested_turn,
@@ -11155,7 +11147,7 @@ fn main() {
     let host_upgrade_transcript = Arc::clone(&transcript_manager);
     let host_upgrade_sessions = Arc::clone(&session_workers);
     let host_upgrade_resume_gateway = Arc::clone(&host_upgrade_gateway_slot);
-    let host_upgrade = match start_production_host_upgrade_extension(
+    let host_upgrade = match production_extensions.start_host_upgrade(
         ProductionHostUpgradePeers {
             suspend_automation_wakes: Arc::new(move || {
                 host_upgrade_automation.suspend_wakes();
@@ -11203,8 +11195,6 @@ fn main() {
                 gateway.resume_interrupted_upgrade_turns()
             }),
         },
-        host_telemetry.logs.clone(),
-        Arc::new(|| Ok(())),
     ) {
         Ok(extension) => extension,
         Err(error) => {
@@ -11452,22 +11442,13 @@ fn main() {
         Arc::downgrade(&automations_lifecycle);
     gateway_api.refresh_production_automations();
 
-    let teach_runtime: Arc<dyn TeachRecordingRuntimePort> =
-        Arc::new(ProductionTeachRecordingRuntime::new(Arc::clone(&forever_box)));
-    let teach_factory = SandTeachRecordingServiceFactory::new(teach_runtime);
-    let teach_experiments = Arc::clone(&production_extensions.experiments);
-    let teach_sessions = Arc::clone(&session_workers);
-    let teach_managed_setup = Arc::clone(&production_extensions.managed_setup);
-    let teach_analytics_started = host_telemetry.analytics.clone();
-    let teach_analytics_stopped = host_telemetry.analytics.clone();
-    let teach_logs_cap = host_telemetry.logs.clone();
-    let teach_logs_start = host_telemetry.logs.clone();
     let teach_gateway = Arc::downgrade(&gateway_api);
-    let teach_deps = TeachRecordingServiceDeps {
-        is_enabled: Arc::new(move || teach_experiments.check_feature_gate("sand_teach_by_demonstration")),
-        cap_delay_ms: SAND_TEACH_MAX_DURATION_MS + CAP_SLACK_MS,
-        send_learning_prompt: Arc::new(move |agent_id, content, client_nonce, rich_text| {
-            let gateway = teach_gateway.upgrade()
+    let teach_recording_api = match production_extensions.start_teach_recording(
+        Arc::clone(&forever_box),
+        Arc::clone(&session_workers),
+        Arc::new(move |agent_id, content, client_nonce, rich_text| {
+            let gateway = teach_gateway
+                .upgrade()
                 .ok_or_else(|| "teach-recording gateway is unavailable".to_string())?;
             let mut args = serde_json::json!({
                 "agentId": agent_id,
@@ -11479,27 +11460,22 @@ fn main() {
             if let Some(rich_text) = rich_text {
                 args["richText"] = serde_json::Value::String(rich_text.to_string());
             }
-            gateway.call("sendPrompt", args).map(|_| ()).map_err(|error| error.to_string())
+            gateway
+                .call("sendPrompt", args)
+                .map(|_| ())
+                .map_err(|error| error.to_string())
         }),
-        list_agent_ids: Arc::new(move || teach_sessions.list_agent_record_ids()),
-        queue_signature_key: Arc::new(|| load_teach_queue_key(None)),
-        ensure_learning_workflow: Arc::new(move || Ok(teach_managed_setup.ensure_managed_skill(LEARN_SKILL_NAME))),
-        track_recording_started: Arc::new(move |event| {
-            let _ = teach_analytics_started.track_event("sand.teach.recording_started", &event);
-        }),
-        track_recording_stopped: Arc::new(move |event| {
-            let _ = teach_analytics_stopped.track_event("sand.teach.recording_stopped", &event);
-        }),
-        report_cap_stop_failed: Arc::new(move |event| {
-            let _ = teach_logs_cap.report_teach_recording_cap_stop_failed(&event);
-        }),
-        report_start_failed: Arc::new(move |event| {
-            let _ = teach_logs_start.report_teach_recording_start_failed(&event);
-        }),
+    ) {
+        Ok(api) => api,
+        Err(error) => {
+            host_lifecycle.fail();
+            eprintln!("failed to start production TeachRecording extension: {error}");
+            return;
+        }
     };
-    let teach_recording_extension = create_teach_recording_extension(&teach_factory, teach_deps);
-    *teach_recording_slot.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) =
-        Some(teach_recording_extension.api());
+    *teach_recording_slot
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(teach_recording_api);
 
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: gateway_api.clone(),
@@ -11516,15 +11492,6 @@ fn main() {
             return;
         }
     };
-
-    let teach_recovery_service = Arc::clone(teach_recording_extension.service());
-    let _teach_recovery_worker = thread::Builder::new()
-        .name("mahayana-teach-recording-recovery".into())
-        .spawn(move || {
-            if let Err(error) = teach_recovery_service.recover_pending() {
-                eprintln!("teach-recording: pending delivery recovery failed: {error}");
-            }
-        });
 
     let ack_redrive_stop = Arc::new(AtomicBool::new(false));
 
@@ -11592,9 +11559,7 @@ fn main() {
     };
 
     production_extensions.notify_bus.mark_background_work_ready();
-    if let Err(error) =
-        cross_user.start_background_work(Arc::clone(&production_extensions.experiments))
-    {
+    if let Err(error) = production_extensions.start_cross_user_background_work() {
         eprintln!("[sand-host] CrossUserSharing background work failed: {error}");
     }
     let _ = local_tool_permission_extension.background_work_ready();
@@ -11743,7 +11708,15 @@ fn main() {
     if let Err(error) = production_extensions.stop_automations() {
         eprintln!("failed to stop production Automations extension cleanly: {error}");
     }
-    cross_user.stop();
+    if let Err(error) = production_extensions.stop_teach_recording() {
+        eprintln!("failed to stop production TeachRecording extension cleanly: {error}");
+    }
+    if let Err(error) = production_extensions.stop_host_upgrade() {
+        eprintln!("failed to stop production HostUpgrade extension cleanly: {error}");
+    }
+    if let Err(error) = production_extensions.stop_cross_user() {
+        eprintln!("failed to stop production CrossUserSharing extension cleanly: {error}");
+    }
     if let Err(error) = production_extensions.stop_notifications() {
         eprintln!("failed to stop production Notifications extension cleanly: {error}");
     }
@@ -11757,7 +11730,6 @@ fn main() {
     if let Err(error) = production_extensions.shutdown_session() {
         eprintln!("failed to shut down production Session extension cleanly: {error}");
     }
-    drop(teach_recording_extension);
     box_extensions.stop();
     // CloudAgents and Telemetry both depend on earlier production extensions.
     // Settle them while Auth / Experiments / Inference are still live.
