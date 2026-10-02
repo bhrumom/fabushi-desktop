@@ -250,13 +250,17 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   // relying on the retired compatibility Host's synthetic roster.
   const roster = page.getByRole('region', { name: 'Agent list' });
   const primary = roster.getByRole('button', { name: 'New chat', exact: true });
+  const loadedAgentRows = roster.locator('button.sand-agent-item');
   const emptyRoster = roster.getByText('No saved agents yet.', { exact: true });
   await expect.poll(async () => {
-    const count = await primary.count();
-    if (count > 0) return 'present';
+    if (await loadedAgentRows.count() > 0) return 'loaded';
     return await emptyRoster.isVisible().catch(() => false) ? 'empty' : 'pending';
   }, { timeout: 15_000 }).not.toBe('pending');
   if (await primary.count() === 0) {
+    // A fresh authenticated account may already contain the shipping default
+    // Grok Agent. That proves the roster is loaded, but it is not the focused
+    // fixture this suite needs. Create exactly one New chat through the real
+    // production New -> createAgent -> refreshRoster path.
     await page.getByRole('button', { name: 'New', exact: true }).click();
   }
   await expect(primary).toHaveCount(1, { timeout: 15_000 });
