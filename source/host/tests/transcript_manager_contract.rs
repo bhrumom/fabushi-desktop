@@ -43,6 +43,18 @@ fn manager_is_the_single_production_composition_owner() {
     assert!(Arc::ptr_eq(&runners_a, &runners_b));
     assert_eq!(runners_a.active_count(), 0);
 
+    let group_a = manager.group_chat();
+    let group_b = manager.group_chat();
+    assert!(Arc::ptr_eq(&group_a, &group_b));
+
+    let widgets_a = manager.widget_responses();
+    let widgets_b = manager.widget_responses();
+    assert!(Arc::ptr_eq(&widgets_a, &widgets_b));
+
+    let rooms_a = manager.shared_rooms();
+    let rooms_b = manager.shared_rooms();
+    assert!(Arc::ptr_eq(&rooms_a, &rooms_b));
+
     let ack_a = manager.ack_obligations();
     let ack_b = manager.ack_obligations();
     assert!(Arc::ptr_eq(&ack_a, &ack_b));

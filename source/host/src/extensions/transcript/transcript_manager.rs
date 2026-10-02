@@ -24,10 +24,12 @@ use crate::extensions::turn_execution::turn_execution_service::{
 
 use super::ack_obligations::AckObligations;
 use super::automation_runtime::AutomationRuntime;
+use super::group_chat_glue::GroupChatGlue;
 use super::async_task_union::AsyncTask;
 use super::production_runtime::{ProductionSendError, ProductionTranscriptRuntime};
 use super::runner_registry::TranscriptRunnerRegistry;
 use super::shared_rooms::SharedRooms;
+use super::widget_responses::WidgetResponses;
 
 #[derive(Clone)]
 pub struct TranscriptTurnExecutionPort {
@@ -104,6 +106,8 @@ pub struct TranscriptManager {
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
     automation_runtime: Arc<AutomationRuntime>,
+    group_chat: Arc<GroupChatGlue>,
+    widget_responses: Arc<WidgetResponses>,
     watched_automation_store: Mutex<Option<FileAutomationStore>>,
     shared_rooms: Arc<SharedRooms>,
     services: Mutex<Option<TranscriptManagerServices>>,
@@ -118,12 +122,16 @@ impl TranscriptManager {
         let root_dir = root_dir.as_ref();
         let automation_runtime = Arc::new(AutomationRuntime::new(Arc::clone(&session_workers)));
         let shared_rooms = Arc::new(SharedRooms::new(Arc::clone(&session_workers)));
+        let group_chat = Arc::new(GroupChatGlue::new(Arc::clone(&session_workers)));
+        let widget_responses = Arc::new(WidgetResponses::new(Arc::clone(&session_workers)));
         Self {
             session_workers,
             transcript_runtime: Arc::new(ProductionTranscriptRuntime::new(Some(root_dir))),
             runner_registry: Arc::new(TranscriptRunnerRegistry::default()),
             ack_obligations: Arc::new(AckObligations::new(root_dir)),
             automation_runtime,
+            group_chat,
+            widget_responses,
             watched_automation_store: Mutex::new(None),
             shared_rooms,
             services: Mutex::new(None),
@@ -153,6 +161,14 @@ impl TranscriptManager {
 
     pub fn shared_rooms(&self) -> Arc<SharedRooms> {
         Arc::clone(&self.shared_rooms)
+    }
+
+    pub fn group_chat(&self) -> Arc<GroupChatGlue> {
+        Arc::clone(&self.group_chat)
+    }
+
+    pub fn widget_responses(&self) -> Arc<WidgetResponses> {
+        Arc::clone(&self.widget_responses)
     }
 
     pub fn set_production_services(&self, services: TranscriptManagerServices) -> Result<(), String> {

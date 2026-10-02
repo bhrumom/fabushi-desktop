@@ -2934,8 +2934,7 @@ impl UnifiedGatewayApi {
             run_local_group_member_turn(deps.clone(), provider, Some(&member_room_id), request)
         });
         let epoch = self.transcript_runtime.current_turn_epoch(agent_id);
-        let group_glue = GroupChatGlue::new(Arc::clone(&self.session_workers));
-        match group_glue.run_group_turn(
+        match self.transcript_manager.group_chat().run_group_turn(
             Arc::clone(&self.transcript_runtime),
             agent_id,
             epoch,
@@ -9970,8 +9969,7 @@ fn main() {
         .event_bridge()
         .expect("production Transcript extension must install its event bridge");
     let content_search_extension = Arc::clone(&production_extensions.content_search);
-    let permission_widget_responses =
-        Arc::new(WidgetResponses::new(Arc::clone(&session_workers)));
+    let permission_widget_responses = transcript_manager.widget_responses();
     let stranded_permission_logs = host_telemetry.logs.clone();
     local_tool_permission_extension.bind_transcript(
         permission_widget_responses,
@@ -10826,9 +10824,9 @@ fn main() {
     );
     let shared_room_runner_deps = cross_user_runner_deps;
     let shared_room_settings_path = cross_user_settings_path;
-    let shared_room_sessions = Arc::clone(&session_workers);
     let shared_room_runtime = Arc::clone(&transcript_runtime);
     let shared_room_events = shared_room_runner_deps.events.clone();
+    let shared_room_group_chat = transcript_manager.group_chat();
     let run_shared_room_turn: SharedRoomTurnRunner = Arc::new(
         move |room_agent_id, remote_executor| {
             let provider = configured_routed_provider(&shared_room_settings_path)
@@ -10844,8 +10842,7 @@ fn main() {
                 )
             });
             let epoch = shared_room_runtime.next_turn_epoch(room_agent_id);
-            let group_glue = GroupChatGlue::new(Arc::clone(&shared_room_sessions));
-            match group_glue.run_group_turn(
+            match shared_room_group_chat.run_group_turn(
                 Arc::clone(&shared_room_runtime),
                 room_agent_id,
                 epoch,
