@@ -93,3 +93,23 @@ fn shipping_host_recreates_durable_upgrade_turns_before_ack_redrive() {
         .expect("shipping ack redrive");
     assert!(resume < redrive);
 }
+
+#[test]
+fn shipping_recreate_gateway_carries_pending_wakes_and_resumes_durable_turns() {
+    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    const GATEWAY_PROTOCOL: &str = include_str!("../src/gateway_protocol.rs");
+    const TRANSCRIPT_MANAGER: &str =
+        include_str!("../src/extensions/transcript/transcript_manager.rs");
+    const TRANSCRIPT_RUNTIME: &str =
+        include_str!("../src/extensions/transcript/production_runtime.rs");
+
+    assert!(GATEWAY_PROTOCOL.contains("\"resumeAfterRecreate\""));
+    assert!(SHIPPING_HOST.contains("if method == \"resumeAfterRecreate\""));
+    assert!(SHIPPING_HOST.contains("\"resumePendingWakes\": self.transcript_manager.recreate_carry_pending_wakes()"));
+    assert!(SHIPPING_HOST.contains(".restore_recreate_pending_wakes(carried)"));
+    assert!(SHIPPING_HOST.contains("self.resume_interrupted_upgrade_turns()"));
+    assert!(TRANSCRIPT_MANAGER.contains("pub fn restore_recreate_pending_wakes"));
+    assert!(TRANSCRIPT_MANAGER.contains("owner.rearm_pending_wake(marker, now_ms, Some(\"recreate_carry\"))"));
+    assert!(TRANSCRIPT_RUNTIME.contains("pub fn recreate_carry_pending_wakes"));
+    assert!(TRANSCRIPT_RUNTIME.contains("PendingWakeKind::CloudAgent | PendingWakeKind::Shell"));
+}

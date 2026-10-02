@@ -45,7 +45,8 @@ use super::client_side_tool_v2_producer::{
 };
 use super::group_chat_glue::GroupChatGlue;
 use super::async_task_union::AsyncTask;
-use super::pending_wake_rearm::{PendingWakeRearm, PendingWakeRuntimePort};
+use super::pending_wake_rearm::{PendingWakeRearm, PendingWakeRuntimePort, is_recreate_wake_carry_disabled};
+use super::sand_pending_wake_store::{DurablePendingWakeMarker, PendingWakeKind, coerce_marker};
 use super::production_runtime::{
     AgentRunLifecycleObserver, ProductionSendError, ProductionTranscriptRuntime,
 };
@@ -423,6 +424,40 @@ impl TranscriptManager {
             .ok_or_else(|| "transcript pending-wake runtime is not configured".to_string())?;
         owner.rearm_pending_wakes();
         Ok(())
+    }
+
+    pub fn restore_recreate_pending_wakes(&self, carried: &[Value]) -> Result<usize, String> {
+        if carried.is_empty() || is_recreate_wake_carry_disabled() {
+            return Ok(0);
+        }
+        let owner = self
+            .pending_wakes
+            .lock()
+            .map_err(|_| "transcript pending-wake mutex poisoned".to_string())?
+            .clone()
+            .ok_or_else(|| "transcript pending-wake runtime is not configured".to_string())?;
+        let Some(store) = self.transcript_runtime.pending_wake_store() else {
+            return Ok(0);
+        };
+        let now_ms = chrono::Utc::now().timestamp_millis() as f64;
+        let mut restored = 0usize;
+        for mut marker in carried.iter().filter_map(coerce_marker) {
+            if !matches!(marker.kind, PendingWakeKind::CloudAgent | PendingWakeKind::Shell) {
+                continue;
+            }
+            if store.has_pending(&marker.agent_id, marker.kind, &marker.work_id) {
+                continue;
+            }
+            if marker.kind == PendingWakeKind::Shell {
+                marker.interrupted_by_recreate = true;
+            }
+            if !owner.persist_pending_wake(marker.clone()) {
+                continue;
+            }
+            owner.rearm_pending_wake(marker, now_ms, Some("recreate_carry"));
+            restored = restored.saturating_add(1);
+        }
+        Ok(restored)
     }
 
     pub fn set_handoff_service(&self, handoff: BoxHandoffService) -> Result<(), String> {
@@ -844,6 +879,10 @@ impl TranscriptManager {
 
     pub fn has_carryable_pending_wake(&self) -> bool {
         self.transcript_runtime.has_carryable_pending_wake()
+    }
+
+    pub fn recreate_carry_pending_wakes(&self) -> Vec<DurablePendingWakeMarker> {
+        self.transcript_runtime.recreate_carry_pending_wakes()
     }
 
     pub fn quiesce_for_upgrade(&self) -> UpgradeQuiesceSummary {

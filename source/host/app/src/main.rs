@@ -8077,6 +8077,43 @@ impl GatewayApi for UnifiedGatewayApi {
             return Ok(serde_json::json!({"queued": true}));
         }
 
+        if method == "resumeAfterRecreate" {
+            let local_ids = self.transcript_runtime.upgrade_resume_agent_ids();
+            let mut resume_ids = local_ids.clone();
+            if let Some(agent_ids) = args.get("agentIds").and_then(serde_json::Value::as_array) {
+                for agent_id in agent_ids.iter().filter_map(serde_json::Value::as_str) {
+                    let agent_id = agent_id.trim();
+                    if agent_id.is_empty() || resume_ids.iter().any(|known| known == agent_id) {
+                        continue;
+                    }
+                    self.transcript_manager.mark_upgrade_resume_pending(UpgradeResumeMarker {
+                        agent_id: agent_id.to_string(),
+                        marked_at_ms: started_at_ms() as f64,
+                        source: None,
+                        automation_id: None,
+                        automation_run_id: None,
+                    });
+                    resume_ids.push(agent_id.to_string());
+                }
+            }
+            self.transcript_manager.resume_after_recreate();
+            let carried = args
+                .get("resumePendingWakes")
+                .and_then(serde_json::Value::as_array)
+                .map(Vec::as_slice)
+                .unwrap_or(&[]);
+            let restored_pending_wakes = self
+                .transcript_manager
+                .restore_recreate_pending_wakes(carried)
+                .map_err(GatewayCommandError::Internal)?;
+            self.resume_interrupted_upgrade_turns()
+                .map_err(GatewayCommandError::Internal)?;
+            return Ok(serde_json::json!({
+                "resumed": resume_ids.len(),
+                "restoredPendingWakes": restored_pending_wakes,
+            }));
+        }
+
         if method == "broadcastToAgents" {
             let message = args
                 .get("message")
@@ -9410,6 +9447,7 @@ impl GatewayApi for UnifiedGatewayApi {
             "quiescing": self.transcript_manager.is_quiescing_for_upgrade(),
             "runningTurns": self.transcript_manager.live_running_agent_ids().len(),
             "resumeAgentIds": self.transcript_runtime.upgrade_resume_agent_ids(),
+            "resumePendingWakes": self.transcript_manager.recreate_carry_pending_wakes(),
         }))
     }
 

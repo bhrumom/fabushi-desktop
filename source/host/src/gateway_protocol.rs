@@ -28,7 +28,7 @@ pub const GROK_GATEWAY_COMMANDS: &[&str] = &[
     "setAgentAvatarBytes", "getAgentAvatar", "getForeverBoxStatus", "getCloudAgentInfo",
     "ensureForeverBox", "resetForeverBox", "updateForeverBox", "autoUpdateBoxNow",
     "snapshotBoxStoreNow", "getBoxStoreStatus", "clearBoxStoreNow", "updateHostNow",
-    "getHostStatus", "setBoxMigrating", "prepareBoxForRecreate", "resumeBoxAfterRecreate",
+    "getHostStatus", "setBoxMigrating", "prepareBoxForRecreate", "resumeBoxAfterRecreate", "resumeAfterRecreate",
     "handBackForeverBox", "startTeachRecording", "stopTeachRecording",
     "getTeachRecordingStatus", "getTrays", "dismissTray", "clearTrays", "uploadAttachment",
     "readAttachmentImage", "readAttachmentText", "readAttachmentChunk", "getHostSettings",

@@ -18,7 +18,7 @@ use super::prompt_acceptance_ledger::{
 };
 use super::run_lifecycle::RunLifecycleState;
 use super::send_group_fanout::GroupMemberTurnExecutor;
-use super::sand_pending_wake_store::{PendingWakeKind, SandPendingWakeStore};
+use super::sand_pending_wake_store::{DurablePendingWakeMarker, PendingWakeKind, SandPendingWakeStore};
 use super::sand_upgrade_resume_store::{SandUpgradeResumeStore, UpgradeResumeMarker};
 use super::session_runtime::SessionRuntime;
 use super::replica_writer::HostReplicaWriter;
@@ -26,6 +26,7 @@ use super::run_scheduler::{
     QueueAccepted, QueueDequeued, RUN_WATCHDOG_DEFAULT_MS, RUN_WATCHDOG_GRACE_DEFAULT_MS,
     RunLane, RunSettlement, WatchdogEvent,
 };
+use super::pending_wake_rearm::is_recreate_wake_carry_disabled;
 use super::send_pipeline::{
     HOST_ACCOUNT_SLOT, PersistedSendContext, SendBegin, SendEchoIdentity, SendPipelineState,
 };
@@ -337,6 +338,24 @@ impl ProductionTranscriptRuntime {
         self.pending_wake_store
             .as_ref()
             .is_some_and(|store| !store.list_pending().is_empty())
+    }
+
+    pub fn recreate_carry_pending_wakes(&self) -> Vec<DurablePendingWakeMarker> {
+        if is_recreate_wake_carry_disabled() {
+            return Vec::new();
+        }
+        self.pending_wake_store
+            .as_ref()
+            .map(|store| {
+                store
+                    .list_pending()
+                    .into_iter()
+                    .filter(|marker| {
+                        matches!(marker.kind, PendingWakeKind::CloudAgent | PendingWakeKind::Shell)
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
     }
 
     pub fn active_agent_id(
