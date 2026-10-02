@@ -255,7 +255,9 @@ use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::AgentEr
 use mahayana_host_runtime::extensions::telemetry::journal_outcome_telemetry::JournalOutcomeReport;
 use mahayana_host_runtime::extensions::telemetry::sand_error_tags::SandErrorValue;
 use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
-use mahayana_host_runtime::extensions::transcript::turn_runtime::{REPLY_NUDGE_PROMPT, classify_agent_error};
+use mahayana_host_runtime::extensions::transcript::turn_runtime::{
+    REPLY_NUDGE_PROMPT, TurnTerminalKind, classify_agent_error, project_turn_terminal,
+};
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
 use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxRunnerResourcePort, BoxStatus, ForeverBoxService,
@@ -7672,9 +7674,16 @@ fn start_routed_provider_task(
             }
             let sent_message_count = send_message_delivery_counter.count();
             let reacted = reaction_delivery_counter.count() > 0;
+            let terminal_projection = project_turn_terminal(
+                waiting_user,
+                worker_cancellation.is_cancelled(),
+                result.is_ok(),
+                sent_message_count,
+                reacted,
+            );
             let closing_send_fields = ClosingSendNudgeFields {
                 conversation_id: agent_id.clone(),
-                delivered: sent_message_count > 0 || reacted,
+                delivered: terminal_projection.delivered,
                 sent_message_count,
                 aborted: worker_cancellation.is_cancelled(),
             };
@@ -7744,20 +7753,25 @@ fn start_routed_provider_task(
             let _ = worker_box_store_sync.schedule_store_db_snapshot(&agent_id);
 
             if let Ok(mut turn) = structured_turn.lock() {
-                if waiting_user {
-                    turn.finalize("waiting_user", None, None);
-                } else if worker_cancellation.is_cancelled() {
-                    turn.finalize("cancelled", None, None);
-                } else if let Err(error) = result.as_ref() {
-                    let classified = classify_agent_error(error);
-                    let detail = sand_error_detail(error);
-                    turn.finalize(
-                        "failed",
-                        Some(&classified),
-                        Some((&detail.message, detail.stack.as_deref())),
-                    );
-                } else {
-                    turn.finalize("completed", None, None);
+                match terminal_projection.kind {
+                    TurnTerminalKind::WaitingUser
+                    | TurnTerminalKind::Cancelled
+                    | TurnTerminalKind::Completed => {
+                        turn.finalize(terminal_projection.kind.as_str(), None, None);
+                    }
+                    TurnTerminalKind::Failed => {
+                        if let Err(error) = result.as_ref() {
+                            let classified = classify_agent_error(error);
+                            let detail = sand_error_detail(error);
+                            turn.finalize(
+                                terminal_projection.kind.as_str(),
+                                Some(&classified),
+                                Some((&detail.message, detail.stack.as_deref())),
+                            );
+                        } else {
+                            turn.finalize(terminal_projection.kind.as_str(), None, None);
+                        }
+                    }
                 }
             }
 

@@ -2,8 +2,8 @@ use mahayana_host_runtime::extensions::transcript::send_pipeline::{
     PersistedSendContext, RecoverySend,
 };
 use mahayana_host_runtime::extensions::transcript::turn_runtime::{
-    QueuedTurnRecoveryCheck, REPLY_NUDGE_PROMPT, is_delivery_owed,
-    should_supersede_stale_turn,
+    QueuedTurnRecoveryCheck, REPLY_NUDGE_PROMPT, TurnTerminalKind, is_delivery_owed,
+    project_turn_terminal, should_supersede_stale_turn,
 };
 use mahayana_host_runtime::runner::{
     RecoveryUserMessage, would_recover_via_prepend,
@@ -103,4 +103,33 @@ fn frozen_delivery_owed_treats_successful_reaction_as_user_visible_delivery() {
     assert!(!is_delivery_owed(0, true));
     assert!(REPLY_NUDGE_PROMPT.contains("actually invoking the SendMessage tool"));
     assert!(REPLY_NUDGE_PROMPT.contains("ack ≠ delivery"));
+}
+
+
+#[test]
+fn frozen_terminal_projection_keeps_delivery_and_reply_nudge_semantics_together() {
+    let completed_silent = project_turn_terminal(false, false, true, 0, false);
+    assert_eq!(completed_silent.kind, TurnTerminalKind::Completed);
+    assert!(!completed_silent.delivered);
+    assert!(completed_silent.reply_nudge_owed);
+
+    let completed_sent = project_turn_terminal(false, false, true, 1, false);
+    assert!(completed_sent.delivered);
+    assert!(!completed_sent.reply_nudge_owed);
+
+    let completed_reaction = project_turn_terminal(false, false, true, 0, true);
+    assert!(completed_reaction.delivered);
+    assert!(!completed_reaction.reply_nudge_owed);
+
+    let waiting = project_turn_terminal(true, false, true, 0, false);
+    assert_eq!(waiting.kind, TurnTerminalKind::WaitingUser);
+    assert!(!waiting.reply_nudge_owed);
+
+    let cancelled = project_turn_terminal(false, true, true, 0, false);
+    assert_eq!(cancelled.kind, TurnTerminalKind::Cancelled);
+    assert!(!cancelled.reply_nudge_owed);
+
+    let failed = project_turn_terminal(false, false, false, 0, false);
+    assert_eq!(failed.kind, TurnTerminalKind::Failed);
+    assert!(!failed.reply_nudge_owed);
 }

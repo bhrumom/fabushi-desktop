@@ -11,6 +11,56 @@ pub fn is_delivery_owed(sent_message_count: u64, reacted: bool) -> bool {
     sent_message_count == 0 && !reacted
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TurnTerminalKind {
+    WaitingUser,
+    Cancelled,
+    Completed,
+    Failed,
+}
+
+impl TurnTerminalKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::WaitingUser => "waiting_user",
+            Self::Cancelled => "cancelled",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TurnTerminalProjection {
+    pub kind: TurnTerminalKind,
+    pub delivered: bool,
+    pub reply_nudge_owed: bool,
+}
+
+pub fn project_turn_terminal(
+    waiting_user: bool,
+    cancelled: bool,
+    succeeded: bool,
+    sent_message_count: u64,
+    reacted: bool,
+) -> TurnTerminalProjection {
+    let kind = if waiting_user {
+        TurnTerminalKind::WaitingUser
+    } else if cancelled {
+        TurnTerminalKind::Cancelled
+    } else if succeeded {
+        TurnTerminalKind::Completed
+    } else {
+        TurnTerminalKind::Failed
+    };
+    let delivered = !is_delivery_owed(sent_message_count, reacted);
+    TurnTerminalProjection {
+        kind,
+        delivered,
+        reply_nudge_owed: kind == TurnTerminalKind::Completed && !delivered,
+    }
+}
+
 pub fn classify_agent_error(error: &ProviderSessionError) -> SandErrorValue {
     let message = error.to_string();
     let lower = message.to_ascii_lowercase();
