@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::sync::{Mutex, mpsc};
+use std::sync::{Arc, Mutex, mpsc};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{RecvTimeoutError, Sender};
 use std::time::Duration;
 use std::thread;
@@ -589,14 +590,24 @@ pub struct InferenceRoute {
 
 type InferenceTask = Box<dyn FnOnce() + Send + 'static>;
 
-#[derive(Clone)]
-struct InferenceTaskWorker {
-    urgent: Sender<InferenceTask>,
-    normal: Sender<InferenceTask>,
+struct QueuedInferenceTask {
+    generation: u64,
+    generation_gate: Arc<AtomicU64>,
+    task: InferenceTask,
 }
 
-fn run_inference_task(task: InferenceTask) {
-    let _ = catch_unwind(AssertUnwindSafe(task));
+#[derive(Clone)]
+struct InferenceTaskWorker {
+    urgent: Sender<QueuedInferenceTask>,
+    normal: Sender<QueuedInferenceTask>,
+    generation: Arc<AtomicU64>,
+}
+
+fn run_inference_task(task: QueuedInferenceTask) {
+    if task.generation_gate.load(Ordering::SeqCst) != task.generation {
+        return;
+    }
+    let _ = catch_unwind(AssertUnwindSafe(task.task));
 }
 
 #[derive(Default)]
@@ -606,8 +617,9 @@ pub struct InferenceTaskQueue {
 
 impl InferenceTaskQueue {
     fn spawn_worker(agent_id: &str) -> Result<InferenceTaskWorker, Failure> {
-        let (urgent_tx, urgent_rx) = mpsc::channel::<InferenceTask>();
-        let (normal_tx, normal_rx) = mpsc::channel::<InferenceTask>();
+        let (urgent_tx, urgent_rx) = mpsc::channel::<QueuedInferenceTask>();
+        let (normal_tx, normal_rx) = mpsc::channel::<QueuedInferenceTask>();
+        let generation = Arc::new(AtomicU64::new(0));
         thread::Builder::new()
             .name(format!("inference-router-{agent_id}"))
             .spawn(move || loop {
@@ -638,7 +650,19 @@ impl InferenceTaskQueue {
                     format!("could not start inference queue worker: {error}"),
                 )
             })?;
-        Ok(InferenceTaskWorker { urgent: urgent_tx, normal: normal_tx })
+        Ok(InferenceTaskWorker {
+            urgent: urgent_tx,
+            normal: normal_tx,
+            generation,
+        })
+    }
+
+    fn queued_task(worker: &InferenceTaskWorker, task: InferenceTask) -> QueuedInferenceTask {
+        QueuedInferenceTask {
+            generation: worker.generation.load(Ordering::SeqCst),
+            generation_gate: Arc::clone(&worker.generation),
+            task,
+        }
     }
 
     pub fn enqueue<F>(&self, agent_id: &str, task: F) -> Result<(), Failure>
@@ -677,10 +701,11 @@ impl InferenceTaskQueue {
 
         if let Some(worker) = workers.get(agent_id) {
             let sender = if urgent { &worker.urgent } else { &worker.normal };
-            match sender.send(task) {
+            match sender.send(Self::queued_task(worker, task)) {
                 Ok(()) => return Ok(()),
                 Err(error) => {
-                    task = error.0;
+                    task = error.0.task;
+                    worker.generation.fetch_add(1, Ordering::SeqCst);
                     workers.remove(agent_id);
                 }
             }
@@ -688,14 +713,27 @@ impl InferenceTaskQueue {
 
         let worker = Self::spawn_worker(agent_id)?;
         let sender = if urgent { &worker.urgent } else { &worker.normal };
-        sender.send(task).map_err(|error| {
-            Failure::new(
-                "INFERENCE_QUEUE_DISCONNECTED",
-                format!("inference queue worker stopped before enqueue: {error}"),
-            )
-        })?;
+        sender
+            .send(Self::queued_task(&worker, task))
+            .map_err(|error| {
+                Failure::new(
+                    "INFERENCE_QUEUE_DISCONNECTED",
+                    format!("inference queue worker stopped before enqueue: {error}"),
+                )
+            })?;
         workers.insert(agent_id.to_string(), worker);
         Ok(())
+    }
+
+    pub fn clear_agent(&self, agent_id: &str) -> usize {
+        let Ok(mut workers) = self.workers.lock() else {
+            return 0;
+        };
+        let Some(worker) = workers.remove(agent_id.trim()) else {
+            return 0;
+        };
+        worker.generation.fetch_add(1, Ordering::SeqCst);
+        1
     }
 
     pub fn worker_count(&self) -> usize {
@@ -707,6 +745,9 @@ impl InferenceTaskQueue {
 
     pub fn dispose(&self) {
         if let Ok(mut workers) = self.workers.lock() {
+            for worker in workers.values() {
+                worker.generation.fetch_add(1, Ordering::SeqCst);
+            }
             workers.clear();
         }
     }
