@@ -18,15 +18,31 @@ export interface ProductionHumanIdentityStore {
 export function createProductionHumanIdentityStore(userDataDir: string): ProductionHumanIdentityStore {
   const path = join(userDataDir, "fabushi-human-identities.json");
   const read = (): HumanIdentityFile => {
+    let raw: string;
     try {
-      const parsed = JSON.parse(readFileSync(path, "utf8")) as Partial<HumanIdentityFile>;
-      if (parsed.schemaVersion === 1 && parsed.identities != null && typeof parsed.identities === "object") {
-        return { schemaVersion: 1, identities: { ...parsed.identities } };
+      raw = readFileSync(path, "utf8");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        return { schemaVersion: 1, identities: {} };
       }
-    } catch {
-      // Missing or corrupt metadata is recovered by minting a scoped identity.
+      throw error;
     }
-    return { schemaVersion: 1, identities: {} };
+
+    let parsed: Partial<HumanIdentityFile>;
+    try {
+      parsed = JSON.parse(raw) as Partial<HumanIdentityFile>;
+    } catch {
+      throw new Error("Fabushi Human identity store is corrupt.");
+    }
+    if (parsed.schemaVersion !== 1 || parsed.identities == null || typeof parsed.identities !== "object" || Array.isArray(parsed.identities)) {
+      throw new Error("Fabushi Human identity store is corrupt.");
+    }
+    for (const [scope, identity] of Object.entries(parsed.identities)) {
+      if (scope.length === 0 || typeof identity !== "string" || identity.trim().length === 0) {
+        throw new Error("Fabushi Human identity store is corrupt.");
+      }
+    }
+    return { schemaVersion: 1, identities: { ...parsed.identities } };
   };
 
   return {
