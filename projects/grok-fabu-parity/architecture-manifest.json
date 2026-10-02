@@ -16657,7 +16657,7 @@
       "targetPath": "source/host/src/extensions/transcript/turn_runtime.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "af5c98f64f25396925da8d462e6a6d72d1adaf43",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -16669,7 +16669,14 @@
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/extensions/session/production_agent_store.rs",
         "source/host/src/runner/production_agent_checkpoint.rs",
-        "source/host/src/extensions/telemetry/agent_error_telemetry.rs"
+        "source/host/src/extensions/telemetry/agent_error_telemetry.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/turn_observation.rs",
+        "source/host/src/host_runner_composition.rs",
+        "source/host/src/extensions/auto_review/auto_review_service.rs",
+        "source/host/src/extensions/transcript/widget_responses.rs",
+        "source/host/src/runner/tools/sand_reaction_tool.rs",
+        "source/host/src/extensions/transcript/run_lifecycle.rs"
       ],
       "testEvidence": [
         "source/host/tests/turn_runtime_recovery_contract.rs",
@@ -16677,10 +16684,17 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/production_agent_checkpoint_contract.rs",
-        "source/host/tests/agent_error_telemetry_contract.rs"
+        "source/host/tests/agent_error_telemetry_contract.rs",
+        "source/host/tests/runner_delivery_parity_contract.rs",
+        "source/host/tests/widget_responses_full_contract.rs",
+        "source/host/tests/auto_review_service_contract.rs",
+        "source/host/tests/sand_reaction_tool_contract.rs",
+        "source/host/tests/host_runner_composition_local_permission_contract.rs",
+        "source/host/tests/turn_telemetry_production_wiring_contract.rs",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Real shipping slice of frozen TurnRuntime: queued-turn recovery suppression uses current/recovery-break epochs, durable message identity/history, no-media/no-fork/no-reply/raw-text guards, latest recovery epoch and exact SandAgentRunner prepend ordering/confirmed semantics before Host dispatch. Successful Agent checkpoint settlement now sets the durable transcript confirmed watermark atomically with latestRootBlobId, so later recovery decisions observe real generated-state confirmation. Final remains withheld for update projection, request/usage lifecycle, reply nudges/empty-delivery telemetry, tool diagnostics/status settlement, reactions and automation emission. Rust turn runtime now also owns the frozen Agent-error family classifier used by ack-redrive structured telemetry; broader TurnRuntime finality remains gated by the remaining frozen turn/session/tool lifecycle surfaces."
+      "notes": "Frozen TurnRuntime responsibilities are absorbed into the canonical Rust Host production graph. Queued-turn recovery suppression and confirmed-watermark checkpoint settlement remain owned by turn_runtime/production_runtime/send_pipeline. Shipping app/main executes bounded hidden reply nudges and the silent-tool closing-send nudge with current-epoch/cancel/waiting-user guards, reports both ordinary empty delivery and closing-send telemetry, and projects terminal outcomes. Request-id and turn-usage lifecycle are persisted through TranscriptProductionRuntime/RunLifecycle and emitted through Host telemetry. TurnObservation owns client-side-tool-v2 and tool-call start/error/stall projection; AutoReviewService and HostRunnerComposition persist auto-review and local-tool-permission status settlement; WidgetResponses plus the Runner reaction bridge persist reactions and count successful reaction delivery. Settled turns emit roster/automation state through the manager-owned shipping composition. Focused contracts cover each split owner and the architecture gate keeps the single Rust Host composition authoritative; no parallel TurnRuntime owner is introduced."
     },
     {
       "referencePath": "source/host/extensions/transcript/upgrade-recreate-resume.ts",

@@ -107,7 +107,12 @@ fn shipping_turn_telemetry_uses_typed_host_facade_and_closing_send_delivery_owne
     assert!(SEND_TOOL.contains("if result.is_ok()"));
     assert!(SEND_TOOL.contains("self.counter.record_success()"));
     assert!(SHIPPING_HOST.contains("let sent_message_count = send_message_delivery_counter.count()"));
-    assert!(SHIPPING_HOST.contains("delivered: sent_message_count > 0"));
+    assert!(SHIPPING_HOST.contains("let reacted = reaction_delivery_counter.count() > 0"));
+    assert!(SHIPPING_HOST.contains("let terminal_projection = project_turn_terminal("));
+    assert!(SHIPPING_HOST.contains("sent_message_count,"));
+    assert!(SHIPPING_HOST.contains("reacted,"));
+    assert!(SHIPPING_HOST.contains("delivered: !is_delivery_owed("));
+    assert!(SHIPPING_HOST.contains("reaction_delivery_counter.count() > 0"));
     assert!(SHIPPING_HOST.contains("aborted: worker_cancellation.is_cancelled()"));
 
     for event in [
