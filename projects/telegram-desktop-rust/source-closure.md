@@ -61,12 +61,14 @@ No item in this table is an instruction to ship Telegram dependencies. It is sou
 
 A previous CMake-only scan correctly found no CMake `file(DOWNLOAD)`, `FetchContent`, or `ExternalProject_Add`, but that scope was too narrow. The frozen `Telegram/build/prepare/prepare.py` and `Telegram/build/docker/centos_env/Dockerfile` explicitly perform network acquisition using `git clone/fetch`, PowerShell `iwr`, `wget`, and `curl`. Build-time external acquisition therefore remains a real provenance blocker and must be enumerated rather than reported absent.
 
-P0 must still enumerate:
+The current PR #26 adoption audit found no Telegram prepare/Docker/Snap invocation, no tracked Telegram resource/shader tree, no `.qsb`/`.binobj`/`.obj` payload, and no binary addition in the FBCP production delta. Those Telegram build/resource inputs are therefore research-only for the current distributed branch rather than shipping dependencies. This does not turn mutable historical acquisition into immutable evidence and does not waive source-informed legal review.
 
-1. immutable build-input proof for tag/branch/`latest`/bootstrap, archive and package-manager acquisitions already inventoried from prepare/Docker/Snap (current tag→commit observations are recorded but are not historical immutability proof);
-2. dependency license expressions for those external acquisitions;
-3. copied/derived asset provenance for any Telegram resources/shaders/models actually used by Fabushi;
-4. third-party dependency/license expressions across the already closed gitlink tree and external acquisition set;
-5. behavior-level responsibility dossiers for each reachable product capability.
+P0 must still close:
+
+1. historical immutable build-input evidence only where needed to understand a source-derived behavior/build responsibility, while recording explicit non-adoption for Telegram-only dependencies not used by Fabushi;
+2. dependency/license review for dependencies actually adopted by distributed Fabushi, plus source-informed GPL/third-party review;
+3. copied/derived provenance for any upstream resource/shader/model/source content that a future or current production change actually copies or adapts; the current FBCP branch has no such Telegram resource/shader/model payload;
+4. floating `desktop-app/legal` and mixed-license/per-file provenance needed to interpret researched upstream sources;
+5. behavior-level source-to-responsibility dossiers until no reachable product capability remains unknown.
 
 Until those close, source research coverage must not be reported as 100%.

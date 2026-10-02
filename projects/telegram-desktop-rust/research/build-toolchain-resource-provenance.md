@@ -64,6 +64,14 @@ The frozen source contains explicit packaging inputs for all three desktop famil
 
 This closes identification of the tracked platform-packaging roots, but not legal review of downloaded dependencies or copied/derived assets.
 
+## Current Fabushi adoption audit
+
+The current FBCP branch was compared against the current PR #20 product skeleton. No tracked Fabushi file is a Telegram `Resources` or `shaders` tree, and no tracked `.qsb`, `.binobj`, or `.obj` payload is present. The current production/build roots (`.github`, `desktop`, `frontend`, `source`, root package/Cargo manifests) contain no invocation of Telegram's frozen `prepare.py`, CentOS Docker build, Snap build, or the specific NuGet/MSYS2/Boost/rustup acquisition endpoints inventoried above. The PR adds no binary file.
+
+The only `telegram.sendMessage` string in the changed production/test surface is a negative Host gateway contract asserting that a Telegram-prefixed command is **not** accepted; it is evidence against a Telegram runtime boundary, not adoption of one.
+
+Therefore the Telegram build acquisition graph, baked QRhi shaders, generated `.binobj` models, and Telegram resource tree are research/provenance inputs, not dependencies or assets of the currently distributed Fabushi branch. Their package-manager/archive licenses do not become Fabushi shipping-dependency licenses merely because Telegram used them. If a future Fabushi change copies, adapts, vendors, invokes, or distributes any such input, that change must add immutable input identity, license/asset provenance, derivation, platform scope, and release review before acceptance. Source-informed implementation provenance remains a separate legal-review surface and is not waived by this non-adoption finding.
+
 ## Closure boundary
 
 After this dossier, the source-research blockers are narrower:

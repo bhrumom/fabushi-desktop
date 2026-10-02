@@ -85,6 +85,12 @@ The frozen acquisition entrypoint files themselves were also re-fetched by exact
 - `https://code.videolan.org/videolan/dav1d.git` tag `1.5.4` remains unresolved from the original remote in this evidence set; the GitHub mirror observation is not substituted for the source URL.
 - License records are still required for every external acquisition that would enter a distributed Fabushi artifact. The hashes above are provenance identities, not license clearance.
 
+## Current Fabushi non-adoption evidence
+
+A current-branch tracked-file and build-reference audit found no Fabushi invocation of the frozen Telegram `prepare.py`, CentOS Dockerfile, or Snap build, and no references to the inventoried NuGet/MSYS2/Boost/rustup endpoints in `.github`, `desktop`, `frontend`, `source`, or the root package/Cargo manifests. The FBCP delta contains no Telegram resources, shader/model sources or baked outputs, and adds no binary file.
+
+For current Fabushi distribution provenance, these acquisition rows are therefore classified `research-only / non-adopted`. The dated hashes above remain useful to bind research observations, but current Fabushi acceptance does not require vendoring those Telegram dependencies or turning them into runtime dependencies. This classification must be revisited if production/build changes begin consuming them.
+
 ## Closure rule
 
 A row can leave the provenance blocker only when the distributed Fabushi build either (a) does not use that Telegram build dependency at all and records that non-adoption, or (b) records the actual immutable commit/content digest, license, patches/derivation and platform scope. Symbolic tags, branches, `latest`, package names and bootstrap endpoints never satisfy that rule by themselves.

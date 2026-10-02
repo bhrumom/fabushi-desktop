@@ -40,6 +40,12 @@ cmake_helpers, codegen, lib_base, lib_crl, lib_lottie, lib_qr, lib_rpl, lib_spel
 - flatpak/xdg-desktop-portal@23a76c39...: COPYING blob 4362b491... is LGPL version 2.1; doc website also has its own LICENSE.
 - Cyan4973/xxHash@bbb27a5e...: LICENSE blob e4c5da72... identifies BSD 2-Clause for the library; CLI/tests contain separate copying/license files.
 
+## Current FBCP distribution adoption checkpoint
+
+Against PR #20 `dcb19a94383833fc1ec5074f10c4bbbd28c09036`, the current FBCP branch adds no Telegram resource/shader/model binary, does not vendor a Telegram build tree, and does not invoke Telegram's prepare/Docker/Snap acquisition surfaces from the Fabushi production/build roots. No `.qsb`, `.binobj`, `.obj`, or other binary addition appears in the FBCP delta.
+
+Accordingly, the dependencies listed above are **researched upstream provenance**, not automatically dependencies of the Fabushi distribution. Release dependency review must be driven by Fabushi's actual dependency/artifact graph. Separately, because this project is source-informed, upstream GPL/third-party source provenance and any copied/adapted production content still require legal review; independent reimplementation language does not itself determine licensing.
+
 ## Why release review is still open
 
 An exact file-location inventory is not a legal compatibility conclusion. Remaining work includes: pinning or otherwise legally resolving the floating desktop-app/legal reference; per-file REUSE/license mapping for mixed-license dependencies; resource/font/icon/theme/sound provenance; determining which upstream code/assets, if any, are actually copied or adapted into distributed Fabushi artifacts; and reviewing the final dependency graph of the Fabushi build rather than assuming every Telegram research dependency ships.
