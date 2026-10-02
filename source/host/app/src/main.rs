@@ -84,7 +84,6 @@ use mahayana_host_runtime::extensions::local_tool_permission::extension::{
 use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_resolution::{
     LocalToolPermissionResolutionArgs, SandLocalToolPermissionResolutionError,
 };
-use mahayana_host_runtime::extensions::transcript::widget_responses::WidgetResponses;
 use mahayana_host_runtime::host_runner_composition::HostRunnerComposition;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult,
@@ -124,7 +123,7 @@ use mahayana_host_runtime::extensions::transcript::pending_wake_rearm::{
     LostSubagentWake, PendingWakeRearm, PendingWakeReport, PendingWakeRuntimePort,
 };
 use mahayana_host_runtime::extensions::transcript::group_chat_glue::{
-    GroupChatGlue, GroupMemberPreview, GroupRoomEntryObserver, group_member_reaction_target,
+    GroupMemberPreview, GroupRoomEntryObserver, group_member_reaction_target,
     should_redrive_group_member_after_preemption,
 };
 use mahayana_host_runtime::extensions::transcript::group_chat_orchestrator::GroupMemberTurnRequest;
@@ -1081,6 +1080,7 @@ struct LocalRoutedRunnerDeps {
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
+    transcript_manager: Arc<TranscriptManager>,
     generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
     completion_revivals: Arc<CompletionRevivals>,
     forever_box: Arc<ForeverBoxService>,
@@ -1275,6 +1275,7 @@ impl SubagentTaskSink for ProductionSubagentTaskSink {
             Arc::clone(&self.deps.runner_registry),
             Arc::clone(&self.deps.ack_obligations),
             Arc::clone(&self.deps.transcript_runtime),
+            Arc::clone(&self.deps.transcript_manager),
             Arc::clone(&self.deps.generated_agent_runtime),
             Arc::clone(&self.deps.completion_revivals),
             Arc::clone(&self.deps.forever_box),
@@ -2321,6 +2322,7 @@ impl UnifiedGatewayApi {
             runner_registry: Arc::clone(&self.runner_registry),
             ack_obligations: Arc::clone(&self.ack_obligations),
             transcript_runtime: Arc::clone(&self.transcript_runtime),
+            transcript_manager: Arc::clone(&self.transcript_manager),
             generated_agent_runtime: Arc::clone(&self.generated_agent_runtime),
             completion_revivals: Arc::clone(&self.completion_revivals),
             forever_box: Arc::clone(&self.forever_box),
@@ -2968,10 +2970,10 @@ fn post_agent_message_to_group(
     {
         return Err("Messaging isn't available right now.".into());
     }
-    let posted = mahayana_host_runtime::extensions::transcript::shared_rooms::SharedRooms::new(
-        Arc::clone(&deps.session_workers),
-    )
-    .post_local_agent_message(
+    let posted = deps
+        .transcript_manager
+        .shared_rooms()
+        .post_local_agent_message(
         from_agent_id,
         group_id,
         message,
@@ -3021,7 +3023,7 @@ fn run_agent_posted_group_turn(
         "skipAckObligation": true,
     });
     let dispatch_runtime = Arc::clone(&deps.transcript_runtime);
-    let dispatch_sessions = Arc::clone(&deps.session_workers);
+    let dispatch_group_chat = deps.transcript_manager.group_chat();
     let dispatch_deps = deps.clone();
     let dispatch_events = deps.events.clone();
     let room_id = group_id.to_string();
@@ -3041,8 +3043,7 @@ fn run_agent_posted_group_turn(
                     )
                 });
                 let epoch = dispatch_runtime.current_turn_epoch(&room_id);
-                let group_glue = GroupChatGlue::new(dispatch_sessions);
-                match group_glue.run_group_turn(
+                match dispatch_group_chat.run_group_turn(
                     Arc::clone(&dispatch_runtime),
                     &room_id,
                     epoch,
@@ -3144,6 +3145,7 @@ fn run_local_group_member_turn(
         Arc::clone(&deps.runner_registry),
         deps.ack_obligations,
         deps.transcript_runtime,
+        deps.transcript_manager,
         deps.generated_agent_runtime,
         deps.completion_revivals,
         deps.forever_box,
@@ -3330,6 +3332,7 @@ fn start_local_upgrade_resume_turn(
         Arc::clone(&deps.runner_registry),
         deps.ack_obligations,
         deps.transcript_runtime,
+        deps.transcript_manager,
         deps.generated_agent_runtime,
         deps.completion_revivals,
         deps.forever_box,
@@ -3483,6 +3486,7 @@ fn run_local_automation_turn(
         Arc::clone(&deps.runner_registry),
         deps.ack_obligations,
         deps.transcript_runtime,
+        deps.transcript_manager,
         deps.generated_agent_runtime,
         deps.completion_revivals,
         deps.forever_box,
@@ -3588,6 +3592,7 @@ fn run_local_kickstart_turn(
         Arc::clone(&deps.runner_registry),
         deps.ack_obligations,
         deps.transcript_runtime.clone(),
+        deps.transcript_manager,
         deps.generated_agent_runtime,
         deps.completion_revivals,
         deps.forever_box,
@@ -3850,6 +3855,7 @@ fn run_local_background_revival_turn_with_context(
         Arc::clone(&deps.runner_registry),
         deps.ack_obligations,
         deps.transcript_runtime,
+        deps.transcript_manager,
         deps.generated_agent_runtime,
         deps.completion_revivals,
         deps.forever_box,
@@ -4038,7 +4044,9 @@ fn run_channel_inbound_revival_worker(
         let addresses = distinct_inbound_channel_addresses(&envelopes);
         publish_channel_activity(&deps.events, &agent_id, &addresses, true);
         let prompt = build_channel_inbound_wake_prompt(&envelopes);
-        let widget_prompts = WidgetResponses::new(Arc::clone(&deps.session_workers))
+        let widget_prompts = deps
+            .transcript_manager
+            .widget_responses()
             .collect_unanswered_question_prompts(&agent_id)
             .unwrap_or_default();
         let selected_images = collect_inbound_images(&envelopes)
@@ -4190,7 +4198,9 @@ fn run_channel_failure_revival_worker(
         }
 
         let prompt = build_channel_delivery_failure_wake_prompt(&failures);
-        let widget_prompts = WidgetResponses::new(Arc::clone(&deps.session_workers))
+        let widget_prompts = deps
+            .transcript_manager
+            .widget_responses()
             .collect_unanswered_question_prompts(&agent_id)
             .unwrap_or_default();
         match run_local_background_revival_turn_with_context(
@@ -4798,6 +4808,7 @@ fn start_routed_provider_task(
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
+    transcript_manager: Arc<TranscriptManager>,
     generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
     completion_revivals: Arc<CompletionRevivals>,
     forever_box: Arc<ForeverBoxService>,
@@ -5635,6 +5646,7 @@ fn start_routed_provider_task(
         runner_registry: Arc::clone(&runner_registry),
         ack_obligations: Arc::clone(&ack_obligations),
         transcript_runtime: Arc::clone(&transcript_runtime),
+        transcript_manager: Arc::clone(&transcript_manager),
         generated_agent_runtime: Arc::clone(&generated_agent_runtime),
         completion_revivals: Arc::clone(&completion_revivals),
         forever_box: Arc::clone(&forever_box),
@@ -5686,6 +5698,7 @@ fn start_routed_provider_task(
                     runner_registry: Arc::clone(&runner_registry),
                     ack_obligations: Arc::clone(&ack_obligations),
                     transcript_runtime: Arc::clone(&transcript_runtime),
+                    transcript_manager: Arc::clone(&transcript_manager),
                     generated_agent_runtime: Arc::clone(&generated_agent_runtime),
                     completion_revivals: Arc::clone(&completion_revivals),
                     forever_box: Arc::clone(&forever_box),
@@ -8925,6 +8938,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.runner_registry),
                 Arc::clone(&self.ack_obligations),
                 Arc::clone(&self.transcript_runtime),
+                Arc::clone(&self.transcript_manager),
                 Arc::clone(&self.generated_agent_runtime),
                 Arc::clone(&self.completion_revivals),
                 Arc::clone(&self.forever_box),
@@ -9291,6 +9305,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.runner_registry),
                 Arc::clone(&self.ack_obligations),
                 Arc::clone(&self.transcript_runtime),
+                Arc::clone(&self.transcript_manager),
                 Arc::clone(&self.generated_agent_runtime),
                 Arc::clone(&self.completion_revivals),
                 Arc::clone(&self.forever_box),
@@ -10622,6 +10637,7 @@ fn main() {
         runner_registry: Arc::clone(&runner_registry),
         ack_obligations: Arc::clone(&ack_obligations),
         transcript_runtime: Arc::clone(&transcript_runtime),
+        transcript_manager: Arc::clone(&transcript_manager),
         generated_agent_runtime: Arc::clone(&generated_agent_runtime),
         completion_revivals: Arc::clone(&completion_revivals),
         forever_box: Arc::clone(&forever_box),
