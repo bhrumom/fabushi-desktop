@@ -94,9 +94,7 @@ use mahayana_host_runtime::extensions::settings::settings_service::SettingsServi
 use mahayana_host_runtime::extensions::secrets::extension::{
     HostSecretsExtension, SecretsGatewayError, dispatch_secrets_gateway_call,
 };
-use mahayana_host_runtime::extensions::notifications::extension::{
-    notification_agent_from_value, start_notifications_extension,
-};
+use mahayana_host_runtime::extensions::notifications::extension::notification_agent_from_value;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, persist_accepted_send_prompt_context,
 };
@@ -10241,8 +10239,7 @@ fn main() {
                 .collect::<Vec<_>>()
         });
     let notification_transcript = Arc::clone(&transcript_manager);
-    let _notifications_extension = match start_notifications_extension(
-        Arc::clone(&production_extensions.auth),
+    if let Err(error) = production_extensions.start_notifications(
         gateway_events.clone(),
         notification_baseline,
         Arc::new(move || {
@@ -10252,13 +10249,10 @@ fn main() {
                 .map(|value| value as u64)
         }),
     ) {
-        Ok(extension) => extension,
-        Err(error) => {
-            host_lifecycle.fail();
-            eprintln!("failed to start production Notifications extension: {error}");
-            return;
-        }
-    };
+        host_lifecycle.fail();
+        eprintln!("failed to start production Notifications extension: {error}");
+        return;
+    }
     {
         let dropped_logs = host_telemetry.logs.clone();
         transcript_manager
