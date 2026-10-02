@@ -56,7 +56,7 @@ pub fn read_image_file_dimensions(path: &str) -> Option<MediaDimensions> {
 }
 
 pub fn read_image_dimensions(bytes: &[u8]) -> Option<MediaDimensions> {
-    read_webp_dimensions(bytes)
+    read_webp_or_heic_dimensions(bytes)
         .or_else(|| read_png_dimensions(bytes))
         .or_else(|| read_gif_dimensions(bytes))
         .or_else(|| read_jpeg_dimensions(bytes))
@@ -102,6 +102,240 @@ fn read_u32_le(bytes: &[u8], offset: usize) -> Option<u32> {
 
 fn tag(bytes: &[u8], offset: usize) -> Option<&[u8]> {
     bytes.get(offset..offset + 4)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct IsoBox {
+    kind: [u8; 4],
+    body: usize,
+    end: usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct PrimaryImageProperty {
+    ispe_body: usize,
+    quarter_turns: u8,
+}
+
+fn index_of_four_char_tag(bytes: &[u8], expected: &[u8; 4]) -> Option<usize> {
+    bytes.windows(4).position(|window| window == expected)
+}
+
+fn iso_boxes(bytes: &[u8], start: usize, end: usize) -> Vec<IsoBox> {
+    if start > end || end > bytes.len() {
+        return Vec::new();
+    }
+
+    let mut boxes = Vec::new();
+    let mut offset = start;
+    while offset.checked_add(8).is_some_and(|value| value <= end) {
+        let Some(raw_size) = read_u32_be(bytes, offset) else {
+            break;
+        };
+        let mut size = raw_size as usize;
+        let mut header = 8usize;
+        if size == 1 {
+            if offset.checked_add(16).is_none_or(|value| value > end) {
+                break;
+            }
+            let Some(extended_size) = read_u32_be(bytes, offset + 12) else {
+                break;
+            };
+            size = extended_size as usize;
+            header = 16;
+        } else if size == 0 {
+            size = end - offset;
+        }
+
+        let Some(box_end) = offset.checked_add(size) else {
+            break;
+        };
+        if size < header || box_end > end {
+            break;
+        }
+        let Some(kind_bytes) = bytes.get(offset + 4..offset + 8) else {
+            break;
+        };
+        let Ok(kind) = <[u8; 4]>::try_from(kind_bytes) else {
+            break;
+        };
+        boxes.push(IsoBox {
+            kind,
+            body: offset + header,
+            end: box_end,
+        });
+        offset = box_end;
+    }
+    boxes
+}
+
+fn find_iso_box(boxes: &[IsoBox], kind: &[u8; 4]) -> Option<IsoBox> {
+    boxes.iter().copied().find(|box_| box_.kind == *kind)
+}
+
+fn primary_item_id(bytes: &[u8], pitm: IsoBox) -> Option<u32> {
+    if pitm.body.checked_add(6)? > pitm.end {
+        return None;
+    }
+    let version = *bytes.get(pitm.body)?;
+    let at = pitm.body.checked_add(4)?;
+    if version == 0 {
+        return Some(u32::from(read_u16_be(bytes, at)?));
+    }
+    if at.checked_add(4)? > pitm.end {
+        return None;
+    }
+    read_u32_be(bytes, at)
+}
+
+fn item_property_indices(bytes: &[u8], ipma: IsoBox, item_id: u32) -> Option<Vec<usize>> {
+    let mut offset = ipma.body;
+    if offset.checked_add(8)? > ipma.end {
+        return None;
+    }
+    let version = *bytes.get(offset)?;
+    let flags = (u32::from(*bytes.get(offset + 1)?) << 16)
+        | (u32::from(*bytes.get(offset + 2)?) << 8)
+        | u32::from(*bytes.get(offset + 3)?);
+    offset += 4;
+    let entry_count = read_u32_be(bytes, offset)?;
+    offset += 4;
+    let id_bytes = if version >= 1 { 4usize } else { 2usize };
+    let index_is_16 = (flags & 1) == 1;
+
+    for _ in 0..entry_count {
+        if offset.checked_add(id_bytes + 1)? > ipma.end {
+            return None;
+        }
+        let id = if id_bytes == 4 {
+            read_u32_be(bytes, offset)?
+        } else {
+            u32::from(read_u16_be(bytes, offset)?)
+        };
+        offset += id_bytes;
+        let association_count = usize::from(*bytes.get(offset)?);
+        offset += 1;
+        let mut indices = Vec::with_capacity(association_count);
+        for _ in 0..association_count {
+            if index_is_16 {
+                if offset.checked_add(2)? > ipma.end {
+                    return None;
+                }
+                indices.push(usize::from(read_u16_be(bytes, offset)? & 0x7fff));
+                offset += 2;
+            } else {
+                if offset.checked_add(1)? > ipma.end {
+                    return None;
+                }
+                indices.push(usize::from(*bytes.get(offset)? & 0x7f));
+                offset += 1;
+            }
+        }
+        if id == item_id {
+            return Some(indices);
+        }
+    }
+    None
+}
+
+fn fallback_primary_image(
+    bytes: &[u8],
+    first_ispe: Option<usize>,
+    first_irot: Option<usize>,
+) -> Option<PrimaryImageProperty> {
+    let first_ispe = first_ispe?;
+    if first_ispe.checked_add(16)? > bytes.len() {
+        return None;
+    }
+    let quarter_turns = first_irot
+        .and_then(|offset| offset.checked_add(4))
+        .and_then(|offset| bytes.get(offset))
+        .map_or(0, |value| value & 3);
+    Some(PrimaryImageProperty {
+        ispe_body: first_ispe + 8,
+        quarter_turns,
+    })
+}
+
+fn select_primary_image(bytes: &[u8]) -> Option<PrimaryImageProperty> {
+    let first_ispe = index_of_four_char_tag(bytes, b"ispe");
+    let first_irot = index_of_four_char_tag(bytes, b"irot");
+    let fallback = || fallback_primary_image(bytes, first_ispe, first_irot);
+
+    let top_level = iso_boxes(bytes, 0, bytes.len());
+    let Some(meta) = find_iso_box(&top_level, b"meta") else {
+        return fallback();
+    };
+    let Some(meta_start) = meta.body.checked_add(4) else {
+        return fallback();
+    };
+    if meta_start > meta.end {
+        return fallback();
+    }
+    let meta_boxes = iso_boxes(bytes, meta_start, meta.end);
+    let Some(pitm) = find_iso_box(&meta_boxes, b"pitm") else {
+        return fallback();
+    };
+    let Some(iprp) = find_iso_box(&meta_boxes, b"iprp") else {
+        return fallback();
+    };
+    let iprp_boxes = iso_boxes(bytes, iprp.body, iprp.end);
+    let Some(ipco) = find_iso_box(&iprp_boxes, b"ipco") else {
+        return fallback();
+    };
+    let Some(ipma) = find_iso_box(&iprp_boxes, b"ipma") else {
+        return fallback();
+    };
+    let properties = iso_boxes(bytes, ipco.body, ipco.end);
+    let Some(primary_id) = primary_item_id(bytes, pitm) else {
+        return fallback();
+    };
+    let Some(indices) = item_property_indices(bytes, ipma, primary_id) else {
+        return fallback();
+    };
+
+    let mut ispe_body = None;
+    let mut quarter_turns = 0u8;
+    for index in indices {
+        let Some(property_index) = index.checked_sub(1) else {
+            continue;
+        };
+        let Some(property) = properties.get(property_index).copied() else {
+            continue;
+        };
+        if property.kind == *b"ispe" && ispe_body.is_none() {
+            if property.body.checked_add(12).is_some_and(|value| value <= property.end) {
+                ispe_body = property.body.checked_add(4);
+            }
+        } else if property.kind == *b"irot" && property.body < property.end {
+            quarter_turns = *bytes.get(property.body)? & 3;
+        }
+    }
+
+    ispe_body
+        .map(|ispe_body| PrimaryImageProperty {
+            ispe_body,
+            quarter_turns,
+        })
+        .or_else(fallback)
+}
+
+fn read_heic_dimensions(bytes: &[u8]) -> Option<MediaDimensions> {
+    if bytes.len() < 12 || tag(bytes, 4)? != b"ftyp" {
+        return None;
+    }
+    let selected = select_primary_image(bytes)?;
+    let width = read_u32_be(bytes, selected.ispe_body)?;
+    let height = read_u32_be(bytes, selected.ispe_body.checked_add(4)?)?;
+    if matches!(selected.quarter_turns, 1 | 3) {
+        dimensions(height, width)
+    } else {
+        dimensions(width, height)
+    }
+}
+
+fn read_webp_or_heic_dimensions(bytes: &[u8]) -> Option<MediaDimensions> {
+    read_webp_dimensions(bytes).or_else(|| read_heic_dimensions(bytes))
 }
 
 fn read_png_dimensions(bytes: &[u8]) -> Option<MediaDimensions> {
