@@ -1,6 +1,6 @@
 # Telegram Frozen Source Closure Evidence
 
-Status: P0 evidence; not complete  
+Status: P0 evidence; recursive gitlink closure complete; resource/license/behavior closure not complete  
 Frozen root: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`  
 Captured: 2026-10-02
 

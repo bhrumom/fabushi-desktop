@@ -1,10 +1,10 @@
 # TDRP/FBCP P0 — Telegram Top-Level Capability Graph (Discovery Pass)
 
-Status: discovery pass; recursive closure and behavior research incomplete  
+Status: discovery pass; recursive gitlink closure complete; behavior/resource/license closure still incomplete  
 Frozen upstream: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`  
 Target owner snapshot: PR #20 `c2767eac1383fd8db7be9b536e5acaf4a4d2b7f0`
 
-This graph records product capability domains observed in the frozen Telegram Desktop source tree. It is intentionally not marked research-complete: the recursive submodule/download/generated/resource closure is still open, so P0 cannot yet claim that no unknown capability domain remains.
+This graph records product capability domains observed in the frozen Telegram Desktop source tree. It is intentionally not marked research-complete: recursive gitlink closure is now complete, but generated/resource/platform-packaging/license provenance and behavior-level resolution for remaining long-tail domains are still open, so P0 cannot yet claim that no unknown capability domain remains.
 
 | Capability domain | Representative frozen source regions | Initial Fabushi owner candidates |
 | --- | --- | --- |
@@ -32,19 +32,19 @@ This graph records product capability domains observed in the frozen Telegram De
 | local lock / credential / WebAuthn | cloud password, `webauthn`, platform WebAuthn; dossier `research/stories-notifications-privacy-security-bots-webview.md` | owner-resolved as `LOCAL-CREDENTIAL-WEBAUTHN` → existing account/auth + secrets + Host WebAuthn proxy |
 | Bots / inline interactions | `inline_bots/*`, `api/api_bot.*`, peer bot commands; dossier `research/stories-notifications-privacy-security-bots-webview.md` | owner-resolved as `BOT-INLINE` → existing Agent + Composer + typed transcript cards + Coordinator/Host/Runner + Plugins/MCP |
 | Mini Apps / WebView concepts | inline bot attach web view + `lib_webview` gitlink; dossier `research/stories-notifications-privacy-security-bots-webview.md` | owner-resolved as `MINIAPP-WEBVIEW` → existing Plugins/MCP + plugin browser/Web surface + Electron security boundary |
-| Premium / subscriptions / credits / Stars | premium/credits data + API/settings | existing settings/product shell; domain owner requires business decision |
-| gifts | `data/data_star_gift.*`, peer gifts | product shell; owner unresolved until full behavior research |
-| business features | `data/business`, `settings/business` | existing product/workflow/settings owners by capability, not a single business subsystem by default |
-| payments | `payments`, credits/earn code | explicit payments owner only after ADR/security research if accepted |
-| Passport / security identity flows | `passport`, `webauthn`, auth code | existing auth/security boundaries; applicability still to be decided |
-| export / data lifecycle | `export`, storage serialization | existing artifacts/data-lifecycle owner |
-| local storage / migration / corruption recovery | `storage/*`, serialization/account/domain/facade, file locks | existing durable-state/storage/recovery owners |
-| themes / language / RTL / IME / accessibility | `lang`, `ui`, platform, history/dialog accessibility sources | existing product shell/platform/accessibility owners |
-| calls / video / screen sharing | `calls/*`, `calls/group`, `lib_webrtc`, `tgcalls` | Computer/platform/realtime candidates; call-session/signaling owner unresolved |
-| reconnect / sleep-wake / proxy / network transition | `mtproto`, core/network/platform lifecycle | native sync/network infrastructure + existing platform lifecycle; no MTProto runtime dependency |
-| multi-device sync / ordering / duplicate suppression / gap recovery | update/session/data/mtproto state machinery | existing durable state + minimal native sync/messaging infrastructure |
+| Premium / subscriptions / credits / Stars | premium/credits data + API/settings; dossier `research/commerce-data-calls-realtime.md` | owner-resolved as `PREMIUM-ENTITLEMENT` for entitlement projection and `CREDITS-GIFTS`/`PAYMENT-SETTLEMENT` for value; real settlement requires ADR-002 and product/provider decision |
+| gifts | `data/data_star_gift.*`, peer gifts; commerce dossier | owner-resolved as `CREDITS-GIFTS` → existing typed transcript/resource/shell presentation plus ADR-002 for real value settlement |
+| business features | `data/business`, `settings/business`; commerce dossier | owner-resolved as `BUSINESS-WORKFLOWS` → existing Automations + Agent + settings/permissions + Composer/Transcript |
+| payments | `payments`, credits/earn code; commerce dossier | `PAYMENT-SETTLEMENT`: existing_owner=none; minimal PaymentSettlement infrastructure fully specified in ADR-002, implementation blocked on product/provider applicability |
+| Passport / security identity flows | `passport`, `webauthn`, auth code; commerce dossier | owner-resolved as `IDENTITY-DOCUMENT-SECURITY` → existing account/auth + secrets + resource lifecycle; regulated verification remains conditional/not-configured |
+| export / data lifecycle | `export`, storage serialization; commerce dossier | owner-resolved as `EXPORT-DATA` → existing settings + Session/data lifecycle + attachments/artifacts |
+| local storage / migration / corruption recovery | `storage/*`, serialization/account/domain/facade, file locks; commerce dossier | owner-resolved as `STORAGE-MIGRATION-RECOVERY` → existing Host Session recovery + Electron startup migration + attachment/cache owners |
+| themes / language / RTL / IME / accessibility | `lang`, `ui`, platform, history/dialog accessibility sources; commerce dossier | owner-resolved as `THEME-I18N-A11Y` → existing root shell/theme + settings + platform/accessibility composition |
+| calls / video / screen sharing | `calls/*`, `calls/group`, `lib_webrtc`, `tgcalls`; commerce dossier | `CALL-REALTIME`: existing_owner=none for session/signaling, minimal owner in ADR-003; existing Computer retains screen-share/control integration |
+| reconnect / sleep-wake / proxy / network transition | `mtproto`, core/network/platform lifecycle; commerce dossier | owner-resolved as `NETWORK-SYNC-REALTIME` → existing product owners plus minimal native sync/network infrastructure below them; no MTProto runtime |
+| multi-device sync / ordering / duplicate suppression / gap recovery | update/session/data/mtproto state machinery; commerce dossier | owner-resolved under `NETWORK-SYNC-REALTIME` + message/history rows; durable state remains existing owner |
 | large histories / pagination / stale updates | history/data sparse-id/search/update code | existing transcript pagination/storage + sync infrastructure |
-| update / install / rollback | core/platform/build/update code | existing Electron/platform update owners |
+| update / install / rollback | core/platform/build/update code; commerce dossier | owner-resolved as `UPDATE-INSTALL-ROLLBACK` → existing Electron update/platform owner |
 | communities / managed communities | `api/api_communities.*`, peer/community boxes, `info/community*` | extend Shared Room/group/member/admin owners after behavior research |
 | Compose AI / AI tone helpers | `api/api_compose_with_ai.*`, `boxes/compose_ai_box.*`, create/preview AI tone boxes | existing composer + Agent capability; preserve typed Agent flow rather than a Telegram-specific AI subsystem |
 | rich tasks / todo lists | `api/api_rich_tasks.*`, `api/api_todo_lists.*`, todo-list editor boxes | existing task/automation/transcript typed-event owners |
@@ -118,3 +118,8 @@ The message/history cluster now has behavior dossiers and explicit owner-resolut
 ## Stories through Mini Apps owner-resolution checkpoint — 2026-10-02
 
 `STORY-LIFECYCLE`, `NOTIFICATION-TRAY`, `PRIVACY-BLOCKING`, `LOCAL-CREDENTIAL-WEBAUTHN`, `BOT-INLINE`, and `MINIAPP-WEBVIEW` now have fixed-upstream behavior evidence, plausible-owner analysis, selected existing owners, exact c276 owner paths, persistence/native-network requirements, focused tests and explicit blockers in the formal matrix and dossier. This is P0 research/ownership progress only; none of these rows is promoted to implemented or accepted by documentation.
+
+
+## Commerce, data lifecycle, shell quality and realtime checkpoint — 2026-10-02
+
+Formal owner-resolution now covers Premium/entitlements, credits/gifts, business workflows, payment settlement, sensitive identity-document flows, export, storage/migration/recovery, themes/language/RTL/IME/accessibility, calls/realtime signaling, network/sync/reconnect semantics, and update/install/rollback. Payment and call signaling are the two rows in this batch where no existing canonical owner safely owns the authoritative state; ADR-002 and ADR-003 define minimal infrastructure owners without creating a parallel product architecture. These rows remain research/ownership only, not implementation claims.
