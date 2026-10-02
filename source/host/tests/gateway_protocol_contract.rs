@@ -17,7 +17,16 @@ fn gateway_protocol_parses_empty_and_json_command_args() {
 
 #[test]
 fn gateway_protocol_keeps_frozen_command_inventory_and_upgrade_path() {
-    assert_eq!(GROK_GATEWAY_COMMANDS.len(), 120);\n    assert!(!GROK_GATEWAY_COMMANDS.contains(&"listRoutedMcpTools"));\n    assert!(!GROK_GATEWAY_COMMANDS.contains(&"executeRoutedMcpTool"));\n    assert_eq!(\n        FABUSHI_GATEWAY_COMPAT_COMMANDS,\n        &["resumeAfterRecreate", "listRoutedMcpTools", "executeRoutedMcpTool"]\n    );\n    assert!(is_grok_gateway_command("sendPrompt"));\n    assert!(is_grok_gateway_command("requestWebAuthnCeremony"));\n    assert!(is_grok_gateway_command("resumeAfterRecreate"));\n    assert!(is_grok_gateway_command("listRoutedMcpTools"));\n    assert!(is_grok_gateway_command("executeRoutedMcpTool"));\n    assert!(!is_grok_gateway_command("feature.auth.status"));
+    assert_eq!(GROK_GATEWAY_COMMANDS.len(), 122);
+    assert!(GROK_GATEWAY_COMMANDS.contains(&"listRoutedMcpTools"));
+    assert!(GROK_GATEWAY_COMMANDS.contains(&"executeRoutedMcpTool"));
+    assert_eq!(FABUSHI_GATEWAY_COMPAT_COMMANDS, &["resumeAfterRecreate"]);
+    assert!(is_grok_gateway_command("sendPrompt"));
+    assert!(is_grok_gateway_command("requestWebAuthnCeremony"));
+    assert!(is_grok_gateway_command("resumeAfterRecreate"));
+    assert!(is_grok_gateway_command("listRoutedMcpTools"));
+    assert!(is_grok_gateway_command("executeRoutedMcpTool"));
+    assert!(!is_grok_gateway_command("feature.auth.status"));
     assert!(!is_grok_gateway_command("not-a-grok-command"));
     assert_eq!(GATEWAY_PREPARE_UPGRADE_PATH, "/prepare-upgrade");
 }
