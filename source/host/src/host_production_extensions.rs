@@ -18,6 +18,12 @@ use crate::extensions::action_audit::extension::{
 use crate::extensions::attachments::extension::{
     HostAttachmentsExtension, start_attachments_extension,
 };
+use crate::extensions::auto_review::auto_review_service::{
+    AutoReviewExpireSweepFailedSink, AutoReviewTelemetrySink, AutoReviewUpdateSink,
+};
+use crate::extensions::auto_review::extension::{
+    HostAutoReviewExtension, start_auto_review_extension_with_expire_sweep_telemetry,
+};
 use crate::extensions::auth::auth_service::HostAuthServiceOptions;
 use crate::extensions::auth::extension::{
     HostAuthExtension, start_host_auth_extension_with_options,
@@ -193,6 +199,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Secrets,
     HostExtensionId::TurnExecution,
     HostExtensionId::Session,
+    HostExtensionId::AutoReview,
 ];
 
 pub struct ProductionBrowserUaLog;
@@ -443,6 +450,7 @@ pub struct ProductionHostExtensions {
     pub cloud_agents: CloudAgentsExtension,
     pub turn_execution: Arc<Mutex<TurnExecutionRegistry>>,
     session: Mutex<Option<SessionExtension>>,
+    auto_review: Mutex<Option<Arc<HostAutoReviewExtension>>>,
     backend_url: String,
     mcp: Mutex<Option<McpExtensionRuntime>>,
     box_store_sync: Mutex<Option<BoxStoreSyncExtension<ProductionBoxStoreSyncService>>>,
@@ -630,6 +638,7 @@ pub fn start_production_host_extensions(
         cloud_agents,
         turn_execution,
         session: Mutex::new(None),
+        auto_review: Mutex::new(None),
         backend_url,
         mcp: Mutex::new(None),
         box_store_sync: Mutex::new(None),
@@ -647,6 +656,46 @@ impl ProductionHostExtensions {
 
     pub fn stop_cloud_agents(&self) {
         self.cloud_agents.stop();
+    }
+
+    pub fn start_auto_review(
+        &self,
+        sessions: Arc<ProductionSessionWorkers>,
+        host_generation: impl Into<String>,
+        on_update: AutoReviewUpdateSink,
+        telemetry: AutoReviewTelemetrySink,
+        expire_sweep_failed: Option<AutoReviewExpireSweepFailedSink>,
+    ) -> Result<Arc<HostAutoReviewExtension>, String> {
+        let mut slot = self
+            .auto_review
+            .lock()
+            .map_err(|_| "production AutoReview runtime lock poisoned".to_string())?;
+        if slot.is_some() {
+            return Err("production AutoReview runtime is already started".into());
+        }
+        let extension = Arc::new(start_auto_review_extension_with_expire_sweep_telemetry(
+            sessions,
+            Arc::clone(&self.experiments),
+            Arc::clone(&self.settings),
+            host_generation,
+            on_update,
+            telemetry,
+            expire_sweep_failed,
+        ));
+        *slot = Some(Arc::clone(&extension));
+        Ok(extension)
+    }
+
+    pub fn stop_auto_review(&self) -> Result<(), String> {
+        let extension = self
+            .auto_review
+            .lock()
+            .map_err(|_| "production AutoReview runtime lock poisoned".to_string())?
+            .take();
+        if let Some(extension) = extension {
+            extension.stop();
+        }
+        Ok(())
     }
 
     pub fn start_session(
