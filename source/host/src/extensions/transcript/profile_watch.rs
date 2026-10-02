@@ -63,6 +63,19 @@ impl ProfileWatchCoalescer {
         self.deadline = None;
     }
 
+    pub fn switch_agent(
+        &mut self,
+        current: &mut Option<String>,
+        next: Option<String>,
+    ) -> bool {
+        if *current == next {
+            return false;
+        }
+        self.clear();
+        *current = next;
+        true
+    }
+
     pub fn recv_timeout(&self, now: Instant) -> Duration {
         self.deadline
             .map(|deadline| deadline.saturating_duration_since(now))
@@ -153,18 +166,22 @@ impl ProductionProfileWatch {
                     Ok(Ok(event)) => {
                         for path in event.paths {
                             if path == worker_root.join(ACTIVE_AGENT_FILENAME) {
-                                coalescer.clear();
                                 let active = SandAgentSessionStore::new(Arc::clone(&worker_sessions))
                                     .read_active_agent_id();
-                                if let Ok(mut watched) = worker_watched.lock() {
-                                    *watched = active.clone();
-                                }
-                                if let Some(agent_id) = active {
-                                    seed_known_agent_name(
-                                        &worker_sessions,
-                                        &worker_names,
-                                        &agent_id,
-                                    );
+                                let changed = worker_watched
+                                    .lock()
+                                    .map(|mut watched| {
+                                        coalescer.switch_agent(&mut watched, active.clone())
+                                    })
+                                    .unwrap_or(false);
+                                if changed {
+                                    if let Some(agent_id) = active {
+                                        seed_known_agent_name(
+                                            &worker_sessions,
+                                            &worker_names,
+                                            &agent_id,
+                                        );
+                                    }
                                 }
                                 continue;
                             }
