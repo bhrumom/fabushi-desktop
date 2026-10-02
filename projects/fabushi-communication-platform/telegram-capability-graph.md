@@ -102,7 +102,9 @@ This pass also exposed product-capability domains that were missing from the fir
 - full owner-resolution coverage;
 - implementation or acceptance.
 
-Until those are closed, `research_inventory_status` remains partial and P0 remains open.
+A reverse citation audit of the frozen tree now finds no uncited immediate `Telegram/SourceFiles` directory (40/40) and no uncited directory path through relative depth two (130/130) across the research dossier set. This does not prove behavioral completeness, but it removes the prior possibility that an entire major SourceFiles area had never entered research.
+
+Until behavior-level source-to-capability closure and the remaining legal/provenance review are closed, `research_inventory_status` remains partial and P0 remains open.
 
 
 ## P0 behavior-resolution checkpoint — 2026-10-02

@@ -41,6 +41,12 @@ The recursive frozen root and `Telegram/CMakeLists.txt` exposed additional reach
 
 These are capability inputs only. They do not authorize Telegram-prefixed product owners.
 
+## Source-directory citation coverage audit
+
+A reverse audit against the frozen GitHub tree at `33261535a0e747f125e0ed25486f01e556330677` enumerated all 40 immediate `Telegram/SourceFiles` directories and 130 directory paths through relative depth two. Every one is cited by path or directory identity in the current research dossier set. This is useful negative evidence against an entirely unvisited top-level/second-level source area.
+
+The result is **not** equivalent to behavior completeness: a directory citation can cover multiple state machines and edge cases, deeper files can expose additional responsibilities, and infrastructure/toolkit directories can still affect product lifecycle. It therefore narrows the remaining research question from “is there an untouched major SourceFiles area?” to “are all reachable behaviors inside the cited areas represented by a capability/aggregate row with source-to-behavior evidence?”.
+
 ## Build/resource closure checkpoint
 
 The frozen root already proves these non-product-code inputs are reachable and therefore cannot be omitted from provenance closure:
