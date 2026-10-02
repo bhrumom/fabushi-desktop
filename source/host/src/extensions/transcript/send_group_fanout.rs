@@ -18,6 +18,8 @@ use super::transcript_entry_ids::{TranscriptEntryIdKind, next_entry_id};
 
 pub type GroupMemberTurnExecutor =
     Arc<dyn Fn(GroupMemberTurnRequest) -> Result<Vec<String>, String> + Send + Sync + 'static>;
+pub type GroupRoomEntryObserver =
+    Arc<dyn Fn(&str, &Value) + Send + Sync + 'static>;
 
 pub const GROUP_MEMBER_DM_PREEMPTED_ERROR: &str =
     "__sand_group_member_dm_preempted__";
@@ -46,6 +48,7 @@ struct LocalGroupFanoutDeps {
     posted_messages: Arc<Mutex<usize>>,
     member_failures: Arc<Mutex<Vec<(String, String)>>>,
     post_error: Arc<Mutex<Option<String>>>,
+    entry_observer: Option<GroupRoomEntryObserver>,
 }
 
 impl LocalGroupFanoutDeps {
@@ -75,8 +78,15 @@ impl LocalGroupFanoutDeps {
             },
         });
         self.sessions
-            .append_agent_transcript_entries(&self.room_id, &[entry])?;
+            .append_agent_transcript_entries(&self.room_id, &[entry.clone()])?;
         let _ = self.sessions.mark_agent_activity(&self.room_id, now_ms());
+        if let Some(shared_room_id) = self.config.shared_room_id.as_deref() {
+            self.runtime
+                .publish_shared_group_room_entry(shared_room_id, &entry)?;
+        }
+        if let Some(observer) = self.entry_observer.as_ref() {
+            observer(&self.room_id, &entry);
+        }
         if let Ok(mut posted) = self.posted_messages.lock() {
             *posted = posted.saturating_add(1);
         }
@@ -213,6 +223,26 @@ pub fn dispatch_local_group_send(
     executor: GroupMemberTurnExecutor,
     remote_executor: Option<GroupMemberTurnExecutor>,
 ) -> Result<LocalGroupFanoutDisposition, String> {
+    dispatch_local_group_send_with_observer(
+        sessions,
+        runtime,
+        room_id,
+        expected_epoch,
+        executor,
+        remote_executor,
+        None,
+    )
+}
+
+pub fn dispatch_local_group_send_with_observer(
+    sessions: Arc<ProductionSessionWorkers>,
+    runtime: Arc<ProductionTranscriptRuntime>,
+    room_id: &str,
+    expected_epoch: u64,
+    executor: GroupMemberTurnExecutor,
+    remote_executor: Option<GroupMemberTurnExecutor>,
+    entry_observer: Option<GroupRoomEntryObserver>,
+) -> Result<LocalGroupFanoutDisposition, String> {
     let db_path = sessions.session_db_path(room_id)?;
     let agent_dir = db_path
         .parent()
@@ -263,6 +293,7 @@ pub fn dispatch_local_group_send(
         posted_messages: Arc::clone(&posted_messages),
         member_failures: Arc::clone(&member_failures),
         post_error: Arc::clone(&post_error),
+        entry_observer,
     };
     let mut member_ids = deps.config.member_ids.clone();
     if deps.remote_executor.is_some() {

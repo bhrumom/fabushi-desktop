@@ -15844,7 +15844,7 @@
       "targetPath": "source/host/src/extensions/transcript/group_chat_glue.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "83c041092a99840bc81bebf731c4cf306700920d",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -15857,7 +15857,8 @@
         "source/host/src/extensions/transcript/group_chat_orchestrator.rs",
         "source/host/src/extensions/transcript/send_group_fanout.rs",
         "source/host/src/extensions/cross_user_sharing/production.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_gateway_contract.rs",
@@ -15865,10 +15866,11 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/send_group_fanout_contract.rs",
-        "source/host/tests/routed_send_acceptance_contract.rs"
+        "source/host/tests/routed_send_acceptance_contract.rs",
+        "source/host/tests/group_chat_glue_owner_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Rust Session Gateway owns createGroup/setGroupMembers and group config. Production room turns consume the canonical GroupChatOrchestrator; local members, including Cursor-backed members, execute through the real Routed Runner, and shared/remote members use the production CrossUser remote executor through that same orchestrator. The shared-room production callback also uses this provider-agnostic path rather than a Cursor compatibility route. This row remains non-final for streaming preview lifecycle, reactions, three-attempt direct-message preemption/redrive behavior, activity/trace lifecycle parity, and the full shared-room guardrail/publication behavior at this owner boundary."
+      "notes": "Final Rust adaptation: GroupChatGlue is the shipping owner for local and shared group-turn composition instead of leaving fanout in main.rs. It reuses the canonical bounded GroupChatOrchestrator and existing three-attempt epoch-aware DM-preemption redrive, projects transient member text as room-scoped streaming send-message append/update/remove events with (pass) suppression, routes group-member reactions to the room, carries reaction/send delivery into preemption settlement, emits cancellation terminal state so preempted waits cannot hang until timeout, durably persists final authored room messages, and late-binds final shared-room entry publication to the single production CrossUser publisher. Focused behavioral contracts execute preview lifecycle, reaction/redrive settlement, final room persistence/observation, and shared-room publication; existing fanout/orchestrator contracts retain history, bounds, remote routing, prompt guardrails, and three-attempt redrive coverage."
     },
     {
       "referencePath": "source/host/extensions/transcript/group-chat-orchestrator.ts",

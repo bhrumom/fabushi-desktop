@@ -38,6 +38,8 @@ use super::upgrade_recreate_resume::{
 const COMPLETION_CACHE_MAX: usize = 256;
 
 pub type AgentRunLifecycleObserver = Arc<dyn Fn(&str, &str) + Send + Sync>;
+pub type SharedGroupRoomEntryPublisher =
+    Arc<dyn Fn(&str, &Value) -> Result<(), String> + Send + Sync>;
 
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ProductionSendError {
@@ -134,6 +136,7 @@ pub struct ProductionTranscriptRuntime {
     session_runtime: SessionRuntime,
     replica_writer: HostReplicaWriter,
     shared_group_remote_executor: Mutex<Option<GroupMemberTurnExecutor>>,
+    shared_group_room_entry_publisher: Mutex<Option<SharedGroupRoomEntryPublisher>>,
     roster_snapshot_seq: AtomicU64,
     agent_run_lifecycle_observer: Mutex<Option<AgentRunLifecycleObserver>>,
 }
@@ -175,6 +178,7 @@ impl ProductionTranscriptRuntime {
             session_runtime: SessionRuntime::new(),
             replica_writer: HostReplicaWriter::new(),
             shared_group_remote_executor: Mutex::new(None),
+            shared_group_room_entry_publisher: Mutex::new(None),
             roster_snapshot_seq: AtomicU64::new(0),
             agent_run_lifecycle_observer: Mutex::new(None),
         }
@@ -220,6 +224,33 @@ impl ProductionTranscriptRuntime {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .clone()
+    }
+
+    pub fn bind_shared_group_room_entry_publisher(
+        &self,
+        publisher: Option<SharedGroupRoomEntryPublisher>,
+    ) {
+        *self
+            .shared_group_room_entry_publisher
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = publisher;
+    }
+
+    pub fn publish_shared_group_room_entry(
+        &self,
+        room_id: &str,
+        entry: &Value,
+    ) -> Result<bool, String> {
+        let publisher = self
+            .shared_group_room_entry_publisher
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        let Some(publisher) = publisher else {
+            return Ok(false);
+        };
+        publisher(room_id, entry)?;
+        Ok(true)
     }
 
     pub fn switch_agent(

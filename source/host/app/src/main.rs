@@ -123,7 +123,10 @@ use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
 use mahayana_host_runtime::extensions::transcript::pending_wake_rearm::{
     LostSubagentWake, PendingWakeRearm, PendingWakeReport, PendingWakeRuntimePort,
 };
-use mahayana_host_runtime::extensions::transcript::group_chat_glue::GroupChatGlue;
+use mahayana_host_runtime::extensions::transcript::group_chat_glue::{
+    GroupChatGlue, GroupMemberPreview, GroupRoomEntryObserver, group_member_reaction_target,
+    should_redrive_group_member_after_preemption,
+};
 use mahayana_host_runtime::extensions::transcript::group_chat_orchestrator::GroupMemberTurnRequest;
 use mahayana_host_runtime::extensions::cross_user_sharing::production::{
     CrossUserGatewayError, ProductionCrossUserRuntime, RemoteRequestedTurnRunner,
@@ -132,7 +135,7 @@ use mahayana_host_runtime::extensions::cross_user_sharing::production::{
 use mahayana_host_runtime::groups::group_chat::{GroupDescription, GroupMember};
 use mahayana_host_runtime::extensions::transcript::send_group_fanout::{
     GROUP_MEMBER_DM_PREEMPTED_ERROR, GroupMemberTurnExecutor, LocalGroupFanoutDisposition,
-    collect_new_member_send_messages, dispatch_local_group_send,
+    collect_new_member_send_messages,
 };
 use mahayana_host_runtime::extensions::transcript::send_acceptance::emit_accepted_send_echoes;
 use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
@@ -514,6 +517,20 @@ const RUNNER_ACCEPT_ROUTED_PROMPT_GATEWAY_METHOD: &str = "runner.acceptRoutedPro
 const RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD: &str = "runner.startRoutedProvider";
 const RUNNER_CANCEL_ROUTED_PROVIDER_GATEWAY_METHOD: &str = "runner.cancelRoutedProvider";
 const RUNNER_INFERENCE_EVENT_CHANNEL: &str = "runner-inference";
+
+fn group_room_entry_observer(events: GatewayEventHub) -> GroupRoomEntryObserver {
+    Arc::new(move |room_id, entry| {
+        events.publish(serde_json::json!({
+            "channel": "transcript",
+            "payload": {
+                "type": "appended",
+                "agentId": room_id,
+                "entry": entry,
+            }
+        }));
+    })
+}
+
 
 fn persist_runner_media_bytes(
     sessions: &ProductionSessionWorkers,
@@ -2750,17 +2767,19 @@ impl UnifiedGatewayApi {
             return Ok(None);
         };
         let deps = self.local_routed_runner_deps();
+        let member_room_id = agent_id.to_string();
         let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
-            run_local_group_member_turn(deps.clone(), provider, request)
+            run_local_group_member_turn(deps.clone(), provider, Some(&member_room_id), request)
         });
         let epoch = self.transcript_runtime.current_turn_epoch(agent_id);
-        match dispatch_local_group_send(
-            Arc::clone(&self.session_workers),
+        let group_glue = GroupChatGlue::new(Arc::clone(&self.session_workers));
+        match group_glue.run_group_turn(
             Arc::clone(&self.transcript_runtime),
             agent_id,
             epoch,
             executor,
             self.cross_user.remote_executor(),
+            Some(group_room_entry_observer(self.events.clone())),
         ).map_err(ProductionSendError::Internal)? {
             LocalGroupFanoutDisposition::NotGroup | LocalGroupFanoutDisposition::DeferredRemote { .. } => Ok(None),
             LocalGroupFanoutDisposition::Completed { posted_messages, member_failures } => Ok(Some(serde_json::json!({
@@ -2843,6 +2862,7 @@ fn run_agent_posted_group_turn(
     let dispatch_runtime = Arc::clone(&deps.transcript_runtime);
     let dispatch_sessions = Arc::clone(&deps.session_workers);
     let dispatch_deps = deps.clone();
+    let dispatch_events = deps.events.clone();
     let room_id = group_id.to_string();
     deps.transcript_runtime
         .execute_send(
@@ -2850,17 +2870,24 @@ fn run_agent_posted_group_turn(
             move || {
                 let remote_executor = dispatch_runtime.shared_group_remote_executor();
                 let member_deps = dispatch_deps.clone();
+                let member_room_id = room_id.clone();
                 let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
-                    run_local_group_member_turn(member_deps.clone(), provider, request)
+                    run_local_group_member_turn(
+                        member_deps.clone(),
+                        provider,
+                        Some(&member_room_id),
+                        request,
+                    )
                 });
                 let epoch = dispatch_runtime.current_turn_epoch(&room_id);
-                match dispatch_local_group_send(
-                    dispatch_sessions,
+                let group_glue = GroupChatGlue::new(dispatch_sessions);
+                match group_glue.run_group_turn(
                     Arc::clone(&dispatch_runtime),
                     &room_id,
                     epoch,
                     executor,
                     remote_executor,
+                    Some(group_room_entry_observer(dispatch_events.clone())),
                 )
                 .map_err(ProductionSendError::Internal)?
                 {
@@ -2893,9 +2920,12 @@ fn run_agent_posted_group_turn(
 fn run_local_group_member_turn(
     deps: LocalRoutedRunnerDeps,
     provider: RoutedProvider,
+    group_room_id: Option<&str>,
     request: GroupMemberTurnRequest,
 ) -> Result<Vec<String>, String> {
     let member_id = request.member.id.clone();
+    let member_name = request.member.name.clone();
+    let group_room_id = group_room_id.map(ToOwned::to_owned);
     let before = deps
         .session_workers
         .read_agent_transcript_entries(&member_id)?;
@@ -2924,6 +2954,8 @@ fn run_local_group_member_turn(
         "streamId": stream_id,
         "requestSource": "group-member",
         "groupMemberTurn": true,
+        "groupRoomId": group_room_id,
+        "groupMemberName": member_name,
         "messages": [
             {
                 "role": "system",
@@ -3010,7 +3042,19 @@ fn run_local_group_member_turn(
                                 .session_workers
                                 .read_agent_transcript_entries(&member_id)?;
                             let sent = collect_new_member_send_messages(&before, &after);
-                            if !sent.is_empty() {
+                            let sent_message_count = payload
+                                .get("sentMessageCount")
+                                .and_then(serde_json::Value::as_u64)
+                                .unwrap_or(sent.len() as u64)
+                                .max(sent.len() as u64);
+                            let reacted = payload
+                                .get("reacted")
+                                .and_then(serde_json::Value::as_bool)
+                                .unwrap_or(false);
+                            if !should_redrive_group_member_after_preemption(
+                                sent_message_count,
+                                reacted,
+                            ) {
                                 return Ok(sent);
                             }
                             return Err(GROUP_MEMBER_DM_PREEMPTED_ERROR.to_string());
@@ -5234,6 +5278,24 @@ fn start_routed_provider_task(
         .get("groupMemberTurn")
         .and_then(serde_json::Value::as_bool)
         .unwrap_or(false);
+    let group_room_id = is_group_member_turn
+        .then(|| {
+            args.get("groupRoomId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned)
+        })
+        .flatten();
+    let group_member_name = is_group_member_turn
+        .then(|| {
+            args.get("groupMemberName")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned)
+        })
+        .flatten();
     transcript_runtime.begin_provider_run_with_kind(&agent_id, is_group_member_turn);
     let supplied_ack_token = args
         .get("ackToken")
@@ -5319,6 +5381,8 @@ fn start_routed_provider_task(
     let worker_trays = Arc::clone(&trays);
     let worker_telemetry_logs = telemetry_logs.clone();
     let worker_request_source = request_source.clone();
+    let worker_group_room_id = group_room_id.clone();
+    let worker_group_member_name = group_member_name.clone();
     let worker_is_handoff_resume = worker_request_source.as_deref() == Some("handoff-resume");
     let worker_session_options = SandSessionOptions {
         model_id: args
@@ -6501,6 +6565,15 @@ fn start_routed_provider_task(
                         })
                     }) as SubagentSteerReviewCallback
                 });
+            let group_preview = worker_group_room_id.as_deref().map(|room_id| {
+                Arc::new(Mutex::new(GroupMemberPreview::new(
+                    room_id,
+                    &agent_id,
+                    worker_group_member_name.as_deref().unwrap_or(&agent_id),
+                    &stream_id,
+                )))
+            });
+            let delta_group_preview = group_preview.clone();
             let delta_events = worker_events.clone();
             let delta_stream_id = stream_id.clone();
             let delta_runtime = Arc::clone(&worker_transcript_runtime);
@@ -6527,6 +6600,15 @@ fn start_routed_provider_task(
                     },
                     started_at_ms(),
                 );
+                if let Some(preview) = delta_group_preview.as_ref()
+                    && let Ok(mut preview) = preview.lock()
+                    && let Some(payload) = preview.on_text_delta(accumulated)
+                {
+                    delta_events.publish(serde_json::json!({
+                        "channel": "transcript",
+                        "payload": payload,
+                    }));
+                }
                 delta_events.publish(serde_json::json!({
                     "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
                     "payload": {
@@ -6684,7 +6766,10 @@ fn start_routed_provider_task(
             let base_reaction_sink: Arc<dyn ReactionSink> = Arc::new(
                 ProductionReactionSink {
                     host_tx,
-                    agent_id: agent_id.clone(),
+                    agent_id: group_member_reaction_target(
+                        worker_group_room_id.as_deref(),
+                        &agent_id,
+                    ),
                 },
             );
             let reaction_sink: Arc<dyn ReactionSink> = Arc::new(CountingReactionSink::new(
@@ -7431,6 +7516,15 @@ fn start_routed_provider_task(
                 &ActivityUpdate::TurnEnded,
                 started_at_ms(),
             );
+            if let Some(preview) = group_preview.as_ref()
+                && let Ok(mut preview) = preview.lock()
+                && let Some(payload) = preview.finish()
+            {
+                worker_events.publish(serde_json::json!({
+                    "channel": "transcript",
+                    "payload": payload,
+                }));
+            }
             if prompt_role == RunnerPromptRole::ComputerUseSubagent {
                 let usage = worker_provider_usage
                     .lock()
@@ -7504,7 +7598,18 @@ fn start_routed_provider_task(
                         "reacted": reacted
                     }
                 }));
-            } else if !worker_cancellation.is_cancelled() {
+            } else if worker_cancellation.is_cancelled() {
+                worker_events.publish(serde_json::json!({
+                    "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+                    "payload": {
+                        "streamId": stream_id,
+                        "type": "cancelled",
+                        "message": "Runner provider request cancelled",
+                        "sentMessageCount": sent_message_count,
+                        "reacted": reacted
+                    }
+                }));
+            } else {
                 match result {
                     Ok(content) => worker_events.publish(serde_json::json!({
                         "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
@@ -7554,7 +7659,9 @@ fn start_routed_provider_task(
                             "payload": {
                                 "streamId": stream_id,
                                 "type": "failed",
-                                "message": message
+                                "message": message,
+                                "sentMessageCount": sent_message_count,
+                                "reacted": reacted
                             }
                         }))
                     },
@@ -10439,6 +10546,7 @@ fn main() {
             run_local_group_member_turn(
                 remote_requested_runner_deps.clone(),
                 provider,
+                None,
                 GroupMemberTurnRequest {
                     member: GroupMember {
                         id: agent_id.to_string(),
@@ -10462,22 +10570,30 @@ fn main() {
     let shared_room_settings_path = cross_user_settings_path;
     let shared_room_sessions = Arc::clone(&session_workers);
     let shared_room_runtime = Arc::clone(&transcript_runtime);
+    let shared_room_events = shared_room_runner_deps.events.clone();
     let run_shared_room_turn: SharedRoomTurnRunner = Arc::new(
         move |room_agent_id, remote_executor| {
             let provider = configured_routed_provider(&shared_room_settings_path)
                 .ok_or_else(|| "no routed provider configured for shared-room fanout".to_string())?;
             let deps = shared_room_runner_deps.clone();
+            let member_room_id = room_agent_id.to_string();
             let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
-                run_local_group_member_turn(deps.clone(), provider, request)
+                run_local_group_member_turn(
+                    deps.clone(),
+                    provider,
+                    Some(&member_room_id),
+                    request,
+                )
             });
             let epoch = shared_room_runtime.next_turn_epoch(room_agent_id);
-            match dispatch_local_group_send(
-                Arc::clone(&shared_room_sessions),
+            let group_glue = GroupChatGlue::new(Arc::clone(&shared_room_sessions));
+            match group_glue.run_group_turn(
                 Arc::clone(&shared_room_runtime),
                 room_agent_id,
                 epoch,
                 executor,
                 remote_executor,
+                Some(group_room_entry_observer(shared_room_events.clone())),
             )? {
                 LocalGroupFanoutDisposition::NotGroup => Err(format!(
                     "shared-room relay target is not a group: {room_agent_id}"
@@ -10510,6 +10626,10 @@ fn main() {
         .unwrap_or_else(|poisoned| poisoned.into_inner()) =
         Arc::downgrade(&cross_user);
     transcript_runtime.bind_shared_group_remote_executor(cross_user.remote_executor());
+    transcript_runtime.bind_shared_group_room_entry_publisher(Some({
+        let publisher = Arc::clone(&cross_user);
+        Arc::new(move |room_id, entry| publisher.publish_room_entry_and_wait(room_id, entry))
+    }));
 
     let host_upgrade_gateway_slot =
         Arc::new(Mutex::new(Weak::<UnifiedGatewayApi>::new()));

@@ -2,11 +2,11 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::agents::agent_profile::SandAgentProfile;
 use crate::groups::group_chat::{
-    assert_members_are_not_groups, is_same_member_set,
+    assert_members_are_not_groups, is_potential_pass_prefix, is_same_member_set,
 };
 use crate::groups::group_store::{
     GROUP_CONFIG_VERSION, GROUP_MAX_MEMBERS, SandGroupConfig,
@@ -15,6 +15,13 @@ use crate::groups::group_store::{
 use crate::extensions::session::agent_session::SandAgentSessionStore;
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::extensions::session::session_summaries::AgentSummary;
+
+use super::production_runtime::ProductionTranscriptRuntime;
+use super::send_group_fanout::{
+    GroupMemberTurnExecutor, LocalGroupFanoutDisposition,
+    dispatch_local_group_send_with_observer,
+};
+pub use super::send_group_fanout::GroupRoomEntryObserver;
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum GroupChatGlueError {
@@ -33,6 +40,81 @@ pub struct GroupCreateResult {
 
 pub struct GroupChatGlue {
     session: Arc<ProductionSessionWorkers>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GroupMemberPreview {
+    room_id: String,
+    member_id: String,
+    member_name: String,
+    entry_id: String,
+    is_open: bool,
+}
+
+impl GroupMemberPreview {
+    pub fn new(room_id: &str, member_id: &str, member_name: &str, stream_id: &str) -> Self {
+        Self {
+            room_id: room_id.to_string(),
+            member_id: member_id.to_string(),
+            member_name: member_name.to_string(),
+            entry_id: format!("group-preview:{stream_id}"),
+            is_open: false,
+        }
+    }
+
+    pub fn on_text_delta(&mut self, accumulated: &str) -> Option<Value> {
+        if is_potential_pass_prefix(accumulated) {
+            return self.finish();
+        }
+        let content = accumulated.trim_end();
+        if content.trim().is_empty() {
+            return None;
+        }
+        let event_type = if self.is_open {
+            "updated"
+        } else {
+            self.is_open = true;
+            "appended"
+        };
+        Some(json!({
+            "type": event_type,
+            "agentId": self.room_id,
+            "entry": {
+                "kind": "send-message",
+                "id": self.entry_id,
+                "message": {"type": "text", "content": content},
+                "author": {"id": self.member_id, "name": self.member_name},
+                "streaming": true,
+            }
+        }))
+    }
+
+    pub fn finish(&mut self) -> Option<Value> {
+        if !self.is_open {
+            return None;
+        }
+        self.is_open = false;
+        Some(json!({
+            "type": "removed",
+            "agentId": self.room_id,
+            "id": self.entry_id,
+        }))
+    }
+}
+
+pub fn group_member_reaction_target(group_room_id: Option<&str>, member_agent_id: &str) -> String {
+    group_room_id
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(member_agent_id)
+        .to_string()
+}
+
+pub fn should_redrive_group_member_after_preemption(
+    sent_message_count: u64,
+    reacted: bool,
+) -> bool {
+    sent_message_count == 0 && !reacted
 }
 
 impl GroupChatGlue {
@@ -174,6 +256,26 @@ impl GroupChatGlue {
         store
             .summarize_agent_by_id(group_id)
             .map_err(GroupChatGlueError::Internal)
+    }
+
+    pub fn run_group_turn(
+        &self,
+        runtime: Arc<ProductionTranscriptRuntime>,
+        room_id: &str,
+        expected_epoch: u64,
+        executor: GroupMemberTurnExecutor,
+        remote_executor: Option<GroupMemberTurnExecutor>,
+        entry_observer: Option<GroupRoomEntryObserver>,
+    ) -> Result<LocalGroupFanoutDisposition, String> {
+        dispatch_local_group_send_with_observer(
+            Arc::clone(&self.session),
+            runtime,
+            room_id,
+            expected_epoch,
+            executor,
+            remote_executor,
+            entry_observer,
+        )
     }
 
     pub fn is_group_agent_id(&self, agent_id: &str) -> bool {
