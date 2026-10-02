@@ -17225,20 +17225,26 @@
       "targetPath": "source/host/src/host_gateway_api.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "1bf2f5eceae71355eb7f57f6b2a6aaee2e079f0b",
       "architecturalRole": "host/host-gateway-api",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/host_gateway_api.rs",
+        "source/host/src/gateway_protocol.rs",
+        "source/host/src/gateway_server.rs",
         "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/remaining_planned_contract.rs",
+        "source/host/tests/gateway_protocol_contract.rs",
+        "source/host/tests/gateway_server_contract.rs",
+        "source/host/tests/sand_host_production_wiring_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/sand_host_production_wiring_contract.rs"
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Shipping UnifiedGatewayApi now consumes the Rust Host Gateway policy owner for createAgent nonce dedupe (bounded to the frozen 64-entry cap), Sand-only purpose filtering and template-id validation around the canonical Rust ProductionSession gateway mint. The broader frozen gateway method table still remains distributed across typed Rust Gateway/Session/extension dispatchers, so this row stays non-final until those remaining extension-owned methods are proven through the canonical registry."
+      "notes": "Frozen HostGatewayApi ownership is represented by one canonical Rust registry: FROZEN_HOST_GATEWAY_METHODS contains the exact 122 Grok 0.18 public methods and host_gateway_owner resolves every frozen method to one HostGatewayOwner. The shipping GatewayServer gates the public HTTP command surface through is_grok_gateway_command, which consumes that registry, while Fabushi-only gateway methods remain explicitly separated. Production UnifiedGatewayApi continues dispatching the typed TranscriptManager, Session and extension owners; createAgent nonce dedupe and Sand-only argument sanitization remain in the same Rust gateway policy owner. Focused contracts assert exact inventory, uniqueness, owner resolution, compatibility separation, gateway exposure and production wiring, so there is no parallel TypeScript HostGatewayApi owner.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/host-initial-transcript-load.ts",
