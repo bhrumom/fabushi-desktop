@@ -13,7 +13,7 @@ use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     run_created_agent_kickstart,
 };
 use mahayana_host_runtime::extensions::transcript::production_runtime::classify_send_dispatch;
-use mahayana_host_runtime::extensions::transcript::run_lifecycle::RunLane;
+use mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane;
 use serde_json::json;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
