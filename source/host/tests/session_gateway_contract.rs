@@ -571,6 +571,21 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     assert_eq!(transcript.as_array().map(Vec::len), Some(1));
     assert_eq!(transcript[0]["id"], "human-message:human-nonce-1");
 
+    let conflicting = dispatch_production_session_gateway_call(
+        &runtime,
+        "sendHumanMessage",
+        &json!({
+            "conversationId": conversation_id,
+            "senderId": "human-local",
+            "text": "different content",
+            "clientNonce": "human-nonce-1",
+            "composedAtMs": 1234
+        }),
+    )
+    .expect("handled Human send")
+    .expect_err("nonce collision must reject different content");
+    assert!(conflicting.to_string().contains("different content"));
+
     runtime.shutdown();
 
     let restarted = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));

@@ -1386,8 +1386,18 @@ impl ProductionSessionWorkers {
                 .get_transcript_entries()
                 .map_err(|error| error.to_string())?
                 .into_iter()
-                .find(|candidate| candidate.get("id") == entry.get("id"));
-            return replay.ok_or_else(|| "native Human message was not durably appended".to_string());
+                .find(|candidate| candidate.get("id") == entry.get("id"))
+                .ok_or_else(|| "native Human message was not durably appended".to_string())?;
+            let same_sender =
+                replay.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
+            let same_text =
+                replay.get("content").and_then(serde_json::Value::as_str) == Some(text);
+            let same_nonce =
+                replay.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce);
+            if same_sender && same_text && same_nonce {
+                return Ok(replay);
+            }
+            return Err("sendHumanMessage clientNonce already identifies different content".into());
         }
         owner
             .mark_activity(
