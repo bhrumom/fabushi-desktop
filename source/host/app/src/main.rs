@@ -256,8 +256,8 @@ use mahayana_host_runtime::extensions::telemetry::journal_outcome_telemetry::Jou
 use mahayana_host_runtime::extensions::telemetry::sand_error_tags::SandErrorValue;
 use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
 use mahayana_host_runtime::extensions::transcript::turn_runtime::{
-    REPLY_NUDGE_PROMPT, TurnTerminalKind, classify_agent_error, project_turn_terminal,
-    should_attempt_reply_nudge,
+    TurnTerminalKind, classify_agent_error, project_turn_terminal,
+    shape_reply_nudge_turn_input, should_attempt_reply_nudge,
 };
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
 use mahayana_host_runtime::extensions::forever_box::{
@@ -7456,17 +7456,17 @@ fn start_routed_provider_task(
                     result.is_ok(),
                 ) {
                     reply_nudge_attempts = reply_nudge_attempts.saturating_add(1);
-                    let mut nudge_provider_messages = provider_messages.clone();
-                    nudge_provider_messages.push(ProviderMessage {
-                        role: "user".into(),
-                        content: REPLY_NUDGE_PROMPT.to_string(),
-                    });
+                    let nudge_input = shape_reply_nudge_turn_input(
+                        &lifecycle_messages,
+                        &provider_messages,
+                        &turn_input.options,
+                    );
                     let mut suppress_hidden_nudge_delta = |_delta: &str, _accumulated: &str| {};
                     result = runner.run_routed_provider_with_projected_messages(
                         &data_dir,
-                        &lifecycle_messages,
-                        &nudge_provider_messages,
-                        turn_input.options.clone(),
+                        &nudge_input.lifecycle_messages,
+                        &nudge_input.provider_messages,
+                        nudge_input.options,
                         &mut suppress_hidden_nudge_delta,
                     );
                     waiting_user = matches!(

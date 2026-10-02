@@ -1,6 +1,6 @@
-use crate::extensions::inference::provider_session::ProviderSessionError;
+use crate::extensions::inference::provider_session::{ProviderMessage, ProviderSessionError};
 use crate::extensions::telemetry::sand_error_tags::SandErrorValue;
-use crate::runner::{StreamFailureKind, TransientStreamError};
+use crate::runner::{StreamFailureKind, TransientStreamError, TurnRunOptions};
 use crate::runner::would_recover_via_prepend;
 
 use super::send_pipeline::{PersistedSendContext, RecoverySend};
@@ -78,6 +78,42 @@ pub fn should_attempt_reply_nudge(
         && attempts < MAX_REPLY_NUDGES
         && turn_epoch == current_epoch
         && is_delivery_owed(sent_message_count, reacted)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReplyNudgeTurnInput {
+    pub lifecycle_messages: Vec<ProviderMessage>,
+    pub provider_messages: Vec<ProviderMessage>,
+    pub options: TurnRunOptions,
+}
+
+pub fn shape_reply_nudge_turn_input(
+    lifecycle_messages: &[ProviderMessage],
+    provider_messages: &[ProviderMessage],
+    options: &TurnRunOptions,
+) -> ReplyNudgeTurnInput {
+    let nudge = ProviderMessage {
+        role: "user".into(),
+        content: REPLY_NUDGE_PROMPT.to_string(),
+    };
+    let mut shaped_lifecycle_messages = lifecycle_messages.to_vec();
+    shaped_lifecycle_messages.push(nudge.clone());
+    let mut shaped_provider_messages = provider_messages.to_vec();
+    shaped_provider_messages.push(nudge);
+    let mut shaped_options = options.clone();
+    shaped_options.message_id = None;
+    shaped_options.recent_message_text = Some(REPLY_NUDGE_PROMPT.to_string());
+    shaped_options.recent_user_messages.clear();
+    shaped_options.is_fork = false;
+    shaped_options.attachment_count = 0;
+    shaped_options.image_count = 0;
+    shaped_options.video_count = 0;
+    shaped_options.has_reply_context = false;
+    ReplyNudgeTurnInput {
+        lifecycle_messages: shaped_lifecycle_messages,
+        provider_messages: shaped_provider_messages,
+        options: shaped_options,
+    }
 }
 
 pub fn classify_agent_error(error: &ProviderSessionError) -> SandErrorValue {
