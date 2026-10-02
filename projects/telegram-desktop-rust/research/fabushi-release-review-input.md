@@ -65,15 +65,13 @@ Open review item: produce the final distributed npm-license inventory from this 
 - the Node Agent Coordinator Rust binary, built from `source/node-agent-coordinator/Cargo.toml`;
 - `box-exec-daemon`, built from `source/box-exec-daemon/Cargo.toml`.
 
-The release path invokes these through `desktop/package.json` without `--locked`.
-
-At this exact source baseline, none of those three manifest roots has a checked-in adjacent `Cargo.lock`. The repository does contain other lockfiles, including:
+Historical finding (now superseded): the initial audited release path invoked these through `desktop/package.json` without `--locked`, and the three shipping manifest roots did not yet have authoritative adjacent lockfiles. The repository also contained other unrelated lockfiles, including:
 
 - `source/mahayana/mahayana-rs/Cargo.lock` blob `aedcddd756d2434e2eaaca89c2e6105d1611a0e8`;
 - `source/mahayana/codex-rs/Cargo.lock` blob `7591a40df797cde1c4cd88e30bfe3cf248ab3f92`;
 - `native/mahayana-messaging/Cargo.lock` blob `876b3fe8a6e182d4d53c379dbfad7b80c967d748`.
 
-Those lockfiles must not be substituted for the shipping manifest roots unless Cargo's actual workspace resolution proves they govern those builds.
+Those unrelated lockfiles were not substituted for the shipping manifest roots. The current resolution below instead gives each shipping root its own checked-in lock and uses Cargo `--locked` on the actual package path.
 
 ### Release blocker RR-RUST-LOCK-01
 
@@ -95,13 +93,7 @@ These are build-environment provenance inputs. They do not make Telegram's packa
 
 ## 5. Offline ASR packaging blocker
 
-`.github/workflows/release-macos-main.yml` currently reads:
-
-`desktop/electron/offline-asr-engine.json`
-
-to obtain an exact `whisper.cpp` repository and commit before staging `desktop/resources/asr`.
-
-That manifest is absent from the current exact tree.
+Historical finding (now superseded): `.github/workflows/release-macos-main.yml` read `desktop/electron/offline-asr-engine.json` to obtain an exact `whisper.cpp` repository and commit before staging `desktop/resources/asr`, even though that manifest had already been deleted from the production tree.
 
 Git history shows it was deleted by `0d4969452379eb322978b785ac57de17072faf93` ("refactor: remove superseded desktop runtime roots"). The immediately preceding manifest pinned:
 
@@ -125,9 +117,9 @@ Current Fabushi package reachability provides the decisive boundary:
 
 - no Telegram `Resources`, shader, `.qsb`, or `.binobj` tree is tracked as a Fabushi package input at this baseline;
 - the Fabushi package does include its own `desktop/resources/icon.png`;
-- no license/origin/provenance record was found adjacent to that icon or the tracked entitlement files.
+- the initial audit found no independent license/origin/provenance row for that icon; the resolution below now supplies one.
 
-Therefore Telegram asset-license uncertainty is a research/legal blocker only if a Telegram-derived asset is later copied/adapted. Separately, Fabushi's own distributed icon still needs its own origin/license/ownership record for release review.
+Therefore Telegram asset-license uncertainty is a research/legal blocker only if a Telegram-derived asset is later copied/adapted. Fabushi's distributed icon is handled independently by RR-ASSET-01 below.
 
 ### RR-ASSET-01 resolution
 
@@ -164,4 +156,4 @@ A candidate is not provenance-closed until all applicable items below are bound 
 
 This closes the missing distinction between Telegram's research acquisition graph and Fabushi's actual release graph.
 
-It does **not** close P0 or legal review. The earliest concrete release-provenance blockers are now explicit as RR-RUST-LOCK-01, RR-ASR-01, and RR-ASSET-01. Mutable Telegram package-manager/default/latest history remains documented as historically unprovable where no build record exists, but it is not currently reachable from the Fabushi package graph and therefore is not misrepresented as a shipping dependency.
+It does **not** close P0 or legal review. RR-RUST-LOCK-01, RR-ASR-01, and RR-ASSET-01 are resolved in the current source graph as documented above; candidate acceptance must still bind lockfile/asset digests and the packaged binaries to the same exact HEAD. Mutable Telegram package-manager/default/latest history remains documented as historically unprovable where no build record exists, but it is not currently reachable from the Fabushi package graph and therefore is not misrepresented as a shipping dependency.
