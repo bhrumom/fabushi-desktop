@@ -140,6 +140,10 @@ fn report_summary_diagnostic(kind: &str, agent_id: &str) {
     });
 }
 
+fn is_reserved_session_namespace(id: &str) -> bool {
+    id.starts_with('.')
+}
+
 pub fn list_agents(
     root_dir: &Path,
     busy_timeout_ms: u64,
@@ -155,6 +159,7 @@ pub fn list_agents(
     let roster_ids = entries
         .iter()
         .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .filter(|id| !is_reserved_session_namespace(id))
         .collect::<BTreeSet<_>>();
     let mut summaries = Vec::new();
 
@@ -163,6 +168,9 @@ pub fn list_agents(
             continue;
         }
         let dir_name = entry.file_name().to_string_lossy().into_owned();
+        if is_reserved_session_namespace(&dir_name) {
+            continue;
+        }
         if is_agent_being_deleted(&dir_name) {
             continue;
         }
@@ -272,7 +280,7 @@ pub fn summarize_agent_by_id(
     is_agent_being_deleted: &dyn Fn(&str) -> bool,
     extras_cache: &RosterExtrasCache,
 ) -> Result<Option<AgentSummary>, String> {
-    if is_agent_being_deleted(agent_id) {
+    if is_reserved_session_namespace(agent_id) || is_agent_being_deleted(agent_id) {
         return Ok(None);
     }
     let db_path = get_agent_db_path(root_dir, agent_id)
