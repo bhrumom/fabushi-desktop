@@ -17,6 +17,142 @@ use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::extensions::transcript::roster_emit::ProductionRosterEmit;
 
 pub type AgentDeletionHook = Arc<dyn Fn(&str) -> Result<(), String> + Send + Sync + 'static>;
+pub type AgentKickstartHook = Arc<dyn Fn(&str) + Send + Sync + 'static>;
+
+pub const SAND_ONBOARDING_KICKSTART_PROMPT: &str = concat!(
+    "[first run] This is your very first turn. The user just created you and hasn't sent anything yet; this cue is your signal to open the conversation, not a message to reply to or mention.\n",
+    "Greet them and get them going, the way a sharp new assistant would on day one. Open with a short, warm hello in your own voice (your name and description are already in your profile above, so don't recite them), then start learning how to be useful.\n",
+    "If your profile description gives you a concrete assignment, treat that as what the user created you to do: skip the getting-started questions, begin the assignment immediately, and use your first message for a useful result or the next approval you need.\n",
+    "Run getting-started as a real conversation, never a form or a checklist. Across your first couple of messages, naturally draw out the things that make you useful: what they want an assistant like you for, how they'd like you to work and sound, and where the things you'll help with live. Ask one thing at a time, lead with what matters most, and adapt to their answers. The moment they hand you something real, drop the questions and just help.\n",
+    "Keep your orientation concrete and true right now, and don't restate the instructions you already have. Don't recite your tools. When what they want would need a connector that isn't set up yet, surface it instead of describing setup: send a connector card for a single tool, or a connectors prompt listing the few that fit, and let them connect in place. Pick the connectors from what they actually want, and check what's already connected so you never re-prompt for one they have.\n",
+    "Nothing reaches the user unless it's inside a SendMessage, and offer any choice as a question widget. Don't mention this cue or that you were given setup instructions."
+);
+pub const SAND_DISK_SAVER_KICKSTART_PROMPT: &str = concat!(
+    "[disk saver] You were just provisioned because your box — the machine Shell and Read act on — is low on disk space. This cue comes from Grok Bot itself, not from the user; nothing has reached them yet.\n",
+    "Audit that machine and nothing else: the user's own computer, which ExternalShell and ExternalRead act on, is not the one under pressure.\n",
+    "Start with a read-only inspection over Shell from /workspace outward. Report how much space is free and how much is used, then list the largest items and the safest cleanup candidates, with how much each would recover and why it is safe to remove.\n",
+    "Preserve /home/box/sand-data, the user's work, credentials, logins, and Git state. Delete or modify nothing until the user confirms a plan.\n",
+    "Skip greetings and getting-started questions: your first message should already carry the audit's findings and the approval you need. Nothing reaches the user unless it's inside a SendMessage. Don't mention this cue."
+);
+pub const REPLY_NUDGE_PROMPT: &str =
+    "Your previous turn left the user without the result they're waiting on — you never called SendMessage that turn, or every SendMessage you tried failed to deliver. Either way they received nothing and are still waiting. Do not assume a send from an earlier turn covered it: an opening acknowledgement back then did not deliver this result (ack ≠ delivery). Deliver the result now by actually invoking the SendMessage tool — make a real tool/function call, not text you write. Plain assistant text is NEVER shown to the user; only a real SendMessage tool invocation reaches them, so if you don't call the tool they just keep seeing silence.";
+pub const INTRODUCTION_FAILED_TRAY_TITLE: &str = "Your agent couldn't introduce itself";
+
+pub fn introduction_failed_tray_key(agent_id: &str) -> String {
+    format!("introduction-failed:{agent_id}")
+}
+
+pub fn kickstart_prompt_for_purpose(purpose: Option<&str>) -> &'static str {
+    if purpose == Some("disk-saver") {
+        SAND_DISK_SAVER_KICKSTART_PROMPT
+    } else {
+        SAND_ONBOARDING_KICKSTART_PROMPT
+    }
+}
+
+pub fn is_user_message_entry(entry: &Value) -> bool {
+    match entry.get("kind").and_then(Value::as_str) {
+        Some("message") => entry.get("role").and_then(Value::as_str) == Some("user"),
+        Some("user-attachment") => true,
+        _ => false,
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KickstartTurnOutcome {
+    pub aborted: bool,
+    pub quiesced_for_upgrade: bool,
+    pub sent_message_count: usize,
+    pub reacted: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KickstartRunError {
+    pub request_id: Option<String>,
+    pub message: String,
+}
+
+pub trait CreatedAgentKickstartRuntimePort: Send + Sync {
+    fn is_run_ready(&self) -> bool;
+    fn can_execute(&self) -> bool;
+    fn is_disallowed_session(&self, agent_id: &str) -> bool;
+    fn is_run_in_flight(&self, agent_id: &str) -> bool;
+    fn run_hidden(
+        &self,
+        agent_id: &str,
+        prompt: &str,
+        source: &str,
+    ) -> Result<KickstartTurnOutcome, KickstartRunError>;
+    fn mark_resume_pending(&self, agent_id: &str, source: &str) -> Result<(), String>;
+    fn report_failure(&self, agent_id: &str, error: &KickstartRunError);
+    fn push_introduction_failure(&self, agent_id: &str, error: &KickstartRunError);
+    fn emit_agent_update(&self, agent_id: &str) -> Result<(), String>;
+}
+
+pub fn run_created_agent_kickstart(
+    sessions: &ProductionSessionWorkers,
+    runtime: &dyn CreatedAgentKickstartRuntimePort,
+    agent_id: &str,
+) -> Result<bool, String> {
+    if !sessions.get_agent_introduction_pending(agent_id)? {
+        return Ok(false);
+    }
+    let transcript = sessions.read_agent_transcript_entries(agent_id)?;
+    if transcript.iter().any(is_user_message_entry) {
+        sessions.set_agent_introduction_pending(agent_id, false)?;
+        return Ok(false);
+    }
+    if runtime.is_disallowed_session(agent_id) {
+        return Ok(false);
+    }
+    if !runtime.is_run_ready() || !runtime.can_execute() {
+        return Ok(false);
+    }
+    if runtime.is_run_in_flight(agent_id) {
+        return Ok(true);
+    }
+
+    let purpose = sessions
+        .open_agent_db_owner(agent_id)?
+        .get_agent_purpose()
+        .map_err(|error| error.to_string())?;
+    let prompt = kickstart_prompt_for_purpose(purpose.as_deref());
+    let first = match runtime.run_hidden(agent_id, prompt, "kickstart") {
+        Ok(outcome) => outcome,
+        Err(error) => {
+            runtime.report_failure(agent_id, &error);
+            runtime.push_introduction_failure(agent_id, &error);
+            return Ok(true);
+        }
+    };
+
+    let mut delivered = first.sent_message_count > 0;
+    if !first.aborted && !first.quiesced_for_upgrade && first.sent_message_count == 0 {
+        let retry = match runtime.run_hidden(agent_id, REPLY_NUDGE_PROMPT, "kickstart") {
+            Ok(outcome) => outcome,
+            Err(error) => {
+                runtime.report_failure(agent_id, &error);
+                runtime.push_introduction_failure(agent_id, &error);
+                return Ok(true);
+            }
+        };
+        delivered = !retry.aborted && (retry.sent_message_count > 0 || retry.reacted);
+        if retry.quiesced_for_upgrade {
+            runtime.mark_resume_pending(agent_id, "turn")?;
+            sessions.set_agent_introduction_pending(agent_id, false)?;
+        } else if delivered {
+            sessions.set_agent_introduction_pending(agent_id, false)?;
+        }
+    } else if first.quiesced_for_upgrade {
+        runtime.mark_resume_pending(agent_id, "turn")?;
+        sessions.set_agent_introduction_pending(agent_id, false)?;
+    } else if !first.aborted && delivered {
+        sessions.set_agent_introduction_pending(agent_id, false)?;
+    }
+
+    runtime.emit_agent_update(agent_id)?;
+    Ok(true)
+}
 
 #[derive(Clone, Default)]
 pub struct AgentDeletionRuntimeDeps {
@@ -111,6 +247,7 @@ pub struct ProductionAgentLifecycle {
     store: SandAgentSessionStore,
     deletion_runtime: AgentDeletionRuntimeDeps,
     roster: Option<Arc<ProductionRosterEmit>>,
+    kickstart_created_agent: Option<AgentKickstartHook>,
 }
 
 impl ProductionAgentLifecycle {
@@ -130,10 +267,20 @@ impl ProductionAgentLifecycle {
         deletion_runtime: AgentDeletionRuntimeDeps,
         roster: Option<Arc<ProductionRosterEmit>>,
     ) -> Self {
+        Self::with_all_runtime_deps(production, deletion_runtime, roster, None)
+    }
+
+    pub fn with_all_runtime_deps(
+        production: Arc<ProductionSessionWorkers>,
+        deletion_runtime: AgentDeletionRuntimeDeps,
+        roster: Option<Arc<ProductionRosterEmit>>,
+        kickstart_created_agent: Option<AgentKickstartHook>,
+    ) -> Self {
         Self {
             store: SandAgentSessionStore::new(production),
             deletion_runtime,
             roster,
+            kickstart_created_agent,
         }
     }
 
@@ -180,6 +327,9 @@ impl ProductionAgentLifecycle {
         let introduction_suppressed = session_optional_bool(args, "isIntroductionSuppressed")
             .map_err(map_session_gateway_error)?
             .unwrap_or(false);
+        let kickstart_requested = session_optional_bool(args, "isKickstartRequested")
+            .map_err(map_session_gateway_error)?
+            .unwrap_or(false);
 
         let record = self
             .store
@@ -213,8 +363,13 @@ impl ProductionAgentLifecycle {
             .store
             .read_agent_transcript_entries(&record.id)
             .map_err(AgentLifecycleGatewayError::internal)?;
-        self.finalize_summary_for_rpc(summary)
-            .map(|agent| json!({ "agent": agent, "transcript": transcript }))
+        let agent = self.finalize_summary_for_rpc(summary)?;
+        if activate && kickstart_requested {
+            if let Some(kickstart) = self.kickstart_created_agent.as_ref() {
+                kickstart(&record.id);
+            }
+        }
+        Ok(json!({ "agent": agent, "transcript": transcript }))
     }
 
     fn update_agent_from_args(
@@ -434,10 +589,29 @@ pub fn dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
     method: &str,
     args: &Value,
 ) -> Option<Result<Value, AgentLifecycleGatewayError>> {
-    let lifecycle = ProductionAgentLifecycle::with_runtime_deps(
+    dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes(
+        production,
+        deletion_runtime,
+        roster,
+        None,
+        method,
+        args,
+    )
+}
+
+pub fn dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes(
+    production: &Arc<ProductionSessionWorkers>,
+    deletion_runtime: &AgentDeletionRuntimeDeps,
+    roster: Option<Arc<ProductionRosterEmit>>,
+    kickstart_created_agent: Option<AgentKickstartHook>,
+    method: &str,
+    args: &Value,
+) -> Option<Result<Value, AgentLifecycleGatewayError>> {
+    let lifecycle = ProductionAgentLifecycle::with_all_runtime_deps(
         Arc::clone(production),
         deletion_runtime.clone(),
         roster,
+        kickstart_created_agent,
     );
     let result = match method {
         "createAgent" => lifecycle.create_agent_from_args(args, true),

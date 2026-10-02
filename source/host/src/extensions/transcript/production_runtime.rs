@@ -63,6 +63,7 @@ pub fn classify_send_dispatch(
     let is_upgrade_resume = request_source == Some("upgrade-resume");
     let is_group_member = request_source == Some("group-member");
     let is_agent_inbound = request_source == Some("agent-inbound");
+    let is_kickstart = request_source == Some("kickstart");
     let is_ack_redrive =
         optional_bool(args, "ackRedrive")?.unwrap_or(false) && is_handoff_resume;
     Ok((
@@ -85,6 +86,8 @@ pub fn classify_send_dispatch(
             "agent-inbound"
         } else if is_group_member {
             "group-member"
+        } else if is_kickstart {
+            "kickstart"
         } else {
             "turn"
         },

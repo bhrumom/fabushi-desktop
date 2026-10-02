@@ -167,9 +167,13 @@ use mahayana_host_runtime::extensions::transcript::ack_obligations::{
 use mahayana_host_runtime::extensions::transcript::runner_registry::TranscriptRunnerRegistry;
 use mahayana_host_runtime::extensions::transcript::run_scheduler::WatchdogStage;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
-    AgentDeletionRuntimeDeps, AgentLifecycleGatewayError,
+    AgentDeletionRuntimeDeps, AgentKickstartHook, AgentLifecycleGatewayError,
+    CreatedAgentKickstartRuntimePort, INTRODUCTION_FAILED_TRAY_TITLE,
+    KickstartRunError, KickstartTurnOutcome, introduction_failed_tray_key,
+    run_created_agent_kickstart,
     dispatch_production_agent_lifecycle_gateway_call_with_runtime,
     dispatch_production_agent_lifecycle_gateway_call_with_runtimes,
+    dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderOptions,
@@ -1014,6 +1018,98 @@ struct LocalRoutedRunnerDeps {
 }
 
 #[derive(Clone)]
+struct ProductionCreatedAgentKickstartRuntime {
+    deps: LocalRoutedRunnerDeps,
+    roster: Arc<ProductionRosterEmit>,
+}
+
+impl CreatedAgentKickstartRuntimePort for ProductionCreatedAgentKickstartRuntime {
+    fn is_run_ready(&self) -> bool {
+        !self.deps.transcript_runtime.is_quiescing_for_upgrade()
+            && configured_routed_provider(&self.deps.data_dir.join("settings.json")).is_some()
+    }
+
+    fn can_execute(&self) -> bool {
+        self.is_run_ready()
+    }
+
+    fn is_disallowed_session(&self, agent_id: &str) -> bool {
+        self.deps
+            .session_workers
+            .summarize_agent_by_id(agent_id, None)
+            .map(|summary| summary.is_none_or(|summary| summary.is_group))
+            .unwrap_or(true)
+    }
+
+    fn is_run_in_flight(&self, agent_id: &str) -> bool {
+        self.deps.transcript_runtime.is_agent_running(agent_id)
+            || !self
+                .deps
+                .runner_registry
+                .active_stream_ids_for_agent(agent_id)
+                .is_empty()
+    }
+
+    fn run_hidden(
+        &self,
+        agent_id: &str,
+        prompt: &str,
+        source: &str,
+    ) -> Result<KickstartTurnOutcome, KickstartRunError> {
+        let Some(provider) =
+            configured_routed_provider(&self.deps.data_dir.join("settings.json"))
+        else {
+            return Err(KickstartRunError {
+                request_id: None,
+                message: "no routed provider configured for created-agent kickstart".into(),
+            });
+        };
+        run_local_kickstart_turn(self.deps.clone(), provider, agent_id, source, prompt)
+    }
+
+    fn mark_resume_pending(&self, agent_id: &str, source: &str) -> Result<(), String> {
+        if let Some(store) = self.deps.transcript_runtime.upgrade_resume_store() {
+            store.mark_pending(UpgradeResumeMarker {
+                agent_id: agent_id.to_string(),
+                marked_at_ms: started_at_ms() as f64,
+                source: Some(source.to_string()),
+                automation_id: None,
+                automation_run_id: None,
+            });
+        }
+        Ok(())
+    }
+
+    fn report_failure(&self, agent_id: &str, error: &KickstartRunError) {
+        let classified_error = ProviderSessionError::Tool(error.message.clone());
+        let report = AgentErrorReport {
+            source: "onboarding_kickstart".into(),
+            conversation_id: agent_id.to_string(),
+            request_id: error.request_id.clone(),
+            error: classify_agent_error(&classified_error),
+            detail: Some(sand_error_detail(&error.message)),
+        };
+        if let Err(telemetry_error) = self.deps.telemetry_logs.report_agent_error(&report) {
+            eprintln!(
+                "mahayana-host kickstart_agent_error_telemetry_failed agent={agent_id} error={telemetry_error}"
+            );
+        }
+    }
+
+    fn push_introduction_failure(&self, agent_id: &str, error: &KickstartRunError) {
+        let mut tray =
+            provider_failure_tray(agent_id, &error.message, started_at_ms() as i64);
+        tray.title = INTRODUCTION_FAILED_TRAY_TITLE.into();
+        tray.dedupe_key = Some(introduction_failed_tray_key(agent_id));
+        self.deps.trays.push_error(tray);
+    }
+
+    fn emit_agent_update(&self, agent_id: &str) -> Result<(), String> {
+        self.roster.emit_agent_update(agent_id)
+    }
+}
+
+#[derive(Clone)]
 struct ProductionSubagentTaskSink {
     deps: LocalRoutedRunnerDeps,
     parent_agent_id: String,
@@ -1259,6 +1355,37 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
                 quiet_origin: wake.quiet_origin,
             });
         Ok(())
+    }
+
+    fn created_agent_kickstart_hook(&self) -> AgentKickstartHook {
+        let sessions = Arc::clone(&self.session_workers);
+        let runtime = ProductionCreatedAgentKickstartRuntime {
+            deps: self.local_routed_runner_deps(),
+            roster: Arc::clone(&self.roster_emit),
+        };
+        Arc::new(move |agent_id| {
+            let sessions = Arc::clone(&sessions);
+            let runtime = runtime.clone();
+            let agent_id = agent_id.to_string();
+            let thread_agent_id = agent_id.clone();
+            if let Err(error) = thread::Builder::new()
+                .name(format!("mahayana-agent-kickstart-{agent_id}"))
+                .spawn(move || {
+                    if let Err(error) =
+                        run_created_agent_kickstart(sessions.as_ref(), &runtime, &thread_agent_id)
+                    {
+                        eprintln!(
+                            "mahayana-host created_agent_kickstart_failed agent={} error={error}",
+                            thread_agent_id
+                        );
+                    }
+                })
+            {
+                eprintln!(
+                    "mahayana-host created_agent_kickstart_spawn_failed agent={agent_id} error={error}"
+                );
+            }
+        })
     }
 
     fn emit_async_tasks_for_agent(&self, agent_id: &str) {
@@ -2912,6 +3039,167 @@ fn run_local_automation_turn(
     }
 }
 
+fn run_local_kickstart_turn(
+    deps: LocalRoutedRunnerDeps,
+    provider: RoutedProvider,
+    agent_id: &str,
+    source: &str,
+    prompt: &str,
+) -> Result<KickstartTurnOutcome, KickstartRunError> {
+    let stream_id = format!("kickstart-{}", uuid::Uuid::new_v4());
+    let client_nonce = format!("kickstart:{}:{}", agent_id, uuid::Uuid::new_v4());
+    let admission_args = serde_json::json!({
+        "agentId": agent_id,
+        "prompt": prompt,
+        "clientNonce": client_nonce,
+        "streamId": stream_id,
+        "appendUserMessage": false,
+        "hidden": true,
+        "requestSource": source,
+        "skipAckObligation": true,
+    });
+    deps.transcript_runtime
+        .accept_routed_send(&admission_args, |_| {
+            Ok::<_, ProductionSendError>(PersistedSendContext::default())
+        })
+        .map_err(|error| KickstartRunError {
+            request_id: Some(stream_id.clone()),
+            message: error.to_string(),
+        })?;
+
+    let receiver = deps.events.subscribe();
+    let runner_args = serde_json::json!({
+        "provider": provider.as_str(),
+        "agentId": agent_id,
+        "streamId": stream_id,
+        "requestSource": source,
+        "hidden": true,
+        "messages": [{
+            "role": "user",
+            "content": prompt,
+        }],
+    });
+    start_routed_provider_task(
+        deps.routed_tool_relay,
+        deps.mcp_service,
+        deps.events.clone(),
+        deps.host_tx,
+        deps.data_dir,
+        deps.request_context,
+        deps.auth,
+        deps.auto_review,
+        deps.experiments,
+        deps.settings,
+        deps.inference,
+        Arc::clone(&deps.session_workers),
+        Arc::clone(&deps.runner_registry),
+        deps.ack_obligations,
+        deps.transcript_runtime.clone(),
+        deps.generated_agent_runtime,
+        deps.completion_revivals,
+        deps.forever_box,
+        deps.local_exec,
+        deps.local_tool_permission,
+        deps.session_handoff,
+        deps.trays,
+        deps.telemetry_logs,
+        deps.production_action_auditor,
+        deps.cloud_agents,
+        deps.cloud_agent_watches,
+        deps.background_shell_watches,
+        deps.host_runner_composition,
+        deps.box_store_sync,
+        Arc::clone(&deps.automations_lifecycle),
+        None,
+        runner_args,
+    )
+    .map_err(|error| KickstartRunError {
+        request_id: Some(stream_id.clone()),
+        message: error.to_string(),
+    })?;
+
+    let deadline = Instant::now() + Duration::from_secs(30 * 60);
+    loop {
+        let now = Instant::now();
+        if now >= deadline {
+            let _ = deps
+                .runner_registry
+                .cancel_stream(&stream_id, "created-agent kickstart timed out");
+            return Ok(KickstartTurnOutcome {
+                aborted: true,
+                quiesced_for_upgrade: false,
+                sent_message_count: 0,
+                reacted: false,
+            });
+        }
+        let wait = deadline
+            .saturating_duration_since(now)
+            .min(Duration::from_millis(250));
+        match receiver.recv_timeout(wait) {
+            Ok(event) => {
+                if event.get("channel").and_then(serde_json::Value::as_str)
+                    != Some(RUNNER_INFERENCE_EVENT_CHANNEL)
+                {
+                    continue;
+                }
+                let Some(payload) = event.get("payload") else {
+                    continue;
+                };
+                if payload.get("streamId").and_then(serde_json::Value::as_str)
+                    != Some(stream_id.as_str())
+                {
+                    continue;
+                }
+                match payload.get("type").and_then(serde_json::Value::as_str) {
+                    Some("completed") => {
+                        return Ok(KickstartTurnOutcome {
+                            aborted: false,
+                            quiesced_for_upgrade: false,
+                            sent_message_count: payload
+                                .get("sentMessageCount")
+                                .and_then(serde_json::Value::as_u64)
+                                .and_then(|count| usize::try_from(count).ok())
+                                .unwrap_or_default(),
+                            reacted: payload
+                                .get("reacted")
+                                .and_then(serde_json::Value::as_bool)
+                                .unwrap_or(false),
+                        });
+                    }
+                    Some("cancelled") => {
+                        return Ok(KickstartTurnOutcome {
+                            aborted: true,
+                            quiesced_for_upgrade: deps
+                                .transcript_runtime
+                                .is_quiescing_for_upgrade(),
+                            sent_message_count: 0,
+                            reacted: false,
+                        });
+                    }
+                    Some("failed") => {
+                        return Err(KickstartRunError {
+                            request_id: Some(stream_id.clone()),
+                            message: payload
+                                .get("message")
+                                .and_then(serde_json::Value::as_str)
+                                .unwrap_or("created-agent kickstart Runner failed")
+                                .to_string(),
+                        });
+                    }
+                    _ => {}
+                }
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) => continue,
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                return Err(KickstartRunError {
+                    request_id: Some(stream_id.clone()),
+                    message: "Host event bus disconnected during created-agent kickstart".into(),
+                });
+            }
+        }
+    }
+}
+
 fn run_local_background_revival_turn(
     deps: LocalRoutedRunnerDeps,
     provider: RoutedProvider,
@@ -4402,6 +4690,7 @@ fn start_routed_provider_task(
         .then(|| Arc::clone(&generated_agent_runtime));
     let worker_is_ack_redrive = is_ack_redrive;
     let worker_is_upgrade_resume = is_upgrade_resume;
+    let worker_is_kickstart = request_source.as_deref() == Some("kickstart");
     let worker_profile_announcement = pending_profile_announcement;
     let worker_memory_store = memory_store.clone();
     let worker_memory_service = session_workers.memory_service();
@@ -6405,15 +6694,17 @@ fn start_routed_provider_task(
                                 );
                             }
                         }
-                        let mut tray = provider_failure_tray(
-                            &agent_id,
-                            &message,
-                            started_at_ms() as i64,
-                        );
-                        if worker_is_upgrade_resume {
-                            tray.title = "Agent failed to resume after host update".into();
+                        if !worker_is_kickstart {
+                            let mut tray = provider_failure_tray(
+                                &agent_id,
+                                &message,
+                                started_at_ms() as i64,
+                            );
+                            if worker_is_upgrade_resume {
+                                tray.title = "Agent failed to resume after host update".into();
+                            }
+                            worker_trays.push_error(tray);
                         }
-                        worker_trays.push_error(tray);
                         worker_events.publish(serde_json::json!({
                             "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
                             "payload": {
@@ -6670,10 +6961,11 @@ impl GatewayApi for UnifiedGatewayApi {
                 if let Some(cached) = ledger.get(&nonce).cloned() {
                     return Ok(cached);
                 }
-                let minted = dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
+                let minted = dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes(
                     &self.session_workers,
                     &self.agent_deletion_runtime,
                     Some(Arc::clone(&self.roster_emit)),
+                    Some(self.created_agent_kickstart_hook()),
                     method,
                     &projected,
                 )
@@ -6689,10 +6981,11 @@ impl GatewayApi for UnifiedGatewayApi {
                 ledger.insert(nonce, minted.clone());
                 return Ok(minted);
             }
-            return dispatch_production_agent_lifecycle_gateway_call_with_runtimes(
+            return dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes(
                 &self.session_workers,
                 &self.agent_deletion_runtime,
                 Some(Arc::clone(&self.roster_emit)),
+                Some(self.created_agent_kickstart_hook()),
                 method,
                 &projected,
             )
@@ -8765,6 +9058,7 @@ fn main() {
     let host_upgrade_production_automations = Arc::clone(&automations_lifecycle_slot);
     let host_upgrade_sharing = Arc::clone(&cross_user);
     let host_upgrade_transcript = Arc::clone(&transcript_runtime);
+    let host_upgrade_sessions = Arc::clone(&session_workers);
     let host_upgrade_resume_gateway = Arc::clone(&host_upgrade_gateway_slot);
     let host_upgrade = match start_production_host_upgrade_extension(
         ProductionHostUpgradePeers {
@@ -8783,7 +9077,28 @@ fn main() {
                 host_upgrade_sharing.prepare_for_upgrade();
             }),
             quiesce_transcript_for_upgrade: Arc::new(move || {
+                let kickstart_agent_ids = host_upgrade_transcript
+                    .live_running_agent_ids()
+                    .into_iter()
+                    .filter(|agent_id| {
+                        host_upgrade_transcript.active_turn_source(agent_id).as_deref()
+                            == Some("kickstart")
+                    })
+                    .collect::<Vec<_>>();
                 host_upgrade_transcript.quiesce_for_upgrade();
+                for agent_id in kickstart_agent_ids {
+                    let _ = host_upgrade_sessions
+                        .set_agent_introduction_pending(&agent_id, false);
+                    if let Some(store) = host_upgrade_transcript.upgrade_resume_store() {
+                        store.mark_pending(UpgradeResumeMarker {
+                            agent_id,
+                            marked_at_ms: started_at_ms() as f64,
+                            source: Some("turn".into()),
+                            automation_id: None,
+                            automation_run_id: None,
+                        });
+                    }
+                }
                 Ok(())
             }),
             resume_interrupted_upgrade_turns: Arc::new(move || {
