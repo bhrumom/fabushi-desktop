@@ -9414,8 +9414,13 @@ fn main() {
         Arc::clone(&production_extensions.local_tool_permission);
     let settings_for_session = Arc::clone(&settings_extension);
 
+    let local_human_id = std::env::var("FABUSHI_LOCAL_HUMAN_ID")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty());
     let session_workers = Arc::new(
-        ProductionSessionWorkers::production_with_dependencies(
+        ProductionSessionWorkers::production_with_identity_and_dependencies(
+            local_human_id,
             Arc::new(move || settings_for_session.get_user_time_zone()),
             production_extensions.memory.service(),
         ),

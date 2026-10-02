@@ -449,3 +449,61 @@ test('self-hosted Bot invocation projects into the same Hermes-style turn withou
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
+
+
+test('Human conversation shares the Agent workspace, survives restart, and explicitly hands off to Mahayana', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-agent-vertical-slice-'));
+  let app: ElectronApplication | null = null;
+  const humanMessage = 'Human durable message for the native Fabushi conversation.';
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+
+    // Create one real Agent through the shipping sidebar so the Human handoff
+    // has an existing Coordinator -> Host -> Runner target.
+    await openMahayanaConversation(page);
+    await expect(page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true })).toBeVisible();
+
+    // Human conversations are created from the same sidebar and mounted into
+    // the same recovered conversation workspace rather than a parallel shell.
+    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
+    const humanDialog = page.getByRole('dialog', { name: 'New Human chat' });
+    await expect(humanDialog).toBeVisible();
+    await humanDialog.getByRole('textbox', { name: 'Human identity' }).fill('human-peer-e2e');
+    await humanDialog.getByRole('textbox', { name: 'Conversation title' }).fill('Human Alice');
+    await humanDialog.getByRole('button', { name: 'Create', exact: true }).click();
+
+    await expect(page.getByText('Human', { exact: true })).toBeVisible();
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+    await prompt.pressSequentially(humanMessage);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible({ timeout: 10_000 });
+
+    const roster = page.getByRole('region', { name: 'Agent list' });
+    await expect(roster.getByRole('button', { name: 'Human Alice', exact: true })).toBeVisible();
+    await expect(roster.getByRole('button', { name: 'New chat', exact: true })).toBeVisible();
+
+    // Restart the packaged/runtime app data scope and prove the authenticated
+    // Human identity resolves to the same durable Session/Transcript owner.
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Alice', exact: true }).click();
+    await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible({ timeout: 10_000 });
+
+    // Explicit Human -> Agent continuation stays on the existing sendPrompt
+    // path. The local inference backend validates the authenticated Runner
+    // request and emits the same Hermes-style assistant turn as ordinary Agent chat.
+    await page.getByRole('button', { name: 'Ask Agent', exact: true }).click();
+    await expectHermesAssistantTurn(page, '收到：请分析这个任务');
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toBeVisible();
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});

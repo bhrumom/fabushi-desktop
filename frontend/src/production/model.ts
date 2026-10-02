@@ -184,6 +184,59 @@ export function projectRendererAgents(value: unknown, now = Date.now()): Rendere
     .sort((left, right) => right.updatedAt - left.updatedAt);
 }
 
+export function isHumanConversationAgent(agent: Pick<RendererAgent, "raw"> | null | undefined): boolean {
+  return agent?.raw.conversationKind === "human";
+}
+
+export function projectHumanConversation(value: unknown, now = Date.now()): RendererAgent | null {
+  if (!isRecord(value) || value.kind !== "human") return null;
+  const id = stringValue(value.id);
+  if (id == null) return null;
+  const participantIds = stringArray(value.participantIds);
+  const title = stringValue(value.title) ?? "Human conversation";
+  return {
+    id,
+    name: title,
+    title,
+    updatedAt: numberValue(value.updatedAt, now),
+    isGroup: false,
+    isHidden: false,
+    memberIds: participantIds,
+    conversationPartnerIds: participantIds,
+    awaitingUserResponse: null,
+    lastEntry: null,
+    lastMessageId: null,
+    lastMessagePreview: null,
+    raw: { ...value, conversationKind: "human" }
+  };
+}
+
+export function projectHumanConversations(value: unknown, now = Date.now()): RendererAgent[] {
+  const rows = Array.isArray(value)
+    ? value
+    : isRecord(value) && Array.isArray(value.conversations)
+      ? value.conversations
+      : [];
+  return rows
+    .map((row) => projectHumanConversation(row, now))
+    .filter((row): row is RendererAgent => row != null);
+}
+
+export function projectHumanConversationTranscript(
+  value: unknown,
+  conversationName: string,
+  conversationId: string,
+): ConversationTranscriptEntry[] {
+  const rows = Array.isArray(value)
+    ? value
+    : isRecord(value) && Array.isArray(value.entries)
+      ? value.entries
+      : [];
+  return rows
+    .map((row, index) => projectTranscriptEntry(row, index, conversationName, conversationId))
+    .filter((entry): entry is ConversationTranscriptEntry => entry != null);
+}
+
 function attachmentFromEntry(entry: Record<string, unknown>): DraftAttachment | null {
   const path = stringValue(entry.path ?? entry.url ?? entry.source ?? entry.id);
   if (path == null) return null;
