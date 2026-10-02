@@ -1,6 +1,7 @@
 use mahayana_host_runtime::extensions::inference::provider_session::RoutedToolDefinition;
 use mahayana_host_runtime::ports::mcp_state_executor::{
-    McpStateExecResult, SandMcpToolProvider, execute_mcp_state,
+    McpStateExecResult, SandMcpToolProvider, decode_canonical_mcp_state_result,
+    encode_canonical_mcp_state_result, execute_mcp_state,
 };
 use serde_json::json;
 
@@ -66,4 +67,21 @@ fn empty_provider_is_success_and_provider_failure_is_not_hidden() {
 
     let failed = Provider { tools: Vec::new(), fail: true };
     assert_eq!(execute_mcp_state(&failed).unwrap_err(), "unavailable");
+}
+
+
+#[test]
+fn canonical_agent_v1_wire_round_trip_preserves_grouping_and_tool_schema() {
+    let provider = Provider {
+        tools: vec![
+            tool("github", "github_search", "search"),
+            tool("linear", "linear_get", "get"),
+            tool("github", "github_issue", "issue"),
+        ],
+        fail: false,
+    };
+    let projected = execute_mcp_state(&provider).expect("project state");
+    let bytes = encode_canonical_mcp_state_result(&projected).expect("encode canonical protobuf");
+    let decoded = decode_canonical_mcp_state_result(&bytes).expect("decode canonical protobuf");
+    assert_eq!(decoded, projected);
 }
