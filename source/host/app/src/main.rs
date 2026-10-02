@@ -1847,7 +1847,7 @@ impl UnifiedGatewayApi {
                             )
                         })?;
                         let direct_runner_args = prepare_direct_turn_runner_args(
-                            self.session_workers.as_ref(),
+                            Arc::clone(&self.session_workers),
                             agent_id,
                             &runner_args,
                             &persisted,

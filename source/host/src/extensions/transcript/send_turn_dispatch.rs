@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use serde_json::{Map, Value};
 
 use crate::agents::agent_messaging::{AgentAddress, build_mentioned_agents_context};
@@ -13,7 +15,7 @@ use super::send_pipeline::PersistedSendContext;
 use super::workflow_commands::expand_workflow_references;
 
 pub fn prepare_direct_turn_runner_args(
-    workers: &ProductionSessionWorkers,
+    workers: Arc<ProductionSessionWorkers>,
     agent_id: &str,
     args: &Value,
     persisted: &PersistedSendContext,
@@ -27,9 +29,9 @@ pub fn prepare_direct_turn_runner_args(
         .to_string();
     let rich_text = shaped.get("richText").and_then(Value::as_str);
 
-    let expanded = expand_workflow_references(workers, agent_id, &raw_prompt, rich_text)
+    let expanded = expand_workflow_references(Arc::clone(&workers), agent_id, &raw_prompt, rich_text)
         .map_err(|error| error.to_string())?;
-    let expanded = with_mentioned_agents_context(workers, agent_id, &raw_prompt, &expanded)?;
+    let expanded = with_mentioned_agents_context(workers.as_ref(), agent_id, &raw_prompt, &expanded)?;
     let composed_note = shaped
         .get("composedAtMs")
         .and_then(Value::as_f64)

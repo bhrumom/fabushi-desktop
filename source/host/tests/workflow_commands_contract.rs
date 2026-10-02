@@ -252,7 +252,7 @@ fn normal_send_expands_enabled_rich_text_workflow_reference() {
     .to_string();
 
     let expanded = expand_workflow_references(
-        workers.as_ref(),
+        Arc::clone(&workers),
         &agent.id,
         "also compare the results",
         Some(&rich_text),

@@ -30,7 +30,7 @@ fn temp_root(label: &str) -> std::path::PathBuf {
 #[test]
 fn direct_turn_runner_args_use_durable_history_composed_note_and_mentions() {
     let root = temp_root("direct-turn-runner-args");
-    let sessions = ProductionSessionWorkers::with_agents_root(root.join("agents"), 5_000);
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 5_000));
     let primary = sessions
         .materialize_new_session(None, "user", None)
         .expect("primary");
@@ -68,7 +68,7 @@ fn direct_turn_runner_args_use_durable_history_composed_note_and_mentions() {
         ..PersistedSendContext::default()
     };
     let shaped = prepare_direct_turn_runner_args(
-        &sessions,
+        Arc::clone(&sessions),
         &primary.id,
         &serde_json::json!({
             "agentId":primary.id,

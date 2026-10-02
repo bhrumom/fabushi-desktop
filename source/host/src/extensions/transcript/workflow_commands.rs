@@ -74,7 +74,7 @@ pub fn prepare_workflow_run_now(
 }
 
 pub fn expand_workflow_references(
-    workers: &ProductionSessionWorkers,
+    workers: Arc<ProductionSessionWorkers>,
     agent_id: &str,
     prompt: &str,
     rich_text: Option<&str>,
@@ -92,7 +92,7 @@ pub fn expand_workflow_references(
         return Ok(prompt.to_string());
     }
 
-    let store = SandAgentSessionStore::new(Arc::new(workers.clone()));
+    let store = SandAgentSessionStore::new(workers);
     let mut blocks = Vec::new();
     for (workflow_id, teach_queue_scope) in references {
         let Some(workflow) = store
