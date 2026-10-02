@@ -8,9 +8,10 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     AgentDeletionRuntimeDeps, AgentKickstartHook, CreatedAgentKickstartRuntimePort,
     KickstartRunError, KickstartTurnOutcome, REPLY_NUDGE_PROMPT,
-    SAND_DISK_SAVER_KICKSTART_PROMPT, SAND_ONBOARDING_KICKSTART_PROMPT,
+    SAND_DISK_SAVER_KICKSTART_PROMPT, SAND_DISK_SAVER_REAUDIT_PROMPT,
+    SAND_ONBOARDING_KICKSTART_PROMPT,
     dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes,
-    run_created_agent_kickstart,
+    request_disk_saver_audit, run_created_agent_kickstart,
 };
 use mahayana_host_runtime::extensions::transcript::production_runtime::classify_send_dispatch;
 use mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane;
@@ -37,6 +38,7 @@ struct FakeKickstartRuntime {
     calls: Mutex<Vec<(String, String, String)>>,
     resume: Mutex<Vec<(String, String)>>,
     failures: Mutex<Vec<String>>,
+    audit_failures: Mutex<Vec<String>>,
     trays: Mutex<Vec<String>>,
     roster_updates: Mutex<Vec<String>>,
 }
@@ -88,6 +90,13 @@ impl CreatedAgentKickstartRuntimePort for FakeKickstartRuntime {
         self.failures
             .lock()
             .expect("failures")
+            .push(format!("{agent_id}:{}", error.message));
+    }
+
+    fn report_disk_saver_audit_failure(&self, agent_id: &str, error: &KickstartRunError) {
+        self.audit_failures
+            .lock()
+            .expect("audit failures")
             .push(format!("{agent_id}:{}", error.message));
     }
 
@@ -361,4 +370,95 @@ fn shipping_host_wires_real_kickstart_adapter_and_upgrade_quiesce_override() {
     assert!(main.contains("dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes"));
     assert!(main.contains("active_turn_source(agent_id).as_deref()"));
     assert!(main.contains("source: Some(\"turn\".into())"));
+    assert!(main.contains("method == \"kickstartAgent\" || method == \"requestDiskSaverAudit\""));
+    assert!(main.contains("request_disk_saver_audit("));
+    assert!(main.contains("source: \"disk_saver_reaudit\".into()"));
+}
+
+
+#[test]
+fn disk_saver_reaudit_runs_on_background_event_lane_and_nudges_empty_delivery() {
+    let root = temp_root("reaudit");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store
+        .create_session(None, "user", Some("disk-saver"))
+        .expect("agent");
+    production
+        .set_agent_introduction_pending(&record.id, false)
+        .expect("settle introduction");
+    let runtime = FakeKickstartRuntime {
+        ready: true,
+        can_execute: true,
+        ..FakeKickstartRuntime::default()
+    };
+    {
+        let mut outcomes = runtime.outcomes.lock().expect("outcomes");
+        outcomes.push_back(Ok(successful(0, false)));
+        outcomes.push_back(Ok(successful(1, false)));
+    }
+
+    assert!(request_disk_saver_audit(&production, &runtime, &record.id).expect("reaudit"));
+    let calls = runtime.calls.lock().expect("calls");
+    assert_eq!(calls.len(), 2);
+    assert_eq!(calls[0].1, SAND_DISK_SAVER_REAUDIT_PROMPT);
+    assert_eq!(calls[0].2, "event");
+    assert_eq!(calls[1].1, REPLY_NUDGE_PROMPT);
+    assert_eq!(calls[1].2, "event");
+    assert!(runtime.trays.lock().expect("trays").is_empty());
+    assert_eq!(
+        *runtime.roster_updates.lock().expect("roster"),
+        vec![record.id.clone()]
+    );
+    let (lane, source) =
+        classify_send_dispatch(&json!({"requestSource":"event"})).expect("event dispatch");
+    assert_eq!(lane, RunLane::Background);
+    assert_eq!(source, "event");
+
+    production.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn disk_saver_reaudit_rejects_other_purposes_and_reports_failure_without_tray() {
+    let root = temp_root("reaudit-failure");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let normal = store.create_session(None, "user", None).expect("normal");
+    production
+        .set_agent_introduction_pending(&normal.id, false)
+        .expect("settle normal");
+    let runtime = FakeKickstartRuntime {
+        ready: true,
+        can_execute: true,
+        ..FakeKickstartRuntime::default()
+    };
+    assert!(!request_disk_saver_audit(&production, &runtime, &normal.id).expect("skip normal"));
+
+    let disk = store
+        .create_session(None, "user", Some("disk-saver"))
+        .expect("disk saver");
+    production
+        .set_agent_introduction_pending(&disk.id, false)
+        .expect("settle disk saver");
+    runtime
+        .outcomes
+        .lock()
+        .expect("outcomes")
+        .push_back(Err(KickstartRunError {
+            request_id: Some("reaudit-request".into()),
+            message: "reaudit failed".into(),
+        }));
+    assert!(request_disk_saver_audit(&production, &runtime, &disk.id).expect("handled failure"));
+    assert_eq!(runtime.audit_failures.lock().expect("audit failures").len(), 1);
+    assert!(runtime.trays.lock().expect("trays").is_empty());
+
+    production.shutdown();
+    let _ = fs::remove_dir_all(root);
 }
