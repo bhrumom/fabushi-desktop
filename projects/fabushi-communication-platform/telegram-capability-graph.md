@@ -19,11 +19,11 @@ This graph records product capability domains observed in the frozen Telegram De
 | polls / rich message variants | `data/data_poll*`, `api/api_polls.*`, `poll/*` | existing typed transcript/card system |
 | drafts / composer / voice input | `data/data_drafts.*`, history composer/view code | researched in `projects/telegram-desktop-rust/research/message-relations-and-settlement.md`; existing composer/draft owner selected |
 | scheduled / silent send / send progress | `api/api_sending.*`, `api/api_send_progress.*`, scheduled-history code | researched in `projects/telegram-desktop-rust/research/message-relations-and-settlement.md`; Automations + composer/send + ephemeral presence/progress selected |
-| groups / members / admin | `data/data_chat.*`, `data/data_groups.*`, `api/api_chat_participants.*`, `info/members` | existing Shared Room/group/member + permissions |
-| channels / broadcast | `data/data_channel.*`, history/dialog/api channel code | existing room/conversation model + broadcast policy |
-| topics / forums / threads | `data/data_forum.*`, `data/data_forum_topic.*`, `data/data_thread.*` | existing conversation/thread model |
-| search | `api/api_messages_search.*`, `data/data_search_controller.*`, dialog search code | existing search/command/find-in-chat owners |
-| files / upload / download | `storage/file_upload.*`, `storage/file_download*`, `data/data_document*` | existing attachment/artifact/resource lifecycle + transfer infrastructure |
+| groups / members / admin | `data/data_chat.*`, `data/data_groups.*`, `api/api_chat_participants.*`, `info/members` | researched in `projects/telegram-desktop-rust/research/rooms-search-media.md`; existing Shared Room/member/permissions selected |
+| channels / broadcast | `data/data_channel.*`, history/dialog/api channel code | researched in `projects/telegram-desktop-rust/research/rooms-search-media.md`; existing room/conversation + broadcast policy selected |
+| topics / forums / threads | `data/data_forum.*`, `data/data_forum_topic.*`, `data/data_thread.*` | researched in `projects/telegram-desktop-rust/research/rooms-search-media.md`; existing conversation/thread/transcript selected |
+| search | `api/api_messages_search.*`, `data/data_search_controller.*`, dialog search code | researched in `projects/telegram-desktop-rust/research/rooms-search-media.md`; existing Content Search + transcript pagination selected |
+| files / upload / download | `storage/file_upload.*`, `storage/file_download*`, `data/data_document*` | researched in `projects/telegram-desktop-rust/research/rooms-search-media.md`; existing attachments/resources + minimal blob transfer selected |
 | images / video / audio / voice / streaming | `media/*`, `data/data_streaming.*`, media preload/rotation | existing resources/transcript + minimal media transfer/cache infra |
 | stickers / GIF / emoji / custom emoji | `chat_helpers`, data/media/UI helpers | existing composer + rich transcript/cards |
 | Stories | `data/data_stories.*`, `data/data_story.*`, `media/stories`, `info/stories` | product shell or minimal Story owner after owner analysis |
