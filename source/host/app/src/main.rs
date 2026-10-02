@@ -104,6 +104,9 @@ use mahayana_host_runtime::extensions::session::gateway::{
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
+use mahayana_host_runtime::extensions::transcript::background_wakes::{
+    BackgroundWakes, build_timeline_event_wake_prompt,
+};
 use mahayana_host_runtime::extensions::transcript::completion_revivals::{
     CompletionRevivalRuntimePort, CompletionRevivals, RevivalExecution, RevivalReport,
     ShellCompletion, SubagentCompletion,
@@ -9321,6 +9324,159 @@ fn main() {
         box_store_sync: box_store_sync_api.clone(),
         automations_lifecycle: Arc::clone(&automations_lifecycle_slot),
     };
+    let timeline_event_runner_deps = cross_user_runner_deps.clone();
+    let timeline_event_roster = Arc::clone(&roster_emit);
+    let timeline_event_wakes =
+        Arc::new(Mutex::new(BackgroundWakes::<serde_json::Value>::default()));
+    let timeline_event_wakes_for_sink = Arc::clone(&timeline_event_wakes);
+    roster_emit.bind_timeline_wake_sink(Some(Arc::new(move |agent_id, event| {
+        let agent_id = agent_id.trim().to_string();
+        if agent_id.is_empty() {
+            return;
+        }
+        let Ok(Some(summary)) = timeline_event_runner_deps
+            .session_workers
+            .summarize_agent_by_id(&agent_id, None)
+        else {
+            return;
+        };
+        if summary.is_group {
+            return;
+        }
+
+        let entry = serde_json::json!({
+            "kind": "event",
+            "id": format!("event-{}", uuid::Uuid::new_v4()),
+            "event": event.clone(),
+            "timestampMs": started_at_ms(),
+        });
+        if let Err(error) = timeline_event_runner_deps
+            .session_workers
+            .append_agent_transcript_entries(&agent_id, &[entry])
+        {
+            eprintln!(
+                "mahayana-host timeline_event_persist_failed agent={} error={error}",
+                agent_id
+            );
+            return;
+        }
+
+        let already_running = timeline_event_runner_deps
+            .transcript_runtime
+            .is_agent_running(&agent_id)
+            || !timeline_event_runner_deps
+                .runner_registry
+                .active_stream_ids_for_agent(&agent_id)
+                .is_empty();
+        if already_running {
+            return;
+        }
+        if configured_routed_provider(&timeline_event_runner_deps.data_dir.join("settings.json"))
+            .is_none()
+        {
+            return;
+        }
+
+        let should_spawn = {
+            let mut wakes = timeline_event_wakes_for_sink
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            BackgroundWakes::enqueue(&mut wakes.pending_event_wakes, agent_id.clone(), event);
+            BackgroundWakes::<serde_json::Value>::begin_revival(
+                &mut wakes.reviving_event_agent_ids,
+                &agent_id,
+            )
+        };
+        if !should_spawn {
+            return;
+        }
+
+        let deps = timeline_event_runner_deps.clone();
+        let wakes = Arc::clone(&timeline_event_wakes_for_sink);
+        let roster = Arc::clone(&timeline_event_roster);
+        let worker_agent_id = agent_id.clone();
+        if let Err(error) = thread::Builder::new()
+            .name(format!("mahayana-timeline-event-{agent_id}"))
+            .spawn(move || {
+                loop {
+                    let events = {
+                        let mut wakes = wakes
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner());
+                        BackgroundWakes::take_pending(
+                            &mut wakes.pending_event_wakes,
+                            &worker_agent_id,
+                        )
+                    };
+                    if events.is_empty() {
+                        break;
+                    }
+                    let Some(provider) =
+                        configured_routed_provider(&deps.data_dir.join("settings.json"))
+                    else {
+                        break;
+                    };
+                    let prompt = build_timeline_event_wake_prompt(&events);
+                    match run_local_background_revival_turn(
+                        deps.clone(),
+                        provider,
+                        &worker_agent_id,
+                        "event",
+                        &prompt,
+                        true,
+                        "continue",
+                    ) {
+                        Ok(_) => {
+                            let _ = roster.emit_agent_update(&worker_agent_id);
+                        }
+                        Err(error) => {
+                            let classified_error = ProviderSessionError::Tool(error.clone());
+                            let report = AgentErrorReport {
+                                source: "event".into(),
+                                conversation_id: worker_agent_id.clone(),
+                                request_id: None,
+                                error: classify_agent_error(&classified_error),
+                                detail: Some(sand_error_detail(&error)),
+                            };
+                            if let Err(telemetry_error) = deps.telemetry_logs.report_agent_error(&report) {
+                                eprintln!(
+                                    "mahayana-host timeline_event_telemetry_failed agent={} error={telemetry_error}",
+                                    worker_agent_id
+                                );
+                            }
+                            let mut tray = provider_failure_tray(
+                                &worker_agent_id,
+                                &error,
+                                started_at_ms() as i64,
+                            );
+                            tray.title = "Timeline event follow-up failed".into();
+                            deps.trays.push_error(tray);
+                        }
+                    }
+                }
+                let mut wakes = wakes
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                BackgroundWakes::<serde_json::Value>::end_revival(
+                    &mut wakes.reviving_event_agent_ids,
+                    &worker_agent_id,
+                );
+            })
+        {
+            let mut wakes = timeline_event_wakes_for_sink
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            BackgroundWakes::<serde_json::Value>::end_revival(
+                &mut wakes.reviving_event_agent_ids,
+                &agent_id,
+            );
+            eprintln!(
+                "mahayana-host timeline_event_worker_spawn_failed agent={} error={error}",
+                agent_id
+            );
+        }
+    })));
+
     let cross_user_settings_path = app_data_dir.join("settings.json");
     let remote_requested_runner_deps = cross_user_runner_deps.clone();
     let remote_requested_settings_path = cross_user_settings_path.clone();

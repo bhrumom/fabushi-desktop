@@ -11,6 +11,8 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::Productio
 use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
 use serde_json::Value;
 
+const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -87,6 +89,75 @@ fn production_roster_emit_publishes_full_and_incremental_ordered_events() {
     drop(events);
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn name_change_projects_timeline_event_to_the_bound_background_wake_sink() {
+    let root = temp_root("timeline-wake");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let transcript = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    let emitted = Arc::new(Mutex::new(Vec::<Value>::new()));
+    let sink_emitted = Arc::clone(&emitted);
+    let emitter = ProductionRosterEmit::new(
+        Arc::clone(&sessions),
+        transcript,
+        Arc::new(move |event| sink_emitted.lock().expect("events").push(event)),
+    );
+    let wakes = Arc::new(Mutex::new(Vec::<(String, Value)>::new()));
+    let sink_wakes = Arc::clone(&wakes);
+    emitter.bind_timeline_wake_sink(Some(Arc::new(move |agent_id, event| {
+        sink_wakes
+            .lock()
+            .expect("wakes")
+            .push((agent_id.to_string(), event));
+    })));
+
+    emitter.publish_name_changed("agent-a", "Old", "New");
+
+    let emitted = emitted.lock().expect("events");
+    assert_eq!(emitted[0]["channel"], "timeline");
+    assert_eq!(emitted[0]["payload"]["event"]["type"], "name-changed");
+    drop(emitted);
+    let wakes = wakes.lock().expect("wakes");
+    assert_eq!(wakes.len(), 1);
+    assert_eq!(wakes[0].0, "agent-a");
+    assert_eq!(wakes[0].1["from"], "Old");
+    assert_eq!(wakes[0].1["to"], "New");
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_profile_timeline_event_uses_background_lane_and_silent_hidden_wake() {
+    let bind = SHIPPING_HOST
+        .find("roster_emit.bind_timeline_wake_sink")
+        .expect("shipping timeline wake binding");
+    let persist = SHIPPING_HOST[bind..]
+        .find("append_agent_transcript_entries(&agent_id, &[entry])")
+        .map(|offset| bind + offset)
+        .expect("timeline entry persistence");
+    let running_fence = SHIPPING_HOST[bind..]
+        .find("is_agent_running(&agent_id)")
+        .map(|offset| bind + offset)
+        .expect("active-run fence");
+    let dispatch = SHIPPING_HOST[bind..]
+        .find("run_local_background_revival_turn(")
+        .map(|offset| bind + offset)
+        .expect("timeline background dispatch");
+    assert!(persist < running_fence && running_fence < dispatch);
+    let body = &SHIPPING_HOST[dispatch
+        ..SHIPPING_HOST[dispatch..]
+            .find("let cross_user_settings_path")
+            .map(|offset| dispatch + offset)
+            .expect("timeline binding boundary")];
+    assert!(body.contains("\"event\""));
+    assert!(body.contains(
+        "&prompt,
+                        true,"
+    ));
+    assert!(body.contains("report_agent_error(&report)"));
+    assert!(body.contains("Timeline event follow-up failed"));
 }
 
 #[test]

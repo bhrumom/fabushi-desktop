@@ -12,6 +12,7 @@ use super::replica_writer::ReplicaStamp;
 pub const ROSTER_REPLICA_KEY: &str = "roster";
 
 pub type RosterEventSink = Arc<dyn Fn(Value) + Send + Sync + 'static>;
+pub type TimelineWakeSink = Arc<dyn Fn(&str, Value) + Send + Sync + 'static>;
 
 #[derive(Debug, Default)]
 struct RosterEmitState {
@@ -23,6 +24,7 @@ pub struct ProductionRosterEmit {
     sessions: Arc<ProductionSessionWorkers>,
     transcript: Arc<ProductionTranscriptRuntime>,
     event_sink: RosterEventSink,
+    timeline_wake_sink: Mutex<Option<TimelineWakeSink>>,
     state: Mutex<RosterEmitState>,
 }
 
@@ -36,6 +38,7 @@ impl ProductionRosterEmit {
             sessions,
             transcript,
             event_sink,
+            timeline_wake_sink: Mutex::new(None),
             state: Mutex::new(RosterEmitState::default()),
         }
     }
@@ -102,9 +105,11 @@ impl ProductionRosterEmit {
                 .state
                 .lock()
                 .map_err(|_| "roster emit state mutex poisoned".to_string())?;
-            if let Some(index) = state.cached_agent_summaries.iter().position(|row| {
-                row.get("id").and_then(Value::as_str) == Some(agent_id)
-            }) {
+            if let Some(index) = state
+                .cached_agent_summaries
+                .iter()
+                .position(|row| row.get("id").and_then(Value::as_str) == Some(agent_id))
+            {
                 state.cached_agent_summaries[index] = agent.clone();
             } else {
                 state.cached_agent_summaries.push(agent.clone());
@@ -141,18 +146,34 @@ impl ProductionRosterEmit {
         }));
     }
 
+    pub fn bind_timeline_wake_sink(&self, sink: Option<TimelineWakeSink>) {
+        *self
+            .timeline_wake_sink
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = sink;
+    }
+
     pub fn publish_name_changed(&self, agent_id: &str, from: &str, to: &str) {
+        let event = json!({
+            "type": "name-changed",
+            "from": from,
+            "to": to
+        });
         (self.event_sink)(json!({
             "channel": "timeline",
             "payload": {
                 "agentId": agent_id,
-                "event": {
-                    "type": "name-changed",
-                    "from": from,
-                    "to": to
-                }
+                "event": event.clone()
             }
         }));
+        let sink = self
+            .timeline_wake_sink
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        if let Some(sink) = sink {
+            sink(agent_id, event);
+        }
     }
 
     pub fn cached_agent_summaries(&self) -> Vec<Value> {

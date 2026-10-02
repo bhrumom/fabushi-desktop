@@ -2,7 +2,7 @@ use mahayana_host_runtime::extensions::telemetry::box_log_shipper::{
     classify_offset_save_errno, is_box_log_shipping_enabled, saturating_add, to_source_name,
 };
 use mahayana_host_runtime::extensions::transcript::background_wakes::{
-    BackgroundWakes, distinct_channel_addresses,
+    BackgroundWakes, build_timeline_event_wake_prompt, distinct_channel_addresses,
 };
 use mahayana_host_runtime::extensions::transcript::client_side_tool_v2_projection::{
     ProjectedClientSideToolV2, ToolProjectionPhase, project_basic_tool_call,
@@ -62,16 +62,23 @@ fn background_wakes_dedupe_addresses_and_fence_parallel_revival() {
 }
 
 #[test]
+fn timeline_event_wake_prompt_matches_frozen_system_event_contract() {
+    let prompt = build_timeline_event_wake_prompt(&[serde_json::json!({
+        "type": "name-changed",
+        "to": "Researcher"
+    })]);
+    assert_eq!(
+        prompt,
+        "[event] Something about this conversation just changed.\nThis is a system event recorded in your timeline, not the user typing in this app, and possibly something you did yourself.\n- Renamed to Researcher\nIf it is worth acknowledging to the user, reply with SendMessage; otherwise it is fine to stay silent."
+    );
+}
+
+#[test]
 fn client_projection_requires_identity_and_preserves_phase() {
-    assert!(project_basic_tool_call(
-        ToolProjectionPhase::Started,
-        "",
-        "shell",
-        "{}",
-        "",
-        None
-    )
-    .is_none());
+    assert!(
+        project_basic_tool_call(ToolProjectionPhase::Started, "", "shell", "{}", "", None)
+            .is_none()
+    );
     let projected = project_basic_tool_call(
         ToolProjectionPhase::Partial,
         "tc-1",
@@ -99,10 +106,7 @@ fn client_projection_requires_identity_and_preserves_phase() {
     .unwrap();
     assert!(matches!(
         completed,
-        ProjectedClientSideToolV2::Result {
-            error: Some(_),
-            ..
-        }
+        ProjectedClientSideToolV2::Result { error: Some(_), .. }
     ));
 }
 
@@ -177,6 +181,14 @@ fn sand_host_health_does_not_refresh_busy_clock_for_approval_only_wait() {
         100,
     );
     assert_eq!(active.last_busy_at_ms, 200);
-    assert!(should_report_box_ready(Some("boot-1"), Some(10), Some("boot-0")));
-    assert!(!should_report_box_ready(Some("boot-1"), Some(10), Some("boot-1")));
+    assert!(should_report_box_ready(
+        Some("boot-1"),
+        Some(10),
+        Some("boot-0")
+    ));
+    assert!(!should_report_box_ready(
+        Some("boot-1"),
+        Some(10),
+        Some("boot-1")
+    ));
 }
