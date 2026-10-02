@@ -114,8 +114,23 @@ fn profile_watch_coalescing_window_is_fixed_and_session_switch_cancels_pending_e
         Some("agent-a".to_string())
     );
 
+    let mut watched = Some("agent-a".to_string());
     coalescer.schedule("agent-a", started);
-    coalescer.clear();
+    assert!(!coalescer.switch_agent(
+        &mut watched,
+        Some("agent-a".to_string())
+    ));
+    assert_eq!(
+        coalescer.take_due(started + Duration::from_millis(PROFILE_WATCH_DEBOUNCE_MS)),
+        Some("agent-a".to_string())
+    );
+
+    coalescer.schedule("agent-a", started);
+    assert!(coalescer.switch_agent(
+        &mut watched,
+        Some("agent-b".to_string())
+    ));
+    assert_eq!(watched.as_deref(), Some("agent-b"));
     assert!(coalescer
         .take_due(started + Duration::from_millis(PROFILE_WATCH_DEBOUNCE_MS * 2))
         .is_none());
@@ -154,16 +169,17 @@ fn profile_watch_routes_timeline_before_profile_changed_through_transcript_owner
         (sink)(event);
     }
 
-    let projected = projected.lock().expect("projected");
-    assert_eq!(projected.len(), 2);
-    assert_eq!(projected[0]["channel"], "timeline");
-    assert_eq!(projected[0]["payload"]["agentId"], "agent-a");
-    assert_eq!(projected[0]["payload"]["event"]["type"], "name-changed");
-    assert_eq!(projected[0]["payload"]["event"]["from"], "Old");
-    assert_eq!(projected[0]["payload"]["event"]["to"], "New");
-    assert_eq!(projected[1]["channel"], "profile-changed");
-    assert_eq!(projected[1]["payload"]["agentId"], "agent-a");
-    drop(projected);
+    {
+        let projected_guard = projected.lock().expect("projected");
+        assert_eq!(projected_guard.len(), 2);
+        assert_eq!(projected_guard[0]["channel"], "timeline");
+        assert_eq!(projected_guard[0]["payload"]["agentId"], "agent-a");
+        assert_eq!(projected_guard[0]["payload"]["event"]["type"], "name-changed");
+        assert_eq!(projected_guard[0]["payload"]["event"]["from"], "Old");
+        assert_eq!(projected_guard[0]["payload"]["event"]["to"], "New");
+        assert_eq!(projected_guard[1]["channel"], "profile-changed");
+        assert_eq!(projected_guard[1]["payload"]["agentId"], "agent-a");
+    }
 
     assert_eq!(
         subscribed.lock().expect("subscribed").as_slice(),
@@ -178,11 +194,12 @@ fn profile_watch_routes_timeline_before_profile_changed_through_transcript_owner
         subscribed.lock().expect("subscribed").as_slice(),
         &["agent-a".to_string()]
     );
-    let projected = projected.lock().expect("projected");
-    assert_eq!(projected.len(), 3);
-    assert_eq!(projected[2]["channel"], "profile-changed");
-    assert_eq!(projected[2]["payload"]["agentId"], "agent-b");
-    drop(projected);
+    {
+        let projected_guard = projected.lock().expect("projected");
+        assert_eq!(projected_guard.len(), 3);
+        assert_eq!(projected_guard[2]["channel"], "profile-changed");
+        assert_eq!(projected_guard[2]["payload"]["agentId"], "agent-b");
+    }
 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
