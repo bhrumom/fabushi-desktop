@@ -11746,6 +11746,9 @@ fn main() {
         eprintln!("failed to stop production Automations extension cleanly: {error}");
     }
     cross_user.stop();
+    if let Err(error) = production_extensions.stop_notifications() {
+        eprintln!("failed to stop production Notifications extension cleanly: {error}");
+    }
     production_extensions.notify_bus.stop();
     drop(transcript_extension);
     session_extension.shutdown();
