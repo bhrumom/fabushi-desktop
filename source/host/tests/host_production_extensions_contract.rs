@@ -346,14 +346,13 @@ fn turn_execution_has_one_shipping_production_owner() {
         );
     }
     assert!(
-        SHIPPING_HOST.contains(
-            "let turn_execution_registry = Arc::clone(&production_extensions.turn_execution);"
-        ),
-        "shipping Host must consume the centralized TurnExecution owner"
+        PRODUCTION_OWNER.contains("turn_execution: Arc::clone(&self.turn_execution)"),
+        "centralized Transcript composition must inject the unique TurnExecution owner"
     );
     assert!(
-        !SHIPPING_HOST.contains("turn_execution_extension()"),
-        "shipping Host must not construct a second TurnExecution registry"
+        !SHIPPING_HOST.contains("turn_execution_extension()")
+            && !SHIPPING_HOST.contains("production_extensions.turn_execution"),
+        "shipping Host must neither construct nor reach around the centralized TurnExecution owner"
     );
 }
 
