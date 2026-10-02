@@ -9,6 +9,9 @@ use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffRequest, HandoffTelemetry,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::transcript::client_side_tool_v2_producer::{
+    ClientSideToolV2ProducedValue, ClientSideToolV2TransportKind,
+};
 use mahayana_host_runtime::extensions::transcript::transcript_manager::{
     TranscriptManager, TranscriptTurnExecutionPort,
 };
@@ -62,6 +65,30 @@ fn manager_is_the_single_production_composition_owner() {
     let rooms_a = manager.shared_rooms();
     let rooms_b = manager.shared_rooms();
     assert!(Arc::ptr_eq(&rooms_a, &rooms_b));
+
+    let tool_call = manager
+        .publish_client_side_tool_v2(
+            "agent-tools",
+            ClientSideToolV2ProducedValue::call("call-1", b"call".to_vec()),
+        )
+        .expect("manager-owned client tool call");
+    let tool_result = manager
+        .publish_client_side_tool_v2(
+            "agent-tools",
+            ClientSideToolV2ProducedValue::result("call-1", b"result".to_vec()),
+        )
+        .expect("manager-owned client tool result");
+    assert_eq!(tool_call.kind, ClientSideToolV2TransportKind::Call);
+    assert_eq!(tool_result.kind, ClientSideToolV2TransportKind::Result);
+    assert_eq!(tool_call.epoch, tool_result.epoch);
+    assert_eq!(tool_call.sequence, 1);
+    assert_eq!(tool_result.sequence, 2);
+    let tool_reset = manager
+        .reset_client_side_tool_v2("agent-tools")
+        .expect("manager-owned client tool reset");
+    assert_eq!(tool_reset.kind, ClientSideToolV2TransportKind::Reset);
+    assert_eq!(tool_reset.epoch, tool_call.epoch);
+    assert_eq!(tool_reset.sequence, 3);
 
     let ack_a = manager.ack_obligations();
     let ack_b = manager.ack_obligations();

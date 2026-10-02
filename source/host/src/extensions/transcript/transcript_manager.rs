@@ -25,6 +25,9 @@ use crate::extensions::turn_execution::turn_execution_service::{
 
 use super::ack_obligations::AckObligations;
 use super::automation_runtime::AutomationRuntime;
+use super::client_side_tool_v2_producer::{
+    ClientSideToolV2ProducedValue, ClientSideToolV2Producer, ClientSideToolV2TransportEvent,
+};
 use super::group_chat_glue::GroupChatGlue;
 use super::async_task_union::AsyncTask;
 use super::production_runtime::{ProductionSendError, ProductionTranscriptRuntime};
@@ -108,6 +111,7 @@ pub struct TranscriptManager {
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
     automation_runtime: Arc<AutomationRuntime>,
+    client_side_tool_v2: Mutex<ClientSideToolV2Producer>,
     group_chat: Arc<GroupChatGlue>,
     widget_responses: Arc<WidgetResponses>,
     workflow_commands: Arc<WorkflowCommands>,
@@ -138,6 +142,7 @@ impl TranscriptManager {
             runner_registry: Arc::new(TranscriptRunnerRegistry::default()),
             ack_obligations: Arc::new(AckObligations::new(root_dir)),
             automation_runtime,
+            client_side_tool_v2: Mutex::new(ClientSideToolV2Producer::new()),
             group_chat,
             widget_responses,
             workflow_commands,
@@ -171,6 +176,27 @@ impl TranscriptManager {
 
     pub fn shared_rooms(&self) -> Arc<SharedRooms> {
         Arc::clone(&self.shared_rooms)
+    }
+
+    pub fn publish_client_side_tool_v2(
+        &self,
+        agent_id: &str,
+        produced: ClientSideToolV2ProducedValue,
+    ) -> Option<ClientSideToolV2TransportEvent> {
+        self.client_side_tool_v2
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .publish(agent_id, produced)
+    }
+
+    pub fn reset_client_side_tool_v2(
+        &self,
+        agent_id: &str,
+    ) -> Option<ClientSideToolV2TransportEvent> {
+        self.client_side_tool_v2
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .reset(agent_id)
     }
 
     pub fn group_chat(&self) -> Arc<GroupChatGlue> {
@@ -384,6 +410,11 @@ impl TranscriptManager {
         self.ack_obligations.dispose();
         self.automation_runtime.dispose();
         self.workflow_commands.dispose();
+        *self
+            .client_side_tool_v2
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) =
+            ClientSideToolV2Producer::new();
 
         if let Some(store) = self
             .watched_automation_store

@@ -5537,6 +5537,7 @@ fn start_routed_provider_task(
     let worker_retire_sessions = Arc::clone(&session_workers);
     let worker_ack_obligations = Arc::clone(&ack_obligations);
     let worker_transcript_runtime = Arc::clone(&transcript_runtime);
+    let worker_transcript_manager = Arc::clone(&transcript_manager);
     let worker_ack_token = ack_token.clone();
     let worker_trays = Arc::clone(&trays);
     let worker_telemetry_logs = telemetry_logs.clone();
@@ -5853,12 +5854,12 @@ fn start_routed_provider_task(
                 let tool_call_logs = worker_telemetry_logs.clone();
                 let client_side_tool_events = worker_events.clone();
                 let client_side_tool_agent_id = agent_id.clone();
+                let client_side_tool_manager = Arc::clone(&worker_transcript_manager);
                 observation.set_client_side_tool_v2_handler(Arc::new(move |projected| {
-                    if let Some(event) =
-                        mahayana_host_runtime::extensions::transcript::client_side_tool_v2_producer::publish_production_client_side_tool_v2(
-                            &client_side_tool_agent_id,
-                            projected.into_produced_value(),
-                        )
+                    if let Some(event) = client_side_tool_manager.publish_client_side_tool_v2(
+                        &client_side_tool_agent_id,
+                        projected.into_produced_value(),
+                    )
                     {
                         client_side_tool_events.publish(serde_json::json!({
                             "channel": mahayana_host_runtime::extensions::transcript::client_side_tool_v2_producer::CLIENT_SIDE_TOOL_V2_FAMILY,
