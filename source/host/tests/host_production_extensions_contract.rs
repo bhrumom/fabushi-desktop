@@ -55,6 +55,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert!(shipping.contains(&HostExtensionId::Attachments));
     assert!(shipping.contains(&HostExtensionId::Secrets));
     assert!(shipping.contains(&HostExtensionId::TurnExecution));
+    assert!(shipping.contains(&HostExtensionId::Session));
     assert_eq!(inference_extension_id(), HostExtensionId::Inference);
     assert_eq!(
         INFERENCE_DEPENDENCIES,
@@ -139,6 +140,35 @@ fn box_stage_extensions_have_one_production_composition_owner() {
     );
 }
 
+
+
+#[test]
+fn session_has_one_shipping_production_lifecycle_owner() {
+    for needle in [
+        "HostExtensionId::Session",
+        "session: Mutex<Option<SessionExtension>>",
+        "pub fn start_session(",
+        "start_session_extension(",
+        "pub fn shutdown_session(&self)",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own Session lifecycle: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains("production_extensions.start_session("),
+        "shipping Host must start Session through the centralized production owner"
+    );
+    assert!(
+        SHIPPING_HOST.contains("production_extensions.shutdown_session()"),
+        "shipping Host must settle Session through the centralized production owner"
+    );
+    assert!(
+        !SHIPPING_HOST.contains("start_session_extension("),
+        "shipping Host must not construct a second Session extension"
+    );
+}
 
 
 #[test]
