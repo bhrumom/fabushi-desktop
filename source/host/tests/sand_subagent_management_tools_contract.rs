@@ -247,6 +247,9 @@ fn denied_live_steer_review_fences_runtime_mutation() {
 fn shipping_host_wires_management_tools_to_generated_runtime_and_auto_review() {
     let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let main = std::fs::read_to_string(root.join("app/src/main.rs")).expect("shipping host main");
+    let host_runner_composition =
+        std::fs::read_to_string(root.join("src/host_runner_composition.rs"))
+            .expect("host runner composition");
     let composition = std::fs::read_to_string(root.join("src/runner/turn_agent_composition.rs"))
         .expect("turn composition");
     let toolset = std::fs::read_to_string(root.join("src/runner/tools/turn_toolset.rs"))
@@ -256,9 +259,23 @@ fn shipping_host_wires_management_tools_to_generated_runtime_and_auto_review() {
         "build_sand_subagent_steer_review_target",
         "review_sand_subagent_action(",
         "tool_call_id",
-        ".with_subagent_management(",
+        "subagent_management_runtime: worker_subagent_management_runtime",
+        "compose_production_turn(",
     ] {
         assert!(main.contains(required), "missing shipping management wiring: {required}");
+    }
+    assert!(
+        !main.contains(".with_subagent_management("),
+        "shipping main must delegate Runner decoration to HostRunnerComposition",
+    );
+    for required in [
+        "hooks.subagent_management_runtime",
+        ".with_subagent_management(",
+    ] {
+        assert!(
+            host_runner_composition.contains(required),
+            "missing canonical HostRunnerComposition management wiring: {required}",
+        );
     }
     assert!(toolset.contains("SubagentManagementToolBridge"));
     assert!(composition.contains("subagent_steer_review"));
