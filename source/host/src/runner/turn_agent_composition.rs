@@ -195,6 +195,7 @@ pub struct TurnAgentComposition {
     spotlight_enabled: bool,
     action_audit: Option<RoutedMcpAuditConfig>,
     observation: Option<TurnObservationHandle>,
+    mcp_discovery_failure_sink: Option<Arc<dyn Fn(&ProviderSessionError, f64) + Send + Sync>>,
     projected_mcp_tools: Option<Arc<Vec<RoutedToolDefinition>>>,
 }
 
@@ -248,6 +249,7 @@ impl TurnAgentComposition {
             spotlight_enabled: false,
             action_audit: None,
             observation: None,
+            mcp_discovery_failure_sink: None,
             projected_mcp_tools: None,
         }
     }
@@ -544,6 +546,24 @@ impl TurnAgentComposition {
 
     pub fn has_observation(&self) -> bool {
         self.observation.is_some()
+    }
+
+    pub fn with_mcp_discovery_failure_sink(
+        mut self,
+        sink: Arc<dyn Fn(&ProviderSessionError, f64) + Send + Sync>,
+    ) -> Self {
+        self.mcp_discovery_failure_sink = Some(sink);
+        self
+    }
+
+    pub fn report_mcp_discovery_failure(
+        &self,
+        error: &ProviderSessionError,
+        elapsed_ms: f64,
+    ) {
+        if let Some(sink) = self.mcp_discovery_failure_sink.as_ref() {
+            sink(error, elapsed_ms);
+        }
     }
 
     /// Execute the canonical per-turn MCP state projection from the exact
