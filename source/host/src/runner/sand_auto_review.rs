@@ -8,6 +8,8 @@ use uuid::Uuid;
 
 pub const SAND_AUTO_REVIEW_APPROVAL_TTL_MS: u64 = 10 * 60 * 1_000;
 pub const SAND_AUTO_REVIEW_MAX_PENDING_PER_AGENT: usize = 4;
+pub const SAND_AUTO_REVIEW_CANCELLED_REASON: &str = "The action was cancelled.";
+const SAND_AUTO_REVIEW_CANCEL_POLL_MS: u64 = 25;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SandAutoReviewMode {
@@ -199,11 +201,33 @@ pub enum SandAutoReviewDecision {
 pub struct SandAutoReviewPending {
     pub approval: SandAutoReviewApproval,
     receiver: mpsc::Receiver<SandAutoReviewDecision>,
+    controller: SandAutoReviewController,
 }
 
 impl SandAutoReviewPending {
     pub fn wait(self) -> Result<SandAutoReviewDecision, mpsc::RecvError> {
-        self.receiver.recv()
+        if !self.controller.has_cancellation_probe() {
+            return self.receiver.recv();
+        }
+        loop {
+            if self.controller.is_cancelled() {
+                self.controller.retire(
+                    &self.approval.id,
+                    SandAutoReviewExpiryCause::Cancelled,
+                    SandAutoReviewDecision::Denied {
+                        reason: SAND_AUTO_REVIEW_CANCELLED_REASON.into(),
+                    },
+                );
+            }
+            match self
+                .receiver
+                .recv_timeout(Duration::from_millis(SAND_AUTO_REVIEW_CANCEL_POLL_MS))
+            {
+                Ok(decision) => return Ok(decision),
+                Err(mpsc::RecvTimeoutError::Timeout) => continue,
+                Err(mpsc::RecvTimeoutError::Disconnected) => return self.receiver.recv(),
+            }
+        }
     }
 
     pub fn try_recv(&self) -> Result<SandAutoReviewDecision, mpsc::TryRecvError> {
@@ -217,6 +241,7 @@ pub enum SandAutoReviewRequestOutcome {
 }
 
 type Listener = Arc<dyn Fn(&SandAutoReviewEvent) + Send + Sync>;
+type CancellationProbe = Arc<dyn Fn() -> bool + Send + Sync>;
 
 struct PendingRecord {
     approval: SandAutoReviewApproval,
@@ -242,6 +267,7 @@ pub struct SandAutoReviewController {
     now: Arc<dyn Fn() -> u64 + Send + Sync>,
     random_id: Arc<dyn Fn() -> String + Send + Sync>,
     on_display_recheck_failed: Option<Arc<dyn Fn(&str) + Send + Sync>>,
+    cancellation_probe: Arc<Mutex<Option<CancellationProbe>>>,
     state: Arc<Mutex<ControllerState>>,
 }
 
@@ -256,6 +282,7 @@ impl Clone for SandAutoReviewController {
             now: Arc::clone(&self.now),
             random_id: Arc::clone(&self.random_id),
             on_display_recheck_failed: self.on_display_recheck_failed.clone(),
+            cancellation_probe: Arc::clone(&self.cancellation_probe),
             state: Arc::clone(&self.state),
         }
     }
@@ -295,6 +322,7 @@ impl SandAutoReviewController {
             now,
             random_id,
             on_display_recheck_failed,
+            cancellation_probe: Arc::new(Mutex::new(None)),
             state: Arc::new(Mutex::new(ControllerState {
                 pending: HashMap::new(),
                 listeners: HashMap::new(),
@@ -322,6 +350,28 @@ impl SandAutoReviewController {
         if let Some(callback) = self.on_display_recheck_failed.as_ref() {
             callback(agent_id.unwrap_or(&self.agent_id));
         }
+    }
+
+    pub fn set_cancellation_probe(&self, probe: CancellationProbe) {
+        *self
+            .cancellation_probe
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(probe);
+    }
+
+    fn has_cancellation_probe(&self) -> bool {
+        self.cancellation_probe
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .is_some()
+    }
+
+    fn is_cancelled(&self) -> bool {
+        self.cancellation_probe
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+            .is_some_and(|probe| probe())
     }
 
     pub fn request_approval(
@@ -429,6 +479,7 @@ impl SandAutoReviewController {
         SandAutoReviewRequestOutcome::Pending(SandAutoReviewPending {
             approval,
             receiver,
+            controller: self.clone(),
         })
     }
 
