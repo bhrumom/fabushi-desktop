@@ -10,14 +10,15 @@ use mahayana_host_runtime::runner::system_prompt::{
     format_attached_file_size, is_media_review_subagent_type,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{
-    AgentProfileForPrompt, ComputerPromptState, RemoteBoxPromptState, RunnerPromptRole,
+    AgentProfileForPrompt, AgentSkillPromptItem, ComputerPromptState, RemoteBoxPromptState,
+    RunnerPromptRole,
     append_agent_profile_system_prompt, append_computer_system_prompt,
     append_mcp_system_prompt_sections, append_remote_box_system_prompt,
     append_workflows_system_prompt, render_agent_profile_section,
     render_computer_system_prompt, render_remote_box_system_prompt,
     render_request_context_system_prompt,
     render_request_context_system_prompt_with_capabilities,
-    render_workflows_system_prompt,
+    render_budgeted_agent_skills_prompt, render_workflows_system_prompt,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::ProviderMessage;
 use mahayana_host_runtime::sand_multitask::SAND_MULTITASK_PROMPT_SECTION;
@@ -218,6 +219,41 @@ fn frozen_workflows_section_is_rendered_once_for_the_shipping_provider_prompt() 
             .count(),
         1
     );
+}
+
+
+#[test]
+fn frozen_agent_skill_catalog_uses_the_turn_token_limit_and_preserves_protected_skills() {
+    let under_budget = render_budgeted_agent_skills_prompt(
+        &[AgentSkillPromptItem {
+            full_path: "/home/oai/share/workflows/research/SKILL.md".into(),
+            description: Some("Research workflow".into()),
+        }],
+        200_000,
+    );
+    assert_eq!(under_budget.strategy, "under_budget");
+    assert_eq!(under_budget.retained_count, 1);
+    assert_eq!(under_budget.omitted_count, 0);
+    assert!(under_budget.prompt.contains("research/SKILL.md"));
+    assert!(under_budget.prompt.contains("Research workflow"));
+
+    let mut crowded = vec![AgentSkillPromptItem {
+        full_path: "/home/oai/share/workflows/canvas/SKILL.md".into(),
+        description: Some("protected canvas skill".into()),
+    }];
+    crowded.extend((0..30).map(|index| AgentSkillPromptItem {
+        full_path: format!("/home/oai/share/workflows/skill-{index}/SKILL.md"),
+        description: Some("x".repeat(800)),
+    }));
+    let capped = render_budgeted_agent_skills_prompt(&crowded, 2_000);
+    assert!(matches!(
+        capped.strategy,
+        "shortened_descriptions" | "dropped_descriptions" | "omitted_skills"
+    ));
+    assert!(capped.prompt.contains("/canvas/SKILL.md"));
+    if capped.omitted_count > 0 {
+        assert!(capped.prompt.contains("Additional skills omitted"));
+    }
 }
 
 

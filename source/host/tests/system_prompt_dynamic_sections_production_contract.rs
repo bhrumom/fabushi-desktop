@@ -22,7 +22,7 @@ fn shipping_provider_turn_consumes_dynamic_sections_in_frozen_order() {
     let tail = &source[provider_start..];
 
     let workflows = tail
-        .find("append_workflows_system_prompt(")
+        .find("append_budgeted_workflows_system_prompt(")
         .expect("shipping workflows section");
     let channels = tail
         .find("append_channels_system_prompt(")
@@ -43,6 +43,9 @@ fn shipping_provider_turn_consumes_dynamic_sections_in_frozen_order() {
     assert!(turn_prefix.contains("mcp_service.list_installed()"));
     assert!(turn_prefix.contains("discovery_unavailable: true"));
     assert!(turn_prefix.contains("is_subagent_runner: generated_parent_agent_id.is_some()"));
+    assert!(tail[..channels].contains("workflow_store.list()"));
+    assert!(tail[..channels].contains("SAND_AGENT_TOKEN_LIMIT"));
+    assert_eq!(source.matches("append_budgeted_workflows_system_prompt(").count(), 1);
     assert_eq!(source.matches("append_channels_system_prompt(").count(), 1);
     assert_eq!(source.matches("append_agent_directory_system_prompt(").count(), 1);
     assert_eq!(source.matches(".append_live_runtime_sections(").count(), 1);

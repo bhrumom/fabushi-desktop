@@ -324,9 +324,9 @@ use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     to_exact_action_value, validate_computer_action,
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{
-    AgentProfileForPrompt, append_agent_directory_system_prompt,
+    AgentProfileForPrompt, AgentSkillPromptItem, append_agent_directory_system_prompt,
     append_automations_system_prompt, append_channels_system_prompt,
-    append_combined_memory_system_prompt, append_workflows_system_prompt,
+    append_combined_memory_system_prompt, append_budgeted_workflows_system_prompt,
     ComputerPromptState, RemoteBoxPromptState, RunnerPromptRole,
     render_agent_profile_section, resolve_combined_memory_system_prompt,
 };
@@ -349,7 +349,7 @@ use mahayana_host_runtime::runner::sand_action_audit::{
 use mahayana_host_runtime::runner::bot_block_detection::with_bot_block_detection_sink;
 use mahayana_host_runtime::extensions::telemetry::bot_block_telemetry::BotBlockReport;
 use mahayana_host_runtime::runner::turn_agent_composition::{
-    TurnSubagentLaunchReviewBindings, build_turn_subagent_types,
+    SAND_AGENT_TOKEN_LIMIT, TurnSubagentLaunchReviewBindings, build_turn_subagent_types,
     create_turn_subagent_task_review,
 };
 use mahayana_host_runtime::runner::turn_observation::{
@@ -5456,9 +5456,25 @@ fn start_routed_provider_task(
             "could not open production workflow store for {agent_id}: {error}"
         )))?;
     let workflow_location = workflow_store.get_location().to_string_lossy().into_owned();
-    append_workflows_system_prompt(
+    let available_skill_prompts = if generated_parent_agent_id.is_none() && !is_group_member_turn {
+        workflow_store
+            .list()
+            .into_iter()
+            .filter(|workflow| workflow.trigger.is_none() && !workflow.disable_model_invocation)
+            .map(|workflow| AgentSkillPromptItem {
+                full_path: workflow.file_path.to_string_lossy().into_owned(),
+                description: (!workflow.description.trim().is_empty())
+                    .then_some(workflow.description),
+            })
+            .collect::<Vec<_>>()
+    } else {
+        Vec::new()
+    };
+    append_budgeted_workflows_system_prompt(
         &mut provider_messages,
         Some(&workflow_location),
+        &available_skill_prompts,
+        SAND_AGENT_TOKEN_LIMIT,
     );
 
     let channel_store = session_workers
@@ -7892,6 +7908,7 @@ fn start_routed_provider_task(
                 });
             let turn_static_config = ProductionTurnAgentStaticConfig {
                 model_id: turn_model_id,
+                agent_token_limit: SAND_AGENT_TOKEN_LIMIT,
                 conversation_id: turn_conversation_id,
                 is_box_scoped_subagent: worker_generated_parent_agent_id.is_some(),
                 is_subagent_runner: worker_generated_parent_agent_id.is_some(),

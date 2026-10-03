@@ -228,6 +228,255 @@ pub fn render_workflows_system_prompt(location: Option<&str>) -> String {
     )
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AgentSkillPromptItem {
+    pub full_path: String,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AgentSkillPromptBudgetResult {
+    pub prompt: String,
+    pub retained_count: usize,
+    pub omitted_count: usize,
+    pub strategy: &'static str,
+}
+
+const INITIAL_SKILL_CATALOG_CONTEXT_PERCENT: usize = 2;
+const MIN_TRUNCATED_SKILL_DESCRIPTION_LENGTH: usize = 24;
+const MAX_TRUNCATED_SKILL_DESCRIPTION_LENGTH: usize = 480;
+const SHORT_SKILL_DESCRIPTION_PATH_ONLY_THRESHOLD: usize = 80;
+const MAX_OMITTED_SKILL_DIRECTORY_COUNT: usize = 5;
+
+fn estimate_prompt_tokens(value: &str) -> usize {
+    // Frozen Grok 0.18: Math.round(value.length / 4).
+    (value.chars().count() + 2) / 4
+}
+
+fn xml_escape(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
+}
+
+fn skill_name(full_path: &str) -> String {
+    let normalized = full_path.replace('\\', "/");
+    let parts = normalized
+        .split('/')
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>();
+    if parts.last().copied() == Some("SKILL.md") && parts.len() >= 2 {
+        parts[parts.len() - 2].to_string()
+    } else {
+        parts.last().copied().unwrap_or("").to_string()
+    }
+}
+
+fn is_protected_skill(item: &AgentSkillPromptItem) -> bool {
+    matches!(skill_name(&item.full_path).as_str(), "canvas" | "env-setup")
+}
+
+fn skill_directory_hint(full_path: &str) -> String {
+    let normalized = full_path.replace('\\', "/");
+    for marker in [
+        "/.cursor/skills/",
+        "/.cursor/skills-cursor/",
+        "/.agents/skills/",
+        "/.claude/skills/",
+        "/.codex/skills/",
+        "/.claude/plugins/",
+    ] {
+        if let Some(index) = normalized.find(marker) {
+            return normalized[..index + marker.len() - 1].to_string();
+        }
+    }
+    if let Some(index) = normalized.find("/.cursor/plugins/cache/") {
+        if let Some(relative) = normalized[index..].find("/skills/") {
+            let skills_index = index + relative;
+            return normalized[..skills_index + "/skills".len()].to_string();
+        }
+    }
+    normalized
+        .rsplit_once('/')
+        .map(|(directory, _)| directory.to_string())
+        .unwrap_or(normalized)
+}
+
+fn render_agent_skill_section(items: &[AgentSkillPromptItem], omitted: &[AgentSkillPromptItem]) -> String {
+    let mut out = String::from(
+        "<agent_skills>\nWhen the user names a skill, use it faithfully as part of the current task. Read the skill file using the read tool before following its instructions. The user's instructions take precedence over skill guidance.\n<available_skills>\n",
+    );
+    for item in items {
+        out.push_str("<agent_skill fullPath=\"");
+        out.push_str(&xml_escape(&item.full_path));
+        out.push_str("\">");
+        if let Some(description) = item.description.as_deref().filter(|value| !value.is_empty()) {
+            out.push_str(&xml_escape(description));
+        }
+        out.push_str("</agent_skill>\n");
+    }
+    if !omitted.is_empty() {
+        let mut directories = Vec::<String>::new();
+        for item in omitted {
+            let directory = skill_directory_hint(&item.full_path);
+            if !directories.contains(&directory) {
+                directories.push(directory);
+                if directories.len() == MAX_OMITTED_SKILL_DIRECTORY_COUNT {
+                    break;
+                }
+            }
+        }
+        out.push_str(&format!(
+            "Additional skills omitted from this initial list ({}). Directories containing omitted skills: {}.\n",
+            omitted.len(),
+            directories.join(", ")
+        ));
+    }
+    out.push_str("</available_skills>\n</agent_skills>");
+    out
+}
+
+fn truncate_skill_description(description: Option<&str>, max_length: usize) -> Option<String> {
+    let description = description?;
+    if description.chars().count() <= max_length {
+        return Some(description.to_string());
+    }
+    let content_length = max_length.saturating_sub(3);
+    Some(format!(
+        "{}...",
+        description.chars().take(content_length).collect::<String>().trim_end()
+    ))
+}
+
+pub fn render_budgeted_agent_skills_prompt(
+    skills: &[AgentSkillPromptItem],
+    agent_token_limit: usize,
+) -> AgentSkillPromptBudgetResult {
+    let uncapped = render_agent_skill_section(skills, &[]);
+    let budget_tokens = agent_token_limit
+        .saturating_mul(INITIAL_SKILL_CATALOG_CONTEXT_PERCENT)
+        / 100;
+    if estimate_prompt_tokens(&uncapped) <= budget_tokens {
+        return AgentSkillPromptBudgetResult {
+            prompt: uncapped,
+            retained_count: skills.len(),
+            omitted_count: 0,
+            strategy: "under_budget",
+        };
+    }
+
+    let max_description_length = skills
+        .iter()
+        .filter(|item| !is_protected_skill(item))
+        .filter_map(|item| item.description.as_deref())
+        .map(|description| description.chars().count())
+        .max()
+        .unwrap_or(0);
+    if max_description_length > SHORT_SKILL_DESCRIPTION_PATH_ONLY_THRESHOLD {
+        let mut lower = MIN_TRUNCATED_SKILL_DESCRIPTION_LENGTH;
+        let mut upper = max_description_length
+            .saturating_sub(1)
+            .min(MAX_TRUNCATED_SKILL_DESCRIPTION_LENGTH);
+        let mut best = None::<(String, Vec<AgentSkillPromptItem>)>;
+        while lower <= upper {
+            let midpoint = lower + (upper - lower) / 2;
+            let candidate = skills
+                .iter()
+                .map(|item| AgentSkillPromptItem {
+                    full_path: item.full_path.clone(),
+                    description: if is_protected_skill(item) {
+                        item.description.clone()
+                    } else {
+                        truncate_skill_description(item.description.as_deref(), midpoint)
+                    },
+                })
+                .collect::<Vec<_>>();
+            let prompt = render_agent_skill_section(&candidate, &[]);
+            if estimate_prompt_tokens(&prompt) <= budget_tokens {
+                best = Some((prompt, candidate));
+                lower = midpoint.saturating_add(1);
+            } else if midpoint == 0 {
+                break;
+            } else {
+                upper = midpoint - 1;
+            }
+        }
+        if let Some((prompt, candidate)) = best {
+            return AgentSkillPromptBudgetResult {
+                prompt,
+                retained_count: candidate.len(),
+                omitted_count: 0,
+                strategy: "shortened_descriptions",
+            };
+        }
+    }
+
+    let path_only = skills
+        .iter()
+        .map(|item| AgentSkillPromptItem {
+            full_path: item.full_path.clone(),
+            description: is_protected_skill(item).then(|| item.description.clone()).flatten(),
+        })
+        .collect::<Vec<_>>();
+    let path_only_prompt = render_agent_skill_section(&path_only, &[]);
+    if estimate_prompt_tokens(&path_only_prompt) <= budget_tokens {
+        return AgentSkillPromptBudgetResult {
+            prompt: path_only_prompt,
+            retained_count: path_only.len(),
+            omitted_count: 0,
+            strategy: "dropped_descriptions",
+        };
+    }
+
+    let droppable = skills
+        .iter()
+        .enumerate()
+        .filter_map(|(index, item)| (!is_protected_skill(item)).then_some(index))
+        .collect::<Vec<_>>();
+    for retained_droppable_count in (0..=droppable.len()).rev() {
+        let retained_indices = droppable[..retained_droppable_count]
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut retained = Vec::new();
+        let mut omitted = Vec::new();
+        for (index, original) in skills.iter().enumerate() {
+            if is_protected_skill(original) || retained_indices.contains(&index) {
+                retained.push(path_only[index].clone());
+            } else {
+                omitted.push(original.clone());
+            }
+        }
+        let prompt = render_agent_skill_section(&retained, &omitted);
+        if estimate_prompt_tokens(&prompt) <= budget_tokens || retained_droppable_count == 0 {
+            return AgentSkillPromptBudgetResult {
+                prompt,
+                retained_count: retained.len(),
+                omitted_count: omitted.len(),
+                strategy: "omitted_skills",
+            };
+        }
+    }
+    unreachable!("skill omission loop must return")
+}
+
+pub fn append_budgeted_workflows_system_prompt(
+    messages: &mut Vec<ProviderMessage>,
+    location: Option<&str>,
+    skills: &[AgentSkillPromptItem],
+    agent_token_limit: usize,
+) {
+    append_workflows_system_prompt(messages, location);
+    if skills.is_empty() {
+        return;
+    }
+    let budgeted = render_budgeted_agent_skills_prompt(skills, agent_token_limit);
+    append_unique_system_section(messages, &budgeted.prompt, "<agent_skills>");
+}
+
 pub fn append_workflows_system_prompt(
     messages: &mut Vec<ProviderMessage>,
     location: Option<&str>,

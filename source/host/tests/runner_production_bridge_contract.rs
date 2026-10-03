@@ -489,6 +489,7 @@ fn production_bridge_binds_the_generated_runner_facade() {
     let build_bindings = ProductionTurnAgentBuildBindings::new(
         ProductionTurnAgentStaticConfig {
             model_id: "grok-contract".into(),
+            agent_token_limit: 200_000,
             conversation_id: "bridge-agent".into(),
             is_box_scoped_subagent: false,
             is_subagent_runner: false,

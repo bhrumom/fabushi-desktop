@@ -107,6 +107,7 @@ impl RoutedProviderCheckpointStore for ObservedRoutedProviderCheckpointStore {
 }
 
 pub const SAND_AGENT_MAX_STEPS: usize = 5_000;
+pub const SAND_AGENT_TOKEN_LIMIT: usize = 200_000;
 pub const GENERAL_PURPOSE_SUBAGENT_TYPE: &str = "general-purpose";
 pub const EXECUTOR_SUBAGENT_TYPE: &str = "executor";
 pub const COMPUTER_USE_SUBAGENT_TYPE: &str = "computeruse";

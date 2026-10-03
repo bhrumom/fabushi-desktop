@@ -16,7 +16,9 @@ use super::production_turn_input_projection::{
 use super::production_turn_run_shell_adapter::run_production_turn_shell_lifecycle;
 use super::send_message_reminder_middleware::DISK_PRESSURE_REMINDER_MESSAGE;
 use super::routed_provider_runtime::RoutedProviderCancellation;
-use super::turn_agent_composition::{SAND_AGENT_MAX_STEPS, TurnAgentComposition};
+use super::turn_agent_composition::{
+    SAND_AGENT_MAX_STEPS, SAND_AGENT_TOKEN_LIMIT, TurnAgentComposition,
+};
 use super::{
     TerminalOutcome, TurnRunFinished, TurnRunOptions, TurnRunShell,
 };
@@ -39,6 +41,7 @@ pub type ProductionTurnPrivacyModeResolver =
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProductionTurnAgentStaticConfig {
     pub model_id: String,
+    pub agent_token_limit: usize,
     pub conversation_id: String,
     pub is_box_scoped_subagent: bool,
     pub is_subagent_runner: bool,
@@ -50,6 +53,7 @@ pub struct ProductionTurnAgentStaticConfig {
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProductionTurnAgentStaticProjection {
     pub max_steps: usize,
+    pub agent_token_limit: usize,
     pub background_summarization_start_unused_tokens: usize,
     pub background_summarization_start_unused_percent: f64,
     pub background_summarization_persist_unused_tokens: usize,
@@ -76,6 +80,7 @@ impl ProductionTurnAgentStaticConfig {
     pub fn frozen_projection(&self) -> ProductionTurnAgentStaticProjection {
         ProductionTurnAgentStaticProjection {
             max_steps: SAND_AGENT_MAX_STEPS,
+            agent_token_limit: self.agent_token_limit,
             background_summarization_start_unused_tokens: 10_000,
             background_summarization_start_unused_percent: 0.1,
             background_summarization_persist_unused_tokens: 5_000,
@@ -278,6 +283,11 @@ impl ProductionTurnAgentOwner {
         if input.static_projection.max_steps != SAND_AGENT_MAX_STEPS {
             return Err(ProviderSessionError::Configuration(
                 "production turn max steps drifted from frozen Grok config".into(),
+            ));
+        }
+        if input.static_projection.agent_token_limit != SAND_AGENT_TOKEN_LIMIT {
+            return Err(ProviderSessionError::Configuration(
+                "production turn agent token limit drifted from frozen Grok config".into(),
             ));
         }
         if input.static_projection.conversation_group_id != input.static_config.conversation_id {

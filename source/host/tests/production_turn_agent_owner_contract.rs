@@ -99,6 +99,7 @@ fn build_bindings(
     ProductionTurnAgentBuildBindings::new(
         ProductionTurnAgentStaticConfig {
             model_id: "grok-contract".into(),
+            agent_token_limit: 200_000,
             conversation_id: conversation_id.into(),
             is_box_scoped_subagent: false,
             is_subagent_runner: false,
@@ -125,6 +126,7 @@ fn production_owner_freezes_build_input_and_privacy_once() {
         .with_build_bindings(ProductionTurnAgentBuildBindings::new(
             ProductionTurnAgentStaticConfig {
                 model_id: "grok-contract".into(),
+                agent_token_limit: 200_000,
                 conversation_id: "agent-build".into(),
                 is_box_scoped_subagent: true,
                 is_subagent_runner: true,
@@ -149,6 +151,7 @@ fn production_owner_freezes_build_input_and_privacy_once() {
     assert!(build.static_config.sand_send_message_delivery_owed);
     assert!(build.static_config.transcripts_folder_available);
     assert_eq!(build.static_projection.max_steps, 5_000);
+    assert_eq!(build.static_projection.agent_token_limit, 200_000);
     assert_eq!(
         build.static_projection.background_summarization_start_unused_tokens,
         10_000
