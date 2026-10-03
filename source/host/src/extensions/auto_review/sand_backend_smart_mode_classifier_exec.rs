@@ -250,6 +250,9 @@ where
             Err(SandSmartModeClassifierError::Backend(
                 CursorBackendError::Cancelled(reason),
             )) => Err(AutoReviewClassifierError::Aborted(reason)),
+            Err(SandSmartModeClassifierError::Backend(
+                CursorBackendError::Timeout(reason),
+            )) => Err(AutoReviewClassifierError::Timeout(reason)),
             Err(error) => Err(AutoReviewClassifierError::Failed(error.to_string())),
         }
     }
