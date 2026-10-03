@@ -218,6 +218,7 @@ impl Default for TurnToolsetRole {
 pub struct TurnLocalToolPermissionBinding {
     pub controller: Arc<SandLocalToolPermissionController>,
     pub agent_id: String,
+    pub direction_epoch: u64,
 }
 
 struct LocalToolScopeBridge {
@@ -279,11 +280,7 @@ impl RoutedToolBridge for LocalToolScopeBridge {
             agent_id: self.binding.agent_id.clone(),
             tool_call_id: Some(tool_call_id.to_string()),
             action: action.map(str::to_string),
-            direction_epoch: Some(
-                self.binding
-                    .controller
-                    .direction_epoch(&self.binding.agent_id),
-            ),
+            direction_epoch: Some(self.binding.direction_epoch),
         };
         let result = self.delegate.call_tool(tool, args, tool_call_id);
         self.binding.controller.complete_scope(Some(&scope));
