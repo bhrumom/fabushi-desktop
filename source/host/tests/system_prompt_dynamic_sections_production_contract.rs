@@ -43,7 +43,9 @@ fn shipping_provider_turn_consumes_dynamic_sections_in_frozen_order() {
     assert!(turn_prefix.contains("mcp_service.list_installed()"));
     assert!(turn_prefix.contains("discovery_unavailable: true"));
     assert!(turn_prefix.contains("is_subagent_runner: generated_parent_agent_id.is_some()"));
-    assert!(tail[..channels].contains("workflow_store.list()"));
+    assert!(tail[..channels].contains("let available_skill_prompts ="));
+    assert!(tail[..channels].contains("workflow_store"));
+    assert!(tail[..channels].contains(".list()"));
     assert!(tail[..channels].contains("SAND_AGENT_TOKEN_LIMIT"));
     assert_eq!(source.matches("append_budgeted_workflows_system_prompt(").count(), 1);
     assert_eq!(source.matches("append_channels_system_prompt(").count(), 1);
