@@ -4,12 +4,20 @@ use serde_json::Value;
 
 use crate::extensions::inference::provider_session::ProviderMessage;
 
+use super::sand_agent_profile_prompt::{
+    AgentProfileIdentity, agent_profile_identities_equal, render_agent_profile_update,
+};
 use super::sand_prompt_markers::{
     SAND_HIDDEN_PROMPT_MARKER, SAND_TRUSTED_AUTOMATION_PROMPT_MARKER,
 };
 use super::system_prompt::{
-    ReplyContext, append_user_reply_reminder, build_attached_files_note,
-    build_reply_context_note, build_user_message_address_note,
+    ReplyContext, USER_MESSAGE_REPLY_REMINDER, append_user_reply_reminder,
+    build_attached_files_note, build_reply_context_note, build_user_message_address_note,
+};
+use super::system_prompt_assembly::{
+    ComputerPromptState, RemoteBoxPromptState, append_agent_profile_system_prompt,
+    append_computer_system_prompt, append_mcp_system_prompt_sections,
+    append_remote_box_system_prompt,
 };
 
 /// Provider-facing prompt projection for the frozen prompt-collector boundary.
@@ -24,6 +32,114 @@ pub struct ProviderPromptProjection {
     pub messages: Vec<ProviderMessage>,
     pub projected_user_text: Option<String>,
     pub prepended_unanswered_questions: bool,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct PromptCollectorDynamicUserContext<'a> {
+    pub automation_status_reminder: Option<&'a str>,
+    pub profile_update: Option<&'a str>,
+    pub is_silence_allowed: bool,
+}
+
+pub fn append_profile_system_section_for_turn(
+    messages: &mut Vec<ProviderMessage>,
+    profile_section: &str,
+) {
+    append_agent_profile_system_prompt(messages, profile_section);
+}
+
+pub fn resolve_profile_update_for_turn(
+    identity: &AgentProfileIdentity,
+    announced_identity: &AgentProfileIdentity,
+) -> Option<String> {
+    (!agent_profile_identities_equal(identity, announced_identity))
+        .then(|| render_agent_profile_update(identity))
+}
+
+pub fn apply_dynamic_user_context_for_turn(
+    messages: &mut [ProviderMessage],
+    context: PromptCollectorDynamicUserContext<'_>,
+) -> bool {
+    let automation = context
+        .automation_status_reminder
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    let profile = context
+        .profile_update
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    if automation.is_none() && profile.is_none() {
+        return false;
+    }
+
+    let Some(user) = messages.iter_mut().rfind(|message| message.role == "user") else {
+        return false;
+    };
+
+    let original = user.content.as_str();
+    let mut hidden_prefix = String::new();
+    let mut body = original;
+    if let Some(rest) = body.strip_prefix(SAND_HIDDEN_PROMPT_MARKER) {
+        hidden_prefix.push_str(SAND_HIDDEN_PROMPT_MARKER);
+        body = rest;
+        if let Some(rest) = body.strip_prefix(SAND_TRUSTED_AUTOMATION_PROMPT_MARKER) {
+            hidden_prefix.push_str(SAND_TRUSTED_AUTOMATION_PROMPT_MARKER);
+            body = rest;
+        }
+    }
+
+    let reply_suffix = format!("\n\n{USER_MESSAGE_REPLY_REMINDER}");
+    let mut had_reply_reminder = body.ends_with(&reply_suffix);
+    if had_reply_reminder {
+        body = &body[..body.len() - reply_suffix.len()];
+    } else if body == USER_MESSAGE_REPLY_REMINDER {
+        had_reply_reminder = true;
+        body = "";
+    }
+
+    let mut rendered = body.to_string();
+    for addition in [automation, profile].into_iter().flatten() {
+        rendered = if rendered.is_empty() {
+            addition.to_string()
+        } else if context.is_silence_allowed {
+            format!("{addition}\n\n{rendered}")
+        } else {
+            format!("{rendered}\n\n{addition}")
+        };
+    }
+    if had_reply_reminder {
+        rendered = if rendered.is_empty() {
+            USER_MESSAGE_REPLY_REMINDER.to_string()
+        } else {
+            format!("{rendered}\n\n{USER_MESSAGE_REPLY_REMINDER}")
+        };
+    }
+
+    user.content = format!("{hidden_prefix}{rendered}");
+    true
+}
+
+pub fn append_mcp_runtime_sections_for_turn(
+    messages: &mut Vec<ProviderMessage>,
+    installed: &[Value],
+    discovery_unavailable: bool,
+    is_subagent_runner: bool,
+) {
+    append_mcp_system_prompt_sections(
+        messages,
+        installed,
+        discovery_unavailable,
+        !is_subagent_runner,
+    );
+}
+
+pub fn append_remote_runtime_sections_for_turn(
+    messages: &mut Vec<ProviderMessage>,
+    remote_box: &RemoteBoxPromptState,
+    computer: &ComputerPromptState,
+) {
+    append_remote_box_system_prompt(messages, remote_box);
+    append_computer_system_prompt(messages, computer);
 }
 
 pub fn project_provider_messages_for_turn(

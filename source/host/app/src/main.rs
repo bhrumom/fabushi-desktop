@@ -269,7 +269,12 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
 };
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::is_recovery_shaped_turn;
-use mahayana_host_runtime::runner::prompt_collector_glue::project_provider_messages_for_turn;
+use mahayana_host_runtime::runner::prompt_collector_glue::{
+    PromptCollectorDynamicUserContext, append_mcp_runtime_sections_for_turn,
+    append_profile_system_section_for_turn, append_remote_runtime_sections_for_turn,
+    apply_dynamic_user_context_for_turn, project_provider_messages_for_turn,
+    resolve_profile_update_for_turn,
+};
 use mahayana_host_runtime::runner::sand_memory::{
     FrozenMemorySnapshot, MEMORY_PROJECT_INJECTED_CAP, MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
     MEMORY_PROJECT_RECENT_PROMPT_LIMIT, MEMORY_RECENT_PROMPT_LIMIT,
@@ -306,17 +311,14 @@ use mahayana_host_runtime::runner::tools::sand_computer_tool::{
 };
 use mahayana_host_runtime::runner::system_prompt_assembly::{
     AgentProfileForPrompt, append_agent_directory_system_prompt,
-    append_agent_profile_system_prompt, append_automations_system_prompt,
-    append_channels_system_prompt, append_combined_memory_system_prompt,
-    append_computer_system_prompt, append_mcp_system_prompt_sections,
-    append_remote_box_system_prompt, append_workflows_system_prompt,
+    append_automations_system_prompt, append_channels_system_prompt,
+    append_combined_memory_system_prompt, append_workflows_system_prompt,
     ComputerPromptState, RemoteBoxPromptState, RunnerPromptRole,
     render_agent_profile_section, resolve_combined_memory_system_prompt,
 };
 use mahayana_host_runtime::runner::sand_agent_profile_prompt::{
-    AgentProfileIdentity, AgentProfilePromptSnapshot, agent_profile_identities_equal,
-    normalize_agent_profile_identity, persist_announced_agent_profile_snapshot,
-    render_agent_profile_update, resolve_agent_profile_prompt_snapshot,
+    AgentProfileIdentity, AgentProfilePromptSnapshot, normalize_agent_profile_identity,
+    persist_announced_agent_profile_snapshot, resolve_agent_profile_prompt_snapshot,
 };
 use mahayana_host_runtime::runner::production_turn_agent_owner::{
     ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
@@ -4939,6 +4941,7 @@ fn start_routed_provider_task(
         AgentProfilePromptSnapshot,
         AgentProfileIdentity,
     )> = None;
+    let mut profile_update_for_turn: Option<String> = None;
     if let Some(profile) = session_workers
         .get_agent_profile_text(&agent_id)
         .map_err(|error| GatewayCommandError::Internal(format!(
@@ -4994,18 +4997,15 @@ fn start_routed_provider_task(
                         "could not persist production profile prompt snapshot for {agent_id}: {error}"
                     )))?;
             }
-            append_agent_profile_system_prompt(
+            append_profile_system_section_for_turn(
                 &mut provider_messages,
                 &resolved_profile_snapshot.profile_section,
             );
-            if !agent_profile_identities_equal(
+            profile_update_for_turn = resolve_profile_update_for_turn(
                 &identity,
                 &resolved_profile_snapshot.announced_identity,
-            ) {
-                provider_messages.push(ProviderMessage {
-                    role: "user".into(),
-                    content: render_agent_profile_update(&identity),
-                });
+            );
+            if profile_update_for_turn.is_some() {
                 pending_profile_announcement =
                     Some((resolved_profile_snapshot, identity));
             }
@@ -5238,11 +5238,11 @@ fn start_routed_provider_task(
                 (Vec::new(), true)
             }
         };
-    append_mcp_system_prompt_sections(
+    append_mcp_runtime_sections_for_turn(
         &mut provider_messages,
         &installed_mcp_servers,
         mcp_discovery_unavailable,
-        true,
+        generated_parent_agent_id.is_some(),
     );
 
     let prompt_role = if generated_parent_agent_id.is_none() {
@@ -5320,7 +5320,7 @@ fn start_routed_provider_task(
         .or_else(|| forever_box.box_().get_agent_window_index(&agent_id));
     let human_takeover_pending = session_handoff.get(&agent_id).is_some();
 
-    append_remote_box_system_prompt(
+    append_remote_runtime_sections_for_turn(
         &mut provider_messages,
         &RemoteBoxPromptState {
             role: prompt_role,
@@ -5329,9 +5329,6 @@ fn start_routed_provider_task(
             desktop_capable: shipping_desktop_capable,
             desktop_ready: shipping_desktop_ready,
         },
-    );
-    append_computer_system_prompt(
-        &mut provider_messages,
         &ComputerPromptState {
             role: prompt_role,
             box_available: shipping_box_available,
@@ -5349,14 +5346,19 @@ fn start_routed_provider_task(
         .and_then(serde_json::Value::as_object)
         .and_then(|wake| wake.get("id"))
         .and_then(serde_json::Value::as_str);
-    if let Some(reminder) =
-        create_automation_status_reminder(&automation_store, firing_automation_id)
-    {
-        provider_messages.push(ProviderMessage {
-            role: "system".into(),
-            content: reminder,
-        });
-    }
+    let automation_status_reminder =
+        create_automation_status_reminder(&automation_store, firing_automation_id);
+    let _ = apply_dynamic_user_context_for_turn(
+        &mut provider_messages,
+        PromptCollectorDynamicUserContext {
+            automation_status_reminder: automation_status_reminder.as_deref(),
+            profile_update: profile_update_for_turn.as_deref(),
+            is_silence_allowed: args
+                .get("isSilenceAllowed")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+        },
+    );
     let spotlight_enabled = experiments.check_feature_gate("sand_spotlight");
     let multitask_enabled = !args
         .get("groupMemberTurn")
