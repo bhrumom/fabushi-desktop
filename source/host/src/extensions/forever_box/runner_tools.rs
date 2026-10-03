@@ -10,7 +10,8 @@ use crate::r#box::box_shell_command::{
 use crate::r#box::box_windows::{ShellAccessor, ShellExecutionOutcome};
 use crate::r#box::generated_production::{
     ProductionBackgroundShellSpawnResult, ProductionReadArgs, ProductionReadOutput,
-    ProductionReadResult, ProductionShellStreamArgs, ProductionShellStreamEvent,
+    ProductionReadResult, ProductionShellResult, ProductionShellStreamArgs,
+    ProductionShellStreamEvent,
 };
 use crate::runner::background_work::{
     BackgroundShellWatchOptions, RunnerBackgroundShellWatches,
@@ -433,20 +434,10 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
             )));
         }
 
-        let result = accessor.execute(&(), args).map_err(|error| {
+        let result = accessor.execute_shell_result(&(), args).map_err(|error| {
             ProviderSessionError::Tool(format!("Box Shell failed: {error}"))
         })?;
-        Ok(match result.result {
-            ShellExecutionOutcome::Success { exit_code, stderr } => json!({
-                "kind": "success",
-                "exitCode": exit_code,
-                "stderr": stderr,
-            }),
-            ShellExecutionOutcome::Failure { case } => json!({
-                "kind": "failure",
-                "case": case,
-            }),
-        })
+        Ok(project_shell_result(result))
     }
 
     fn execute_read(
@@ -593,4 +584,91 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
         }
     }
 
+}
+fn project_shell_result(result: ProductionShellResult) -> Value {
+    match result {
+        ProductionShellResult::Success {
+            exit_code,
+            stdout,
+            stderr,
+        } => json!({
+            "kind": "success",
+            "exitCode": exit_code,
+            "stdout": stdout,
+            "stderr": stderr,
+        }),
+        ProductionShellResult::Failure {
+            exit_code,
+            signal,
+            stdout,
+            stderr,
+            aborted,
+        } => json!({
+            "kind": "failure",
+            "exitCode": exit_code,
+            "signal": signal,
+            "stdout": stdout,
+            "stderr": stderr,
+            "aborted": aborted,
+        }),
+        ProductionShellResult::SpawnError { error } => json!({
+            "kind": "spawnError",
+            "error": error,
+        }),
+        ProductionShellResult::PermissionDenied { error } => json!({
+            "kind": "permissionDenied",
+            "error": error,
+        }),
+        ProductionShellResult::Rejected { reason } => json!({
+            "kind": "rejected",
+            "reason": reason,
+        }),
+        ProductionShellResult::Timeout { timeout_ms } => json!({
+            "kind": "timeout",
+            "timeoutMs": timeout_ms,
+        }),
+        ProductionShellResult::Other { case } => json!({
+            "kind": "failure",
+            "case": case,
+        }),
+    }
+}
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::project_shell_result;
+    use crate::r#box::generated_production::ProductionShellResult;
+
+    #[test]
+    fn normal_shell_projection_preserves_stdout_for_navigation_probes() {
+        let value = project_shell_result(ProductionShellResult::Success {
+            exit_code: 0,
+            stdout: r#"[{\"url\":\"https://example.com/path\"}]"#.into(),
+            stderr: String::new(),
+        });
+        assert_eq!(value["kind"], "success");
+        assert_eq!(value["exitCode"], 0);
+        assert_eq!(
+            value["stdout"],
+            r#"[{\"url\":\"https://example.com/path\"}]"#
+        );
+    }
+
+    #[test]
+    fn normal_shell_projection_preserves_failure_diagnostics() {
+        let value = project_shell_result(ProductionShellResult::Failure {
+            exit_code: 7,
+            signal: "SIGTERM".into(),
+            stdout: "partial".into(),
+            stderr: "failed".into(),
+            aborted: true,
+        });
+        assert_eq!(value["kind"], "failure");
+        assert_eq!(value["exitCode"], 7);
+        assert_eq!(value["stdout"], "partial");
+        assert_eq!(value["stderr"], "failed");
+        assert_eq!(value["aborted"], true);
+    }
 }
