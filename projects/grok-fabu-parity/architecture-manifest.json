@@ -19521,7 +19521,7 @@
       "targetPath": "source/host/src/runner/tools/turn_toolset.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "dae94ac7441372d7f40f418d7f0a6e6d38d3d383",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -19536,16 +19536,25 @@
         "source/host/src/cloud_agents/cloud_agent_tool.rs",
         "source/host/src/runner/tools/sand_computer_tool.rs",
         "source/host/src/runner/host_computer_tool_dependencies.rs",
-        "source/host/src/extensions/forever_box/runner_tools.rs"
+        "source/host/src/extensions/forever_box/runner_tools.rs",
+        "source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs",
+        "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+        "source/host/src/runner/host_external_machine_dependencies.rs",
+        "source/host/src/runner/host_file_transfer_dependencies.rs",
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/src/runner/tools/mcp_meta_tools.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/turn_toolset_contract.rs",
         "source/host/tests/sand_state_tool_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/computer_tool_projection_contract.rs"
+        "source/host/tests/computer_tool_projection_contract.rs",
+        "source/host/tests/local_tool_permission_controller_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs"
       ],
-      "notes": "Rust Runner owns a real per-turn first-party/delegated toolset boundary. Shipping composition now includes box resources, Browser, Computer/Screenshot, ReactToMessage, SendToAgent/CreateAgent/UpdateAgent, update_state, CloudAgent, RequestBoxHelp, SendMessage and Spotlight fencing. Browser is final with exact-head f7c127bf65c60a346bdc95a7556fed599129a2ed evidence; Computer production composition is exact-head verified at f53b5c40b759186d1ad96c0470b1aef93c7b5aec via rust-host job 108697895190 and Desktop Chat Parity run 36346965680. Final remains withheld because frozen TurnToolset also centralizes generated Agent task/read/shell/await/file-transfer/MCP-management/dynamic-MCP/subagent/static-context/auto-review/local-permission composition and those surfaces are not yet fully centralized here."
+      "notes": "Frozen Grok TurnToolset parity is closed in the shipping Mahayana Runner. The canonical Rust owner now composes the per-turn first-party and delegated toolset with role-scoped empty ordinary subagents, Browser/Computer/Screenshot exposure, external read/shell/await, box shell/read/await, file transfer, web, image generation, CloudAgent, MCP management and per-turn MCP projection, subagent management, state/multitask, shared-room filtering, dynamic Cursor MCP placement, Spotlight fencing, and one routed-provider timeout guard. Local-tool scope identity is production-bound to agentId + toolCallId + action + an immutable per-user-direction epoch: canonical direct user turns advance the controller epoch, retries/resumes/background/group/subagent runs retain the current direction, external/file-transfer gateway authorization uses that same frozen epoch, and scope completion retires one-time approvals. Exact HEAD 5ac28e2b00a70f8820a408549b01b562ca7b6885 passed the Rust desktop runtime shipping Host step in run 37148320887; the same HEAD passed renderer production/build/boundary steps and the final strict gate reported this row only because its manifest status had not yet been promoted."
     },
     {
       "referencePath": "source/host/runner/transient-stream-error.ts",
