@@ -48,6 +48,7 @@ pub enum SmartModeClassifierResult {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AutoReviewClassifierError {
     Aborted(String),
+    Timeout(String),
     Failed(String),
 }
 
@@ -143,7 +144,8 @@ pub fn run_sand_auto_review_classifier<Target: Serialize, Message>(
         Err(AutoReviewClassifierError::Aborted(reason)) => {
             return Err(AutoReviewClassifierError::Aborted(reason));
         }
-        Err(AutoReviewClassifierError::Failed(_)) => {
+        Err(AutoReviewClassifierError::Timeout(_))
+        | Err(AutoReviewClassifierError::Failed(_)) => {
             return Ok(AutoReviewClassifierDecision::Reject {
                 reason: error_reason.to_string(),
             });
@@ -198,6 +200,27 @@ pub fn run_sand_auto_review_classifier<Target: Serialize, Message>(
                 retryable: None,
             });
             return Err(AutoReviewClassifierError::Aborted(reason));
+        }
+        Err(AutoReviewClassifierError::Timeout(_)) => {
+            executor.record_measurement(SmartModeClassifierMeasurement {
+                kind: SmartModeClassifierMeasurementKind::Exception,
+                mode: mode.to_string(),
+                action_kind,
+                surface_label,
+                timeout_ms: None,
+                has_target: None,
+                has_target_arguments: None,
+                outcome: Some("exception".into()),
+                decision: Some("unknown".into()),
+                has_reason: Some(false),
+                latency_ms: Some(elapsed_ms(started)),
+                retry_count: Some(0),
+                failure_reason: Some("timeout_exception".into()),
+                retryable: None,
+            });
+            return Ok(AutoReviewClassifierDecision::Reject {
+                reason: error_reason.to_string(),
+            });
         }
         Err(AutoReviewClassifierError::Failed(_)) => {
             executor.record_measurement(SmartModeClassifierMeasurement {
