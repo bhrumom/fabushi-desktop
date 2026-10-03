@@ -14,6 +14,7 @@ use crate::extensions::local_tool_permission::local_tool_permission_controller::
 use crate::extensions::memory::agent_state::SandAgentState;
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::runner::TurnUsage;
+use crate::runner::background_work::{RunnerBackgroundShellWatches, RunnerCloudAgentWatches};
 use crate::runner::computer_use::{
     ComputerControlLease, ComputerUseCoordination, ComputerUsePrewarmStage,
 };
@@ -30,6 +31,7 @@ use crate::runner::subagent_runtime::SubagentRuntime;
 use crate::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use crate::runner::tools::sand_state_tool::SandStateWriter;
 use crate::runner::turn_agent_composition::TurnAgentComposition;
+use crate::runner::turn_observation::TurnObservationHandle;
 pub use crate::runner_production_bridge::ProductionRunnerCompositionHooks as ProductionTurnCompositionHooks;
 use crate::runner_production_bridge::{
     ProductionRunnerCompositionInput, create_production_runner,
@@ -216,6 +218,10 @@ impl HostRunnerComposition {
         checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
         upgrade_quiesce_signal: Arc<AtomicBool>,
         generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
+        observation: Option<TurnObservationHandle>,
+        cloud_agent_watches: Option<Arc<RunnerCloudAgentWatches>>,
+        background_shell_watches: Option<Arc<RunnerBackgroundShellWatches>>,
+        computer_use: Option<Arc<Mutex<ComputerUseCoordination>>>,
     ) -> SandAgentRunner {
         create_production_runner(
             composition,
@@ -224,6 +230,10 @@ impl HostRunnerComposition {
             checkpoint_sink,
             upgrade_quiesce_signal,
             generated_agent_runtime,
+            observation,
+            cloud_agent_watches,
+            background_shell_watches,
+            computer_use,
         )
     }
 
