@@ -18101,20 +18101,27 @@
       "targetPath": "source/host/src/runner/computer_use.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "22df2bd6818ef6abb71bd1eecee6f235886037ea",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/computer_use.rs",
-        "source/host/src/runner/sand_action_audit.rs"
+        "source/host/src/host_runner_composition.rs",
+        "source/host/src/runner/host_computer_tool_dependencies.rs",
+        "source/host/src/runner/sand_action_audit.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/computer_use_coordination_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/computer_tool_projection_contract.rs",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/grok-rust-parity-finalize.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Runner now owns the frozen computer-use coordination state: one desktop window lease, per-subagent prewarm bookkeeping, fail-soft box/browser diagnostics, audit-kind counting, turn-usage aggregation, mixed-model projection and lazy navigation-probe ownership. Final remains withheld until generated computerUse/shell executor resources, remoteBox.ensureReady/browser prewarm and the concrete SandNavigationProbe are wired through this owner in the shipping generated Agent graph."
+      "notes": "Frozen computer-use coordination is now wired through the canonical Rust Runner/Host ownership path: ComputerUseCoordination owns the exclusive desktop control lease, fail-soft box/browser preparation state, audit/usage/model aggregation, navigation baseline, page-id URL dedupe, generation-fenced/coalesced 2s navigation probing, and browserNavigation audit projection. HostRunnerComposition remains the single composition owner; the shipping Host uses ForeverBox ensure_ready plus box-chrome --sand-prepare, ProductionComputerToolExecutor sends generated ComputerUse protobuf through the Host-owned box transport, enforces live human-takeover/control-lease checks, and invokes a post-action probe that executes the CDP page-list shell command through RunnerBoxResourcePort and publishes changed navigation through the existing action-audit sink. No parallel Computer/session owner was added. Exact-head 6a825c92dc1aa2633a8b301a423631c53a0dc367 evidence: Grok Rust parity finalize run 37094487428 executed computer_tool_projection_contract 11/11, computer_use_coordination_contract 5/5 (including navigation baseline/dedupe/coalescing), and host_runner_composition_production_wiring_contract 8/8 successfully before an unrelated Linux perf environment failure; Rust desktop runtime run 37094490618 rust-host job 111121519571 succeeded including independent Host Runner, prompt attachment, human Computer takeover, and ConversationActor/CapabilityBroker ownership; dedicated Ubuntu and Windows pressure-profiler jobs also succeeded; Desktop Chat Parity run 37094490687 completed successfully with focused Electron E2E evidence artifact 11264240178. The finalize workflow now prepares Linux perf exactly like the dedicated production pressure-profile job instead of weakening or skipping that native gate."
     },
     {
       "referencePath": "source/host/runner/conversation-outline.ts",

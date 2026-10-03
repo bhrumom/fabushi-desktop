@@ -41,6 +41,16 @@ jobs:
         with:
           workspaces: source/host -> target
           shared-key: grok-rust-parity-1.97.1
+      - name: Enable Linux perf sampling
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v perf >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y linux-tools-common linux-tools-generic
+          fi
+          sudo sysctl -w kernel.perf_event_paranoid=-1 || true
+          perf --version
       - name: Test Mahayana Runner parity contracts
         shell: bash
         run: |
