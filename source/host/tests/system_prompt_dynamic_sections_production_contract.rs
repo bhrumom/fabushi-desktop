@@ -63,11 +63,13 @@ fn shipping_provider_turn_consumes_dynamic_sections_in_frozen_order() {
     assert!(turn_prefix.contains("automation_status_reminder_for_turn("));
     assert!(turn_prefix.contains("note_automation_status_reminder("));
     assert!(collector.contains("pub struct PromptCollectorAutomationReminderState"));
-    assert!(turn_prefix.contains("read_agent_transcript_entries(&prompt_transcript_agent_id)"));
+    assert!(turn_prefix.contains("confirmed_user_turn_watermark("));
+    assert!(turn_prefix.contains("&prompt_watermark_sessions"));
+    assert!(turn_prefix.contains("&prompt_watermark_agent_id"));
     assert_eq!(source.matches(".prepend_unconfirmed_user_messages(").count(), 1);
     assert!(glue.contains("pub fn prepend_unconfirmed_user_messages("));
-    assert!(glue.contains("prepend_unconfirmed_user_messages_for_turn("));
-    assert!(collector.contains("pub fn prepend_unconfirmed_user_messages_for_turn("));
+    assert!(glue.contains("prepend_unconfirmed_user_messages_with_watermark_for_turn("));
+    assert!(collector.contains("pub fn prepend_unconfirmed_user_messages_with_watermark_for_turn("));
     assert!(collector.contains("collect_prepend_user_messages("));
 
     assert!(turn_prefix.contains("production_services()"));

@@ -510,6 +510,57 @@ fn is_confirmed_user_entry(entry: &Value) -> bool {
         && entry.get("confirmed").and_then(Value::as_bool) == Some(true)
 }
 
+pub fn prepend_unconfirmed_user_messages_with_watermark_for_turn(
+    args: &Value,
+    messages: &mut Vec<ProviderMessage>,
+    watermark: &WatermarkResult,
+) -> usize {
+    let current_message_id = optional_non_empty(args, "messageId");
+    let recent_user_messages = args
+        .get("recentUserMessages")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|message| {
+            let id = message.get("id")?.as_str()?.trim();
+            if id.is_empty() {
+                return None;
+            }
+            Some(RecentTerminalUserMessage {
+                id: id.to_string(),
+                text: message
+                    .get("text")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_string(),
+                rich_text: message
+                    .get("richText")
+                    .and_then(Value::as_str)
+                    .map(str::to_string),
+            })
+        })
+        .collect::<Vec<_>>();
+    let prepended =
+        collect_prepend_user_messages(&recent_user_messages, current_message_id, watermark);
+    if prepended.is_empty() {
+        return 0;
+    }
+    let Some(current_user_index) = messages.iter().rposition(|message| message.role == "user") else {
+        return 0;
+    };
+    let count = prepended.len();
+    for (offset, message) in prepended.into_iter().enumerate() {
+        messages.insert(
+            current_user_index + offset,
+            ProviderMessage {
+                role: "user".into(),
+                content: message.text,
+            },
+        );
+    }
+    count
+}
+
 pub fn prepend_unconfirmed_user_messages_for_turn(
     args: &Value,
     messages: &mut Vec<ProviderMessage>,

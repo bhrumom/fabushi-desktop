@@ -296,3 +296,32 @@ fn host_runner_composition_settles_only_its_owned_shutdown_surfaces() {
         "HostRunnerComposition must not duplicate TranscriptRunnerRegistry cancellation ownership",
     );
 }
+
+
+#[test]
+fn shell_terminal_watch_shipping_path_uses_canonical_permission_and_generated_watermark() {
+    let host = std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("app/src/main.rs"),
+    )
+    .expect("shipping host");
+    let composition = std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/host_runner_composition.rs"),
+    )
+    .expect("host runner composition");
+    let forever_box = std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("src/extensions/forever_box/runner_tools.rs"),
+    )
+    .expect("forever box runner tools");
+
+    assert!(host.contains(".with_background_read_permission(Arc::clone(&shell_watch_local_tool_permission))"));
+    assert!(forever_box.contains("SandLocalToolScope {"));
+    assert!(forever_box.contains("agent_id: self.agent_id.clone()"));
+    assert!(forever_box.contains("SandLocalToolRequest::simple(\"read-file\", output_path.clone())"));
+    assert!(host.contains("confirmed_user_turn_watermark("));
+    assert!(composition.contains("latest_checkpoint_bytes()"));
+    assert!(composition.contains("create_agent_blob_store(agent_id)"));
+    assert!(composition.contains("decode_conversation_turn_structure_fields"));
+    assert!(composition.contains("decode_user_message_identity_fields"));
+    assert!(composition.contains("find_confirmed_user_turn_watermark(&turns, None)"));
+}

@@ -13,9 +13,10 @@ use super::prompt_collector_glue::{
     PromptCollectorDynamicUserContext, ProviderPromptProjection,
     append_mcp_runtime_sections_for_turn, append_profile_system_section_for_turn,
     append_remote_runtime_sections_for_turn, apply_dynamic_user_context_for_turn,
-    prepend_unconfirmed_user_messages_for_turn, project_provider_messages_for_turn,
+    prepend_unconfirmed_user_messages_with_watermark_for_turn, project_provider_messages_for_turn,
 };
 use super::sand_agent_profile_prompt::{AgentProfileIdentity, AgentProfilePromptSnapshot};
+use super::shell_terminal_watch::WatermarkResult;
 use super::system_prompt_assembly::{ComputerPromptState, RemoteBoxPromptState};
 use super::tools::sand_file_transfer_tools::FileTransferController;
 use super::tools::sand_spotlight_tools::spotlight_prompt_section;
@@ -47,8 +48,8 @@ pub struct RunnerPromptAutomationState {
     pub is_silence_allowed: bool,
 }
 
-pub type RunnerPromptTranscriptGetter =
-    Arc<dyn Fn() -> Result<Vec<Value>, String> + Send + Sync>;
+pub type RunnerPromptWatermarkGetter =
+    Arc<dyn Fn() -> Result<WatermarkResult, String> + Send + Sync>;
 pub type RunnerPromptProfileGetter =
     Arc<dyn Fn() -> Result<RunnerPromptProfileState, String> + Send + Sync>;
 pub type RunnerPromptMcpGetter =
@@ -68,7 +69,7 @@ pub type RunnerPromptFeatureGate = Arc<dyn Fn() -> bool + Send + Sync>;
 #[derive(Clone)]
 pub struct RunnerPromptGlueOwner {
     pub is_subagent_runner: bool,
-    pub transcript_entries_for_turn: RunnerPromptTranscriptGetter,
+    pub confirmed_user_watermark_for_turn: RunnerPromptWatermarkGetter,
     pub profile_for_turn: RunnerPromptProfileGetter,
     pub mcp_for_turn: RunnerPromptMcpGetter,
     pub remote_for_turn: RunnerPromptRemoteGetter,
@@ -91,11 +92,11 @@ impl RunnerPromptGlueOwner {
         args: &Value,
         messages: &mut Vec<ProviderMessage>,
     ) -> Result<usize, String> {
-        let transcript_entries = (self.transcript_entries_for_turn)()?;
-        Ok(prepend_unconfirmed_user_messages_for_turn(
+        let watermark = (self.confirmed_user_watermark_for_turn)()?;
+        Ok(prepend_unconfirmed_user_messages_with_watermark_for_turn(
             args,
             messages,
-            &transcript_entries,
+            &watermark,
         ))
     }
 

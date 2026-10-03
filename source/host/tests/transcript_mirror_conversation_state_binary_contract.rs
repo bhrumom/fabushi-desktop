@@ -84,3 +84,33 @@ fn malformed_wire_shapes_fail_with_specific_decoder_errors() {
         TranscriptMirrorProtobufDecodeError::MismatchedGroup
     );
 }
+
+
+#[test]
+fn user_message_identity_decoder_reads_frozen_text_and_message_id_fields() {
+    fn push_varint(mut value: u64, output: &mut Vec<u8>) {
+        loop {
+            let mut byte = (value & 0x7f) as u8;
+            value >>= 7;
+            if value != 0 {
+                byte |= 0x80;
+            }
+            output.push(byte);
+            if value == 0 {
+                break;
+            }
+        }
+    }
+    fn push_bytes(field: u64, value: &[u8], output: &mut Vec<u8>) {
+        push_varint((field << 3) | 2, output);
+        push_varint(value.len() as u64, output);
+        output.extend_from_slice(value);
+    }
+
+    let mut bytes = Vec::new();
+    push_bytes(1, b"queued question", &mut bytes);
+    push_bytes(2, b"msg-queued", &mut bytes);
+    let decoded = decode_user_message_identity_fields(&bytes).expect("user message");
+    assert_eq!(decoded.text, "queued question");
+    assert_eq!(decoded.message_id, "msg-queued");
+}

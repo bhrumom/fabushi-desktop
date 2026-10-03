@@ -26,6 +26,10 @@ use crate::runner::production_turn_agent_owner::{
     ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
 };
 use crate::runner::prompt_collector_glue::PromptCollectorAutomationReminderState;
+use crate::runner::shell_terminal_watch::{
+    MaterializedTurn, MaterializedTurnKind, MaterializedUserMessage, WatermarkResult,
+    find_confirmed_user_turn_watermark,
+};
 use crate::runner::sand_agent_runner::SandAgentRunner;
 use crate::runner::subagent_runtime::SubagentRuntime;
 use crate::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
@@ -37,7 +41,11 @@ use crate::runner_production_bridge::{
     ProductionRunnerCompositionInput, create_production_runner,
     create_production_runner_composition_with_hooks,
 };
-use crate::transcript_mirror::conversation_state_binary::conversation_compaction_epoch;
+use crate::transcript_mirror::conversation_state_binary::{
+    ConversationTurnStructureFields, conversation_compaction_epoch,
+    decode_conversation_state_recovery_fields, decode_conversation_turn_structure_fields,
+    decode_user_message_identity_fields,
+};
 use crate::transcript_mirror::generated_occurrence_codec::{
     GeneratedTranscriptOccurrenceCodec, RejectGeneratedToolJsonProjection,
 };
@@ -164,6 +172,74 @@ impl HostRunnerComposition {
             true,
         )?;
         Ok(Some(Arc::new(sink)))
+    }
+
+    /// Resolve the frozen confirmed-user watermark from the canonical generated
+    /// Agent ConversationStateStructure and content-addressed BlobStore.
+    ///
+    /// Missing or unreadable referenced blobs fail closed as "a user turn
+    /// exists but its identity is unknown", preventing queued-message replay.
+    pub fn confirmed_user_turn_watermark(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        agent_id: &str,
+    ) -> Result<WatermarkResult, String> {
+        let agent_store = sessions.open_agent_store_owner(agent_id)?;
+        let state_bytes = agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        if state_bytes.is_empty() {
+            return Ok(WatermarkResult {
+                last_user_message_id: None,
+                has_user_turn: false,
+            });
+        }
+        let state = match decode_conversation_state_recovery_fields(&state_bytes) {
+            Ok(state) => state,
+            Err(_) => {
+                return Ok(WatermarkResult {
+                    last_user_message_id: None,
+                    has_user_turn: true,
+                });
+            }
+        };
+        let blob_store = sessions.create_agent_blob_store(agent_id)?;
+        let mut turns = Vec::with_capacity(state.turns.len());
+        for turn_ref in state.turns {
+            if turn_ref.is_empty() {
+                continue;
+            }
+            let kind = match blob_store.get_blob_blocking(&turn_ref) {
+                Ok(Some(turn_blob)) => match decode_conversation_turn_structure_fields(&turn_blob) {
+                    Ok(Some(ConversationTurnStructureFields::Shell { .. })) | Ok(None) => {
+                        MaterializedTurnKind::NonAgent
+                    }
+                    Ok(Some(ConversationTurnStructureFields::Agent { user_message, .. })) => {
+                        if user_message.is_empty() {
+                            MaterializedTurnKind::Agent { user_message: None }
+                        } else {
+                            match blob_store.get_blob_blocking(&user_message) {
+                                Ok(Some(user_blob)) => {
+                                    match decode_user_message_identity_fields(&user_blob) {
+                                        Ok(user) => MaterializedTurnKind::Agent {
+                                            user_message: Some(MaterializedUserMessage {
+                                                text: user.text,
+                                                message_id: user.message_id,
+                                                rich_text: None,
+                                            }),
+                                        },
+                                        Err(_) => MaterializedTurnKind::Unreadable,
+                                    }
+                                }
+                                _ => MaterializedTurnKind::Unreadable,
+                            }
+                        }
+                    }
+                    Err(_) => MaterializedTurnKind::Unreadable,
+                },
+                _ => MaterializedTurnKind::Unreadable,
+            };
+            turns.push(MaterializedTurn { turn_ref, kind });
+        }
+        Ok(find_confirmed_user_turn_watermark(&turns, None).result)
     }
 
     /// Read the durable conversation compaction epoch used by dynamic prompt projection.

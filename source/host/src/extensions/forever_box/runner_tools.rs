@@ -3,6 +3,9 @@ use std::sync::{Arc, Mutex};
 use serde_json::{Value, json};
 
 use crate::extensions::inference::provider_session::ProviderSessionError;
+use crate::extensions::local_tool_permission::local_tool_permission_controller::{
+    SandLocalToolPermissionController, SandLocalToolRequest, SandLocalToolScope,
+};
 use crate::r#box::box_file_transfer::{FileTransferAccessor, WriteExecResult};
 use crate::r#box::box_windows::touch_sand_monitor_busy_lease;
 use crate::r#box::box_shell_command::{
@@ -58,6 +61,7 @@ pub struct ForeverBoxRunnerResourcePort {
     agent_id: String,
     coordinator: Arc<Mutex<RemoteBoxResourceCoordinator<Arc<Mutex<crate::r#box::generated_production::ProductionBoxResourceAccessor>>>>>,
     background_shell_watches: Option<Arc<RunnerBackgroundShellWatches>>,
+    background_read_permission: Option<Arc<SandLocalToolPermissionController>>,
     remote_lifecycle: Arc<Mutex<Option<ForeverBoxRemoteResourceLifecycle>>>,
 }
 
@@ -75,6 +79,7 @@ impl ForeverBoxRunnerResourcePort {
                 None,
             ))),
             background_shell_watches: None,
+            background_read_permission: None,
             remote_lifecycle: Arc::new(Mutex::new(None)),
         }
     }
@@ -84,6 +89,17 @@ impl ForeverBoxRunnerResourcePort {
         watches: Arc<RunnerBackgroundShellWatches>,
     ) -> Self {
         self.background_shell_watches = Some(watches);
+        self
+    }
+
+    /// Bind the canonical Host local-tool permission owner used by frozen
+    /// shell-terminal polling. The read is authorized with an agent-scoped
+    /// scope and no tool-call identity, matching sandLocalToolScopeKey.
+    pub fn with_background_read_permission(
+        mut self,
+        controller: Arc<SandLocalToolPermissionController>,
+    ) -> Self {
+        self.background_read_permission = Some(controller);
         self
     }
 
@@ -147,6 +163,23 @@ impl ForeverBoxRunnerResourcePort {
         };
         let folder = connection.terminals_folder.trim_end_matches('/');
         let output_path = format!("{folder}/{shell_id}.txt");
+        if let Some(controller) = self.background_read_permission.as_ref() {
+            let scope = SandLocalToolScope {
+                agent_id: self.agent_id.clone(),
+                tool_call_id: None,
+                action: Some("read-file".into()),
+                direction_epoch: Some(controller.direction_epoch(&self.agent_id)),
+            };
+            let decision = controller.authorize(
+                Some(&scope),
+                &SandLocalToolRequest::simple("read-file", output_path.clone()),
+            );
+            if !decision.allowed {
+                return ShellTerminalPollRead::PermissionDenied {
+                    output_path: Some(output_path),
+                };
+            }
+        }
         let mut accessor = connection
             .resource
             .lock()

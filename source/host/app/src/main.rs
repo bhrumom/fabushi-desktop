@@ -4961,17 +4961,14 @@ fn start_routed_provider_task(
     };
     let prompt_remote_lease_state = Arc::new(Mutex::new((true, false, None::<u32>)));
 
-    let prompt_transcript_sessions = Arc::clone(&session_workers);
-    let prompt_transcript_agent_id = agent_id.clone();
-    let transcript_entries_for_turn = Arc::new(move || {
-        prompt_transcript_sessions
-            .read_agent_transcript_entries(&prompt_transcript_agent_id)
-            .map_err(|error| {
-                format!(
-                    "could not read production transcript recovery watermark for {}: {error}",
-                    prompt_transcript_agent_id
-                )
-            })
+    let prompt_watermark_sessions = Arc::clone(&session_workers);
+    let prompt_watermark_owner = Arc::clone(&host_runner_composition);
+    let prompt_watermark_agent_id = agent_id.clone();
+    let confirmed_user_watermark_for_turn = Arc::new(move || {
+        prompt_watermark_owner.confirmed_user_turn_watermark(
+            &prompt_watermark_sessions,
+            &prompt_watermark_agent_id,
+        )
     });
 
     let prompt_profile_sessions = Arc::clone(&session_workers);
@@ -5162,7 +5159,7 @@ fn start_routed_provider_task(
     let prompt_experiments = Arc::clone(&experiments);
     let prompt_owner = RunnerPromptGlueOwner {
         is_subagent_runner: generated_parent_agent_id.is_some(),
-        transcript_entries_for_turn,
+        confirmed_user_watermark_for_turn,
         profile_for_turn,
         mcp_for_turn,
         remote_for_turn,
@@ -11155,6 +11152,7 @@ fn main() {
         })),
     ));
     let shell_watch_box = Arc::clone(&forever_box);
+    let shell_watch_local_tool_permission = local_tool_permission_extension.controller();
     let shell_watch_pending_store = transcript_runtime.pending_wake_store().cloned();
     let shell_watch_pending_events = gateway_events.clone();
     let shell_watch_settled = Arc::clone(&completion_revivals);
@@ -11169,7 +11167,8 @@ fn main() {
             let resources = ForeverBoxRunnerResourcePort::new(
                 Arc::clone(&shell_watch_box),
                 agent_id.to_string(),
-            );
+            )
+            .with_background_read_permission(Arc::clone(&shell_watch_local_tool_permission));
             let poll_ms = shell_rewatch_poll_ms(
                 std::env::var("SAND_SHELL_REWATCH_POLL_MS")
                     .ok()

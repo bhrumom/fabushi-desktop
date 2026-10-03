@@ -308,6 +308,31 @@ pub fn decode_summary_archive_message_ids(
 }
 
 
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct UserMessageIdentityFields {
+    pub text: String,
+    pub message_id: String,
+}
+
+pub fn decode_user_message_identity_fields(
+    bytes: &[u8],
+) -> Result<UserMessageIdentityFields, TranscriptMirrorProtobufDecodeError> {
+    let mut cursor = Cursor { offset: 0 };
+    let mut decoded = UserMessageIdentityFields::default();
+    while cursor.offset < bytes.len() {
+        let tag = read_varint(bytes, &mut cursor)?;
+        let field_number = tag / 8;
+        let wire_type = (tag & 7) as u8;
+        match (field_number, wire_type) {
+            (1, 2) => decoded.text = read_string(bytes, &mut cursor)?,
+            (2, 2) => decoded.message_id = read_string(bytes, &mut cursor)?,
+            _ => skip_field(bytes, &mut cursor, wire_type, field_number)?,
+        }
+    }
+    Ok(decoded)
+}
+
 pub fn decode_conversation_turn_structure_fields(
     bytes: &[u8],
 ) -> Result<Option<ConversationTurnStructureFields>, TranscriptMirrorProtobufDecodeError> {

@@ -24,6 +24,7 @@ use mahayana_host_runtime::runner::tools::sand_file_transfer_tools::{
     FileTransferController, UserComputerHandle,
 };
 use serde_json::{Value, json};
+use mahayana_host_runtime::runner::shell_terminal_watch::WatermarkResult;
 
 #[derive(Default)]
 struct MemoryBox {
@@ -163,7 +164,6 @@ fn glue_applies_single_large_output_spill_policy() {
 
 #[test]
 fn live_owner_reads_mutable_prompt_inputs_at_phase_time() {
-    let transcript_entries = Arc::new(Mutex::new(Vec::<Value>::new()));
     let profile_name = Arc::new(Mutex::new("Live Agent".to_string()));
     let mcp_state = Arc::new(Mutex::new(RunnerPromptMcpState {
         installed_servers: vec![json!({
@@ -179,10 +179,12 @@ fn live_owner_reads_mutable_prompt_inputs_at_phase_time() {
 
     let owner = RunnerPromptGlueOwner {
         is_subagent_runner: false,
-        transcript_entries_for_turn: {
-            let entries = Arc::clone(&transcript_entries);
-            Arc::new(move || Ok(entries.lock().unwrap().clone()))
-        },
+        confirmed_user_watermark_for_turn: Arc::new(|| {
+            Ok(WatermarkResult {
+                last_user_message_id: None,
+                has_user_turn: false,
+            })
+        }),
         profile_for_turn: {
             let profile_name = Arc::clone(&profile_name);
             Arc::new(move || -> Result<RunnerPromptProfileState, String> {
