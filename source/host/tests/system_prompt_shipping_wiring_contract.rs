@@ -66,6 +66,11 @@ fn shipping_provider_consumes_live_box_and_computer_state_in_frozen_prompt_order
         "control_lease_active: lease.1",
         "human_takeover_pending",
         "window_index: lease.2",
+        "get_status(&prompt_remote_agent_id)",
+        ".is_available()",
+        ".shared_desktop()",
+        "prompt_remote_handoff",
+        ".get(&prompt_remote_agent_id)",
     ] {
         assert!(
             shipping_remote_owner.contains(production_binding),
@@ -74,11 +79,7 @@ fn shipping_provider_consumes_live_box_and_computer_state_in_frozen_prompt_order
     }
 
     for production_binding in [
-        "forever_box.get_status(&agent_id)",
-        "forever_box.box_().is_available()",
-        "forever_box.box_().inner().shared_desktop().is_some()",
         "forever_box.box_().get_agent_window_index(&agent_id)",
-        "session_handoff.get(&agent_id).is_some()",
         ".with_availability_check(Arc::new(move |args|",
         "ComputerToolExposure::ScreenshotOnly",
         "ComputerToolExposure::Full",
