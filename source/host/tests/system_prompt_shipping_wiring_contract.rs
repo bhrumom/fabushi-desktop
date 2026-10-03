@@ -2,19 +2,56 @@ const SHIPPING_BOX_RUNNER: &str = include_str!("../src/extensions/forever_box/ru
 const HOST_RUNNER_COMPOSITION: &str = include_str!("../src/host_runner_composition.rs");
 const COMPUTER_USE_OWNER: &str = include_str!("../src/runner/computer_use.rs");
 const SHIPPING_HOST_MAIN: &str = include_str!("../app/src/main.rs");
+const PROMPT_COLLECTOR_GLUE: &str = include_str!("../src/runner/prompt_collector_glue.rs");
 
 #[test]
 fn shipping_provider_consumes_live_box_and_computer_state_in_frozen_prompt_order() {
     let mcp = SHIPPING_HOST_MAIN
-        .find("append_mcp_system_prompt_sections(")
-        .expect("shipping MCP prompt binding");
+        .find("append_mcp_runtime_sections_for_turn(")
+        .expect("shipping prompt-collector MCP binding");
     let remote = SHIPPING_HOST_MAIN
-        .find("append_remote_box_system_prompt(")
-        .expect("shipping remote-box prompt binding");
-    let computer = SHIPPING_HOST_MAIN
-        .find("append_computer_system_prompt(")
-        .expect("shipping Computer prompt binding");
-    assert!(mcp < remote && remote < computer);
+        .find("append_remote_runtime_sections_for_turn(")
+        .expect("shipping prompt-collector remote/computer binding");
+    assert!(mcp < remote);
+
+    let mcp_owner = PROMPT_COLLECTOR_GLUE
+        .find("pub fn append_mcp_runtime_sections_for_turn(")
+        .expect("prompt collector MCP owner");
+    let remote_owner = PROMPT_COLLECTOR_GLUE
+        .find("pub fn append_remote_runtime_sections_for_turn(")
+        .expect("prompt collector remote/computer owner");
+    assert!(mcp_owner < remote_owner);
+
+    let mcp_body = &PROMPT_COLLECTOR_GLUE[mcp_owner..remote_owner];
+    assert!(mcp_body.contains("append_mcp_system_prompt_sections("));
+    assert!(mcp_body.contains("!is_subagent_runner"));
+
+    let remote_body = &PROMPT_COLLECTOR_GLUE[remote_owner..];
+    let remote_delegate = remote_body
+        .find("append_remote_box_system_prompt(messages, remote_box)")
+        .expect("canonical remote-box prompt delegate");
+    let computer_delegate = remote_body
+        .find("append_computer_system_prompt(messages, computer)")
+        .expect("canonical Computer prompt delegate");
+    assert!(remote_delegate < computer_delegate);
+
+    let shipping_remote_tail = &SHIPPING_HOST_MAIN[remote..];
+    for production_binding in [
+        "role: prompt_role",
+        "available: shipping_box_available",
+        "runtime_state: shipping_box_status.state.clone()",
+        "desktop_capable: shipping_desktop_capable",
+        "desktop_ready: shipping_desktop_ready",
+        "box_available: shipping_box_available",
+        "control_lease_active: computer_control_lease_active",
+        "human_takeover_pending",
+        "window_index: shipping_window_index",
+    ] {
+        assert!(
+            shipping_remote_tail.contains(production_binding),
+            "prompt collector does not receive live shipping state: {production_binding}"
+        );
+    }
 
     for production_binding in [
         "forever_box.get_status(&agent_id)",
@@ -32,6 +69,22 @@ fn shipping_provider_consumes_live_box_and_computer_state_in_frozen_prompt_order
             "missing shipping production binding: {production_binding}"
         );
     }
+
+    assert_eq!(
+        SHIPPING_HOST_MAIN.matches("append_mcp_system_prompt_sections(").count(),
+        0,
+        "shipping Host must delegate MCP prompt ownership through prompt collector"
+    );
+    assert_eq!(
+        SHIPPING_HOST_MAIN.matches("append_remote_box_system_prompt(").count(),
+        0,
+        "shipping Host must delegate remote-box prompt ownership through prompt collector"
+    );
+    assert_eq!(
+        SHIPPING_HOST_MAIN.matches("append_computer_system_prompt(").count(),
+        0,
+        "shipping Host must delegate Computer prompt ownership through prompt collector"
+    );
 }
 
 
