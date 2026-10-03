@@ -757,7 +757,7 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
                     surface: surface.to_string(),
                 });
             }
-            if name == "AwaitShell" || name == "awaitToolCall" {
+            if matches!(name, "AwaitShell" | "ExternalAwaitShell" | "awaitToolCall") {
                 let block_until_ms = args
                     .get("block_until_ms")
                     .or_else(|| args.get("blockUntilMs"))
@@ -829,7 +829,7 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
                     connector: "unknown".into(),
                 });
             }
-            if name == "AwaitShell" || name == "awaitToolCall" {
+            if matches!(name, "AwaitShell" | "ExternalAwaitShell" | "awaitToolCall") {
                 let block_until_ms = args
                     .get("block_until_ms")
                     .or_else(|| args.get("blockUntilMs"))

@@ -6,12 +6,21 @@ use crate::cloud_agents::cloud_agent_tool::{
 use crate::runner::box_tool_access::{
     BoxShellAutoReviewCallback, RunnerBoxResourcePort, RunnerBoxToolBridge,
 };
+use crate::extensions::inference::provider_session::{
+    ProviderPartialToolCall, ProviderSessionError, RoutedMcpMetaToolDefinition,
+    RoutedToolDefinition,
+};
+use crate::ports::mcp_state_executor::{
+    McpStateExecResult, SandMcpToolProvider, execute_mcp_state as execute_canonical_mcp_state,
+};
 use crate::runner::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedToolBridge,
 };
 use crate::runner::subagent_runtime::SubagentRuntime;
 
 use super::box_help_tool::BoxHelpToolBridge;
+use super::mcp_meta_tools::McpMetaToolBridge;
+use super::sand_await_shell_tool::SandAwaitShellToolBridge;
 use super::sand_agent_management_tools::{
     AgentManagementSink, AgentManagementToolBridge,
 };
@@ -30,6 +39,7 @@ use super::sand_state_tool::{
 use super::sand_multitask_todo_tool::{
     MultitaskTodoState, SandMultitaskTodoToolBridge,
 };
+use super::sand_mcp_management_tools::{McpManagementSink, McpManagementToolBridge};
 use super::send_message_tool::{SendMessageInteractionSink, SendMessageSink, SendMessageToolBridge};
 use super::sand_task_subagent_tool::{
     SubagentTaskReviewCallback, SubagentTaskSink, SubagentTaskToolBridge,
@@ -37,6 +47,78 @@ use super::sand_task_subagent_tool::{
 use super::sand_subagent_management_tools::{
     SubagentManagementToolBridge, SubagentSteerReviewCallback,
 };
+
+struct TurnToolsetMcpProvider<'a> {
+    bridge: &'a dyn RoutedToolBridge,
+}
+
+impl SandMcpToolProvider for TurnToolsetMcpProvider<'_> {
+    fn get_tools(&self) -> Result<Vec<RoutedToolDefinition>, String> {
+        self.bridge.list_tools().map_err(|error| error.to_string())
+    }
+}
+
+pub struct TurnToolsetMcpProjectionBridge {
+    delegate: Arc<dyn RoutedToolBridge>,
+    projected_tools: Option<Arc<Vec<RoutedToolDefinition>>>,
+}
+
+impl TurnToolsetMcpProjectionBridge {
+    fn new(
+        delegate: Arc<dyn RoutedToolBridge>,
+        projected_tools: Option<Arc<Vec<RoutedToolDefinition>>>,
+    ) -> Self {
+        Self { delegate, projected_tools }
+    }
+}
+
+impl RoutedToolBridge for TurnToolsetMcpProjectionBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        if let Some(projected_tools) = self.projected_tools.as_ref() {
+            return Ok(projected_tools.as_ref().clone());
+        }
+        let McpStateExecResult::Success(state) = execute_canonical_mcp_state(
+            &TurnToolsetMcpProvider { bridge: self.delegate.as_ref() },
+        )
+        .map_err(|error| ProviderSessionError::Tool(format!("MCP state projection failed: {error}")))?;
+        Ok(state.servers.into_iter().flat_map(|server| server.tools).map(|tool| RoutedToolDefinition {
+            name: tool.name,
+            provider_identifier: tool.provider_identifier,
+            tool_name: tool.tool_name,
+            description: tool.description,
+            input_schema: tool.input_schema,
+        }).collect())
+    }
+
+    fn observe_partial_tool_call(&self, partial: &ProviderPartialToolCall) -> Result<(), ProviderSessionError> {
+        self.delegate.observe_partial_tool_call(partial)
+    }
+
+    fn call_tool(&self, tool: &RoutedToolDefinition, args: serde_json::Value, tool_call_id: &str) -> Result<serde_json::Value, ProviderSessionError> {
+        self.delegate.call_tool(tool, args, tool_call_id)
+    }
+}
+
+pub fn project_turn_mcp_toolset(
+    base: Arc<dyn RoutedToolBridge>,
+    projected_tools: Option<Arc<Vec<RoutedToolDefinition>>>,
+    projected_meta_tools: Option<Arc<Vec<RoutedMcpMetaToolDefinition>>>,
+    mcp_meta_enabled: bool,
+) -> Result<Arc<dyn RoutedToolBridge>, ProviderSessionError> {
+    let source_meta_tools = if mcp_meta_enabled {
+        Some(match projected_meta_tools {
+            Some(tools) => tools.as_ref().clone(),
+            None => base.list_mcp_meta_tools()?,
+        })
+    } else {
+        None
+    };
+    let bridge: Arc<dyn RoutedToolBridge> = Arc::new(TurnToolsetMcpProjectionBridge::new(base, projected_tools));
+    Ok(match source_meta_tools {
+        Some(tools) => Arc::new(McpMetaToolBridge::new(bridge, tools)),
+        None => bridge,
+    })
+}
 
 /// Per-turn Runner tool dependency projection.
 ///
@@ -54,6 +136,7 @@ pub struct TurnToolsetDependencies {
     pub file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
     pub external_machine_executor: Option<Arc<dyn ExternalMachineExecutor>>,
     pub external_shell_review: Option<ExternalShellAutoReviewCallback>,
+    pub mcp_management_sink: Option<Arc<dyn McpManagementSink>>,
     pub send_message_sink: Option<Arc<dyn SendMessageSink>>,
     pub send_message_interaction_sink: Option<Arc<dyn SendMessageInteractionSink>>,
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
@@ -75,9 +158,16 @@ pub fn build_turn_toolset(
     base: Arc<dyn RoutedToolBridge>,
     dependencies: TurnToolsetDependencies,
 ) -> Arc<dyn RoutedToolBridge> {
+    let await_box_resources = dependencies.box_resources.clone();
+    let await_external_machine = dependencies.external_machine_executor.clone();
+    let await_cancellation = dependencies.cancellation.clone();
+    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.mcp_management_sink {
+        Some(management) => Arc::new(McpManagementToolBridge::new(base, management)),
+        None => base,
+    };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.box_resources {
         Some(box_resources) => {
-            let mut box_bridge = RunnerBoxToolBridge::new(base, box_resources);
+            let mut box_bridge = RunnerBoxToolBridge::new(bridge, box_resources);
             if let Some(review) = dependencies.box_shell_review {
                 box_bridge = box_bridge.with_shell_review(review);
             }
@@ -109,6 +199,16 @@ pub fn build_turn_toolset(
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.file_transfer_executor {
         Some(executor) => Arc::new(SandFileTransferToolBridge::new(bridge, executor)),
         None => bridge,
+    };
+    let bridge: Arc<dyn RoutedToolBridge> = if await_box_resources.is_some() || await_external_machine.is_some() {
+        Arc::new(SandAwaitShellToolBridge::new(
+            bridge,
+            await_box_resources,
+            await_external_machine,
+            await_cancellation,
+        ))
+    } else {
+        bridge
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.reaction_sink {
         Some(sink) => Arc::new(ReactionToolBridge::new(bridge, sink)),

@@ -8,6 +8,7 @@ use crate::extensions::local_exec::gateway_local_exec_sand_box::{
     GatewayLocalExecManager, GatewayLocalToolGate, GatewayLocalToolScope,
 };
 use crate::extensions::local_tool_permission::extension::HostLocalToolPermissionExtension;
+use crate::runner::shell_terminal_watch::{ShellTerminalPollRead, TerminalReadResult};
 use crate::runner::tools::sand_external_machine_tools::{
     ExternalMachineExecutor, ExternalMachineReadArgs, ExternalMachineShellArgs,
 };
@@ -65,6 +66,54 @@ impl ExternalMachineExecutor for ProductionExternalMachineExecutor {
             "cwd": result.cwd,
             "aborted": result.aborted
         }))
+    }
+
+    fn poll_background_shell_terminal(
+        &self,
+        shell_id: &str,
+        tool_call_id: &str,
+    ) -> ShellTerminalPollRead {
+        let folder = self.manager.terminals_folder();
+        let output_path = format!("{}/{}.txt", folder.trim_end_matches('/'), shell_id.trim());
+        let value = match self.execute_read(&ExternalMachineReadArgs {
+            path: output_path.clone(),
+            offset: None,
+            limit: None,
+            encoding_hint: None,
+            tool_call_id: tool_call_id.to_string(),
+        }) {
+            Ok(value) => value,
+            Err(error) => {
+                let message = error.to_string();
+                let lower = message.to_ascii_lowercase();
+                if lower.contains("permission") || lower.contains("approved") {
+                    return ShellTerminalPollRead::PermissionDenied { output_path: Some(output_path) };
+                }
+                if lower.contains("not found") || lower.contains("no such file") {
+                    return ShellTerminalPollRead::Snapshot {
+                        output_path,
+                        result: TerminalReadResult::FileNotFound,
+                    };
+                }
+                return ShellTerminalPollRead::TransientFailure(message);
+            }
+        };
+        if value.get("fileNotFound").is_some() {
+            return ShellTerminalPollRead::Snapshot { output_path, result: TerminalReadResult::FileNotFound };
+        }
+        if value.get("permissionDenied").is_some() {
+            return ShellTerminalPollRead::PermissionDenied { output_path: Some(output_path) };
+        }
+        let Some(success) = value.get("success") else {
+            return ShellTerminalPollRead::TransientFailure(format!(
+                "local-exec terminal read returned an unsupported result: {value}"
+            ));
+        };
+        let content = success.get("content").and_then(Value::as_str).unwrap_or_default().to_string();
+        ShellTerminalPollRead::Snapshot {
+            output_path,
+            result: TerminalReadResult::SuccessText(content),
+        }
     }
 
     fn execute_read(

@@ -417,6 +417,10 @@ impl ForeverBoxRunnerResourcePort {
 }
 
 impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
+    fn poll_background_shell_terminal(&self, shell_id: &str) -> ShellTerminalPollRead {
+        self.read_background_shell_terminal(shell_id)
+    }
+
     fn execute_shell(
         &self,
         request: RunnerBoxShellRequest,

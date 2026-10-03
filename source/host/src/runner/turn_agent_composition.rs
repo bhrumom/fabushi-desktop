@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
-    ProviderMessage, ProviderPartialToolCall, ProviderSessionError, ProviderTokenUsage,
+    ProviderMessage, ProviderSessionError, ProviderTokenUsage,
     RoutedMcpMetaToolDefinition, RoutedProvider, RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
@@ -43,15 +43,14 @@ use super::tools::sand_file_transfer_tools::FileTransferExecutor;
 use super::tools::sand_external_machine_tools::{
     ExternalMachineExecutor, ExternalShellAutoReviewCallback,
 };
-use super::tools::sand_mcp_management_tools::{McpManagementSink, McpManagementToolBridge};
-use super::tools::mcp_meta_tools::McpMetaToolBridge;
+use super::tools::sand_mcp_management_tools::McpManagementSink;
 use super::tools::sand_state_tool::{
     RoutineAutoReviewCallback, RoutinePostWriteCallback, SandStateWriter,
     StateApprovalBarrier,
 };
 use super::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use super::tools::turn_toolset::{
-    TurnToolsetDependencies, build_turn_toolset, fence_turn_toolset,
+    TurnToolsetDependencies, build_turn_toolset, fence_turn_toolset, project_turn_mcp_toolset,
 };
 
 struct RoutedBridgeMcpToolProvider<'a> {
@@ -71,79 +70,6 @@ struct FrozenRoutedMcpToolProvider<'a> {
 impl SandMcpToolProvider for FrozenRoutedMcpToolProvider<'_> {
     fn get_tools(&self) -> Result<Vec<RoutedToolDefinition>, String> {
         Ok(self.tools.iter().map(|source| source.tool.clone()).collect())
-    }
-}
-
-/// Canonical MCP-state projection adapter for the shipping routed-tool bridge.
-///
-/// Tool discovery is projected through the recovered Grok MCP-state executor before
-/// the Runner adds its built-in turn tools. Tool execution and partial-call
-/// observation remain owned by the existing routed-tool bridge.
-pub struct McpStateProjectedRoutedToolBridge {
-    delegate: Arc<dyn RoutedToolBridge>,
-    projected_tools: Option<Arc<Vec<RoutedToolDefinition>>>,
-}
-
-impl McpStateProjectedRoutedToolBridge {
-    pub fn new(delegate: Arc<dyn RoutedToolBridge>) -> Self {
-        Self {
-            delegate,
-            projected_tools: None,
-        }
-    }
-
-    pub fn with_projected_tools(
-        delegate: Arc<dyn RoutedToolBridge>,
-        projected_tools: Option<Arc<Vec<RoutedToolDefinition>>>,
-    ) -> Self {
-        Self {
-            delegate,
-            projected_tools,
-        }
-    }
-}
-
-impl RoutedToolBridge for McpStateProjectedRoutedToolBridge {
-    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
-        if let Some(projected_tools) = self.projected_tools.as_ref() {
-            return Ok(projected_tools.as_ref().clone());
-        }
-        let McpStateExecResult::Success(state) =
-            execute_canonical_mcp_state(&RoutedBridgeMcpToolProvider {
-                bridge: self.delegate.as_ref(),
-            })
-            .map_err(|error| {
-                ProviderSessionError::Tool(format!("MCP state projection failed: {error}"))
-            })?;
-
-        Ok(state
-            .servers
-            .into_iter()
-            .flat_map(|server| server.tools)
-            .map(|tool| RoutedToolDefinition {
-                name: tool.name,
-                provider_identifier: tool.provider_identifier,
-                tool_name: tool.tool_name,
-                description: tool.description,
-                input_schema: tool.input_schema,
-            })
-            .collect())
-    }
-
-    fn observe_partial_tool_call(
-        &self,
-        partial: &ProviderPartialToolCall,
-    ) -> Result<(), ProviderSessionError> {
-        self.delegate.observe_partial_tool_call(partial)
-    }
-
-    fn call_tool(
-        &self,
-        tool: &RoutedToolDefinition,
-        args: serde_json::Value,
-        tool_call_id: &str,
-    ) -> Result<serde_json::Value, ProviderSessionError> {
-        self.delegate.call_tool(tool, args, tool_call_id)
     }
 }
 
@@ -720,21 +646,12 @@ impl TurnAgentComposition {
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
         self.reset_latest_provider_checkpoint();
-        let bridge: Arc<dyn RoutedToolBridge> = Arc::new(
-            McpStateProjectedRoutedToolBridge::with_projected_tools(
-                Arc::clone(&self.bridge),
-                self.projected_mcp_tools.clone(),
-            ),
-        );
-        let bridge: Arc<dyn RoutedToolBridge> = if self.mcp_meta_enabled {
-            let source_tools = match self.projected_mcp_meta_tools.as_ref() {
-                Some(tools) => tools.as_ref().clone(),
-                None => self.bridge.list_mcp_meta_tools()?,
-            };
-            Arc::new(McpMetaToolBridge::new(bridge, source_tools))
-        } else {
-            bridge
-        };
+        let bridge = project_turn_mcp_toolset(
+            Arc::clone(&self.bridge),
+            self.projected_mcp_tools.clone(),
+            self.projected_mcp_meta_tools.clone(),
+            self.mcp_meta_enabled,
+        )?;
         let bridge: Arc<dyn RoutedToolBridge> = match &self.observation {
             Some(observation) => Arc::new(McpObservedRoutedToolBridge::new(
                 bridge,
@@ -746,13 +663,6 @@ impl TurnAgentComposition {
             Some(config) => Arc::new(AuditedRoutedToolBridge::new(
                 bridge,
                 config.clone(),
-            )),
-            None => bridge,
-        };
-        let bridge: Arc<dyn RoutedToolBridge> = match &self.mcp_management_sink {
-            Some(management) => Arc::new(McpManagementToolBridge::new(
-                bridge,
-                Arc::clone(management),
             )),
             None => bridge,
         };
@@ -773,6 +683,7 @@ impl TurnAgentComposition {
                 file_transfer_executor: self.file_transfer_executor.clone(),
                 external_machine_executor: self.external_machine_executor.clone(),
                 external_shell_review: self.external_shell_review.clone(),
+                mcp_management_sink: self.mcp_management_sink.clone(),
                 send_message_sink: self.send_message_sink.clone(),
                 send_message_interaction_sink,
                 reaction_sink: self.reaction_sink.clone(),

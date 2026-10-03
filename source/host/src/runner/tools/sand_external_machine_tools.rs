@@ -5,6 +5,7 @@ use serde_json::{Value, json};
 
 use crate::extensions::inference::provider_session::{ProviderSessionError, RoutedToolDefinition};
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
+use crate::runner::shell_terminal_watch::ShellTerminalPollRead;
 use crate::sand_activity::{SAND_EXTERNAL_READ_TOOL_NAME, SAND_EXTERNAL_SHELL_TOOL_NAME};
 
 pub const EXTERNAL_MACHINE_TOOL_PROVIDER: &str = "mahayana-local-exec";
@@ -28,6 +29,16 @@ pub struct ExternalMachineReadArgs {
 pub trait ExternalMachineExecutor: Send + Sync {
     fn execute_shell(&self, args: &ExternalMachineShellArgs) -> Result<Value, ProviderSessionError>;
     fn execute_read(&self, args: &ExternalMachineReadArgs) -> Result<Value, ProviderSessionError>;
+
+    fn poll_background_shell_terminal(
+        &self,
+        _shell_id: &str,
+        _tool_call_id: &str,
+    ) -> ShellTerminalPollRead {
+        ShellTerminalPollRead::TransientFailure(
+            "External background terminal polling is unavailable".into(),
+        )
+    }
 }
 
 pub type ExternalShellAutoReviewCallback = Arc<

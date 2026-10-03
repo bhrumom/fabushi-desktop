@@ -8,6 +8,7 @@ use crate::extensions::inference::provider_session::{
 };
 
 use super::large_output_spill::{MCP_TEXT_FILE_THRESHOLD_BYTES, is_large_output_spill_enabled, maybe_spill_mcp_text_result};
+use super::shell_terminal_watch::ShellTerminalPollRead;
 use super::routed_provider_runtime::RoutedToolBridge;
 
 pub const RUNNER_BOX_TOOL_PROVIDER: &str = "mahayana-box";
@@ -72,6 +73,12 @@ pub trait RunnerBoxResourcePort: Send + Sync {
         &self,
         request: RunnerBoxWriteRequest,
     ) -> Result<(), ProviderSessionError>;
+
+    fn poll_background_shell_terminal(&self, _shell_id: &str) -> ShellTerminalPollRead {
+        ShellTerminalPollRead::TransientFailure(
+            "Box background terminal polling is unavailable for this agent".into(),
+        )
+    }
 
     /// Execute the generated Grok ComputerUse protobuf through the Host-owned
     /// box transport. Runner owns the tool contract; Host owns the remote

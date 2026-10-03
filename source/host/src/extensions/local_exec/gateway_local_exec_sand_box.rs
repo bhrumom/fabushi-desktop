@@ -364,6 +364,10 @@ impl GatewayLocalExecSandBox {
 
 
 impl GatewayLocalExecManager {
+    pub fn terminals_folder(&self) -> String {
+        self.sandbox.terminals_folder()
+    }
+
     fn next_id(&self) -> u32 {
         let id = self.next_exec_id.fetch_add(1, Ordering::Relaxed);
         if id == 0 { 1 } else { id }

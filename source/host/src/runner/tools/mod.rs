@@ -23,6 +23,7 @@ pub mod sand_task_subagent_tool;
 
 pub mod sand_file_transfer_tools;
 pub mod sand_external_machine_tools;
+pub mod sand_await_shell_tool;
 
 pub mod sand_computer_tool;
 
