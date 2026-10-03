@@ -200,6 +200,7 @@ fn closing_send_nudge_uses_the_same_hidden_checkpoint_identity_rules() {
         recent_message_text: Some("original".into()),
         recent_message_rich_text: Some("<p>original</p>".into()),
         recent_user_messages: Vec::new(),
+        turn_started_at_ms: Some(41),
         is_fork: true,
         attachment_count: 3,
         image_count: 1,
