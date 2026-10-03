@@ -65,6 +65,35 @@ pub trait GatewayLocalToolGate: Send + Sync {
     ) -> Result<Option<String>, SandLocalExecError>;
 }
 
+fn authorize_host_local_tool(
+    permission: &HostLocalToolPermissionExtension,
+    scope: &GatewayLocalToolScope,
+    action: &str,
+    target: &str,
+    direction_epoch: Option<u64>,
+) -> Result<Option<String>, SandLocalExecError> {
+    let sand_scope = scope.agent_id.as_ref().map(|agent_id| SandLocalToolScope {
+        agent_id: agent_id.clone(),
+        tool_call_id: scope.tool_call_id.clone(),
+        action: scope.action.clone(),
+        direction_epoch,
+    });
+    let decision = HostLocalToolPermissionExtension::authorize(
+        permission,
+        sand_scope.as_ref(),
+        &SandLocalToolRequest::simple(action, target),
+    );
+    if decision.allowed {
+        Ok(decision.approval_id)
+    } else {
+        Err(SandLocalExecError::new(
+            decision
+                .reason
+                .unwrap_or_else(|| "Local tool permission denied".to_string()),
+        ))
+    }
+}
+
 impl GatewayLocalToolGate for HostLocalToolPermissionExtension {
     fn blocked_reason(&self) -> Option<String> {
         HostLocalToolPermissionExtension::blocked_reason(self)
@@ -80,26 +109,50 @@ impl GatewayLocalToolGate for HostLocalToolPermissionExtension {
         action: &str,
         target: &str,
     ) -> Result<Option<String>, SandLocalExecError> {
-        let sand_scope = scope.agent_id.as_ref().map(|agent_id| SandLocalToolScope {
-            agent_id: agent_id.clone(),
-            tool_call_id: scope.tool_call_id.clone(),
-            action: scope.action.clone(),
-            direction_epoch: None,
-        });
-        let decision = HostLocalToolPermissionExtension::authorize(
-            self,
-            sand_scope.as_ref(),
-            &SandLocalToolRequest::simple(action, target),
-        );
-        if decision.allowed {
-            Ok(decision.approval_id)
-        } else {
-            Err(SandLocalExecError::new(
-                decision
-                    .reason
-                    .unwrap_or_else(|| "Local tool permission denied".to_string()),
-            ))
+        authorize_host_local_tool(self, scope, action, target, None)
+    }
+}
+
+#[derive(Clone)]
+pub struct TurnScopedGatewayLocalToolGate {
+    permission: Arc<HostLocalToolPermissionExtension>,
+    direction_epoch: u64,
+}
+
+impl TurnScopedGatewayLocalToolGate {
+    pub fn new(
+        permission: Arc<HostLocalToolPermissionExtension>,
+        direction_epoch: u64,
+    ) -> Self {
+        Self {
+            permission,
+            direction_epoch,
         }
+    }
+}
+
+impl GatewayLocalToolGate for TurnScopedGatewayLocalToolGate {
+    fn blocked_reason(&self) -> Option<String> {
+        self.permission.blocked_reason()
+    }
+
+    fn requires_approval(&self) -> bool {
+        self.permission.requires_approval()
+    }
+
+    fn authorize(
+        &self,
+        scope: &GatewayLocalToolScope,
+        action: &str,
+        target: &str,
+    ) -> Result<Option<String>, SandLocalExecError> {
+        authorize_host_local_tool(
+            self.permission.as_ref(),
+            scope,
+            action,
+            target,
+            Some(self.direction_epoch),
+        )
     }
 }
 
