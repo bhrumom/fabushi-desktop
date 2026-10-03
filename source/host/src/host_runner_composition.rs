@@ -13,7 +13,6 @@ use crate::extensions::local_tool_permission::local_tool_permission_controller::
 };
 use crate::extensions::memory::agent_state::SandAgentState;
 use crate::extensions::session::production::ProductionSessionWorkers;
-use crate::runner::box_tool_access::BoxShellAutoReviewCallback;
 use crate::runner::TurnUsage;
 use crate::runner::computer_use::{
     ComputerControlLease, ComputerUseCoordination, ComputerUsePrewarmStage,
@@ -40,10 +39,10 @@ use crate::transcript_mirror::transcript_mirror_router::JournalEnabledReader;
 
 type PermissionEventSink = Arc<dyn Fn(&SandLocalToolControllerEvent) + Send + Sync>;
 
-/// Per-turn Host-owned projections that decorate the canonical Runner composition.
+/// Host-resolved state surfaces consumed by the canonical Runner bridge.
 ///
-/// Concrete services are resolved by the shipping Host, while this owner controls
-/// the ordering and one-time projection into the Runner boundary.
+/// Concrete state owners remain in Session/Memory; HostRunnerComposition only
+/// resolves their turn-scoped handles before delegating immutable projection.
 pub struct ProductionTurnStateSurfaces {
     pub state_writer: Option<Arc<dyn SandStateWriter>>,
     pub multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
