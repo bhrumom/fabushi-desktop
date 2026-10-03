@@ -188,6 +188,8 @@ fn shipping_host_composes_shared_gate_into_every_frozen_side_effect_surface() {
     let main = std::fs::read_to_string(root.join("app/src/main.rs")).expect("shipping host main");
     let composition = std::fs::read_to_string(root.join("src/host_runner_composition.rs"))
         .expect("canonical Host Runner composition");
+    let bridge = std::fs::read_to_string(root.join("src/runner_production_bridge.rs"))
+        .expect("canonical production Runner bridge");
 
     for required in [
         "ProductionAutoReviewGateDeps",
@@ -225,17 +227,28 @@ fn shipping_host_composes_shared_gate_into_every_frozen_side_effect_surface() {
         );
     }
 
+    assert!(
+        composition.contains(
+            "ProductionRunnerCompositionHooks as ProductionTurnCompositionHooks"
+        ),
+        "HostRunnerComposition must expose the bridge-owned turn hook contract"
+    );
+    assert!(
+        composition.contains("create_production_runner_composition_with_hooks(input, hooks)"),
+        "HostRunnerComposition must delegate immutable hook projection to the production bridge"
+    );
+
     for required in [
-        "pub struct ProductionTurnCompositionHooks",
+        "pub struct ProductionRunnerCompositionHooks",
         "pub routine_auto_review: RoutineAutoReviewCallback",
         "pub box_shell_review: BoxShellAutoReviewCallback",
         ".with_routine_auto_review(hooks.routine_auto_review)",
         ".with_box_shell_review(hooks.box_shell_review)",
-        "composition.with_subagent_task_review(subagent_task_review)",
+        "composition = composition.with_subagent_task_review(subagent_task_review)",
     ] {
         assert!(
-            composition.contains(required),
-            "missing canonical HostRunnerComposition auto-review wiring: {required}"
+            bridge.contains(required),
+            "missing canonical production Runner bridge auto-review wiring: {required}"
         );
     }
 }
