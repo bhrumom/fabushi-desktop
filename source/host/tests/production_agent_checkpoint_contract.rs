@@ -202,11 +202,13 @@ fn production_sink_commits_real_agent_wire_through_mirror_and_agent_store() {
     let decoded =
         decode_transcript_mirror_conversation_state(&state).expect("decoded state");
     assert_eq!(decoded.turns.len(), 1);
-    assert_eq!(decoded.turn_timings.len(), 1);
-    assert!(decoded.turn_timings[0].timestamp_ms > 1);
+    let recovery =
+        decode_conversation_state_recovery_fields(&state).expect("decoded recovery state");
+    assert_eq!(recovery.turn_timings.len(), 1);
+    assert!(recovery.turn_timings[0].timestamp_ms > 1);
     assert_eq!(
-        decoded.turn_timings[0].duration_ms,
-        decoded.turn_timings[0].timestamp_ms.saturating_sub(1),
+        recovery.turn_timings[0].duration_ms,
+        recovery.turn_timings[0].timestamp_ms.saturating_sub(1),
     );
     assert!(!session.agent_store.latest_root_blob_id().is_empty());
     assert_eq!(
