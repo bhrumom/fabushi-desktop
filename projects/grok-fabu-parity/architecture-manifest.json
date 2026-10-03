@@ -18518,7 +18518,7 @@
         "source/host/tests/sand_auto_review_classifier_contract.rs",
         "source/host/tests/sand_backend_smart_mode_classifier_exec_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
       "notes": "Rust now owns the frozen classifier execution contract in production: one measured attempt, suppressed tool-call-id logging, parent conversation/tool/mode/workspace projection, canonical backend request/result decoding, real 10s transport timeout, cancellation/abort propagation, ALLOW/BLOCK/UNSPECIFIED/missing/backend-error handling, trimmed proposed rules, frozen default block reason, and distinct timeout_exception versus unknown_exception measurement semantics. Shipping Host binds the canonical backend executor and Host structured-telemetry reporter; exact HEAD 404bbdc9bde3d62a9673b97dfb37c43f85192a67 passed Desktop Chat Parity run 37128219956 and Rust host/runtime run 37128219933 except for the intentional final architecture gate that this row closes."
