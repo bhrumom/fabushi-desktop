@@ -95,6 +95,35 @@ impl RoutedProviderCheckpointStore for ObservedRoutedProviderCheckpointStore {
     }
 }
 
+pub const GENERAL_PURPOSE_SUBAGENT_TYPE: &str = "general-purpose";
+pub const EXECUTOR_SUBAGENT_TYPE: &str = "executor";
+pub const COMPUTER_USE_SUBAGENT_TYPE: &str = "computeruse";
+pub const BROWSER_USE_SUBAGENT_TYPE: &str = "browseruse";
+
+pub fn build_turn_subagent_types(
+    is_subagent_runner: bool,
+    multitask_enabled: bool,
+    remote_box_available: bool,
+    remote_box_has_desktop: bool,
+    browser_use_enabled: bool,
+) -> Option<Vec<String>> {
+    if is_subagent_runner {
+        return None;
+    }
+    let mut types = vec![if multitask_enabled {
+        EXECUTOR_SUBAGENT_TYPE.to_string()
+    } else {
+        GENERAL_PURPOSE_SUBAGENT_TYPE.to_string()
+    }];
+    if remote_box_available && remote_box_has_desktop {
+        types.push(COMPUTER_USE_SUBAGENT_TYPE.to_string());
+        if browser_use_enabled {
+            types.push(BROWSER_USE_SUBAGENT_TYPE.to_string());
+        }
+    }
+    Some(types)
+}
+
 /// Shipping Runner composition for one provider-backed turn.
 ///
 /// This module deliberately owns the dependency assembly that used to be
@@ -130,6 +159,7 @@ pub struct TurnAgentComposition {
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
+    subagent_task_allowed_types: Option<Arc<Vec<String>>>,
     subagent_task_review: Option<SubagentTaskReviewCallback>,
     subagent_runtime: Option<Arc<Mutex<SubagentRuntime>>>,
     subagent_steer_review: Option<SubagentSteerReviewCallback>,
@@ -192,6 +222,7 @@ impl TurnAgentComposition {
             reaction_sink: None,
             agent_management_sink: None,
             subagent_task_sink: None,
+            subagent_task_allowed_types: None,
             subagent_task_review: None,
             subagent_runtime: None,
             subagent_steer_review: None,
@@ -432,6 +463,11 @@ impl TurnAgentComposition {
 
     pub fn has_subagent_task_sink(&self) -> bool {
         self.subagent_task_sink.is_some()
+    }
+
+    pub fn with_subagent_task_allowed_types(mut self, allowed: Arc<Vec<String>>) -> Self {
+        self.subagent_task_allowed_types = Some(allowed);
+        self
     }
 
     pub fn with_subagent_task_review(mut self, review: SubagentTaskReviewCallback) -> Self {
@@ -738,6 +774,7 @@ impl TurnAgentComposition {
                 reaction_sink: self.reaction_sink.clone(),
                 agent_management_sink: self.agent_management_sink.clone(),
                 subagent_task_sink: self.subagent_task_sink.clone(),
+                subagent_task_allowed_types: self.subagent_task_allowed_types.clone(),
                 subagent_task_review: self.subagent_task_review.clone(),
                 subagent_runtime: self.subagent_runtime.clone(),
                 subagent_steer_review: self.subagent_steer_review.clone(),
