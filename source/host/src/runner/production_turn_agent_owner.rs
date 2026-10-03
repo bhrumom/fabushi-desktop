@@ -354,6 +354,7 @@ impl ProductionTurnAgentOwner {
             ProductionTurnInputProjection {
                 options,
                 ack_token: None,
+                prompt_action: Default::default(),
             },
             on_text_delta,
         )
@@ -374,6 +375,7 @@ impl ProductionTurnAgentOwner {
             ProductionTurnInputProjection {
                 options,
                 ack_token: None,
+                prompt_action: Default::default(),
             },
             on_text_delta,
         )
