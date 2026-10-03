@@ -1237,6 +1237,11 @@ fn generate_agent_tool_json_schema(manifest_dir: &std::path::Path) {
         enum_field_types.insert((parent_type, field_number), enum_type);
     }
 
+    enum_field_types.insert(
+        ("google.protobuf.Value".to_string(), 1),
+        "google.protobuf.NullValue".to_string(),
+    );
+
     let root = defs.get("agent.v1.ToolCall")
         .expect("canonical generated agent.v1.ToolCall is missing");
     let mut tool_calls = Vec::<(u64, String, String, Option<String>, Option<String>)>::new();
