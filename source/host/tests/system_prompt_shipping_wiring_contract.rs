@@ -44,20 +44,31 @@ fn shipping_provider_consumes_live_box_and_computer_state_in_frozen_prompt_order
         .expect("canonical Computer prompt delegate");
     assert!(remote_delegate < computer_delegate);
 
-    let shipping_remote_tail = &SHIPPING_HOST_MAIN[live_runtime..];
+    let remote_state_owner = SHIPPING_HOST_MAIN
+        .find("let remote_for_turn = Arc::new(move || -> Result<RunnerPromptRemoteState, String> {")
+        .expect("shipping RunnerPromptGlue remote-state owner");
+    let remote_state_end = remote_state_owner
+        + SHIPPING_HOST_MAIN[remote_state_owner..]
+            .find("let prompt_automation_sessions =")
+            .expect("remote-state owner must settle before automation prompt state");
+    assert!(
+        remote_state_owner < live_runtime,
+        "shipping Host must bind the live remote/computer getter before consuming it",
+    );
+    let shipping_remote_owner = &SHIPPING_HOST_MAIN[remote_state_owner..remote_state_end];
     for production_binding in [
         "role: prompt_role",
-        "available: shipping_box_available",
-        "runtime_state: shipping_box_status.state.clone()",
-        "desktop_capable: shipping_desktop_capable",
-        "desktop_ready: shipping_desktop_ready",
-        "box_available: shipping_box_available",
-        "control_lease_active: computer_control_lease_active",
+        "available: box_available",
+        "runtime_state: status.state.clone()",
+        "desktop_capable",
+        "desktop_ready",
+        "box_available",
+        "control_lease_active: lease.1",
         "human_takeover_pending",
-        "window_index: shipping_window_index",
+        "window_index: lease.2",
     ] {
         assert!(
-            shipping_remote_tail.contains(production_binding),
+            shipping_remote_owner.contains(production_binding),
             "prompt collector does not receive live shipping state: {production_binding}"
         );
     }
