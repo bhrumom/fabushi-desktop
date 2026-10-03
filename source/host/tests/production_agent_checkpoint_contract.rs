@@ -10,7 +10,7 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::host_request_context::HostRequestContext;
 use mahayana_host_runtime::runner::production_agent_checkpoint::{
     AgentStateCheckpointSink, ProductionAgentStateCheckpointSink,
-    build_text_turn_checkpoint,
+    build_text_turn_checkpoint, build_text_turn_checkpoint_with_rich_text,
 };
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderCheckpointStore;
@@ -66,6 +66,22 @@ fn canonical_text_turn_checkpoint_preserves_prior_wire_and_appends_turn_referenc
     assert_eq!(decoded.turns, vec![checkpoint.turn_id.clone()]);
     assert!(!checkpoint.user_message_id.is_empty());
     assert_eq!(checkpoint.step_ids.len(), 1);
+
+    let rich = build_text_turn_checkpoint_with_rich_text(
+        &prior,
+        "hello",
+        Some("{\"type\":\"doc\",\"content\":[]}"),
+        "message-rich",
+        Some("request-rich"),
+        "world",
+    );
+    let rich_wire = b"{\"type\":\"doc\",\"content\":[]}";
+    assert!(
+        rich.user_message_bytes
+            .windows(rich_wire.len())
+            .any(|window| window == rich_wire)
+    );
+    assert_ne!(rich.user_message_id, checkpoint.user_message_id);
 }
 
 #[test]
