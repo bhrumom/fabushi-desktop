@@ -19472,7 +19472,7 @@
       "targetPath": "source/host/src/runner/tools/send_message_tool.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "7c61afc1da3193859080822ffbd8b8e111e2acbd",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -19482,16 +19482,20 @@
         "source/host/app/src/main.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/src/attachment_paths.rs",
-        "source/host/src/selected_image_inputs.rs"
+        "source/host/src/selected_image_inputs.rs",
+        "source/host/src/runner/tools/turn_toolset.rs",
+        "source/host/src/runner/turn_observation.rs",
+        "source/host/src/extensions/cloud_agents/cloud_agents_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/send_message_tool_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/session_production_contract.rs"
+        "source/host/tests/session_production_contract.rs",
+        "source/host/tests/background_wakes_production_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Runner exposes SendMessage as a first-party RoutedToolBridge ahead of delegated MCP tools. Calls are schema-validated, normalized/encoded and durably appended to the authoritative Rust Session transcript. Text images and standalone file:// attachments pass through frozen resolveAttachmentSource ordering: local Host ingest first, ForeverBox fallback second, stable filename preservation and agent-owned media persistence. Frozen readMediaDimensions parity is production-wired: resolved local/persisted image URLs are inspected and width/height are stamped on text-inline images and standalone image attachments. Frozen awaiting-user fencing is now production-wired too: ProductionSendMessageSink reads the durable Session awaitingUserResponse state and rejects new user-visible output with the exact frozen error while a widget/box handoff is pending. Final remains withheld for cloud-agent title lookup, https file-vs-media classification, external channel delivery, and the exact generated proto interaction-handler partial/final tool-call surface."
+      "notes": "Rust shipping parity for frozen send-message-tool.ts is complete. The first-party SendMessage bridge validates the frozen schema, preserves awaiting-user fencing, resolves Host/ForeverBox attachment sources and media dimensions, emits user-visible transcript entries, and keeps production external-channel delivery on the Host-owned deliverToChannel path. Cursor-agent sends now use the shipping SandCloudAgentManager get path to resolve the optional cloud-agent name/title with frozen fail-soft behavior. Each real SendMessage call now emits frozen agent.v1 SendMessageToolCall tag-55 initial/completed wire with toolCallId/timestamps and canonical success/error SendMessageResult through the turn observation consumer; focused contracts cover success and awaiting-user error settlement. The old HTTPS classifyAttachment note was not promoted into production because the frozen Grok shipping composition does not inject that optional dependency; it is not an applicable shipping-path blocker. Exact HEAD d2949d123aad4d44c0937e7b9917e0655b22f2a8 passed Desktop Chat Parity run 37143119166 including Focused Electron E2E. Rust desktop runtime run 37143119121 passed shipping Host compilation, independent Coordinator on the controlled rerun after an initial macOS WouldBlock WebAuthn socket flake, box-exec/supervisor, independent Host Runner including the SendMessage contracts, attachment projection, Human Computer takeover, ConversationActor/CapabilityBroker ownership, platform-worker, and Ubuntu/Windows pressure-profiler; the workflow remained red only at the intentional strict final architecture gate before this promotion."
     },
     {
       "referencePath": "source/host/runner/tools/tool-input-error.ts",
