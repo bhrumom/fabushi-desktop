@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::Instant;
 
 use serde_json::Value;
 
@@ -43,17 +42,7 @@ pub fn create_production_turn_agent_input_projection<'a>(
     turn_input: &ProductionTurnInputProjection,
     emit_update: &'a mut dyn FnMut(&str, &str),
 ) -> Result<ProductionTurnAgentInputProjection<'a>, ProviderSessionError> {
-    let mcp_discovery_started = Instant::now();
-    let mcp_tools = match composition.snapshot_mcp_tools() {
-        Ok(tools) => tools,
-        Err(error) => {
-            composition.report_mcp_discovery_failure(
-                &error,
-                mcp_discovery_started.elapsed().as_secs_f64() * 1_000.0,
-            );
-            Vec::new()
-        }
-    };
+    let mcp_tools = composition.snapshot_mcp_tools().unwrap_or_default();
     let base_state_bytes = match checkpoint_sink {
         Some(sink) => sink.base_state_bytes()?,
         None => Vec::new(),
