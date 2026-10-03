@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -54,6 +54,9 @@ use crate::transcript_mirror::transcript_mirror::JournalOutcomeReporter;
 use crate::transcript_mirror::transcript_mirror_router::JournalEnabledReader;
 
 type PermissionEventSink = Arc<dyn Fn(&SandLocalToolControllerEvent) + Send + Sync>;
+type CanonicalTranscriptMirrorProvider = ProductionTranscriptMirrorProvider<
+    GeneratedTranscriptOccurrenceCodec<CanonicalGeneratedToolJsonProjection>,
+>;
 
 /// Host-resolved state surfaces consumed by the canonical Runner bridge.
 ///
@@ -70,6 +73,7 @@ pub struct HostRunnerComposition {
     surfaces: Mutex<HashMap<String, SandLocalToolControllerSubscription>>,
     prompt_automation_reminders: Mutex<HashMap<String, PromptCollectorAutomationReminderState>>,
     computer_use: Arc<Mutex<ComputerUseCoordination>>,
+    transcript_providers: Mutex<HashMap<PathBuf, Arc<CanonicalTranscriptMirrorProvider>>>,
 }
 
 impl HostRunnerComposition {
@@ -98,6 +102,7 @@ impl HostRunnerComposition {
             surfaces: Mutex::new(HashMap::new()),
             prompt_automation_reminders: Mutex::new(HashMap::new()),
             computer_use: Arc::new(Mutex::new(ComputerUseCoordination::new(true))),
+            transcript_providers: Mutex::new(HashMap::new()),
         }
     }
 
@@ -157,11 +162,26 @@ impl HostRunnerComposition {
         let agent_store = sessions.open_agent_store_owner(agent_id)?;
         let blob_store = Arc::new(sessions.create_agent_blob_store(agent_id)?);
         let prior_state_bytes = agent_store.latest_checkpoint_bytes().unwrap_or_default();
-        let transcript_provider = ProductionTranscriptMirrorProvider::with_reporter(
-            data_dir.join("transcripts"),
-            GeneratedTranscriptOccurrenceCodec::new(CanonicalGeneratedToolJsonProjection),
-            report_outcome,
-        );
+        let transcripts_dir = data_dir.join("transcripts");
+        let transcript_provider = {
+            let mut providers = self
+                .transcript_providers
+                .lock()
+                .map_err(|_| "production transcript provider registry is poisoned".to_string())?;
+            Arc::clone(
+                providers
+                    .entry(transcripts_dir.clone())
+                    .or_insert_with(|| {
+                        Arc::new(ProductionTranscriptMirrorProvider::with_reporter(
+                            transcripts_dir,
+                            GeneratedTranscriptOccurrenceCodec::new(
+                                CanonicalGeneratedToolJsonProjection,
+                            ),
+                            Arc::clone(&report_outcome),
+                        ))
+                    }),
+            )
+        };
         let transcript_mirror = Arc::new(transcript_provider.route_for_session(
             Arc::clone(&blob_store),
             &prior_state_bytes,
