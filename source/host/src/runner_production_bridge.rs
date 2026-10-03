@@ -1,9 +1,14 @@
-use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
+use std::sync::{Arc, Mutex};
 
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{ProviderTokenUsage, RoutedProvider};
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
-use crate::runner::box_tool_access::RunnerBoxResourcePort;
+use crate::runner::box_tool_access::{BoxShellAutoReviewCallback, RunnerBoxResourcePort};
+use crate::runner::production_agent_checkpoint::AgentStateCheckpointSink;
+use crate::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
+use crate::runner::sand_agent_runner::SandAgentRunner;
+use crate::runner::subagent_runtime::SubagentRuntime;
 use crate::runner::production_turn_run_shell_adapter::{
     ProviderRetryEvent, ProviderRetryReport, RoutedProviderCheckpointStore,
 };
@@ -12,6 +17,13 @@ use crate::runner::routed_provider_runtime::{
 };
 use crate::runner::sand_action_audit::{ActionAuditSink, RoutedMcpAuditConfig};
 use crate::runner::tools::sand_reaction_tool::ReactionSink;
+use crate::runner::tools::sand_agent_management_tools::AgentManagementSink;
+use crate::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
+use crate::runner::tools::sand_state_tool::{
+    RoutineAutoReviewCallback, RoutinePostWriteCallback, SandStateWriter,
+};
+use crate::runner::tools::sand_subagent_management_tools::SubagentSteerReviewCallback;
+use crate::runner::tools::sand_task_subagent_tool::{SubagentTaskReviewCallback, SubagentTaskSink};
 use crate::runner::tools::sand_browser_tools::BrowserToolExecutor;
 use crate::runner::tools::sand_computer_tool::{ComputerToolExecutor, ComputerToolExposure};
 use crate::runner::tools::sand_file_transfer_tools::FileTransferExecutor;
@@ -34,6 +46,23 @@ pub struct ProductionActionAuditInput {
     pub agent_id: String,
     pub turn_id: Option<String>,
     pub sink: Arc<dyn ActionAuditSink>,
+}
+
+/// Host-resolved, per-turn dependencies that the frozen production bridge owns
+/// as one immutable projection into the Runner. Concrete services retain their
+/// existing owners; this struct only prevents a second decoration path after
+/// the bridge has created the turn composition.
+pub struct ProductionRunnerCompositionHooks {
+    pub agent_management_sink: Arc<dyn AgentManagementSink>,
+    pub state_writer: Option<Arc<dyn SandStateWriter>>,
+    pub routine_auto_review: RoutineAutoReviewCallback,
+    pub box_shell_review: BoxShellAutoReviewCallback,
+    pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
+    pub subagent_task_review: Option<SubagentTaskReviewCallback>,
+    pub subagent_management_runtime: Option<Arc<Mutex<SubagentRuntime>>>,
+    pub subagent_steer_review: Option<SubagentSteerReviewCallback>,
+    pub routine_post_write: Option<RoutinePostWriteCallback>,
+    pub multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
 }
 
 pub struct ProductionRunnerCompositionInput {
@@ -130,4 +159,58 @@ pub fn create_production_runner_composition(
         composition = composition.with_observation(observation);
     }
     composition
+}
+
+/// Complete the frozen immutable per-turn projection in the bridge itself.
+/// HostRunnerComposition may resolve concrete services, but it must not decorate
+/// TurnAgentComposition after this boundary returns.
+pub fn create_production_runner_composition_with_hooks(
+    input: ProductionRunnerCompositionInput,
+    hooks: ProductionRunnerCompositionHooks,
+) -> TurnAgentComposition {
+    let mut composition = create_production_runner_composition(input)
+        .with_agent_management_sink(hooks.agent_management_sink)
+        .with_routine_auto_review(hooks.routine_auto_review)
+        .with_box_shell_review(hooks.box_shell_review);
+
+    if let Some(state_writer) = hooks.state_writer {
+        composition = composition.with_state_writer(state_writer);
+    }
+    if let Some(subagent_task_sink) = hooks.subagent_task_sink {
+        composition = composition.with_subagent_task_sink(subagent_task_sink);
+        if let Some(subagent_task_review) = hooks.subagent_task_review {
+            composition = composition.with_subagent_task_review(subagent_task_review);
+        }
+    }
+    if let Some(subagent_runtime) = hooks.subagent_management_runtime {
+        composition = composition.with_subagent_management(
+            subagent_runtime,
+            hooks.subagent_steer_review,
+        );
+    }
+    if let Some(routine_post_write) = hooks.routine_post_write {
+        composition = composition.with_routine_post_write(routine_post_write);
+    }
+    if let Some(multitask_todo_state) = hooks.multitask_todo_state {
+        composition = composition.with_multitask_todo_state(multitask_todo_state);
+    }
+
+    composition
+}
+
+/// Mandatory production Runner binding for the generated turn engine.
+/// The bridge owns the one-time binding; ProductionTurnAgentOwner continues to
+/// own turn lifecycle/settlement and SandAgentRunner remains the Runner facade.
+pub fn create_production_runner(
+    composition: TurnAgentComposition,
+    checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
+    upgrade_quiesce_signal: Arc<AtomicBool>,
+    generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
+) -> SandAgentRunner {
+    let mut owner = ProductionTurnAgentOwner::new(composition)
+        .with_upgrade_quiesce_signal(upgrade_quiesce_signal);
+    if let Some(checkpoint_sink) = checkpoint_sink {
+        owner = owner.with_agent_state_checkpoint_sink(checkpoint_sink);
+    }
+    SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)
 }

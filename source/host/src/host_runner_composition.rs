@@ -21,19 +21,15 @@ use crate::runner::computer_use::{
 use crate::runner::production_agent_checkpoint::{
     AgentStateCheckpointSink, ProductionAgentStateCheckpointSink,
 };
-use crate::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
 use crate::runner::sand_agent_runner::SandAgentRunner;
 use crate::runner::subagent_runtime::SubagentRuntime;
-use crate::runner::tools::sand_agent_management_tools::AgentManagementSink;
 use crate::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
-use crate::runner::tools::sand_state_tool::{
-    RoutineAutoReviewCallback, RoutinePostWriteCallback, SandStateWriter,
-};
-use crate::runner::tools::sand_subagent_management_tools::SubagentSteerReviewCallback;
-use crate::runner::tools::sand_task_subagent_tool::{SubagentTaskReviewCallback, SubagentTaskSink};
+use crate::runner::tools::sand_state_tool::SandStateWriter;
 use crate::runner::turn_agent_composition::TurnAgentComposition;
+pub use crate::runner_production_bridge::ProductionRunnerCompositionHooks as ProductionTurnCompositionHooks;
 use crate::runner_production_bridge::{
-    ProductionRunnerCompositionInput, create_production_runner_composition,
+    ProductionRunnerCompositionInput, create_production_runner,
+    create_production_runner_composition_with_hooks,
 };
 use crate::transcript_mirror::generated_occurrence_codec::{
     GeneratedTranscriptOccurrenceCodec, RejectGeneratedToolJsonProjection,
@@ -50,19 +46,6 @@ type PermissionEventSink = Arc<dyn Fn(&SandLocalToolControllerEvent) + Send + Sy
 /// the ordering and one-time projection into the Runner boundary.
 pub struct ProductionTurnStateSurfaces {
     pub state_writer: Option<Arc<dyn SandStateWriter>>,
-    pub multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
-}
-
-pub struct ProductionTurnCompositionHooks {
-    pub agent_management_sink: Arc<dyn AgentManagementSink>,
-    pub state_writer: Option<Arc<dyn SandStateWriter>>,
-    pub routine_auto_review: RoutineAutoReviewCallback,
-    pub box_shell_review: BoxShellAutoReviewCallback,
-    pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
-    pub subagent_task_review: Option<SubagentTaskReviewCallback>,
-    pub subagent_management_runtime: Option<Arc<Mutex<SubagentRuntime>>>,
-    pub subagent_steer_review: Option<SubagentSteerReviewCallback>,
-    pub routine_post_write: Option<RoutinePostWriteCallback>,
     pub multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
 }
 
@@ -182,12 +165,12 @@ impl HostRunnerComposition {
         upgrade_quiesce_signal: Arc<AtomicBool>,
         generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
     ) -> SandAgentRunner {
-        let mut owner = ProductionTurnAgentOwner::new(composition)
-            .with_upgrade_quiesce_signal(upgrade_quiesce_signal);
-        if let Some(checkpoint_sink) = checkpoint_sink {
-            owner = owner.with_agent_state_checkpoint_sink(checkpoint_sink);
-        }
-        SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)
+        create_production_runner(
+            composition,
+            checkpoint_sink,
+            upgrade_quiesce_signal,
+            generated_agent_runtime,
+        )
     }
 
     /// Build one production turn through the canonical Host -> Runner composition owner.
@@ -199,32 +182,7 @@ impl HostRunnerComposition {
         input: ProductionRunnerCompositionInput,
         hooks: ProductionTurnCompositionHooks,
     ) -> TurnAgentComposition {
-        let mut composition = create_production_runner_composition(input)
-            .with_agent_management_sink(hooks.agent_management_sink)
-            .with_routine_auto_review(hooks.routine_auto_review)
-            .with_box_shell_review(hooks.box_shell_review);
-
-        if let Some(state_writer) = hooks.state_writer {
-            composition = composition.with_state_writer(state_writer);
-        }
-        if let Some(subagent_task_sink) = hooks.subagent_task_sink {
-            composition = composition.with_subagent_task_sink(subagent_task_sink);
-            if let Some(subagent_task_review) = hooks.subagent_task_review {
-                composition = composition.with_subagent_task_review(subagent_task_review);
-            }
-        }
-        if let Some(subagent_runtime) = hooks.subagent_management_runtime {
-            composition =
-                composition.with_subagent_management(subagent_runtime, hooks.subagent_steer_review);
-        }
-        if let Some(routine_post_write) = hooks.routine_post_write {
-            composition = composition.with_routine_post_write(routine_post_write);
-        }
-        if let Some(multitask_todo_state) = hooks.multitask_todo_state {
-            composition = composition.with_multitask_todo_state(multitask_todo_state);
-        }
-
-        composition
+        create_production_runner_composition_with_hooks(input, hooks)
     }
 
     pub fn bind_local_permission_surface(&self, agent_id: &str) {

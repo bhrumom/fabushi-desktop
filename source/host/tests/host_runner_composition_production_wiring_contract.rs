@@ -8,16 +8,7 @@ fn host_runner_composition_owns_turn_decoration_order() {
     for needle in [
         "pub struct ProductionTurnCompositionHooks",
         "pub fn compose_production_turn(",
-        "create_production_runner_composition(input)",
-        ".with_agent_management_sink(hooks.agent_management_sink)",
-        "if let Some(state_writer) = hooks.state_writer",
-        "composition = composition.with_state_writer(state_writer)",
-        ".with_routine_auto_review(hooks.routine_auto_review)",
-        ".with_box_shell_review(hooks.box_shell_review)",
-        "composition.with_subagent_task_sink(subagent_task_sink)",
-        "composition.with_subagent_management(",
-        "composition.with_routine_post_write(routine_post_write)",
-        "composition.with_multitask_todo_state(multitask_todo_state)",
+        "create_production_runner_composition_with_hooks(input, hooks)",
     ] {
         assert!(
             OWNER.contains(needle),
@@ -136,11 +127,11 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
 fn host_runner_composition_owns_shipping_runner_construction() {
     for needle in [
         "pub fn compose_production_runner(",
-        "ProductionTurnAgentOwner::new(composition)",
-        "if let Some(checkpoint_sink) = checkpoint_sink",
-        "owner = owner.with_agent_state_checkpoint_sink(checkpoint_sink)",
-        ".with_upgrade_quiesce_signal(upgrade_quiesce_signal)",
-        "SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)",
+        "create_production_runner(",
+        "composition,",
+        "checkpoint_sink,",
+        "upgrade_quiesce_signal,",
+        "generated_agent_runtime,",
     ] {
         assert!(
             OWNER.contains(needle),

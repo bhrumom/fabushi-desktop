@@ -18,6 +18,10 @@ use mahayana_host_runtime::runner::tools::sand_mcp_management_tools::{
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionRunnerCompositionInput, create_production_runner_composition,
 };
+
+const PRODUCTION_BRIDGE: &str = include_str!("../src/runner_production_bridge.rs");
+const HOST_COMPOSITION: &str = include_str!("../src/host_runner_composition.rs");
+const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 use mahayana_host_runtime::ports::mcp_state_executor::McpStateExecResult;
 use serde_json::{Value, json};
 
@@ -261,4 +265,53 @@ fn production_bridge_registers_canonical_mcp_state_executor_on_turn_composition(
     );
     assert_eq!(state.servers[1].server_identifier, "linear");
     assert_eq!(state.servers[1].tools.len(), 1);
+}
+
+#[test]
+fn production_bridge_owns_immutable_turn_projection_and_generated_runner_binding() {
+    for needle in [
+        "pub struct ProductionRunnerCompositionHooks",
+        "pub fn create_production_runner_composition_with_hooks(",
+        ".with_agent_management_sink(hooks.agent_management_sink)",
+        ".with_routine_auto_review(hooks.routine_auto_review)",
+        ".with_box_shell_review(hooks.box_shell_review)",
+        "composition = composition.with_state_writer(state_writer)",
+        "composition = composition.with_subagent_task_sink(subagent_task_sink)",
+        "composition.with_subagent_management(",
+        "composition = composition.with_routine_post_write(routine_post_write)",
+        "composition = composition.with_multitask_todo_state(multitask_todo_state)",
+        "pub fn create_production_runner(",
+        "ProductionTurnAgentOwner::new(composition)",
+        "owner = owner.with_agent_state_checkpoint_sink(checkpoint_sink)",
+        "SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)",
+    ] {
+        assert!(
+            PRODUCTION_BRIDGE.contains(needle),
+            "production bridge missing frozen ownership: {needle}"
+        );
+    }
+
+    assert!(
+        HOST_COMPOSITION.contains("create_production_runner_composition_with_hooks(input, hooks)")
+            && HOST_COMPOSITION.contains("create_production_runner("),
+        "HostRunnerComposition must delegate immutable turn and Runner binding to the bridge",
+    );
+    for forbidden in [
+        ".with_agent_management_sink(hooks.agent_management_sink)",
+        ".with_routine_auto_review(hooks.routine_auto_review)",
+        "ProductionTurnAgentOwner::new(composition)",
+        "SandAgentRunner::new(owner)",
+    ] {
+        assert!(
+            !HOST_COMPOSITION.contains(forbidden),
+            "HostRunnerComposition still duplicates bridge ownership: {forbidden}",
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains("worker_host_runner_composition.compose_production_turn(")
+            && SHIPPING_HOST.contains("worker_host_runner_composition.compose_production_runner(")
+            && !SHIPPING_HOST.contains("create_production_runner_composition_with_hooks(")
+            && !SHIPPING_HOST.contains("create_production_runner("),
+        "shipping Host must retain one HostRunnerComposition entrypoint into the bridge",
+    );
 }
