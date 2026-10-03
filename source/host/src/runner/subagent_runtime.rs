@@ -179,6 +179,8 @@ pub enum ControlResult {
     NotRunning,
 }
 
+pub type SubagentAbortObserver = Arc<dyn Fn(&str, &str) + Send + Sync>;
+
 #[derive(Default)]
 pub struct SubagentRuntime {
     sessions: HashMap<String, SubagentSessionSnapshot>,
@@ -188,9 +190,23 @@ pub struct SubagentRuntime {
     outlines: HashMap<String, Vec<Value>>,
     pending_steers: HashMap<String, String>,
     aborting: HashSet<String>,
+    abort_observer: Option<SubagentAbortObserver>,
 }
 
 impl SubagentRuntime {
+    pub fn set_abort_observer(&mut self, observer: Option<SubagentAbortObserver>) {
+        self.abort_observer = observer;
+    }
+
+    fn notify_abort(&self, id: &str) {
+        let Some(meta) = self.meta.get(id) else {
+            return;
+        };
+        if let Some(observer) = self.abort_observer.as_ref() {
+            observer(&meta.parent_agent_id, id);
+        }
+    }
+
     pub fn register_session(&mut self, id: impl Into<String>, snapshot: SubagentSessionSnapshot) {
         self.sessions.insert(id.into(), snapshot);
     }
@@ -267,8 +283,11 @@ impl SubagentRuntime {
         if !self.sessions.contains_key(id) || !self.running.contains(id) {
             return ControlResult::NotRunning;
         }
-        self.aborting.insert(id.to_string());
+        let newly_aborting = self.aborting.insert(id.to_string());
         self.pending_steers.remove(id);
+        if newly_aborting {
+            self.notify_abort(id);
+        }
         ControlResult::Ok {
             interrupt_reason: "Stopped by the parent agent.",
         }
@@ -434,8 +453,11 @@ impl SubagentRuntime {
     pub fn abort_running_subagents_for_parent(&mut self, parent_agent_id: &str) -> Vec<String> {
         let ids = self.running_subagent_ids_for_parent(parent_agent_id);
         for id in &ids {
-            self.aborting.insert(id.clone());
+            let newly_aborting = self.aborting.insert(id.clone());
             self.pending_steers.remove(id);
+            if newly_aborting {
+                self.notify_abort(id);
+            }
         }
         ids
     }

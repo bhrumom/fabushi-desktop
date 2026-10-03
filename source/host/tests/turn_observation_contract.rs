@@ -273,6 +273,22 @@ fn pending_awaits_flush_on_turn_unwind_with_frozen_clean_stop_and_abort_outcomes
 }
 
 #[test]
+fn shipping_host_removes_aborting_subagents_from_async_task_projection_immediately() {
+    let main = fs::read_to_string("app/src/main.rs").expect("shipping host main");
+    for required in [
+        ".set_abort_observer(Some(Arc::new(",
+        "PendingWakeKind::Subagent",
+        "pending_store.clear_one(",
+        "publish_async_tasks_changed(",
+    ] {
+        assert!(
+            main.contains(required),
+            "missing abort-to-async-task production wiring: {required}"
+        );
+    }
+}
+
+#[test]
 fn shipping_host_flushes_pending_awaits_at_the_real_turn_unwind_boundary() {
     let main = fs::read_to_string("app/src/main.rs").expect("shipping host main");
     assert!(

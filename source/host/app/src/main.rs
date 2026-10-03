@@ -10991,6 +10991,25 @@ fn main() {
     let runner_registry = transcript_manager.runner_registry();
     let transcript_runtime = transcript_manager.transcript_runtime();
     let generated_agent_runtime = Arc::new(Mutex::new(SubagentRuntime::default()));
+    if let Some(pending_store) = transcript_runtime.pending_wake_store().cloned() {
+        let abort_async_runtime = Arc::clone(&transcript_runtime);
+        let abort_async_events = gateway_events.clone();
+        generated_agent_runtime
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .set_abort_observer(Some(Arc::new(move |parent_agent_id, subagent_id| {
+                pending_store.clear_one(
+                    parent_agent_id,
+                    PendingWakeKind::Subagent,
+                    subagent_id,
+                );
+                publish_async_tasks_changed(
+                    &abort_async_events,
+                    abort_async_runtime.as_ref(),
+                    parent_agent_id,
+                );
+            })));
+    }
     let host_runner_composition = Arc::new(HostRunnerComposition::production(
         local_tool_permission_extension.controller(),
         Arc::clone(&session_workers),
