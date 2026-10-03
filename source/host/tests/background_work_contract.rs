@@ -149,6 +149,7 @@ fn runner_cloud_agent_watches_match_frozen_ownership_and_settlement_contract() {
     let pending = Arc::new(Mutex::new(Vec::new()));
     let settled = Arc::new(Mutex::new(Vec::<CloudAgentBackgroundCompletion>::new()));
     let changed = Arc::new(Mutex::new(Vec::<String>::new()));
+    let callback_order = Arc::new(Mutex::new(Vec::<&'static str>::new()));
 
     let watches = RunnerCloudAgentWatches::new(
         Arc::new({
@@ -174,13 +175,17 @@ fn runner_cloud_agent_watches_match_frozen_ownership_and_settlement_contract() {
         }),
         Some({
             let settled = Arc::clone(&settled);
+            let callback_order = Arc::clone(&callback_order);
             Arc::new(move |completion| {
+                callback_order.lock().expect("order").push("settled");
                 settled.lock().expect("settled").push(completion);
             })
         }),
         Some({
             let changed = Arc::clone(&changed);
+            let callback_order = Arc::clone(&callback_order);
             Arc::new(move |agent_id| {
+                callback_order.lock().expect("order").push("changed");
                 changed.lock().expect("changed").push(agent_id.to_string());
             })
         }),
@@ -217,7 +222,10 @@ fn runner_cloud_agent_watches_match_frozen_ownership_and_settlement_contract() {
 
     release_tx.send(()).expect("release watch");
     for _ in 0..100 {
-        if !watches.is_cloud_watch_armed("agent-a", "bc-1") {
+        if !watches.is_cloud_watch_armed("agent-a", "bc-1")
+            && settled.lock().expect("settled").len() == 1
+            && changed.lock().expect("changed").len() >= 2
+        {
             break;
         }
         std::thread::sleep(Duration::from_millis(5));
@@ -231,6 +239,11 @@ fn runner_cloud_agent_watches_match_frozen_ownership_and_settlement_contract() {
     assert_eq!(settled[0].result, "finished work");
     assert_eq!(settled[0].quiet_origin, Some(quiet_origin));
     assert!(changed.lock().expect("changed").len() >= 2);
+    assert_eq!(
+        *callback_order.lock().expect("order"),
+        vec!["changed", "settled", "changed"],
+        "completion must settle the durable/live owner before publishing the terminal task-set change",
+    );
 }
 
 #[test]
@@ -290,6 +303,7 @@ fn runner_background_shell_watches_dedupe_before_pending_persist_and_fence_settl
     let pending = Arc::new(Mutex::new(Vec::new()));
     let settled = Arc::new(Mutex::new(Vec::<BackgroundShellBackgroundCompletion>::new()));
     let changed = Arc::new(Mutex::new(Vec::<String>::new()));
+    let callback_order = Arc::new(Mutex::new(Vec::<&'static str>::new()));
 
     let watches = RunnerBackgroundShellWatches::new(
         Arc::new({
@@ -319,13 +333,17 @@ fn runner_background_shell_watches_dedupe_before_pending_persist_and_fence_settl
         }),
         Some({
             let settled = Arc::clone(&settled);
+            let callback_order = Arc::clone(&callback_order);
             Arc::new(move |completion| {
+                callback_order.lock().expect("order").push("settled");
                 settled.lock().expect("settled").push(completion);
             })
         }),
         Some({
             let changed = Arc::clone(&changed);
+            let callback_order = Arc::clone(&callback_order);
             Arc::new(move |agent_id| {
+                callback_order.lock().expect("order").push("changed");
                 changed.lock().expect("changed").push(agent_id.to_string());
             })
         }),
@@ -356,7 +374,10 @@ fn runner_background_shell_watches_dedupe_before_pending_persist_and_fence_settl
 
     release_tx.send(()).expect("release");
     for _ in 0..100 {
-        if !watches.is_shell_watch_armed("agent-a", "42") {
+        if !watches.is_shell_watch_armed("agent-a", "42")
+            && settled.lock().expect("settled").len() == 1
+            && changed.lock().expect("changed").len() >= 2
+        {
             break;
         }
         std::thread::sleep(Duration::from_millis(5));
@@ -371,6 +392,11 @@ fn runner_background_shell_watches_dedupe_before_pending_persist_and_fence_settl
     assert_eq!(settled[0].output_path.as_deref(), Some("/term/42.txt"));
     assert_eq!(settled[0].quiet_origin, Some(origin));
     assert!(changed.lock().expect("changed").len() >= 2);
+    assert_eq!(
+        *callback_order.lock().expect("order"),
+        vec!["changed", "settled", "changed"],
+        "completion must settle the durable/live owner before publishing the terminal task-set change",
+    );
 }
 
 #[test]

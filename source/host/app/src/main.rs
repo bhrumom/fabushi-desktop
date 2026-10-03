@@ -8353,6 +8353,18 @@ fn start_routed_provider_task(
                         }
                     }
                     if let Some(completion) = settled.completion {
+                        if let Some(store) = worker_transcript_runtime.pending_wake_store() {
+                            let _ = store.clear_one(
+                                &completion.parent_agent_id,
+                                PendingWakeKind::Subagent,
+                                &completion.subagent_agent_id,
+                            );
+                        }
+                        publish_async_tasks_changed(
+                            &worker_events,
+                            worker_transcript_runtime.as_ref(),
+                            &completion.parent_agent_id,
+                        );
                         worker_completion_revivals.handle_background_subagent_completion(
                             SubagentCompletion {
                                 parent_agent_id: completion.parent_agent_id,
@@ -11372,6 +11384,7 @@ fn main() {
         Arc::downgrade(&completion_revivals);
     let cloud_watch_manager = production_extensions.cloud_agents.service();
     let cloud_watch_pending_store = transcript_runtime.pending_wake_store().cloned();
+    let cloud_watch_settle_pending_store = transcript_runtime.pending_wake_store().cloned();
     let cloud_watch_pending_events = gateway_events.clone();
     let cloud_watch_settled = Arc::clone(&completion_revivals);
     let cloud_watch_async_runtime = Arc::clone(&transcript_runtime);
@@ -11418,6 +11431,13 @@ fn main() {
             }) as mahayana_host_runtime::runner::background_work::CloudAgentPendingCallback
         }),
         Some(Arc::new(move |completion| {
+            if let Some(store) = cloud_watch_settle_pending_store.as_ref() {
+                let _ = store.clear_one(
+                    &completion.parent_agent_id,
+                    PendingWakeKind::CloudAgent,
+                    &completion.work_id,
+                );
+            }
             cloud_watch_settled.handle_background_subagent_completion(SubagentCompletion {
                 parent_agent_id: completion.parent_agent_id,
                 subagent_agent_id: completion.work_id,
@@ -11442,6 +11462,7 @@ fn main() {
     let shell_watch_box = Arc::clone(&forever_box);
     let shell_watch_local_tool_permission = local_tool_permission_extension.controller();
     let shell_watch_pending_store = transcript_runtime.pending_wake_store().cloned();
+    let shell_watch_settle_pending_store = transcript_runtime.pending_wake_store().cloned();
     let shell_watch_pending_events = gateway_events.clone();
     let shell_watch_settled = Arc::clone(&completion_revivals);
     let shell_watch_async_runtime = Arc::clone(&transcript_runtime);
@@ -11513,6 +11534,13 @@ fn main() {
             }) as mahayana_host_runtime::runner::background_work::BackgroundShellPendingCallback
         }),
         Some(Arc::new(move |completion| {
+            if let Some(store) = shell_watch_settle_pending_store.as_ref() {
+                let _ = store.clear_one(
+                    &completion.parent_agent_id,
+                    PendingWakeKind::Shell,
+                    &completion.work_id,
+                );
+            }
             shell_watch_settled.handle_background_shell_completion(ShellCompletion {
                 agent_id: completion.parent_agent_id,
                 shell_id: completion.work_id,

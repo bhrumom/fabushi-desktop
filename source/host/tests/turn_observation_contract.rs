@@ -520,6 +520,44 @@ fn shipping_host_routes_async_task_projection_through_turn_observation_owner() {
 }
 
 
+
+#[test]
+fn shipping_background_task_settlement_clears_durable_projection_before_change_event() {
+    let main = fs::read_to_string("app/src/main.rs").expect("shipping host main");
+    for required in [
+        "cloud_watch_settle_pending_store",
+        "PendingWakeKind::CloudAgent",
+        "shell_watch_settle_pending_store",
+        "PendingWakeKind::Shell",
+        "PendingWakeKind::Subagent",
+    ] {
+        assert!(
+            main.contains(required),
+            "missing production background-task settlement projection: {required}"
+        );
+    }
+
+    let background_work = fs::read_to_string("src/runner/background_work.rs")
+        .expect("background work owner");
+    let cloud_settled = background_work
+        .find("callback(CloudAgentBackgroundCompletion")
+        .expect("cloud settlement callback");
+    let cloud_changed = background_work[cloud_settled..]
+        .find("callback(&parent_agent_id);")
+        .expect("cloud terminal change callback")
+        + cloud_settled;
+    assert!(cloud_settled < cloud_changed);
+
+    let shell_settled = background_work
+        .find("callback(BackgroundShellBackgroundCompletion")
+        .expect("shell settlement callback");
+    let shell_changed = background_work[shell_settled..]
+        .find("callback(&parent_agent_id);")
+        .expect("shell terminal change callback")
+        + shell_settled;
+    assert!(shell_settled < shell_changed);
+}
+
 #[test]
 fn shipping_host_preserves_gateway_trace_span_for_dispatch_and_ttft_telemetry() {
     let main = fs::read_to_string("app/src/main.rs").expect("shipping host main");

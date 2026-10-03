@@ -467,9 +467,10 @@ impl RunnerCloudAgentWatches {
                 if !still_owned {
                     return;
                 }
-                if let Some(callback) = on_async_tasks_changed.as_ref() {
-                    callback(&parent_agent_id);
-                }
+                // Settle the live owner before publishing the task-set change.
+                // The shipping settlement callback clears the durable pending-wake
+                // projection, so observers cannot briefly resurrect a completed
+                // cloud task from the recovery ledger.
                 if let Some(callback) = on_settled.as_ref() {
                     callback(CloudAgentBackgroundCompletion {
                         parent_agent_id,
@@ -487,6 +488,9 @@ impl RunnerCloudAgentWatches {
                         },
                         quiet_origin,
                     });
+                }
+                if let Some(callback) = on_async_tasks_changed.as_ref() {
+                    callback(&parent_agent_id);
                 }
             });
         true
@@ -743,9 +747,10 @@ impl RunnerBackgroundShellWatches {
                 if !still_owned {
                     return;
                 }
-                if let Some(callback) = on_async_tasks_changed.as_ref() {
-                    callback(&parent_agent_id);
-                }
+                // Settle the live owner before publishing the task-set change.
+                // The settlement callback clears the durable recovery projection
+                // first, preventing a finished shell from being re-emitted as
+                // running by the async-task observer.
                 if let (Some(callback), Some(outcome)) = (on_settled.as_ref(), outcome) {
                     callback(BackgroundShellBackgroundCompletion {
                         parent_agent_id,
@@ -756,6 +761,9 @@ impl RunnerBackgroundShellWatches {
                         output_path: outcome.output_path,
                         quiet_origin,
                     });
+                }
+                if let Some(callback) = on_async_tasks_changed.as_ref() {
+                    callback(&parent_agent_id);
                 }
             });
         true
