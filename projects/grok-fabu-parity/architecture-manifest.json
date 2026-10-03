@@ -18775,22 +18775,30 @@
       "targetPath": "source/host/src/runner/shell_terminal_watch.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "211878c7eba16bbc901f0bd04b234257679ae90f",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/shell_terminal_watch.rs",
         "source/host/src/runner/background_work.rs",
-        "source/host/src/runner/conversation_state.rs",
-        "source/host/src/runner/system_prompt.rs"
+        "source/host/src/extensions/forever_box/runner_tools.rs",
+        "source/host/src/host_runner_composition.rs",
+        "source/host/src/runner/prompt_collector_glue.rs",
+        "source/host/src/runner/runner_prompt_glue.rs",
+        "source/host/src/transcript_mirror/conversation_state_binary.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/shell_terminal_watch_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+        "source/host/tests/system_prompt_dynamic_sections_production_contract.rs",
+        "source/host/tests/transcript_mirror_conversation_state_binary_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Runner now owns the frozen terminal-watch decision core: text/data/not-found decoding, footer settlement, missing-file threshold, permission/timeout outcomes, group/hidden-turn filtering, confirmed-turn watermark/cache validation and queued-user-message prepend projection. Final remains withheld until the generated Read executor, local-tool permission scope, real box readiness/terminal path, ConversationStateStructure blob store decoding and asynchronous poll loop are production-bound to this state machine."
+      "notes": "Implemented against frozen Grok 0.18 shell-terminal-watch.ts blob 211878c7eba16bbc901f0bd04b234257679ae90f. Shipping Host now injects the canonical SandLocalToolPermissionController into each background terminal poll with agent-scoped SandLocalToolScope identity equivalent to sandLocalToolScopeKey {agentId}; RunnerBackgroundShellWatches owns the real asynchronous poll/revival path through fresh ForeverBox readiness and terminal-file reads. Queued-user prepend now consumes the canonical generated Agent ConversationStateStructure checkpoint and production BlobStore, resolves ConversationTurnStructure/UserMessage blobs, applies hidden/group/unreadable fail-closed watermark semantics, and feeds Runner prompt projection without a second production owner. Exact-head 7089eb7911f23ba79407040b8eeb8ad7dd803134 passed Desktop Chat Parity run 37130681102 and, after one controlled rerun cleared a non-reproducing temporary transcript-manager SQLite open failure, Rust desktop runtime run 37130681119 passed shipping Host, Coordinator, box-exec, Host supervisor, independent Host Runner, prompt attachment, Human Computer takeover, and ConversationActor/CapabilityBroker suites."
     },
     {
       "referencePath": "source/host/runner/site-visit-tracking.ts",
