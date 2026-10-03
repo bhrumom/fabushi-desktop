@@ -6,6 +6,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
+use mahayana_host_runtime::runner::turn_agent_composition::build_turn_subagent_types;
 use mahayana_host_runtime::runner::tools::sand_task_subagent_tool::{
     SAND_TASK_TOOL_NAME, SubagentLaunchRecord, SubagentTaskReviewCallback,
     SubagentTaskSink, SubagentTaskToolBridge,
@@ -98,6 +99,7 @@ fn shipping_host_owns_task_child_runner_and_live_parent_projection() {
         "start_routed_provider_task(",
         "\"parentAgentId\": self.parent_agent_id",
         "subagent_task_sink: worker_subagent_task_sink",
+        "subagent_task_allowed_types,",
         "subagent_task_review,",
         "worker_host_runner_composition.compose_production_runner(",
         "Arc::clone(&worker_generated_agent_runtime)",
@@ -111,6 +113,7 @@ fn shipping_host_owns_task_child_runner_and_live_parent_projection() {
     }
     for required in [
         "pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>",
+        "pub subagent_task_allowed_types: Option<Arc<Vec<String>>>",
         "pub subagent_task_review: Option<SubagentTaskReviewCallback>",
         "composition = composition.with_subagent_task_sink(subagent_task_sink)",
         "composition = composition.with_subagent_task_review(subagent_task_review)",
@@ -207,4 +210,77 @@ fn shipping_task_launch_is_bound_to_subagent_auto_review_before_dispatch() {
     );
     assert!(composition.contains("SubagentTaskReviewCallback"));
     assert!(toolset.contains("task_bridge.with_review(review)"));
+}
+
+
+#[test]
+fn frozen_turn_subagent_type_projection_is_capability_scoped() {
+    assert_eq!(
+        build_turn_subagent_types(false, false, false, false, false),
+        Some(vec!["general-purpose".to_string()])
+    );
+    assert_eq!(
+        build_turn_subagent_types(false, true, false, false, true),
+        Some(vec!["executor".to_string()])
+    );
+    assert_eq!(
+        build_turn_subagent_types(false, true, true, true, false),
+        Some(vec!["executor".to_string(), "computeruse".to_string()])
+    );
+    assert_eq!(
+        build_turn_subagent_types(false, true, true, true, true),
+        Some(vec![
+            "executor".to_string(),
+            "computeruse".to_string(),
+            "browseruse".to_string(),
+        ])
+    );
+    assert_eq!(
+        build_turn_subagent_types(false, false, true, false, true),
+        Some(vec!["general-purpose".to_string()])
+    );
+    assert_eq!(
+        build_turn_subagent_types(true, true, true, true, true),
+        None
+    );
+}
+
+#[test]
+fn task_tool_rejects_subagent_types_outside_the_turn_projection_before_dispatch() {
+    let sink = Arc::new(RecordingTaskSink::default());
+    let allowed = Arc::new(vec!["executor".to_string(), "computeruse".to_string()]);
+    let bridge = SubagentTaskToolBridge::new(Arc::new(EmptyBridge), sink.clone())
+        .with_allowed_subagent_types(allowed);
+    let tools = bridge.list_tools().expect("task tool list");
+    let task = tools
+        .iter()
+        .find(|tool| tool.name == SAND_TASK_TOOL_NAME)
+        .expect("Task tool installed");
+    assert_eq!(
+        task.input_schema["properties"]["subagent_type"]["enum"],
+        json!(["executor", "computeruse"])
+    );
+
+    let error = bridge
+        .call_tool(
+            task,
+            json!({"prompt":"browse","subagent_type":"browseruse"}),
+            "task-unavailable",
+        )
+        .expect_err("unavailable turn capability must fail closed");
+    assert!(error.to_string().contains("browseruse"));
+    assert!(sink.calls.lock().unwrap().is_empty());
+
+    let launched = bridge
+        .call_tool(task, json!({"prompt":"work"}), "task-default")
+        .expect("default uses first projected type");
+    assert_eq!(launched["subagent_type"], "executor");
+    assert_eq!(
+        sink.calls.lock().unwrap().as_slice(),
+        &[(
+            "work".to_string(),
+            "executor".to_string(),
+            "task-default".to_string(),
+        )]
+    );
 }
