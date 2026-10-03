@@ -4,7 +4,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderPartialToolCall, ProviderSessionError, RoutedToolDefinition,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
-use mahayana_host_runtime::runner::turn_agent_composition::McpStateProjectedRoutedToolBridge;
+use mahayana_host_runtime::runner::tools::turn_toolset::project_turn_mcp_toolset;
 use mahayana_host_runtime::ports::mcp_state_executor::{
     McpStateExecResult, SandMcpToolProvider, decode_canonical_mcp_state_result,
     encode_canonical_mcp_state_result, execute_mcp_state,
@@ -139,7 +139,8 @@ fn shipping_projection_bridge_routes_discovery_through_mcp_state_and_delegates_e
         observed: Arc::clone(&observed),
         called: Arc::clone(&called),
     });
-    let projected = McpStateProjectedRoutedToolBridge::new(bridge);
+    let projected = project_turn_mcp_toolset(bridge, None, None, false)
+        .expect("project turn MCP toolset");
 
     let tools = projected.list_tools().expect("projected tools");
     assert_eq!(tools, vec![first.clone(), second.clone()]);
