@@ -1,7 +1,8 @@
 use mahayana_host_runtime::runner::sand_auto_review_classifier_run::{
     AutoReviewClassifierDecision, AutoReviewClassifierError,
     AutoReviewClassifierRequest, SandAutoReviewClassifierExecutor,
-    SmartModeClassifierDecision, SmartModeClassifierResult,
+    SmartModeClassifierDecision, SmartModeClassifierMeasurement,
+    SmartModeClassifierMeasurementKind, SmartModeClassifierResult,
     SmartModeClassifierSuccess, SAND_AUTO_REVIEW_BLOCK_REASON,
     SAND_AUTO_REVIEW_CLASSIFIER_MAX_ATTEMPTS,
     run_sand_auto_review_classifier,
@@ -10,6 +11,7 @@ use mahayana_host_runtime::runner::sand_auto_review_classifier_run::{
 struct Executor {
     result: Result<SmartModeClassifierResult, AutoReviewClassifierError>,
     seen: Vec<(String, String, String, bool, u32)>,
+    measurements: Vec<SmartModeClassifierMeasurement>,
 }
 
 impl SandAutoReviewClassifierExecutor<String, String> for Executor {
@@ -26,6 +28,10 @@ impl SandAutoReviewClassifierExecutor<String, String> for Executor {
         ));
         self.result.clone()
     }
+
+    fn record_measurement(&mut self, measurement: SmartModeClassifierMeasurement) {
+        self.measurements.push(measurement);
+    }
 }
 
 #[test]
@@ -39,6 +45,7 @@ fn classifier_allows_and_enforces_frozen_measurement_options() {
             },
         )),
         seen: Vec::new(),
+        measurements: Vec::new(),
     };
     let decision = run_sand_auto_review_classifier(
         &mut executor,
@@ -63,6 +70,21 @@ fn classifier_allows_and_enforces_frozen_measurement_options() {
         )]
     );
     assert_eq!(SAND_AUTO_REVIEW_CLASSIFIER_MAX_ATTEMPTS, 1);
+    assert_eq!(executor.measurements.len(), 2);
+    assert_eq!(
+        executor.measurements[0].kind,
+        SmartModeClassifierMeasurementKind::Started
+    );
+    assert_eq!(executor.measurements[0].mode, "enforce");
+    assert_eq!(executor.measurements[0].timeout_ms, Some(10_000));
+    assert_eq!(
+        executor.measurements[1].kind,
+        SmartModeClassifierMeasurementKind::Call
+    );
+    assert_eq!(executor.measurements[1].outcome.as_deref(), Some("allow"));
+    assert_eq!(executor.measurements[1].decision.as_deref(), Some("allow"));
+    assert_eq!(executor.measurements[1].retry_count, Some(0));
+    assert_eq!(executor.measurements[1].retryable, Some(false));
 }
 
 #[test]
@@ -76,6 +98,7 @@ fn classifier_trims_block_reason_and_rule_and_uses_default_reason() {
             },
         )),
         seen: Vec::new(),
+        measurements: Vec::new(),
     };
     let decision = run_sand_auto_review_classifier(
         &mut executor,
@@ -128,6 +151,7 @@ fn classifier_failures_and_unknown_decisions_reject_fail_closed() {
     let mut executor = Executor {
         result: Ok(SmartModeClassifierResult::Failure),
         seen: Vec::new(),
+        measurements: Vec::new(),
     };
     let reject = run_sand_auto_review_classifier(
         &mut executor,
@@ -178,6 +202,7 @@ fn classifier_abort_is_rethrown_but_other_executor_errors_reject() {
     let mut executor = Executor {
         result: Err(AutoReviewClassifierError::Aborted("cancelled".into())),
         seen: Vec::new(),
+        measurements: Vec::new(),
     };
     let error = run_sand_auto_review_classifier(
         &mut executor,
@@ -217,6 +242,7 @@ fn conversation_context_abort_is_rethrown_before_executor_runs() {
     let mut executor = Executor {
         result: Ok(SmartModeClassifierResult::Failure),
         seen: Vec::new(),
+        measurements: Vec::new(),
     };
     let error = run_sand_auto_review_classifier(
         &mut executor,
@@ -231,4 +257,106 @@ fn conversation_context_abort_is_rethrown_before_executor_runs() {
     .expect_err("abort");
     assert_eq!(error, AutoReviewClassifierError::Aborted("cancelled".into()));
     assert!(executor.seen.is_empty());
+}
+
+
+#[test]
+fn classifier_measurement_preserves_unspecified_error_and_abort_semantics() {
+    let mut executor = Executor {
+        result: Ok(SmartModeClassifierResult::Success(
+            SmartModeClassifierSuccess {
+                decision: SmartModeClassifierDecision::Unspecified,
+                block_reason: None,
+                proposed_allow_rule: None,
+            },
+        )),
+        seen: Vec::new(),
+        measurements: Vec::new(),
+    };
+    let decision = run_sand_auto_review_classifier(
+        &mut executor,
+        "private-tool-call-id",
+        "conversation",
+        "enforce",
+        || serde_json::json!({
+            "action": "shell",
+            "arguments": {"execution_surface": "host_machine"}
+        }),
+        || Ok(Vec::<String>::new()),
+        &["/workspace".into()],
+        "manual review",
+    )
+    .expect("unspecified must fail closed");
+    assert_eq!(
+        decision,
+        AutoReviewClassifierDecision::Reject {
+            reason: "manual review".into(),
+        }
+    );
+    assert_eq!(executor.measurements[0].action_kind, "shell");
+    assert_eq!(
+        executor.measurements[0].surface_label.as_deref(),
+        Some("host_machine")
+    );
+    assert_eq!(
+        executor.measurements[1].failure_reason.as_deref(),
+        Some("unspecified_decision")
+    );
+    assert_eq!(executor.measurements[1].retryable, Some(true));
+    assert!(
+        !format!("{:?}", executor.measurements).contains("private-tool-call-id"),
+        "measurement must suppress tool-call id"
+    );
+
+    executor.result = Ok(SmartModeClassifierResult::Error {
+        failure_reason: Some("backend_overloaded".into()),
+        retryable: Some(false),
+    });
+    executor.measurements.clear();
+    let decision = run_sand_auto_review_classifier(
+        &mut executor,
+        "private-tool-call-id-2",
+        "conversation",
+        "shadow",
+        || serde_json::json!({"action": "mcp", "arguments": {}}),
+        || Ok(Vec::<String>::new()),
+        &[],
+        "manual review",
+    )
+    .expect("backend result error must fail closed");
+    assert_eq!(
+        decision,
+        AutoReviewClassifierDecision::Reject {
+            reason: "manual review".into(),
+        }
+    );
+    assert_eq!(executor.measurements[1].outcome.as_deref(), Some("error"));
+    assert_eq!(
+        executor.measurements[1].failure_reason.as_deref(),
+        Some("backend_overloaded")
+    );
+    assert_eq!(executor.measurements[1].retryable, Some(false));
+
+    executor.result = Err(AutoReviewClassifierError::Aborted("cancelled".into()));
+    executor.measurements.clear();
+    let error = run_sand_auto_review_classifier(
+        &mut executor,
+        "private-tool-call-id-3",
+        "conversation",
+        "enforce",
+        || serde_json::json!({"action": "sand_computer", "arguments": {}}),
+        || Ok(Vec::<String>::new()),
+        &[],
+        "manual review",
+    )
+    .expect_err("abort must propagate");
+    assert_eq!(error, AutoReviewClassifierError::Aborted("cancelled".into()));
+    assert_eq!(
+        executor.measurements[1].kind,
+        SmartModeClassifierMeasurementKind::Exception
+    );
+    assert_eq!(
+        executor.measurements[1].outcome.as_deref(),
+        Some("exception")
+    );
 }
