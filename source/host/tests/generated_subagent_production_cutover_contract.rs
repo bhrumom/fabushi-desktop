@@ -88,6 +88,9 @@ fn shipping_host_owns_task_child_runner_and_live_parent_projection() {
     let runner_composition =
         fs::read_to_string(root.join("src/host_runner_composition.rs"))
             .expect("canonical Host Runner composition");
+    let production_bridge =
+        fs::read_to_string(root.join("src/runner_production_bridge.rs"))
+            .expect("canonical production Runner bridge");
     for required in [
         "struct ProductionSubagentTaskSink",
         "impl SubagentTaskSink for ProductionSubagentTaskSink",
@@ -109,15 +112,20 @@ fn shipping_host_owns_task_child_runner_and_live_parent_projection() {
     for required in [
         "pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>",
         "pub subagent_task_review: Option<SubagentTaskReviewCallback>",
-        "composition.with_subagent_task_sink(subagent_task_sink)",
-        "composition.with_subagent_task_review(subagent_task_review)",
+        "composition = composition.with_subagent_task_sink(subagent_task_sink)",
+        "composition = composition.with_subagent_task_review(subagent_task_review)",
         "SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)",
     ] {
         assert!(
-            runner_composition.contains(required),
-            "missing canonical HostRunnerComposition subagent wiring: {required}"
+            production_bridge.contains(required),
+            "missing canonical production Runner bridge subagent wiring: {required}"
         );
     }
+    assert!(
+        runner_composition.contains("create_production_runner_composition_with_hooks(input, hooks)")
+            && runner_composition.contains("create_production_runner("),
+        "HostRunnerComposition must delegate subagent projection and Runner construction to the production bridge"
+    );
     assert!(
         main.contains("if generated_parent_agent_id.is_none()"),
         "child sessions must not recursively install Task"
@@ -171,6 +179,9 @@ fn shipping_task_launch_is_bound_to_subagent_auto_review_before_dispatch() {
     let runner_composition =
         fs::read_to_string(root.join("src/host_runner_composition.rs"))
             .expect("canonical Host Runner composition");
+    let production_bridge =
+        fs::read_to_string(root.join("src/runner_production_bridge.rs"))
+            .expect("canonical production Runner bridge");
     let composition = fs::read_to_string(root.join("src/runner/turn_agent_composition.rs"))
         .expect("turn composition");
     let toolset = fs::read_to_string(root.join("src/runner/tools/turn_toolset.rs"))
@@ -184,8 +195,13 @@ fn shipping_task_launch_is_bound_to_subagent_auto_review_before_dispatch() {
         assert!(main.contains(required), "missing launch review input/delegation: {required}");
     }
     assert!(
-        runner_composition.contains("composition.with_subagent_task_review(subagent_task_review)"),
-        "canonical HostRunnerComposition must bind subagent auto-review before dispatch"
+        production_bridge.contains("composition = composition.with_subagent_task_sink(subagent_task_sink)")
+            && production_bridge.contains("composition = composition.with_subagent_task_review(subagent_task_review)"),
+        "canonical production Runner bridge must bind subagent sink and auto-review before dispatch"
+    );
+    assert!(
+        runner_composition.contains("create_production_runner_composition_with_hooks(input, hooks)"),
+        "HostRunnerComposition must delegate subagent auto-review binding to the production bridge"
     );
     assert!(composition.contains("SubagentTaskReviewCallback"));
     assert!(toolset.contains("task_bridge.with_review(review)"));
