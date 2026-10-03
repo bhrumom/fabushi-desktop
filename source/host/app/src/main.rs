@@ -7883,7 +7883,8 @@ fn start_routed_provider_task(
                     routine_post_write,
                     multitask_todo_state,
                 },
-            );
+            )
+            .with_silence_allowed(prompt_is_silence_allowed);
             let summarization_inference = Arc::clone(&inference);
             let summarization_data_dir = data_dir.clone();
             let summarization_prompt: ProductionTurnSummarizationPrompt =

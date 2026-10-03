@@ -857,6 +857,7 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials(
         on_usage,
         on_partial_tool_call,
         8,
+        None,
     )
 }
 
@@ -876,6 +877,7 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
     on_partial_tool_call: &mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
     max_steps: usize,
+    tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
     let tool_index = tools
@@ -1006,12 +1008,16 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
         });
 
         let calls_in_step = calls.len();
+        let mut observed_tool_calls = Vec::with_capacity(calls_in_step);
         for call in calls {
             if should_cancel() {
                 return Err(ProviderSessionError::Cancelled(
                     "Runner cancelled before Cursor tool execution".into(),
                 ));
             }
+            let args = serde_json::from_str::<Value>(&call.args)
+                .unwrap_or_else(|_| json!({}));
+            observed_tool_calls.push((call.tool_name.clone(), args.clone()));
             let (result, is_error) = match tool_index.get(&call.tool_name).copied() {
                 None => (
                     json!({
@@ -1019,23 +1025,27 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
                     }),
                     true,
                 ),
-                Some(tool) => {
-                    let args = serde_json::from_str::<Value>(&call.args)
-                        .unwrap_or_else(|_| json!({}));
-                    match execute_tool(tool, args, &call.tool_call_id) {
-                        Ok(value) => (value, false),
-                        Err(error) => (
-                            json!({ "error": error.to_string() }),
-                            true,
-                        ),
-                    }
-                }
+                Some(tool) => match execute_tool(tool, args, &call.tool_call_id) {
+                    Ok(value) => (value, false),
+                    Err(error) => (
+                        json!({ "error": error.to_string() }),
+                        true,
+                    ),
+                },
             };
             conversation.push(CursorCheckpointMessage::ToolResult {
                 tool_call_id: call.tool_call_id,
                 tool_name: call.tool_name,
                 result,
                 is_error,
+            });
+        }
+        if let Some(reminder) =
+            tool_step_reminder.and_then(|hook| hook(&observed_tool_calls))
+        {
+            conversation.push(CursorCheckpointMessage::Text {
+                role: "user".into(),
+                text: reminder,
             });
         }
 

@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, ProviderTokenUsage,
+    ProviderMessage, ProviderSessionError, ProviderTokenUsage, ProviderToolStepReminderHook,
     RoutedMcpMetaToolDefinition, RoutedProvider, RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
@@ -23,6 +23,7 @@ use super::sand_action_audit::{AuditedRoutedToolBridge, RoutedMcpAuditConfig};
 use super::subagent_runtime::SubagentRuntime;
 use super::StreamAttemptRuntime;
 use super::turn_shape::checkpoint_ended_on_silent_tool_calls;
+use super::turn_tool_session_reminders::TurnToolSessionReminderState;
 use super::turn_observation::{
     McpObservedRoutedToolBridge, ObservedRoutedToolBridge, TurnObservationHandle,
 };
@@ -180,6 +181,7 @@ pub struct TurnAgentComposition {
     is_computer_use_subagent: bool,
     toolset_role: TurnToolsetRole,
     local_tool_permission: Option<TurnLocalToolPermissionBinding>,
+    is_silence_allowed: bool,
 }
 
 impl TurnAgentComposition {
@@ -243,6 +245,7 @@ impl TurnAgentComposition {
             is_computer_use_subagent: false,
             toolset_role: TurnToolsetRole::default(),
             local_tool_permission: None,
+            is_silence_allowed: false,
         }
     }
 
@@ -251,6 +254,11 @@ impl TurnAgentComposition {
         cursor_auth: Arc<dyn CursorInferenceAuth>,
     ) -> Self {
         self.cursor_auth = Some(cursor_auth);
+        self
+    }
+
+    pub fn with_silence_allowed(mut self, allowed: bool) -> Self {
+        self.is_silence_allowed = allowed;
         self
     }
 
@@ -803,6 +811,19 @@ impl TurnAgentComposition {
             None => bridge,
         };
         let bridge = fence_turn_toolset(bridge, self.spotlight_enabled);
+        let tool_step_reminder = if self.toolset_role.is_subagent_runner || self.is_silence_allowed {
+            None
+        } else {
+            let state = Arc::new(Mutex::new(TurnToolSessionReminderState::default()));
+            let hook_state = Arc::clone(&state);
+            let hook: Arc<ProviderToolStepReminderHook> = Arc::new(move |calls| {
+                hook_state
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .observe_tool_step(calls)
+            });
+            Some(hook)
+        };
         run_routed_provider_in_runner(
             RoutedProviderRun {
                 provider: self.provider,
@@ -821,6 +842,7 @@ impl TurnAgentComposition {
                 multitask_enabled: self.multitask_enabled,
                 is_computer_use_subagent: self.is_computer_use_subagent,
                 max_steps: SAND_AGENT_MAX_STEPS,
+                tool_step_reminder,
             },
             on_text_delta,
         )

@@ -17,8 +17,8 @@ use uuid::Uuid;
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderPartialToolCall, ProviderSessionError, ProviderTokenUsage,
-    RoutedMcpMetaToolDefinition, RoutedProvider, RoutedProviderCheckpoint, RoutedProviderOptions,
-    RoutedToolDefinition,
+    ProviderToolStepReminderHook, RoutedMcpMetaToolDefinition, RoutedProvider,
+    RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
     run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps,
 };
 use crate::host_request_context::HostRequestContext;
@@ -327,6 +327,7 @@ struct ProductionRoutedProviderAttemptExecutor<'a> {
     on_partial_tool_call: &'a mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
     usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
     max_steps: usize,
+    tool_step_reminder: Option<Arc<ProviderToolStepReminderHook>>,
 }
 
 impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'_> {
@@ -363,6 +364,7 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
             on_checkpoint,
             &mut on_usage,
             self.max_steps,
+            self.tool_step_reminder.as_deref(),
         )
     }
 }
@@ -384,6 +386,7 @@ pub struct RoutedProviderRun<'a> {
     pub multitask_enabled: bool,
     pub is_computer_use_subagent: bool,
     pub max_steps: usize,
+    pub tool_step_reminder: Option<Arc<ProviderToolStepReminderHook>>,
 }
 
 pub fn run_routed_provider_in_runner(
@@ -475,6 +478,7 @@ pub fn run_routed_provider_in_runner(
         on_partial_tool_call: &mut on_partial_tool_call,
         usage_sink: run.usage_sink.clone(),
         max_steps: run.max_steps.max(1),
+        tool_step_reminder: run.tool_step_reminder.clone(),
     };
     let retry_sink = run.retry_sink.clone();
     let mut on_retry = move |event: &ProviderRetryEvent| {

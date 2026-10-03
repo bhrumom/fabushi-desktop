@@ -66,6 +66,7 @@ pub mod sand_subagent_auto_review;
 
 pub mod send_message_reminder_middleware;
 pub mod start_of_turn_ack_reminder_middleware;
+pub mod turn_tool_session_reminders;
 pub mod turn_shape;
 pub mod routed_provider_runtime;
 pub mod coordinator_tool_relay;

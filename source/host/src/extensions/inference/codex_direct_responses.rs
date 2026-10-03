@@ -222,6 +222,34 @@ pub fn run_codex_direct_responses_with_lifecycle(
     ) -> Result<(), CodexDirectError>,
     should_cancel: &dyn Fn() -> bool,
 ) -> Result<CodexDirectResult, CodexDirectError> {
+    run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
+        transport,
+        options,
+        resume_from,
+        execute_tool,
+        on_text_delta,
+        on_checkpoint,
+        should_cancel,
+        None,
+    )
+}
+
+pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
+    transport: &mut dyn CodexDirectTransport,
+    options: &CodexDirectOptions,
+    resume_from: Option<&CodexDirectCheckpoint>,
+    execute_tool: &mut dyn FnMut(
+        &CodexDirectTool,
+        Value,
+        &str,
+    ) -> Result<Value, CodexDirectError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    on_checkpoint: &mut dyn FnMut(
+        &CodexDirectCheckpoint,
+    ) -> Result<(), CodexDirectError>,
+    should_cancel: &dyn Fn() -> bool,
+    tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
+) -> Result<CodexDirectResult, CodexDirectError> {
     let max_steps = options.max_steps.max(1);
     let tools_by_name = options
         .tools
@@ -354,6 +382,7 @@ pub fn run_codex_direct_responses_with_lifecycle(
 
         let calls_in_step = calls.len();
         let mut results = Vec::new();
+        let mut observed_tool_calls = Vec::with_capacity(calls_in_step);
         for call in calls {
             if should_cancel() {
                 return Err(CodexDirectError::Cancelled(
@@ -362,30 +391,25 @@ pub fn run_codex_direct_responses_with_lifecycle(
             }
             let name = call.get("name").and_then(Value::as_str).unwrap_or("");
             let call_id = call.get("call_id").and_then(Value::as_str).unwrap_or("");
+            let arguments = call
+                .get("arguments")
+                .and_then(Value::as_str)
+                .unwrap_or("{}");
+            let args = serde_json::from_str::<Value>(arguments)
+                .unwrap_or_else(|_| json!({}));
+            observed_tool_calls.push((name.to_string(), args.clone()));
             let output = match tools_by_name.get(name).copied() {
                 None => json!({
                     "isError": true,
                     "error": format!("Unknown Fabushi tool: {name}")
                 }),
-                Some(tool) => {
-                    let arguments = call
-                        .get("arguments")
-                        .and_then(Value::as_str)
-                        .unwrap_or("{}");
-                    match serde_json::from_str::<Value>(arguments) {
-                        Ok(args) => match execute_tool(tool, args, call_id) {
-                            Ok(value) => value,
-                            Err(error) => json!({
-                                "isError": true,
-                                "error": error.to_string()
-                            }),
-                        },
-                        Err(_) => json!({
-                            "isError": true,
-                            "error": "Tool arguments were not valid JSON."
-                        }),
-                    }
-                }
+                Some(tool) => match execute_tool(tool, args, call_id) {
+                    Ok(value) => value,
+                    Err(error) => json!({
+                        "isError": true,
+                        "error": error.to_string()
+                    }),
+                },
             };
             results.push(json!({
                 "type": "function_call_output",
@@ -396,6 +420,14 @@ pub fn run_codex_direct_responses_with_lifecycle(
 
         input.extend(output);
         input.extend(results);
+        if let Some(reminder) =
+            tool_step_reminder.and_then(|hook| hook(&observed_tool_calls))
+        {
+            input.push(json!({
+                "role": "user",
+                "content": reminder,
+            }));
+        }
         completed_steps = completed_steps.saturating_add(1);
         tool_calls_completed =
             tool_calls_completed.saturating_add(calls_in_step);

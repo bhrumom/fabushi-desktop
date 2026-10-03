@@ -28,7 +28,7 @@ use super::cursor_inference_transport::{
 use super::codex_direct_responses::{
     CodexDirectCheckpoint, CodexDirectError, CodexDirectOptions, CodexDirectTool,
     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
-    run_codex_direct_responses_with_lifecycle,
+    run_codex_direct_responses_with_lifecycle_and_tool_step_reminder,
 };
 
 pub const GROK_ROUTER_SYSTEM_PROMPT: &str =
@@ -194,6 +194,9 @@ pub struct ProviderPartialToolCall {
     pub raw_arguments: String,
     pub model_call_id: Option<String>,
 }
+
+pub type ProviderToolStepReminderHook =
+    dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "provider", content = "checkpoint", rename_all = "kebab-case")]
@@ -977,6 +980,7 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage(
         on_checkpoint,
         on_usage,
         8,
+        None,
     )
 }
 
@@ -996,6 +1000,7 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     ) -> Result<(), ProviderSessionError>,
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
     max_steps: usize,
+    tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let mut transport = CodexHttpTransport::new(&codex_home().join("auth.json"))?;
     let system_prompt = assembled_provider_system_prompt(messages);
@@ -1021,7 +1026,7 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
         .iter()
         .map(|tool| (tool.name.clone(), tool))
         .collect::<BTreeMap<_, _>>();
-    let result = run_codex_direct_responses_with_lifecycle(
+    let result = run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
         &mut transport,
         &request,
         resume_from,
@@ -1041,6 +1046,7 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
                 .map_err(|error| CodexDirectError::Transport(error.to_string()))
         },
         should_cancel,
+        tool_step_reminder,
     )?;
     on_usage(result.usage.into());
     Ok(result.text)
@@ -1116,6 +1122,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
         on_checkpoint,
         on_usage,
         8,
+        None,
     )
 }
 
@@ -1129,6 +1136,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     ) -> Result<(), ProviderSessionError>,
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
     max_steps: usize,
+    tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
     if (options.should_cancel)() {
@@ -1178,6 +1186,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
                 on_usage,
                 on_partial_tool_call,
                 max_steps,
+                tool_step_reminder,
             );
             if let Ok(text) = result.as_ref() {
                 let mut labeled_messages = messages.to_vec();
@@ -1213,6 +1222,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
                 &mut codex_checkpoint,
                 on_usage,
                 max_steps,
+                tool_step_reminder,
             )
         }
         RoutedProvider::OpenRouter => {
@@ -1235,6 +1245,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
                 &mut openrouter_checkpoint,
                 on_usage,
                 max_steps,
+                tool_step_reminder,
             )
         }
         RoutedProvider::ClaudeCode => {
@@ -1510,6 +1521,7 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials(
         on_usage,
         on_partial_tool_call,
         8,
+        None,
     )
 }
 
@@ -1532,6 +1544,7 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
     on_partial_tool_call: &mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
     max_steps: usize,
+    tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
     let tool_index = tools
@@ -1718,6 +1731,7 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
             "tool_calls": tool_calls,
         }));
 
+        let mut observed_tool_calls = Vec::with_capacity(calls_in_step);
         for (_index, call) in partial_calls {
             if should_cancel() {
                 return Err(ProviderSessionError::Cancelled(
@@ -1729,29 +1743,35 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
             } else {
                 call.id
             };
+            let args = serde_json::from_str::<Value>(&call.arguments)
+                .unwrap_or_else(|_| json!({}));
+            observed_tool_calls.push((call.name.clone(), args.clone()));
             let result = match tool_index.get(&call.name).copied() {
                 None => json!({
                     "isError": true,
                     "error": format!("Unknown Fabushi tool: {}", call.name)
                 }),
-                Some(tool) => {
-                    let args =
-                        serde_json::from_str::<Value>(&call.arguments)
-                            .unwrap_or_else(|_| json!({}));
-                    match execute_tool(tool, args, &tool_call_id) {
-                        Ok(value) => value,
-                        Err(error) => json!({
-                            "isError": true,
-                            "error": error.to_string()
-                        }),
-                    }
-                }
+                Some(tool) => match execute_tool(tool, args, &tool_call_id) {
+                    Ok(value) => value,
+                    Err(error) => json!({
+                        "isError": true,
+                        "error": error.to_string()
+                    }),
+                },
             };
             conversation.push(json!({
                 "role": "tool",
                 "tool_call_id": tool_call_id,
                 "content": serde_json::to_string(&result)
                     .unwrap_or_else(|_| "null".into()),
+            }));
+        }
+        if let Some(reminder) =
+            tool_step_reminder.and_then(|hook| hook(&observed_tool_calls))
+        {
+            conversation.push(json!({
+                "role": "user",
+                "content": reminder,
             }));
         }
 
@@ -1801,6 +1821,7 @@ fn run_openrouter_provider_text_with_lifecycle(
         on_checkpoint,
         &mut ignore_usage,
         8,
+        None,
     )
 }
 
@@ -1813,6 +1834,7 @@ fn run_openrouter_provider_text_with_lifecycle_reporting_usage(
     ) -> Result<(), ProviderSessionError>,
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
     max_steps: usize,
+    tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let api_key = openrouter_api_key(options.data_dir)?;
     let model = env::var("SAND_OPENROUTER_MODEL")
@@ -1843,6 +1865,7 @@ fn run_openrouter_provider_text_with_lifecycle_reporting_usage(
         on_usage,
         on_partial_tool_call,
         max_steps,
+        tool_step_reminder,
     )
 }
 
