@@ -54,6 +54,8 @@ pub enum CursorBackendError {
     InvalidBackendUrl(String),
     #[error("Cursor backend transport failed: {0}")]
     Transport(String),
+    #[error("Cursor backend request timed out: {0}")]
+    Timeout(String),
     #[error("Cursor backend request cancelled: {0}")]
     Cancelled(String),
     #[error("Cursor backend returned HTTP {status}: {body}")]
@@ -302,7 +304,13 @@ async fn send_cursor_unary_async_with_request_id(
     tokio::pin!(request);
     let response = tokio::select! {
         result = &mut request => {
-            result.map_err(|error| CursorBackendError::Transport(error.to_string()))?
+            result.map_err(|error| {
+                if error.is_timeout() {
+                    CursorBackendError::Timeout(error.to_string())
+                } else {
+                    CursorBackendError::Transport(error.to_string())
+                }
+            })?
         }
         _ = wait_for_cursor_cancellation(Arc::clone(&cancellation)) => {
             return Err(CursorBackendError::Cancelled(
@@ -316,7 +324,13 @@ async fn send_cursor_unary_async_with_request_id(
     let bytes = tokio::select! {
         result = &mut response_body => {
             result
-                .map_err(|error| CursorBackendError::Transport(error.to_string()))?
+                .map_err(|error| {
+                    if error.is_timeout() {
+                        CursorBackendError::Timeout(error.to_string())
+                    } else {
+                        CursorBackendError::Transport(error.to_string())
+                    }
+                })?
                 .to_vec()
         }
         _ = wait_for_cursor_cancellation(cancellation) => {
