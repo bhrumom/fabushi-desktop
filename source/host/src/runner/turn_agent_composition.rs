@@ -21,6 +21,7 @@ use super::routed_provider_runtime::{
 };
 use super::sand_action_audit::{AuditedRoutedToolBridge, RoutedMcpAuditConfig};
 use super::subagent_runtime::SubagentRuntime;
+use super::StreamAttemptRuntime;
 use super::turn_shape::checkpoint_ended_on_silent_tool_calls;
 use super::turn_observation::{
     McpObservedRoutedToolBridge, ObservedRoutedToolBridge, TurnObservationHandle,
@@ -169,6 +170,7 @@ pub struct TurnAgentComposition {
     latest_provider_checkpoint: Arc<Mutex<Option<RoutedProviderCheckpoint>>>,
     retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
     retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
+    stream_attempt_runtime: Option<Arc<StreamAttemptRuntime>>,
     usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
     box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     box_shell_review: Option<BoxShellAutoReviewCallback>,
@@ -222,6 +224,7 @@ impl TurnAgentComposition {
             latest_provider_checkpoint,
             retry_sink: None,
             retry_report_sink: None,
+            stream_attempt_runtime: None,
             usage_sink: None,
             box_resources: None,
             box_shell_review: None,
@@ -273,6 +276,14 @@ impl TurnAgentComposition {
         sink: Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>,
     ) -> Self {
         self.retry_report_sink = Some(sink);
+        self
+    }
+
+    pub fn with_stream_attempt_runtime(
+        mut self,
+        runtime: Arc<StreamAttemptRuntime>,
+    ) -> Self {
+        self.stream_attempt_runtime = Some(runtime);
         self
     }
 
@@ -699,6 +710,7 @@ impl TurnAgentComposition {
                 checkpoint_store: Arc::clone(&self.checkpoint_store),
                 retry_sink: self.retry_sink.clone(),
                 retry_report_sink: self.retry_report_sink.clone(),
+                stream_attempt_runtime: self.stream_attempt_runtime.clone(),
                 usage_sink: self.usage_sink.clone(),
                 cloud_agents_enabled: self.cloud_agent_tool.is_some(),
                 multitask_enabled: self.multitask_enabled,

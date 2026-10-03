@@ -1,6 +1,156 @@
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use super::{AttemptCheckpoint, TransientStreamError};
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StreamAttemptGeneration(u64);
+
+impl StreamAttemptGeneration {
+    pub fn value(self) -> u64 {
+        self.0
+    }
+}
+
+/// Canonical Runner owner for one generated-Agent stream attempt lifecycle.
+///
+/// The frozen TypeScript owner keeps an object identity fence plus resettable
+/// first-token timer hooks around each attempt. Rust cannot retain borrowed
+/// callbacks after run_attempt returns, but production provider callbacks may
+/// still cross worker/thread boundaries. Keep the fence explicit so stale
+/// callbacks are rejected by behavior rather than relying only on lifetimes.
+#[derive(Debug)]
+pub struct StreamAttemptRuntime {
+    policy: StreamAttemptPolicy,
+    active_generation: AtomicU64,
+    next_generation: AtomicU64,
+    stream_output_produced: AtomicBool,
+    deadline_epoch: AtomicU64,
+    deadline_disarmed: AtomicBool,
+}
+
+impl StreamAttemptRuntime {
+    pub fn new(policy: StreamAttemptPolicy) -> Self {
+        Self {
+            policy,
+            active_generation: AtomicU64::new(0),
+            next_generation: AtomicU64::new(0),
+            stream_output_produced: AtomicBool::new(false),
+            deadline_epoch: AtomicU64::new(0),
+            deadline_disarmed: AtomicBool::new(true),
+        }
+    }
+
+    pub fn policy(&self) -> &StreamAttemptPolicy {
+        &self.policy
+    }
+
+    pub fn begin_attempt(&self) -> StreamAttemptGeneration {
+        let generation = self
+            .next_generation
+            .fetch_add(1, Ordering::AcqRel)
+            .saturating_add(1);
+        // Fence the prior attempt before publishing any mutable state for the
+        // next one. A late callback from the previous provider generation must
+        // never observe freshly reset output/deadline state as its own.
+        self.active_generation.store(0, Ordering::Release);
+        self.stream_output_produced.store(false, Ordering::Release);
+        self.deadline_disarmed.store(false, Ordering::Release);
+        self.deadline_epoch.fetch_add(1, Ordering::AcqRel);
+        self.active_generation.store(generation, Ordering::Release);
+        StreamAttemptGeneration(generation)
+    }
+
+    pub fn is_current(&self, generation: StreamAttemptGeneration) -> bool {
+        generation.0 != 0
+            && self.active_generation.load(Ordering::Acquire) == generation.0
+    }
+
+    pub fn stream_output_produced(
+        &self,
+        generation: StreamAttemptGeneration,
+    ) -> bool {
+        self.is_current(generation)
+            && self.stream_output_produced.load(Ordering::Acquire)
+    }
+
+    pub fn mark_stream_output(
+        &self,
+        generation: StreamAttemptGeneration,
+    ) -> bool {
+        if !self.is_current(generation) {
+            return false;
+        }
+        self.stream_output_produced.store(true, Ordering::Release);
+        self.deadline_disarmed.store(true, Ordering::Release);
+        true
+    }
+
+    /// Equivalent to the frozen reset-first-token-deadline hook. A reset is
+    /// ignored after output or after this attempt has been superseded.
+    pub fn reset_first_output_deadline(
+        &self,
+        generation: StreamAttemptGeneration,
+    ) -> bool {
+        if !self.is_current(generation)
+            || self.stream_output_produced.load(Ordering::Acquire)
+            || self.deadline_disarmed.load(Ordering::Acquire)
+        {
+            return false;
+        }
+        self.deadline_epoch.fetch_add(1, Ordering::AcqRel);
+        true
+    }
+
+    pub fn disarm_first_output_deadline(
+        &self,
+        generation: StreamAttemptGeneration,
+    ) -> bool {
+        if !self.is_current(generation) {
+            return false;
+        }
+        self.deadline_disarmed.store(true, Ordering::Release);
+        true
+    }
+
+    pub fn deadline_epoch(
+        &self,
+        generation: StreamAttemptGeneration,
+    ) -> Option<u64> {
+        self.is_current(generation)
+            .then(|| self.deadline_epoch.load(Ordering::Acquire))
+    }
+
+    pub fn deadline_armed(
+        &self,
+        generation: StreamAttemptGeneration,
+    ) -> bool {
+        self.is_current(generation)
+            && !self.stream_output_produced.load(Ordering::Acquire)
+            && !self.deadline_disarmed.load(Ordering::Acquire)
+    }
+
+    pub fn settle_attempt(
+        &self,
+        generation: StreamAttemptGeneration,
+    ) -> bool {
+        if self
+            .active_generation
+            .compare_exchange(
+                generation.0,
+                0,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            )
+            .is_err()
+        {
+            return false;
+        }
+        self.deadline_disarmed.store(true, Ordering::Release);
+        true
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct AttemptProgress {

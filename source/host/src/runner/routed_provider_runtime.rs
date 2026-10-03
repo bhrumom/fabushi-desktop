@@ -26,6 +26,7 @@ use crate::runner::production_turn_run_shell_adapter::{
     RoutedProviderAttemptExecutor, RoutedProviderCheckpointStore,
 };
 use crate::runner::system_prompt_assembly::render_request_context_system_prompt_with_capabilities;
+use crate::runner::StreamAttemptRuntime;
 use crate::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout;
 
 pub const ROUTED_MCP_PROTOCOL_VERSION: &str = "2025-03-26";
@@ -367,6 +368,7 @@ pub struct RoutedProviderRun<'a> {
     pub checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     pub retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
     pub retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
+    pub stream_attempt_runtime: Option<Arc<StreamAttemptRuntime>>,
     pub usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
     pub cloud_agents_enabled: bool,
     pub multitask_enabled: bool,
@@ -472,14 +474,26 @@ pub fn run_routed_provider_in_runner(
             sink(report);
         }
     };
-    let result = ProductionTurnRunShellAdapter::default().run_with_retry_reporting(
-        &run.cancellation,
-        run.checkpoint_store.as_ref(),
-        &mut executor,
-        &mut guarded_delta,
-        &mut on_retry,
-        &mut on_retry_report,
-    );
+    let adapter = ProductionTurnRunShellAdapter::default();
+    let result = match run.stream_attempt_runtime.clone() {
+        Some(runtime) => adapter.run_with_attempt_runtime_reporting(
+            runtime,
+            &run.cancellation,
+            run.checkpoint_store.as_ref(),
+            &mut executor,
+            &mut guarded_delta,
+            &mut on_retry,
+            &mut on_retry_report,
+        ),
+        None => adapter.run_with_retry_reporting(
+            &run.cancellation,
+            run.checkpoint_store.as_ref(),
+            &mut executor,
+            &mut guarded_delta,
+            &mut on_retry,
+            &mut on_retry_report,
+        ),
+    };
 
     if let Some(server) = mcp_server.as_mut() {
         server.close();

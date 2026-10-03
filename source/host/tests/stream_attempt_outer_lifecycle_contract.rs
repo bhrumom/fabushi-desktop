@@ -3,7 +3,8 @@ use std::sync::Mutex;
 use futures::future;
 use mahayana_host_runtime::runner::{
     OuterCheckpointDisposition, OuterStreamFuture, OuterStreamPersistence,
-    StreamCancelReason, persist_outer_stream_checkpoint,
+    StreamAttemptPolicy, StreamAttemptRuntime, StreamCancelReason,
+    persist_outer_stream_checkpoint,
     persist_outer_stream_final_state, release_outer_stream_persistence,
 };
 
@@ -207,4 +208,29 @@ fn final_state_commit_and_release_are_separate_outer_finally_steps() {
         events.snapshot(),
         vec!["final:final", "commit-disk", "release-disk"]
     );
+}
+
+
+#[test]
+fn stream_attempt_runtime_fences_stale_generation_and_owns_resettable_deadline() {
+    let runtime = StreamAttemptRuntime::new(StreamAttemptPolicy::default());
+    let first = runtime.begin_attempt();
+    let first_epoch = runtime.deadline_epoch(first).expect("first epoch");
+    assert!(runtime.reset_first_output_deadline(first));
+    assert!(
+        runtime.deadline_epoch(first).expect("reset epoch") > first_epoch,
+        "deadline reset must be observable by the watchdog owner"
+    );
+
+    let second = runtime.begin_attempt();
+    assert!(!runtime.is_current(first));
+    assert!(!runtime.mark_stream_output(first));
+    assert!(!runtime.reset_first_output_deadline(first));
+    assert!(runtime.is_current(second));
+    assert!(runtime.deadline_armed(second));
+    assert!(runtime.mark_stream_output(second));
+    assert!(!runtime.deadline_armed(second));
+    assert!(runtime.stream_output_produced(second));
+    assert!(runtime.settle_attempt(second));
+    assert!(!runtime.is_current(second));
 }

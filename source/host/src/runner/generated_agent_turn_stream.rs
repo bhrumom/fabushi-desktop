@@ -20,8 +20,8 @@ use super::production_turn_input_projection::ProductionTurnAgentInputProjection;
 use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::turn_agent_composition::TurnAgentComposition;
 use super::{
-    OuterStreamFuture, OuterStreamPersistence, StreamCancelReason,
-    TurnRunOptions,
+    OuterStreamFuture, OuterStreamPersistence, StreamAttemptPolicy,
+    StreamAttemptRuntime, StreamCancelReason, TurnRunOptions,
 };
 
 pub struct GeneratedAgentTurnContext<'a> {
@@ -270,6 +270,11 @@ pub fn run_production_generated_agent_stream(
         options,
     } = projection;
     let cancellation = cancel_this_run;
+    let stream_attempt_runtime = Arc::new(StreamAttemptRuntime::new(
+        StreamAttemptPolicy::default(),
+    ));
+    let composition = composition
+        .with_stream_attempt_runtime(stream_attempt_runtime);
     let source: Arc<
         dyn InactiveTurnAgentStreamSource<
             GeneratedAgentTurnContext<'_>,

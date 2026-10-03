@@ -13,7 +13,8 @@ use crate::extensions::inference::provider_session::{
 use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::tools::box_help_tool::WAITING_USER_CANCELLATION_PREFIX;
 use super::{
-    AttemptCheckpoint, AttemptProgress, RetryDecision, StreamAttemptPolicy,
+    AttemptCheckpoint, AttemptProgress, RetryDecision, StreamAttemptGeneration,
+    StreamAttemptPolicy, StreamAttemptRuntime,
     StreamFailureKind, TransientStreamError, TurnRunFinished, TurnRunOptions,
     TurnRunShell, TurnRunShellError, TurnRunStarted,
 };
@@ -246,6 +247,27 @@ impl ProductionTurnRunShellAdapter {
         on_retry: &mut dyn FnMut(&ProviderRetryEvent),
         on_report: &mut dyn FnMut(&ProviderRetryReport),
     ) -> Result<String, ProviderSessionError> {
+        self.run_with_attempt_runtime_reporting(
+            Arc::new(StreamAttemptRuntime::new(self.policy.clone())),
+            cancellation,
+            checkpoint_store,
+            executor,
+            on_text_delta,
+            on_retry,
+            on_report,
+        )
+    }
+
+    pub fn run_with_attempt_runtime_reporting(
+        &self,
+        runtime: Arc<StreamAttemptRuntime>,
+        cancellation: &RoutedProviderCancellation,
+        checkpoint_store: &dyn RoutedProviderCheckpointStore,
+        executor: &mut dyn RoutedProviderAttemptExecutor,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+        on_retry: &mut dyn FnMut(&ProviderRetryEvent),
+        on_report: &mut dyn FnMut(&ProviderRetryReport),
+    ) -> Result<String, ProviderSessionError> {
         let mut attempt = 1_u32;
         let mut resume_from: Option<RoutedProviderCheckpoint> = None;
 
@@ -254,17 +276,18 @@ impl ProductionTurnRunShellAdapter {
                 return Err(cancelled_error(cancellation));
             }
 
-            let first_output_seen = Arc::new(AtomicBool::new(false));
+            let generation = runtime.begin_attempt();
             let attempt_done = Arc::new(AtomicBool::new(false));
             let watchdog_expired = Arc::new(AtomicBool::new(false));
             let watchdog_timeout = first_output_timeout_for_attempt(
-                self.policy.first_output_timeout,
+                runtime.policy().first_output_timeout,
                 attempt,
             );
             let watchdog = spawn_first_output_watchdog(
                 watchdog_timeout,
                 self.watchdog_poll_interval,
-                Arc::clone(&first_output_seen),
+                Arc::clone(&runtime),
+                generation,
                 Arc::clone(&attempt_done),
                 Arc::clone(&watchdog_expired),
                 cancellation.clone(),
@@ -273,9 +296,11 @@ impl ProductionTurnRunShellAdapter {
             let progress = RefCell::new(AttemptProgress::default());
             let accepted_resume =
                 RefCell::new(resume_from.clone());
-            let seen_for_delta = Arc::clone(&first_output_seen);
+            let runtime_for_delta = Arc::clone(&runtime);
             let mut guarded_delta = |delta: &str, accumulated: &str| {
-                seen_for_delta.store(true, Ordering::Release);
+                if !runtime_for_delta.mark_stream_output(generation) {
+                    return;
+                }
                 let mut progress = progress.borrow_mut();
                 progress.record_output(delta.len());
                 // Output after a prior checkpoint invalidates that checkpoint
@@ -284,15 +309,18 @@ impl ProductionTurnRunShellAdapter {
                 drop(progress);
                 on_text_delta(delta, accumulated);
             };
-            let seen_for_checkpoint = Arc::clone(&first_output_seen);
+            let runtime_for_checkpoint = Arc::clone(&runtime);
             let mut accept_checkpoint =
                 |checkpoint: &RoutedProviderCheckpoint| {
+                    if !runtime_for_checkpoint.is_current(generation) {
+                        return Ok(());
+                    }
                     let cursor = checkpoint_store.persist(checkpoint)?;
                     // A durable tool-boundary checkpoint is observable provider
                     // progress even when no text delta preceded it. Stop the
                     // first-output watchdog only after persistence succeeds so
                     // an unpersisted boundary can never authorize resume.
-                    seen_for_checkpoint.store(true, Ordering::Release);
+                    runtime_for_checkpoint.mark_stream_output(generation);
                     let mut progress = progress.borrow_mut();
                     progress.record_output(0);
                     progress.checkpoint = Some(AttemptCheckpoint::new(
@@ -307,9 +335,11 @@ impl ProductionTurnRunShellAdapter {
                 };
 
             let timed_out_for_attempt = Arc::clone(&watchdog_expired);
+            let runtime_for_cancel = Arc::clone(&runtime);
             let should_cancel = || {
                 cancellation.is_cancelled()
                     || timed_out_for_attempt.load(Ordering::Acquire)
+                    || !runtime_for_cancel.is_current(generation)
             };
             let result = executor.run_attempt(
                 resume_from.as_ref(),
@@ -322,6 +352,7 @@ impl ProductionTurnRunShellAdapter {
             if let Some(watchdog) = watchdog {
                 let _ = watchdog.join();
             }
+            runtime.settle_attempt(generation);
 
             if cancellation.is_cancelled() {
                 return Err(cancelled_error(cancellation));
@@ -340,6 +371,7 @@ impl ProductionTurnRunShellAdapter {
                             .into(),
                     );
                     if !self.retry(
+                        runtime.policy(),
                         &mut attempt,
                         &progress,
                         &error,
@@ -362,6 +394,7 @@ impl ProductionTurnRunShellAdapter {
                         error
                     };
                     if !self.retry(
+                        runtime.policy(),
                         &mut attempt,
                         &progress,
                         &error,
@@ -380,6 +413,7 @@ impl ProductionTurnRunShellAdapter {
 
     fn retry(
         &self,
+        policy: &StreamAttemptPolicy,
         attempt: &mut u32,
         progress: &AttemptProgress,
         error: &ProviderSessionError,
@@ -391,9 +425,7 @@ impl ProductionTurnRunShellAdapter {
     ) -> Result<bool, ProviderSessionError> {
         let transient =
             classify_provider_failure(error, watchdog_expired);
-        let decision = self
-            .policy
-            .retry_decision(*attempt, progress, &transient);
+        let decision = policy.retry_decision(*attempt, progress, &transient);
         let (delay, resume_from_checkpoint) = match decision {
             RetryDecision::RetryAfter(delay) => (delay, false),
             RetryDecision::ResumeAfter {
@@ -406,7 +438,7 @@ impl ProductionTurnRunShellAdapter {
                 (delay, true)
             }
             RetryDecision::Fail => {
-                let outcome = if *attempt > 1 && *attempt >= self.policy.max_attempts {
+                let outcome = if *attempt > 1 && *attempt >= policy.max_attempts {
                     Some(ProviderRetryOutcome::Exhausted)
                 } else if *attempt > 1 || transient.retryable() {
                     Some(ProviderRetryOutcome::GaveUpIneligible)
@@ -417,7 +449,7 @@ impl ProductionTurnRunShellAdapter {
                     on_report(&ProviderRetryReport {
                         outcome,
                         attempt: *attempt,
-                        max_attempts: self.policy.max_attempts,
+                        max_attempts: policy.max_attempts,
                         delay_ms: None,
                         server_paced: false,
                         resume_from_checkpoint: accepted_resume.is_some(),
@@ -437,7 +469,7 @@ impl ProductionTurnRunShellAdapter {
         on_report(&ProviderRetryReport {
             outcome: ProviderRetryOutcome::Retried,
             attempt: *attempt,
-            max_attempts: self.policy.max_attempts,
+            max_attempts: policy.max_attempts,
             delay_ms: Some(delay_ms),
             server_paced,
             resume_from_checkpoint,
@@ -480,24 +512,36 @@ fn cancelled_error(
 fn spawn_first_output_watchdog(
     timeout: Duration,
     poll_interval: Duration,
-    first_output_seen: Arc<AtomicBool>,
+    runtime: Arc<StreamAttemptRuntime>,
+    generation: StreamAttemptGeneration,
     attempt_done: Arc<AtomicBool>,
     expired: Arc<AtomicBool>,
     cancellation: RoutedProviderCancellation,
 ) -> Option<thread::JoinHandle<()>> {
     if timeout.is_zero() {
         expired.store(true, Ordering::Release);
+        runtime.settle_attempt(generation);
         return None;
     }
     Some(thread::spawn(move || {
-        let started = Instant::now();
+        let mut epoch = runtime.deadline_epoch(generation).unwrap_or_default();
+        let mut started = Instant::now();
         while !attempt_done.load(Ordering::Acquire)
-            && !first_output_seen.load(Ordering::Acquire)
+            && runtime.deadline_armed(generation)
             && !cancellation.is_cancelled()
         {
+            let current_epoch = match runtime.deadline_epoch(generation) {
+                Some(current_epoch) => current_epoch,
+                None => break,
+            };
+            if current_epoch != epoch {
+                epoch = current_epoch;
+                started = Instant::now();
+            }
             let elapsed = started.elapsed();
             if elapsed >= timeout {
                 expired.store(true, Ordering::Release);
+                runtime.settle_attempt(generation);
                 break;
             }
             let remaining = timeout.saturating_sub(elapsed);

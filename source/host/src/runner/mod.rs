@@ -18,7 +18,8 @@ mod turn_run_shell;
 pub use checkpoint::AttemptCheckpoint;
 pub use stream_attempt::{
     AttemptProgress, OuterCheckpointDisposition, OuterStreamFuture,
-    OuterStreamPersistence, RetryDecision, StreamAttemptPolicy,
+    OuterStreamPersistence, RetryDecision, StreamAttemptGeneration,
+    StreamAttemptPolicy, StreamAttemptRuntime,
     StreamCancelReason, StreamWatchdog, persist_outer_stream_checkpoint,
     persist_outer_stream_final_state, release_outer_stream_persistence,
 };

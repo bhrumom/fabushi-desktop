@@ -325,3 +325,38 @@ fn shell_terminal_watch_shipping_path_uses_canonical_permission_and_generated_wa
     assert!(composition.contains("decode_user_message_identity_fields"));
     assert!(composition.contains("find_confirmed_user_turn_watermark(&turns, None)"));
 }
+
+
+#[test]
+fn generated_agent_stream_owns_canonical_stream_attempt_runtime() {
+    const GENERATED_STREAM: &str =
+        include_str!("../src/runner/generated_agent_turn_stream.rs");
+    const TURN_COMPOSITION: &str =
+        include_str!("../src/runner/turn_agent_composition.rs");
+    const ROUTED_PROVIDER: &str =
+        include_str!("../src/runner/routed_provider_runtime.rs");
+    const ATTEMPT_ADAPTER: &str =
+        include_str!("../src/runner/production_turn_run_shell_adapter.rs");
+
+    assert!(GENERATED_STREAM.contains(
+        "Arc::new(StreamAttemptRuntime::new("
+    ));
+    assert!(GENERATED_STREAM.contains(
+        ".with_stream_attempt_runtime(stream_attempt_runtime)"
+    ));
+    assert!(TURN_COMPOSITION.contains(
+        "stream_attempt_runtime: self.stream_attempt_runtime.clone()"
+    ));
+    assert!(ROUTED_PROVIDER.contains(
+        "run_with_attempt_runtime_reporting("
+    ));
+    assert!(ATTEMPT_ADAPTER.contains(
+        "let generation = runtime.begin_attempt();"
+    ));
+    assert!(ATTEMPT_ADAPTER.contains(
+        "runtime_for_delta.mark_stream_output(generation)"
+    ));
+    assert!(ATTEMPT_ADAPTER.contains(
+        "runtime_for_checkpoint.is_current(generation)"
+    ));
+}
