@@ -320,3 +320,17 @@ fn pending_user_selection_blocks_configuration_mutations() {
     assert_eq!(management.mutations.load(Ordering::SeqCst), 0);
     assert!(management.installed.lock().expect("installed").is_empty());
 }
+
+#[test]
+fn production_management_sink_requires_explicit_turn_interaction_callbacks() {
+    let source = include_str!("../src/runner/tools/mcp_host_service_management_sink.rs");
+    let main = include_str!("../app/src/main.rs");
+
+    assert!(source.contains("with_interaction_callbacks"));
+    assert!(source.contains("fn is_awaiting_user_selection(&self) -> bool"));
+    assert!(source.contains("fn emit_connector_card(&self, card: ConnectorCard)"));
+    assert!(main.contains("mcp_awaiting_sink.is_awaiting_user_selection()"));
+    assert!(main.contains("mcp_connector_sink"));
+    assert!(main.contains("\"type\": \"connector\""));
+    assert!(main.contains("mcp_management_sink: Some(mcp_management_sink)"));
+}

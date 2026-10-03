@@ -6,15 +6,21 @@ use serde_json::Value;
 use crate::extensions::inference::provider_session::ProviderSessionError;
 use crate::extensions::mcp::mcp_service::McpHostService;
 use crate::runner::tools::sand_mcp_management_tools::{
-    McpAuthenticationResult, McpInstalledServer, McpManagementSink, McpPluginDetail,
-    McpPluginField, McpPluginSkill, McpPluginSummary, McpRemoveServerResult,
-    McpUninstallPluginResult,
+    ConnectorCard, McpAuthenticationResult, McpInstalledServer, McpManagementSink,
+    McpPluginDetail, McpPluginField, McpPluginSkill, McpPluginSummary,
+    McpRemoveServerResult, McpUninstallPluginResult,
 };
+
+pub type AwaitingUserSelectionProbe = Arc<dyn Fn() -> bool + Send + Sync>;
+pub type ConnectorCardEmitter =
+    Arc<dyn Fn(ConnectorCard) -> Result<(), ProviderSessionError> + Send + Sync>;
 
 pub struct McpHostServiceManagementSink {
     service: Arc<McpHostService>,
     requesting_agent_id: Option<String>,
     multi_account_enabled: bool,
+    awaiting_user_selection: Option<AwaitingUserSelectionProbe>,
+    connector_card_emitter: Option<ConnectorCardEmitter>,
 }
 
 impl McpHostServiceManagementSink {
@@ -27,7 +33,19 @@ impl McpHostServiceManagementSink {
             service,
             requesting_agent_id,
             multi_account_enabled,
+            awaiting_user_selection: None,
+            connector_card_emitter: None,
         }
+    }
+
+    pub fn with_interaction_callbacks(
+        mut self,
+        awaiting_user_selection: AwaitingUserSelectionProbe,
+        connector_card_emitter: ConnectorCardEmitter,
+    ) -> Self {
+        self.awaiting_user_selection = Some(awaiting_user_selection);
+        self.connector_card_emitter = Some(connector_card_emitter);
+        self
     }
 }
 
@@ -313,7 +331,20 @@ impl McpManagementSink for McpHostServiceManagementSink {
         self.requesting_agent_id.clone()
     }
 
+    fn is_awaiting_user_selection(&self) -> bool {
+        self.awaiting_user_selection
+            .as_ref()
+            .is_some_and(|probe| probe())
+    }
+
     fn is_multi_account_enabled(&self) -> bool {
         self.multi_account_enabled
+    }
+
+    fn emit_connector_card(&self, card: ConnectorCard) -> Result<(), ProviderSessionError> {
+        match self.connector_card_emitter.as_ref() {
+            Some(emitter) => emitter(card),
+            None => Ok(()),
+        }
     }
 }

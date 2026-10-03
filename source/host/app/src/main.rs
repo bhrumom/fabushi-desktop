@@ -374,6 +374,7 @@ use mahayana_host_runtime::extensions::mcp::production_box_state::{
     execute_box_mcp_raw,
 };
 use mahayana_host_runtime::runner::tools::mcp_host_service_management_sink::McpHostServiceManagementSink;
+use mahayana_host_runtime::runner::tools::sand_mcp_management_tools::ConnectorCardVariant;
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
 use mahayana_host_runtime::runner::subagent_runtime::{
     RunOutcome as GeneratedSubagentRunOutcome, SubagentLineage as GeneratedSubagentLineage,
@@ -7053,6 +7054,37 @@ fn start_routed_provider_task(
                     send_message_delivery_counter.clone(),
                 ),
             );
+            let mcp_awaiting_sink = Arc::clone(&send_message_sink);
+            let mcp_connector_sink = Arc::clone(&send_message_sink);
+            let mcp_management_sink = Arc::new(
+                McpHostServiceManagementSink::new(
+                    Arc::clone(&worker_mcp_service),
+                    Some(agent_id.clone()),
+                    true,
+                )
+                .with_interaction_callbacks(
+                    Arc::new(move || mcp_awaiting_sink.is_awaiting_user_selection()),
+                    Arc::new(move |card| {
+                        let variant = match card.variant {
+                            ConnectorCardVariant::Connect => "connect",
+                            ConnectorCardVariant::Connected => "connected",
+                        };
+                        let server_id = card.server_id.clone();
+                        mcp_connector_sink
+                            .send_message(
+                                serde_json::json!({
+                                    "type": "connector",
+                                    "connector": card.connector,
+                                    "serverId": card.server_id,
+                                    "variant": variant,
+                                }),
+                                started_at_ms(),
+                                &format!("mcp-management:{server_id}:{variant}"),
+                            )
+                            .map(|_| ())
+                    }),
+                ),
+            );
             let routine_post_write: Option<RoutinePostWriteCallback> =
                 automations_lifecycle
                     .lock()
@@ -7689,11 +7721,7 @@ fn start_routed_provider_task(
                     file_transfer_executor: Some(file_transfer_executor),
                     external_machine_executor: Some(external_machine_executor),
                     external_shell_review: Some(external_shell_review),
-                    mcp_management_sink: Some(Arc::new(McpHostServiceManagementSink::new(
-                        Arc::clone(&worker_mcp_service),
-                        Some(agent_id.clone()),
-                        true,
-                    ))),
+                    mcp_management_sink: Some(mcp_management_sink),
                     send_message_sink: Some(send_message_sink),
                     reaction_sink: Some(reaction_sink),
                     cloud_agent_tool: Some(cloud_agent_tool),
