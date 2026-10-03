@@ -5,6 +5,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
 };
+use crate::transcript_mirror::conversation_state_binary::{
+    ConversationStateRecoveryFields, decode_conversation_state_recovery_fields,
+};
 
 use super::inactive_turn_agent_stream::{
     InactiveTurnAgentLifecycleHooks, InactiveTurnAgentOutputSink,
@@ -68,6 +71,68 @@ struct ProductionGeneratedAgentStreamSource {
     checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
 }
 
+fn validate_canonical_state_blob_references(
+    checkpoint_sink: &dyn AgentStateCheckpointSink,
+    base_state_bytes: &[u8],
+) -> Result<(), GeneratedAgentTurnStreamError> {
+    if base_state_bytes.is_empty() {
+        return Ok(());
+    }
+    let fields = decode_conversation_state_recovery_fields(base_state_bytes).map_err(|error| {
+        GeneratedAgentTurnStreamError::Provider(ProviderSessionError::Protocol(format!(
+            "Runner Agent could not decode canonical ConversationStateStructure: {error}"
+        )))
+    })?;
+
+    fn validate_group(
+        checkpoint_sink: &dyn AgentStateCheckpointSink,
+        kind: &str,
+        ids: &[Vec<u8>],
+    ) -> Result<(), GeneratedAgentTurnStreamError> {
+        for id in ids {
+            if id.is_empty() {
+                return Err(GeneratedAgentTurnStreamError::Provider(
+                    ProviderSessionError::Protocol(format!(
+                        "Runner Agent canonical state contains an empty {kind} blob reference"
+                    )),
+                ));
+            }
+            let present = checkpoint_sink
+                .read_state_blob(id)
+                .map_err(GeneratedAgentTurnStreamError::Provider)?;
+            if present.is_none() {
+                return Err(GeneratedAgentTurnStreamError::Provider(
+                    ProviderSessionError::Protocol(format!(
+                        "Runner Agent canonical state is missing referenced {kind} blob"
+                    )),
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    let ConversationStateRecoveryFields {
+        root_prompt_messages_json,
+        turns,
+        todos,
+        summary,
+        summary_archives,
+        ..
+    } = fields;
+    validate_group(
+        checkpoint_sink,
+        "root prompt message",
+        &root_prompt_messages_json,
+    )?;
+    validate_group(checkpoint_sink, "conversation turn", &turns)?;
+    validate_group(checkpoint_sink, "todo", &todos)?;
+    if let Some(summary) = summary {
+        validate_group(checkpoint_sink, "summary", &[summary])?;
+    }
+    validate_group(checkpoint_sink, "summary archive", &summary_archives)?;
+    Ok(())
+}
+
 impl<'ctx>
     InactiveTurnAgentStreamSource<
         GeneratedAgentTurnContext<'ctx>,
@@ -101,6 +166,10 @@ impl<'ctx>
                         ),
                     ));
                 }
+                validate_canonical_state_blob_references(
+                    checkpoint_sink.as_ref(),
+                    &live_base_state,
+                )?;
             }
             let mut forward_delta = |delta: &str, accumulated: &str| {
                 output.on_text_delta(delta, accumulated);
