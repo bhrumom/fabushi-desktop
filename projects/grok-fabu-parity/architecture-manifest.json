@@ -20138,7 +20138,7 @@
       "targetPath": "source/host/src/transcript_mirror/production_provider.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "e6a24755eceb5a58088526c1ea05c8e8e9352e52",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
@@ -20153,7 +20153,10 @@
         "source/host/src/runner/turn_settle.rs",
         "source/host/src/runner/production_agent_checkpoint.rs",
         "source/host/src/runner/production_turn_agent_owner.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/host_runner_composition.rs",
+        "source/host/src/runner/generated_agent_turn_stream.rs",
+        "source/host/src/runner/turn_agent_composition.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_production_provider_contract.rs",
@@ -20164,10 +20167,11 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/generated_occurrence_codec_contract.rs",
         "source/host/tests/turn_settle_checkpoint_contract.rs",
-        "source/host/tests/production_agent_checkpoint_contract.rs"
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "The production provider is now invoked by the actual runner.startRoutedProvider shipping path. Each turn recovers the prior Agent state into the routed mirror, uses the sand_new_transcript_journal gate, and successful text turns execute mirror prepare -> durable AgentStore checkpoint -> mirror commit before terminal completion. The generated text-only checkpoint uses canonical agent.v1 wire and real content-addressed blobs. Final remains withheld because generated tool-call JSON still lacks canonical Rust agent.v1 bindings and the shipping checkpoint projector does not yet serialize the full generated Agent tool/resource/subagent state."
+      "notes": "Frozen production-provider ownership is closed in the shipping Host path. HostRunnerComposition caches one ProductionTranscriptMirrorProvider per transcripts directory, binds the canonical generated agent.v1 occurrence codec and ArtifactTranscriptOccurrenceDeriver, and creates one routed mirror per session with a per-session legacy prior-root cursor and the sand_new_transcript_journal gate. The production Agent checkpoint path recovers prior durable state, preserves the exact prior ConversationState wire image, records actually executed routed tools in call order as generated content-addressed ConversationStep blobs, appends the terminal assistant step, then executes mirror prepare -> durable AgentStore checkpoint/user confirmation -> mirror commit (or the explicit journal-disabled skip path). The earlier withholding note about missing generated tool JSON and text-only shipping checkpoints is obsolete: canonical protobuf JSON projection and generated tool-step persistence are both on the shipping Runner path. Resource/subagent state remains owned by their canonical Agent state producers and is preserved byte-for-byte in the prior state rather than duplicated by this provider. Focused provider, generated-codec, checkpoint, composition-wiring, mirror/router and offload contracts cover this boundary."
     },
     {
       "referencePath": "source/host/transcript-mirror/transcript-journal-codec.ts",
@@ -20258,7 +20262,7 @@
       "targetPath": "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f12f52765c75b824cfdc3583a653e2cc74082232",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
@@ -20266,16 +20270,20 @@
         "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs",
         "source/host/src/transcript_mirror/transcript_mirror.rs",
         "source/host/src/transcript_mirror/transcript_journal_codec.rs",
-        "source/host/src/transcript_mirror/production_provider.rs"
+        "source/host/src/transcript_mirror/production_provider.rs",
+        "source/host/src/transcript_mirror/generated_occurrence_codec.rs",
+        "source/host/src/host_runner_composition.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_occurrence_deriver_contract.rs",
         "source/host/tests/transcript_mirror_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/transcript_mirror_production_provider_contract.rs"
+        "source/host/tests/transcript_mirror_production_provider_contract.rs",
+        "source/host/tests/generated_occurrence_codec_contract.rs",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port owns frozen occurrence derivation semantics: incremental turn/step monotonicity fences, user text-blob fallback with TextDecoder-equivalent lossy UTF-8, context-tag stripping, hidden-thinking stripping, deferred final text step, tool-use/result delta projection, immutable completed-tool checks, stable occurrence identities and fail-closed missing blobs. It plugs directly into FileTranscriptMirror's TranscriptDeriver trait. Final is withheld until generated-occurrence-codec is backed by canonical generated agent.v1 Rust bindings and production-provider feeds the shipping Runner checkpoint path."
+      "notes": "Rust owns the frozen transcript occurrence derivation semantics: monotonic turn and step fences; fail-closed missing blobs and shell turns; user text-blob fallback with TextDecoder-equivalent lossy UTF-8; context-tag and hidden-thinking stripping; deferred non-final assistant/thinking tail; stable occurrence identities; tool-use/tool-result delta projection; immutable completed-tool and input checks; and final checkpoint replay. The deriver is the TranscriptDeriver installed by ProductionTranscriptMirrorProvider. Its former external blockers are now closed: GeneratedTranscriptOccurrenceCodec uses the canonical generated agent.v1 protobuf projection, and HostRunnerComposition feeds that provider from the shipping Runner checkpoint path with actual generated tool steps. Focused deriver, generated-codec, production-provider and mirror integration contracts cover the path."
     },
     {
       "referencePath": "source/host/transcript-mutation-events.ts",
