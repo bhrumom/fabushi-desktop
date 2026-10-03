@@ -18316,7 +18316,7 @@
       "targetPath": "source/host/src/runner/production_turn_run_shell_adapter.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "563d27a2ae7bc120c9e1982ef94d98c4185e7708",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -18325,15 +18325,21 @@
         "source/host/src/runner/routed_provider_runtime.rs",
         "source/host/src/extensions/inference/provider_session.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/runner/turn_agent_composition.rs"
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/runner/production_turn_input_projection.rs",
+        "source/host/src/runner/generated_agent_turn_stream.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
         "source/host/tests/runner_routed_provider_contract.rs",
         "source/host/tests/inference_provider_session_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/production_turn_agent_owner_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Shipping routed-provider path enters ProductionTurnRunShellAdapter for bounded retry/backoff, exponentially relaxed first-output watchdog, per-attempt watchdog cancellation, durable checkpoint-before-resume and tool-only checkpoint progress. Retry activity and retry telemetry are now separate: only a real next attempt projects ActivityUpdate::Retrying, while reports cover retried/exhausted/gave_up_ineligible with attempt/max-attempt/deadline/resume evidence. The full frozen prepared-turn/generated-Agent stream/session/context-linking adapter remains to be cut over before final."
+      "notes": "Shipping Rust now owns both halves of the frozen Grok responsibility instead of only provider retry/watchdog behavior. ProductionTurnRunShellAdapter retains bounded provider retry/backoff, first-output watchdog, durable checkpoint-before-resume and retry reporting, and now also owns the canonical per-turn prepare -> execute -> settle -> unwind lifecycle: it binds one TurnRunShell owner token, freezes the prepared turn input before execution, dispatches only that prepared snapshot, maps waiting-user/cancel/failure/completion settlement, honors upgrade quiescing, and guarantees unwind callbacks on the lifecycle exit path. ProductionTurnAgentOwner shipping execution and its independent contract seam both delegate through this adapter; the shipping prepare closure freezes ProductionTurnInputProjection and the execute closure starts run_production_generated_agent_stream with the bound owner generation, eliminating the prior parallel run_owned_turn lifecycle from the owner module. Focused production_turn_run_shell_adapter_contract now exercises prepared-input ordering/unwind and failed-prepare settlement in addition to the existing retry/watchdog/checkpoint cases. Exact-HEAD c348b31216f732410e3b8526e93d9eab84cca974 PR Rust desktop runtime run 37102695072 passed shipping Mahayana Host compilation, independent Coordinator, box-exec daemon, Host supervisor, independent Host Runner, prompt attachment projection, Human Computer takeover, ConversationActor/CapabilityBroker ownership, and both pressure-profiler jobs; Desktop Chat Parity run 37102695095 passed renderer build and the full deterministic Mahayana host/co-staged runtime/bundle boundary/Grok Agent shell + Mahayana regression path with evidence upload. The renderer failure at that exact HEAD was only the expected strict inventory gate while this row remained existing-needs-parity.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/runner/prompt-collector-glue.ts",
