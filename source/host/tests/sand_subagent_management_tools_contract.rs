@@ -250,6 +250,9 @@ fn shipping_host_wires_management_tools_to_generated_runtime_and_auto_review() {
     let host_runner_composition =
         std::fs::read_to_string(root.join("src/host_runner_composition.rs"))
             .expect("host runner composition");
+    let production_bridge =
+        std::fs::read_to_string(root.join("src/runner_production_bridge.rs"))
+            .expect("production runner bridge");
     let composition = std::fs::read_to_string(root.join("src/runner/turn_agent_composition.rs"))
         .expect("turn composition");
     let toolset = std::fs::read_to_string(root.join("src/runner/tools/turn_toolset.rs"))
@@ -268,13 +271,17 @@ fn shipping_host_wires_management_tools_to_generated_runtime_and_auto_review() {
         !main.contains(".with_subagent_management("),
         "shipping main must delegate Runner decoration to HostRunnerComposition",
     );
+    assert!(
+        host_runner_composition.contains("create_production_runner_composition_with_hooks(input, hooks)"),
+        "HostRunnerComposition must delegate generated-subagent management projection to the production bridge",
+    );
     for required in [
         "hooks.subagent_management_runtime",
         ".with_subagent_management(",
     ] {
         assert!(
-            host_runner_composition.contains(required),
-            "missing canonical HostRunnerComposition management wiring: {required}",
+            production_bridge.contains(required),
+            "missing canonical production Runner bridge management wiring: {required}",
         );
     }
     assert!(toolset.contains("SubagentManagementToolBridge"));
