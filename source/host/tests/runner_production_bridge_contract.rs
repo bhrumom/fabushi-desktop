@@ -1,13 +1,16 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
+use mahayana_host_runtime::cursor_backend::SandPrivacyMode;
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedProvider, RoutedProviderCheckpoint,
     RoutedToolDefinition,
 };
 use mahayana_host_runtime::host_request_context::HostRequestContext;
 use mahayana_host_runtime::runner::production_turn_agent_owner::{
-    ProductionTurnAgentLifecycleBindings, ProductionTurnSummarizationPrompt,
+    ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
+    ProductionTurnAgentStaticConfig, ProductionTurnPrivacyModeResolver,
+    ProductionTurnSummarizationPrompt,
 };
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderCheckpointStore;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
@@ -327,6 +330,7 @@ fn production_bridge_owns_immutable_turn_projection_and_generated_runner_binding
         "composition = composition.with_multitask_todo_state(multitask_todo_state)",
         "pub fn create_production_runner(",
         "ProductionTurnAgentOwner::new(composition)",
+        ".with_build_bindings(build_bindings)",
         ".with_lifecycle_bindings(lifecycle_bindings)",
         "owner = owner.with_agent_state_checkpoint_sink(checkpoint_sink)",
         "SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)",
@@ -356,6 +360,9 @@ fn production_bridge_owns_immutable_turn_projection_and_generated_runner_binding
     assert!(
         SHIPPING_HOST.contains("worker_host_runner_composition.compose_production_turn(")
             && SHIPPING_HOST.contains("worker_host_runner_composition.compose_production_runner(")
+            && SHIPPING_HOST.contains("ProductionTurnAgentBuildBindings::new(")
+            && SHIPPING_HOST.contains("ProductionTurnAgentStaticConfig {")
+            && SHIPPING_HOST.contains("resolve_sand_privacy_mode(")
             && SHIPPING_HOST.contains("ProductionTurnAgentLifecycleBindings::new(")
             && SHIPPING_HOST.contains(".disk_pressure_reminder_episodes()")
             && !SHIPPING_HOST.contains("create_production_runner_composition_with_hooks(")
@@ -445,13 +452,28 @@ fn production_bridge_binds_the_generated_runner_facade() {
     let runtime = Arc::new(Mutex::new(SubagentRuntime::default()));
     let summarization: ProductionTurnSummarizationPrompt =
         Arc::new(|_, _, _| Ok("summary".into()));
+    let privacy_mode_resolver: ProductionTurnPrivacyModeResolver =
+        Arc::new(|| Some(SandPrivacyMode::NoTraining));
+    let build_bindings = ProductionTurnAgentBuildBindings::new(
+        ProductionTurnAgentStaticConfig {
+            model_id: "grok-contract".into(),
+            conversation_id: "bridge-agent".into(),
+            is_box_scoped_subagent: false,
+            is_subagent_runner: false,
+            is_shared_room_runner: false,
+            sand_send_message_delivery_owed: true,
+            transcripts_folder_available: true,
+        },
+        privacy_mode_resolver,
+        summarization,
+    );
     let lifecycle_bindings = ProductionTurnAgentLifecycleBindings::new(
         "bridge-agent",
         "bridge-request",
-        summarization,
     );
     let runner = create_production_runner(
         composition,
+        build_bindings,
         lifecycle_bindings,
         None,
         Arc::new(std::sync::atomic::AtomicBool::new(false)),

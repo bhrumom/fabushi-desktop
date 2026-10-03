@@ -318,8 +318,9 @@ use mahayana_host_runtime::runner::sand_agent_profile_prompt::{
     render_agent_profile_update, resolve_agent_profile_prompt_snapshot,
 };
 use mahayana_host_runtime::runner::production_turn_agent_owner::{
-    ProductionTurnAgentLifecycleBindings, ProductionTurnProfileAnnouncementCommit,
-    ProductionTurnSummarizationPrompt,
+    ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
+    ProductionTurnAgentStaticConfig, ProductionTurnPrivacyModeResolver,
+    ProductionTurnProfileAnnouncementCommit, ProductionTurnSummarizationPrompt,
 };
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
@@ -7332,6 +7333,24 @@ fn start_routed_provider_task(
                     }
                 });
             let cursor_auth = inference.cursor_auth_for_session(Some(&worker_session_options));
+            let turn_model_id = cursor_auth.requested_model().model_id;
+            let turn_conversation_id = cursor_auth
+                .conversation_id()
+                .unwrap_or_else(|| agent_id.clone());
+            let privacy_auth = Arc::clone(&cursor_auth);
+            let privacy_mode_resolver: ProductionTurnPrivacyModeResolver =
+                Arc::new(move || {
+                    let backend_url = privacy_auth.backend_url().ok()?;
+                    let access_token = privacy_auth.access_token().ok()?;
+                    let machine_id = privacy_auth.machine_id().ok()?;
+                    mahayana_host_runtime::cursor_backend::resolve_sand_privacy_mode(
+                        &backend_url,
+                        &access_token,
+                        &machine_id,
+                    )
+                });
+            let transcripts_folder_available =
+                !resolved_request_context.context.transcripts_folder.trim().is_empty();
             let computer_exposure = if worker_generated_parent_agent_id.is_some() {
                 if worker_generated_subagent_type.eq_ignore_ascii_case("computeruse")
                     && computer_use_window_granted
@@ -7403,6 +7422,23 @@ fn start_routed_provider_task(
                         should_cancel,
                     )
                 });
+            let turn_static_config = ProductionTurnAgentStaticConfig {
+                model_id: turn_model_id,
+                conversation_id: turn_conversation_id,
+                is_box_scoped_subagent: worker_generated_parent_agent_id.is_some(),
+                is_subagent_runner: worker_generated_parent_agent_id.is_some(),
+                is_shared_room_runner: worker_group_room_id.is_some(),
+                sand_send_message_delivery_owed: is_delivery_owed(
+                    send_message_delivery_counter.count(),
+                    reaction_delivery_counter.count() > 0,
+                ),
+                transcripts_folder_available,
+            };
+            let build_bindings = ProductionTurnAgentBuildBindings::new(
+                turn_static_config,
+                privacy_mode_resolver,
+                summarization_prompt,
+            );
             let profile_announcement_commit = worker_profile_announcement
                 .clone()
                 .map(|(turn_snapshot, identity)| {
@@ -7431,12 +7467,12 @@ fn start_routed_provider_task(
             let lifecycle_bindings = ProductionTurnAgentLifecycleBindings::new(
                 agent_id.clone(),
                 worker_stream_id.clone(),
-                summarization_prompt,
             )
             .with_disk_pressure_reminders(forever_box.disk_pressure_reminder_episodes())
             .with_profile_announcement_commit(profile_announcement_commit);
             let mut runner = worker_host_runner_composition.compose_production_runner(
                 composition,
+                build_bindings,
                 lifecycle_bindings,
                 agent_state_checkpoint_sink,
                 worker_registry.upgrade_quiesce_signal(),

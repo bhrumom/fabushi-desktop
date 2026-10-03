@@ -2,6 +2,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use crate::cursor_backend::SandPrivacyMode;
 use crate::extensions::forever_box::DiskPressureReminderEpisodes;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
@@ -24,17 +25,68 @@ pub type ProductionTurnSummarizationPrompt = Arc<
         + Sync,
 >;
 pub type ProductionTurnProfileAnnouncementCommit = Arc<dyn Fn() + Send + Sync>;
+pub type ProductionTurnPrivacyModeResolver =
+    Arc<dyn Fn() -> Option<SandPrivacyMode> + Send + Sync>;
+
+/// Frozen, per-turn static inputs owned by ProductionTurnAgentOwner.
+///
+/// This is deliberately a projection of existing production truths rather than
+/// a second configuration system. Detailed prompt/tool configuration remains in
+/// TurnAgentComposition; the owner freezes the identity and mode inputs that
+/// must not drift after a turn starts.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProductionTurnAgentStaticConfig {
+    pub model_id: String,
+    pub conversation_id: String,
+    pub is_box_scoped_subagent: bool,
+    pub is_subagent_runner: bool,
+    pub is_shared_room_runner: bool,
+    pub sand_send_message_delivery_owed: bool,
+    pub transcripts_folder_available: bool,
+}
+
+/// Immutable build input captured once before the shipping provider path runs.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProductionTurnAgentBuildInput {
+    pub static_config: ProductionTurnAgentStaticConfig,
+    pub privacy_mode: Option<SandPrivacyMode>,
+}
+
+/// Existing production surfaces that ProductionTurnAgentOwner resolves exactly
+/// once into ProductionTurnAgentBuildInput.
+///
+/// Inference/privacy and summarization retain their canonical owners. This
+/// binding only makes the Runner turn owner responsible for the per-turn
+/// resolve/freeze lifecycle, matching Grok's buildAgentForRun owner boundary.
+pub struct ProductionTurnAgentBuildBindings {
+    static_config: ProductionTurnAgentStaticConfig,
+    privacy_mode_resolver: ProductionTurnPrivacyModeResolver,
+    summarization_prompt: ProductionTurnSummarizationPrompt,
+}
+
+impl ProductionTurnAgentBuildBindings {
+    pub fn new(
+        static_config: ProductionTurnAgentStaticConfig,
+        privacy_mode_resolver: ProductionTurnPrivacyModeResolver,
+        summarization_prompt: ProductionTurnSummarizationPrompt,
+    ) -> Self {
+        Self {
+            static_config,
+            privacy_mode_resolver,
+            summarization_prompt,
+        }
+    }
+}
 
 /// Host-resolved lifecycle surfaces that are consumed by one production turn.
 ///
-/// Concrete inference, ForeverBox and profile stores retain their canonical
-/// owners. This immutable binding lets ProductionTurnAgentOwner own their
-/// per-turn claim/commit/dispose semantics without creating a second runtime.
+/// Concrete ForeverBox and profile stores retain their canonical owners. This
+/// immutable binding lets ProductionTurnAgentOwner own their per-turn
+/// claim/commit/dispose semantics without creating a second runtime.
 pub struct ProductionTurnAgentLifecycleBindings {
     conversation_id: String,
     claim_id: String,
     disk_pressure_reminders: Option<Arc<DiskPressureReminderEpisodes>>,
-    summarization_prompt: ProductionTurnSummarizationPrompt,
     profile_announcement_commit: Option<ProductionTurnProfileAnnouncementCommit>,
 }
 
@@ -42,13 +94,11 @@ impl ProductionTurnAgentLifecycleBindings {
     pub fn new(
         conversation_id: impl Into<String>,
         claim_id: impl Into<String>,
-        summarization_prompt: ProductionTurnSummarizationPrompt,
     ) -> Self {
         Self {
             conversation_id: conversation_id.into(),
             claim_id: claim_id.into(),
             disk_pressure_reminders: None,
-            summarization_prompt,
             profile_announcement_commit: None,
         }
     }
@@ -81,6 +131,8 @@ pub struct ProductionTurnAgentOwner {
     last_finished: Option<TurnRunFinished>,
     agent_state_checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
     upgrade_quiescing: Arc<AtomicBool>,
+    build_input: Option<ProductionTurnAgentBuildInput>,
+    summarization_prompt: Option<ProductionTurnSummarizationPrompt>,
     lifecycle_bindings: Option<ProductionTurnAgentLifecycleBindings>,
     disk_pressure_episode_id: Option<String>,
     disk_pressure_committed: bool,
@@ -96,6 +148,8 @@ impl ProductionTurnAgentOwner {
             last_finished: None,
             agent_state_checkpoint_sink: None,
             upgrade_quiescing: Arc::new(AtomicBool::new(false)),
+            build_input: None,
+            summarization_prompt: None,
             lifecycle_bindings: None,
             disk_pressure_episode_id: None,
             disk_pressure_committed: false,
@@ -115,6 +169,49 @@ impl ProductionTurnAgentOwner {
     pub fn with_upgrade_quiesce_signal(mut self, signal: Arc<AtomicBool>) -> Self {
         self.upgrade_quiescing = signal;
         self
+    }
+
+    pub fn with_build_bindings(
+        mut self,
+        bindings: ProductionTurnAgentBuildBindings,
+    ) -> Self {
+        let privacy_mode = (bindings.privacy_mode_resolver)();
+        self.build_input = Some(ProductionTurnAgentBuildInput {
+            static_config: bindings.static_config,
+            privacy_mode,
+        });
+        self.summarization_prompt = Some(bindings.summarization_prompt);
+        self
+    }
+
+    pub fn build_input(&self) -> Option<&ProductionTurnAgentBuildInput> {
+        self.build_input.as_ref()
+    }
+
+    fn validate_build_input(&self) -> Result<(), ProviderSessionError> {
+        let input = self.build_input.as_ref().ok_or_else(|| {
+            ProviderSessionError::Configuration(
+                "production turn build input is not bound".into(),
+            )
+        })?;
+        if input.static_config.model_id.trim().is_empty() {
+            return Err(ProviderSessionError::Configuration(
+                "production turn model id is empty".into(),
+            ));
+        }
+        if input.static_config.conversation_id.trim().is_empty() {
+            return Err(ProviderSessionError::Configuration(
+                "production turn conversation id is empty".into(),
+            ));
+        }
+        if let Some(lifecycle) = self.lifecycle_bindings.as_ref()
+            && lifecycle.conversation_id != input.static_config.conversation_id
+        {
+            return Err(ProviderSessionError::Configuration(
+                "production turn build/lifecycle conversation identities differ".into(),
+            ));
+        }
+        Ok(())
     }
 
     pub fn with_lifecycle_bindings(
@@ -145,12 +242,12 @@ impl ProductionTurnAgentOwner {
         user_prompt: &str,
         should_cancel: &dyn Fn() -> bool,
     ) -> Result<String, ProviderSessionError> {
-        let bindings = self.lifecycle_bindings.as_ref().ok_or_else(|| {
+        let summarization_prompt = self.summarization_prompt.as_ref().ok_or_else(|| {
             ProviderSessionError::Configuration(
                 "production turn summarization surface is not bound".into(),
             )
         })?;
-        (bindings.summarization_prompt)(system_prompt, user_prompt, should_cancel)
+        (summarization_prompt)(system_prompt, user_prompt, should_cancel)
     }
 
     pub fn project_provider_messages_for_turn(
@@ -265,6 +362,7 @@ impl ProductionTurnAgentOwner {
         options: TurnRunOptions,
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
+        self.validate_build_input()?;
         let checkpoint_sink = self.agent_state_checkpoint_sink.clone();
         let composition_for_stream = self.composition.clone();
         let completion_probe = self.composition.clone();

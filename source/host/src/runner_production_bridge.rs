@@ -7,7 +7,8 @@ use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
 use crate::runner::box_tool_access::{BoxShellAutoReviewCallback, RunnerBoxResourcePort};
 use crate::runner::production_agent_checkpoint::AgentStateCheckpointSink;
 use crate::runner::production_turn_agent_owner::{
-    ProductionTurnAgentLifecycleBindings, ProductionTurnAgentOwner,
+    ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
+    ProductionTurnAgentOwner,
 };
 use crate::runner::sand_agent_runner::SandAgentRunner;
 use crate::runner::subagent_runtime::SubagentRuntime;
@@ -205,12 +206,14 @@ pub fn create_production_runner_composition_with_hooks(
 /// own turn lifecycle/settlement and SandAgentRunner remains the Runner facade.
 pub fn create_production_runner(
     composition: TurnAgentComposition,
+    build_bindings: ProductionTurnAgentBuildBindings,
     lifecycle_bindings: ProductionTurnAgentLifecycleBindings,
     checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
     upgrade_quiesce_signal: Arc<AtomicBool>,
     generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
 ) -> SandAgentRunner {
     let mut owner = ProductionTurnAgentOwner::new(composition)
+        .with_build_bindings(build_bindings)
         .with_lifecycle_bindings(lifecycle_bindings)
         .with_upgrade_quiesce_signal(upgrade_quiesce_signal);
     if let Some(checkpoint_sink) = checkpoint_sink {

@@ -1,6 +1,7 @@
 use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
 use std::sync::{Arc, Mutex};
 
+use mahayana_host_runtime::cursor_backend::SandPrivacyMode;
 use mahayana_host_runtime::extensions::forever_box::{
     DiskPressureLevel, DiskPressureReminderEpisodes,
 };
@@ -10,8 +11,10 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 };
 use mahayana_host_runtime::host_request_context::HostRequestContext;
 use mahayana_host_runtime::runner::production_turn_agent_owner::{
-    ProductionTurnAgentLifecycleBindings, ProductionTurnAgentOwner,
-    ProductionTurnProfileAnnouncementCommit, ProductionTurnSummarizationPrompt,
+    ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
+    ProductionTurnAgentOwner, ProductionTurnAgentStaticConfig,
+    ProductionTurnPrivacyModeResolver, ProductionTurnProfileAnnouncementCommit,
+    ProductionTurnSummarizationPrompt,
 };
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderCheckpointStore;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
@@ -87,6 +90,78 @@ fn user_messages() -> Vec<ProviderMessage> {
     }]
 }
 
+fn build_bindings(
+    conversation_id: &str,
+    summarization: ProductionTurnSummarizationPrompt,
+) -> ProductionTurnAgentBuildBindings {
+    let privacy_mode_resolver: ProductionTurnPrivacyModeResolver =
+        Arc::new(|| Some(SandPrivacyMode::NoTraining));
+    ProductionTurnAgentBuildBindings::new(
+        ProductionTurnAgentStaticConfig {
+            model_id: "grok-contract".into(),
+            conversation_id: conversation_id.into(),
+            is_box_scoped_subagent: false,
+            is_subagent_runner: false,
+            is_shared_room_runner: false,
+            sand_send_message_delivery_owed: true,
+            transcripts_folder_available: true,
+        },
+        privacy_mode_resolver,
+        summarization,
+    )
+}
+
+#[test]
+fn production_owner_freezes_build_input_and_privacy_once() {
+    let resolve_count = Arc::new(AtomicUsize::new(0));
+    let resolver_count = Arc::clone(&resolve_count);
+    let privacy_mode_resolver: ProductionTurnPrivacyModeResolver = Arc::new(move || {
+        resolver_count.fetch_add(1, AtomicOrdering::SeqCst);
+        Some(SandPrivacyMode::NoStorage)
+    });
+    let summarization: ProductionTurnSummarizationPrompt =
+        Arc::new(|system, user, _| Ok(format!("{system}:{user}")));
+    let owner = ProductionTurnAgentOwner::new(composition())
+        .with_build_bindings(ProductionTurnAgentBuildBindings::new(
+            ProductionTurnAgentStaticConfig {
+                model_id: "grok-contract".into(),
+                conversation_id: "agent-build".into(),
+                is_box_scoped_subagent: true,
+                is_subagent_runner: true,
+                is_shared_room_runner: false,
+                sand_send_message_delivery_owed: true,
+                transcripts_folder_available: true,
+            },
+            privacy_mode_resolver,
+            summarization,
+        ))
+        .with_lifecycle_bindings(ProductionTurnAgentLifecycleBindings::new(
+            "agent-build",
+            "request-build",
+        ));
+
+    assert_eq!(resolve_count.load(AtomicOrdering::SeqCst), 1);
+    let build = owner.build_input().expect("frozen build input");
+    assert_eq!(build.static_config.model_id, "grok-contract");
+    assert_eq!(build.static_config.conversation_id, "agent-build");
+    assert!(build.static_config.is_box_scoped_subagent);
+    assert!(build.static_config.is_subagent_runner);
+    assert!(build.static_config.sand_send_message_delivery_owed);
+    assert!(build.static_config.transcripts_folder_available);
+    assert_eq!(build.privacy_mode, Some(SandPrivacyMode::NoStorage));
+    assert_eq!(
+        owner
+            .run_summarization_prompt("system", "user", &|| false)
+            .expect("turn-owned summarization"),
+        "system:user"
+    );
+    assert_eq!(
+        resolve_count.load(AtomicOrdering::SeqCst),
+        1,
+        "privacy mode must be frozen once for the turn owner"
+    );
+}
+
 #[test]
 fn production_owner_binds_disk_pressure_summarization_and_profile_lifecycle() {
     let reminders = Arc::new(DiskPressureReminderEpisodes::new(
@@ -111,11 +186,12 @@ fn production_owner_binds_disk_pressure_summarization_and_profile_lifecycle() {
             Ok(format!("{system_prompt}::{user_prompt}"))
         },
     );
-    let mut owner = ProductionTurnAgentOwner::new(composition()).with_lifecycle_bindings(
+    let mut owner = ProductionTurnAgentOwner::new(composition())
+        .with_build_bindings(build_bindings("agent-success", summarization))
+        .with_lifecycle_bindings(
         ProductionTurnAgentLifecycleBindings::new(
             "agent-success",
             "request-success",
-            summarization,
         )
         .with_disk_pressure_reminders(Some(Arc::clone(&reminders)))
         .with_profile_announcement_commit(Some(profile_commit)),
@@ -161,11 +237,12 @@ fn production_owner_releases_uncommitted_disk_pressure_on_dispose() {
         });
     let summarization: ProductionTurnSummarizationPrompt =
         Arc::new(|_, _, _| Ok("summary".into()));
-    let mut owner = ProductionTurnAgentOwner::new(composition()).with_lifecycle_bindings(
+    let mut owner = ProductionTurnAgentOwner::new(composition())
+        .with_build_bindings(build_bindings("agent-release", summarization))
+        .with_lifecycle_bindings(
         ProductionTurnAgentLifecycleBindings::new(
             "agent-release",
             "request-release",
-            summarization,
         )
         .with_disk_pressure_reminders(Some(Arc::clone(&reminders)))
         .with_profile_announcement_commit(Some(profile_commit)),
