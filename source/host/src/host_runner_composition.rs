@@ -17,6 +17,7 @@ use crate::runner::TurnUsage;
 use crate::runner::computer_use::{
     ComputerControlLease, ComputerUseCoordination, ComputerUsePrewarmStage,
 };
+use crate::runner::sand_action_audit::ActionAuditRecord;
 use crate::runner::production_agent_checkpoint::{
     AgentStateCheckpointSink, ProductionAgentStateCheckpointSink,
 };
@@ -282,6 +283,41 @@ impl HostRunnerComposition {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .owns_control_lease(lease)
+    }
+
+    pub fn capture_computer_navigation_baseline(&self, stdout: &str) {
+        self.computer_use
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .capture_navigation_baseline(stdout);
+    }
+
+    pub fn request_computer_navigation_probe(&self) -> Option<u64> {
+        self.computer_use
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .request_navigation_probe()
+    }
+
+    pub fn computer_navigation_probe_wait_ms(&self, generation: u64, now_ms: u64) -> Option<u64> {
+        self.computer_use
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .navigation_probe_wait_ms(generation, now_ms)
+    }
+
+    pub fn complete_computer_navigation_probe(
+        &self,
+        generation: u64,
+        stdout: &str,
+        agent_id: &str,
+        turn_id: Option<&str>,
+        occurred_at_ms: u64,
+    ) -> Vec<ActionAuditRecord> {
+        self.computer_use
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .complete_navigation_probe(generation, stdout, agent_id, turn_id, occurred_at_ms)
     }
 
     pub fn finish_computer_use_turn(

@@ -509,6 +509,7 @@ pub fn decode_generated_computer_use_result(
 
 pub type ComputerAvailabilityCheck = Arc<dyn Fn(&ComputerActionArgs) -> Result<(), ProviderSessionError> + Send + Sync>;
 pub type ComputerActionReportCallback = Arc<dyn Fn(&crate::runner::tools::sand_computer_tool::ReportedComputerAction, &str) + Send + Sync>;
+pub type ComputerPostActionCallback = Arc<dyn Fn(&str) + Send + Sync>;
 
 pub struct ProductionComputerToolExecutor {
     box_resources: Arc<dyn RunnerBoxResourcePort>,
@@ -516,6 +517,7 @@ pub struct ProductionComputerToolExecutor {
     persist_image: Option<ComputerPersistImageCallback>,
     availability_check: Option<ComputerAvailabilityCheck>,
     action_report: Option<ComputerActionReportCallback>,
+    post_action: Option<ComputerPostActionCallback>,
     bind_unmapped_characters: bool,
 }
 
@@ -527,6 +529,7 @@ impl ProductionComputerToolExecutor {
             persist_image: None,
             availability_check: None,
             action_report: None,
+            post_action: None,
             bind_unmapped_characters: false,
         }
     }
@@ -548,6 +551,11 @@ impl ProductionComputerToolExecutor {
 
     pub fn with_action_report_callback(mut self, callback: ComputerActionReportCallback) -> Self {
         self.action_report = Some(callback);
+        self
+    }
+
+    pub fn with_post_action_callback(mut self, callback: ComputerPostActionCallback) -> Self {
+        self.post_action = Some(callback);
         self
     }
 
@@ -598,6 +606,9 @@ impl ComputerToolExecutor for ProductionComputerToolExecutor {
                 move |bytes: &[u8], mime: &str| persist(bytes, mime)
             }),
         ).map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+        if let Some(post_action) = self.post_action.as_ref() {
+            post_action(tool_call_id);
+        }
         Ok(result)
     }
 }

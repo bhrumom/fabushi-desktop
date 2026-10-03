@@ -1,6 +1,9 @@
 use std::collections::{BTreeSet, HashMap};
 
-use super::sand_action_audit::computer_use_audit_kind;
+use super::sand_action_audit::{
+    ActionAuditRecord, NAVIGATION_PROBE_MIN_INTERVAL_MS, computer_use_audit_kind,
+    normalize_navigation_url, parse_navigation_probe_output,
+};
 use super::{TurnUsage, merge_turn_usage};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,6 +57,10 @@ pub struct ComputerUseCoordination {
     turn_ended_count: u64,
     usage: Option<TurnUsage>,
     navigation_probe_created: bool,
+    navigation_probe_baselined: bool,
+    navigation_urls_by_page_id: HashMap<String, String>,
+    navigation_probe_request_generation: u64,
+    last_navigation_probe_at_ms: u64,
     audit_enabled: bool,
     diagnostics: Vec<ComputerUsePrewarmDiagnostic>,
 }
@@ -178,6 +185,91 @@ impl ComputerUseCoordination {
             turn_ended_count: self.turn_ended_count,
             usage: self.usage.clone(),
         }
+    }
+
+    pub fn capture_navigation_baseline(&mut self, stdout: &str) {
+        if !self.audit_enabled {
+            return;
+        }
+        self.navigation_probe_created = true;
+        self.navigation_probe_baselined = true;
+        for target in parse_navigation_probe_output(stdout) {
+            if target.get("type").and_then(serde_json::Value::as_str) != Some("page") {
+                continue;
+            }
+            let Some(page_id) = target.get("id").and_then(serde_json::Value::as_str).filter(|value| !value.is_empty()) else {
+                continue;
+            };
+            let Some(url) = target.get("url").and_then(serde_json::Value::as_str).and_then(normalize_navigation_url) else {
+                continue;
+            };
+            self.navigation_urls_by_page_id.insert(page_id.to_string(), url);
+        }
+    }
+
+    pub fn request_navigation_probe(&mut self) -> Option<u64> {
+        if !self.audit_enabled || !self.navigation_probe_baselined {
+            return None;
+        }
+        self.navigation_probe_created = true;
+        self.navigation_probe_request_generation =
+            self.navigation_probe_request_generation.saturating_add(1).max(1);
+        Some(self.navigation_probe_request_generation)
+    }
+
+    pub fn navigation_probe_wait_ms(&self, generation: u64, now_ms: u64) -> Option<u64> {
+        if generation != self.navigation_probe_request_generation {
+            return None;
+        }
+        let elapsed = now_ms.saturating_sub(self.last_navigation_probe_at_ms);
+        Some(if self.last_navigation_probe_at_ms == 0
+            || elapsed >= NAVIGATION_PROBE_MIN_INTERVAL_MS
+        {
+            0
+        } else {
+            NAVIGATION_PROBE_MIN_INTERVAL_MS - elapsed
+        })
+    }
+
+    pub fn complete_navigation_probe(
+        &mut self,
+        generation: u64,
+        stdout: &str,
+        agent_id: &str,
+        turn_id: Option<&str>,
+        occurred_at_ms: u64,
+    ) -> Vec<ActionAuditRecord> {
+        if generation != self.navigation_probe_request_generation || !self.audit_enabled {
+            return Vec::new();
+        }
+        self.last_navigation_probe_at_ms = occurred_at_ms;
+        let mut records = Vec::new();
+        for target in parse_navigation_probe_output(stdout) {
+            if target.get("type").and_then(serde_json::Value::as_str) != Some("page") {
+                continue;
+            }
+            let Some(page_id) = target.get("id").and_then(serde_json::Value::as_str).filter(|value| !value.is_empty()) else {
+                continue;
+            };
+            let Some(url) = target.get("url").and_then(serde_json::Value::as_str).and_then(normalize_navigation_url) else {
+                continue;
+            };
+            if self.navigation_urls_by_page_id.get(page_id).is_some_and(|prior| prior == &url) {
+                continue;
+            }
+            self.navigation_urls_by_page_id.insert(page_id.to_string(), url.clone());
+            records.push(ActionAuditRecord {
+                agent_id: agent_id.to_string(),
+                turn_id: turn_id.map(str::to_string),
+                occurred_at_ms,
+                action: serde_json::json!({
+                    "kind": "browserNavigation",
+                    "url": url,
+                    "pageTitle": target.get("title").and_then(serde_json::Value::as_str).unwrap_or_default(),
+                }),
+            });
+        }
+        records
     }
 
     pub fn get_or_create_navigation_probe(&mut self) -> bool {

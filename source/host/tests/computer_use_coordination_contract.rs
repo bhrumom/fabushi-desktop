@@ -101,3 +101,36 @@ fn navigation_probe_is_lazy_and_absent_without_auditor() {
     assert!(enabled.get_or_create_navigation_probe());
     assert!(enabled.has_navigation_probe());
 }
+
+#[test]
+fn navigation_probe_baseline_dedupes_urls_and_coalesces_trailing_requests() {
+    let mut coordination = ComputerUseCoordination::new(true);
+    coordination.capture_navigation_baseline(
+        r#"[{"type":"page","id":"page-1","url":"https://example.com/start?x=1","title":"Start"}]"#,
+    );
+    assert!(coordination.has_navigation_probe());
+    let first = coordination.request_navigation_probe().expect("first probe");
+    let superseding = coordination.request_navigation_probe().expect("superseding probe");
+    assert!(coordination.navigation_probe_wait_ms(first, 100).is_none());
+    assert_eq!(coordination.navigation_probe_wait_ms(superseding, 100), Some(0));
+    let records = coordination.complete_navigation_probe(
+        superseding,
+        r#"[{"type":"page","id":"page-1","url":"https://example.com/next?q=2","title":"Next"}]"#,
+        "agent-1",
+        Some("turn-1"),
+        100,
+    );
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].action["kind"], "browserNavigation");
+    assert_eq!(records[0].action["url"], "https://example.com/next");
+    assert_eq!(records[0].action["pageTitle"], "Next");
+    let later = coordination.request_navigation_probe().expect("later probe");
+    assert_eq!(coordination.navigation_probe_wait_ms(later, 101), Some(1999));
+    assert!(coordination.complete_navigation_probe(
+        later,
+        r#"[{"type":"page","id":"page-1","url":"https://example.com/next","title":"Next"}]"#,
+        "agent-1",
+        Some("turn-1"),
+        2100,
+    ).is_empty());
+}

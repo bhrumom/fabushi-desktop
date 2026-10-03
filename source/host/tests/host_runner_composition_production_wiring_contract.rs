@@ -163,6 +163,10 @@ fn host_runner_composition_owns_computer_use_session_lifecycle() {
         "pub fn mark_computer_use_preparation_ready(",
         "pub fn mark_computer_use_preparation_failed(",
         "pub fn owns_computer_control_lease(",
+        "pub fn capture_computer_navigation_baseline(",
+        "pub fn request_computer_navigation_probe(",
+        "pub fn computer_navigation_probe_wait_ms(",
+        "pub fn complete_computer_navigation_probe(",
         "pub fn finish_computer_use_turn(",
         "owner.record_model_id(model_id)",
         "owner.record_turn_ended(usage)",
@@ -195,6 +199,18 @@ fn host_runner_composition_owns_computer_use_session_lifecycle() {
         SHIPPING_HOST.contains("worker_host_runner_composition.finish_computer_use_turn("),
         "shipping Host must delegate computer-use turn settlement",
     );
+    for needle in [
+        "navigation_probe_command(display_number)",
+        "worker_host_runner_composition.capture_computer_navigation_baseline(stdout)",
+        ".with_post_action_callback(",
+        "computer_navigation_owner.request_computer_navigation_probe()",
+        "navigation_owner.complete_computer_navigation_probe(",
+    ] {
+        assert!(
+            SHIPPING_HOST.contains(needle),
+            "shipping Host missing frozen computer-use navigation-probe wiring: {needle}",
+        );
+    }
 }
 
 

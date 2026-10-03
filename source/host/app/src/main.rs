@@ -320,7 +320,7 @@ use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
 };
 use mahayana_host_runtime::runner::sand_action_audit::{
-    ActionAuditRecord, ActionAuditSink, normalize_navigation_url,
+    ActionAuditRecord, ActionAuditSink, navigation_probe_command, normalize_navigation_url,
 };
 use mahayana_host_runtime::runner::bot_block_detection::with_bot_block_detection_sink;
 use mahayana_host_runtime::extensions::telemetry::bot_block_telemetry::BotBlockReport;
@@ -7104,6 +7104,24 @@ fn start_routed_provider_task(
                     file_url_for_path(path)
                 },
             );
+            let computer_navigation_baseline_box = Arc::clone(&box_resources);
+            if let Ok(display_number) = computer_navigation_baseline_box.browser_window_index() {
+                if let Ok(display_number) = u16::try_from(display_number) {
+                    if let Ok(result) = computer_navigation_baseline_box.execute_shell(RunnerBoxShellRequest {
+                        command: navigation_probe_command(display_number),
+                        working_directory: "/workspace".into(),
+                        tool_call_id: "sand-navigation-probe-baseline".into(),
+                        is_background: false,
+                        block_until_ms: None,
+                    }) {
+                        if result.get("exitCode").and_then(serde_json::Value::as_i64).unwrap_or(-1) == 0 {
+                            if let Some(stdout) = result.get("stdout").and_then(serde_json::Value::as_str) {
+                                worker_host_runner_composition.capture_computer_navigation_baseline(stdout);
+                            }
+                        }
+                    }
+                }
+            }
             let computer_control_handoff = session_handoff.clone();
             let computer_control_agent_id = agent_id.clone();
             let computer_control_lease_for_check = computer_control_lease.clone();
@@ -7113,6 +7131,11 @@ fn start_routed_provider_task(
             let computer_action_audit = Arc::clone(&action_audit_sink);
             let computer_action_agent_id = agent_id.clone();
             let computer_action_turn_id = stream_id.clone();
+            let computer_navigation_box = Arc::clone(&box_resources);
+            let computer_navigation_owner = Arc::clone(&worker_host_runner_composition);
+            let computer_navigation_audit = Arc::clone(&action_audit_sink);
+            let computer_navigation_agent_id = agent_id.clone();
+            let computer_navigation_turn_id = stream_id.clone();
             let mut computer_executor_owner =
                 ProductionComputerToolExecutor::new(Arc::clone(&box_resources))
                     .with_auto_review_callback(computer_auto_review)
@@ -7151,6 +7174,62 @@ fn start_routed_provider_task(
                             turn_id: Some(computer_action_turn_id.clone()),
                             action,
                         });
+                    }))
+                    .with_post_action_callback(Arc::new(move |tool_call_id| {
+                        let Some(generation) = computer_navigation_owner.request_computer_navigation_probe() else {
+                            return;
+                        };
+                        let navigation_box = Arc::clone(&computer_navigation_box);
+                        let navigation_owner = Arc::clone(&computer_navigation_owner);
+                        let navigation_audit = Arc::clone(&computer_navigation_audit);
+                        let navigation_agent_id = computer_navigation_agent_id.clone();
+                        let navigation_turn_id = computer_navigation_turn_id.clone();
+                        let tool_call_id = tool_call_id.to_string();
+                        let _ = thread::Builder::new()
+                            .name(format!("mahayana-navigation-probe-{generation}"))
+                            .spawn(move || {
+                                loop {
+                                    let now = started_at_ms();
+                                    let Some(wait_ms) = navigation_owner.computer_navigation_probe_wait_ms(generation, now) else {
+                                        return;
+                                    };
+                                    if wait_ms == 0 {
+                                        break;
+                                    }
+                                    thread::sleep(Duration::from_millis(wait_ms));
+                                }
+                                let Ok(display_number) = navigation_box.browser_window_index() else {
+                                    return;
+                                };
+                                let Ok(display_number) = u16::try_from(display_number) else {
+                                    return;
+                                };
+                                let Ok(result) = navigation_box.execute_shell(RunnerBoxShellRequest {
+                                    command: navigation_probe_command(display_number),
+                                    working_directory: "/workspace".into(),
+                                    tool_call_id: format!("{tool_call_id}:navigation-probe"),
+                                    is_background: false,
+                                    block_until_ms: None,
+                                }) else {
+                                    return;
+                                };
+                                if result.get("exitCode").and_then(serde_json::Value::as_i64).unwrap_or(-1) != 0 {
+                                    return;
+                                }
+                                let Some(stdout) = result.get("stdout").and_then(serde_json::Value::as_str) else {
+                                    return;
+                                };
+                                let occurred_at_ms = started_at_ms();
+                                for record in navigation_owner.complete_computer_navigation_probe(
+                                    generation,
+                                    stdout,
+                                    &navigation_agent_id,
+                                    Some(&navigation_turn_id),
+                                    occurred_at_ms,
+                                ) {
+                                    navigation_audit.record(record);
+                                }
+                            });
                     }))
                     .with_availability_check(Arc::new(move |args| {
                         if !computer_control_box.box_().is_available() {

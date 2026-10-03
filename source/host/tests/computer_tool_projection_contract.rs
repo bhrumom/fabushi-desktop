@@ -307,6 +307,8 @@ fn production_computer_executor_uses_host_box_transport_and_persists_screenshot(
     let port = Arc::new(ComputerTransportPort::default());
     let persist_calls = Arc::new(Mutex::new(Vec::<(Vec<u8>, String)>::new()));
     let persist_capture = Arc::clone(&persist_calls);
+    let post_actions = Arc::new(Mutex::new(Vec::<String>::new()));
+    let post_actions_capture = Arc::clone(&post_actions);
     let executor = ProductionComputerToolExecutor::new(
         Arc::clone(&port) as Arc<dyn RunnerBoxResourcePort>,
     )
@@ -316,6 +318,9 @@ fn production_computer_executor_uses_host_box_transport_and_persists_screenshot(
             .expect("persist")
             .push((bytes.to_vec(), mime.to_string()));
         Some("file:///saved-computer.webp".into())
+    }))
+    .with_post_action_callback(Arc::new(move |tool_call_id| {
+        post_actions_capture.lock().expect("post actions").push(tool_call_id.to_string());
     }));
 
     let result = executor
@@ -339,6 +344,10 @@ fn production_computer_executor_uses_host_box_transport_and_persists_screenshot(
     assert_eq!(
         persist_calls.lock().expect("persist").as_slice(),
         &[(vec![1, 2, 3], "image/webp".into())]
+    );
+    assert_eq!(
+        post_actions.lock().expect("post actions").as_slice(),
+        &["tool-live".to_string()]
     );
 }
 
