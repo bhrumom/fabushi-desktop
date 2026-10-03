@@ -45,6 +45,7 @@ use super::tools::sand_mcp_management_tools::{McpManagementSink, McpManagementTo
 use super::tools::mcp_meta_tools::McpMetaToolBridge;
 use super::tools::sand_state_tool::{
     RoutineAutoReviewCallback, RoutinePostWriteCallback, SandStateWriter,
+    StateApprovalBarrier,
 };
 use super::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use super::tools::turn_toolset::{
@@ -201,6 +202,7 @@ pub struct TurnAgentComposition {
     subagent_steer_review: Option<SubagentSteerReviewCallback>,
     state_writer: Option<Arc<dyn SandStateWriter>>,
     routine_auto_review: Option<RoutineAutoReviewCallback>,
+    state_approval_barrier: Option<StateApprovalBarrier>,
     routine_post_write: Option<RoutinePostWriteCallback>,
     multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
     cloud_agent_tool: Option<CloudAgentToolDependencies>,
@@ -258,6 +260,7 @@ impl TurnAgentComposition {
             subagent_steer_review: None,
             state_writer: None,
             routine_auto_review: None,
+            state_approval_barrier: None,
             routine_post_write: None,
             multitask_todo_state: None,
             cloud_agent_tool: None,
@@ -499,6 +502,14 @@ impl TurnAgentComposition {
 
     pub fn has_routine_auto_review(&self) -> bool {
         self.routine_auto_review.is_some()
+    }
+
+    pub fn with_state_approval_barrier(
+        mut self,
+        barrier: StateApprovalBarrier,
+    ) -> Self {
+        self.state_approval_barrier = Some(barrier);
+        self
     }
 
     pub fn with_routine_post_write(
@@ -764,6 +775,7 @@ impl TurnAgentComposition {
                 subagent_steer_review: self.subagent_steer_review.clone(),
                 state_writer: self.state_writer.clone(),
                 routine_auto_review: self.routine_auto_review.clone(),
+                state_approval_barrier: self.state_approval_barrier.clone(),
                 routine_post_write: self.routine_post_write.clone(),
                 multitask_enabled: self.multitask_enabled,
                 multitask_todo_state: self.multitask_todo_state.clone(),

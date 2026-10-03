@@ -26,6 +26,7 @@ use crate::runner::tools::sand_agent_management_tools::AgentManagementSink;
 use crate::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use crate::runner::tools::sand_state_tool::{
     RoutineAutoReviewCallback, RoutinePostWriteCallback, SandStateWriter,
+    StateApprovalBarrier,
 };
 use crate::runner::tools::sand_subagent_management_tools::SubagentSteerReviewCallback;
 use crate::runner::tools::sand_task_subagent_tool::{SubagentTaskReviewCallback, SubagentTaskSink};
@@ -61,6 +62,7 @@ pub struct ProductionRunnerCompositionHooks {
     pub agent_management_sink: Arc<dyn AgentManagementSink>,
     pub state_writer: Option<Arc<dyn SandStateWriter>>,
     pub routine_auto_review: RoutineAutoReviewCallback,
+    pub state_approval_barrier: StateApprovalBarrier,
     pub box_shell_review: BoxShellAutoReviewCallback,
     pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
     pub subagent_task_review: Option<SubagentTaskReviewCallback>,
@@ -176,6 +178,7 @@ pub fn create_production_runner_composition_with_hooks(
     let mut composition = create_production_runner_composition(input)
         .with_agent_management_sink(hooks.agent_management_sink)
         .with_routine_auto_review(hooks.routine_auto_review)
+        .with_state_approval_barrier(hooks.state_approval_barrier)
         .with_box_shell_review(hooks.box_shell_review);
 
     if let Some(state_writer) = hooks.state_writer {

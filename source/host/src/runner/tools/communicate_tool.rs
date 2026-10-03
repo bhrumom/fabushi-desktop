@@ -26,6 +26,7 @@ pub const FROZEN_COMMUNICATE_TOOL_NAMES: &[&str] = &[
     "StopSubagent",
     "CopyToBox",
     "CopyFromBox",
+    "update_state",
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -340,7 +341,14 @@ impl RoutedToolBridge for CommunicateRoutedToolBridge {
         }
 
         let started_at_ms = now_ms();
-        let initial = executing_tool_call_wire(name, None, tool_call_id, started_at_ms);
+        let activity = (name == "update_state")
+            .then(|| crate::runner::tools::sand_state_tool::describe_state_update(&args))
+            .flatten()
+            .map(|detail| CommunicateActivity {
+                detail: Some(detail),
+                target: None,
+            });
+        let initial = executing_tool_call_wire(name, activity.as_ref(), tool_call_id, started_at_ms);
         if let Some(sink) = self.sink.as_ref() {
             sink.on_tool_call("initial", name, &initial);
         }

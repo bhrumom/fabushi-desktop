@@ -154,7 +154,7 @@ fn routine_writes_run_auto_review_before_state_mutation() {
             assert_eq!(target.operation, "create");
             assert_eq!(target.spec.name, "Reviewed routine");
             assert_eq!(tool_call_id, "tool-routine-reviewed");
-            Err(ProviderSessionError::Tool("review denied".into()))
+            Ok(Some("review denied".into()))
         }));
     let tool = bridge
         .list_tools()
@@ -162,7 +162,7 @@ fn routine_writes_run_auto_review_before_state_mutation() {
         .into_iter()
         .find(|tool| tool.name == SAND_UPDATE_STATE_TOOL_NAME)
         .expect("update_state");
-    let error = bridge.call_tool(
+    let denied = bridge.call_tool(
         &tool,
         json!({
             "target":"routine",
@@ -172,8 +172,8 @@ fn routine_writes_run_auto_review_before_state_mutation() {
             "schedule":"0 8 * * *"
         }),
         "tool-routine-reviewed",
-    ).expect_err("review must block write");
-    assert!(error.to_string().contains("review denied"));
+    ).expect("review denial is a normal state outcome");
+    assert_eq!(denied, Value::String("Not saved — review denied".into()));
     assert!(state.automation_record("reviewed-routine").is_none());
     let _ = fs::remove_dir_all(root);
 }
@@ -247,7 +247,7 @@ fn workflow_body_write_is_reviewed_only_when_a_routine_references_it() {
                 target.referencing_routines[0].prompt.as_deref(),
                 Some("Follow the Release Playbook when CI passes")
             );
-            Err(ProviderSessionError::Tool("review denied".into()))
+            Ok(Some("review denied".into()))
         }));
     let tool = bridge
         .list_tools()
@@ -255,7 +255,7 @@ fn workflow_body_write_is_reviewed_only_when_a_routine_references_it() {
         .into_iter()
         .find(|tool| tool.name == SAND_UPDATE_STATE_TOOL_NAME)
         .expect("update_state");
-    let error = bridge.call_tool(
+    let denied = bridge.call_tool(
         &tool,
         json!({
             "target":"workflow",
@@ -266,8 +266,8 @@ fn workflow_body_write_is_reviewed_only_when_a_routine_references_it() {
             "body":"new body"
         }),
         "tool-workflow",
-    ).expect_err("referenced workflow write must be reviewed");
-    assert!(error.to_string().contains("review denied"));
+    ).expect("review denial is a normal state outcome");
+    assert_eq!(denied, Value::String("Not saved — review denied".into()));
     let _ = fs::remove_dir_all(root);
 }
 
@@ -336,5 +336,66 @@ fn routine_post_write_runs_only_after_successful_routine_write() {
     ).expect("memory write");
     assert_eq!(observed.lock().expect("observed").len(), 1);
 
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn pending_auto_review_barrier_blocks_every_state_mutation_before_write() {
+    let root = temp_root("approval-barrier");
+    let state = Arc::new(SandAgentState::new(&root, "agent-barrier").expect("state"));
+    let writer: Arc<dyn SandStateWriter> = state.clone();
+    let bridge = SandStateToolBridge::new(Arc::new(DelegateBridge), writer)
+        .with_approval_barrier(Arc::new(|| {
+            Err(ProviderSessionError::Tool(
+                "Another action is waiting for Auto-review approval; no new side effect may start yet.".into(),
+            ))
+        }));
+    let tool = bridge.list_tools().expect("tools").into_iter()
+        .find(|tool| tool.name == SAND_UPDATE_STATE_TOOL_NAME).expect("update_state");
+    let error = bridge.call_tool(
+        &tool,
+        json!({"target":"memory","action":"write","fact":"must not persist","tier":"log"}),
+        "tool-barrier",
+    ).expect_err("pending approval must block even non-routine state");
+    assert!(error.to_string().contains("waiting for Auto-review approval"));
+    let store = FileMemoryStore::new(get_agent_memory_dir(root.join("agents").join("agent-barrier")));
+    assert_eq!(store.count_memories(), 0);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn routine_trigger_is_canonicalized_and_invalid_listener_is_rejected_before_write() {
+    let root = temp_root("trigger-validation");
+    let state = Arc::new(SandAgentState::new(&root, "agent-trigger").expect("state"));
+    let writer: Arc<dyn SandStateWriter> = state.clone();
+    let bridge = SandStateToolBridge::new(Arc::new(DelegateBridge), writer);
+    let tool = bridge.list_tools().expect("tools").into_iter()
+        .find(|tool| tool.name == SAND_UPDATE_STATE_TOOL_NAME).expect("update_state");
+
+    let error = bridge.call_tool(
+        &tool,
+        json!({
+            "target":"routine","action":"create","name":"Broken CI listener",
+            "prompt":"Watch CI","trigger":{"type":"github","repo":"owner/repo","events":["ci-passed"]}
+        }),
+        "tool-invalid-trigger",
+    ).expect_err("ci listener without ciBranch is unusable");
+    assert!(error.to_string().contains("that trigger isn't usable"));
+    assert!(state.automation_record("broken-ci-listener").is_none());
+
+    bridge.call_tool(
+        &tool,
+        json!({
+            "target":"routine","action":"create","name":"Valid CI listener",
+            "prompt":"Watch CI","trigger":{
+                "type":"github","repo":"owner/repo","events":["ci-passed"],
+                "ciBranch":"main","userAllowlist":["@Alice","alice"]
+            }
+        }),
+        "tool-valid-trigger",
+    ).expect("valid trigger");
+    let trigger = state.automation_record("valid-ci-listener").expect("routine").trigger;
+    assert_eq!(trigger["ciBranch"], "main");
+    assert_eq!(trigger["userAllowlist"], json!(["Alice"]));
     let _ = fs::remove_dir_all(root);
 }

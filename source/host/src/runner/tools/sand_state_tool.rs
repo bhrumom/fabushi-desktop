@@ -4,6 +4,7 @@ use std::sync::Arc;
 use serde_json::{Map, Value, json};
 
 use crate::automations::automation::{AutomationRecord, AutomationSpec};
+use crate::automations::automation_trigger::parse_stored_trigger;
 use crate::workflows::workflow_library::slugify_workflow_name;
 use crate::workflows::workflow_store::WorkflowRecord;
 use crate::extensions::inference::provider_session::{
@@ -20,8 +21,11 @@ use crate::runner::sand_automation_auto_review::{
 pub const SAND_UPDATE_STATE_TOOL_NAME: &str = "update_state";
 
 pub type RoutineAutoReviewCallback = Arc<
-    dyn Fn(&AutomationWriteTarget, &str) -> Result<(), ProviderSessionError> + Send + Sync,
+    dyn Fn(&AutomationWriteTarget, &str) -> Result<Option<String>, ProviderSessionError> + Send + Sync,
 >;
+
+pub type StateApprovalBarrier =
+    Arc<dyn Fn() -> Result<(), ProviderSessionError> + Send + Sync>;
 
 pub type RoutinePostWriteCallback = Arc<
     dyn Fn(&AutomationWriteTarget, &str) -> Result<(), ProviderSessionError> + Send + Sync,
@@ -188,6 +192,7 @@ pub struct SandStateToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
     state: Arc<dyn SandStateWriter>,
     routine_auto_review: Option<RoutineAutoReviewCallback>,
+    approval_barrier: Option<StateApprovalBarrier>,
     routine_post_write: Option<RoutinePostWriteCallback>,
 }
 
@@ -200,6 +205,7 @@ impl SandStateToolBridge {
             delegate,
             state,
             routine_auto_review: None,
+            approval_barrier: None,
             routine_post_write: None,
         }
     }
@@ -209,6 +215,14 @@ impl SandStateToolBridge {
         review: RoutineAutoReviewCallback,
     ) -> Self {
         self.routine_auto_review = Some(review);
+        self
+    }
+
+    pub fn with_approval_barrier(
+        mut self,
+        barrier: StateApprovalBarrier,
+    ) -> Self {
+        self.approval_barrier = Some(barrier);
         self
     }
 
@@ -243,9 +257,14 @@ impl RoutedToolBridge for SandStateToolBridge {
         {
             return self.delegate.call_tool(tool, args, tool_call_id);
         }
+        if let Some(barrier) = self.approval_barrier.as_ref() {
+            barrier()?;
+        }
         let routine_target = automation_review_target(&args, self.state.as_ref())?;
         if let (Some(review), Some(target)) = (&self.routine_auto_review, routine_target.as_ref()) {
-            review(target, tool_call_id)?;
+            if let Some(reason) = review(target, tool_call_id)? {
+                return Ok(Value::String(format!("Not saved — {reason}")));
+            }
         }
         let outcome = apply_state_update(&args, self.state.as_ref())?;
         if outcome.ok {
@@ -258,7 +277,7 @@ impl RoutedToolBridge for SandStateToolBridge {
         Ok(Value::String(if outcome.ok {
             outcome.message
         } else {
-            format!("Not saved - {}", outcome.message)
+            format!("Not saved — {}", outcome.message)
         }))
     }
 }
@@ -440,6 +459,31 @@ pub fn automation_review_target(
     Ok(None)
 }
 
+pub fn describe_state_update(args: &Value) -> Option<String> {
+    let object = args.as_object()?;
+    let target = object.get("target")?.as_str()?;
+    let detail = match target {
+        "memory" => match object.get("scope").and_then(Value::as_str) {
+            Some("user") => "user memory".to_string(),
+            Some("project") => object
+                .get("project")
+                .and_then(Value::as_str)
+                .filter(|value| !value.trim().is_empty())
+                .unwrap_or("memory")
+                .to_string(),
+            _ => "memory".to_string(),
+        },
+        "avatar" => "avatar".to_string(),
+        _ => ["name", "project", "id", "platform"]
+            .into_iter()
+            .find_map(|key| object.get(key).and_then(Value::as_str))
+            .filter(|value| !value.trim().is_empty())
+            .unwrap_or(target)
+            .to_string(),
+    };
+    Some(detail)
+}
+
 pub fn apply_state_update(
     args: &Value,
     state: &dyn SandStateWriter,
@@ -551,22 +595,19 @@ fn automation_spec(
         ));
     }
     let trigger = if let Some(schedule) = schedule {
-        json!({"type":"cron","schedule":schedule})
+        parse_stored_trigger(&json!({"type":"cron","schedule":schedule}))
     } else if let Some(trigger) = trigger {
-        if trigger.is_array() {
-            json!({"type":"group","listeners":trigger})
-        } else if trigger.is_object() {
-            trigger.clone()
-        } else {
-            return Err(tool_error("trigger must be an object or array"));
-        }
+        parse_stored_trigger(trigger)
     } else if let Some(existing) = existing {
-        existing.trigger.clone()
+        Some(existing.trigger.clone())
     } else {
         return Err(tool_error(
             "schedule or trigger is required for routine create",
         ));
-    };
+    }
+    .ok_or_else(|| tool_error(
+        "that trigger isn't usable — check the channel, repo (one concrete \"owner/name\"), event names, the ciBranch a ci-passed/ci-failed listener needs, and the tenantId plus at least one team id a microsoftTeams trigger needs.",
+    ))?;
     let enabled = optional_bool(object, "enabled")?
         .or_else(|| existing.is_none().then_some(true));
     Ok(AutomationSpec {

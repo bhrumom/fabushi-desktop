@@ -266,19 +266,41 @@ fn shipping_communicate_bridge_emits_initial_and_completed_wire_for_frozen_tools
         .is_err());
     assert_eq!(
         bridge
+            .call_tool(
+                &routed_tool("update_state"),
+                json!({"target":"memory","action":"write","scope":"user","fact":"x"}),
+                "state-1",
+            )
+            .expect("state"),
+        Value::String("base".into())
+    );
+    assert_eq!(
+        bridge
             .call_tool(&routed_tool("Read"), json!({}), "read-1")
             .expect("base"),
         Value::String("base".into())
     );
 
     let calls = sink.calls.lock().unwrap();
-    assert_eq!(calls.len(), 4);
+    assert_eq!(calls.len(), 6);
     assert_eq!(calls[0].0, "initial");
     assert_eq!(calls[0].1, "CreateAgent");
     assert_eq!(calls[1].0, "completed");
     assert_eq!(calls[2].0, "initial");
     assert_eq!(calls[2].1, "UpdateAgent");
     assert_eq!(calls[3].0, "completed");
+    assert_eq!(calls[4].0, "initial");
+    assert_eq!(calls[4].1, "update_state");
+    let state_initial = AgentToolCall::decode(calls[4].2.as_slice()).expect("state initial");
+    match state_initial.tool {
+        Some(agent_tool_call::Tool::CommunicateUpdateToolCall(call)) => {
+            let step = call.args.and_then(|args| args.current_step).expect("state current step");
+            let step: Value = serde_json::from_str(&step).expect("state step json");
+            assert_eq!(step["detail"], "user memory");
+        }
+        _ => panic!("unexpected state communicate ToolCall"),
+    }
+    assert_eq!(calls[5].0, "completed");
     for (_, _, wire) in calls.iter() {
         let decoded = AgentToolCall::decode(wire.as_slice()).expect("canonical wire");
         assert!(matches!(

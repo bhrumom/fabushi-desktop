@@ -25,6 +25,7 @@ use super::sand_reaction_tool::{ReactionSink, ReactionToolBridge};
 use super::sand_spotlight_tools::SpotlightedRoutedToolBridge;
 use super::sand_state_tool::{
     RoutineAutoReviewCallback, RoutinePostWriteCallback, SandStateToolBridge, SandStateWriter,
+    StateApprovalBarrier,
 };
 use super::sand_multitask_todo_tool::{
     MultitaskTodoState, SandMultitaskTodoToolBridge,
@@ -62,6 +63,7 @@ pub struct TurnToolsetDependencies {
     pub subagent_steer_review: Option<SubagentSteerReviewCallback>,
     pub state_writer: Option<Arc<dyn SandStateWriter>>,
     pub routine_auto_review: Option<RoutineAutoReviewCallback>,
+    pub state_approval_barrier: Option<StateApprovalBarrier>,
     pub routine_post_write: Option<RoutinePostWriteCallback>,
     pub multitask_enabled: bool,
     pub multitask_todo_state: Option<Arc<dyn MultitaskTodoState>>,
@@ -138,6 +140,9 @@ pub fn build_turn_toolset(
             let mut state_bridge = SandStateToolBridge::new(bridge, state);
             if let Some(review) = dependencies.routine_auto_review {
                 state_bridge = state_bridge.with_routine_auto_review(review);
+            }
+            if let Some(barrier) = dependencies.state_approval_barrier {
+                state_bridge = state_bridge.with_approval_barrier(barrier);
             }
             if let Some(callback) = dependencies.routine_post_write {
                 state_bridge = state_bridge.with_routine_post_write(callback);

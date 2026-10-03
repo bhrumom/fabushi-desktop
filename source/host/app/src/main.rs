@@ -6692,6 +6692,13 @@ fn start_routed_provider_task(
                     )
                     .map_err(|error| ProviderSessionError::Tool(error.to_string()))
                 });
+            let state_approval_auto_review = Arc::clone(&worker_auto_review);
+            let state_approval_barrier =
+                Arc::new(move || {
+                    state_approval_auto_review
+                        .assert_no_pending_approval()
+                        .map_err(|error| ProviderSessionError::Tool(error.to_string()))
+                }) as mahayana_host_runtime::runner::tools::sand_state_tool::StateApprovalBarrier;
             let routine_review_auth = Arc::clone(&worker_auth);
             let routine_review_auto_review = Arc::clone(&worker_auto_review);
             let routine_review_controller = Arc::clone(&worker_auto_review_controller);
@@ -6744,10 +6751,8 @@ fn start_routed_provider_task(
                         })
                     })?;
                     match outcome {
-                        AutomationReviewOutcome::Allowed => Ok(()),
-                        AutomationReviewOutcome::Blocked(reason) => {
-                            Err(ProviderSessionError::Tool(reason))
-                        }
+                        AutomationReviewOutcome::Allowed => Ok(None),
+                        AutomationReviewOutcome::Blocked(reason) => Ok(Some(reason)),
                     }
                 });
             let cloud_agent_review = build_cloud_agent_auto_review_hook(
@@ -7737,6 +7742,7 @@ fn start_routed_provider_task(
                     agent_management_sink,
                     state_writer,
                     routine_auto_review,
+                    state_approval_barrier,
                     box_shell_review,
                     subagent_task_sink: worker_subagent_task_sink,
                     subagent_task_review,
