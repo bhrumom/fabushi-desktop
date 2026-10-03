@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::cloud_agents::cloud_agent_tool::{
-    CloudAgentToolBridge, CloudAgentToolDependencies,
+    CLOUD_AGENT_TOOL_NAME, CloudAgentToolBridge, CloudAgentToolDependencies,
 };
 use crate::runner::box_tool_access::{
     BoxShellAutoReviewCallback, RUNNER_BOX_READ_TOOL_NAME, RUNNER_BOX_SHELL_TOOL_NAME,
@@ -26,8 +26,11 @@ use crate::runner::routed_provider_runtime::{
 };
 use crate::runner::subagent_runtime::SubagentRuntime;
 
-use super::box_help_tool::BoxHelpToolBridge;
-use super::mcp_meta_tools::McpMetaToolBridge;
+use super::box_help_tool::{BoxHelpToolBridge, SAND_REQUEST_BOX_HELP_TOOL_NAME};
+use super::mcp_meta_tools::{
+    CALL_MCP_TOOL_NAME, GET_MCP_TOOLS_TOOL_NAME, McpMetaToolBridge,
+    mcp_meta_tool_definitions,
+};
 use super::sand_await_shell_tool::SandAwaitShellToolBridge;
 use super::sand_agent_management_tools::{
     AgentManagementSink, AgentManagementToolBridge,
@@ -50,7 +53,10 @@ use super::sand_state_tool::{
 use super::sand_multitask_todo_tool::{
     MultitaskTodoState, SandMultitaskTodoToolBridge,
 };
-use super::sand_mcp_management_tools::{McpManagementSink, McpManagementToolBridge};
+use super::sand_mcp_management_tools::{
+    AUTHENTICATE_MCP_SERVER_TOOL_NAME, McpManagementSink, McpManagementToolBridge,
+    SEARCH_PLUGINS_TOOL_NAME,
+};
 use super::send_message_tool::{
     SAND_SEND_MESSAGE_TOOL_NAME, SendMessageInteractionSink, SendMessageSink,
     SendMessageToolBridge,
@@ -59,6 +65,7 @@ use super::sand_task_subagent_tool::{
     SubagentTaskReviewCallback, SubagentTaskSink, SubagentTaskToolBridge,
 };
 use super::sand_subagent_management_tools::{
+    CHECK_SUBAGENT_TOOL_NAME, MESSAGE_SUBAGENT_TOOL_NAME, STOP_SUBAGENT_TOOL_NAME,
     SubagentManagementToolBridge, SubagentSteerReviewCallback,
 };
 
@@ -177,6 +184,7 @@ pub struct TurnToolsetRole {
     pub is_box_scoped_subagent: bool,
     pub is_browser_use_subagent: bool,
     pub shared_room_box_tools_enabled: bool,
+    pub dynamic_tools_enabled: bool,
 }
 
 impl Default for TurnToolsetRole {
@@ -187,6 +195,7 @@ impl Default for TurnToolsetRole {
             is_box_scoped_subagent: false,
             is_browser_use_subagent: false,
             shared_room_box_tools_enabled: true,
+            dynamic_tools_enabled: false,
         }
     }
 }
@@ -265,6 +274,215 @@ impl RoutedToolBridge for LocalToolScopeBridge {
         let result = self.delegate.call_tool(tool, args, tool_call_id);
         self.binding.controller.complete_scope(Some(&scope));
         result
+    }
+}
+
+const CURSOR_DYNAMIC_TOOLS_NAMESPACE: &str = "cursor";
+
+fn is_dynamic_first_party_tool(tool: &RoutedToolDefinition) -> bool {
+    [
+        CLOUD_AGENT_TOOL_NAME,
+        SEARCH_PLUGINS_TOOL_NAME,
+        AUTHENTICATE_MCP_SERVER_TOOL_NAME,
+        COPY_TO_BOX_TOOL_NAME,
+        COPY_FROM_BOX_TOOL_NAME,
+        SAND_REQUEST_BOX_HELP_TOOL_NAME,
+        CHECK_SUBAGENT_TOOL_NAME,
+        MESSAGE_SUBAGENT_TOOL_NAME,
+        STOP_SUBAGENT_TOOL_NAME,
+    ]
+    .iter()
+    .any(|candidate| tool.name == *candidate || tool.tool_name == *candidate)
+}
+
+struct DynamicToolPlacementBridge {
+    delegate: Arc<dyn RoutedToolBridge>,
+    dynamic_tools: Vec<RoutedToolDefinition>,
+    delegate_has_meta_tools: bool,
+}
+
+impl DynamicToolPlacementBridge {
+    fn new(delegate: Arc<dyn RoutedToolBridge>) -> Result<Self, ProviderSessionError> {
+        let offered = delegate.list_tools()?;
+        let dynamic_tools = offered
+            .iter()
+            .filter(|tool| is_dynamic_first_party_tool(tool))
+            .cloned()
+            .collect::<Vec<_>>();
+        let delegate_has_meta_tools = offered.iter().any(|tool| {
+            tool.name == GET_MCP_TOOLS_TOOL_NAME || tool.tool_name == GET_MCP_TOOLS_TOOL_NAME
+        });
+        Ok(Self {
+            delegate,
+            dynamic_tools,
+            delegate_has_meta_tools,
+        })
+    }
+
+    fn cursor_discovery(&self, args: &serde_json::Value) -> serde_json::Value {
+        let requested_tool = args
+            .get("toolName")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        let pattern = args
+            .get("pattern")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_ascii_lowercase);
+        let tools = self
+            .dynamic_tools
+            .iter()
+            .filter(|tool| {
+                if let Some(requested_tool) = requested_tool
+                    && requested_tool != tool.name
+                    && requested_tool != tool.tool_name
+                {
+                    return false;
+                }
+                match pattern.as_ref() {
+                    None => true,
+                    Some(pattern) => {
+                        tool.name.to_ascii_lowercase().contains(pattern)
+                            || tool.tool_name.to_ascii_lowercase().contains(pattern)
+                            || tool
+                                .description
+                                .as_deref()
+                                .unwrap_or_default()
+                                .to_ascii_lowercase()
+                                .contains(pattern)
+                    }
+                }
+            })
+            .map(|tool| {
+                serde_json::json!({
+                    "toolName": tool.name,
+                    "description": tool.description,
+                    "inputSchema": tool.input_schema,
+                })
+            })
+            .collect::<Vec<_>>();
+        serde_json::json!({
+            "enabled": true,
+            "mcpDescriptors": [{
+                "serverIdentifier": CURSOR_DYNAMIC_TOOLS_NAMESPACE,
+                "serverName": CURSOR_DYNAMIC_TOOLS_NAMESPACE,
+                "serverUseInstructions": "Native Cursor tools for this session. Read their schemas before calling them.",
+                "tools": tools,
+            }]
+        })
+    }
+
+    fn merge_cursor_discovery(
+        &self,
+        delegate_value: serde_json::Value,
+        args: &serde_json::Value,
+    ) -> serde_json::Value {
+        let cursor = self.cursor_discovery(args);
+        let mut descriptors = delegate_value
+            .get("mcpDescriptors")
+            .and_then(serde_json::Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        if let Some(cursor_descriptor) = cursor
+            .get("mcpDescriptors")
+            .and_then(serde_json::Value::as_array)
+            .and_then(|values| values.first())
+            .cloned()
+        {
+            descriptors.push(cursor_descriptor);
+        }
+        serde_json::json!({
+            "enabled": true,
+            "mcpDescriptors": descriptors,
+        })
+    }
+}
+
+impl RoutedToolBridge for DynamicToolPlacementBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        let mut tools = self
+            .delegate
+            .list_tools()?
+            .into_iter()
+            .filter(|tool| !is_dynamic_first_party_tool(tool))
+            .collect::<Vec<_>>();
+        for meta in mcp_meta_tool_definitions() {
+            if !tools.iter().any(|tool| tool.name == meta.name) {
+                tools.push(meta);
+            }
+        }
+        Ok(tools)
+    }
+
+    fn list_mcp_meta_tools(
+        &self,
+    ) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
+        self.delegate.list_mcp_meta_tools()
+    }
+
+    fn observe_partial_tool_call(
+        &self,
+        partial: &ProviderPartialToolCall,
+    ) -> Result<(), ProviderSessionError> {
+        self.delegate.observe_partial_tool_call(partial)
+    }
+
+    fn call_tool(
+        &self,
+        tool: &RoutedToolDefinition,
+        args: serde_json::Value,
+        tool_call_id: &str,
+    ) -> Result<serde_json::Value, ProviderSessionError> {
+        let effective = if tool.tool_name.trim().is_empty() {
+            tool.name.as_str()
+        } else {
+            tool.tool_name.as_str()
+        };
+        if effective == GET_MCP_TOOLS_TOOL_NAME {
+            let server = args
+                .get("server")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty());
+            if server == Some(CURSOR_DYNAMIC_TOOLS_NAMESPACE) || !self.delegate_has_meta_tools {
+                return Ok(self.cursor_discovery(&args));
+            }
+            if server.is_none() {
+                let delegated = self.delegate.call_tool(tool, args.clone(), tool_call_id)?;
+                return Ok(self.merge_cursor_discovery(delegated, &args));
+            }
+        }
+        if effective == CALL_MCP_TOOL_NAME
+            && args
+                .get("server")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|server| server == CURSOR_DYNAMIC_TOOLS_NAMESPACE)
+        {
+            let tool_name = args
+                .get("toolName")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| ProviderSessionError::Tool("toolName is required".into()))?;
+            let target = self
+                .dynamic_tools
+                .iter()
+                .find(|candidate| candidate.name == tool_name || candidate.tool_name == tool_name)
+                .cloned()
+                .ok_or_else(|| {
+                    ProviderSessionError::Tool(format!(
+                        "dynamic tool {tool_name} was not found in the cursor namespace"
+                    ))
+                })?;
+            return self.delegate.call_tool(
+                &target,
+                args.get("arguments").cloned().unwrap_or_else(|| serde_json::json!({})),
+                tool_call_id,
+            );
+        }
+        self.delegate.call_tool(tool, args, tool_call_id)
     }
 }
 
@@ -476,6 +694,18 @@ pub fn build_turn_toolset(
             Arc::new(send_bridge)
         }
         _ => bridge,
+    };
+    let bridge: Arc<dyn RoutedToolBridge> = if role.dynamic_tools_enabled
+        && !role.is_subagent_runner
+        && !role.is_shared_room_runner
+        && !role.is_box_scoped_subagent
+    {
+        match DynamicToolPlacementBridge::new(bridge.clone()) {
+            Ok(dynamic) => Arc::new(dynamic),
+            Err(_) => bridge,
+        }
+    } else {
+        bridge
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.local_tool_permission {
         Some(binding) => Arc::new(LocalToolScopeBridge {

@@ -363,7 +363,7 @@ fn required_meta_argument<'a>(
         .ok_or_else(|| ProviderSessionError::Tool(format!("{key} is required")))
 }
 
-fn mcp_meta_tool_definitions() -> Vec<RoutedToolDefinition> {
+pub(crate) fn mcp_meta_tool_definitions() -> Vec<RoutedToolDefinition> {
     vec![
         RoutedToolDefinition {
             name: GET_MCP_TOOLS_TOOL_NAME.into(),

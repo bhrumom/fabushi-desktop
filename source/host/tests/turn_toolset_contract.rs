@@ -45,6 +45,41 @@ impl RoutedToolBridge for BaseBridge {
     }
 }
 
+struct DynamicBaseBridge;
+
+impl RoutedToolBridge for DynamicBaseBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        Ok(vec![
+            RoutedToolDefinition {
+                name: "base_tool".into(),
+                provider_identifier: "base".into(),
+                tool_name: "base_tool".into(),
+                description: None,
+                input_schema: json!({"type":"object"}),
+            },
+            RoutedToolDefinition {
+                name: "CloudAgent".into(),
+                provider_identifier: "fabushi-runner".into(),
+                tool_name: "CloudAgent".into(),
+                description: Some("Launch a cloud agent".into()),
+                input_schema: json!({
+                    "type":"object",
+                    "properties":{"prompt":{"type":"string"}}
+                }),
+            },
+        ])
+    }
+
+    fn call_tool(
+        &self,
+        tool: &RoutedToolDefinition,
+        args: Value,
+        _tool_call_id: &str,
+    ) -> Result<Value, ProviderSessionError> {
+        Ok(json!({"tool":tool.name,"args":args}))
+    }
+}
+
 struct FakeComputerExecutor;
 
 impl ComputerToolExecutor for FakeComputerExecutor {
@@ -204,6 +239,51 @@ fn turn_toolset_hides_browser_from_non_browser_runner_roles() {
     let tools = bridge.list_tools().expect("tools");
     assert!(tools.iter().all(|tool| !tool.name.starts_with("browser_")));
     assert!(tools.iter().any(|tool| tool.name == "base_tool"));
+}
+
+#[test]
+fn dynamic_turn_toolset_moves_native_tools_behind_cursor_meta_dispatch() {
+    let bridge = build_turn_toolset(
+        Arc::new(DynamicBaseBridge),
+        TurnToolsetDependencies {
+            role: TurnToolsetRole {
+                dynamic_tools_enabled: true,
+                ..TurnToolsetRole::default()
+            },
+            ..TurnToolsetDependencies::default()
+        },
+    );
+
+    let tools = bridge.list_tools().expect("tools");
+    assert!(tools.iter().any(|tool| tool.name == "base_tool"));
+    assert!(tools.iter().all(|tool| tool.name != "CloudAgent"));
+    let discovery = tools
+        .iter()
+        .find(|tool| tool.name == "GetMcpTools")
+        .expect("GetMcpTools");
+    let discovered = bridge
+        .call_tool(discovery, json!({"server":"cursor"}), "discover")
+        .expect("dynamic discovery");
+    assert_eq!(discovered["mcpDescriptors"][0]["serverIdentifier"], "cursor");
+    assert_eq!(discovered["mcpDescriptors"][0]["tools"][0]["toolName"], "CloudAgent");
+
+    let invocation = tools
+        .iter()
+        .find(|tool| tool.name == "CallMcpTool")
+        .expect("CallMcpTool");
+    let result = bridge
+        .call_tool(
+            invocation,
+            json!({
+                "server":"cursor",
+                "toolName":"CloudAgent",
+                "arguments":{"prompt":"fix it"}
+            }),
+            "invoke",
+        )
+        .expect("dynamic invocation");
+    assert_eq!(result["tool"], "CloudAgent");
+    assert_eq!(result["args"]["prompt"], "fix it");
 }
 
 #[test]

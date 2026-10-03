@@ -5570,6 +5570,7 @@ fn start_routed_provider_task(
         )
         .map_err(GatewayCommandError::Internal)?;
     let spotlight_enabled = prompt_owner.spotlight_enabled();
+    let dynamic_tools_enabled = experiments.is_dynamic_tools_enabled();
     let multitask_enabled = !args
         .get("groupMemberTurn")
         .and_then(serde_json::Value::as_bool)
@@ -7755,6 +7756,7 @@ fn start_routed_provider_task(
                         is_browser_use_subagent: worker_generated_parent_agent_id.is_some()
                             && worker_generated_subagent_type.eq_ignore_ascii_case("browseruse"),
                         shared_room_box_tools_enabled: true,
+                        dynamic_tools_enabled,
                     },
                     local_tool_permission: Some(TurnLocalToolPermissionBinding {
                         controller: local_tool_permission.controller(),
