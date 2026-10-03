@@ -85,13 +85,17 @@ fn task_tool_dispatches_real_subagent_sink_contract() {
 fn shipping_host_owns_task_child_runner_and_live_parent_projection() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let main = fs::read_to_string(root.join("app/src/main.rs")).expect("shipping host main");
+    let runner_composition =
+        fs::read_to_string(root.join("src/host_runner_composition.rs"))
+            .expect("canonical Host Runner composition");
     for required in [
         "struct ProductionSubagentTaskSink",
         "impl SubagentTaskSink for ProductionSubagentTaskSink",
         "materialize_new_session(Some(&profile), \"subagent\"",
         "start_routed_provider_task(",
         "\"parentAgentId\": self.parent_agent_id",
-        ".with_subagent_task_sink(subagent_task_sink)",
+        "subagent_task_sink: worker_subagent_task_sink",
+        "subagent_task_review,",
         ".with_generated_agent_runtime(Arc::clone(&worker_generated_agent_runtime))",
         "runner.begin_generated_subagent(",
         "worker_transcript_runtime.begin_live_subagent(parent_agent_id)",
@@ -100,6 +104,17 @@ fn shipping_host_owns_task_child_runner_and_live_parent_projection() {
         "publish_generated_subagents(",
     ] {
         assert!(main.contains(required), "missing shipping wiring: {required}");
+    }
+    for required in [
+        "pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>",
+        "pub subagent_task_review: Option<SubagentTaskReviewCallback>",
+        "composition.with_subagent_task_sink(subagent_task_sink)",
+        "composition.with_subagent_task_review(subagent_task_review)",
+    ] {
+        assert!(
+            runner_composition.contains(required),
+            "missing canonical HostRunnerComposition subagent wiring: {required}"
+        );
     }
     assert!(
         main.contains("if generated_parent_agent_id.is_none()"),
@@ -151,6 +166,9 @@ fn task_launch_review_receives_real_tool_call_id_and_can_fence_dispatch() {
 fn shipping_task_launch_is_bound_to_subagent_auto_review_before_dispatch() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let main = fs::read_to_string(root.join("app/src/main.rs")).expect("shipping host main");
+    let runner_composition =
+        fs::read_to_string(root.join("src/host_runner_composition.rs"))
+            .expect("canonical Host Runner composition");
     let composition = fs::read_to_string(root.join("src/runner/turn_agent_composition.rs"))
         .expect("turn composition");
     let toolset = fs::read_to_string(root.join("src/runner/tools/turn_toolset.rs"))
@@ -159,10 +177,14 @@ fn shipping_task_launch_is_bound_to_subagent_auto_review_before_dispatch() {
         "build_sand_subagent_launch_review_target",
         "subagent_task_review",
         "review_sand_subagent_action(",
-        ".with_subagent_task_review(subagent_task_review)",
+        "subagent_task_review,",
     ] {
-        assert!(main.contains(required), "missing launch review wiring: {required}");
+        assert!(main.contains(required), "missing launch review input/delegation: {required}");
     }
+    assert!(
+        runner_composition.contains("composition.with_subagent_task_review(subagent_task_review)"),
+        "canonical HostRunnerComposition must bind subagent auto-review before dispatch"
+    );
     assert!(composition.contains("SubagentTaskReviewCallback"));
     assert!(toolset.contains("task_bridge.with_review(review)"));
 }
