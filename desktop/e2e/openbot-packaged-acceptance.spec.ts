@@ -447,12 +447,84 @@ async function stableAvatarShape(locator: Locator): Promise<string> {
   return shape!;
 }
 
+type LatencySample = {
+  readonly prompt: string;
+  readonly localSubmitPaintMs: number;
+  readonly acceptanceVisibilityMs: number;
+  readonly firstOutputMs: number;
+  readonly completionMs: number;
+  readonly operationId: string;
+};
+
+function percentile(samples: readonly number[], quantile: number): number {
+  if (samples.length === 0) throw new Error('percentile requires at least one sample');
+  const sorted = [...samples].sort((left, right) => left - right);
+  const rank = Math.max(1, Math.ceil(quantile * sorted.length));
+  return sorted[Math.min(sorted.length - 1, rank - 1)]!;
+}
+
+async function runLatencyProbe(page: Page, index: number): Promise<LatencySample> {
+  await installLifecycleCapture(page);
+  const marker = `FABUSHI-LATENCY-PROBE-${index}-OK`;
+  const prompt = `Reply briefly and include exactly this marker: ${marker}`;
+  const submittedAt = Date.now();
+  const previousAssistantCount = await submitTurn(page, prompt);
+  const localSubmitPaintMs = Date.now() - submittedAt;
+  const turn = await waitForCompletedTurn(page, prompt, previousAssistantCount);
+  await expect(turn).toContainText(marker);
+
+  const lifecycle = await page.evaluate(() => {
+    const scope = window as typeof window & { __candidateLifecycle?: LifecycleSample[] };
+    return scope.__candidateLifecycle ?? [];
+  });
+  const started = lifecycle.find((sample) => sample.type === 'operation.started' && sample.at >= submittedAt);
+  expect(started?.operationId, `latency probe ${index} must emit operation.started`).toBeTruthy();
+  const operationId = started!.operationId!;
+  const operationLifecycle = lifecycle.filter((sample) => sample.operationId === operationId);
+  const active = operationLifecycle.find((sample) =>
+    sample.type === 'turn.state'
+    && ['preparing', 'thinking', 'streaming', 'tool-running'].includes(sample.status));
+  const firstOutput = operationLifecycle.find((sample) =>
+    (sample.type === 'chat.delta' || sample.type === 'chat.message')
+    && sample.text.length > 0);
+  const completed = operationLifecycle.find((sample) =>
+    sample.type === 'operation.completed' && sample.status === 'completed');
+  expect(active, `latency probe ${index} must expose active state`).toBeTruthy();
+  expect(firstOutput, `latency probe ${index} must expose first output`).toBeTruthy();
+  expect(completed, `latency probe ${index} must complete`).toBeTruthy();
+  return {
+    prompt,
+    localSubmitPaintMs,
+    acceptanceVisibilityMs: active!.at - started!.at,
+    firstOutputMs: firstOutput!.at - started!.at,
+    completionMs: completed!.at - started!.at,
+    operationId,
+  };
+}
+
+async function capturePluginsEvidence(page: Page): Promise<{ text: string; itemCount: number }> {
+  const button = page.getByRole('button', { name: 'Plugins' });
+  await expect(button).toBeVisible({ timeout: 20_000 });
+  await button.click();
+  const dialog = page.getByRole('dialog', { name: 'Plugins' });
+  await expect(dialog).toBeVisible({ timeout: 20_000 });
+  await expect.poll(async () => (await dialog.textContent()) ?? '', { timeout: 30_000 })
+    .not.toContain('Loading the marketplace');
+  const text = ((await dialog.textContent()) ?? '').trim();
+  const itemCount = await dialog.locator('article, [role="listitem"], button').count();
+  expect(text.length, 'production Plugins surface must expose connector/catalog state').toBeGreaterThan(0);
+  await screenshot(page, '07-plugins-production-surface');
+  await dialog.getByRole('button', { name: 'Close' }).click();
+  await expect(dialog).toBeHidden();
+  return { text, itemCount };
+}
+
 test.describe('signed candidate packaged acceptance', () => {
   test.describe.configure({ retries: 0 });
   test.skip(!realAcceptance, 'Set OBF_REAL_ACCEPTANCE=1 to run signed packaged acceptance.');
 
-  test('exact candidate covers handoff, broadcast, two-Agent isolation and real lifecycle', async () => {
-    test.setTimeout(12 * 60_000);
+  test('exact candidate covers handoff, broadcast, two-Agent isolation, lifecycle, latency and plugins', async () => {
+    test.setTimeout(20 * 60_000);
     expect(executable, 'FABUSHI_ELECTRON_EXECUTABLE is required').toBeTruthy();
     expect(sourceSha, 'OBF_SOURCE_SHA must be the exact candidate HEAD').toMatch(/^[0-9a-f]{40}$/);
     expect(expectedSourceSha, 'OBF_EXPECTED_SOURCE_SHA must be a full SHA').toMatch(/^[0-9a-f]{40}$/);
@@ -473,6 +545,8 @@ test.describe('signed candidate packaged acceptance', () => {
       'failure.json',
       'candidate.json',
       'lifecycle.json',
+      'timings.json',
+      'connectors.json',
       'trace.zip',
     ]) {
       await rm(path.join(evidenceRoot, relativePath), { recursive: true, force: true });
@@ -648,6 +722,36 @@ test.describe('signed candidate packaged acceptance', () => {
       expect(transcriptShape).toBe(rosterShape);
       await screenshot(page, '06-real-lifecycle-complete');
 
+      const latencySamples: LatencySample[] = [];
+      for (let index = 1; index <= 5; index += 1) {
+        latencySamples.push(await runLatencyProbe(page, index));
+      }
+      const latencySummary = {
+        samples: latencySamples,
+        p50: {
+          localSubmitPaintMs: percentile(latencySamples.map((sample) => sample.localSubmitPaintMs), 0.50),
+          acceptanceVisibilityMs: percentile(latencySamples.map((sample) => sample.acceptanceVisibilityMs), 0.50),
+          firstOutputMs: percentile(latencySamples.map((sample) => sample.firstOutputMs), 0.50),
+        },
+        p95: {
+          localSubmitPaintMs: percentile(latencySamples.map((sample) => sample.localSubmitPaintMs), 0.95),
+          acceptanceVisibilityMs: percentile(latencySamples.map((sample) => sample.acceptanceVisibilityMs), 0.95),
+          firstOutputMs: percentile(latencySamples.map((sample) => sample.firstOutputMs), 0.95),
+        },
+      };
+      expect(latencySummary.p95.localSubmitPaintMs, 'PERF-001 packaged p95 local submit paint').toBeLessThanOrEqual(250);
+      expect(latencySummary.p95.acceptanceVisibilityMs, 'PERF-002 packaged p95 acceptance visibility').toBeLessThanOrEqual(500);
+      expect(latencySummary.p50.firstOutputMs, 'PERF-003 packaged p50 first output').toBeLessThanOrEqual(3_000);
+      expect(latencySummary.p95.firstOutputMs, 'PERF-003 packaged p95 first output').toBeLessThanOrEqual(8_000);
+      await writeFile(path.join(evidenceRoot, 'timings.json'), JSON.stringify(latencySummary, null, 2));
+
+      const connectorEvidence = await capturePluginsEvidence(page);
+      await writeFile(path.join(evidenceRoot, 'connectors.json'), JSON.stringify({
+        sourceSha,
+        capturedAt: Date.now(),
+        ...connectorEvidence,
+      }, null, 2));
+
       await writeFile(path.join(evidenceRoot, 'lifecycle.json'), JSON.stringify(lifecycle, null, 2));
       await writeFile(path.join(evidenceRoot, 'runtime.log'), runtimeLogs.map((row) => `[${new Date(row.at).toISOString()}] ${row.source}: ${row.text}`).join('\n'));
       await writeFile(path.join(evidenceRoot, 'candidate.json'), JSON.stringify({
@@ -659,6 +763,8 @@ test.describe('signed candidate packaged acceptance', () => {
           broadcast: true,
           twoAgentIsolation: true,
           realLifecycle: true,
+          packagedLatency: true,
+          pluginsSurface: true,
           lowPowerAvatarCutover: true,
         },
       }, null, 2));
