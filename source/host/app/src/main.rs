@@ -5622,6 +5622,10 @@ fn start_routed_provider_task(
         Some("group-member" | "automation")
     );
     let auto_review_controller = auto_review.bind_runner(&agent_id, approvals_resolvable);
+    let auto_review_cancellation = cancellation.clone();
+    auto_review_controller.set_cancellation_probe(Arc::new(move || {
+        auto_review_cancellation.is_cancelled()
+    }));
     let auto_review_service = auto_review.service();
     let auto_review_request_source = request_source
         .clone()
