@@ -19580,7 +19580,7 @@
       "targetPath": "source/host/src/runner/turn_agent_composition.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "0f285618ee8e625869485a9121bdc00612659203",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -19595,7 +19595,11 @@
         "source/host/src/runner/tools/box_help_tool.rs",
         "source/host/src/runner/tools/sand_agent_management_tools.rs",
         "source/host/src/extensions/transcript/agent_to_agent_messaging.rs",
-        "source/host/src/runner/generated_agent_turn_stream.rs"
+        "source/host/src/runner/generated_agent_turn_stream.rs",
+        "source/host/src/runner/production_turn_input_projection.rs",
+        "source/host/src/runner/turn_tool_session_reminders.rs",
+        "source/host/src/runner/tools/turn_toolset.rs",
+        "source/host/src/runner_production_bridge.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_agent_owner_contract.rs",
@@ -19607,9 +19611,11 @@
         "source/host/tests/sand_agent_management_tools_contract.rs",
         "source/host/tests/agent_to_agent_messaging_contract.rs",
         "source/host/tests/inactive_turn_agent_stream_contract.rs",
-        "source/host/tests/generated_subagent_production_cutover_contract.rs"
+        "source/host/tests/generated_subagent_production_cutover_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs",
+        "source/host/tests/system_prompt_dynamic_sections_production_contract.rs"
       ],
-      "notes": "A real shipping TurnAgentComposition owns provider selection, routed Host tools, request context, cancellation, checkpoint store and first-party tool injection, and it is now executed inside the shipping generated-Agent stream lifecycle rather than only the routed-provider helper path. Subagent Task/management, SendMessage, reaction, box, Computer, external-machine and other production bridges are progressively composed here. The row remains non-final because the frozen Grok composition still includes the complete generated Agent/tool-session/resource projection/MCP/static-config/auto-review factory graph and those remaining surfaces are not yet fully centralized."
+      "notes": "The shipping Mahayana Runner now owns the frozen turn-agent composition as one production path: TurnAgentComposition builds the per-turn routed toolset and resource projection (local-tool permission, box/external execution, Browser/Web/Image/Computer, MCP management, state, cloud agent, subagent task/management, auto-review and observation), carries request context/cancellation/checkpoint state, and feeds the same reminder-aware provider run used by ProductionTurnAgentOwner. ProductionTurnAgentOwner freezes the per-turn model/static/privacy/summarization inputs once, create_production_turn_agent_input_projection snapshots the live Coordinator-owned MCP catalog plus the canonical content-addressed ConversationState root, and run_production_generated_agent_stream consumes that projection with the durable Agent checkpoint/blob graph and StreamAttemptRuntime. The Host shipping composition binds max-steps/token budget, live skill catalog, per-turn subagent types, confirmed-user watermark and collected queued UserMessage actions into this same owner; no Electron/Coordinator generated-Agent owner or legacy provider fallback is used. The frozen optional isSystemPromptOverridden+multitask executor branch is semantically closed by the shipping input contract: the only explicit per-turn system-prompt override producer is groupMemberTurn, and Host derives multitask_enabled as false for that route, so no reachable custom-system-prompt+multitask turn can expose the executor incorrectly. Rust does not materialize the frozen JavaScript RedactedString object graph: sensitive state remains behind the content-addressed Agent/blob owner and raw turn text is consumed only by the canonical provider/local checkpoint path rather than a second logging/training surface; the resolved privacy mode is still frozen once at the Runner owner boundary. Exact-head source-equivalent evidence at b8db31267430cdd1771f7ca16bdb5ab2ca358ef3 passed shipping Host compilation, independent Coordinator, box-exec daemon/supervisor, the full independent Host Runner suite, prompt attachment projection, Human Computer takeover, ConversationActor/CapabilityBroker ownership, and Desktop Chat Parity including Focused Electron E2E; renderer remained red only at the intentional six-row strict final architecture gate."
     },
     {
       "referencePath": "source/host/runner/turn-memory.ts",
