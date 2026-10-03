@@ -11,8 +11,9 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSnapshot,
 };
 use mahayana_host_runtime::runner::subagent_runtime::SubagentRuntime;
+use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
 use mahayana_host_runtime::runner::tools::sand_agent_management_tools::{
-    AgentManagementRecord, AgentManagementSink, AgentMessageImage,
+    AgentManagementRecord, AgentManagementSink,
 };
 use mahayana_host_runtime::runner::tools::sand_computer_tool::ComputerToolExposure;
 use mahayana_host_runtime::runner::tools::sand_mcp_management_tools::{
