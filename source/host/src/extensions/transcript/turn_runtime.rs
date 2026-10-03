@@ -151,6 +151,7 @@ fn shape_hidden_nudge_turn_input(
     let mut shaped_options = options.clone();
     shaped_options.message_id = None;
     shaped_options.recent_message_text = Some(prompt.to_string());
+    shaped_options.recent_message_rich_text = None;
     shaped_options.recent_user_messages.clear();
     shaped_options.is_fork = false;
     shaped_options.attachment_count = 0;
