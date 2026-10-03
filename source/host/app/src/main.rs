@@ -4936,7 +4936,14 @@ fn start_routed_provider_task(
             })?;
     }
 
-    const FROZEN_PROFILE_COMPACTION_EPOCH: i64 = 0;
+    let prompt_compaction_epoch = host_runner_composition
+        .prompt_compaction_epoch(&session_workers, &agent_id)
+        .map_err(GatewayCommandError::Internal)?;
+    let profile_compaction_epoch = i64::try_from(prompt_compaction_epoch).map_err(|_| {
+        GatewayCommandError::Internal(format!(
+            "production conversation compaction epoch exceeds profile snapshot range for {agent_id}"
+        ))
+    })?;
     let mut pending_profile_announcement: Option<(
         AgentProfilePromptSnapshot,
         AgentProfileIdentity,
@@ -4981,7 +4988,7 @@ fn start_routed_provider_task(
             });
             let resolved_profile_snapshot = resolve_agent_profile_prompt_snapshot(
                 persisted_profile_snapshot.as_ref(),
-                FROZEN_PROFILE_COMPACTION_EPOCH,
+                profile_compaction_epoch,
                 live_section,
                 identity.clone(),
             );
@@ -5348,9 +5355,7 @@ fn start_routed_provider_task(
         .and_then(serde_json::Value::as_str);
     let rendered_automation_status_reminder =
         create_automation_status_reminder(&automation_store, firing_automation_id);
-    let automation_status_compaction_epoch = host_runner_composition
-        .prompt_compaction_epoch(&session_workers, &agent_id)
-        .map_err(GatewayCommandError::Internal)?;
+    let automation_status_compaction_epoch = prompt_compaction_epoch;
     let automation_status_reminder = host_runner_composition
         .automation_status_reminder_for_turn(
             &agent_id,
