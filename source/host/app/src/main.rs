@@ -213,6 +213,7 @@ use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::{
     HostTelemetryApi, MessageSentReport, McpDiscoveryFailedGatewayError, dispatch_connector_auth_gateway,
     dispatch_mcp_discovery_failed_gateway,
 };
+use mahayana_host_runtime::extensions::telemetry::mcp_discovery_telemetry::McpDiscoveryFailedReport;
 use mahayana_host_runtime::extensions::telemetry::host_lifecycle_progress::{
     HostLifecycleCompletion, production_host_lifecycle_watchdog,
 };
@@ -4526,17 +4527,33 @@ type RoutedMcpAutoReviewCallback = Arc<
 struct CoordinatorRoutedToolBridge {
     relay: Arc<CoordinatorToolRelay>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
+    telemetry_logs: HostStructuredLogTelemetry,
     agent_id: String,
     mcp_review: Option<RoutedMcpAutoReviewCallback>,
 }
 
 impl RoutedToolBridge for CoordinatorRoutedToolBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
-        let value = self
+        let started = Instant::now();
+        let result = self
             .relay
             .request(ROUTED_TOOL_LIST_METHOD, serde_json::json!({}))
-            .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
-        decode_routed_tools(value)
+            .map_err(|error| ProviderSessionError::Tool(error.to_string()))
+            .and_then(decode_routed_tools);
+        if let Err(error) = result.as_ref() {
+            let report = McpDiscoveryFailedReport {
+                error_class: "provider_session_error".into(),
+                elapsed_ms: started.elapsed().as_secs_f64() * 1_000.0,
+                served_stale: false,
+            };
+            if let Err(telemetry_error) = self.telemetry_logs.report_mcp_discovery_failed(&report) {
+                eprintln!(
+                    "mahayana-host mcp_discovery_failed_telemetry_failed agent={} discovery_error={} telemetry_error={}",
+                    self.agent_id, error, telemetry_error
+                );
+            }
+        }
+        result
     }
 
     fn call_tool(
@@ -6074,6 +6091,7 @@ fn start_routed_provider_task(
             let bridge: Arc<dyn RoutedToolBridge> = Arc::new(CoordinatorRoutedToolBridge {
                 relay: routed_tool_relay,
                 transcript_runtime: Arc::clone(&worker_transcript_runtime),
+                telemetry_logs: worker_telemetry_logs.clone(),
                 agent_id: agent_id.clone(),
                 mcp_review: Some(mcp_review),
             });
