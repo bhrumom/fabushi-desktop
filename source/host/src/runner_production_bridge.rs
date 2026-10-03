@@ -68,6 +68,7 @@ pub struct ProductionRunnerCompositionHooks {
     pub state_approval_barrier: StateApprovalBarrier,
     pub box_shell_review: BoxShellAutoReviewCallback,
     pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
+    pub subagent_task_allowed_types: Option<Arc<Vec<String>>>,
     pub subagent_task_review: Option<SubagentTaskReviewCallback>,
     pub subagent_management_runtime: Option<Arc<Mutex<SubagentRuntime>>>,
     pub subagent_steer_review: Option<SubagentSteerReviewCallback>,
@@ -203,6 +204,9 @@ pub fn create_production_runner_composition_with_hooks(
     }
     if let Some(subagent_task_sink) = hooks.subagent_task_sink {
         composition = composition.with_subagent_task_sink(subagent_task_sink);
+        if let Some(allowed) = hooks.subagent_task_allowed_types {
+            composition = composition.with_subagent_task_allowed_types(allowed);
+        }
         if let Some(subagent_task_review) = hooks.subagent_task_review {
             composition = composition.with_subagent_task_review(subagent_task_review);
         }
