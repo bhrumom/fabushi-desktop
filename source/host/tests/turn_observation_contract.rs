@@ -559,23 +559,38 @@ fn shipping_background_task_settlement_clears_durable_projection_before_change_e
 }
 
 #[test]
-fn shipping_host_preserves_gateway_trace_span_for_dispatch_and_ttft_telemetry() {
+fn shipping_host_owns_real_turn_trace_for_dispatch_ttft_and_first_token() {
     let main = fs::read_to_string("app/src/main.rs").expect("shipping host main");
     for required in [
-        "let send_dispatch_trace_id = worker_gateway_context",
-        "let send_dispatch_span_id = worker_gateway_context",
+        "begin_turn_trace(BeginTurnTraceOptions",
+        "traceparent: worker_gateway_context",
+        "let send_dispatch_trace_id = turn_trace",
+        "let send_dispatch_span_id = turn_trace",
         "trace_id: send_dispatch_trace_id.clone()",
         "span_id: send_dispatch_span_id.clone()",
-        "let ttft_trace_id = worker_gateway_context",
-        "let ttft_span_id = worker_gateway_context",
+        "\"sand.send_dispatch_ms\"",
+        "\"sand.send_dispatch_skew_reason\"",
+        "\"sand.send_dispatch_host_ms\"",
+        "let ttft_trace_id = turn_trace",
+        "let ttft_span_id = turn_trace",
         "trace_id: ttft_trace_id.clone()",
         "span_id: ttft_span_id.clone()",
+        "\"sand.ttft_ms\"",
+        "\"sand.ttft_skew_reason\"",
+        "add_turn_trace_event(",
+        "\"first_token\"",
+        "\"chunk_type\"",
+        "trace.span.end()",
     ] {
         assert!(
             main.contains(required),
-            "missing frozen dispatch/TTFT trace-span production wiring: {required}"
+            "missing frozen dispatch/TTFT turn-trace production wiring: {required}"
         );
     }
+    assert!(
+        !main.contains("let send_dispatch_trace_id = worker_gateway_context"),
+        "dispatch telemetry must bind to the turn span, not merely echo the gateway parent span"
+    );
 }
 
 #[test]

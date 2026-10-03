@@ -270,7 +270,9 @@ use mahayana_host_runtime::extensions::teach_recording::teach_recording_service:
 };
 use mahayana_host_runtime::runner_context_production_provider::ProductionRunnerRequestContextSource;
 use mahayana_host_runtime::send_trace_host::{
-    HostTrace, begin_send_trace, record_completed_trace_span,
+    BeginTurnTraceOptions, HostTrace, TurnTraceTypeOptions, add_turn_trace_event, begin_send_trace,
+    begin_turn_trace, mark_turn_trace_error, record_completed_trace_span, resolve_turn_trace_type,
+    set_turn_trace_attributes,
 };
 use mahayana_host_runtime::sand_activity::ActivityUpdate;
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
@@ -5967,6 +5969,11 @@ fn start_routed_provider_task(
     let worker_memory_store = memory_store.clone();
     let worker_memory_service = session_workers.memory_service();
     let worker_turn_hidden = turn_hidden;
+    let worker_turn_trace_type = resolve_turn_trace_type(TurnTraceTypeOptions {
+        automation_wake: args.get("automationWake"),
+        request_source: request_source.as_deref(),
+        hidden: turn_hidden,
+    });
     let worker_gateway_context = gateway_context;
     let worker_enter_epoch_ms = args
         .get("enterEpochMs")
@@ -6050,6 +6057,27 @@ fn start_routed_provider_task(
         .name(format!("mahayana-runner-provider-{agent_id}"))
         .spawn(move || {
             let mut worker_routed_turn_lease = routed_turn_lease_guard;
+            let runner_started_at_ms = started_at_ms();
+            let turn_trace = begin_turn_trace(BeginTurnTraceOptions {
+                conversation_id: agent_id.clone(),
+                turn_type: worker_turn_trace_type.clone(),
+                traceparent: worker_gateway_context
+                    .as_ref()
+                    .and_then(|context| context.traceparent.clone()),
+                parent_ctx: None,
+                start_time: Some(runner_started_at_ms as f64),
+                sample_ratio: None,
+                attributes: {
+                    let mut attributes = BTreeMap::from([(
+                        "sand.is_fork".into(),
+                        serde_json::json!(worker_send_is_fork),
+                    )]);
+                    if let Some(model_id) = worker_session_options.model_id.clone() {
+                        attributes.insert("sand.model_id".into(), serde_json::json!(model_id));
+                    }
+                    attributes
+                },
+            });
             let turn_type = worker_request_source
                 .clone()
                 .unwrap_or_else(|| "turn".to_string());
@@ -6073,28 +6101,29 @@ fn start_routed_provider_task(
             );
             let send_dispatch_logs = worker_telemetry_logs.clone();
             let send_dispatch_conversation_id = agent_id.clone();
-            let send_dispatch_trace_id = worker_gateway_context
+            let send_dispatch_trace_id = turn_trace
                 .as_ref()
-                .and_then(|context| context.trace_id.clone());
-            let send_dispatch_span_id = worker_gateway_context
+                .and_then(|trace| trace.trace_id.clone());
+            let send_dispatch_span_id = turn_trace
                 .as_ref()
-                .and_then(|context| context.span_id.clone());
+                .and_then(|trace| trace.span_id.clone());
+            let send_dispatch_turn_trace = turn_trace.clone();
             let await_telemetry_logs = worker_telemetry_logs.clone();
             let await_conversation_id = agent_id.clone();
             let ttft_telemetry_logs = worker_telemetry_logs.clone();
             let ttft_conversation_id = agent_id.clone();
-            let ttft_trace_id = worker_gateway_context
+            let ttft_trace_id = turn_trace
                 .as_ref()
-                .and_then(|context| context.trace_id.clone())
+                .and_then(|trace| trace.trace_id.clone())
                 .unwrap_or_default();
-            let ttft_span_id = worker_gateway_context
+            let ttft_span_id = turn_trace
                 .as_ref()
-                .and_then(|context| context.span_id.clone())
+                .and_then(|trace| trace.span_id.clone())
                 .unwrap_or_default();
+            let ttft_turn_trace = turn_trace.clone();
             let ttft_dispatch_started = worker_gateway_context
                 .as_ref()
                 .map(|context| context.dispatch_started);
-            let runner_started_at_ms = started_at_ms();
             if let Ok(mut observation) = observation.lock() {
                 observation.set_request_id(Some(worker_stream_id.clone()));
                 let async_tasks_runtime = Arc::clone(&worker_transcript_runtime);
@@ -6177,6 +6206,37 @@ fn start_routed_provider_task(
                     }
                 }));
                 observation.set_send_dispatch_handler(Arc::new(move |event| {
+                    let mut trace_attributes = BTreeMap::new();
+                    if let Some(dispatch_ms) = event
+                        .get("dispatchMs")
+                        .and_then(serde_json::Value::as_f64)
+                    {
+                        trace_attributes.insert(
+                            "sand.send_dispatch_ms".into(),
+                            serde_json::json!(dispatch_ms),
+                        );
+                    } else if let Some(reason) = event
+                        .get("skewReason")
+                        .and_then(serde_json::Value::as_str)
+                    {
+                        trace_attributes.insert(
+                            "sand.send_dispatch_skew_reason".into(),
+                            serde_json::json!(reason),
+                        );
+                    }
+                    if let Some(host_dispatch_ms) = event
+                        .get("hostDispatchMs")
+                        .and_then(serde_json::Value::as_f64)
+                    {
+                        trace_attributes.insert(
+                            "sand.send_dispatch_host_ms".into(),
+                            serde_json::json!(host_dispatch_ms),
+                        );
+                    }
+                    set_turn_trace_attributes(
+                        send_dispatch_turn_trace.as_ref(),
+                        &trace_attributes,
+                    );
                     let report = SendDispatchReport {
                         conversation_id: send_dispatch_conversation_id.clone(),
                         dispatch_ms: event.get("dispatchMs").and_then(serde_json::Value::as_f64),
@@ -6200,6 +6260,30 @@ fn start_routed_provider_task(
                     else {
                         return;
                     };
+                    let mut trace_attributes = BTreeMap::new();
+                    if let Some(ttft_ms) = event
+                        .get("ttftMs")
+                        .and_then(serde_json::Value::as_f64)
+                    {
+                        trace_attributes.insert("sand.ttft_ms".into(), serde_json::json!(ttft_ms));
+                    } else if let Some(reason) = event
+                        .get("skewReason")
+                        .and_then(serde_json::Value::as_str)
+                    {
+                        trace_attributes.insert(
+                            "sand.ttft_skew_reason".into(),
+                            serde_json::json!(reason),
+                        );
+                    }
+                    set_turn_trace_attributes(ttft_turn_trace.as_ref(), &trace_attributes);
+                    add_turn_trace_event(
+                        ttft_turn_trace.as_ref(),
+                        "first_token",
+                        &BTreeMap::from([(
+                            "chunk_type".into(),
+                            serde_json::json!(chunk_type),
+                        )]),
+                    );
                     let fields = TtftFields {
                         conversation_id: ttft_conversation_id.clone(),
                         ttft_ms: event.get("ttftMs").and_then(serde_json::Value::as_f64),
@@ -8507,6 +8591,37 @@ fn start_routed_provider_task(
                         }
                     }
                 }
+            }
+
+            if worker_cancellation.is_cancelled() {
+                set_turn_trace_attributes(
+                    turn_trace.as_ref(),
+                    &BTreeMap::from([(
+                        "sand.outcome".into(),
+                        serde_json::json!("aborted"),
+                    )]),
+                );
+            } else if waiting_user {
+                set_turn_trace_attributes(
+                    turn_trace.as_ref(),
+                    &BTreeMap::from([(
+                        "sand.outcome".into(),
+                        serde_json::json!("awaiting_user"),
+                    )]),
+                );
+            } else if let Some(error) = result.as_ref().err() {
+                mark_turn_trace_error(turn_trace.as_ref(), error);
+            } else {
+                set_turn_trace_attributes(
+                    turn_trace.as_ref(),
+                    &BTreeMap::from([(
+                        "sand.outcome".into(),
+                        serde_json::json!("success"),
+                    )]),
+                );
+            }
+            if let Some(trace) = turn_trace.as_ref() {
+                trace.span.end();
             }
 
             if waiting_user {

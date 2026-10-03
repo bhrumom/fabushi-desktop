@@ -103,6 +103,7 @@ pub fn derive_child_traceparent(parent: &str) -> Option<(String, String)> {
 
 pub trait TraceSpan: Send + Sync {
     fn set_attribute(&self, key: &str, value: Value);
+    fn add_event(&self, _name: &str, _attributes: &BTreeMap<String, Value>) {}
     fn record_exception(&self, error: &str);
     fn set_status(&self, code: u8);
     fn end(&self);
@@ -120,6 +121,8 @@ pub type TraceContext = Arc<dyn Any + Send + Sync>;
 pub struct HostTrace {
     pub span: Arc<dyn TraceSpan>,
     pub context: Option<TraceContext>,
+    pub trace_id: Option<String>,
+    pub span_id: Option<String>,
 }
 
 pub struct TraceFactoryOptions {
@@ -283,6 +286,7 @@ pub fn resolve_turn_trace_type(options: TurnTraceTypeOptions<'_>) -> String {
 pub struct BeginTurnTraceOptions {
     pub conversation_id: String,
     pub turn_type: String,
+    pub traceparent: Option<String>,
     pub parent_ctx: Option<TraceContext>,
     pub start_time: Option<f64>,
     pub sample_ratio: Option<f64>,
@@ -309,6 +313,21 @@ pub fn begin_turn_trace(options: BeginTurnTraceOptions) -> Option<HostTrace> {
                 name: SAND_TURN_ROOT_SPAN_NAME.into(),
                 traceparent: None,
                 parent_ctx: Some(parent_ctx),
+                start_time: options.start_time,
+                inheritable_attributes: common_attributes.clone(),
+            },
+        )
+    } else if let Some(traceparent) = options
+        .traceparent
+        .clone()
+        .filter(|value| parse_traceparent(value).is_some())
+    {
+        create_trace(
+            &factory,
+            TraceFactoryOptions {
+                name: SAND_TURN_ROOT_SPAN_NAME.into(),
+                traceparent: Some(traceparent),
+                parent_ctx: None,
                 start_time: options.start_time,
                 inheritable_attributes: common_attributes.clone(),
             },
@@ -389,6 +408,19 @@ pub fn set_turn_trace_attributes(
         for (key, value) in attributes {
             trace.span.set_attribute(key, value.clone());
         }
+    }));
+}
+
+pub fn add_turn_trace_event(
+    trace: Option<&HostTrace>,
+    name: &str,
+    attributes: &BTreeMap<String, Value>,
+) {
+    let Some(trace) = trace else {
+        return;
+    };
+    let _ = catch_unwind(AssertUnwindSafe(|| {
+        trace.span.add_event(name, attributes);
     }));
 }
 

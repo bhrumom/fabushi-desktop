@@ -262,6 +262,7 @@ struct ProductionTraceContext {
 
 struct ProductionSpanState {
     attributes: BTreeMap<String, Value>,
+    events: Vec<(u128, String, BTreeMap<String, Value>)>,
     exception: Option<String>,
     status_code: u8,
 }
@@ -286,6 +287,17 @@ impl TraceSpan for ProductionTraceSpan {
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .attributes
             .insert(key.to_string(), value);
+    }
+
+    fn add_event(&self, name: &str, attributes: &BTreeMap<String, Value>) {
+        if self.ended.load(Ordering::Acquire) {
+            return;
+        }
+        self.state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .events
+            .push((unix_nanos(), name.to_string(), attributes.clone()));
     }
 
     fn record_exception(&self, error: &str) {
@@ -357,15 +369,32 @@ impl TraceSpan for ProductionTraceSpan {
         if let Some(parent_span_id) = self.parent_span_id.as_deref() {
             span["parentSpanId"] = Value::String(parent_span_id.to_string());
         }
+        let mut events = state
+            .events
+            .iter()
+            .map(|(time_unix_nanos, name, attributes)| {
+                json!({
+                    "timeUnixNano": time_unix_nanos.to_string(),
+                    "name": name,
+                    "attributes": attributes.iter().map(|(key, value)| json!({
+                        "key": key,
+                        "value": otlp_any_value(value),
+                    })).collect::<Vec<_>>(),
+                })
+            })
+            .collect::<Vec<_>>();
         if let Some(exception) = state.exception.as_deref() {
-            span["events"] = json!([{
+            events.push(json!({
                 "timeUnixNano": end_unix_nanos.to_string(),
                 "name": "exception",
                 "attributes": [{
                     "key": "exception.message",
                     "value": {"stringValue": exception},
                 }],
-            }]);
+            }));
+        }
+        if !events.is_empty() {
+            span["events"] = Value::Array(events);
         }
         provider.enqueue(span);
     }
@@ -468,14 +497,17 @@ impl ProductionHostTracerProvider {
             ended: AtomicBool::new(false),
             state: Mutex::new(ProductionSpanState {
                 attributes: options.inheritable_attributes,
+                events: Vec::new(),
                 exception: None,
                 status_code: 0,
             }),
         });
-        let trace_context: TraceContext = context;
+        let trace_context: TraceContext = context.clone();
         Some(HostTrace {
             span,
             context: Some(trace_context),
+            trace_id: Some(context.trace_id.clone()),
+            span_id: Some(context.span_id.clone()),
         })
     }
 

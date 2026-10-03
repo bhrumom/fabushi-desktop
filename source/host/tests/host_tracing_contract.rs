@@ -206,6 +206,7 @@ fn production_provider_registers_send_trace_factory_and_flushes_finished_spans()
     let trace = begin_turn_trace(BeginTurnTraceOptions {
         conversation_id: "agent-trace".into(),
         turn_type: "user".into(),
+        traceparent: None,
         parent_ctx: None,
         start_time: None,
         sample_ratio: Some(1.0),

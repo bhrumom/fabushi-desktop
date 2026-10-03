@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use mahayana_host_runtime::send_trace_host::{
     BeginTurnTraceOptions, HostTrace, ParsedTraceparent, TraceContext, TraceFactory,
     TraceFactoryOptions, TraceSpan, TurnTraceOutcome, TurnTraceTypeOptions,
-    adopt_remote_parent, begin_gateway_command_trace, begin_turn_trace,
+    add_turn_trace_event, adopt_remote_parent, begin_gateway_command_trace, begin_turn_trace,
     derive_child_traceparent, mark_turn_trace_error, mint_traceparent, parse_traceparent,
     resolve_turn_trace_outcome, resolve_turn_trace_sample_ratio, resolve_turn_trace_type,
     set_host_trace_factory, set_turn_trace_attributes, set_turn_trace_host_bundle_version,
@@ -16,6 +16,7 @@ use serde_json::{Value, json};
 #[derive(Default)]
 struct RecordingSpan {
     attributes: Mutex<BTreeMap<String, Value>>,
+    events: Mutex<Vec<(String, BTreeMap<String, Value>)>>,
     exceptions: Mutex<Vec<String>>,
     statuses: Mutex<Vec<u8>>,
     ends: Mutex<u64>,
@@ -24,6 +25,12 @@ struct RecordingSpan {
 impl TraceSpan for RecordingSpan {
     fn set_attribute(&self, key: &str, value: Value) {
         self.attributes.lock().unwrap().insert(key.into(), value);
+    }
+    fn add_event(&self, name: &str, attributes: &BTreeMap<String, Value>) {
+        self.events
+            .lock()
+            .unwrap()
+            .push((name.to_string(), attributes.clone()));
     }
     fn record_exception(&self, error: &str) {
         self.exceptions.lock().unwrap().push(error.into());
@@ -121,6 +128,8 @@ fn host_factory_adopts_remote_parents_and_turn_spans_are_fail_closed() {
         Some(HostTrace {
             span,
             context: Some(context),
+            trace_id: Some("0123456789abcdef0123456789abcdef".into()),
+            span_id: Some("0123456789abcdef".into()),
         })
     });
     set_host_trace_factory(factory);
@@ -134,6 +143,7 @@ fn host_factory_adopts_remote_parents_and_turn_spans_are_fail_closed() {
     let trace = begin_turn_trace(BeginTurnTraceOptions {
         conversation_id: "agent-1".into(),
         turn_type: "user".into(),
+        traceparent: None,
         parent_ctx: Some(parent),
         start_time: Some(42.0),
         sample_ratio: Some(0.0),
@@ -144,6 +154,11 @@ fn host_factory_adopts_remote_parents_and_turn_spans_are_fail_closed() {
     set_turn_trace_attributes(
         Some(&trace),
         &BTreeMap::from([("sand.extra".into(), json!(7))]),
+    );
+    add_turn_trace_event(
+        Some(&trace),
+        "first_token",
+        &BTreeMap::from([("chunk_type".into(), json!("text"))]),
     );
     mark_turn_trace_error(Some(&trace), "boom");
 
@@ -159,6 +174,25 @@ fn host_factory_adopts_remote_parents_and_turn_spans_are_fail_closed() {
     drop(attrs);
     assert_eq!(turn.exceptions.lock().unwrap().as_slice(), &["boom"]);
     assert_eq!(turn.statuses.lock().unwrap().as_slice(), &[2]);
+    assert_eq!(
+        turn.events.lock().unwrap().as_slice(),
+        &[(
+            "first_token".to_string(),
+            BTreeMap::from([("chunk_type".into(), json!("text"))]),
+        )]
+    );
+
+    let remote_turn = begin_turn_trace(BeginTurnTraceOptions {
+        conversation_id: "agent-remote".into(),
+        turn_type: "user".into(),
+        traceparent: Some(remote.into()),
+        parent_ctx: None,
+        start_time: None,
+        sample_ratio: Some(0.0),
+        attributes: BTreeMap::new(),
+    })
+    .expect("valid remote traceparent bypasses local root sampling");
+    assert_eq!(remote_turn.trace_id.as_deref(), Some("0123456789abcdef0123456789abcdef"));
 
     let calls = calls.lock().unwrap();
     assert!(calls.iter().any(|(name, traceparent, _)| {
