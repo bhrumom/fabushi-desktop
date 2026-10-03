@@ -163,6 +163,7 @@ fn reply_nudge_checkpoint_input_is_hidden_from_the_original_user_identity() {
         recent_message_text: Some("original".into()),
         recent_message_rich_text: Some("<p>original</p>".into()),
         recent_user_messages: Vec::new(),
+        turn_started_at_ms: Some(41),
         is_fork: true,
         attachment_count: 2,
         image_count: 1,
@@ -177,6 +178,7 @@ fn reply_nudge_checkpoint_input_is_hidden_from_the_original_user_identity() {
     assert_eq!(shaped.options.recent_message_text.as_deref(), Some(REPLY_NUDGE_PROMPT));
     assert_eq!(shaped.options.recent_message_rich_text, None);
     assert!(shaped.options.recent_user_messages.is_empty());
+    assert_eq!(shaped.options.turn_started_at_ms, Some(41));
     assert!(!shaped.options.is_fork);
     assert_eq!(shaped.options.attachment_count, 0);
     assert_eq!(shaped.options.image_count, 0);
@@ -223,6 +225,7 @@ fn closing_send_nudge_uses_the_same_hidden_checkpoint_identity_rules() {
         Some(CLOSING_SEND_NUDGE_PROMPT)
     );
     assert_eq!(shaped.options.recent_message_rich_text, None);
+    assert_eq!(shaped.options.turn_started_at_ms, Some(41));
     assert!(!shaped.options.is_fork);
     assert_eq!(shaped.options.attachment_count, 0);
     assert_eq!(shaped.options.image_count, 0);
