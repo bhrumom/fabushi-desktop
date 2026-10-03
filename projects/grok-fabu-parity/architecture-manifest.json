@@ -17707,7 +17707,7 @@
       "targetPath": "source/host/src/ports/mcp_state_executor.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "e4dcfebc238e66703e3f49e1f7558c96ef79e4e2",
       "architecturalRole": "host/ports",
       "processOrPackage": "mahayana-host",
@@ -17728,7 +17728,7 @@
         "source/host/src/extensions/mcp/production_box_state.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Canonical MCP-state wire ownership and shipping Box field-36 consumption share source/host/src/ports/mcp_state_executor.rs. The frozen per-turn state-executor responsibility is now bound into the shipping Runner boundary: TurnAgentComposition executes canonical MCP state from the exact RoutedToolBridge already owned by that turn, preserving first-seen provider grouping and full tool schema without a second MCP discovery owner. runner_production_bridge_contract executes this production composition path. Status remains existing-needs-parity until this exact implementation HEAD passes required shipping Host/Runner and Focused Electron gates; parent-head acceptance is not inherited.",
+      "notes": "Canonical MCP-state wire ownership and shipping Box field-36 consumption share source/host/src/ports/mcp_state_executor.rs. Shipping TurnAgentComposition now wraps its existing RoutedToolBridge with McpStateProjectedRoutedToolBridge before the built-in turn toolset, so list_tools() is projected through the canonical MCP-state executor while partial tool-call observation and call_tool() remain delegated to the same bridge; this preserves first-seen provider grouping and full tool schema without creating a second discovery or execution owner. Exact implementation HEAD 99d059d1e4bfab6e81a79aa8eee6991e215f75ae passed source/host/tests/mcp_state_executor_contract.rs on htch-runtime (4 passed, 0 failed), GitHub Rust desktop runtime run 37087803433 rust-host including shipping Host compile, Coordinator, box-exec daemon/supervisor, independent Host Runner, prompt attachment, human Computer takeover, and ConversationActor/CapabilityBroker ownership, and Desktop Chat Parity run 37087803360 Focused Electron chat E2E including the Grok Agent shell + Mahayana chat regression and evidence upload. The renderer strict-gate failure on that implementation HEAD was solely this still-unpromoted manifest row.",
       "evidence": [
         "source/host/tests/mcp_state_executor_contract.rs",
         "source/host/tests/box_mcp_exec_contract.rs",
