@@ -6,6 +6,9 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     RoutedToolDefinition,
 };
 use mahayana_host_runtime::host_request_context::HostRequestContext;
+use mahayana_host_runtime::runner::production_turn_agent_owner::{
+    ProductionTurnAgentLifecycleBindings, ProductionTurnSummarizationPrompt,
+};
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderCheckpointStore;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSnapshot,
@@ -324,6 +327,7 @@ fn production_bridge_owns_immutable_turn_projection_and_generated_runner_binding
         "composition = composition.with_multitask_todo_state(multitask_todo_state)",
         "pub fn create_production_runner(",
         "ProductionTurnAgentOwner::new(composition)",
+        ".with_lifecycle_bindings(lifecycle_bindings)",
         "owner = owner.with_agent_state_checkpoint_sink(checkpoint_sink)",
         "SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)",
     ] {
@@ -352,6 +356,8 @@ fn production_bridge_owns_immutable_turn_projection_and_generated_runner_binding
     assert!(
         SHIPPING_HOST.contains("worker_host_runner_composition.compose_production_turn(")
             && SHIPPING_HOST.contains("worker_host_runner_composition.compose_production_runner(")
+            && SHIPPING_HOST.contains("ProductionTurnAgentLifecycleBindings::new(")
+            && SHIPPING_HOST.contains(".disk_pressure_reminder_episodes()")
             && !SHIPPING_HOST.contains("create_production_runner_composition_with_hooks(")
             && !SHIPPING_HOST.contains("create_production_runner("),
         "shipping Host must retain one HostRunnerComposition entrypoint into the bridge",
@@ -437,8 +443,16 @@ fn production_bridge_binds_the_generated_runner_facade() {
         },
     );
     let runtime = Arc::new(Mutex::new(SubagentRuntime::default()));
+    let summarization: ProductionTurnSummarizationPrompt =
+        Arc::new(|_, _, _| Ok("summary".into()));
+    let lifecycle_bindings = ProductionTurnAgentLifecycleBindings::new(
+        "bridge-agent",
+        "bridge-request",
+        summarization,
+    );
     let runner = create_production_runner(
         composition,
+        lifecycle_bindings,
         None,
         Arc::new(std::sync::atomic::AtomicBool::new(false)),
         Arc::clone(&runtime),

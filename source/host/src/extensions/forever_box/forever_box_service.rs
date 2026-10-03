@@ -20,7 +20,7 @@ use crate::r#box::box_transfer::TransferBox;
 use crate::r#box::generated_production::ProductionBoxResourceAccessor;
 use crate::r#box::loopback_sand_box::LoopbackSandBoxError;
 
-use super::disk_pressure::{DiskPressureWatch};
+use super::disk_pressure::{DiskPressureReminderEpisodes, DiskPressureWatch};
 use super::disk_pressure_guard::DiskPressureLevel;
 use super::host_box::{BoxStatus, HostBox};
 
@@ -139,6 +139,15 @@ impl ForeverBoxService {
             .lock()
             .ok()
             .and_then(|watch| watch.as_ref().and_then(DiskPressureWatch::level))
+    }
+
+    pub fn disk_pressure_reminder_episodes(
+        &self,
+    ) -> Option<Arc<DiskPressureReminderEpisodes>> {
+        self.disk_pressure_watch
+            .lock()
+            .ok()
+            .and_then(|watch| watch.as_ref().map(DiskPressureWatch::reminder_episodes))
     }
 
     pub fn is_auto_update_enabled(&self) -> bool {

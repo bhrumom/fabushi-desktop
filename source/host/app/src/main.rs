@@ -317,6 +317,10 @@ use mahayana_host_runtime::runner::sand_agent_profile_prompt::{
     normalize_agent_profile_identity, persist_announced_agent_profile_snapshot,
     render_agent_profile_update, resolve_agent_profile_prompt_snapshot,
 };
+use mahayana_host_runtime::runner::production_turn_agent_owner::{
+    ProductionTurnAgentLifecycleBindings, ProductionTurnProfileAnnouncementCommit,
+    ProductionTurnSummarizationPrompt,
+};
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
 };
@@ -7388,8 +7392,52 @@ fn start_routed_provider_task(
                     multitask_todo_state,
                 },
             );
+            let summarization_inference = Arc::clone(&inference);
+            let summarization_data_dir = data_dir.clone();
+            let summarization_prompt: ProductionTurnSummarizationPrompt =
+                Arc::new(move |system_prompt, user_prompt, should_cancel| {
+                    summarization_inference.run_summarization_prompt(
+                        &summarization_data_dir,
+                        system_prompt,
+                        user_prompt,
+                        should_cancel,
+                    )
+                });
+            let profile_announcement_commit = worker_profile_announcement
+                .clone()
+                .map(|(turn_snapshot, identity)| {
+                    let profile_sessions = Arc::clone(&worker_retire_sessions);
+                    let profile_agent_id = agent_id.clone();
+                    Arc::new(move || {
+                        if let Ok(current_value) =
+                            profile_sessions.get_agent_profile_prompt_snapshot(&profile_agent_id)
+                        {
+                            let current = current_value.and_then(|value| {
+                                serde_json::from_value::<AgentProfilePromptSnapshot>(value).ok()
+                            });
+                            if let Some(next) = persist_announced_agent_profile_snapshot(
+                                current.as_ref(),
+                                &turn_snapshot,
+                                &identity,
+                            ) {
+                                if let Ok(value) = serde_json::to_value(&next) {
+                                    let _ = profile_sessions
+                                        .set_agent_profile_prompt_snapshot(&profile_agent_id, &value);
+                                }
+                            }
+                        }
+                    }) as ProductionTurnProfileAnnouncementCommit
+                });
+            let lifecycle_bindings = ProductionTurnAgentLifecycleBindings::new(
+                agent_id.clone(),
+                worker_stream_id.clone(),
+                summarization_prompt,
+            )
+            .with_disk_pressure_reminders(forever_box.disk_pressure_reminder_episodes())
+            .with_profile_announcement_commit(profile_announcement_commit);
             let mut runner = worker_host_runner_composition.compose_production_runner(
                 composition,
+                lifecycle_bindings,
                 agent_state_checkpoint_sink,
                 worker_registry.upgrade_quiesce_signal(),
                 Arc::clone(&worker_generated_agent_runtime),
@@ -7605,30 +7653,6 @@ fn start_routed_provider_task(
                         eprintln!(
                             "mahayana-host empty_delivery_telemetry_failed agent={agent_id} error={error}"
                         );
-                    }
-                }
-            }
-
-            if result.is_ok() {
-                if let Some((turn_snapshot, identity)) =
-                    worker_profile_announcement.as_ref()
-                {
-                    if let Ok(current_value) =
-                        worker_retire_sessions.get_agent_profile_prompt_snapshot(&agent_id)
-                    {
-                        let current = current_value.and_then(|value| {
-                            serde_json::from_value::<AgentProfilePromptSnapshot>(value).ok()
-                        });
-                        if let Some(next) = persist_announced_agent_profile_snapshot(
-                            current.as_ref(),
-                            turn_snapshot,
-                            identity,
-                        ) {
-                            if let Ok(value) = serde_json::to_value(&next) {
-                                let _ = worker_retire_sessions
-                                    .set_agent_profile_prompt_snapshot(&agent_id, &value);
-                            }
-                        }
                     }
                 }
             }

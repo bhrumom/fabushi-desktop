@@ -21,6 +21,7 @@ use crate::runner::sand_action_audit::ActionAuditRecord;
 use crate::runner::production_agent_checkpoint::{
     AgentStateCheckpointSink, ProductionAgentStateCheckpointSink,
 };
+use crate::runner::production_turn_agent_owner::ProductionTurnAgentLifecycleBindings;
 use crate::runner::sand_agent_runner::SandAgentRunner;
 use crate::runner::subagent_runtime::SubagentRuntime;
 use crate::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
@@ -161,12 +162,14 @@ impl HostRunnerComposition {
     pub fn compose_production_runner(
         &self,
         composition: TurnAgentComposition,
+        lifecycle_bindings: ProductionTurnAgentLifecycleBindings,
         checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
         upgrade_quiesce_signal: Arc<AtomicBool>,
         generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
     ) -> SandAgentRunner {
         create_production_runner(
             composition,
+            lifecycle_bindings,
             checkpoint_sink,
             upgrade_quiesce_signal,
             generated_agent_runtime,

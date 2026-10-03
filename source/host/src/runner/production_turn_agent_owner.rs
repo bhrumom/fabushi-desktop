@@ -2,12 +2,14 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use crate::extensions::forever_box::DiskPressureReminderEpisodes;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
 };
 
 use super::generated_agent_turn_stream::run_production_generated_agent_stream;
 use super::production_agent_checkpoint::AgentStateCheckpointSink;
+use super::send_message_reminder_middleware::DISK_PRESSURE_REMINDER_MESSAGE;
 use super::tools::box_help_tool::WAITING_USER_CANCELLATION_PREFIX;
 use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::turn_agent_composition::TurnAgentComposition;
@@ -15,6 +17,58 @@ use super::{
     TerminalOutcome, TurnRunFinished, TurnRunOptions, TurnRunShell,
     TurnRunShellError,
 };
+
+pub type ProductionTurnSummarizationPrompt = Arc<
+    dyn Fn(&str, &str, &dyn Fn() -> bool) -> Result<String, ProviderSessionError>
+        + Send
+        + Sync,
+>;
+pub type ProductionTurnProfileAnnouncementCommit = Arc<dyn Fn() + Send + Sync>;
+
+/// Host-resolved lifecycle surfaces that are consumed by one production turn.
+///
+/// Concrete inference, ForeverBox and profile stores retain their canonical
+/// owners. This immutable binding lets ProductionTurnAgentOwner own their
+/// per-turn claim/commit/dispose semantics without creating a second runtime.
+pub struct ProductionTurnAgentLifecycleBindings {
+    conversation_id: String,
+    claim_id: String,
+    disk_pressure_reminders: Option<Arc<DiskPressureReminderEpisodes>>,
+    summarization_prompt: ProductionTurnSummarizationPrompt,
+    profile_announcement_commit: Option<ProductionTurnProfileAnnouncementCommit>,
+}
+
+impl ProductionTurnAgentLifecycleBindings {
+    pub fn new(
+        conversation_id: impl Into<String>,
+        claim_id: impl Into<String>,
+        summarization_prompt: ProductionTurnSummarizationPrompt,
+    ) -> Self {
+        Self {
+            conversation_id: conversation_id.into(),
+            claim_id: claim_id.into(),
+            disk_pressure_reminders: None,
+            summarization_prompt,
+            profile_announcement_commit: None,
+        }
+    }
+
+    pub fn with_disk_pressure_reminders(
+        mut self,
+        reminders: Option<Arc<DiskPressureReminderEpisodes>>,
+    ) -> Self {
+        self.disk_pressure_reminders = reminders;
+        self
+    }
+
+    pub fn with_profile_announcement_commit(
+        mut self,
+        commit: Option<ProductionTurnProfileAnnouncementCommit>,
+    ) -> Self {
+        self.profile_announcement_commit = commit;
+        self
+    }
+}
 
 /// Owns one production turn's terminal lifecycle independently from the Host.
 ///
@@ -27,6 +81,11 @@ pub struct ProductionTurnAgentOwner {
     last_finished: Option<TurnRunFinished>,
     agent_state_checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
     upgrade_quiescing: Arc<AtomicBool>,
+    lifecycle_bindings: Option<ProductionTurnAgentLifecycleBindings>,
+    disk_pressure_episode_id: Option<String>,
+    disk_pressure_committed: bool,
+    profile_announcement_committed: bool,
+    disposed: bool,
 }
 
 impl ProductionTurnAgentOwner {
@@ -37,6 +96,11 @@ impl ProductionTurnAgentOwner {
             last_finished: None,
             agent_state_checkpoint_sink: None,
             upgrade_quiescing: Arc::new(AtomicBool::new(false)),
+            lifecycle_bindings: None,
+            disk_pressure_episode_id: None,
+            disk_pressure_committed: false,
+            profile_announcement_committed: false,
+            disposed: false,
         }
     }
 
@@ -51,6 +115,108 @@ impl ProductionTurnAgentOwner {
     pub fn with_upgrade_quiesce_signal(mut self, signal: Arc<AtomicBool>) -> Self {
         self.upgrade_quiescing = signal;
         self
+    }
+
+    pub fn with_lifecycle_bindings(
+        mut self,
+        bindings: ProductionTurnAgentLifecycleBindings,
+    ) -> Self {
+        self.release_uncommitted_disk_pressure();
+        self.disk_pressure_episode_id = bindings
+            .disk_pressure_reminders
+            .as_ref()
+            .and_then(|reminders| {
+                reminders.claim(&bindings.conversation_id, &bindings.claim_id)
+            });
+        self.lifecycle_bindings = Some(bindings);
+        self.disk_pressure_committed = false;
+        self.profile_announcement_committed = false;
+        self.disposed = false;
+        self
+    }
+
+    pub fn disk_pressure_episode_id(&self) -> Option<&str> {
+        self.disk_pressure_episode_id.as_deref()
+    }
+
+    pub fn run_summarization_prompt(
+        &self,
+        system_prompt: &str,
+        user_prompt: &str,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<String, ProviderSessionError> {
+        let bindings = self.lifecycle_bindings.as_ref().ok_or_else(|| {
+            ProviderSessionError::Configuration(
+                "production turn summarization surface is not bound".into(),
+            )
+        })?;
+        (bindings.summarization_prompt)(system_prompt, user_prompt, should_cancel)
+    }
+
+    pub fn project_provider_messages_for_turn(
+        &self,
+        provider_messages: &[ProviderMessage],
+    ) -> Vec<ProviderMessage> {
+        let mut projected = provider_messages.to_vec();
+        if self.disk_pressure_committed || self.disk_pressure_episode_id.is_none() {
+            return projected;
+        }
+        if !projected.iter().any(|message| {
+            message.role == "user"
+                && message.content.contains(DISK_PRESSURE_REMINDER_MESSAGE)
+        }) {
+            projected.push(ProviderMessage {
+                role: "user".into(),
+                content: DISK_PRESSURE_REMINDER_MESSAGE.into(),
+            });
+        }
+        projected
+    }
+
+    pub fn dispose(&mut self) {
+        if self.disposed {
+            return;
+        }
+        self.disposed = true;
+        self.release_uncommitted_disk_pressure();
+    }
+
+    fn commit_successful_lifecycle(&mut self) {
+        let Some(bindings) = self.lifecycle_bindings.as_ref() else {
+            return;
+        };
+        let reminders = bindings.disk_pressure_reminders.as_ref().map(Arc::clone);
+        let conversation_id = bindings.conversation_id.clone();
+        let claim_id = bindings.claim_id.clone();
+        let profile_commit = bindings.profile_announcement_commit.clone();
+
+        if !self.disk_pressure_committed {
+            if let (Some(reminders), Some(_episode_id)) =
+                (reminders, self.disk_pressure_episode_id.as_ref())
+            {
+                self.disk_pressure_committed =
+                    reminders.commit(&conversation_id, &claim_id);
+            }
+        }
+        if !self.profile_announcement_committed {
+            if let Some(commit) = profile_commit {
+                commit();
+                self.profile_announcement_committed = true;
+            }
+        }
+    }
+
+    fn release_uncommitted_disk_pressure(&mut self) {
+        if self.disk_pressure_committed || self.disk_pressure_episode_id.is_none() {
+            return;
+        }
+        let Some(bindings) = self.lifecycle_bindings.as_ref() else {
+            return;
+        };
+        if let Some(reminders) = bindings.disk_pressure_reminders.as_ref() {
+            reminders.release(&bindings.conversation_id, &bindings.claim_id);
+        }
+        self.disk_pressure_episode_id = None;
     }
 
     pub fn cancellation(&self) -> RoutedProviderCancellation {
@@ -99,25 +265,20 @@ impl ProductionTurnAgentOwner {
         options: TurnRunOptions,
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
-        let Self {
-            composition,
-            shell,
-            last_finished,
-            agent_state_checkpoint_sink,
-            upgrade_quiescing,
-        } = self;
-        let checkpoint_sink = agent_state_checkpoint_sink.clone();
-        let composition_for_stream = composition.clone();
-        let completion_probe = composition.clone();
+        let checkpoint_sink = self.agent_state_checkpoint_sink.clone();
+        let composition_for_stream = self.composition.clone();
+        let completion_probe = self.composition.clone();
+        let projected_provider_messages =
+            self.project_provider_messages_for_turn(provider_messages);
         let turn_quiesced = Arc::new(AtomicBool::new(false));
-        let stream_upgrade_quiescing = Arc::clone(upgrade_quiescing);
+        let stream_upgrade_quiescing = Arc::clone(&self.upgrade_quiescing);
         let stream_turn_quiesced = Arc::clone(&turn_quiesced);
         let result = run_owned_turn(
-            shell,
-            last_finished,
+            &mut self.shell,
+            &mut self.last_finished,
             lifecycle_messages,
             options.clone(),
-            Arc::clone(upgrade_quiescing),
+            Arc::clone(&self.upgrade_quiescing),
             Arc::clone(&turn_quiesced),
             move |started| {
                 run_production_generated_agent_stream(
@@ -125,7 +286,7 @@ impl ProductionTurnAgentOwner {
                     checkpoint_sink,
                     data_dir,
                     lifecycle_messages,
-                    provider_messages,
+                    &projected_provider_messages,
                     &options,
                     started.owner.generation,
                     Arc::clone(&stream_upgrade_quiescing),
@@ -134,9 +295,12 @@ impl ProductionTurnAgentOwner {
                 )
             },
         );
-        if let (Ok(content), Some(finished)) = (&result, last_finished.as_mut()) {
+        if let (Ok(content), Some(finished)) = (&result, self.last_finished.as_mut()) {
             finished.ended_on_silent_tool_calls =
                 completion_probe.last_run_ended_on_silent_tool_calls(content);
+        }
+        if result.is_ok() {
+            self.commit_successful_lifecycle();
         }
         result
     }
@@ -171,7 +335,7 @@ impl ProductionTurnAgentOwner {
         let checkpoint_sink = self.agent_state_checkpoint_sink.clone();
         let checkpoint_options = options.clone();
         let turn_quiesced = Arc::new(AtomicBool::new(false));
-        run_owned_turn(
+        let result = run_owned_turn(
             &mut self.shell,
             &mut self.last_finished,
             messages,
@@ -192,7 +356,17 @@ impl ProductionTurnAgentOwner {
                     (result, _) => result,
                 }
             },
-        )
+        );
+        if result.is_ok() {
+            self.commit_successful_lifecycle();
+        }
+        result
+    }
+}
+
+impl Drop for ProductionTurnAgentOwner {
+    fn drop(&mut self) {
+        self.dispose();
     }
 }
 
