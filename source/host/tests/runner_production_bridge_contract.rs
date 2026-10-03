@@ -17,6 +17,7 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSnapshot,
 };
 use mahayana_host_runtime::runner::subagent_runtime::SubagentRuntime;
+use mahayana_host_runtime::runner::turn_observation::TurnObservation;
 use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
 use mahayana_host_runtime::runner::tools::sand_agent_management_tools::{
     AgentManagementRecord, AgentManagementSink,
@@ -473,6 +474,7 @@ fn production_bridge_binds_the_generated_runner_facade() {
         "bridge-agent",
         "bridge-request",
     );
+    let observation = TurnObservation::shared("bridge-agent", None);
     let runner = create_production_runner(
         composition,
         build_bindings,
@@ -480,6 +482,10 @@ fn production_bridge_binds_the_generated_runner_facade() {
         None,
         Arc::new(std::sync::atomic::AtomicBool::new(false)),
         Arc::clone(&runtime),
+        Some(Arc::clone(&observation)),
+        None,
+        None,
+        None,
     );
 
     assert!(runner.generated_agent_runtime().is_some());
@@ -487,4 +493,12 @@ fn production_bridge_binds_the_generated_runner_facade() {
         .generated_agent_runtime()
         .expect("generated runtime");
     assert!(Arc::ptr_eq(&projected_runtime, &runtime));
+    assert!(runner.list_async_tasks().expect("async tasks").is_empty());
+    assert!(runner.get_activity_snapshot().expect("activity").is_empty());
+    assert_eq!(
+        runner
+            .get_observed_tool_call_count()
+            .expect("observed tool calls"),
+        0
+    );
 }
