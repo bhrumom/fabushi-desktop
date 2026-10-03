@@ -19368,7 +19368,7 @@
       "targetPath": "source/host/src/runner/tools/sand_state_tool.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f8149a689566409e70191ac697e564c877400af7",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -19376,15 +19376,23 @@
         "source/host/src/runner/tools/sand_state_tool.rs",
         "source/host/src/runner/turn_agent_composition.rs",
         "source/host/src/extensions/memory/agent_state.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/tools/turn_toolset.rs",
+        "source/host/src/runner/tools/communicate_tool.rs",
+        "source/host/src/runner_production_bridge.rs",
+        "source/host/src/host_runner_composition.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_state_tool_contract.rs",
         "source/host/tests/agent_state_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/runner_communicate_listener_contract.rs",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs"
       ],
-      "notes": "Shipping Runner now advertises update_state and routes memory/routine/workflow/profile/settings/channel/project/avatar mutations through a typed SandStateWriter boundary into the Host-owned SandAgentState; routine updates preserve omitted name/prompt/trigger fields. Exact-head Host and desktop-chat verification passed at ad5b0832245c1106a22a6557c562de2987ada34a. Remaining frozen parity is the source auto-review/approval flow for routine and workflow-body writes, listener-routine post-save integration, richer trigger validation, communicate-tool activity projection, and avatar reads from box paths."
+      "notes": "Rust shipping parity for frozen sand-state-tool.ts is complete. The Runner advertises update_state through the canonical TurnToolset and routes memory/routine/workflow/profile/settings/channel/project/avatar mutations into the single Host-owned SandAgentState. Routine create/update and referenced workflow-body writes use the production AutoReview controller with denial returned as the normal `Not saved — …` tool result; every state mutation first crosses the same production pending-approval barrier. Listener routine writes invoke the shipping post-save listener lifecycle hook only after a successful mutation. Frozen trigger semantics are enforced through canonical parse_stored_trigger validation/canonicalization, including grouped listeners and GitHub CI branch fencing. CommunicateRoutedToolBridge wraps update_state in the canonical agent.v1 communicate lifecycle and projects describe_state_update activity into turn observation. Avatar writes remain Host-first and fall back to the production ForeverBox file reader for box-root paths. HostRunnerComposition is the sole state-surface composition owner and runner_production_bridge carries these hooks into shipping turns; no Electron/Coordinator second state owner is introduced. Exact HEAD ff50153c179b3e08709730b843eb3d635688d068 passed Desktop Chat Parity run 37141860430 including Focused Electron E2E; Rust desktop runtime run 37141860455 passed rust-host, platform-worker, Ubuntu/Windows pressure-profiler, independent Coordinator, box-exec/supervisor, independent Host Runner, attachment projection, Human Computer takeover, and ConversationActor/CapabilityBroker ownership. That workflow remained red only at the intentional strict final architecture gate, which still listed this row plus eight later parity rows before this promotion.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/runner/tools/sand-subagent-management-tools.ts",
