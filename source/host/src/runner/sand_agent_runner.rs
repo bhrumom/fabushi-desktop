@@ -6,6 +6,7 @@ use crate::extensions::inference::provider_session::{
 };
 
 use super::production_turn_agent_owner::ProductionTurnAgentOwner;
+use super::production_turn_input_projection::ProductionTurnInputProjection;
 use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::subagent_runtime::{
     PendingWake, RunOutcome, SettleResult, SubagentLineage, SubagentRuntime,
@@ -133,6 +134,23 @@ impl SandAgentRunner {
             lifecycle_messages,
             provider_messages,
             options,
+            on_text_delta,
+        )
+    }
+
+    pub fn run_routed_provider_with_projected_turn_input(
+        &mut self,
+        data_dir: &Path,
+        lifecycle_messages: &[ProviderMessage],
+        provider_messages: &[ProviderMessage],
+        turn_input: ProductionTurnInputProjection,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+    ) -> Result<String, ProviderSessionError> {
+        self.owner.run_routed_provider_with_projected_turn_input(
+            data_dir,
+            lifecycle_messages,
+            provider_messages,
+            turn_input,
             on_text_delta,
         )
     }

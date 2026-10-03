@@ -15,6 +15,7 @@ use super::inactive_turn_agent_stream::{
 use super::production_agent_checkpoint::{
     AgentStateCheckpointSink, TextTurnCheckpointArtifacts,
 };
+use super::production_turn_input_projection::ProductionTurnAgentInputProjection;
 use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::turn_agent_composition::TurnAgentComposition;
 use super::{
@@ -27,6 +28,8 @@ pub struct GeneratedAgentTurnContext<'a> {
     pub lifecycle_messages: &'a [ProviderMessage],
     pub provider_messages: &'a [ProviderMessage],
     pub options: &'a TurnRunOptions,
+    pub base_state_bytes: &'a [u8],
+    pub ack_token: Option<&'a str>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -85,6 +88,16 @@ impl<'ctx>
         Result<GeneratedAgentTurnState, Self::Error>,
     > {
         Box::pin(async move {
+            if let Some(checkpoint_sink) = self.checkpoint_sink.as_ref() {
+                let live_base_state = checkpoint_sink.base_state_bytes()?;
+                if live_base_state != context.base_state_bytes {
+                    return Err(GeneratedAgentTurnStreamError::Provider(
+                        ProviderSessionError::Protocol(
+                            "Runner Agent base state changed after turn input projection".into(),
+                        ),
+                    ));
+                }
+            }
             let mut forward_delta = |delta: &str, accumulated: &str| {
                 output.on_text_delta(delta, accumulated);
             };
@@ -238,15 +251,21 @@ pub fn run_production_generated_agent_stream(
     composition: TurnAgentComposition,
     checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
     data_dir: &Path,
-    lifecycle_messages: &[ProviderMessage],
-    provider_messages: &[ProviderMessage],
-    options: &TurnRunOptions,
+    projection: ProductionTurnAgentInputProjection<'_>,
     generation: u64,
     upgrade_quiescing: Arc<AtomicBool>,
     turn_quiesced: Arc<AtomicBool>,
-    on_text_delta: &mut dyn FnMut(&str, &str),
 ) -> Result<String, ProviderSessionError> {
-    let cancellation = composition.cancellation();
+    let ProductionTurnAgentInputProjection {
+        action,
+        mcp_tools: _,
+        base_state_bytes,
+        ack_token,
+        cancel_this_run,
+        emit_update,
+        options,
+    } = projection;
+    let cancellation = cancel_this_run;
     let source: Arc<
         dyn InactiveTurnAgentStreamSource<
             GeneratedAgentTurnContext<'_>,
@@ -268,12 +287,14 @@ pub fn run_production_generated_agent_stream(
     let hooks = NoopInactiveTurnAgentLifecycleHooks;
     let context = GeneratedAgentTurnContext {
         data_dir,
-        lifecycle_messages,
-        provider_messages,
-        options,
+        lifecycle_messages: &action.lifecycle_messages,
+        provider_messages: &action.provider_messages,
+        options: &options,
+        base_state_bytes: &base_state_bytes,
+        ack_token: ack_token.as_deref(),
     };
     let mut output = LiveDeltaSink {
-        callback: on_text_delta,
+        callback: emit_update,
     };
     futures::executor::block_on(path.run_lifecycle_with_output(
         &context,

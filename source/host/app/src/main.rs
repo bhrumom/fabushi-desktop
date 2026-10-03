@@ -4892,7 +4892,7 @@ fn start_routed_provider_task(
         events.clone(),
     );
     let lifecycle_messages = decode_provider_messages(&args)?;
-    let turn_input = create_production_turn_input_projection(
+    let mut turn_input = create_production_turn_input_projection(
         &args,
         &stream_id,
         &lifecycle_messages,
@@ -5446,6 +5446,7 @@ fn start_routed_provider_task(
                 ))
             })?
     };
+    turn_input.ack_token = ack_token.clone();
     let recovery_shaped = lifecycle_messages
         .iter()
         .rev()
@@ -7558,11 +7559,11 @@ fn start_routed_provider_task(
             }
             let _ = worker_registry.mark_routed_provider_dispatched(&worker_stream_id);
             let turn_epoch = worker_transcript_runtime.current_turn_epoch(&agent_id);
-            let mut result = runner.run_routed_provider_with_projected_messages(
+            let mut result = runner.run_routed_provider_with_projected_turn_input(
                 &data_dir,
                 &lifecycle_messages,
                 &provider_messages,
-                turn_input.options.clone(),
+                turn_input.clone(),
                 &mut on_text_delta,
             );
             let mut waiting_user = matches!(

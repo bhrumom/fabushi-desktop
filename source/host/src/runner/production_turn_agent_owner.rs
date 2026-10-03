@@ -10,6 +10,9 @@ use crate::extensions::inference::provider_session::{
 
 use super::generated_agent_turn_stream::run_production_generated_agent_stream;
 use super::production_agent_checkpoint::AgentStateCheckpointSink;
+use super::production_turn_input_projection::{
+    ProductionTurnInputProjection, create_production_turn_agent_input_projection,
+};
 use super::send_message_reminder_middleware::DISK_PRESSURE_REMINDER_MESSAGE;
 use super::tools::box_help_tool::WAITING_USER_CANCELLATION_PREFIX;
 use super::routed_provider_runtime::RoutedProviderCancellation;
@@ -345,11 +348,14 @@ impl ProductionTurnAgentOwner {
         options: TurnRunOptions,
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
-        self.run_routed_provider_with_projected_messages(
+        self.run_routed_provider_with_projected_turn_input(
             data_dir,
             messages,
             messages,
-            options,
+            ProductionTurnInputProjection {
+                options,
+                ack_token: None,
+            },
             on_text_delta,
         )
     }
@@ -362,12 +368,33 @@ impl ProductionTurnAgentOwner {
         options: TurnRunOptions,
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
+        self.run_routed_provider_with_projected_turn_input(
+            data_dir,
+            lifecycle_messages,
+            provider_messages,
+            ProductionTurnInputProjection {
+                options,
+                ack_token: None,
+            },
+            on_text_delta,
+        )
+    }
+
+    pub fn run_routed_provider_with_projected_turn_input(
+        &mut self,
+        data_dir: &Path,
+        lifecycle_messages: &[ProviderMessage],
+        provider_messages: &[ProviderMessage],
+        turn_input: ProductionTurnInputProjection,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+    ) -> Result<String, ProviderSessionError> {
         self.validate_build_input()?;
         let checkpoint_sink = self.agent_state_checkpoint_sink.clone();
         let composition_for_stream = self.composition.clone();
         let completion_probe = self.composition.clone();
         let projected_provider_messages =
             self.project_provider_messages_for_turn(provider_messages);
+        let shell_options = turn_input.options.clone();
         let turn_quiesced = Arc::new(AtomicBool::new(false));
         let stream_upgrade_quiescing = Arc::clone(&self.upgrade_quiescing);
         let stream_turn_quiesced = Arc::clone(&turn_quiesced);
@@ -375,21 +402,28 @@ impl ProductionTurnAgentOwner {
             &mut self.shell,
             &mut self.last_finished,
             lifecycle_messages,
-            options.clone(),
+            shell_options,
             Arc::clone(&self.upgrade_quiescing),
             Arc::clone(&turn_quiesced),
             move |started| {
-                run_production_generated_agent_stream(
-                    composition_for_stream,
-                    checkpoint_sink,
-                    data_dir,
+                let projection = create_production_turn_agent_input_projection(
+                    &composition_for_stream,
+                    checkpoint_sink.as_ref(),
                     lifecycle_messages,
                     &projected_provider_messages,
-                    &options,
+                    &turn_input,
+                    on_text_delta,
+                )?;
+                let stream_composition = composition_for_stream
+                    .with_projected_mcp_tools(projection.mcp_tools.clone());
+                run_production_generated_agent_stream(
+                    stream_composition,
+                    checkpoint_sink,
+                    data_dir,
+                    projection,
                     started.owner.generation,
                     Arc::clone(&stream_upgrade_quiescing),
                     Arc::clone(&stream_turn_quiesced),
-                    on_text_delta,
                 )
             },
         );

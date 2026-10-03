@@ -1,13 +1,64 @@
+use std::sync::Arc;
+
 use serde_json::Value;
 
-use crate::extensions::inference::provider_session::ProviderMessage;
+use crate::extensions::inference::provider_session::{
+    ProviderMessage, ProviderSessionError, RoutedToolDefinition,
+};
 
 use super::conversation_state::RecentUserMessage;
+use super::production_agent_checkpoint::AgentStateCheckpointSink;
+use super::routed_provider_runtime::RoutedProviderCancellation;
+use super::turn_agent_composition::TurnAgentComposition;
 use super::TurnRunOptions;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProductionTurnInputProjection {
     pub options: TurnRunOptions,
+    pub ack_token: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProductionTurnActionProjection {
+    pub lifecycle_messages: Vec<ProviderMessage>,
+    pub provider_messages: Vec<ProviderMessage>,
+}
+
+pub struct ProductionTurnAgentInputProjection<'a> {
+    pub action: ProductionTurnActionProjection,
+    pub mcp_tools: Vec<RoutedToolDefinition>,
+    pub base_state_bytes: Vec<u8>,
+    pub ack_token: Option<String>,
+    pub cancel_this_run: RoutedProviderCancellation,
+    pub emit_update: &'a mut dyn FnMut(&str, &str),
+    pub options: TurnRunOptions,
+}
+
+pub fn create_production_turn_agent_input_projection<'a>(
+    composition: &TurnAgentComposition,
+    checkpoint_sink: Option<&Arc<dyn AgentStateCheckpointSink>>,
+    lifecycle_messages: &[ProviderMessage],
+    provider_messages: &[ProviderMessage],
+    turn_input: &ProductionTurnInputProjection,
+    emit_update: &'a mut dyn FnMut(&str, &str),
+) -> Result<ProductionTurnAgentInputProjection<'a>, ProviderSessionError> {
+    let mcp_tools = composition.snapshot_mcp_tools()?;
+    let base_state_bytes = match checkpoint_sink {
+        Some(sink) => sink.base_state_bytes()?,
+        None => Vec::new(),
+    };
+    Ok(ProductionTurnAgentInputProjection {
+        action: ProductionTurnActionProjection {
+            lifecycle_messages: lifecycle_messages.to_vec(),
+            provider_messages: provider_messages.to_vec(),
+        },
+        mcp_tools,
+        base_state_bytes,
+        ack_token: turn_input.ack_token.clone(),
+        cancel_this_run: composition.cancellation(),
+        emit_update,
+        options: turn_input.options.clone(),
+    })
 }
 
 pub fn create_production_turn_input_projection(
@@ -51,6 +102,7 @@ pub fn create_production_turn_input_projection(
                 .get("replyContext")
                 .is_some_and(|value| !value.is_null()),
         },
+        ack_token: None,
     })
 }
 

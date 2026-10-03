@@ -66,16 +66,26 @@ impl SandMcpToolProvider for RoutedBridgeMcpToolProvider<'_> {
 /// observation remain owned by the existing routed-tool bridge.
 pub struct McpStateProjectedRoutedToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
+    projected_tools: Option<Arc<Vec<RoutedToolDefinition>>>,
 }
 
 impl McpStateProjectedRoutedToolBridge {
-    pub fn new(delegate: Arc<dyn RoutedToolBridge>) -> Self {
-        Self { delegate }
+    pub fn new(
+        delegate: Arc<dyn RoutedToolBridge>,
+        projected_tools: Option<Arc<Vec<RoutedToolDefinition>>>,
+    ) -> Self {
+        Self {
+            delegate,
+            projected_tools,
+        }
     }
 }
 
 impl RoutedToolBridge for McpStateProjectedRoutedToolBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        if let Some(projected_tools) = self.projected_tools.as_ref() {
+            return Ok(projected_tools.as_ref().clone());
+        }
         let McpStateExecResult::Success(state) =
             execute_canonical_mcp_state(&RoutedBridgeMcpToolProvider {
                 bridge: self.delegate.as_ref(),
@@ -178,6 +188,7 @@ pub struct TurnAgentComposition {
     spotlight_enabled: bool,
     action_audit: Option<RoutedMcpAuditConfig>,
     observation: Option<TurnObservationHandle>,
+    projected_mcp_tools: Option<Arc<Vec<RoutedToolDefinition>>>,
 }
 
 impl TurnAgentComposition {
@@ -230,6 +241,7 @@ impl TurnAgentComposition {
             spotlight_enabled: false,
             action_audit: None,
             observation: None,
+            projected_mcp_tools: None,
         }
     }
 
@@ -538,6 +550,35 @@ impl TurnAgentComposition {
         })
     }
 
+    pub fn snapshot_mcp_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        if let Some(projected_tools) = self.projected_mcp_tools.as_ref() {
+            return Ok(projected_tools.as_ref().clone());
+        }
+        let McpStateExecResult::Success(state) = self.execute_mcp_state().map_err(|error| {
+            ProviderSessionError::Tool(format!("MCP state projection failed: {error}"))
+        })?;
+        Ok(state
+            .servers
+            .into_iter()
+            .flat_map(|server| server.tools)
+            .map(|tool| RoutedToolDefinition {
+                name: tool.name,
+                provider_identifier: tool.provider_identifier,
+                tool_name: tool.tool_name,
+                description: tool.description,
+                input_schema: tool.input_schema,
+            })
+            .collect())
+    }
+
+    pub fn with_projected_mcp_tools(
+        mut self,
+        tools: Vec<RoutedToolDefinition>,
+    ) -> Self {
+        self.projected_mcp_tools = Some(Arc::new(tools));
+        self
+    }
+
     pub fn provider(&self) -> RoutedProvider {
         self.provider
     }
@@ -571,7 +612,10 @@ impl TurnAgentComposition {
     ) -> Result<String, ProviderSessionError> {
         self.reset_latest_provider_checkpoint();
         let bridge: Arc<dyn RoutedToolBridge> = Arc::new(
-            McpStateProjectedRoutedToolBridge::new(Arc::clone(&self.bridge)),
+            McpStateProjectedRoutedToolBridge::new(
+                Arc::clone(&self.bridge),
+                self.projected_mcp_tools.clone(),
+            ),
         );
         let bridge: Arc<dyn RoutedToolBridge> = match &self.observation {
             Some(observation) => Arc::new(McpObservedRoutedToolBridge::new(

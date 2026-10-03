@@ -362,6 +362,8 @@ fn production_bridge_owns_immutable_turn_projection_and_generated_runner_binding
             && SHIPPING_HOST.contains("worker_host_runner_composition.compose_production_runner(")
             && SHIPPING_HOST.contains("ProductionTurnAgentBuildBindings::new(")
             && SHIPPING_HOST.contains("ProductionTurnAgentStaticConfig {")
+            && SHIPPING_HOST.contains("turn_input.ack_token = ack_token.clone()")
+            && SHIPPING_HOST.contains("run_routed_provider_with_projected_turn_input(")
             && SHIPPING_HOST.contains("resolve_sand_privacy_mode(")
             && SHIPPING_HOST.contains("ProductionTurnAgentLifecycleBindings::new(")
             && SHIPPING_HOST.contains(".disk_pressure_reminder_episodes()")

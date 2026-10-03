@@ -15,6 +15,10 @@ use crate::transcript_mirror::production_provider::{
 use super::TurnRunOptions;
 
 pub trait AgentStateCheckpointSink: Send + Sync {
+    fn base_state_bytes(&self) -> Result<Vec<u8>, ProviderSessionError> {
+        Ok(Vec::new())
+    }
+
     fn stage_text_turn(
         &self,
         _messages: &[ProviderMessage],
@@ -169,6 +173,17 @@ impl ProductionAgentStateCheckpointSink {
 }
 
 impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
+    fn base_state_bytes(&self) -> Result<Vec<u8>, ProviderSessionError> {
+        self.prior_state_bytes
+            .lock()
+            .map(|prior| prior.clone())
+            .map_err(|_| {
+                ProviderSessionError::Protocol(
+                    "Runner Agent checkpoint prior state is poisoned".into(),
+                )
+            })
+    }
+
     fn stage_text_turn(
         &self,
         messages: &[ProviderMessage],
