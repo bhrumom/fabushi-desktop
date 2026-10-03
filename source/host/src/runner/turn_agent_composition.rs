@@ -182,6 +182,7 @@ pub struct TurnAgentComposition {
     toolset_role: TurnToolsetRole,
     local_tool_permission: Option<TurnLocalToolPermissionBinding>,
     is_silence_allowed: bool,
+    max_steps: usize,
 }
 
 impl TurnAgentComposition {
@@ -246,6 +247,7 @@ impl TurnAgentComposition {
             toolset_role: TurnToolsetRole::default(),
             local_tool_permission: None,
             is_silence_allowed: false,
+            max_steps: SAND_AGENT_MAX_STEPS,
         }
     }
 
@@ -260,6 +262,15 @@ impl TurnAgentComposition {
     pub fn with_silence_allowed(mut self, allowed: bool) -> Self {
         self.is_silence_allowed = allowed;
         self
+    }
+
+    pub fn with_max_steps(mut self, max_steps: usize) -> Self {
+        self.max_steps = max_steps.max(1);
+        self
+    }
+
+    pub fn max_steps(&self) -> usize {
+        self.max_steps
     }
 
     pub fn with_retry_sink(
@@ -841,7 +852,7 @@ impl TurnAgentComposition {
                 cloud_agents_enabled: self.cloud_agent_tool.is_some(),
                 multitask_enabled: self.multitask_enabled,
                 is_computer_use_subagent: self.is_computer_use_subagent,
-                max_steps: SAND_AGENT_MAX_STEPS,
+                max_steps: self.max_steps,
                 tool_step_reminder,
             },
             on_text_delta,

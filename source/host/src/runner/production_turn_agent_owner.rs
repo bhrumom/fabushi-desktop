@@ -16,7 +16,7 @@ use super::production_turn_input_projection::{
 use super::production_turn_run_shell_adapter::run_production_turn_shell_lifecycle;
 use super::send_message_reminder_middleware::DISK_PRESSURE_REMINDER_MESSAGE;
 use super::routed_provider_runtime::RoutedProviderCancellation;
-use super::turn_agent_composition::TurnAgentComposition;
+use super::turn_agent_composition::{SAND_AGENT_MAX_STEPS, TurnAgentComposition};
 use super::{
     TerminalOutcome, TurnRunFinished, TurnRunOptions, TurnRunShell,
 };
@@ -47,10 +47,65 @@ pub struct ProductionTurnAgentStaticConfig {
     pub transcripts_folder_available: bool,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct ProductionTurnAgentStaticProjection {
+    pub max_steps: usize,
+    pub background_summarization_start_unused_tokens: usize,
+    pub background_summarization_start_unused_percent: f64,
+    pub background_summarization_persist_unused_tokens: usize,
+    pub background_summarization_persist_unused_percent: f64,
+    pub background_summarization_discard_on_error: bool,
+    pub background_summarization_require_trigger_for_mid_loop_persist: bool,
+    pub enable_watch_video_in_ide_subagent: bool,
+    pub sand_send_message_delivery_owed: bool,
+    pub user_message_timestamps: bool,
+    pub rerender_user_info_on_request_context_recovery: bool,
+    pub rerender_user_info_on_summarization: bool,
+    pub skip_pre_turn_state_snapshot: bool,
+    pub agent_type: &'static str,
+    pub conversation_group_id: String,
+    pub disable_user_info: bool,
+    pub display_cursor_rules: bool,
+    pub display_skills: bool,
+    pub exclude_agent_transcripts: bool,
+    pub enable_terminal_files: bool,
+    pub enable_transcript_in_summary: bool,
+}
+
+impl ProductionTurnAgentStaticConfig {
+    pub fn frozen_projection(&self) -> ProductionTurnAgentStaticProjection {
+        ProductionTurnAgentStaticProjection {
+            max_steps: SAND_AGENT_MAX_STEPS,
+            background_summarization_start_unused_tokens: 10_000,
+            background_summarization_start_unused_percent: 0.1,
+            background_summarization_persist_unused_tokens: 5_000,
+            background_summarization_persist_unused_percent: 0.05,
+            background_summarization_discard_on_error: true,
+            background_summarization_require_trigger_for_mid_loop_persist: true,
+            enable_watch_video_in_ide_subagent: true,
+            sand_send_message_delivery_owed: self.sand_send_message_delivery_owed,
+            user_message_timestamps: true,
+            rerender_user_info_on_request_context_recovery: true,
+            rerender_user_info_on_summarization: true,
+            skip_pre_turn_state_snapshot: true,
+            agent_type: "IDE",
+            conversation_group_id: self.conversation_id.clone(),
+            disable_user_info: self.is_box_scoped_subagent,
+            display_cursor_rules: true,
+            display_skills: !self.is_subagent_runner && !self.is_shared_room_runner,
+            exclude_agent_transcripts: self.is_subagent_runner
+                || !self.transcripts_folder_available,
+            enable_terminal_files: false,
+            enable_transcript_in_summary: true,
+        }
+    }
+}
+
 /// Immutable build input captured once before the shipping provider path runs.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ProductionTurnAgentBuildInput {
     pub static_config: ProductionTurnAgentStaticConfig,
+    pub static_projection: ProductionTurnAgentStaticProjection,
     pub privacy_mode: Option<SandPrivacyMode>,
 }
 
@@ -190,8 +245,10 @@ impl ProductionTurnAgentOwner {
         bindings: ProductionTurnAgentBuildBindings,
     ) -> Self {
         let privacy_mode = (bindings.privacy_mode_resolver)();
+        let static_projection = bindings.static_config.frozen_projection();
         self.build_input = Some(ProductionTurnAgentBuildInput {
             static_config: bindings.static_config,
+            static_projection,
             privacy_mode,
         });
         self.summarization_prompt = Some(bindings.summarization_prompt);
@@ -216,6 +273,16 @@ impl ProductionTurnAgentOwner {
         if input.static_config.conversation_id.trim().is_empty() {
             return Err(ProviderSessionError::Configuration(
                 "production turn conversation id is empty".into(),
+            ));
+        }
+        if input.static_projection.max_steps != SAND_AGENT_MAX_STEPS {
+            return Err(ProviderSessionError::Configuration(
+                "production turn max steps drifted from frozen Grok config".into(),
+            ));
+        }
+        if input.static_projection.conversation_group_id != input.static_config.conversation_id {
+            return Err(ProviderSessionError::Configuration(
+                "production turn conversation group identity drifted".into(),
             ));
         }
         if let Some(lifecycle) = self.lifecycle_bindings.as_ref()
@@ -402,6 +469,12 @@ impl ProductionTurnAgentOwner {
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
         self.validate_build_input()?;
+        let turn_max_steps = self
+            .build_input
+            .as_ref()
+            .expect("validated production turn build input")
+            .static_projection
+            .max_steps;
         let checkpoint_sink_for_projection =
             self.agent_state_checkpoint_sink.clone();
         let checkpoint_sink_for_stream =
@@ -442,6 +515,7 @@ impl ProductionTurnAgentOwner {
                     checkpoint_sink_for_stream,
                     data_dir,
                     projection,
+                    turn_max_steps,
                     prepared.started.owner.generation,
                     Arc::clone(&stream_upgrade_quiescing),
                     Arc::clone(&stream_turn_quiesced),

@@ -148,6 +148,28 @@ fn production_owner_freezes_build_input_and_privacy_once() {
     assert!(build.static_config.is_subagent_runner);
     assert!(build.static_config.sand_send_message_delivery_owed);
     assert!(build.static_config.transcripts_folder_available);
+    assert_eq!(build.static_projection.max_steps, 5_000);
+    assert_eq!(
+        build.static_projection.background_summarization_start_unused_tokens,
+        10_000
+    );
+    assert_eq!(
+        build.static_projection.background_summarization_persist_unused_tokens,
+        5_000
+    );
+    assert!(build.static_projection.enable_watch_video_in_ide_subagent);
+    assert!(build.static_projection.user_message_timestamps);
+    assert!(build.static_projection.rerender_user_info_on_request_context_recovery);
+    assert!(build.static_projection.rerender_user_info_on_summarization);
+    assert!(build.static_projection.skip_pre_turn_state_snapshot);
+    assert_eq!(build.static_projection.agent_type, "IDE");
+    assert_eq!(build.static_projection.conversation_group_id, "agent-build");
+    assert!(build.static_projection.disable_user_info);
+    assert!(build.static_projection.display_cursor_rules);
+    assert!(!build.static_projection.display_skills);
+    assert!(build.static_projection.exclude_agent_transcripts);
+    assert!(!build.static_projection.enable_terminal_files);
+    assert!(build.static_projection.enable_transcript_in_summary);
     assert_eq!(build.privacy_mode, Some(SandPrivacyMode::NoStorage));
     assert_eq!(
         owner

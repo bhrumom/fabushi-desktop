@@ -256,6 +256,7 @@ pub fn run_production_generated_agent_stream(
     checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
     data_dir: &Path,
     projection: ProductionTurnAgentInputProjection<'_>,
+    max_steps: usize,
     generation: u64,
     upgrade_quiescing: Arc<AtomicBool>,
     turn_quiesced: Arc<AtomicBool>,
@@ -275,6 +276,7 @@ pub fn run_production_generated_agent_stream(
         StreamAttemptPolicy::default(),
     ));
     let composition = composition
+        .with_max_steps(max_steps)
         .with_projected_mcp_tools(mcp_tools)
         .with_projected_mcp_meta_tools(mcp_meta_tools)
         .with_stream_attempt_runtime(stream_attempt_runtime);
