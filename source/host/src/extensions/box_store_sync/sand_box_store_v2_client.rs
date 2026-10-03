@@ -434,6 +434,7 @@ fn map_cursor_error(error: CursorBackendError) -> SandBoxStoreClientError {
         CursorBackendError::InvalidProto(message) => protocol_error(message),
         CursorBackendError::InvalidBackendUrl(message)
         | CursorBackendError::Transport(message)
+        | CursorBackendError::Timeout(message)
         | CursorBackendError::Cancelled(message) => transport_error(message),
         CursorBackendError::HttpStatus { status, body } => {
             other_error(format!("SandBoxStoreV2 HTTP {status}: {body}"))
