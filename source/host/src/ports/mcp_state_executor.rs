@@ -214,7 +214,7 @@ pub fn encode_canonical_mcp_state_result(
             tools,
             instructions: Vec::new(),
             status: Some(server.status.clone()),
-            error_message: None,
+            error_message: server.error_message.clone(),
         });
     }
     Ok(CanonicalMcpStateExecResult {
