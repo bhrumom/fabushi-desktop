@@ -123,7 +123,7 @@ fn external_shell_review_blocks_before_executor_side_effect() {
 
 #[test]
 fn box_scoped_subagent_does_not_receive_external_machine_tools() {
-    let executor = Arc::new(FakeExternalExecutor::default());
+    let executor = Arc::new(FakeExternalMachine::default());
     let bridge = build_turn_toolset(
         Arc::new(BaseBridge),
         TurnToolsetDependencies {
