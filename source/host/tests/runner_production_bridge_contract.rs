@@ -370,6 +370,10 @@ fn production_bridge_owns_immutable_turn_projection_and_generated_runner_binding
             && SHIPPING_HOST.contains("resolve_sand_privacy_mode(")
             && SHIPPING_HOST.contains("ProductionTurnAgentLifecycleBindings::new(")
             && SHIPPING_HOST.contains(".disk_pressure_reminder_episodes()")
+            && SHIPPING_HOST.contains("Some(Arc::clone(&observation))")
+            && SHIPPING_HOST.contains("Some(Arc::clone(&worker_cloud_agent_watches))")
+            && SHIPPING_HOST.contains("Some(Arc::clone(&background_shell_watches))")
+            && SHIPPING_HOST.contains("Some(worker_host_runner_composition.computer_use_coordination())")
             && !SHIPPING_HOST.contains("create_production_runner_composition_with_hooks(")
             && !SHIPPING_HOST.contains("create_production_runner("),
         "shipping Host must retain one HostRunnerComposition entrypoint into the bridge",
@@ -503,4 +507,10 @@ fn production_bridge_binds_the_generated_runner_facade() {
             .expect("observed tool calls"),
         0
     );
+    assert!(!runner.is_quiescing_for_upgrade());
+    runner.request_quiesce_for_upgrade();
+    assert!(runner.is_quiescing_for_upgrade());
+    runner.cancel_quiesce_for_upgrade();
+    assert!(!runner.is_quiescing_for_upgrade());
+    assert!(!runner.is_awaiting_user_selection());
 }
