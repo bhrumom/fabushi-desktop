@@ -4998,6 +4998,10 @@ fn start_routed_provider_task(
     transcript_runtime
         .require_routed_turn_lease(&agent_id, &stream_id)
         .map_err(map_production_send_error)?;
+    let turn_local_tool_permission = local_tool_permission.controller();
+    turn_local_tool_permission.begin_turn(&agent_id);
+    let turn_local_tool_direction_epoch =
+        turn_local_tool_permission.direction_epoch(&agent_id);
     let routed_turn_lease_guard = RoutedTurnLeaseGuard::new(
         Arc::clone(&transcript_runtime),
         agent_id.clone(),
@@ -7682,18 +7686,20 @@ fn start_routed_provider_task(
             let computer_executor: Arc<dyn ComputerToolExecutor> =
                 Arc::new(computer_executor_owner);
             let file_transfer_executor: Arc<dyn FileTransferExecutor> = Arc::new(
-                ProductionFileTransferExecutor::new(
+                ProductionFileTransferExecutor::for_turn(
                     Arc::clone(&forever_box),
                     Arc::clone(&local_exec),
                     Arc::clone(&local_tool_permission),
                     agent_id.clone(),
+                    turn_local_tool_direction_epoch,
                 ),
             );
             let external_machine_executor: Arc<dyn ExternalMachineExecutor> = Arc::new(
-                ProductionExternalMachineExecutor::new(
+                ProductionExternalMachineExecutor::for_turn(
                     Arc::clone(&local_exec),
                     Arc::clone(&local_tool_permission),
                     agent_id.clone(),
+                    turn_local_tool_direction_epoch,
                 ),
             );
             let worker_provider_usage = Arc::new(Mutex::new(None::<ProviderTokenUsage>));
@@ -7802,8 +7808,9 @@ fn start_routed_provider_task(
                         dynamic_tools_enabled,
                     },
                     local_tool_permission: Some(TurnLocalToolPermissionBinding {
-                        controller: local_tool_permission.controller(),
+                        controller: Arc::clone(&turn_local_tool_permission),
                         agent_id: agent_id.clone(),
+                        direction_epoch: turn_local_tool_direction_epoch,
                     }),
                     box_resources: Some(box_resources),
                     browser_executor: Some(browser_executor),
