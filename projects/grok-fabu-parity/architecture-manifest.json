@@ -18504,19 +18504,24 @@
       "targetPath": "source/host/src/runner/sand_auto_review_classifier_run.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "42b2293f5352720dbfea66c1a216b0f969c0c65d",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
-        "source/host/src/runner/sand_auto_review_classifier_run.rs"
+        "source/host/src/runner/sand_auto_review_classifier_run.rs",
+        "source/host/src/extensions/auto_review/sand_backend_smart_mode_classifier_exec.rs",
+        "source/host/src/cursor_backend.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_auto_review_classifier_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/sand_backend_smart_mode_classifier_exec_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust now owns the frozen classifier execution contract: one measured attempt, suppressed tool-call-id logging, parent conversation/tool/mode/workspace projection, allow/block/reject mapping, trimmed proposed rules, frozen default block reason, abort propagation, and fail-closed handling for non-success/unknown/non-abort errors. Final remains withheld because the canonical generated SmartModeRiskTarget/ConversationMessage proto resource and executeSmartModeClassifierWithMeasurement implementation are not yet production-bound to this adapter."
+      "notes": "Rust now owns the frozen classifier execution contract in production: one measured attempt, suppressed tool-call-id logging, parent conversation/tool/mode/workspace projection, canonical backend request/result decoding, real 10s transport timeout, cancellation/abort propagation, ALLOW/BLOCK/UNSPECIFIED/missing/backend-error handling, trimmed proposed rules, frozen default block reason, and distinct timeout_exception versus unknown_exception measurement semantics. Shipping Host binds the canonical backend executor and Host structured-telemetry reporter; exact HEAD 404bbdc9bde3d62a9673b97dfb37c43f85192a67 passed Desktop Chat Parity run 37128219956 and Rust host/runtime run 37128219933 except for the intentional final architecture gate that this row closes."
     },
     {
       "referencePath": "source/host/runner/sand-auto-review-summaries.ts",
