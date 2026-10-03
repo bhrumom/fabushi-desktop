@@ -173,7 +173,7 @@ pub fn build_turn_toolset(
             }
             Arc::new(box_bridge)
         }
-        None => base,
+        None => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.browser_executor {
         Some(executor) => Arc::new(SandBrowserToolBridge::new(bridge, executor)),
