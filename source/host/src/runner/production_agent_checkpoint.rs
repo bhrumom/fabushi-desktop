@@ -79,12 +79,36 @@ pub fn build_text_turn_checkpoint(
     request_id: Option<&str>,
     assistant_content: &str,
 ) -> TextTurnCheckpointArtifacts {
+    build_text_turn_checkpoint_with_rich_text(
+        prior_state_bytes,
+        user_text,
+        None,
+        message_id,
+        request_id,
+        assistant_content,
+    )
+}
+
+pub fn build_text_turn_checkpoint_with_rich_text(
+    prior_state_bytes: &[u8],
+    user_text: &str,
+    user_rich_text: Option<&str>,
+    message_id: &str,
+    request_id: Option<&str>,
+    assistant_content: &str,
+) -> TextTurnCheckpointArtifacts {
     let prior_root_id = (!prior_state_bytes.is_empty())
         .then(|| Sha256::digest(prior_state_bytes).to_vec());
 
     let mut user_message_bytes = Vec::new();
     push_length_delimited(1, user_text.as_bytes(), &mut user_message_bytes);
     push_length_delimited(2, message_id.as_bytes(), &mut user_message_bytes);
+    if let Some(user_rich_text) = user_rich_text
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        push_length_delimited(8, user_rich_text.as_bytes(), &mut user_message_bytes);
+    }
     if let Some(prior_root_id) = prior_root_id.as_deref() {
         push_length_delimited(10, prior_root_id, &mut user_message_bytes);
     }
@@ -254,9 +278,10 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
             ));
         }
 
-        let artifacts = build_text_turn_checkpoint(
+        let artifacts = build_text_turn_checkpoint_with_rich_text(
             &prior,
             user_text,
+            options.recent_message_rich_text.as_deref(),
             message_id,
             options.inference_request_id.as_deref(),
             assistant_content,
