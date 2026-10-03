@@ -30,11 +30,22 @@ pub struct SubagentTaskToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
     sink: Arc<dyn SubagentTaskSink>,
     review: Option<SubagentTaskReviewCallback>,
+    allowed_subagent_types: Option<Arc<Vec<String>>>,
 }
 
 impl SubagentTaskToolBridge {
     pub fn new(delegate: Arc<dyn RoutedToolBridge>, sink: Arc<dyn SubagentTaskSink>) -> Self {
-        Self { delegate, sink, review: None }
+        Self {
+            delegate,
+            sink,
+            review: None,
+            allowed_subagent_types: None,
+        }
+    }
+
+    pub fn with_allowed_subagent_types(mut self, allowed: Arc<Vec<String>>) -> Self {
+        self.allowed_subagent_types = Some(allowed);
+        self
     }
 
     pub fn with_review(mut self, review: SubagentTaskReviewCallback) -> Self {
@@ -43,7 +54,14 @@ impl SubagentTaskToolBridge {
     }
 }
 
-fn task_definition() -> RoutedToolDefinition {
+fn task_definition(allowed_subagent_types: Option<&[String]>) -> RoutedToolDefinition {
+    let subagent_type_schema = match allowed_subagent_types {
+        Some(allowed) => json!({
+            "type": "string",
+            "enum": allowed,
+        }),
+        None => json!({"type":"string","minLength":1}),
+    };
     RoutedToolDefinition {
         name: SAND_TASK_TOOL_NAME.into(),
         provider_identifier: "fabushi-runner".into(),
@@ -58,7 +76,7 @@ fn task_definition() -> RoutedToolDefinition {
             "additionalProperties": false,
             "properties": {
                 "prompt": {"type":"string","minLength":1},
-                "subagent_type": {"type":"string","minLength":1}
+                "subagent_type": subagent_type_schema
             }
         }),
     }
@@ -71,7 +89,10 @@ impl RoutedToolBridge for SubagentTaskToolBridge {
             !tool.name.eq_ignore_ascii_case(SAND_TASK_TOOL_NAME)
                 && !tool.tool_name.eq_ignore_ascii_case(SAND_TASK_TOOL_NAME)
         });
-        tools.insert(0, task_definition());
+        tools.insert(
+            0,
+            task_definition(self.allowed_subagent_types.as_deref().map(Vec::as_slice)),
+        );
         Ok(tools)
     }
 
@@ -92,13 +113,28 @@ impl RoutedToolBridge for SubagentTaskToolBridge {
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .ok_or_else(|| ProviderSessionError::Tool("Task requires prompt".into()))?;
-        let subagent_type = args
+        let requested_subagent_type = args
             .get("subagent_type")
             .or_else(|| args.get("subagentType"))
             .and_then(Value::as_str)
             .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .unwrap_or("general-purpose");
+            .filter(|value| !value.is_empty());
+        let subagent_type = match (requested_subagent_type, self.allowed_subagent_types.as_ref()) {
+            (Some(value), Some(allowed)) => allowed
+                .iter()
+                .find(|candidate| candidate.eq_ignore_ascii_case(value))
+                .map(String::as_str)
+                .ok_or_else(|| {
+                    ProviderSessionError::Tool(format!(
+                        "Task subagent type is unavailable for this turn: {value}"
+                    ))
+                })?,
+            (None, Some(allowed)) => allowed.first().map(String::as_str).ok_or_else(|| {
+                ProviderSessionError::Tool("Task has no available subagent types for this turn".into())
+            })?,
+            (Some(value), None) => value,
+            (None, None) => "general-purpose",
+        };
         if let Some(review) = self.review.as_ref() {
             if let Some(reason) = review(prompt, subagent_type, tool_call_id)? {
                 return Ok(Value::String(reason));
