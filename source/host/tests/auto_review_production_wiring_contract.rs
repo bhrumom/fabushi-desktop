@@ -8,6 +8,16 @@ fn shipping_host_binds_one_auto_review_controller_per_routed_runner_turn() {
 }
 
 #[test]
+fn shipping_turn_cancellation_is_bound_to_the_canonical_auto_review_controller() {
+    assert!(SHIPPING_HOST.contains(
+        "auto_review_controller.set_cancellation_probe(Arc::new(move ||"
+    ));
+    assert!(SHIPPING_HOST.contains(
+        "auto_review_cancellation.is_cancelled()"
+    ));
+}
+
+#[test]
 fn shipping_cloud_agent_tool_uses_live_auto_review_hook() {
     assert!(SHIPPING_HOST.contains("build_cloud_agent_auto_review_hook("));
     assert!(SHIPPING_HOST.contains("review: Some(cloud_agent_review)"));
