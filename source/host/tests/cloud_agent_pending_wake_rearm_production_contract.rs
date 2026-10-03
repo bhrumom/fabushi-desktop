@@ -45,7 +45,7 @@ fn shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_pro
     assert!(SHIPPING_HOST.contains("subagent_type: Some(pending.subagent_type.clone())"));
     assert!(SHIPPING_HOST.contains("pending_subagent_wake_persist_failed"));
     assert!(SHIPPING_HOST.contains(
-        "publish_async_tasks_changed(\n                            &worker_events,\n                            worker_transcript_runtime.as_ref(),\n                            parent_agent_id,"
+        "publish_async_tasks_changed(\n                            &worker_events,\n                            worker_transcript_runtime.as_ref(),\n                            worker_generated_agent_runtime.as_ref(),\n                            worker_cloud_agent_watches.as_ref(),\n                            background_shell_watches.as_ref(),\n                            parent_agent_id,"
     ));
     assert!(SHIPPING_HOST.contains("handle_background_subagent_completion(SubagentCompletion"));
 }
