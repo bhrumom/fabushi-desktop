@@ -6660,6 +6660,7 @@ fn start_routed_provider_task(
                     .map_err(|error| {
                         ProviderSessionError::Tool(match error {
                             mahayana_host_runtime::runner::sand_auto_review_classifier_run::AutoReviewClassifierError::Aborted(reason)
+                            | mahayana_host_runtime::runner::sand_auto_review_classifier_run::AutoReviewClassifierError::Timeout(reason)
                             | mahayana_host_runtime::runner::sand_auto_review_classifier_run::AutoReviewClassifierError::Failed(reason) => reason,
                         })
                     })?;
