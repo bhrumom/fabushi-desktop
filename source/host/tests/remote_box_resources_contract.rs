@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::io;
 use std::sync::Arc;
 
@@ -8,7 +9,7 @@ use mahayana_host_runtime::ports::r#box::{
 use mahayana_host_runtime::runner::remote_box_resources::{
     RemoteBoxResourceCoordinator, RemoteConnection, RemoteConnectError,
     RemoteResourceKind, RemoteResourceLifecycleEvent, RemoteShellKind,
-    should_register_auto_review_classifier,
+    execute_remote_resource_lifecycle_plan, should_register_auto_review_classifier,
 };
 use mahayana_host_runtime::runner::sand_auto_review::SandAutoReviewModes;
 
@@ -218,4 +219,72 @@ fn classifier_registration_requires_executor_and_any_non_off_mode() {
         true,
         &SandAutoReviewModes::shadow()
     ));
+}
+
+
+#[test]
+fn lifecycle_executor_keeps_final_probe_after_delegate_error_but_skips_success_audit() {
+    let plan = vec![
+        RemoteResourceLifecycleEvent::AutoReviewBarrier,
+        RemoteResourceLifecycleEvent::Delegate {
+            resource: RemoteResourceKind::ComputerUse,
+        },
+        RemoteResourceLifecycleEvent::RecordComputerAuditIntent {
+            action_case: Some("click".into()),
+        },
+        RemoteResourceLifecycleEvent::ProbeNavigation,
+    ];
+    let events = RefCell::new(Vec::<&'static str>::new());
+    let result: Result<(), &'static str> = execute_remote_resource_lifecycle_plan(
+        &plan,
+        |event| {
+            events.borrow_mut().push(match event {
+                RemoteResourceLifecycleEvent::AutoReviewBarrier => "barrier",
+                RemoteResourceLifecycleEvent::RecordComputerAuditIntent { .. } => "audit-intent",
+                RemoteResourceLifecycleEvent::ProbeNavigation => "probe",
+                _ => "other",
+            });
+            Ok(())
+        },
+        |resource| {
+            assert_eq!(resource, RemoteResourceKind::ComputerUse);
+            events.borrow_mut().push("delegate");
+            Err("delegate-failed")
+        },
+    );
+    assert_eq!(result, Err("delegate-failed"));
+    assert_eq!(&*events.borrow(), &["barrier", "delegate", "probe"]);
+}
+
+#[test]
+fn lifecycle_executor_runs_success_post_delegate_intent_before_probe() {
+    let plan = vec![
+        RemoteResourceLifecycleEvent::Delegate {
+            resource: RemoteResourceKind::ComputerUse,
+        },
+        RemoteResourceLifecycleEvent::RecordComputerAuditIntent {
+            action_case: Some("click".into()),
+        },
+        RemoteResourceLifecycleEvent::ProbeNavigation,
+    ];
+    let events = RefCell::new(Vec::<&'static str>::new());
+    let result = execute_remote_resource_lifecycle_plan(
+        &plan,
+        |event| {
+            events.borrow_mut().push(match event {
+                RemoteResourceLifecycleEvent::RecordComputerAuditIntent { .. } => "audit-intent",
+                RemoteResourceLifecycleEvent::ProbeNavigation => "probe",
+                _ => "other",
+            });
+            Ok::<(), &'static str>(())
+        },
+        |resource| {
+            assert_eq!(resource, RemoteResourceKind::ComputerUse);
+            events.borrow_mut().push("delegate");
+            Ok::<u32, &'static str>(7)
+        },
+    )
+    .expect("lifecycle");
+    assert_eq!(result, 7);
+    assert_eq!(&*events.borrow(), &["delegate", "audit-intent", "probe"]);
 }

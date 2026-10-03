@@ -596,7 +596,10 @@ impl ComputerToolExecutor for ProductionComputerToolExecutor {
         ).map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
         let request = encode_generated_computer_use_args(&generated)
             .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
-        let response = self.box_resources.execute_computer_use_protobuf(request)?;
+        let action_case = actions.first().map(|action| action.action_case.as_str());
+        let response = self
+            .box_resources
+            .execute_computer_use_protobuf_with_action_case(request, action_case)?;
         let generated_result = decode_generated_computer_use_result(&response)
             .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
         let mut result = from_generated_computer_use_result(generated_result);

@@ -254,7 +254,7 @@ use mahayana_host_runtime::extensions::transcript::turn_runtime::{
 };
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
 use mahayana_host_runtime::extensions::forever_box::{
-    ForeverBoxRunnerResourcePort, BoxStatus, ForeverBoxService,
+    ForeverBoxRemoteResourceLifecycle, ForeverBoxRunnerResourcePort, BoxStatus, ForeverBoxService,
 };
 use mahayana_host_runtime::extensions::teach_recording::teach_recording_service::{
     TeachRecordingApi, TeachStatus,
@@ -7073,6 +7073,81 @@ fn start_routed_provider_task(
                     }
                 }),
             );
+            let remote_resource_gate = Arc::clone(&auto_review_gate);
+            let remote_shell_audit = Arc::clone(&action_audit_sink);
+            let remote_shell_agent_id = agent_id.clone();
+            let remote_shell_turn_id = stream_id.clone();
+            let remote_navigation_baseline_owner =
+                Arc::clone(&worker_host_runner_composition);
+            let remote_navigation_probe_owner =
+                Arc::clone(&worker_host_runner_composition);
+            let remote_navigation_audit = Arc::clone(&action_audit_sink);
+            let remote_navigation_agent_id = agent_id.clone();
+            let remote_navigation_turn_id = stream_id.clone();
+            let remote_computer_audit_owner =
+                worker_host_runner_composition.computer_use_coordination();
+            shipping_box_resources.bind_remote_resource_lifecycle(
+                ForeverBoxRemoteResourceLifecycle {
+                    turn_id: Some(stream_id.clone()),
+                    box_id: agent_id.clone(),
+                    assert_no_pending_approval: Arc::new(move || {
+                        remote_resource_gate
+                            .assert_no_pending_approval()
+                            .map_err(|error| ProviderSessionError::Tool(error.to_string()))
+                    }),
+                    audit_shell: Arc::new(move |kind, command, turn_id, _box_id| {
+                        let shell_kind = match kind {
+                            mahayana_host_runtime::runner::remote_box_resources::RemoteShellKind::Foreground => "foreground",
+                            mahayana_host_runtime::runner::remote_box_resources::RemoteShellKind::Background => "background",
+                        };
+                        remote_shell_audit.record(ActionAuditRecord {
+                            occurred_at_ms: started_at_ms(),
+                            agent_id: remote_shell_agent_id.clone(),
+                            turn_id: turn_id
+                                .map(str::to_string)
+                                .or_else(|| Some(remote_shell_turn_id.clone())),
+                            action: serde_json::json!({
+                                "kind": "shellCommand",
+                                "command": command,
+                                "shellKind": shell_kind,
+                                "target": "isolated_box",
+                            }),
+                        });
+                    }),
+                    capture_navigation_baseline: Arc::new(move |stdout| {
+                        remote_navigation_baseline_owner
+                            .capture_computer_navigation_baseline(stdout);
+                    }),
+                    probe_navigation: Arc::new(move |stdout| {
+                        let Some(generation) =
+                            remote_navigation_probe_owner.request_computer_navigation_probe()
+                        else {
+                            return;
+                        };
+                        for record in remote_navigation_probe_owner
+                            .complete_computer_navigation_probe(
+                                generation,
+                                stdout,
+                                &remote_navigation_agent_id,
+                                Some(&remote_navigation_turn_id),
+                                started_at_ms(),
+                            )
+                        {
+                            remote_navigation_audit.record(record);
+                        }
+                    }),
+                    record_computer_audit_intent: Arc::new(move |action_case| {
+                        let Some(action_case) = action_case else {
+                            return;
+                        };
+                        remote_computer_audit_owner
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner())
+                            .record_audit_intent(action_case);
+                    }),
+                },
+            );
+
             let browser_media_agent_id = agent_id.clone();
             let browser_persist_image: BrowserPersistImageCallback = Arc::new(
                 move |bytes, mime| {

@@ -85,6 +85,16 @@ pub trait RunnerBoxResourcePort: Send + Sync {
         ))
     }
 
+    /// Execute ComputerUse while preserving the first generated action case for
+    /// the remote-resource audit lifecycle. Existing ports may ignore the hint.
+    fn execute_computer_use_protobuf_with_action_case(
+        &self,
+        protobuf_args: Vec<u8>,
+        _action_case: Option<&str>,
+    ) -> Result<Vec<u8>, ProviderSessionError> {
+        self.execute_computer_use_protobuf(protobuf_args)
+    }
+
     /// Resolve the Host-owned browser window assigned to this agent.
     ///
     /// The default fails closed so non-desktop box ports do not accidentally

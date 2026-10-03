@@ -270,6 +270,41 @@ where
     }
 }
 
+/// Execute a frozen remote-resource lifecycle plan while preserving Grok's
+/// delegate/finally semantics. Post-delegate audit intent only belongs to a
+/// successful ComputerUse call, while navigation probing is a finally effect
+/// and still runs after a delegate error.
+pub fn execute_remote_resource_lifecycle_plan<T, E, Event, Delegate>(
+    plan: &[RemoteResourceLifecycleEvent],
+    mut execute_event: Event,
+    mut delegate: Delegate,
+) -> Result<T, E>
+where
+    Event: FnMut(&RemoteResourceLifecycleEvent) -> Result<(), E>,
+    Delegate: FnMut(RemoteResourceKind) -> Result<T, E>,
+{
+    let mut delegated = None;
+    let mut delegate_failed = false;
+    for event in plan {
+        match event {
+            RemoteResourceLifecycleEvent::Delegate { resource } => {
+                assert!(
+                    delegated.is_none(),
+                    "remote resource lifecycle plan delegated more than once"
+                );
+                let result = delegate(*resource);
+                delegate_failed = result.is_err();
+                delegated = Some(result);
+            }
+            RemoteResourceLifecycleEvent::RecordComputerAuditIntent { .. }
+                if delegate_failed => {}
+            _ => execute_event(event)?,
+        }
+    }
+    delegated
+        .expect("remote resource lifecycle plan must delegate exactly once")
+}
+
 pub fn should_register_auto_review_classifier(
     executor_available: bool,
     modes: &SandAutoReviewModes,

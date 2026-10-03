@@ -18372,7 +18372,7 @@
       "targetPath": "source/host/src/runner/remote_box_resources.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "7c4b982cbe8100f2fada98a58cc8340a26e2e121",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -18382,14 +18382,17 @@
         "source/host/src/runner/auto_review_gate.rs",
         "source/host/src/runner/sand_action_audit.rs",
         "source/host/src/box/box_capabilities.rs",
-        "source/host/src/box/box_windows.rs"
+        "source/host/src/box/box_windows.rs",
+        "source/host/src/extensions/forever_box/runner_tools.rs",
+        "source/host/src/runner/host_computer_tool_dependencies.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/remote_box_resources_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Runner now owns the frozen remote-resource lifecycle decision core: prepared/cached connection reuse, terminal-folder publication, preparing/connection failure mapping with retryable cache reset, no-monitor invalidation, shell/background barrier+audit+navigation ordering, read/shell/computer side-effect plans, monitor busy lease intent and classifier registration policy. Final remains withheld until RegistryResourceAccessor/generated shell/read/background/computer/classifier executors, async connection-promise coalescing and live AutoReview/NavigationProbe/Host audit callbacks execute these plans in production."
+      "notes": "Rust Runner owns and now executes the frozen remote-resource lifecycle in the shipping path: per-turn guarded connection reuse/coalescing with explicit fresh background polling, preparing/failure/no-monitor invalidation, generated shell/read/background/computer executors, pre/post AutoReview barriers, Host action audit, navigation baseline/probe callbacks, monitor busy lease, and first ComputerUse action-case audit intent. Host-owned smart-mode callbacks execute the classifier at the same preflight boundary instead of storing a classifier executor inside a JS RegistryResourceAccessor. The focused lifecycle executor contract also preserves finally-style navigation probing after delegate failure while suppressing success-only audit intent."
     },
     {
       "referencePath": "source/host/runner/runner-prompt-glue.ts",

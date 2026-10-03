@@ -27,4 +27,4 @@ pub use host_box::{
     BoxStatus, BoxWindowStatus, HostBox, HostBoxStatusListener,
 };
 
-pub use runner_tools::ForeverBoxRunnerResourcePort;
+pub use runner_tools::{ForeverBoxRemoteResourceLifecycle, ForeverBoxRunnerResourcePort};
