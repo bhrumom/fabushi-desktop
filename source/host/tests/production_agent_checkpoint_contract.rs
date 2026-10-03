@@ -30,6 +30,7 @@ use mahayana_host_runtime::transcript_mirror::production_provider::{
     ProductionTranscriptMirrorProvider,
 };
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -116,6 +117,17 @@ fn production_sink_commits_real_agent_wire_through_mirror_and_agent_store() {
         true,
     )
     .expect("sink");
+    let fixture_blob = b"canonical generated Agent state blob";
+    let fixture_blob_id = Sha256::digest(fixture_blob).to_vec();
+    blob_store
+        .set_blob_blocking(&fixture_blob_id, fixture_blob)
+        .expect("fixture blob");
+    assert_eq!(
+        sink.read_state_blob(&fixture_blob_id)
+            .expect("canonical blob read")
+            .as_deref(),
+        Some(fixture_blob.as_slice())
+    );
     sink.checkpoint_text_turn(
         &user_messages(),
         &TurnRunOptions {
