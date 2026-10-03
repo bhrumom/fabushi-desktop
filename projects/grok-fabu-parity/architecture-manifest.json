@@ -18466,7 +18466,7 @@
       "targetPath": "source/host/src/runner/sand_agent_runner.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "1823ba8f57adbede2aae2aafa1f3fd5d09a8d8da",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -18478,7 +18478,10 @@
         "source/host/src/runner/routed_provider_runtime.rs",
         "source/host/src/extensions/inference/provider_session.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/runner/production_agent_checkpoint.rs"
+        "source/host/src/runner/production_agent_checkpoint.rs",
+        "source/host/src/runner_production_bridge.rs",
+        "source/host/src/host_runner_composition.rs",
+        "source/host/src/runner/background_work.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_agent_owner_contract.rs",
@@ -18488,9 +18491,13 @@
         "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/production_agent_checkpoint_contract.rs",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/runner_production_bridge_contract.rs",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+        "source/host/tests/background_work_contract.rs",
+        "source/host/tests/turn_observation_contract.rs"
       ],
-      "notes": "Shipping SandAgentRunner now reaches a real generated-wire Agent checkpoint transaction before terminal completion: the owner injects ProductionAgentStateCheckpointSink, which preserves the prior ConversationStateStructure byte image, appends a field-8 turn reference, stores canonical user/assistant/turn blobs, and advances AgentStore latestRootBlobId through the production transcript mirror. Full Grok Agent session/action/resource/toolset/attachments/subagents/computer-use/quiesce/await-user lifecycle and tool-step checkpoint projection remain non-final."
+      "notes": "Frozen Grok SandAgentRunner responsibilities are now production-composed through the single Rust Runner facade: authoritative turn observation, cloud/background watches, computer-use coordination, generated subagent runtime, upgrade quiesce/cancel and await-user terminal projection are injected by the canonical HostRunnerComposition -> runner_production_bridge path into the same per-turn SandAgentRunner. Rust intentionally creates a fresh Runner facade per shipping turn rather than caching Grok's long-lived JS Runner; durable/background state remains in the shared canonical watch/subagent owners, with conversation-scoped cleanup on quiesce/agent lifecycle/dispose, so no stale per-Runner state or second production owner survives between turns. Exact-HEAD e92a3e76fc29ab7b219d16517ac1975ef596415e passed Desktop Chat Parity run 37123828059 and the controlled rust-host rerun in Rust desktop runtime 37123828087, including the complete independent Host Runner suite, prompt attachment projection, Human Computer takeover and ConversationActor/CapabilityBroker ownership."
     },
     {
       "referencePath": "source/host/runner/sand-auto-review-classifier-run.ts",
