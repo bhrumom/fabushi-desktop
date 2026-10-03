@@ -13,10 +13,11 @@ use super::prompt_collector_glue::{
     PromptCollectorDynamicUserContext, ProviderPromptProjection,
     append_mcp_runtime_sections_for_turn, append_profile_system_section_for_turn,
     append_remote_runtime_sections_for_turn, apply_dynamic_user_context_for_turn,
-    prepend_unconfirmed_user_messages_with_watermark_for_turn, project_provider_messages_for_turn,
+    prepend_unconfirmed_user_messages_with_watermark_and_collect_for_turn,
+    project_provider_messages_for_turn,
 };
 use super::sand_agent_profile_prompt::{AgentProfileIdentity, AgentProfilePromptSnapshot};
-use super::shell_terminal_watch::WatermarkResult;
+use super::shell_terminal_watch::{MaterializedUserMessage, WatermarkResult};
 use super::system_prompt_assembly::{ComputerPromptState, RemoteBoxPromptState};
 use super::tools::sand_file_transfer_tools::FileTransferController;
 use super::tools::sand_spotlight_tools::spotlight_prompt_section;
@@ -91,9 +92,9 @@ impl RunnerPromptGlueOwner {
         &self,
         args: &Value,
         messages: &mut Vec<ProviderMessage>,
-    ) -> Result<usize, String> {
+    ) -> Result<Vec<MaterializedUserMessage>, String> {
         let watermark = (self.confirmed_user_watermark_for_turn)()?;
-        Ok(prepend_unconfirmed_user_messages_with_watermark_for_turn(
+        Ok(prepend_unconfirmed_user_messages_with_watermark_and_collect_for_turn(
             args,
             messages,
             &watermark,
