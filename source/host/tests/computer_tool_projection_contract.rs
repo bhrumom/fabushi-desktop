@@ -371,6 +371,40 @@ impl RoutedToolBridge for EmptyToolBridge {
 }
 
 #[test]
+fn computer_runtime_parser_rejects_present_empty_or_non_array_followups() {
+    let executor: Arc<dyn ComputerToolExecutor> = Arc::new(
+        ProductionComputerToolExecutor::new(
+            Arc::new(ComputerTransportPort::default()) as Arc<dyn RunnerBoxResourcePort>,
+        ),
+    );
+    let bridge = SandComputerToolBridge::new(Arc::new(EmptyToolBridge), executor);
+    let tool = bridge
+        .list_tools()
+        .expect("tools")
+        .into_iter()
+        .find(|tool| tool.name == "Computer")
+        .expect("Computer tool");
+
+    let empty = bridge
+        .call_tool(
+            &tool,
+            serde_json::json!({"action":"move","x":1,"y":2,"then":[]}),
+            "empty-followups",
+        )
+        .expect_err("explicit empty then must fail frozen min(1)");
+    assert!(empty.to_string().contains("at least one follow-up action"));
+
+    let wrong_type = bridge
+        .call_tool(
+            &tool,
+            serde_json::json!({"action":"move","x":1,"y":2,"then":{}}),
+            "invalid-followups",
+        )
+        .expect_err("non-array then must fail");
+    assert!(wrong_type.to_string().contains("then must be an array"));
+}
+
+#[test]
 fn computer_tool_exposure_matches_frozen_runner_roles() {
     let executor: Arc<dyn ComputerToolExecutor> =
         Arc::new(ProductionComputerToolExecutor::new(

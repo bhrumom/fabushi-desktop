@@ -46,7 +46,7 @@ use mahayana_host_runtime::runner::sand_automation_auto_review::{
 use mahayana_host_runtime::runner::sand_auto_review_summaries::CloudLifecycleAction;
 use mahayana_host_runtime::runner::sand_browser_auto_review::run_sand_browser_auto_review_preflight;
 use mahayana_host_runtime::runner::sand_computer_auto_review::{
-    BoxIdentity, SAND_COMPUTER_AUTO_REVIEW_CLASSIFIER_ERROR_REASON,
+    BoxIdentity, InstructionPermissions, SAND_COMPUTER_AUTO_REVIEW_CLASSIFIER_ERROR_REASON,
     run_sand_computer_auto_review_preflight,
 };
 use mahayana_host_runtime::runner::sand_cloud_agent_auto_review::{
@@ -6521,7 +6521,7 @@ fn start_routed_provider_task(
             let computer_media_sessions = Arc::clone(&worker_sessions);
             let computer_review_box = Arc::clone(&box_resources);
             let computer_review_auth = Arc::clone(&worker_auth);
-            let computer_review_auto_review = Arc::clone(&worker_auto_review);
+            let computer_review_gate = Arc::clone(&auto_review_gate);
             let computer_review_controller = Arc::clone(&worker_auto_review_controller);
             let computer_review_cancellation = worker_cancellation.clone();
             let computer_review_agent_id = agent_id.clone();
@@ -6538,7 +6538,14 @@ fn start_routed_provider_task(
             let computer_review_workspace_paths = vec!["/workspace".to_string()];
             let computer_auto_review: ComputerAutoReviewCallback =
                 Arc::new(move |args, tool_call_id| {
-                    let mode = computer_review_auto_review.current_modes().computer;
+                    let mode = computer_review_gate.current_modes().computer;
+                    let computer_review_instructions =
+                        computer_review_gate.user_instructions().map(|instructions| {
+                            InstructionPermissions {
+                                allow_instructions: instructions.allow_instructions,
+                                block_instructions: instructions.block_instructions,
+                            }
+                        });
                     validate_computer_action(args, Some(mode))
                         .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
                     let initial_display = computer_review_box.browser_window_index()?;
@@ -6569,10 +6576,14 @@ fn start_routed_provider_task(
                         &computer_review_agent_id,
                         &computer_review_request_source,
                         Some(computer_review_controller.as_ref()),
+                        computer_review_instructions.as_ref(),
                         || {
+                            let live_display = computer_review_box
+                                .browser_window_index()
+                                .map_err(|error| error.to_string())?;
                             capture_browser_review_state(
                                 computer_review_box.as_ref(),
-                                initial_display,
+                                live_display,
                                 None,
                                 tool_call_id,
                             )

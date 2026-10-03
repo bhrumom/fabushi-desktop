@@ -517,7 +517,10 @@ fn parse_computer_action(
     args.y = parse_i64(object, "y")?;
     args.x2 = parse_i64(object, "x2")?;
     args.y2 = parse_i64(object, "y2")?;
-    if let Some(path) = object.get("path").and_then(Value::as_array) {
+    if let Some(path_value) = object.get("path") {
+        let path = path_value.as_array().ok_or_else(|| {
+            ProviderSessionError::Tool("Computer path must be an array".into())
+        })?;
         args.path = path
             .iter()
             .map(|point| {
@@ -567,7 +570,15 @@ fn parse_computer_action(
         })?),
     };
     if allow_followups {
-        if let Some(followups) = object.get("then").and_then(Value::as_array) {
+        if let Some(followups_value) = object.get("then") {
+            let followups = followups_value.as_array().ok_or_else(|| {
+                ProviderSessionError::Tool("Computer then must be an array".into())
+            })?;
+            if followups.is_empty() {
+                return Err(ProviderSessionError::Tool(
+                    "Computer then must contain at least one follow-up action".into(),
+                ));
+            }
             args.then_actions = followups
                 .iter()
                 .map(|followup| parse_computer_action(followup, false))

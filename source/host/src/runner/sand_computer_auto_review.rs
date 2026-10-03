@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
@@ -39,12 +41,32 @@ pub struct InstructionPermissions {
 }
 
 pub fn compute_sand_computer_page_state_identity(stdout: &str) -> String {
-    let mut lines = stdout
-        .lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty())
-        .collect::<Vec<_>>();
-    lines.sort_unstable();
+    let mut lines = match serde_json::from_str::<Value>(stdout) {
+        Ok(Value::Array(targets)) => targets
+            .iter()
+            .filter_map(|target| {
+                let target = target.as_object()?;
+                if target.get("type").and_then(Value::as_str) != Some("page") {
+                    return None;
+                }
+                let id = target.get("id").and_then(Value::as_str)?;
+                let url = target
+                    .get("url")
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .unwrap_or_default();
+                Some(format!("{id}\t{url}"))
+            })
+            .collect::<Vec<_>>(),
+        Ok(_) => Vec::new(),
+        Err(_) => stdout
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty())
+            .map(str::to_string)
+            .collect::<Vec<_>>(),
+    };
+    lines.sort();
     let mut hash = Sha256::new();
     hash.update(lines.join("\n").as_bytes());
     format!("{:x}", hash.finalize())
@@ -113,7 +135,13 @@ pub fn build_sand_computer_auto_review_canonical_target(
 }
 
 pub fn fingerprint_sand_computer_auto_review_target(target: &Value) -> String {
-    fingerprint_sand_auto_review_target(target)
+    fingerprint_sand_auto_review_target(&json!({
+        "exact_action": target.get("exact_action").cloned().unwrap_or_else(|| json!({})),
+        "description": target.get("description").and_then(Value::as_str).unwrap_or_default(),
+        "window_generation": target.pointer("/box_identity/window_generation").and_then(Value::as_str).unwrap_or_default(),
+        "box_id": target.pointer("/box_identity/box_id").and_then(Value::as_str).unwrap_or_default(),
+        "display_state_identity": target.get("display_state_identity").and_then(Value::as_str).unwrap_or_default(),
+    }))
 }
 
 pub fn build_project_permissions_context(
@@ -123,9 +151,21 @@ pub fn build_project_permissions_context(
 ) -> Option<Value> {
     let mut allow = Vec::new();
     let mut block = Vec::new();
+    let mut seen_allow = HashSet::new();
+    let mut seen_block = HashSet::new();
     for instructions in [personal, user, project].into_iter().flatten() {
-        allow.extend(instructions.allow_instructions.iter().cloned());
-        block.extend(instructions.block_instructions.iter().cloned());
+        for value in &instructions.allow_instructions {
+            let value = value.trim();
+            if !value.is_empty() && seen_allow.insert(value.to_string()) {
+                allow.push(value.to_string());
+            }
+        }
+        for value in &instructions.block_instructions {
+            let value = value.trim();
+            if !value.is_empty() && seen_block.insert(value.to_string()) {
+                block.push(value.to_string());
+            }
+        }
     }
     if allow.is_empty() && block.is_empty() {
         None
@@ -147,24 +187,60 @@ pub fn build_sand_computer_classifier_risk_target(
 ) -> Value {
     let action = canonical_target
         .get("exact_action")
-        .cloned()
-        .unwrap_or_else(|| json!({}));
+        .and_then(Value::as_object);
     let mut arguments = Map::new();
-    arguments.insert("exact_action".into(), action);
-    if let Some(description) = canonical_target.get("description").cloned().filter(|value| !value.is_null()) {
-        arguments.insert("declared_purpose".into(), description);
+    arguments.insert("surface".into(), Value::String("computer".into()));
+    if let Some(action_kind) = action
+        .and_then(|action| action.get("action"))
+        .and_then(Value::as_str)
+    {
+        arguments.insert("action_kind".into(), Value::String(action_kind.to_string()));
     }
-    if let Some(value) = canonical_target.pointer("/box_identity/box_id").cloned() {
-        arguments.insert("box_id".into(), value);
+    if let Some(action) = action {
+        if action.get("x").is_some_and(|value| !value.is_null())
+            && action.get("y").is_some_and(|value| !value.is_null())
+        {
+            arguments.insert(
+                "coordinates".into(),
+                json!({"x": action.get("x"), "y": action.get("y")}),
+            );
+        }
+        if action.get("x2").is_some_and(|value| !value.is_null())
+            && action.get("y2").is_some_and(|value| !value.is_null())
+        {
+            arguments.insert(
+                "end_coordinates".into(),
+                json!({"x": action.get("x2"), "y": action.get("y2")}),
+            );
+        }
+        for key in ["path", "button", "count", "text", "key", "direction", "amount"] {
+            if let Some(value) = action.get(key).filter(|value| !value.is_null()) {
+                arguments.insert(key.into(), value.clone());
+            }
+        }
+        if let Some(value) = action.get("durationMs").filter(|value| !value.is_null()) {
+            arguments.insert("duration_ms".into(), value.clone());
+        }
     }
-    if let Some(value) = canonical_target.pointer("/box_identity/window_generation").cloned() {
-        arguments.insert("window_generation".into(), value);
+    if let Some(description) = canonical_target
+        .get("description")
+        .and_then(Value::as_str)
+    {
+        arguments.insert(
+            "declared_purpose".into(),
+            Value::String(description.to_string()),
+        );
     }
-    if let Some(value) = canonical_target.get("display_state_identity").cloned() {
-        arguments.insert("display_state_identity".into(), value);
-    }
+    arguments.insert(
+        "box".into(),
+        json!({
+            "box_id": canonical_target.pointer("/box_identity/box_id"),
+            "window_generation": canonical_target.pointer("/box_identity/window_generation"),
+            "display_state_identity": canonical_target.get("display_state_identity"),
+        }),
+    );
     if let Some(context) = build_project_permissions_context(personal, user, project) {
-        arguments.insert("permissions".into(), context);
+        arguments.insert("project_permissions".into(), context);
     }
     json!({
         "action": SAND_COMPUTER_CLASSIFIER_TARGET_ACTION,
@@ -227,6 +303,7 @@ pub fn run_sand_computer_auto_review_preflight<F, C>(
     agent_id: &str,
     request_source: &str,
     controller: Option<&SandAutoReviewController>,
+    instruction_permissions: Option<&InstructionPermissions>,
     mut capture_display_state_identity: C,
     mut classify: F,
 ) -> Result<(), SandComputerAutoReviewBlockedError>
@@ -246,7 +323,7 @@ where
         && normalize_sand_computer_description(description)?.is_none()
     {
         return Err(SandComputerAutoReviewBlockedError(
-            "Computer click and drag actions require a declared purpose in Auto-review enforce mode.".into(),
+            "Computer click and drag actions require a concise description field stating the intended UI target and purpose.".into(),
         ));
     }
     let display_state_identity = capture_display_state_identity()
@@ -257,15 +334,36 @@ where
         box_identity,
         &display_state_identity,
     )?;
-    let risk_target = build_sand_computer_classifier_risk_target(&canonical, None, None, None);
+    let risk_target = build_sand_computer_classifier_risk_target(
+        &canonical,
+        None,
+        instruction_permissions,
+        None,
+    );
     if mode == SandAutoReviewMode::Shadow {
         let _ = classify(&risk_target, "shadow");
         return Ok(());
     }
     let decision = classify(&risk_target, "enforce")
         .map_err(|error| SandComputerAutoReviewBlockedError(format!("{error:?}")))?;
+    let recheck_display = |capture: &mut C| -> Result<(), SandComputerAutoReviewBlockedError> {
+        let next = capture().map_err(SandComputerAutoReviewBlockedError)?;
+        if next != display_state_identity {
+            if let Some(controller) = controller {
+                controller.report_display_recheck_failed(Some(agent_id));
+            }
+            return Err(SandComputerAutoReviewBlockedError(
+                "The page changed after review; inspect the latest screenshot and retry the action."
+                    .into(),
+            ));
+        }
+        Ok(())
+    };
     let (reason, proposed_rule) = match decision {
-        AutoReviewClassifierDecision::Allow => return Ok(()),
+        AutoReviewClassifierDecision::Allow => {
+            recheck_display(&mut capture_display_state_identity)?;
+            return Ok(());
+        }
         AutoReviewClassifierDecision::Reject { reason } => {
             return Err(SandComputerAutoReviewBlockedError(reason));
         }
@@ -298,15 +396,7 @@ where
     match decision {
         SandAutoReviewDecision::Denied { reason } => Err(SandComputerAutoReviewBlockedError(reason)),
         SandAutoReviewDecision::Approved => {
-            let next = capture_display_state_identity()
-                .map_err(SandComputerAutoReviewBlockedError)?;
-            if next != display_state_identity {
-                controller.report_display_recheck_failed(Some(agent_id));
-                return Err(SandComputerAutoReviewBlockedError(
-                    "Computer display changed while approval was pending; retry the action.".into(),
-                ));
-            }
-            Ok(())
+            recheck_display(&mut capture_display_state_identity)
         }
     }
 }

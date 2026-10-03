@@ -26,7 +26,10 @@ use mahayana_host_runtime::runner::sand_cloud_agent_auto_review::{
     describe_sand_cloud_agent_review_images, review_sand_cloud_agent_lifecycle_action,
 };
 use mahayana_host_runtime::runner::sand_computer_auto_review::{
-    BoxIdentity, compute_sand_computer_page_state_identity,
+    BoxIdentity, InstructionPermissions, build_project_permissions_context,
+    build_sand_computer_auto_review_canonical_target,
+    build_sand_computer_classifier_risk_target,
+    compute_sand_computer_page_state_identity, fingerprint_sand_computer_auto_review_target,
     run_sand_computer_auto_review_preflight,
 };
 use mahayana_host_runtime::runner::sand_shell_auto_review_enrichment::{
@@ -135,6 +138,53 @@ fn computer_and_browser_preflight_bind_approval_to_display_state() {
         compute_sand_computer_page_state_identity("b\na\n"),
         compute_sand_computer_page_state_identity("a\nb\n")
     );
+    let first_page_state = compute_sand_computer_page_state_identity(
+        r#"[{"type":"worker","id":"ignore"},{"type":"page","id":"b","url":" https://b.test "},{"type":"page","id":"a","url":"https://a.test"}]"#,
+    );
+    let reordered_page_state = compute_sand_computer_page_state_identity(
+        r#"[{"type":"page","id":"a","url":"https://a.test"},{"type":"page","id":"b","url":"https://b.test"},{"type":"worker","id":"different"}]"#,
+    );
+    assert_eq!(first_page_state, reordered_page_state);
+
+    let canonical = build_sand_computer_auto_review_canonical_target(
+        &json!({"action":"click","x":20,"y":30,"button":"left","count":1}),
+        Some(" Open settings "),
+        &box_identity,
+        "screen-1",
+    )
+    .expect("canonical computer target");
+    let instructions = InstructionPermissions {
+        allow_instructions: vec![" allow settings ".into(), "allow settings".into()],
+        block_instructions: vec!["".into(), " block payment ".into()],
+    };
+    let permissions =
+        build_project_permissions_context(None, Some(&instructions), None).expect("permissions");
+    assert_eq!(
+        permissions["auto_run"]["allow_instructions"],
+        json!(["allow settings"])
+    );
+    assert_eq!(
+        permissions["auto_run"]["block_instructions"],
+        json!(["block payment"])
+    );
+    let risk = build_sand_computer_classifier_risk_target(
+        &canonical,
+        None,
+        Some(&instructions),
+        None,
+    );
+    assert_eq!(risk["action"], "sand_computer");
+    assert_eq!(risk["arguments"]["surface"], "computer");
+    assert_eq!(risk["arguments"]["action_kind"], "click");
+    assert_eq!(risk["arguments"]["coordinates"], json!({"x":20,"y":30}));
+    assert_eq!(risk["arguments"]["box"]["box_id"], "box-a");
+    assert_eq!(
+        risk["arguments"]["project_permissions"]["auto_run"]["allow_instructions"],
+        json!(["allow settings"])
+    );
+    assert!(risk["arguments"].get("exact_action").is_none());
+    assert_eq!(fingerprint_sand_computer_auto_review_target(&canonical).len(), 64);
+
     let controller = approving_controller();
     run_sand_computer_auto_review_preflight(
         SandAutoReviewMode::Enforce,
@@ -144,6 +194,7 @@ fn computer_and_browser_preflight_bind_approval_to_display_state() {
         "agent-a",
         "turn",
         Some(&controller),
+        None,
         || Ok("screen-1".into()),
         |target, mode| {
             assert_eq!(mode, "enforce");
@@ -155,6 +206,32 @@ fn computer_and_browser_preflight_bind_approval_to_display_state() {
         },
     )
     .expect("approved computer click");
+
+    let mut allowed_captures = 0usize;
+    run_sand_computer_auto_review_preflight(
+        SandAutoReviewMode::Enforce,
+        &json!({"action":"type","text":"hello"}),
+        Some("Type greeting"),
+        &box_identity,
+        "agent-a",
+        "turn",
+        None,
+        None,
+        || {
+            allowed_captures += 1;
+            Ok("screen-1".into())
+        },
+        |target, mode| {
+            assert_eq!(mode, "enforce");
+            assert_eq!(target["arguments"]["action_kind"], "type");
+            Ok(AutoReviewClassifierDecision::Allow)
+        },
+    )
+    .expect("allowed computer action");
+    assert_eq!(
+        allowed_captures, 2,
+        "frozen Computer Auto-review rechecks page identity after classifier allow"
+    );
 
     assert!(!is_sand_browser_auto_review_mutating_action(
         &json!({"op":"screenshot"})
