@@ -343,6 +343,13 @@ impl HostRunnerComposition {
             .owns_control_lease(lease)
     }
 
+    pub fn record_computer_audit_intent(&self, action_case: &str) {
+        self.computer_use
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .record_audit_intent(action_case);
+    }
+
     pub fn capture_computer_navigation_baseline(&self, stdout: &str) {
         self.computer_use
             .lock()

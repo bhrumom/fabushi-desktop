@@ -163,6 +163,7 @@ fn host_runner_composition_owns_computer_use_session_lifecycle() {
         "pub fn mark_computer_use_preparation_ready(",
         "pub fn mark_computer_use_preparation_failed(",
         "pub fn owns_computer_control_lease(",
+        "pub fn record_computer_audit_intent(",
         "pub fn capture_computer_navigation_baseline(",
         "pub fn request_computer_navigation_probe(",
         "pub fn computer_navigation_probe_wait_ms(",
@@ -202,6 +203,7 @@ fn host_runner_composition_owns_computer_use_session_lifecycle() {
     for needle in [
         "navigation_probe_command(display_number)",
         "worker_host_runner_composition.capture_computer_navigation_baseline(stdout)",
+        "remote_computer_audit_owner.record_computer_audit_intent(action_case)",
         ".with_post_action_callback(",
         "computer_navigation_owner.request_computer_navigation_probe()",
         "navigation_owner.complete_computer_navigation_probe(",

@@ -7085,7 +7085,7 @@ fn start_routed_provider_task(
             let remote_navigation_agent_id = agent_id.clone();
             let remote_navigation_turn_id = stream_id.clone();
             let remote_computer_audit_owner =
-                worker_host_runner_composition.computer_use_coordination();
+                Arc::clone(&worker_host_runner_composition);
             shipping_box_resources.bind_remote_resource_lifecycle(
                 ForeverBoxRemoteResourceLifecycle {
                     turn_id: Some(stream_id.clone()),
@@ -7141,9 +7141,7 @@ fn start_routed_provider_task(
                             return;
                         };
                         remote_computer_audit_owner
-                            .lock()
-                            .unwrap_or_else(|poisoned| poisoned.into_inner())
-                            .record_audit_intent(action_case);
+                            .record_computer_audit_intent(action_case);
                     }),
                 },
             );
