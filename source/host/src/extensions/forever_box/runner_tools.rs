@@ -7,7 +7,6 @@ use crate::r#box::box_file_transfer::{FileTransferAccessor, WriteExecResult};
 use crate::r#box::box_shell_command::{
     HostShellArgsInput, build_host_shell_args,
 };
-use crate::r#box::box_windows::{ShellAccessor, ShellExecutionOutcome};
 use crate::r#box::generated_production::{
     ProductionBackgroundShellSpawnResult, ProductionReadArgs, ProductionReadOutput,
     ProductionReadResult, ProductionShellResult, ProductionShellStreamArgs,
@@ -633,7 +632,6 @@ fn project_shell_result(result: ProductionShellResult) -> Value {
         }),
     }
 }
-
 
 
 #[cfg(test)]
