@@ -40,12 +40,16 @@ pub fn marker_label(marker: &DurablePendingWakeMarker) -> String {
 }
 
 pub fn pending_wake_marker_to_async_task(marker: &DurablePendingWakeMarker) -> AsyncTask {
-    let detail = marker
-        .subagent_type
-        .as_deref()
-        .filter(|value| !value.is_empty())
-        .map(|value| format!("{value} · {LEDGER_ONLY_DETAIL}"))
-        .or_else(|| Some(LEDGER_ONLY_DETAIL.to_string()));
+    let detail = if marker.kind == PendingWakeKind::Shell && marker.interrupted_by_recreate {
+        Some("reattached after a host restart".to_string())
+    } else {
+        marker
+            .subagent_type
+            .as_deref()
+            .filter(|value| !value.is_empty())
+            .map(|value| format!("{value} · {LEDGER_ONLY_DETAIL}"))
+            .or_else(|| Some(LEDGER_ONLY_DETAIL.to_string()))
+    };
     AsyncTask {
         kind: kind_name(marker.kind).to_string(),
         id: marker.work_id.clone(),

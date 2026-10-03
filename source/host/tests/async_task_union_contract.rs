@@ -87,6 +87,27 @@ fn frozen_marker_projection_preserves_labels_detail_and_frontend_shape() {
 }
 
 #[test]
+fn recreated_shell_marker_preserves_the_frozen_rewatch_detail() {
+    let mut shell = marker(
+        "agent-a",
+        PendingWakeKind::Shell,
+        "shell-restarted",
+        15.0,
+        Some("Long build"),
+        None,
+    );
+    shell.interrupted_by_recreate = true;
+
+    let task = pending_wake_marker_to_async_task(&shell);
+    assert_eq!(task.kind, "shell");
+    assert_eq!(task.label, "Long build");
+    assert_eq!(
+        task.detail.as_deref(),
+        Some("reattached after a host restart")
+    );
+}
+
+#[test]
 fn merge_deduplicates_live_ownership_and_sorts_by_start_then_id() {
     let live = vec![AsyncTask {
         kind: "cloud-agent".into(),
