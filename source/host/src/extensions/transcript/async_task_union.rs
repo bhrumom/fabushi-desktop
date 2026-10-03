@@ -4,8 +4,6 @@ use serde::Serialize;
 
 use super::sand_pending_wake_store::{DurablePendingWakeMarker, PendingWakeKind};
 
-pub const LEDGER_ONLY_DETAIL: &str = "from the durable pending-wake ledger";
-
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AsyncTask {
@@ -40,15 +38,16 @@ pub fn marker_label(marker: &DurablePendingWakeMarker) -> String {
 }
 
 pub fn pending_wake_marker_to_async_task(marker: &DurablePendingWakeMarker) -> AsyncTask {
-    let detail = if marker.kind == PendingWakeKind::Shell && marker.interrupted_by_recreate {
-        Some("reattached after a host restart".to_string())
-    } else {
-        marker
+    let detail = match marker.kind {
+        PendingWakeKind::Shell if marker.interrupted_by_recreate => {
+            Some("reattached after a host restart".to_string())
+        }
+        PendingWakeKind::Subagent => marker
             .subagent_type
             .as_deref()
             .filter(|value| !value.is_empty())
-            .map(|value| format!("{value} · {LEDGER_ONLY_DETAIL}"))
-            .or_else(|| Some(LEDGER_ONLY_DETAIL.to_string()))
+            .map(ToOwned::to_owned),
+        PendingWakeKind::CloudAgent | PendingWakeKind::Shell => None,
     };
     AsyncTask {
         kind: kind_name(marker.kind).to_string(),

@@ -2,7 +2,7 @@ use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::transcript::async_task_union::{
-    AsyncTask, LEDGER_ONLY_DETAIL, marker_label, merge_async_tasks,
+    AsyncTask, marker_label, merge_async_tasks,
     pending_wake_marker_to_async_task,
 };
 use mahayana_host_runtime::extensions::transcript::production_runtime::ProductionTranscriptRuntime;
@@ -56,7 +56,7 @@ fn frozen_marker_projection_preserves_labels_detail_and_frontend_shape() {
     assert_eq!(task.kind, "cloud-agent");
     assert_eq!(task.id, "bc-1");
     assert_eq!(task.status, "running");
-    assert_eq!(task.detail.as_deref(), Some(LEDGER_ONLY_DETAIL));
+    assert_eq!(task.detail, None);
 
     let subagent = marker(
         "agent-a",
@@ -70,7 +70,7 @@ fn frozen_marker_projection_preserves_labels_detail_and_frontend_shape() {
     assert_eq!(task.label, "Research");
     assert_eq!(
         task.detail.as_deref(),
-        Some("cursor-agent · from the durable pending-wake ledger")
+        Some("cursor-agent")
     );
     assert_eq!(
         serde_json::to_value(&task).expect("serialize task"),
@@ -80,7 +80,7 @@ fn frozen_marker_projection_preserves_labels_detail_and_frontend_shape() {
             "label": "Research",
             "status": "running",
             "startedAtMs": 10.0,
-            "detail": "cursor-agent · from the durable pending-wake ledger",
+            "detail": "cursor-agent",
             "subagentType": "cursor-agent"
         })
     );
