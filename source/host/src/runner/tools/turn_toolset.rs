@@ -171,6 +171,7 @@ pub struct TurnToolsetDependencies {
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
     pub agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
+    pub subagent_task_allowed_types: Option<Arc<Vec<String>>>,
     pub subagent_task_review: Option<SubagentTaskReviewCallback>,
     pub subagent_runtime: Option<Arc<Mutex<SubagentRuntime>>>,
     pub subagent_steer_review: Option<SubagentSteerReviewCallback>,
@@ -753,6 +754,9 @@ pub fn build_turn_toolset(
         match (role.is_subagent_runner, dependencies.subagent_task_sink) {
         (false, Some(sink)) => {
             let mut task_bridge = SubagentTaskToolBridge::new(bridge, sink);
+            if let Some(allowed) = dependencies.subagent_task_allowed_types {
+                task_bridge = task_bridge.with_allowed_subagent_types(allowed);
+            }
             if let Some(review) = dependencies.subagent_task_review {
                 task_bridge = task_bridge.with_review(review);
             }
