@@ -1,3 +1,6 @@
+const SHIPPING_HOST_MAIN: &str = include_str!("../app/src/main.rs");
+const MCP_SERVICE: &str = include_str!("../src/extensions/mcp/mcp_service.rs");
+
 use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
@@ -85,6 +88,28 @@ fn computer_use_kind_preserves_frozen_names() {
     assert_eq!(computer_use_audit_kind("mouseMove"), Some("mouse_move"));
     assert_eq!(computer_use_audit_kind("screenshot"), Some("screenshot"));
     assert_eq!(computer_use_audit_kind("cursorPosition"), None);
+}
+
+#[test]
+fn shipping_action_audit_resolves_transport_from_live_mcp_registry() {
+    for binding in [
+        "with_transport_resolving_sink(",
+        "transport_for_server_identifier(server_identifier)",
+        ".unwrap_or_else(|_| \"unknown\".to_string())",
+    ] {
+        assert!(
+            SHIPPING_HOST_MAIN.contains(binding),
+            "shipping Host does not wire live MCP audit transport: {binding}"
+        );
+    }
+    assert!(
+        MCP_SERVICE.contains("pub fn transport_for_server_identifier("),
+        "MCP service must own the live connector transport lookup"
+    );
+    assert!(
+        MCP_SERVICE.contains(".find(|server| server.server_identifier == server_identifier)"),
+        "transport lookup must bind provider/server identity to the live registry"
+    );
 }
 
 #[test]
