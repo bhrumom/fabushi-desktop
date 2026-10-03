@@ -104,6 +104,7 @@ pub fn create_production_turn_input_projection(
                 .map(ToOwned::to_owned)
                 .or(current_message_text)
                 .or(latest_user_text),
+            recent_message_rich_text: prompt_action.rich_text.clone(),
             recent_user_messages,
             is_fork: args.get("isFork").and_then(Value::as_bool).unwrap_or(false),
             attachment_count: array_len(args, "attachmentPaths"),
