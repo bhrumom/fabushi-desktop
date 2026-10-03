@@ -1039,17 +1039,19 @@ fn forever_box_runner_resource_port_positive_block_backgrounds_real_shell_id_wit
 }
 
 #[test]
-fn forever_box_runner_resource_port_reaches_authenticated_shipping_exec_service() {
+fn forever_box_runner_resource_port_reuses_authenticated_shipping_exec_service_for_turn() {
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind Runner box daemon");
     let port = listener.local_addr().expect("local address").port();
     let server = thread::spawn(move || {
+        // Frozen remote-box-resources owns one connectionPromise per Runner.
+        // The shipping adapter is turn-scoped, so Shell authenticates once and
+        // the following Read reuses that guarded accessor without another ping.
         serve_unary_success(&listener, PING_PATH);
         serve_exec_response(
             &listener,
             b"echo runner-box",
             shell_success_element("runner-shell"),
         );
-        serve_unary_success(&listener, PING_PATH);
         serve_exec_response(
             &listener,
             b"/workspace/runner.txt",
