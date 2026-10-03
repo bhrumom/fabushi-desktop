@@ -3,7 +3,8 @@ use mahayana_host_runtime::runner::prompt_collector_glue::{
     PromptCollectorAutomationReminderState, PromptCollectorDynamicUserContext,
     append_mcp_runtime_sections_for_turn,
     append_profile_system_section_for_turn, append_remote_runtime_sections_for_turn,
-    apply_dynamic_user_context_for_turn, project_provider_messages_for_turn,
+    apply_dynamic_user_context_for_turn, prepend_unconfirmed_user_messages_for_turn,
+    project_provider_messages_for_turn,
     resolve_profile_update_for_turn,
 };
 use mahayana_host_runtime::runner::sand_agent_profile_prompt::AgentProfileIdentity;
@@ -245,6 +246,42 @@ fn prompt_collector_owns_profile_mcp_and_remote_runtime_sections() {
     assert!(!subagent_messages[0].content.contains("<mcp_status>"));
 }
 
+
+#[test]
+fn shipping_prepend_projection_uses_durable_confirmed_transcript_watermark() {
+    let args = serde_json::json!({
+        "messageId": "m3",
+        "recentUserMessages": [
+            {"id":"m1","text":"confirmed"},
+            {"id":"m2","text":"queued","richText":"{\"doc\":1}"},
+            {"id":"m3","text":"current"}
+        ]
+    });
+    let transcript = vec![
+        serde_json::json!({
+            "id":"m1","kind":"message","role":"user","content":"confirmed","confirmed":true
+        }),
+        serde_json::json!({
+            "id":"m2","kind":"message","role":"user","content":"queued"
+        }),
+        serde_json::json!({
+            "id":"m3","kind":"message","role":"user","content":"current"
+        }),
+    ];
+    let mut provider_messages = vec![
+        ProviderMessage { role: "system".into(), content: "system".into() },
+        ProviderMessage { role: "user".into(), content: "current".into() },
+    ];
+
+    assert_eq!(
+        prepend_unconfirmed_user_messages_for_turn(&args, &mut provider_messages, &transcript),
+        1
+    );
+    assert_eq!(provider_messages.len(), 3);
+    assert_eq!(provider_messages[1].role, "user");
+    assert_eq!(provider_messages[1].content, "[m2]\nqueued");
+    assert_eq!(provider_messages[2].content, "current");
+}
 
 #[test]
 fn automation_status_reminder_state_matches_frozen_compaction_and_clear_semantics() {

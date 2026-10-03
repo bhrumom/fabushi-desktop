@@ -12,6 +12,9 @@ use super::sand_agent_profile_prompt::{
 use super::sand_prompt_markers::{
     SAND_HIDDEN_PROMPT_MARKER, SAND_TRUSTED_AUTOMATION_PROMPT_MARKER,
 };
+use super::shell_terminal_watch::{
+    RecentTerminalUserMessage, WatermarkResult, collect_prepend_user_messages,
+};
 use super::system_prompt::{
     ReplyContext, USER_MESSAGE_REPLY_REMINDER, append_user_reply_reminder,
     build_attached_files_note, build_reply_context_note, build_user_message_address_note,
@@ -199,6 +202,86 @@ pub fn append_remote_runtime_sections_for_turn(
 ) {
     append_remote_box_system_prompt(messages, remote_box);
     append_computer_system_prompt(messages, computer);
+}
+
+fn is_confirmed_user_entry(entry: &Value) -> bool {
+    entry.get("kind").and_then(Value::as_str) == Some("message")
+        && entry.get("role").and_then(Value::as_str) == Some("user")
+        && entry.get("fromAgent").is_none_or(Value::is_null)
+        && entry.get("channel").is_none_or(Value::is_null)
+        && entry.get("confirmed").and_then(Value::as_bool) == Some(true)
+}
+
+pub fn prepend_unconfirmed_user_messages_for_turn(
+    args: &Value,
+    messages: &mut Vec<ProviderMessage>,
+    transcript_entries: &[Value],
+) -> usize {
+    let current_message_id = optional_non_empty(args, "messageId");
+    let recent_user_messages = args
+        .get("recentUserMessages")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|message| {
+            let id = message.get("id")?.as_str()?.trim();
+            if id.is_empty() {
+                return None;
+            }
+            Some(RecentTerminalUserMessage {
+                id: id.to_string(),
+                text: message
+                    .get("text")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_string(),
+                rich_text: message
+                    .get("richText")
+                    .and_then(Value::as_str)
+                    .map(str::to_string),
+            })
+        })
+        .collect::<Vec<_>>();
+
+    let last_user_message_id = transcript_entries
+        .iter()
+        .rev()
+        .filter(|entry| is_confirmed_user_entry(entry))
+        .find_map(|entry| {
+            entry
+                .get("id")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|id| !id.is_empty())
+                .map(str::to_string)
+        });
+    let has_user_turn = transcript_entries.iter().any(is_confirmed_user_entry);
+    let prepended = collect_prepend_user_messages(
+        &recent_user_messages,
+        current_message_id,
+        &WatermarkResult {
+            last_user_message_id,
+            has_user_turn,
+        },
+    );
+    if prepended.is_empty() {
+        return 0;
+    }
+
+    let Some(current_user_index) = messages.iter().rposition(|message| message.role == "user") else {
+        return 0;
+    };
+    let count = prepended.len();
+    for (offset, message) in prepended.into_iter().enumerate() {
+        messages.insert(
+            current_user_index + offset,
+            ProviderMessage {
+                role: "user".into(),
+                content: message.text,
+            },
+        );
+    }
+    count
 }
 
 pub fn project_provider_messages_for_turn(

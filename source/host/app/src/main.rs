@@ -272,6 +272,7 @@ use mahayana_host_runtime::runner::is_recovery_shaped_turn;
 use mahayana_host_runtime::runner::prompt_collector_glue::{
     PromptCollectorDynamicUserContext, append_mcp_runtime_sections_for_turn,
     append_profile_system_section_for_turn, append_remote_runtime_sections_for_turn,
+    prepend_unconfirmed_user_messages_for_turn,
     apply_dynamic_user_context_for_turn, project_provider_messages_for_turn,
     resolve_profile_update_for_turn,
 };
@@ -4935,6 +4936,17 @@ fn start_routed_provider_task(
                 ))
             })?;
     }
+
+    let transcript_entries_for_prompt = session_workers
+        .read_agent_transcript_entries(&agent_id)
+        .map_err(|error| GatewayCommandError::Internal(format!(
+            "could not read production transcript recovery watermark for {agent_id}: {error}"
+        )))?;
+    prepend_unconfirmed_user_messages_for_turn(
+        &args,
+        &mut provider_messages,
+        &transcript_entries_for_prompt,
+    );
 
     let prompt_compaction_epoch = host_runner_composition
         .prompt_compaction_epoch(&session_workers, &agent_id)

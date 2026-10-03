@@ -36,4 +36,11 @@ fn shipping_provider_turn_consumes_dynamic_sections_in_frozen_order() {
     assert!(tail.contains("automation_status_reminder_for_turn("));
     assert!(tail.contains("note_automation_status_reminder("));
     assert!(collector.contains("pub struct PromptCollectorAutomationReminderState"));
+    assert!(tail.contains("read_agent_transcript_entries(&agent_id)"));
+    assert_eq!(
+        source.matches("prepend_unconfirmed_user_messages_for_turn(").count(),
+        1
+    );
+    assert!(collector.contains("pub fn prepend_unconfirmed_user_messages_for_turn("));
+    assert!(collector.contains("collect_prepend_user_messages("));
 }
