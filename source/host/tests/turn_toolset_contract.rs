@@ -189,6 +189,24 @@ fn turn_toolset_spotlight_fence_preserves_tool_inventory() {
 
 
 #[test]
+fn ordinary_subagent_without_nested_configs_gets_no_tools() {
+    let bridge = build_turn_toolset(
+        Arc::new(BaseBridge),
+        TurnToolsetDependencies {
+            role: TurnToolsetRole {
+                is_subagent_runner: true,
+                is_box_scoped_subagent: true,
+                subagent_configs_present: false,
+                ..TurnToolsetRole::default()
+            },
+            ..TurnToolsetDependencies::default()
+        },
+    );
+
+    assert!(bridge.list_tools().expect("tools").is_empty());
+}
+
+#[test]
 fn turn_toolset_composes_browser_capability_without_hiding_base_tools() {
     let browser: Arc<dyn BrowserToolExecutor> = Arc::new(FakeBrowserExecutor);
     let bridge = build_turn_toolset(

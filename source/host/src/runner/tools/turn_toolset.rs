@@ -188,7 +188,9 @@ pub struct TurnToolsetRole {
     pub is_subagent_runner: bool,
     pub is_shared_room_runner: bool,
     pub is_box_scoped_subagent: bool,
+    pub is_computer_use_subagent: bool,
     pub is_browser_use_subagent: bool,
+    pub subagent_configs_present: bool,
     pub shared_room_box_tools_enabled: bool,
     pub remote_box_available: bool,
     pub remote_box_has_desktop: bool,
@@ -201,7 +203,9 @@ impl Default for TurnToolsetRole {
             is_subagent_runner: false,
             is_shared_room_runner: false,
             is_box_scoped_subagent: false,
+            is_computer_use_subagent: false,
             is_browser_use_subagent: false,
+            subagent_configs_present: true,
             shared_room_box_tools_enabled: true,
             remote_box_available: true,
             remote_box_has_desktop: true,
@@ -545,6 +549,32 @@ impl RoutedToolBridge for DynamicToolPlacementBridge {
     }
 }
 
+struct EmptyTurnToolBridge;
+
+impl RoutedToolBridge for EmptyTurnToolBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        Ok(Vec::new())
+    }
+
+    fn list_mcp_meta_tools(
+        &self,
+    ) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
+        Ok(Vec::new())
+    }
+
+    fn call_tool(
+        &self,
+        tool: &RoutedToolDefinition,
+        _args: serde_json::Value,
+        _tool_call_id: &str,
+    ) -> Result<serde_json::Value, ProviderSessionError> {
+        Err(ProviderSessionError::Tool(format!(
+            "{} is not available to this subagent Runner",
+            tool.name
+        )))
+    }
+}
+
 struct SharedRoomToolFilterBridge {
     delegate: Arc<dyn RoutedToolBridge>,
     box_tools_enabled: bool,
@@ -616,6 +646,13 @@ pub fn build_turn_toolset(
     dependencies: TurnToolsetDependencies,
 ) -> Arc<dyn RoutedToolBridge> {
     let role = dependencies.role;
+    if role.is_subagent_runner
+        && !role.is_computer_use_subagent
+        && !role.is_browser_use_subagent
+        && !role.subagent_configs_present
+    {
+        return Arc::new(EmptyTurnToolBridge);
+    }
     let await_box_resources = role
         .remote_box_available
         .then(|| dependencies.box_resources.clone())

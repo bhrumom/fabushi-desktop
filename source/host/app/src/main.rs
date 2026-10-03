@@ -7791,8 +7791,11 @@ fn start_routed_provider_task(
                         is_subagent_runner: worker_generated_parent_agent_id.is_some(),
                         is_shared_room_runner: worker_group_room_id.is_some(),
                         is_box_scoped_subagent: worker_generated_parent_agent_id.is_some(),
+                        is_computer_use_subagent: worker_generated_parent_agent_id.is_some()
+                            && worker_generated_subagent_type.eq_ignore_ascii_case("computeruse"),
                         is_browser_use_subagent: worker_generated_parent_agent_id.is_some()
                             && worker_generated_subagent_type.eq_ignore_ascii_case("browseruse"),
+                        subagent_configs_present: worker_generated_parent_agent_id.is_none(),
                         shared_room_box_tools_enabled,
                         remote_box_available,
                         remote_box_has_desktop,
