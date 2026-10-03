@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -6,7 +7,13 @@ use serde_json::Value;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
 };
+use crate::extensions::transcript::async_task_union::AsyncTask;
 
+use super::background_work::{
+    BackgroundShellWatchOptions, CloudAgentWatchOptions,
+    RunnerBackgroundShellWatches, RunnerCloudAgentWatches,
+};
+use super::computer_use::{ComputerUseCoordination, ComputerUseUsageSnapshot};
 use super::production_turn_agent_owner::ProductionTurnAgentOwner;
 use super::production_turn_input_projection::ProductionTurnInputProjection;
 use super::routed_provider_runtime::RoutedProviderCancellation;
@@ -14,7 +21,8 @@ use super::subagent_runtime::{
     ControlResult, PendingWake, RunOutcome, RunningSubagentInfo, SettleResult,
     SubagentLineage, SubagentRecord, SubagentRuntime, SubagentSessionSnapshot,
 };
-use super::{TurnRunFinished, TurnRunOptions};
+use super::turn_observation::TurnObservationHandle;
+use super::{TerminalOutcome, TurnRunFinished, TurnRunOptions};
 
 /// Runner-owned shipping facade for provider-backed turns.
 ///
@@ -24,6 +32,10 @@ use super::{TurnRunFinished, TurnRunOptions};
 pub struct SandAgentRunner {
     owner: ProductionTurnAgentOwner,
     generated_agent_runtime: Option<Arc<Mutex<SubagentRuntime>>>,
+    observation: Option<TurnObservationHandle>,
+    cloud_agent_watches: Option<Arc<RunnerCloudAgentWatches>>,
+    background_shell_watches: Option<Arc<RunnerBackgroundShellWatches>>,
+    computer_use: Option<Arc<Mutex<ComputerUseCoordination>>>,
 }
 
 impl SandAgentRunner {
@@ -31,6 +43,10 @@ impl SandAgentRunner {
         Self {
             owner,
             generated_agent_runtime: None,
+            observation: None,
+            cloud_agent_watches: None,
+            background_shell_watches: None,
+            computer_use: None,
         }
     }
 
@@ -44,6 +60,164 @@ impl SandAgentRunner {
 
     pub fn generated_agent_runtime(&self) -> Option<Arc<Mutex<SubagentRuntime>>> {
         self.generated_agent_runtime.as_ref().map(Arc::clone)
+    }
+
+    pub fn with_runtime_services(
+        mut self,
+        observation: Option<TurnObservationHandle>,
+        cloud_agent_watches: Option<Arc<RunnerCloudAgentWatches>>,
+        background_shell_watches: Option<Arc<RunnerBackgroundShellWatches>>,
+        computer_use: Option<Arc<Mutex<ComputerUseCoordination>>>,
+    ) -> Self {
+        self.observation = observation;
+        self.cloud_agent_watches = cloud_agent_watches;
+        self.background_shell_watches = background_shell_watches;
+        self.computer_use = computer_use;
+        self
+    }
+
+    pub fn list_async_tasks(&self) -> Result<Vec<AsyncTask>, String> {
+        let Some(observation) = self.observation.as_ref() else {
+            return Ok(Vec::new());
+        };
+        observation
+            .lock()
+            .map_err(|_| "turn observation lock poisoned".to_string())
+            .map(|observation| observation.list_async_tasks())
+    }
+
+    pub fn get_activity_snapshot(&self) -> Result<Vec<String>, String> {
+        let Some(observation) = self.observation.as_ref() else {
+            return Ok(Vec::new());
+        };
+        observation
+            .lock()
+            .map_err(|_| "turn observation lock poisoned".to_string())
+            .map(|observation| observation.recent_activity())
+    }
+
+    pub fn get_observed_tool_call_count(&self) -> Result<u64, String> {
+        let Some(observation) = self.observation.as_ref() else {
+            return Ok(0);
+        };
+        observation
+            .lock()
+            .map_err(|_| "turn observation lock poisoned".to_string())
+            .map(|observation| observation.observed_tool_call_count())
+    }
+
+    pub fn get_pending_cloud_agent_watch_ids(&self, parent_agent_id: &str) -> Vec<String> {
+        self.cloud_agent_watches
+            .as_ref()
+            .map(|watches| watches.pending_cloud_agent_watch_ids(parent_agent_id))
+            .unwrap_or_default()
+    }
+
+    pub fn watch_cloud_agent(
+        &self,
+        parent_agent_id: &str,
+        id: &str,
+        quiet_origin: Option<Value>,
+        after_followup: bool,
+    ) -> bool {
+        self.cloud_agent_watches
+            .as_ref()
+            .is_some_and(|watches| {
+                watches.watch_cloud_agent(
+                    parent_agent_id,
+                    id,
+                    CloudAgentWatchOptions::new(quiet_origin, after_followup),
+                )
+            })
+    }
+
+    pub fn watch_background_shell(
+        &self,
+        parent_agent_id: &str,
+        id: &str,
+        title: Option<String>,
+        quiet_origin: Option<Value>,
+    ) -> bool {
+        self.background_shell_watches
+            .as_ref()
+            .is_some_and(|watches| {
+                watches.watch_background_shell(
+                    parent_agent_id,
+                    id,
+                    BackgroundShellWatchOptions::new(title, quiet_origin),
+                )
+            })
+    }
+
+    pub fn has_running_background_shell_work(&self) -> bool {
+        self.background_shell_watches
+            .as_ref()
+            .is_some_and(|watches| watches.has_running_background_shell_work())
+    }
+
+    pub fn get_pending_shell_rewatch_ids(&self, parent_agent_id: &str) -> Vec<String> {
+        self.background_shell_watches
+            .as_ref()
+            .map(|watches| watches.pending_shell_rewatch_ids(parent_agent_id))
+            .unwrap_or_default()
+    }
+
+    pub fn cancel_background_shell_rewatches(&self, parent_agent_id: &str) -> usize {
+        self.background_shell_watches
+            .as_ref()
+            .map(|watches| watches.dispose_parent(parent_agent_id))
+            .unwrap_or_default()
+    }
+
+    pub fn get_computer_use_usage_snapshot(&self) -> Option<ComputerUseUsageSnapshot> {
+        self.computer_use.as_ref().map(|owner| {
+            owner
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .usage_snapshot()
+        })
+    }
+
+    pub fn get_computer_use_audit_action_counts(&self) -> HashMap<String, u64> {
+        self.computer_use
+            .as_ref()
+            .map(|owner| {
+                owner
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .audit_action_counts()
+                    .clone()
+            })
+            .unwrap_or_default()
+    }
+
+    pub fn request_quiesce_for_upgrade(&self) {
+        self.owner.request_quiesce_for_upgrade();
+        if let Some(conversation_id) = self
+            .owner
+            .build_input()
+            .map(|input| input.static_config.conversation_id.as_str())
+        {
+            let _ = self.cancel_background_shell_rewatches(conversation_id);
+            if let Some(watches) = self.cloud_agent_watches.as_ref() {
+                let _ = watches.dispose_parent(conversation_id);
+            }
+        }
+    }
+
+    pub fn cancel_quiesce_for_upgrade(&self) {
+        self.owner.cancel_quiesce_for_upgrade();
+    }
+
+    pub fn is_quiescing_for_upgrade(&self) -> bool {
+        self.owner.is_quiescing_for_upgrade()
+    }
+
+    pub fn is_awaiting_user_selection(&self) -> bool {
+        matches!(
+            self.owner.last_finished().map(|finished| &finished.outcome),
+            Some(TerminalOutcome::WaitingUser)
+        )
     }
 
     pub fn begin_generated_subagent(
@@ -193,6 +367,18 @@ impl SandAgentRunner {
     }
 
     pub fn dispose(&mut self) {
+        if let Some(conversation_id) = self
+            .owner
+            .build_input()
+            .map(|input| input.static_config.conversation_id.as_str())
+        {
+            if let Some(watches) = self.background_shell_watches.as_ref() {
+                let _ = watches.dispose_parent(conversation_id);
+            }
+            if let Some(watches) = self.cloud_agent_watches.as_ref() {
+                let _ = watches.dispose_parent(conversation_id);
+            }
+        }
         self.owner.dispose();
     }
 
