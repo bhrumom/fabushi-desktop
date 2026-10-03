@@ -34,6 +34,24 @@ impl SandAutoReviewClassifierExecutor<String, String> for Executor {
     }
 }
 
+struct JsonExecutor {
+    result: Result<SmartModeClassifierResult, AutoReviewClassifierError>,
+    measurements: Vec<SmartModeClassifierMeasurement>,
+}
+
+impl SandAutoReviewClassifierExecutor<serde_json::Value, String> for JsonExecutor {
+    fn execute(
+        &mut self,
+        _request: AutoReviewClassifierRequest<'_, serde_json::Value, String>,
+    ) -> Result<SmartModeClassifierResult, AutoReviewClassifierError> {
+        self.result.clone()
+    }
+
+    fn record_measurement(&mut self, measurement: SmartModeClassifierMeasurement) {
+        self.measurements.push(measurement);
+    }
+}
+
 #[test]
 fn classifier_allows_and_enforces_frozen_measurement_options() {
     let mut executor = Executor {
@@ -262,7 +280,7 @@ fn conversation_context_abort_is_rethrown_before_executor_runs() {
 
 #[test]
 fn classifier_measurement_preserves_unspecified_error_and_abort_semantics() {
-    let mut executor = Executor {
+    let mut executor = JsonExecutor {
         result: Ok(SmartModeClassifierResult::Success(
             SmartModeClassifierSuccess {
                 decision: SmartModeClassifierDecision::Unspecified,
@@ -270,7 +288,6 @@ fn classifier_measurement_preserves_unspecified_error_and_abort_semantics() {
                 proposed_allow_rule: None,
             },
         )),
-        seen: Vec::new(),
         measurements: Vec::new(),
     };
     let decision = run_sand_auto_review_classifier(
