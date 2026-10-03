@@ -18422,7 +18422,7 @@
       "targetPath": "source/host/src/runner/sand_action_audit.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b67f15eb45c1921cbcdc0e4dcc870b65287d1a9d",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -18436,10 +18436,11 @@
         "source/host/tests/sand_action_audit_contract.rs",
         "source/host/tests/runner_production_bridge_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/mcp_service_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust ports the frozen MCP audit envelope, noisy CDP target parsing, navigation URL normalization/probe command and computer-use audit-kind mapping. Shipping TurnAgentComposition wraps routed MCP with AuditedRoutedToolBridge, Host publishes correlated agent/turn MCP audit records, and Browser onPossibleNavigation now invokes the production navigation probe/audit path. Final remains withheld for Computer onComputerAction/session audit wiring and live connector-registry MCP transport resolution instead of the current fail-closed 'unknown' transport."
+      "notes": "Rust preserves the frozen MCP audit envelope, noisy CDP target parsing, navigation URL normalization/probe semantics, and computer-use audit-kind mapping. Shipping TurnAgentComposition wraps routed MCP with AuditedRoutedToolBridge; the production action-audit sink now resolves transport from the live McpHostService connector registry by serverIdentifier and preserves the frozen fail-closed unknown fallback. Shipping Computer actions publish correlated agent/turn computerAction records, while baseline/throttled navigation probes and browser navigation records flow through the same durable audit sink. Focused executable contracts cover live registry lookup, resolver behavior, and shipping production wiring."
     },
     {
       "referencePath": "source/host/runner/sand-agent-profile-prompt.ts",
