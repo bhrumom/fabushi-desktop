@@ -287,7 +287,8 @@ use mahayana_host_runtime::runner::tools::listener_connect_cards::{
 };
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BrowserAutoReviewCallback, BrowserPersistImageCallback, BrowserPossibleNavigationCallback,
-    BrowserToolExecutor, ProductionBrowserToolExecutor, capture_browser_review_state,
+    BrowserShellSafetyCallback, BrowserToolExecutor, ProductionBrowserToolExecutor,
+    capture_browser_review_state,
     to_browser_review_action,
 };
 use mahayana_host_runtime::runner::host_computer_tool_dependencies::ProductionComputerToolExecutor;
@@ -7072,12 +7073,36 @@ fn start_routed_provider_task(
                         }),
                     });
                 });
+            let browser_shell_gate = Arc::clone(&auto_review_gate);
+            let browser_shell_audit = Arc::clone(&action_audit_sink);
+            let browser_shell_agent_id = agent_id.clone();
+            let browser_shell_turn_id = stream_id.clone();
+            let browser_shell_safety: BrowserShellSafetyCallback = Arc::new(
+                move |request: &RunnerBoxShellRequest| {
+                    browser_shell_gate
+                        .assert_no_pending_approval()
+                        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                    browser_shell_audit.record(ActionAuditRecord {
+                        occurred_at_ms: started_at_ms(),
+                        agent_id: browser_shell_agent_id.clone(),
+                        turn_id: Some(browser_shell_turn_id.clone()),
+                        action: serde_json::json!({
+                            "kind": "shellCommand",
+                            "command": request.command.clone(),
+                            "shellKind": if request.is_background { "background" } else { "foreground" },
+                            "target": "isolated_box",
+                        }),
+                    });
+                    Ok(())
+                },
+            );
             let mut browser_executor_owner = ProductionBrowserToolExecutor::new(
                 Arc::clone(&box_resources),
                 agent_id.clone(),
             )
             .with_auto_review_callback(browser_auto_review)
-            .with_possible_navigation_callback(browser_possible_navigation);
+            .with_possible_navigation_callback(browser_possible_navigation)
+            .with_shell_safety_callback(browser_shell_safety);
             if !is_group_member_turn {
                 browser_executor_owner =
                     browser_executor_owner.with_persist_image_callback(browser_persist_image);

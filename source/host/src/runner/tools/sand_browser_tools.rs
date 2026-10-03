@@ -533,6 +533,16 @@ pub type BrowserAutoReviewCallback = Arc<
 pub type BrowserPersistImageCallback = Arc<dyn Fn(&[u8], &str) + Send + Sync>;
 pub type BrowserPossibleNavigationCallback =
     Arc<dyn Fn(&BrowserDriverResponse) + Send + Sync>;
+/// Host-owned pre-execution barrier for Browser's internal box shell calls.
+///
+/// Frozen Grok routes these calls through HostShellExecutor, which asserts
+/// there is no pending approval and records the shell action before delegating
+/// to the generated shell resource with skipApproval. Keep that safety/audit
+/// boundary here without turning Browser's private driver commands into a
+/// second user-facing approval flow.
+pub type BrowserShellSafetyCallback = Arc<
+    dyn Fn(&RunnerBoxShellRequest) -> Result<(), ProviderSessionError> + Send + Sync,
+>;
 
 #[derive(Clone)]
 pub struct ProductionBrowserToolExecutor {
@@ -541,6 +551,7 @@ pub struct ProductionBrowserToolExecutor {
     auto_review: Option<BrowserAutoReviewCallback>,
     persist_image: Option<BrowserPersistImageCallback>,
     on_possible_navigation: Option<BrowserPossibleNavigationCallback>,
+    shell_safety: Option<BrowserShellSafetyCallback>,
 }
 
 impl ProductionBrowserToolExecutor {
@@ -554,6 +565,7 @@ impl ProductionBrowserToolExecutor {
             auto_review: None,
             persist_image: None,
             on_possible_navigation: None,
+            shell_safety: None,
         }
     }
 
@@ -581,9 +593,27 @@ impl ProductionBrowserToolExecutor {
         self
     }
 
+    pub fn with_shell_safety_callback(
+        mut self,
+        callback: BrowserShellSafetyCallback,
+    ) -> Self {
+        self.shell_safety = Some(callback);
+        self
+    }
+
+    fn execute_shell(
+        &self,
+        request: RunnerBoxShellRequest,
+    ) -> Result<Value, ProviderSessionError> {
+        if let Some(safety) = self.shell_safety.as_ref() {
+            safety(&request)?;
+        }
+        self.box_resources.execute_shell(request)
+    }
+
     fn ensure_driver_uploaded(&self, tool_call_id: &str) -> Result<(), ProviderSessionError> {
         self.ensure_shell_success(
-            self.box_resources.execute_shell(RunnerBoxShellRequest {
+            self.execute_shell(RunnerBoxShellRequest {
                 command: format!("mkdir -p {SAND_BROWSER_DRIVER_BOX_DIR}"),
                 working_directory: "/workspace".into(),
                 tool_call_id: format!("{tool_call_id}:browser-driver-dir"),
@@ -710,7 +740,7 @@ impl BrowserToolExecutor for ProductionBrowserToolExecutor {
             invocation.shell_command
         );
         self.ensure_shell_success(
-            self.box_resources.execute_shell(RunnerBoxShellRequest {
+            self.execute_shell(RunnerBoxShellRequest {
                 command: shell_command,
                 working_directory: "/workspace".into(),
                 tool_call_id: format!("{tool_call_id}:browser-driver-run"),

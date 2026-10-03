@@ -10,7 +10,8 @@ use mahayana_host_runtime::runner::box_tool_access::{
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BOX_CDP_PORT_BASE, BrowserDriverOutput, BrowserEnvelope, BrowserToolExecutor,
-    BrowserToolSpec, ProductionBrowserToolExecutor, SandBrowserToolBridge,
+    BrowserShellSafetyCallback, BrowserToolSpec, ProductionBrowserToolExecutor,
+    SandBrowserToolBridge,
     browser_tool_specs, capture_browser_review_state,
     build_browser_driver_invocation, decode_envelope, encode_envelope,
     parse_driver_response, sanitize_for_box_path, stash_screenshot,
@@ -297,6 +298,12 @@ fn production_browser_executor_uses_only_host_box_port() {
     let persisted_images_sink = Arc::clone(&persisted_images);
     let navigation_events = Arc::new(Mutex::new(Vec::<(String, String)>::new()));
     let navigation_events_sink = Arc::clone(&navigation_events);
+    let guarded_shells = Arc::new(Mutex::new(Vec::<RunnerBoxShellRequest>::new()));
+    let guarded_shells_sink = Arc::clone(&guarded_shells);
+    let shell_safety: BrowserShellSafetyCallback = Arc::new(move |request| {
+        guarded_shells_sink.lock().expect("guarded shells").push(request.clone());
+        Ok(())
+    });
     let executor = ProductionBrowserToolExecutor::new(resources, "agent-browser")
         .with_auto_review_callback(Arc::new(move |spec, args, tool_call_id| {
             assert_eq!(spec.name, "browser_navigate");
@@ -324,7 +331,8 @@ fn production_browser_executor_uses_only_host_box_port() {
                     response.url.clone().unwrap_or_default(),
                     response.title.clone().unwrap_or_default(),
                 ));
-        }));
+        }))
+        .with_shell_safety_callback(shell_safety);
     let spec = browser_tool_specs()
         .into_iter()
         .find(|spec| spec.name == "browser_navigate")
@@ -367,9 +375,35 @@ fn production_browser_executor_uses_only_host_box_port() {
         request.command.contains("node /tmp/.sand-browser/driver-v2.mjs")
             && request.command.contains("result-browsercall1.txt")
     }));
+    let guarded = guarded_shells.lock().expect("guarded shells");
+    assert_eq!(guarded.as_slice(), shells.as_slice());
+    drop(guarded);
     drop(shells);
 
     let reads = port.reads.lock().expect("reads");
     assert!(reads.iter().any(|request| request.path.contains("result-browsercall1.txt")));
     assert!(reads.iter().any(|request| request.path.ends_with("shot-browsercall1.png")));
+}
+
+
+#[test]
+fn production_browser_executor_fails_closed_before_internal_shell_when_host_safety_blocks() {
+    let port = Arc::new(ProductionBoxPort::default());
+    let resources: Arc<dyn RunnerBoxResourcePort> = port.clone();
+    let executor = ProductionBrowserToolExecutor::new(resources, "agent-browser")
+        .with_shell_safety_callback(Arc::new(|request| {
+            Err(ProviderSessionError::Tool(format!(
+                "pending approval blocks {}",
+                request.tool_call_id
+            )))
+        }));
+    let spec = browser_tool_specs().into_iter()
+        .find(|spec| spec.name == "browser_navigate")
+        .expect("navigate spec");
+    let args = json!({"url":"https://example.com"});
+    let error = executor.execute(&spec, args.as_object().expect("args"), "browser/blocked:1")
+        .expect_err("host safety must fail closed");
+    assert!(error.to_string().contains("pending approval"));
+    assert!(port.shells.lock().expect("shells").is_empty());
+    assert!(port.writes.lock().expect("writes").is_empty());
 }
