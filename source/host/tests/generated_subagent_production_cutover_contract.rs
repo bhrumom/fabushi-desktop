@@ -199,7 +199,7 @@ fn shipping_task_launch_is_bound_to_subagent_auto_review_before_dispatch() {
     }
     for forbidden in [
         "build_sand_subagent_launch_review_target(",
-        "let outcome = review_sand_subagent_action(\n                            mode,\n                            &target,",
+        "Some(\"The subagent launch was cancelled.\".into())",
     ] {
         assert!(
             !main.contains(forbidden),
