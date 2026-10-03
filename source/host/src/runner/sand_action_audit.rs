@@ -33,6 +33,10 @@ pub struct ActionAuditRecord {
 
 pub trait ActionAuditSink: Send + Sync {
     fn record(&self, record: ActionAuditRecord);
+
+    fn resolve_transport(&self, _server_identifier: &str) -> String {
+        "unknown".to_string()
+    }
 }
 
 impl<F> ActionAuditSink for F
@@ -45,6 +49,28 @@ where
 }
 
 pub type TransportResolver = Arc<dyn Fn(&str) -> String + Send + Sync>;
+
+pub struct TransportResolvingActionAuditSink {
+    inner: Arc<dyn ActionAuditSink>,
+    resolver: TransportResolver,
+}
+
+impl ActionAuditSink for TransportResolvingActionAuditSink {
+    fn record(&self, record: ActionAuditRecord) {
+        self.inner.record(record);
+    }
+
+    fn resolve_transport(&self, server_identifier: &str) -> String {
+        (self.resolver)(server_identifier)
+    }
+}
+
+pub fn with_transport_resolving_sink(
+    inner: Arc<dyn ActionAuditSink>,
+    resolver: TransportResolver,
+) -> Arc<dyn ActionAuditSink> {
+    Arc::new(TransportResolvingActionAuditSink { inner, resolver })
+}
 
 #[derive(Clone)]
 pub struct RoutedMcpAuditConfig {
@@ -60,11 +86,14 @@ impl RoutedMcpAuditConfig {
         turn_id: Option<String>,
         sink: Arc<dyn ActionAuditSink>,
     ) -> Self {
+        let resolver_sink = Arc::clone(&sink);
         Self {
             agent_id: agent_id.into(),
             turn_id,
             sink,
-            resolve_transport: Arc::new(|_| "unknown".to_string()),
+            resolve_transport: Arc::new(move |server_identifier| {
+                resolver_sink.resolve_transport(server_identifier)
+            }),
         }
     }
 
