@@ -3,8 +3,8 @@ use std::sync::{Arc, Mutex};
 
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedProvider,
-    RoutedProviderCheckpoint, RoutedToolDefinition,
+    ProviderMessage, ProviderPartialToolCall, ProviderSessionError, ProviderTokenUsage,
+    RoutedProvider, RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
 use crate::ports::mcp_state_executor::{
@@ -56,6 +56,62 @@ struct RoutedBridgeMcpToolProvider<'a> {
 impl SandMcpToolProvider for RoutedBridgeMcpToolProvider<'_> {
     fn get_tools(&self) -> Result<Vec<RoutedToolDefinition>, String> {
         self.bridge.list_tools().map_err(|error| error.to_string())
+    }
+}
+
+/// Canonical MCP-state projection adapter for the shipping routed-tool bridge.
+///
+/// Tool discovery is projected through the recovered Grok MCP-state executor before
+/// the Runner adds its built-in turn tools. Tool execution and partial-call
+/// observation remain owned by the existing routed-tool bridge.
+pub struct McpStateProjectedRoutedToolBridge {
+    delegate: Arc<dyn RoutedToolBridge>,
+}
+
+impl McpStateProjectedRoutedToolBridge {
+    pub fn new(delegate: Arc<dyn RoutedToolBridge>) -> Self {
+        Self { delegate }
+    }
+}
+
+impl RoutedToolBridge for McpStateProjectedRoutedToolBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        let McpStateExecResult::Success(state) =
+            execute_canonical_mcp_state(&RoutedBridgeMcpToolProvider {
+                bridge: self.delegate.as_ref(),
+            })
+            .map_err(|error| {
+                ProviderSessionError::Tool(format!("MCP state projection failed: {error}"))
+            })?;
+
+        Ok(state
+            .servers
+            .into_iter()
+            .flat_map(|server| server.tools)
+            .map(|tool| RoutedToolDefinition {
+                name: tool.name,
+                provider_identifier: tool.provider_identifier,
+                tool_name: tool.tool_name,
+                description: tool.description,
+                input_schema: tool.input_schema,
+            })
+            .collect())
+    }
+
+    fn observe_partial_tool_call(
+        &self,
+        partial: &ProviderPartialToolCall,
+    ) -> Result<(), ProviderSessionError> {
+        self.delegate.observe_partial_tool_call(partial)
+    }
+
+    fn call_tool(
+        &self,
+        tool: &RoutedToolDefinition,
+        args: serde_json::Value,
+        tool_call_id: &str,
+    ) -> Result<serde_json::Value, ProviderSessionError> {
+        self.delegate.call_tool(tool, args, tool_call_id)
     }
 }
 
@@ -510,12 +566,15 @@ impl TurnAgentComposition {
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
         self.reset_latest_provider_checkpoint();
+        let bridge: Arc<dyn RoutedToolBridge> = Arc::new(
+            McpStateProjectedRoutedToolBridge::new(Arc::clone(&self.bridge)),
+        );
         let bridge: Arc<dyn RoutedToolBridge> = match &self.observation {
             Some(observation) => Arc::new(McpObservedRoutedToolBridge::new(
-                Arc::clone(&self.bridge),
+                bridge,
                 Arc::clone(observation),
             )),
-            None => Arc::clone(&self.bridge),
+            None => bridge,
         };
         let bridge: Arc<dyn RoutedToolBridge> = match &self.action_audit {
             Some(config) => Arc::new(AuditedRoutedToolBridge::new(
