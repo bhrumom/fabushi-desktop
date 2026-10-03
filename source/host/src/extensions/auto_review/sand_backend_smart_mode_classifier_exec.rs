@@ -376,6 +376,28 @@ fn project_result(result: SmartModeClassifierResultWire) -> SmartModeClassifierR
     }
 }
 
+const SMART_MODE_CLASSIFIER_FAILURE_METADATA_MARKER: &str =
+    "\n\nSmartModeClassifierFailureMetadata:";
+
+fn parse_failure_metadata(error: &str) -> (Option<String>, Option<bool>) {
+    let Some((_, encoded)) = error.split_once(SMART_MODE_CLASSIFIER_FAILURE_METADATA_MARKER) else {
+        return (None, None);
+    };
+    let Ok(value) = serde_json::from_str::<Value>(encoded) else {
+        return (None, None);
+    };
+    let Some(object) = value.as_object() else {
+        return (None, None);
+    };
+    (
+        object
+            .get("failureReason")
+            .and_then(Value::as_str)
+            .map(str::to_string),
+        object.get("retryable").and_then(Value::as_bool),
+    )
+}
+
 #[derive(Clone, PartialEq, Message)]
 struct SmartModeClassifierConversationMessageWire {
     #[prost(string, tag = "1")]
