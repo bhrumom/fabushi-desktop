@@ -93,7 +93,6 @@ pub struct ProductionRunnerCompositionInput {
     pub spotlight_enabled: bool,
     pub action_audit: Option<ProductionActionAuditInput>,
     pub observation: Option<TurnObservationHandle>,
-    pub mcp_discovery_failure_sink: Option<Arc<dyn Fn(&ProviderSessionError, f64) + Send + Sync>>,
 }
 
 pub fn create_production_runner_composition(
@@ -161,9 +160,6 @@ pub fn create_production_runner_composition(
     }
     if let Some(observation) = input.observation {
         composition = composition.with_observation(observation);
-    }
-    if let Some(sink) = input.mcp_discovery_failure_sink {
-        composition = composition.with_mcp_discovery_failure_sink(sink);
     }
     composition
 }
