@@ -5579,11 +5579,12 @@ fn start_routed_provider_task(
         .map_err(GatewayCommandError::Internal)?;
     let spotlight_enabled = prompt_owner.spotlight_enabled();
     let dynamic_tools_enabled = experiments.is_dynamic_tools_enabled();
+    let shared_room_box_tools_enabled = experiments.is_shared_room_box_tools_enabled();
     let multitask_enabled = !args
         .get("groupMemberTurn")
         .and_then(serde_json::Value::as_bool)
         .unwrap_or(false)
-        && experiments.check_feature_gate("sand_multitask");
+        && experiments.is_multitask_enabled();
 
     let journal_logs = telemetry_logs.clone();
     let journal_experiments = Arc::clone(&experiments);
@@ -7767,6 +7768,8 @@ fn start_routed_provider_task(
             } else {
                 ComputerToolExposure::ScreenshotOnly
             };
+            let remote_box_available = forever_box.box_().is_available();
+            let remote_box_has_desktop = forever_box.box_().inner().shared_desktop().is_some();
             let cloud_agent_tool_for_turn = if worker_cloud_agents.is_disabled_by_team_admin() {
                 None
             } else {
@@ -7790,7 +7793,9 @@ fn start_routed_provider_task(
                         is_box_scoped_subagent: worker_generated_parent_agent_id.is_some(),
                         is_browser_use_subagent: worker_generated_parent_agent_id.is_some()
                             && worker_generated_subagent_type.eq_ignore_ascii_case("browseruse"),
-                        shared_room_box_tools_enabled: true,
+                        shared_room_box_tools_enabled,
+                        remote_box_available,
+                        remote_box_has_desktop,
                         dynamic_tools_enabled,
                     },
                     local_tool_permission: Some(TurnLocalToolPermissionBinding {

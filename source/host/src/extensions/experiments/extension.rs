@@ -639,6 +639,14 @@ impl HostExperimentsExtension {
         self.check_feature_gate("grok_bot_dynamic_tools")
     }
 
+    pub fn is_shared_room_box_tools_enabled(&self) -> bool {
+        let env_enabled = resolve_boolean_env_override(
+            std::env::var("SAND_SHARED_ROOM_BOX_TOOLS").ok().as_deref(),
+            true,
+        );
+        env_enabled && !self.check_feature_gate("sand_shared_room_box_tools_kill_switch")
+    }
+
     pub fn is_browser_use_subagent_enabled(&self) -> bool {
         self.check_feature_gate("sand_browser_use_subagent")
     }

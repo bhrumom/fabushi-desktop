@@ -190,6 +190,8 @@ pub struct TurnToolsetRole {
     pub is_box_scoped_subagent: bool,
     pub is_browser_use_subagent: bool,
     pub shared_room_box_tools_enabled: bool,
+    pub remote_box_available: bool,
+    pub remote_box_has_desktop: bool,
     pub dynamic_tools_enabled: bool,
 }
 
@@ -201,6 +203,8 @@ impl Default for TurnToolsetRole {
             is_box_scoped_subagent: false,
             is_browser_use_subagent: false,
             shared_room_box_tools_enabled: true,
+            remote_box_available: true,
+            remote_box_has_desktop: true,
             dynamic_tools_enabled: false,
         }
     }
@@ -612,7 +616,10 @@ pub fn build_turn_toolset(
     dependencies: TurnToolsetDependencies,
 ) -> Arc<dyn RoutedToolBridge> {
     let role = dependencies.role;
-    let await_box_resources = dependencies.box_resources.clone();
+    let await_box_resources = role
+        .remote_box_available
+        .then(|| dependencies.box_resources.clone())
+        .flatten();
     let generate_image_box_resources = dependencies.box_resources.clone();
     let await_external_machine = dependencies.external_machine_executor.clone();
     let await_cancellation = dependencies.cancellation.clone();
@@ -621,21 +628,25 @@ pub fn build_turn_toolset(
             (false, Some(management)) => Arc::new(McpManagementToolBridge::new(base, management)),
             _ => base,
         };
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.box_resources {
-        Some(box_resources) => {
+    let bridge: Arc<dyn RoutedToolBridge> = match (role.remote_box_available, dependencies.box_resources) {
+        (true, Some(box_resources)) => {
             let mut box_bridge = RunnerBoxToolBridge::new(bridge, box_resources);
             if let Some(review) = dependencies.box_shell_review {
                 box_bridge = box_bridge.with_shell_review(review);
             }
             Arc::new(box_bridge)
         }
-        None => bridge,
+        _ => bridge,
     };
-    let bridge: Arc<dyn RoutedToolBridge> =
-        match (role.is_browser_use_subagent, dependencies.browser_executor) {
-            (true, Some(executor)) => Arc::new(SandBrowserToolBridge::new(bridge, executor)),
-            _ => bridge,
-        };
+    let bridge: Arc<dyn RoutedToolBridge> = match (
+        role.is_browser_use_subagent,
+        role.remote_box_available,
+        role.remote_box_has_desktop,
+        dependencies.browser_executor,
+    ) {
+        (true, true, true, Some(executor)) => Arc::new(SandBrowserToolBridge::new(bridge, executor)),
+        _ => bridge,
+    };
     let bridge: Arc<dyn RoutedToolBridge> =
         match (role.is_box_scoped_subagent, dependencies.web_executor) {
             (false, Some(executor)) => Arc::new(SandWebToolBridge::new(bridge, executor)),
@@ -651,12 +662,16 @@ pub fn build_turn_toolset(
         ),
         _ => bridge,
     };
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.computer_executor {
-        Some(executor) => Arc::new(
+    let bridge: Arc<dyn RoutedToolBridge> = match (
+        role.remote_box_available,
+        role.remote_box_has_desktop,
+        dependencies.computer_executor,
+    ) {
+        (true, true, Some(executor)) => Arc::new(
             SandComputerToolBridge::new(bridge, executor)
                 .with_exposure(dependencies.computer_exposure),
         ),
-        None => bridge,
+        _ => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> =
         match (role.is_box_scoped_subagent, dependencies.external_machine_executor) {
@@ -670,8 +685,12 @@ pub fn build_turn_toolset(
         _ => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> =
-        match (role.is_box_scoped_subagent, dependencies.file_transfer_executor) {
-            (false, Some(executor)) => Arc::new(SandFileTransferToolBridge::new(bridge, executor)),
+        match (
+            role.is_box_scoped_subagent,
+            role.remote_box_available,
+            dependencies.file_transfer_executor,
+        ) {
+            (false, true, Some(executor)) => Arc::new(SandFileTransferToolBridge::new(bridge, executor)),
             _ => bridge,
         };
     let bridge: Arc<dyn RoutedToolBridge> = if !role.is_box_scoped_subagent
@@ -748,8 +767,13 @@ pub fn build_turn_toolset(
             _ => bridge,
         };
     let bridge: Arc<dyn RoutedToolBridge> =
-        match (role.is_subagent_runner, &dependencies.send_message_sink) {
-        (false, Some(sink)) => Arc::new(BoxHelpToolBridge::new(
+        match (
+            role.is_subagent_runner,
+            role.remote_box_available,
+            role.remote_box_has_desktop,
+            &dependencies.send_message_sink,
+        ) {
+        (false, true, true, Some(sink)) => Arc::new(BoxHelpToolBridge::new(
             bridge,
             Arc::clone(sink),
             dependencies.cancellation.clone(),
