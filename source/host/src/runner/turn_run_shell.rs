@@ -20,6 +20,7 @@ pub struct TurnRunOptions {
     pub inference_request_id: Option<String>,
     pub message_id: Option<String>,
     pub recent_message_text: Option<String>,
+    pub recent_message_rich_text: Option<String>,
     pub recent_user_messages: Vec<RecentUserMessage>,
     pub is_fork: bool,
     pub attachment_count: usize,
