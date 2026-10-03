@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 
+use crate::automations::automation_status_reminder::render_automation_cleared_status_reminder;
+
 use crate::extensions::inference::provider_session::ProviderMessage;
 
 use super::sand_agent_profile_prompt::{
@@ -39,6 +41,63 @@ pub struct PromptCollectorDynamicUserContext<'a> {
     pub automation_status_reminder: Option<&'a str>,
     pub profile_update: Option<&'a str>,
     pub is_silence_allowed: bool,
+}
+
+/// Runner-owned cross-turn state for frozen automation status reminder projection.
+///
+/// The reference prompt collector suppresses an unchanged status snapshot until
+/// compaction advances, and emits one authoritative cleared snapshot when the
+/// previous reminder disappears. Host composition may retain this state per
+/// Agent, but the transition rules remain owned by the prompt collector.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct PromptCollectorAutomationReminderState {
+    last_status_reminder: Option<String>,
+    last_compaction_epoch: Option<u64>,
+}
+
+impl PromptCollectorAutomationReminderState {
+    pub fn reminder_for_turn(
+        &self,
+        rendered: Option<&str>,
+        compaction_epoch: u64,
+    ) -> Option<String> {
+        let compaction_advanced = self
+            .last_compaction_epoch
+            .is_some_and(|last| compaction_epoch > last);
+        match rendered {
+            Some(rendered)
+                if self.last_status_reminder.as_deref() == Some(rendered)
+                    && !compaction_advanced =>
+            {
+                None
+            }
+            Some(rendered) => Some(rendered.to_string()),
+            None if self.last_status_reminder.is_none() => None,
+            None => {
+                let clearing = render_automation_cleared_status_reminder();
+                if self.last_status_reminder.as_deref() == Some(clearing.as_str())
+                    && !compaction_advanced
+                {
+                    None
+                } else {
+                    Some(clearing)
+                }
+            }
+        }
+    }
+
+    pub fn note_reminder(&mut self, reminder: Option<&str>, compaction_epoch: u64) {
+        let Some(reminder) = reminder else {
+            return;
+        };
+        self.last_status_reminder = Some(reminder.to_string());
+        self.last_compaction_epoch = Some(compaction_epoch);
+    }
+
+    pub fn reset(&mut self) {
+        self.last_status_reminder = None;
+        self.last_compaction_epoch = None;
+    }
 }
 
 pub fn append_profile_system_section_for_turn(
