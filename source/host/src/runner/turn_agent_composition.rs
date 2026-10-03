@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -77,19 +78,26 @@ pub struct CompletedRoutedToolCall {
     pub result: Result<Value, String>,
     pub started_at_ms: u64,
     pub completed_at_ms: u64,
+    pub sequence: u64,
 }
 
 struct CheckpointRecordingRoutedToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
     completed: Arc<Mutex<Vec<CompletedRoutedToolCall>>>,
+    next_sequence: Arc<AtomicU64>,
 }
 
 impl CheckpointRecordingRoutedToolBridge {
     fn new(
         delegate: Arc<dyn RoutedToolBridge>,
         completed: Arc<Mutex<Vec<CompletedRoutedToolCall>>>,
+        next_sequence: Arc<AtomicU64>,
     ) -> Self {
-        Self { delegate, completed }
+        Self {
+            delegate,
+            completed,
+            next_sequence,
+        }
     }
 }
 
@@ -117,6 +125,7 @@ impl RoutedToolBridge for CheckpointRecordingRoutedToolBridge {
         args: Value,
         tool_call_id: &str,
     ) -> Result<Value, ProviderSessionError> {
+        let sequence = self.next_sequence.fetch_add(1, Ordering::Relaxed);
         let started_at_ms = unix_epoch_ms();
         let result = self.delegate.call_tool(tool, args.clone(), tool_call_id);
         let completed_at_ms = unix_epoch_ms();
@@ -133,6 +142,7 @@ impl RoutedToolBridge for CheckpointRecordingRoutedToolBridge {
                     .map_err(ToString::to_string),
                 started_at_ms,
                 completed_at_ms,
+                sequence,
             });
         result
     }
@@ -290,6 +300,7 @@ pub struct TurnAgentComposition {
     checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     latest_provider_checkpoint: Arc<Mutex<Option<RoutedProviderCheckpoint>>>,
     completed_tool_calls: Arc<Mutex<Vec<CompletedRoutedToolCall>>>,
+    next_tool_sequence: Arc<AtomicU64>,
     retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
     retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
     stream_attempt_runtime: Option<Arc<StreamAttemptRuntime>>,
@@ -356,6 +367,7 @@ impl TurnAgentComposition {
             checkpoint_store,
             latest_provider_checkpoint,
             completed_tool_calls: Arc::new(Mutex::new(Vec::new())),
+            next_tool_sequence: Arc::new(AtomicU64::new(0)),
             retry_sink: None,
             retry_report_sink: None,
             stream_attempt_runtime: None,
@@ -894,15 +906,18 @@ impl TurnAgentComposition {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .clear();
+        self.next_tool_sequence.store(0, Ordering::Relaxed);
     }
 
     pub fn take_completed_tool_calls(&self) -> Vec<CompletedRoutedToolCall> {
-        std::mem::take(
+        let mut calls = std::mem::take(
             &mut *self
                 .completed_tool_calls
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner()),
-        )
+        );
+        calls.sort_by_key(|call| call.sequence);
+        calls
     }
 
     pub fn run(
@@ -992,6 +1007,7 @@ impl TurnAgentComposition {
             CheckpointRecordingRoutedToolBridge::new(
                 bridge,
                 Arc::clone(&self.completed_tool_calls),
+                Arc::clone(&self.next_tool_sequence),
             ),
         );
         let tool_step_reminder = if self.toolset_role.is_subagent_runner || self.is_silence_allowed {
