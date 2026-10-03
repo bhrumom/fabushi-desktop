@@ -1,6 +1,7 @@
 use mahayana_host_runtime::extensions::inference::provider_session::ProviderMessage;
 use mahayana_host_runtime::runner::prompt_collector_glue::{
-    PromptCollectorDynamicUserContext, append_mcp_runtime_sections_for_turn,
+    PromptCollectorAutomationReminderState, PromptCollectorDynamicUserContext,
+    append_mcp_runtime_sections_for_turn,
     append_profile_system_section_for_turn, append_remote_runtime_sections_for_turn,
     apply_dynamic_user_context_for_turn, project_provider_messages_for_turn,
     resolve_profile_update_for_turn,
@@ -242,4 +243,40 @@ fn prompt_collector_owns_profile_mcp_and_remote_runtime_sections() {
     );
     assert!(!subagent_messages[0].content.contains("Connector custom instructions"));
     assert!(!subagent_messages[0].content.contains("<mcp_status>"));
+}
+
+
+#[test]
+fn automation_status_reminder_state_matches_frozen_compaction_and_clear_semantics() {
+    let mut state = PromptCollectorAutomationReminderState::default();
+    let running = "<automation_status>running</automation_status>";
+
+    assert_eq!(
+        state.reminder_for_turn(Some(running), 4).as_deref(),
+        Some(running)
+    );
+    state.note_reminder(Some(running), 4);
+
+    assert_eq!(state.reminder_for_turn(Some(running), 4), None);
+    assert_eq!(
+        state.reminder_for_turn(Some(running), 5).as_deref(),
+        Some(running)
+    );
+    state.note_reminder(Some(running), 5);
+
+    let cleared = state
+        .reminder_for_turn(None, 5)
+        .expect("cleared automation snapshot");
+    assert!(cleared.contains("<automation_status>"));
+    assert!(cleared.to_ascii_lowercase().contains("no automations"));
+    state.note_reminder(Some(&cleared), 5);
+
+    assert_eq!(state.reminder_for_turn(None, 5), None);
+    assert_eq!(
+        state.reminder_for_turn(None, 6).as_deref(),
+        Some(cleared.as_str())
+    );
+
+    state.reset();
+    assert_eq!(state.reminder_for_turn(None, 6), None);
 }
