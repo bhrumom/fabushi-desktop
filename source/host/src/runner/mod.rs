@@ -103,3 +103,4 @@ pub mod host_file_transfer_dependencies;
 pub mod host_external_machine_dependencies;
 
 pub mod host_web_dependencies;
+pub mod host_generate_image_dependencies;

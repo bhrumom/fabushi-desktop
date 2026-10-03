@@ -32,6 +32,7 @@ use crate::runner::tools::sand_subagent_management_tools::SubagentSteerReviewCal
 use crate::runner::tools::sand_task_subagent_tool::{SubagentTaskReviewCallback, SubagentTaskSink};
 use crate::runner::tools::sand_browser_tools::BrowserToolExecutor;
 use crate::runner::tools::sand_web_tools::WebToolExecutor;
+use crate::runner::tools::sand_generate_image_tool::GenerateImageToolExecutor;
 use crate::runner::tools::sand_computer_tool::{ComputerToolExecutor, ComputerToolExposure};
 use crate::runner::tools::sand_file_transfer_tools::FileTransferExecutor;
 use crate::runner::tools::sand_external_machine_tools::{
@@ -87,6 +88,7 @@ pub struct ProductionRunnerCompositionInput {
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     pub browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     pub web_executor: Option<Arc<dyn WebToolExecutor>>,
+    pub generate_image_executor: Option<Arc<dyn GenerateImageToolExecutor>>,
     pub computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
     pub computer_exposure: ComputerToolExposure,
     pub file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
@@ -148,6 +150,9 @@ pub fn create_production_runner_composition(
     }
     if let Some(web_executor) = input.web_executor {
         composition = composition.with_web_executor(web_executor);
+    }
+    if let Some(generate_image_executor) = input.generate_image_executor {
+        composition = composition.with_generate_image_executor(generate_image_executor);
     }
     composition = composition.with_computer_exposure(input.computer_exposure);
     if let Some(computer_executor) = input.computer_executor {

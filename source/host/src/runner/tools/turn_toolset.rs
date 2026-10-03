@@ -37,6 +37,9 @@ use super::sand_agent_management_tools::{
 };
 use super::sand_browser_tools::{BrowserToolExecutor, SandBrowserToolBridge};
 use super::sand_web_tools::{SandWebToolBridge, WebToolExecutor};
+use super::sand_generate_image_tool::{
+    GenerateImageToolExecutor, SandGenerateImageToolBridge,
+};
 use super::sand_computer_tool::{ComputerToolExecutor, ComputerToolExposure, SandComputerToolBridge};
 use super::sand_file_transfer_tools::{
     COPY_FROM_BOX_TOOL_NAME, COPY_TO_BOX_TOOL_NAME, FileTransferExecutor,
@@ -156,6 +159,7 @@ pub struct TurnToolsetDependencies {
     pub box_shell_review: Option<BoxShellAutoReviewCallback>,
     pub browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
     pub web_executor: Option<Arc<dyn WebToolExecutor>>,
+    pub generate_image_executor: Option<Arc<dyn GenerateImageToolExecutor>>,
     pub computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
     pub computer_exposure: ComputerToolExposure,
     pub file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
@@ -292,6 +296,7 @@ fn is_dynamic_first_party_tool(tool: &RoutedToolDefinition) -> bool {
         CHECK_SUBAGENT_TOOL_NAME,
         MESSAGE_SUBAGENT_TOOL_NAME,
         STOP_SUBAGENT_TOOL_NAME,
+        GENERATE_IMAGE_TOOL_NAME,
     ]
     .iter()
     .any(|candidate| tool.name == *candidate || tool.tool_name == *candidate)
@@ -560,6 +565,7 @@ pub fn build_turn_toolset(
 ) -> Arc<dyn RoutedToolBridge> {
     let role = dependencies.role;
     let await_box_resources = dependencies.box_resources.clone();
+    let generate_image_box_resources = dependencies.box_resources.clone();
     let await_external_machine = dependencies.external_machine_executor.clone();
     let await_cancellation = dependencies.cancellation.clone();
     let bridge: Arc<dyn RoutedToolBridge> =
@@ -587,6 +593,16 @@ pub fn build_turn_toolset(
             (false, Some(executor)) => Arc::new(SandWebToolBridge::new(bridge, executor)),
             _ => bridge,
         };
+    let bridge: Arc<dyn RoutedToolBridge> = match (
+        role.is_subagent_runner,
+        dependencies.generate_image_executor,
+        generate_image_box_resources,
+    ) {
+        (false, Some(executor), Some(box_resources)) => Arc::new(
+            SandGenerateImageToolBridge::new(bridge, executor, box_resources),
+        ),
+        _ => bridge,
+    };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.computer_executor {
         Some(executor) => Arc::new(
             SandComputerToolBridge::new(bridge, executor)

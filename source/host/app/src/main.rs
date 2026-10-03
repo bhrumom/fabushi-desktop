@@ -13,6 +13,10 @@ use mahayana_host_runtime::extensions::box_store_sync::box_copy_in::{
 use mahayana_host_runtime::extensions::box_store_sync::production::ProductionBoxStoreSyncApi;
 use mahayana_host_runtime::extensions::action_audit::extension::ActionAuditExtension;
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
+use mahayana_host_runtime::extensions::attachments::generate_image_service::{
+    GenerateImageAuth, PersistGeneratedImage, PersistedImage,
+};
+use mahayana_host_runtime::extensions::attachments::attachments_service::persist_image_bytes;
 use mahayana_host_runtime::extensions::auto_review::extension::HostAutoReviewExtension;
 use mahayana_host_runtime::extensions::auto_review::sand_backend_smart_mode_classifier_exec::{
     create_sand_backend_smart_mode_classifier_executor_with_cancellation,
@@ -307,11 +311,13 @@ use mahayana_host_runtime::runner::host_computer_tool_dependencies::ProductionCo
 use mahayana_host_runtime::runner::host_file_transfer_dependencies::ProductionFileTransferExecutor;
 use mahayana_host_runtime::runner::host_external_machine_dependencies::ProductionExternalMachineExecutor;
 use mahayana_host_runtime::runner::host_web_dependencies::ProductionWebToolExecutor;
+use mahayana_host_runtime::runner::host_generate_image_dependencies::ProductionGenerateImageToolExecutor;
 use mahayana_host_runtime::runner::tools::sand_file_transfer_tools::FileTransferExecutor;
 use mahayana_host_runtime::runner::tools::sand_external_machine_tools::{
     ExternalMachineExecutor, ExternalMachineShellArgs, ExternalShellAutoReviewCallback,
 };
 use mahayana_host_runtime::runner::tools::sand_web_tools::WebToolExecutor;
+use mahayana_host_runtime::runner::tools::sand_generate_image_tool::GenerateImageToolExecutor;
 use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     ComputerAutoReviewCallback, ComputerPersistImageCallback, ComputerToolExecutor,
     ComputerToolExposure, ReportedComputerAction,
@@ -7710,14 +7716,28 @@ fn start_routed_provider_task(
                 });
             let cursor_auth = inference.cursor_auth_for_session(Some(&worker_session_options));
             let turn_model_id = cursor_auth.requested_model().model_id;
-            let web_search = inference
-                .create_web_search(turn_model_id.clone(), None)
-                .map_err(GatewayCommandError::Internal)?;
-            let web_fetch = inference
-                .create_web_fetch(None)
-                .map_err(GatewayCommandError::Internal)?;
-            let web_executor: Arc<dyn WebToolExecutor> =
-                Arc::new(ProductionWebToolExecutor::new(web_search, web_fetch));
+            let web_executor: Arc<dyn WebToolExecutor> = Arc::new(
+                ProductionWebToolExecutor::new(Arc::clone(&inference), turn_model_id.clone()),
+            );
+            let generated_image_dir =
+                mahayana_host_runtime::host_paths::get_sand_root_dir()
+                    .join("agents")
+                    .join(&agent_id)
+                    .join("generated-images");
+            let persist_generated_image: PersistGeneratedImage = Arc::new(move |bytes, mime_type| {
+                let persisted = persist_image_bytes(&generated_image_dir, bytes, mime_type)
+                    .map_err(|error| error.to_string())?;
+                Ok(Some(PersistedImage {
+                    absolute_path: persisted.absolute_path.to_string_lossy().into_owned(),
+                }))
+            });
+            let generate_image_auth: Arc<dyn GenerateImageAuth> = auth.clone();
+            let generate_image_executor: Arc<dyn GenerateImageToolExecutor> = Arc::new(
+                ProductionGenerateImageToolExecutor::new(
+                    generate_image_auth,
+                    persist_generated_image,
+                ),
+            );
             let turn_conversation_id = cursor_auth
                 .conversation_id()
                 .unwrap_or_else(|| agent_id.clone());
@@ -7775,6 +7795,7 @@ fn start_routed_provider_task(
                     box_resources: Some(box_resources),
                     browser_executor: Some(browser_executor),
                     web_executor: Some(web_executor),
+                    generate_image_executor: Some(generate_image_executor),
                     computer_executor: Some(computer_executor),
                     computer_exposure,
                     file_transfer_executor: Some(file_transfer_executor),

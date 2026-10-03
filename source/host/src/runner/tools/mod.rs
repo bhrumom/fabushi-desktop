@@ -39,3 +39,4 @@ pub mod sand_browser_driver_source;
 pub mod sand_browser_tools;
 
 pub mod sand_web_tools;
+pub mod sand_generate_image_tool;
