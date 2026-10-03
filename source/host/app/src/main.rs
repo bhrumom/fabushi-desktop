@@ -280,7 +280,7 @@ use mahayana_host_runtime::runner::production_turn_input_projection::create_prod
 use mahayana_host_runtime::runner::is_recovery_shaped_turn;
 use mahayana_host_runtime::runner::prompt_collector_glue::{
     apply_staged_attachment_paths_for_turn, resolve_profile_update_for_turn,
-    selected_media_host_paths_for_turn,
+    selected_media_host_paths_for_turn, unanswered_questions_user_message_for_turn,
 };
 use mahayana_host_runtime::runner::runner_prompt_glue::{
     RunnerPromptAutomationState, RunnerPromptGlueOwner, RunnerPromptMcpState,
@@ -5313,9 +5313,13 @@ fn start_routed_provider_task(
             })?;
     }
 
-    prompt_owner
+    let mut prepend_user_messages = prompt_owner
         .prepend_unconfirmed_user_messages(&args, &mut provider_messages)
         .map_err(GatewayCommandError::Internal)?;
+    if let Some(unanswered) = unanswered_questions_user_message_for_turn(&args) {
+        prepend_user_messages.push(unanswered);
+    }
+    turn_input.prompt_action.prepend_user_messages = prepend_user_messages;
     let prompt_profile_state = prompt_owner
         .append_profile(&mut provider_messages)
         .map_err(GatewayCommandError::Internal)?;
