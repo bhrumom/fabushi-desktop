@@ -227,6 +227,21 @@ impl McpHostService {
             .map(|servers| to_installed_servers(&servers))
     }
 
+    pub fn transport_for_server_identifier(
+        &self,
+        server_identifier: &str,
+    ) -> Result<String, String> {
+        let transport = self
+            .backend
+            .list_servers()?
+            .into_iter()
+            .find(|server| server.server_identifier == server_identifier)
+            .map(|server| server.transport)
+            .filter(|transport| !transport.trim().is_empty())
+            .unwrap_or_else(|| "unknown".to_string());
+        Ok(transport)
+    }
+
     pub fn list_plugins(&self) -> Result<Vec<Value>, String> {
         let views = self.backend.list_catalog(false)?;
         let servers = self.backend.list_servers()?;
