@@ -323,6 +323,7 @@ fn production_bridge_owns_immutable_turn_projection_and_generated_runner_binding
         "pub fn create_production_runner_composition_with_hooks(",
         ".with_agent_management_sink(hooks.agent_management_sink)",
         ".with_routine_auto_review(hooks.routine_auto_review)",
+        ".with_state_approval_barrier(hooks.state_approval_barrier)",
         ".with_box_shell_review(hooks.box_shell_review)",
         "composition = composition.with_state_writer(state_writer)",
         "composition = composition.with_subagent_task_sink(subagent_task_sink)",
@@ -412,7 +413,8 @@ fn production_bridge_projects_host_resolved_turn_hooks_behaviorally() {
         ProductionRunnerCompositionHooks {
             agent_management_sink: Arc::new(EmptyAgentManagementSink),
             state_writer: None,
-            routine_auto_review: Arc::new(|_, _| Ok(())),
+            routine_auto_review: Arc::new(|_, _| Ok(None)),
+            state_approval_barrier: Arc::new(|| Ok(())),
             box_shell_review: Arc::new(|_| Ok(None)),
             subagent_task_sink: None,
             subagent_task_review: None,
@@ -425,6 +427,7 @@ fn production_bridge_projects_host_resolved_turn_hooks_behaviorally() {
 
     assert!(composition.has_agent_management_sink());
     assert!(composition.has_routine_auto_review());
+    assert!(composition.has_state_approval_barrier());
     assert!(composition.has_box_shell_review());
 }
 
