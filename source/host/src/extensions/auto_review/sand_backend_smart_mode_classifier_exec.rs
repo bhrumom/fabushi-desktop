@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use prost::{Message, Oneof};
 use serde::Serialize;
@@ -15,7 +15,7 @@ use crate::extensions::auth::extension::HostAuthExtension;
 use crate::runner::sand_auto_review_classifier_run::{
     AutoReviewClassifierError, AutoReviewClassifierRequest,
     SandAutoReviewClassifierExecutor, SmartModeClassifierDecision,
-    SmartModeClassifierResult, SmartModeClassifierSuccess,
+    SmartModeClassifierMeasurement, SmartModeClassifierResult, SmartModeClassifierSuccess,
 };
 
 pub const DASHBOARD_CLASSIFY_SAND_AUTO_REVIEW_PATH: &str =
@@ -26,6 +26,35 @@ pub type ClassifierAccessToken =
     Arc<dyn Fn() -> Result<String, String> + Send + Sync + 'static>;
 pub type ClassifierMachineId =
     Arc<dyn Fn() -> Result<String, String> + Send + Sync + 'static>;
+pub type SmartModeClassifierMeasurementReporter =
+    Arc<dyn Fn(SmartModeClassifierMeasurement) + Send + Sync + 'static>;
+
+static CLASSIFIER_MEASUREMENT_REPORTER: OnceLock<
+    Mutex<Option<SmartModeClassifierMeasurementReporter>>,
+> = OnceLock::new();
+
+fn classifier_measurement_reporter(
+) -> &'static Mutex<Option<SmartModeClassifierMeasurementReporter>> {
+    CLASSIFIER_MEASUREMENT_REPORTER.get_or_init(|| Mutex::new(None))
+}
+
+pub fn pin_sand_auto_review_classifier_measurement_reporter(
+    reporter: Option<SmartModeClassifierMeasurementReporter>,
+) {
+    *classifier_measurement_reporter()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) = reporter;
+}
+
+fn report_classifier_measurement(measurement: SmartModeClassifierMeasurement) {
+    let reporter = classifier_measurement_reporter()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .clone();
+    if let Some(reporter) = reporter {
+        reporter(measurement);
+    }
+}
 
 #[derive(Clone)]
 pub struct SandBackendSmartModeClassifierOptions {
@@ -182,11 +211,9 @@ impl SandBackendSmartModeClassifierExecutor {
                     "ClassifySandAutoReview returned invalid protobuf: {error}"
                 ))
             })?;
-        let result = response.result.ok_or_else(|| {
-            SandSmartModeClassifierError::Protocol(
-                "ClassifySandAutoReview returned no result".into(),
-            )
-        })?;
+        let Some(result) = response.result else {
+            return Ok(SmartModeClassifierResult::Missing);
+        };
         Ok(project_result(result))
     }
 }
@@ -225,6 +252,10 @@ where
             )) => Err(AutoReviewClassifierError::Aborted(reason)),
             Err(error) => Err(AutoReviewClassifierError::Failed(error.to_string())),
         }
+    }
+
+    fn record_measurement(&mut self, measurement: SmartModeClassifierMeasurement) {
+        report_classifier_measurement(measurement);
     }
 }
 
@@ -323,6 +354,7 @@ fn project_result(result: SmartModeClassifierResultWire) -> SmartModeClassifierR
     match result.result {
         Some(smart_mode_classifier_result_wire::Result::Success(success)) => {
             let decision = match success.decision {
+                0 => SmartModeClassifierDecision::Unspecified,
                 1 => SmartModeClassifierDecision::Allow,
                 2 => SmartModeClassifierDecision::Block,
                 _ => SmartModeClassifierDecision::Unknown,
@@ -333,9 +365,14 @@ fn project_result(result: SmartModeClassifierResultWire) -> SmartModeClassifierR
                 proposed_allow_rule: success.proposed_allow_rule,
             })
         }
-        Some(smart_mode_classifier_result_wire::Result::Error(_)) | None => {
-            SmartModeClassifierResult::Failure
+        Some(smart_mode_classifier_result_wire::Result::Error(error)) => {
+            let (failure_reason, retryable) = parse_failure_metadata(&error.error);
+            SmartModeClassifierResult::Error {
+                failure_reason,
+                retryable,
+            }
         }
+        None => SmartModeClassifierResult::Missing
     }
 }
 
