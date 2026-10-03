@@ -128,6 +128,9 @@ pub struct TurnObservation {
     mcp_observed_tool_call_ids: HashSet<String>,
     provider_streamed_tool_call_ids: HashSet<String>,
     first_token_observed: bool,
+    first_output_dispatch_started: Option<Instant>,
+    first_output_model_id: Option<String>,
+    first_output_is_fork: bool,
 }
 
 pub type TurnObservationHandle = Arc<Mutex<TurnObservation>>;
@@ -177,6 +180,9 @@ impl TurnObservation {
             mcp_observed_tool_call_ids: HashSet::new(),
             provider_streamed_tool_call_ids: HashSet::new(),
             first_token_observed: false,
+            first_output_dispatch_started: None,
+            first_output_model_id: None,
+            first_output_is_fork: false,
         }
     }
 
@@ -338,6 +344,9 @@ impl TurnObservation {
     pub fn turn_started(&mut self, at_ms: u64) {
         self.turn_started_at_ms = at_ms;
         self.first_token_observed = false;
+        self.first_output_dispatch_started = None;
+        self.first_output_model_id = None;
+        self.first_output_is_fork = false;
         self.emit(json!({
             "type": "turn-started",
             "agentId": self.conversation_id,
@@ -464,8 +473,23 @@ impl TurnObservation {
         true
     }
 
+    pub fn observe_stream_output(&mut self, chunk_type: &str) -> bool {
+        let elapsed_ms = self
+            .first_output_dispatch_started
+            .map(|started| started.elapsed().as_secs_f64() * 1_000.0);
+        let model_id = self.first_output_model_id.clone();
+        let is_fork = self.first_output_is_fork;
+        self.observe_first_token(
+            chunk_type,
+            elapsed_ms.map(|_| 0.0),
+            elapsed_ms,
+            model_id.as_deref(),
+            is_fork,
+        )
+    }
+
     pub fn observe_send_dispatch(
-        &self,
+        &mut self,
         host_receipt_perf_ms: f64,
         dispatch_perf_ms: f64,
         enter_epoch_ms: Option<f64>,
@@ -473,6 +497,10 @@ impl TurnObservation {
         is_fork: bool,
         model_id: &str,
     ) {
+        self.first_output_dispatch_started = Some(Instant::now());
+        self.first_output_model_id =
+            (!model_id.trim().is_empty()).then(|| model_id.to_string());
+        self.first_output_is_fork = is_fork;
         let host_dispatch_ms = (dispatch_perf_ms - host_receipt_perf_ms)
             .max(0.0)
             .round() as u64;
@@ -729,6 +757,7 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
         partial: &ProviderPartialToolCall,
     ) -> Result<(), ProviderSessionError> {
         if let Ok(mut observation) = self.observation.lock() {
+            observation.observe_stream_output("tool-call");
             observation.observe_provider_partial_tool_call(partial);
         }
         Ok(())
@@ -747,6 +776,7 @@ impl RoutedToolBridge for ObservedRoutedToolBridge {
         };
         let started = Instant::now();
         if let Ok(mut observation) = self.observation.lock() {
+            observation.observe_stream_output("tool-call");
             observation.tool_started(name);
             if let Some(surface) = dual_surface_tool_surface(name) {
                 observation.emit_tool_call_telemetry(ToolCallTelemetryEvent::Started {
