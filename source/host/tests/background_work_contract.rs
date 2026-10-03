@@ -207,6 +207,11 @@ fn runner_cloud_agent_watches_match_frozen_ownership_and_settlement_contract() {
         watches.pending_cloud_agent_watch_ids("agent-a"),
         vec!["bc-1".to_string()]
     );
+    let cloud_tasks = watches.async_task_snapshots("agent-a");
+    assert_eq!(cloud_tasks.len(), 1);
+    assert_eq!(cloud_tasks[0].id, "bc-1");
+    assert_eq!(cloud_tasks[0].label, "Cloud agent bc-1");
+    assert!(cloud_tasks[0].started_at_ms > 0);
     assert_eq!(
         await_started_rx.recv_timeout(Duration::from_secs(2)).expect("started"),
         ("bc-1".to_string(), true)
@@ -366,6 +371,11 @@ fn runner_background_shell_watches_dedupe_before_pending_persist_and_fence_settl
         watches.pending_shell_rewatch_ids("agent-a"),
         vec!["42".to_string()]
     );
+    let shell_tasks = watches.async_task_snapshots("agent-a");
+    assert_eq!(shell_tasks.len(), 1);
+    assert_eq!(shell_tasks[0].id, "42");
+    assert_eq!(shell_tasks[0].label, "compile");
+    assert!(shell_tasks[0].started_at_ms > 0);
     assert_eq!(
         started_rx.recv_timeout(Duration::from_secs(2)).expect("started"),
         ("agent-a".to_string(), "42".to_string())

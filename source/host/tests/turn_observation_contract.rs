@@ -506,11 +506,15 @@ fn shipping_host_routes_async_task_projection_through_turn_observation_owner() {
         "set_async_tasks_provider(",
         "set_async_tasks_event_handler(",
         "publish_async_tasks_changed(",
-        "get_async_tasks(owner_agent_id, &[])",
+        "running_subagent_records_for_parent(owner_agent_id)",
+        "async_tasks_shell",
+        ".async_task_snapshots(owner_agent_id)",
+        "async_tasks_cloud",
+        "get_async_tasks(owner_agent_id, &live_tasks)",
     ] {
         assert!(
             main.contains(required),
-            "missing production async-task observation wiring: {required}"
+            "missing live-owner async-task observation wiring: {required}"
         );
     }
     assert!(

@@ -451,6 +451,33 @@ impl SubagentRuntime {
         ids
     }
 
+    pub fn running_subagent_records_for_parent(
+        &self,
+        parent_agent_id: &str,
+    ) -> Vec<(String, SubagentRecord)> {
+        let mut records = self
+            .running
+            .iter()
+            .filter(|id| !self.aborting.contains(*id))
+            .filter_map(|id| {
+                let meta = self.meta.get(id)?;
+                if meta.parent_agent_id != parent_agent_id {
+                    return None;
+                }
+                self.registry
+                    .get(id)
+                    .cloned()
+                    .map(|record| (id.clone(), record))
+            })
+            .collect::<Vec<_>>();
+        records.sort_by(|(left_id, left), (right_id, right)| {
+            left.started_at_ms
+                .cmp(&right.started_at_ms)
+                .then_with(|| left_id.cmp(right_id))
+        });
+        records
+    }
+
     pub fn abort_running_subagents_for_parent(&mut self, parent_agent_id: &str) -> Vec<String> {
         let ids = self.running_subagent_ids_for_parent(parent_agent_id);
         for id in &ids {

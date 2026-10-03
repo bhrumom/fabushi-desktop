@@ -179,6 +179,7 @@ use mahayana_host_runtime::extensions::automations::sand_automation_cloud_sync::
 use mahayana_host_runtime::extensions::automations::sand_automation_fire_consumer::{
     BackendAutomationFire, FireCompletion,
 };
+use mahayana_host_runtime::extensions::transcript::async_task_union::AsyncTask;
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     AckObligations, AckRedrivePreparation, build_ack_redrive_empty_delivery_report,
     build_ack_redrive_send_args,
@@ -6021,8 +6022,11 @@ fn start_routed_provider_task(
         ))?;
     let worker_cloud_agents = Arc::clone(&cloud_agents);
     let worker_cloud_agent_watches = Arc::clone(&cloud_agent_watches);
+    let worker_async_cloud_agent_watches = Arc::clone(&cloud_agent_watches);
+    let worker_async_background_shell_watches = Arc::clone(&background_shell_watches);
     let worker_box_store_sync = box_store_sync.clone();
     let worker_generated_agent_runtime = Arc::clone(&generated_agent_runtime);
+    let worker_async_generated_agent_runtime = Arc::clone(&generated_agent_runtime);
     let worker_completion_revivals = Arc::clone(&completion_revivals);
     let cloud_agent_quiet_origin = args
         .get("quietOrigin")
@@ -6127,8 +6131,57 @@ fn start_routed_provider_task(
             if let Ok(mut observation) = observation.lock() {
                 observation.set_request_id(Some(worker_stream_id.clone()));
                 let async_tasks_runtime = Arc::clone(&worker_transcript_runtime);
+                let async_tasks_subagents = Arc::clone(&worker_async_generated_agent_runtime);
+                let async_tasks_cloud = Arc::clone(&worker_async_cloud_agent_watches);
+                let async_tasks_shell = Arc::clone(&worker_async_background_shell_watches);
                 observation.set_async_tasks_provider(Arc::new(move |owner_agent_id| {
-                    async_tasks_runtime.get_async_tasks(owner_agent_id, &[])
+                    let mut live_tasks = async_tasks_subagents
+                        .lock()
+                        .map(|runtime| {
+                            runtime
+                                .running_subagent_records_for_parent(owner_agent_id)
+                                .into_iter()
+                                .map(|(id, record)| AsyncTask {
+                                    kind: "subagent".into(),
+                                    id,
+                                    label: record.title,
+                                    status: "running".into(),
+                                    started_at_ms: record.started_at_ms as f64,
+                                    detail: Some(record.subagent_type.clone()),
+                                    subagent_type: Some(record.subagent_type),
+                                })
+                                .collect::<Vec<_>>()
+                        })
+                        .unwrap_or_default();
+                    live_tasks.extend(
+                        async_tasks_shell
+                            .async_task_snapshots(owner_agent_id)
+                            .into_iter()
+                            .map(|task| AsyncTask {
+                                kind: "shell".into(),
+                                id: task.id,
+                                label: task.label,
+                                status: "running".into(),
+                                started_at_ms: task.started_at_ms as f64,
+                                detail: None,
+                                subagent_type: None,
+                            }),
+                    );
+                    live_tasks.extend(
+                        async_tasks_cloud
+                            .async_task_snapshots(owner_agent_id)
+                            .into_iter()
+                            .map(|task| AsyncTask {
+                                kind: "cloud-agent".into(),
+                                id: task.id,
+                                label: task.label,
+                                status: "running".into(),
+                                started_at_ms: task.started_at_ms as f64,
+                                detail: None,
+                                subagent_type: None,
+                            }),
+                    );
+                    async_tasks_runtime.get_async_tasks(owner_agent_id, &live_tasks)
                 }));
                 let async_tasks_events = worker_events.clone();
                 observation.set_async_tasks_event_handler(Arc::new(move |payload| {

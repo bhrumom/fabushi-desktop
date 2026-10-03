@@ -168,8 +168,25 @@ fn parent_delete_abort_targets_only_running_children_owned_by_that_parent() {
         vec!["child-a".to_string(), "child-b".to_string()]
     );
     assert_eq!(
+        runtime
+            .running_subagent_records_for_parent("parent-a")
+            .into_iter()
+            .map(|(id, record)| (id, record.title, record.started_at_ms))
+            .collect::<Vec<_>>(),
+        vec![
+            ("child-a".to_string(), "first".to_string(), 10),
+            ("child-b".to_string(), "second".to_string(), 11),
+        ]
+    );
+    assert_eq!(
         runtime.abort_running_subagents_for_parent("parent-a"),
         vec!["child-a".to_string(), "child-b".to_string()]
+    );
+    assert!(
+        runtime
+            .running_subagent_records_for_parent("parent-a")
+            .is_empty(),
+        "aborting children must leave the frozen async-task projection immediately"
     );
 
     for child in ["child-a", "child-b"] {

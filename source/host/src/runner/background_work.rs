@@ -3,8 +3,23 @@ use std::sync::{
     Arc, Mutex,
     atomic::{AtomicBool, Ordering},
 };
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::Value;
+
+fn background_task_started_at_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(u128::from(u64::MAX)) as u64)
+        .unwrap_or_default()
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BackgroundAsyncTaskSnapshot {
+    pub id: String,
+    pub label: String,
+    pub started_at_ms: u64,
+}
 
 pub const SHELL_REWATCH_POLL_DEFAULT_MS: u64 = 10_000;
 pub const SHELL_REWATCH_MAX_WAIT_MS: u64 = 5 * 60 * 60 * 1_000;
@@ -359,6 +374,7 @@ struct ArmedCloudAgentWatch {
     parent_agent_id: String,
     work_id: String,
     title: String,
+    started_at_ms: u64,
     quiet_origin: Option<Value>,
 }
 
@@ -420,6 +436,7 @@ impl RunnerCloudAgentWatches {
                 parent_agent_id: parent_agent_id.to_string(),
                 work_id: bc_id.to_string(),
                 title: format!("Cloud agent {bc_id}"),
+                started_at_ms: background_task_started_at_ms(),
                 quiet_origin: options.quiet_origin.clone(),
             };
             state.armed.insert(key.clone(), armed.clone());
@@ -516,6 +533,28 @@ impl RunnerCloudAgentWatches {
             .collect::<Vec<_>>();
         ids.sort();
         ids
+    }
+
+    pub fn async_task_snapshots(&self, parent_agent_id: &str) -> Vec<BackgroundAsyncTaskSnapshot> {
+        let mut tasks = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .armed
+            .values()
+            .filter(|watch| watch.parent_agent_id == parent_agent_id)
+            .map(|watch| BackgroundAsyncTaskSnapshot {
+                id: watch.work_id.clone(),
+                label: watch.title.clone(),
+                started_at_ms: watch.started_at_ms,
+            })
+            .collect::<Vec<_>>();
+        tasks.sort_by(|a, b| {
+            a.started_at_ms
+                .cmp(&b.started_at_ms)
+                .then_with(|| a.id.cmp(&b.id))
+        });
+        tasks
     }
 
     pub fn cancel_cloud_watch(&self, parent_agent_id: &str, bc_id: &str) -> bool {
@@ -617,6 +656,7 @@ struct ArmedBackgroundShellWatch {
     parent_agent_id: String,
     work_id: String,
     title: String,
+    started_at_ms: u64,
     quiet_origin: Option<Value>,
     cancelled: Arc<AtomicBool>,
 }
@@ -692,6 +732,7 @@ impl RunnerBackgroundShellWatches {
                 parent_agent_id: parent_agent_id.to_string(),
                 work_id: shell_id.to_string(),
                 title,
+                started_at_ms: background_task_started_at_ms(),
                 quiet_origin: options.quiet_origin,
                 cancelled: Arc::new(AtomicBool::new(false)),
             };
@@ -792,6 +833,28 @@ impl RunnerBackgroundShellWatches {
             .collect::<Vec<_>>();
         ids.sort();
         ids
+    }
+
+    pub fn async_task_snapshots(&self, parent_agent_id: &str) -> Vec<BackgroundAsyncTaskSnapshot> {
+        let mut tasks = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .armed
+            .values()
+            .filter(|watch| watch.parent_agent_id == parent_agent_id)
+            .map(|watch| BackgroundAsyncTaskSnapshot {
+                id: watch.work_id.clone(),
+                label: watch.title.clone(),
+                started_at_ms: watch.started_at_ms,
+            })
+            .collect::<Vec<_>>();
+        tasks.sort_by(|a, b| {
+            a.started_at_ms
+                .cmp(&b.started_at_ms)
+                .then_with(|| a.id.cmp(&b.id))
+        });
+        tasks
     }
 
     pub fn has_running_background_shell_work(&self) -> bool {
