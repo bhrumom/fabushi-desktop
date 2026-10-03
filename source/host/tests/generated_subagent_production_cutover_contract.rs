@@ -96,7 +96,8 @@ fn shipping_host_owns_task_child_runner_and_live_parent_projection() {
         "\"parentAgentId\": self.parent_agent_id",
         "subagent_task_sink: worker_subagent_task_sink",
         "subagent_task_review,",
-        ".with_generated_agent_runtime(Arc::clone(&worker_generated_agent_runtime))",
+        "worker_host_runner_composition.compose_production_runner(",
+        "Arc::clone(&worker_generated_agent_runtime)",
         "runner.begin_generated_subagent(",
         "worker_transcript_runtime.begin_live_subagent(parent_agent_id)",
         "worker_completion_revivals.handle_background_subagent_completion",
@@ -110,6 +111,7 @@ fn shipping_host_owns_task_child_runner_and_live_parent_projection() {
         "pub subagent_task_review: Option<SubagentTaskReviewCallback>",
         "composition.with_subagent_task_sink(subagent_task_sink)",
         "composition.with_subagent_task_review(subagent_task_review)",
+        "SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)",
     ] {
         assert!(
             runner_composition.contains(required),
