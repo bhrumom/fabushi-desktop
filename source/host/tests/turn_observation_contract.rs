@@ -521,6 +521,26 @@ fn shipping_host_routes_async_task_projection_through_turn_observation_owner() {
 
 
 #[test]
+fn shipping_host_preserves_gateway_trace_span_for_dispatch_and_ttft_telemetry() {
+    let main = fs::read_to_string("app/src/main.rs").expect("shipping host main");
+    for required in [
+        "let send_dispatch_trace_id = worker_gateway_context",
+        "let send_dispatch_span_id = worker_gateway_context",
+        "trace_id: send_dispatch_trace_id.clone()",
+        "span_id: send_dispatch_span_id.clone()",
+        "let ttft_trace_id = worker_gateway_context",
+        "let ttft_span_id = worker_gateway_context",
+        "trace_id: ttft_trace_id.clone()",
+        "span_id: ttft_span_id.clone()",
+    ] {
+        assert!(
+            main.contains(required),
+            "missing frozen dispatch/TTFT trace-span production wiring: {required}"
+        );
+    }
+}
+
+#[test]
 fn shipping_host_emits_send_dispatch_at_the_real_provider_dispatch_boundary() {
     let main = fs::read_to_string("app/src/main.rs").expect("shipping host main");
     let observation = main
