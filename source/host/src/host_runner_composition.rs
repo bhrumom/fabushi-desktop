@@ -11,7 +11,7 @@ use crate::extensions::local_tool_permission::local_tool_permission_controller::
     SandLocalToolControllerSubscription, SandLocalToolPermissionController,
     SandLocalToolRequestStatus,
 };
-use crate::extensions::memory::agent_state::SandAgentState;
+use crate::extensions::memory::agent_state::{AvatarBoxFileReader, SandAgentState};
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::runner::TurnUsage;
 use crate::runner::background_work::{RunnerBackgroundShellWatches, RunnerCloudAgentWatches};
@@ -108,6 +108,7 @@ impl HostRunnerComposition {
         agent_id: &str,
         group_member_turn: bool,
         multitask_enabled: bool,
+        avatar_box_file_reader: Option<AvatarBoxFileReader>,
     ) -> Result<ProductionTurnStateSurfaces, String> {
         if group_member_turn {
             return Ok(ProductionTurnStateSurfaces {
@@ -121,8 +122,11 @@ impl HostRunnerComposition {
             .parent()
             .map(Path::to_path_buf)
             .ok_or_else(|| "production memory agents root has no sand root parent".to_string())?;
-        let state_writer: Arc<dyn SandStateWriter> =
-            Arc::new(SandAgentState::new(sand_root, agent_id.to_string())?);
+        let mut state = SandAgentState::new(sand_root, agent_id.to_string())?;
+        if let Some(reader) = avatar_box_file_reader {
+            state = state.with_box_file_reader(reader);
+        }
+        let state_writer: Arc<dyn SandStateWriter> = Arc::new(state);
         let multitask_todo_state = if multitask_enabled {
             Some(sessions.open_agent_db_owner(agent_id)? as Arc<dyn MultitaskTodoState>)
         } else {

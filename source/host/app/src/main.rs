@@ -62,6 +62,7 @@ use mahayana_host_runtime::runner::sand_subagent_auto_review::{
 };
 use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
+use mahayana_host_runtime::extensions::memory::agent_state::AvatarBoxFileReader;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::agents::agent_messaging::{
@@ -256,6 +257,7 @@ use mahayana_host_runtime::extensions::transcript::turn_runtime::{
     shape_closing_send_nudge_turn_input, shape_reply_nudge_turn_input, should_attempt_reply_nudge,
 };
 use mahayana_host_runtime::ports::telemetry::sand_error_detail;
+use mahayana_host_runtime::r#box::box_transfer::TransferBox;
 use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxRemoteResourceLifecycle, ForeverBoxRunnerResourcePort, BoxStatus, ForeverBoxService,
 };
@@ -5899,12 +5901,25 @@ fn start_routed_provider_task(
         .filter(|value| !value.is_empty())
         .map(ToOwned::to_owned);
     let worker_send_is_fork = turn_input.options.is_fork;
+    let avatar_box_file_reader: AvatarBoxFileReader = {
+        let forever_box = Arc::clone(&forever_box);
+        let avatar_agent_id = agent_id.clone();
+        Arc::new(move |path: &std::path::Path| {
+            let path = path
+                .to_str()
+                .ok_or_else(|| "avatar box path must be valid UTF-8".to_string())?;
+            forever_box
+                .download_file(&(), &avatar_agent_id, path)
+                .map_err(|error| error.to_string())
+        })
+    };
     let turn_state_surfaces = host_runner_composition
         .compose_turn_state_surfaces(
             &session_workers,
             &agent_id,
             is_group_member_turn,
             multitask_enabled,
+            Some(avatar_box_file_reader),
         )
         .map_err(|error| GatewayCommandError::Internal(format!(
             "could not compose production turn state surfaces for {agent_id}: {error}"

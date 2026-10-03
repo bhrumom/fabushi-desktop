@@ -1,5 +1,5 @@
 use std::fs;
-use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+use std::sync::{Arc, Mutex, atomic::{AtomicUsize, Ordering}};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::json;
@@ -12,7 +12,7 @@ use mahayana_host_runtime::agents::settings_file::{
 };
 use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::extensions::memory::agent_state::{
-    MemoryScope, MemoryTier, SandAgentState,
+    AvatarBoxFileReader, MemoryScope, MemoryTier, SandAgentState,
 };
 use mahayana_host_runtime::extensions::memory::memory_service::{
     FileMemoryStore, get_agent_memory_dir, get_project_memory_shard_dir,
@@ -95,6 +95,39 @@ fn routes_memory_to_agent_user_and_joined_project_shards() {
         MemoryScope::Project,
         Some("alpha"),
     ).ok);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn avatar_uses_box_reader_when_box_root_path_is_not_on_host() {
+    let root = temp_root("box-avatar");
+    let reads = Arc::new(Mutex::new(Vec::<String>::new()));
+    let reads_for_reader = Arc::clone(&reads);
+    let reader: AvatarBoxFileReader = Arc::new(move |path| {
+        reads_for_reader
+            .lock()
+            .expect("reads")
+            .push(path.to_string_lossy().into_owned());
+        Ok(vec![137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0])
+    });
+    let state = SandAgentState::new(&root, "agent-box-avatar")
+        .expect("state")
+        .with_box_file_reader(reader);
+    let source = std::path::Path::new("/workspace/fabushi-avatar-from-box.png");
+
+    let outcome = state.set_avatar(source);
+    assert!(outcome.ok, "{}", outcome.message);
+    assert_eq!(
+        reads.lock().expect("reads").as_slice(),
+        &["/workspace/fabushi-avatar-from-box.png".to_string()]
+    );
+    assert!(
+        root.join("agents")
+            .join("agent-box-avatar")
+            .join("avatar.png")
+            .is_file()
+    );
 
     let _ = fs::remove_dir_all(root);
 }

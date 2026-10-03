@@ -14,6 +14,7 @@ use crate::agents::agent_profile::{
 };
 use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_file};
 use crate::automations::automation::{AutomationRecord, AutomationSpec, describe_trigger};
+use crate::r#box::box_transfer::is_box_root_path;
 use crate::extensions::session::channel_store::{FileChannelStore, get_agent_channels_dir};
 use crate::storage::folder_id::is_safe_folder_id;
 use crate::workflows::workflow_library::{WorkflowSpec, get_global_workflows_dir};
@@ -29,6 +30,8 @@ pub const MEMORY_NOTE_PREFIX: &str = "Note: ";
 
 pub type AgentStateClock = Arc<dyn Fn() -> i64 + Send + Sync + 'static>;
 pub type AvatarChanged = Arc<dyn Fn() + Send + Sync + 'static>;
+pub type AvatarBoxFileReader =
+    Arc<dyn Fn(&Path) -> Result<Vec<u8>, String> + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryTier { Profile, Note, Log }
@@ -54,6 +57,7 @@ pub struct SandAgentState {
     workflows: FileWorkflowStore,
     now: AgentStateClock,
     on_avatar_changed: Option<AvatarChanged>,
+    read_box_file: Option<AvatarBoxFileReader>,
 }
 
 impl SandAgentState {
@@ -72,11 +76,13 @@ impl SandAgentState {
             agent_id, agent_dir, sand_root,
             now: Arc::new(system_now_ms),
             on_avatar_changed: None,
+            read_box_file: None,
         })
     }
 
     pub fn with_clock(mut self, clock: AgentStateClock) -> Self { self.now = clock; self }
     pub fn with_avatar_changed(mut self, callback: AvatarChanged) -> Self { self.on_avatar_changed = Some(callback); self }
+    pub fn with_box_file_reader(mut self, reader: AvatarBoxFileReader) -> Self { self.read_box_file = Some(reader); self }
     pub fn agent_dir(&self) -> &Path { &self.agent_dir }
 
     pub fn write_memory(&self, content: &str, tier: MemoryTier, scope: MemoryScope, project: Option<&str>) -> StateWriteResult {
@@ -291,7 +297,34 @@ impl SandAgentState {
     }
 
     pub fn set_avatar(&self, source: &Path) -> StateWriteResult {
-        let Ok(bytes) = fs::read(source) else { return StateWriteResult::failure("could not read avatar source."); };
+        let source_label = source
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("avatar source");
+        let is_box_path = source.to_str().is_some_and(is_box_root_path);
+        let bytes = match fs::read(source) {
+            Ok(bytes) => bytes,
+            Err(_) if is_box_path => {
+                let Some(read_box_file) = &self.read_box_file else {
+                    return StateWriteResult::failure(format!(
+                        "could not read \"{source_label}\" from your box - write the image with Shell (or CopyFromBox onto a host path) first, then pass that path."
+                    ));
+                };
+                match read_box_file(source) {
+                    Ok(bytes) => bytes,
+                    Err(_) => {
+                        return StateWriteResult::failure(format!(
+                            "could not read \"{source_label}\" from your box - write the image with Shell (or CopyFromBox onto a host path) first, then pass that path."
+                        ));
+                    }
+                }
+            }
+            Err(_) => {
+                return StateWriteResult::failure(format!(
+                    "could not read \"{source_label}\" - download or write the image somewhere first, then pass that path."
+                ));
+            }
+        };
         if bytes.is_empty() || bytes.len() as u64 > AVATAR_MAX_BYTES { return StateWriteResult::failure("the image must be under 5 MB and non-empty."); }
         let Some(mime) = sniff_avatar_mime_type(&bytes) else { return StateWriteResult::failure("that file is not a recognized avatar image."); };
         let extension = match mime { "image/png" => "png", "image/jpeg" => "jpg", "image/webp" => "webp", "image/gif" => "gif", "image/svg+xml" => "svg", _ => return StateWriteResult::failure("that file is not a recognized avatar image.") };
@@ -301,7 +334,9 @@ impl SandAgentState {
         if let Err(error) = fs::write(self.agent_dir.join(&filename), bytes) { return StateWriteResult::failure(format!("could not update picture: {error}")); }
         invalidate_avatar_data_url_cache(&self.agent_dir);
         if let Some(callback) = &self.on_avatar_changed { callback(); }
-        StateWriteResult::success(format!("Updated your picture ({filename})."))
+        StateWriteResult::success(format!(
+            "Updated your picture ({filename}). Source {source_label} can be deleted if you no longer need it."
+        ))
     }
 
     pub fn clear_avatar(&self) -> StateWriteResult {

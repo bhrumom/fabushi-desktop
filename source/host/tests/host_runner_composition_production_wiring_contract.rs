@@ -96,6 +96,8 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         "group_member_turn: bool",
         "state_writer: None",
         "SandAgentState::new(sand_root, agent_id.to_string())",
+        "avatar_box_file_reader: Option<AvatarBoxFileReader>",
+        "state = state.with_box_file_reader(reader)",
         "sessions.open_agent_db_owner(agent_id)?",
     ] {
         assert!(
@@ -108,7 +110,11 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
             && SHIPPING_HOST.contains("&session_workers,")
             && SHIPPING_HOST.contains("&agent_id,")
             && SHIPPING_HOST.contains("is_group_member_turn,")
-            && SHIPPING_HOST.contains("multitask_enabled,"),
+            && SHIPPING_HOST.contains("multitask_enabled,")
+            && SHIPPING_HOST.contains("let avatar_box_file_reader: AvatarBoxFileReader")
+            && SHIPPING_HOST.contains("forever_box")
+            && SHIPPING_HOST.contains(".download_file(&(), &avatar_agent_id, path)")
+            && SHIPPING_HOST.contains("Some(avatar_box_file_reader),"),
         "shipping Host must consume HostRunnerComposition state surfaces",
     );
     for needle in [
