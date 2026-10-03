@@ -10,8 +10,8 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::host_request_context::HostRequestContext;
 use mahayana_host_runtime::runner::production_agent_checkpoint::{
     AgentStateCheckpointSink, ProductionAgentStateCheckpointSink,
-    build_text_turn_checkpoint, build_text_turn_checkpoint_with_rich_text,
-    prepare_settled_checkpoint_state,
+    build_generated_turn_checkpoint_with_rich_text, build_text_turn_checkpoint,
+    build_text_turn_checkpoint_with_rich_text, prepare_settled_checkpoint_state,
 };
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderCheckpointStore;
@@ -83,6 +83,43 @@ fn canonical_text_turn_checkpoint_preserves_prior_wire_and_appends_turn_referenc
             .any(|window| window == rich_wire)
     );
     assert_ne!(rich.user_message_id, checkpoint.user_message_id);
+}
+
+#[test]
+fn generated_turn_checkpoint_hashes_and_references_tool_steps_before_assistant_text() {
+    let tool_step = vec![0x12, 0x02, 0x0a, 0x00];
+    let checkpoint = build_generated_turn_checkpoint_with_rich_text(
+        &[],
+        "use a tool",
+        None,
+        "message-tool",
+        Some("request-tool"),
+        std::slice::from_ref(&tool_step),
+        "done",
+    );
+    assert_eq!(checkpoint.step_bytes.len(), 2);
+    assert_eq!(checkpoint.step_bytes[0], tool_step);
+    assert_eq!(
+        checkpoint.step_ids[0],
+        Sha256::digest(&checkpoint.step_bytes[0]).to_vec()
+    );
+    assert_eq!(
+        checkpoint.step_ids[1],
+        Sha256::digest(&checkpoint.step_bytes[1]).to_vec()
+    );
+
+    // AgentConversationTurnStructure field 2 contains the ordered blob ids.
+    let first = checkpoint
+        .turn_bytes
+        .windows(checkpoint.step_ids[0].len())
+        .position(|window| window == checkpoint.step_ids[0].as_slice())
+        .expect("tool step id is referenced");
+    let second = checkpoint
+        .turn_bytes
+        .windows(checkpoint.step_ids[1].len())
+        .position(|window| window == checkpoint.step_ids[1].as_slice())
+        .expect("assistant step id is referenced");
+    assert!(first < second, "tool step must precede terminal assistant text");
 }
 
 #[test]
