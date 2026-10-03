@@ -18287,7 +18287,7 @@
       "targetPath": "source/host/src/runner/production_turn_input_projection.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "03c5848f87f29ca948bb3b3ec370099fce4d4d7a",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -18309,7 +18309,7 @@
         "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping runner.startRoutedProvider now receives the Coordinator-minted durable current user message id plus recent user-message history and the original fork/reply/rich-text/timing/attachment channel metadata. ProductionTurnInputProjection binds those values into TurnRunOptions; TurnRunShell marks a turn recovery-shaped only when the current message id resolves to the same trimmed prompt and the turn has no fork/reply/attachment boundary. Final is withheld because frozen generated ConversationAction creation, MCP discovery results, binary-cloned ConversationStateStructure, ackToken/cancelThisRun/emitUpdate callbacks and stale-epoch prepend suppression are not yet fully represented."
+      "notes": "Shipping ProductionTurnInputProjection now freezes the generated action/provider-message snapshot, Coordinator-discovered MCP tool definitions, binary checkpoint/base-state bytes, ack token, cancellation token, update sink and TurnRunOptions before ProductionTurnAgentOwner enters the generated stream. The shipping CoordinatorRoutedToolBridge remains the MCP owner boundary and reports discovery failures through the existing HostStructuredLogTelemetry sand.mcp_discovery_failed event with measured elapsed_ms; projection then follows frozen Grok semantics by degrading a failed MCP discovery to an empty per-turn tool snapshot instead of aborting the turn, while checkpoint/base-state failures remain fatal. The focused production_turn_input_projection_contract executes the success and failed-discovery paths. Exact-HEAD efb8715427e473e014b630a19994d9b1ad6f64b7 Rust runtime run 37100897625 passed shipping Host, independent Coordinator, box-exec daemon, Host supervisor, full Host Runner suite, prompt attachment projection, Human Computer takeover and ConversationActor/CapabilityBroker ownership plus both pressure-profiler jobs. Desktop Chat Parity run 37100897615 passed renderer build and, on an unchanged-HEAD rerun after one pre-turn login/UI initialization miss, the full deterministic-host/co-staged-runtime/bundle-boundary/Grok Agent shell + Mahayana regression path with evidence upload."
     },
     {
       "referencePath": "source/host/runner/production-turn-run-shell-adapter.ts",
