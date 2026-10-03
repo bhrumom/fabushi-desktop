@@ -139,7 +139,7 @@ fn shipping_projection_bridge_routes_discovery_through_mcp_state_and_delegates_e
         observed: Arc::clone(&observed),
         called: Arc::clone(&called),
     });
-    let projected = McpStateProjectedRoutedToolBridge::new(bridge);
+    let projected = McpStateProjectedRoutedToolBridge::new(bridge, None);
 
     let tools = projected.list_tools().expect("projected tools");
     assert_eq!(tools, vec![first.clone(), second.clone()]);
