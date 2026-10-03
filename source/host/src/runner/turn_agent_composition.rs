@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderPartialToolCall, ProviderSessionError, ProviderTokenUsage,
-    RoutedProvider, RoutedProviderCheckpoint, RoutedToolDefinition,
+    RoutedMcpMetaToolDefinition, RoutedProvider, RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
 use crate::ports::mcp_state_executor::{
@@ -42,6 +42,7 @@ use super::tools::sand_external_machine_tools::{
     ExternalMachineExecutor, ExternalShellAutoReviewCallback,
 };
 use super::tools::sand_mcp_management_tools::{McpManagementSink, McpManagementToolBridge};
+use super::tools::mcp_meta_tools::McpMetaToolBridge;
 use super::tools::sand_state_tool::{
     RoutineAutoReviewCallback, RoutinePostWriteCallback, SandStateWriter,
 };
@@ -198,6 +199,9 @@ pub struct TurnAgentComposition {
     action_audit: Option<RoutedMcpAuditConfig>,
     observation: Option<TurnObservationHandle>,
     projected_mcp_tools: Option<Arc<Vec<RoutedToolDefinition>>>,
+    projected_mcp_meta_tools: Option<Arc<Vec<RoutedMcpMetaToolDefinition>>>,
+    mcp_meta_enabled: bool,
+    is_computer_use_subagent: bool,
 }
 
 impl TurnAgentComposition {
@@ -252,6 +256,9 @@ impl TurnAgentComposition {
             action_audit: None,
             observation: None,
             projected_mcp_tools: None,
+            projected_mcp_meta_tools: None,
+            mcp_meta_enabled: false,
+            is_computer_use_subagent: false,
         }
     }
 
@@ -342,6 +349,8 @@ impl TurnAgentComposition {
 
     pub fn with_computer_exposure(mut self, exposure: ComputerToolExposure) -> Self {
         self.computer_exposure = exposure;
+        self.is_computer_use_subagent = exposure == ComputerToolExposure::Full;
+        self.mcp_meta_enabled = exposure == ComputerToolExposure::ScreenshotOnly;
         self
     }
 
@@ -597,6 +606,23 @@ impl TurnAgentComposition {
         self
     }
 
+    pub fn snapshot_mcp_meta_tools(
+        &self,
+    ) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
+        if let Some(projected_tools) = self.projected_mcp_meta_tools.as_ref() {
+            return Ok(projected_tools.as_ref().clone());
+        }
+        self.bridge.list_mcp_meta_tools()
+    }
+
+    pub fn with_projected_mcp_meta_tools(
+        mut self,
+        tools: Vec<RoutedMcpMetaToolDefinition>,
+    ) -> Self {
+        self.projected_mcp_meta_tools = Some(Arc::new(tools));
+        self
+    }
+
     pub fn provider(&self) -> RoutedProvider {
         self.provider
     }
@@ -635,6 +661,15 @@ impl TurnAgentComposition {
                 self.projected_mcp_tools.clone(),
             ),
         );
+        let bridge: Arc<dyn RoutedToolBridge> = if self.mcp_meta_enabled {
+            let source_tools = match self.projected_mcp_meta_tools.as_ref() {
+                Some(tools) => tools.as_ref().clone(),
+                None => self.bridge.list_mcp_meta_tools()?,
+            };
+            Arc::new(McpMetaToolBridge::new(bridge, source_tools))
+        } else {
+            bridge
+        };
         let bridge: Arc<dyn RoutedToolBridge> = match &self.observation {
             Some(observation) => Arc::new(McpObservedRoutedToolBridge::new(
                 bridge,
@@ -714,6 +749,7 @@ impl TurnAgentComposition {
                 usage_sink: self.usage_sink.clone(),
                 cloud_agents_enabled: self.cloud_agent_tool.is_some(),
                 multitask_enabled: self.multitask_enabled,
+                is_computer_use_subagent: self.is_computer_use_subagent,
             },
             on_text_delta,
         )

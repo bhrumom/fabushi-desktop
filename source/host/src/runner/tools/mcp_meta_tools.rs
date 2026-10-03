@@ -1,13 +1,19 @@
-use std::sync::mpsc;
+use std::sync::{Arc, mpsc};
 use std::thread;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::extensions::inference::provider_session::{
-    ProviderSessionError, RoutedToolDefinition,
+    ProviderPartialToolCall, ProviderSessionError, RoutedMcpMetaToolDefinition,
+    RoutedToolDefinition,
 };
+use crate::runner::routed_provider_runtime::RoutedToolBridge;
+
+pub const GET_MCP_TOOLS_TOOL_NAME: &str = "GetMcpTools";
+pub const CALL_MCP_TOOL_NAME: &str = "CallMcpTool";
+pub const MCP_META_TOOL_PROVIDER: &str = "mahayana-mcp-meta";
 
 pub const EXTRA_SHORT_TOOL_TIMEOUT_MS: u64 = 5 * 60 * 1_000;
 pub const SHORT_TOOL_TIMEOUT_MS: u64 = 15 * 60 * 1_000;
@@ -128,7 +134,7 @@ pub fn execute_routed_tool_with_timeout<F>(
 where
     F: FnOnce() -> Result<Value, ProviderSessionError> + Send + 'static,
 {
-    let tool_name = effective_routed_tool_name(tool).to_string();
+    let tool_name = effective_meta_invocation_tool_name(tool, args);
     let execution_timeout_ms =
         tool_call_execution_guard_ms(&tool_name, args, is_computer_use_subagent);
     execute_with_timeout_ms(tool_name, execution_timeout_ms, operation)
@@ -194,6 +200,10 @@ pub struct McpToolDescriptor {
 pub struct McpDescriptor {
     pub server_identifier: String,
     pub server_name: String,
+    pub plugin: Option<Value>,
+    pub marketplace: Option<Value>,
+    pub plugin_db_id: Option<String>,
+    pub marketplace_id: Option<String>,
     pub tools: Vec<McpToolDescriptor>,
 }
 
@@ -204,11 +214,30 @@ pub struct SandMcpMetaToolOptions {
     pub mcp_descriptors: Vec<McpDescriptor>,
 }
 
+pub fn effective_meta_invocation_tool_name(
+    tool: &RoutedToolDefinition,
+    args: &Value,
+) -> String {
+    let routed = effective_routed_tool_name(tool);
+    if routed.eq_ignore_ascii_case(CALL_MCP_TOOL_NAME) {
+        if let Some(inner) = args
+            .get("toolName")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            return inner.to_string();
+        }
+    }
+    routed.to_string()
+}
+
 pub fn create_sand_mcp_meta_tool_options(
-    mcp_tools: &[RoutedToolDefinition],
+    mcp_tools: &[RoutedMcpMetaToolDefinition],
 ) -> SandMcpMetaToolOptions {
     let mut descriptors = Vec::<McpDescriptor>::new();
-    for tool in mcp_tools {
+    for source in mcp_tools {
+        let tool = &source.tool;
         let server_identifier = tool.provider_identifier.clone();
         let index = descriptors
             .iter()
@@ -219,6 +248,10 @@ pub fn create_sand_mcp_meta_tool_options(
                 descriptors.push(McpDescriptor {
                     server_identifier: server_identifier.clone(),
                     server_name: server_identifier,
+                    plugin: source.plugin.clone(),
+                    marketplace: source.marketplace.clone(),
+                    plugin_db_id: source.plugin_id.clone(),
+                    marketplace_id: source.marketplace_id.clone(),
                     tools: Vec::new(),
                 });
                 descriptors.last_mut().expect("descriptor was just inserted")
@@ -239,6 +272,208 @@ pub fn create_sand_mcp_meta_tool_options(
         enabled: true,
         mcp_descriptors: descriptors,
     }
+}
+
+#[derive(Clone)]
+pub struct McpMetaToolBridge {
+    delegate: Arc<dyn RoutedToolBridge>,
+    source_tools: Arc<Vec<RoutedMcpMetaToolDefinition>>,
+    options: Arc<SandMcpMetaToolOptions>,
+}
+
+impl McpMetaToolBridge {
+    pub fn new(
+        delegate: Arc<dyn RoutedToolBridge>,
+        source_tools: Vec<RoutedMcpMetaToolDefinition>,
+    ) -> Self {
+        let options = create_sand_mcp_meta_tool_options(&source_tools);
+        Self {
+            delegate,
+            source_tools: Arc::new(source_tools),
+            options: Arc::new(options),
+        }
+    }
+
+    pub fn options(&self) -> &SandMcpMetaToolOptions {
+        self.options.as_ref()
+    }
+}
+
+impl RoutedToolBridge for McpMetaToolBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        Ok(mcp_meta_tool_definitions())
+    }
+
+    fn list_mcp_meta_tools(
+        &self,
+    ) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
+        Ok(self.source_tools.as_ref().clone())
+    }
+
+    fn observe_partial_tool_call(
+        &self,
+        partial: &ProviderPartialToolCall,
+    ) -> Result<(), ProviderSessionError> {
+        self.delegate.observe_partial_tool_call(partial)
+    }
+
+    fn call_tool(
+        &self,
+        tool: &RoutedToolDefinition,
+        args: Value,
+        tool_call_id: &str,
+    ) -> Result<Value, ProviderSessionError> {
+        match effective_routed_tool_name(tool) {
+            GET_MCP_TOOLS_TOOL_NAME => Ok(render_mcp_tool_discovery(self.options.as_ref(), &args)),
+            CALL_MCP_TOOL_NAME => {
+                let server = required_meta_argument(&args, "server")?;
+                let tool_name = required_meta_argument(&args, "toolName")?;
+                let target = self
+                    .source_tools
+                    .iter()
+                    .find(|candidate| {
+                        candidate.tool.provider_identifier == server
+                            && candidate.tool.tool_name == tool_name
+                    })
+                    .map(|candidate| candidate.tool.clone())
+                    .ok_or_else(|| {
+                        ProviderSessionError::Tool(format!(
+                            "MCP tool {tool_name} was not found on server {server}"
+                        ))
+                    })?;
+                let call_args = args
+                    .get("arguments")
+                    .cloned()
+                    .unwrap_or_else(|| json!({}));
+                self.delegate.call_tool(&target, call_args, tool_call_id)
+            }
+            _ => self.delegate.call_tool(tool, args, tool_call_id),
+        }
+    }
+}
+
+fn required_meta_argument<'a>(
+    args: &'a Value,
+    key: &str,
+) -> Result<&'a str, ProviderSessionError> {
+    args.get(key)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| ProviderSessionError::Tool(format!("{key} is required")))
+}
+
+fn mcp_meta_tool_definitions() -> Vec<RoutedToolDefinition> {
+    vec![
+        RoutedToolDefinition {
+            name: GET_MCP_TOOLS_TOOL_NAME.into(),
+            provider_identifier: MCP_META_TOOL_PROVIDER.into(),
+            tool_name: GET_MCP_TOOLS_TOOL_NAME.into(),
+            description: Some(
+                "Discover available MCP servers and tool schemas before invoking them.".into(),
+            ),
+            input_schema: json!({
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "server": {"type": "string"},
+                    "toolName": {"type": "string"},
+                    "pattern": {"type": "string"}
+                }
+            }),
+        },
+        RoutedToolDefinition {
+            name: CALL_MCP_TOOL_NAME.into(),
+            provider_identifier: MCP_META_TOOL_PROVIDER.into(),
+            tool_name: CALL_MCP_TOOL_NAME.into(),
+            description: Some(
+                "Invoke one MCP tool after discovering its schema with GetMcpTools.".into(),
+            ),
+            input_schema: json!({
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["server", "toolName"],
+                "properties": {
+                    "server": {"type": "string"},
+                    "toolName": {"type": "string"},
+                    "arguments": {"type": "object"}
+                }
+            }),
+        },
+    ]
+}
+
+fn render_mcp_tool_discovery(options: &SandMcpMetaToolOptions, args: &Value) -> Value {
+    let server_filter = args
+        .get("server")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    let tool_filter = args
+        .get("toolName")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    let pattern = args
+        .get("pattern")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_ascii_lowercase);
+
+    let descriptors = options
+        .mcp_descriptors
+        .iter()
+        .filter_map(|descriptor| {
+            if let Some(server) = server_filter {
+                if server != descriptor.server_identifier {
+                    return None;
+                }
+            }
+            let tools = descriptor
+                .tools
+                .iter()
+                .filter(|tool| {
+                    if let Some(name) = tool_filter {
+                        if name != tool.tool_name {
+                            return false;
+                        }
+                    }
+                    match pattern.as_ref() {
+                        None => true,
+                        Some(needle) => {
+                            descriptor
+                                .server_identifier
+                                .to_ascii_lowercase()
+                                .contains(needle)
+                                || descriptor.server_name.to_ascii_lowercase().contains(needle)
+                                || tool.tool_name.to_ascii_lowercase().contains(needle)
+                                || tool
+                                    .description
+                                    .as_deref()
+                                    .unwrap_or_default()
+                                    .to_ascii_lowercase()
+                                    .contains(needle)
+                        }
+                    }
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+            if tools.is_empty() && (tool_filter.is_some() || pattern.is_some()) {
+                return None;
+            }
+            Some(json!({
+                "serverIdentifier": descriptor.server_identifier,
+                "serverName": descriptor.server_name,
+                "plugin": descriptor.plugin,
+                "marketplace": descriptor.marketplace,
+                "pluginDbId": descriptor.plugin_db_id,
+                "marketplaceId": descriptor.marketplace_id,
+                "tools": tools,
+            }))
+        })
+        .collect::<Vec<_>>();
+    json!({"enabled": options.enabled, "mcpDescriptors": descriptors})
 }
 
 #[cfg(test)]

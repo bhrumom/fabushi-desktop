@@ -262,7 +262,8 @@ pub fn run_production_generated_agent_stream(
 ) -> Result<String, ProviderSessionError> {
     let ProductionTurnAgentInputProjection {
         action,
-        mcp_tools: _,
+        mcp_tools,
+        mcp_meta_tools,
         base_state_bytes,
         ack_token,
         cancel_this_run,
@@ -274,6 +275,8 @@ pub fn run_production_generated_agent_stream(
         StreamAttemptPolicy::default(),
     ));
     let composition = composition
+        .with_projected_mcp_tools(mcp_tools)
+        .with_projected_mcp_meta_tools(mcp_meta_tools)
         .with_stream_attempt_runtime(stream_attempt_runtime);
     let source: Arc<
         dyn InactiveTurnAgentStreamSource<

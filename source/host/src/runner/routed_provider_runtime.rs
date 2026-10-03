@@ -17,7 +17,8 @@ use uuid::Uuid;
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderPartialToolCall, ProviderSessionError, ProviderTokenUsage,
-    RoutedProvider, RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
+    RoutedMcpMetaToolDefinition, RoutedProvider, RoutedProviderCheckpoint, RoutedProviderOptions,
+    RoutedToolDefinition,
     run_routed_provider_text_with_lifecycle_reporting_usage,
 };
 use crate::host_request_context::HostRequestContext;
@@ -216,6 +217,13 @@ impl RoutedProviderTaskRegistry {
 
 pub trait RoutedToolBridge: Send + Sync {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError>;
+
+    fn list_mcp_meta_tools(
+        &self,
+    ) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
+        self.list_tools()
+            .map(|tools| tools.into_iter().map(RoutedMcpMetaToolDefinition::from).collect())
+    }
     fn observe_partial_tool_call(
         &self,
         _partial: &ProviderPartialToolCall,
@@ -372,6 +380,7 @@ pub struct RoutedProviderRun<'a> {
     pub usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
     pub cloud_agents_enabled: bool,
     pub multitask_enabled: bool,
+    pub is_computer_use_subagent: bool,
 }
 
 pub fn run_routed_provider_in_runner(
@@ -402,9 +411,10 @@ pub fn run_routed_provider_in_runner(
         run.bridge.list_tools()?
     };
     let mut mcp_server = if run.provider == RoutedProvider::ClaudeCode {
-        Some(start_routed_mcp_server_with_cancellation(
+        Some(start_routed_mcp_server_for_run(
             Arc::clone(&run.bridge),
             run.cancellation.clone(),
+            run.is_computer_use_subagent,
         )?)
     } else {
         None
@@ -427,7 +437,7 @@ pub fn run_routed_provider_in_runner(
         execute_routed_tool_with_timeout(
             &guard_tool,
             &guard_args,
-            false,
+            run.is_computer_use_subagent,
             move || {
                 operation_cancellation.check()?;
                 operation_bridge.call_tool(
@@ -546,6 +556,14 @@ pub fn start_routed_mcp_server_with_cancellation(
     bridge: Arc<dyn RoutedToolBridge>,
     cancellation: RoutedProviderCancellation,
 ) -> Result<RoutedMcpServer, ProviderSessionError> {
+    start_routed_mcp_server_for_run(bridge, cancellation, false)
+}
+
+fn start_routed_mcp_server_for_run(
+    bridge: Arc<dyn RoutedToolBridge>,
+    cancellation: RoutedProviderCancellation,
+    is_computer_use_subagent: bool,
+) -> Result<RoutedMcpServer, ProviderSessionError> {
     let listener = TcpListener::bind("127.0.0.1:0").map_err(|error| {
         ProviderSessionError::Transport(format!("could not bind routed MCP server: {error}"))
     })?;
@@ -582,6 +600,7 @@ pub fn start_routed_mcp_server_with_cancellation(
                             &mut tools,
                             &bridge,
                             &worker_cancellation,
+                            is_computer_use_subagent,
                         );
                     }
                     Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
@@ -608,6 +627,7 @@ fn serve_request(
     tools: &mut HashMap<String, RoutedToolDefinition>,
     bridge: &Arc<dyn RoutedToolBridge>,
     cancellation: &RoutedProviderCancellation,
+    is_computer_use_subagent: bool,
 ) -> std::io::Result<()> {
     stream.set_read_timeout(Some(Duration::from_secs(5)))?;
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
@@ -715,7 +735,7 @@ fn serve_request(
                     match execute_routed_tool_with_timeout(
                         &guard_tool,
                         &guard_args,
-                        false,
+                        is_computer_use_subagent,
                         move || operation_bridge.call_tool(
                             &owned_tool,
                             args,

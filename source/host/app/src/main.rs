@@ -190,7 +190,8 @@ use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
 };
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderOptions,
-    RoutedToolDefinition, configured_routed_provider, run_routed_provider_text,
+    RoutedMcpMetaToolDefinition, RoutedToolDefinition, configured_routed_provider,
+    run_routed_provider_text,
 };
 use mahayana_host_runtime::extensions::inference::inference_service::{
     InferenceUsage, authorize_routed_provider_request,
@@ -4562,6 +4563,31 @@ impl RoutedToolBridge for CoordinatorRoutedToolBridge {
         result
     }
 
+    fn list_mcp_meta_tools(
+        &self,
+    ) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
+        let started = Instant::now();
+        let result = self
+            .relay
+            .request(ROUTED_TOOL_LIST_METHOD, serde_json::json!({}))
+            .map_err(|error| ProviderSessionError::Tool(error.to_string()))
+            .and_then(decode_routed_mcp_meta_tools);
+        if let Err(error) = result.as_ref() {
+            let report = McpDiscoveryFailedReport {
+                error_class: "provider_session_error".into(),
+                elapsed_ms: started.elapsed().as_secs_f64() * 1_000.0,
+                served_stale: false,
+            };
+            if let Err(telemetry_error) = self.telemetry_logs.report_mcp_discovery_failed(&report) {
+                eprintln!(
+                    "mahayana-host mcp_meta_discovery_failed_telemetry_failed agent={} discovery_error={} telemetry_error={}",
+                    self.agent_id, error, telemetry_error
+                );
+            }
+        }
+        result
+    }
+
     fn call_tool(
         &self,
         tool: &RoutedToolDefinition,
@@ -4634,6 +4660,46 @@ fn decode_routed_tools(
                 input_schema: row.get("inputSchema").cloned().unwrap_or_else(|| {
                     serde_json::json!({"type":"object","additionalProperties":true})
                 }),
+            })
+        })
+        .collect())
+}
+
+fn decode_routed_mcp_meta_tools(
+    value: serde_json::Value,
+) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
+    let rows = value.as_array().ok_or_else(|| {
+        ProviderSessionError::Protocol("listRoutedMcpTools did not return an array".into())
+    })?;
+    Ok(rows
+        .iter()
+        .filter_map(|row| {
+            Some(RoutedMcpMetaToolDefinition {
+                tool: RoutedToolDefinition {
+                    name: row.get("name")?.as_str()?.to_string(),
+                    provider_identifier: row.get("providerIdentifier")?.as_str()?.to_string(),
+                    tool_name: row.get("toolName")?.as_str()?.to_string(),
+                    description: row
+                        .get("description")
+                        .and_then(serde_json::Value::as_str)
+                        .map(str::to_string),
+                    input_schema: row.get("inputSchema").cloned().unwrap_or_else(|| {
+                        serde_json::json!({"type":"object","additionalProperties":true})
+                    }),
+                },
+                plugin: row.get("plugin").cloned().filter(|value| !value.is_null()),
+                marketplace: row
+                    .get("marketplace")
+                    .cloned()
+                    .filter(|value| !value.is_null()),
+                plugin_id: row
+                    .get("pluginId")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::to_string),
+                marketplace_id: row
+                    .get("marketplaceId")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::to_string),
             })
         })
         .collect())

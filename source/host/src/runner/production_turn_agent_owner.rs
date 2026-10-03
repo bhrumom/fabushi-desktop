@@ -435,7 +435,8 @@ impl ProductionTurnAgentOwner {
             move |prepared| {
                 let projection = prepared.prepared;
                 let stream_composition = composition_for_stream
-                    .with_projected_mcp_tools(projection.mcp_tools.clone());
+                    .with_projected_mcp_tools(projection.mcp_tools.clone())
+                    .with_projected_mcp_meta_tools(projection.mcp_meta_tools.clone());
                 run_production_generated_agent_stream(
                     stream_composition,
                     checkpoint_sink_for_stream,

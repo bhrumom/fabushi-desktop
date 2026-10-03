@@ -1,10 +1,11 @@
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    ProviderSessionError, RoutedToolDefinition,
+    ProviderSessionError, RoutedMcpMetaToolDefinition, RoutedToolDefinition,
 };
 use mahayana_host_runtime::runner::tools::mcp_meta_tools::{
     EXTRA_LONG_TOOL_TIMEOUT_MS, LONG_TOOL_TIMEOUT_MS, SHORT_TOOL_TIMEOUT_MS,
     build_tool_call_execution_timed_out_message, create_sand_mcp_meta_tool_options,
-    effective_routed_tool_name, is_subagent_tool_name, parse_block_until_ms,
+    effective_meta_invocation_tool_name, effective_routed_tool_name, is_subagent_tool_name,
+    parse_block_until_ms,
     pick_tool_call_timeout_tier_ms, suggested_tool_timeout_ms,
     tool_call_execution_guard_ms,
 };
@@ -57,26 +58,44 @@ fn frozen_timeout_tiers_and_block_until_rules_are_preserved() {
 #[test]
 fn mcp_descriptors_group_by_server_and_sort_tools_like_frozen_meta_options() {
     let tools = vec![
-        RoutedToolDefinition {
-            name: "github_zeta".into(),
-            provider_identifier: "github".into(),
-            tool_name: "zeta".into(),
-            description: Some("z".into()),
-            input_schema: json!({"type":"object","z":true}),
+        RoutedMcpMetaToolDefinition {
+            tool: RoutedToolDefinition {
+                name: "github_zeta".into(),
+                provider_identifier: "github".into(),
+                tool_name: "zeta".into(),
+                description: Some("z".into()),
+                input_schema: json!({"type":"object","z":true}),
+            },
+            plugin: Some(json!({"slug":"github"})),
+            marketplace: Some(json!({"name":"team-market"})),
+            plugin_id: Some("plugin-db-1".into()),
+            marketplace_id: Some("market-1".into()),
         },
-        RoutedToolDefinition {
-            name: "notion_query".into(),
-            provider_identifier: "notion".into(),
-            tool_name: "query".into(),
-            description: None,
-            input_schema: json!({"type":"object"}),
+        RoutedMcpMetaToolDefinition {
+            tool: RoutedToolDefinition {
+                name: "notion_query".into(),
+                provider_identifier: "notion".into(),
+                tool_name: "query".into(),
+                description: None,
+                input_schema: json!({"type":"object"}),
+            },
+            plugin: None,
+            marketplace: None,
+            plugin_id: None,
+            marketplace_id: None,
         },
-        RoutedToolDefinition {
-            name: "github_alpha".into(),
-            provider_identifier: "github".into(),
-            tool_name: "alpha".into(),
-            description: Some("a".into()),
-            input_schema: json!({"type":"object","a":true}),
+        RoutedMcpMetaToolDefinition {
+            tool: RoutedToolDefinition {
+                name: "github_alpha".into(),
+                provider_identifier: "github".into(),
+                tool_name: "alpha".into(),
+                description: Some("a".into()),
+                input_schema: json!({"type":"object","a":true}),
+            },
+            plugin: Some(json!({"slug":"github"})),
+            marketplace: Some(json!({"name":"team-market"})),
+            plugin_id: Some("plugin-db-1".into()),
+            marketplace_id: Some("market-1".into()),
         },
     ];
     let options = create_sand_mcp_meta_tool_options(&tools);
@@ -92,6 +111,16 @@ fn mcp_descriptors_group_by_server_and_sort_tools_like_frozen_meta_options() {
         vec!["alpha", "zeta"]
     );
     assert_eq!(options.mcp_descriptors[1].server_identifier, "notion");
+    assert_eq!(options.mcp_descriptors[0].plugin_db_id.as_deref(), Some("plugin-db-1"));
+    assert_eq!(options.mcp_descriptors[0].marketplace_id.as_deref(), Some("market-1"));
+    assert_eq!(
+        options.mcp_descriptors[0].plugin,
+        Some(json!({"slug":"github"}))
+    );
+    assert_eq!(
+        options.mcp_descriptors[0].marketplace,
+        Some(json!({"name":"team-market"}))
+    );
 }
 
 #[test]
@@ -110,6 +139,21 @@ fn routed_tool_effective_name_prefers_provider_tool_name() {
         ..tool
     };
     assert_eq!(effective_routed_tool_name(&fallback), "github_search");
+
+    let dynamic = RoutedToolDefinition {
+        name: "CallMcpTool".into(),
+        provider_identifier: "mahayana-mcp-meta".into(),
+        tool_name: "CallMcpTool".into(),
+        description: None,
+        input_schema: json!({}),
+    };
+    assert_eq!(
+        effective_meta_invocation_tool_name(
+            &dynamic,
+            &json!({"server":"github","toolName":"task"})
+        ),
+        "task"
+    );
 
     let _type_anchor: Option<ProviderSessionError> = None;
 }

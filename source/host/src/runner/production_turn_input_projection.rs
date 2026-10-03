@@ -3,7 +3,7 @@ use std::sync::Arc;
 use serde_json::Value;
 
 use crate::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, RoutedToolDefinition,
+    ProviderMessage, ProviderSessionError, RoutedMcpMetaToolDefinition, RoutedToolDefinition,
 };
 
 use super::conversation_state::RecentUserMessage;
@@ -32,6 +32,7 @@ pub struct ProductionTurnActionProjection {
 pub struct ProductionTurnAgentInputProjection<'a> {
     pub action: ProductionTurnActionProjection,
     pub mcp_tools: Vec<RoutedToolDefinition>,
+    pub mcp_meta_tools: Vec<RoutedMcpMetaToolDefinition>,
     pub base_state_bytes: Vec<u8>,
     pub ack_token: Option<String>,
     pub cancel_this_run: RoutedProviderCancellation,
@@ -48,6 +49,7 @@ pub fn create_production_turn_agent_input_projection<'a>(
     emit_update: &'a mut dyn FnMut(&str, &str),
 ) -> Result<ProductionTurnAgentInputProjection<'a>, ProviderSessionError> {
     let mcp_tools = composition.snapshot_mcp_tools().unwrap_or_default();
+    let mcp_meta_tools = composition.snapshot_mcp_meta_tools().unwrap_or_default();
     let base_state_bytes = match checkpoint_sink {
         Some(sink) => sink.base_state_bytes()?,
         None => Vec::new(),
@@ -59,6 +61,7 @@ pub fn create_production_turn_agent_input_projection<'a>(
             prompt_action: turn_input.prompt_action.clone(),
         },
         mcp_tools,
+        mcp_meta_tools,
         base_state_bytes,
         ack_token: turn_input.ack_token.clone(),
         cancel_this_run: composition.cancellation(),

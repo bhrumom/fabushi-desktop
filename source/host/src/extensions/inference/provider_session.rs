@@ -167,6 +167,27 @@ pub struct RoutedToolDefinition {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct RoutedMcpMetaToolDefinition {
+    pub tool: RoutedToolDefinition,
+    pub plugin: Option<Value>,
+    pub marketplace: Option<Value>,
+    pub plugin_id: Option<String>,
+    pub marketplace_id: Option<String>,
+}
+
+impl From<RoutedToolDefinition> for RoutedMcpMetaToolDefinition {
+    fn from(tool: RoutedToolDefinition) -> Self {
+        Self {
+            tool,
+            plugin: None,
+            marketplace: None,
+            plugin_id: None,
+            marketplace_id: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct ProviderPartialToolCall {
     pub tool: RoutedToolDefinition,
     pub tool_call_id: String,
