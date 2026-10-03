@@ -18170,7 +18170,7 @@
       "targetPath": "source/host/src/runner/host_computer_tool_dependencies.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f52f844cf1a2dd80fda02995ce469bd100a725f6",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -18182,17 +18182,19 @@
         "source/host/src/extensions/forever_box/runner_tools.rs",
         "source/host/src/runner/turn_agent_composition.rs",
         "source/host/src/runner_production_bridge.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/tools/sand_browser_tools.rs"
       ],
       "testEvidence": [
         "source/host/tests/computer_tool_projection_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/turn_toolset_contract.rs",
         "source/host/tests/runner_production_bridge_contract.rs",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/sand_browser_tools_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust now owns the Host-to-Runner Computer dependency path through production: strict action/result projection, exact ComputerUse protobuf field encoding/decoding, Host-owned ForeverBox resource execution, live Computer Auto-review/display-state capture, screenshot persistence and first-party tool injection. Exact-head f53b5c40b759186d1ad96c0470b1aef93c7b5aec passed full Host/Runner cargo tests in rust-host job 108697895190 (run 36346965682) and Desktop Chat Parity run 36346965680. Final remains withheld for the canonical generated ComputerUse/Shell resource package cutover, frozen browser-file-transfer dependency projection, InteractionHandler cancellation/state metadata and computer-action audit callback."
+      "notes": "Frozen host-computer dependency projection is now owned by the canonical Rust Host/Runner path without a parallel runtime. Computer actions/results are projected into exact generated ComputerUse protobuf through ProductionComputerToolExecutor and the Host-owned ForeverBox production accessor, with live Auto-review, Unicode typing, screenshot persistence and computer-action audit callbacks. Browser dependencies use the same Host-owned box identity: browser_window_index first ensures the shipping box is ready, the existing read/write resource port provides byte transfer, and ProductionBrowserToolExecutor retains the transcript/agent default-view identity, screenshot persistence, Browser Auto-review and navigation reporting. The remaining frozen HostShellExecutor invariant is now wired in production rather than existing only as a helper seam: every Browser-internal box shell call first runs a Host-owned BrowserShellSafetyCallback that fails closed on any pending approval and emits shellCommand audit before delegating to RunnerBoxResourcePort; build_host_shell_args continues to set skip_approval=true, so these private driver commands do not create a second user-facing approval flow. The old manifest blocker mentioning InteractionHandler cancellation/state metadata is not a responsibility of frozen host-computer-tool-dependencies.ts and is therefore not treated as a synthetic requirement. Exact-head a0cba9b8ee1a3191c34e61d25687ada535c92801 evidence: Rust desktop runtime run 37095540151 rust-host job 111124632866 passed the shipping Host check, full independent Host Runner suite, prompt attachment projection, human Computer takeover, and ConversationActor/CapabilityBroker ownership; sand_browser_tools_contract executed 8/8 successfully, including production_browser_executor_fails_closed_before_internal_shell_when_host_safety_blocks and production_browser_executor_uses_only_host_box_port. Desktop Chat Parity run 37095540145 completed successfully, with Focused Electron chat E2E passing the deterministic Mahayana test host, renderer/co-staged runtime/bundle boundary and Grok Agent shell + Mahayana regression, then uploading artifact 11263982038 (desktop-chat-parity-playwright-a0cba9b8ee1a3191c34e61d25687ada535c92801, sha256:61d965f16313723def79b9be3bcf75afa37619ac7d13342c6314c3a60b597877). Rust workflow remains red only because the strict final architecture gate intentionally lists later existing-needs-parity rows."
     },
     {
       "referencePath": "source/host/runner/inactive-turn-agent-stream.ts",
