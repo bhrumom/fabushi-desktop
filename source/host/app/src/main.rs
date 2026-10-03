@@ -7703,6 +7703,10 @@ fn start_routed_provider_task(
                 agent_state_checkpoint_sink,
                 worker_registry.upgrade_quiesce_signal(),
                 Arc::clone(&worker_generated_agent_runtime),
+                Some(Arc::clone(&observation)),
+                Some(Arc::clone(&worker_cloud_agent_watches)),
+                Some(Arc::clone(&background_shell_watches)),
+                Some(worker_host_runner_composition.computer_use_coordination()),
             );
             let generated_prompt = lifecycle_messages
                 .iter()
