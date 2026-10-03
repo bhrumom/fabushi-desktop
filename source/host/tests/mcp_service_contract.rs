@@ -198,6 +198,20 @@ fn frozen_projection_helpers_preserve_optional_fields_and_install_semantics() {
 }
 
 #[test]
+fn live_server_registry_resolves_audit_transport_and_fails_closed_for_unknown_servers() {
+    let backend_state = Arc::new(Mutex::new(BackendState::default()));
+    let service = McpHostService::new(Arc::new(Backend(backend_state)), None);
+    assert_eq!(
+        service.transport_for_server_identifier("calendar").unwrap(),
+        "stdio"
+    );
+    assert_eq!(
+        service.transport_for_server_identifier("missing").unwrap(),
+        "unknown"
+    );
+}
+
+#[test]
 fn install_and_uninstall_drive_plugin_skill_sync_and_live_ref_retirement() {
     let backend_state = Arc::new(Mutex::new(BackendState::default()));
     let skills_state = Arc::new(Mutex::new(SkillsState::default()));
