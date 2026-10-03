@@ -19181,7 +19181,7 @@
       "targetPath": "source/host/src/runner/tools/sand_computer_tool.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "4aab3efb0944dab3724ccfeeb02df246e88ec171",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -19201,10 +19201,11 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/turn_toolset_contract.rs",
         "source/host/tests/runner_production_bridge_contract.rs",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/sand_auto_review_specialized_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Runner now owns the shipping Computer/Screenshot path: frozen action validation/defaults, enforce-mode description/follow-up restrictions, drag/protocol projection, automatic final screenshot, first-party schemas/registration, real Host-owned ForeverBox ComputerUse protobuf transport, live Computer Auto-review with display-state capture and workspace context, and agent-media screenshot persistence. Exact-head f53b5c40b759186d1ad96c0470b1aef93c7b5aec passed full Host/Runner cargo tests in rust-host job 108697895190 (run 36346965682) and focused Electron chat E2E run 36346965680. Final remains withheld for the frozen generated InteractionHandler/tool-call surface, tool-call AbortSignal/stateHandler projection, role-aware Computer-vs-Screenshot exposure, onComputerAction audit callback, and replacement of local wire structs with the canonical generated proto resource when that generated package is cut over."
+      "notes": "Frozen Grok Computer/Screenshot behavior now has one shipping Runner owner. SandComputerToolBridge owns the model-facing schemas, action validation/defaults, nested follow-up limits, automatic final screenshot and role-aware Full/ScreenshotOnly/Disabled exposure; ProductionComputerToolExecutor owns action sequencing, Unicode typing, onComputerAction-equivalent audit reporting, exact recovered agent.v1 ComputerUse protobuf wire projection, Host-owned ForeverBox transport, screenshot persistence and post-action navigation probing. Computer Auto-review now uses the frozen canonical target/fingerprint and risk-target shape, normalized page-only display identity, trimmed/deduplicated permission context from the canonical Auto-review settings owner, current turn conversation context, canonical /workspace box root, turn cancellation for pending approval, live display re-resolution, and display-state recheck after classifier allow and after approval. The recovered generated TypeScript proto and Rust prost projection use the same enum values and field/oneof tags, with focused wire-byte coverage; no Electron or Coordinator Computer execution/policy owner was introduced. Exact-head 847bca07cea3f71929fc944ff45a11cbf8c30837 evidence: Rust desktop runtime run 37137120047 has shipping Host, independent Coordinator, box-exec, Host supervisor, full source/host tests, independent Host Runner, prompt attachment projection, Human Computer takeover, and ConversationActor/CapabilityBroker ownership success; Desktop Chat Parity CI run 37137120048 has Renderer typecheck/build and Focused Electron chat E2E success. The only Rust workflow failure at that exact head is the intentional final architecture gate while this row and later rows remain existing-needs-parity."
     },
     {
       "referencePath": "source/host/runner/tools/sand-computer-use-subagent.ts",
