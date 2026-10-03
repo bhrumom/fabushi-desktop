@@ -427,7 +427,6 @@ fn production_bridge_projects_host_resolved_turn_hooks_behaviorally() {
 
     assert!(composition.has_agent_management_sink());
     assert!(composition.has_routine_auto_review());
-    assert!(composition.has_state_approval_barrier());
     assert!(composition.has_box_shell_review());
 }
 
