@@ -236,3 +236,80 @@ fn production_turn_agent_projection_freezes_action_mcp_ack_and_base_state() {
     assert_eq!(frozen[0].name, "mcp__frozen");
     assert_eq!(list_calls.load(Ordering::SeqCst), 1);
 }
+
+
+struct FailingDiscoveryBridge {
+    list_calls: Arc<AtomicUsize>,
+}
+
+impl RoutedToolBridge for FailingDiscoveryBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        self.list_calls.fetch_add(1, Ordering::SeqCst);
+        Err(ProviderSessionError::Tool("discovery unavailable".into()))
+    }
+
+    fn call_tool(
+        &self,
+        _tool: &RoutedToolDefinition,
+        _args: Value,
+        _tool_call_id: &str,
+    ) -> Result<Value, ProviderSessionError> {
+        Ok(Value::Null)
+    }
+}
+
+#[test]
+fn production_turn_agent_projection_degrades_failed_mcp_discovery_to_empty_snapshot() {
+    let list_calls = Arc::new(AtomicUsize::new(0));
+    let composition = TurnAgentComposition::new(
+        RoutedProvider::OpenRouter,
+        Arc::new(FailingDiscoveryBridge {
+            list_calls: Arc::clone(&list_calls),
+        }),
+        RunnerRequestContextSnapshot {
+            context: HostRequestContext {
+                os_version: "test".into(),
+                shell: None,
+                time_zone: Some("UTC".into()),
+                transcripts_folder: "/tmp/transcripts".into(),
+                user_full_name: None,
+            },
+            rules: None,
+        },
+        RoutedProviderCancellation::default(),
+        Arc::new(MemoryProviderCheckpointStore),
+    );
+    let lifecycle_messages = vec![ProviderMessage {
+        role: "user".into(),
+        content: "continue without MCP".into(),
+    }];
+    let provider_messages = lifecycle_messages.clone();
+    let checkpoint_sink: Arc<dyn AgentStateCheckpointSink> = Arc::new(
+        SnapshotCheckpointSink {
+            base: Mutex::new(vec![9, 8, 7]),
+        },
+    );
+    let turn_input = ProductionTurnInputProjection {
+        options: TurnRunOptions::default(),
+        ack_token: Some("ack-fallback".into()),
+    };
+    let mut emit_update = |_delta: &str, _accumulated: &str| {};
+
+    let projected = create_production_turn_agent_input_projection(
+        &composition,
+        Some(&checkpoint_sink),
+        &lifecycle_messages,
+        &provider_messages,
+        &turn_input,
+        &mut emit_update,
+    )
+    .expect("MCP discovery failure must not abort the turn projection");
+
+    assert_eq!(list_calls.load(Ordering::SeqCst), 1);
+    assert!(projected.mcp_tools.is_empty());
+    assert_eq!(projected.action.lifecycle_messages, lifecycle_messages);
+    assert_eq!(projected.action.provider_messages, provider_messages);
+    assert_eq!(projected.base_state_bytes, vec![9, 8, 7]);
+    assert_eq!(projected.ack_token.as_deref(), Some("ack-fallback"));
+    assert!(!projected.cancel_this_run.is_cancelled());
+}
