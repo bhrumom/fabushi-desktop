@@ -354,6 +354,35 @@ fn classifier_measurement_preserves_unspecified_error_and_abort_semantics() {
     );
     assert_eq!(executor.measurements[1].retryable, Some(false));
 
+    executor.result = Err(AutoReviewClassifierError::Timeout("request timed out".into()));
+    executor.measurements.clear();
+    let decision = run_sand_auto_review_classifier(
+        &mut executor,
+        "private-tool-call-id-timeout",
+        "conversation",
+        "enforce",
+        || serde_json::json!({"action": "web_fetch", "arguments": {}}),
+        || Ok(Vec::<String>::new()),
+        &[],
+        "manual review",
+    )
+    .expect("timeout must fail closed");
+    assert_eq!(
+        decision,
+        AutoReviewClassifierDecision::Reject {
+            reason: "manual review".into(),
+        }
+    );
+    assert_eq!(
+        executor.measurements[1].failure_reason.as_deref(),
+        Some("timeout_exception")
+    );
+    assert_eq!(
+        executor.measurements[1].kind,
+        SmartModeClassifierMeasurementKind::Exception
+    );
+    assert_eq!(executor.measurements[1].retry_count, Some(0));
+
     executor.result = Err(AutoReviewClassifierError::Aborted("cancelled".into()));
     executor.measurements.clear();
     let error = run_sand_auto_review_classifier(
