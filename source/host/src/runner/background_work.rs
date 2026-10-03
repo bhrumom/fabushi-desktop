@@ -473,7 +473,7 @@ impl RunnerCloudAgentWatches {
                 // cloud task from the recovery ledger.
                 if let Some(callback) = on_settled.as_ref() {
                     callback(CloudAgentBackgroundCompletion {
-                        parent_agent_id,
+                        parent_agent_id: parent_agent_id.clone(),
                         work_id,
                         title,
                         status: if outcome.status == "error" {
@@ -753,7 +753,7 @@ impl RunnerBackgroundShellWatches {
                 // running by the async-task observer.
                 if let (Some(callback), Some(outcome)) = (on_settled.as_ref(), outcome) {
                     callback(BackgroundShellBackgroundCompletion {
-                        parent_agent_id,
+                        parent_agent_id: parent_agent_id.clone(),
                         work_id,
                         title,
                         status: outcome.status,
