@@ -433,6 +433,7 @@ fn production_bridge_projects_host_resolved_turn_hooks_behaviorally() {
             state_approval_barrier: Arc::new(|| Ok(())),
             box_shell_review: Arc::new(|_| Ok(None)),
             subagent_task_sink: None,
+            subagent_task_allowed_types: None,
             subagent_task_review: None,
             subagent_management_runtime: None,
             subagent_steer_review: None,
