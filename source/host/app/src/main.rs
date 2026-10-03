@@ -16,6 +16,7 @@ use mahayana_host_runtime::extensions::attachments::attachments_service::Attachm
 use mahayana_host_runtime::extensions::auto_review::extension::HostAutoReviewExtension;
 use mahayana_host_runtime::extensions::auto_review::sand_backend_smart_mode_classifier_exec::{
     create_sand_backend_smart_mode_classifier_executor_with_cancellation,
+    pin_sand_auto_review_classifier_measurement_reporter,
 };
 use mahayana_host_runtime::extensions::auth::extension::HostAuthExtension;
 use mahayana_host_runtime::extensions::telemetry::auto_review_approval_telemetry::{
@@ -31,7 +32,8 @@ use mahayana_host_runtime::runner::sand_auto_review::{
     sand_auto_review_approval_expiry_policy,
 };
 use mahayana_host_runtime::runner::sand_auto_review_classifier_run::{
-    AutoReviewClassifierDecision, run_sand_auto_review_classifier,
+    AutoReviewClassifierDecision, SmartModeClassifierMeasurementKind,
+    run_sand_auto_review_classifier,
 };
 use mahayana_host_runtime::runner::sand_auto_review_tool_escalations::{
     McpApprovalRequest, ShellApprovalRequest, ShellApprovalTarget,
@@ -10272,6 +10274,72 @@ fn main() {
         }
     };
     let host_telemetry = production_extensions.telemetry.clone();
+    let classifier_logs = host_telemetry.logs.clone();
+    let classifier_analytics = host_telemetry.analytics.clone();
+    pin_sand_auto_review_classifier_measurement_reporter(Some(Arc::new(move |measurement| {
+        let mut metadata = BTreeMap::from([
+            ("mode".into(), measurement.mode.clone()),
+            ("actionKind".into(), measurement.action_kind.clone()),
+        ]);
+        if let Some(surface_label) = measurement.surface_label.as_ref() {
+            metadata.insert("surfaceLabel".into(), surface_label.clone());
+        }
+        if let Some(timeout_ms) = measurement.timeout_ms {
+            metadata.insert("timeoutMs".into(), timeout_ms.to_string());
+        }
+        if let Some(has_target) = measurement.has_target {
+            metadata.insert("hasTarget".into(), has_target.to_string());
+        }
+        if let Some(has_target_arguments) = measurement.has_target_arguments {
+            metadata.insert("hasTargetArguments".into(), has_target_arguments.to_string());
+        }
+        if let Some(outcome) = measurement.outcome.as_ref() {
+            metadata.insert("outcome".into(), outcome.clone());
+        }
+        if let Some(decision) = measurement.decision.as_ref() {
+            metadata.insert("decision".into(), decision.clone());
+        }
+        if let Some(has_reason) = measurement.has_reason {
+            metadata.insert("hasReason".into(), has_reason.to_string());
+        }
+        if let Some(latency_ms) = measurement.latency_ms {
+            metadata.insert("latencyMs".into(), latency_ms.round().max(0.0).to_string());
+        }
+        if let Some(retry_count) = measurement.retry_count {
+            metadata.insert("retryCount".into(), retry_count.to_string());
+        }
+        if let Some(failure_reason) = measurement.failure_reason.as_ref() {
+            metadata.insert("failureReason".into(), failure_reason.clone());
+        }
+        if let Some(retryable) = measurement.retryable {
+            metadata.insert("retryable".into(), retryable.to_string());
+        }
+        let started = matches!(
+            measurement.kind,
+            SmartModeClassifierMeasurementKind::Started
+        );
+        let event = if started {
+            "smart_mode.classifier_call.started"
+        } else {
+            "smart_mode.classifier_call"
+        };
+        if let Err(error) = classifier_logs.report_projection(&HostTelemetryProjection {
+            level: Some("info"),
+            event: Some(event),
+            metadata: metadata.clone(),
+        }) {
+            eprintln!("mahayana-host classifier_measurement_telemetry_failed error={error}");
+        }
+        if !started {
+            let properties = serde_json::Value::Object(
+                metadata
+                    .into_iter()
+                    .map(|(key, value)| (key, serde_json::Value::String(value)))
+                    .collect(),
+            );
+            let _ = classifier_analytics.track_event("smart_mode.classifier_call", &properties);
+        }
+    })));
     let fatal_telemetry = host_telemetry.clone();
     let fatal_logs = host_telemetry.logs.clone();
     _process_crash_guard.set_reporter(Some(Arc::new(move |_message, kind| {
