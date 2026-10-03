@@ -270,7 +270,8 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::is_recovery_shaped_turn;
 use mahayana_host_runtime::runner::prompt_collector_glue::{
-    PromptCollectorDynamicUserContext, append_mcp_runtime_sections_for_turn,
+    PromptCollectorDynamicUserContext, apply_staged_attachment_paths_for_turn,
+    append_mcp_runtime_sections_for_turn,
     append_profile_system_section_for_turn, append_remote_runtime_sections_for_turn,
     prepend_unconfirmed_user_messages_for_turn,
     apply_dynamic_user_context_for_turn, project_provider_messages_for_turn,
@@ -4836,7 +4837,7 @@ fn start_routed_provider_task(
     box_store_sync: ProductionBoxStoreSyncApi,
     automations_lifecycle: Arc<Mutex<Weak<ProductionAutomationsLifecycle>>>,
     gateway_context: Option<GatewayCommandContext>,
-    args: serde_json::Value,
+    mut args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
     let requested_provider = RoutedProvider::parse(provider_name)
@@ -4911,6 +4912,21 @@ fn start_routed_provider_task(
         stream_id.clone(),
         events.clone(),
     );
+    let attachment_paths = args
+        .get("attachmentPaths")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(serde_json::Value::as_str)
+        .map(PathBuf::from)
+        .collect::<Vec<_>>();
+    if !attachment_paths.is_empty() {
+        if let Some(services) = transcript_manager.production_services() {
+            let staged = services.attachments.stage_into_box(&agent_id, &attachment_paths);
+            apply_staged_attachment_paths_for_turn(&mut args, &staged);
+        }
+    }
+
     let lifecycle_messages = decode_provider_messages(&args)?;
     let mut turn_input = create_production_turn_input_projection(
         &args,

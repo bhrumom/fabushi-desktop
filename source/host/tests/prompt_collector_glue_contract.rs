@@ -1,6 +1,7 @@
 use mahayana_host_runtime::extensions::inference::provider_session::ProviderMessage;
 use mahayana_host_runtime::runner::prompt_collector_glue::{
     PromptCollectorAutomationReminderState, PromptCollectorDynamicUserContext,
+    apply_staged_attachment_paths_for_turn,
     append_mcp_runtime_sections_for_turn,
     append_profile_system_section_for_turn, append_remote_runtime_sections_for_turn,
     apply_dynamic_user_context_for_turn, prepend_unconfirmed_user_messages_for_turn,
@@ -246,6 +247,23 @@ fn prompt_collector_owns_profile_mcp_and_remote_runtime_sections() {
     assert!(!subagent_messages[0].content.contains("<mcp_status>"));
 }
 
+#[test]
+fn staged_attachment_paths_are_projected_back_into_the_turn_args() {
+    let mut args = serde_json::json!({
+        "attachmentPaths": ["/tmp/report.csv"]
+    });
+    let staged = std::collections::BTreeMap::from([(
+        std::path::PathBuf::from("/tmp/report.csv"),
+        "/workspace/uploads/report.csv".to_string(),
+    )]);
+
+    assert_eq!(apply_staged_attachment_paths_for_turn(&mut args, &staged), 1);
+    assert_eq!(
+        args.pointer("/boxPathByHostPath/~1tmp~1report.csv")
+            .and_then(serde_json::Value::as_str),
+        Some("/workspace/uploads/report.csv")
+    );
+}
 
 #[test]
 fn shipping_prepend_projection_uses_durable_confirmed_transcript_watermark() {

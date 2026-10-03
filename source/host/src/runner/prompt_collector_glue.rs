@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
+use std::path::PathBuf;
 
 use serde_json::Value;
 
@@ -202,6 +203,34 @@ pub fn append_remote_runtime_sections_for_turn(
 ) {
     append_remote_box_system_prompt(messages, remote_box);
     append_computer_system_prompt(messages, computer);
+}
+
+pub fn apply_staged_attachment_paths_for_turn(
+    args: &mut Value,
+    staged: &BTreeMap<PathBuf, String>,
+) -> usize {
+    let Some(object) = args.as_object_mut() else {
+        return 0;
+    };
+    if staged.is_empty() {
+        object.remove("boxPathByHostPath");
+        return 0;
+    }
+    object.insert(
+        "boxPathByHostPath".into(),
+        Value::Object(
+            staged
+                .iter()
+                .map(|(host_path, box_path)| {
+                    (
+                        host_path.to_string_lossy().into_owned(),
+                        Value::String(box_path.clone()),
+                    )
+                })
+                .collect(),
+        ),
+    );
+    staged.len()
 }
 
 fn is_confirmed_user_entry(entry: &Value) -> bool {

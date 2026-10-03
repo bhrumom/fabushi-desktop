@@ -43,4 +43,11 @@ fn shipping_provider_turn_consumes_dynamic_sections_in_frozen_order() {
     );
     assert!(collector.contains("pub fn prepend_unconfirmed_user_messages_for_turn("));
     assert!(collector.contains("collect_prepend_user_messages("));
+    assert!(tail.contains("production_services()"));
+    assert!(tail.contains("services.attachments.stage_into_box(&agent_id, &attachment_paths)"));
+    assert_eq!(
+        source.matches("apply_staged_attachment_paths_for_turn(").count(),
+        1
+    );
+    assert!(collector.contains("pub fn apply_staged_attachment_paths_for_turn("));
 }
