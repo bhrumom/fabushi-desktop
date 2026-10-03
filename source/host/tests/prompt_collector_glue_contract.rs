@@ -268,7 +268,7 @@ fn automation_status_reminder_state_matches_frozen_compaction_and_clear_semantic
         .reminder_for_turn(None, 5)
         .expect("cleared automation snapshot");
     assert!(cleared.contains("<automation_status>"));
-    assert!(cleared.to_ascii_lowercase().contains("no automations"));
+    assert!(cleared.contains("No current routines."));
     state.note_reminder(Some(&cleared), 5);
 
     assert_eq!(state.reminder_for_turn(None, 5), None);
