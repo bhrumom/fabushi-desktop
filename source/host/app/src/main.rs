@@ -184,7 +184,7 @@ use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     build_ack_redrive_send_args,
 };
 use mahayana_host_runtime::extensions::transcript::runner_registry::{
-    RUN_DIRECT_USER_INTERRUPT_REASON, TranscriptRunnerRegistry,
+    RUN_DIRECT_USER_INTERRUPT_REASON, RUN_WATCHDOG_INTERRUPT_REASON, TranscriptRunnerRegistry,
 };
 use mahayana_host_runtime::extensions::transcript::run_scheduler::WatchdogStage;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
@@ -8154,6 +8154,16 @@ fn start_routed_provider_task(
                         agent_id
                     );
                 }
+            }
+
+            let turn_interrupted = worker_cancellation.reason().is_some_and(|reason| {
+                matches!(
+                    reason.as_str(),
+                    RUN_DIRECT_USER_INTERRUPT_REASON | RUN_WATCHDOG_INTERRUPT_REASON
+                )
+            });
+            if let Ok(mut observation) = observation.lock() {
+                observation.flush_pending_awaits_on_unwind(turn_interrupted);
             }
 
             if is_user_turn {

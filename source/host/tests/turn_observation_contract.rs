@@ -234,6 +234,58 @@ fn observed_bridge_wraps_success_failure_and_await_lifecycle() {
 
 
 #[test]
+fn pending_awaits_flush_on_turn_unwind_with_frozen_clean_stop_and_abort_outcomes() {
+    let emitted = Arc::new(Mutex::new(Vec::<Value>::new()));
+    let sink = Arc::clone(&emitted);
+    let mut observation = TurnObservation::new("agent-await-unwind", None);
+    observation.set_turn_await_handler(Arc::new(move |event| {
+        sink.lock().unwrap().push(event);
+    }));
+
+    observation.observe_await_tool_call(
+        true,
+        "await-clean",
+        101,
+        None,
+        false,
+        false,
+    );
+    observation.flush_pending_awaits_on_unwind(false);
+
+    observation.observe_await_tool_call(
+        true,
+        "await-abort",
+        202,
+        None,
+        false,
+        false,
+    );
+    observation.flush_pending_awaits_on_unwind(true);
+
+    let emitted = emitted.lock().unwrap();
+    assert_eq!(emitted.len(), 2);
+    assert_eq!(emitted[0]["awaitIndex"], 1);
+    assert_eq!(emitted[0]["blockUntilMs"], 101);
+    assert_eq!(emitted[0]["outcome"], "clean_stop");
+    assert_eq!(emitted[1]["awaitIndex"], 1);
+    assert_eq!(emitted[1]["blockUntilMs"], 202);
+    assert_eq!(emitted[1]["outcome"], "aborted");
+}
+
+#[test]
+fn shipping_host_flushes_pending_awaits_at_the_real_turn_unwind_boundary() {
+    let main = fs::read_to_string("app/src/main.rs").expect("shipping host main");
+    assert!(
+        main.contains("observation.flush_pending_awaits_on_unwind(turn_interrupted);"),
+        "shipping provider turn must settle pending awaits on unwind"
+    );
+    assert!(
+        main.contains("RUN_DIRECT_USER_INTERRUPT_REASON | RUN_WATCHDOG_INTERRUPT_REASON"),
+        "shipping unwind must derive interrupted outcome from canonical runner interrupt reasons"
+    );
+}
+
+#[test]
 fn send_dispatch_handler_receives_the_sanitized_shipping_payload() {
     let dispatched = Arc::new(Mutex::new(Vec::new()));
     let sink = Arc::clone(&dispatched);
