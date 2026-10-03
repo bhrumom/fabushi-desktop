@@ -78,6 +78,381 @@ impl GeneratedToolJsonProjection for CanonicalGeneratedToolJsonProjection {
     }
 }
 
+
+pub fn encode_generated_agent_tool_step(
+    tool_name: &str,
+    input: &Value,
+    result: Option<&Value>,
+    tool_call_id: &str,
+    started_at_ms: Option<u64>,
+    completed_at_ms: Option<u64>,
+) -> Result<Vec<u8>, String> {
+    let normalized = normalize_generated_tool_name(tool_name);
+    let (field_number, descriptor) = (1u64..=77)
+        .filter_map(|field_number| {
+            generated_agent_tool_call_descriptor(field_number)
+                .map(|descriptor| (field_number, descriptor))
+        })
+        .find(|(_, descriptor)| descriptor.static_name == normalized)
+        .ok_or_else(|| format!("canonical generated tool descriptor is missing for {tool_name}"))?;
+
+    let mut wrapper = Vec::new();
+    if let Some(args_type) = descriptor.args_type {
+        let args = encode_generated_json_message(input, args_type)?;
+        write_length_delimited(&mut wrapper, 1, &args);
+    }
+    if let (Some(result), Some(result_type)) = (result, descriptor.result_type) {
+        let result = encode_generated_json_message(result, result_type)?;
+        write_length_delimited(&mut wrapper, 2, &result);
+    }
+
+    let mut tool_call = Vec::new();
+    write_length_delimited(&mut tool_call, field_number, &wrapper);
+    if !tool_call_id.trim().is_empty() {
+        write_length_delimited(&mut tool_call, 57, tool_call_id.as_bytes());
+    }
+    if let Some(started_at_ms) = started_at_ms {
+        write_key(&mut tool_call, 59, 0);
+        write_varint(&mut tool_call, started_at_ms);
+    }
+    if let Some(completed_at_ms) = completed_at_ms {
+        write_key(&mut tool_call, 60, 0);
+        write_varint(&mut tool_call, completed_at_ms);
+    }
+
+    let mut step = Vec::new();
+    write_length_delimited(&mut step, 2, &tool_call);
+    Ok(step)
+}
+
+fn normalize_generated_tool_name(name: &str) -> String {
+    let trimmed = name.trim();
+    match trimmed {
+        "Shell" | "ExternalShell" => return "shell".into(),
+        "Read" | "ExternalRead" => return "read".into(),
+        "Task" => return "task".into(),
+        "Computer" => return "computer_use".into(),
+        "GenerateImage" => return "generate_image".into(),
+        "RecordScreen" => return "record_screen".into(),
+        "ListMcpResources" => return "list_mcp_resources".into(),
+        "ReadMcpResource" => return "read_mcp_resource".into(),
+        "AskQuestion" => return "ask_question".into(),
+        "McpAuth" => return "mcp_auth".into(),
+        "WebSearch" => return "web_search".into(),
+        "WebFetch" => return "web_fetch".into(),
+        "GetMcpTools" => return "get_mcp_tools".into(),
+        "SendMessage" => return "send_message".into(),
+        _ => {}
+    }
+    let base = trimmed
+        .strip_suffix("ToolCall")
+        .or_else(|| trimmed.strip_suffix("_tool_call"))
+        .unwrap_or(trimmed);
+    let mut output = String::new();
+    for (index, ch) in base.chars().enumerate() {
+        if ch == '-' || ch == ' ' {
+            if !output.ends_with('_') {
+                output.push('_');
+            }
+            continue;
+        }
+        if ch.is_ascii_uppercase() {
+            if index > 0 && !output.ends_with('_') {
+                output.push('_');
+            }
+            output.push(ch.to_ascii_lowercase());
+        } else {
+            output.push(ch);
+        }
+    }
+    output
+}
+
+fn encode_generated_json_message(value: &Value, type_name: &str) -> Result<Vec<u8>, String> {
+    let owned;
+    let value = match type_name {
+        "google.protobuf.Value" => {
+            owned = generated_value_message(value);
+            &owned
+        }
+        "google.protobuf.Struct" => {
+            let object = value
+                .as_object()
+                .ok_or_else(|| "generated google.protobuf.Struct JSON must be an object".to_string())?;
+            owned = Value::Object(Map::from_iter([(
+                "fields".to_string(),
+                Value::Object(
+                    object
+                        .iter()
+                        .map(|(key, value)| (key.clone(), generated_value_message(value)))
+                        .collect(),
+                ),
+            )]));
+            &owned
+        }
+        "google.protobuf.ListValue" => {
+            let values = value
+                .as_array()
+                .ok_or_else(|| "generated google.protobuf.ListValue JSON must be an array".to_string())?;
+            owned = Value::Object(Map::from_iter([(
+                "values".to_string(),
+                Value::Array(values.iter().map(generated_value_message).collect()),
+            )]));
+            &owned
+        }
+        "google.protobuf.Timestamp" => {
+            let timestamp = value
+                .as_str()
+                .ok_or_else(|| "generated google.protobuf.Timestamp JSON must be an RFC3339 string".to_string())?;
+            let parsed = chrono::DateTime::parse_from_rfc3339(timestamp)
+                .map_err(|error| format!("invalid generated Timestamp JSON: {error}"))?
+                .with_timezone(&chrono::Utc);
+            owned = serde_json::json!({
+                "seconds": parsed.timestamp().to_string(),
+                "nanos": parsed.timestamp_subsec_nanos(),
+            });
+            &owned
+        }
+        _ => value,
+    };
+
+    let descriptor = generated_agent_tool_json_message_descriptor(type_name)
+        .ok_or_else(|| format!("canonical generated JSON descriptor is missing for {type_name}"))?;
+    let object = value
+        .as_object()
+        .ok_or_else(|| format!("generated protobuf JSON for {type_name} must be an object"))?;
+    let mut output = Vec::new();
+    for field in descriptor.fields {
+        let Some(value) = object.get(field.json_name) else {
+            continue;
+        };
+        if value.is_null() && !matches!(field.kind, AgentToolJsonFieldKind::Message("google.protobuf.Value")) {
+            continue;
+        }
+        if field.repeated && !matches!(field.kind, AgentToolJsonFieldKind::Map { .. }) {
+            let values = value
+                .as_array()
+                .ok_or_else(|| format!("generated repeated field {} must be an array", field.json_name))?;
+            for value in values {
+                encode_generated_field(&mut output, *field, value)?;
+            }
+        } else {
+            encode_generated_field(&mut output, *field, value)?;
+        }
+    }
+    Ok(output)
+}
+
+fn generated_value_message(value: &Value) -> Value {
+    match value {
+        Value::Null => serde_json::json!({"nullValue": "NULL_VALUE"}),
+        Value::Bool(value) => serde_json::json!({"boolValue": value}),
+        Value::Number(value) => serde_json::json!({"numberValue": value}),
+        Value::String(value) => serde_json::json!({"stringValue": value}),
+        Value::Array(values) => serde_json::json!({
+            "listValue": values,
+        }),
+        Value::Object(values) => serde_json::json!({
+            "structValue": values,
+        }),
+    }
+}
+
+fn encode_generated_field(
+    output: &mut Vec<u8>,
+    field: AgentToolJsonFieldDescriptor,
+    value: &Value,
+) -> Result<(), String> {
+    match field.kind {
+        AgentToolJsonFieldKind::Scalar(scalar) => {
+            encode_generated_scalar_field(output, field.number, scalar, value)
+        }
+        AgentToolJsonFieldKind::Enum(values) => {
+            write_key(output, field.number, 0);
+            write_varint(output, generated_enum_number(value, values)? as u64);
+            Ok(())
+        }
+        AgentToolJsonFieldKind::Message(type_name) => {
+            let bytes = encode_generated_json_message(value, type_name)?;
+            write_length_delimited(output, field.number, &bytes);
+            Ok(())
+        }
+        AgentToolJsonFieldKind::Map { key_scalar, value: value_kind } => {
+            let object = value
+                .as_object()
+                .ok_or_else(|| format!("generated map field {} must be an object", field.json_name))?;
+            for (key, value) in object {
+                let mut entry = Vec::new();
+                encode_generated_map_key(&mut entry, key_scalar, key)?;
+                encode_generated_map_value(&mut entry, value_kind, value)?;
+                write_length_delimited(output, field.number, &entry);
+            }
+            Ok(())
+        }
+    }
+}
+
+fn encode_generated_map_key(
+    output: &mut Vec<u8>,
+    scalar: u64,
+    key: &str,
+) -> Result<(), String> {
+    let value = match scalar {
+        8 => Value::Bool(match key {
+            "true" => true,
+            "false" => false,
+            _ => return Err(format!("invalid generated bool map key {key}")),
+        }),
+        9 => Value::String(key.to_string()),
+        _ => Value::String(key.to_string()),
+    };
+    encode_generated_scalar_field(output, 1, scalar, &value)
+}
+
+fn encode_generated_map_value(
+    output: &mut Vec<u8>,
+    kind: AgentToolJsonMapValueKind,
+    value: &Value,
+) -> Result<(), String> {
+    match kind {
+        AgentToolJsonMapValueKind::Scalar(scalar) => {
+            encode_generated_scalar_field(output, 2, scalar, value)
+        }
+        AgentToolJsonMapValueKind::Enum(values) => {
+            write_key(output, 2, 0);
+            write_varint(output, generated_enum_number(value, values)? as u64);
+            Ok(())
+        }
+        AgentToolJsonMapValueKind::Message(type_name) => {
+            let bytes = encode_generated_json_message(value, type_name)?;
+            write_length_delimited(output, 2, &bytes);
+            Ok(())
+        }
+    }
+}
+
+fn generated_enum_number(
+    value: &Value,
+    values: &'static [(i64, &'static str)],
+) -> Result<i64, String> {
+    if let Some(value) = value.as_i64() {
+        return Ok(value);
+    }
+    if let Some(value) = value.as_u64() {
+        return i64::try_from(value).map_err(|_| "generated enum value exceeds i64".to_string());
+    }
+    let name = value
+        .as_str()
+        .ok_or_else(|| "generated enum JSON must be a name or integer".to_string())?;
+    values
+        .iter()
+        .find(|(_, candidate)| *candidate == name)
+        .map(|(number, _)| *number)
+        .ok_or_else(|| format!("unknown generated enum value {name}"))
+}
+
+fn encode_generated_scalar_field(
+    output: &mut Vec<u8>,
+    field_number: u64,
+    scalar: u64,
+    value: &Value,
+) -> Result<(), String> {
+    let wire = scalar_wire_type(scalar)?;
+    write_key(output, field_number, wire);
+    match scalar {
+        1 => output.extend_from_slice(&generated_f64(value)?.to_bits().to_le_bytes()),
+        2 => output.extend_from_slice(&(generated_f64(value)? as f32).to_bits().to_le_bytes()),
+        3 => write_varint(output, generated_i64(value)? as u64),
+        4 => write_varint(output, generated_u64(value)?),
+        5 => write_varint(output, generated_i64(value)? as i32 as u32 as u64),
+        6 => output.extend_from_slice(&generated_u64(value)?.to_le_bytes()),
+        7 => output.extend_from_slice(&(generated_u64(value)? as u32).to_le_bytes()),
+        8 => write_varint(
+            output,
+            u64::from(value.as_bool().ok_or_else(|| "generated bool JSON must be boolean".to_string())?),
+        ),
+        9 => {
+            let text = value
+                .as_str()
+                .ok_or_else(|| "generated string JSON must be a string".to_string())?;
+            write_varint(output, text.len() as u64);
+            output.extend_from_slice(text.as_bytes());
+        }
+        12 => {
+            let encoded = value
+                .as_str()
+                .ok_or_else(|| "generated bytes JSON must be base64 text".to_string())?;
+            let bytes = STANDARD
+                .decode(encoded)
+                .map_err(|error| format!("invalid generated base64 bytes JSON: {error}"))?;
+            write_varint(output, bytes.len() as u64);
+            output.extend_from_slice(&bytes);
+        }
+        13 => write_varint(output, generated_u64(value)? as u32 as u64),
+        15 => output.extend_from_slice(&(generated_i64(value)? as i32).to_le_bytes()),
+        16 => output.extend_from_slice(&generated_i64(value)?.to_le_bytes()),
+        17 => {
+            let value = generated_i64(value)? as i32;
+            write_varint(output, ((value << 1) ^ (value >> 31)) as u32 as u64);
+        }
+        18 => {
+            let value = generated_i64(value)?;
+            write_varint(output, ((value << 1) ^ (value >> 63)) as u64);
+        }
+        _ => return Err(format!("unsupported generated protobuf scalar {scalar}")),
+    }
+    Ok(())
+}
+
+fn generated_i64(value: &Value) -> Result<i64, String> {
+    value
+        .as_i64()
+        .or_else(|| value.as_u64().and_then(|value| i64::try_from(value).ok()))
+        .or_else(|| value.as_str().and_then(|value| value.parse::<i64>().ok()))
+        .ok_or_else(|| "generated integer JSON is not an i64".to_string())
+}
+
+fn generated_u64(value: &Value) -> Result<u64, String> {
+    value
+        .as_u64()
+        .or_else(|| value.as_i64().and_then(|value| u64::try_from(value).ok()))
+        .or_else(|| value.as_str().and_then(|value| value.parse::<u64>().ok()))
+        .ok_or_else(|| "generated integer JSON is not a u64".to_string())
+}
+
+fn generated_f64(value: &Value) -> Result<f64, String> {
+    if let Some(value) = value.as_f64() {
+        return Ok(value);
+    }
+    match value.as_str() {
+        Some("NaN") => Ok(f64::NAN),
+        Some("Infinity") => Ok(f64::INFINITY),
+        Some("-Infinity") => Ok(f64::NEG_INFINITY),
+        Some(value) => value
+            .parse::<f64>()
+            .map_err(|error| format!("invalid generated float JSON: {error}")),
+        None => Err("generated float JSON is not numeric".into()),
+    }
+}
+
+fn write_key(output: &mut Vec<u8>, field_number: u64, wire_type: u8) {
+    write_varint(output, (field_number << 3) | u64::from(wire_type));
+}
+
+fn write_length_delimited(output: &mut Vec<u8>, field_number: u64, bytes: &[u8]) {
+    write_key(output, field_number, 2);
+    write_varint(output, bytes.len() as u64);
+    output.extend_from_slice(bytes);
+}
+
+fn write_varint(output: &mut Vec<u8>, mut value: u64) {
+    while value >= 0x80 {
+        output.push((value as u8 & 0x7f) | 0x80);
+        value >>= 7;
+    }
+    output.push(value as u8);
+}
+
 fn decode_generated_json_message(bytes: &[u8], type_name: &str) -> Result<Value, String> {
     let descriptor = generated_agent_tool_json_message_descriptor(type_name)
         .ok_or_else(|| format!("canonical generated JSON descriptor is missing for {type_name}"))?;
