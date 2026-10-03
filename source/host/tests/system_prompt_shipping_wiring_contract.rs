@@ -60,13 +60,11 @@ fn shipping_remote_box_and_computer_owners_are_consumed_not_test_only_helpers() 
         "let shipping_box_resources = Arc::new(",
         "ForeverBoxRunnerResourcePort::new(",
         ".with_background_shell_watches(Arc::clone(&background_shell_watches))",
-        "let computer_use_owner = host_runner_composition.computer_use_coordination();",
-        "owner.acquire_control_lease(&agent_id)",
-        ".owns_control_lease(lease)",
-        "owner.begin_preparation(&agent_id)",
+        "host_runner_composition.begin_computer_use_preparation(&agent_id)",
+        "host_runner_composition.mark_computer_use_preparation_ready(&agent_id)",
+        "host_runner_composition.owns_computer_control_lease(lease)",
         "box-chrome --sand-prepare",
-        "owner.record_turn_ended(usage)",
-        "owner.release_control_lease(lease)",
+        "worker_host_runner_composition.finish_computer_use_turn(",
         "shipping_box_resources.clone()",
         "computer_control_box.box_().is_available()",
         "computer_control_box.box_().inner().shared_desktop().is_none()",
@@ -75,6 +73,19 @@ fn shipping_remote_box_and_computer_owners_are_consumed_not_test_only_helpers() 
         assert!(
             SHIPPING_HOST_MAIN.contains(binding),
             "shipping Host does not consume remote-box/computer owner: {binding}"
+        );
+    }
+
+    for binding in [
+        "owner.acquire_control_lease(agent_id)",
+        "owner.begin_preparation(agent_id)",
+        ".owns_control_lease(lease)",
+        "owner.record_turn_ended(usage)",
+        "owner.release_control_lease(lease)",
+    ] {
+        assert!(
+            HOST_RUNNER_COMPOSITION.contains(binding),
+            "HostRunnerComposition does not own ComputerUseCoordination delegation: {binding}"
         );
     }
 }
