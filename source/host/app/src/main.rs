@@ -331,6 +331,7 @@ use mahayana_host_runtime::runner_production_bridge::{
 };
 use mahayana_host_runtime::runner::sand_action_audit::{
     ActionAuditRecord, ActionAuditSink, navigation_probe_command, normalize_navigation_url,
+    with_transport_resolving_sink,
 };
 use mahayana_host_runtime::runner::bot_block_detection::with_bot_block_detection_sink;
 use mahayana_host_runtime::extensions::telemetry::bot_block_telemetry::BotBlockReport;
@@ -7139,6 +7140,15 @@ fn start_routed_provider_task(
                             record.agent_id
                         );
                     }
+                }),
+            );
+            let audit_mcp_service = Arc::clone(&worker_mcp_service);
+            let action_audit_sink = with_transport_resolving_sink(
+                action_audit_sink,
+                Arc::new(move |server_identifier| {
+                    audit_mcp_service
+                        .transport_for_server_identifier(server_identifier)
+                        .unwrap_or_else(|_| "unknown".to_string())
                 }),
             );
             let remote_resource_gate = Arc::clone(&auto_review_gate);
