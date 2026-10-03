@@ -387,6 +387,13 @@ impl SandAutoReviewController {
             .unwrap_or_else(|| self.agent_id.clone());
 
         {
+            if self.is_cancelled() {
+                return SandAutoReviewRequestOutcome::Immediate(
+                    SandAutoReviewDecision::Denied {
+                        reason: SAND_AUTO_REVIEW_CANCELLED_REASON.into(),
+                    },
+                );
+            }
             let state = self.state.lock().expect("auto-review state");
             if state.quiescing_for_host_wind_down {
                 return SandAutoReviewRequestOutcome::Immediate(
