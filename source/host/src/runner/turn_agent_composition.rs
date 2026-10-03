@@ -95,6 +95,7 @@ impl RoutedProviderCheckpointStore for ObservedRoutedProviderCheckpointStore {
     }
 }
 
+pub const SAND_AGENT_MAX_STEPS: usize = 5_000;
 pub const GENERAL_PURPOSE_SUBAGENT_TYPE: &str = "general-purpose";
 pub const EXECUTOR_SUBAGENT_TYPE: &str = "executor";
 pub const COMPUTER_USE_SUBAGENT_TYPE: &str = "computeruse";
@@ -819,6 +820,7 @@ impl TurnAgentComposition {
                 cloud_agents_enabled: self.cloud_agent_tool.is_some(),
                 multitask_enabled: self.multitask_enabled,
                 is_computer_use_subagent: self.is_computer_use_subagent,
+                max_steps: SAND_AGENT_MAX_STEPS,
             },
             on_text_delta,
         )

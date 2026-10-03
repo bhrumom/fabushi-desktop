@@ -845,6 +845,39 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials(
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
     on_partial_tool_call: &mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
 ) -> Result<String, ProviderSessionError> {
+    run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
+        transport,
+        messages,
+        tools,
+        execute_tool,
+        on_text_delta,
+        should_cancel,
+        resume_from,
+        on_checkpoint,
+        on_usage,
+        on_partial_tool_call,
+        8,
+    )
+}
+
+pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
+    transport: &dyn CursorInferenceStreamTransport,
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&CursorCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(&CursorCheckpoint) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    on_partial_tool_call: &mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
+    max_steps: usize,
+) -> Result<String, ProviderSessionError> {
+    let max_steps = max_steps.max(1);
     let tool_index = tools
         .iter()
         .map(|tool| (tool.name.clone(), tool))
@@ -868,13 +901,13 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials(
             ),
         };
 
-    if completed_steps >= 8 {
-        return Err(ProviderSessionError::Protocol(
-            "Cursor resume checkpoint already exhausted Fabushi's 8-step tool limit.".into(),
-        ));
+    if completed_steps >= max_steps {
+        return Err(ProviderSessionError::Protocol(format!(
+            "Cursor resume checkpoint already exhausted Fabushi's {max_steps}-step tool limit."
+        )));
     }
 
-    for _step in completed_steps..8 {
+    for _step in completed_steps..max_steps {
         if should_cancel() {
             return Err(ProviderSessionError::Cancelled(
                 "Runner cancelled Cursor inference before provider step".into(),
@@ -1016,9 +1049,9 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials(
         })?;
     }
 
-    Err(ProviderSessionError::Protocol(
-        "Cursor inference exceeded Fabushi's 8-step tool limit.".into(),
-    ))
+    Err(ProviderSessionError::Protocol(format!(
+        "Cursor inference exceeded Fabushi's {max_steps}-step tool limit."
+    )))
 }
 
 pub fn cursor_tool_result_message(

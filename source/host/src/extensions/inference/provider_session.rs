@@ -967,6 +967,36 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage(
     ) -> Result<(), ProviderSessionError>,
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
 ) -> Result<String, ProviderSessionError> {
+    run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+        messages,
+        tools,
+        execute_tool,
+        on_text_delta,
+        should_cancel,
+        resume_from,
+        on_checkpoint,
+        on_usage,
+        8,
+    )
+}
+
+pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&CodexDirectCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &CodexDirectCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    max_steps: usize,
+) -> Result<String, ProviderSessionError> {
     let mut transport = CodexHttpTransport::new(&codex_home().join("auth.json"))?;
     let system_prompt = assembled_provider_system_prompt(messages);
     let mut request = CodexDirectOptions::new(
@@ -984,6 +1014,7 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage(
             .collect(),
     );
     request.reasoning_effort = configured_codex_reasoning_effort();
+    request.max_steps = max_steps.max(1);
     request.tools = tools.iter().map(to_codex_tool).collect();
 
     let tool_index = tools
@@ -1077,6 +1108,29 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
     ) -> Result<(), ProviderSessionError>,
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
 ) -> Result<String, ProviderSessionError> {
+    run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+        provider,
+        messages,
+        options,
+        resume_from,
+        on_checkpoint,
+        on_usage,
+        8,
+    )
+}
+
+pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+    provider: RoutedProvider,
+    messages: &[ProviderMessage],
+    options: &mut RoutedProviderOptions<'_>,
+    resume_from: Option<&RoutedProviderCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &RoutedProviderCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    max_steps: usize,
+) -> Result<String, ProviderSessionError> {
+    let max_steps = max_steps.max(1);
     if (options.should_cancel)() {
         return Err(ProviderSessionError::Cancelled(
             "Runner cancelled before provider dispatch".into(),
@@ -1112,7 +1166,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
                 .on_partial_tool_call
                 .as_deref_mut()
                 .unwrap_or(&mut ignore_partial);
-            let result = super::cursor_inference_transport::run_cursor_with_transport_reporting_usage_and_partials(
+            let result = super::cursor_inference_transport::run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
                 &transport,
                 messages,
                 options.tools,
@@ -1123,6 +1177,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
                 &mut cursor_checkpoint,
                 on_usage,
                 on_partial_tool_call,
+                max_steps,
             );
             if let Ok(text) = result.as_ref() {
                 let mut labeled_messages = messages.to_vec();
@@ -1148,7 +1203,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
                     checkpoint.clone(),
                 ))
             };
-            run_codex_provider_text_with_lifecycle_reporting_usage(
+            run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
                 messages,
                 options.tools,
                 options.execute_tool,
@@ -1157,6 +1212,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
                 resume,
                 &mut codex_checkpoint,
                 on_usage,
+                max_steps,
             )
         }
         RoutedProvider::OpenRouter => {
@@ -1178,6 +1234,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage(
                 resume,
                 &mut openrouter_checkpoint,
                 on_usage,
+                max_steps,
             )
         }
         RoutedProvider::ClaudeCode => {
@@ -1440,6 +1497,43 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials(
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
     on_partial_tool_call: &mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
 ) -> Result<String, ProviderSessionError> {
+    run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps(
+        transport,
+        model,
+        messages,
+        tools,
+        execute_tool,
+        on_text_delta,
+        should_cancel,
+        resume_from,
+        on_checkpoint,
+        on_usage,
+        on_partial_tool_call,
+        8,
+    )
+}
+
+pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps(
+    transport: &mut dyn OpenRouterTransport,
+    model: &str,
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&OpenRouterCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &OpenRouterCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    on_partial_tool_call: &mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
+    max_steps: usize,
+) -> Result<String, ProviderSessionError> {
+    let max_steps = max_steps.max(1);
     let tool_index = tools
         .iter()
         .map(|tool| (tool.name.clone(), tool))
@@ -1482,14 +1576,13 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials(
         }
     };
 
-    if completed_steps >= 8 {
-        return Err(ProviderSessionError::Protocol(
-            "OpenRouter resume checkpoint already exhausted Fabushi's 8-step tool limit."
-                .into(),
-        ));
+    if completed_steps >= max_steps {
+        return Err(ProviderSessionError::Protocol(format!(
+            "OpenRouter resume checkpoint already exhausted Fabushi's {max_steps}-step tool limit."
+        )));
     }
 
-    for _step in completed_steps..8 {
+    for _step in completed_steps..max_steps {
         if should_cancel() {
             return Err(ProviderSessionError::Cancelled(
                 "Runner cancelled the OpenRouter request".into(),
@@ -1673,9 +1766,9 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials(
         })?;
     }
 
-    Err(ProviderSessionError::Protocol(
-        "OpenRouter exceeded Fabushi's 8-step tool limit.".into(),
-    ))
+    Err(ProviderSessionError::Protocol(format!(
+        "OpenRouter exceeded Fabushi's {max_steps}-step tool limit."
+    )))
 }
 
 fn run_openrouter_provider_text(
@@ -1707,6 +1800,7 @@ fn run_openrouter_provider_text_with_lifecycle(
         resume_from,
         on_checkpoint,
         &mut ignore_usage,
+        8,
     )
 }
 
@@ -1718,6 +1812,7 @@ fn run_openrouter_provider_text_with_lifecycle_reporting_usage(
         &OpenRouterCheckpoint,
     ) -> Result<(), ProviderSessionError>,
     on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    max_steps: usize,
 ) -> Result<String, ProviderSessionError> {
     let api_key = openrouter_api_key(options.data_dir)?;
     let model = env::var("SAND_OPENROUTER_MODEL")
@@ -1735,7 +1830,7 @@ fn run_openrouter_provider_text_with_lifecycle_reporting_usage(
         .on_partial_tool_call
         .as_deref_mut()
         .unwrap_or(&mut ignore_partial);
-    run_openrouter_with_transport_reporting_usage_and_partials(
+    run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps(
         &mut transport,
         &model,
         messages,
@@ -1747,6 +1842,7 @@ fn run_openrouter_provider_text_with_lifecycle_reporting_usage(
         on_checkpoint,
         on_usage,
         on_partial_tool_call,
+        max_steps,
     )
 }
 

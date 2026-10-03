@@ -19,7 +19,7 @@ use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderPartialToolCall, ProviderSessionError, ProviderTokenUsage,
     RoutedMcpMetaToolDefinition, RoutedProvider, RoutedProviderCheckpoint, RoutedProviderOptions,
     RoutedToolDefinition,
-    run_routed_provider_text_with_lifecycle_reporting_usage,
+    run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps,
 };
 use crate::host_request_context::HostRequestContext;
 use crate::runner::production_turn_run_shell_adapter::{
@@ -326,6 +326,7 @@ struct ProductionRoutedProviderAttemptExecutor<'a> {
     ) -> Result<Value, ProviderSessionError>,
     on_partial_tool_call: &'a mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
     usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
+    max_steps: usize,
 }
 
 impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'_> {
@@ -354,13 +355,14 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
                 sink(usage);
             }
         };
-        run_routed_provider_text_with_lifecycle_reporting_usage(
+        run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
             self.provider,
             self.messages,
             &mut options,
             resume_from,
             on_checkpoint,
             &mut on_usage,
+            self.max_steps,
         )
     }
 }
@@ -381,6 +383,7 @@ pub struct RoutedProviderRun<'a> {
     pub cloud_agents_enabled: bool,
     pub multitask_enabled: bool,
     pub is_computer_use_subagent: bool,
+    pub max_steps: usize,
 }
 
 pub fn run_routed_provider_in_runner(
@@ -471,6 +474,7 @@ pub fn run_routed_provider_in_runner(
         execute_tool: &mut execute_tool,
         on_partial_tool_call: &mut on_partial_tool_call,
         usage_sink: run.usage_sink.clone(),
+        max_steps: run.max_steps.max(1),
     };
     let retry_sink = run.retry_sink.clone();
     let mut on_retry = move |event: &ProviderRetryEvent| {
