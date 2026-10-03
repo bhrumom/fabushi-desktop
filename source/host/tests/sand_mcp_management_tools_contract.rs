@@ -15,7 +15,7 @@ use mahayana_host_runtime::runner::tools::sand_mcp_management_tools::{
     McpManagementToolBridge, McpPluginDetail, McpPluginField, McpPluginSkill,
     McpPluginSummary, McpRemoveServerResult, McpUninstallPluginResult,
     SEARCH_PLUGINS_TOOL_NAME, build_server_config_json,
-    rank_plugins_lexically, validate_remote_mcp_url,
+    encode_mcp_account_label_for_listing, rank_plugins_lexically, validate_remote_mcp_url,
 };
 use serde_json::{Value, json};
 
@@ -49,6 +49,8 @@ struct FakeManagement {
     mutations: AtomicUsize,
     awaiting: bool,
     multi_account: bool,
+    list_installed_error: bool,
+    last_authenticated_server_id: Mutex<Option<String>>,
 }
 
 impl FakeManagement {
@@ -63,7 +65,14 @@ impl FakeManagement {
             mutations: AtomicUsize::new(0),
             awaiting,
             multi_account: false,
+            list_installed_error: false,
+            last_authenticated_server_id: Mutex::new(None),
         }
+    }
+
+    fn with_list_installed_error(mut self) -> Self {
+        self.list_installed_error = true;
+        self
     }
 }
 
@@ -121,6 +130,9 @@ impl McpManagementSink for FakeManagement {
     }
 
     fn list_installed(&self) -> Result<Vec<McpInstalledServer>, ProviderSessionError> {
+        if self.list_installed_error {
+            return Err(ProviderSessionError::Tool("installed listing unavailable".into()));
+        }
         Ok(self.installed.lock().expect("installed").clone())
     }
 
@@ -163,12 +175,16 @@ impl McpManagementSink for FakeManagement {
 
     fn authenticate(
         &self,
-        _server_id: &str,
+        server_id: &str,
         _account_key: &str,
         _requesting_agent_id: Option<&str>,
         _force_reauth: bool,
     ) -> Result<McpAuthenticationResult, ProviderSessionError> {
         self.mutations.fetch_add(1, Ordering::SeqCst);
+        *self
+            .last_authenticated_server_id
+            .lock()
+            .expect("last authenticated server id") = Some(server_id.to_string());
         Ok(McpAuthenticationResult::Started {
             server_name: "Custom".into(),
         })
@@ -319,6 +335,40 @@ fn pending_user_selection_blocks_configuration_mutations() {
     assert!(result.as_str().is_some_and(|text| text.contains("waiting on the user's selection")));
     assert_eq!(management.mutations.load(Ordering::SeqCst), 0);
     assert!(management.installed.lock().expect("installed").is_empty());
+}
+
+
+#[test]
+fn hostile_account_labels_are_escaped_like_the_frozen_shared_mcp_helper() {
+    assert_eq!(
+        encode_mcp_account_label_for_listing("alpha\n\"'`\\[]{}()<>\u{2028}\u{2029}"),
+        "\"alpha\\u000a\\u0022\\u0027\\u0060\\u005c\\u005b\\u005d\\u007b\\u007d\\u0028\\u0029\\u003c\\u003e\\u2028\\u2029\""
+    );
+}
+
+#[test]
+fn server_resolution_fails_soft_when_the_installed_listing_is_unreadable() {
+    let management = Arc::new(FakeManagement::new(false).with_list_installed_error());
+    let sink: Arc<dyn McpManagementSink> = management.clone();
+    let bridge = McpManagementToolBridge::new(Arc::new(BaseBridge), sink);
+    let tools = bridge.list_tools().expect("tools");
+    let auth = tools
+        .iter()
+        .find(|tool| tool.name == AUTHENTICATE_MCP_SERVER_TOOL_NAME)
+        .expect("auth");
+
+    let result = bridge
+        .call_tool(auth, json!({"server_id":"legacy-token"}), "tool-auth")
+        .expect("fail-soft auth");
+    assert!(result.as_str().is_some_and(|text| text.contains("Authentication started")));
+    assert_eq!(
+        management
+            .last_authenticated_server_id
+            .lock()
+            .expect("last authenticated server id")
+            .as_deref(),
+        Some("legacy-token")
+    );
 }
 
 #[test]

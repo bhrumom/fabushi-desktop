@@ -354,7 +354,34 @@ pub fn truncate_one_line(value: &str, max: usize) -> String {
 }
 
 pub fn encode_mcp_account_label_for_listing(label: &str) -> String {
-    serde_json::to_string(label).unwrap_or_else(|_| "\"\"".into())
+    let mut escaped = String::new();
+    for character in label.chars() {
+        let hostile = matches!(
+            character,
+            '\u{0000}'..='\u{001f}'
+                | '\u{007f}'
+                | '"'
+                | '\''
+                | '`'
+                | '\\'
+                | '['
+                | ']'
+                | '{'
+                | '}'
+                | '('
+                | ')'
+                | '<'
+                | '>'
+                | '\u{2028}'
+                | '\u{2029}'
+        );
+        if hostile {
+            escaped.push_str(&format!("\\u{:04x}", character as u32));
+        } else {
+            escaped.push(character);
+        }
+    }
+    format!("\"{escaped}\"")
 }
 
 pub fn decode_mcp_account_label_argument(raw_argument: &str) -> String {
@@ -914,7 +941,10 @@ fn resolve_server_id(
     if is_mcp_server_id(trimmed) {
         return Ok(Some(trimmed.to_string()));
     }
-    let installed = management.list_installed()?;
+    let installed = match management.list_installed() {
+        Ok(installed) => installed,
+        Err(_) => return Ok(Some(trimmed.to_string())),
+    };
     Ok(resolve_server_row(&installed, trimmed).map(|row| row.id.clone()))
 }
 
