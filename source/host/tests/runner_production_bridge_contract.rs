@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedProvider, RoutedProviderCheckpoint,
@@ -10,13 +10,19 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProv
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSnapshot,
 };
+use mahayana_host_runtime::runner::subagent_runtime::SubagentRuntime;
+use mahayana_host_runtime::runner::tools::sand_agent_management_tools::{
+    AgentManagementRecord, AgentManagementSink, AgentMessageImage,
+};
 use mahayana_host_runtime::runner::tools::sand_computer_tool::ComputerToolExposure;
 use mahayana_host_runtime::runner::tools::sand_mcp_management_tools::{
     McpAuthenticationResult, McpInstalledServer, McpManagementSink, McpPluginDetail,
     McpPluginSummary, McpRemoveServerResult, McpUninstallPluginResult,
 };
 use mahayana_host_runtime::runner_production_bridge::{
-    ProductionRunnerCompositionInput, create_production_runner_composition,
+    ProductionRunnerCompositionHooks, ProductionRunnerCompositionInput,
+    create_production_runner, create_production_runner_composition,
+    create_production_runner_composition_with_hooks,
 };
 
 const PRODUCTION_BRIDGE: &str = include_str!("../src/runner_production_bridge.rs");
@@ -78,6 +84,41 @@ impl RoutedToolBridge for McpStateBridge {
         _tool_call_id: &str,
     ) -> Result<Value, ProviderSessionError> {
         Err(ProviderSessionError::Tool("not used by MCP state projection".into()))
+    }
+}
+
+struct EmptyAgentManagementSink;
+
+impl AgentManagementSink for EmptyAgentManagementSink {
+    fn self_agent_id(&self) -> &str {
+        "agent-contract"
+    }
+
+    fn send_to_agent(
+        &self,
+        _target_id: &str,
+        _message: &str,
+        _images: &[AgentMessageImage],
+        _priority: bool,
+    ) -> Result<String, ProviderSessionError> {
+        Err(ProviderSessionError::Tool("not exercised".into()))
+    }
+
+    fn create_agent(
+        &self,
+        _name: &str,
+        _description: &str,
+    ) -> Result<AgentManagementRecord, ProviderSessionError> {
+        Err(ProviderSessionError::Tool("not exercised".into()))
+    }
+
+    fn update_agent(
+        &self,
+        _agent_id: &str,
+        _name: Option<&str>,
+        _description: Option<&str>,
+    ) -> Result<Option<AgentManagementRecord>, ProviderSessionError> {
+        Err(ProviderSessionError::Tool("not exercised".into()))
     }
 }
 
@@ -314,4 +355,97 @@ fn production_bridge_owns_immutable_turn_projection_and_generated_runner_binding
             && !SHIPPING_HOST.contains("create_production_runner("),
         "shipping Host must retain one HostRunnerComposition entrypoint into the bridge",
     );
+}
+
+#[test]
+fn production_bridge_projects_host_resolved_turn_hooks_behaviorally() {
+    let composition = create_production_runner_composition_with_hooks(
+        ProductionRunnerCompositionInput {
+            provider: RoutedProvider::OpenRouter,
+            bridge: Arc::new(EmptyBridge),
+            cursor_auth: None,
+            request_context: request_context(),
+            cancellation: RoutedProviderCancellation::default(),
+            checkpoint_store: Arc::new(MemoryCheckpointStore),
+            retry_sink: None,
+            retry_report_sink: None,
+            usage_sink: None,
+            spotlight_enabled: false,
+            box_resources: None,
+            browser_executor: None,
+            computer_executor: None,
+            computer_exposure: ComputerToolExposure::Full,
+            file_transfer_executor: None,
+            external_machine_executor: None,
+            external_shell_review: None,
+            mcp_management_sink: None,
+            send_message_sink: None,
+            reaction_sink: None,
+            cloud_agent_tool: None,
+            multitask_enabled: false,
+            action_audit: None,
+            observation: None,
+        },
+        ProductionRunnerCompositionHooks {
+            agent_management_sink: Arc::new(EmptyAgentManagementSink),
+            state_writer: None,
+            routine_auto_review: Arc::new(|_, _| Ok(())),
+            box_shell_review: Arc::new(|_| Ok(None)),
+            subagent_task_sink: None,
+            subagent_task_review: None,
+            subagent_management_runtime: None,
+            subagent_steer_review: None,
+            routine_post_write: None,
+            multitask_todo_state: None,
+        },
+    );
+
+    assert!(composition.has_agent_management_sink());
+    assert!(composition.has_routine_auto_review());
+    assert!(composition.has_box_shell_review());
+}
+
+#[test]
+fn production_bridge_binds_the_generated_runner_facade() {
+    let composition = create_production_runner_composition(
+        ProductionRunnerCompositionInput {
+            provider: RoutedProvider::OpenRouter,
+            bridge: Arc::new(EmptyBridge),
+            cursor_auth: None,
+            request_context: request_context(),
+            cancellation: RoutedProviderCancellation::default(),
+            checkpoint_store: Arc::new(MemoryCheckpointStore),
+            retry_sink: None,
+            retry_report_sink: None,
+            usage_sink: None,
+            spotlight_enabled: false,
+            box_resources: None,
+            browser_executor: None,
+            computer_executor: None,
+            computer_exposure: ComputerToolExposure::Full,
+            file_transfer_executor: None,
+            external_machine_executor: None,
+            external_shell_review: None,
+            mcp_management_sink: None,
+            send_message_sink: None,
+            reaction_sink: None,
+            cloud_agent_tool: None,
+            multitask_enabled: false,
+            action_audit: None,
+            observation: None,
+        },
+    );
+    let runtime = Arc::new(Mutex::new(SubagentRuntime::default()));
+    let runner = create_production_runner(
+        composition,
+        None,
+        Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        Arc::clone(&runtime),
+    );
+
+    assert!(runner.generated_agent_runtime().is_some());
+    assert!(Arc::ptr_eq(
+        runner.generated_agent_runtime().expect("generated runtime"),
+        &runtime,
+    ));
 }

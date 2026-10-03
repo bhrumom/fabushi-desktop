@@ -282,6 +282,10 @@ impl TurnAgentComposition {
         self
     }
 
+    pub fn has_box_shell_review(&self) -> bool {
+        self.box_shell_review.is_some()
+    }
+
     pub fn with_browser_executor(
         mut self,
         executor: Arc<dyn BrowserToolExecutor>,

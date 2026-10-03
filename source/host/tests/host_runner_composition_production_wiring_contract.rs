@@ -6,7 +6,7 @@ const TURN_OWNER: &str = include_str!("../src/runner/production_turn_agent_owner
 #[test]
 fn host_runner_composition_owns_turn_decoration_order() {
     for needle in [
-        "pub use crate::runner_production_bridge::ProductionRunnerCompositionHooks as ProductionTurnCompositionHooks;",
+        "ProductionRunnerCompositionHooks as ProductionTurnCompositionHooks",
         "pub fn compose_production_turn(",
         "create_production_runner_composition_with_hooks(input, hooks)",
     ] {
