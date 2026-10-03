@@ -203,7 +203,6 @@ fn host_runner_composition_owns_computer_use_session_lifecycle() {
     for needle in [
         "navigation_probe_command(display_number)",
         "worker_host_runner_composition.capture_computer_navigation_baseline(stdout)",
-        "remote_computer_audit_owner.record_computer_audit_intent(action_case)",
         ".with_post_action_callback(",
         "computer_navigation_owner.request_computer_navigation_probe()",
         "navigation_owner.complete_computer_navigation_probe(",
@@ -213,6 +212,15 @@ fn host_runner_composition_owns_computer_use_session_lifecycle() {
             "shipping Host missing frozen computer-use navigation-probe wiring: {needle}",
         );
     }
+    let normalized_shipping_host = SHIPPING_HOST
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert!(
+        normalized_shipping_host
+            .contains("remote_computer_audit_owner .record_computer_audit_intent(action_case);"),
+        "shipping Host must delegate computer audit intent to HostRunnerComposition",
+    );
 }
 
 
