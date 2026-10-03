@@ -352,7 +352,10 @@ impl SandAutoReviewController {
         }
     }
 
-    pub fn set_cancellation_probe(&self, probe: CancellationProbe) {
+    pub fn set_cancellation_probe(
+        &self,
+        probe: Arc<dyn Fn() -> bool + Send + Sync>,
+    ) {
         *self
             .cancellation_probe
             .lock()
