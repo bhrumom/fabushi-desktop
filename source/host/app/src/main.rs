@@ -4999,7 +4999,15 @@ fn start_routed_provider_task(
         .require_routed_turn_lease(&agent_id, &stream_id)
         .map_err(map_production_send_error)?;
     let turn_local_tool_permission = local_tool_permission.controller();
-    turn_local_tool_permission.begin_turn(&agent_id);
+    let starts_new_user_direction = matches!(request_source.as_deref(), None | Some("turn"))
+        && !is_ack_redrive
+        && !is_upgrade_resume
+        && !turn_hidden
+        && !is_group_member_turn
+        && generated_parent_agent_id.is_none();
+    if starts_new_user_direction {
+        turn_local_tool_permission.begin_turn(&agent_id);
+    }
     let turn_local_tool_direction_epoch =
         turn_local_tool_permission.direction_epoch(&agent_id);
     let routed_turn_lease_guard = RoutedTurnLeaseGuard::new(
