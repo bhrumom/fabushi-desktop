@@ -18251,32 +18251,36 @@
       "targetPath": "source/host/src/runner/production_turn_agent_owner.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "c390ece2ff2ed6032118b7e8921b94a1f2869c2f",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/production_turn_agent_owner.rs",
         "source/host/src/runner/turn_agent_composition.rs",
-        "source/host/src/runner/sand_agent_runner.rs",
-        "source/host/src/runner/turn_run_shell.rs",
+        "source/host/src/runner/generated_agent_turn_stream.rs",
+        "source/host/src/runner_production_bridge.rs",
+        "source/host/src/host_runner_composition.rs",
         "source/host/app/src/main.rs",
         "source/host/src/runner/production_turn_input_projection.rs",
         "source/host/src/runner/production_agent_checkpoint.rs",
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/extensions/session/production_agent_store.rs",
-        "source/host/src/runner/generated_agent_turn_stream.rs"
+        "source/host/src/cursor_backend.rs",
+        "source/host/src/extensions/inference/production.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_agent_owner_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs",
         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/production_turn_input_projection_contract.rs",
         "source/host/tests/production_agent_checkpoint_contract.rs",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/inactive_turn_agent_stream_contract.rs"
+        "source/host/tests/inactive_turn_agent_stream_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Shipping ProductionTurnAgentOwner now owns both terminal turn settlement and the generated-Agent stream/checkpoint boundary: with a production AgentStateCheckpointSink it enters run_production_generated_agent_stream, uses the current Runner generation, and cannot settle Completed before the outer durable checkpoint succeeds. The independent contract seam preserves the same checkpoint-before-Completed invariant without double-writing the shipping path. This mapping remains non-final because the frozen owner also constructs broader Agent resource/tool/summarization/static-config/disk-pressure/profile/update/disposer surfaces that are not yet fully represented."
+      "notes": "Shipping Rust ProductionTurnAgentOwner now owns the complete per-turn owner boundary represented by the frozen Grok module: it freezes one immutable build input before dispatch (model/conversation identity, subagent/shared-room/delivery/transcript static projections plus privacy mode resolved once from the existing authenticated inference owner), retains the turn-owned summarization surface, claims/commits/releases ForeverBox disk-pressure reminder episodes, commits profile announcements only after successful settlement, delegates execution through the canonical HostRunnerComposition -> runner_production_bridge -> TurnAgentComposition path, and preserves checkpoint-before-Completed plus idempotent dispose semantics without creating a second runtime or configuration owner. Exact-head 44458f208a4a1e72fdcfc06e1b963018428c2ff4 passed shipping Mahayana Host compilation, independent Coordinator/box-exec/Host supervisor/Host Runner contracts, prompt attachment projection, Human Computer takeover, ConversationActor/CapabilityBroker ownership, and both Desktop Chat Parity jobs (runs 37098154280 and 37098154284); the only renderer failure was the expected strict inventory gate while this row remained existing-needs-parity.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/runner/production-turn-input-projection.ts",
