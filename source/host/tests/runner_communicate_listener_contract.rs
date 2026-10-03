@@ -1,4 +1,5 @@
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+const HOST_RUNNER_COMPOSITION: &str = include_str!("../src/host_runner_composition.rs");
 
 use std::sync::{Arc, Mutex};
 
@@ -31,7 +32,14 @@ fn shipping_routine_write_surfaces_listener_connect_cards_and_arms_resume_watche
     assert!(SHIPPING_HOST.contains("\"type\": card.message_type"));
     assert!(SHIPPING_HOST.contains("sink.send_message("));
     assert!(SHIPPING_HOST.contains("lifecycle.watch_listener_connection("));
-    assert!(SHIPPING_HOST.contains(".with_routine_post_write(routine_post_write)"));
+    assert!(SHIPPING_HOST.contains("compose_production_turn("));
+    assert!(SHIPPING_HOST.contains("routine_post_write,"));
+    assert!(HOST_RUNNER_COMPOSITION.contains(
+        "if let Some(routine_post_write) = hooks.routine_post_write {"
+    ));
+    assert!(HOST_RUNNER_COMPOSITION.contains(
+        "composition = composition.with_routine_post_write(routine_post_write);"
+    ));
 }
 
 #[test]
