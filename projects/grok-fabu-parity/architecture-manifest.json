@@ -17946,19 +17946,30 @@
       "targetPath": "source/host/src/runner/agent_adapters.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "72b1947632c8dbac744cce55ba88231111720e66",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
-        "source/host/src/runner/agent_adapters.rs"
+        "source/host/src/runner/agent_adapters.rs",
+        "source/host/src/runner_context_production_provider.rs",
+        "source/host/src/runner/turn_observation.rs",
+        "source/host/src/extensions/transcript/client_side_tool_v2_projection.rs",
+        "source/host/src/runner/subagent_runtime.rs",
+        "source/host/src/runner/sand_agent_runner.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/subagent_runtime_adapter_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/runner_request_context_contract.rs",
+        "source/host/tests/client_side_tool_v2_projection_contract.rs",
+        "source/host/tests/generated_subagent_production_cutover_contract.rs",
+        "source/host/tests/turn_observation_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust now owns the frozen adapter protocol core: request lineage, request-context projection, single-computer-use session admission, resume/running fences, launch review settlement, background dispatch metadata, turn-usage forwarding and unresolved shell/read/await tool projection. Final remains withheld for the canonical generated RequestContext/AgentSkill/CursorRule protos, client-side-tool-v2 projection and live generated Agent InteractionListener/session wiring."
+      "notes": "Frozen agent-adapters responsibility is implemented as a Rust one-to-many adaptation without introducing a second session/listener owner. agent_adapters.rs preserves lineage, request-context, admission/review, forwarding and unresolved-tool semantics; the shipping request-context path is ProductionRunnerRequestContextSource -> RunnerRequestContextSnapshot; TurnObservation + client_side_tool_v2_projection own live started/partial/completed tool projection and publish it through the Host transcript producer; SandAgentRunner + the shared SubagentRuntime own live generated child begin/settle/steer/abort state and source/host/app/src/main.rs wires that same runtime into the shipping Runner, pending-wake durability and completion revival path. The frozen TypeScript generated RequestContext/AgentSkill/CursorRule classes are internal representation details here: their observable context/rules/capability responsibilities are projected through the canonical Rust Runner owners rather than duplicated as a parallel protobuf/session owner. Exact-head f51d3c36bc3b04645c83f703a49f9c2d8ef7d16d evidence in Rust desktop runtime run 37092869795 rust-host job 111116725142: subagent_runtime_adapter_contract 7/7, runner_request_context_contract 2/2, client_side_tool_v2_projection_contract 7/7, generated_subagent_production_cutover_contract 4/4, and turn_observation_contract 11/11 all passed; the rust-host job succeeded. Desktop Chat Parity run 37092869749 also completed successfully with the focused packaged-like Electron regression path and uploaded Playwright evidence. Closure is based on production ownership plus executable contracts, not the presence of the same-named Rust file."
     },
     {
       "referencePath": "source/host/runner/agent-state.ts",
