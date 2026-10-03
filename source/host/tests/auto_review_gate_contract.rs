@@ -186,6 +186,9 @@ fn user_instructions_are_cloned_from_live_dependencies() {
 fn shipping_host_composes_shared_gate_into_every_frozen_side_effect_surface() {
     let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let main = std::fs::read_to_string(root.join("app/src/main.rs")).expect("shipping host main");
+    let composition = std::fs::read_to_string(root.join("src/host_runner_composition.rs"))
+        .expect("canonical Host Runner composition");
+
     for required in [
         "ProductionAutoReviewGateDeps",
         "AutoReviewGate::new",
@@ -208,12 +211,31 @@ fn shipping_host_composes_shared_gate_into_every_frozen_side_effect_surface() {
         "shell_approval_identity(ShellApprovalSurface::HostShell)",
         "mark_shell_side_effect_start(",
         "mcp_review: Some(mcp_review)",
-        ".with_box_shell_review(box_shell_review)",
+        "worker_host_runner_composition.compose_production_turn(",
+        "ProductionTurnCompositionHooks {",
+        "box_shell_review,",
+        "routine_auto_review,",
         "external_shell_review: Some(external_shell_review)",
-        ".with_routine_auto_review(routine_auto_review)",
         "review: Some(cloud_agent_review)",
-        ".with_subagent_task_review(subagent_task_review)",
+        "subagent_task_review,",
     ] {
-        assert!(main.contains(required), "missing production auto-review gate wiring: {required}");
+        assert!(
+            main.contains(required),
+            "missing shipping Host auto-review gate input/delegation: {required}"
+        );
+    }
+
+    for required in [
+        "pub struct ProductionTurnCompositionHooks",
+        "pub routine_auto_review: RoutineAutoReviewCallback",
+        "pub box_shell_review: BoxShellAutoReviewCallback",
+        ".with_routine_auto_review(hooks.routine_auto_review)",
+        ".with_box_shell_review(hooks.box_shell_review)",
+        "composition.with_subagent_task_review(subagent_task_review)",
+    ] {
+        assert!(
+            composition.contains(required),
+            "missing canonical HostRunnerComposition auto-review wiring: {required}"
+        );
     }
 }
