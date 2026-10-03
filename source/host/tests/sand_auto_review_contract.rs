@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+};
 
 use mahayana_host_runtime::runner::sand_auto_review::{
     SandAutoReviewApprovalStatus, SandAutoReviewController, SandAutoReviewDecision,
@@ -229,6 +232,45 @@ fn settings_surface_expiry_and_quiesce_preserve_distinct_reasons() {
         SandAutoReviewRequestOutcome::Immediate(SandAutoReviewDecision::Denied { .. })
     ));
     controller.cancel_quiesce();
+}
+
+#[test]
+fn turn_cancellation_retires_pending_approval_with_frozen_reason() {
+    let controller = SandAutoReviewController::new("agent-1", "host-1");
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let cancellation_probe = Arc::clone(&cancelled);
+    controller.set_cancellation_probe(Arc::new(move || {
+        cancellation_probe.load(Ordering::SeqCst)
+    }));
+    let events = Arc::new(Mutex::new(Vec::<SandAutoReviewEvent>::new()));
+    let event_sink = Arc::clone(&events);
+    controller.subscribe(Arc::new(move |event| {
+        event_sink.lock().expect("events").push(event.clone());
+    }));
+
+    let pending = match controller.request_approval(request(
+        SandAutoReviewSurface::Mcp,
+        Some(SandAutoReviewExpiryPolicy::Park),
+    )) {
+        SandAutoReviewRequestOutcome::Pending(pending) => pending,
+        SandAutoReviewRequestOutcome::Immediate(_) => panic!("expected pending"),
+    };
+    cancelled.store(true, Ordering::SeqCst);
+
+    assert_eq!(
+        pending.wait().expect("cancelled decision"),
+        SandAutoReviewDecision::Denied {
+            reason: "The action was cancelled.".into(),
+        }
+    );
+    assert!(controller.get_pending_approvals().is_empty());
+    assert!(matches!(
+        events.lock().expect("events").last(),
+        Some(SandAutoReviewEvent::Expired {
+            cause: SandAutoReviewExpiryCause::Cancelled,
+            ..
+        })
+    ));
 }
 
 #[test]
