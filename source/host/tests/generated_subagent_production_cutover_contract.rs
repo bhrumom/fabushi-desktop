@@ -114,7 +114,9 @@ fn shipping_host_owns_task_child_runner_and_live_parent_projection() {
         "pub subagent_task_review: Option<SubagentTaskReviewCallback>",
         "composition = composition.with_subagent_task_sink(subagent_task_sink)",
         "composition = composition.with_subagent_task_review(subagent_task_review)",
-        "SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)",
+        "SandAgentRunner::new(owner)",
+        ".with_generated_agent_runtime(generated_agent_runtime)",
+        ".with_runtime_services(",
     ] {
         assert!(
             production_bridge.contains(required),
