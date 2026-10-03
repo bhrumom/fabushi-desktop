@@ -4,8 +4,10 @@ use crate::cloud_agents::cloud_agent_tool::{
     CloudAgentToolBridge, CloudAgentToolDependencies,
 };
 use crate::runner::box_tool_access::{
-    BoxShellAutoReviewCallback, RunnerBoxResourcePort, RunnerBoxToolBridge,
+    BoxShellAutoReviewCallback, RUNNER_BOX_READ_TOOL_NAME, RUNNER_BOX_SHELL_TOOL_NAME,
+    RunnerBoxResourcePort, RunnerBoxToolBridge,
 };
+use crate::sand_activity::SAND_BOX_AWAIT_SHELL_TOOL_NAME;
 use crate::extensions::inference::provider_session::{
     ProviderPartialToolCall, ProviderSessionError, RoutedMcpMetaToolDefinition,
     RoutedToolDefinition,
@@ -40,7 +42,10 @@ use super::sand_multitask_todo_tool::{
     MultitaskTodoState, SandMultitaskTodoToolBridge,
 };
 use super::sand_mcp_management_tools::{McpManagementSink, McpManagementToolBridge};
-use super::send_message_tool::{SendMessageInteractionSink, SendMessageSink, SendMessageToolBridge};
+use super::send_message_tool::{
+    SAND_SEND_MESSAGE_TOOL_NAME, SendMessageInteractionSink, SendMessageSink,
+    SendMessageToolBridge,
+};
 use super::sand_task_subagent_tool::{
     SubagentTaskReviewCallback, SubagentTaskSink, SubagentTaskToolBridge,
 };
@@ -127,6 +132,7 @@ pub fn project_turn_mcp_toolset(
 /// Cross-cutting audit/observation wrappers stay outside this owner.
 #[derive(Clone, Default)]
 pub struct TurnToolsetDependencies {
+    pub role: TurnToolsetRole,
     pub cancellation: RoutedProviderCancellation,
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     pub box_shell_review: Option<BoxShellAutoReviewCallback>,
@@ -154,17 +160,106 @@ pub struct TurnToolsetDependencies {
     pub cloud_agent_tool: Option<CloudAgentToolDependencies>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TurnToolsetRole {
+    pub is_subagent_runner: bool,
+    pub is_shared_room_runner: bool,
+    pub is_box_scoped_subagent: bool,
+    pub is_browser_use_subagent: bool,
+    pub shared_room_box_tools_enabled: bool,
+}
+
+impl Default for TurnToolsetRole {
+    fn default() -> Self {
+        Self {
+            is_subagent_runner: false,
+            is_shared_room_runner: false,
+            is_box_scoped_subagent: false,
+            is_browser_use_subagent: false,
+            shared_room_box_tools_enabled: true,
+        }
+    }
+}
+
+struct SharedRoomToolFilterBridge {
+    delegate: Arc<dyn RoutedToolBridge>,
+    box_tools_enabled: bool,
+}
+
+impl SharedRoomToolFilterBridge {
+    fn allows(&self, tool: &RoutedToolDefinition) -> bool {
+        if tool.name == SAND_SEND_MESSAGE_TOOL_NAME || tool.tool_name == SAND_SEND_MESSAGE_TOOL_NAME {
+            return true;
+        }
+        self.box_tools_enabled
+            && [
+                RUNNER_BOX_SHELL_TOOL_NAME,
+                RUNNER_BOX_READ_TOOL_NAME,
+                SAND_BOX_AWAIT_SHELL_TOOL_NAME,
+                "Screenshot",
+            ]
+            .iter()
+            .any(|allowed| tool.name == *allowed || tool.tool_name == *allowed)
+    }
+}
+
+impl RoutedToolBridge for SharedRoomToolFilterBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        Ok(self
+            .delegate
+            .list_tools()?
+            .into_iter()
+            .filter(|tool| self.allows(tool))
+            .collect())
+    }
+
+    fn list_mcp_meta_tools(
+        &self,
+    ) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
+        Ok(self
+            .delegate
+            .list_mcp_meta_tools()?
+            .into_iter()
+            .filter(|meta| self.allows(&meta.tool))
+            .collect())
+    }
+
+    fn observe_partial_tool_call(
+        &self,
+        partial: &ProviderPartialToolCall,
+    ) -> Result<(), ProviderSessionError> {
+        self.delegate.observe_partial_tool_call(partial)
+    }
+
+    fn call_tool(
+        &self,
+        tool: &RoutedToolDefinition,
+        args: serde_json::Value,
+        tool_call_id: &str,
+    ) -> Result<serde_json::Value, ProviderSessionError> {
+        if !self.allows(tool) {
+            return Err(ProviderSessionError::Tool(format!(
+                "{} is not available in a shared-room Runner",
+                tool.name
+            )));
+        }
+        self.delegate.call_tool(tool, args, tool_call_id)
+    }
+}
+
 pub fn build_turn_toolset(
     base: Arc<dyn RoutedToolBridge>,
     dependencies: TurnToolsetDependencies,
 ) -> Arc<dyn RoutedToolBridge> {
+    let role = dependencies.role;
     let await_box_resources = dependencies.box_resources.clone();
     let await_external_machine = dependencies.external_machine_executor.clone();
     let await_cancellation = dependencies.cancellation.clone();
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.mcp_management_sink {
-        Some(management) => Arc::new(McpManagementToolBridge::new(base, management)),
-        None => base,
-    };
+    let bridge: Arc<dyn RoutedToolBridge> =
+        match (role.is_subagent_runner, dependencies.mcp_management_sink) {
+            (false, Some(management)) => Arc::new(McpManagementToolBridge::new(base, management)),
+            _ => base,
+        };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.box_resources {
         Some(box_resources) => {
             let mut box_bridge = RunnerBoxToolBridge::new(bridge, box_resources);
@@ -175,10 +270,11 @@ pub fn build_turn_toolset(
         }
         None => bridge,
     };
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.browser_executor {
-        Some(executor) => Arc::new(SandBrowserToolBridge::new(bridge, executor)),
-        None => bridge,
-    };
+    let bridge: Arc<dyn RoutedToolBridge> =
+        match (role.is_browser_use_subagent, dependencies.browser_executor) {
+            (true, Some(executor)) => Arc::new(SandBrowserToolBridge::new(bridge, executor)),
+            _ => bridge,
+        };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.computer_executor {
         Some(executor) => Arc::new(
             SandComputerToolBridge::new(bridge, executor)
@@ -186,21 +282,25 @@ pub fn build_turn_toolset(
         ),
         None => bridge,
     };
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.external_machine_executor {
-        Some(executor) => {
+    let bridge: Arc<dyn RoutedToolBridge> =
+        match (role.is_box_scoped_subagent, dependencies.external_machine_executor) {
+        (false, Some(executor)) => {
             let mut external = ExternalMachineToolBridge::new(bridge, executor);
             if let Some(review) = dependencies.external_shell_review {
                 external = external.with_shell_review(review);
             }
             Arc::new(external)
         }
-        None => bridge,
+        _ => bridge,
     };
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.file_transfer_executor {
-        Some(executor) => Arc::new(SandFileTransferToolBridge::new(bridge, executor)),
-        None => bridge,
-    };
-    let bridge: Arc<dyn RoutedToolBridge> = if await_box_resources.is_some() || await_external_machine.is_some() {
+    let bridge: Arc<dyn RoutedToolBridge> =
+        match (role.is_box_scoped_subagent, dependencies.file_transfer_executor) {
+            (false, Some(executor)) => Arc::new(SandFileTransferToolBridge::new(bridge, executor)),
+            _ => bridge,
+        };
+    let bridge: Arc<dyn RoutedToolBridge> = if !role.is_box_scoped_subagent
+        && (await_box_resources.is_some() || await_external_machine.is_some())
+    {
         Arc::new(SandAwaitShellToolBridge::new(
             bridge,
             await_box_resources,
@@ -210,34 +310,39 @@ pub fn build_turn_toolset(
     } else {
         bridge
     };
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.reaction_sink {
-        Some(sink) => Arc::new(ReactionToolBridge::new(bridge, sink)),
-        None => bridge,
-    };
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.agent_management_sink {
-        Some(sink) => Arc::new(AgentManagementToolBridge::new(bridge, sink)),
-        None => bridge,
-    };
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.subagent_task_sink {
-        Some(sink) => {
+    let bridge: Arc<dyn RoutedToolBridge> =
+        match (role.is_subagent_runner, dependencies.reaction_sink) {
+            (false, Some(sink)) => Arc::new(ReactionToolBridge::new(bridge, sink)),
+            _ => bridge,
+        };
+    let bridge: Arc<dyn RoutedToolBridge> =
+        match (role.is_subagent_runner, dependencies.agent_management_sink) {
+            (false, Some(sink)) => Arc::new(AgentManagementToolBridge::new(bridge, sink)),
+            _ => bridge,
+        };
+    let bridge: Arc<dyn RoutedToolBridge> =
+        match (role.is_subagent_runner, dependencies.subagent_task_sink) {
+        (false, Some(sink)) => {
             let mut task_bridge = SubagentTaskToolBridge::new(bridge, sink);
             if let Some(review) = dependencies.subagent_task_review {
                 task_bridge = task_bridge.with_review(review);
             }
             Arc::new(task_bridge)
         }
-        None => bridge,
+        _ => bridge,
     };
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.subagent_runtime {
-        Some(runtime) => Arc::new(SubagentManagementToolBridge::new(
+    let bridge: Arc<dyn RoutedToolBridge> =
+        match (role.is_subagent_runner, dependencies.subagent_runtime) {
+        (false, Some(runtime)) => Arc::new(SubagentManagementToolBridge::new(
             bridge,
             runtime,
             dependencies.subagent_steer_review,
         )),
-        None => bridge,
+        _ => bridge,
     };
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.state_writer {
-        Some(state) => {
+    let bridge: Arc<dyn RoutedToolBridge> =
+        match (role.is_subagent_runner, dependencies.state_writer) {
+        (false, Some(state)) => {
             let mut state_bridge = SandStateToolBridge::new(bridge, state);
             if let Some(review) = dependencies.routine_auto_review {
                 state_bridge = state_bridge.with_routine_auto_review(review);
@@ -250,9 +355,10 @@ pub fn build_turn_toolset(
             }
             Arc::new(state_bridge)
         }
-        None => bridge,
+        _ => bridge,
     };
-    let bridge: Arc<dyn RoutedToolBridge> = if dependencies.multitask_enabled {
+    let bridge: Arc<dyn RoutedToolBridge> =
+        if !role.is_subagent_runner && dependencies.multitask_enabled {
         match dependencies.multitask_todo_state {
             Some(state) => Arc::new(SandMultitaskTodoToolBridge::new(bridge, state)),
             None => bridge,
@@ -260,27 +366,37 @@ pub fn build_turn_toolset(
     } else {
         bridge
     };
-    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.cloud_agent_tool {
-        Some(deps) => Arc::new(CloudAgentToolBridge::new(bridge, deps)),
-        None => bridge,
-    };
-    let bridge: Arc<dyn RoutedToolBridge> = match &dependencies.send_message_sink {
-        Some(sink) => Arc::new(BoxHelpToolBridge::new(
+    let bridge: Arc<dyn RoutedToolBridge> =
+        match (role.is_box_scoped_subagent, dependencies.cloud_agent_tool) {
+            (false, Some(deps)) => Arc::new(CloudAgentToolBridge::new(bridge, deps)),
+            _ => bridge,
+        };
+    let bridge: Arc<dyn RoutedToolBridge> =
+        match (role.is_subagent_runner, &dependencies.send_message_sink) {
+        (false, Some(sink)) => Arc::new(BoxHelpToolBridge::new(
             bridge,
             Arc::clone(sink),
             dependencies.cancellation.clone(),
         )),
-        None => bridge,
+        _ => bridge,
     };
-    match dependencies.send_message_sink {
-        Some(sink) => {
+    let bridge = match (role.is_subagent_runner, dependencies.send_message_sink) {
+        (false, Some(sink)) => {
             let mut send_bridge = SendMessageToolBridge::new(bridge, sink);
             if let Some(interaction_sink) = dependencies.send_message_interaction_sink {
                 send_bridge = send_bridge.with_interaction_sink(interaction_sink);
             }
             Arc::new(send_bridge)
         }
-        None => bridge,
+        _ => bridge,
+    };
+    if role.is_shared_room_runner {
+        Arc::new(SharedRoomToolFilterBridge {
+            delegate: bridge,
+            box_tools_enabled: role.shared_room_box_tools_enabled,
+        })
+    } else {
+        bridge
     }
 }
 

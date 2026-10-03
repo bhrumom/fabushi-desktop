@@ -8,7 +8,7 @@ use mahayana_host_runtime::runner::tools::sand_external_machine_tools::{
     ExternalMachineExecutor, ExternalMachineReadArgs, ExternalMachineShellArgs,
 };
 use mahayana_host_runtime::runner::tools::turn_toolset::{
-    TurnToolsetDependencies, build_turn_toolset,
+    TurnToolsetDependencies, TurnToolsetRole, build_turn_toolset,
 };
 use mahayana_host_runtime::sand_activity::{
     SAND_EXTERNAL_READ_TOOL_NAME, SAND_EXTERNAL_SHELL_TOOL_NAME,
@@ -118,4 +118,25 @@ fn external_shell_review_blocks_before_executor_side_effect() {
     ).expect("review result");
     assert_eq!(result, Value::String("blocked by auto-review".into()));
     assert!(executor.calls.lock().expect("calls").is_empty());
+}
+
+
+#[test]
+fn box_scoped_subagent_does_not_receive_external_machine_tools() {
+    let executor = Arc::new(FakeExternalExecutor::default());
+    let bridge = build_turn_toolset(
+        Arc::new(BaseBridge),
+        TurnToolsetDependencies {
+            role: TurnToolsetRole {
+                is_subagent_runner: true,
+                is_box_scoped_subagent: true,
+                ..TurnToolsetRole::default()
+            },
+            external_machine_executor: Some(executor),
+            ..TurnToolsetDependencies::default()
+        },
+    );
+    let tools = bridge.list_tools().expect("tools");
+    assert!(tools.iter().all(|tool| tool.name != SAND_EXTERNAL_SHELL_TOOL_NAME));
+    assert!(tools.iter().all(|tool| tool.name != SAND_EXTERNAL_READ_TOOL_NAME));
 }

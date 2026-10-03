@@ -18,7 +18,7 @@ use mahayana_host_runtime::runner::tools::sand_state_tool::{
     SAND_UPDATE_STATE_TOOL_NAME, SandStateWriter,
 };
 use mahayana_host_runtime::runner::tools::turn_toolset::{
-    TurnToolsetDependencies, build_turn_toolset, fence_turn_toolset,
+    TurnToolsetDependencies, TurnToolsetRole, build_turn_toolset, fence_turn_toolset,
 };
 use serde_json::{Value, json};
 
@@ -159,6 +159,12 @@ fn turn_toolset_composes_browser_capability_without_hiding_base_tools() {
     let bridge = build_turn_toolset(
         Arc::new(BaseBridge),
         TurnToolsetDependencies {
+            role: TurnToolsetRole {
+                is_subagent_runner: true,
+                is_box_scoped_subagent: true,
+                is_browser_use_subagent: true,
+                ..TurnToolsetRole::default()
+            },
             browser_executor: Some(browser),
             ..TurnToolsetDependencies::default()
         },
@@ -182,6 +188,23 @@ fn turn_toolset_composes_browser_capability_without_hiding_base_tools() {
     assert_eq!(result["isError"], false);
 }
 
+
+
+#[test]
+fn turn_toolset_hides_browser_from_non_browser_runner_roles() {
+    let browser: Arc<dyn BrowserToolExecutor> = Arc::new(FakeBrowserExecutor);
+    let bridge = build_turn_toolset(
+        Arc::new(BaseBridge),
+        TurnToolsetDependencies {
+            browser_executor: Some(browser),
+            ..TurnToolsetDependencies::default()
+        },
+    );
+
+    let tools = bridge.list_tools().expect("tools");
+    assert!(tools.iter().all(|tool| !tool.name.starts_with("browser_")));
+    assert!(tools.iter().any(|tool| tool.name == "base_tool"));
+}
 
 #[test]
 fn turn_toolset_composes_computer_and_screenshot_capabilities_without_hiding_base_tools() {

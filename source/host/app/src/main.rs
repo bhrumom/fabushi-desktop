@@ -393,6 +393,7 @@ use mahayana_host_runtime::runner::tools::send_message_tool::{
     CountingSendMessageSink, ResolvedAttachmentSource, SendMessageDeliveryCounter,
     SendMessageSink, file_path_from_file_url,
 };
+use mahayana_host_runtime::runner::tools::turn_toolset::TurnToolsetRole;
 use mahayana_host_runtime::selected_image_inputs::read_image_file_dimensions;
 use mahayana_host_runtime::runner::tools::sand_reaction_tool::{
     CountingReactionSink, ReactionDeliveryCounter, ReactionSink,
@@ -7745,6 +7746,14 @@ fn start_routed_provider_task(
                     retry_report_sink: Some(retry_report_sink),
                     usage_sink: Some(usage_sink),
                     spotlight_enabled,
+                    toolset_role: TurnToolsetRole {
+                        is_subagent_runner: worker_generated_parent_agent_id.is_some(),
+                        is_shared_room_runner: worker_group_room_id.is_some(),
+                        is_box_scoped_subagent: worker_generated_parent_agent_id.is_some(),
+                        is_browser_use_subagent: worker_generated_parent_agent_id.is_some()
+                            && worker_generated_subagent_type.eq_ignore_ascii_case("browseruse"),
+                        shared_room_box_tools_enabled: true,
+                    },
                     box_resources: Some(box_resources),
                     browser_executor: Some(browser_executor),
                     computer_executor: Some(computer_executor),
