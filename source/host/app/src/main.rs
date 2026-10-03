@@ -4895,6 +4895,22 @@ fn build_cloud_agent_auto_review_hook(
     })
 }
 
+fn starts_new_local_tool_direction(
+    request_source: Option<&str>,
+    is_ack_redrive: bool,
+    is_upgrade_resume: bool,
+    turn_hidden: bool,
+    is_group_member_turn: bool,
+    has_generated_parent: bool,
+) -> bool {
+    matches!(request_source, None | Some("turn"))
+        && !is_ack_redrive
+        && !is_upgrade_resume
+        && !turn_hidden
+        && !is_group_member_turn
+        && !has_generated_parent
+}
+
 fn start_routed_provider_task(
     routed_tool_relay: Arc<CoordinatorToolRelay>,
     mcp_service: Arc<McpHostService>,
@@ -4999,12 +5015,14 @@ fn start_routed_provider_task(
         .require_routed_turn_lease(&agent_id, &stream_id)
         .map_err(map_production_send_error)?;
     let turn_local_tool_permission = local_tool_permission.controller();
-    let starts_new_user_direction = matches!(request_source.as_deref(), None | Some("turn"))
-        && !is_ack_redrive
-        && !is_upgrade_resume
-        && !turn_hidden
-        && !is_group_member_turn
-        && generated_parent_agent_id.is_none();
+    let starts_new_user_direction = starts_new_local_tool_direction(
+        request_source.as_deref(),
+        is_ack_redrive,
+        is_upgrade_resume,
+        turn_hidden,
+        is_group_member_turn,
+        generated_parent_agent_id.is_some(),
+    );
     if starts_new_user_direction {
         turn_local_tool_permission.begin_turn(&agent_id);
     }
@@ -12369,13 +12387,43 @@ mod tests {
         decode_provider_messages,
         dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
         AutomationExecutionResult, automation_fire_completion, automation_terminal_from_event,
-        listener_connect_resume_args,
+        listener_connect_resume_args, starts_new_local_tool_direction,
         project_forever_box_status, reaction_gateway_args,
     };
     use mahayana_host_runtime::extensions::forever_box::BoxStatus;
     use mahayana_host_runtime::extensions::session::box_handoff_service::PendingHandoff;
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn local_tool_direction_advances_only_for_new_direct_user_turns() {
+        assert!(starts_new_local_tool_direction(
+            None, false, false, false, false, false
+        ));
+        assert!(starts_new_local_tool_direction(
+            Some("turn"), false, false, false, false, false
+        ));
+        for source in ["automation", "background-revival", "handoff-resume", "subagent"] {
+            assert!(!starts_new_local_tool_direction(
+                Some(source), false, false, false, false, false
+            ));
+        }
+        assert!(!starts_new_local_tool_direction(
+            Some("turn"), true, false, false, false, false
+        ));
+        assert!(!starts_new_local_tool_direction(
+            Some("turn"), false, true, false, false, false
+        ));
+        assert!(!starts_new_local_tool_direction(
+            Some("turn"), false, false, true, false, false
+        ));
+        assert!(!starts_new_local_tool_direction(
+            Some("turn"), false, false, false, true, false
+        ));
+        assert!(!starts_new_local_tool_direction(
+            Some("turn"), false, false, false, false, true
+        ));
+    }
 
     #[test]
     fn production_browser_ua_log_is_send_sync() {
