@@ -7,17 +7,132 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crate::extensions::inference::provider_session::{
-    ProviderSessionError, RoutedProviderCheckpoint,
+    ProviderMessage, ProviderSessionError, RoutedProviderCheckpoint,
 };
 
 use super::routed_provider_runtime::RoutedProviderCancellation;
+use super::tools::box_help_tool::WAITING_USER_CANCELLATION_PREFIX;
 use super::{
     AttemptCheckpoint, AttemptProgress, RetryDecision, StreamAttemptPolicy,
-    StreamFailureKind, TransientStreamError,
+    StreamFailureKind, TransientStreamError, TurnRunFinished, TurnRunOptions,
+    TurnRunShell, TurnRunShellError, TurnRunStarted,
 };
 
 pub const DEFAULT_WATCHDOG_POLL_INTERVAL: Duration =
     Duration::from_millis(10);
+
+pub struct ProductionTurnRunShellPreparedTurn<T> {
+    pub started: TurnRunStarted,
+    pub prompt: String,
+    pub prepared: T,
+}
+
+/// Bind one concrete production turn to the canonical TurnRunShell lifecycle.
+///
+/// The caller freezes all turn-scoped owner/input state in `prepare`, then
+/// executes only that prepared snapshot. Settlement and unwind remain owned by
+/// this adapter so production code cannot accidentally create a parallel turn
+/// lifecycle around the generated Agent stream.
+pub fn run_production_turn_shell_lifecycle<Prepared, Prepare, Execute, Unwind>(
+    shell: &mut TurnRunShell,
+    last_finished: &mut Option<TurnRunFinished>,
+    messages: &[ProviderMessage],
+    options: TurnRunOptions,
+    upgrade_quiescing: Arc<AtomicBool>,
+    turn_quiesced: Arc<AtomicBool>,
+    prepare: Prepare,
+    execute: Execute,
+    mut on_unwind: Unwind,
+) -> Result<String, ProviderSessionError>
+where
+    Prepare: FnOnce(&str, &TurnRunStarted) -> Result<Prepared, ProviderSessionError>,
+    Execute: FnOnce(
+        ProductionTurnRunShellPreparedTurn<Prepared>,
+    ) -> Result<String, ProviderSessionError>,
+    Unwind: FnMut(&TurnRunStarted),
+{
+    let prompt = latest_non_empty_user_prompt(messages).ok_or_else(|| {
+        ProviderSessionError::Configuration(
+            "Runner production turn requires a non-empty user prompt.".into(),
+        )
+    })?;
+    let started = shell
+        .begin_run(prompt, options)
+        .map_err(turn_shell_error)?;
+    shell
+        .mark_dispatched(&started.owner)
+        .map_err(turn_shell_error)?;
+
+    let result = match prepare(prompt.trim(), &started) {
+        Ok(prepared) => execute(ProductionTurnRunShellPreparedTurn {
+            started: started.clone(),
+            prompt: prompt.trim().to_string(),
+            prepared,
+        }),
+        Err(error) => Err(error),
+    };
+
+    if upgrade_quiescing.load(Ordering::Acquire)
+        || turn_quiesced.load(Ordering::Acquire)
+    {
+        if let Err(error) = shell.mark_quiesced_for_upgrade(&started.owner) {
+            on_unwind(&started);
+            return Err(turn_shell_error(error));
+        }
+    }
+
+    let settlement = match settle_production_turn(shell, &started, &result) {
+        Ok(settlement) => settlement,
+        Err(error) => {
+            on_unwind(&started);
+            return Err(turn_shell_error(error));
+        }
+    };
+    *last_finished = Some(settlement);
+    on_unwind(&started);
+    result
+}
+
+fn settle_production_turn(
+    shell: &mut TurnRunShell,
+    started: &TurnRunStarted,
+    result: &Result<String, ProviderSessionError>,
+) -> Result<TurnRunFinished, TurnRunShellError> {
+    match result {
+        Ok(_) => shell.finish_completed(&started.owner),
+        Err(ProviderSessionError::Cancelled(reason))
+            if reason.starts_with(WAITING_USER_CANCELLATION_PREFIX) =>
+        {
+            shell
+                .end_turn_awaiting_user(&started.owner, reason.clone())
+                .and_then(|()| shell.finish_cancelled(&started.owner))
+        }
+        Err(ProviderSessionError::Cancelled(_)) => {
+            shell.finish_cancelled(&started.owner)
+        }
+        Err(error) => shell.finish_failed(
+            &started.owner,
+            matches!(error, ProviderSessionError::Transport(_)),
+            error.to_string(),
+        ),
+    }
+}
+
+fn latest_non_empty_user_prompt(messages: &[ProviderMessage]) -> Option<&str> {
+    messages
+        .iter()
+        .rev()
+        .find(|message| {
+            message.role == "user" && !message.content.trim().is_empty()
+        })
+        .map(|message| message.content.as_str())
+}
+
+fn turn_shell_error(error: TurnRunShellError) -> ProviderSessionError {
+    ProviderSessionError::Protocol(format!(
+        "Runner turn lifecycle failed: {error}"
+    ))
+}
 
 pub trait RoutedProviderCheckpointStore: Send + Sync {
     /// Persist the checkpoint before it becomes eligible for resume.

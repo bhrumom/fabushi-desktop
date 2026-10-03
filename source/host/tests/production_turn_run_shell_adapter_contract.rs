@@ -1,22 +1,27 @@
 use std::collections::VecDeque;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    OpenRouterCheckpoint, ProviderSessionError,
+    OpenRouterCheckpoint, ProviderMessage, ProviderSessionError,
     RoutedProviderCheckpoint,
 };
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
     ProductionTurnRunShellAdapter, ProviderRetryEvent, ProviderRetryOutcome,
     ProviderRetryReport, RoutedProviderAttemptExecutor, RoutedProviderCheckpointStore,
-    first_output_timeout_for_attempt,
+    first_output_timeout_for_attempt, run_production_turn_shell_lifecycle,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     RoutedProviderCancellation,
 };
 use mahayana_host_runtime::runner::StreamAttemptPolicy;
 use serde_json::json;
+
+use mahayana_host_runtime::runner::{
+    TerminalOutcome, TurnRunOptions, TurnRunShell,
+};
 
 #[derive(Clone)]
 enum Behavior {
@@ -495,4 +500,120 @@ fn production_turn_adapter_user_cancellation_wins_without_retry() {
 
     assert!(matches!(error, ProviderSessionError::Cancelled(_)));
     assert_eq!(executor.attempts, 0);
+}
+
+#[test]
+fn production_turn_lifecycle_freezes_prepared_input_before_execution_and_unwinds() {
+    let mut shell = TurnRunShell::default();
+    let mut last_finished = None;
+    let upgrade_quiescing = Arc::new(AtomicBool::new(false));
+    let turn_quiesced = Arc::new(AtomicBool::new(false));
+    let messages = vec![ProviderMessage {
+        role: "user".into(),
+        content: "  build app  ".into(),
+    }];
+    let phases = Arc::new(Mutex::new(Vec::<String>::new()));
+
+    let result = run_production_turn_shell_lifecycle(
+        &mut shell,
+        &mut last_finished,
+        &messages,
+        TurnRunOptions {
+            inference_request_id: Some("request-1".into()),
+            ..TurnRunOptions::default()
+        },
+        upgrade_quiescing,
+        turn_quiesced,
+        {
+            let phases = Arc::clone(&phases);
+            move |prompt, started| {
+                phases
+                    .lock()
+                    .expect("phases")
+                    .push(format!("prepare:{prompt}:{}", started.owner.request_id));
+                Ok(vec!["frozen".to_string()])
+            }
+        },
+        {
+            let phases = Arc::clone(&phases);
+            move |prepared| {
+                assert_eq!(prepared.prompt, "build app");
+                assert_eq!(prepared.started.owner.request_id, "request-1");
+                assert_eq!(prepared.prepared, vec!["frozen".to_string()]);
+                phases.lock().expect("phases").push("execute".into());
+                Ok("done".into())
+            }
+        },
+        {
+            let phases = Arc::clone(&phases);
+            move |started| {
+                phases
+                    .lock()
+                    .expect("phases")
+                    .push(format!("unwind:{}", started.owner.request_id));
+            }
+        },
+    )
+    .expect("production lifecycle");
+
+    assert_eq!(result, "done");
+    assert!(!shell.has_active_run());
+    assert!(matches!(
+        last_finished.as_ref().map(|finished| &finished.outcome),
+        Some(TerminalOutcome::Completed)
+    ));
+    assert_eq!(
+        phases.lock().expect("phases").as_slice(),
+        &[
+            "prepare:build app:request-1".to_string(),
+            "execute".to_string(),
+            "unwind:request-1".to_string(),
+        ]
+    );
+}
+
+#[test]
+fn production_turn_lifecycle_unwinds_and_settles_failed_prepare() {
+    let mut shell = TurnRunShell::default();
+    let mut last_finished = None;
+    let unwound = Arc::new(AtomicBool::new(false));
+    let messages = vec![ProviderMessage {
+        role: "user".into(),
+        content: "fail safely".into(),
+    }];
+
+    let error = run_production_turn_shell_lifecycle(
+        &mut shell,
+        &mut last_finished,
+        &messages,
+        TurnRunOptions::default(),
+        Arc::new(AtomicBool::new(false)),
+        Arc::new(AtomicBool::new(false)),
+        |_prompt, _started| {
+            Err::<(), _>(ProviderSessionError::Protocol(
+                "prepare failed".into(),
+            ))
+        },
+        |_prepared| -> Result<String, ProviderSessionError> {
+            panic!("execute must not run after prepare failure")
+        },
+        {
+            let unwound = Arc::clone(&unwound);
+            move |_started| {
+                unwound.store(true, Ordering::Release);
+            }
+        },
+    )
+    .expect_err("prepare failure must settle the turn");
+
+    assert!(error.to_string().contains("prepare failed"));
+    assert!(unwound.load(Ordering::Acquire));
+    assert!(!shell.has_active_run());
+    assert!(matches!(
+        last_finished.as_ref().map(|finished| &finished.outcome),
+        Some(TerminalOutcome::Failed {
+            retryable: false,
+            ..
+        })
+    ));
 }

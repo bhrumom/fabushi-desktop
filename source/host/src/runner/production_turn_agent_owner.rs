@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 
 use crate::cursor_backend::SandPrivacyMode;
 use crate::extensions::forever_box::DiskPressureReminderEpisodes;
@@ -13,13 +13,12 @@ use super::production_agent_checkpoint::AgentStateCheckpointSink;
 use super::production_turn_input_projection::{
     ProductionTurnInputProjection, create_production_turn_agent_input_projection,
 };
+use super::production_turn_run_shell_adapter::run_production_turn_shell_lifecycle;
 use super::send_message_reminder_middleware::DISK_PRESSURE_REMINDER_MESSAGE;
-use super::tools::box_help_tool::WAITING_USER_CANCELLATION_PREFIX;
 use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::turn_agent_composition::TurnAgentComposition;
 use super::{
     TerminalOutcome, TurnRunFinished, TurnRunOptions, TurnRunShell,
-    TurnRunShellError,
 };
 
 pub type ProductionTurnSummarizationPrompt = Arc<
@@ -389,7 +388,11 @@ impl ProductionTurnAgentOwner {
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
         self.validate_build_input()?;
-        let checkpoint_sink = self.agent_state_checkpoint_sink.clone();
+        let checkpoint_sink_for_projection =
+            self.agent_state_checkpoint_sink.clone();
+        let checkpoint_sink_for_stream =
+            self.agent_state_checkpoint_sink.clone();
+        let composition_for_projection = self.composition.clone();
         let composition_for_stream = self.composition.clone();
         let completion_probe = self.composition.clone();
         let projected_provider_messages =
@@ -398,34 +401,38 @@ impl ProductionTurnAgentOwner {
         let turn_quiesced = Arc::new(AtomicBool::new(false));
         let stream_upgrade_quiescing = Arc::clone(&self.upgrade_quiescing);
         let stream_turn_quiesced = Arc::clone(&turn_quiesced);
-        let result = run_owned_turn(
+        let result = run_production_turn_shell_lifecycle(
             &mut self.shell,
             &mut self.last_finished,
             lifecycle_messages,
             shell_options,
             Arc::clone(&self.upgrade_quiescing),
             Arc::clone(&turn_quiesced),
-            move |started| {
-                let projection = create_production_turn_agent_input_projection(
-                    &composition_for_stream,
-                    checkpoint_sink.as_ref(),
+            move |_prompt, _started| {
+                create_production_turn_agent_input_projection(
+                    &composition_for_projection,
+                    checkpoint_sink_for_projection.as_ref(),
                     lifecycle_messages,
                     &projected_provider_messages,
                     &turn_input,
                     on_text_delta,
-                )?;
+                )
+            },
+            move |prepared| {
+                let projection = prepared.prepared;
                 let stream_composition = composition_for_stream
                     .with_projected_mcp_tools(projection.mcp_tools.clone());
                 run_production_generated_agent_stream(
                     stream_composition,
-                    checkpoint_sink,
+                    checkpoint_sink_for_stream,
                     data_dir,
                     projection,
-                    started.owner.generation,
+                    prepared.started.owner.generation,
                     Arc::clone(&stream_upgrade_quiescing),
                     Arc::clone(&stream_turn_quiesced),
                 )
             },
+            |_started| {},
         );
         if let (Ok(content), Some(finished)) = (&result, self.last_finished.as_mut()) {
             finished.ended_on_silent_tool_calls =
@@ -467,14 +474,15 @@ impl ProductionTurnAgentOwner {
         let checkpoint_sink = self.agent_state_checkpoint_sink.clone();
         let checkpoint_options = options.clone();
         let turn_quiesced = Arc::new(AtomicBool::new(false));
-        let result = run_owned_turn(
+        let result = run_production_turn_shell_lifecycle(
             &mut self.shell,
             &mut self.last_finished,
             messages,
             options,
             Arc::clone(&self.upgrade_quiescing),
             turn_quiesced,
-            move |_started| {
+            |_prompt, _started| Ok(()),
+            move |_prepared| {
                 let result = execute();
                 match (result, checkpoint_sink) {
                     (Ok(content), Some(sink)) => {
@@ -488,6 +496,7 @@ impl ProductionTurnAgentOwner {
                     (result, _) => result,
                 }
             },
+            |_started| {},
         );
         if result.is_ok() {
             self.commit_successful_lifecycle();
@@ -500,75 +509,6 @@ impl Drop for ProductionTurnAgentOwner {
     fn drop(&mut self) {
         self.dispose();
     }
-}
-
-fn run_owned_turn<Execute>(
-    shell: &mut TurnRunShell,
-    last_finished: &mut Option<TurnRunFinished>,
-    messages: &[ProviderMessage],
-    options: TurnRunOptions,
-    upgrade_quiescing: Arc<AtomicBool>,
-    turn_quiesced: Arc<AtomicBool>,
-    execute: Execute,
-) -> Result<String, ProviderSessionError>
-where
-    Execute: FnOnce(&super::TurnRunStarted) -> Result<String, ProviderSessionError>,
-{
-    let prompt = latest_non_empty_user_prompt(messages).ok_or_else(|| {
-        ProviderSessionError::Configuration(
-            "Runner production turn requires a non-empty user prompt.".into(),
-        )
-    })?;
-    let started = shell
-        .begin_run(prompt, options)
-        .map_err(turn_shell_error)?;
-    shell
-        .mark_dispatched(&started.owner)
-        .map_err(turn_shell_error)?;
-
-    let result = execute(&started);
-    if upgrade_quiescing.load(Ordering::Acquire) || turn_quiesced.load(Ordering::Acquire) {
-        shell
-            .mark_quiesced_for_upgrade(&started.owner)
-            .map_err(turn_shell_error)?;
-    }
-    let settlement = match &result {
-        Ok(_) => shell.finish_completed(&started.owner),
-        Err(ProviderSessionError::Cancelled(reason))
-            if reason.starts_with(WAITING_USER_CANCELLATION_PREFIX) =>
-        {
-            shell
-                .end_turn_awaiting_user(&started.owner, reason.clone())
-                .and_then(|()| shell.finish_cancelled(&started.owner))
-        }
-        Err(ProviderSessionError::Cancelled(_)) => {
-            shell.finish_cancelled(&started.owner)
-        }
-        Err(error) => shell.finish_failed(
-            &started.owner,
-            matches!(error, ProviderSessionError::Transport(_)),
-            error.to_string(),
-        ),
-    }
-    .map_err(turn_shell_error)?;
-    *last_finished = Some(settlement);
-    result
-}
-
-fn latest_non_empty_user_prompt(messages: &[ProviderMessage]) -> Option<&str> {
-    messages
-        .iter()
-        .rev()
-        .find(|message| {
-            message.role == "user" && !message.content.trim().is_empty()
-        })
-        .map(|message| message.content.as_str())
-}
-
-fn turn_shell_error(error: TurnRunShellError) -> ProviderSessionError {
-    ProviderSessionError::Protocol(format!(
-        "Runner turn lifecycle failed: {error}"
-    ))
 }
 
 #[allow(dead_code)]
