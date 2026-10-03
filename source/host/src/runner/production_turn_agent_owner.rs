@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::cursor_backend::SandPrivacyMode;
 use crate::extensions::forever_box::DiskPressureReminderEpisodes;
@@ -171,6 +171,18 @@ impl ProductionTurnAgentOwner {
     pub fn with_upgrade_quiesce_signal(mut self, signal: Arc<AtomicBool>) -> Self {
         self.upgrade_quiescing = signal;
         self
+    }
+
+    pub fn request_quiesce_for_upgrade(&self) {
+        self.upgrade_quiescing.store(true, Ordering::Release);
+    }
+
+    pub fn cancel_quiesce_for_upgrade(&self) {
+        self.upgrade_quiescing.store(false, Ordering::Release);
+    }
+
+    pub fn is_quiescing_for_upgrade(&self) -> bool {
+        self.upgrade_quiescing.load(Ordering::Acquire)
     }
 
     pub fn with_build_bindings(
