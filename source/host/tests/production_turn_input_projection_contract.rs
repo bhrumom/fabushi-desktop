@@ -201,7 +201,7 @@ fn production_turn_agent_projection_freezes_action_mcp_ack_and_base_state() {
         ack_token: Some("ack-1".into()),
     };
 
-    let mut projected = create_production_turn_agent_input_projection(
+    let projected = create_production_turn_agent_input_projection(
         &composition,
         Some(&checkpoint_sink),
         &lifecycle_messages,

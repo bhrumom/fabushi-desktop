@@ -70,7 +70,14 @@ pub struct McpStateProjectedRoutedToolBridge {
 }
 
 impl McpStateProjectedRoutedToolBridge {
-    pub fn new(
+    pub fn new(delegate: Arc<dyn RoutedToolBridge>) -> Self {
+        Self {
+            delegate,
+            projected_tools: None,
+        }
+    }
+
+    pub fn with_projected_tools(
         delegate: Arc<dyn RoutedToolBridge>,
         projected_tools: Option<Arc<Vec<RoutedToolDefinition>>>,
     ) -> Self {
@@ -612,7 +619,7 @@ impl TurnAgentComposition {
     ) -> Result<String, ProviderSessionError> {
         self.reset_latest_provider_checkpoint();
         let bridge: Arc<dyn RoutedToolBridge> = Arc::new(
-            McpStateProjectedRoutedToolBridge::new(
+            McpStateProjectedRoutedToolBridge::with_projected_tools(
                 Arc::clone(&self.bridge),
                 self.projected_mcp_tools.clone(),
             ),
