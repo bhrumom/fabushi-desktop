@@ -6692,10 +6692,10 @@ fn start_routed_provider_task(
                     )
                     .map_err(|error| ProviderSessionError::Tool(error.to_string()))
                 });
-            let state_approval_auto_review = Arc::clone(&worker_auto_review);
+            let state_approval_gate = Arc::clone(&auto_review_gate);
             let state_approval_barrier =
                 Arc::new(move || {
-                    state_approval_auto_review
+                    state_approval_gate
                         .assert_no_pending_approval()
                         .map_err(|error| ProviderSessionError::Tool(error.to_string()))
                 }) as mahayana_host_runtime::runner::tools::sand_state_tool::StateApprovalBarrier;
