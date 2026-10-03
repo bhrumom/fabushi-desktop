@@ -1,6 +1,8 @@
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+use serde_json::Value;
+
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
 };
@@ -9,8 +11,8 @@ use super::production_turn_agent_owner::ProductionTurnAgentOwner;
 use super::production_turn_input_projection::ProductionTurnInputProjection;
 use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::subagent_runtime::{
-    PendingWake, RunOutcome, SettleResult, SubagentLineage, SubagentRuntime,
-    SubagentSessionSnapshot,
+    ControlResult, PendingWake, RunOutcome, RunningSubagentInfo, SettleResult,
+    SubagentLineage, SubagentRecord, SubagentRuntime, SubagentSessionSnapshot,
 };
 use super::{TurnRunFinished, TurnRunOptions};
 
@@ -90,6 +92,108 @@ impl SandAgentRunner {
             .map(|mut runtime| {
                 runtime.settle_background_subagent_turn(subagent_agent_id, outcome, now_ms)
             })
+    }
+
+    pub fn list_subagents(&self) -> Result<Vec<(String, SubagentRecord)>, String> {
+        let Some(runtime) = self.generated_agent_runtime.as_ref() else {
+            return Ok(Vec::new());
+        };
+        runtime
+            .lock()
+            .map_err(|_| "generated Agent runtime lock poisoned".to_string())
+            .map(|runtime| runtime.list_subagents())
+    }
+
+    pub fn list_running_subagents(&self, now_ms: u64) -> Result<Vec<RunningSubagentInfo>, String> {
+        let Some(runtime) = self.generated_agent_runtime.as_ref() else {
+            return Ok(Vec::new());
+        };
+        runtime
+            .lock()
+            .map_err(|_| "generated Agent runtime lock poisoned".to_string())
+            .map(|runtime| runtime.list_running_subagents(now_ms))
+    }
+
+    pub fn get_running_subagent(
+        &self,
+        subagent_agent_id: &str,
+        now_ms: u64,
+    ) -> Result<Option<RunningSubagentInfo>, String> {
+        let Some(runtime) = self.generated_agent_runtime.as_ref() else {
+            return Ok(None);
+        };
+        runtime
+            .lock()
+            .map_err(|_| "generated Agent runtime lock poisoned".to_string())
+            .map(|runtime| runtime.get_running_subagent(subagent_agent_id, now_ms))
+    }
+
+    pub fn get_subagent_outline(&self, subagent_agent_id: &str) -> Result<Vec<Value>, String> {
+        let Some(runtime) = self.generated_agent_runtime.as_ref() else {
+            return Ok(Vec::new());
+        };
+        runtime
+            .lock()
+            .map_err(|_| "generated Agent runtime lock poisoned".to_string())
+            .map(|runtime| runtime.get_subagent_outline(subagent_agent_id))
+    }
+
+    pub fn has_subagent(&self, subagent_agent_id: &str) -> Result<bool, String> {
+        let Some(runtime) = self.generated_agent_runtime.as_ref() else {
+            return Ok(false);
+        };
+        runtime
+            .lock()
+            .map_err(|_| "generated Agent runtime lock poisoned".to_string())
+            .map(|runtime| runtime.has_subagent(subagent_agent_id))
+    }
+
+    pub fn has_running_subagents(&self) -> Result<bool, String> {
+        let Some(runtime) = self.generated_agent_runtime.as_ref() else {
+            return Ok(false);
+        };
+        runtime
+            .lock()
+            .map_err(|_| "generated Agent runtime lock poisoned".to_string())
+            .map(|runtime| runtime.has_running_subagents())
+    }
+
+    pub fn steer_subagent(
+        &self,
+        subagent_agent_id: &str,
+        message: &str,
+    ) -> Result<ControlResult, String> {
+        let Some(runtime) = self.generated_agent_runtime.as_ref() else {
+            return Ok(ControlResult::NotRunning);
+        };
+        runtime
+            .lock()
+            .map_err(|_| "generated Agent runtime lock poisoned".to_string())
+            .map(|mut runtime| runtime.steer_subagent(subagent_agent_id, message))
+    }
+
+    pub fn abort_subagent(&self, subagent_agent_id: &str) -> Result<ControlResult, String> {
+        let Some(runtime) = self.generated_agent_runtime.as_ref() else {
+            return Ok(ControlResult::NotRunning);
+        };
+        runtime
+            .lock()
+            .map_err(|_| "generated Agent runtime lock poisoned".to_string())
+            .map(|mut runtime| runtime.abort_subagent(subagent_agent_id))
+    }
+
+    pub fn reset(&self) -> Result<(), String> {
+        if let Some(runtime) = self.generated_agent_runtime.as_ref() {
+            runtime
+                .lock()
+                .map_err(|_| "generated Agent runtime lock poisoned".to_string())?
+                .reset();
+        }
+        Ok(())
+    }
+
+    pub fn dispose(&mut self) {
+        self.owner.dispose();
     }
 
     pub fn cancellation(&self) -> RoutedProviderCancellation {

@@ -23,7 +23,7 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
 use mahayana_host_runtime::runner::send_message_reminder_middleware::DISK_PRESSURE_REMINDER_MESSAGE;
 use mahayana_host_runtime::runner::subagent_runtime::{
-    RunOutcome as SubagentRunOutcome, SubagentRuntime, SubagentStatus,
+    ControlResult, RunOutcome as SubagentRunOutcome, SubagentRuntime, SubagentStatus,
 };
 use mahayana_host_runtime::runner::turn_agent_composition::TurnAgentComposition;
 use mahayana_host_runtime::runner::tools::box_help_tool::WAITING_USER_CANCELLATION_PREFIX;
@@ -412,6 +412,53 @@ fn shipping_sand_agent_runner_owns_and_settles_generated_subagent_runtime() {
         .list_subagents()
         .iter()
         .any(|(id, record)| id == "child-agent" && record.status == SubagentStatus::Done));
+}
+
+#[test]
+fn shipping_sand_agent_runner_exposes_generated_subagent_control_surface() {
+    let shared = Arc::new(Mutex::new(SubagentRuntime::default()));
+    let runner = runner().with_generated_agent_runtime(Arc::clone(&shared));
+
+    runner
+        .begin_generated_subagent(
+            "parent-agent",
+            "box-a",
+            "child-agent",
+            "general-purpose",
+            "tool-call-2",
+            "inspect lifecycle",
+            None,
+            100,
+        )
+        .expect("begin generated subagent")
+        .expect("pending wake");
+
+    assert!(runner.has_subagent("child-agent").expect("has subagent"));
+    assert!(runner.has_running_subagents().expect("has running subagents"));
+    assert_eq!(runner.list_subagents().expect("list subagents").len(), 1);
+    assert_eq!(
+        runner
+            .get_running_subagent("child-agent", 150)
+            .expect("get running subagent")
+            .expect("running subagent")
+            .subagent_id,
+        "child-agent"
+    );
+    assert!(matches!(
+        runner
+            .steer_subagent("child-agent", "focus on lifecycle")
+            .expect("steer subagent"),
+        ControlResult::Ok { .. }
+    ));
+    assert!(matches!(
+        runner.abort_subagent("child-agent").expect("abort subagent"),
+        ControlResult::Ok { .. }
+    ));
+
+    runner.reset().expect("reset generated subagent state");
+    assert!(!runner.has_subagent("child-agent").expect("subagent cleared"));
+    assert!(!runner.has_running_subagents().expect("running cleared"));
+    assert!(runner.get_subagent_outline("child-agent").expect("outline").is_empty());
 }
 
 #[test]
