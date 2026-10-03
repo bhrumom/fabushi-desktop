@@ -49,7 +49,7 @@ fn frozen_marker_projection_preserves_labels_detail_and_frontend_shape() {
         "bc-1",
         20.0,
         None,
-        None,
+        Some("cursor-agent"),
     );
     assert_eq!(marker_label(&cloud), "Cloud agent bc-1");
     let task = pending_wake_marker_to_async_task(&cloud);
@@ -57,6 +57,10 @@ fn frozen_marker_projection_preserves_labels_detail_and_frontend_shape() {
     assert_eq!(task.id, "bc-1");
     assert_eq!(task.status, "running");
     assert_eq!(task.detail, None);
+    assert_eq!(
+        task.subagent_type, None,
+        "cloud recovery metadata must not leak the subagent-only field"
+    );
 
     let subagent = marker(
         "agent-a",

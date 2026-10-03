@@ -56,11 +56,15 @@ pub fn pending_wake_marker_to_async_task(marker: &DurablePendingWakeMarker) -> A
         status: "running".to_string(),
         started_at_ms: marker.marked_at_ms,
         detail,
-        subagent_type: marker
-            .subagent_type
-            .as_deref()
-            .filter(|value| !value.is_empty())
-            .map(ToOwned::to_owned),
+        subagent_type: (marker.kind == PendingWakeKind::Subagent)
+            .then(|| {
+                marker
+                    .subagent_type
+                    .as_deref()
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned)
+            })
+            .flatten(),
     }
 }
 
