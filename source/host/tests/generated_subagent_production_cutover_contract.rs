@@ -192,12 +192,31 @@ fn shipping_task_launch_is_bound_to_subagent_auto_review_before_dispatch() {
     let toolset = fs::read_to_string(root.join("src/runner/tools/turn_toolset.rs"))
         .expect("turn toolset");
     for required in [
-        "build_sand_subagent_launch_review_target",
-        "subagent_task_review",
-        "review_sand_subagent_action(",
+        "create_turn_subagent_task_review(TurnSubagentLaunchReviewBindings",
         "subagent_task_review,",
     ] {
-        assert!(main.contains(required), "missing launch review input/delegation: {required}");
+        assert!(main.contains(required), "missing launch review delegation: {required}");
+    }
+    for forbidden in [
+        "build_sand_subagent_launch_review_target(",
+        "let outcome = review_sand_subagent_action(\n                            mode,\n                            &target,",
+    ] {
+        assert!(
+            !main.contains(forbidden),
+            "shipping Host entrypoint must not retain subagent launch policy owner: {forbidden}"
+        );
+    }
+    for required in [
+        "pub fn create_turn_subagent_task_review(",
+        "build_sand_subagent_launch_review_target(",
+        "(bindings.assert_no_pending_approval)()?;",
+        "review_sand_subagent_action(",
+        "SubagentReviewOutcome::Allowed => None",
+    ] {
+        assert!(
+            composition.contains(required),
+            "Runner turn composition must own subagent launch review policy: {required}"
+        );
     }
     assert!(
         production_bridge.contains("composition = composition.with_subagent_task_sink(subagent_task_sink)")

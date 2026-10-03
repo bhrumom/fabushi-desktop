@@ -61,7 +61,7 @@ use mahayana_host_runtime::runner::sand_cloud_agent_auto_review::{
 };
 use mahayana_host_runtime::runner::sand_subagent_auto_review::{
     SubagentReviewOutcome, SAND_SUBAGENT_CLASSIFIER_ERROR_REASON,
-    build_sand_subagent_launch_review_target, build_sand_subagent_steer_review_target,
+    build_sand_subagent_steer_review_target,
     review_sand_subagent_action,
 };
 use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
@@ -348,7 +348,10 @@ use mahayana_host_runtime::runner::sand_action_audit::{
 };
 use mahayana_host_runtime::runner::bot_block_detection::with_bot_block_detection_sink;
 use mahayana_host_runtime::extensions::telemetry::bot_block_telemetry::BotBlockReport;
-use mahayana_host_runtime::runner::turn_agent_composition::build_turn_subagent_types;
+use mahayana_host_runtime::runner::turn_agent_composition::{
+    TurnSubagentLaunchReviewBindings, build_turn_subagent_types,
+    create_turn_subagent_task_review,
+};
 use mahayana_host_runtime::runner::turn_observation::{
     ToolCallTelemetryEvent, TurnObservation, TurnObservationHandle,
     async_tasks_changed_event,
@@ -6858,12 +6861,12 @@ fn start_routed_provider_task(
             };
             let subagent_task_review: Option<SubagentTaskReviewCallback> =
                 worker_subagent_management_runtime.as_ref().map(|_| {
+                    let mode_source = Arc::clone(&worker_auto_review);
+                    let launch_review_gate = Arc::clone(&auto_review_gate);
                     let review_auth = Arc::clone(&worker_auth);
-                    let review_auto_review = Arc::clone(&worker_auto_review);
-                    let review_controller = Arc::clone(&worker_auto_review_controller);
                     let review_cancellation = worker_cancellation.clone();
+                    let cancellation_for_classifier = worker_cancellation.clone();
                     let review_agent_id = agent_id.clone();
-                    let review_request_source = auto_review_request_source.clone();
                     let review_context = auto_review_context
                         .iter()
                         .map(|message| {
@@ -6873,49 +6876,40 @@ fn start_routed_provider_task(
                             })
                         })
                         .collect::<Vec<_>>();
-                    Arc::new(move |prompt: &str, subagent_type: &str, tool_call_id: &str| {
-                        let Some(target) = build_sand_subagent_launch_review_target(
-                            prompt,
-                            Some(subagent_type),
-                        ) else {
-                            return Ok(Some("Task requires a non-empty prompt.".into()));
-                        };
-                        let mode = review_auto_review.current_modes().subagent_launch;
-                        let classifier_cancellation = review_cancellation.clone();
-                        let mut classifier =
-                            create_sand_backend_smart_mode_classifier_executor_with_cancellation(
-                                Arc::clone(&review_auth),
-                                Arc::new(move || classifier_cancellation.is_cancelled()),
-                            )
-                            .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
-                        let outcome = review_sand_subagent_action(
-                            mode,
-                            &target,
-                            Some(review_controller.as_ref()),
-                            &review_request_source,
-                            || review_cancellation.is_cancelled(),
-                            |risk_target, classifier_mode| {
-                                run_sand_auto_review_classifier(
-                                    &mut classifier,
-                                    tool_call_id,
-                                    &review_agent_id,
-                                    classifier_mode,
-                                    || risk_target.clone(),
-                                    || Ok(review_context.clone()),
-                                    &[],
-                                    SAND_SUBAGENT_CLASSIFIER_ERROR_REASON,
+                    create_turn_subagent_task_review(TurnSubagentLaunchReviewBindings {
+                        mode: Arc::new(move || mode_source.current_modes().subagent_launch),
+                        assert_no_pending_approval: Arc::new(move || {
+                            launch_review_gate
+                                .assert_no_pending_approval()
+                                .map_err(|error| ProviderSessionError::Tool(error.to_string()))
+                        }),
+                        controller: Arc::clone(&worker_auto_review_controller),
+                        request_source: auto_review_request_source.clone(),
+                        should_cancel: Arc::new(move || review_cancellation.is_cancelled()),
+                        classify: Arc::new(move |risk_target, tool_call_id, classifier_mode| {
+                            let classifier_cancellation = cancellation_for_classifier.clone();
+                            let mut classifier =
+                                create_sand_backend_smart_mode_classifier_executor_with_cancellation(
+                                    Arc::clone(&review_auth),
+                                    Arc::new(move || classifier_cancellation.is_cancelled()),
                                 )
-                            },
-                        )
-                        .map_err(|error| ProviderSessionError::Tool(format!("{error:?}")))?;
-                        Ok(match outcome {
-                            SubagentReviewOutcome::Allowed => None,
-                            SubagentReviewOutcome::Blocked(reason) => Some(reason),
-                            SubagentReviewOutcome::Cancelled => {
-                                Some("The subagent launch was cancelled.".into())
-                            }
-                        })
-                    }) as SubagentTaskReviewCallback
+                                .map_err(|error| {
+                                    mahayana_host_runtime::runner::sand_auto_review_classifier_run::AutoReviewClassifierError::Failed(
+                                        error.to_string(),
+                                    )
+                                })?;
+                            run_sand_auto_review_classifier(
+                                &mut classifier,
+                                tool_call_id,
+                                &review_agent_id,
+                                classifier_mode,
+                                || risk_target.clone(),
+                                || Ok(review_context.clone()),
+                                &[],
+                                SAND_SUBAGENT_CLASSIFIER_ERROR_REASON,
+                            )
+                        }),
+                    })
                 });
             let subagent_steer_review: Option<SubagentSteerReviewCallback> =
                 worker_subagent_management_runtime.as_ref().map(|_| {

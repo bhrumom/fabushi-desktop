@@ -1,6 +1,8 @@
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+use serde_json::Value;
+
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, ProviderTokenUsage, ProviderToolStepReminderHook,
@@ -20,6 +22,14 @@ use super::routed_provider_runtime::{
     RunnerRequestContextSnapshot, run_routed_provider_in_runner,
 };
 use super::sand_action_audit::{AuditedRoutedToolBridge, RoutedMcpAuditConfig};
+use super::sand_auto_review::{SandAutoReviewController, SandAutoReviewMode};
+use super::sand_auto_review_classifier_run::{
+    AutoReviewClassifierDecision, AutoReviewClassifierError,
+};
+use super::sand_subagent_auto_review::{
+    SubagentReviewOutcome,
+    build_sand_subagent_launch_review_target, review_sand_subagent_action,
+};
 use super::subagent_runtime::SubagentRuntime;
 use super::StreamAttemptRuntime;
 use super::turn_shape::checkpoint_ended_on_silent_tool_calls;
@@ -101,6 +111,66 @@ pub const GENERAL_PURPOSE_SUBAGENT_TYPE: &str = "general-purpose";
 pub const EXECUTOR_SUBAGENT_TYPE: &str = "executor";
 pub const COMPUTER_USE_SUBAGENT_TYPE: &str = "computeruse";
 pub const BROWSER_USE_SUBAGENT_TYPE: &str = "browseruse";
+
+pub type TurnSubagentLaunchClassifier = Arc<
+    dyn Fn(
+            &Value,
+            &str,
+            SandAutoReviewMode,
+        ) -> Result<AutoReviewClassifierDecision, AutoReviewClassifierError>
+        + Send
+        + Sync,
+>;
+
+pub struct TurnSubagentLaunchReviewBindings {
+    pub mode: Arc<dyn Fn() -> SandAutoReviewMode + Send + Sync>,
+    pub assert_no_pending_approval:
+        Arc<dyn Fn() -> Result<(), ProviderSessionError> + Send + Sync>,
+    pub controller: Arc<SandAutoReviewController>,
+    pub request_source: String,
+    pub should_cancel: Arc<dyn Fn() -> bool + Send + Sync>,
+    pub classify: TurnSubagentLaunchClassifier,
+}
+
+/// Builds the per-turn subagent launch reviewer from raw Host services.
+///
+/// The Host supplies authentication-backed classifier I/O and the shared
+/// approval controller, while the Runner composition owns target construction,
+/// policy mode lookup, cancellation, approval semantics and result mapping.
+/// This mirrors the frozen Grok owner boundary without creating a second
+/// Auto-review policy implementation in the Host entrypoint.
+pub fn create_turn_subagent_task_review(
+    bindings: TurnSubagentLaunchReviewBindings,
+) -> SubagentTaskReviewCallback {
+    Arc::new(move |prompt: &str, subagent_type: &str, tool_call_id: &str| {
+        let Some(target) = build_sand_subagent_launch_review_target(
+            prompt,
+            Some(subagent_type),
+        ) else {
+            return Ok(Some("Task requires a non-empty prompt.".into()));
+        };
+        (bindings.assert_no_pending_approval)()?;
+        let mode = (bindings.mode)();
+        let outcome = review_sand_subagent_action(
+            mode,
+            &target,
+            Some(bindings.controller.as_ref()),
+            &bindings.request_source,
+            || (bindings.should_cancel)(),
+            |risk_target, classifier_mode| {
+                (bindings.classify)(risk_target, tool_call_id, classifier_mode)
+            },
+        )
+        .map_err(|error| ProviderSessionError::Tool(format!("{error:?}")))?;
+        Ok(match outcome {
+            SubagentReviewOutcome::Allowed => None,
+            SubagentReviewOutcome::Blocked(reason) => Some(reason),
+            SubagentReviewOutcome::Cancelled => {
+                Some("The subagent launch was cancelled.".into())
+            }
+        })
+    })
+}
 
 pub fn build_turn_subagent_types(
     is_subagent_runner: bool,
