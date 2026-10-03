@@ -43,6 +43,21 @@ pub trait AgentStateCheckpointSink: Send + Sync {
         ))
     }
 
+    fn stage_generated_turn(
+        &self,
+        messages: &[ProviderMessage],
+        options: &TurnRunOptions,
+        generated_step_bytes: &[Vec<u8>],
+        assistant_content: &str,
+    ) -> Result<TextTurnCheckpointArtifacts, ProviderSessionError> {
+        if generated_step_bytes.is_empty() {
+            return self.stage_text_turn(messages, options, assistant_content);
+        }
+        Err(ProviderSessionError::Protocol(
+            "Agent checkpoint sink does not support generated tool steps".into(),
+        ))
+    }
+
     fn persist_staged_text_turn(
         &self,
         _options: &TurnRunOptions,
@@ -101,6 +116,26 @@ pub fn build_text_turn_checkpoint_with_rich_text(
     request_id: Option<&str>,
     assistant_content: &str,
 ) -> TextTurnCheckpointArtifacts {
+    build_generated_turn_checkpoint_with_rich_text(
+        prior_state_bytes,
+        user_text,
+        user_rich_text,
+        message_id,
+        request_id,
+        &[],
+        assistant_content,
+    )
+}
+
+pub fn build_generated_turn_checkpoint_with_rich_text(
+    prior_state_bytes: &[u8],
+    user_text: &str,
+    user_rich_text: Option<&str>,
+    message_id: &str,
+    request_id: Option<&str>,
+    generated_step_bytes: &[Vec<u8>],
+    assistant_content: &str,
+) -> TextTurnCheckpointArtifacts {
     let prior_root_id = (!prior_state_bytes.is_empty())
         .then(|| Sha256::digest(prior_state_bytes).to_vec());
 
@@ -118,8 +153,11 @@ pub fn build_text_turn_checkpoint_with_rich_text(
     }
     let user_message_id = Sha256::digest(&user_message_bytes).to_vec();
 
-    let mut step_ids = Vec::new();
-    let mut step_bytes = Vec::new();
+    let mut step_bytes = generated_step_bytes.to_vec();
+    let mut step_ids = step_bytes
+        .iter()
+        .map(|step| Sha256::digest(step).to_vec())
+        .collect::<Vec<_>>();
     if !assistant_content.is_empty() {
         let mut assistant_message = Vec::new();
         push_length_delimited(1, assistant_content.as_bytes(), &mut assistant_message);
@@ -252,6 +290,16 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
         options: &TurnRunOptions,
         assistant_content: &str,
     ) -> Result<TextTurnCheckpointArtifacts, ProviderSessionError> {
+        self.stage_generated_turn(messages, options, &[], assistant_content)
+    }
+
+    fn stage_generated_turn(
+        &self,
+        messages: &[ProviderMessage],
+        options: &TurnRunOptions,
+        generated_step_bytes: &[Vec<u8>],
+        assistant_content: &str,
+    ) -> Result<TextTurnCheckpointArtifacts, ProviderSessionError> {
         let user_text = options
             .recent_message_text
             .as_deref()
@@ -296,12 +344,13 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
             ));
         }
 
-        let mut artifacts = build_text_turn_checkpoint_with_rich_text(
+        let mut artifacts = build_generated_turn_checkpoint_with_rich_text(
             &prior,
             user_text,
             options.recent_message_rich_text.as_deref(),
             message_id,
             options.inference_request_id.as_deref(),
+            generated_step_bytes,
             assistant_content,
         );
         let turn_ended_at_ms = SystemTime::now()
