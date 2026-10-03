@@ -3,16 +3,25 @@ const HOST_RUNNER_COMPOSITION: &str = include_str!("../src/host_runner_compositi
 const COMPUTER_USE_OWNER: &str = include_str!("../src/runner/computer_use.rs");
 const SHIPPING_HOST_MAIN: &str = include_str!("../app/src/main.rs");
 const PROMPT_COLLECTOR_GLUE: &str = include_str!("../src/runner/prompt_collector_glue.rs");
+const RUNNER_PROMPT_GLUE: &str = include_str!("../src/runner/runner_prompt_glue.rs");
 
 #[test]
 fn shipping_provider_consumes_live_box_and_computer_state_in_frozen_prompt_order() {
-    let mcp = SHIPPING_HOST_MAIN
+    let live_runtime = SHIPPING_HOST_MAIN
+        .find(".append_live_runtime_sections(")
+        .expect("shipping RunnerPromptGlue live-runtime binding");
+
+    let live_runtime_owner = RUNNER_PROMPT_GLUE
+        .find("pub fn append_live_runtime_sections(")
+        .expect("RunnerPromptGlue live-runtime owner");
+    let live_runtime_body = &RUNNER_PROMPT_GLUE[live_runtime_owner..];
+    let live_mcp = live_runtime_body
         .find("append_mcp_runtime_sections_for_turn(")
-        .expect("shipping prompt-collector MCP binding");
-    let remote = SHIPPING_HOST_MAIN
+        .expect("RunnerPromptGlue MCP delegate");
+    let live_remote = live_runtime_body
         .find("append_remote_runtime_sections_for_turn(")
-        .expect("shipping prompt-collector remote/computer binding");
-    assert!(mcp < remote);
+        .expect("RunnerPromptGlue remote/computer delegate");
+    assert!(live_mcp < live_remote);
 
     let mcp_owner = PROMPT_COLLECTOR_GLUE
         .find("pub fn append_mcp_runtime_sections_for_turn(")
@@ -35,7 +44,7 @@ fn shipping_provider_consumes_live_box_and_computer_state_in_frozen_prompt_order
         .expect("canonical Computer prompt delegate");
     assert!(remote_delegate < computer_delegate);
 
-    let shipping_remote_tail = &SHIPPING_HOST_MAIN[remote..];
+    let shipping_remote_tail = &SHIPPING_HOST_MAIN[live_runtime..];
     for production_binding in [
         "role: prompt_role",
         "available: shipping_box_available",
