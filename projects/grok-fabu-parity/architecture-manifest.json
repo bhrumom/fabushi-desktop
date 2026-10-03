@@ -19056,7 +19056,7 @@
         "source/host/tests/production_turn_input_projection_contract.rs",
         "source/host/tests/runner_routed_provider_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
       "notes": "Frozen Grok MCP meta-tool behavior is now shipping through the canonical Runner path. The Coordinator relay preserves plugin, marketplace, pluginId→pluginDbId and marketplaceId metadata in a dedicated raw MCP meta projection; each production turn freezes one discovery snapshot and derives the canonical MCP-state tools and meta descriptors from that same snapshot. Main generated Runner composition exposes GetMcpTools/CallMcpTool over the same canonical MCP execution owner, resolves CallMcpTool.toolName for timeout classification, and carries the existing ComputerToolExposure identity into direct-provider and Claude routed-MCP timeout guards so computer-use subagents receive subagent-tier classification. Exact-head GitHub evidence at 48aa35a67f624d080b4816a2f96fc55b9ddfa5fa: Rust desktop runtime 37135047776 has shipping Host, independent Coordinator, box-exec, Host supervisor, independent Host Runner, prompt attachment, Human Computer takeover, and ConversationActor/CapabilityBroker ownership success; Desktop Chat Parity CI 37135047781 has Renderer typecheck/build and Focused Electron chat E2E success."
