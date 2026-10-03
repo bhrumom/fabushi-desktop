@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::Value;
 
@@ -66,6 +67,85 @@ use super::tools::turn_toolset::{
     TurnLocalToolPermissionBinding, TurnToolsetDependencies, TurnToolsetRole,
     build_turn_toolset, fence_turn_toolset, project_turn_mcp_toolset,
 };
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct CompletedRoutedToolCall {
+    pub tool: RoutedToolDefinition,
+    pub args: Value,
+    pub tool_call_id: String,
+    pub result: Result<Value, String>,
+    pub started_at_ms: u64,
+    pub completed_at_ms: u64,
+}
+
+struct CheckpointRecordingRoutedToolBridge {
+    delegate: Arc<dyn RoutedToolBridge>,
+    completed: Arc<Mutex<Vec<CompletedRoutedToolCall>>>,
+}
+
+impl CheckpointRecordingRoutedToolBridge {
+    fn new(
+        delegate: Arc<dyn RoutedToolBridge>,
+        completed: Arc<Mutex<Vec<CompletedRoutedToolCall>>>,
+    ) -> Self {
+        Self { delegate, completed }
+    }
+}
+
+impl RoutedToolBridge for CheckpointRecordingRoutedToolBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        self.delegate.list_tools()
+    }
+
+    fn list_mcp_meta_tools(
+        &self,
+    ) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
+        self.delegate.list_mcp_meta_tools()
+    }
+
+    fn observe_partial_tool_call(
+        &self,
+        partial: &crate::extensions::inference::provider_session::ProviderPartialToolCall,
+    ) -> Result<(), ProviderSessionError> {
+        self.delegate.observe_partial_tool_call(partial)
+    }
+
+    fn call_tool(
+        &self,
+        tool: &RoutedToolDefinition,
+        args: Value,
+        tool_call_id: &str,
+    ) -> Result<Value, ProviderSessionError> {
+        let started_at_ms = unix_epoch_ms();
+        let result = self.delegate.call_tool(tool, args.clone(), tool_call_id);
+        let completed_at_ms = unix_epoch_ms();
+        self.completed
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .push(CompletedRoutedToolCall {
+                tool: tool.clone(),
+                args,
+                tool_call_id: tool_call_id.to_string(),
+                result: result
+                    .as_ref()
+                    .map(Clone::clone)
+                    .map_err(ToString::to_string),
+                started_at_ms,
+                completed_at_ms,
+            });
+        result
+    }
+}
+
+fn unix_epoch_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+        .try_into()
+        .unwrap_or(u64::MAX)
+}
 
 struct RoutedBridgeMcpToolProvider<'a> {
     bridge: &'a dyn RoutedToolBridge,
@@ -209,6 +289,7 @@ pub struct TurnAgentComposition {
     cancellation: RoutedProviderCancellation,
     checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     latest_provider_checkpoint: Arc<Mutex<Option<RoutedProviderCheckpoint>>>,
+    completed_tool_calls: Arc<Mutex<Vec<CompletedRoutedToolCall>>>,
     retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
     retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
     stream_attempt_runtime: Option<Arc<StreamAttemptRuntime>>,
@@ -274,6 +355,7 @@ impl TurnAgentComposition {
             cancellation,
             checkpoint_store,
             latest_provider_checkpoint,
+            completed_tool_calls: Arc::new(Mutex::new(Vec::new())),
             retry_sink: None,
             retry_report_sink: None,
             stream_attempt_runtime: None,
@@ -807,6 +889,22 @@ impl TurnAgentComposition {
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = None;
     }
 
+    fn reset_completed_tool_calls(&self) {
+        self.completed_tool_calls
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
+    }
+
+    pub fn take_completed_tool_calls(&self) -> Vec<CompletedRoutedToolCall> {
+        std::mem::take(
+            &mut *self
+                .completed_tool_calls
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner()),
+        )
+    }
+
     pub fn run(
         &self,
         data_dir: &Path,
@@ -814,6 +912,7 @@ impl TurnAgentComposition {
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
         self.reset_latest_provider_checkpoint();
+        self.reset_completed_tool_calls();
         let bridge = project_turn_mcp_toolset(
             Arc::clone(&self.bridge),
             self.projected_mcp_tools.clone(),
@@ -889,6 +988,12 @@ impl TurnAgentComposition {
             None => bridge,
         };
         let bridge = fence_turn_toolset(bridge, self.spotlight_enabled);
+        let bridge: Arc<dyn RoutedToolBridge> = Arc::new(
+            CheckpointRecordingRoutedToolBridge::new(
+                bridge,
+                Arc::clone(&self.completed_tool_calls),
+            ),
+        );
         let tool_step_reminder = if self.toolset_role.is_subagent_runner || self.is_silence_allowed {
             None
         } else {
