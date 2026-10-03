@@ -177,6 +177,43 @@ fn first_token_is_one_shot_and_snapshot_uses_turn_start() {
 }
 
 #[test]
+fn tool_call_can_be_the_frozen_first_output_and_keeps_dispatch_identity() {
+    let first_token_events = Arc::new(Mutex::new(Vec::new()));
+    let sink_events = Arc::clone(&first_token_events);
+    let observation = TurnObservation::shared("agent-tool-first", None);
+    {
+        let mut observation = observation.lock().unwrap();
+        observation.set_first_token_handler(Arc::new(move |event| {
+            sink_events.lock().unwrap().push(event);
+        }));
+        observation.turn_started(100);
+        observation.observe_send_dispatch(
+            0.0,
+            10.0,
+            None,
+            100.0,
+            true,
+            "model-tool",
+        );
+    }
+
+    let bridge = ObservedRoutedToolBridge::new(
+        Arc::new(Delegate),
+        Arc::clone(&observation),
+    );
+    bridge
+        .call_tool(&tool("Read"), json!({}), "call-tool-first")
+        .expect("tool call");
+
+    let events = first_token_events.lock().unwrap();
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0]["chunkType"], "tool-call");
+    assert_eq!(events[0]["modelId"], "model-tool");
+    assert_eq!(events[0]["isFork"], true);
+    assert!(events[0]["ttftMs"].as_f64().is_some());
+}
+
+#[test]
 fn observed_bridge_wraps_success_failure_and_await_lifecycle() {
     let events = Arc::new(Mutex::new(Vec::new()));
     let sink_events = Arc::clone(&events);
@@ -560,6 +597,21 @@ fn shipping_background_task_settlement_clears_durable_projection_before_change_e
         .expect("shell terminal change callback")
         + shell_settled;
     assert!(shell_settled < shell_changed);
+}
+
+#[test]
+fn shipping_first_output_is_armed_at_provider_dispatch_and_covers_tool_calls() {
+    let main = fs::read_to_string("app/src/main.rs").expect("shipping host main");
+    let observation =
+        fs::read_to_string("src/runner/turn_observation.rs").expect("turn observation owner");
+    assert!(main.contains("observation.observe_send_dispatch("));
+    assert!(main.contains("observation.observe_stream_output(\"text\")"));
+    assert!(observation.contains("self.first_output_dispatch_started = Some(Instant::now())"));
+    assert!(observation.contains("observation.observe_stream_output(\"tool-call\")"));
+    assert!(
+        !main.contains("let ttft_dispatch_started = worker_gateway_context"),
+        "first-output timing must be armed at the real provider dispatch boundary"
+    );
 }
 
 #[test]
