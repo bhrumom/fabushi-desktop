@@ -18,13 +18,13 @@ use mahayana_host_runtime::runner::tools::send_message_schema::{
 };
 use mahayana_host_runtime::runner::tools::send_message_tool::{
     CountingSendMessageSink, ResolvedAttachmentSource, SAND_AWAITING_USER_SEND_MESSAGE_BLOCKED,
-    SAND_SEND_MESSAGE_TOOL_NAME, SendMessageDeliveryCounter, SendMessageSink,
-    SendMessageToolBridge,
+    SAND_SEND_MESSAGE_TOOL_NAME, SendMessageDeliveryCounter, SendMessageInteractionSink,
+    SendMessageSink, SendMessageToolBridge,
 };
 use serde_json::{Value, json};
 use prost::Message as _;
 use mahayana_host_runtime::runner::agent_v1_wire::{
-    AgentToolCall, SendMessageToolCall, agent_tool_call,
+    AgentToolCall, SendMessageToolCall, agent_tool_call, send_message_result,
 };
 
 struct Delegate;
@@ -47,6 +47,21 @@ impl RoutedToolBridge for Delegate {
         _tool_call_id: &str,
     ) -> Result<Value, ProviderSessionError> {
         Ok(json!({"delegated":true}))
+    }
+}
+
+
+#[derive(Default)]
+struct RecordingSendMessageInteractionSink {
+    calls: Mutex<Vec<(&'static str, AgentToolCall)>>,
+}
+
+impl SendMessageInteractionSink for RecordingSendMessageInteractionSink {
+    fn on_tool_call(&self, phase: &'static str, tool_call: &AgentToolCall) {
+        self.calls
+            .lock()
+            .expect("interaction calls")
+            .push((phase, tool_call.clone()));
     }
 }
 
@@ -323,6 +338,10 @@ struct ResolvingSink {
 }
 
 impl SendMessageSink for ResolvingSink {
+    fn resolve_cloud_agent_title(&self, bc_id: &str) -> Option<String> {
+        (bc_id == "bc-title").then(|| "  Release helper  ".to_string())
+    }
+
     fn read_media_dimensions(&self, resolved_url: &str) -> Option<(u32, u32)> {
         resolved_url.ends_with(".png").then_some((640, 480))
     }
@@ -352,6 +371,104 @@ impl SendMessageSink for ResolvingSink {
     ) -> Result<Option<String>, ProviderSessionError> {
         self.messages.lock().expect("messages").push(message);
         Ok(Some(format!("runner-send:{tool_call_id}")))
+    }
+}
+
+#[test]
+fn cursor_agent_message_resolves_shipping_title_fail_soft() {
+    let sink = Arc::new(ResolvingSink::default());
+    let bridge = SendMessageToolBridge::new(Arc::new(Delegate), sink.clone());
+    let tool = bridge.list_tools().expect("tools").remove(0);
+
+    bridge.call_tool(
+        &tool,
+        json!({"type":"cursor-agent","bcId":"bc-title"}),
+        "cloud-title",
+    ).expect("title lookup send");
+    bridge.call_tool(
+        &tool,
+        json!({"type":"cursor-agent","bcId":"bc-missing"}),
+        "cloud-missing",
+    ).expect("missing title is fail-soft");
+
+    let messages = sink.messages.lock().expect("messages");
+    assert_eq!(messages[0]["title"], "Release helper");
+    assert!(messages[1].get("title").is_none());
+}
+
+#[test]
+fn send_message_interaction_emits_frozen_initial_and_completed_agent_v1_wire() {
+    let sink = Arc::new(Sink::default());
+    let interactions = Arc::new(RecordingSendMessageInteractionSink::default());
+    let bridge = SendMessageToolBridge::new(Arc::new(Delegate), sink)
+        .with_interaction_sink(interactions.clone());
+    let tool = bridge.list_tools().expect("tools").remove(0);
+
+    bridge.call_tool(
+        &tool,
+        json!({"type":"text","content":"hello"}),
+        "send-wire-1",
+    ).expect("send");
+
+    let calls = interactions.calls.lock().expect("interaction calls");
+    assert_eq!(calls.len(), 2);
+    assert_eq!(calls[0].0, "initial");
+    assert_eq!(calls[1].0, "completed");
+    assert_eq!(calls[0].1.tool_call_id.as_deref(), Some("send-wire-1"));
+    assert!(calls[0].1.started_at_ms.is_some());
+    assert!(calls[0].1.completed_at_ms.is_none());
+    assert_eq!(calls[1].1.tool_call_id.as_deref(), Some("send-wire-1"));
+    assert_eq!(calls[1].1.started_at_ms, calls[0].1.started_at_ms);
+    assert!(calls[1].1.completed_at_ms.is_some());
+
+    match calls[0].1.tool.as_ref() {
+        Some(agent_tool_call::Tool::SendMessageToolCall(call)) => {
+            assert!(call.args.is_some());
+            assert!(call.result.is_none());
+        }
+        _ => panic!("initial must be frozen SendMessage ToolCall"),
+    }
+    match calls[1].1.tool.as_ref() {
+        Some(agent_tool_call::Tool::SendMessageToolCall(call)) => {
+            assert!(call.args.is_some());
+            match call.result.as_ref().and_then(|value| value.result.as_ref()) {
+                Some(send_message_result::Result::Success(success)) => {
+                    assert_eq!(success.message_id, "runner-send:send-wire-1");
+                    assert!(success.timestamp > 0);
+                }
+                _ => panic!("completed must carry SendMessage success"),
+            }
+        }
+        _ => panic!("completed must be frozen SendMessage ToolCall"),
+    }
+}
+
+#[test]
+fn awaiting_user_interaction_completes_with_frozen_error_result_before_rejecting() {
+    let interactions = Arc::new(RecordingSendMessageInteractionSink::default());
+    let bridge = SendMessageToolBridge::new(Arc::new(Delegate), Arc::new(AwaitingSink))
+        .with_interaction_sink(interactions.clone());
+    let tool = bridge.list_tools().expect("tools").remove(0);
+
+    let error = bridge.call_tool(
+        &tool,
+        json!({"type":"text","content":"must wait"}),
+        "awaiting-wire",
+    ).expect_err("awaiting user rejects send");
+    assert!(matches!(error, ProviderSessionError::Tool(_)));
+
+    let calls = interactions.calls.lock().expect("interaction calls");
+    assert_eq!(calls.len(), 2);
+    match calls[1].1.tool.as_ref() {
+        Some(agent_tool_call::Tool::SendMessageToolCall(call)) => {
+            match call.result.as_ref().and_then(|value| value.result.as_ref()) {
+                Some(send_message_result::Result::Error(error)) => {
+                    assert_eq!(error.error, SAND_AWAITING_USER_SEND_MESSAGE_BLOCKED);
+                }
+                _ => panic!("awaiting completion must carry SendMessage error"),
+            }
+        }
+        _ => panic!("awaiting completion must be frozen SendMessage ToolCall"),
     }
 }
 
@@ -510,4 +627,22 @@ fn delivery_counter_tracks_only_successful_shipping_send_side_effects() {
         .send_message(json!({"type":"text","content":"not persisted"}), 3, "bad")
         .is_err());
     assert_eq!(counter.count(), 2, "failed persistence must not count as delivered");
+}
+
+#[test]
+fn shipping_send_message_composes_cloud_title_and_generated_interaction_observation() {
+    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    const TURN_COMPOSITION: &str = include_str!("../src/runner/turn_agent_composition.rs");
+    const TURN_TOOLSET: &str = include_str!("../src/runner/tools/turn_toolset.rs");
+
+    assert!(SHIPPING_HOST.contains("cloud_agents: Arc<SandCloudAgentManager>"));
+    assert!(SHIPPING_HOST.contains("fn resolve_cloud_agent_title(&self, bc_id: &str)"));
+    assert!(SHIPPING_HOST.contains("detail.summary.name.trim().to_string()"));
+    assert!(SHIPPING_HOST.contains("cloud_agents: Arc::clone(&worker_cloud_agents)"));
+    assert!(SHIPPING_HOST.contains("\"deliverToChannel\""));
+
+    assert!(TURN_COMPOSITION.contains("TurnObservationSendMessageSink::new"));
+    assert!(TURN_COMPOSITION.contains("send_message_interaction_sink,"));
+    assert!(TURN_TOOLSET.contains("send_message.with_interaction_sink")
+        || TURN_TOOLSET.contains("send_bridge.with_interaction_sink"));
 }

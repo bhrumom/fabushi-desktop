@@ -598,6 +598,7 @@ fn resolve_production_attachment_source(
 
 struct ProductionSendMessageSink {
     host_tx: mpsc::Sender<HostLaneRequest>,
+    cloud_agents: Arc<SandCloudAgentManager>,
     sessions: Arc<ProductionSessionWorkers>,
     forever_box: Arc<ForeverBoxService>,
     transcript_manager: Arc<TranscriptManager>,
@@ -633,6 +634,15 @@ impl SendMessageSink for ProductionSendMessageSink {
             .ok()
             .flatten()
             .is_some()
+    }
+
+    fn resolve_cloud_agent_title(&self, bc_id: &str) -> Option<String> {
+        self.cloud_agents
+            .get(bc_id)
+            .ok()
+            .flatten()
+            .map(|detail| detail.summary.name.trim().to_string())
+            .filter(|value| !value.is_empty())
     }
 
     fn request_box_help(
@@ -7057,6 +7067,7 @@ fn start_routed_provider_task(
             let base_send_message_sink: Arc<dyn SendMessageSink> = Arc::new(
                 ProductionSendMessageSink {
                     host_tx: host_tx.clone(),
+                    cloud_agents: Arc::clone(&worker_cloud_agents),
                     sessions: worker_sessions,
                     forever_box: Arc::clone(&forever_box),
                     transcript_manager: Arc::clone(&worker_transcript_manager),

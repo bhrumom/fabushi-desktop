@@ -30,7 +30,7 @@ use super::sand_state_tool::{
 use super::sand_multitask_todo_tool::{
     MultitaskTodoState, SandMultitaskTodoToolBridge,
 };
-use super::send_message_tool::{SendMessageSink, SendMessageToolBridge};
+use super::send_message_tool::{SendMessageInteractionSink, SendMessageSink, SendMessageToolBridge};
 use super::sand_task_subagent_tool::{
     SubagentTaskReviewCallback, SubagentTaskSink, SubagentTaskToolBridge,
 };
@@ -55,6 +55,7 @@ pub struct TurnToolsetDependencies {
     pub external_machine_executor: Option<Arc<dyn ExternalMachineExecutor>>,
     pub external_shell_review: Option<ExternalShellAutoReviewCallback>,
     pub send_message_sink: Option<Arc<dyn SendMessageSink>>,
+    pub send_message_interaction_sink: Option<Arc<dyn SendMessageInteractionSink>>,
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
     pub agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     pub subagent_task_sink: Option<Arc<dyn SubagentTaskSink>>,
@@ -172,7 +173,13 @@ pub fn build_turn_toolset(
         None => bridge,
     };
     match dependencies.send_message_sink {
-        Some(sink) => Arc::new(SendMessageToolBridge::new(bridge, sink)),
+        Some(sink) => {
+            let mut send_bridge = SendMessageToolBridge::new(bridge, sink);
+            if let Some(interaction_sink) = dependencies.send_message_interaction_sink {
+                send_bridge = send_bridge.with_interaction_sink(interaction_sink);
+            }
+            Arc::new(send_bridge)
+        }
         None => bridge,
     }
 }

@@ -7,6 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use url::Url;
 
+use prost::Message;
 use serde_json::{Value, json};
 
 use crate::extensions::inference::provider_session::{
@@ -15,7 +16,14 @@ use crate::extensions::inference::provider_session::{
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
 
 use super::box_help_tool::{BoxHelpOutcome, BoxHelpRequest};
-use super::send_message_encoding::encode_send_message;
+use super::send_message_encoding::{
+    create_send_message_tool_call, encode_send_message_wire,
+};
+use crate::runner::agent_v1_wire::{
+    AgentToolCall, SendMessageError, SendMessageResult, SendMessageSuccess, SendMessageToolCall,
+    send_message_result,
+};
+use crate::runner::turn_observation::TurnObservationHandle;
 use super::send_message_schema::{
     SendMessageInput, SendMessageType, parse_send_message_input, send_message_input_schema,
     validate_send_message,
@@ -53,6 +61,10 @@ pub fn identity_attachment_source(raw: &str) -> ResolvedAttachmentSource {
 pub trait SendMessageSink: Send + Sync {
     fn is_awaiting_user_selection(&self) -> bool {
         false
+    }
+
+    fn resolve_cloud_agent_title(&self, _bc_id: &str) -> Option<String> {
+        None
     }
 
     fn request_box_help(
@@ -120,6 +132,10 @@ impl SendMessageSink for CountingSendMessageSink {
         self.delegate.is_awaiting_user_selection()
     }
 
+    fn resolve_cloud_agent_title(&self, bc_id: &str) -> Option<String> {
+        self.delegate.resolve_cloud_agent_title(bc_id)
+    }
+
     fn request_box_help(
         &self,
         request: BoxHelpRequest,
@@ -155,15 +171,63 @@ impl SendMessageSink for CountingSendMessageSink {
     }
 }
 
+pub trait SendMessageInteractionSink: Send + Sync {
+    fn on_tool_call(&self, phase: &'static str, tool_call: &AgentToolCall);
+}
+
+pub struct TurnObservationSendMessageSink {
+    observation: TurnObservationHandle,
+}
+
+impl TurnObservationSendMessageSink {
+    pub fn new(observation: TurnObservationHandle) -> Self {
+        Self { observation }
+    }
+}
+
+impl SendMessageInteractionSink for TurnObservationSendMessageSink {
+    fn on_tool_call(&self, phase: &'static str, tool_call: &AgentToolCall) {
+        if let Ok(observation) = self.observation.lock() {
+            observation.observe_communicate_tool_call(
+                phase,
+                SAND_SEND_MESSAGE_TOOL_NAME,
+                tool_call.tool_call_id.as_deref().unwrap_or_default(),
+                &tool_call.encode_to_vec(),
+            );
+        }
+    }
+}
+
 pub struct SendMessageToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
     sink: Arc<dyn SendMessageSink>,
+    interaction_sink: Option<Arc<dyn SendMessageInteractionSink>>,
 }
 
 impl SendMessageToolBridge {
     pub fn new(delegate: Arc<dyn RoutedToolBridge>, sink: Arc<dyn SendMessageSink>) -> Self {
-        Self { delegate, sink }
+        Self { delegate, sink, interaction_sink: None }
     }
+
+    pub fn with_interaction_sink(mut self, sink: Arc<dyn SendMessageInteractionSink>) -> Self {
+        self.interaction_sink = Some(sink);
+        self
+    }
+}
+
+
+fn provider_error_message(error: &ProviderSessionError) -> String {
+    match error {
+        ProviderSessionError::Tool(message) => message.clone(),
+        other => other.to_string(),
+    }
+}
+
+fn now_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|value| value.as_millis().min(u64::MAX as u128) as u64)
+        .unwrap_or_default()
 }
 
 pub fn send_message_tool_definition() -> RoutedToolDefinition {
@@ -235,10 +299,21 @@ fn build_sand_send_message(
             "type": "widget",
             "widget": input.widget.clone().unwrap_or(Value::Null)
         }),
-        SendMessageType::CursorAgent => json!({
-            "type": "cursor-agent",
-            "bcId": input.bc_id.as_deref().unwrap_or_default()
-        }),
+        SendMessageType::CursorAgent => {
+            let bc_id = input.bc_id.as_deref().unwrap_or_default();
+            let mut value = json!({
+                "type": "cursor-agent",
+                "bcId": bc_id
+            });
+            if let Some(title) = sink
+                .resolve_cloud_agent_title(bc_id)
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+            {
+                value["title"] = Value::String(title);
+            }
+            value
+        },
         SendMessageType::SecretRequest => {
             let secret = input.secret.as_ref().ok_or_else(|| {
                 ProviderSessionError::Tool("secret is required when type is secret-request".into())
@@ -270,6 +345,27 @@ fn build_sand_send_message(
         }
     }
     Ok(message)
+}
+
+impl SendMessageToolBridge {
+    fn emit_completed(
+        &self,
+        tool_call_id: &str,
+        started_at_ms: u64,
+        args: crate::runner::agent_v1_wire::SendMessageArgs,
+        result: SendMessageResult,
+    ) {
+        let mut completed = create_send_message_tool_call(SendMessageToolCall {
+            args: Some(args),
+            result: Some(result),
+        });
+        completed.tool_call_id = Some(tool_call_id.to_string());
+        completed.started_at_ms = Some(started_at_ms);
+        completed.completed_at_ms = Some(now_ms());
+        if let Some(sink) = self.interaction_sink.as_ref() {
+            sink.on_tool_call("completed", &completed);
+        }
+    }
 }
 
 impl RoutedToolBridge for SendMessageToolBridge {
@@ -304,23 +400,67 @@ impl RoutedToolBridge for SendMessageToolBridge {
                 .join("; ");
             return Err(ProviderSessionError::Tool(message));
         }
-        if self.sink.is_awaiting_user_selection() {
-            return Err(ProviderSessionError::Tool(
-                SAND_AWAITING_USER_SEND_MESSAGE_BLOCKED.to_string(),
-            ));
+        let message = build_sand_send_message(&input, self.sink.as_ref(), tool_call_id)?;
+        let encoded_args = encode_send_message_wire(&message).map_err(ProviderSessionError::Tool)?;
+        let started_at_ms = now_ms();
+        let mut initial = create_send_message_tool_call(SendMessageToolCall {
+            args: Some(encoded_args.clone()),
+            result: None,
+        });
+        initial.tool_call_id = Some(tool_call_id.to_string());
+        initial.started_at_ms = Some(started_at_ms);
+        if let Some(sink) = self.interaction_sink.as_ref() {
+            sink.on_tool_call("initial", &initial);
         }
 
-        let message = build_sand_send_message(&input, self.sink.as_ref(), tool_call_id)?;
-        let _encoded = encode_send_message(&message).map_err(ProviderSessionError::Tool)?;
-        let timestamp_ms = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|value| value.as_millis().min(u64::MAX as u128) as u64)
-            .unwrap_or_default();
-        let message_id = self.sink.send_message(message, timestamp_ms, tool_call_id)?;
-        Ok(json!({
-            "sent": true,
-            "timestampMs": timestamp_ms,
-            "messageId": message_id
-        }))
+        if self.sink.is_awaiting_user_selection() {
+            let error = SAND_AWAITING_USER_SEND_MESSAGE_BLOCKED.to_string();
+            self.emit_completed(
+                tool_call_id,
+                started_at_ms,
+                encoded_args,
+                SendMessageResult {
+                    result: Some(send_message_result::Result::Error(SendMessageError {
+                        error: error.clone(),
+                    })),
+                },
+            );
+            return Err(ProviderSessionError::Tool(error));
+        }
+
+        let timestamp_ms = now_ms();
+        match self.sink.send_message(message, timestamp_ms, tool_call_id) {
+            Ok(message_id) => {
+                self.emit_completed(
+                    tool_call_id,
+                    started_at_ms,
+                    encoded_args,
+                    SendMessageResult {
+                        result: Some(send_message_result::Result::Success(SendMessageSuccess {
+                            timestamp: timestamp_ms,
+                            message_id: message_id.clone().unwrap_or_default(),
+                        })),
+                    },
+                );
+                Ok(json!({
+                    "sent": true,
+                    "timestampMs": timestamp_ms,
+                    "messageId": message_id
+                }))
+            }
+            Err(error) => {
+                self.emit_completed(
+                    tool_call_id,
+                    started_at_ms,
+                    encoded_args,
+                    SendMessageResult {
+                        result: Some(send_message_result::Result::Error(SendMessageError {
+                            error: provider_error_message(&error),
+                        })),
+                    },
+                );
+                Err(error)
+            }
+        }
     }
 }

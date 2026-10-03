@@ -30,7 +30,9 @@ use super::tools::communicate_tool::{
     CommunicateInteractionSink, CommunicateRoutedToolBridge,
     TurnObservationCommunicateSink,
 };
-use super::tools::send_message_tool::SendMessageSink;
+use super::tools::send_message_tool::{
+    SendMessageInteractionSink, SendMessageSink, TurnObservationSendMessageSink,
+};
 use super::tools::sand_reaction_tool::ReactionSink;
 use super::tools::sand_agent_management_tools::AgentManagementSink;
 use super::tools::sand_task_subagent_tool::{SubagentTaskReviewCallback, SubagentTaskSink};
@@ -754,6 +756,11 @@ impl TurnAgentComposition {
             )),
             None => bridge,
         };
+        let send_message_interaction_sink: Option<Arc<dyn SendMessageInteractionSink>> =
+            self.observation.as_ref().map(|observation| {
+                Arc::new(TurnObservationSendMessageSink::new(Arc::clone(observation)))
+                    as Arc<dyn SendMessageInteractionSink>
+            });
         let bridge = build_turn_toolset(
             bridge,
             TurnToolsetDependencies {
@@ -767,6 +774,7 @@ impl TurnAgentComposition {
                 external_machine_executor: self.external_machine_executor.clone(),
                 external_shell_review: self.external_shell_review.clone(),
                 send_message_sink: self.send_message_sink.clone(),
+                send_message_interaction_sink,
                 reaction_sink: self.reaction_sink.clone(),
                 agent_management_sink: self.agent_management_sink.clone(),
                 subagent_task_sink: self.subagent_task_sink.clone(),
