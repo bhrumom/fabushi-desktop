@@ -348,6 +348,7 @@ use mahayana_host_runtime::runner::sand_action_audit::{
 };
 use mahayana_host_runtime::runner::bot_block_detection::with_bot_block_detection_sink;
 use mahayana_host_runtime::extensions::telemetry::bot_block_telemetry::BotBlockReport;
+use mahayana_host_runtime::runner::turn_agent_composition::build_turn_subagent_types;
 use mahayana_host_runtime::runner::turn_observation::{
     ToolCallTelemetryEvent, TurnObservation, TurnObservationHandle,
     async_tasks_changed_event,
@@ -5610,6 +5611,7 @@ fn start_routed_provider_task(
     let spotlight_enabled = prompt_owner.spotlight_enabled();
     let dynamic_tools_enabled = experiments.is_dynamic_tools_enabled();
     let shared_room_box_tools_enabled = experiments.is_shared_room_box_tools_enabled();
+    let browser_use_subagent_enabled = experiments.is_browser_use_subagent_enabled();
     let multitask_enabled = !args
         .get("groupMemberTurn")
         .and_then(serde_json::Value::as_bool)
@@ -7802,6 +7804,14 @@ fn start_routed_provider_task(
             };
             let remote_box_available = forever_box.box_().is_available();
             let remote_box_has_desktop = forever_box.box_().inner().shared_desktop().is_some();
+            let subagent_task_allowed_types = build_turn_subagent_types(
+                worker_generated_parent_agent_id.is_some(),
+                multitask_enabled,
+                remote_box_available,
+                remote_box_has_desktop,
+                browser_use_subagent_enabled,
+            )
+            .map(Arc::new);
             let cloud_agent_tool_for_turn = if worker_cloud_agents.is_disabled_by_team_admin() {
                 None
             } else {
@@ -7866,6 +7876,7 @@ fn start_routed_provider_task(
                     state_approval_barrier,
                     box_shell_review,
                     subagent_task_sink: worker_subagent_task_sink,
+                    subagent_task_allowed_types,
                     subagent_task_review,
                     subagent_management_runtime: worker_subagent_management_runtime,
                     subagent_steer_review,
