@@ -7,7 +7,13 @@ use crate::runner::box_tool_access::{
     BoxShellAutoReviewCallback, RUNNER_BOX_READ_TOOL_NAME, RUNNER_BOX_SHELL_TOOL_NAME,
     RunnerBoxResourcePort, RunnerBoxToolBridge,
 };
-use crate::sand_activity::SAND_BOX_AWAIT_SHELL_TOOL_NAME;
+use crate::sand_activity::{
+    SAND_BOX_AWAIT_SHELL_TOOL_NAME, SAND_EXTERNAL_AWAIT_SHELL_TOOL_NAME,
+    SAND_EXTERNAL_READ_TOOL_NAME, SAND_EXTERNAL_SHELL_TOOL_NAME,
+};
+use crate::extensions::local_tool_permission::local_tool_permission_controller::{
+    SandLocalToolPermissionController, SandLocalToolScope,
+};
 use crate::extensions::inference::provider_session::{
     ProviderPartialToolCall, ProviderSessionError, RoutedMcpMetaToolDefinition,
     RoutedToolDefinition,
@@ -28,7 +34,10 @@ use super::sand_agent_management_tools::{
 };
 use super::sand_browser_tools::{BrowserToolExecutor, SandBrowserToolBridge};
 use super::sand_computer_tool::{ComputerToolExecutor, ComputerToolExposure, SandComputerToolBridge};
-use super::sand_file_transfer_tools::{FileTransferExecutor, SandFileTransferToolBridge};
+use super::sand_file_transfer_tools::{
+    COPY_FROM_BOX_TOOL_NAME, COPY_TO_BOX_TOOL_NAME, FileTransferExecutor,
+    SandFileTransferToolBridge,
+};
 use super::sand_external_machine_tools::{
     ExternalMachineExecutor, ExternalMachineToolBridge, ExternalShellAutoReviewCallback,
 };
@@ -133,6 +142,7 @@ pub fn project_turn_mcp_toolset(
 #[derive(Clone, Default)]
 pub struct TurnToolsetDependencies {
     pub role: TurnToolsetRole,
+    pub local_tool_permission: Option<TurnLocalToolPermissionBinding>,
     pub cancellation: RoutedProviderCancellation,
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     pub box_shell_review: Option<BoxShellAutoReviewCallback>,
@@ -178,6 +188,83 @@ impl Default for TurnToolsetRole {
             is_browser_use_subagent: false,
             shared_room_box_tools_enabled: true,
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct TurnLocalToolPermissionBinding {
+    pub controller: Arc<SandLocalToolPermissionController>,
+    pub agent_id: String,
+}
+
+struct LocalToolScopeBridge {
+    delegate: Arc<dyn RoutedToolBridge>,
+    binding: TurnLocalToolPermissionBinding,
+}
+
+impl LocalToolScopeBridge {
+    fn scoped_action(tool: &RoutedToolDefinition) -> Option<Option<&'static str>> {
+        let names = [tool.name.as_str(), tool.tool_name.as_str()];
+        if names.contains(&SAND_EXTERNAL_SHELL_TOOL_NAME) {
+            return Some(Some("run-command"));
+        }
+        if names.contains(&SAND_EXTERNAL_READ_TOOL_NAME)
+            || names.contains(&SAND_EXTERNAL_AWAIT_SHELL_TOOL_NAME)
+        {
+            return Some(Some("read-file"));
+        }
+        if names.contains(&RUNNER_BOX_SHELL_TOOL_NAME)
+            || names.contains(&RUNNER_BOX_READ_TOOL_NAME)
+            || names.contains(&SAND_BOX_AWAIT_SHELL_TOOL_NAME)
+            || names.contains(&COPY_TO_BOX_TOOL_NAME)
+            || names.contains(&COPY_FROM_BOX_TOOL_NAME)
+        {
+            return Some(None);
+        }
+        None
+    }
+}
+
+impl RoutedToolBridge for LocalToolScopeBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        self.delegate.list_tools()
+    }
+
+    fn list_mcp_meta_tools(
+        &self,
+    ) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
+        self.delegate.list_mcp_meta_tools()
+    }
+
+    fn observe_partial_tool_call(
+        &self,
+        partial: &ProviderPartialToolCall,
+    ) -> Result<(), ProviderSessionError> {
+        self.delegate.observe_partial_tool_call(partial)
+    }
+
+    fn call_tool(
+        &self,
+        tool: &RoutedToolDefinition,
+        args: serde_json::Value,
+        tool_call_id: &str,
+    ) -> Result<serde_json::Value, ProviderSessionError> {
+        let Some(action) = Self::scoped_action(tool) else {
+            return self.delegate.call_tool(tool, args, tool_call_id);
+        };
+        let scope = SandLocalToolScope {
+            agent_id: self.binding.agent_id.clone(),
+            tool_call_id: Some(tool_call_id.to_string()),
+            action: action.map(str::to_string),
+            direction_epoch: Some(
+                self.binding
+                    .controller
+                    .direction_epoch(&self.binding.agent_id),
+            ),
+        };
+        let result = self.delegate.call_tool(tool, args, tool_call_id);
+        self.binding.controller.complete_scope(Some(&scope));
+        result
     }
 }
 
@@ -389,6 +476,13 @@ pub fn build_turn_toolset(
             Arc::new(send_bridge)
         }
         _ => bridge,
+    };
+    let bridge: Arc<dyn RoutedToolBridge> = match dependencies.local_tool_permission {
+        Some(binding) => Arc::new(LocalToolScopeBridge {
+            delegate: bridge,
+            binding,
+        }),
+        None => bridge,
     };
     if role.is_shared_room_runner {
         Arc::new(SharedRoomToolFilterBridge {

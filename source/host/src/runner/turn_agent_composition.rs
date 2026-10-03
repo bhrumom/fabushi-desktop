@@ -50,8 +50,8 @@ use super::tools::sand_state_tool::{
 };
 use super::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use super::tools::turn_toolset::{
-    TurnToolsetDependencies, TurnToolsetRole, build_turn_toolset, fence_turn_toolset,
-    project_turn_mcp_toolset,
+    TurnLocalToolPermissionBinding, TurnToolsetDependencies, TurnToolsetRole,
+    build_turn_toolset, fence_turn_toolset, project_turn_mcp_toolset,
 };
 
 struct RoutedBridgeMcpToolProvider<'a> {
@@ -144,6 +144,7 @@ pub struct TurnAgentComposition {
     mcp_meta_enabled: bool,
     is_computer_use_subagent: bool,
     toolset_role: TurnToolsetRole,
+    local_tool_permission: Option<TurnLocalToolPermissionBinding>,
 }
 
 impl TurnAgentComposition {
@@ -203,6 +204,7 @@ impl TurnAgentComposition {
             mcp_meta_enabled: false,
             is_computer_use_subagent: false,
             toolset_role: TurnToolsetRole::default(),
+            local_tool_permission: None,
         }
     }
 
@@ -305,6 +307,14 @@ impl TurnAgentComposition {
 
     pub fn toolset_role(&self) -> TurnToolsetRole {
         self.toolset_role
+    }
+
+    pub fn with_local_tool_permission(
+        mut self,
+        binding: TurnLocalToolPermissionBinding,
+    ) -> Self {
+        self.local_tool_permission = Some(binding);
+        self
     }
 
 
@@ -687,6 +697,7 @@ impl TurnAgentComposition {
             bridge,
             TurnToolsetDependencies {
                 role: self.toolset_role,
+                local_tool_permission: self.local_tool_permission.clone(),
                 cancellation: self.cancellation.clone(),
                 box_resources: self.box_resources.clone(),
                 box_shell_review: self.box_shell_review.clone(),
