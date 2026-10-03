@@ -14,6 +14,7 @@ pub struct ConversationStateRecoveryFields {
     pub todos: Vec<Vec<u8>>,
     pub summary: Option<Vec<u8>>,
     pub summary_archives: Vec<Vec<u8>>,
+    pub self_summary_count: u64,
     pub subagent_states: Vec<(String, Vec<u8>)>,
     pub subagent_state_refs: Vec<(String, Vec<u8>)>,
 }
@@ -213,6 +214,10 @@ pub fn decode_conversation_state_recovery_fields(
         if field_number == 0 {
             return Err(TranscriptMirrorProtobufDecodeError::InvalidFieldNumber);
         }
+        if field_number == 17 && wire_type == 0 {
+            state.self_summary_count = read_varint(bytes, &mut cursor)?;
+            continue;
+        }
         if wire_type == 2 {
             match field_number {
                 1 => {
@@ -256,6 +261,18 @@ pub fn decode_conversation_state_recovery_fields(
     }
 
     Ok(state)
+}
+
+/// Monotonic compaction epoch derived from the durable Agent conversation state.
+///
+/// Grok treats both external summary archives and self summaries as completed
+/// compactions. Their persisted counts therefore form the turn-visible epoch
+/// used to decide whether unchanged dynamic prompt state must be re-injected.
+pub fn conversation_compaction_epoch(
+    bytes: &[u8],
+) -> Result<u64, TranscriptMirrorProtobufDecodeError> {
+    let decoded = decode_conversation_state_recovery_fields(bytes)?;
+    Ok((decoded.summary_archives.len() as u64).saturating_add(decoded.self_summary_count))
 }
 
 pub fn decode_transcript_mirror_conversation_state(
@@ -376,4 +393,17 @@ pub fn decode_subagent_persisted_state_fields(
         }
     }
     Ok(state)
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::conversation_compaction_epoch;
+
+    #[test]
+    fn conversation_compaction_epoch_counts_external_and_self_summaries() {
+        // field 13 (summary_archives), twice; field 17 (self_summary_count) = 3.
+        let state = [0x6a, 0x01, 0x01, 0x6a, 0x01, 0x02, 0x88, 0x01, 0x03];
+        assert_eq!(conversation_compaction_epoch(&state).expect("compaction epoch"), 5);
+    }
 }

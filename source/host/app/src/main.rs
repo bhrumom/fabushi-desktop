@@ -5346,9 +5346,18 @@ fn start_routed_provider_task(
         .and_then(serde_json::Value::as_object)
         .and_then(|wake| wake.get("id"))
         .and_then(serde_json::Value::as_str);
-    let automation_status_reminder =
+    let rendered_automation_status_reminder =
         create_automation_status_reminder(&automation_store, firing_automation_id);
-    let _ = apply_dynamic_user_context_for_turn(
+    let automation_status_compaction_epoch = host_runner_composition
+        .prompt_compaction_epoch(&session_workers, &agent_id)
+        .map_err(GatewayCommandError::Internal)?;
+    let automation_status_reminder = host_runner_composition
+        .automation_status_reminder_for_turn(
+            &agent_id,
+            rendered_automation_status_reminder.as_deref(),
+            automation_status_compaction_epoch,
+        );
+    let dynamic_user_context_applied = apply_dynamic_user_context_for_turn(
         &mut provider_messages,
         PromptCollectorDynamicUserContext {
             automation_status_reminder: automation_status_reminder.as_deref(),
@@ -5359,6 +5368,13 @@ fn start_routed_provider_task(
                 .unwrap_or(false),
         },
     );
+    if dynamic_user_context_applied && automation_status_reminder.is_some() {
+        host_runner_composition.note_automation_status_reminder(
+            &agent_id,
+            automation_status_reminder.as_deref(),
+            automation_status_compaction_epoch,
+        );
+    }
     let spotlight_enabled = experiments.check_feature_gate("sand_spotlight");
     let multitask_enabled = !args
         .get("groupMemberTurn")

@@ -32,4 +32,8 @@ fn shipping_provider_turn_consumes_dynamic_sections_in_frozen_order() {
     assert!(collector.contains("append_mcp_system_prompt_sections("));
     assert!(collector.contains("!is_subagent_runner"));
     assert_eq!(source.matches("append_mcp_system_prompt_sections(").count(), 0);
+    assert!(tail.contains("prompt_compaction_epoch(&session_workers, &agent_id)"));
+    assert!(tail.contains("automation_status_reminder_for_turn("));
+    assert!(tail.contains("note_automation_status_reminder("));
+    assert!(collector.contains("pub struct PromptCollectorAutomationReminderState"));
 }

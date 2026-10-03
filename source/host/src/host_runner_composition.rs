@@ -24,6 +24,7 @@ use crate::runner::production_agent_checkpoint::{
 use crate::runner::production_turn_agent_owner::{
     ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
 };
+use crate::runner::prompt_collector_glue::PromptCollectorAutomationReminderState;
 use crate::runner::sand_agent_runner::SandAgentRunner;
 use crate::runner::subagent_runtime::SubagentRuntime;
 use crate::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
@@ -34,6 +35,7 @@ use crate::runner_production_bridge::{
     ProductionRunnerCompositionInput, create_production_runner,
     create_production_runner_composition_with_hooks,
 };
+use crate::transcript_mirror::conversation_state_binary::conversation_compaction_epoch;
 use crate::transcript_mirror::generated_occurrence_codec::{
     GeneratedTranscriptOccurrenceCodec, RejectGeneratedToolJsonProjection,
 };
@@ -56,6 +58,7 @@ pub struct HostRunnerComposition {
     controller: Arc<SandLocalToolPermissionController>,
     sink: PermissionEventSink,
     surfaces: Mutex<HashMap<String, SandLocalToolControllerSubscription>>,
+    prompt_automation_reminders: Mutex<HashMap<String, PromptCollectorAutomationReminderState>>,
     computer_use: Arc<Mutex<ComputerUseCoordination>>,
 }
 
@@ -83,6 +86,7 @@ impl HostRunnerComposition {
             controller,
             sink,
             surfaces: Mutex::new(HashMap::new()),
+            prompt_automation_reminders: Mutex::new(HashMap::new()),
             computer_use: Arc::new(Mutex::new(ComputerUseCoordination::new(true))),
         }
     }
@@ -158,6 +162,49 @@ impl HostRunnerComposition {
             true,
         )?;
         Ok(Some(Arc::new(sink)))
+    }
+
+    /// Read the durable conversation compaction epoch used by dynamic prompt projection.
+    pub fn prompt_compaction_epoch(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        agent_id: &str,
+    ) -> Result<u64, String> {
+        let agent_store = sessions.open_agent_store_owner(agent_id)?;
+        let state = agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        conversation_compaction_epoch(&state).map_err(|error| {
+            format!("could not decode production conversation compaction epoch for {agent_id}: {error}")
+        })
+    }
+
+    /// Resolve this turn's automation reminder through the long-lived per-Agent collector state.
+    pub fn automation_status_reminder_for_turn(
+        &self,
+        agent_id: &str,
+        rendered: Option<&str>,
+        compaction_epoch: u64,
+    ) -> Option<String> {
+        self.prompt_automation_reminders
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .entry(agent_id.to_string())
+            .or_default()
+            .reminder_for_turn(rendered, compaction_epoch)
+    }
+
+    /// Commit a reminder only after the prompt collector actually injected it.
+    pub fn note_automation_status_reminder(
+        &self,
+        agent_id: &str,
+        reminder: Option<&str>,
+        compaction_epoch: u64,
+    ) {
+        self.prompt_automation_reminders
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .entry(agent_id.to_string())
+            .or_default()
+            .note_reminder(reminder, compaction_epoch);
     }
 
     /// Construct the shipping Runner facade from the composed turn and lifecycle owners.
@@ -239,6 +286,10 @@ impl HostRunnerComposition {
     /// local-permission subscriptions, matching the frozen composition boundary.
     pub fn dispose(&self) {
         self.surfaces
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
+        self.prompt_automation_reminders
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .clear();
