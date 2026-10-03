@@ -17707,7 +17707,7 @@
       "targetPath": "source/host/src/ports/mcp_state_executor.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "e4dcfebc238e66703e3f49e1f7558c96ef79e4e2",
       "architecturalRole": "host/ports",
       "processOrPackage": "mahayana-host",
@@ -17715,6 +17715,8 @@
         "source/host/src/ports/mcp_state_executor.rs",
         "source/host/src/extensions/mcp/production_box_state.rs",
         "source/host/src/extensions/mcp/box_mcp_exec.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner_production_bridge.rs",
         "source/host/app/src/main.rs",
         "source/packages/proto/generated/agent/v1/mcp_exec_pb.ts",
         "source/packages/proto/generated/agent/v1/mcp_pb.ts"
@@ -17722,13 +17724,15 @@
       "testEvidence": [
         "source/host/tests/mcp_state_executor_contract.rs",
         "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs",
         "source/host/src/extensions/mcp/production_box_state.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Canonical MCP-state ownership is now single-path rather than a test-only projection plus a separate shipping decoder. source/host/src/ports/mcp_state_executor.rs owns the recovered agent.v1 McpStateExecArgs/McpStateExecResult/McpStateServer/McpToolDefinition protobuf field contract, first-seen provider grouping, connected projection, full tool metadata/schema round-trip, success/error/rejected decode, and status-detail preservation. Shipping ProductionBoxMcpStateLoader field 36 and Box MCP mapping import this owner directly; the prior private opaque MCP-state wire structs were removed. Exact implementation HEAD ea29726d33da17bae8fbe5e1c145ba3c828081ee passed htch-runtime production_box_state 2/2, mcp_state_executor_contract 3/3 and box_mcp_exec_contract 3/3 (all exit 0, no filtered integration cases), and GitHub exact-head shipping Mahayana Host compile succeeded; Desktop renderer/typecheck/build also succeeded while the final architecture gate remained blocked only by declared existing-needs-parity rows. This manifest commit must establish its own exact-HEAD gate before becoming the next baseline.",
+      "notes": "Canonical MCP-state wire ownership and shipping Box field-36 consumption share source/host/src/ports/mcp_state_executor.rs. The frozen per-turn state-executor responsibility is now bound into the shipping Runner boundary: TurnAgentComposition executes canonical MCP state from the exact RoutedToolBridge already owned by that turn, preserving first-seen provider grouping and full tool schema without a second MCP discovery owner. runner_production_bridge_contract executes this production composition path. Status remains existing-needs-parity until this exact implementation HEAD passes required shipping Host/Runner and Focused Electron gates; parent-head acceptance is not inherited.",
       "evidence": [
         "source/host/tests/mcp_state_executor_contract.rs",
         "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs",
         "source/host/src/extensions/mcp/production_box_state.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ]

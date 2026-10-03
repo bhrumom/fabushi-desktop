@@ -18,7 +18,8 @@ use mahayana_host_runtime::runner::tools::sand_mcp_management_tools::{
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionRunnerCompositionInput, create_production_runner_composition,
 };
-use serde_json::Value;
+use mahayana_host_runtime::ports::mcp_state_executor::McpStateExecResult;
+use serde_json::{Value, json};
 
 struct EmptyBridge;
 
@@ -34,6 +35,45 @@ impl RoutedToolBridge for EmptyBridge {
         _tool_call_id: &str,
     ) -> Result<Value, ProviderSessionError> {
         Err(ProviderSessionError::Tool("no tools".into()))
+    }
+}
+
+struct McpStateBridge;
+
+impl RoutedToolBridge for McpStateBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        Ok(vec![
+            RoutedToolDefinition {
+                name: "github_search".into(),
+                provider_identifier: "github".into(),
+                tool_name: "search".into(),
+                description: Some("Search GitHub".into()),
+                input_schema: json!({"type":"object","properties":{"q":{"type":"string"}}}),
+            },
+            RoutedToolDefinition {
+                name: "linear_get".into(),
+                provider_identifier: "linear".into(),
+                tool_name: "get".into(),
+                description: Some("Get Linear issue".into()),
+                input_schema: json!({"type":"object","properties":{"id":{"type":"string"}}}),
+            },
+            RoutedToolDefinition {
+                name: "github_issue".into(),
+                provider_identifier: "github".into(),
+                tool_name: "issue".into(),
+                description: None,
+                input_schema: json!({"type":"object"}),
+            },
+        ])
+    }
+
+    fn call_tool(
+        &self,
+        _tool: &RoutedToolDefinition,
+        _args: Value,
+        _tool_call_id: &str,
+    ) -> Result<Value, ProviderSessionError> {
+        Err(ProviderSessionError::Tool("not used by MCP state projection".into()))
     }
 }
 
@@ -174,4 +214,51 @@ fn production_bridge_projects_mcp_management_into_canonical_turn_composition() {
     );
 
     assert!(composition.has_mcp_management_sink());
+}
+
+
+#[test]
+fn production_bridge_registers_canonical_mcp_state_executor_on_turn_composition() {
+    let composition = create_production_runner_composition(
+        ProductionRunnerCompositionInput {
+            provider: RoutedProvider::OpenRouter,
+            bridge: Arc::new(McpStateBridge),
+            cursor_auth: None,
+            request_context: request_context(),
+            cancellation: RoutedProviderCancellation::default(),
+            checkpoint_store: Arc::new(MemoryCheckpointStore),
+            retry_sink: None,
+            retry_report_sink: None,
+            usage_sink: None,
+            spotlight_enabled: false,
+            box_resources: None,
+            browser_executor: None,
+            computer_executor: None,
+            computer_exposure: ComputerToolExposure::Full,
+            file_transfer_executor: None,
+            external_machine_executor: None,
+            external_shell_review: None,
+            mcp_management_sink: None,
+            send_message_sink: None,
+            reaction_sink: None,
+            cloud_agent_tool: None,
+            multitask_enabled: false,
+            action_audit: None,
+            observation: None,
+        },
+    );
+
+    let McpStateExecResult::Success(state) = composition
+        .execute_mcp_state()
+        .expect("production turn MCP state projection");
+    assert_eq!(state.servers.len(), 2);
+    assert_eq!(state.servers[0].server_identifier, "github");
+    assert_eq!(state.servers[0].tools.len(), 2);
+    assert_eq!(state.servers[0].tools[0].name, "github_search");
+    assert_eq!(
+        state.servers[0].tools[0].input_schema["properties"]["q"]["type"],
+        "string"
+    );
+    assert_eq!(state.servers[1].server_identifier, "linear");
+    assert_eq!(state.servers[1].tools.len(), 1);
 }

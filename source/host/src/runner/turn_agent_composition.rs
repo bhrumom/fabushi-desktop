@@ -4,9 +4,12 @@ use std::sync::{Arc, Mutex};
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedProvider,
-    RoutedProviderCheckpoint,
+    RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
+use crate::ports::mcp_state_executor::{
+    McpStateExecResult, SandMcpToolProvider, execute_mcp_state as execute_canonical_mcp_state,
+};
 
 use super::box_tool_access::{BoxShellAutoReviewCallback, RunnerBoxResourcePort};
 use super::production_turn_run_shell_adapter::{
@@ -45,6 +48,16 @@ use super::tools::sand_multitask_todo_tool::MultitaskTodoState;
 use super::tools::turn_toolset::{
     TurnToolsetDependencies, build_turn_toolset, fence_turn_toolset,
 };
+
+struct RoutedBridgeMcpToolProvider<'a> {
+    bridge: &'a dyn RoutedToolBridge,
+}
+
+impl SandMcpToolProvider for RoutedBridgeMcpToolProvider<'_> {
+    fn get_tools(&self) -> Result<Vec<RoutedToolDefinition>, String> {
+        self.bridge.list_tools().map_err(|error| error.to_string())
+    }
+}
 
 struct ObservedRoutedProviderCheckpointStore {
     delegate: Arc<dyn RoutedProviderCheckpointStore>,
@@ -452,6 +465,17 @@ impl TurnAgentComposition {
 
     pub fn has_observation(&self) -> bool {
         self.observation.is_some()
+    }
+
+    /// Execute the canonical per-turn MCP state projection from the exact
+    /// shipping routed-tool bridge already owned by this Runner composition.
+    ///
+    /// This is the Rust equivalent of Grok's mcpStateExecutorResource and
+    /// deliberately avoids creating a second MCP discovery owner.
+    pub fn execute_mcp_state(&self) -> Result<McpStateExecResult, String> {
+        execute_canonical_mcp_state(&RoutedBridgeMcpToolProvider {
+            bridge: self.bridge.as_ref(),
+        })
     }
 
     pub fn provider(&self) -> RoutedProvider {
