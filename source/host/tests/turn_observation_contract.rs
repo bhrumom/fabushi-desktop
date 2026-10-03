@@ -506,6 +506,8 @@ fn shipping_host_routes_async_task_projection_through_turn_observation_owner() {
         "set_async_tasks_provider(",
         "set_async_tasks_event_handler(",
         "publish_async_tasks_changed(",
+        "publish_async_tasks_changed_from_slots(",
+        "collect_live_async_tasks(",
         "running_subagent_records_for_parent(owner_agent_id)",
         "async_tasks_shell",
         ".async_task_snapshots(owner_agent_id)",

@@ -1525,12 +1525,76 @@ struct ProductionCompletionRevivalRuntime {
     gateway: Arc<Mutex<Weak<UnifiedGatewayApi>>>,
 }
 
+fn collect_live_async_tasks(
+    generated_agent_runtime: &Mutex<SubagentRuntime>,
+    cloud_agent_watches: &RunnerCloudAgentWatches,
+    background_shell_watches: &RunnerBackgroundShellWatches,
+    agent_id: &str,
+) -> Vec<AsyncTask> {
+    let mut live_tasks = generated_agent_runtime
+        .lock()
+        .map(|runtime| {
+            runtime
+                .running_subagent_records_for_parent(agent_id)
+                .into_iter()
+                .map(|(id, record)| AsyncTask {
+                    kind: "subagent".into(),
+                    id,
+                    label: record.title,
+                    status: "running".into(),
+                    started_at_ms: record.started_at_ms as f64,
+                    detail: Some(record.subagent_type.clone()),
+                    subagent_type: Some(record.subagent_type),
+                })
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    live_tasks.extend(
+        background_shell_watches
+            .async_task_snapshots(agent_id)
+            .into_iter()
+            .map(|task| AsyncTask {
+                kind: "shell".into(),
+                id: task.id,
+                label: task.label,
+                status: "running".into(),
+                started_at_ms: task.started_at_ms as f64,
+                detail: None,
+                subagent_type: None,
+            }),
+    );
+    live_tasks.extend(
+        cloud_agent_watches
+            .async_task_snapshots(agent_id)
+            .into_iter()
+            .map(|task| AsyncTask {
+                kind: "cloud-agent".into(),
+                id: task.id,
+                label: task.label,
+                status: "running".into(),
+                started_at_ms: task.started_at_ms as f64,
+                detail: None,
+                subagent_type: None,
+            }),
+    );
+    live_tasks
+}
+
 fn publish_async_tasks_changed(
     events: &GatewayEventHub,
     runtime: &ProductionTranscriptRuntime,
+    generated_agent_runtime: &Mutex<SubagentRuntime>,
+    cloud_agent_watches: &RunnerCloudAgentWatches,
+    background_shell_watches: &RunnerBackgroundShellWatches,
     agent_id: &str,
 ) {
-    let tasks = runtime.get_async_tasks(agent_id, &[]);
+    let live_tasks = collect_live_async_tasks(
+        generated_agent_runtime,
+        cloud_agent_watches,
+        background_shell_watches,
+        agent_id,
+    );
+    let tasks = runtime.get_async_tasks(agent_id, &live_tasks);
     match async_tasks_changed_event(agent_id, &tasks) {
         Ok(payload) => events.publish(serde_json::json!({
             "channel": "async-tasks",
@@ -1540,6 +1604,45 @@ fn publish_async_tasks_changed(
             "mahayana-host async_tasks_projection_failed agent={} error={}",
             agent_id, error
         ),
+    }
+}
+
+fn publish_async_tasks_changed_from_slots(
+    events: &GatewayEventHub,
+    runtime: &ProductionTranscriptRuntime,
+    generated_agent_runtime: &Arc<Mutex<SubagentRuntime>>,
+    cloud_agent_watches: &Arc<Mutex<Weak<RunnerCloudAgentWatches>>>,
+    background_shell_watches: &Arc<Mutex<Weak<RunnerBackgroundShellWatches>>>,
+    agent_id: &str,
+) {
+    let cloud_agent_watches = cloud_agent_watches
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .upgrade();
+    let background_shell_watches = background_shell_watches
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .upgrade();
+    if let (Some(cloud_agent_watches), Some(background_shell_watches)) =
+        (cloud_agent_watches, background_shell_watches)
+    {
+        publish_async_tasks_changed(
+            events,
+            runtime,
+            generated_agent_runtime.as_ref(),
+            cloud_agent_watches.as_ref(),
+            background_shell_watches.as_ref(),
+            agent_id,
+        );
+        return;
+    }
+
+    let tasks = runtime.get_async_tasks(agent_id, &[]);
+    if let Ok(payload) = async_tasks_changed_event(agent_id, &tasks) {
+        events.publish(serde_json::json!({
+            "channel": "async-tasks",
+            "payload": payload,
+        }));
     }
 }
 
@@ -2348,6 +2451,9 @@ impl UnifiedGatewayApi {
         publish_async_tasks_changed(
             &self.events,
             self.transcript_runtime.as_ref(),
+            self.generated_agent_runtime.as_ref(),
+            self.cloud_agent_watches.as_ref(),
+            self.background_shell_watches.as_ref(),
             agent_id,
         );
     }
@@ -6135,51 +6241,11 @@ fn start_routed_provider_task(
                 let async_tasks_cloud = Arc::clone(&worker_async_cloud_agent_watches);
                 let async_tasks_shell = Arc::clone(&worker_async_background_shell_watches);
                 observation.set_async_tasks_provider(Arc::new(move |owner_agent_id| {
-                    let mut live_tasks = async_tasks_subagents
-                        .lock()
-                        .map(|runtime| {
-                            runtime
-                                .running_subagent_records_for_parent(owner_agent_id)
-                                .into_iter()
-                                .map(|(id, record)| AsyncTask {
-                                    kind: "subagent".into(),
-                                    id,
-                                    label: record.title,
-                                    status: "running".into(),
-                                    started_at_ms: record.started_at_ms as f64,
-                                    detail: Some(record.subagent_type.clone()),
-                                    subagent_type: Some(record.subagent_type),
-                                })
-                                .collect::<Vec<_>>()
-                        })
-                        .unwrap_or_default();
-                    live_tasks.extend(
-                        async_tasks_shell
-                            .async_task_snapshots(owner_agent_id)
-                            .into_iter()
-                            .map(|task| AsyncTask {
-                                kind: "shell".into(),
-                                id: task.id,
-                                label: task.label,
-                                status: "running".into(),
-                                started_at_ms: task.started_at_ms as f64,
-                                detail: None,
-                                subagent_type: None,
-                            }),
-                    );
-                    live_tasks.extend(
-                        async_tasks_cloud
-                            .async_task_snapshots(owner_agent_id)
-                            .into_iter()
-                            .map(|task| AsyncTask {
-                                kind: "cloud-agent".into(),
-                                id: task.id,
-                                label: task.label,
-                                status: "running".into(),
-                                started_at_ms: task.started_at_ms as f64,
-                                detail: None,
-                                subagent_type: None,
-                            }),
+                    let live_tasks = collect_live_async_tasks(
+                        async_tasks_subagents.as_ref(),
+                        async_tasks_cloud.as_ref(),
+                        async_tasks_shell.as_ref(),
+                        owner_agent_id,
                     );
                     async_tasks_runtime.get_async_tasks(owner_agent_id, &live_tasks)
                 }));
@@ -8161,6 +8227,9 @@ fn start_routed_provider_task(
                         publish_async_tasks_changed(
                             &worker_events,
                             worker_transcript_runtime.as_ref(),
+                            worker_generated_agent_runtime.as_ref(),
+                            worker_cloud_agent_watches.as_ref(),
+                            background_shell_watches.as_ref(),
                             parent_agent_id,
                         );
                     }
@@ -8500,6 +8569,9 @@ fn start_routed_provider_task(
                         publish_async_tasks_changed(
                             &worker_events,
                             worker_transcript_runtime.as_ref(),
+                            worker_generated_agent_runtime.as_ref(),
+                            worker_cloud_agent_watches.as_ref(),
+                            background_shell_watches.as_ref(),
                             &completion.parent_agent_id,
                         );
                         worker_completion_revivals.handle_background_subagent_completion(
@@ -11171,25 +11243,6 @@ fn main() {
     let runner_registry = transcript_manager.runner_registry();
     let transcript_runtime = transcript_manager.transcript_runtime();
     let generated_agent_runtime = Arc::new(Mutex::new(SubagentRuntime::default()));
-    if let Some(pending_store) = transcript_runtime.pending_wake_store().cloned() {
-        let abort_async_runtime = Arc::clone(&transcript_runtime);
-        let abort_async_events = gateway_events.clone();
-        generated_agent_runtime
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .set_abort_observer(Some(Arc::new(move |parent_agent_id, subagent_id| {
-                pending_store.clear_one(
-                    parent_agent_id,
-                    PendingWakeKind::Subagent,
-                    subagent_id,
-                );
-                publish_async_tasks_changed(
-                    &abort_async_events,
-                    abort_async_runtime.as_ref(),
-                    parent_agent_id,
-                );
-            })));
-    }
     let host_runner_composition = Arc::new(HostRunnerComposition::production(
         local_tool_permission_extension.controller(),
         Arc::clone(&session_workers),
@@ -11557,6 +11610,9 @@ fn main() {
     let cloud_watch_settled = Arc::clone(&completion_revivals);
     let cloud_watch_async_runtime = Arc::clone(&transcript_runtime);
     let cloud_watch_async_events = gateway_events.clone();
+    let cloud_watch_async_generated = Arc::clone(&generated_agent_runtime);
+    let cloud_watch_async_cloud_slot = Arc::clone(&cloud_agent_deletion_watches);
+    let cloud_watch_async_shell_slot = Arc::clone(&background_shell_deletion_watches);
     let cloud_agent_watches = Arc::new(RunnerCloudAgentWatches::new(
         Arc::new(move |bc_id, wait_for_restart| {
             let result = cloud_watch_manager.await_completion(bc_id, wait_for_restart);
@@ -11624,9 +11680,12 @@ fn main() {
             });
         })),
         Some(Arc::new(move |agent_id| {
-            publish_async_tasks_changed(
+            publish_async_tasks_changed_from_slots(
                 &cloud_watch_async_events,
                 cloud_watch_async_runtime.as_ref(),
+                &cloud_watch_async_generated,
+                &cloud_watch_async_cloud_slot,
+                &cloud_watch_async_shell_slot,
                 agent_id,
             );
         })),
@@ -11639,6 +11698,9 @@ fn main() {
     let shell_watch_settled = Arc::clone(&completion_revivals);
     let shell_watch_async_runtime = Arc::clone(&transcript_runtime);
     let shell_watch_async_events = gateway_events.clone();
+    let shell_watch_async_generated = Arc::clone(&generated_agent_runtime);
+    let shell_watch_async_cloud_slot = Arc::clone(&cloud_agent_deletion_watches);
+    let shell_watch_async_shell_slot = Arc::clone(&background_shell_deletion_watches);
     *cloud_agent_deletion_watches
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) =
@@ -11731,9 +11793,12 @@ fn main() {
             });
         })),
         Some(Arc::new(move |agent_id| {
-            publish_async_tasks_changed(
+            publish_async_tasks_changed_from_slots(
                 &shell_watch_async_events,
                 shell_watch_async_runtime.as_ref(),
+                &shell_watch_async_generated,
+                &shell_watch_async_cloud_slot,
+                &shell_watch_async_shell_slot,
                 agent_id,
             );
         })),
@@ -11742,6 +11807,32 @@ fn main() {
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) =
         Arc::downgrade(&background_shell_watches);
+
+    if let Some(pending_store) = transcript_runtime.pending_wake_store().cloned() {
+        let abort_async_runtime = Arc::clone(&transcript_runtime);
+        let abort_async_events = gateway_events.clone();
+        let abort_async_generated = Arc::clone(&generated_agent_runtime);
+        let abort_async_cloud_slot = Arc::clone(&cloud_agent_deletion_watches);
+        let abort_async_shell_slot = Arc::clone(&background_shell_deletion_watches);
+        generated_agent_runtime
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .set_abort_observer(Some(Arc::new(move |parent_agent_id, subagent_id| {
+                pending_store.clear_one(
+                    parent_agent_id,
+                    PendingWakeKind::Subagent,
+                    subagent_id,
+                );
+                publish_async_tasks_changed_from_slots(
+                    &abort_async_events,
+                    abort_async_runtime.as_ref(),
+                    &abort_async_generated,
+                    &abort_async_cloud_slot,
+                    &abort_async_shell_slot,
+                    parent_agent_id,
+                );
+            })));
+    }
 
     let cross_user_runner_deps = LocalRoutedRunnerDeps {
         routed_tool_relay: Arc::clone(&routed_tool_relay),
