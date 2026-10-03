@@ -281,6 +281,9 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
 };
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::is_recovery_shaped_turn;
+use mahayana_host_runtime::runner::{
+    should_run_completed_turn_side_effects, should_run_turn_memory,
+};
 use mahayana_host_runtime::runner::prompt_collector_glue::{
     apply_staged_attachment_paths_for_turn, resolve_profile_update_for_turn,
     selected_media_host_paths_for_turn, unanswered_questions_user_message_for_turn,
@@ -7956,6 +7959,7 @@ fn start_routed_provider_task(
                     }
                 });
             let cursor_auth = inference.cursor_auth_for_session(Some(&worker_session_options));
+            let settle_labeling_auth = Arc::clone(&cursor_auth);
             let turn_model_id = cursor_auth.requested_model().model_id;
             let web_executor: Arc<dyn WebToolExecutor> = Arc::new(
                 ProductionWebToolExecutor::new(Arc::clone(&inference), turn_model_id.clone()),
@@ -8246,6 +8250,7 @@ fn start_routed_provider_task(
             }
             let _ = worker_registry.mark_routed_provider_dispatched(&worker_stream_id);
             let turn_epoch = worker_transcript_runtime.current_turn_epoch(&agent_id);
+            turn_input.options.turn_started_at_ms = Some(runner_started_at_ms);
             let mut result = runner.run_routed_provider_with_projected_turn_input(
                 &data_dir,
                 &lifecycle_messages,
@@ -8351,6 +8356,26 @@ fn start_routed_provider_task(
                 }
             }
 
+            if should_run_completed_turn_side_effects(
+                worker_generated_parent_agent_id.is_some(),
+                worker_turn_hidden,
+                waiting_user,
+                worker_cancellation.is_cancelled(),
+                result.is_ok(),
+            ) && turn_epoch == worker_transcript_runtime.current_turn_epoch(&agent_id)
+            {
+                if let Ok(content) = result.as_ref() {
+                    let mut labeled_messages = lifecycle_messages.clone();
+                    if !content.is_empty() {
+                        labeled_messages.push(ProviderMessage {
+                            role: "assistant".into(),
+                            content: content.clone(),
+                        });
+                    }
+                    settle_labeling_auth.record_post_turn_labeling(&labeled_messages);
+                }
+            }
+
             let turn_interrupted = worker_cancellation.reason().is_some_and(|reason| {
                 matches!(
                     reason.as_str(),
@@ -8391,19 +8416,26 @@ fn start_routed_provider_task(
                 }
             }
 
-            if !waiting_user && !worker_turn_hidden {
-                if let (Ok(content), Some(worker_memory_store)) =
-                    (result.as_ref(), worker_memory_store.as_ref())
+            if let (Ok(content), Some(worker_memory_store)) =
+                (result.as_ref(), worker_memory_store.as_ref())
+            {
+                if let Some(user_prompt) = lifecycle_messages
+                    .iter()
+                    .rev()
+                    .find(|message| {
+                        message.role == "user" && !message.content.trim().is_empty()
+                    })
+                    .map(|message| message.content.trim().to_string())
                 {
-                    if let Some(user_prompt) = lifecycle_messages
-                        .iter()
-                        .rev()
-                        .find(|message| {
-                            message.role == "user" && !message.content.trim().is_empty()
-                        })
-                        .map(|message| message.content.trim().to_string())
-                        .filter(|prompt| is_memorable_exchange(prompt))
-                    {
+                    let memory_evidence_enabled = worker_memory_service.synthesis_enabled();
+                    if should_run_turn_memory(
+                        turn_epoch == worker_transcript_runtime.current_turn_epoch(&agent_id),
+                        worker_turn_hidden,
+                        waiting_user,
+                        result.is_ok(),
+                        memory_evidence_enabled,
+                        is_memorable_exchange(&user_prompt),
+                    ) {
                         if let Ok(episode_db) =
                             worker_retire_sessions.open_agent_db_owner(&agent_id)
                         {
@@ -8462,7 +8494,7 @@ fn start_routed_provider_task(
                                     runner_started_at_ms as i64,
                                 );
                             };
-                            let memory_mode = if worker_memory_service.synthesis_enabled() {
+                            let memory_mode = if memory_evidence_enabled {
                                 TurnMemoryMode::RecordEvidence(&mut record_memory_evidence)
                             } else {
                                 TurnMemoryMode::Extract

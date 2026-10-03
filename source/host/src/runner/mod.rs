@@ -25,9 +25,10 @@ pub use stream_attempt::{
 };
 pub use transient_stream_error::{StreamFailureKind, TransientStreamError};
 pub use turn_settle::{
-    DurableTurnCheckpointStore, TerminalOutcome, TranscriptCheckpointMirror,
-    TurnCheckpointFuture, TurnCheckpointPersistenceError, TurnSettlement,
-    persist_checkpoint_with_mirror,
+    DurableTurnCheckpointStore, SettledTokenDetails, TerminalOutcome,
+    TokenDetailsPersistenceTracker, TranscriptCheckpointMirror, TurnCheckpointFuture,
+    TurnCheckpointPersistenceError, TurnSettlement, persist_checkpoint_with_mirror,
+    should_run_completed_turn_side_effects, should_run_turn_memory,
 };
 pub use turn_run_shell::{
     CheckpointBoundary, TurnCancellation, TurnOwnerToken, TurnRunFinished,

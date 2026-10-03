@@ -1188,16 +1188,6 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
                 max_steps,
                 tool_step_reminder,
             );
-            if let Ok(text) = result.as_ref() {
-                let mut labeled_messages = messages.to_vec();
-                if !text.is_empty() {
-                    labeled_messages.push(ProviderMessage {
-                        role: "assistant".into(),
-                        content: text.clone(),
-                    });
-                }
-                auth.record_post_turn_labeling(&labeled_messages);
-            }
             result
         }
         RoutedProvider::Codex => {

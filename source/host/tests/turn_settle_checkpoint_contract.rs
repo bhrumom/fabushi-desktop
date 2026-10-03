@@ -2,8 +2,10 @@ use std::sync::Mutex;
 
 use futures::future;
 use mahayana_host_runtime::runner::{
-    DurableTurnCheckpointStore, TranscriptCheckpointMirror, TurnCheckpointFuture,
-    TurnCheckpointPersistenceError, persist_checkpoint_with_mirror,
+    DurableTurnCheckpointStore, SettledTokenDetails, TokenDetailsPersistenceTracker,
+    TranscriptCheckpointMirror, TurnCheckpointFuture, TurnCheckpointPersistenceError,
+    persist_checkpoint_with_mirror, should_run_completed_turn_side_effects,
+    should_run_turn_memory,
 };
 
 #[derive(Default)]
@@ -195,4 +197,67 @@ fn local_state_fallback_commits_without_root_metadata() {
         events.snapshot(),
         vec!["prepare:false:true", "local", "commit:none"]
     );
+}
+
+
+#[test]
+fn summary_archive_growth_suppresses_only_the_stale_token_snapshot() {
+    let stale = SettledTokenDetails {
+        used_tokens: 120,
+        max_tokens: 1_000,
+    };
+    let fresh = SettledTokenDetails {
+        used_tokens: 140,
+        max_tokens: 1_000,
+    };
+    let mut tracker = TokenDetailsPersistenceTracker::new(2);
+
+    assert!(!tracker.should_suppress(2, Some(stale)));
+    assert!(tracker.should_suppress(3, Some(stale)));
+    assert!(
+        tracker.should_suppress(3, Some(stale)),
+        "the exact pre-compaction snapshot stays stale"
+    );
+    assert!(
+        !tracker.should_suppress(3, Some(fresh)),
+        "a genuinely new token snapshot becomes persistable"
+    );
+}
+
+#[test]
+fn completed_turn_side_effect_policy_matches_frozen_owner_boundaries() {
+    assert!(should_run_completed_turn_side_effects(
+        false, false, false, false, true,
+    ));
+    assert!(!should_run_completed_turn_side_effects(
+        true, false, false, false, true,
+    ));
+    assert!(!should_run_completed_turn_side_effects(
+        false, true, false, false, true,
+    ));
+    assert!(!should_run_completed_turn_side_effects(
+        false, false, true, false, true,
+    ));
+    assert!(!should_run_completed_turn_side_effects(
+        false, false, false, true, true,
+    ));
+    assert!(!should_run_completed_turn_side_effects(
+        false, false, false, false, false,
+    ));
+}
+
+#[test]
+fn turn_memory_evidence_bypasses_memorable_filter_but_stale_runs_do_not_write() {
+    assert!(should_run_turn_memory(
+        true, false, false, true, true, false,
+    ));
+    assert!(!should_run_turn_memory(
+        false, false, false, true, true, true,
+    ));
+    assert!(!should_run_turn_memory(
+        true, false, false, true, false, false,
+    ));
+    assert!(should_run_turn_memory(
+        true, false, false, true, false, true,
+    ));
 }

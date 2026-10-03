@@ -22,6 +22,7 @@ pub struct TurnRunOptions {
     pub recent_message_text: Option<String>,
     pub recent_message_rich_text: Option<String>,
     pub recent_user_messages: Vec<RecentUserMessage>,
+    pub turn_started_at_ms: Option<u64>,
     pub is_fork: bool,
     pub attachment_count: usize,
     pub image_count: usize,

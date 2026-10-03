@@ -7,13 +7,27 @@ pub struct TranscriptMirrorConversationState {
     pub summary_archives: Vec<Vec<u8>>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct ConversationTokenDetailsFields {
+    pub used_tokens: u64,
+    pub max_tokens: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct ConversationStepTimingFields {
+    pub duration_ms: u64,
+    pub timestamp_ms: u64,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ConversationStateRecoveryFields {
     pub root_prompt_messages_json: Vec<Vec<u8>>,
     pub turns: Vec<Vec<u8>>,
     pub todos: Vec<Vec<u8>>,
+    pub token_details: Option<ConversationTokenDetailsFields>,
     pub summary: Option<Vec<u8>>,
     pub summary_archives: Vec<Vec<u8>>,
+    pub turn_timings: Vec<ConversationStepTimingFields>,
     pub self_summary_count: u64,
     pub subagent_states: Vec<(String, Vec<u8>)>,
     pub subagent_state_refs: Vec<(String, Vec<u8>)>,
@@ -201,6 +215,42 @@ fn decode_string_bytes_map_entry(
     Ok(key.zip(value))
 }
 
+fn decode_conversation_token_details(
+    bytes: &[u8],
+) -> Result<ConversationTokenDetailsFields, TranscriptMirrorProtobufDecodeError> {
+    let mut cursor = Cursor { offset: 0 };
+    let mut details = ConversationTokenDetailsFields::default();
+    while cursor.offset < bytes.len() {
+        let tag = read_varint(bytes, &mut cursor)?;
+        let field_number = tag / 8;
+        let wire_type = (tag & 7) as u8;
+        match (field_number, wire_type) {
+            (1, 0) => details.used_tokens = read_varint(bytes, &mut cursor)?,
+            (2, 0) => details.max_tokens = read_varint(bytes, &mut cursor)?,
+            _ => skip_field(bytes, &mut cursor, wire_type, field_number)?,
+        }
+    }
+    Ok(details)
+}
+
+fn decode_conversation_step_timing(
+    bytes: &[u8],
+) -> Result<ConversationStepTimingFields, TranscriptMirrorProtobufDecodeError> {
+    let mut cursor = Cursor { offset: 0 };
+    let mut timing = ConversationStepTimingFields::default();
+    while cursor.offset < bytes.len() {
+        let tag = read_varint(bytes, &mut cursor)?;
+        let field_number = tag / 8;
+        let wire_type = (tag & 7) as u8;
+        match (field_number, wire_type) {
+            (1, 0) => timing.duration_ms = read_varint(bytes, &mut cursor)?,
+            (2, 0) => timing.timestamp_ms = read_varint(bytes, &mut cursor)?,
+            _ => skip_field(bytes, &mut cursor, wire_type, field_number)?,
+        }
+    }
+    Ok(timing)
+}
+
 pub fn decode_conversation_state_recovery_fields(
     bytes: &[u8],
 ) -> Result<ConversationStateRecoveryFields, TranscriptMirrorProtobufDecodeError> {
@@ -228,6 +278,11 @@ pub fn decode_conversation_state_recovery_fields(
                     state.todos.push(read_bytes(bytes, &mut cursor)?);
                     continue;
                 }
+                5 => {
+                    let token_details = read_bytes(bytes, &mut cursor)?;
+                    state.token_details = Some(decode_conversation_token_details(&token_details)?);
+                    continue;
+                }
                 6 => {
                     state.summary = Some(read_bytes(bytes, &mut cursor)?);
                     continue;
@@ -238,6 +293,11 @@ pub fn decode_conversation_state_recovery_fields(
                 }
                 13 => {
                     state.summary_archives.push(read_bytes(bytes, &mut cursor)?);
+                    continue;
+                }
+                14 => {
+                    let timing = read_bytes(bytes, &mut cursor)?;
+                    state.turn_timings.push(decode_conversation_step_timing(&timing)?);
                     continue;
                 }
                 16 => {
@@ -273,6 +333,27 @@ pub fn conversation_compaction_epoch(
 ) -> Result<u64, TranscriptMirrorProtobufDecodeError> {
     let decoded = decode_conversation_state_recovery_fields(bytes)?;
     Ok((decoded.summary_archives.len() as u64).saturating_add(decoded.self_summary_count))
+}
+
+pub fn remove_conversation_state_token_details(
+    bytes: &[u8],
+) -> Result<Vec<u8>, TranscriptMirrorProtobufDecodeError> {
+    let mut cursor = Cursor { offset: 0 };
+    let mut output = Vec::with_capacity(bytes.len());
+    while cursor.offset < bytes.len() {
+        let field_start = cursor.offset;
+        let tag = read_varint(bytes, &mut cursor)?;
+        let field_number = tag / 8;
+        let wire_type = (tag & 7) as u8;
+        if field_number == 0 {
+            return Err(TranscriptMirrorProtobufDecodeError::InvalidFieldNumber);
+        }
+        skip_field(bytes, &mut cursor, wire_type, field_number)?;
+        if field_number != 5 {
+            output.extend_from_slice(&bytes[field_start..cursor.offset]);
+        }
+    }
+    Ok(output)
 }
 
 pub fn decode_transcript_mirror_conversation_state(
@@ -423,12 +504,50 @@ pub fn decode_subagent_persisted_state_fields(
 
 #[cfg(test)]
 mod tests {
-    use super::conversation_compaction_epoch;
+    use super::{
+        conversation_compaction_epoch, decode_conversation_state_recovery_fields,
+        remove_conversation_state_token_details,
+    };
 
     #[test]
     fn conversation_compaction_epoch_counts_external_and_self_summaries() {
         // field 13 (summary_archives), twice; field 17 (self_summary_count) = 3.
         let state = [0x6a, 0x01, 0x01, 0x6a, 0x01, 0x02, 0x88, 0x01, 0x03];
         assert_eq!(conversation_compaction_epoch(&state).expect("compaction epoch"), 5);
+
+    #[test]
+    fn recovery_fields_decode_token_details_and_turn_timing() {
+        // field 5 = ConversationTokenDetails { used=120, max=1000 }
+        // field 14 = StepTiming { duration=25, timestamp=200 }
+        let state = [
+            0x2a, 0x05, 0x08, 0x78, 0x10, 0xe8, 0x07,
+            0x72, 0x05, 0x08, 0x19, 0x10, 0xc8, 0x01,
+        ];
+        let decoded =
+            decode_conversation_state_recovery_fields(&state).expect("decode state");
+        let token = decoded.token_details.expect("token details");
+        assert_eq!(token.used_tokens, 120);
+        assert_eq!(token.max_tokens, 1_000);
+        assert_eq!(decoded.turn_timings.len(), 1);
+        assert_eq!(decoded.turn_timings[0].duration_ms, 25);
+        assert_eq!(decoded.turn_timings[0].timestamp_ms, 200);
+    }
+
+    #[test]
+    fn stale_token_details_can_be_removed_without_reencoding_other_fields() {
+        let state = [
+            0x6a, 0x01, 0xaa,
+            0x2a, 0x05, 0x08, 0x78, 0x10, 0xe8, 0x07,
+            0x42, 0x01, 0xbb,
+        ];
+        let stripped =
+            remove_conversation_state_token_details(&state).expect("strip token details");
+        assert_eq!(stripped, [0x6a, 0x01, 0xaa, 0x42, 0x01, 0xbb]);
+        let decoded =
+            decode_conversation_state_recovery_fields(&stripped).expect("decode stripped");
+        assert!(decoded.token_details.is_none());
+        assert_eq!(decoded.summary_archives, vec![vec![0xaa]]);
+        assert_eq!(decoded.turns, vec![vec![0xbb]]);
+    }
     }
 }

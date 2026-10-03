@@ -32,6 +32,79 @@ impl TurnSettlement {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SettledTokenDetails {
+    pub used_tokens: u64,
+    pub max_tokens: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TokenDetailsPersistenceState {
+    Fresh,
+    Stale(Option<SettledTokenDetails>),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TokenDetailsPersistenceTracker {
+    observed_summary_archive_count: usize,
+    state: TokenDetailsPersistenceState,
+}
+
+impl TokenDetailsPersistenceTracker {
+    pub fn new(observed_summary_archive_count: usize) -> Self {
+        Self {
+            observed_summary_archive_count,
+            state: TokenDetailsPersistenceState::Fresh,
+        }
+    }
+
+    /// Mirror the frozen turn-settle token freshness rule.
+    ///
+    /// A new summary archive makes the token-details snapshot on that same
+    /// checkpoint stale. Keep suppressing that exact used/max pair until a
+    /// later checkpoint reports a genuinely new token-details snapshot.
+    pub fn should_suppress(
+        &mut self,
+        summary_archive_count: usize,
+        token_details: Option<SettledTokenDetails>,
+    ) -> bool {
+        if summary_archive_count > self.observed_summary_archive_count {
+            self.observed_summary_archive_count = summary_archive_count;
+            self.state = TokenDetailsPersistenceState::Stale(token_details);
+        } else if let TokenDetailsPersistenceState::Stale(stale) = self.state
+            && token_details != stale
+        {
+            self.state = TokenDetailsPersistenceState::Fresh;
+        }
+        matches!(self.state, TokenDetailsPersistenceState::Stale(_))
+    }
+}
+
+pub fn should_run_completed_turn_side_effects(
+    is_subagent_runner: bool,
+    hidden: bool,
+    waiting_user: bool,
+    cancelled: bool,
+    succeeded: bool,
+) -> bool {
+    !is_subagent_runner && !hidden && !waiting_user && !cancelled && succeeded
+}
+
+pub fn should_run_turn_memory(
+    run_is_current: bool,
+    hidden: bool,
+    waiting_user: bool,
+    succeeded: bool,
+    memory_evidence_enabled: bool,
+    memorable_exchange: bool,
+) -> bool {
+    run_is_current
+        && !hidden
+        && !waiting_user
+        && succeeded
+        && (memory_evidence_enabled || memorable_exchange)
+}
+
 use std::future::Future;
 use std::pin::Pin;
 

@@ -106,6 +106,7 @@ pub fn create_production_turn_input_projection(
                 .or(latest_user_text),
             recent_message_rich_text: prompt_action.rich_text.clone(),
             recent_user_messages,
+            turn_started_at_ms: None,
             is_fork: args.get("isFork").and_then(Value::as_bool).unwrap_or(false),
             attachment_count: array_len(args, "attachmentPaths"),
             image_count: array_len(args, "selectedImages"),

@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use sha2::{Digest, Sha256};
 
@@ -8,11 +9,14 @@ use crate::extensions::inference::provider_session::{
 use crate::extensions::session::production_agent_store::{
     ProductionAgentStore, ProductionWorkerBlobStore,
 };
+use crate::transcript_mirror::conversation_state_binary::{
+    decode_conversation_state_recovery_fields, remove_conversation_state_token_details,
+};
 use crate::transcript_mirror::production_provider::{
     ProductionRoutedTranscriptMirror, ProductionTranscriptCheckpoint,
 };
 
-use super::TurnRunOptions;
+use super::{SettledTokenDetails, TokenDetailsPersistenceTracker, TurnRunOptions};
 
 pub trait AgentStateCheckpointSink: Send + Sync {
     fn base_state_bytes(&self) -> Result<Vec<u8>, ProviderSessionError> {
@@ -166,6 +170,7 @@ pub struct ProductionAgentStateCheckpointSink {
     transcript_mirror: Arc<ProductionRoutedTranscriptMirror>,
     transcript_persistence_enabled: bool,
     prior_state_bytes: Mutex<Vec<u8>>,
+    token_details_persistence: Mutex<TokenDetailsPersistenceTracker>,
 }
 
 impl ProductionAgentStateCheckpointSink {
@@ -179,6 +184,16 @@ impl ProductionAgentStateCheckpointSink {
     ) -> Result<Self, String> {
         let agent_id = agent_id.into();
         let prior = ProductionTranscriptCheckpoint::from_state_bytes(&prior_state_bytes)?;
+        let observed_summary_archive_count = if prior_state_bytes.is_empty() {
+            0
+        } else {
+            decode_conversation_state_recovery_fields(&prior_state_bytes)
+                .map_err(|error| format!(
+                    "Runner Agent could not decode base ConversationStateStructure for turn settlement: {error}"
+                ))?
+                .summary_archives
+                .len()
+        };
         transcript_mirror.recover(&agent_id, &prior, &blob_store)?;
         Ok(Self {
             agent_id,
@@ -187,6 +202,9 @@ impl ProductionAgentStateCheckpointSink {
             transcript_mirror,
             transcript_persistence_enabled,
             prior_state_bytes: Mutex::new(prior_state_bytes),
+            token_details_persistence: Mutex::new(TokenDetailsPersistenceTracker::new(
+                observed_summary_archive_count,
+            )),
         })
     }
 
@@ -278,7 +296,7 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
             ));
         }
 
-        let artifacts = build_text_turn_checkpoint_with_rich_text(
+        let mut artifacts = build_text_turn_checkpoint_with_rich_text(
             &prior,
             user_text,
             options.recent_message_rich_text.as_deref(),
@@ -286,6 +304,22 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
             options.inference_request_id.as_deref(),
             assistant_content,
         );
+        let turn_ended_at_ms = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|duration| duration.as_millis().min(u64::MAX as u128) as u64)
+            .unwrap_or_default();
+        let mut token_details_persistence = self
+            .token_details_persistence
+            .lock()
+            .map_err(|_| ProviderSessionError::Protocol(
+                "Runner Agent token-details settlement state is poisoned".into(),
+            ))?;
+        artifacts.state_bytes = prepare_settled_checkpoint_state(
+            &artifacts.state_bytes,
+            &mut token_details_persistence,
+            options.turn_started_at_ms,
+            turn_ended_at_ms,
+        )?;
         Ok(artifacts)
     }
 
@@ -396,6 +430,54 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
     }
 }
 
+
+pub fn prepare_settled_checkpoint_state(
+    state_bytes: &[u8],
+    token_details_persistence: &mut TokenDetailsPersistenceTracker,
+    turn_started_at_ms: Option<u64>,
+    turn_ended_at_ms: u64,
+) -> Result<Vec<u8>, ProviderSessionError> {
+    let mut settled = state_bytes.to_vec();
+    if let Some(turn_started_at_ms) = turn_started_at_ms {
+        append_turn_timing(
+            &mut settled,
+            turn_ended_at_ms.saturating_sub(turn_started_at_ms),
+            turn_ended_at_ms,
+        );
+    }
+    let recovery = decode_conversation_state_recovery_fields(&settled)
+        .map_err(|error| ProviderSessionError::Protocol(format!(
+            "Runner Agent could not decode settled ConversationStateStructure: {error}"
+        )))?;
+    let token_details = recovery.token_details.map(|details| SettledTokenDetails {
+        used_tokens: details.used_tokens,
+        max_tokens: details.max_tokens,
+    });
+    if token_details_persistence.should_suppress(
+        recovery.summary_archives.len(),
+        token_details,
+    ) && recovery.token_details.is_some()
+    {
+        settled = remove_conversation_state_token_details(&settled)
+            .map_err(|error| ProviderSessionError::Protocol(format!(
+                "Runner Agent could not suppress stale token details: {error}"
+            )))?;
+    }
+    Ok(settled)
+}
+
+fn append_turn_timing(
+    state_bytes: &mut Vec<u8>,
+    duration_ms: u64,
+    timestamp_ms: u64,
+) {
+    let mut timing = Vec::new();
+    push_varint(1_u64 << 3, &mut timing);
+    push_varint(duration_ms, &mut timing);
+    push_varint(2_u64 << 3, &mut timing);
+    push_varint(timestamp_ms, &mut timing);
+    push_length_delimited(14, &timing, state_bytes);
+}
 
 fn push_length_delimited(field_number: u64, value: &[u8], output: &mut Vec<u8>) {
     push_varint((field_number << 3) | 2, output);

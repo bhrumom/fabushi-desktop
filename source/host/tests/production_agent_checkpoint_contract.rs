@@ -11,6 +11,7 @@ use mahayana_host_runtime::host_request_context::HostRequestContext;
 use mahayana_host_runtime::runner::production_agent_checkpoint::{
     AgentStateCheckpointSink, ProductionAgentStateCheckpointSink,
     build_text_turn_checkpoint, build_text_turn_checkpoint_with_rich_text,
+    prepare_settled_checkpoint_state,
 };
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderCheckpointStore;
@@ -19,9 +20,9 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
 };
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
 use mahayana_host_runtime::runner::turn_agent_composition::TurnAgentComposition;
-use mahayana_host_runtime::runner::{TerminalOutcome, TurnRunOptions};
+use mahayana_host_runtime::runner::{TerminalOutcome, TokenDetailsPersistenceTracker, TurnRunOptions};
 use mahayana_host_runtime::transcript_mirror::conversation_state_binary::{
-    decode_transcript_mirror_conversation_state,
+    decode_conversation_state_recovery_fields, decode_transcript_mirror_conversation_state,
 };
 use mahayana_host_runtime::transcript_mirror::generated_occurrence_codec::{
     GeneratedTranscriptOccurrenceCodec, RejectGeneratedToolJsonProjection,
@@ -150,6 +151,7 @@ fn production_sink_commits_real_agent_wire_through_mirror_and_agent_store() {
             inference_request_id: Some("request-1".into()),
             message_id: Some("message-1".into()),
             recent_message_text: Some("hello checkpoint".into()),
+            turn_started_at_ms: Some(1),
             ..TurnRunOptions::default()
         },
         "assistant checkpoint",
@@ -163,6 +165,12 @@ fn production_sink_commits_real_agent_wire_through_mirror_and_agent_store() {
     let decoded =
         decode_transcript_mirror_conversation_state(&state).expect("decoded state");
     assert_eq!(decoded.turns.len(), 1);
+    assert_eq!(decoded.turn_timings.len(), 1);
+    assert!(decoded.turn_timings[0].timestamp_ms > 1);
+    assert_eq!(
+        decoded.turn_timings[0].duration_ms,
+        decoded.turn_timings[0].timestamp_ms.saturating_sub(1),
+    );
     assert!(!session.agent_store.latest_root_blob_id().is_empty());
     assert_eq!(
         session
@@ -494,4 +502,31 @@ fn production_sink_can_checkpoint_inside_existing_localpool_executor() {
 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn settled_checkpoint_suppresses_compaction_stale_tokens_and_appends_timing() {
+    // ConversationStateStructure:
+    //   summary_archives (13) = [0xaa]
+    //   token_details (5) = { used_tokens: 120, max_tokens: 1000 }
+    let state = [
+        0x6a, 0x01, 0xaa,
+        0x2a, 0x05, 0x08, 0x78, 0x10, 0xe8, 0x07,
+    ];
+    let mut tracker = TokenDetailsPersistenceTracker::new(0);
+    let settled = prepare_settled_checkpoint_state(
+        &state,
+        &mut tracker,
+        Some(100),
+        175,
+    )
+    .expect("settled state");
+    let decoded =
+        decode_conversation_state_recovery_fields(&settled).expect("decode settled state");
+    assert!(decoded.token_details.is_none());
+    assert_eq!(decoded.summary_archives, vec![vec![0xaa]]);
+    assert_eq!(decoded.turn_timings.len(), 1);
+    assert_eq!(decoded.turn_timings[0].duration_ms, 75);
+    assert_eq!(decoded.turn_timings[0].timestamp_ms, 175);
 }
