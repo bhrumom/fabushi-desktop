@@ -17865,27 +17865,36 @@
       "targetPath": "source/host/src/production_binding_providers.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "7a0c2741ab2d0517098da9255c23baf75665db6b",
       "architecturalRole": "host/production-binding-providers",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/production_binding_providers.rs",
+        "source/host/src/cloud_agents/cloud_agent_trace_format.rs",
+        "source/host/src/host_production_extensions.rs",
         "source/host/src/extensions/state_backstop/state_backstop_service.rs",
         "source/host/src/storage/agent_paths.rs",
         "source/host/src/storage/store_db.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/build.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_binding_providers_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/cloud_agent_trace_production_contract.rs",
+        "source/host/tests/host_production_extensions_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
       "evidence": [
         "source/host/tests/production_binding_providers_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/cloud_agent_trace_production_contract.rs",
+        "source/host/tests/host_production_extensions_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust production-binding owner now centralizes the frozen construction responsibilities that are platform-complete: Secrets uses a Host-native production context/log binding instead of an anonymous main.rs closure, and StateBackstop exposes the canonical Sand agents root plus checkpoint-before-read store.db runtime using the single storage owners. Shipping CloudAgents also consumes the binding module, but its converter deliberately remains fail-closed because canonical generated aiserver.v1 ConversationMessage/ClientSideToolV2Result Rust bindings are not yet present; opaque protobuf bytes are not treated as a trace. Final remains withheld until the complete NO_PREAMBLE ConversationMessage-to-trace adapter is generated/ported and production StateBackstop composition consumes the runtime with live BoxStore/SourceMap dependencies."
+      "notes": "Rust production-binding ownership now covers every frozen construction responsibility without a parallel provider owner. Secrets is constructed through the centralized ProductionHostBoxExtensions path with production_secrets_log(); StateBackstop uses the canonical Sand agents root and checkpoint-before-read store.db binding, and ProductionHostExtensions composes it after the live BoxStoreSync API with the shared SourceMap source-id resolver and stops it before BoxStoreSync; CloudAgents is constructed with production_cloud_agent_trace_converter(), whose decoder schema is generated at build time from the frozen generated protobuf TypeScript tree and requires aiserver.v1.ConversationMessage/ToolResult/Thinking plus ClientSideToolV2Result roots before projecting NO_PREAMBLE human/assistant/thinking/tool-call/tool-result/timestamp rows. Exact implementation HEAD 86c6e2ca0366bdf5bd8418ed74361f053e323e4f passed GitHub Rust desktop runtime run 37088221509 rust-host, including the full Host Runner suite that executes production_binding_providers_contract, cloud_agent_trace_production_contract, and host_production_extensions_contract, plus shipping Host, Coordinator, box-exec daemon/supervisor, prompt attachment, human Computer takeover, and ConversationActor/CapabilityBroker ownership. Desktop Chat Parity run 37088221507 also passed its renderer build and Focused Electron chat E2E. An extra htch-runtime attempt is deliberately not acceptance evidence because its linker terminated with signal 7 before tests executed."
     },
     {
       "referencePath": "source/host/runner-context-production-provider.ts",
