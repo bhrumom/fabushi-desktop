@@ -17,6 +17,7 @@ pub enum AutoReviewClassifierDecision {
 pub enum SmartModeClassifierDecision {
     Allow,
     Block,
+    Unspecified,
     Unknown,
 }
 
@@ -30,6 +31,12 @@ pub struct SmartModeClassifierSuccess {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SmartModeClassifierResult {
     Success(SmartModeClassifierSuccess),
+    Error {
+        failure_reason: Option<String>,
+        retryable: Option<bool>,
+    },
+    Missing,
+    // Kept for executor-level failures that do not expose backend result metadata.
     Failure,
 }
 
