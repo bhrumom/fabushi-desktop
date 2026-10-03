@@ -10,7 +10,14 @@ fn shipping_source(relative: &str) -> String {
 fn shipping_provider_turn_consumes_dynamic_sections_in_frozen_order() {
     let source = shipping_source("app/src/main.rs");
     let collector = shipping_source("src/runner/prompt_collector_glue.rs");
-    let provider_start = source.find("let mut provider_messages =").expect("shipping provider projection");
+    let turn_start = source
+        .find("fn start_routed_provider_task(")
+        .expect("shipping routed provider turn");
+    let provider_start = source[turn_start..]
+        .find("let mut provider_messages =")
+        .map(|offset| turn_start + offset)
+        .expect("shipping provider projection");
+    let turn_prefix = &source[turn_start..provider_start];
     let tail = &source[provider_start..];
 
     let workflows = tail.find("append_workflows_system_prompt(").expect("shipping workflows section");
@@ -43,8 +50,8 @@ fn shipping_provider_turn_consumes_dynamic_sections_in_frozen_order() {
     );
     assert!(collector.contains("pub fn prepend_unconfirmed_user_messages_for_turn("));
     assert!(collector.contains("collect_prepend_user_messages("));
-    assert!(tail.contains("production_services()"));
-    assert!(tail.contains("services.attachments.stage_into_box(&agent_id, &attachment_paths)"));
+    assert!(turn_prefix.contains("production_services()"));
+    assert!(turn_prefix.contains("services.attachments.stage_into_box(&agent_id, &attachment_paths)"));
     assert_eq!(
         source.matches("apply_staged_attachment_paths_for_turn(").count(),
         1
