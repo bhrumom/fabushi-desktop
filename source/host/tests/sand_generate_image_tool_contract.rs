@@ -14,7 +14,9 @@ use mahayana_host_runtime::runner::tools::sand_generate_image_tool::{
 use mahayana_host_runtime::runner::tools::turn_toolset::{
     TurnToolsetDependencies, TurnToolsetRole, build_turn_toolset,
 };
-use mahayana_host_runtime::runner::shell_terminal_watch::ShellTerminalPollRead;
+use mahayana_host_runtime::runner::shell_terminal_watch::{
+    ShellTerminalPollRead, TerminalReadResult,
+};
 use serde_json::{Value, json};
 
 struct EmptyBridge;
@@ -77,7 +79,10 @@ impl RunnerBoxResourcePort for FakeBox {
         Ok(())
     }
     fn poll_background_shell_terminal(&self, _shell_id: &str) -> ShellTerminalPollRead {
-        ShellTerminalPollRead::FileNotFound
+        ShellTerminalPollRead::Snapshot {
+            output_path: "/tmp/fake-terminal-output".into(),
+            result: TerminalReadResult::FileNotFound,
+        }
     }
 }
 
