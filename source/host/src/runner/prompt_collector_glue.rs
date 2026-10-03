@@ -16,7 +16,8 @@ use super::sand_prompt_markers::{
     SAND_HIDDEN_PROMPT_MARKER, SAND_TRUSTED_AUTOMATION_PROMPT_MARKER,
 };
 use super::shell_terminal_watch::{
-    RecentTerminalUserMessage, WatermarkResult, collect_prepend_user_messages,
+    MaterializedUserMessage, RecentTerminalUserMessage, WatermarkResult,
+    collect_prepend_user_messages,
 };
 use super::system_prompt::{
     ReplyContext, USER_MESSAGE_REPLY_REMINDER, append_user_reply_reminder,
@@ -82,6 +83,7 @@ pub struct PromptCollectorTurnAction {
     pub reply_context: Option<Value>,
     pub hidden: bool,
     pub selected_context: PromptCollectorSelectedContext,
+    pub prepend_user_messages: Vec<MaterializedUserMessage>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -374,6 +376,7 @@ pub fn collect_turn_action_for_projection(
             attached_file_paths,
             staged_file_paths,
         },
+        prepend_user_messages: Vec::new(),
     })
 }
 
@@ -510,11 +513,10 @@ fn is_confirmed_user_entry(entry: &Value) -> bool {
         && entry.get("confirmed").and_then(Value::as_bool) == Some(true)
 }
 
-pub fn prepend_unconfirmed_user_messages_with_watermark_for_turn(
+pub fn collect_unconfirmed_user_messages_with_watermark_for_turn(
     args: &Value,
-    messages: &mut Vec<ProviderMessage>,
     watermark: &WatermarkResult,
-) -> usize {
+) -> Vec<MaterializedUserMessage> {
     let current_message_id = optional_non_empty(args, "messageId");
     let recent_user_messages = args
         .get("recentUserMessages")
@@ -540,25 +542,54 @@ pub fn prepend_unconfirmed_user_messages_with_watermark_for_turn(
             })
         })
         .collect::<Vec<_>>();
-    let prepended =
-        collect_prepend_user_messages(&recent_user_messages, current_message_id, watermark);
+    collect_prepend_user_messages(&recent_user_messages, current_message_id, watermark)
+}
+
+pub fn prepend_unconfirmed_user_messages_with_watermark_and_collect_for_turn(
+    args: &Value,
+    messages: &mut Vec<ProviderMessage>,
+    watermark: &WatermarkResult,
+) -> Vec<MaterializedUserMessage> {
+    let prepended = collect_unconfirmed_user_messages_with_watermark_for_turn(args, watermark);
     if prepended.is_empty() {
-        return 0;
+        return prepended;
     }
     let Some(current_user_index) = messages.iter().rposition(|message| message.role == "user") else {
-        return 0;
+        return Vec::new();
     };
-    let count = prepended.len();
-    for (offset, message) in prepended.into_iter().enumerate() {
+    let unanswered = unanswered_questions_note(args);
+    let insert_index = if !unanswered.is_empty()
+        && current_user_index > 0
+        && messages[current_user_index - 1].role == "user"
+        && messages[current_user_index - 1].content == unanswered
+    {
+        current_user_index - 1
+    } else {
+        current_user_index
+    };
+    for (offset, message) in prepended.iter().enumerate() {
         messages.insert(
-            current_user_index + offset,
+            insert_index + offset,
             ProviderMessage {
                 role: "user".into(),
-                content: message.text,
+                content: message.text.clone(),
             },
         );
     }
-    count
+    prepended
+}
+
+pub fn prepend_unconfirmed_user_messages_with_watermark_for_turn(
+    args: &Value,
+    messages: &mut Vec<ProviderMessage>,
+    watermark: &WatermarkResult,
+) -> usize {
+    prepend_unconfirmed_user_messages_with_watermark_and_collect_for_turn(
+        args,
+        messages,
+        watermark,
+    )
+    .len()
 }
 
 pub fn prepend_unconfirmed_user_messages_for_turn(
@@ -791,6 +822,17 @@ fn string_map(value: Option<&Value>) -> HashMap<String, String> {
                 .collect()
         })
         .unwrap_or_default()
+}
+
+pub fn unanswered_questions_user_message_for_turn(
+    args: &Value,
+) -> Option<MaterializedUserMessage> {
+    let text = unanswered_questions_note(args);
+    (!text.is_empty()).then(|| MaterializedUserMessage {
+        text,
+        message_id: String::new(),
+        rich_text: None,
+    })
 }
 
 fn unanswered_questions_note(args: &Value) -> String {
