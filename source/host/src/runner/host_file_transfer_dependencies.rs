@@ -5,6 +5,7 @@ use crate::extensions::inference::provider_session::ProviderSessionError;
 use crate::extensions::local_exec::extension::HostLocalExecExtension;
 use crate::extensions::local_exec::gateway_local_exec_sand_box::{
     GatewayLocalExecSandBox, GatewayLocalToolGate, LocalExecTransferContext,
+    TurnScopedGatewayLocalToolGate,
 };
 use crate::extensions::local_tool_permission::extension::HostLocalToolPermissionExtension;
 use crate::runner::tools::sand_file_transfer_tools::{
@@ -18,6 +19,7 @@ pub struct ProductionFileTransferExecutor {
     local_exec: Arc<HostLocalExecExtension>,
     local_tool_permission: Arc<HostLocalToolPermissionExtension>,
     agent_id: String,
+    direction_epoch: Option<u64>,
 }
 
 impl ProductionFileTransferExecutor {
@@ -32,13 +34,36 @@ impl ProductionFileTransferExecutor {
             local_exec,
             local_tool_permission,
             agent_id: agent_id.into(),
+            direction_epoch: None,
+        }
+    }
+
+    pub fn for_turn(
+        forever_box: Arc<ForeverBoxService>,
+        local_exec: Arc<HostLocalExecExtension>,
+        local_tool_permission: Arc<HostLocalToolPermissionExtension>,
+        agent_id: impl Into<String>,
+        direction_epoch: u64,
+    ) -> Self {
+        Self {
+            forever_box,
+            local_exec,
+            local_tool_permission,
+            agent_id: agent_id.into(),
+            direction_epoch: Some(direction_epoch),
         }
     }
 
     fn controller(
         &self,
     ) -> FileTransferController<ForeverBoxService, GatewayLocalExecSandBox> {
-        let gate: Arc<dyn GatewayLocalToolGate> = self.local_tool_permission.clone();
+        let gate: Arc<dyn GatewayLocalToolGate> = match self.direction_epoch {
+            Some(direction_epoch) => Arc::new(TurnScopedGatewayLocalToolGate::new(
+                Arc::clone(&self.local_tool_permission),
+                direction_epoch,
+            )),
+            None => self.local_tool_permission.clone(),
+        };
         let user_computers = self
             .local_exec
             .list_computers()
