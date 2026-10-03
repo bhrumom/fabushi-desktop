@@ -7767,6 +7767,11 @@ fn start_routed_provider_task(
             } else {
                 ComputerToolExposure::ScreenshotOnly
             };
+            let cloud_agent_tool_for_turn = if worker_cloud_agents.is_disabled_by_team_admin() {
+                None
+            } else {
+                Some(cloud_agent_tool)
+            };
             let composition = worker_host_runner_composition.compose_production_turn(
                 ProductionRunnerCompositionInput {
                     provider,
@@ -7804,7 +7809,7 @@ fn start_routed_provider_task(
                     mcp_management_sink: Some(mcp_management_sink),
                     send_message_sink: Some(send_message_sink),
                     reaction_sink: Some(reaction_sink),
-                    cloud_agent_tool: Some(cloud_agent_tool),
+                    cloud_agent_tool: cloud_agent_tool_for_turn,
                     multitask_enabled,
                     action_audit: Some(ProductionActionAuditInput {
                         agent_id: agent_id.clone(),

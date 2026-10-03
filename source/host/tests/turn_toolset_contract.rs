@@ -266,6 +266,12 @@ fn dynamic_turn_toolset_moves_native_tools_behind_cursor_meta_dispatch() {
         .expect("dynamic discovery");
     assert_eq!(discovered["mcpDescriptors"][0]["serverIdentifier"], "cursor");
     assert_eq!(discovered["mcpDescriptors"][0]["tools"][0]["toolName"], "CloudAgent");
+    assert!(
+        discovered["mcpDescriptors"][0]["serverUseInstructions"]
+            .as_str()
+            .expect("server instructions")
+            .contains("Launch and manage Cursor cloud coding agents for repository work.")
+    );
 
     let invocation = tools
         .iter()

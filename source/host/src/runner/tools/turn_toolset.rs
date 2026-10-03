@@ -285,6 +285,53 @@ impl RoutedToolBridge for LocalToolScopeBridge {
 
 const CURSOR_DYNAMIC_TOOLS_NAMESPACE: &str = "cursor";
 
+fn dynamic_tool_hint(tool: &RoutedToolDefinition) -> Option<&'static str> {
+    let names = [tool.name.as_str(), tool.tool_name.as_str()];
+    if names.contains(&CLOUD_AGENT_TOOL_NAME) {
+        return Some("Launch and manage Cursor cloud coding agents for repository work.");
+    }
+    if names.contains(&SEARCH_PLUGINS_TOOL_NAME) {
+        return Some("Search installable plugins/connectors when a task needs a service.");
+    }
+    if names.contains(&AUTHENTICATE_MCP_SERVER_TOOL_NAME) {
+        return Some("Start authentication for a connector that needs auth.");
+    }
+    if names.contains(&COPY_TO_BOX_TOOL_NAME) {
+        return Some("Copy a file from the user's computer onto your box.");
+    }
+    if names.contains(&COPY_FROM_BOX_TOOL_NAME) {
+        return Some("Copy a file from your box onto the user's computer.");
+    }
+    if names.contains(&SAND_REQUEST_BOX_HELP_TOOL_NAME) {
+        return Some("Hand your box's desktop to the user for a sign-in or manual step.");
+    }
+    if names.contains(&CHECK_SUBAGENT_TOOL_NAME) {
+        return Some("Inspect a running background subagent's status and recent actions.");
+    }
+    if names.contains(&MESSAGE_SUBAGENT_TOOL_NAME) {
+        return Some("Send a new instruction into a running background subagent.");
+    }
+    if names.contains(&STOP_SUBAGENT_TOOL_NAME) {
+        return Some("Abort a running background subagent.");
+    }
+    None
+}
+
+fn build_dynamic_server_use_instructions(tools: &[RoutedToolDefinition]) -> String {
+    let hints = tools
+        .iter()
+        .filter_map(|tool| dynamic_tool_hint(tool).map(|hint| format!("- {}: {hint}", tool.name)))
+        .collect::<Vec<_>>();
+    if hints.is_empty() {
+        "Native Cursor tools for this session. Read their schemas before calling them.".into()
+    } else {
+        format!(
+            "Native Cursor tools for this session. Read their schemas before calling them.\n{}",
+            hints.join("\n")
+        )
+    }
+}
+
 fn is_dynamic_first_party_tool(tool: &RoutedToolDefinition) -> bool {
     [
         CLOUD_AGENT_TOOL_NAME,
@@ -370,12 +417,13 @@ impl DynamicToolPlacementBridge {
                 })
             })
             .collect::<Vec<_>>();
+        let instructions = build_dynamic_server_use_instructions(&self.dynamic_tools);
         serde_json::json!({
             "enabled": true,
             "mcpDescriptors": [{
                 "serverIdentifier": CURSOR_DYNAMIC_TOOLS_NAMESPACE,
                 "serverName": CURSOR_DYNAMIC_TOOLS_NAMESPACE,
-                "serverUseInstructions": "Native Cursor tools for this session. Read their schemas before calling them.",
+                "serverUseInstructions": instructions,
                 "tools": tools,
             }]
         })
