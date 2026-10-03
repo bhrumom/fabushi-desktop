@@ -180,7 +180,6 @@ fn host_runner_composition_owns_computer_use_session_lifecycle() {
         );
     }
     for needle in [
-        "computer_use_coordination()",
         ".acquire_control_lease(&agent_id)",
         ".begin_preparation(&agent_id)",
         ".record_turn_ended(usage)",
@@ -192,6 +191,17 @@ fn host_runner_composition_owns_computer_use_session_lifecycle() {
             "shipping Host still owns computer-use session composition: {needle}"
         );
     }
+    assert_eq!(
+        SHIPPING_HOST.matches("computer_use_coordination()").count(),
+        1,
+        "shipping Host may only read the canonical HostRunnerComposition computer-use owner to inject that same service into SandAgentRunner",
+    );
+    assert!(
+        SHIPPING_HOST.contains(
+            "Some(worker_host_runner_composition.computer_use_coordination()),"
+        ),
+        "shipping Runner must receive the canonical HostRunnerComposition computer-use coordination rather than a second owner",
+    );
     assert!(
         SHIPPING_HOST.contains("host_runner_composition.begin_computer_use_preparation(&agent_id)"),
         "shipping Host must delegate computer-use preparation",
