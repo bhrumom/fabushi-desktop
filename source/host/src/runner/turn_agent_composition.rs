@@ -61,6 +61,16 @@ impl SandMcpToolProvider for RoutedBridgeMcpToolProvider<'_> {
     }
 }
 
+struct FrozenRoutedMcpToolProvider<'a> {
+    tools: &'a [RoutedMcpMetaToolDefinition],
+}
+
+impl SandMcpToolProvider for FrozenRoutedMcpToolProvider<'_> {
+    fn get_tools(&self) -> Result<Vec<RoutedToolDefinition>, String> {
+        Ok(self.tools.iter().map(|source| source.tool.clone()).collect())
+    }
+}
+
 /// Canonical MCP-state projection adapter for the shipping routed-tool bridge.
 ///
 /// Tool discovery is projected through the recovered Grok MCP-state executor before
@@ -596,6 +606,48 @@ impl TurnAgentComposition {
                 input_schema: tool.input_schema,
             })
             .collect())
+    }
+
+    pub fn snapshot_mcp_projection(
+        &self,
+    ) -> Result<
+        (
+            Vec<RoutedToolDefinition>,
+            Vec<RoutedMcpMetaToolDefinition>,
+        ),
+        ProviderSessionError,
+    > {
+        if let (Some(projected_tools), Some(projected_meta_tools)) = (
+            self.projected_mcp_tools.as_ref(),
+            self.projected_mcp_meta_tools.as_ref(),
+        ) {
+            return Ok((
+                projected_tools.as_ref().clone(),
+                projected_meta_tools.as_ref().clone(),
+            ));
+        }
+
+        let meta_tools = self.bridge.list_mcp_meta_tools()?;
+        let McpStateExecResult::Success(state) =
+            execute_canonical_mcp_state(&FrozenRoutedMcpToolProvider {
+                tools: &meta_tools,
+            })
+            .map_err(|error| {
+                ProviderSessionError::Tool(format!("MCP state projection failed: {error}"))
+            })?;
+        let tools = state
+            .servers
+            .into_iter()
+            .flat_map(|server| server.tools)
+            .map(|tool| RoutedToolDefinition {
+                name: tool.name,
+                provider_identifier: tool.provider_identifier,
+                tool_name: tool.tool_name,
+                description: tool.description,
+                input_schema: tool.input_schema,
+            })
+            .collect();
+        Ok((tools, meta_tools))
     }
 
     pub fn with_projected_mcp_tools(

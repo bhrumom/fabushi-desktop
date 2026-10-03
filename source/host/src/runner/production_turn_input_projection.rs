@@ -48,8 +48,8 @@ pub fn create_production_turn_agent_input_projection<'a>(
     turn_input: &ProductionTurnInputProjection,
     emit_update: &'a mut dyn FnMut(&str, &str),
 ) -> Result<ProductionTurnAgentInputProjection<'a>, ProviderSessionError> {
-    let mcp_tools = composition.snapshot_mcp_tools().unwrap_or_default();
-    let mcp_meta_tools = composition.snapshot_mcp_meta_tools().unwrap_or_default();
+    let (mcp_tools, mcp_meta_tools) =
+        composition.snapshot_mcp_projection().unwrap_or_default();
     let base_state_bytes = match checkpoint_sink {
         Some(sink) => sink.base_state_bytes()?,
         None => Vec::new(),
