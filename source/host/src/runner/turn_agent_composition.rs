@@ -38,6 +38,7 @@ use super::tools::sand_agent_management_tools::AgentManagementSink;
 use super::tools::sand_task_subagent_tool::{SubagentTaskReviewCallback, SubagentTaskSink};
 use super::tools::sand_subagent_management_tools::SubagentSteerReviewCallback;
 use super::tools::sand_browser_tools::BrowserToolExecutor;
+use super::tools::sand_web_tools::WebToolExecutor;
 use super::tools::sand_computer_tool::{ComputerToolExecutor, ComputerToolExposure};
 use super::tools::sand_file_transfer_tools::FileTransferExecutor;
 use super::tools::sand_external_machine_tools::{
@@ -116,6 +117,7 @@ pub struct TurnAgentComposition {
     box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     box_shell_review: Option<BoxShellAutoReviewCallback>,
     browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
+    web_executor: Option<Arc<dyn WebToolExecutor>>,
     computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
     computer_exposure: ComputerToolExposure,
     file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
@@ -176,6 +178,7 @@ impl TurnAgentComposition {
             box_resources: None,
             box_shell_review: None,
             browser_executor: None,
+            web_executor: None,
             computer_executor: None,
             computer_exposure: ComputerToolExposure::Full,
             file_transfer_executor: None,
@@ -279,6 +282,15 @@ impl TurnAgentComposition {
 
     pub fn has_browser_executor(&self) -> bool {
         self.browser_executor.is_some()
+    }
+
+    pub fn with_web_executor(mut self, executor: Arc<dyn WebToolExecutor>) -> Self {
+        self.web_executor = Some(executor);
+        self
+    }
+
+    pub fn has_web_executor(&self) -> bool {
+        self.web_executor.is_some()
     }
 
     pub fn with_computer_executor(
@@ -702,6 +714,7 @@ impl TurnAgentComposition {
                 box_resources: self.box_resources.clone(),
                 box_shell_review: self.box_shell_review.clone(),
                 browser_executor: self.browser_executor.clone(),
+                web_executor: self.web_executor.clone(),
                 computer_executor: self.computer_executor.clone(),
                 computer_exposure: self.computer_exposure,
                 file_transfer_executor: self.file_transfer_executor.clone(),

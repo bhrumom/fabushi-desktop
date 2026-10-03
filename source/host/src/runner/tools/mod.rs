@@ -37,3 +37,5 @@ pub mod mcp_host_service_management_sink;
 pub mod sand_browser_driver_source;
 
 pub mod sand_browser_tools;
+
+pub mod sand_web_tools;

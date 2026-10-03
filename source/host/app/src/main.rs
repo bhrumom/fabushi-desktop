@@ -306,10 +306,12 @@ use mahayana_host_runtime::runner::tools::sand_browser_tools::{
 use mahayana_host_runtime::runner::host_computer_tool_dependencies::ProductionComputerToolExecutor;
 use mahayana_host_runtime::runner::host_file_transfer_dependencies::ProductionFileTransferExecutor;
 use mahayana_host_runtime::runner::host_external_machine_dependencies::ProductionExternalMachineExecutor;
+use mahayana_host_runtime::runner::host_web_dependencies::ProductionWebToolExecutor;
 use mahayana_host_runtime::runner::tools::sand_file_transfer_tools::FileTransferExecutor;
 use mahayana_host_runtime::runner::tools::sand_external_machine_tools::{
     ExternalMachineExecutor, ExternalMachineShellArgs, ExternalShellAutoReviewCallback,
 };
+use mahayana_host_runtime::runner::tools::sand_web_tools::WebToolExecutor;
 use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     ComputerAutoReviewCallback, ComputerPersistImageCallback, ComputerToolExecutor,
     ComputerToolExposure, ReportedComputerAction,
@@ -7708,6 +7710,14 @@ fn start_routed_provider_task(
                 });
             let cursor_auth = inference.cursor_auth_for_session(Some(&worker_session_options));
             let turn_model_id = cursor_auth.requested_model().model_id;
+            let web_search = inference
+                .create_web_search(turn_model_id.clone(), None)
+                .map_err(GatewayCommandError::Internal)?;
+            let web_fetch = inference
+                .create_web_fetch(None)
+                .map_err(GatewayCommandError::Internal)?;
+            let web_executor: Arc<dyn WebToolExecutor> =
+                Arc::new(ProductionWebToolExecutor::new(web_search, web_fetch));
             let turn_conversation_id = cursor_auth
                 .conversation_id()
                 .unwrap_or_else(|| agent_id.clone());
@@ -7764,6 +7774,7 @@ fn start_routed_provider_task(
                     }),
                     box_resources: Some(box_resources),
                     browser_executor: Some(browser_executor),
+                    web_executor: Some(web_executor),
                     computer_executor: Some(computer_executor),
                     computer_exposure,
                     file_transfer_executor: Some(file_transfer_executor),

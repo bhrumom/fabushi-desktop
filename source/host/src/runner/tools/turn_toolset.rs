@@ -36,6 +36,7 @@ use super::sand_agent_management_tools::{
     AgentManagementSink, AgentManagementToolBridge,
 };
 use super::sand_browser_tools::{BrowserToolExecutor, SandBrowserToolBridge};
+use super::sand_web_tools::{SandWebToolBridge, WebToolExecutor};
 use super::sand_computer_tool::{ComputerToolExecutor, ComputerToolExposure, SandComputerToolBridge};
 use super::sand_file_transfer_tools::{
     COPY_FROM_BOX_TOOL_NAME, COPY_TO_BOX_TOOL_NAME, FileTransferExecutor,
@@ -154,6 +155,7 @@ pub struct TurnToolsetDependencies {
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     pub box_shell_review: Option<BoxShellAutoReviewCallback>,
     pub browser_executor: Option<Arc<dyn BrowserToolExecutor>>,
+    pub web_executor: Option<Arc<dyn WebToolExecutor>>,
     pub computer_executor: Option<Arc<dyn ComputerToolExecutor>>,
     pub computer_exposure: ComputerToolExposure,
     pub file_transfer_executor: Option<Arc<dyn FileTransferExecutor>>,
@@ -578,6 +580,11 @@ pub fn build_turn_toolset(
     let bridge: Arc<dyn RoutedToolBridge> =
         match (role.is_browser_use_subagent, dependencies.browser_executor) {
             (true, Some(executor)) => Arc::new(SandBrowserToolBridge::new(bridge, executor)),
+            _ => bridge,
+        };
+    let bridge: Arc<dyn RoutedToolBridge> =
+        match (role.is_box_scoped_subagent, dependencies.web_executor) {
+            (false, Some(executor)) => Arc::new(SandWebToolBridge::new(bridge, executor)),
             _ => bridge,
         };
     let bridge: Arc<dyn RoutedToolBridge> = match dependencies.computer_executor {
