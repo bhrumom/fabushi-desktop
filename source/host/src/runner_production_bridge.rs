@@ -10,6 +10,8 @@ use crate::runner::production_turn_agent_owner::{
     ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
     ProductionTurnAgentOwner,
 };
+use crate::runner::background_work::{RunnerBackgroundShellWatches, RunnerCloudAgentWatches};
+use crate::runner::computer_use::ComputerUseCoordination;
 use crate::runner::sand_agent_runner::SandAgentRunner;
 use crate::runner::subagent_runtime::SubagentRuntime;
 use crate::runner::production_turn_run_shell_adapter::{
@@ -211,6 +213,10 @@ pub fn create_production_runner(
     checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
     upgrade_quiesce_signal: Arc<AtomicBool>,
     generated_agent_runtime: Arc<Mutex<SubagentRuntime>>,
+    observation: Option<TurnObservationHandle>,
+    cloud_agent_watches: Option<Arc<RunnerCloudAgentWatches>>,
+    background_shell_watches: Option<Arc<RunnerBackgroundShellWatches>>,
+    computer_use: Option<Arc<Mutex<ComputerUseCoordination>>>,
 ) -> SandAgentRunner {
     let mut owner = ProductionTurnAgentOwner::new(composition)
         .with_build_bindings(build_bindings)
@@ -219,5 +225,12 @@ pub fn create_production_runner(
     if let Some(checkpoint_sink) = checkpoint_sink {
         owner = owner.with_agent_state_checkpoint_sink(checkpoint_sink);
     }
-    SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)
+    SandAgentRunner::new(owner)
+        .with_generated_agent_runtime(generated_agent_runtime)
+        .with_runtime_services(
+            observation,
+            cloud_agent_watches,
+            background_shell_watches,
+            computer_use,
+        )
 }
