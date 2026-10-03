@@ -73,8 +73,8 @@ fn shipping_provider_turn_consumes_dynamic_sections_in_frozen_order() {
     assert!(turn_prefix.contains("&prompt_watermark_agent_id"));
     assert_eq!(source.matches(".prepend_unconfirmed_user_messages(").count(), 1);
     assert!(glue.contains("pub fn prepend_unconfirmed_user_messages("));
-    assert!(glue.contains("prepend_unconfirmed_user_messages_with_watermark_for_turn("));
-    assert!(collector.contains("pub fn prepend_unconfirmed_user_messages_with_watermark_for_turn("));
+    assert!(glue.contains("prepend_unconfirmed_user_messages_with_watermark_and_collect_for_turn("));
+    assert!(collector.contains("pub fn prepend_unconfirmed_user_messages_with_watermark_and_collect_for_turn("));
     assert!(collector.contains("collect_prepend_user_messages("));
 
     assert!(turn_prefix.contains("production_services()"));
