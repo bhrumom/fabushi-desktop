@@ -6231,9 +6231,6 @@ fn start_routed_provider_task(
                 .and_then(|trace| trace.span_id.clone())
                 .unwrap_or_default();
             let ttft_turn_trace = turn_trace.clone();
-            let ttft_dispatch_started = worker_gateway_context
-                .as_ref()
-                .map(|context| context.dispatch_started);
             if let Ok(mut observation) = observation.lock() {
                 observation.set_request_id(Some(worker_stream_id.clone()));
                 let async_tasks_runtime = Arc::clone(&worker_transcript_runtime);
@@ -7222,15 +7219,7 @@ fn start_routed_provider_task(
             let mut on_text_delta = move |delta: &str, accumulated: &str| {
                 if !delta.is_empty() {
                     if let Ok(mut observation) = delta_observation.lock() {
-                        let observed_perf_ms = ttft_dispatch_started
-                            .map(|dispatch_started| dispatch_started.elapsed().as_secs_f64() * 1_000.0);
-                        let _ = observation.observe_first_token(
-                            "text",
-                            observed_perf_ms.map(|_| 0.0),
-                            observed_perf_ms,
-                            Some(provider.as_str()),
-                            turn_input.options.is_fork,
-                        );
+                        let _ = observation.observe_stream_output("text");
                     }
                 }
                 delta_runtime.track_runner_activity_update(
@@ -8241,7 +8230,7 @@ fn start_routed_provider_task(
                     parent_agent_id,
                 );
             }
-            if let Ok(observation) = observation.lock() {
+            if let Ok(mut observation) = observation.lock() {
                 let dispatch_perf_ms = worker_gateway_context
                     .as_ref()
                     .map(|context| context.dispatch_started.elapsed().as_secs_f64() * 1_000.0)
