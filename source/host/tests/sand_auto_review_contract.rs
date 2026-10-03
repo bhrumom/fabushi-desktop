@@ -235,6 +235,22 @@ fn settings_surface_expiry_and_quiesce_preserve_distinct_reasons() {
 }
 
 #[test]
+fn already_cancelled_turn_does_not_enqueue_an_approval() {
+    let controller = SandAutoReviewController::new("agent-1", "host-1");
+    controller.set_cancellation_probe(Arc::new(|| true));
+
+    assert!(matches!(
+        controller.request_approval(request(
+            SandAutoReviewSurface::Mcp,
+            Some(SandAutoReviewExpiryPolicy::Park),
+        )),
+        SandAutoReviewRequestOutcome::Immediate(SandAutoReviewDecision::Denied { reason })
+            if reason == "The action was cancelled."
+    ));
+    assert!(controller.get_pending_approvals().is_empty());
+}
+
+#[test]
 fn turn_cancellation_retires_pending_approval_with_frozen_reason() {
     let controller = SandAutoReviewController::new("agent-1", "host-1");
     let cancelled = Arc::new(AtomicBool::new(false));
