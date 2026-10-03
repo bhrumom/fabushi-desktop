@@ -1,5 +1,6 @@
 import { _electron as electron, expect, test, type Page } from '@playwright/test';
 import { mkdtemp, rm } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,6 +18,7 @@ import {
   parsePullRequestToolResult,
 } from '../src/agent-workspace/agent-composer-suggestion-provider';
 import type { TranscriptEntry } from '../src/agent-workspace/transcript-model';
+import type { RuntimeEvent } from '../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import {
   FABU_AGENT_ATTACHMENT_INDEX_PATH,
   FABU_AGENT_ROOT_PATH,
@@ -28,61 +30,177 @@ import {
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
 
+let e2eAuthServer: ReturnType<typeof createServer> | null = null;
+let e2eAuthBackendPromise: Promise<string> | null = null;
+
+function e2eAuthToken(): string {
+  const encode = (value: Record<string, unknown>) => Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
+  return [
+    encode({ alg: 'none', typ: 'JWT' }),
+    encode({ sub: 'fabushi-e2e-account', email: 'e2e@fabushi.local', exp: 4_102_444_800 }),
+    'fabushi-e2e',
+  ].join('.');
+}
+
+async function ensureE2eAuthBackend(): Promise<string> {
+  if (e2eAuthBackendPromise != null) return await e2eAuthBackendPromise;
+  e2eAuthBackendPromise = new Promise<string>((resolve, reject) => {
+    const token = e2eAuthToken();
+    const server = createServer((request, response) => {
+      const requestUrl = new URL(request.url ?? '/', 'http://127.0.0.1');
+      response.setHeader('content-type', 'application/json');
+      if (requestUrl.pathname === '/auth/poll') {
+        response.statusCode = 200;
+        response.end(JSON.stringify({ accessToken: token, refreshToken: token }));
+        return;
+      }
+      if (requestUrl.pathname === '/oauth/token') {
+        response.statusCode = 200;
+        response.end(JSON.stringify({ access_token: token, refresh_token: token }));
+        return;
+      }
+      response.statusCode = 404;
+      response.end(JSON.stringify({ error: 'not-found' }));
+    });
+    e2eAuthServer = server;
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (address == null || typeof address === 'string') {
+        reject(new Error('Focused Electron auth backend did not bind a TCP address.'));
+        return;
+      }
+      resolve(`http://127.0.0.1:${address.port}`);
+    });
+  });
+  return await e2eAuthBackendPromise;
+}
+
+test.afterAll(async () => {
+  const server = e2eAuthServer;
+  e2eAuthServer = null;
+  e2eAuthBackendPromise = null;
+  if (server == null || !server.listening) return;
+  await new Promise<void>((resolve, reject) => {
+    server.close((error) => error == null ? resolve() : reject(error));
+  });
+});
+
 async function launchDesktopApp(appDataDir: string) {
+  const e2eAuthBackendUrl = await ensureE2eAuthBackend();
   return electron.launch({
     ...(packagedExecutable
       ? { executablePath: packagedExecutable, args: [] }
       : { args: [appRoot] }),
     env: {
       ...process.env,
-      FABUSHI_APP_DATA: appDataDir,
+      // Focused Electron acceptance must opt out of production background
+      // persistence so Playwright app.close() reaches the real before-quit
+      // cleanup path instead of being converted into a hidden-window session.
+      FABUSHI_E2E: '1',
+      SAND_USER_DATA_DIR: appDataDir,
+      // Keep the frozen Grok account implementation byte-identical while
+      // giving focused CI a deterministic local OAuth exchange.
+      SAND_BACKEND_URL: e2eAuthBackendUrl,
+      CURSOR_API_BASE_URL: e2eAuthBackendUrl,
+      SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
+      SAND_DISABLE_SENTRY: '1',
       FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
+      // Agent Network is a frozen Grok feature gate whose bundled default is OFF.
+      // This focused parity test opts in through the same dev override contract
+      // used by SandExperimentService instead of changing the production default.
+      SAND_FEATURE_GATE_OVERRIDES: 'sand_agent_network=1',
       MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
     },
   });
 }
 
 async function completeBrowserLogin(page: Page): Promise<void> {
-  const onboardingGate = page.getByTestId('onboarding-gate');
-  const loginGate = page.getByTestId('login-gate');
-  const workspace = page.getByTestId('messenger-workspace');
-  type LoginPhase = 'onboarding' | 'login' | 'ready' | 'waiting';
+  const rendererErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') rendererErrors.push(message.text());
+  });
 
-  // Read the auth surface in one renderer evaluation. During the HostClient ->
-  // Messenger transition individual locator probes can straddle a destroyed
-  // execution context and wait on navigation even though auth already finished.
-  const readPhase = async (): Promise<LoginPhase> => {
-    try {
-      return await page.evaluate(() => {
-        if (document.querySelector('[data-testid="onboarding-gate"]')) return 'onboarding';
-        if (document.querySelector('[data-testid="login-gate"]')) return 'login';
-        const messenger = document.querySelector('[data-testid="messenger-workspace"]');
-        if (messenger?.getAttribute('data-initial-host-hydrated') === 'true') return 'ready';
-        return 'waiting';
-      }) as LoginPhase;
-    } catch {
-      return 'waiting';
-    }
-  };
+  await page.waitForFunction(() => {
+    const candidate = window as unknown as { desktop?: { cursorAccount?: { getStatus?: unknown }; onboarding?: { setSeen?: unknown } } };
+    return typeof candidate.desktop?.cursorAccount?.getStatus === 'function'
+      && typeof candidate.desktop?.onboarding?.setSeen === 'function';
+  }, { timeout: 15_000 });
 
-  for (let phase = 0; phase < 12; phase += 1) {
-    await expect.poll(readPhase, { timeout: 15_000 }).not.toBe('waiting');
-    const currentPhase = await readPhase();
+  const accountKind = async (): Promise<string> => page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        cursorAccount: { getStatus(): Promise<{ kind?: string }> };
+      };
+    };
+    return (await candidate.desktop.cursorAccount.getStatus()).kind ?? 'unknown';
+  });
 
-    if (currentPhase === 'onboarding') {
-      await page.getByTestId('onboarding-next').click();
-      continue;
-    }
-    if (currentPhase === 'login') {
-      await page.getByTestId('browser-login-start').click();
-      await expect(loginGate).toBeHidden();
-      continue;
-    }
-    if (currentPhase === 'ready') break;
+  const initialKind = await accountKind();
+  if (initialKind === 'logged-out') {
+    // Exercise the shipping recovered-Grok sign-in surface instead of the
+    // retired DesktopAuthBoundary. Its button calls cursorAccount.login(),
+    // which owns the Electron/main auth contract used by the production shell.
+    const signInSurface = page.getByRole('main', { name: 'Grok Bot', exact: true });
+    await expect(signInSurface).toBeVisible({ timeout: 15_000 });
+    await signInSurface.getByRole('button', { name: 'Sign in', exact: true }).click();
   }
 
-  await expect(workspace).toHaveAttribute('data-initial-host-hydrated', 'true', { timeout: 15_000 });
-  await expect(workspace).toBeVisible();
+  await expect.poll(accountKind, { timeout: 20_000 }).toBe('logged-in');
+  // Onboarding persistence is account-scoped. Complete the shipping login
+  // transition first, then persist the public preference for the authenticated
+  // account and verify the mirror before recreating the renderer. This avoids
+  // writing into a departing anonymous scope while still exercising the real
+  // cursorAccount -> Electron main -> Coordinator/Host authentication path.
+  await page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        onboarding: {
+          setSeen(seen: boolean): Promise<unknown>;
+        };
+      };
+    };
+    await candidate.desktop.onboarding.setSeen(true);
+  });
+  const onboardingSeen = async (): Promise<boolean> => page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        onboarding: {
+          getSeen(): Promise<boolean>;
+        };
+      };
+    };
+    return (await candidate.desktop.onboarding.getSeen()) === true;
+  });
+  await expect.poll(onboardingSeen, { timeout: 10_000 }).toBe(true);
+
+  // The production renderer resolves onboarding at account/bootstrap boundaries;
+  // reload only the renderer after persisting the authenticated account setting.
+  // Main/Coordinator/Host and the authenticated session remain live.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => {
+    const candidate = window as unknown as { desktop?: { cursorAccount?: { getStatus?: unknown } } };
+    return typeof candidate.desktop?.cursorAccount?.getStatus === 'function';
+  }, { timeout: 15_000 });
+  await expect.poll(accountKind, { timeout: 10_000 }).toBe('logged-in');
+  await expect(page.getByRole('main', { name: 'Grok Bot', exact: true })).toBeHidden({ timeout: 10_000 });
+
+  const fatal = page.locator('.sand-error-boundary--app');
+  if (await fatal.count()) {
+    const surfaceText = await fatal.first().innerText().catch(() => 'unknown renderer failure');
+    throw new Error(`renderer root fatal: ${rendererErrors.at(-1) ?? surfaceText}`);
+  }
+
+  // listAgents is now owned by the shipping Rust Session store. A fresh
+  // FABUSHI_APP_DATA directory is intentionally empty, so create the focused
+  // fixture through the real New -> createAgent -> listAgents path instead of
+  // relying on the retired compatibility Host's synthetic roster.
+  const roster = page.getByRole('region', { name: 'Agent list' });
+  const primary = roster.getByRole('button', { name: 'New chat', exact: true });
+  if (await primary.count() === 0) {
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+  }
+  await expect(primary).toBeVisible({ timeout: 15_000 });
 }
 
 function rgbLuma(value: string): number {
@@ -91,8 +209,35 @@ function rgbLuma(value: string): number {
   return components[0] * 0.2126 + components[1] * 0.7152 + components[2] * 0.0722;
 }
 
+function parseComputedColor(value: string): { r: number; g: number; b: number; a: number } | null {
+  if (value.trim().toLowerCase() === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+  const components = value.match(/[\d.]+/g)?.map(Number) ?? [];
+  if (components.length < 3) return null;
+  const srgbFunction = /^color\(srgb\s/i.test(value);
+  const scale = srgbFunction ? 255 : 1;
+  const alphaRaw = components[3] ?? 1;
+  return {
+    r: components[0] * scale,
+    g: components[1] * scale,
+    b: components[2] * scale,
+    a: Math.max(0, Math.min(1, alphaRaw > 1 ? alphaRaw / 100 : alphaRaw)),
+  };
+}
+
+function compositedLuma(foreground: string, background: string): number {
+  const front = parseComputedColor(foreground);
+  const back = parseComputedColor(background);
+  if (front == null || back == null) return 255;
+  const r = front.r * front.a + back.r * (1 - front.a);
+  const g = front.g * front.a + back.g * (1 - front.a);
+  const b = front.b * front.a + back.b * (1 - front.a);
+  return r * 0.2126 + g * 0.7152 + b * 0.0722;
+}
+
 function primaryMahayanaAgentPeer(page: Page) {
-  return page.getByTestId('messenger-sidebar').locator('button[data-agent-id="mahayana-assistant"]');
+  // The shipping Grok sidebar must keep visible Agents directly reachable;
+  // Search is covered separately and is not a fallback for a broken roster.
+  return page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true });
 }
 
 test('desktop uses the Fabushi-owned Grok parity surface without a parallel Messenger', async () => {
@@ -106,11 +251,13 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       const controller = new AgentWorkspaceController();
       controller.beginRequest('agent:a', 'request:a');
       controller.beginRequest('agent:b', 'request:b');
-      expect(controller.onlyPendingPeer()).toBeNull();
       expect(controller.requestSnapshot()).toEqual({
         'agent:a': 'request:a',
         'agent:b': 'request:b',
       });
+      expect(controller.snapshot()).toEqual({});
+      expect(controller.operationForPeer('agent:a')).toBeNull();
+      expect(controller.operationForPeer('agent:b')).toBeNull();
 
       controller.adoptOperation('request:a', 'operation:a', 'agent:a');
       expect(controller.operationForPeer('agent:a')).toBe('operation:a');
@@ -121,7 +268,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       controller.finishOperation('operation:a');
       expect(controller.isBusy('agent:a')).toBe(false);
       expect(controller.isBusy('agent:b')).toBe(true);
-      expect(controller.onlyPendingPeer()).toBe('agent:b');
+      expect(controller.claimRuntimeOperation('operation:unknown')).toBeNull();
 
       const claimedPeer = controller.claimRuntimeOperation('operation:b', controller.peerForRequest('request:b'));
       expect(claimedPeer).toBe('agent:b');
@@ -767,6 +914,63 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       coordinator.dispose();
     });
 
+    await test.step('Agent runtime correlation fails closed without a canonical operation id', async () => {
+      const controller = new AgentWorkspaceController();
+      const transcripts = new AgentTranscriptStore();
+      const coordinator = new AgentRuntimeCoordinator(controller, transcripts);
+      coordinator.bindAgentPeers([{
+        agentId: 'strict',
+        peerKey: 'agent:strict',
+        conversationId: 'codex:agent:strict',
+      }]);
+
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:strict',
+        requestId: 'request:strict',
+        messageId: 'user:strict',
+        text: 'strict ownership',
+        createdAtMs: 30,
+      });
+
+      expect(coordinator.handle({
+        type: 'chat.delta',
+        timestamp: new Date(31).toISOString(),
+        delta: 'must-not-be-inferred',
+      } as unknown as RuntimeEvent)).toBe(false);
+      expect(coordinator.handle({
+        type: 'chat.message',
+        timestamp: new Date(32).toISOString(),
+        role: 'assistant',
+        text: 'must-not-be-inferred',
+      })).toBe(false);
+      expect(controller.requestForPeer('agent:strict')).toBe('request:strict');
+      expect(controller.operationForPeer('agent:strict')).toBeNull();
+      expect(transcripts.entries('agent:strict').map((entry) => entry.text).join(' ')).not.toContain('must-not-be-inferred');
+
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(33).toISOString(),
+        operationId: 'operation:strict',
+        turnId: 'turn:strict',
+        runId: 'run:strict',
+        conversationId: 'codex:agent:strict',
+        state: 'thinking',
+        sequence: 1,
+      })).toBe(true);
+      expect(controller.operationForPeer('agent:strict')).toBe('operation:strict');
+      expect(controller.requestForPeer('agent:strict')).toBeNull();
+
+      expect(coordinator.handle({
+        type: 'chat.delta',
+        timestamp: new Date(34).toISOString(),
+        operationId: 'operation:strict',
+        delta: 'canonical',
+      })).toBe(true);
+      coordinator.flushPendingDeltas();
+      expect(transcripts.entries('agent:strict').map((entry) => entry.text).join(' ')).toContain('canonical');
+      coordinator.dispose();
+    });
+
     await test.step('Agent command bridge resolves Rust conversation ids back to canonical peers under concurrent sends', async () => {
       const controller = new AgentWorkspaceController();
       const transcripts = new AgentTranscriptStore();
@@ -1003,60 +1207,70 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-agent-root-shell', 'true');
       await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-product-shell', 'agent');
       await expect(page.locator('.desktop-mode-switch')).toHaveCount(0);
-      await expect(page.getByTestId('grok-new-agent')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'New', exact: true })).toBeVisible();
+      await expect(primaryMahayanaAgentPeer(page)).toBeVisible();
+      await expect(page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true })).toHaveCount(1);
+      await expect(page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Incident Bot', exact: true })).toHaveCount(0);
       await expect(page.getByTestId('profile-navigation-trigger')).toHaveCount(0);
       await expect(page.locator('[data-testid^="legacy-peer-"]')).toHaveCount(0);
 
       await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
-      await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
-      await expect(page.getByPlaceholder('Search agents or run a command')).toBeFocused();
+      const search = page.getByRole('dialog', { name: 'Search' });
+      await expect(search).toBeVisible();
+      await expect(search.getByRole('combobox', { name: 'Search' })).toBeFocused();
+      await expect(search.getByRole('option', { name: 'New chat Agent', exact: true })).toBeVisible();
       await page.keyboard.press('Escape');
-      await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeHidden();
+      await expect(search).toBeHidden();
     });
 
     await test.step('Agent Network is the Agent-domain group surface', async () => {
       await page.getByRole('button', { name: 'Agent network' }).click();
-      const network = page.getByTestId('grok-agent-network');
-      await expect(network).toBeVisible();
-      await expect(network.getByRole('button', { name: 'Create from selected' })).toBeVisible();
-      await expect(network.getByText(/agents · \d+ groups/)).toBeVisible();
-      await network.getByRole('button', { name: 'Close Agent network' }).click();
-      await expect(network).toBeHidden();
+      const orgChart = page.getByRole('main').filter({ has: page.getByRole('heading', { name: 'Org chart' }) });
+      await expect(orgChart.getByRole('heading', { name: 'Org chart' })).toBeVisible();
+      await expect(orgChart.getByRole('region', { name: 'Agent network' })).toBeVisible();
+      await expect(orgChart.getByText(/\d+ agents? · \d+ groups? · \d+ message links?/)).toBeVisible();
+      await orgChart.getByRole('button', { name: 'Close org chart' }).click();
+      await expect(page.getByRole('heading', { name: 'Org chart' })).toHaveCount(0);
     });
 
     await test.step('Agent conversation and composer expose dark low-contrast material', async () => {
       const peer = primaryMahayanaAgentPeer(page);
       await expect(peer).toBeVisible();
       await peer.click();
-      const input = page.getByTestId('messenger-input');
+      const input = page.getByRole('textbox', { name: 'Prompt' });
       await expect(input).toBeVisible();
 
-      const material = await page.evaluate(() => {
-        const inputElement = document.querySelector('[data-testid="messenger-input"]');
-        const composer = inputElement?.closest('[data-testid="grok-agent-composer"]');
-        const peerElement = document.querySelector('#root [data-testid="messenger-sidebar"] button[data-agent-id="mahayana-assistant"]');
-        if (!composer || !peerElement) return null;
-        const composerStyle = getComputedStyle(composer);
+      const composer = page.locator('.sand-prompt-shell');
+      await expect(composer).toHaveCount(1);
+      const material = await composer.evaluate((composerElement, peerElement) => {
+        if (!(peerElement instanceof HTMLElement)) return null;
+        const composerStyle = getComputedStyle(composerElement);
         const peerStyle = getComputedStyle(peerElement);
         return {
           composerBackground: composerStyle.backgroundColor,
           composerRadius: composerStyle.borderRadius,
           peerBackground: peerStyle.backgroundColor,
           peerRadius: peerStyle.borderRadius,
+          bodyBackground: getComputedStyle(document.body).backgroundColor,
         };
-      });
+      }, await peer.elementHandle());
 
       expect(material).not.toBeNull();
-      expect(rgbLuma(material!.composerBackground)).toBeLessThan(70);
+      // Frozen Grok uses translucent token surfaces here
+      // (--cursor-bg-input-surface -> --cursor-bg-quaternary). Validate the
+      // visible material after alpha compositing over the dark workspace instead
+      // of treating the translucent foreground RGB as an opaque pixel.
+      expect(compositedLuma(material!.composerBackground, material!.bodyBackground)).toBeLessThan(70);
       expect(parseFloat(material!.composerRadius)).toBeGreaterThanOrEqual(14);
-      expect(rgbLuma(material!.peerBackground)).toBeLessThan(80);
+      expect(compositedLuma(material!.peerBackground, material!.bodyBackground)).toBeLessThan(80);
       expect(parseFloat(material!.peerRadius)).toBeGreaterThanOrEqual(10);
     });
 
     await test.step('Agent uses one canonical workspace and Agent-scoped attachment draft', async () => {
-      const composer = page.getByTestId('grok-agent-composer');
+      const composer = page.locator('.sand-prompt-shell');
+      const transcript = page.getByRole('log', { name: 'Conversation transcript' });
       await expect(composer).toHaveCount(1);
-      await expect(page.getByTestId('message-list')).toHaveCount(1);
+      await expect(transcript).toHaveCount(1);
 
       const fileInput = composer.locator('input[type="file"]');
       await expect(fileInput).toHaveAttribute('multiple', '');
@@ -1067,13 +1281,29 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       });
       await expect(composer.getByText('agent-notes.txt')).toBeVisible();
 
-      const input = page.getByTestId('messenger-input');
+      const input = page.getByRole('textbox', { name: 'Prompt' });
       await expect(input).toHaveAttribute('contenteditable', 'true');
       await input.fill('Use the attached note.');
-      await page.getByTestId('messenger-send').click();
+      await expect(composer.getByText('agent-notes.txt')).toBeVisible();
+      await expect.poll(async () => page.evaluate(async () => {
+        const candidate = window as unknown as {
+          desktop: {
+            cursorAccount: { getStatus(): Promise<{ kind?: string; authId?: string | null; email?: string | null }> };
+            agent: { clientPersistence: { read(key: string): Promise<string | null> } };
+          };
+        };
+        const status = await candidate.desktop.cursorAccount.getStatus();
+        if (status.kind !== 'logged-in') return false;
+        const slot = status.authId ?? status.email ?? 'account';
+        const encodedSlot = encodeURIComponent(slot).replaceAll('.', '%2E');
+        const raw = await candidate.desktop.agent.clientPersistence.read('sand.client.slice.account.' + encodedSlot + '.composer-drafts');
+        return raw?.includes('Use the attached note.') === true && raw.includes('agent-notes.txt');
+      }), { timeout: 5_000 }).toBe(true);
+      await composer.getByRole('button', { name: 'Send message' }).click();
 
       await expect(composer.getByText('agent-notes.txt')).toHaveCount(0);
-      const firstUserTurn = page.locator('[data-agent-message-role="me"]').filter({ hasText: 'Use the attached note.' });
+      console.log('[attachment-probe] transcript-after-click', JSON.stringify(await transcript.getByRole('article').allInnerTexts()));
+      const firstUserTurn = transcript.getByRole('article').filter({ hasText: 'Use the attached note.' }).filter({ hasText: 'agent-notes.txt' });
       await expect(firstUserTurn).toHaveCount(1);
       await expect(firstUserTurn.getByText('agent-notes.txt')).toBeVisible();
 
@@ -1082,72 +1312,92 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
         mimeType: 'text/plain',
         buffer: Buffer.from('Attachment-only Agent submission'),
       });
-      await expect(page.getByTestId('messenger-send')).toBeVisible();
-      await page.getByTestId('messenger-send').click();
-      await expect(page.getByTestId('message-list').getByText('attachment-only.txt')).toBeVisible();
+      await expect(composer.getByRole('button', { name: 'Send message' })).toBeVisible();
+      await composer.getByRole('button', { name: 'Send message' }).click();
+      await expect(transcript.getByText('attachment-only.txt')).toBeVisible();
 
       await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
-      const palette = page.getByRole('dialog', { name: 'Command palette' });
+      const palette = page.getByRole('dialog', { name: 'Search' });
       await expect(palette).toBeVisible();
-      await page.getByPlaceholder('Search agents or run a command').fill('agent-notes.txt');
-      await expect(palette.getByText('agent-notes.txt')).toBeVisible();
-      await page.keyboard.press('Escape');
+      await palette.getByRole('combobox', { name: 'Search' }).fill('agent-notes.txt');
+      // The deterministic Host does not advertise global media search. The
+      // shipping Search surface must represent that capability contract instead
+      // of fabricating a local attachment index for this focused chat test.
+      await expect(palette.getByText('Search unavailable', { exact: true })).toBeVisible();
+      await expect(palette.getByRole('tab', { name: 'Files', exact: true })).toHaveCount(0);
+      // Send Escape to the shipping Search combobox itself. The palette owns
+      // the keyboard dismissal contract; targeting the focused control avoids a
+      // page-level key race and lets us wait for the pointer-blocking backdrop
+      // to unmount before opening Agent info.
+      await palette.getByRole('combobox', { name: 'Search' }).press('Escape');
+      await expect(palette).toHaveCount(0);
     });
 
     await test.step('Agent settings are an Agent-owned secondary surface', async () => {
-      await page.getByTestId('conversation-info-toggle').click();
-      const overlays = page.getByTestId('agent-overlays');
-      await expect(overlays).toBeVisible();
-      await overlays.getByTestId('agent-settings-toggle').click();
-      const settings = overlays.getByRole('region', { name: 'Agent settings' });
+      // The shipping recovered-Grok header opens Agent Settings from the Agent
+      // identity itself. The retired AgentOverlays test ids are not part of the
+      // production renderer contract anymore.
+      await page.getByRole('button', { name: 'View agent settings' }).click();
+      const settings = page.getByRole('region', { name: 'Agent settings' });
       await expect(settings).toBeVisible();
       await expect(settings.getByLabel('Agent name')).toHaveValue(/.+/);
       await expect(settings.getByLabel('Agent description')).toBeVisible();
       await expect(settings.getByRole('switch')).toBeVisible();
-      await overlays.getByTestId('bot-computer-toggle').click();
+
+      // Computer is a sibling info pane in the recovered Grok header. Switching
+      // to it closes Agent Settings rather than nesting another legacy overlay.
+      await page.getByRole('button', { name: "Grok Bot's Computer" }).click();
       await expect(settings).toHaveCount(0);
-      await expect(overlays.getByTestId('bot-computer-panel')).toBeVisible();
-
-      const takeover = overlays.getByTestId('agent-computer-takeover');
-      await expect(takeover.getByRole('button', { name: 'Take Control' })).toBeVisible();
-      await takeover.getByRole('button', { name: 'Take Control' }).click();
-      await expect(takeover).toContainText('You have control');
-      await expect(takeover.getByRole('button', { name: 'Release Control' })).toBeVisible();
-      await takeover.getByRole('button', { name: 'Release Control' }).click();
-      await expect(takeover.getByRole('button', { name: 'Take Control' })).toBeVisible();
-
-      await overlays.getByRole('button', { name: 'Close Agent info' }).click();
-      await expect(overlays).toHaveCount(0);
+      const details = page.getByRole('complementary', { name: 'Conversation details' });
+      await expect(details).toBeVisible();
+      await expect(details.getByRole('region', { name: 'Computer preview' })).toBeVisible();
+      await details.getByRole('button', { name: 'Close details' }).click();
+      await expect(details).toBeHidden();
     });
 
     await test.step('Agent sidebar supports modifier selection and account-scoped sections', async () => {
       const peer = primaryMahayanaAgentPeer(page);
       await peer.click({ modifiers: [process.platform === 'darwin' ? 'Meta' : 'Control'] });
-      const selectionBar = page.getByTestId('agent-selection-bar');
-      await expect(selectionBar).toBeVisible();
-      await expect(selectionBar).toContainText('1 selected');
+      // The recovered Grok 0.18 sidebar exposes selection through pressed
+      // Agent rows plus the accessible Move/Clear action header; the retired
+      // agent-selection-bar + Create section dialog are not shipping contracts.
+      await expect(peer).toHaveAttribute('aria-pressed', 'true');
+      const moveSelected = page.getByRole('button', { name: 'Move selected agent to section' });
+      await expect(moveSelected).toBeVisible();
 
-      await selectionBar.getByRole('button', { name: 'Section' }).click();
-      const sectionDialog = page.getByRole('dialog', { name: 'Create section' });
-      await expect(sectionDialog).toBeVisible();
-      await sectionDialog.getByLabel('Section name').fill('Focused work');
-      await sectionDialog.getByRole('button', { name: 'Create' }).click();
-      const focusedWork = page.locator('[data-section-id]').filter({ hasText: 'Focused work' });
+      await moveSelected.click();
+      const moveMenu = page.getByRole('menu', { name: 'Move to section' });
+      await expect(moveMenu).toBeVisible();
+      await moveMenu.getByRole('menuitem', { name: 'New section' }).click();
+      const renameSection = page.getByLabel('Rename section');
+      await expect(renameSection).toBeVisible();
+      await renameSection.fill('Focused work');
+      await renameSection.press('Enter');
+      const focusedWork = page.locator('.sand-agents-section[data-section-id]').filter({ hasText: 'Focused work' });
       await expect(focusedWork).toBeVisible();
-      await expect(selectionBar).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Clear selection' })).toHaveCount(0);
+      await expect(peer).toHaveAttribute('aria-pressed', 'false');
 
-      // Pinning is a presentation dimension, not section ownership. The Agent
-      // stays under Pinned while pinned, then must project back into the section
-      // that was just persisted when it is unpinned. This guards the original
-      // 35522950977 failure instead of merely asserting that an empty header exists.
-      const pinnedRow = peer.locator('..');
-      const focusedAgentRow = focusedWork.locator('button[data-agent-key="agent:mahayana-assistant"]');
-      await expect(pinnedRow).toHaveAttribute('data-pinned', 'true');
+      // Pinning is a presentation dimension, not section ownership. First prove
+      // the selected Agent is actually projected into the newly persisted section.
+      // Then pin it through the recovered Grok row context menu, prove the section
+      // projection disappears while pinned, and finally unpin it and prove the
+      // original section ownership is restored. This guards the original
+      // 35522950977 regression without assuming fixture-specific initial pin state.
+      const focusedAgentRow = focusedWork.getByRole('button', { name: 'New chat', exact: true });
+      await expect(focusedAgentRow).toBeVisible();
+
+      await focusedAgentRow.click({ button: 'right' });
+      const agentActions = page.getByRole('menu', { name: 'Agent actions' });
+      await expect(agentActions).toBeVisible();
+      await agentActions.getByRole('menuitem', { name: 'Pin' }).click();
+      await expect(peer).toHaveAttribute('data-pinned', 'true');
       await expect(focusedAgentRow).toHaveCount(0);
-      await pinnedRow.hover();
-      await pinnedRow.getByRole('button', { name: /大乘助手 actions/ }).click();
-      await page.getByRole('menuitem', { name: 'Unpin' }).click();
-      await expect(focusedAgentRow).toHaveCount(1);
+
+      await peer.click({ button: 'right' });
+      await expect(agentActions).toBeVisible();
+      await agentActions.getByRole('menuitem', { name: 'Unpin' }).click();
+      await expect(peer).not.toHaveAttribute('data-pinned', 'true');
       await expect(focusedAgentRow).toBeVisible();
     });
   } finally {
