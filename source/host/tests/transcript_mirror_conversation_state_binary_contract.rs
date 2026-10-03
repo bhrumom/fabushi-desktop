@@ -1,5 +1,6 @@
 use mahayana_host_runtime::transcript_mirror::conversation_state_binary::{
     TranscriptMirrorProtobufDecodeError, decode_conversation_state_recovery_fields,
+    decode_user_message_identity_fields,
     decode_summary_archive_message_ids, decode_transcript_mirror_conversation_state,
 };
 
