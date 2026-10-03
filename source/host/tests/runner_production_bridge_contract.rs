@@ -444,8 +444,8 @@ fn production_bridge_binds_the_generated_runner_facade() {
     );
 
     assert!(runner.generated_agent_runtime().is_some());
-    assert!(Arc::ptr_eq(
-        runner.generated_agent_runtime().expect("generated runtime"),
-        &runtime,
-    ));
+    let projected_runtime = runner
+        .generated_agent_runtime()
+        .expect("generated runtime");
+    assert!(Arc::ptr_eq(&projected_runtime, &runtime));
 }
