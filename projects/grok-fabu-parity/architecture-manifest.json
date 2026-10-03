@@ -19037,21 +19037,29 @@
       "targetPath": "source/host/src/runner/tools/mcp_meta_tools.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "40e7ba55e6e7e1bc61d6754c363f1653aaebcf24",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/inference/provider_session.rs",
+        "source/host/src/runner/production_turn_input_projection.rs",
+        "source/host/src/runner/generated_agent_turn_stream.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
         "source/host/src/runner/tools/mcp_meta_tools.rs",
         "source/host/src/runner/routed_provider_runtime.rs"
       ],
       "testEvidence": [
         "source/host/tests/mcp_meta_tools_contract.rs",
+        "source/host/tests/production_turn_input_projection_contract.rs",
         "source/host/tests/runner_routed_provider_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust ports the frozen timeout tiers, block_until_ms guard math, timeout message shaping, effective routed-tool naming and MCP descriptor grouping. Shipping Runner now wraps both direct provider tool execution and the Claude routed-MCP HTTP tools/call path with the same per-call timeout guard. Final remains withheld until full generated Agent MCP meta-tool registration carries plugin/marketplace/account metadata and the computer-use-subagent-specific dynamic registry classification through the production Agent composition."
+      "notes": "Frozen Grok MCP meta-tool behavior is now shipping through the canonical Runner path. The Coordinator relay preserves plugin, marketplace, pluginId→pluginDbId and marketplaceId metadata in a dedicated raw MCP meta projection; each production turn freezes one discovery snapshot and derives the canonical MCP-state tools and meta descriptors from that same snapshot. Main generated Runner composition exposes GetMcpTools/CallMcpTool over the same canonical MCP execution owner, resolves CallMcpTool.toolName for timeout classification, and carries the existing ComputerToolExposure identity into direct-provider and Claude routed-MCP timeout guards so computer-use subagents receive subagent-tier classification. Exact-head GitHub evidence at 48aa35a67f624d080b4816a2f96fc55b9ddfa5fa: Rust desktop runtime 37135047776 has shipping Host, independent Coordinator, box-exec, Host supervisor, independent Host Runner, prompt attachment, Human Computer takeover, and ConversationActor/CapabilityBroker ownership success; Desktop Chat Parity CI 37135047781 has Renderer typecheck/build and Focused Electron chat E2E success."
     },
     {
       "referencePath": "source/host/runner/tools/mcp-server-resolution.ts",
