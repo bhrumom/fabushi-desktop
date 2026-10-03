@@ -19,6 +19,15 @@ pub trait AgentStateCheckpointSink: Send + Sync {
         Ok(Vec::new())
     }
 
+    fn read_state_blob(
+        &self,
+        _blob_id: &[u8],
+    ) -> Result<Option<Vec<u8>>, ProviderSessionError> {
+        Err(ProviderSessionError::Protocol(
+            "Agent checkpoint sink does not support canonical state blob reads".into(),
+        ))
+    }
+
     fn stage_text_turn(
         &self,
         _messages: &[ProviderMessage],
@@ -182,6 +191,17 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
                     "Runner Agent checkpoint prior state is poisoned".into(),
                 )
             })
+    }
+
+    fn read_state_blob(
+        &self,
+        blob_id: &[u8],
+    ) -> Result<Option<Vec<u8>>, ProviderSessionError> {
+        self.agent_store.get_blob(blob_id).map_err(|error| {
+            ProviderSessionError::Protocol(format!(
+                "Runner Agent checkpoint blob read failed: {error}"
+            ))
+        })
     }
 
     fn stage_text_turn(
