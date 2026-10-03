@@ -10,7 +10,16 @@ use mahayana_host_runtime::runner::box_tool_access::{
     RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest,
     RunnerBoxWriteRequest,
 };
-use mahayana_host_runtime::runner::runner_prompt_glue::RunnerPromptGlue;
+use mahayana_host_runtime::runner::runner_prompt_glue::{
+    RunnerPromptAutomationState, RunnerPromptGlue, RunnerPromptGlueOwner,
+    RunnerPromptMcpState, RunnerPromptProfileState, RunnerPromptRemoteState,
+};
+use mahayana_host_runtime::runner::sand_agent_profile_prompt::{
+    AgentProfileIdentity, AgentProfilePromptSnapshot,
+};
+use mahayana_host_runtime::runner::system_prompt_assembly::{
+    ComputerPromptState, RemoteBoxPromptState, RunnerPromptRole,
+};
 use mahayana_host_runtime::runner::tools::sand_file_transfer_tools::{
     FileTransferController, UserComputerHandle,
 };
@@ -149,4 +158,176 @@ fn glue_applies_single_large_output_spill_policy() {
         .as_str()
         .unwrap()
         .starts_with(".sand/tools/"));
+}
+
+
+#[test]
+fn live_owner_reads_mutable_prompt_inputs_at_phase_time() {
+    let transcript_entries = Arc::new(Mutex::new(Vec::<Value>::new()));
+    let profile_name = Arc::new(Mutex::new("Live Agent".to_string()));
+    let mcp_state = Arc::new(Mutex::new(RunnerPromptMcpState {
+        installed_servers: vec![json!({
+            "name":"Acme",
+            "status":"connected",
+            "customInstructions":"Use the live rows."
+        })],
+        discovery_unavailable: false,
+    }));
+    let remote_available = Arc::new(Mutex::new(true));
+    let automation_text = Arc::new(Mutex::new(Some("Routine live now.".to_string())));
+    let committed = Arc::new(Mutex::new(Vec::<Option<String>>::new()));
+
+    let owner = RunnerPromptGlueOwner {
+        is_subagent_runner: false,
+        transcript_entries_for_turn: {
+            let entries = Arc::clone(&transcript_entries);
+            Arc::new(move || Ok(entries.lock().unwrap().clone()))
+        },
+        profile_for_turn: {
+            let profile_name = Arc::clone(&profile_name);
+            Arc::new(move || -> Result<RunnerPromptProfileState, String> {
+                let name = profile_name.lock().unwrap().clone();
+                let identity = AgentProfileIdentity {
+                    name: name.clone(),
+                    description: "live profile".into(),
+                };
+                Ok(RunnerPromptProfileState {
+                    system_section: Some(format!("## Agent profile\nName: {name}")),
+                    profile_update: Some(format!("profile-update:{name}")),
+                    announcement: Some((
+                        AgentProfilePromptSnapshot {
+                            version: 1,
+                            profile_section: format!("## Agent profile\nName: {name}"),
+                            system_identity: identity.clone(),
+                            announced_identity: AgentProfileIdentity::default(),
+                            compaction_epoch: 3,
+                        },
+                        identity,
+                    )),
+                })
+            })
+        },
+        mcp_for_turn: {
+            let state = Arc::clone(&mcp_state);
+            Arc::new(move || -> Result<RunnerPromptMcpState, String> {
+                Ok(state.lock().unwrap().clone())
+            })
+        },
+        remote_for_turn: {
+            let available = Arc::clone(&remote_available);
+            Arc::new(move || -> Result<RunnerPromptRemoteState, String> {
+                let available = *available.lock().unwrap();
+                Ok(RunnerPromptRemoteState {
+                    remote_box: RemoteBoxPromptState {
+                        role: RunnerPromptRole::Main,
+                        available,
+                        runtime_state: if available { "ready" } else { "offline" }.into(),
+                        desktop_capable: true,
+                        desktop_ready: available,
+                    },
+                    computer: ComputerPromptState {
+                        role: RunnerPromptRole::Main,
+                        box_available: available,
+                        desktop_capable: true,
+                        desktop_ready: available,
+                        control_lease_active: false,
+                        human_takeover_pending: false,
+                        browser_use_offered: false,
+                        window_index: Some(4),
+                    },
+                })
+            })
+        },
+        automation_for_turn: {
+            let text = Arc::clone(&automation_text);
+            Arc::new(move || -> Result<RunnerPromptAutomationState, String> {
+                Ok(RunnerPromptAutomationState {
+                    status_reminder: text.lock().unwrap().clone(),
+                    compaction_epoch: 9,
+                    is_silence_allowed: false,
+                })
+            })
+        },
+        note_automation_status: {
+            let committed = Arc::clone(&committed);
+            Arc::new(move |reminder, _epoch| {
+                committed.lock().unwrap().push(reminder);
+            })
+        },
+        spotlight_enabled_for_turn: Arc::new(|| true),
+    };
+
+    let args = json!({"messageId":"msg-2"});
+    let mut first = vec![ProviderMessage {
+        role: "user".into(),
+        content: "current".into(),
+    }];
+    let profile = owner.append_profile(&mut first).expect("profile");
+    owner
+        .append_live_runtime_sections(&mut first, profile.profile_update.as_deref())
+        .expect("runtime sections");
+    let first_text = first.iter().map(|row| row.content.as_str()).collect::<Vec<_>>().join("\n");
+    assert!(first_text.contains("Live Agent"));
+    assert!(first_text.contains("Use the live rows."));
+    assert!(first_text.contains("Routine live now."));
+    assert!(first_text.contains("## Your box"));
+    assert!(first_text.contains("## Untrusted content"));
+    assert_eq!(committed.lock().unwrap().as_slice(), &[Some("Routine live now.".into())]);
+
+    *profile_name.lock().unwrap() = "Changed Agent".into();
+    *remote_available.lock().unwrap() = false;
+    *automation_text.lock().unwrap() = Some("Routine changed.".into());
+    *mcp_state.lock().unwrap() = RunnerPromptMcpState {
+        installed_servers: Vec::new(),
+        discovery_unavailable: true,
+    };
+
+    let mut second = vec![ProviderMessage {
+        role: "user".into(),
+        content: "second".into(),
+    }];
+    let profile = owner.append_profile(&mut second).expect("changed profile");
+    owner
+        .append_live_runtime_sections(&mut second, profile.profile_update.as_deref())
+        .expect("changed runtime sections");
+    let second_text = second.iter().map(|row| row.content.as_str()).collect::<Vec<_>>().join("\n");
+    assert!(second_text.contains("Changed Agent"));
+    assert!(second_text.contains("Routine changed."));
+    assert!(second_text.contains("<mcp_status>"));
+    assert!(second_text.contains("unavailable this turn"));
+
+    let projected = owner.project_provider_messages(
+        &args,
+        &[ProviderMessage { role: "user".into(), content: "hello".into() }],
+    );
+    assert!(projected.messages.iter().any(|row| row.content.contains("msg-2")));
+}
+
+#[test]
+fn shipping_host_routes_mutable_prompt_surfaces_through_runner_owner() {
+    const HOST: &str = include_str!("../app/src/main.rs");
+    for needle in [
+        "let prompt_owner = RunnerPromptGlueOwner",
+        "prompt_owner.project_provider_messages(&args, &lifecycle_messages)",
+        ".prepend_unconfirmed_user_messages(&args, &mut provider_messages)",
+        ".append_profile(&mut provider_messages)",
+        ".append_live_runtime_sections(",
+        "prompt_owner.spotlight_enabled()",
+    ] {
+        assert!(
+            HOST.contains(needle),
+            "shipping Host must route mutable prompt surface through Runner owner: {needle}"
+        );
+    }
+    for stale in [
+        "project_provider_messages_for_turn(&args, &lifecycle_messages)",
+        "append_mcp_runtime_sections_for_turn(\n        &mut provider_messages",
+        "append_remote_runtime_sections_for_turn(\n        &mut provider_messages",
+        "apply_dynamic_user_context_for_turn(\n        &mut provider_messages",
+    ] {
+        assert!(
+            !HOST.contains(stale),
+            "shipping Host must not bypass Runner prompt glue with {stale}"
+        );
+    }
 }

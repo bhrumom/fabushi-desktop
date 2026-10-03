@@ -270,12 +270,12 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::is_recovery_shaped_turn;
 use mahayana_host_runtime::runner::prompt_collector_glue::{
-    PromptCollectorDynamicUserContext, apply_staged_attachment_paths_for_turn,
-    append_mcp_runtime_sections_for_turn,
-    append_profile_system_section_for_turn, append_remote_runtime_sections_for_turn,
-    prepend_unconfirmed_user_messages_for_turn,
-    apply_dynamic_user_context_for_turn, project_provider_messages_for_turn,
-    resolve_profile_update_for_turn, selected_media_host_paths_for_turn,
+    apply_staged_attachment_paths_for_turn, resolve_profile_update_for_turn,
+    selected_media_host_paths_for_turn,
+};
+use mahayana_host_runtime::runner::runner_prompt_glue::{
+    RunnerPromptAutomationState, RunnerPromptGlueOwner, RunnerPromptMcpState,
+    RunnerPromptProfileState, RunnerPromptRemoteState,
 };
 use mahayana_host_runtime::runner::sand_memory::{
     FrozenMemorySnapshot, MEMORY_PROJECT_INJECTED_CAP, MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
@@ -286,7 +286,6 @@ use mahayana_host_runtime::runner::sand_memory::{
 use mahayana_host_runtime::runner::turn_memory::{
     TurnExchange, TurnMemoryMode, build_turn_memory_exchange, run_turn_memory_with,
 };
-use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt_section;
 use mahayana_host_runtime::runner::tools::sand_state_tool::{
     RoutineAutoReviewCallback, RoutinePostWriteCallback,
 };
@@ -4939,8 +4938,240 @@ fn start_routed_provider_task(
         &lifecycle_messages,
     )
     .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
+
+    let prompt_compaction_epoch = host_runner_composition
+        .prompt_compaction_epoch(&session_workers, &agent_id)
+        .map_err(GatewayCommandError::Internal)?;
+    let profile_compaction_epoch = i64::try_from(prompt_compaction_epoch).map_err(|_| {
+        GatewayCommandError::Internal(format!(
+            "production conversation compaction epoch exceeds profile snapshot range for {agent_id}"
+        ))
+    })?;
+    let prompt_role = if generated_parent_agent_id.is_none() {
+        RunnerPromptRole::Main
+    } else if generated_subagent_type.eq_ignore_ascii_case("computeruse") {
+        RunnerPromptRole::ComputerUseSubagent
+    } else if generated_subagent_type.eq_ignore_ascii_case("browseruse") {
+        RunnerPromptRole::BrowserUseSubagent
+    } else {
+        RunnerPromptRole::OtherSubagent
+    };
+    let prompt_remote_lease_state = Arc::new(Mutex::new((true, false, None::<u32>)));
+
+    let prompt_transcript_sessions = Arc::clone(&session_workers);
+    let prompt_transcript_agent_id = agent_id.clone();
+    let transcript_entries_for_turn = Arc::new(move || {
+        prompt_transcript_sessions
+            .read_agent_transcript_entries(&prompt_transcript_agent_id)
+            .map_err(|error| {
+                format!(
+                    "could not read production transcript recovery watermark for {}: {error}",
+                    prompt_transcript_agent_id
+                )
+            })
+    });
+
+    let prompt_profile_sessions = Arc::clone(&session_workers);
+    let prompt_profile_agent_id = agent_id.clone();
+    let profile_for_turn = Arc::new(move || -> Result<RunnerPromptProfileState, String> {
+        let Some(profile) = prompt_profile_sessions
+            .get_agent_profile_text(&prompt_profile_agent_id)
+            .map_err(|error| {
+                format!(
+                    "could not read production Agent profile for {}: {error}",
+                    prompt_profile_agent_id
+                )
+            })?
+        else {
+            return Ok(RunnerPromptProfileState::default());
+        };
+        let agent_dir = prompt_profile_sessions
+            .session_db_path(&prompt_profile_agent_id)?
+            .parent()
+            .map(Path::to_path_buf)
+            .ok_or_else(|| {
+                format!(
+                    "agent database path has no parent for {}",
+                    prompt_profile_agent_id
+                )
+            })?;
+        let profile_path = to_model_visible_path(&get_sand_profile_path(&agent_dir))
+            .to_string_lossy()
+            .into_owned();
+        let settings_path = to_model_visible_path(&get_sand_settings_path(&agent_dir))
+            .to_string_lossy()
+            .into_owned();
+        let profile_for_prompt = AgentProfileForPrompt {
+            name: profile.name.clone(),
+            description: profile.description.clone(),
+            file_path: profile_path,
+            settings_file_path: settings_path,
+        };
+        let Some(live_section) = render_agent_profile_section(&profile_for_prompt, false) else {
+            return Ok(RunnerPromptProfileState::default());
+        };
+        let persisted_profile_snapshot = prompt_profile_sessions
+            .get_agent_profile_prompt_snapshot(&prompt_profile_agent_id)?
+            .and_then(|value| serde_json::from_value::<AgentProfilePromptSnapshot>(value).ok());
+        let identity = normalize_agent_profile_identity(AgentProfileIdentity {
+            name: profile.name,
+            description: profile.description,
+        });
+        let resolved_profile_snapshot = resolve_agent_profile_prompt_snapshot(
+            persisted_profile_snapshot.as_ref(),
+            profile_compaction_epoch,
+            live_section,
+            identity.clone(),
+        );
+        if persisted_profile_snapshot.as_ref() != Some(&resolved_profile_snapshot) {
+            let value = serde_json::to_value(&resolved_profile_snapshot).map_err(|error| {
+                format!(
+                    "could not serialize production profile prompt snapshot for {}: {error}",
+                    prompt_profile_agent_id
+                )
+            })?;
+            prompt_profile_sessions
+                .set_agent_profile_prompt_snapshot(&prompt_profile_agent_id, &value)
+                .map_err(|error| {
+                    format!(
+                        "could not persist production profile prompt snapshot for {}: {error}",
+                        prompt_profile_agent_id
+                    )
+                })?;
+        }
+        let profile_update =
+            resolve_profile_update_for_turn(&identity, &resolved_profile_snapshot.announced_identity);
+        let announcement = profile_update
+            .as_ref()
+            .map(|_| (resolved_profile_snapshot.clone(), identity));
+        Ok(RunnerPromptProfileState {
+            system_section: Some(resolved_profile_snapshot.profile_section),
+            profile_update,
+            announcement,
+        })
+    });
+
+    let prompt_mcp_service = Arc::clone(&mcp_service);
+    let prompt_mcp_agent_id = agent_id.clone();
+    let mcp_for_turn = Arc::new(move || -> Result<RunnerPromptMcpState, String> {
+        Ok(match prompt_mcp_service.list_installed() {
+            Ok(installed_servers) => RunnerPromptMcpState {
+                installed_servers,
+                discovery_unavailable: false,
+            },
+            Err(error) => {
+                eprintln!(
+                    "[sand:mcp] connector discovery unavailable for provider turn agent={}: {error}",
+                    prompt_mcp_agent_id
+                );
+                RunnerPromptMcpState {
+                    installed_servers: Vec::new(),
+                    discovery_unavailable: true,
+                }
+            }
+        })
+    });
+
+    let prompt_remote_forever_box = Arc::clone(&forever_box);
+    let prompt_remote_handoff = session_handoff.clone();
+    let prompt_remote_agent_id = agent_id.clone();
+    let prompt_remote_lease = Arc::clone(&prompt_remote_lease_state);
+    let remote_for_turn = Arc::new(move || -> Result<RunnerPromptRemoteState, String> {
+        let desktop_capable = prompt_remote_forever_box
+            .box_()
+            .inner()
+            .shared_desktop()
+            .is_some();
+        let status = prompt_remote_forever_box.get_status(&prompt_remote_agent_id);
+        let box_available = prompt_remote_forever_box.box_().is_available();
+        let lease = prompt_remote_lease
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let desktop_ready = desktop_capable
+            && lease.0
+            && (status.vnc_url.is_some()
+                || status
+                    .windows
+                    .as_ref()
+                    .is_some_and(|windows| !windows.is_empty()));
+        Ok(RunnerPromptRemoteState {
+            remote_box: RemoteBoxPromptState {
+                role: prompt_role,
+                available: box_available,
+                runtime_state: status.state.clone(),
+                desktop_capable,
+                desktop_ready,
+            },
+            computer: ComputerPromptState {
+                role: prompt_role,
+                box_available,
+                desktop_capable,
+                desktop_ready,
+                control_lease_active: lease.1,
+                human_takeover_pending: prompt_remote_handoff
+                    .get(&prompt_remote_agent_id)
+                    .is_some(),
+                browser_use_offered: false,
+                window_index: lease.2,
+            },
+        })
+    });
+
+    let prompt_automation_sessions = Arc::clone(&session_workers);
+    let prompt_automation_owner = Arc::clone(&host_runner_composition);
+    let prompt_automation_agent_id = agent_id.clone();
+    let prompt_firing_automation_id = args
+        .get("automationWake")
+        .and_then(serde_json::Value::as_object)
+        .and_then(|wake| wake.get("id"))
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_string);
+    let prompt_is_silence_allowed = args
+        .get("isSilenceAllowed")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false);
+    let automation_for_turn = Arc::new(move || -> Result<RunnerPromptAutomationState, String> {
+        let automation_store =
+            prompt_automation_sessions.open_automation_store(&prompt_automation_agent_id)?;
+        let rendered = create_automation_status_reminder(
+            &automation_store,
+            prompt_firing_automation_id.as_deref(),
+        );
+        Ok(RunnerPromptAutomationState {
+            status_reminder: prompt_automation_owner.automation_status_reminder_for_turn(
+                &prompt_automation_agent_id,
+                rendered.as_deref(),
+                prompt_compaction_epoch,
+            ),
+            compaction_epoch: prompt_compaction_epoch,
+            is_silence_allowed: prompt_is_silence_allowed,
+        })
+    });
+    let prompt_note_owner = Arc::clone(&host_runner_composition);
+    let prompt_note_agent_id = agent_id.clone();
+    let note_automation_status = Arc::new(move |reminder: Option<String>, epoch: u64| {
+        prompt_note_owner.note_automation_status_reminder(
+            &prompt_note_agent_id,
+            reminder.as_deref(),
+            epoch,
+        );
+    });
+    let prompt_experiments = Arc::clone(&experiments);
+    let prompt_owner = RunnerPromptGlueOwner {
+        is_subagent_runner: generated_parent_agent_id.is_some(),
+        transcript_entries_for_turn,
+        profile_for_turn,
+        mcp_for_turn,
+        remote_for_turn,
+        automation_for_turn,
+        note_automation_status,
+        spotlight_enabled_for_turn: Arc::new(move || {
+            prompt_experiments.check_feature_gate("sand_spotlight")
+        }),
+    };
+
     let mut provider_messages =
-        project_provider_messages_for_turn(&args, &lifecycle_messages).messages;
+        prompt_owner.project_provider_messages(&args, &lifecycle_messages).messages;
     if let Some(prepared_session) = session_workers
         .prepare_existing_agent(&agent_id)
         .map_err(|error| {
@@ -4958,99 +5189,14 @@ fn start_routed_provider_task(
             })?;
     }
 
-    let transcript_entries_for_prompt = session_workers
-        .read_agent_transcript_entries(&agent_id)
-        .map_err(|error| GatewayCommandError::Internal(format!(
-            "could not read production transcript recovery watermark for {agent_id}: {error}"
-        )))?;
-    prepend_unconfirmed_user_messages_for_turn(
-        &args,
-        &mut provider_messages,
-        &transcript_entries_for_prompt,
-    );
-
-    let prompt_compaction_epoch = host_runner_composition
-        .prompt_compaction_epoch(&session_workers, &agent_id)
+    prompt_owner
+        .prepend_unconfirmed_user_messages(&args, &mut provider_messages)
         .map_err(GatewayCommandError::Internal)?;
-    let profile_compaction_epoch = i64::try_from(prompt_compaction_epoch).map_err(|_| {
-        GatewayCommandError::Internal(format!(
-            "production conversation compaction epoch exceeds profile snapshot range for {agent_id}"
-        ))
-    })?;
-    let mut pending_profile_announcement: Option<(
-        AgentProfilePromptSnapshot,
-        AgentProfileIdentity,
-    )> = None;
-    let mut profile_update_for_turn: Option<String> = None;
-    if let Some(profile) = session_workers
-        .get_agent_profile_text(&agent_id)
-        .map_err(|error| GatewayCommandError::Internal(format!(
-            "could not read production Agent profile for {agent_id}: {error}"
-        )))?
-    {
-        let agent_dir = session_workers
-            .session_db_path(&agent_id)
-            .map_err(GatewayCommandError::Internal)?
-            .parent()
-            .map(Path::to_path_buf)
-            .ok_or_else(|| GatewayCommandError::Internal(format!(
-                "agent database path has no parent for {agent_id}"
-            )))?;
-        let profile_path = to_model_visible_path(&get_sand_profile_path(&agent_dir))
-            .to_string_lossy()
-            .into_owned();
-        let settings_path = to_model_visible_path(&get_sand_settings_path(&agent_dir))
-            .to_string_lossy()
-            .into_owned();
-        let profile_for_prompt = AgentProfileForPrompt {
-            name: profile.name.clone(),
-            description: profile.description.clone(),
-            file_path: profile_path,
-            settings_file_path: settings_path,
-        };
-        if let Some(live_section) = render_agent_profile_section(&profile_for_prompt, false) {
-            let persisted_profile_snapshot = session_workers
-                .get_agent_profile_prompt_snapshot(&agent_id)
-                .map_err(|error| GatewayCommandError::Internal(format!(
-                    "could not read production profile prompt snapshot for {agent_id}: {error}"
-                )))?
-                .and_then(|value| serde_json::from_value::<AgentProfilePromptSnapshot>(value).ok());
-            let identity = normalize_agent_profile_identity(AgentProfileIdentity {
-                name: profile.name,
-                description: profile.description,
-            });
-            let resolved_profile_snapshot = resolve_agent_profile_prompt_snapshot(
-                persisted_profile_snapshot.as_ref(),
-                profile_compaction_epoch,
-                live_section,
-                identity.clone(),
-            );
-            if persisted_profile_snapshot.as_ref() != Some(&resolved_profile_snapshot) {
-                let value = serde_json::to_value(&resolved_profile_snapshot).map_err(|error| {
-                    GatewayCommandError::Internal(format!(
-                        "could not serialize production profile prompt snapshot for {agent_id}: {error}"
-                    ))
-                })?;
-                session_workers
-                    .set_agent_profile_prompt_snapshot(&agent_id, &value)
-                    .map_err(|error| GatewayCommandError::Internal(format!(
-                        "could not persist production profile prompt snapshot for {agent_id}: {error}"
-                    )))?;
-            }
-            append_profile_system_section_for_turn(
-                &mut provider_messages,
-                &resolved_profile_snapshot.profile_section,
-            );
-            profile_update_for_turn = resolve_profile_update_for_turn(
-                &identity,
-                &resolved_profile_snapshot.announced_identity,
-            );
-            if profile_update_for_turn.is_some() {
-                pending_profile_announcement =
-                    Some((resolved_profile_snapshot, identity));
-            }
-        }
-    }
+    let prompt_profile_state = prompt_owner
+        .append_profile(&mut provider_messages)
+        .map_err(GatewayCommandError::Internal)?;
+    let profile_update_for_turn = prompt_profile_state.profile_update;
+    let pending_profile_announcement = prompt_profile_state.announcement;
 
     let memory_service = session_workers.memory_service();
     let agent_summaries = Arc::new(
@@ -5268,32 +5414,6 @@ fn start_routed_provider_task(
         generated_parent_agent_id.is_none(),
     );
 
-    let (installed_mcp_servers, mcp_discovery_unavailable) =
-        match mcp_service.list_installed() {
-            Ok(installed) => (installed, false),
-            Err(error) => {
-                eprintln!(
-                    "[sand:mcp] connector discovery unavailable for provider turn agent={agent_id}: {error}"
-                );
-                (Vec::new(), true)
-            }
-        };
-    append_mcp_runtime_sections_for_turn(
-        &mut provider_messages,
-        &installed_mcp_servers,
-        mcp_discovery_unavailable,
-        generated_parent_agent_id.is_some(),
-    );
-
-    let prompt_role = if generated_parent_agent_id.is_none() {
-        RunnerPromptRole::Main
-    } else if generated_subagent_type.eq_ignore_ascii_case("computeruse") {
-        RunnerPromptRole::ComputerUseSubagent
-    } else if generated_subagent_type.eq_ignore_ascii_case("browseruse") {
-        RunnerPromptRole::BrowserUseSubagent
-    } else {
-        RunnerPromptRole::OtherSubagent
-    };
     let shipping_desktop_capable = forever_box.box_().inner().shared_desktop().is_some();
     let shipping_box_resources = Arc::new(
         ForeverBoxRunnerResourcePort::new(
@@ -5344,87 +5464,35 @@ fn start_routed_provider_task(
             }
         }
     }
-    let shipping_box_status = forever_box.get_status(&agent_id);
-    let shipping_box_available = forever_box.box_().is_available();
-    let shipping_desktop_ready = shipping_desktop_capable
-        && computer_use_window_granted
-        && (shipping_box_status.vnc_url.is_some()
-            || shipping_box_status
-                .windows
-                .as_ref()
-                .is_some_and(|windows| !windows.is_empty()));
     let computer_control_lease_active = computer_control_lease
         .as_ref()
         .is_some_and(|lease| host_runner_composition.owns_computer_control_lease(lease));
-    let shipping_window_index = computer_control_lease.as_ref().map(|lease| lease.window_index())
+    let shipping_window_index = computer_control_lease
+        .as_ref()
+        .map(|lease| lease.window_index())
         .or_else(|| forever_box.box_().get_agent_window_index(&agent_id));
-    let human_takeover_pending = session_handoff.get(&agent_id).is_some();
-
-    append_remote_runtime_sections_for_turn(
-        &mut provider_messages,
-        &RemoteBoxPromptState {
-            role: prompt_role,
-            available: shipping_box_available,
-            runtime_state: shipping_box_status.state.clone(),
-            desktop_capable: shipping_desktop_capable,
-            desktop_ready: shipping_desktop_ready,
-        },
-        &ComputerPromptState {
-            role: prompt_role,
-            box_available: shipping_box_available,
-            desktop_capable: shipping_desktop_capable,
-            desktop_ready: shipping_desktop_ready,
-            control_lease_active: computer_control_lease_active,
-            human_takeover_pending,
-            browser_use_offered: false,
-            window_index: shipping_window_index,
-        },
-    );
-
-    let firing_automation_id = args
-        .get("automationWake")
-        .and_then(serde_json::Value::as_object)
-        .and_then(|wake| wake.get("id"))
-        .and_then(serde_json::Value::as_str);
-    let rendered_automation_status_reminder =
-        create_automation_status_reminder(&automation_store, firing_automation_id);
-    let automation_status_compaction_epoch = prompt_compaction_epoch;
-    let automation_status_reminder = host_runner_composition
-        .automation_status_reminder_for_turn(
-            &agent_id,
-            rendered_automation_status_reminder.as_deref(),
-            automation_status_compaction_epoch,
-        );
-    let dynamic_user_context_applied = apply_dynamic_user_context_for_turn(
-        &mut provider_messages,
-        PromptCollectorDynamicUserContext {
-            automation_status_reminder: automation_status_reminder.as_deref(),
-            profile_update: profile_update_for_turn.as_deref(),
-            is_silence_allowed: args
-                .get("isSilenceAllowed")
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false),
-        },
-    );
-    if dynamic_user_context_applied && automation_status_reminder.is_some() {
-        host_runner_composition.note_automation_status_reminder(
-            &agent_id,
-            automation_status_reminder.as_deref(),
-            automation_status_compaction_epoch,
+    {
+        let mut lease_state = prompt_remote_lease_state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        *lease_state = (
+            computer_use_window_granted,
+            computer_control_lease_active,
+            shipping_window_index,
         );
     }
-    let spotlight_enabled = experiments.check_feature_gate("sand_spotlight");
+    prompt_owner
+        .append_live_runtime_sections(
+            &mut provider_messages,
+            profile_update_for_turn.as_deref(),
+        )
+        .map_err(GatewayCommandError::Internal)?;
+    let spotlight_enabled = prompt_owner.spotlight_enabled();
     let multitask_enabled = !args
         .get("groupMemberTurn")
         .and_then(serde_json::Value::as_bool)
         .unwrap_or(false)
         && experiments.check_feature_gate("sand_multitask");
-    if spotlight_enabled {
-        provider_messages.push(ProviderMessage {
-            role: "system".into(),
-            content: spotlight_prompt_section(true),
-        });
-    }
 
     let journal_logs = telemetry_logs.clone();
     let journal_experiments = Arc::clone(&experiments);

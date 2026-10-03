@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use serde_json::Value;
 
 use crate::r#box::box_transfer::TransferBox;
@@ -8,9 +10,155 @@ use super::large_output_spill::{
     MCP_TEXT_FILE_THRESHOLD_BYTES, is_large_output_spill_enabled, maybe_spill_mcp_text_result,
 };
 use super::prompt_collector_glue::{
-    ProviderPromptProjection, project_provider_messages_for_turn,
+    PromptCollectorDynamicUserContext, ProviderPromptProjection,
+    append_mcp_runtime_sections_for_turn, append_profile_system_section_for_turn,
+    append_remote_runtime_sections_for_turn, apply_dynamic_user_context_for_turn,
+    prepend_unconfirmed_user_messages_for_turn, project_provider_messages_for_turn,
 };
+use super::sand_agent_profile_prompt::{AgentProfileIdentity, AgentProfilePromptSnapshot};
+use super::system_prompt_assembly::{ComputerPromptState, RemoteBoxPromptState};
 use super::tools::sand_file_transfer_tools::FileTransferController;
+use super::tools::sand_spotlight_tools::spotlight_prompt_section;
+
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct RunnerPromptProfileState {
+    pub system_section: Option<String>,
+    pub profile_update: Option<String>,
+    pub announcement: Option<(AgentProfilePromptSnapshot, AgentProfileIdentity)>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct RunnerPromptMcpState {
+    pub installed_servers: Vec<Value>,
+    pub discovery_unavailable: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RunnerPromptRemoteState {
+    pub remote_box: RemoteBoxPromptState,
+    pub computer: ComputerPromptState,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct RunnerPromptAutomationState {
+    pub status_reminder: Option<String>,
+    pub compaction_epoch: u64,
+    pub is_silence_allowed: bool,
+}
+
+pub type RunnerPromptTranscriptGetter =
+    Arc<dyn Fn() -> Result<Vec<Value>, String> + Send + Sync>;
+pub type RunnerPromptProfileGetter =
+    Arc<dyn Fn() -> Result<RunnerPromptProfileState, String> + Send + Sync>;
+pub type RunnerPromptMcpGetter =
+    Arc<dyn Fn() -> Result<RunnerPromptMcpState, String> + Send + Sync>;
+pub type RunnerPromptRemoteGetter =
+    Arc<dyn Fn() -> Result<RunnerPromptRemoteState, String> + Send + Sync>;
+pub type RunnerPromptAutomationGetter =
+    Arc<dyn Fn() -> Result<RunnerPromptAutomationState, String> + Send + Sync>;
+pub type RunnerPromptAutomationCommit =
+    Arc<dyn Fn(Option<String>, u64) + Send + Sync>;
+pub type RunnerPromptFeatureGate = Arc<dyn Fn() -> bool + Send + Sync>;
+
+/// The production Runner-owned join for prompt inputs that remain mutable
+/// outside the Runner. Canonical Session/MCP/Box/Automation/Experiments owners
+/// retain their state; this join resolves each value at the phase that consumes
+/// it instead of snapshotting those services when the Host constructs a turn.
+#[derive(Clone)]
+pub struct RunnerPromptGlueOwner {
+    pub is_subagent_runner: bool,
+    pub transcript_entries_for_turn: RunnerPromptTranscriptGetter,
+    pub profile_for_turn: RunnerPromptProfileGetter,
+    pub mcp_for_turn: RunnerPromptMcpGetter,
+    pub remote_for_turn: RunnerPromptRemoteGetter,
+    pub automation_for_turn: RunnerPromptAutomationGetter,
+    pub note_automation_status: RunnerPromptAutomationCommit,
+    pub spotlight_enabled_for_turn: RunnerPromptFeatureGate,
+}
+
+impl RunnerPromptGlueOwner {
+    pub fn project_provider_messages(
+        &self,
+        args: &Value,
+        messages: &[ProviderMessage],
+    ) -> ProviderPromptProjection {
+        project_provider_messages_for_turn(args, messages)
+    }
+
+    pub fn prepend_unconfirmed_user_messages(
+        &self,
+        args: &Value,
+        messages: &mut Vec<ProviderMessage>,
+    ) -> Result<usize, String> {
+        let transcript_entries = (self.transcript_entries_for_turn)()?;
+        Ok(prepend_unconfirmed_user_messages_for_turn(
+            args,
+            messages,
+            &transcript_entries,
+        ))
+    }
+
+    pub fn append_profile(
+        &self,
+        messages: &mut Vec<ProviderMessage>,
+    ) -> Result<RunnerPromptProfileState, String> {
+        let profile = (self.profile_for_turn)()?;
+        if let Some(section) = profile.system_section.as_deref() {
+            append_profile_system_section_for_turn(messages, section);
+        }
+        Ok(profile)
+    }
+
+    pub fn append_live_runtime_sections(
+        &self,
+        messages: &mut Vec<ProviderMessage>,
+        profile_update: Option<&str>,
+    ) -> Result<(), String> {
+        let mcp = (self.mcp_for_turn)()?;
+        append_mcp_runtime_sections_for_turn(
+            messages,
+            &mcp.installed_servers,
+            mcp.discovery_unavailable,
+            self.is_subagent_runner,
+        );
+
+        let remote = (self.remote_for_turn)()?;
+        append_remote_runtime_sections_for_turn(
+            messages,
+            &remote.remote_box,
+            &remote.computer,
+        );
+
+        let automation = (self.automation_for_turn)()?;
+        let dynamic_applied = apply_dynamic_user_context_for_turn(
+            messages,
+            PromptCollectorDynamicUserContext {
+                automation_status_reminder: automation.status_reminder.as_deref(),
+                profile_update,
+                is_silence_allowed: automation.is_silence_allowed,
+            },
+        );
+        if dynamic_applied && automation.status_reminder.is_some() {
+            (self.note_automation_status)(
+                automation.status_reminder.clone(),
+                automation.compaction_epoch,
+            );
+        }
+
+        if (self.spotlight_enabled_for_turn)() {
+            messages.push(ProviderMessage {
+                role: "system".into(),
+                content: spotlight_prompt_section(true),
+            });
+        }
+        Ok(())
+    }
+
+    pub fn spotlight_enabled(&self) -> bool {
+        (self.spotlight_enabled_for_turn)()
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct RunnerPromptGlue<AgentBoxType, UserBoxType> {
