@@ -262,7 +262,7 @@ fn backend_classifier_projects_frozen_dashboard_contract_without_tool_call_id() 
 }
 
 #[test]
-fn backend_classifier_defaults_mode_and_rejects_missing_result() {
+fn backend_classifier_defaults_mode_and_preserves_missing_result() {
     clear_sand_privacy_mode_cache_for_testing();
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind backend");
     let port = listener.local_addr().expect("backend address").port();
@@ -279,7 +279,7 @@ fn backend_classifier_defaults_mode_and_rejects_missing_result() {
             get_machine_id: Arc::new(|| Ok("machine-99".into())),
         },
     );
-    let error = executor
+    let result = executor
         .execute(AutoReviewClassifierRequest {
             tool_call_id: "local-only",
             parent_conversation_id: "conversation-2",
@@ -290,9 +290,8 @@ fn backend_classifier_defaults_mode_and_rejects_missing_result() {
             suppress_tool_call_id_logging: true,
             max_attempts: 1,
         })
-        .expect_err("missing result must fail closed");
-    assert!(matches!(error, AutoReviewClassifierError::Failed(_)));
-    assert!(format!("{error:?}").contains("returned no result"));
+        .expect("missing backend result remains a classifier result");
+    assert_eq!(result, SmartModeClassifierResult::Missing);
 
     let classify = server.join().expect("server");
     let (_, body) = split_request(&classify);
