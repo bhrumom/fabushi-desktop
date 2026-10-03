@@ -38,7 +38,7 @@ use super::sand_agent_management_tools::{
 use super::sand_browser_tools::{BrowserToolExecutor, SandBrowserToolBridge};
 use super::sand_web_tools::{SandWebToolBridge, WebToolExecutor};
 use super::sand_generate_image_tool::{
-    GenerateImageToolExecutor, SandGenerateImageToolBridge,
+    GENERATE_IMAGE_TOOL_NAME, GenerateImageToolExecutor, SandGenerateImageToolBridge,
 };
 use super::sand_computer_tool::{ComputerToolExecutor, ComputerToolExposure, SandComputerToolBridge};
 use super::sand_file_transfer_tools::{
