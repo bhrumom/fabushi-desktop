@@ -1,4 +1,5 @@
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+const HOST_RUNNER_COMPOSITION: &str = include_str!("../src/host_runner_composition.rs");
 
 use std::fs;
 use std::sync::{Arc, Mutex};
@@ -90,13 +91,28 @@ fn state_bytes(
 
 #[test]
 fn shipping_runner_binds_generated_checkpoint_codec_into_file_transcript_mirror() {
-    assert!(SHIPPING_HOST.contains("ProductionTranscriptMirrorProvider::with_reporter("));
+    assert!(SHIPPING_HOST.contains("host_runner_composition"));
+    assert!(SHIPPING_HOST.contains(".compose_production_checkpoint_sink("));
     assert!(SHIPPING_HOST.contains("report_journal_outcome(&report)"));
-    assert!(SHIPPING_HOST.contains("GeneratedTranscriptOccurrenceCodec::new("));
-    assert!(SHIPPING_HOST.contains("RejectGeneratedToolJsonProjection"));
-    assert!(SHIPPING_HOST.contains(".route_for_session("));
-    assert!(SHIPPING_HOST.contains("ProductionAgentStateCheckpointSink::new("));
-    assert!(SHIPPING_HOST.contains("transcript_mirror,"));
+
+    for binding in [
+        "ProductionTranscriptMirrorProvider::with_reporter(",
+        "GeneratedTranscriptOccurrenceCodec::new(",
+        "RejectGeneratedToolJsonProjection",
+        ".route_for_session(",
+        "ProductionAgentStateCheckpointSink::new(",
+        "transcript_mirror,",
+    ] {
+        assert!(
+            HOST_RUNNER_COMPOSITION.contains(binding),
+            "HostRunnerComposition does not own transcript checkpoint wiring: {binding}"
+        );
+    }
+
+    assert!(
+        !SHIPPING_HOST.contains("ProductionTranscriptMirrorProvider::with_reporter("),
+        "shipping main must delegate transcript checkpoint composition to HostRunnerComposition"
+    );
 }
 
 #[test]
