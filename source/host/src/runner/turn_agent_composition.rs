@@ -113,11 +113,7 @@ pub const COMPUTER_USE_SUBAGENT_TYPE: &str = "computeruse";
 pub const BROWSER_USE_SUBAGENT_TYPE: &str = "browseruse";
 
 pub type TurnSubagentLaunchClassifier = Arc<
-    dyn Fn(
-            &Value,
-            &str,
-            SandAutoReviewMode,
-        ) -> Result<AutoReviewClassifierDecision, AutoReviewClassifierError>
+    dyn Fn(&Value, &str, &str) -> Result<AutoReviewClassifierDecision, AutoReviewClassifierError>
         + Send
         + Sync,
 >;
