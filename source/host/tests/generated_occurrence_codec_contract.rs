@@ -1,7 +1,7 @@
 use mahayana_host_runtime::transcript_mirror::generated_occurrence_codec::{
     CanonicalGeneratedToolJsonProjection, GeneratedToolJsonProjection,
     GeneratedToolProjection, GeneratedTranscriptOccurrenceCodec,
-    RejectGeneratedToolJsonProjection,
+    RejectGeneratedToolJsonProjection, encode_generated_agent_tool_step,
     generated_tool_name,
 };
 use mahayana_host_runtime::transcript_mirror::transcript_occurrence_deriver::{
@@ -186,6 +186,38 @@ fn canonical_generated_projection_ignores_unknown_tool_message_fields() {
             name: "send_message".into(),
             input: json!({"text":{"content":"hello"}}),
             result: None,
+        }
+    );
+}
+
+#[test]
+fn canonical_generated_tool_encoder_round_trips_send_message_json() {
+    let step = encode_generated_agent_tool_step(
+        "SendMessage",
+        &json!({"text":{"content":"hello"}}),
+        Some(&json!({
+            "success":{
+                "timestamp":"123",
+                "messageId":"msg-1"
+            }
+        })),
+        "tool-call-1",
+        Some(100),
+        Some(200),
+    )
+    .expect("encode canonical generated tool step");
+    let codec = GeneratedTranscriptOccurrenceCodec::new(CanonicalGeneratedToolJsonProjection);
+    assert_eq!(
+        codec.decode_step(&step).expect("decode encoded tool step"),
+        DecodedTranscriptStep::Tool {
+            name: "send_message".into(),
+            input: json!({"text":{"content":"hello"}}),
+            result: Some(json!({
+                "success":{
+                    "timestamp":"123",
+                    "messageId":"msg-1"
+                }
+            })),
         }
     );
 }
