@@ -18346,7 +18346,7 @@
       "targetPath": "source/host/src/runner/prompt_collector_glue.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "8ad85f39be093ca71e34f3d053d9bb58bf4eafc6",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -18354,14 +18354,18 @@
         "source/host/src/runner/prompt_collector_glue.rs",
         "source/host/src/runner/production_turn_agent_owner.rs",
         "source/host/src/runner/sand_agent_runner.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/production_turn_input_projection.rs",
+        "source/host/src/runner/generated_agent_turn_stream.rs"
       ],
       "testEvidence": [
         "source/host/tests/prompt_collector_glue_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/production_turn_input_projection_contract.rs",
+        "source/host/tests/system_prompt_dynamic_sections_production_contract.rs"
       ],
-      "notes": "Shipping Rust now owns the frozen provider-facing core prompt projection for message-id addressing, reply context, attached-file notes/size/staged paths, user-reply reminder, hidden/trusted-automation markers and unanswered-question prepend. startRoutedProvider invokes this projection before provider execution while ProductionTurnAgentOwner keeps original durable lifecycle/checkpoint messages separate from shaped provider messages, preventing prompt decoration from corrupting recovery/message identity. Final is withheld for generated ConversationAction/UserMessage/SelectedContext construction, attachment staging, selected image/video byte materialization, shell-watch prepend collection, automation status reminder compaction, profile-update injection, MCP custom instructions/discovery status and remote-box/computer/browser sections."
+      "notes": "Shipping Rust prompt collection now owns the frozen turn-boundary responsibilities: durable user/reply/file shaping, attachment and selected-media box staging, unanswered-user recovery, hidden/trusted automation markers, automation-status compaction, profile/MCP/remote/computer prompt sections, and an immutable per-turn action snapshot carrying message identity, richText, reply context, attached files, selected-image bytes/metadata, and selected-video metadata/bytes. Subagent videos without a transferable handle are materialized with the frozen 100 MiB guard and container validation, and the action is frozen into ProductionTurnInputProjection and carried through the generated Agent stream boundary. Provider-specific native multimodal encoding/consumption remains a later Runner/provider responsibility and is not claimed by this row."
     },
     {
       "referencePath": "source/host/runner/remote-box-resources.ts",

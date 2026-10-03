@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, HashMap};
+use std::fs;
 use std::path::PathBuf;
 
+use base64::Engine;
 use serde_json::Value;
 
 use crate::automations::automation_status_reminder::render_automation_cleared_status_reminder;
@@ -25,6 +27,7 @@ use super::system_prompt_assembly::{
     append_computer_system_prompt, append_mcp_system_prompt_sections,
     append_remote_box_system_prompt,
 };
+use super::video_container::bytes_look_like_video_container;
 
 /// Provider-facing prompt projection for the frozen prompt-collector boundary.
 ///
@@ -38,6 +41,47 @@ pub struct ProviderPromptProjection {
     pub messages: Vec<ProviderMessage>,
     pub projected_user_text: Option<String>,
     pub prepended_unanswered_questions: bool,
+}
+
+const MAX_SELECTED_VIDEO_BYTES: u64 = 100 * 1024 * 1024;
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct PromptCollectorSelectedImage {
+    pub raw: Value,
+    pub path: Option<String>,
+    pub box_path: Option<String>,
+    pub mime_type: Option<String>,
+    pub data: Option<Vec<u8>>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct PromptCollectorSelectedVideo {
+    pub raw: Value,
+    pub path: Option<String>,
+    pub box_path: Option<String>,
+    pub mime_type: Option<String>,
+    pub filename: Option<String>,
+    pub fps: Option<u32>,
+    pub materialize_to_filesystem: bool,
+    pub data: Option<Vec<u8>>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct PromptCollectorSelectedContext {
+    pub selected_images: Vec<PromptCollectorSelectedImage>,
+    pub selected_videos: Vec<PromptCollectorSelectedVideo>,
+    pub attached_file_paths: Vec<String>,
+    pub staged_file_paths: Vec<String>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct PromptCollectorTurnAction {
+    pub message_id: Option<String>,
+    pub text: String,
+    pub rich_text: Option<String>,
+    pub reply_context: Option<Value>,
+    pub hidden: bool,
+    pub selected_context: PromptCollectorSelectedContext,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -203,6 +247,231 @@ pub fn append_remote_runtime_sections_for_turn(
 ) {
     append_remote_box_system_prompt(messages, remote_box);
     append_computer_system_prompt(messages, computer);
+}
+
+pub fn selected_media_host_paths_for_turn(args: &Value) -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+    for field in ["selectedImages", "selectedVideos"] {
+        for value in args
+            .get(field)
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            let Some(path) = optional_non_empty(value, "path") else {
+                continue;
+            };
+            let path = PathBuf::from(path);
+            if !paths.iter().any(|known| known == &path) {
+                paths.push(path);
+            }
+        }
+    }
+    paths
+}
+
+pub fn collect_turn_action_for_projection(
+    args: &Value,
+    messages: &[ProviderMessage],
+) -> Result<PromptCollectorTurnAction, String> {
+    let message_id = optional_non_empty(args, "messageId").map(ToOwned::to_owned);
+    let text = messages
+        .iter()
+        .rev()
+        .find(|message| message.role == "user")
+        .map(|message| message.content.clone())
+        .unwrap_or_default();
+    let rich_text = optional_non_empty(args, "richText")
+        .map(ToOwned::to_owned)
+        .or_else(|| {
+            let message_id = message_id.as_deref()?;
+            args.get("recentUserMessages")
+                .and_then(Value::as_array)?
+                .iter()
+                .find(|message| optional_non_empty(message, "id") == Some(message_id))
+                .and_then(|message| optional_non_empty(message, "richText"))
+                .map(ToOwned::to_owned)
+        });
+    let box_paths = string_map(args.get("boxPathByHostPath"));
+    let attached_file_paths = string_array(args, "attachmentPaths")
+        .or_else(|| string_array(args, "attachedFilePaths"))
+        .unwrap_or_default();
+    let staged_file_paths = attached_file_paths
+        .iter()
+        .filter_map(|path| box_paths.get(path).cloned())
+        .collect::<Vec<_>>();
+
+    let selected_images = args
+        .get("selectedImages")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .map(|raw| {
+            let path = optional_non_empty(raw, "path").map(ToOwned::to_owned);
+            PromptCollectorSelectedImage {
+                raw: raw.clone(),
+                box_path: path.as_ref().and_then(|path| box_paths.get(path).cloned()),
+                path,
+                mime_type: optional_non_empty(raw, "mimeType")
+                    .or_else(|| optional_non_empty(raw, "mime_type"))
+                    .map(ToOwned::to_owned),
+                data: selected_media_bytes(raw),
+            }
+        })
+        .collect::<Vec<_>>();
+
+    let is_subagent = optional_non_empty(args, "parentAgentId").is_some();
+    let mut selected_videos = Vec::new();
+    for raw in args
+        .get("selectedVideos")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let path = optional_non_empty(raw, "path").map(ToOwned::to_owned);
+        let mut data = selected_media_bytes(raw);
+        if is_subagent && data.is_none() && !selected_media_has_external_reference(raw) {
+            if let Some(path) = path.as_deref() {
+                data = Some(read_subagent_video_bytes(path)?);
+            }
+        }
+        let fps = raw
+            .get("fps")
+            .and_then(Value::as_f64)
+            .filter(|value| {
+                value.is_finite()
+                    && *value >= 0.0
+                    && value.fract() == 0.0
+                    && *value <= u32::MAX as f64
+            })
+            .map(|value| value as u32);
+        selected_videos.push(PromptCollectorSelectedVideo {
+            raw: raw.clone(),
+            box_path: path.as_ref().and_then(|path| box_paths.get(path).cloned()),
+            path,
+            mime_type: optional_non_empty(raw, "mimeType")
+                .or_else(|| optional_non_empty(raw, "mime_type"))
+                .map(ToOwned::to_owned),
+            filename: optional_non_empty(raw, "filename").map(ToOwned::to_owned),
+            fps,
+            materialize_to_filesystem: raw
+                .get("materializeToFilesystem")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
+            data,
+        });
+    }
+
+    Ok(PromptCollectorTurnAction {
+        message_id,
+        text,
+        rich_text,
+        reply_context: args.get("replyContext").filter(|value| !value.is_null()).cloned(),
+        hidden: args.get("hidden").and_then(Value::as_bool).unwrap_or(false),
+        selected_context: PromptCollectorSelectedContext {
+            selected_images,
+            selected_videos,
+            attached_file_paths,
+            staged_file_paths,
+        },
+    })
+}
+
+fn selected_media_bytes(value: &Value) -> Option<Vec<u8>> {
+    if let Some(data) = value.get("data").and_then(decode_media_bytes) {
+        return Some(data);
+    }
+    let data_or_blob = value
+        .get("dataOrBlobId")
+        .or_else(|| value.get("data_or_blob_id"))
+        .and_then(Value::as_object)?;
+    match data_or_blob.get("case").and_then(Value::as_str) {
+        Some("data") => data_or_blob.get("value").and_then(decode_media_bytes),
+        Some("blobIdWithData") | Some("blob_id_with_data") => data_or_blob
+            .get("value")
+            .and_then(|value| value.get("data"))
+            .and_then(decode_media_bytes),
+        _ => None,
+    }
+}
+
+fn selected_media_has_external_reference(value: &Value) -> bool {
+    if ["blobId", "blob_id", "promptUploadRef", "prompt_upload_ref", "signedUrl", "signed_url"]
+        .into_iter()
+        .any(|field| value.get(field).is_some_and(|value| !value.is_null()))
+    {
+        return true;
+    }
+    value
+        .get("dataOrBlobId")
+        .or_else(|| value.get("data_or_blob_id"))
+        .and_then(Value::as_object)
+        .and_then(|value| value.get("case"))
+        .and_then(Value::as_str)
+        .is_some_and(|case| !matches!(case, "data" | "blobIdWithData" | "blob_id_with_data"))
+}
+
+fn decode_media_bytes(value: &Value) -> Option<Vec<u8>> {
+    if let Some(values) = value.as_array() {
+        return values
+            .iter()
+            .map(|value| {
+                value
+                    .as_u64()
+                    .filter(|value| *value <= u8::MAX as u64)
+                    .map(|value| value as u8)
+            })
+            .collect();
+    }
+    if let Some(raw) = value.as_str() {
+        let payload = raw
+            .split_once(',')
+            .filter(|(prefix, _)| prefix.contains(";base64"))
+            .map(|(_, payload)| payload)
+            .unwrap_or(raw);
+        return base64::engine::general_purpose::STANDARD
+            .decode(payload)
+            .ok()
+            .or_else(|| {
+                base64::engine::general_purpose::URL_SAFE_NO_PAD
+                    .decode(payload)
+                    .ok()
+            });
+    }
+    let object = value.as_object()?;
+    let mut indexed = object
+        .iter()
+        .filter_map(|(index, value)| {
+            let index = index.parse::<usize>().ok()?;
+            let byte = value.as_u64().filter(|value| *value <= u8::MAX as u64)? as u8;
+            Some((index, byte))
+        })
+        .collect::<Vec<_>>();
+    if indexed.is_empty() {
+        return None;
+    }
+    indexed.sort_by_key(|(index, _)| *index);
+    indexed
+        .iter()
+        .enumerate()
+        .all(|(expected, (index, _))| expected == *index)
+        .then(|| indexed.into_iter().map(|(_, byte)| byte).collect())
+}
+
+fn read_subagent_video_bytes(path: &str) -> Result<Vec<u8>, String> {
+    let metadata = fs::metadata(path)
+        .map_err(|error| format!("could not inspect selected video {path}: {error}"))?;
+    if metadata.len() > MAX_SELECTED_VIDEO_BYTES {
+        return Err(format!("selected video {path} exceeds the 100 MiB turn limit"));
+    }
+    let bytes = fs::read(path)
+        .map_err(|error| format!("could not read selected video {path}: {error}"))?;
+    if !bytes_look_like_video_container(&bytes) {
+        return Err(format!(
+            "selected video {path} does not match a supported video container"
+        ));
+    }
+    Ok(bytes)
 }
 
 pub fn apply_staged_attachment_paths_for_turn(

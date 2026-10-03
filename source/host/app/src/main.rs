@@ -275,7 +275,7 @@ use mahayana_host_runtime::runner::prompt_collector_glue::{
     append_profile_system_section_for_turn, append_remote_runtime_sections_for_turn,
     prepend_unconfirmed_user_messages_for_turn,
     apply_dynamic_user_context_for_turn, project_provider_messages_for_turn,
-    resolve_profile_update_for_turn,
+    resolve_profile_update_for_turn, selected_media_host_paths_for_turn,
 };
 use mahayana_host_runtime::runner::sand_memory::{
     FrozenMemorySnapshot, MEMORY_PROJECT_INJECTED_CAP, MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
@@ -4912,7 +4912,7 @@ fn start_routed_provider_task(
         stream_id.clone(),
         events.clone(),
     );
-    let attachment_paths = args
+    let mut attachment_paths = args
         .get("attachmentPaths")
         .and_then(serde_json::Value::as_array)
         .into_iter()
@@ -4920,6 +4920,11 @@ fn start_routed_provider_task(
         .filter_map(serde_json::Value::as_str)
         .map(PathBuf::from)
         .collect::<Vec<_>>();
+    for media_path in selected_media_host_paths_for_turn(&args) {
+        if !attachment_paths.iter().any(|known| known == &media_path) {
+            attachment_paths.push(media_path);
+        }
+    }
     if !attachment_paths.is_empty() {
         if let Some(services) = transcript_manager.production_services() {
             let staged = services.attachments.stage_into_box(&agent_id, &attachment_paths);

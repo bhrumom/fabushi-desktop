@@ -29,8 +29,19 @@ fn production_turn_projection_binds_stream_identity_and_recovery_shape() {
         ],
         "isFork": true,
         "attachmentPaths": ["/tmp/a", "/tmp/b"],
-        "selectedImages": [{"id":"image"}],
-        "selectedVideos": [{"id":"video"}],
+        "selectedImages": [{
+            "uuid":"image",
+            "path":"/tmp/image.png",
+            "mimeType":"image/png",
+            "data":[1,2,3]
+        }],
+        "selectedVideos": [{
+            "uuid":"video",
+            "path":"/tmp/video.mp4",
+            "mimeType":"video/mp4",
+            "filename":"video.mp4",
+            "data":[0,0,0,0,102,116,121,112]
+        }],
         "replyContext": {"id":"reply"}
     });
     let messages = vec![ProviderMessage {
@@ -71,6 +82,19 @@ fn production_turn_projection_binds_stream_identity_and_recovery_shape() {
     assert_eq!(projected.options.image_count, 1);
     assert_eq!(projected.options.video_count, 1);
     assert!(projected.options.has_reply_context);
+    assert_eq!(projected.prompt_action.message_id.as_deref(), Some("msg-1"));
+    assert_eq!(
+        projected.prompt_action.selected_context.selected_images[0]
+            .data
+            .as_deref(),
+        Some(&[1, 2, 3][..])
+    );
+    assert_eq!(
+        projected.prompt_action.selected_context.selected_videos[0]
+            .filename
+            .as_deref(),
+        Some("video.mp4")
+    );
 }
 
 #[test]
@@ -199,6 +223,7 @@ fn production_turn_agent_projection_freezes_action_mcp_ack_and_base_state() {
     let turn_input = ProductionTurnInputProjection {
         options: TurnRunOptions::default(),
         ack_token: Some("ack-1".into()),
+        prompt_action: Default::default(),
     };
 
     let projected = create_production_turn_agent_input_projection(
@@ -213,6 +238,7 @@ fn production_turn_agent_projection_freezes_action_mcp_ack_and_base_state() {
 
     assert_eq!(projected.action.lifecycle_messages, lifecycle_messages);
     assert_eq!(projected.action.provider_messages, provider_messages);
+    assert_eq!(projected.action.prompt_action, turn_input.prompt_action);
     assert_eq!(projected.mcp_tools.len(), 1);
     assert_eq!(projected.mcp_tools[0].name, "mcp__demo");
     assert_eq!(projected.base_state_bytes, vec![1, 2, 3, 4]);
@@ -292,6 +318,7 @@ fn production_turn_agent_projection_degrades_failed_mcp_discovery_to_empty_snaps
     let turn_input = ProductionTurnInputProjection {
         options: TurnRunOptions::default(),
         ack_token: Some("ack-fallback".into()),
+        prompt_action: Default::default(),
     };
     let mut emit_update = |_delta: &str, _accumulated: &str| {};
 

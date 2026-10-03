@@ -15,6 +15,7 @@ use super::inactive_turn_agent_stream::{
 use super::production_agent_checkpoint::{
     AgentStateCheckpointSink, TextTurnCheckpointArtifacts,
 };
+use super::prompt_collector_glue::PromptCollectorTurnAction;
 use super::production_turn_input_projection::ProductionTurnAgentInputProjection;
 use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::turn_agent_composition::TurnAgentComposition;
@@ -27,6 +28,7 @@ pub struct GeneratedAgentTurnContext<'a> {
     pub data_dir: &'a Path,
     pub lifecycle_messages: &'a [ProviderMessage],
     pub provider_messages: &'a [ProviderMessage],
+    pub prompt_action: &'a PromptCollectorTurnAction,
     pub options: &'a TurnRunOptions,
     pub base_state_bytes: &'a [u8],
     pub ack_token: Option<&'a str>,
@@ -291,6 +293,7 @@ pub fn run_production_generated_agent_stream(
         data_dir,
         lifecycle_messages: &action.lifecycle_messages,
         provider_messages: &action.provider_messages,
+        prompt_action: &action.prompt_action,
         options: &options,
         base_state_bytes: &base_state_bytes,
         ack_token: ack_token.as_deref(),

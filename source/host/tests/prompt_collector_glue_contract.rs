@@ -1,11 +1,11 @@
 use mahayana_host_runtime::extensions::inference::provider_session::ProviderMessage;
 use mahayana_host_runtime::runner::prompt_collector_glue::{
     PromptCollectorAutomationReminderState, PromptCollectorDynamicUserContext,
-    apply_staged_attachment_paths_for_turn,
+    apply_staged_attachment_paths_for_turn, collect_turn_action_for_projection,
     append_mcp_runtime_sections_for_turn,
     append_profile_system_section_for_turn, append_remote_runtime_sections_for_turn,
     apply_dynamic_user_context_for_turn, prepend_unconfirmed_user_messages_for_turn,
-    project_provider_messages_for_turn,
+    project_provider_messages_for_turn, selected_media_host_paths_for_turn,
     resolve_profile_update_for_turn,
 };
 use mahayana_host_runtime::runner::sand_agent_profile_prompt::AgentProfileIdentity;
@@ -334,4 +334,109 @@ fn automation_status_reminder_state_matches_frozen_compaction_and_clear_semantic
 
     state.reset();
     assert_eq!(state.reminder_for_turn(None, 6), None);
+}
+
+
+#[test]
+fn prompt_collector_freezes_selected_context_rich_text_and_staged_media_paths() {
+    let args = serde_json::json!({
+        "messageId": "m-media",
+        "richText": "{\"type\":\"doc\"}",
+        "attachmentPaths": ["/tmp/report.csv"],
+        "selectedImages": [{
+            "uuid": "image-1",
+            "path": "/tmp/photo.png",
+            "mimeType": "image/png",
+            "data": [137, 80, 78, 71]
+        }],
+        "selectedVideos": [{
+            "uuid": "video-1",
+            "path": "/tmp/clip.mp4",
+            "mimeType": "video/mp4",
+            "filename": "clip.mp4",
+            "fps": 30,
+            "data": [0, 0, 0, 0, 102, 116, 121, 112]
+        }],
+        "boxPathByHostPath": {
+            "/tmp/report.csv": "/workspace/uploads/report.csv",
+            "/tmp/photo.png": "/workspace/uploads/photo.png",
+            "/tmp/clip.mp4": "/workspace/uploads/clip.mp4"
+        }
+    });
+    let lifecycle = vec![ProviderMessage {
+        role: "user".into(),
+        content: "Inspect the attached media".into(),
+    }];
+
+    let action =
+        collect_turn_action_for_projection(&args, &lifecycle).expect("turn action projection");
+    assert_eq!(action.message_id.as_deref(), Some("m-media"));
+    assert_eq!(action.text, "Inspect the attached media");
+    assert_eq!(action.rich_text.as_deref(), Some("{\"type\":\"doc\"}"));
+    assert_eq!(action.selected_context.selected_images.len(), 1);
+    assert_eq!(
+        action.selected_context.selected_images[0].data.as_deref(),
+        Some(&[137, 80, 78, 71][..])
+    );
+    assert_eq!(
+        action.selected_context.selected_images[0].box_path.as_deref(),
+        Some("/workspace/uploads/photo.png")
+    );
+    assert_eq!(action.selected_context.selected_videos.len(), 1);
+    assert_eq!(action.selected_context.selected_videos[0].fps, Some(30));
+    assert_eq!(
+        action.selected_context.selected_videos[0].box_path.as_deref(),
+        Some("/workspace/uploads/clip.mp4")
+    );
+    assert_eq!(
+        action.selected_context.staged_file_paths,
+        vec!["/workspace/uploads/report.csv"]
+    );
+
+    assert_eq!(
+        selected_media_host_paths_for_turn(&args),
+        vec![
+            std::path::PathBuf::from("/tmp/photo.png"),
+            std::path::PathBuf::from("/tmp/clip.mp4")
+        ]
+    );
+}
+
+#[test]
+fn subagent_video_without_transfer_handle_materializes_and_validates_bytes() {
+    let unique = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    let path = std::env::temp_dir().join(format!(
+        "fabushi-prompt-video-{}-{unique}.mp4",
+        std::process::id()
+    ));
+    let bytes = vec![0, 0, 0, 0, b'f', b't', b'y', b'p', 0, 0, 0, 0];
+    std::fs::write(&path, &bytes).expect("write test video");
+    let args = serde_json::json!({
+        "parentAgentId": "parent-agent",
+        "selectedVideos": [{
+            "path": path.to_string_lossy(),
+            "mimeType": "video/mp4",
+            "filename": "clip.mp4"
+        }]
+    });
+    let lifecycle = vec![ProviderMessage {
+        role: "user".into(),
+        content: "Inspect the video".into(),
+    }];
+
+    let action =
+        collect_turn_action_for_projection(&args, &lifecycle).expect("materialized video");
+    assert_eq!(
+        action.selected_context.selected_videos[0].data.as_deref(),
+        Some(bytes.as_slice())
+    );
+
+    std::fs::write(&path, b"not-a-video").expect("write invalid test video");
+    let error = collect_turn_action_for_projection(&args, &lifecycle)
+        .expect_err("invalid video must fail closed");
+    assert!(error.contains("supported video container"));
+    let _ = std::fs::remove_file(path);
 }

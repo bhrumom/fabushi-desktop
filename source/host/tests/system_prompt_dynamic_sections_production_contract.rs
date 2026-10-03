@@ -51,10 +51,15 @@ fn shipping_provider_turn_consumes_dynamic_sections_in_frozen_order() {
     assert!(collector.contains("pub fn prepend_unconfirmed_user_messages_for_turn("));
     assert!(collector.contains("collect_prepend_user_messages("));
     assert!(turn_prefix.contains("production_services()"));
+    assert!(turn_prefix.contains("selected_media_host_paths_for_turn(&args)"));
+    assert!(turn_prefix.contains("attachment_paths.push(media_path)"));
     assert!(turn_prefix.contains("services.attachments.stage_into_box(&agent_id, &attachment_paths)"));
     assert_eq!(
         source.matches("apply_staged_attachment_paths_for_turn(").count(),
         1
     );
     assert!(collector.contains("pub fn apply_staged_attachment_paths_for_turn("));
+    assert!(collector.contains("pub fn collect_turn_action_for_projection("));
+    assert!(collector.contains("read_subagent_video_bytes("));
+    assert!(collector.contains("bytes_look_like_video_container("));
 }

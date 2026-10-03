@@ -8,6 +8,9 @@ use crate::extensions::inference::provider_session::{
 
 use super::conversation_state::RecentUserMessage;
 use super::production_agent_checkpoint::AgentStateCheckpointSink;
+use super::prompt_collector_glue::{
+    PromptCollectorTurnAction, collect_turn_action_for_projection,
+};
 use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::turn_agent_composition::TurnAgentComposition;
 use super::TurnRunOptions;
@@ -16,12 +19,14 @@ use super::TurnRunOptions;
 pub struct ProductionTurnInputProjection {
     pub options: TurnRunOptions,
     pub ack_token: Option<String>,
+    pub prompt_action: PromptCollectorTurnAction,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProductionTurnActionProjection {
     pub lifecycle_messages: Vec<ProviderMessage>,
     pub provider_messages: Vec<ProviderMessage>,
+    pub prompt_action: PromptCollectorTurnAction,
 }
 
 pub struct ProductionTurnAgentInputProjection<'a> {
@@ -51,6 +56,7 @@ pub fn create_production_turn_agent_input_projection<'a>(
         action: ProductionTurnActionProjection {
             lifecycle_messages: lifecycle_messages.to_vec(),
             provider_messages: provider_messages.to_vec(),
+            prompt_action: turn_input.prompt_action.clone(),
         },
         mcp_tools,
         base_state_bytes,
@@ -65,10 +71,10 @@ pub fn create_production_turn_input_projection(
     args: &Value,
     stream_id: &str,
     messages: &[ProviderMessage],
-) -> Result<ProductionTurnInputProjection, &'static str> {
+) -> Result<ProductionTurnInputProjection, String> {
     let request_id = stream_id.trim();
     if request_id.is_empty() {
-        return Err("production turn input projection requires streamId");
+        return Err("production turn input projection requires streamId".into());
     }
 
     let latest_user_text = messages
@@ -84,6 +90,8 @@ pub fn create_production_turn_input_projection(
             .find(|message| message.id == message_id)
             .map(|message| message.text.clone())
     });
+
+    let prompt_action = collect_turn_action_for_projection(args, messages)?;
 
     Ok(ProductionTurnInputProjection {
         options: TurnRunOptions {
@@ -103,6 +111,7 @@ pub fn create_production_turn_input_projection(
                 .is_some_and(|value| !value.is_null()),
         },
         ack_token: None,
+        prompt_action,
     })
 }
 
