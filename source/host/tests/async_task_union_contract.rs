@@ -160,6 +160,35 @@ fn merge_deduplicates_live_ownership_and_sorts_by_start_then_id() {
 }
 
 #[test]
+fn restart_shell_marker_enriches_the_live_owner_without_creating_a_duplicate() {
+    let live = vec![AsyncTask {
+        kind: "shell".into(),
+        id: "shell-restarted".into(),
+        label: "Long build".into(),
+        status: "running".into(),
+        started_at_ms: 10.0,
+        detail: None,
+        subagent_type: None,
+    }];
+    let mut restarted = marker(
+        "agent-a",
+        PendingWakeKind::Shell,
+        "shell-restarted",
+        10.0,
+        Some("Long build"),
+        None,
+    );
+    restarted.interrupted_by_recreate = true;
+
+    let tasks = merge_async_tasks(&live, &[restarted]);
+    assert_eq!(tasks.len(), 1);
+    assert_eq!(
+        tasks[0].detail.as_deref(),
+        Some("reattached after a host restart")
+    );
+}
+
+#[test]
 fn shipping_runtime_projects_durable_pending_wakes_for_get_async_tasks() {
     let root = temp_root("runtime");
     fs::create_dir_all(&root).expect("root");

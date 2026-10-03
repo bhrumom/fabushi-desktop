@@ -75,9 +75,18 @@ pub fn merge_async_tasks(
     let mut merged = live_tasks.to_vec();
     for marker in markers {
         let key = (kind_name(marker.kind).to_string(), marker.work_id.clone());
-        if seen.insert(key) {
-            merged.push(pending_wake_marker_to_async_task(marker));
+        if !seen.insert(key.clone()) {
+            if marker.kind == PendingWakeKind::Shell && marker.interrupted_by_recreate {
+                if let Some(task) = merged
+                    .iter_mut()
+                    .find(|task| task.kind == key.0 && task.id == key.1)
+                {
+                    task.detail = Some("reattached after a host restart".to_string());
+                }
+            }
+            continue;
         }
+        merged.push(pending_wake_marker_to_async_task(marker));
     }
     merged.sort_by(|a, b| {
         a.started_at_ms
