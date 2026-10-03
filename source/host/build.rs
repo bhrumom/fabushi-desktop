@@ -1062,6 +1062,388 @@ fn generate_agent_v1_local_exec_bindings(manifest_dir: &std::path::Path) {
         .expect("generate protobuf-JSON serde for canonical agent.v1 local-exec bindings");
 }
 
+
+fn signed_number_after(input: &str, marker: &str) -> Option<i64> {
+    let rest = input.get(input.find(marker)? + marker.len()..)?.trim_start();
+    let value: String = rest
+        .chars()
+        .take_while(|ch| ch.is_ascii_digit() || *ch == '-')
+        .collect();
+    (!value.is_empty()).then(|| value.parse().ok()).flatten()
+}
+
+fn parse_generated_enum_definitions(
+    content: &str,
+    symbol_to_types: &mut BTreeMap<String, BTreeSet<String>>,
+    values_by_type: &mut BTreeMap<String, Vec<(i64, String)>>,
+) {
+    let marker = "proto3.util.setEnumType(";
+    let mut cursor = 0usize;
+    while let Some(relative) = content[cursor..].find(marker) {
+        let start = cursor + relative + marker.len();
+        let Some(comma_relative) = content[start..].find(',') else { break };
+        let comma = start + comma_relative;
+        let symbol = content[start..comma].trim();
+        let rest = &content[comma + 1..];
+        let Some(type_name) = quoted_after(rest, "") else {
+            cursor = comma + 1;
+            continue;
+        };
+        let Some(array_start_relative) = rest.find('[') else {
+            cursor = comma + 1;
+            continue;
+        };
+        let array_start = comma + 1 + array_start_relative + 1;
+        let Some(array_end_relative) = content[array_start..].find("]);") else {
+            cursor = array_start;
+            continue;
+        };
+        let array_end = array_start + array_end_relative;
+        let mut values = Vec::new();
+        for object in split_top_level_objects(&content[array_start..array_end]) {
+            let Some(number) = signed_number_after(object, "no:") else { continue };
+            let Some(name) = quoted_after(object, "name:") else { continue };
+            values.push((number, name));
+        }
+        symbol_to_types
+            .entry(symbol.to_string())
+            .or_default()
+            .insert(type_name.clone());
+        values_by_type.insert(type_name, values);
+        cursor = array_end + 3;
+    }
+}
+
+fn parse_generated_enum_field_symbols(
+    content: &str,
+    output: &mut BTreeMap<(String, u64), String>,
+) {
+    let type_marker = ".typeName = \"";
+    let fields_marker = ").fields = proto3.util.newFieldList(() => [";
+    let mut cursor = 0usize;
+    while let Some(relative) = content[cursor..].find(type_marker) {
+        let type_pos = cursor + relative;
+        let line_start = content[..type_pos].rfind('\n').map(|idx| idx + 1).unwrap_or(0);
+        let line_end = content[type_pos..]
+            .find('\n')
+            .map(|idx| type_pos + idx)
+            .unwrap_or(content.len());
+        let line = &content[line_start..line_end];
+        let Some(symbol) = line
+            .trim_start()
+            .strip_prefix('(')
+            .and_then(|value| value.split(" as MutableMessageType").next())
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        else {
+            cursor = line_end;
+            continue;
+        };
+        let Some(type_name) = quoted_after(line, ".typeName = ") else {
+            cursor = line_end;
+            continue;
+        };
+        let after = &content[line_end..];
+        let symbol_marker = format!("({symbol} as MutableMessageType<");
+        let Some(symbol_fields) = after.find(&symbol_marker) else {
+            cursor = line_end;
+            continue;
+        };
+        let fields_start = line_end + symbol_fields;
+        let Some(marker_pos) = content[fields_start..].find(fields_marker) else {
+            cursor = fields_start + symbol_marker.len();
+            continue;
+        };
+        let array_start = fields_start + marker_pos + fields_marker.len();
+        let Some(array_end_relative) = content[array_start..].find("]);") else {
+            cursor = array_start;
+            continue;
+        };
+        let array_end = array_start + array_end_relative;
+        for object in split_top_level_objects(&content[array_start..array_end]) {
+            let Some(number) = number_after(object, "no:") else { continue };
+            let kind = quoted_after(object, "kind:").unwrap_or_default();
+            let enum_source = if kind == "enum" {
+                Some(object)
+            } else if kind == "map" {
+                object
+                    .find("V:")
+                    .and_then(|index| object.get(index + 2..))
+                    .filter(|value| quoted_after(value, "kind:").as_deref() == Some("enum"))
+            } else {
+                None
+            };
+            let Some(enum_source) = enum_source else { continue };
+            let Some(enum_marker) = enum_source.find("getEnumType(") else { continue };
+            let enum_rest = &enum_source[enum_marker + "getEnumType(".len()..];
+            let enum_symbol: String = enum_rest
+                .chars()
+                .take_while(|ch| ch.is_ascii_alphanumeric() || *ch == '_')
+                .collect();
+            if !enum_symbol.is_empty() {
+                output.insert((type_name.clone(), number), enum_symbol);
+            }
+        }
+        cursor = array_end + 3;
+    }
+}
+
+fn generate_agent_tool_json_schema(manifest_dir: &std::path::Path) {
+    let proto_root = manifest_dir.join("../packages/proto/generated");
+    println!("cargo:rerun-if-changed={}", proto_root.display());
+    let mut files = Vec::new();
+    collect_generated_proto_ts_files(&proto_root, &mut files);
+
+    let mut defs = BTreeMap::<String, CloudTraceGeneratedMessage>::new();
+    let mut symbol_to_types = BTreeMap::<String, BTreeSet<String>>::new();
+    let mut enum_values = BTreeMap::<String, Vec<(i64, String)>>::new();
+    let mut enum_field_symbols = BTreeMap::<(String, u64), String>::new();
+    for path in &files {
+        let content = fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("read generated protobuf TypeScript {}: {error}", path.display()));
+        parse_cloud_trace_message_definitions(&content, &mut defs, &mut symbol_to_types);
+        parse_generated_enum_definitions(&content, &mut symbol_to_types, &mut enum_values);
+        parse_generated_enum_field_symbols(&content, &mut enum_field_symbols);
+    }
+    add_cloud_trace_well_known_types(&mut defs, &mut symbol_to_types);
+    enum_values.entry("google.protobuf.NullValue".to_string())
+        .or_insert_with(|| vec![(0, "NULL_VALUE".to_string())]);
+    symbol_to_types.entry("NullValue".to_string()).or_default()
+        .insert("google.protobuf.NullValue".to_string());
+
+    let parent_names = defs.keys().cloned().collect::<Vec<_>>();
+    for parent_type in parent_names {
+        let Some(message) = defs.get_mut(&parent_type) else { continue };
+        for field in &mut message.fields {
+            match &mut field.kind {
+                CloudTraceGeneratedFieldKind::Message { child_symbol, child_type } => {
+                    *child_type = resolve_cloud_trace_symbol(&parent_type, child_symbol, &symbol_to_types);
+                }
+                CloudTraceGeneratedFieldKind::Map {
+                    value: CloudTraceGeneratedMapValueKind::Message { child_symbol, child_type },
+                    ..
+                } => {
+                    *child_type = resolve_cloud_trace_symbol(&parent_type, child_symbol, &symbol_to_types);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    let mut enum_field_types = BTreeMap::<(String, u64), String>::new();
+    for ((parent_type, field_number), symbol) in enum_field_symbols {
+        let enum_type = resolve_cloud_trace_symbol(&parent_type, &symbol, &symbol_to_types)
+            .unwrap_or_else(|| panic!("could not resolve generated enum symbol {symbol} for {parent_type}.{field_number}"));
+        enum_field_types.insert((parent_type, field_number), enum_type);
+    }
+
+    let root = defs.get("agent.v1.ToolCall")
+        .expect("canonical generated agent.v1.ToolCall is missing");
+    let mut tool_calls = Vec::<(u64, String, String, Option<String>, Option<String>)>::new();
+    let mut roots = Vec::<String>::new();
+    for field in root.fields.iter().filter(|field| field.oneof.as_deref() == Some("tool")) {
+        let CloudTraceGeneratedFieldKind::Message { child_type: Some(tool_type), .. } = &field.kind else {
+            panic!("agent.v1.ToolCall field {} must resolve to a message", field.number);
+        };
+        let tool_message = defs.get(tool_type)
+            .unwrap_or_else(|| panic!("generated tool call message missing: {tool_type}"));
+        let args_type = tool_message.fields.iter()
+            .find(|candidate| candidate.proto_name == "args")
+            .and_then(|candidate| match &candidate.kind {
+                CloudTraceGeneratedFieldKind::Message { child_type, .. } => child_type.clone(),
+                _ => None,
+            });
+        let result_type = tool_message.fields.iter()
+            .find(|candidate| candidate.proto_name == "result")
+            .and_then(|candidate| match &candidate.kind {
+                CloudTraceGeneratedFieldKind::Message { child_type, .. } => child_type.clone(),
+                _ => None,
+            });
+        if let Some(value) = args_type.as_ref() { roots.push(value.clone()); }
+        if let Some(value) = result_type.as_ref() { roots.push(value.clone()); }
+        let static_name = field.proto_name
+            .strip_suffix("_tool_call")
+            .unwrap_or(&field.proto_name)
+            .to_string();
+        tool_calls.push((field.number, static_name, tool_type.clone(), args_type, result_type));
+    }
+
+    let mut reachable = BTreeSet::<String>::new();
+    let mut queue = VecDeque::<String>::from(roots);
+    while let Some(type_name) = queue.pop_front() {
+        if !reachable.insert(type_name.clone()) { continue; }
+        let message = defs.get(&type_name)
+            .unwrap_or_else(|| panic!("generated agent tool JSON descriptor missing for {type_name}"));
+        for field in &message.fields {
+            match &field.kind {
+                CloudTraceGeneratedFieldKind::Message { child_type: Some(child_type), .. } => {
+                    if !reachable.contains(child_type) { queue.push_back(child_type.clone()); }
+                }
+                CloudTraceGeneratedFieldKind::Message { child_symbol, child_type: None } => {
+                    panic!("could not resolve generated message symbol {child_symbol} for {type_name}.{}", field.proto_name);
+                }
+                CloudTraceGeneratedFieldKind::Map {
+                    value: CloudTraceGeneratedMapValueKind::Message { child_type: Some(child_type), .. },
+                    ..
+                } => {
+                    if !reachable.contains(child_type) { queue.push_back(child_type.clone()); }
+                }
+                CloudTraceGeneratedFieldKind::Map {
+                    value: CloudTraceGeneratedMapValueKind::Message { child_symbol, child_type: None },
+                    ..
+                } => {
+                    panic!("could not resolve generated map message symbol {child_symbol} for {type_name}.{}", field.proto_name);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    let mut output = String::new();
+    output.push_str("// @generated by source/host/build.rs from frozen generated protobuf TypeScript.\n");
+    output.push_str("// Transcript occurrence tool JSON projection consumes this schema; do not hand-edit.\n\n");
+    output.push_str("#[derive(Debug, Clone, Copy)]\n");
+    output.push_str("enum AgentToolJsonMapValueKind { Scalar(u64), Enum(&'static [(i64, &'static str)]), Message(&'static str) }\n");
+    output.push_str("#[derive(Debug, Clone, Copy)]\n");
+    output.push_str("enum AgentToolJsonFieldKind { Scalar(u64), Enum(&'static [(i64, &'static str)]), Message(&'static str), Map { key_scalar: u64, value: AgentToolJsonMapValueKind } }\n");
+    output.push_str("#[derive(Debug, Clone, Copy)]\n");
+    output.push_str("struct AgentToolJsonFieldDescriptor { number: u64, json_name: &'static str, kind: AgentToolJsonFieldKind, repeated: bool, optional: bool, oneof: Option<&'static str> }\n");
+    output.push_str("#[derive(Debug, Clone, Copy)]\n");
+    output.push_str("struct AgentToolJsonMessageDescriptor { fields: &'static [AgentToolJsonFieldDescriptor] }\n");
+    output.push_str("#[derive(Debug, Clone, Copy)]\n");
+    output.push_str("struct AgentToolCallDescriptor { static_name: &'static str, args_type: Option<&'static str>, result_type: Option<&'static str> }\n\n");
+
+    output.push_str("fn generated_agent_tool_call_descriptor(field_number: u64) -> Option<AgentToolCallDescriptor> {\n    match field_number {\n");
+    for (number, static_name, _tool_type, args_type, result_type) in &tool_calls {
+        output.push_str("        ");
+        output.push_str(&number.to_string());
+        output.push_str(" => Some(AgentToolCallDescriptor { static_name: ");
+        output.push_str(&rust_string(static_name));
+        output.push_str(", args_type: ");
+        match args_type {
+            Some(value) => {
+                output.push_str("Some(");
+                output.push_str(&rust_string(value));
+                output.push(')');
+            }
+            None => output.push_str("None"),
+        }
+        output.push_str(", result_type: ");
+        match result_type {
+            Some(value) => {
+                output.push_str("Some(");
+                output.push_str(&rust_string(value));
+                output.push(')');
+            }
+            None => output.push_str("None"),
+        }
+        output.push_str(" }),\n");
+    }
+    output.push_str("        _ => None,\n    }\n}\n\n");
+
+    output.push_str("fn generated_agent_tool_json_message_descriptor(type_name: &str) -> Option<AgentToolJsonMessageDescriptor> {\n    match type_name {\n");
+    for type_name in &reachable {
+        let message = defs.get(type_name)
+            .unwrap_or_else(|| panic!("reachable agent tool JSON descriptor missing for {type_name}"));
+        output.push_str("        ");
+        output.push_str(&rust_string(type_name));
+        output.push_str(" => Some(AgentToolJsonMessageDescriptor { fields: &[\n");
+        for field in &message.fields {
+            output.push_str("            AgentToolJsonFieldDescriptor { number: ");
+            output.push_str(&field.number.to_string());
+            output.push_str(", json_name: ");
+            output.push_str(&rust_string(&field.json_name));
+            output.push_str(", kind: ");
+            match &field.kind {
+                CloudTraceGeneratedFieldKind::Scalar(scalar) => {
+                    output.push_str("AgentToolJsonFieldKind::Scalar(");
+                    output.push_str(&scalar.to_string());
+                    output.push(')');
+                }
+                CloudTraceGeneratedFieldKind::Enum => {
+                    let enum_type = enum_field_types.get(&(type_name.clone(), field.number))
+                        .unwrap_or_else(|| panic!("generated enum type missing for {type_name}.{}", field.proto_name));
+                    let values = enum_values.get(enum_type)
+                        .unwrap_or_else(|| panic!("generated enum values missing for {enum_type}"));
+                    output.push_str("AgentToolJsonFieldKind::Enum(&[");
+                    for (number, name) in values {
+                        output.push('(');
+                        output.push_str(&number.to_string());
+                        output.push_str(", ");
+                        output.push_str(&rust_string(name));
+                        output.push_str("),");
+                    }
+                    output.push_str("])");
+                }
+                CloudTraceGeneratedFieldKind::Message { child_type: Some(child_type), .. } => {
+                    output.push_str("AgentToolJsonFieldKind::Message(");
+                    output.push_str(&rust_string(child_type));
+                    output.push(')');
+                }
+                CloudTraceGeneratedFieldKind::Message { .. } => {
+                    panic!("unresolved generated message for {type_name}.{}", field.proto_name);
+                }
+                CloudTraceGeneratedFieldKind::Map { key_scalar, value } => {
+                    output.push_str("AgentToolJsonFieldKind::Map { key_scalar: ");
+                    output.push_str(&key_scalar.to_string());
+                    output.push_str(", value: ");
+                    match value {
+                        CloudTraceGeneratedMapValueKind::Scalar(scalar) => {
+                            output.push_str("AgentToolJsonMapValueKind::Scalar(");
+                            output.push_str(&scalar.to_string());
+                            output.push(')');
+                        }
+                        CloudTraceGeneratedMapValueKind::Enum => {
+                            let enum_type = enum_field_types.get(&(type_name.clone(), field.number))
+                                .unwrap_or_else(|| panic!("generated map enum type missing for {type_name}.{}", field.proto_name));
+                            let values = enum_values.get(enum_type)
+                                .unwrap_or_else(|| panic!("generated enum values missing for {enum_type}"));
+                            output.push_str("AgentToolJsonMapValueKind::Enum(&[");
+                            for (number, name) in values {
+                                output.push('(');
+                                output.push_str(&number.to_string());
+                                output.push_str(", ");
+                                output.push_str(&rust_string(name));
+                                output.push_str("),");
+                            }
+                            output.push_str("])");
+                        }
+                        CloudTraceGeneratedMapValueKind::Message { child_type: Some(child_type), .. } => {
+                            output.push_str("AgentToolJsonMapValueKind::Message(");
+                            output.push_str(&rust_string(child_type));
+                            output.push(')');
+                        }
+                        CloudTraceGeneratedMapValueKind::Message { .. } => {
+                            panic!("unresolved generated map message for {type_name}.{}", field.proto_name);
+                        }
+                    }
+                    output.push_str(" }");
+                }
+            }
+            output.push_str(", repeated: ");
+            output.push_str(if field.repeated { "true" } else { "false" });
+            output.push_str(", optional: ");
+            output.push_str(if field.optional { "true" } else { "false" });
+            output.push_str(", oneof: ");
+            match field.oneof.as_deref() {
+                Some(oneof) => {
+                    output.push_str("Some(");
+                    output.push_str(&rust_string(oneof));
+                    output.push(')');
+                }
+                None => output.push_str("None"),
+            }
+            output.push_str(" },\n");
+        }
+        output.push_str("        ] }),\n");
+    }
+    output.push_str("        _ => None,\n    }\n}\n");
+
+    let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR"));
+    fs::write(out_dir.join("agent_tool_json_schema.rs"), output)
+        .expect("write generated Agent tool JSON schema");
+}
+
 fn main() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR"));
     let proto_dir = manifest_dir.join("../packages/proto/generated/agent/v1");
@@ -1218,5 +1600,6 @@ fn main() {
 
     generate_cloud_agent_trace_schema(&manifest_dir);
     generate_client_side_tool_v2_schema(&manifest_dir);
+    generate_agent_tool_json_schema(&manifest_dir);
     generate_agent_v1_local_exec_bindings(&manifest_dir);
 }

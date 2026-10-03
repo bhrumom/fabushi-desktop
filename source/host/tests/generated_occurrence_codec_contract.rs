@@ -1,6 +1,7 @@
 use mahayana_host_runtime::transcript_mirror::generated_occurrence_codec::{
-    GeneratedToolJsonProjection, GeneratedToolProjection,
-    GeneratedTranscriptOccurrenceCodec, RejectGeneratedToolJsonProjection,
+    CanonicalGeneratedToolJsonProjection, GeneratedToolJsonProjection,
+    GeneratedToolProjection, GeneratedTranscriptOccurrenceCodec,
+    RejectGeneratedToolJsonProjection,
     generated_tool_name,
 };
 use mahayana_host_runtime::transcript_mirror::transcript_occurrence_deriver::{
@@ -8,6 +9,11 @@ use mahayana_host_runtime::transcript_mirror::transcript_occurrence_deriver::{
     TranscriptOccurrenceCodec,
 };
 use serde_json::json;
+use prost::Message;
+use mahayana_host_runtime::runner::agent_v1_wire::{
+    SendMessageArgs, SendMessageResult, SendMessageSuccess, SendMessageText,
+    SendMessageToolCall, send_message_args, send_message_result,
+};
 
 fn encode_varint(mut value: u64, output: &mut Vec<u8>) {
     while value >= 0x80 {
@@ -125,4 +131,61 @@ fn frozen_tool_case_field_numbers_map_to_stable_names() {
     assert_eq!(generated_tool_name(55), Some("send_message"));
     assert_eq!(generated_tool_name(77), Some("stop_agent"));
     assert_eq!(generated_tool_name(2), None);
+}
+
+
+#[test]
+fn canonical_generated_projection_matches_frozen_send_message_to_json_semantics() {
+    let tool = SendMessageToolCall {
+        args: Some(SendMessageArgs {
+            message: Some(send_message_args::Message::Text(SendMessageText {
+                content: "hello".into(),
+            })),
+        }),
+        result: Some(SendMessageResult {
+            result: Some(send_message_result::Result::Success(SendMessageSuccess {
+                timestamp: 123,
+                message_id: "msg-1".into(),
+            })),
+        }),
+    };
+    let codec = GeneratedTranscriptOccurrenceCodec::new(CanonicalGeneratedToolJsonProjection);
+    let step = field(2, &field(55, &tool.encode_to_vec()));
+    assert_eq!(
+        codec.decode_step(&step).expect("canonical send-message projection"),
+        DecodedTranscriptStep::Tool {
+            name: "send_message".into(),
+            input: json!({"text":{"content":"hello"}}),
+            result: Some(json!({
+                "success":{
+                    "timestamp":"123",
+                    "messageId":"msg-1"
+                }
+            })),
+        }
+    );
+}
+
+#[test]
+fn canonical_generated_projection_ignores_unknown_tool_message_fields() {
+    let tool = SendMessageToolCall {
+        args: Some(SendMessageArgs {
+            message: Some(send_message_args::Message::Text(SendMessageText {
+                content: "hello".into(),
+            })),
+        }),
+        result: None,
+    };
+    let mut tool_bytes = tool.encode_to_vec();
+    tool_bytes.extend(field(99, b"future"));
+    let codec = GeneratedTranscriptOccurrenceCodec::new(CanonicalGeneratedToolJsonProjection);
+    let step = field(2, &field(55, &tool_bytes));
+    assert_eq!(
+        codec.decode_step(&step).expect("unknown generated field"),
+        DecodedTranscriptStep::Tool {
+            name: "send_message".into(),
+            input: json!({"text":{"content":"hello"}}),
+            result: None,
+        }
+    );
 }

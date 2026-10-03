@@ -7,6 +7,14 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::runner::persist_checkpoint_with_mirror;
+use mahayana_host_runtime::runner::agent_v1_wire::{
+    SendMessageArgs, SendMessageResult, SendMessageSuccess, SendMessageText,
+    SendMessageToolCall, send_message_args, send_message_result,
+};
+use mahayana_host_runtime::transcript_mirror::generated_occurrence_codec::{
+    CanonicalGeneratedToolJsonProjection, GeneratedTranscriptOccurrenceCodec,
+};
+use prost::Message;
 use mahayana_host_runtime::transcript_mirror::production_provider::{
     ProductionTranscriptCheckpoint, ProductionTranscriptMirrorProvider,
 };
@@ -98,7 +106,7 @@ fn shipping_runner_binds_generated_checkpoint_codec_into_file_transcript_mirror(
     for binding in [
         "ProductionTranscriptMirrorProvider::with_reporter(",
         "GeneratedTranscriptOccurrenceCodec::new(",
-        "RejectGeneratedToolJsonProjection",
+        "CanonicalGeneratedToolJsonProjection",
         ".route_for_session(",
         "ProductionAgentStateCheckpointSink::new(",
         "transcript_mirror,",
@@ -219,6 +227,97 @@ fn provider_routes_real_worker_blob_store_through_shared_journal() {
             && outcome.entry_count == Some(1)
     }));
     drop(outcomes);
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+fn length_delimited_field(field: u64, value: &[u8]) -> Vec<u8> {
+    let mut output = Vec::new();
+    push_length_delimited(field, value, &mut output);
+    output
+}
+
+#[test]
+fn production_provider_derives_generated_tool_occurrence_with_canonical_json_projection() {
+    let root = temp_root("generated-tool");
+    let agents_root = root.join("agents");
+    let transcripts_dir = root.join("transcripts");
+    let workers = ProductionSessionWorkers::with_agents_root(&agents_root, 500);
+    let session = workers
+        .materialize_session_with_active(None, "user", None, None)
+        .expect("session");
+    let store = Arc::new(
+        workers
+            .create_agent_blob_store(&session.record.id)
+            .expect("blob store"),
+    );
+
+    let user_blob_id = [0xa2];
+    let turn_blob_id = [0xa1];
+    let user_bytes = length_delimited_field(1, b"run the tool");
+    let tool = SendMessageToolCall {
+        args: Some(SendMessageArgs {
+            message: Some(send_message_args::Message::Text(SendMessageText {
+                content: "tool answer".into(),
+            })),
+        }),
+        result: Some(SendMessageResult {
+            result: Some(send_message_result::Result::Success(SendMessageSuccess {
+                timestamp: 123,
+                message_id: "generated-msg".into(),
+            })),
+        }),
+    };
+    let tool_call = length_delimited_field(55, &tool.encode_to_vec());
+    let step = length_delimited_field(2, &tool_call);
+    let mut agent_turn = Vec::new();
+    push_length_delimited(1, &user_blob_id, &mut agent_turn);
+    push_length_delimited(2, &step, &mut agent_turn);
+    let turn_bytes = length_delimited_field(1, &agent_turn);
+
+    futures::executor::block_on(store.set_blob(&(), &user_blob_id, &user_bytes))
+        .expect("user blob");
+    futures::executor::block_on(store.set_blob(&(), &turn_blob_id, &turn_bytes))
+        .expect("turn blob");
+
+    let provider = ProductionTranscriptMirrorProvider::new(
+        &transcripts_dir,
+        GeneratedTranscriptOccurrenceCodec::new(CanonicalGeneratedToolJsonProjection),
+    );
+    let routed = provider
+        .route_for_session(Arc::clone(&store), &[], Arc::new(|| Ok(true)))
+        .expect("route");
+    let base = ProductionTranscriptCheckpoint::from_state_bytes(&[]).expect("base");
+    routed
+        .recover(&session.record.id, &base, &store)
+        .expect("recover");
+    let next_bytes = state_bytes(&[], &[&turn_blob_id], &[]);
+    let next = ProductionTranscriptCheckpoint::from_state_bytes(&next_bytes).expect("next");
+    futures::executor::block_on(persist_checkpoint_with_mirror(
+        Some(&routed),
+        Some(session.agent_store.as_ref()),
+        &session.record.id,
+        &next,
+        &store,
+        true,
+        false,
+        true,
+        |_| Err("production AgentStore must own the checkpoint".into()),
+    ))
+    .expect("persist generated tool occurrence");
+
+    let jsonl = fs::read_to_string(
+        transcripts_dir
+            .join(&session.record.id)
+            .join(format!("{}.jsonl", session.record.id)),
+    )
+    .expect("generated tool jsonl");
+    assert!(jsonl.contains("\"name\":\"send_message\""));
+    assert!(jsonl.contains("\"content\":\"tool answer\""));
+    assert!(jsonl.contains("\"timestamp\":\"123\""));
+    assert!(jsonl.contains("\"messageId\":\"generated-msg\""));
 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);

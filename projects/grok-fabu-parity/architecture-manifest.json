@@ -20087,22 +20087,25 @@
       "targetPath": "source/host/src/transcript_mirror/generated_occurrence_codec.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "e8a0b1f2474f766079484c792dd4ac04c27119c4",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/transcript_mirror/generated_occurrence_codec.rs",
         "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs",
-        "source/host/src/transcript_mirror/production_provider.rs"
+        "source/host/src/transcript_mirror/production_provider.rs",
+        "source/host/src/host_runner_composition.rs",
+        "source/host/build.rs"
       ],
       "testEvidence": [
         "source/host/tests/generated_occurrence_codec_contract.rs",
         "source/host/tests/transcript_mirror_production_provider_contract.rs",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust codec now decodes the frozen agent.v1 ConversationTurnStructure, UserMessage and ConversationStep outer wire contracts, including the complete frozen ToolCall oneof field-number/name table. Tool args/result JSON fails closed behind a mandatory GeneratedToolJsonProjection collaborator instead of guessing imported generated schemas. Final remains withheld until canonical generated agent.v1 Rust bindings (including imported tool messages) provide exact protobuf fromBinary/toJson behavior and the shipping production provider uses that collaborator."
+      "notes": "The shipping Host now binds CanonicalGeneratedToolJsonProjection instead of the fail-closed Reject collaborator. source/host/build.rs derives the complete agent.v1 ToolCall oneof plus recursively reachable args/result protobuf descriptors and enum JSON names from the frozen generated *_pb.ts corpus; generated_occurrence_codec.rs uses those descriptors for protobuf wire decoding and protobuf-JSON projection, including oneof selection, nested/repeated/map fields, enum names, 64-bit integer strings, bytes/base64, floats, Struct/ListValue/Value and Timestamp. Frozen outer ConversationTurnStructure/UserMessage/ConversationStep decoding remains fail-closed on malformed wire and ignores unknown fields. Focused contracts execute real generated SendMessage protobuf bytes through the canonical projector, and the production provider integration proves the shipping routed transcript mirror derives a generated tool occurrence with canonical args/result JSON. HostRunnerComposition is the single shipping codec composition owner; the former Reject projection is no longer used there."
     },
     {
       "referencePath": "source/host/transcript-mirror/legacy-transcript-mirror.ts",

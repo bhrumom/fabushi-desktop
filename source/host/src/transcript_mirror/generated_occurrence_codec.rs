@@ -1,4 +1,5 @@
-use serde_json::Value;
+use base64::{engine::general_purpose::STANDARD, Engine as _};
+use serde_json::{Map, Number, Value};
 
 use super::transcript_occurrence_deriver::{
     DecodedTranscriptStep, DecodedTranscriptTurn, DecodedUserMessage,
@@ -18,6 +19,466 @@ pub trait GeneratedToolJsonProjection: Send + Sync {
         tool_field_number: u64,
         tool_message: &[u8],
     ) -> Result<Option<GeneratedToolProjection>, String>;
+}
+
+
+include!(concat!(env!("OUT_DIR"), "/agent_tool_json_schema.rs"));
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct CanonicalGeneratedToolJsonProjection;
+
+impl GeneratedToolJsonProjection for CanonicalGeneratedToolJsonProjection {
+    fn project(
+        &self,
+        tool_field_number: u64,
+        tool_message: &[u8],
+    ) -> Result<Option<GeneratedToolProjection>, String> {
+        let Some(descriptor) = generated_agent_tool_call_descriptor(tool_field_number) else {
+            return Ok(None);
+        };
+        let mut input = Value::Object(Map::new());
+        let mut result = None;
+        let mut position = 0usize;
+        while position < tool_message.len() {
+            let tag = read_varint(tool_message, &mut position)?;
+            let field_number = tag >> 3;
+            let wire_type = (tag & 0x07) as u8;
+            match field_number {
+                1 if descriptor.args_type.is_some() => {
+                    let bytes = read_length_delimited(tool_message, &mut position, wire_type)?;
+                    input = decode_generated_json_message(
+                        bytes,
+                        descriptor.args_type.expect("checked args type"),
+                    )?;
+                }
+                2 if descriptor.result_type.is_some() => {
+                    let bytes = read_length_delimited(tool_message, &mut position, wire_type)?;
+                    result = Some(decode_generated_json_message(
+                        bytes,
+                        descriptor.result_type.expect("checked result type"),
+                    )?);
+                }
+                _ => skip_wire_value(tool_message, &mut position, wire_type)?,
+            }
+        }
+        let name_override = (tool_field_number == 15)
+            .then(|| {
+                input
+                    .get("toolName")
+                    .or_else(|| input.get("name"))
+                    .and_then(Value::as_str)
+                    .map(str::to_string)
+            })
+            .flatten();
+        Ok(Some(GeneratedToolProjection {
+            name_override,
+            input,
+            result,
+        }))
+    }
+}
+
+fn decode_generated_json_message(bytes: &[u8], type_name: &str) -> Result<Value, String> {
+    let descriptor = generated_agent_tool_json_message_descriptor(type_name)
+        .ok_or_else(|| format!("canonical generated JSON descriptor is missing for {type_name}"))?;
+    let mut object = Map::new();
+    let mut position = 0usize;
+    while position < bytes.len() {
+        let tag = read_varint(bytes, &mut position)?;
+        let field_number = tag >> 3;
+        let wire_type = (tag & 0x07) as u8;
+        let Some(field) = descriptor
+            .fields
+            .iter()
+            .find(|field| field.number == field_number)
+            .copied()
+        else {
+            skip_wire_value(bytes, &mut position, wire_type)?;
+            continue;
+        };
+
+        if let Some(oneof) = field.oneof {
+            for sibling in descriptor
+                .fields
+                .iter()
+                .filter(|candidate| candidate.oneof == Some(oneof))
+            {
+                object.remove(sibling.json_name);
+            }
+        }
+
+        match field.kind {
+            AgentToolJsonFieldKind::Map { key_scalar, value } => {
+                let entry = read_length_delimited(bytes, &mut position, wire_type)?;
+                let (key, value) = decode_generated_map_entry(entry, key_scalar, value)?;
+                let target = object
+                    .entry(field.json_name.to_string())
+                    .or_insert_with(|| Value::Object(Map::new()));
+                target
+                    .as_object_mut()
+                    .ok_or_else(|| "generated protobuf map projection collided with non-map field".to_string())?
+                    .insert(key, value);
+            }
+            AgentToolJsonFieldKind::Scalar(scalar)
+                if field.repeated && wire_type == 2 && scalar_is_packable(scalar) =>
+            {
+                let packed = read_length_delimited(bytes, &mut position, wire_type)?;
+                let mut packed_position = 0usize;
+                while packed_position < packed.len() {
+                    let value = decode_generated_scalar(
+                        packed,
+                        &mut packed_position,
+                        scalar_wire_type(scalar)?,
+                        scalar,
+                    )?;
+                    append_generated_repeated(&mut object, field.json_name, value)?;
+                }
+            }
+            AgentToolJsonFieldKind::Enum(values) if field.repeated && wire_type == 2 => {
+                let packed = read_length_delimited(bytes, &mut position, wire_type)?;
+                let mut packed_position = 0usize;
+                while packed_position < packed.len() {
+                    let number = read_varint(packed, &mut packed_position)? as i64;
+                    append_generated_repeated(
+                        &mut object,
+                        field.json_name,
+                        generated_enum_json(number, values),
+                    )?;
+                }
+            }
+            _ => {
+                let value = decode_generated_field_value(bytes, &mut position, wire_type, field.kind)?;
+                if field.repeated {
+                    append_generated_repeated(&mut object, field.json_name, value)?;
+                } else {
+                    object.insert(field.json_name.to_string(), value);
+                }
+            }
+        }
+    }
+    project_well_known_json(type_name, Value::Object(object))
+}
+
+fn project_well_known_json(type_name: &str, value: Value) -> Result<Value, String> {
+    match type_name {
+        "google.protobuf.Struct" => Ok(value
+            .get("fields")
+            .cloned()
+            .unwrap_or_else(|| Value::Object(Map::new()))),
+        "google.protobuf.ListValue" => Ok(value
+            .get("values")
+            .cloned()
+            .unwrap_or_else(|| Value::Array(Vec::new()))),
+        "google.protobuf.Value" => {
+            let object = value
+                .as_object()
+                .ok_or_else(|| "generated google.protobuf.Value was not an object".to_string())?;
+            if object.contains_key("nullValue") {
+                Ok(Value::Null)
+            } else if let Some(value) = object.get("numberValue") {
+                Ok(value.clone())
+            } else if let Some(value) = object.get("stringValue") {
+                Ok(value.clone())
+            } else if let Some(value) = object.get("boolValue") {
+                Ok(value.clone())
+            } else if let Some(value) = object.get("structValue") {
+                Ok(value.clone())
+            } else if let Some(value) = object.get("listValue") {
+                Ok(value.clone())
+            } else {
+                Ok(Value::Null)
+            }
+        }
+        "google.protobuf.Timestamp" => {
+            let seconds = value
+                .get("seconds")
+                .and_then(Value::as_str)
+                .and_then(|value| value.parse::<i64>().ok())
+                .unwrap_or_default();
+            let nanos = value
+                .get("nanos")
+                .and_then(Value::as_i64)
+                .unwrap_or_default()
+                .clamp(0, 999_999_999) as u32;
+            let timestamp = chrono::DateTime::<chrono::Utc>::from_timestamp(seconds, nanos)
+                .ok_or_else(|| "generated Timestamp is outside the supported UTC range".to_string())?;
+            let formatted = if nanos == 0 {
+                timestamp.format("%Y-%m-%dT%H:%M:%SZ").to_string()
+            } else {
+                let digits = if nanos % 1_000_000 == 0 {
+                    3
+                } else if nanos % 1_000 == 0 {
+                    6
+                } else {
+                    9
+                };
+                let fraction = &format!("{nanos:09}")[..digits];
+                format!("{}.{fraction}Z", timestamp.format("%Y-%m-%dT%H:%M:%S"))
+            };
+            Ok(Value::String(formatted))
+        }
+        _ => Ok(value),
+    }
+}
+
+fn append_generated_repeated(
+    object: &mut Map<String, Value>,
+    json_name: &str,
+    value: Value,
+) -> Result<(), String> {
+    let target = object
+        .entry(json_name.to_string())
+        .or_insert_with(|| Value::Array(Vec::new()));
+    target
+        .as_array_mut()
+        .ok_or_else(|| "generated repeated projection collided with non-array field".to_string())?
+        .push(value);
+    Ok(())
+}
+
+fn decode_generated_field_value(
+    bytes: &[u8],
+    position: &mut usize,
+    wire_type: u8,
+    kind: AgentToolJsonFieldKind,
+) -> Result<Value, String> {
+    match kind {
+        AgentToolJsonFieldKind::Scalar(scalar) => {
+            decode_generated_scalar(bytes, position, wire_type, scalar)
+        }
+        AgentToolJsonFieldKind::Enum(values) => {
+            if wire_type != 0 {
+                return Err("generated enum wire type mismatch".into());
+            }
+            Ok(generated_enum_json(read_varint(bytes, position)? as i64, values))
+        }
+        AgentToolJsonFieldKind::Message(type_name) => {
+            let child = read_length_delimited(bytes, position, wire_type)?;
+            decode_generated_json_message(child, type_name)
+        }
+        AgentToolJsonFieldKind::Map { .. } => {
+            Err("generated map field reached scalar decoder".into())
+        }
+    }
+}
+
+fn decode_generated_map_entry(
+    bytes: &[u8],
+    key_scalar: u64,
+    value_kind: AgentToolJsonMapValueKind,
+) -> Result<(String, Value), String> {
+    let mut position = 0usize;
+    let mut key = generated_map_key_default(key_scalar);
+    let mut value = generated_map_value_default(value_kind);
+    while position < bytes.len() {
+        let tag = read_varint(bytes, &mut position)?;
+        let field_number = tag >> 3;
+        let wire_type = (tag & 0x07) as u8;
+        match field_number {
+            1 => {
+                let decoded = decode_generated_scalar(bytes, &mut position, wire_type, key_scalar)?;
+                key = generated_map_key_string(&decoded);
+            }
+            2 => {
+                value = match value_kind {
+                    AgentToolJsonMapValueKind::Scalar(scalar) => {
+                        decode_generated_scalar(bytes, &mut position, wire_type, scalar)?
+                    }
+                    AgentToolJsonMapValueKind::Enum(values) => {
+                        if wire_type != 0 {
+                            return Err("generated map enum wire type mismatch".into());
+                        }
+                        generated_enum_json(read_varint(bytes, &mut position)? as i64, values)
+                    }
+                    AgentToolJsonMapValueKind::Message(type_name) => {
+                        let child = read_length_delimited(bytes, &mut position, wire_type)?;
+                        decode_generated_json_message(child, type_name)?
+                    }
+                };
+            }
+            _ => skip_wire_value(bytes, &mut position, wire_type)?,
+        }
+    }
+    Ok((key, value))
+}
+
+fn generated_map_key_default(scalar: u64) -> String {
+    match scalar {
+        8 => "false".into(),
+        9 => String::new(),
+        _ => "0".into(),
+    }
+}
+
+fn generated_map_value_default(kind: AgentToolJsonMapValueKind) -> Value {
+    match kind {
+        AgentToolJsonMapValueKind::Scalar(scalar) => generated_scalar_default(scalar),
+        AgentToolJsonMapValueKind::Enum(values) => generated_enum_json(0, values),
+        AgentToolJsonMapValueKind::Message(_) => Value::Object(Map::new()),
+    }
+}
+
+fn generated_map_key_string(value: &Value) -> String {
+    match value {
+        Value::String(value) => value.clone(),
+        Value::Bool(value) => value.to_string(),
+        Value::Number(value) => value.to_string(),
+        _ => String::new(),
+    }
+}
+
+fn generated_enum_json(number: i64, values: &'static [(i64, &'static str)]) -> Value {
+    values
+        .iter()
+        .find(|(candidate, _)| *candidate == number)
+        .map(|(_, name)| Value::String((*name).to_string()))
+        .unwrap_or_else(|| Value::Number(Number::from(number)))
+}
+
+fn generated_scalar_default(scalar: u64) -> Value {
+    match scalar {
+        8 => Value::Bool(false),
+        3 | 4 | 6 | 16 | 18 => Value::String("0".into()),
+        9 | 12 => Value::String(String::new()),
+        _ => Value::Number(Number::from(0)),
+    }
+}
+
+fn scalar_is_packable(scalar: u64) -> bool {
+    !matches!(scalar, 9 | 12)
+}
+
+fn scalar_wire_type(scalar: u64) -> Result<u8, String> {
+    match scalar {
+        1 | 6 | 16 => Ok(1),
+        2 | 7 | 15 => Ok(5),
+        3 | 4 | 5 | 8 | 13 | 17 | 18 => Ok(0),
+        9 | 12 => Ok(2),
+        _ => Err(format!("unsupported generated protobuf scalar {scalar}")),
+    }
+}
+
+fn decode_generated_scalar(
+    bytes: &[u8],
+    position: &mut usize,
+    wire_type: u8,
+    scalar: u64,
+) -> Result<Value, String> {
+    let expected = scalar_wire_type(scalar)?;
+    if wire_type != expected {
+        return Err(format!(
+            "generated protobuf scalar wire mismatch: scalar={scalar} expected={expected} actual={wire_type}"
+        ));
+    }
+    match scalar {
+        1 => number_from_f64(f64::from_bits(read_fixed_64(bytes, position)?)),
+        2 => number_from_f64(f32::from_bits(read_fixed_32(bytes, position)?) as f64),
+        3 => Ok(Value::String((read_varint(bytes, position)? as i64).to_string())),
+        4 => Ok(Value::String(read_varint(bytes, position)?.to_string())),
+        5 => Ok(Value::Number(Number::from(read_varint(bytes, position)? as u32 as i32))),
+        6 => Ok(Value::String(read_fixed_64(bytes, position)?.to_string())),
+        7 => Ok(Value::Number(Number::from(read_fixed_32(bytes, position)?))),
+        8 => Ok(Value::Bool(read_varint(bytes, position)? != 0)),
+        9 => {
+            let value = read_length_delimited(bytes, position, wire_type)?;
+            let text = std::str::from_utf8(value)
+                .map_err(|_| "generated protobuf string is invalid UTF-8".to_string())?;
+            Ok(Value::String(text.to_string()))
+        }
+        12 => {
+            let value = read_length_delimited(bytes, position, wire_type)?;
+            Ok(Value::String(STANDARD.encode(value)))
+        }
+        13 => Ok(Value::Number(Number::from(read_varint(bytes, position)? as u32))),
+        15 => Ok(Value::Number(Number::from(i32::from_le_bytes(
+            read_fixed_32(bytes, position)?.to_le_bytes(),
+        )))),
+        16 => Ok(Value::String(i64::from_le_bytes(
+            read_fixed_64(bytes, position)?.to_le_bytes(),
+        ).to_string())),
+        17 => {
+            let raw = read_varint(bytes, position)?;
+            let value = ((raw >> 1) as i64) ^ (-((raw & 1) as i64));
+            Ok(Value::Number(Number::from(value as i32)))
+        }
+        18 => {
+            let raw = read_varint(bytes, position)?;
+            let value = ((raw >> 1) as i64) ^ (-((raw & 1) as i64));
+            Ok(Value::String(value.to_string()))
+        }
+        _ => Err(format!("unsupported generated protobuf scalar {scalar}")),
+    }
+}
+
+fn number_from_f64(value: f64) -> Result<Value, String> {
+    if value.is_nan() {
+        return Ok(Value::String("NaN".into()));
+    }
+    if value == f64::INFINITY {
+        return Ok(Value::String("Infinity".into()));
+    }
+    if value == f64::NEG_INFINITY {
+        return Ok(Value::String("-Infinity".into()));
+    }
+    Number::from_f64(value)
+        .map(Value::Number)
+        .ok_or_else(|| "generated protobuf float could not be projected to JSON".to_string())
+}
+
+fn read_length_delimited<'a>(
+    bytes: &'a [u8],
+    position: &mut usize,
+    wire_type: u8,
+) -> Result<&'a [u8], String> {
+    if wire_type != 2 {
+        return Err("generated protobuf length-delimited wire type mismatch".into());
+    }
+    read_bytes(bytes, position)
+}
+
+fn read_fixed_32(bytes: &[u8], position: &mut usize) -> Result<u32, String> {
+    let end = position
+        .checked_add(4)
+        .ok_or_else(|| "generated protobuf fixed32 overflow".to_string())?;
+    let value = bytes
+        .get(*position..end)
+        .ok_or_else(|| "truncated generated protobuf fixed32".to_string())?;
+    *position = end;
+    Ok(u32::from_le_bytes(
+        value.try_into().map_err(|_| "truncated generated protobuf fixed32".to_string())?,
+    ))
+}
+
+fn read_fixed_64(bytes: &[u8], position: &mut usize) -> Result<u64, String> {
+    let end = position
+        .checked_add(8)
+        .ok_or_else(|| "generated protobuf fixed64 overflow".to_string())?;
+    let value = bytes
+        .get(*position..end)
+        .ok_or_else(|| "truncated generated protobuf fixed64".to_string())?;
+    *position = end;
+    Ok(u64::from_le_bytes(
+        value.try_into().map_err(|_| "truncated generated protobuf fixed64".to_string())?,
+    ))
+}
+
+fn skip_wire_value(data: &[u8], position: &mut usize, wire_type: u8) -> Result<(), String> {
+    match wire_type {
+        0 => {
+            let _ = read_varint(data, position)?;
+        }
+        1 => {
+            let _ = read_fixed_64(data, position)?;
+        }
+        2 => {
+            let _ = read_bytes(data, position)?;
+        }
+        5 => {
+            let _ = read_fixed_32(data, position)?;
+        }
+        _ => return Err(format!("unsupported generated protobuf wire type {wire_type}")),
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -265,73 +726,5 @@ fn skip_field(
 }
 
 pub fn generated_tool_name(field_number: u64) -> Option<&'static str> {
-    Some(match field_number {
-        1 => "shell",
-        3 => "delete",
-        4 => "glob",
-        5 => "grep",
-        8 => "read",
-        9 => "update_todos",
-        10 => "read_todos",
-        12 => "edit",
-        13 => "ls",
-        14 => "read_lints",
-        15 => "mcp",
-        16 => "sem_search",
-        17 => "create_plan",
-        18 => "web_search",
-        19 => "task",
-        20 => "list_mcp_resources",
-        21 => "read_mcp_resource",
-        22 => "apply_agent_diff",
-        23 => "ask_question",
-        24 => "fetch",
-        25 => "switch_mode",
-        28 => "generate_image",
-        29 => "record_screen",
-        30 => "computer_use",
-        31 => "write_shell_stdin",
-        32 => "reflect",
-        33 => "setup_vm_environment",
-        34 => "truncated",
-        35 => "start_grind_execution",
-        36 => "start_grind_planning",
-        37 => "web_fetch",
-        38 => "report_bugfix_results",
-        39 => "ai_attribution",
-        40 => "pr_management",
-        41 => "mcp_auth",
-        42 => "await",
-        43 => "blame_by_file_path",
-        44 => "get_mcp_tools",
-        45 => "report_bug",
-        46 => "set_active_branch",
-        48 => "communicate_update",
-        49 => "send_final_summary",
-        50 => "update_pr_code_tour",
-        51 => "replace_env",
-        52 => "edit_pr_labels",
-        53 => "record_ci_investigation_findings",
-        55 => "send_message",
-        56 => "fetch_cloud_agent_data",
-        58 => "send_to_user",
-        61 => "pi_read",
-        62 => "pi_bash",
-        63 => "pi_edit",
-        64 => "pi_write",
-        65 => "pi_grep",
-        66 => "pi_find",
-        67 => "pi_ls",
-        68 => "connect_scm",
-        69 => "search_conversations",
-        70 => "create_goal",
-        71 => "update_goal",
-        72 => "adopt",
-        73 => "get_agent_status",
-        74 => "send_to_agent",
-        75 => "read_agent_transcript",
-        76 => "create_agent",
-        77 => "stop_agent",
-        _ => return None,
-    })
+    generated_agent_tool_call_descriptor(field_number).map(|descriptor| descriptor.static_name)
 }

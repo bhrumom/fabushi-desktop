@@ -47,7 +47,7 @@ use crate::transcript_mirror::conversation_state_binary::{
     decode_user_message_identity_fields,
 };
 use crate::transcript_mirror::generated_occurrence_codec::{
-    GeneratedTranscriptOccurrenceCodec, RejectGeneratedToolJsonProjection,
+    CanonicalGeneratedToolJsonProjection, GeneratedTranscriptOccurrenceCodec,
 };
 use crate::transcript_mirror::production_provider::ProductionTranscriptMirrorProvider;
 use crate::transcript_mirror::transcript_mirror::JournalOutcomeReporter;
@@ -159,7 +159,7 @@ impl HostRunnerComposition {
         let prior_state_bytes = agent_store.latest_checkpoint_bytes().unwrap_or_default();
         let transcript_provider = ProductionTranscriptMirrorProvider::with_reporter(
             data_dir.join("transcripts"),
-            GeneratedTranscriptOccurrenceCodec::new(RejectGeneratedToolJsonProjection),
+            GeneratedTranscriptOccurrenceCodec::new(CanonicalGeneratedToolJsonProjection),
             report_outcome,
         );
         let transcript_mirror = Arc::new(transcript_provider.route_for_session(

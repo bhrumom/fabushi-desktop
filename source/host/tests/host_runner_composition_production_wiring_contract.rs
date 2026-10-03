@@ -57,7 +57,7 @@ fn host_runner_composition_owns_transcript_checkpoint_wiring() {
         "sessions.open_agent_store_owner(agent_id)?",
         "sessions.create_agent_blob_store(agent_id)?",
         "ProductionTranscriptMirrorProvider::with_reporter(",
-        "GeneratedTranscriptOccurrenceCodec::new(RejectGeneratedToolJsonProjection)",
+        "GeneratedTranscriptOccurrenceCodec::new(CanonicalGeneratedToolJsonProjection)",
         "transcript_provider.route_for_session(",
         "ProductionAgentStateCheckpointSink::new(",
         "if group_member_turn",
