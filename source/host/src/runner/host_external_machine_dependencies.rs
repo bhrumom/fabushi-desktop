@@ -8,6 +8,7 @@ use crate::extensions::local_exec::gateway_local_exec_sand_box::{
     GatewayLocalExecManager, GatewayLocalToolGate, GatewayLocalToolScope,
 };
 use crate::extensions::local_tool_permission::extension::HostLocalToolPermissionExtension;
+use crate::extensions::local_exec::gateway_local_exec_sand_box::TurnScopedGatewayLocalToolGate;
 use crate::runner::shell_terminal_watch::{ShellTerminalPollRead, TerminalReadResult};
 use crate::runner::tools::sand_external_machine_tools::{
     ExternalMachineExecutor, ExternalMachineReadArgs, ExternalMachineShellArgs,
@@ -26,6 +27,26 @@ impl ProductionExternalMachineExecutor {
         agent_id: impl Into<String>,
     ) -> Self {
         let gate: Arc<dyn GatewayLocalToolGate> = local_tool_permission;
+        Self::with_gate(local_exec, gate, agent_id)
+    }
+
+    pub fn for_turn(
+        local_exec: Arc<HostLocalExecExtension>,
+        local_tool_permission: Arc<HostLocalToolPermissionExtension>,
+        agent_id: impl Into<String>,
+        direction_epoch: u64,
+    ) -> Self {
+        let gate: Arc<dyn GatewayLocalToolGate> = Arc::new(
+            TurnScopedGatewayLocalToolGate::new(local_tool_permission, direction_epoch),
+        );
+        Self::with_gate(local_exec, gate, agent_id)
+    }
+
+    fn with_gate(
+        local_exec: Arc<HostLocalExecExtension>,
+        gate: Arc<dyn GatewayLocalToolGate>,
+        agent_id: impl Into<String>,
+    ) -> Self {
         let manager = local_exec
             .sandbox(gate)
             .remote_resource_accessor()
