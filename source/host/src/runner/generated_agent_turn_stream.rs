@@ -89,7 +89,9 @@ impl<'ctx>
     > {
         Box::pin(async move {
             if let Some(checkpoint_sink) = self.checkpoint_sink.as_ref() {
-                let live_base_state = checkpoint_sink.base_state_bytes()?;
+                let live_base_state = checkpoint_sink
+                    .base_state_bytes()
+                    .map_err(GeneratedAgentTurnStreamError::Provider)?;
                 if live_base_state != context.base_state_bytes {
                     return Err(GeneratedAgentTurnStreamError::Provider(
                         ProviderSessionError::Protocol(
