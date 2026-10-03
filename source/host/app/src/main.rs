@@ -11438,17 +11438,21 @@ fn main() {
                     &completion.work_id,
                 );
             }
-            cloud_watch_settled.handle_background_subagent_completion(SubagentCompletion {
-                parent_agent_id: completion.parent_agent_id,
-                subagent_agent_id: completion.work_id,
-                title: completion.title,
-                subagent_type: "cursor-agent".into(),
-                status: completion.status,
-                result: completion.result,
-                quiet_origin: completion
-                    .quiet_origin
-                    .as_ref()
-                    .and_then(coerce_quiet_origin),
+            let completion_revivals = Arc::clone(&cloud_watch_settled);
+            let thread_name = format!("mahayana-cloud-agent-revival-{}", completion.work_id);
+            let _ = thread::Builder::new().name(thread_name).spawn(move || {
+                completion_revivals.handle_background_subagent_completion(SubagentCompletion {
+                    parent_agent_id: completion.parent_agent_id,
+                    subagent_agent_id: completion.work_id,
+                    title: completion.title,
+                    subagent_type: "cursor-agent".into(),
+                    status: completion.status,
+                    result: completion.result,
+                    quiet_origin: completion
+                        .quiet_origin
+                        .as_ref()
+                        .and_then(coerce_quiet_origin),
+                });
             });
         })),
         Some(Arc::new(move |agent_id| {
@@ -11541,17 +11545,21 @@ fn main() {
                     &completion.work_id,
                 );
             }
-            shell_watch_settled.handle_background_shell_completion(ShellCompletion {
-                agent_id: completion.parent_agent_id,
-                shell_id: completion.work_id,
-                title: completion.title,
-                status: completion.status,
-                detail: completion.detail,
-                output_path: completion.output_path,
-                quiet_origin: completion
-                    .quiet_origin
-                    .as_ref()
-                    .and_then(coerce_quiet_origin),
+            let completion_revivals = Arc::clone(&shell_watch_settled);
+            let thread_name = format!("mahayana-shell-revival-{}", completion.work_id);
+            let _ = thread::Builder::new().name(thread_name).spawn(move || {
+                completion_revivals.handle_background_shell_completion(ShellCompletion {
+                    agent_id: completion.parent_agent_id,
+                    shell_id: completion.work_id,
+                    title: completion.title,
+                    status: completion.status,
+                    detail: completion.detail,
+                    output_path: completion.output_path,
+                    quiet_origin: completion
+                        .quiet_origin
+                        .as_ref()
+                        .and_then(coerce_quiet_origin),
+                });
             });
         })),
         Some(Arc::new(move |agent_id| {
