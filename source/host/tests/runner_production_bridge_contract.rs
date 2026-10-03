@@ -334,7 +334,9 @@ fn production_bridge_owns_immutable_turn_projection_and_generated_runner_binding
         ".with_build_bindings(build_bindings)",
         ".with_lifecycle_bindings(lifecycle_bindings)",
         "owner = owner.with_agent_state_checkpoint_sink(checkpoint_sink)",
-        "SandAgentRunner::new(owner).with_generated_agent_runtime(generated_agent_runtime)",
+        "SandAgentRunner::new(owner)",
+        ".with_generated_agent_runtime(generated_agent_runtime)",
+        ".with_runtime_services(",
     ] {
         assert!(
             PRODUCTION_BRIDGE.contains(needle),
