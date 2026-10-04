@@ -33,6 +33,62 @@ use crate::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout;
 pub const ROUTED_MCP_PROTOCOL_VERSION: &str = "2025-03-26";
 pub const ROUTED_MCP_MAX_BODY_BYTES: usize = 1_048_576;
 
+const CONVERSATION_FAST_LANE_MAX_CHARS: usize = 280;
+const SEND_MESSAGE_TOOL_NAME: &str = "SendMessage";
+
+/// Conservative CHAT-013 classifier for simple conversational turns.
+///
+/// This is an optimization only: ambiguous or action-oriented turns stay on the
+/// full tool path, so classification is never required for correctness.
+pub fn is_conversation_fast_lane(messages: &[ProviderMessage]) -> bool {
+    let Some(message) = messages.iter().rev().find(|message| message.role == "user") else {
+        return false;
+    };
+    let text = message.content.trim();
+    if text.is_empty()
+        || text.chars().count() > CONVERSATION_FAST_LANE_MAX_CHARS
+        || text.contains('\n')
+        || text.contains('`')
+        || text.contains("http://")
+        || text.contains("https://")
+    {
+        return false;
+    }
+
+    let lower = text.to_lowercase();
+    const ACTION_MARKERS: &[&str] = &[
+        " search ", " browse ", " open ", " create ", " build ", " edit ",
+        " modify ", " delete ", " remove ", " install ", " download ", " upload ",
+        " run ", " execute ", " send ", " email ", " calendar ", " github ",
+        " slack ", " terminal ", " shell ", " file ", " folder ", " website ",
+        " webpage ", " script ", " code ",
+        "搜索", "查找", "浏览", "打开", "创建", "新建", "构建", "编辑", "修改",
+        "删除", "安装", "下载", "上传", "运行", "执行", "发送", "邮件", "日历",
+        "文件", "文件夹", "终端", "脚本", "代码", "网站", "网页",
+    ];
+    let padded = format!(" {lower} ");
+    !ACTION_MARKERS.iter().any(|marker| padded.contains(marker))
+}
+
+/// Return the reduced direct-tool schema for a simple conversation when it is
+/// safe to do so. A missing SendMessage tool fails closed to the full path.
+pub fn conversation_fast_lane_tools(
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+) -> Option<Vec<RoutedToolDefinition>> {
+    if !is_conversation_fast_lane(messages) {
+        return None;
+    }
+    let send_message = tools
+        .iter()
+        .filter(|tool| {
+            tool.name == SEND_MESSAGE_TOOL_NAME || tool.tool_name == SEND_MESSAGE_TOOL_NAME
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    (!send_message.is_empty()).then_some(send_message)
+}
+
 #[derive(Clone, Default)]
 pub struct RoutedProviderCancellation {
     cancelled: Arc<AtomicBool>,
@@ -414,7 +470,12 @@ pub fn run_routed_provider_in_runner(
         Vec::new()
     } else {
         run.cancellation.check()?;
-        run.bridge.list_tools()?
+        let tools = run.bridge.list_tools()?;
+        if run.provider == RoutedProvider::Fabushi {
+            conversation_fast_lane_tools(run.messages, &tools).unwrap_or(tools)
+        } else {
+            tools
+        }
     };
     let mut mcp_server = if run.provider == RoutedProvider::ClaudeCode {
         Some(start_routed_mcp_server_for_run(

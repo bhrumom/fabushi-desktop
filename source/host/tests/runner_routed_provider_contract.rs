@@ -6,7 +6,8 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    OpenRouterCheckpoint, ProviderSessionError, RoutedProviderCheckpoint, RoutedToolDefinition,
+    OpenRouterCheckpoint, ProviderMessage, ProviderSessionError, RoutedProviderCheckpoint,
+    RoutedToolDefinition,
 };
 use mahayana_host_runtime::extensions::transcript::runner_registry::{
     RUN_DIRECT_USER_INTERRUPT_REASON, RUN_WATCHDOG_INTERRUPT_REASON, TranscriptRunnerRegistry,
@@ -14,9 +15,81 @@ use mahayana_host_runtime::extensions::transcript::runner_registry::{
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderCheckpointStore;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, ROUTED_MCP_PROTOCOL_VERSION,
-    RoutedProviderTaskRegistry, RoutedToolBridge, start_routed_mcp_server,
+    RoutedProviderTaskRegistry, RoutedToolBridge, conversation_fast_lane_tools,
+    is_conversation_fast_lane, start_routed_mcp_server,
 };
 use serde_json::{Value, json};
+
+fn provider_message(role: &str, content: &str) -> ProviderMessage {
+    ProviderMessage {
+        role: role.to_string(),
+        content: content.to_string(),
+    }
+}
+
+fn routed_tool(name: &str) -> RoutedToolDefinition {
+    RoutedToolDefinition {
+        name: name.to_string(),
+        provider_identifier: "test".into(),
+        tool_name: name.to_string(),
+        description: None,
+        input_schema: json!({"type":"object"}),
+    }
+}
+
+#[test]
+fn conversation_fast_lane_accepts_simple_chinese_and_english_questions() {
+    for prompt in [
+        "用一句话解释为什么海水有咸味。",
+        "In one sentence, explain why the daytime sky appears blue.",
+        "用一句话说明声音为什么不能在真空中传播。",
+        "In one sentence, explain what HTTPS protects.",
+    ] {
+        assert!(
+            is_conversation_fast_lane(&[provider_message("user", prompt)]),
+            "expected simple Q&A to use the conversation fast lane: {prompt}",
+        );
+    }
+}
+
+#[test]
+fn conversation_fast_lane_rejects_action_or_external_resource_turns() {
+    for prompt in [
+        "Please search GitHub for the latest release.",
+        "Create a small app and write the files.",
+        "Open https://example.com and summarize it.",
+        "请搜索网页并下载文件。",
+        "修改这个代码文件并运行测试。",
+        "第一行\n第二行",
+    ] {
+        assert!(
+            !is_conversation_fast_lane(&[provider_message("user", prompt)]),
+            "action-oriented turn must remain on the full tool path: {prompt}",
+        );
+    }
+}
+
+#[test]
+fn conversation_fast_lane_keeps_only_send_message_and_fails_closed_without_it() {
+    let messages = [provider_message(
+        "user",
+        "In one sentence, explain what a database index is for.",
+    )];
+    let tools = vec![
+        routed_tool("SendMessage"),
+        routed_tool("github_search"),
+        routed_tool("computer_use"),
+    ];
+    let reduced = conversation_fast_lane_tools(&messages, &tools).expect("fast lane");
+    assert_eq!(reduced.len(), 1);
+    assert_eq!(reduced[0].name, "SendMessage");
+
+    let no_send = vec![routed_tool("github_search")];
+    assert!(
+        conversation_fast_lane_tools(&messages, &no_send).is_none(),
+        "missing SendMessage must fall back to the full tool path",
+    );
+}
 
 struct FakeBridge;
 
