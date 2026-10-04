@@ -181,6 +181,7 @@ fn host_factory_adopts_remote_parents_and_turn_spans_are_fail_closed() {
             BTreeMap::from([("chunk_type".into(), json!("text"))]),
         )]
     );
+    drop(recorded);
 
     let remote_turn = begin_turn_trace(BeginTurnTraceOptions {
         conversation_id: "agent-remote".into(),
