@@ -1,4 +1,5 @@
-import { _electron as electron, chromium, expect, test, type Browser, type BrowserContext, type ElectronApplication, type Locator, type Page } from '@playwright/test';
+import { chromium, expect, test, type Browser, type BrowserContext, type Locator, type Page } from '@playwright/test';
+import { spawn, type ChildProcess } from 'node:child_process';
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -60,75 +61,89 @@ async function withNodeDeadline<T>(label: string, timeoutMs: number, task: Promi
   }
 }
 
+type CdpTargetInfo = {
+  readonly id?: string;
+  readonly type?: string;
+  readonly title?: string;
+  readonly url?: string;
+};
+
+function isShippingRendererUrl(url: string): boolean {
+  if (url.startsWith('app://bundle/')) return true;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'file:' && parsed.pathname.endsWith('/dist/renderer/index.html');
+  } catch {
+    return false;
+  }
+}
+
 async function waitForPackagedRendererBinding(
-  app: ElectronApplication,
-  initialPage: Page,
   appDataDir: string,
-): Promise<{ page: Page; browser: Browser | null; binding: 'electron' | 'cdp' }> {
+): Promise<{
+  page: Page;
+  browser: Browser;
+  binding: 'cdp';
+  cdpPort: number;
+  targets: readonly CdpTargetInfo[];
+}> {
   const deadline = Date.now() + 120_000;
-  let cdpBrowser: Browser | null = null;
-  let lastMainState: { url: string; loading: boolean; title: string } | null = null;
-  let lastPageUrls: string[] = [];
+  let lastTargets: readonly CdpTargetInfo[] = [];
   let lastCdpError = '';
-  const isShippingRendererUrl = (url: string) => {
-    if (url.startsWith('app://bundle/')) return true;
-    try {
-      const parsed = new URL(url);
-      return parsed.protocol === 'file:' && parsed.pathname.endsWith('/dist/renderer/index.html');
-    } catch {
-      return false;
-    }
-  };
+  let lastPort = 0;
 
   while (Date.now() < deadline) {
-    lastMainState = await app.evaluate(({ BrowserWindow }) => {
-      const win = BrowserWindow.getAllWindows()[0];
-      return win
-        ? {
-            url: win.webContents.getURL(),
-            loading: win.webContents.isLoadingMainFrame(),
-            title: win.getTitle(),
-          }
-        : { url: '', loading: true, title: '' };
-    });
-
-    const electronPages = app.windows();
-    lastPageUrls = electronPages.map((candidate) => candidate.url());
-    const electronBound = electronPages.find((candidate) => isShippingRendererUrl(candidate.url()));
-    if (electronBound) return { page: electronBound, browser: null, binding: 'electron' };
-    if (isShippingRendererUrl(initialPage.url())) {
-      return { page: initialPage, browser: null, binding: 'electron' };
-    }
-
-    // Playwright's Electron Page wrapper can miss a packaged renderer navigation
-    // that completed before attachment. Production uses loadFile() for the frozen
-    // renderer entrypoint; older builds may use app://bundle. When Chromium exposes
-    // DevToolsActivePort under the isolated shipping userData directory, bind the
-    // same renderer target instead of reloading or falling back to a test host.
-    if (!cdpBrowser) {
-      try {
-        const activePort = await readFile(path.join(appDataDir, 'DevToolsActivePort'), 'utf8');
-        const [portText] = activePort.trim().split(/\r?\n/u);
-        const port = Number(portText);
-        if (Number.isInteger(port) && port > 0 && port <= 65_535) {
-          cdpBrowser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
-        }
-      } catch (cause) {
-        lastCdpError = cause instanceof Error ? cause.message : String(cause);
+    try {
+      const activePort = await readFile(path.join(appDataDir, 'DevToolsActivePort'), 'utf8');
+      const [portText] = activePort.trim().split(/\r?\n/u);
+      const port = Number(portText);
+      if (!Number.isInteger(port) || port <= 0 || port > 65_535) {
+        lastCdpError = `invalid DevToolsActivePort: ${JSON.stringify(portText)}`;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        continue;
       }
-    }
-    if (cdpBrowser) {
-      const cdpPages = cdpBrowser.contexts().flatMap((context) => context.pages());
-      lastPageUrls = [...lastPageUrls, ...cdpPages.map((candidate) => candidate.url())];
-      const cdpBound = cdpPages.find((candidate) => isShippingRendererUrl(candidate.url()));
-      if (cdpBound) return { page: cdpBound, browser: cdpBrowser, binding: 'cdp' };
+      lastPort = port;
+
+      // Probe Chromium's target registry without auto-attaching. The signed app
+      // must first expose its real shipping renderer target. Playwright only
+      // attaches after that production-owned target exists.
+      const response = await withNodeDeadline(
+        'Read packaged CDP target registry',
+        2_000,
+        fetch(`http://127.0.0.1:${port}/json/list`),
+      );
+      if (!response.ok) {
+        lastCdpError = `CDP target registry returned HTTP ${response.status}`;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        continue;
+      }
+      const payload = await response.json();
+      lastTargets = Array.isArray(payload)
+        ? payload.filter((entry): entry is CdpTargetInfo => entry != null && typeof entry === 'object')
+        : [];
+      if (!lastTargets.some((target) => target.type === 'page' && typeof target.url === 'string' && isShippingRendererUrl(target.url))) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        continue;
+      }
+
+      const browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`, { timeout: 30_000 });
+      const page = browser.contexts()
+        .flatMap((context) => context.pages())
+        .find((candidate) => isShippingRendererUrl(candidate.url()));
+      if (page) {
+        return { page, browser, binding: 'cdp', cdpPort: port, targets: lastTargets };
+      }
+      await browser.close().catch(() => undefined);
+      lastCdpError = 'shipping target existed in /json/list but Playwright did not expose its Page';
+    } catch (cause) {
+      lastCdpError = cause instanceof Error ? cause.message : String(cause);
     }
 
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
 
   throw new Error(
-    `Playwright did not bind the packaged BrowserWindow. main=${JSON.stringify(lastMainState)} pages=${JSON.stringify(lastPageUrls)} cdp=${lastCdpError || 'no target'}`,
+    `Signed production process did not expose a bindable packaged BrowserWindow target. port=${lastPort || 'none'} targets=${JSON.stringify(lastTargets)} cdp=${lastCdpError || 'no target'}`,
   );
 }
 
@@ -573,7 +588,7 @@ test.describe('signed candidate packaged acceptance', () => {
         process.stderr.write(`[candidate ${source}] ${text}\n`);
       }
     };
-    let app: ElectronApplication | null = null;
+    let appProcess: ChildProcess | null = null;
     let cdpBrowser: Browser | null = null;
     let pageForTrace: Page | null = null;
     let traceContext: BrowserContext | null = null;
@@ -581,25 +596,37 @@ test.describe('signed candidate packaged acceptance', () => {
     let acceptanceCompleted = false;
 
     try {
-      app = await electron.launch({
-        executablePath: executable,
-        args: [],
+      // Launch the exact installed, signed candidate as a normal production
+      // process. Playwright's Electron launcher injects a Node inspector/loader
+      // and changes startup semantics, so it is not the packaged launch contract.
+      // The only added Chromium switch exposes loopback CDP for readiness
+      // discovery and attachment; no test host, reload, or synthetic page exists.
+      appProcess = spawn(executable, ['--remote-debugging-address=127.0.0.1', '--remote-debugging-port=0'], {
         env: {
           ...process.env,
           FABUSHI_APP_DATA: appDataDir,
           SAND_USER_DATA_DIR: appDataDir,
           OBF_SOURCE_SHA: sourceSha,
         },
-        recordVideo: { dir: path.join(evidenceRoot, 'video'), size: { width: 1671, height: 937 } },
+        stdio: ['ignore', 'pipe', 'pipe'],
       });
-      // Attach process diagnostics before waiting for the first BrowserWindow so
-      // production startup failures are preserved even when no renderer mounts.
-      app.process().stdout?.on('data', (chunk) => captureRuntimeLog('app-stdout', String(chunk)));
-      app.process().stderr?.on('data', (chunk) => captureRuntimeLog('app-stderr', String(chunk)));
-      // Shipping startup declares a 120s stuck threshold (SAND-E0602). The
-      // Playwright default is only 30s, which can reject a still-valid production
-      // bootstrap before the product itself considers startup stuck.
-      let page = await app.firstWindow({ timeout: 120_000 });
+      appProcess.stdout?.on('data', (chunk) => captureRuntimeLog('app-stdout', String(chunk)));
+      appProcess.stderr?.on('data', (chunk) => captureRuntimeLog('app-stderr', String(chunk)));
+      const earlyExit = new Promise<never>((_, reject) => {
+        appProcess?.once('exit', (code, signal) => {
+          reject(new Error(`Signed candidate exited before renderer binding (code=${code ?? 'null'}, signal=${signal ?? 'null'}).`));
+        });
+      });
+
+      // Shipping startup owns the 120s SAND-E0602 threshold. Poll the browser
+      // target registry until the real packaged renderer URL exists, then attach
+      // Playwright to that already-created renderer.
+      const binding = await Promise.race([
+        waitForPackagedRendererBinding(appDataDir),
+        earlyExit,
+      ]);
+      cdpBrowser = binding.browser;
+      const page = binding.page;
       pageForTrace = page;
       const attachPageDiagnostics = (target: Page) => {
         target.on('console', (message) => captureRuntimeLog('page-console', `${message.type()}: ${message.text()}`));
@@ -612,24 +639,6 @@ test.describe('signed candidate packaged acceptance', () => {
       };
       attachPageDiagnostics(page);
 
-      const startupWindows = await withNodeDeadline(
-        'Inspect packaged BrowserWindow state',
-        5_000,
-        app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().map((win) => ({
-          title: win.getTitle(),
-          url: win.webContents.getURL(),
-          visible: win.isVisible(),
-          loading: win.webContents.isLoading(),
-        }))),
-      );
-      const initialPageUrl = page.url();
-      const binding = await waitForPackagedRendererBinding(app, page, appDataDir);
-      cdpBrowser = binding.browser;
-      if (binding.page !== page) {
-        page = binding.page;
-        attachPageDiagnostics(page);
-      }
-      pageForTrace = page;
       traceContext = page.context();
       await traceContext.tracing.start({
         screenshots: true,
@@ -639,18 +648,13 @@ test.describe('signed candidate packaged acceptance', () => {
       traceStarted = true;
       await writeFile(path.join(evidenceRoot, 'startup.json'), JSON.stringify({
         sourceSha,
-        initialPageUrl,
         pageUrl: page.url(),
         binding: binding.binding,
-        windows: startupWindows,
+        launchMode: 'signed-production-process',
+        cdpPort: binding.cdpPort,
+        targets: binding.targets,
       }, null, 2));
 
-      await app.evaluate(({ BrowserWindow }) => {
-        const win = BrowserWindow.getAllWindows()[0];
-        if (!win) throw new Error('Fabushi BrowserWindow missing');
-        win.setContentSize(1671, 937, false);
-        win.center();
-      });
       await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
       await completeBrowserLogin(page);
       await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-agent-root-shell', 'true');
@@ -772,6 +776,7 @@ test.describe('signed candidate packaged acceptance', () => {
         sourceSha,
         expectedSourceSha,
         executable,
+        launchMode: 'signed-production-process-cdp',
         acceptance: {
           directHandoff: true,
           broadcast: true,
@@ -807,15 +812,18 @@ test.describe('signed candidate packaged acceptance', () => {
           captureRuntimeLog('trace-error', error instanceof Error ? error.stack || error.message : String(error));
         });
       }
-      if (app) {
-        try {
-          await withNodeDeadline('Packaged Electron shutdown', 10_000, app.close());
-        } catch {
-          app.process().kill('SIGKILL');
-        }
-      }
       if (cdpBrowser) {
         await cdpBrowser.close().catch(() => undefined);
+      }
+      if (appProcess && appProcess.exitCode == null && appProcess.signalCode == null) {
+        appProcess.kill('SIGTERM');
+        await withNodeDeadline(
+          'Packaged Electron shutdown',
+          10_000,
+          new Promise<void>((resolve) => appProcess?.once('exit', () => resolve())),
+        ).catch(() => {
+          appProcess?.kill('SIGKILL');
+        });
       }
     }
   });
