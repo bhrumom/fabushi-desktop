@@ -37,7 +37,7 @@ const common = {
 
 await build({
   ...common,
-  entryPoints: [path.join(repoRoot, "source", "electron-main", "entry.ts")],
+  entryPoints: [path.join(repoRoot, "source", "product", "fabushi", "entry.ts")],
   outfile: path.join(outMain, "main.cjs"),
 });
 
@@ -69,4 +69,4 @@ await build({
   outfile: path.join(outCoordinator, "main.cjs"),
 });
 
-console.log("built Grok-shaped Electron main/preload and Rust Coordinator carrier");
+console.log("built Grok-shaped Fabushi product main/preload and Rust Coordinator carrier");
