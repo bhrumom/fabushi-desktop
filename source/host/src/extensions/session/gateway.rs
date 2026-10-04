@@ -320,6 +320,16 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             .list_human_conversations()
             .map(Value::Array)
             .map_err(SessionGatewayError::internal),
+        "syncHumanConversations" => session
+            .sync_human_conversations()
+            .map(Value::Array)
+            .map_err(SessionGatewayError::internal),
+        "syncHumanConversation" => required_string(args, "conversationId").and_then(|conversation_id| {
+            session
+                .sync_human_conversation(conversation_id)
+                .map(Value::Array)
+                .map_err(SessionGatewayError::internal)
+        }),
         "createHumanConversation" => required_string(args, "peerHumanId").and_then(|peer_human_id| {
             let local_human_id = session.local_human_id().map_err(SessionGatewayError::internal)?;
             if let Some(requested) = optional_string(args, "localHumanId")? {
