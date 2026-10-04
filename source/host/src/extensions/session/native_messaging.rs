@@ -20,6 +20,17 @@ pub struct FabushiNativeIdentity {
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
+pub struct FabushiRemoteHumanContact {
+    pub id: Value,
+    pub user_id: Value,
+    pub username: String,
+    pub display_name: String,
+    pub avatar_url: Option<String>,
+    pub status: String,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct FabushiRemoteHumanMessage {
     pub id: Value,
     pub sender_user_id: Value,
@@ -54,6 +65,18 @@ struct SendEnvelope {
 #[derive(Debug, Deserialize)]
 struct ListData {
     messages: Vec<FabushiRemoteHumanMessage>,
+}
+
+#[derive(Debug, Deserialize)]
+struct FriendData {
+    friends: Vec<FabushiRemoteHumanContact>,
+}
+
+#[derive(Debug, Deserialize)]
+struct FriendEnvelope {
+    success: bool,
+    data: Option<FriendData>,
+    error: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -163,6 +186,39 @@ impl FabushiNativeMessagingClient {
         envelope
             .message
             .ok_or_else(|| "Fabushi Human message response omitted the persisted message.".to_string())
+    }
+
+    pub fn list_friends(&self) -> Result<Vec<FabushiRemoteHumanContact>, String> {
+        let credentials = read_credentials(&self.credential_path)?;
+        let response = self
+            .client
+            .get(self.endpoint("/api/social/friends")?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .send()
+            .map_err(|error| format!("Fabushi Human contact sync failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human contact sync response could not be read: {error}"))?;
+        let envelope: FriendEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human contact sync response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human contact sync was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        Ok(envelope.data.map(|data| data.friends).unwrap_or_default())
     }
 
     pub fn list_direct_messages(
