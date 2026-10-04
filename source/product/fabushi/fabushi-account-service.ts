@@ -99,6 +99,20 @@ export function normalizeFabushiSession(value: unknown, options: { readonly allo
   };
 }
 
+export function normalizeFabushiCiSession(value: unknown): FabushiSession | null {
+  const session = normalizeFabushiSession(value, { allowRefreshless: true });
+  if (
+    session == null
+    || session.provider !== "github-actions"
+    || session.ciRunner !== true
+    || session.refreshToken != null
+    || !session.sessionId.startsWith("ci-runner:")
+  ) {
+    return null;
+  }
+  return session;
+}
+
 function statusFromSession(session: FabushiSession): SandAuthStatus {
   const user = session.user;
   const email = boundedText(user?.email, 320) ?? (session.username.includes("@") ? session.username : undefined);
@@ -200,12 +214,8 @@ export class FabushiAuthService implements AuthServicePort {
     if (!source) return null;
     this.ciSessionPromise ??= fs.readFile(source, "utf8").then((raw) => {
       const parsed: unknown = JSON.parse(raw);
-      const session = normalizeFabushiSession(parsed, { allowRefreshless: true });
-      if (session == null
-        || session.provider !== "github-actions"
-        || session.ciRunner !== true
-        || session.refreshToken != null
-        || !session.sessionId.startsWith("ci-runner:")) {
+      const session = normalizeFabushiCiSession(parsed);
+      if (session == null) {
         throw new Error("Fabushi CI account session failed bounded-session validation.");
       }
       return session;
