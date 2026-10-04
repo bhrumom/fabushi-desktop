@@ -355,7 +355,23 @@ impl ProductionTeamRulesResolver {
     }
 
     pub fn resolve_rules(&self) -> Option<Vec<Value>> {
-        self.snapshot().or_else(|| self.refresh())
+        if let Some(snapshot) = self.snapshot() {
+            return Some(snapshot);
+        }
+
+        // Keep Cursor/Sand managed-rule discovery off the first-output critical
+        // path when this desktop has no Cursor renewal credential. Fabushi
+        // account credentials belong exclusively to first-party Fabushi
+        // account/Responses transport, so a missing Cursor token is an expected
+        // state for the signed Fabushi product rather than a reason to trigger
+        // synchronous renewal work on every ordinary turn. Once HostAuth has a
+        // cached Cursor token, refresh remains available and preserves the
+        // production managed-rules behavior for Cursor-authenticated installs.
+        if self.auth.peek_access_token().is_none() {
+            return None;
+        }
+
+        self.refresh()
     }
 
     pub fn snapshot(&self) -> Option<Vec<Value>> {
