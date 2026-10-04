@@ -19,8 +19,9 @@ import {
   createElectronProductionMediaProtocolBinding,
 } from "./production-binding-providers.js";
 import {
-  createElectronProductionAccountOAuthBinding,
-} from "./adapters/account-oauth.js";
+  createFabushiProductionAccountOAuthBinding,
+  createFabushiProductionCursorAccountBinding,
+} from "../product/fabushi/fabushi-account-adapters.js";
 import {
   createElectronProductionAttachmentGatewayBinding,
 } from "./adapters/attachment-gateway.js";
@@ -28,9 +29,6 @@ import {
   createElectronProductionAvatarImagesBinding,
   createElectronProductionImageContextMenuBinding,
 } from "./adapters/avatar-images.js";
-import {
-  createElectronProductionCursorAccountBinding,
-} from "./adapters/account-edge.js";
 import {
   createElectronProductionExperimentsBinding,
 } from "./adapters/production-experiments-binding.js";
@@ -64,11 +62,11 @@ const adapters: ElectronProductionAdapterBindings = {
   settings: createElectronProductionSettingsBinding(),
   attachmentGateway: createElectronProductionAttachmentGatewayBinding(),
   avatarImages: createElectronProductionAvatarImagesBinding(),
-  cursorAccount: createElectronProductionCursorAccountBinding(),
+  cursorAccount: createFabushiProductionCursorAccountBinding(),
   mainRpc: createElectronProductionMainRpcBinding(),
   updaterInstaller: createElectronProductionUpdaterInstallerBinding(),
   mediaProtocol: createElectronProductionMediaProtocolBinding(),
-  accountOAuth: createElectronProductionAccountOAuthBinding(),
+  accountOAuth: createFabushiProductionAccountOAuthBinding(),
   experiments: createElectronProductionExperimentsBinding(),
   mcpOAuth: createProductionMcpOAuthAdapter(),
   telemetry: createElectronProductionTelemetryBinding(),
