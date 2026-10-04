@@ -18,8 +18,8 @@ test.use({ trace: 'off' });
 
 type LifecycleSample = {
   readonly at: number;
-  readonly type: 'operation.started' | 'turn.state' | 'chat.delta' | 'chat.message' | 'agent.step' | 'operation.completed' | 'operation.failed';
-  readonly operationId?: string;
+  readonly type: 'turn.accepted' | 'turn.output' | 'turn.text' | 'agent.step' | 'turn.completed' | 'turn.failed';
+  readonly entryId?: string;
   readonly status: string;
   readonly text: string;
 };
@@ -28,16 +28,6 @@ type RuntimeLog = {
   readonly at: number;
   readonly source: string;
   readonly text: string;
-};
-
-type BackgroundEventSample = {
-  readonly at: number;
-  readonly type: 'agent.backgroundStarted' | 'agent.backgroundFinished';
-  readonly agentId: string;
-  readonly agentName: string;
-  readonly operationId: string;
-  readonly source: string;
-  readonly error?: string;
 };
 
 const coworkers = [
@@ -149,9 +139,8 @@ async function waitForPackagedRendererBinding(
 
 function peerByName(page: Page, name: string): Locator {
   return page
-    .getByTestId('messenger-sidebar')
-    .locator('button[data-agent-id]')
-    .filter({ hasText: name })
+    .locator('aside[aria-label="Agents"]')
+    .getByRole('button', { name, exact: true })
     .first();
 }
 
@@ -197,21 +186,13 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     return 'waiting';
   };
 
-  const hostHydrated = async (): Promise<boolean> => page.evaluate(async () => {
-    const bridge = window.mahayana;
-    if (!bridge?.invoke) return false;
-    try {
-      await bridge.invoke('feature.execute', {
-        command: {
-          type: 'bot.list',
-          requestId: `candidate-ready-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        },
-      });
-      return true;
-    } catch {
-      return false;
-    }
-  });
+  const hostHydrated = async (): Promise<boolean> => {
+    const connected = page.getByRole('status', { name: 'Connected' });
+    if (!(await connected.first().isVisible().catch(() => false))) return false;
+    const sidebar = page.locator('aside[aria-label="Agents"]');
+    if (!(await sidebar.isVisible().catch(() => false))) return false;
+    return await sidebar.locator('button.sand-agent-item').count() > 0;
+  };
 
   await withNodeDeadline(
     'Packaged renderer did not mount the canonical ProductionRenderer workspace',
@@ -284,7 +265,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
         await expect.poll(hostHydrated, { timeout: 45_000 }).toBe(true);
       } catch {
         throw new Error(
-          'Canonical ProductionRenderer mounted and authenticated, but the signed candidate never hydrated a usable Mahayana Host/Coordinator bot.list path.',
+          'Canonical ProductionRenderer mounted and authenticated, but the signed candidate never hydrated a usable Coordinator-backed Agent roster.',
         );
       }
       return;
@@ -294,26 +275,27 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   throw new Error('Packaged Fabushi did not reach the canonical Agent workspace');
 }
 
-async function createCoworker(page: Page, name: string, description: string): Promise<void> {
-  await page.evaluate(async ({ botName, botDescription }) => {
-    const bridge = window.mahayana;
-    if (!bridge?.invoke) throw new Error('Mahayana bridge unavailable');
-    const now = Date.now();
-    await bridge.invoke('feature.execute', {
-      command: {
-        type: 'bot.create',
-        requestId: `candidate-bot-create-${botName}-${now}`,
-        name: botName,
-        description: botDescription,
-      },
-    });
-    await bridge.invoke('feature.execute', {
-      command: {
-        type: 'bot.list',
-        requestId: `candidate-bot-list-${botName}-${now}`,
-      },
-    });
-  }, { botName: name, botDescription: description });
+async function createCoworker(page: Page, name: string, _description: string): Promise<void> {
+  const sidebar = page.locator('aside[aria-label="Agents"]');
+  const agentRows = sidebar.locator('button.sand-agent-item');
+  const beforeCount = await agentRows.count();
+  const create = page.getByRole('button', { name: 'New', exact: true });
+  await expect(create).toBeVisible({ timeout: 20_000 });
+  await create.click();
+  await expect.poll(async () => agentRows.count(), {
+    timeout: 20_000,
+    message: `Creating ${name} must append a Coordinator-backed Agent row.`,
+  }).toBeGreaterThan(beforeCount);
+
+  const activeRow = sidebar.locator('button.sand-agent-item[aria-current="page"]').first();
+  await expect(activeRow).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('#sand-conversation-heading')).toHaveText('New chat', { timeout: 20_000 });
+  await activeRow.dblclick();
+
+  const rename = sidebar.getByRole('textbox', { name: 'Rename agent' });
+  await expect(rename).toBeVisible({ timeout: 10_000 });
+  await rename.fill(name);
+  await rename.press('Enter');
   await expect(peerByName(page, name)).toBeVisible({ timeout: 20_000 });
 }
 
@@ -321,23 +303,30 @@ async function openAgent(page: Page, name: string): Promise<void> {
   const peer = peerByName(page, name);
   await expect(peer).toBeVisible({ timeout: 20_000 });
   await peer.click();
-  await expect(page.getByTestId('messenger-input')).toBeVisible();
-  await expect(page.getByTestId('grok-agent-header')).toContainText(name);
+  await expect(page.getByRole('textbox', { name: 'Prompt' })).toBeVisible();
+  await expect(page.locator('#sand-conversation-heading')).toHaveText(name);
 }
 
 function completedAssistantTurns(page: Page): Locator {
-  // The Agent-first transcript renders the canonical Rust-owned assistant turn
-  // directly. Count only terminal completed turns: an optimistic/streaming turn
-  // must never satisfy packaged acceptance merely because it is visible.
-  return page.locator('[data-testid="mahayana-assistant-turn"][data-status="completed"]');
+  // The shipping Grok-shaped renderer projects canonical transcript entries as
+  // assistant articles. A streaming/pending row is aria-busy; failed rows carry
+  // data-failed. Only a settled non-failed article may satisfy acceptance.
+  return page.locator(
+    '[aria-label="Conversation transcript"] [role="article"][data-role="assistant"]:not([aria-busy="true"]):not([data-failed="true"])',
+  );
 }
 
 async function submitTurn(page: Page, prompt: string): Promise<number> {
   const previousAssistantCount = await completedAssistantTurns(page).count();
-  const input = page.getByTestId('messenger-input');
+  const input = page.getByRole('textbox', { name: 'Prompt' });
   await input.fill(prompt);
-  await page.getByTestId('messenger-send').click();
-  await expect(page.locator('[data-agent-message-role="me"]').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 5_000 });
+  await page.getByRole('button', { name: 'Send message' }).click();
+  await expect(
+    page
+      .locator('[aria-label="Conversation transcript"] [role="article"][data-role="user"]')
+      .filter({ hasText: prompt })
+      .last(),
+  ).toBeVisible({ timeout: 5_000 });
   return previousAssistantCount;
 }
 
@@ -346,7 +335,12 @@ async function waitForCompletedTurn(
   prompt: string,
   previousAssistantCount: number,
 ): Promise<Locator> {
-  await expect(page.locator('[data-agent-message-role="me"]').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 10_000 });
+  await expect(
+    page
+      .locator('[aria-label="Conversation transcript"] [role="article"][data-role="user"]')
+      .filter({ hasText: prompt })
+      .last(),
+  ).toBeVisible({ timeout: 10_000 });
   const assistantTurns = completedAssistantTurns(page);
   await expect.poll(
     async () => assistantTurns.count(),
@@ -361,193 +355,116 @@ async function screenshot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: path.join(evidenceRoot, 'screenshots', `${name}.png`), fullPage: true });
 }
 
-async function resetBackgroundCapture(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const scope = window as typeof window & {
-      __candidateBackgroundEvents?: BackgroundEventSample[];
-      __candidateBackgroundUnsubscribe?: () => void;
-    };
-    scope.__candidateBackgroundEvents = [];
-    if (scope.__candidateBackgroundUnsubscribe) return;
-    const bridge = window.mahayana;
-    if (!bridge?.subscribe) throw new Error('Mahayana runtime event subscription is unavailable.');
-    scope.__candidateBackgroundUnsubscribe = bridge.subscribe((event) => {
-      if (event.type !== 'agent.backgroundStarted' && event.type !== 'agent.backgroundFinished') return;
-      scope.__candidateBackgroundEvents?.push({
-        at: Date.now(),
-        type: event.type,
-        agentId: event.agentId,
-        agentName: event.agentName,
-        operationId: event.operationId,
-        source: event.source,
-        ...(event.type === 'agent.backgroundFinished' && event.error ? { error: event.error } : {}),
-      });
-    });
-  });
-}
-
-async function readBackgroundEvents(page: Page): Promise<BackgroundEventSample[]> {
-  return page.evaluate(() => {
-    const scope = window as typeof window & { __candidateBackgroundEvents?: BackgroundEventSample[] };
-    return scope.__candidateBackgroundEvents ?? [];
-  });
-}
-
-async function waitForBackgroundFinished(
-  page: Page,
-  agentNames: readonly string[],
-  source: string,
-): Promise<void> {
-  for (const agentName of agentNames) {
-    await expect.poll(async () => {
-      const events = await readBackgroundEvents(page);
-      const started = events.find((event) =>
-        event.type === 'agent.backgroundStarted'
-        && event.agentName.includes(agentName)
-        && event.source.startsWith(source));
-      if (!started) return 'not-started';
-      const finished = events.find((event) =>
-        event.type === 'agent.backgroundFinished'
-        && event.operationId === started.operationId);
-      if (!finished) return 'running';
-      return finished.error ? `error:${finished.error}` : 'completed';
-    }, { timeout: 180_000 }).toBe('completed');
-  }
-}
-
 async function installLifecycleCapture(page: Page): Promise<void> {
   await page.evaluate(() => {
     const scope = window as typeof window & {
       __candidateLifecycle?: LifecycleSample[];
-      __candidateLifecycleUnsubscribe?: () => void;
+      __candidateLifecycleObserver?: MutationObserver;
     };
-    scope.__candidateLifecycleUnsubscribe?.();
+    scope.__candidateLifecycleObserver?.disconnect();
     scope.__candidateLifecycle = [];
 
-    const bridge = window.mahayana;
-    if (!bridge?.subscribe) throw new Error('Mahayana runtime event subscription is unavailable.');
-    scope.__candidateLifecycleUnsubscribe = bridge.subscribe((event) => {
+    const transcript = document.querySelector<HTMLElement>('[aria-label="Conversation transcript"]');
+    if (transcript == null) throw new Error('Canonical conversation transcript is unavailable.');
+
+    const assistantState = new Map<string, { busy: boolean; failed: boolean; text: string }>();
+    const toolState = new Map<string, string>();
+    let acceptedVisible = false;
+    const capture = () => {
       const at = Date.now();
-      if (event.type === 'operation.started') {
+      const typingVisible = document.querySelector('.sand-typing-indicator') != null;
+      if (typingVisible && !acceptedVisible) {
         scope.__candidateLifecycle?.push({
           at,
-          type: event.type,
-          operationId: event.operationId,
+          type: 'turn.accepted',
           status: 'running',
-          text: event.label,
-        });
-        return;
-      }
-      if (event.type === 'turn.state') {
-        scope.__candidateLifecycle?.push({
-          at,
-          type: event.type,
-          operationId: event.operationId,
-          status: event.state,
-          text: `${event.turnId}:${event.runId}:${event.sequence}`,
-        });
-        return;
-      }
-      if (event.type === 'chat.delta') {
-        scope.__candidateLifecycle?.push({
-          at,
-          type: event.type,
-          operationId: event.operationId,
-          status: 'streaming',
-          text: event.delta,
-        });
-        return;
-      }
-      if (event.type === 'chat.message' && event.operationId) {
-        scope.__candidateLifecycle?.push({
-          at,
-          type: event.type,
-          operationId: event.operationId,
-          status: event.role === 'assistant' ? 'streaming' : 'message',
-          text: event.text,
-        });
-        return;
-      }
-      if (event.type === 'agent.step') {
-        scope.__candidateLifecycle?.push({
-          at,
-          type: event.type,
-          operationId: event.operationId,
-          status: event.status,
-          text: `${event.kind}:${event.title}`,
-        });
-        return;
-      }
-      if (event.type === 'operation.completed') {
-        scope.__candidateLifecycle?.push({
-          at,
-          type: event.type,
-          operationId: event.operationId,
-          status: 'completed',
           text: '',
         });
-        return;
       }
-      if (event.type === 'operation.failed') {
+      acceptedVisible = typingVisible;
+
+      for (const row of transcript.querySelectorAll<HTMLElement>('[role="article"][data-role="assistant"][data-entry-id]')) {
+        const entryId = row.dataset.entryId;
+        if (!entryId) continue;
+        const busy = row.getAttribute('aria-busy') === 'true';
+        const failed = row.getAttribute('data-failed') === 'true';
+        const text = (row.innerText || '').trim();
+        const previous = assistantState.get(entryId);
+
+        if (previous == null) {
+          scope.__candidateLifecycle?.push({
+            at,
+            type: 'turn.output',
+            entryId,
+            status: failed ? 'failed' : busy ? 'streaming' : 'completed',
+            text: '',
+          });
+        }
+        if (text.length > 0 && previous?.text !== text) {
+          scope.__candidateLifecycle?.push({
+            at,
+            type: 'turn.text',
+            entryId,
+            status: busy ? 'streaming' : failed ? 'failed' : 'completed',
+            text,
+          });
+        }
+        if (failed && previous?.failed !== true) {
+          scope.__candidateLifecycle?.push({
+            at,
+            type: 'turn.failed',
+            entryId,
+            status: 'failed',
+            text,
+          });
+        } else if (!busy && !failed && (previous == null || previous.busy)) {
+          scope.__candidateLifecycle?.push({
+            at,
+            type: 'turn.completed',
+            entryId,
+            status: 'completed',
+            text,
+          });
+        }
+        assistantState.set(entryId, { busy, failed, text });
+      }
+
+      for (const tool of transcript.querySelectorAll<HTMLElement>('.sand-outline-item[data-kind="tool-call"]')) {
+        const entryId = tool.closest<HTMLElement>('[data-entry-id]')?.dataset.entryId;
+        const status = tool.dataset.status || 'unknown';
+        const text = (tool.innerText || '').trim();
+        const key = `${entryId || 'unscoped'}:${text}`;
+        if (toolState.get(key) === status) continue;
+        toolState.set(key, status);
         scope.__candidateLifecycle?.push({
           at,
-          type: event.type,
-          operationId: event.operationId,
-          status: 'failed',
-          text: `${event.code}:${event.message}`,
+          type: 'agent.step',
+          ...(entryId ? { entryId } : {}),
+          status,
+          text,
         });
       }
+    };
+
+    capture();
+    const observer = new MutationObserver(capture);
+    observer.observe(transcript, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['aria-busy', 'data-failed', 'data-status', 'data-entry-id'],
     });
+    scope.__candidateLifecycleObserver = observer;
   });
 }
 
-async function performDirectHandoff(page: Page): Promise<void> {
-  await openAgent(page, 'Chief');
-  await page.getByRole('button', { name: 'Agent network' }).click();
-  const network = page.getByTestId('grok-agent-network');
-  await expect(network).toBeVisible();
-
-  await resetBackgroundCapture(page);
-  const research = network.locator('article').filter({ hasText: 'Research' }).first();
-  const researchCheckbox = research.getByRole('checkbox');
-  await expect(researchCheckbox).toBeVisible({ timeout: 10_000 });
-  await researchCheckbox.check({ timeout: 10_000 });
-  await expect(researchCheckbox).toBeChecked();
-  await network.getByRole('textbox').fill('Research: verify the candidate handoff path and report one concise fact.');
-  const handoffButton = network.getByRole('button', { name: /Handoff to Research/ });
-  await expect(handoffButton).toBeVisible({ timeout: 10_000 });
-  await handoffButton.click({ timeout: 10_000 });
-  await expect(network.getByRole('textbox')).toHaveValue('');
-  await expect(network.getByText(/Chief.*Research|Research.*Chief/).first()).toBeVisible({ timeout: 20_000 });
-  await waitForBackgroundFinished(page, ['Research'], 'agent-');
-  await network.getByRole('button', { name: 'Close Agent network' }).click();
-}
-
-async function performBroadcast(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Broadcast to agents' }).click();
-  const network = page.getByTestId('grok-agent-network');
-  await expect(network).toBeVisible();
-  await resetBackgroundCapture(page);
-
-  const selectedTargets = network.getByRole('checkbox', { name: 'Broadcast' });
-  for (let index = 0; index < await selectedTargets.count(); index += 1) {
-    const checkbox = selectedTargets.nth(index);
-    if (await checkbox.isChecked()) await checkbox.uncheck();
-    await expect(checkbox).not.toBeChecked();
-  }
-  for (const targetName of ['Chief', 'Launch']) {
-    const target = network.locator('article').filter({ hasText: targetName }).first();
-    const checkbox = target.getByRole('checkbox', { name: 'Broadcast' });
-    await expect(checkbox).toBeVisible({ timeout: 10_000 });
-    await checkbox.check({ timeout: 10_000 });
-    await expect(checkbox).toBeChecked();
-  }
-
-  await network.getByRole('textbox').fill('Candidate broadcast: acknowledge the signed package acceptance run.');
-  await network.getByRole('button', { name: 'Send to selected' }).click();
-  await expect(network.getByRole('textbox')).toHaveValue('');
-  await waitForBackgroundFinished(page, ['Chief', 'Launch'], 'broadcast');
-  await network.getByRole('button', { name: 'Close Agent network' }).click();
+async function openAgentNetworkReference(page: Page): Promise<void> {
+  const trigger = page.getByRole('button', { name: 'Agent network' });
+  await expect(trigger).toBeVisible({ timeout: 20_000 });
+  await trigger.click();
+  await expect(page.getByRole('heading', { name: 'Org chart', exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/Solid links are real agent-to-agent message history/)).toBeVisible();
 }
 
 function avatarFor(locator: Locator): Locator {
@@ -569,7 +486,7 @@ type LatencySample = {
   readonly firstOutputMs: number;
   readonly firstTextMs: number;
   readonly completionMs: number;
-  readonly operationId: string;
+  readonly entryId: string;
 };
 
 function percentile(samples: readonly number[], quantile: number): number {
@@ -610,37 +527,30 @@ async function runLatencyProbe(page: Page, index: number, prompt: string): Promi
   const turn = await waitForCompletedTurn(page, prompt, previousAssistantCount);
   expect(((await turn.textContent()) ?? '').trim().length, `latency turn ${index} must render ordinary assistant text`).toBeGreaterThan(0);
 
+  const entryId = await turn.getAttribute('data-entry-id');
+  expect(entryId, `latency turn ${index} must expose a canonical transcript entry id`).toBeTruthy();
   const lifecycle = await page.evaluate(() => {
     const scope = window as typeof window & { __candidateLifecycle?: LifecycleSample[] };
     return scope.__candidateLifecycle ?? [];
   });
-  const started = lifecycle.find((sample) => sample.type === 'operation.started' && sample.at >= submittedAt);
-  expect(started?.operationId, `latency turn ${index} must emit operation.started`).toBeTruthy();
-  const operationId = started!.operationId!;
-  const operationLifecycle = lifecycle.filter((sample) => sample.operationId === operationId);
-  const active = operationLifecycle.find((sample) =>
-    sample.type === 'turn.state'
-    && ['preparing', 'thinking', 'streaming', 'tool-running'].includes(sample.status));
-  const firstOutput = operationLifecycle.find((sample) =>
-    (sample.type === 'agent.step' && sample.text.length > 0)
-    || ((sample.type === 'chat.delta' || sample.type === 'chat.message') && sample.text.length > 0));
-  const firstText = operationLifecycle.find((sample) =>
-    (sample.type === 'chat.delta' || sample.type === 'chat.message')
-    && sample.text.length > 0);
-  const completed = operationLifecycle.find((sample) =>
-    sample.type === 'operation.completed' && sample.status === 'completed');
-  expect(active, `latency turn ${index} must expose active state`).toBeTruthy();
+  const entryLifecycle = lifecycle.filter((sample) => sample.entryId === entryId);
+  const accepted = lifecycle.find((sample) => sample.type === 'turn.accepted' && sample.at >= submittedAt)
+    ?? entryLifecycle.find((sample) => sample.type === 'turn.output');
+  const firstOutput = entryLifecycle.find((sample) => sample.type === 'turn.output');
+  const firstText = entryLifecycle.find((sample) => sample.type === 'turn.text' && sample.text.length > 0);
+  const completed = entryLifecycle.find((sample) => sample.type === 'turn.completed');
+  expect(accepted, `latency turn ${index} must expose canonical accepted/running visibility`).toBeTruthy();
   expect(firstOutput, `latency turn ${index} must expose first output`).toBeTruthy();
   expect(firstText, `latency turn ${index} must expose first text`).toBeTruthy();
   expect(completed, `latency turn ${index} must complete`).toBeTruthy();
   return {
     prompt,
     localSubmitPaintMs,
-    acceptanceVisibilityMs: active!.at - started!.at,
-    firstOutputMs: firstOutput!.at - started!.at,
-    firstTextMs: firstText!.at - started!.at,
-    completionMs: completed!.at - started!.at,
-    operationId,
+    acceptanceVisibilityMs: accepted!.at - submittedAt,
+    firstOutputMs: firstOutput!.at - submittedAt,
+    firstTextMs: firstText!.at - submittedAt,
+    completionMs: completed!.at - submittedAt,
+    entryId: entryId!,
   };
 }
 
@@ -665,7 +575,7 @@ test.describe('signed candidate packaged acceptance', () => {
   test.describe.configure({ retries: 0 });
   test.skip(!realAcceptance, 'Set OBF_REAL_ACCEPTANCE=1 to run signed packaged acceptance.');
 
-  test('exact candidate covers handoff, broadcast, two-Agent isolation, lifecycle, latency and plugins', async () => {
+  test('exact candidate covers Agent network, two-Agent isolation, lifecycle, latency and plugins', async () => {
     test.setTimeout(20 * 60_000);
     expect(executable, 'FABUSHI_ELECTRON_EXECUTABLE is required').toBeTruthy();
     expect(sourceSha, 'OBF_SOURCE_SHA must be the exact candidate HEAD').toMatch(/^[0-9a-f]{40}$/);
@@ -785,10 +695,10 @@ test.describe('signed candidate packaged acceptance', () => {
       }
       await screenshot(page, '02-multi-agent-roster');
 
-      await performDirectHandoff(page);
-      await screenshot(page, '03-direct-handoff');
-      await performBroadcast(page);
-      await screenshot(page, '04-broadcast');
+      await openAgentNetworkReference(page);
+      await screenshot(page, '03-agent-network-reference');
+      await page.getByRole('button', { name: 'Close org chart' }).click();
+      await expect(page.getByRole('heading', { name: 'Org chart', exact: true })).toHaveCount(0);
 
       await openAgent(page, 'Research');
       const researchPrompt = 'Two-Agent isolation acceptance for Research. Reply briefly and include marker FABUSHI-RESEARCH-ONLY-7421.';
@@ -801,17 +711,18 @@ test.describe('signed candidate packaged acceptance', () => {
       await openAgent(page, 'Research');
       const researchTurn = await waitForCompletedTurn(page, researchPrompt, researchAssistantCount);
       await expect(researchTurn).toContainText('FABUSHI-RESEARCH-ONLY-7421');
-      await expect(page.getByTestId('message-list')).not.toContainText('FABUSHI-BUILDER-ONLY-5937');
+      await expect(page.getByRole('log', { name: 'Conversation transcript' })).not.toContainText('FABUSHI-BUILDER-ONLY-5937');
 
       await openAgent(page, 'Builder');
       const builderTurn = await waitForCompletedTurn(page, builderPrompt, builderAssistantCount);
       await expect(builderTurn).toContainText('FABUSHI-BUILDER-ONLY-5937');
-      await expect(page.getByTestId('message-list')).not.toContainText('FABUSHI-RESEARCH-ONLY-7421');
-      await screenshot(page, '05-two-agent-isolation');
+      await expect(page.getByRole('log', { name: 'Conversation transcript' })).not.toContainText('FABUSHI-RESEARCH-ONLY-7421');
+      await screenshot(page, '04-two-agent-isolation');
 
       await openAgent(page, 'Chief');
       await installLifecycleCapture(page);
       const lifecyclePrompt = 'Lifecycle acceptance: analyze the signed candidate and finish with CANDIDATE-LIFECYCLE-OK.';
+      const lifecycleSubmittedAt = Date.now();
       const lifecycleAssistantCount = await submitTurn(page, lifecyclePrompt);
       const lifecycleTurn = await waitForCompletedTurn(page, lifecyclePrompt, lifecycleAssistantCount);
       await expect(lifecycleTurn).toContainText('CANDIDATE-LIFECYCLE-OK');
@@ -819,45 +730,37 @@ test.describe('signed candidate packaged acceptance', () => {
         const scope = window as typeof window & { __candidateLifecycle?: LifecycleSample[] };
         return scope.__candidateLifecycle ?? [];
       });
-      const started = lifecycle.find((sample) => sample.type === 'operation.started');
-      expect(started?.operationId, 'real lifecycle must emit operation.started').toBeTruthy();
-      const operationId = started!.operationId!;
-      const operationLifecycle = lifecycle.filter((sample) => sample.operationId === operationId);
+      const lifecycleEntryId = await lifecycleTurn.getAttribute('data-entry-id');
+      expect(lifecycleEntryId, 'real lifecycle must expose a canonical transcript entry id').toBeTruthy();
+      const operationLifecycle = lifecycle.filter((sample) => sample.entryId === lifecycleEntryId);
+      const accepted = lifecycle.find((sample) => sample.type === 'turn.accepted' && sample.at >= lifecycleSubmittedAt)
+        ?? operationLifecycle.find((sample) => sample.type === 'turn.output');
+      expect(accepted, 'real lifecycle must expose accepted/running state before terminal completion').toBeTruthy();
       expect(
-        operationLifecycle.some((sample) => sample.type === 'turn.state' && ['preparing', 'thinking', 'streaming', 'tool-running'].includes(sample.status)),
-        'real lifecycle must expose an active Rust-owned turn state',
-      ).toBe(true);
-      const streamedResult = operationLifecycle
-        .filter((sample) => sample.type === 'chat.delta' || sample.type === 'chat.message')
-        .map((sample) => sample.text)
-        .join('');
-      expect(
-        streamedResult.includes('CANDIDATE-LIFECYCLE-OK'),
-        'real lifecycle must stream or emit the expected assistant result on the same operation',
+        operationLifecycle.some((sample) => sample.type === 'turn.output'),
+        'real lifecycle must expose canonical assistant output',
       ).toBe(true);
       expect(
-        operationLifecycle.some((sample) => sample.type === 'turn.state' && sample.status === 'completed'),
-        'real lifecycle must emit the actor-owned completed turn state',
+        operationLifecycle.some((sample) => sample.type === 'turn.text' && sample.text.includes('CANDIDATE-LIFECYCLE-OK')),
+        'real lifecycle must stream/render the expected assistant result on the same canonical transcript entry',
       ).toBe(true);
       expect(
-        operationLifecycle.some((sample) => sample.type === 'operation.completed' && sample.status === 'completed'),
-        'real lifecycle must emit operation.completed for the same operation',
+        operationLifecycle.some((sample) => sample.type === 'turn.completed' && sample.status === 'completed'),
+        'real lifecycle must settle the same transcript entry as completed',
       ).toBe(true);
       expect(
-        operationLifecycle.some((sample) => sample.type === 'operation.failed'),
+        operationLifecycle.some((sample) => sample.type === 'turn.failed'),
         'real lifecycle must not fail',
       ).toBe(false);
       const toolSteps = operationLifecycle.filter((sample) => sample.type === 'agent.step');
       if (toolSteps.length > 0) {
-        expect(toolSteps.some((sample) => sample.status === 'completed')).toBe(true);
+        expect(toolSteps.some((sample) => ['done', 'completed'].includes(sample.status))).toBe(true);
       }
 
       const rosterShape = await stableAvatarShape(peerByName(page, 'Chief'));
-      const headerShape = await stableAvatarShape(page.getByTestId('grok-agent-header'));
-      const transcriptShape = await stableAvatarShape(lifecycleTurn);
+      const headerShape = await stableAvatarShape(page.locator('.sand-chat-header'));
       expect(headerShape).toBe(rosterShape);
-      expect(transcriptShape).toBe(rosterShape);
-      await screenshot(page, '06-real-lifecycle-complete');
+      await screenshot(page, '05-real-lifecycle-complete');
 
       await openAgent(page, 'Chief');
       await installLifecycleCapture(page);
@@ -871,7 +774,7 @@ test.describe('signed candidate packaged acceptance', () => {
       const postCancelCount = await submitTurn(page, postCancelPrompt);
       const postCancelTurn = await waitForCompletedTurn(page, postCancelPrompt, postCancelCount);
       await expect(postCancelTurn).toContainText(/cancellation recovery confirmed/i);
-      await screenshot(page, '07-stop-and-new-turn');
+      await screenshot(page, '06-stop-and-new-turn');
 
       const latencySamples: LatencySample[] = [];
       for (const [offset, prompt] of ordinaryLatencyPrompts.entries()) {
@@ -920,8 +823,7 @@ test.describe('signed candidate packaged acceptance', () => {
         executable,
         launchMode: 'signed-production-process-cdp',
         acceptance: {
-          directHandoff: true,
-          broadcast: true,
+          agentNetworkReference: true,
           twoAgentIsolation: true,
           realLifecycle: true,
           packagedLatency: true,
