@@ -498,6 +498,26 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Preserves the frozen Grok 0.18 Coordinator renderer source except for the explicit Fabushi user-interrupt extension required by the shipping Agent product: interruptAgent is admitted through the closed method table, its {agentId, interrupted} reply is fail-closed validated, and telemetry remains owned by the existing send domain. The production renderer exposes the corresponding Stop response control, while signed packaged acceptance verifies cancellation settles and a fresh post-cancel turn completes; no parallel transport, owner, or legacy shell is introduced."
+    },
+    {
+      "referencePath": "source/shared/inference-router.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2bc1550891cfc60a1f5b36ee35e39ac80f63e5bd",
+      "behavioralEvidence": [
+        "source/shared/inference-router.ts",
+        "source/product/fabushi/fabushi-account-adapters.ts",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/src/extensions/inference/provider_session.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/inference_provider_session_contract.rs",
+        "source/host/tests/inference_extension_composition_contract.rs",
+        "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 inference-router ownership and provider-selection contract while adding one Fabushi product provider identity required by the shipping account boundary. Fresh Fabushi profiles select the first-party provider in product composition; the independent Mahayana Host/Runner reuses the existing Responses lifecycle, tool, checkpoint, usage, and cancellation machinery with the account-bound Fabushi credential and official product endpoint. Cursor, Codex, Claude Code, and OpenRouter retain their original identities and ownership, and the upstream Grok default remains Cursor outside Fabushi composition. This adaptation prevents a Fabushi product bearer from being misrouted to Cursor private backend infrastructure without creating a parallel inference runtime or collapsing Coordinator/Host/Runner responsibility boundaries."
     }
   ]
 }
