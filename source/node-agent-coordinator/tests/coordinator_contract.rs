@@ -1292,6 +1292,35 @@ fn coordinator_inference_router_refreshes_default_provider_without_losing_agent_
 
 
 #[test]
+fn coordinator_inference_router_uses_product_fallback_until_settings_override_it() {
+    use std::fs;
+
+    use mahayana_node_agent_coordinator::inference_router::{
+        CoordinatorInferenceRouter, InferenceProvider,
+    };
+    use uuid::Uuid;
+
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-coordinator-product-inference-router-{}",
+        Uuid::new_v4()
+    ));
+    fs::create_dir_all(&root).expect("router temp dir");
+    let settings = root.join("settings.json");
+
+    let router =
+        CoordinatorInferenceRouter::new_with_fallback(&settings, InferenceProvider::Codex);
+    let product_default = router.resolve("builder");
+    assert_eq!(product_default.provider, "codex");
+    assert_eq!(product_default.host_slot, "host");
+
+    fs::write(&settings, r#"{"inferenceProvider":"cursor"}"#).expect("cursor settings");
+    assert_eq!(router.resolve("builder").provider, "cursor");
+
+    fs::remove_dir_all(root).expect("remove router temp dir");
+}
+
+
+#[test]
 fn inference_router_persists_bounded_transcripts_reactions_and_turn_ids() {
     use std::fs;
 

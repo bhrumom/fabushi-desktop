@@ -2964,7 +2964,16 @@ fn main() {
     let inference_data_dir = PathBuf::from(bootstrap.process_config.data_dir.trim());
     let gateway_discovery_path = inference_data_dir.join("gateway.json");
     let inference_settings_path = inference_data_dir.join("settings.json");
-    let inference_router = CoordinatorInferenceRouter::new(inference_settings_path);
+    let inference_fallback_provider =
+        if env::var("FABUSHI_PRODUCT_MODE").ok().as_deref() == Some("1") {
+            InferenceProvider::Codex
+        } else {
+            InferenceProvider::Cursor
+        };
+    let inference_router = CoordinatorInferenceRouter::new_with_fallback(
+        inference_settings_path,
+        inference_fallback_provider,
+    );
     let inference_store =
         InferenceTranscriptFile::new(inference_data_dir.join("inference-router-transcript.json"));
     let gateway_client = CoordinatorGatewayClient::default();

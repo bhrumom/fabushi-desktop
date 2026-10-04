@@ -833,13 +833,22 @@ impl InferenceRouter {
 #[derive(Debug)]
 pub struct CoordinatorInferenceRouter {
     settings_path: PathBuf,
+    fallback_provider: InferenceProvider,
     routes: Mutex<InferenceRouter>,
 }
 
 impl CoordinatorInferenceRouter {
     pub fn new(settings_path: impl Into<PathBuf>) -> Self {
+        Self::new_with_fallback(settings_path, InferenceProvider::Cursor)
+    }
+
+    pub fn new_with_fallback(
+        settings_path: impl Into<PathBuf>,
+        fallback_provider: InferenceProvider,
+    ) -> Self {
         Self {
             settings_path: settings_path.into(),
+            fallback_provider,
             routes: Mutex::new(InferenceRouter::default()),
         }
     }
@@ -850,7 +859,7 @@ impl CoordinatorInferenceRouter {
 
     pub fn resolve(&self, agent_id: &str) -> InferenceRoute {
         let configured = configured_inference_provider(&self.settings_path)
-            .unwrap_or(InferenceProvider::Cursor);
+            .unwrap_or(self.fallback_provider);
         let fallback = InferenceRoute {
             provider: configured.as_str().to_string(),
             host_slot: "host".into(),

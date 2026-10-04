@@ -1,5 +1,5 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -154,6 +154,38 @@ async function ensureE2eAuthBackend(): Promise<string> {
         }));
         return;
       }
+      if (requestUrl.pathname === '/v1/ai/responses' && request.method === 'POST') {
+        const body = await readRequestBody(request);
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !String(request.headers['content-type'] ?? '').startsWith('application/json')) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ error: 'invalid-fabushi-responses-request' }));
+          return;
+        }
+        const isSelfHosted = body.includes(Buffer.from('自建 Bot', 'utf8'));
+        const text = isSelfHosted
+          ? '收到：自建 Bot 请规划步骤'
+          : '收到：请分析这个任务';
+        response.setHeader('content-type', 'text/event-stream');
+        response.statusCode = 200;
+        response.end([
+          `data: ${JSON.stringify({ type: 'response.output_text.delta', delta: text })}\n\n`,
+          `data: ${JSON.stringify({
+            type: 'response.completed',
+            response: {
+              id: 'fabushi-e2e-response',
+              output: [],
+              usage: {
+                input_tokens: 8,
+                output_tokens: 8,
+                input_tokens_details: { cached_tokens: 0 },
+              },
+            },
+          })}\n\n`,
+        ].join(''));
+        return;
+      }
       if (requestUrl.pathname === '/aiserver.v1.InferenceService/Stream') {
         const body = await readRequestBody(request);
         const authorization = request.headers.authorization;
@@ -211,15 +243,9 @@ test.afterAll(async () => {
 
 async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication> {
   const e2eAuthBackendUrl = await ensureE2eAuthBackend();
-  // The shipping Rust Host owns a separate short-lived inference credential
-  // from the renderer account token. Seed that real HostAuth input explicitly
-  // so deterministic CI exercises the authenticated Cursor Runner boundary
-  // instead of stalling before provider execution.
-  const inferenceCredentialPath = path.join(appDataDir, 'e2e-inference-credential.json');
-  await writeFile(inferenceCredentialPath, JSON.stringify({
-    accessToken: e2eAuthToken(),
-    expiresAtMs: 4_102_444_800_000,
-  }), 'utf8');
+  // Exercise the shipping Fabushi account -> private Host credential ->
+  // Responses transport chain. The browser-first login below owns the token;
+  // focused acceptance must not seed a parallel Cursor inference credential.
   return electron.launch({
     ...(packagedExecutable
       ? { executablePath: packagedExecutable, args: [] }
@@ -234,7 +260,7 @@ async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication
       SAND_BACKEND_URL: e2eAuthBackendUrl,
       CURSOR_API_BASE_URL: e2eAuthBackendUrl,
       FABUSHI_API_BASE_URL: e2eAuthBackendUrl,
-      SAND_DEV_INFERENCE_TOKEN_FILE: inferenceCredentialPath,
+      FABUSHI_RESPONSES_URL: `${e2eAuthBackendUrl}/v1/ai/responses`,
       SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
       SAND_DISABLE_SENTRY: '1',
       FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
