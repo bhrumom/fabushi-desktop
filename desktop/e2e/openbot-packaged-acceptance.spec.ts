@@ -480,13 +480,13 @@ async function openAgentNetworkReference(page: Page): Promise<void> {
 }
 
 function avatarFor(locator: Locator): Locator {
-  return locator.locator('[data-fab-avatar="true"]').first();
+  return locator.locator('.sand-agent-avatar[data-avatar-shape]').first();
 }
 
 async function stableAvatarShape(locator: Locator): Promise<string> {
   const avatar = avatarFor(locator);
   await expect(avatar).toBeVisible();
-  const shape = await avatar.getAttribute('data-shape');
+  const shape = await avatar.getAttribute('data-avatar-shape');
   expect(shape).toBeTruthy();
   return shape!;
 }
