@@ -1,8 +1,11 @@
 use std::fs;
 use std::future::{ready, Future};
 use std::pin::Pin;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+static NEXT_TEMP_ROOT: AtomicU64 = AtomicU64::new(0);
 
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::automations::automation::AutomationSpec;
@@ -36,8 +39,9 @@ fn temp_root() -> std::path::PathBuf {
         .duration_since(UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
+    let sequence = NEXT_TEMP_ROOT.fetch_add(1, Ordering::Relaxed);
     std::env::temp_dir().join(format!(
-        "fabushi-transcript-manager-{}-{suffix}",
+        "fabushi-transcript-manager-{}-{suffix}-{sequence}",
         std::process::id()
     ))
 }
