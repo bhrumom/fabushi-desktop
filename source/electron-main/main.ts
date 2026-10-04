@@ -1,3 +1,5 @@
+import { pathToFileURL } from "node:url";
+
 import { installApplicationMenu, type ApplicationMenuElectronPort } from "./application-menu.js";
 import { reportDesktopEdgeFailure } from "./desktop-edge-failures.js";
 import { createDevToolsGate, createDevToolsMembershipResolver } from "./devtools-gate.js";
@@ -229,6 +231,15 @@ export function isSameDocumentNavigation(target: string, current: string): boole
   }
 }
 
+export function isTrustedInitialNavigation(target: string, current: string, trustedInitialUrl: string): boolean {
+  if (current !== "" && current !== "about:blank") return false;
+  try {
+    return new URL(target).href === new URL(trustedInitialUrl).href;
+  } catch {
+    return false;
+  }
+}
+
 export function startElectronMain(deps: ElectronMainDependencies): ElectronMainRuntime {
   const platform = deps.platform ?? process.platform;
   const env = deps.env ?? process.env;
@@ -327,8 +338,16 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
       void services?.openExternalUrl(url);
       return { action: "deny" };
     });
+    const trustedInitialUrl = env.VITE_DEV_SERVER_URL != null
+      ? new URL(env.VITE_DEV_SERVER_URL).href
+      : pathToFileURL(deps.rendererHtmlPath).href;
     window.webContents.on("will-navigate", (event, url) => {
-      if (isSameDocumentNavigation(url, window.webContents.getURL())) return;
+      const currentUrl = window.webContents.getURL();
+      if (isSameDocumentNavigation(url, currentUrl)) return;
+      // The BrowserWindow starts at an empty/about:blank document. Permit only
+      // the exact renderer URL selected by this production composition root;
+      // every other cross-document navigation remains external/fail-closed.
+      if (isTrustedInitialNavigation(url, currentUrl, trustedInitialUrl)) return;
       event.preventDefault();
       void services?.openExternalUrl(url);
     });
