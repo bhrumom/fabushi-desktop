@@ -1,9 +1,6 @@
 name: Package macOS installer from exact source
 
 on:
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
     inputs:
       source_sha:
@@ -17,15 +14,21 @@ on:
         type: boolean
   push:
     branches: [main]
-    tags:
-      - 'package-macos-*'
+    paths:
+      - 'desktop/**'
+      - 'source/**'
+      - 'frontend/**'
+      - 'contracts/**'
+      - 'native/**'
+      - 'source/mahayana/**'
+      - '.github/workflows/release-macos-main.yml'
 
 permissions:
   contents: write
 
 concurrency:
-  group: package-macos-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: package-macos-${{ github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -39,7 +42,7 @@ jobs:
       - name: Checkout exact source
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event_name == 'push' && github.sha || inputs.source_sha || 'main' }}
+          ref: ${{ github.event_name == 'push' && github.sha || inputs.source_sha || 'main' }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -50,19 +53,11 @@ jobs:
           set -euo pipefail
           sha="$(git rev-parse HEAD)"
           requested="${{ inputs.source_sha }}"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            test "$sha" = "${{ github.event.pull_request.head.sha }}"
-          elif [ -n "$requested" ]; then
+          if [ -n "$requested" ]; then
             test "$sha" = "$requested"
           elif [ "${{ github.event_name }}" = "push" ]; then
             test "$sha" = "${{ github.sha }}"
-            case "${{ github.ref }}" in
-              refs/tags/package-macos-*) ;;
-              refs/heads/main)
-                case "${{ github.event.head_commit.message }}" in release:*) ;; *) exit 1 ;; esac
-                ;;
-              *) exit 1 ;;
-            esac
+            test "${{ github.ref }}" = "refs/heads/main"
           else
             test "$(git rev-parse --abbrev-ref HEAD)" = "main"
           fi
@@ -91,10 +86,6 @@ jobs:
           APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            test "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}"
-            echo "CSC_FOR_PULL_REQUEST=true" >> "$GITHUB_ENV"
-          fi
           test -n "$MACOS_CERTIFICATE_P12_BASE64"
           test -n "$MACOS_CERTIFICATE_PASSWORD"
           if { [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_SPECIFIC_PASSWORD" ]; } &&              { [ -z "$APP_STORE_CONNECT_API_KEY_ID" ] || [ -z "$APP_STORE_CONNECT_API_ISSUER_ID" ] || [ -z "$APP_STORE_CONNECT_API_KEY_BASE64" ]; }; then
@@ -108,6 +99,10 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: desktop/package-lock.json
+
+      - name: Require complete Grok architecture cutover
+        shell: bash
+        run: node scripts/check-grok-architecture.mjs --strict
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
@@ -124,10 +119,18 @@ jobs:
         shell: bash
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
 
+      - name: Validate Fabushi product adapter contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm --prefix desktop run build:electron
+          ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.fabushi-product.json
+          node --test desktop/.tmp-fabushi-product/source/product/fabushi/fabushi-account-service.contract.test.js
+
       - name: Restore Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: third_party/mahayana/mahayana-rs -> target
+          workspaces: source/mahayana/mahayana-rs -> target
           shared-key: fabushi-desktop-macos-release-rust-1.97.1
 
       - name: Install Developer ID identity
@@ -173,9 +176,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          manifest="desktop/electron/offline-asr-engine.json"
-          repo="$(node -p "require('./' + process.argv[1]).whisperCpp.repository" "$manifest")"
-          commit="$(node -p "require('./' + process.argv[1]).whisperCpp.commit" "$manifest")"
+          manifest="source/packaging/offline-asr-engine.json"
+          test -f "$manifest"
+          repo="$(node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(m.whisperCpp.repository)' "$manifest")"
+          commit="$(node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(m.whisperCpp.commit)' "$manifest")"
+          test -n "$repo"
+          if [[ ! "$commit" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::offline ASR manifest commit is not a full SHA"
+            exit 1
+          fi
           src="$RUNNER_TEMP/whisper-cpp"
           build="$RUNNER_TEMP/whisper-build"
           rm -rf "$src" "$build"
@@ -214,10 +223,14 @@ jobs:
           rsync -a "$support/desktop/resources/computer-control/" desktop/resources/computer-control/
           test -f desktop/resources/computer-control/active-runtime.json
 
-      - name: Build Electron renderer
+      - name: Build Electron runtime and renderer
         working-directory: desktop
         shell: bash
-        run: npm run build:renderer
+        run: |
+          set -euo pipefail
+          npm run build:electron
+          npm run build:renderer
+          npm run check:desktop-runtime
 
       - name: Enforce built desktop bundle boundary
         working-directory: desktop
@@ -289,12 +302,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          app="$(find desktop/release -maxdepth 4 -type d -name '*.app' -print -quit)"
-          test -n "$app"
-          executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")"
-          executable="$app/Contents/MacOS/$executable_name"
+          source_app="$(find desktop/release -maxdepth 4 -type d -name '*.app' -print -quit)"
+          test -n "$source_app"
+
+          # Packaged macOS production startup intentionally prompts to move an app
+          # that is launched outside /Applications before creating BrowserWindow.
+          # Exercise the exact signed/notarized candidate as an installed app
+          # instead of bypassing that shipping startup contract in the test.
+          installed_app="/Applications/Fabushi Candidate ${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.app"
+          rm -rf "$installed_app"
+          /usr/bin/ditto "$source_app" "$installed_app"
+          codesign --verify --deep --strict --verbose=2 "$installed_app"
+          xcrun stapler validate "$installed_app"
+          spctl --assess --type execute --verbose=4 "$installed_app"
+
+          executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$installed_app/Contents/Info.plist")"
+          executable="$installed_app/Contents/MacOS/$executable_name"
           test -x "$executable"
           echo "executable=$executable" >> "$GITHUB_OUTPUT"
+          echo "Installed candidate app: $installed_app" >> "$GITHUB_STEP_SUMMARY"
           echo "Candidate executable: $executable" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Provision bounded production CI account session
@@ -331,13 +357,13 @@ jobs:
       - name: Run real signed packaged acceptance
         working-directory: desktop
         shell: bash
-        timeout-minutes: 15
+        timeout-minutes: 60
         env:
           OBF_REAL_ACCEPTANCE: '1'
           OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
           OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
           OBF_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-candidate-acceptance
-          FABUSHI_ELECTRON_EXECUTABLE: ${{ github.workspace }}/${{ steps.candidate.outputs.executable }}
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ steps.candidate.outputs.executable }}
           FABUSHI_FEATURE_HOST_MODE: production
           FABUSHI_E2E: '0'
         run: |

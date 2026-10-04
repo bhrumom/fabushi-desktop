@@ -1,0 +1,523 @@
+{
+  "schemaVersion": 1,
+  "adaptations": [
+    {
+      "referencePath": "frontend/src/production/ProductionRenderer.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "ee97740316fa1a9b48bfaa0bd2bc582cbed73c07",
+      "behavioralEvidence": [
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/recovered/features/account/session/sign-in-status.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/pr20-verify-once.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell."
+    },
+    {
+      "referencePath": "frontend/src/production/model.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "a0700444f6d9c629a34a718df3a4d4c8bc8d5b4e",
+      "behavioralEvidence": [
+        "frontend/src/production/model.ts",
+        "frontend/src/production/coordinator-client.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/pr20-verify-once.yml"
+      ],
+      "rationale": "Keeps Grok 0.18 Agent projection/filter/sort semantics while accepting the shipping Mahayana Coordinator agents event envelope { agents: [...] } in addition to the frozen direct array form. The adaptation is limited to transport normalization at the renderer projection boundary; Agent identity, hidden state, activity and ordering continue through the frozen Grok projection logic. It also normalizes authoritative Mahayana transcript echoes that carry Grok attachment contexts on user messages, preserving committed path/name/MIME/size metadata for mixed and attachment-only sends without relying on optimistic renderer state."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "638a2df9675ec9809ab63c0684222e65f416d0e9",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/draft-state.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 account-scoped composer draft store while adapting a shipping race exposed by real desktop attachment staging: a late persistence restore must not overwrite a draft mutation that occurred while the read was in flight. A monotonic mutation revision fences both pre-read and post-read restore settlement without changing account generation semantics, persistence format, or normal draft equality rules. The explicit .ts model import makes this recovered module executable under the Node 24 strip-types contract-test runner while remaining valid under the desktop Bundler TypeScript configuration."
+    },
+    {
+      "referencePath": "source/electron-preload/preload.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c9b7b30158ab2fa9cde1ac62794115c7ed8efe39",
+      "behavioralEvidence": [
+        "source/electron-preload/preload.ts",
+        "source/electron-preload/runtime/primary.ts",
+        "desktop/scripts/build-electron-runtime.mjs"
+      ],
+      "testEvidence": [
+        "source/electron-preload/preload-boundaries.test.ts",
+        "source/electron-preload/coordinator-port-bridge.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "63115522354aaf9893b156e5e1097a888abee01e",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/composer.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop/e2e/grok-parity.spec.ts"
+      ],
+      "rationale": "The frozen TipTap composer is preserved semantically, with only Fabushi ownership boundaries around local persistence and voice input. Agent switches fence queued transactions from the previous scope. Browser beforeinput releases the fence before ordinary edits; committed DOM input also performs a one-shot canonical-state rescue when ProseMirror has already reconciled the DOM without emitting an accepted onUpdate, preventing visible prompt text from diverging from the persisted Agent-scoped draft. Programmatic voice/dictation insertion explicitly releases the same fence before insertText. The focused Electron parity E2E reads the real client-persistence slice and guards this ownership boundary."
+    },
+    {
+      "referencePath": "source/electron-main/adapters/attachment-gateway.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "cbd9411d15f6659eef5490790dedc6e948642dca",
+      "behavioralEvidence": [
+        "source/electron-main/adapters/attachment-gateway.ts",
+        "source/shared/media/link-preview-image-bounds.ts",
+        "source/shared/rpc/coordinator-main.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves Grok attachment-gateway behavior while removing a forbidden Electron-main dependency on the legacy TypeScript Host attachment service. Link metadata now crosses the existing Coordinator main leg, and bounded preview-image handling lives in shared media code. This keeps Electron Main, Coordinator and Host as independent Grok-shaped processes while retaining the same attachment/link-preview contract."
+    },
+    {
+      "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "d3971acd23678c234734e1ed249fa7d4e4966fe6",
+      "behavioralEvidence": [
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/electron-main/coordinator/coordinator-executors.ts",
+        "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs",
+        "source/host/src/extensions/mcp/coordinator_relay.rs",
+        "source/shared/node/sand-data-root.ts",
+        "source/electron-main/mcp/mcp-runtime.ts",
+        "source/shared/rpc/coordinator-main.ts",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/host/app/src/main.rs",
+        "source/electron-main/mcp/host-plugin-skills-loader.ts",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/src/extensions/mcp/plugin_skills.rs",
+        "source/host/src/extensions/mcp/production.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs",
+        "source/host/src/extensions/telemetry/connector_auth_telemetry.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+        "source/host/tests/mcp_coordinator_relay_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs",
+        "source/host/tests/host_production_extensions_contract.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs",
+        "source/host/tests/connector_auth_telemetry_contract.rs",
+        "source/host/tests/connector_auth_production_wiring_contract.rs"
+      ],
+      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and the Mahayana Host as the owner of Plugin Skills lifecycle, cache, authenticated startup, refresh, install/uninstall resync, live-reference cleanup, and Skill Publish. The Cursor Dashboard/marketplace-dependent installed-plugin loader stays as a narrow TypeScript SDK edge in Electron Main and is reached only through the existing allowlisted, correlated Mahayana Coordinator MCP relay. This preserves the frozen Grok process and responsibility boundaries while choosing TypeScript for the Cursor Node SDK edge and Rust for Host lifecycle/state; it does not introduce a second MCP manager or collapse Coordinator/Host/Runner. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+    },
+    {
+      "referencePath": "source/electron-main/attachments/attachment-manager.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "0d055b7d65c49911deb18ff08af2caa1639d93f7",
+      "behavioralEvidence": [
+        "source/electron-main/attachments/attachment-manager.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Keeps the frozen Grok attachment manager semantics while sourcing data-root and path reanchoring from the shared Node boundary rather than legacy Host TypeScript. This is a dependency-direction adaptation only; attachment lifecycle and path semantics remain owned by Electron Main."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/production-root-auxiliary-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "3afe596fea71772b463454d3350c8841d9a3335a",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/production-root-auxiliary-provider.ts",
+        "source/shared/node/sand-data-root.ts",
+        "source/node-agent-coordinator/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves Grok Electron-main Coordinator auxiliary wiring while resolving the Fabushi data directory through shared Node infrastructure instead of importing legacy Host TypeScript. The Coordinator itself remains the independent Rust Mahayana process; this adaptation only cleans the Electron-side dependency edge."
+    },
+    {
+      "referencePath": "source/electron-main/dev/dev-box-recreate-plane.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "193f53527195afee77c3863ad7a8242cd59c58f0",
+      "behavioralEvidence": [
+        "source/electron-main/dev/dev-box-recreate-plane.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves Grok development box-recreate behavior while moving the data-root dependency to the shared Node layer. This prevents the development control plane from retaining a second legacy Host runtime dependency."
+    },
+    {
+      "referencePath": "source/electron-main/media/media-protocol.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c8b23b825833995f7d6979df65006fe92723a47c",
+      "behavioralEvidence": [
+        "source/electron-main/media/media-protocol.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Keeps Grok media-protocol behavior and changes only the path-reanchoring dependency from legacy Host TypeScript to the shared data-root utility, preserving Electron Main ownership of privileged media protocol handling."
+    },
+    {
+      "referencePath": "source/electron-main/production-binding-providers.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "17af9206914a82adaf72a446304b028bc8730a83",
+      "behavioralEvidence": [
+        "source/electron-main/production-binding-providers.ts",
+        "source/electron-main/local-exec/local-exec-daemon-protocol.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/local-exec/local-exec-daemon-protocol.test.ts",
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok production binding graph while cutting two legacy Host-TypeScript imports: local-exec daemon protocol ownership is now in Electron Main and the data-root resolver is shared. The actual local-exec supervision still belongs to Mahayana Coordinator, so this adaptation strengthens rather than collapses the Grok process boundary."
+    },
+    {
+      "referencePath": "source/electron-main/startup/desktop-user-data-bootstrap.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "95b67e98e09038a32935b4d51f9cf41173986fa2",
+      "behavioralEvidence": [
+        "source/electron-main/startup/desktop-user-data-bootstrap.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves Grok desktop user-data bootstrap semantics while moving Fabushi data-root helpers from legacy Host TypeScript into the shared Node layer, so Electron startup no longer depends on a parallel Host implementation."
+    },
+    {
+      "referencePath": "source/electron-main/startup/startup-data-root-migration.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "7ebfb05b0870a546617b2a69b6f49cc550dc4166",
+      "behavioralEvidence": [
+        "source/electron-main/startup/startup-data-root-migration.ts",
+        "source/electron-main/startup/host-process-identity.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves Grok startup data-root migration behavior while replacing legacy Host path/lock imports with shared data-root utilities and an Electron-main host-process identity seam. This lets migration safely recognize the shipping Mahayana Host without retaining the old Host runtime implementation."
+    },
+    {
+      "referencePath": "source/host/local-exec/local-tool-approvals.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "6073ccbc46298057200f287e4a01bfab30b54adf",
+      "behavioralEvidence": [
+        "source/host/local-exec/local-tool-approvals.ts",
+        "source/shared/node/sand-data-root.ts",
+        "source/node-agent-coordinator/src/local_exec/supervisor.rs"
+      ],
+      "testEvidence": [
+        "source/node-agent-coordinator/tests/local_exec_shipping_contract.rs",
+        "source/node-agent-coordinator/tests/local_exec_supervisor_runtime.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Keeps Grok local-tool approval persistence semantics while moving the common data-root lookup to shared Node infrastructure. The shipping local-exec lifecycle is supervised by the independent Rust Coordinator; this TypeScript compatibility module no longer owns or imports a Host runtime path."
+    },
+    {
+      "referencePath": "source/shared/node/cursor-backend/cursor-inference.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "296eeb02b7b0bc37256fc0d89b5c215d7cd1d501",
+      "behavioralEvidence": [
+        "source/shared/node/cursor-backend/cursor-inference.ts",
+        "source/shared/node/sand-data-root.ts",
+        "source/node-agent-coordinator/src/inference_router.rs",
+        "source/host/src/runner_production_bridge.rs"
+      ],
+      "testEvidence": [
+        "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
+        "source/node-agent-coordinator/tests/inference_router_attachments.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the Cursor backend path but deliberately removes the legacy in-process TypeScript provider-session fallback. Any non-Cursor provider must route through Mahayana Coordinator and the independent Host/Runner pipeline, enforcing the required Grok Coordinator/Host/Runner fault and responsibility boundaries rather than keeping a second inference runtime."
+    },
+    {
+      "referencePath": "source/shared/rpc/coordinator-main.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "12e0310503db0e054451a0a6c9eda212fe10fd20",
+      "behavioralEvidence": [
+        "source/shared/rpc/coordinator-main.ts",
+        "source/electron-main/adapters/attachment-gateway.ts",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/host/app/src/main.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs"
+      ],
+      "rationale": "Extends the frozen Coordinator-main RPC contract only for approved cross-boundary capabilities: fetchLinkMetadata plus Box MCP load/list-servers/list-tools-raw/execute-tool-raw operations. Electron remains the MCP manager owner; the calls cross the existing Coordinator protocol into the shipping Host/Box implementation with request/reply ownership preserved and no parallel transport channel. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "09d8600ee4040db2c5709da8b2f822d9e25de0d9",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.ts",
+        "source/electron-main/coordinator/production-provider.ts",
+        "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok Coordinator executor surface and adds only Fabushi-approved MCP lifecycle calls required by the independent Rust Host, including the installed Plugin Skills SDK-edge request. Each command fails closed when its Electron owner is unavailable; the Rust Coordinator relay separately freezes the allowlist, request correlation, and failure settlement and contains no Plugin Skills business logic."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/production-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "dfb1f73df1939a8fe7b0d511ca1d8ee6a2df690c",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/production-provider.ts",
+        "source/electron-main/coordinator/coordinator-executors.ts",
+        "source/electron-main/adapters/mcp-oauth.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Keeps the Grok production Coordinator provider graph while wiring the approved Host MCP lifecycle and Plugin Skills loader calls to the existing Electron ProductionMcpService. This is dependency injection across the established Coordinator boundary: Electron provides the Cursor SDK edge, Rust Host owns Plugin Skills lifecycle/state, and no second manager or in-process Host replacement is introduced."
+    },
+    {
+      "referencePath": "source/electron-main/main-production-services.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "0e4efa00de8cb34ce91aa14d2b94792c88c0a352",
+      "behavioralEvidence": [
+        "source/electron-main/main-production-services.ts",
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/electron-main/window-broadcast.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok production composition while applying two explicit Fabushi product adaptations without moving ownership: the existing Host lifecycle/Plugin Skills SDK-edge surface remains in the single Electron MCP owner, and renderer-scoped BrowserWindow delivery is narrowed at the shipping composition boundary to the trusted main WebContents. The frozen source/electron-main/window-broadcast.ts helper remains byte-identical to Grok for truly global fanout; MCP OAuth completion and dev-control renderer events no longer use that all-window helper in production. Coordinator, Host, Runner, MCP manager, and MainEdge ownership remain unchanged."
+    },
+    {
+      "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "7126c5a132a438f7180d0627e6ea8787ecff65ff",
+      "behavioralEvidence": [
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/shared/node/mcp/mcp-manager.ts",
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/electron-main/mcp/mcp-runtime.ts",
+        "source/shared/rpc/coordinator-main.ts",
+        "source/host/src/extensions/mcp/box_mcp_exec.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs"
+      ],
+      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator→Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+    },
+    {
+      "referencePath": "source/electron-main/mcp/mcp-runtime.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "086c3f90e772951d3548b6b16c0975a16ceacc9e",
+      "behavioralEvidence": [
+        "source/electron-main/mcp/mcp-runtime.ts",
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/shared/rpc/coordinator-main.ts",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/host/app/src/main.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs"
+      ],
+      "rationale": "Preserves the frozen Grok MCP runtime lifecycle while adding only the approved dependency forwarding needed by Fabushi Box MCP parity: loadBoxMcpServers, listBoxMcpServers, listBoxMcpToolsRaw, and executeBoxMcpToolRaw are passed into the single SandMcpManager created by the existing runtime. No second manager, transport, or lifecycle owner is introduced. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/coordinator-runtime.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "52af61f060b59b7f1f6675a6c9b2b7c93a7f4e13",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/coordinator-runtime.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-runtime.test.ts",
+        "source/electron-main/coordinator/coordinator-launcher.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok Coordinator runtime ownership/relaunch model while adapting one Fabushi-approved resource-lifetime boundary: the shipping Mahayana Host owns a managed loopback box exec-daemon on a single fixed production endpoint, so renderer-port replacement and explicit Coordinator restart must retire the previous Coordinator/Host generation completely before launching the successor. Intentional retirement is fenced from crash-relaunch accounting, and repeated renderer requests coalesce behind the same generation replacement. This prevents overlapping shipping Host generations from racing for the managed daemon without moving Host or Runner responsibilities into Electron Main or collapsing the independent Coordinator/Host/Runner failure boundaries."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/tools-discovery.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "103d530e7fdae13a4b2b56c52aac8693b633a1d4",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/tools-discovery.ts",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/electron-main/mcp/mcp-runtime.ts"
+      ],
+      "testEvidence": [
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok MCP tools discovery algorithm while extracting its success/failure settlement into a dependency-free typed helper so the exact success-no-failure-event, cold-failure clear, stale-serving, error-class, and elapsed semantics are executable contracts. The shipping producer still owns discovery/cache settlement; only failure reporting is forwarded through the dedicated Coordinator request to the unique HostStructuredLogTelemetry owner."
+    },
+    {
+      "referencePath": "source/host/extensions/box-store-sync/box-copy-in.ts",
+      "expectedBaseParityMode": "rust-port",
+      "parityMode": "rust-adaptation",
+      "targetBlobSha": "779e42560eb686b4c1bbdf60492b8e8e377312c2",
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_copy_in.rs",
+        "source/host/src/extensions/telemetry/box_copy_in_telemetry.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_copy_in_frozen_parity_contract.rs",
+        "source/host/tests/box_copy_in_telemetry_contract.rs",
+        "source/host/tests/box_copy_in_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Adapts frozen Grok box-copy-in from TypeScript to the Mahayana Host Rust owner without changing process ownership. The real --box-copy-in lifecycle remains the producer; started, slow/stuck watchdog, failed and successful terminal level decisions plus the full frozen metadata shape are preserved. Optional hydrate_source/restored_store_db_entries retain undefined-as-omitted semantics, store_backend remains an identity tag as in the frozen standalone telemetry owner, and every event crosses the single typed HostStructuredLogTelemetry::report_box_copy_in facade into the canonical fixed sand.box_copy_in mapper. Coordinator and Electron gain no second structured-log owner."
+    },
+    {
+      "referencePath": "frontend/src/recovered/runtime/coordinator-source.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "db7859728adba5129fab1d0572720390807dabad",
+      "behavioralEvidence": [
+        "frontend/src/recovered/runtime/coordinator-source.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/openbot-packaged-acceptance.spec.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 Coordinator renderer source except for the explicit Fabushi user-interrupt extension required by the shipping Agent product: interruptAgent is admitted through the closed method table, its {agentId, interrupted} reply is fail-closed validated, and telemetry remains owned by the existing send domain. The production renderer exposes the corresponding Stop response control, while signed packaged acceptance verifies cancellation settles and a fresh post-cancel turn completes; no parallel transport, owner, or legacy shell is introduced."
+    },
+    {
+      "referencePath": "source/shared/inference-router.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2bc1550891cfc60a1f5b36ee35e39ac80f63e5bd",
+      "behavioralEvidence": [
+        "source/shared/inference-router.ts",
+        "source/product/fabushi/fabushi-account-adapters.ts",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/src/extensions/inference/provider_session.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/inference_provider_session_contract.rs",
+        "source/host/tests/inference_extension_composition_contract.rs",
+        "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 inference-router ownership and provider-selection contract while adding one Fabushi product provider identity required by the shipping account boundary. Fresh Fabushi profiles select the first-party provider in product composition; the independent Mahayana Host/Runner reuses the existing Responses lifecycle, tool, checkpoint, usage, and cancellation machinery with the account-bound Fabushi credential and official product endpoint. Cursor, Codex, Claude Code, and OpenRouter retain their original identities and ownership, and the upstream Grok default remains Cursor outside Fabushi composition. This adaptation prevents a Fabushi product bearer from being misrouted to Cursor private backend infrastructure without creating a parallel inference runtime or collapsing Coordinator/Host/Runner responsibility boundaries."
+    }
+  ]
+}

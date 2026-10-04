@@ -15,6 +15,7 @@ export default defineConfig({
       react: path.resolve(here, 'node_modules/react'),
       'react-dom': path.resolve(here, 'node_modules/react-dom'),
       'lucide-react': path.resolve(here, 'node_modules/lucide-react'),
+      '@tiptap': path.resolve(here, 'node_modules/@tiptap'),
     },
     dedupe: ['react', 'react-dom'],
   },
@@ -24,5 +25,9 @@ export default defineConfig({
     strictPort: true,
     fs: { allow: [path.resolve(here, '..')] },
   },
-  build: { sourcemap: true },
+  build: {
+    outDir: 'dist/renderer',
+    emptyOutDir: true,
+    sourcemap: true,
+  },
 });
