@@ -610,6 +610,64 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     );
     assert_eq!(replay, first);
 
+    let reply = dispatch(
+        &runtime,
+        "sendHumanMessage",
+        json!({
+            "conversationId": conversation_id,
+            "senderId": "human-local",
+            "text": "reply with file",
+            "clientNonce": "human-nonce-2",
+            "composedAtMs": 1500,
+            "replyToId": "human-message:human-nonce-1",
+            "attachments": [{
+                "path": "committed-resource-report",
+                "name": "report.pdf"
+            }]
+        }),
+    );
+    assert_eq!(reply["replyToId"], "human-message:human-nonce-1");
+    assert_eq!(
+        reply["attachments"],
+        json!([{
+            "path": "committed-resource-report",
+            "name": "report.pdf"
+        }])
+    );
+
+    let attachment_only = dispatch(
+        &runtime,
+        "sendHumanMessage",
+        json!({
+            "conversationId": conversation_id,
+            "senderId": "human-local",
+            "text": "",
+            "clientNonce": "human-nonce-3",
+            "composedAtMs": 1600,
+            "attachments": [{
+                "path": "committed-resource-image",
+                "name": "image.png"
+            }]
+        }),
+    );
+    assert_eq!(attachment_only["content"], "");
+    assert_eq!(attachment_only["attachments"][0]["name"], "image.png");
+
+    let invalid_reply = dispatch_production_session_gateway_call(
+        &runtime,
+        "sendHumanMessage",
+        &json!({
+            "conversationId": conversation_id,
+            "senderId": "human-local",
+            "text": "bad reply",
+            "clientNonce": "human-nonce-invalid-reply",
+            "replyToId": "foreign-message"
+        }),
+    )
+    .expect("handled Human reply")
+    .expect_err("reply target outside the Human transcript must fail closed");
+    assert!(matches!(invalid_reply, SessionGatewayError::Internal(message) if message.contains("reply target")));
+
     let agent_result = runtime
         .append_human_agent_message(
             &conversation_id,
@@ -667,9 +725,11 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
         "getHumanConversationTranscript",
         json!({"conversationId": conversation_id}),
     );
-    assert_eq!(transcript.as_array().map(Vec::len), Some(2));
+    assert_eq!(transcript.as_array().map(Vec::len), Some(4));
     assert_eq!(transcript[0]["id"], "human-message:human-nonce-1");
-    assert_eq!(transcript[1], agent_result);
+    assert_eq!(transcript[1], reply);
+    assert_eq!(transcript[2], attachment_only);
+    assert_eq!(transcript[3], agent_result);
     let conversations_after_send = dispatch(&runtime, "listHumanConversations", json!({}));
     assert_eq!(conversations_after_send[0]["updatedAt"], 2345.0);
 
