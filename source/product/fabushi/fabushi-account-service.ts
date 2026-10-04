@@ -9,6 +9,17 @@ import { deleteSecret, readSecret, writeSecret } from "../../electron-main/secre
 export const FABUSHI_ACCOUNT_SESSION_SECRET = "fabushi-account-session-v1";
 export const FABUSHI_CI_ACCOUNT_SESSION_FILE_ENV = "FABUSHI_CI_ACCOUNT_SESSION_FILE";
 export const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
+const REFRESH_LEEWAY_MS = 60_000;
+const MIN_POLL_MS = 250;
+const MAX_POLL_MS = 5_000;
+
+interface BrowserAttempt {
+  readonly attemptId: string;
+  readonly loginUrl: string;
+  readonly pollSecret: string;
+  readonly expiresAt: number;
+  readonly pollAfterMs: number;
+}
 export {
   DEFAULT_FABUSHI_API_BASE_URL,
   normalizeFabushiApiBaseUrl,
