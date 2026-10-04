@@ -277,19 +277,22 @@ async function completeBrowserLogin(page: Page): Promise<void> {
 
 async function createCoworker(page: Page, name: string, _description: string): Promise<void> {
   const sidebar = page.locator('aside[aria-label="Agents"]');
-  const agentRows = sidebar.locator('button.sand-agent-item');
-  const beforeCount = await agentRows.count();
-  const create = page.getByRole('button', { name: 'New', exact: true });
-  await expect(create).toBeVisible({ timeout: 20_000 });
-  await create.click();
-  await expect.poll(async () => agentRows.count(), {
-    timeout: 20_000,
-    message: `Creating ${name} must append a Coordinator-backed Agent row.`,
-  }).toBeGreaterThan(beforeCount);
+  const heading = page.locator('#sand-conversation-heading');
+
+  // The signed product can already own one empty "New chat" after first-run
+  // bootstrap. That row is the canonical create target, not a fixture to
+  // discard. Reuse it for the first named Agent; only invoke New when the
+  // currently selected Agent is already durable/non-empty.
+  if ((await heading.textContent().catch(() => null))?.trim() !== 'New chat') {
+    const create = page.getByRole('button', { name: 'New', exact: true });
+    await expect(create).toBeVisible({ timeout: 20_000 });
+    await create.click();
+    await expect(heading).toHaveText('New chat', { timeout: 20_000 });
+  }
 
   const activeRow = sidebar.locator('button.sand-agent-item[aria-current="page"]').first();
   await expect(activeRow).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator('#sand-conversation-heading')).toHaveText('New chat', { timeout: 20_000 });
+  await expect(heading).toHaveText('New chat', { timeout: 20_000 });
   await activeRow.dblclick();
 
   const rename = sidebar.getByRole('textbox', { name: 'Rename agent' });
@@ -297,6 +300,7 @@ async function createCoworker(page: Page, name: string, _description: string): P
   await rename.fill(name);
   await rename.press('Enter');
   await expect(peerByName(page, name)).toBeVisible({ timeout: 20_000 });
+  await expect(heading).toHaveText(name, { timeout: 20_000 });
 }
 
 async function openAgent(page: Page, name: string): Promise<void> {
