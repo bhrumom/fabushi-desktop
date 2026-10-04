@@ -78,6 +78,7 @@ use super::session_profile_files::{
 };
 use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_bytes;
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
+use super::native_messaging::{FabushiNativeMessagingClient, FabushiRemoteHumanMessage};
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
@@ -147,6 +148,9 @@ pub struct ProductionSessionWorkers {
     roster_extras_cache: RosterExtrasCache,
     user_time_zone_resolver: UserTimeZoneResolver,
     local_human_id: Option<String>,
+    native_messaging: Option<Arc<FabushiNativeMessagingClient>>,
+    native_messaging_required: bool,
+    native_messaging_error: Option<String>,
     busy_timeout_ms: u64,
 }
 
@@ -180,10 +184,24 @@ impl ProductionSessionWorkers {
         user_time_zone_resolver: UserTimeZoneResolver,
         memory_service: Arc<MemoryService>,
     ) -> Self {
-        Self::with_agents_root_identity_and_dependencies(
+        let native_messaging_required = local_human_id
+            .as_deref()
+            .is_some_and(|value| !value.trim().is_empty());
+        let (native_messaging, native_messaging_error) = if native_messaging_required {
+            match FabushiNativeMessagingClient::from_env() {
+                Ok(client) => (Some(Arc::new(client)), None),
+                Err(error) => (None, Some(error)),
+            }
+        } else {
+            (None, None)
+        };
+        Self::with_agents_root_identity_messaging_and_dependencies(
             get_sand_agents_root_dir(None),
             PRODUCTION_BLOB_BUSY_TIMEOUT_MS,
             local_human_id,
+            native_messaging,
+            native_messaging_required,
+            native_messaging_error,
             user_time_zone_resolver,
             memory_service,
         )
@@ -237,6 +255,28 @@ impl ProductionSessionWorkers {
         user_time_zone_resolver: UserTimeZoneResolver,
         memory_service: Arc<MemoryService>,
     ) -> Self {
+        Self::with_agents_root_identity_messaging_and_dependencies(
+            agents_root,
+            busy_timeout_ms,
+            local_human_id,
+            None,
+            false,
+            None,
+            user_time_zone_resolver,
+            memory_service,
+        )
+    }
+
+    pub fn with_agents_root_identity_messaging_and_dependencies(
+        agents_root: impl Into<PathBuf>,
+        busy_timeout_ms: u64,
+        local_human_id: Option<String>,
+        native_messaging: Option<Arc<FabushiNativeMessagingClient>>,
+        native_messaging_required: bool,
+        native_messaging_error: Option<String>,
+        user_time_zone_resolver: UserTimeZoneResolver,
+        memory_service: Arc<MemoryService>,
+    ) -> Self {
         let agents_root = agents_root.into();
         let local_human_id = local_human_id
             .map(|value| value.trim().to_string())
@@ -256,6 +296,9 @@ impl ProductionSessionWorkers {
             roster_extras_cache: RosterExtrasCache::default(),
             user_time_zone_resolver,
             local_human_id,
+            native_messaging,
+            native_messaging_required,
+            native_messaging_error,
             busy_timeout_ms,
         }
     }
