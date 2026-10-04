@@ -119,6 +119,13 @@ jobs:
         shell: bash
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
 
+      - name: Validate Fabushi product adapter contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.grok-electron.json
+          node --test desktop/.tmp-grok-electron/source/product/fabushi/fabushi-account-service.contract.test.js
+
       - name: Restore Rust cache
         uses: Swatinem/rust-cache@v2
         with:
