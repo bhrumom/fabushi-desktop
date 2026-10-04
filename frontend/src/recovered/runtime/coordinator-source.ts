@@ -193,6 +193,7 @@ const REPLY_CONVERTERS: Record<ReplyKind, (value: unknown) => ConvertedReply> = 
   count: (value) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : MALFORMED_REPLY,
   void: () => undefined,
   "send-result": (value) => value == null ? undefined : isSourceRecord(value) ? value : MALFORMED_REPLY,
+  "interrupt-result": (value) => isSourceRecord(value) && typeof value.agentId === "string" && typeof value.interrupted === "boolean" ? value : MALFORMED_REPLY,
   "transcript-page": (value) => {
     if (
       !isSourceRecord(value) ||
@@ -515,7 +516,7 @@ export function createStableCoordinatorSource(initial: RawPortCoordinatorSource)
 
 const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   getAgentTranscriptWindow: "transcript", getAgentThread: "transcript", getAgentTranscriptTail: "transcript", openAgentTail: "transcript", getConversationOutline: "transcript",
-  sendPrompt: "send", promptAcceptanceStatus: "send", reactToMessage: "send",
+  sendPrompt: "send", interruptAgent: "send", promptAcceptanceStatus: "send", reactToMessage: "send",
   listRoutedMcpTools: "plugins", executeRoutedMcpTool: "plugins",
   respondToWidget: "widgets", dismissWidget: "widgets", submitSecret: "widgets",
   resolveAutoReviewApproval: "approvals", resolveLocalToolPermission: "approvals",
