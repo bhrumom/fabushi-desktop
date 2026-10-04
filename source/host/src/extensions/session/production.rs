@@ -1381,12 +1381,17 @@ impl ProductionSessionWorkers {
         text: &str,
         client_nonce: &str,
         composed_at_ms: Option<f64>,
+        reply_to_id: Option<&str>,
+        attachments: &[serde_json::Value],
     ) -> Result<serde_json::Value, String> {
         let sender_id = self.local_human_id()?;
         let text = text.trim();
         let client_nonce = client_nonce.trim();
-        if text.is_empty() || client_nonce.is_empty() {
-            return Err("sendHumanMessage requires text and clientNonce".into());
+        if client_nonce.is_empty() {
+            return Err("sendHumanMessage requires clientNonce".into());
+        }
+        if text.is_empty() && attachments.is_empty() {
+            return Err("sendHumanMessage requires text or attachments".into());
         }
         if client_nonce.len() > 512 {
             return Err("sendHumanMessage clientNonce is too long".into());
@@ -1403,17 +1408,61 @@ impl ProductionSessionWorkers {
         let existing = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?;
+        let normalized_reply = reply_to_id
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        if let Some(reply_id) = normalized_reply {
+            if !existing.iter().any(|entry| {
+                entry.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
+            }) {
+                return Err("sendHumanMessage reply target is not in this Human conversation".into());
+            }
+        }
+        let normalized_attachments = attachments
+            .iter()
+            .map(|attachment| {
+                let object = attachment
+                    .as_object()
+                    .ok_or_else(|| "sendHumanMessage attachment must be an object".to_string())?;
+                let path = object
+                    .get("path")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .ok_or_else(|| "sendHumanMessage attachment requires path".to_string())?;
+                let name = object
+                    .get("name")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .ok_or_else(|| "sendHumanMessage attachment requires name".to_string())?;
+                Ok(serde_json::json!({ "path": path, "name": name }))
+            })
+            .collect::<Result<Vec<_>, String>>()?;
         if let Some(entry) = existing.iter().find(|entry| {
             entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
         }) {
             let same_sender = entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
             let same_text = entry.get("content").and_then(serde_json::Value::as_str) == Some(text);
-            if same_sender && same_text {
+            let same_reply = entry.get("replyToId").and_then(serde_json::Value::as_str) == normalized_reply;
+            let same_attachments = entry
+                .get("attachments")
+                .and_then(serde_json::Value::as_array)
+                .is_none_or(|value| value.is_empty())
+                && normalized_attachments.is_empty()
+                || entry.get("attachments") == Some(&serde_json::Value::Array(normalized_attachments.clone()));
+            if same_sender && same_text && same_reply && same_attachments {
                 return Ok(entry.clone());
             }
             return Err("sendHumanMessage clientNonce already identifies different content".into());
         }
-        let entry = serde_json::json!({
+        let timestamp_ms = composed_at_ms.unwrap_or_else(|| {
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as f64
+        });
+        let mut entry = serde_json::json!({
             "id": format!("human-message:{client_nonce}"),
             "kind": "message",
             "role": "user",
@@ -1422,14 +1471,21 @@ impl ProductionSessionWorkers {
             "content": text,
             "clientNonce": client_nonce,
             "composedAtMs": composed_at_ms,
-            "timestampMs": composed_at_ms.unwrap_or_else(|| {
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or_default()
-                    .as_millis() as f64
-            }),
+            "timestampMs": timestamp_ms,
             "delivery": "sent",
         });
+        let object = entry
+            .as_object_mut()
+            .ok_or_else(|| "native Human message projection failed".to_string())?;
+        if let Some(reply_id) = normalized_reply {
+            object.insert("replyToId".into(), serde_json::json!(reply_id));
+        }
+        if !normalized_attachments.is_empty() {
+            object.insert(
+                "attachments".into(),
+                serde_json::Value::Array(normalized_attachments.clone()),
+            );
+        }
         if !owner
             .append_transcript_entry(&entry)
             .map_err(|error| error.to_string())?
@@ -1440,23 +1496,13 @@ impl ProductionSessionWorkers {
                 .into_iter()
                 .find(|candidate| candidate.get("id") == entry.get("id"))
                 .ok_or_else(|| "native Human message was not durably appended".to_string())?;
-            let same_sender =
-                replay.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
-            let same_text =
-                replay.get("content").and_then(serde_json::Value::as_str) == Some(text);
-            let same_nonce =
-                replay.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce);
-            if same_sender && same_text && same_nonce {
+            if replay == entry {
                 return Ok(replay);
             }
             return Err("sendHumanMessage clientNonce already identifies different content".into());
         }
-        let activity_at = entry
-            .get("timestampMs")
-            .and_then(serde_json::Value::as_f64)
-            .unwrap_or_default();
         if !owner
-            .set_metadata("lastActivityAt", serde_json::json!(activity_at))
+            .set_metadata("lastActivityAt", serde_json::json!(timestamp_ms))
             .map_err(|error| error.to_string())?
         {
             return Err("native Human message activity metadata was not durably updated".into());
