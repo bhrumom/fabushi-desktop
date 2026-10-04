@@ -1098,14 +1098,16 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (client == null) throw new Error("coordinator is unavailable for sendPrompt");
     const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === submission.agentId);
     if (humanConversation != null) {
-      if (submission.attachments.length > 0) {
-        throw new Error("Human conversation file attachments are not enabled yet.");
-      }
+      const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
+      const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(bridge, draftAttachments);
+      for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
       const result = await client.call("sendHumanMessage", {
         conversationId: submission.agentId,
         text: submission.prompt,
         clientNonce: submission.nonce,
-        composedAtMs: submission.createdAtMs
+        composedAtMs: submission.createdAtMs,
+        attachments,
+        ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
       });
       const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
       if (authoritative != null) {
@@ -3182,10 +3184,6 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const stageFiles = async (files: File[]) => {
     if (activeAgent == null || bridge == null) return;
-    if (activeIsHuman) {
-      setNotice("File attachments for Human conversations are not enabled yet.");
-      return;
-    }
     const stagingAgentId = activeAgent.id;
     const stagingAccountSlot = acknowledgementScopeRef.current.accountSlot;
     setBusy(true);
@@ -3221,10 +3219,6 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const prompt = liveDraft.prompt.trim();
     const attachments = liveDraft.attachments.map(({ path, name }) => ({ path, name }));
     if (prompt.length === 0 && attachments.length === 0) return;
-    if (activeIsHuman && attachments.length > 0) {
-      setNotice("File attachments for Human conversations are not enabled yet.");
-      return;
-    }
     const submission = replyThreadController.projectSubmission({
       nonce: clientNonce,
       agentId: activeAgent.id,
@@ -3844,8 +3838,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 loadOlder={activeIsHuman ? undefined : loadOlderTranscript}
                 onCancelQueuedSend={cancelQueuedSend}
                 onDeleteFailedSend={removeTranscriptMessage}
-                onOpenReply={activeIsHuman ? undefined : (targetId) => replyThreadController.navigate(targetId)}
-                onReply={activeIsHuman ? undefined : (entry) => { replyThreadController.selectReply(entry.id); }}
+                onOpenReply={(targetId) => replyThreadController.navigate(targetId)}
+                onReply={(entry) => { replyThreadController.selectReply(entry.id); }}
                 onStartThread={activeIsHuman ? undefined : (entry) => { replyThreadController.navigate(entry.id); }}
                 onResendFailedSend={(entry) => void resendFailedSend(entry)}
                 renderMessageReactionActions={activeIsHuman ? undefined : renderReactionActions}
@@ -3867,7 +3861,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={activeIsHuman ? undefined : clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={activeIsHuman ? undefined : replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
       </div>
