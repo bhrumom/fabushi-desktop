@@ -298,3 +298,128 @@ fn codex_direct_resumes_only_from_an_accepted_tool_boundary_checkpoint() {
         .iter()
         .any(|item| item["type"] == "function_call_output"));
 }
+
+
+#[test]
+fn codex_direct_normalizes_strict_dsml_send_message_into_the_declared_tool() {
+    let dsml = concat!(
+        "<｜｜DSML｜｜ calls>\n",
+        "<｜｜DSML｜｜ invoke name=\"SendMessage\">\n",
+        "<｜｜DSML｜｜ parameter name=\"message\" string=\"true\">",
+        "FABUSHI-RESEARCH-ONLY-7421",
+        "</｜｜DSML｜｜ parameter>\n",
+        "</｜｜DSML｜｜ invoke>\n",
+        "</｜｜DSML｜｜ calls>"
+    );
+    let mut transport = FakeTransport {
+        responses: VecDeque::from([
+            vec![
+                json!({"type":"response.output_text.delta","delta":dsml}),
+                json!({"type":"response.completed","response":{
+                    "id":"resp-dsml-1",
+                    "usage":{"input_tokens":10,"output_tokens":4},
+                    "output":[]
+                }})
+            ],
+            vec![
+                json!({"type":"response.output_text.delta","delta":"done"}),
+                json!({"type":"response.completed","response":{
+                    "id":"resp-dsml-2",
+                    "usage":{"input_tokens":6,"output_tokens":1},
+                    "output":[]
+                }})
+            ],
+        ]),
+        requests: Vec::new(),
+    };
+    let mut options = CodexDirectOptions::new(
+        "deepseek-chat",
+        "system",
+        vec![json!({"role":"user","content":"include the marker"})],
+    );
+    options.tools = vec![CodexDirectTool {
+        name: "SendMessage".into(),
+        description: Some("Send a user-visible message".into()),
+        parameters: json!({
+            "type":"object",
+            "required":["type"],
+            "properties":{
+                "type":{"type":"string"},
+                "content":{"type":"string"}
+            }
+        }),
+        source: json!({"providerIdentifier":"fabushi-runner","toolName":"SendMessage"}),
+    }];
+
+    let mut calls = Vec::new();
+    let result = run_codex_direct_responses(
+        &mut transport,
+        &options,
+        &mut |tool, args, call_id| {
+            calls.push((tool.name.clone(), args, call_id.to_string()));
+            Ok(json!({"sent":true}))
+        },
+        &mut |_delta, _accumulated| {},
+    )
+    .expect("DSML compatibility call should execute through the declared tool");
+
+    assert_eq!(
+        calls,
+        vec![(
+            "SendMessage".to_string(),
+            json!({"type":"text","content":"FABUSHI-RESEARCH-ONLY-7421"}),
+            "dsml-step-0-call-0".to_string(),
+        )]
+    );
+    assert_eq!(result.text, "done");
+    assert_eq!(transport.requests.len(), 2);
+    let second_input = transport.requests[1]["input"].as_array().expect("second input");
+    assert!(second_input.iter().any(|item| {
+        item["type"] == "function_call" && item["name"] == "SendMessage"
+    }));
+    assert!(second_input.iter().any(|item| item["type"] == "function_call_output"));
+}
+
+#[test]
+fn codex_direct_does_not_execute_mixed_or_undeclared_dsml_text() {
+    for text in [
+        "prefix <｜｜DSML｜｜ calls><｜｜DSML｜｜ invoke name=\"SendMessage\"></｜｜DSML｜｜ invoke></｜｜DSML｜｜ calls>",
+        "<｜｜DSML｜｜ calls><｜｜DSML｜｜ invoke name=\"UnknownTool\"></｜｜DSML｜｜ invoke></｜｜DSML｜｜ calls>",
+    ] {
+        let mut transport = FakeTransport {
+            responses: VecDeque::from([vec![
+                json!({"type":"response.output_text.delta","delta":text}),
+                json!({"type":"response.completed","response":{
+                    "id":"resp-dsml-fail-closed",
+                    "output":[]
+                }})
+            ]]),
+            requests: Vec::new(),
+        };
+        let mut options = CodexDirectOptions::new(
+            "deepseek-chat",
+            "system",
+            vec![json!({"role":"user","content":"hello"})],
+        );
+        options.tools = vec![CodexDirectTool {
+            name: "SendMessage".into(),
+            description: None,
+            parameters: json!({"type":"object"}),
+            source: json!({}),
+        }];
+        let mut calls = 0_usize;
+        let result = run_codex_direct_responses(
+            &mut transport,
+            &options,
+            &mut |_tool, _args, _call_id| {
+                calls += 1;
+                Ok(Value::Null)
+            },
+            &mut |_delta, _accumulated| {},
+        )
+        .expect("non-canonical DSML must stay ordinary text");
+        assert_eq!(calls, 0);
+        assert_eq!(result.text, text);
+        assert_eq!(transport.requests.len(), 1);
+    }
+}

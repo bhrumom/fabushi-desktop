@@ -160,6 +160,107 @@ fn output_items(completed: &Value, observed: &[Value]) -> Vec<Value> {
         .unwrap_or_else(|| observed.to_vec())
 }
 
+fn parse_dsml_compat_calls(text: &str) -> Option<Vec<(String, Value)>> {
+    const CALLS_OPEN: &str = "<｜｜DSML｜｜ calls>";
+    const CALLS_CLOSE: &str = "</｜｜DSML｜｜ calls>";
+    const INVOKE_OPEN: &str = "<｜｜DSML｜｜ invoke name=\"";
+    const INVOKE_CLOSE: &str = "</｜｜DSML｜｜ invoke>";
+    const PARAM_OPEN: &str = "<｜｜DSML｜｜ parameter name=\"";
+    const PARAM_CLOSE: &str = "</｜｜DSML｜｜ parameter>";
+
+    let trimmed = text.trim();
+    let mut rest = trimmed
+        .strip_prefix(CALLS_OPEN)?
+        .strip_suffix(CALLS_CLOSE)?
+        .trim();
+    let mut calls = Vec::new();
+
+    while !rest.is_empty() {
+        let after_open = rest.strip_prefix(INVOKE_OPEN)?;
+        let name_end = after_open.find("\">")?;
+        let name = &after_open[..name_end];
+        if name.is_empty()
+            || !name
+                .chars()
+                .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '_' | '-' | '.'))
+        {
+            return None;
+        }
+
+        let body = &after_open[name_end + 2..];
+        let invoke_end = body.find(INVOKE_CLOSE)?;
+        let mut params = body[..invoke_end].trim();
+        let mut arguments = serde_json::Map::new();
+
+        while !params.is_empty() {
+            let after_param_open = params.strip_prefix(PARAM_OPEN)?;
+            let param_name_end = after_param_open.find('"')?;
+            let param_name = &after_param_open[..param_name_end];
+            if param_name.is_empty()
+                || !param_name
+                    .chars()
+                    .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '_' | '-' | '.'))
+                || arguments.contains_key(param_name)
+            {
+                return None;
+            }
+
+            let after_name = &after_param_open[param_name_end + 1..];
+            let tag_end = after_name.find('>')?;
+            let attributes = after_name[..tag_end].trim();
+            if !attributes.is_empty() && attributes != "string=\"true\"" {
+                return None;
+            }
+
+            let value_and_tail = &after_name[tag_end + 1..];
+            let value_end = value_and_tail.find(PARAM_CLOSE)?;
+            let value = &value_and_tail[..value_end];
+            arguments.insert(param_name.to_string(), Value::String(value.to_string()));
+            params = value_and_tail[value_end + PARAM_CLOSE.len()..].trim();
+        }
+
+        if name == "SendMessage" && arguments.len() == 1 {
+            if let Some(message) = arguments
+                .remove("message")
+                .and_then(|value| value.as_str().map(ToOwned::to_owned))
+            {
+                arguments.insert("type".into(), Value::String("text".into()));
+                arguments.insert("content".into(), Value::String(message));
+            }
+        }
+
+        calls.push((name.to_string(), Value::Object(arguments)));
+        rest = body[invoke_end + INVOKE_CLOSE.len()..].trim();
+    }
+
+    (!calls.is_empty()).then_some(calls)
+}
+
+fn dsml_compat_function_calls(
+    text: &str,
+    tools: &[CodexDirectTool],
+    step: usize,
+) -> Option<Vec<Value>> {
+    let parsed = parse_dsml_compat_calls(text)?;
+    if parsed.iter().any(|(name, _)| !tools.iter().any(|tool| tool.name == *name)) {
+        return None;
+    }
+    Some(
+        parsed
+            .into_iter()
+            .enumerate()
+            .map(|(index, (name, arguments))| {
+                json!({
+                    "type": "function_call",
+                    "name": name,
+                    "call_id": format!("dsml-step-{step}-call-{index}"),
+                    "arguments": safe_json(&arguments),
+                })
+            })
+            .collect(),
+    )
+}
+
 pub fn run_codex_direct_responses(
     transport: &mut dyn CodexDirectTransport,
     options: &CodexDirectOptions,
@@ -312,6 +413,7 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
             request["reasoning"] = json!({ "effort": effort, "summary": "auto" });
         }
 
+        let step_text_start = text.len();
         let mut completed: Option<Value> = None;
         let mut observed_output = Vec::new();
         transport.stream_response(&request, &mut |event| {
@@ -362,8 +464,8 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
         }
         total_usage = total_usage.add(usage_of(&completed));
 
-        let output = output_items(&completed, &observed_output);
-        let calls = output
+        let mut output = output_items(&completed, &observed_output);
+        let mut calls = output
             .iter()
             .filter(|item| {
                 item.get("type").and_then(Value::as_str) == Some("function_call")
@@ -372,6 +474,16 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
             })
             .cloned()
             .collect::<Vec<_>>();
+        if calls.is_empty() {
+            let step_text = &text[step_text_start..];
+            if let Some(dsml_calls) =
+                dsml_compat_function_calls(step_text, &options.tools, completed_steps)
+            {
+                text.truncate(step_text_start);
+                output = dsml_calls.clone();
+                calls = dsml_calls;
+            }
+        }
         if calls.is_empty() {
             return Ok(CodexDirectResult {
                 text,
