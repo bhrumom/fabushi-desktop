@@ -1319,6 +1319,37 @@ impl ProductionTranscriptRuntime {
         Ok(entry_id)
     }
 
+    pub fn update_generated_send_message_content(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        agent_id: &str,
+        entry_id: &str,
+        content: &str,
+    ) -> Result<(), String> {
+        let entries = sessions.read_agent_transcript_entries(agent_id)?;
+        let current = entries
+            .iter()
+            .find(|entry| entry.get("id").and_then(Value::as_str) == Some(entry_id))
+            .cloned()
+            .ok_or_else(|| format!("generated send entry {entry_id} is missing"))?;
+        let mut next = current
+            .as_object()
+            .cloned()
+            .ok_or_else(|| format!("generated send entry {entry_id} is not an object"))?;
+        let mut message = next
+            .get("message")
+            .and_then(Value::as_object)
+            .cloned()
+            .unwrap_or_default();
+        message.insert("type".into(), Value::String("text".into()));
+        message.insert("content".into(), Value::String(content.to_string()));
+        next.insert("message".into(), Value::Object(message));
+        sessions
+            .update_agent_transcript_entry(agent_id, entry_id, &Value::Object(next))?
+            .ok_or_else(|| format!("generated send entry {entry_id} disappeared during update"))?;
+        Ok(())
+    }
+
     pub fn resolve_box_request_tracking(&self, request_id: &str) -> bool {
         self.lock_state()
             .pipeline

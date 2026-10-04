@@ -70,7 +70,7 @@ fn conversation_fast_lane_rejects_action_or_external_resource_turns() {
 }
 
 #[test]
-fn conversation_fast_lane_keeps_only_send_message_and_fails_closed_without_it() {
+fn conversation_fast_lane_uses_native_text_stream_without_tool_schema() {
     let messages = [provider_message(
         "user",
         "In one sentence, explain what a database index is for.",
@@ -81,13 +81,17 @@ fn conversation_fast_lane_keeps_only_send_message_and_fails_closed_without_it() 
         routed_tool("computer_use"),
     ];
     let reduced = conversation_fast_lane_tools(&messages, &tools).expect("fast lane");
-    assert_eq!(reduced.len(), 1);
-    assert_eq!(reduced[0].name, "SendMessage");
+    assert!(
+        reduced.is_empty(),
+        "simple conversation must avoid all tool-schema overhead",
+    );
 
     let no_send = vec![routed_tool("github_search")];
     assert!(
-        conversation_fast_lane_tools(&messages, &no_send).is_none(),
-        "missing SendMessage must fall back to the full tool path",
+        conversation_fast_lane_tools(&messages, &no_send)
+            .expect("fast lane without SendMessage")
+            .is_empty(),
+        "Host-owned direct text streaming must not depend on SendMessage availability",
     );
 }
 

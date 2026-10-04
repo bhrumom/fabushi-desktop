@@ -363,7 +363,8 @@ use mahayana_host_runtime::runner::turn_observation::{
     async_tasks_changed_event,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
-    ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSource,
+    ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation, RoutedToolBridge,
+    RunnerRequestContextSource, is_conversation_fast_lane,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderTokenUsage, merge_provider_token_usage,
@@ -7205,6 +7206,15 @@ fn start_routed_provider_task(
                         })
                     }) as SubagentSteerReviewCallback
                 });
+            let direct_conversation_fast_lane =
+                provider == RoutedProvider::Fabushi && is_conversation_fast_lane(&provider_messages);
+            let send_message_delivery_counter = SendMessageDeliveryCounter::default();
+            let direct_stream_entry_id = Arc::new(Mutex::new(None::<String>));
+            let direct_stream_sessions = Arc::clone(&worker_sessions);
+            let direct_stream_runtime = Arc::clone(&worker_transcript_runtime);
+            let direct_stream_reply_thread_target = worker_reply_thread_target.clone();
+            let direct_stream_is_fork = worker_send_is_fork;
+            let direct_stream_delivery_counter = send_message_delivery_counter.clone();
             let group_preview = worker_group_room_id.as_deref().map(|room_id| {
                 Arc::new(Mutex::new(GroupMemberPreview::new(
                     room_id,
@@ -7219,6 +7229,7 @@ fn start_routed_provider_task(
             let delta_runtime = Arc::clone(&worker_transcript_runtime);
             let delta_agent_id = agent_id.clone();
             let delta_observation = Arc::clone(&observation);
+            let delta_direct_stream_entry_id = Arc::clone(&direct_stream_entry_id);
             let mut on_text_delta = move |delta: &str, accumulated: &str| {
                 if !delta.is_empty() {
                     if let Ok(mut observation) = delta_observation.lock() {
@@ -7232,6 +7243,53 @@ fn start_routed_provider_task(
                     },
                     started_at_ms(),
                 );
+                if direct_conversation_fast_lane && !accumulated.is_empty() {
+                    if let Ok(mut entry_id) = delta_direct_stream_entry_id.lock() {
+                        if let Some(existing_entry_id) = entry_id.as_deref() {
+                            if let Err(error) = direct_stream_runtime.update_generated_send_message_content(
+                                direct_stream_sessions.as_ref(),
+                                &delta_agent_id,
+                                existing_entry_id,
+                                accumulated,
+                            ) {
+                                eprintln!(
+                                    "mahayana-host fast_lane_stream_update_failed agent={} entry={} error={error}",
+                                    delta_agent_id,
+                                    existing_entry_id,
+                                );
+                            }
+                        } else {
+                            let message = serde_json::json!({
+                                "type": "text",
+                                "content": accumulated,
+                            });
+                            match direct_stream_runtime.append_generated_send_message(
+                                direct_stream_sessions.as_ref(),
+                                &delta_agent_id,
+                                &message,
+                                started_at_ms(),
+                                direct_stream_reply_thread_target.as_deref(),
+                                direct_stream_is_fork,
+                            ) {
+                                Ok(created_entry_id) => {
+                                    *entry_id = Some(created_entry_id);
+                                    direct_stream_delivery_counter.record_delivery();
+                                    direct_stream_runtime.track_runner_activity_update(
+                                        &delta_agent_id,
+                                        &ActivityUpdate::SendMessage,
+                                        started_at_ms(),
+                                    );
+                                }
+                                Err(error) => {
+                                    eprintln!(
+                                        "mahayana-host fast_lane_stream_append_failed agent={} error={error}",
+                                        delta_agent_id,
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
                 if let Some(preview) = delta_group_preview.as_ref()
                     && let Ok(mut preview) = preview.lock()
                     && let Some(payload) = preview.on_text_delta(accumulated)
@@ -7317,7 +7375,6 @@ fn start_routed_provider_task(
                     agent_id: agent_id.clone(),
                 },
             );
-            let send_message_delivery_counter = SendMessageDeliveryCounter::default();
             let base_send_message_sink: Arc<dyn SendMessageSink> = Arc::new(
                 ProductionSendMessageSink {
                     host_tx: host_tx.clone(),

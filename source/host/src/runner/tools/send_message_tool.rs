@@ -108,7 +108,7 @@ impl SendMessageDeliveryCounter {
         self.sent_message_count.load(Ordering::SeqCst)
     }
 
-    fn record_success(&self) {
+    pub fn record_delivery(&self) {
         self.sent_message_count.fetch_add(1, Ordering::SeqCst);
     }
 }
@@ -165,7 +165,7 @@ impl SendMessageSink for CountingSendMessageSink {
     ) -> Result<Option<String>, ProviderSessionError> {
         let result = self.delegate.send_message(message, timestamp_ms, tool_call_id);
         if result.is_ok() {
-            self.counter.record_success();
+            self.counter.record_delivery();
         }
         result
     }

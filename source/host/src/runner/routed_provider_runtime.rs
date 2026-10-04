@@ -34,7 +34,6 @@ pub const ROUTED_MCP_PROTOCOL_VERSION: &str = "2025-03-26";
 pub const ROUTED_MCP_MAX_BODY_BYTES: usize = 1_048_576;
 
 const CONVERSATION_FAST_LANE_MAX_CHARS: usize = 280;
-const SEND_MESSAGE_TOOL_NAME: &str = "SendMessage";
 
 /// Conservative CHAT-013 classifier for simple conversational turns.
 ///
@@ -70,23 +69,16 @@ pub fn is_conversation_fast_lane(messages: &[ProviderMessage]) -> bool {
     !ACTION_MARKERS.iter().any(|marker| padded.contains(marker))
 }
 
-/// Return the reduced direct-tool schema for a simple conversation when it is
-/// safe to do so. A missing SendMessage tool fails closed to the full path.
+/// Return an empty direct-tool schema for a simple conversation.
+///
+/// CHAT-013 uses the provider's native text stream for these turns; the Host
+/// projects that stream into the canonical transcript. Classification is an
+/// optimization only, so non-matches continue on the full tool path.
 pub fn conversation_fast_lane_tools(
     messages: &[ProviderMessage],
-    tools: &[RoutedToolDefinition],
+    _tools: &[RoutedToolDefinition],
 ) -> Option<Vec<RoutedToolDefinition>> {
-    if !is_conversation_fast_lane(messages) {
-        return None;
-    }
-    let send_message = tools
-        .iter()
-        .filter(|tool| {
-            tool.name == SEND_MESSAGE_TOOL_NAME || tool.tool_name == SEND_MESSAGE_TOOL_NAME
-        })
-        .cloned()
-        .collect::<Vec<_>>();
-    (!send_message.is_empty()).then_some(send_message)
+    is_conversation_fast_lane(messages).then(Vec::new)
 }
 
 #[derive(Clone, Default)]
@@ -451,12 +443,23 @@ pub fn run_routed_provider_in_runner(
 ) -> Result<String, ProviderSessionError> {
     run.cancellation.check()?;
 
-    let system_prompt = render_request_context_system_prompt_with_capabilities(
+    let conversation_fast_lane =
+        run.provider == RoutedProvider::Fabushi && is_conversation_fast_lane(run.messages);
+    let mut system_prompt = render_request_context_system_prompt_with_capabilities(
         &run.request_context.context,
         run.request_context.rules.as_deref(),
         run.cloud_agents_enabled,
         run.multitask_enabled,
     );
+    if conversation_fast_lane {
+        if !system_prompt.is_empty() {
+            system_prompt.push_str("\n\n");
+        }
+        system_prompt.push_str(
+            "CHAT-013 fast lane: answer this simple conversational turn directly in plain text. \
+Do not emit tool syntax or attempt a SendMessage call; the Host streams your text into the canonical user-visible transcript.",
+        );
+    }
     let mut provider_messages = Vec::with_capacity(run.messages.len() + usize::from(!system_prompt.is_empty()));
     if !system_prompt.is_empty() {
         provider_messages.push(ProviderMessage {
@@ -471,7 +474,7 @@ pub fn run_routed_provider_in_runner(
     } else {
         run.cancellation.check()?;
         let tools = run.bridge.list_tools()?;
-        if run.provider == RoutedProvider::Fabushi {
+        if conversation_fast_lane {
             conversation_fast_lane_tools(run.messages, &tools).unwrap_or(tools)
         } else {
             tools
