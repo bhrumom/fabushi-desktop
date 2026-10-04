@@ -3831,26 +3831,26 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               }} size="sm" variant="secondary">Stop</SandButton> : null}
               {activeAgent.isGroup || bridge == null || agentChannelsController == null ? null : <SandButton aria-controls="sand-conversation-details" aria-expanded={channelsInfoPaneOpen} aria-label="Channels" data-info-row="channels" onClick={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setChannelsInfoPaneOpen((open) => !open); }} size="sm" variant="secondary"><SandIcon name="chat-bubbles" size="sm" />Channels</SandButton>}
             </>}
-          />
+          />}
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
           {showTranscriptLoadError
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
             : <ConversationTranscript
                 entries={entries}
-                hasOlder={transcriptPaginationSnapshot.hasOlder}
-                isLoadingOlder={transcriptPaginationSnapshot.isLoadingOlder}
-                isAgentRunning={activeAgent.isRunning}
+                hasOlder={activeIsHuman ? false : transcriptPaginationSnapshot.hasOlder}
+                isLoadingOlder={activeIsHuman ? false : transcriptPaginationSnapshot.isLoadingOlder}
+                isAgentRunning={activeIsHuman ? false : activeAgent.isRunning}
                 isTransportDown={transport === "down"}
-                loadOlder={loadOlderTranscript}
+                loadOlder={activeIsHuman ? undefined : loadOlderTranscript}
                 onCancelQueuedSend={cancelQueuedSend}
                 onDeleteFailedSend={removeTranscriptMessage}
-                onOpenReply={(targetId) => replyThreadController.navigate(targetId)}
-                onReply={(entry) => { replyThreadController.selectReply(entry.id); }}
-                onStartThread={(entry) => { replyThreadController.navigate(entry.id); }}
+                onOpenReply={activeIsHuman ? undefined : (targetId) => replyThreadController.navigate(targetId)}
+                onReply={activeIsHuman ? undefined : (entry) => { replyThreadController.selectReply(entry.id); }}
+                onStartThread={activeIsHuman ? undefined : (entry) => { replyThreadController.navigate(entry.id); }}
                 onResendFailedSend={(entry) => void resendFailedSend(entry)}
-                renderMessageReactionActions={renderReactionActions}
-                renderComputerHandoff={(entry) => renderComputerHandoffEntry(entry, computer)}
-                renderMessageReactionPills={renderReactionPills}
+                renderMessageReactionActions={activeIsHuman ? undefined : renderReactionActions}
+                renderComputerHandoff={activeIsHuman ? undefined : (entry) => renderComputerHandoffEntry(entry, computer)}
+                renderMessageReactionPills={activeIsHuman ? undefined : renderReactionPills}
                 resolveAttachmentMedia={resolveAttachmentMedia}
                 readAttachmentBytes={(path, maxBytes) => bridge.readAttachmentBytes(path, maxBytes)}
                 downloadAttachment={(path, suggestedName) => bridge.downloadAttachment(path, suggestedName)}
