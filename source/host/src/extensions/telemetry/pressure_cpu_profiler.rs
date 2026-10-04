@@ -424,7 +424,7 @@ impl ProductionCpuProfilerBackend {
     #[cfg(target_os = "linux")]
     fn start_platform(state: &mut ProductionCpuProfilerState) -> Result<(), String> {
         let path = Self::fresh_capture_path("perf.data");
-        let child = Command::new("perf")
+        let mut child = Command::new("perf")
             .args(["record", "-F", "100", "-g", "-p"])
             .arg(std::process::id().to_string())
             .arg("-o")
@@ -433,6 +433,37 @@ impl ProductionCpuProfilerBackend {
             .stderr(Stdio::null())
             .spawn()
             .map_err(|error| format!("could not start perf profiler: {error}"))?;
+
+        // Spawning perf only proves the process was created. Under runner or host
+        // pressure it can take long enough to initialize that an immediate stop
+        // races before perf has created its native output file. Do not publish an
+        // active production session until the native backend is observably ready.
+        let deadline = Instant::now() + Duration::from_secs(2);
+        loop {
+            if path.exists() {
+                break;
+            }
+            match child.try_wait() {
+                Ok(Some(status)) => {
+                    return Err(format!(
+                        "perf profiler exited before creating its CPU profile artifact: {status}"
+                    ));
+                }
+                Ok(None) if Instant::now() < deadline => {
+                    thread::sleep(Duration::from_millis(25));
+                }
+                Ok(None) => {
+                    let _ = Self::stop_child_gracefully(&mut child);
+                    return Err("perf profiler did not create its CPU profile artifact within 2 seconds".into());
+                }
+                Err(error) => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return Err(format!("could not query perf profiler readiness: {error}"));
+                }
+            }
+        }
+
         state.child = Some(child);
         state.capture_path = Some(path);
         state.active = true;
