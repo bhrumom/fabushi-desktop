@@ -583,7 +583,14 @@ test.describe('signed candidate packaged acceptance', () => {
         },
         recordVideo: { dir: path.join(evidenceRoot, 'video'), size: { width: 1671, height: 937 } },
       });
-      let page = await app.firstWindow();
+      // Attach process diagnostics before waiting for the first BrowserWindow so
+      // production startup failures are preserved even when no renderer mounts.
+      app.process().stdout?.on('data', (chunk) => captureRuntimeLog('app-stdout', String(chunk)));
+      app.process().stderr?.on('data', (chunk) => captureRuntimeLog('app-stderr', String(chunk)));
+      // Shipping startup declares a 120s stuck threshold (SAND-E0602). The
+      // Playwright default is only 30s, which can reject a still-valid production
+      // bootstrap before the product itself considers startup stuck.
+      let page = await app.firstWindow({ timeout: 120_000 });
       pageForTrace = page;
       const attachPageDiagnostics = (target: Page) => {
         target.on('console', (message) => captureRuntimeLog('page-console', `${message.type()}: ${message.text()}`));
@@ -595,8 +602,6 @@ test.describe('signed candidate packaged acceptance', () => {
         ));
       };
       attachPageDiagnostics(page);
-      app.process().stdout?.on('data', (chunk) => captureRuntimeLog('app-stdout', String(chunk)));
-      app.process().stderr?.on('data', (chunk) => captureRuntimeLog('app-stderr', String(chunk)));
 
       const startupWindows = await withNodeDeadline(
         'Inspect packaged BrowserWindow state',
