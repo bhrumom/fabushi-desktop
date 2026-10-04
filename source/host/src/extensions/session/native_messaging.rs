@@ -135,7 +135,7 @@ impl FabushiNativeMessagingClient {
     pub fn identity(&self) -> Result<FabushiNativeIdentity, String> {
         let credentials = read_credentials(&self.credential_path)?;
         Ok(FabushiNativeIdentity {
-            user_id: value_identity(&credentials.user_id)?,
+            user_id: fabushi_identity_text(&credentials.user_id)?,
             device_id: required_trimmed(&credentials.device_id, "deviceId")?.to_string(),
         })
     }
@@ -327,7 +327,7 @@ fn required_trimmed<'a>(value: &'a str, name: &str) -> Result<&'a str, String> {
     }
 }
 
-fn value_identity(value: &Value) -> Result<String, String> {
+pub fn fabushi_identity_text(value: &Value) -> Result<String, String> {
     match value {
         Value::String(value) => required_trimmed(value, "userId").map(str::to_string),
         Value::Number(value) => Ok(value.to_string()),
