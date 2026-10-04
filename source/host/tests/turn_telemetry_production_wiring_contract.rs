@@ -1,6 +1,7 @@
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 const INFERENCE_PRODUCTION: &str = include_str!("../src/extensions/inference/production.rs");
 const TRANSCRIPT_RUNTIME: &str = include_str!("../src/extensions/transcript/production_runtime.rs");
+const TURN_OBSERVATION: &str = include_str!("../src/runner/turn_observation.rs");
 
 #[test]
 fn shipping_host_wires_frozen_turn_telemetry_sources() {
@@ -30,8 +31,13 @@ fn shipping_host_wires_frozen_turn_telemetry_sources() {
         "TelemetryTokenUsage",
         "GatewayCommandContext",
         "call_with_context(",
-        "context.trace_id.clone()",
-        "context.span_id.clone()",
+        "let turn_trace = begin_turn_trace(BeginTurnTraceOptions {",
+        "traceparent: worker_gateway_context",
+        ".and_then(|context| context.traceparent.clone())",
+        "let ttft_trace_id = turn_trace",
+        "let ttft_span_id = turn_trace",
+        "trace_id: ttft_trace_id.clone()",
+        "span_id: ttft_span_id.clone()",
         "dispatch_started.elapsed().as_secs_f64()",
         "observation.set_first_token_handler(",
         "let fields = TtftFields {",
@@ -132,10 +138,16 @@ fn shipping_turn_telemetry_uses_typed_host_facade_and_closing_send_delivery_owne
 #[test]
 fn shipping_ttft_and_usage_provenance_are_live_not_synthetic() {
     for needle in [
-        "let ttft_dispatch_started = worker_gateway_context",
-        "context.trace_id.clone()",
-        "context.span_id.clone()",
-        "dispatch_started.elapsed().as_secs_f64() * 1_000.0",
+        "let turn_trace = begin_turn_trace(BeginTurnTraceOptions {",
+        "traceparent: worker_gateway_context",
+        ".and_then(|context| context.traceparent.clone())",
+        "let ttft_trace_id = turn_trace",
+        "let ttft_span_id = turn_trace",
+        "trace_id: ttft_trace_id.clone()",
+        "span_id: ttft_span_id.clone()",
+        "let dispatch_perf_ms = worker_gateway_context",
+        ".map(|context| context.dispatch_started.elapsed().as_secs_f64() * 1_000.0)",
+        "observation.observe_send_dispatch(",
         "observation.set_first_token_handler(",
         "worker_provider_usage = Arc::new(Mutex::new(None::<ProviderTokenUsage>))",
         "usage_sink: Some(usage_sink)",
@@ -144,5 +156,17 @@ fn shipping_ttft_and_usage_provenance_are_live_not_synthetic() {
         "usage: worker_provider_usage",
     ] {
         assert!(SHIPPING_HOST.contains(needle), "missing live provenance: {needle}");
+    }
+
+    for needle in [
+        "self.first_output_dispatch_started = Some(Instant::now())",
+        "pub fn observe_stream_output(",
+        ".map(|started| started.elapsed().as_secs_f64() * 1_000.0)",
+        "self.observe_first_token(",
+    ] {
+        assert!(
+            TURN_OBSERVATION.contains(needle),
+            "TurnObservation must own live dispatch-to-first-output TTFT provenance: {needle}"
+        );
     }
 }
