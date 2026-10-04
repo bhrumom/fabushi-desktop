@@ -221,10 +221,14 @@ jobs:
           rsync -a "$support/desktop/resources/computer-control/" desktop/resources/computer-control/
           test -f desktop/resources/computer-control/active-runtime.json
 
-      - name: Build Electron renderer
+      - name: Build Electron runtime and renderer
         working-directory: desktop
         shell: bash
-        run: npm run build:renderer
+        run: |
+          set -euo pipefail
+          npm run build:electron
+          npm run build:renderer
+          npm run check:desktop-runtime
 
       - name: Enforce built desktop bundle boundary
         working-directory: desktop
