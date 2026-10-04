@@ -16,7 +16,7 @@ use crate::host_paths::get_sand_root_dir;
 pub const MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH: usize = 500;
 pub const SAND_AUTO_REVIEW_INSTRUCTION_MAX_ENTRIES: usize = 20;
 pub const SAND_AUTO_REVIEW_INSTRUCTION_MAX_CHARS: usize = 1_000;
-const INFERENCE_PROVIDERS: [&str; 4] = ["cursor", "claude-code", "codex", "openrouter"];
+const INFERENCE_PROVIDERS: [&str; 5] = ["fabushi", "cursor", "claude-code", "codex", "openrouter"];
 
 pub type UserTimeZoneListener = Arc<dyn Fn(Option<String>) + Send + Sync + 'static>;
 pub type SettingsChangeListener = Arc<dyn Fn(Vec<String>) + Send + Sync + 'static>;
@@ -1393,6 +1393,7 @@ fn empty_inference_usage() -> Value {
     json!({
         "schemaVersion": 1,
         "providers": {
+            "fabushi": empty(),
             "cursor": empty(),
             "claude-code": empty(),
             "codex": empty(),

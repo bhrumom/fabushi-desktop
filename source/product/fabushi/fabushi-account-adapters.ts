@@ -21,6 +21,7 @@ import {
 
 export const FABUSHI_RESPONSES_URL_ENV = "FABUSHI_RESPONSES_URL";
 export const FABUSHI_PRODUCT_MODE_ENV = "FABUSHI_PRODUCT_MODE";
+export const SAND_PRODUCT_FEATURE_GATE_DEFAULTS_ENV = "SAND_PRODUCT_FEATURE_GATE_DEFAULTS";
 export const DEFAULT_FABUSHI_RESPONSES_URL = `${DEFAULT_FABUSHI_API_BASE_URL}/v1/ai/responses`;
 
 function accountRuntimeOf(
@@ -49,8 +50,18 @@ function installProductEnvironment(context: ProductionServiceContext): string {
   const credentialPath = productHostCredentialPath(context);
   context.env[FABUSHI_PRODUCT_MODE_ENV] = "1";
   context.env[FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV] = credentialPath;
-  if (context.env[FABUSHI_RESPONSES_URL_ENV]?.trim().length === 0 || context.env[FABUSHI_RESPONSES_URL_ENV] == null) {
+  // Signed production must never inherit a shell-provided inference origin:
+  // the account bearer is scoped to Fabushi's first-party control plane.
+  if (context.native.app.isPackaged || context.env[FABUSHI_RESPONSES_URL_ENV]?.trim().length === 0 || context.env[FABUSHI_RESPONSES_URL_ENV] == null) {
     context.env[FABUSHI_RESPONSES_URL_ENV] = DEFAULT_FABUSHI_RESPONSES_URL;
+  }
+  // Grok keeps the capability gate; Fabushi's product composition owns the
+  // shipping fallback until a first-party live gate source is available.
+  context.env[SAND_PRODUCT_FEATURE_GATE_DEFAULTS_ENV] = "sand_agent_network=true";
+  // Preserve an explicit user choice, but make first-party Fabushi inference
+  // the default for fresh Fabushi profiles rather than Cursor private auth.
+  if (context.settings.settingsStore.load().inferenceProvider == null) {
+    context.settings.settingsStore.setInferenceProvider("fabushi");
   }
   return credentialPath;
 }

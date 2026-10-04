@@ -54,6 +54,7 @@ fn assembled_provider_system_prompt(messages: &[ProviderMessage]) -> String {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RoutedProvider {
+    Fabushi,
     Cursor,
     Codex,
     ClaudeCode,
@@ -63,6 +64,7 @@ pub enum RoutedProvider {
 impl RoutedProvider {
     pub fn parse(value: &str) -> Option<Self> {
         match value {
+            "fabushi" => Some(Self::Fabushi),
             "cursor" => Some(Self::Cursor),
             "codex" => Some(Self::Codex),
             "claude-code" => Some(Self::ClaudeCode),
@@ -73,6 +75,7 @@ impl RoutedProvider {
 
     pub fn as_str(self) -> &'static str {
         match self {
+            Self::Fabushi => "fabushi",
             Self::Cursor => "cursor",
             Self::Codex => "codex",
             Self::ClaudeCode => "claude-code",
@@ -201,6 +204,7 @@ pub type ProviderToolStepReminderHook =
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "provider", content = "checkpoint", rename_all = "kebab-case")]
 pub enum RoutedProviderCheckpoint {
+    Fabushi(CodexDirectCheckpoint),
     Cursor(CursorCheckpoint),
     Codex(CodexDirectCheckpoint),
     OpenRouter(OpenRouterCheckpoint),
@@ -209,6 +213,7 @@ pub enum RoutedProviderCheckpoint {
 impl RoutedProviderCheckpoint {
     pub fn emitted_text_bytes(&self) -> usize {
         match self {
+            Self::Fabushi(checkpoint) => checkpoint.text.len(),
             Self::Cursor(checkpoint) => checkpoint.text.len(),
             Self::Codex(checkpoint) => checkpoint.text.len(),
             Self::OpenRouter(checkpoint) => checkpoint.text.len(),
@@ -217,6 +222,7 @@ impl RoutedProviderCheckpoint {
 
     pub fn tool_calls_completed(&self) -> usize {
         match self {
+            Self::Fabushi(checkpoint) => checkpoint.tool_calls_completed,
             Self::Cursor(checkpoint) => checkpoint.tool_calls_completed,
             Self::Codex(checkpoint) => checkpoint.tool_calls_completed,
             Self::OpenRouter(checkpoint) => checkpoint.tool_calls_completed,
@@ -225,6 +231,7 @@ impl RoutedProviderCheckpoint {
 
     pub fn provider(&self) -> RoutedProvider {
         match self {
+            Self::Fabushi(_) => RoutedProvider::Fabushi,
             Self::Cursor(_) => RoutedProvider::Cursor,
             Self::Codex(_) => RoutedProvider::Codex,
             Self::OpenRouter(_) => RoutedProvider::OpenRouter,
@@ -342,6 +349,14 @@ fn codex_home() -> PathBuf {
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)
         .unwrap_or_else(|| home_dir().join(".codex"))
+}
+
+fn configured_fabushi_model() -> String {
+    env::var("FABUSHI_RESPONSES_MODEL")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "deepseek-chat".into())
 }
 
 fn configured_codex_model() -> String {
@@ -856,26 +871,22 @@ fn read_fabushi_responses_credentials(
     })
 }
 
-fn configured_responses_credentials(auth_path: &Path) -> Result<ResponsesHttpCredentials, ProviderSessionError> {
+fn configured_fabushi_responses_credentials() -> Result<ResponsesHttpCredentials, ProviderSessionError> {
     let endpoint = env::var(FABUSHI_RESPONSES_URL_ENV)
         .ok()
         .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty());
-    match endpoint {
-        None => Ok(ResponsesHttpCredentials::ChatGpt(read_codex_credentials(auth_path)?)),
-        Some(endpoint) => {
-            let endpoint = validate_fabushi_responses_url(&endpoint)?;
-            let credential_path = env::var_os(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV)
-                .filter(|value| !value.is_empty())
-                .map(PathBuf::from)
-                .ok_or_else(|| {
-                    ProviderSessionError::Configuration(
-                        "Fabushi Responses transport requires the account-bound credential file.".into(),
-                    )
-                })?;
-            read_fabushi_responses_credentials(&endpoint, &credential_path)
-        }
-    }
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| ProviderSessionError::Configuration(
+            "Fabushi Responses transport requires the first-party Responses URL.".into(),
+        ))?;
+    let endpoint = validate_fabushi_responses_url(&endpoint)?;
+    let credential_path = env::var_os(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV)
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+        .ok_or_else(|| ProviderSessionError::Configuration(
+            "Fabushi Responses transport requires the account-bound credential file.".into(),
+        ))?;
+    read_fabushi_responses_credentials(&endpoint, &credential_path)
 }
 
 struct CodexHttpTransport {
@@ -884,14 +895,21 @@ struct CodexHttpTransport {
 }
 
 impl CodexHttpTransport {
-    fn new(auth_path: &Path) -> Result<Self, ProviderSessionError> {
+    fn with_credentials(credentials: ResponsesHttpCredentials) -> Result<Self, ProviderSessionError> {
         let client = AsyncClient::builder()
             .build()
             .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
-        Ok(Self {
-            client,
-            credentials: configured_responses_credentials(auth_path)?,
-        })
+        Ok(Self { client, credentials })
+    }
+
+    fn new_codex(auth_path: &Path) -> Result<Self, ProviderSessionError> {
+        Self::with_credentials(ResponsesHttpCredentials::ChatGpt(
+            read_codex_credentials(auth_path)?,
+        ))
+    }
+
+    fn new_fabushi() -> Result<Self, ProviderSessionError> {
+        Self::with_credentials(configured_fabushi_responses_credentials()?)
     }
 }
 
@@ -1139,7 +1157,7 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     max_steps: usize,
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
-    let mut transport = CodexHttpTransport::new(&codex_home().join("auth.json"))?;
+    let mut transport = CodexHttpTransport::new_codex(&codex_home().join("auth.json"))?;
     let system_prompt = assembled_provider_system_prompt(messages);
     let mut request = CodexDirectOptions::new(
         configured_codex_model(),
@@ -1156,6 +1174,74 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
             .collect(),
     );
     request.reasoning_effort = configured_codex_reasoning_effort();
+    request.max_steps = max_steps.max(1);
+    request.tools = tools.iter().map(to_codex_tool).collect();
+
+    let tool_index = tools
+        .iter()
+        .map(|tool| (tool.name.clone(), tool))
+        .collect::<BTreeMap<_, _>>();
+    let result = run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
+        &mut transport,
+        &request,
+        resume_from,
+        &mut |tool, args, tool_call_id| {
+            let selected = tool_index.get(&tool.name).copied().ok_or_else(|| {
+                CodexDirectError::Tool(format!(
+                    "Unknown Fabushi tool: {}",
+                    tool.name
+                ))
+            })?;
+            execute_tool(selected, args, tool_call_id)
+                .map_err(|error| CodexDirectError::Tool(error.to_string()))
+        },
+        on_text_delta,
+        &mut |checkpoint| {
+            on_checkpoint(checkpoint)
+                .map_err(|error| CodexDirectError::Transport(error.to_string()))
+        },
+        should_cancel,
+        tool_step_reminder,
+    )?;
+    on_usage(result.usage.into());
+    Ok(result.text)
+}
+
+
+fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&CodexDirectCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &CodexDirectCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    max_steps: usize,
+    tool_step_reminder: Option<&ProviderToolStepReminderHook>,
+) -> Result<String, ProviderSessionError> {
+    let mut transport = CodexHttpTransport::new_fabushi()?;
+    let system_prompt = assembled_provider_system_prompt(messages);
+    let mut request = CodexDirectOptions::new(
+        configured_fabushi_model(),
+        system_prompt,
+        messages
+            .iter()
+            .filter(|message| message.role != "system")
+            .map(|message| {
+                json!({
+                    "role": if message.role == "assistant" { "assistant" } else { "user" },
+                    "content": message.content,
+                })
+            })
+            .collect(),
+    );
     request.max_steps = max_steps.max(1);
     request.tools = tools.iter().map(to_codex_tool).collect();
 
@@ -1292,6 +1378,27 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     }
 
     let result = match provider {
+        RoutedProvider::Fabushi => {
+            let resume = match resume_from {
+                Some(RoutedProviderCheckpoint::Fabushi(checkpoint)) => Some(checkpoint),
+                _ => None,
+            };
+            let mut fabushi_checkpoint = |checkpoint: &CodexDirectCheckpoint| {
+                on_checkpoint(&RoutedProviderCheckpoint::Fabushi(checkpoint.clone()))
+            };
+            run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+                messages,
+                options.tools,
+                options.execute_tool,
+                options.on_text_delta,
+                options.should_cancel,
+                resume,
+                &mut fabushi_checkpoint,
+                on_usage,
+                max_steps,
+                tool_step_reminder,
+            )
+        }
         RoutedProvider::Cursor => {
             let auth = options.cursor_auth.clone().ok_or_else(|| {
                 ProviderSessionError::Configuration(
@@ -2201,6 +2308,7 @@ mod tests {
 
     #[test]
     fn parses_reference_provider_names() {
+        assert_eq!(RoutedProvider::parse("fabushi"), Some(RoutedProvider::Fabushi));
         assert_eq!(RoutedProvider::parse("cursor"), Some(RoutedProvider::Cursor));
         assert_eq!(RoutedProvider::parse("codex"), Some(RoutedProvider::Codex));
         assert_eq!(

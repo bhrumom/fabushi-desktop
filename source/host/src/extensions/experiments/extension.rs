@@ -45,6 +45,7 @@ pub const STATSIG_CLIENT_KEY: &str =
     "client-Bm4HJ0aDjXHQVsoACMREyLNxm5p6zzuzhO50MgtoT5D";
 pub const STATSIG_LOG_EVENT_PROXY_URL: &str = "https://api3.cursor.sh/tev1/v1";
 pub const STATSIG_JS_SDK_VERSION: &str = "3.31.0";
+pub const SAND_PRODUCT_FEATURE_GATE_DEFAULTS_ENV: &str = "SAND_PRODUCT_FEATURE_GATE_DEFAULTS";
 
 pub fn experiments_extension_id() -> HostExtensionId {
     HostExtensionId::Experiments
@@ -301,6 +302,13 @@ impl HostExperimentsExtension {
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .get(name)
             .copied()
+        {
+            return value;
+        }
+        if let Some(value) = std::env::var(SAND_PRODUCT_FEATURE_GATE_DEFAULTS_ENV)
+            .ok()
+            .as_deref()
+            .and_then(|raw| env_gate_override(name, Some(raw)))
         {
             return value;
         }
