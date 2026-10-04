@@ -16,7 +16,8 @@ use super::credential_renewer::{
     read_dev_inference_credential_file,
 };
 
-pub const EXPIRY_LEEWAY_MS: u64 = 30_000;\npub const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV: &str = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
+pub const EXPIRY_LEEWAY_MS: u64 = 30_000;
+pub const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV: &str = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
 pub const SAND_SHORTLIVED_CREDS_WAITING_MESSAGE: &str =
     "Waiting for an inference credential. Grok Bot's computer renews this automatically (no desktop required); this resolves on its own shortly.";
 
