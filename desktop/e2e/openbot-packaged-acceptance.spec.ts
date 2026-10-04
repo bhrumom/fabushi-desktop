@@ -157,36 +157,115 @@ function peerByName(page: Page, name: string): Locator {
 
 async function completeBrowserLogin(page: Page): Promise<void> {
   type LoginPhase = 'onboarding' | 'login' | 'browser-waiting' | 'ready' | 'waiting';
-  const readPhase = async (): Promise<LoginPhase> => {
-    if (await page.getByTestId('messenger-workspace').count()) {
-      const hydrated = await page.getByTestId('messenger-workspace').getAttribute('data-initial-host-hydrated').catch(() => null);
-      if (hydrated === 'true') return 'ready';
+  const workspace = page.getByTestId('messenger-workspace');
+  const signInLanding = page.getByRole('main', { name: 'Grok Bot' });
+  const onboarding = page.locator('.sand-onboarding[data-step]');
+
+  const readAccountKind = async (): Promise<string | null> => page.evaluate(async () => {
+    const desktop = (window as unknown as {
+      desktop?: {
+        cursorAccount?: {
+          getStatus?: () => Promise<{ kind?: unknown }>;
+        };
+      };
+    }).desktop;
+    if (typeof desktop?.cursorAccount?.getStatus !== 'function') return null;
+    try {
+      const status = await desktop.cursorAccount.getStatus();
+      return typeof status?.kind === 'string' ? status.kind : null;
+    } catch {
+      return null;
     }
-    if (await page.getByTestId('onboarding-gate').count()) return 'onboarding';
-    if (await page.getByTestId('browser-login-waiting').count()) return 'browser-waiting';
-    if (await page.getByTestId('login-gate').count()) return 'login';
+  });
+
+  const readPhase = async (): Promise<LoginPhase> => {
+    if (!(await workspace.count())) return 'waiting';
+
+    const accountKind = await readAccountKind();
+    if (accountKind === 'logged-in') {
+      if (await onboarding.count()) return 'onboarding';
+      if (await signInLanding.count()) return 'waiting';
+      return 'ready';
+    }
+    if (accountKind === 'logging-in') return 'browser-waiting';
+    if (accountKind === 'logged-out') return 'login';
+
+    if (await signInLanding.count()) {
+      if (await signInLanding.getByRole('button', { name: 'Sign in', exact: true }).count()) return 'login';
+      return 'browser-waiting';
+    }
     return 'waiting';
   };
 
-  await withNodeDeadline(
-    'Packaged renderer did not mount desktop-shell',
-    35_000,
-    expect(page.getByTestId('desktop-shell')).toBeVisible({ timeout: 30_000 }),
-  );
+  const hostHydrated = async (): Promise<boolean> => page.evaluate(async () => {
+    const bridge = window.mahayana;
+    if (!bridge?.invoke) return false;
+    try {
+      await bridge.invoke('feature.execute', {
+        command: {
+          type: 'bot.list',
+          requestId: `candidate-ready-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        },
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  });
 
-  for (let attempt = 0; attempt < 12; attempt += 1) {
+  await withNodeDeadline(
+    'Packaged renderer did not mount the canonical ProductionRenderer workspace',
+    35_000,
+    expect(workspace).toBeVisible({ timeout: 30_000 }),
+  );
+  await expect(workspace).toHaveAttribute('data-product-shell', 'agent');
+  await expect(workspace).toHaveAttribute('data-runtime', 'electron');
+
+  for (let attempt = 0; attempt < 18; attempt += 1) {
     await expect.poll(readPhase, { timeout: 15_000 }).not.toBe('waiting');
     const phase = await readPhase();
+
     if (phase === 'onboarding') {
-      await page.getByTestId('onboarding-next').click();
-      continue;
+      const step = await onboarding.getAttribute('data-step');
+      if (step === 'meet' || step === 'computer-demo' || step === 'jobs' || step === 'tools') {
+        const next = onboarding.getByRole('button', { name: 'Next', exact: true }).last();
+        await expect(next).toBeVisible();
+        await next.click();
+        continue;
+      }
+      if (step === 'create') {
+        const name = onboarding.getByPlaceholder('New Bot');
+        await expect(name).toBeVisible();
+        if ((await name.inputValue()).trim().length === 0) {
+          await name.fill(`Candidate Acceptance ${Date.now()}`);
+        }
+        const getStarted = onboarding.getByRole('button', { name: 'Get started', exact: true });
+        await expect(getStarted).toBeEnabled();
+        await getStarted.click();
+        continue;
+      }
+      if (step === 'hand-off') {
+        const retry = onboarding.getByRole('button', { name: 'Try again', exact: true });
+        if (await retry.count()) {
+          throw new Error('Signed-in onboarding failed while preparing the production computer/Agent hand-off');
+        }
+        try {
+          await expect.poll(readPhase, { timeout: 90_000 }).not.toBe('onboarding');
+        } catch {
+          throw new Error('Signed-in onboarding did not settle into the canonical Agent workspace');
+        }
+        continue;
+      }
+      throw new Error(`Unexpected signed-in onboarding step: ${step ?? 'unknown'}`);
     }
+
     if (phase === 'login') {
-      const start = page.getByTestId('browser-login-start');
+      const start = signInLanding.getByRole('button', { name: 'Sign in', exact: true });
       await expect(start).toBeVisible();
       await start.click();
       continue;
     }
+
     if (phase === 'browser-waiting') {
       try {
         await expect.poll(readPhase, { timeout: 45_000 }).not.toBe('browser-waiting');
@@ -197,8 +276,21 @@ async function completeBrowserLogin(page: Page): Promise<void> {
       }
       continue;
     }
-    if (phase === 'ready') return;
+
+    if (phase === 'ready') {
+      await expect(signInLanding).toHaveCount(0);
+      await expect(onboarding).toHaveCount(0);
+      try {
+        await expect.poll(hostHydrated, { timeout: 45_000 }).toBe(true);
+      } catch {
+        throw new Error(
+          'Canonical ProductionRenderer mounted and authenticated, but the signed candidate never hydrated a usable Mahayana Host/Coordinator bot.list path.',
+        );
+      }
+      return;
+    }
   }
+
   throw new Error('Packaged Fabushi did not reach the canonical Agent workspace');
 }
 
