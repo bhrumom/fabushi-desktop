@@ -130,6 +130,9 @@ impl ProductionInferenceSettings {
 
 impl InferenceSettings for ProductionInferenceSettings {
     fn inference_provider(&self) -> RoutedProvider {
+        if std::env::var("FABUSHI_PRODUCT_MODE").ok().as_deref() == Some("1") {
+            return RoutedProvider::Codex;
+        }
         RoutedProvider::parse(&self.settings.get_inference_provider())
             .unwrap_or(RoutedProvider::Cursor)
     }
