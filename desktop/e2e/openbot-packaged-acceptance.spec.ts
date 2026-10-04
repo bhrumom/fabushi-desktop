@@ -389,11 +389,17 @@ async function installLifecycleCapture(page: Page): Promise<void> {
       }
       acceptedVisible = typingVisible;
 
-      for (const row of transcript.querySelectorAll<HTMLElement>('[role="article"][data-role="assistant"][data-entry-id]')) {
+      for (const row of transcript.querySelectorAll<HTMLElement>('[role="article"][data-entry-id]')) {
+        const assistantSurface = row.matches('[data-role="assistant"]')
+          ? row
+          : row.querySelector<HTMLElement>('[data-role="assistant"]');
+        if (assistantSurface == null) continue;
         const entryId = row.dataset.entryId;
         if (!entryId) continue;
-        const busy = row.getAttribute('aria-busy') === 'true';
-        const failed = row.getAttribute('data-failed') === 'true';
+        const busy = row.getAttribute('aria-busy') === 'true'
+          || assistantSurface.getAttribute('aria-busy') === 'true';
+        const failed = row.getAttribute('data-failed') === 'true'
+          || assistantSurface.getAttribute('data-failed') === 'true';
         const text = (row.innerText || '').trim();
         const previous = assistantState.get(entryId);
 
