@@ -2966,7 +2966,7 @@ fn main() {
     let inference_settings_path = inference_data_dir.join("settings.json");
     let inference_fallback_provider =
         if env::var("FABUSHI_PRODUCT_MODE").ok().as_deref() == Some("1") {
-            InferenceProvider::Codex
+            InferenceProvider::Fabushi
         } else {
             InferenceProvider::Cursor
         };

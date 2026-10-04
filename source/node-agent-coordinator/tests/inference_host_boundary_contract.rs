@@ -30,6 +30,12 @@ fn coordinator_provider_selection_is_pure_and_host_runtime_independent() {
         configured_inference_provider(&settings),
         Some(InferenceProvider::ClaudeCode)
     );
+    fs::write(&settings, r#"{"router":{"provider":"fabushi"}}"#)
+        .expect("write Fabushi settings");
+    assert_eq!(
+        configured_inference_provider(&settings),
+        Some(InferenceProvider::Fabushi)
+    );
     let _ = fs::remove_dir_all(root);
 
     let cargo = fs::read_to_string(

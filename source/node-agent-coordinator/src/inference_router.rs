@@ -528,6 +528,7 @@ pub fn prepare_agent_inbound_wake_routes(
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InferenceProvider {
+    Fabushi,
     Cursor,
     Codex,
     ClaudeCode,
@@ -537,6 +538,7 @@ pub enum InferenceProvider {
 impl InferenceProvider {
     pub fn parse(value: &str) -> Option<Self> {
         match value {
+            "fabushi" => Some(Self::Fabushi),
             "cursor" => Some(Self::Cursor),
             "codex" => Some(Self::Codex),
             "claude-code" => Some(Self::ClaudeCode),
@@ -547,6 +549,7 @@ impl InferenceProvider {
 
     pub fn as_str(self) -> &'static str {
         match self {
+            Self::Fabushi => "fabushi",
             Self::Cursor => "cursor",
             Self::Codex => "codex",
             Self::ClaudeCode => "claude-code",
