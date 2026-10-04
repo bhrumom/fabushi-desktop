@@ -98,14 +98,6 @@ impl CredentialRenewalBackend for DevFileCredentialBackend {
     }
 }
 
-struct FabushiProductFileCredentialBackend;
-
-impl CredentialRenewalBackend for FabushiProductFileCredentialBackend {
-    fn renew(&self, credential: &str) -> Result<InferenceCredential, SandCredentialRenewalError> {
-        read_dev_inference_credential_file(Path::new(credential))
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct HostAuthEnvironment {
     values: BTreeMap<String, String>,
@@ -183,13 +175,17 @@ impl HostAuthService {
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(str::to_string);
+        // Fabushi account credentials are scoped to the first-party Fabushi API and
+        // Responses transport. They are not Cursor/Sand Connect credentials. Treating
+        // FABUSHI_HOST_ACCESS_CREDENTIAL_FILE as a HostAuth renewal source sends a
+        // valid Fabushi bearer token to Cursor endpoints and produces misleading
+        // ERROR_NOT_LOGGED_IN failures on every turn.
         let has_renewal_credential =
-            dev_token_file.is_some() || product_token_file.is_some() || renewal_credential.is_some();
+            dev_token_file.is_some() || renewal_credential.is_some();
 
         let backend: Arc<dyn CredentialRenewalBackend> = match options.backend {
             Some(backend) => backend,
             None if dev_token_file.is_some() => Arc::new(DevFileCredentialBackend),
-            None if product_token_file.is_some() => Arc::new(FabushiProductFileCredentialBackend),
             None => Arc::new(HttpCredentialRenewalBackend::new(
                 options
                     .backend_url
@@ -200,7 +196,6 @@ impl HostAuthService {
 
         let source_value = dev_token_file
             .clone()
-            .or_else(|| product_token_file.clone())
             .or_else(|| renewal_credential.clone());
         let store = Arc::new(InferenceCredentialStore::default());
         let listeners = Arc::new(Mutex::new(BTreeMap::<u64, RenewalListener>::new()));
@@ -266,10 +261,10 @@ impl HostAuthService {
             (options.log)(&format!(
                 "DEV inference-credential renewer started, reading short-lived tokens from {path} (dev:box-docker local loop)"
             ));
-        } else if let Some(path) = product_token_file {
-            (options.log)(&format!(
-                "Fabushi production inference-credential source started from the account-bound credential file {path}"
-            ));
+        } else if product_token_file.is_some() && !has_renewal_credential {
+            (options.log)(
+                "Fabushi account credential is reserved for first-party Fabushi account/Responses transport; Cursor/Sand HostAuth remains unavailable without a Cursor renewal credential",
+            );
         } else if has_renewal_credential {
             (options.log)(
                 "inference-credential renewer started (backend self-renewal is the sole inference-credential source)",

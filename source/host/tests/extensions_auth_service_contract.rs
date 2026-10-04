@@ -4,8 +4,9 @@ use std::thread;
 use std::time::Duration;
 
 use mahayana_host_runtime::extensions::auth::auth_service::{
-    EXPIRY_LEEWAY_MS, HostAuthEnvironment, HostAuthService, HostAuthServiceOptions,
-    InferenceCredentialStore, SAND_SHORTLIVED_CREDS_WAITING_MESSAGE,
+    EXPIRY_LEEWAY_MS, FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV, HostAuthEnvironment,
+    HostAuthService, HostAuthServiceOptions, InferenceCredentialStore,
+    SAND_SHORTLIVED_CREDS_WAITING_MESSAGE,
 };
 use mahayana_host_runtime::extensions::auth::credential_renewer::{
     CredentialRenewalBackend, InferenceCredential, SandCredentialRenewalError,
@@ -90,6 +91,32 @@ fn auth_service_fails_closed_without_a_renewal_source() {
     assert_eq!(error.to_string(), SAND_SHORTLIVED_CREDS_WAITING_MESSAGE);
     assert!(!service.has_renewal_credential());
     assert!(logs.lock().unwrap()[0].contains("no renewal credential"));
+    service.dispose();
+}
+
+#[test]
+fn fabushi_account_credential_never_becomes_cursor_host_auth() {
+    let now = Arc::new(Mutex::new(10_000));
+    let logs = Arc::new(Mutex::new(Vec::new()));
+    let service = HostAuthService::new(options(
+        BTreeMap::from([(
+            FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV.into(),
+            "/private/fabushi-host-access-credential-v1.json".into(),
+        )]),
+        now,
+        Arc::clone(&logs),
+        Arc::new(StaticBackend {
+            token: "must-not-be-used".into(),
+            expires_at_ms: 100_000,
+        }),
+    ))
+    .unwrap();
+
+    let error = service.get_access_token().unwrap_err();
+    assert_eq!(error.to_string(), SAND_SHORTLIVED_CREDS_WAITING_MESSAGE);
+    assert!(!service.has_renewal_credential());
+    assert!(service.peek_access_token().is_none());
+    assert!(logs.lock().unwrap()[0].contains("reserved for first-party Fabushi"));
     service.dispose();
 }
 
