@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import { getSimulatedGatewayLatencyMs, setSimulatedGatewayLatencyMs, SIMULATED_GATEWAY_LATENCY_MAX_MS } from "./dev/dev-network-latency.js";
@@ -24,6 +27,7 @@ import { resolveDefaultDownloadDir, resolveDefaultDownloadPath, resolveSuggested
 import { assertTrustedClientPersistenceSender, assertTrustedSecretsSender, isTrustedSecretsSender, UntrustedClientPersistenceSenderError, UntrustedSecretsSenderError } from "./secrets/secrets-ipc-guard.js";
 import { createIdleRelaunchSignals, isScreensaverRunning } from "./update/idle-relaunch-signals.js";
 import { createDesktopAccountAuthorizer } from "./account/account-authorization.js";
+import { createProductionHumanIdentityStore } from "./account/human-identity.js";
 import { createSandRecreateCommands, type RecreateOperationId } from "./box/box-recreate-commands.js";
 import { createDesktopHostSettingsFields } from "./prefs/host-settings-fields.js";
 import { createReleaseMetadata } from "./update/release-metadata.js";
@@ -386,4 +390,36 @@ test("release metadata resolves package identity and live update gates", async (
   });
   assert.equal(fallback.readAppReleaseMetadata().version, "9.9.9");
   assert.equal(await fallback.computeUpdateDisabledReasonLive(), null);
+});
+
+
+test("Fabushi Human identity is stable per account without persisting the raw account slot", () => {
+  const root = mkdtempSync(join(tmpdir(), "fabushi-human-identity-"));
+  try {
+    const store = createProductionHumanIdentityStore(root);
+    const first = store.resolve("account@example.com");
+    assert.equal(store.resolve("account@example.com"), first);
+    assert.notEqual(store.resolve("other@example.com"), first);
+    const persisted = readFileSync(join(root, "fabushi-human-identities.json"), "utf8");
+    assert.ok(persisted.includes(first));
+    assert.equal(persisted.includes("account@example.com"), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("Fabushi Human identity fails closed on corrupt persisted state instead of rotating identity", () => {
+  const root = mkdtempSync(join(tmpdir(), "fabushi-human-identity-corrupt-"));
+  const path = join(root, "fabushi-human-identities.json");
+  try {
+    writeFileSync(path, "{not-json", "utf8");
+    const store = createProductionHumanIdentityStore(root);
+    assert.throws(
+      () => store.resolve("account@example.com"),
+      /Fabushi Human identity store is corrupt/,
+    );
+    assert.equal(readFileSync(path, "utf8"), "{not-json");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
