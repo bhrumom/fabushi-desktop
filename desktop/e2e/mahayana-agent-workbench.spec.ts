@@ -80,6 +80,80 @@ async function ensureE2eAuthBackend(): Promise<string> {
         response.end(JSON.stringify({ access_token: token, refresh_token: token }));
         return;
       }
+      if (requestUrl.pathname === '/api/auth/browser/start' && request.method === 'POST') {
+        const origin = `http://${request.headers.host ?? '127.0.0.1'}`;
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+          attemptId: 'fabushi-e2e-browser-attempt',
+          loginUrl: `${origin}/fabushi-e2e-browser-login`,
+          pollSecret: 'fabushi-e2e-poll-secret',
+          expiresAt: Date.now() + 60_000,
+          pollAfterMs: 250,
+        }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/auth/browser/attempts/fabushi-e2e-browser-attempt' && request.method === 'POST') {
+        const body = JSON.parse((await readRequestBody(request)).toString('utf8')) as { pollSecret?: unknown };
+        if (body.pollSecret !== 'fabushi-e2e-poll-secret') {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 403;
+          response.end(JSON.stringify({ error: { code: 'invalid-poll-secret' } }));
+          return;
+        }
+        const expiresAt = 4_102_444_800_000;
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+          status: 'completed',
+          session: {
+            accessToken: token,
+            refreshToken: token,
+            accessTokenExpiresAt: expiresAt,
+            refreshTokenExpiresAt: expiresAt,
+            sessionId: 'fabushi-e2e-session',
+            deviceId: 'fabushi-e2e-device',
+            username: 'e2e@fabushi.local',
+            userId: 'fabushi-e2e-account',
+            provider: 'focused-e2e',
+          },
+        }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/auth/user-info') {
+        if (request.headers.authorization !== `Bearer ${token}`) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ error: { code: 'invalid-access-token' } }));
+          return;
+        }
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+          id: 'fabushi-e2e-account',
+          username: 'e2e@fabushi.local',
+          email: 'e2e@fabushi.local',
+          displayName: 'Fabushi E2E',
+        }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/auth/refresh' && request.method === 'POST') {
+        const expiresAt = 4_102_444_800_000;
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+          accessToken: token,
+          refreshToken: token,
+          accessTokenExpiresAt: expiresAt,
+          refreshTokenExpiresAt: expiresAt,
+          sessionId: 'fabushi-e2e-session',
+          deviceId: 'fabushi-e2e-device',
+          username: 'e2e@fabushi.local',
+          userId: 'fabushi-e2e-account',
+          provider: 'focused-e2e',
+        }));
+        return;
+      }
       if (requestUrl.pathname === '/aiserver.v1.InferenceService/Stream') {
         const body = await readRequestBody(request);
         const authorization = request.headers.authorization;
@@ -159,6 +233,7 @@ async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication
       SAND_USER_DATA_DIR: appDataDir,
       SAND_BACKEND_URL: e2eAuthBackendUrl,
       CURSOR_API_BASE_URL: e2eAuthBackendUrl,
+      FABUSHI_API_BASE_URL: e2eAuthBackendUrl,
       SAND_DEV_INFERENCE_TOKEN_FILE: inferenceCredentialPath,
       SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
       SAND_DISABLE_SENTRY: '1',
