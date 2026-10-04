@@ -14,7 +14,7 @@ fn shipping_transcript_mirror_reports_journal_outcomes_through_unique_host_owner
     assert!(
         RUNNER_COMPOSITION.contains("ProductionTranscriptMirrorProvider::with_reporter(")
     );
-    assert!(RUNNER_COMPOSITION.contains("report_outcome,"));
+    assert!(RUNNER_COMPOSITION.contains("Arc::clone(&report_outcome)"));
     assert!(MIRROR.contains("report_outcome"));
     assert!(OWNER.contains("pub fn report_journal_outcome(&self, report: &JournalOutcomeReport)"));
     assert!(OWNER.contains("self.report_projection(&journal_outcome_telemetry(report))"));
