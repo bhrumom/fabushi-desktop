@@ -227,6 +227,8 @@ jobs:
         run: node desktop/scripts/check-agent-workspace-boundary.mjs
       - name: Compile Grok Electron boundary contracts
         run: ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.grok-electron.json
+      - name: Compile Fabushi product policy contract
+        run: ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.fabushi-product.json
       - name: Test Grok Electron boundary contracts
         run: >-
           node --test
@@ -239,7 +241,8 @@ jobs:
           desktop/.tmp-grok-electron/source/electron-main/coordinator/coordinator-launcher.test.js
           desktop/.tmp-grok-electron/source/electron-main/coordinator/coordinator-executors.test.js
           desktop/.tmp-grok-electron/source/electron-main/local-exec/local-exec-daemon-protocol.test.js
-          desktop/.tmp-grok-electron/source/product/fabushi/fabushi-account-service.contract.test.js
+      - name: Test Fabushi product policy contract
+        run: node --test desktop/.tmp-fabushi-product/source/product/fabushi/fabushi-account-service.contract.test.js
       - name: Test recovered window chrome contracts
         run: >-
           node --experimental-strip-types --test
