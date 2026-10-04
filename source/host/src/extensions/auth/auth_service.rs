@@ -16,7 +16,7 @@ use super::credential_renewer::{
     read_dev_inference_credential_file,
 };
 
-pub const EXPIRY_LEEWAY_MS: u64 = 30_000;
+pub const EXPIRY_LEEWAY_MS: u64 = 30_000;\npub const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV: &str = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
 pub const SAND_SHORTLIVED_CREDS_WAITING_MESSAGE: &str =
     "Waiting for an inference credential. Grok Bot's computer renews this automatically (no desktop required); this resolves on its own shortly.";
 
@@ -97,6 +97,14 @@ impl CredentialRenewalBackend for DevFileCredentialBackend {
     }
 }
 
+struct FabushiProductFileCredentialBackend;
+
+impl CredentialRenewalBackend for FabushiProductFileCredentialBackend {
+    fn renew(&self, credential: &str) -> Result<InferenceCredential, SandCredentialRenewalError> {
+        read_dev_inference_credential_file(Path::new(credential))
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct HostAuthEnvironment {
     values: BTreeMap<String, String>,
@@ -162,17 +170,25 @@ impl HostAuthService {
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(str::to_string);
+        let product_token_file = options
+            .environment
+            .get(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string);
         let renewal_credential = options
             .environment
             .get(SAND_INFERENCE_RENEWAL_CREDENTIAL_ENV)
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(str::to_string);
-        let has_renewal_credential = dev_token_file.is_some() || renewal_credential.is_some();
+        let has_renewal_credential =
+            dev_token_file.is_some() || product_token_file.is_some() || renewal_credential.is_some();
 
         let backend: Arc<dyn CredentialRenewalBackend> = match options.backend {
             Some(backend) => backend,
             None if dev_token_file.is_some() => Arc::new(DevFileCredentialBackend),
+            None if product_token_file.is_some() => Arc::new(FabushiProductFileCredentialBackend),
             None => Arc::new(HttpCredentialRenewalBackend::new(
                 options
                     .backend_url
@@ -183,6 +199,7 @@ impl HostAuthService {
 
         let source_value = dev_token_file
             .clone()
+            .or_else(|| product_token_file.clone())
             .or_else(|| renewal_credential.clone());
         let store = Arc::new(InferenceCredentialStore::default());
         let listeners = Arc::new(Mutex::new(BTreeMap::<u64, RenewalListener>::new()));
@@ -247,6 +264,10 @@ impl HostAuthService {
         if let Some(path) = dev_token_file {
             (options.log)(&format!(
                 "DEV inference-credential renewer started, reading short-lived tokens from {path} (dev:box-docker local loop)"
+            ));
+        } else if let Some(path) = product_token_file {
+            (options.log)(&format!(
+                "Fabushi production inference-credential source started from the account-bound credential file {path}"
             ));
         } else if has_renewal_credential {
             (options.log)(
