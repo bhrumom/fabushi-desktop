@@ -770,9 +770,117 @@ where
     flush_sse_data(&mut data, on_event)
 }
 
+const FABUSHI_RESPONSES_URL_ENV: &str = "FABUSHI_RESPONSES_URL";
+const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV: &str = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
+
+#[derive(Debug, Clone)]
+enum ResponsesHttpCredentials {
+    ChatGpt(CodexCredentials),
+    Fabushi {
+        access_token: String,
+        endpoint: String,
+        credential_path: PathBuf,
+    },
+}
+
+fn validate_fabushi_responses_url(raw: &str) -> Result<String, ProviderSessionError> {
+    let url = url::Url::parse(raw).map_err(|error| {
+        ProviderSessionError::Configuration(format!(
+            "Fabushi Responses URL is invalid: {error}"
+        ))
+    })?;
+    let loopback = matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "::1"));
+    if url.scheme() != "https" && !(loopback && url.scheme() == "http") {
+        return Err(ProviderSessionError::Configuration(
+            "Fabushi Responses URL must use HTTPS outside loopback development.".into(),
+        ));
+    }
+    if !url.username().is_empty() || url.password().is_some() || url.query().is_some() || url.fragment().is_some() {
+        return Err(ProviderSessionError::Configuration(
+            "Fabushi Responses URL must not contain credentials, query, or fragment.".into(),
+        ));
+    }
+    Ok(url.to_string())
+}
+
+fn read_fabushi_responses_credentials(
+    endpoint: &str,
+    path: &Path,
+) -> Result<ResponsesHttpCredentials, ProviderSessionError> {
+    let metadata = fs::symlink_metadata(path).map_err(|error| {
+        ProviderSessionError::Authentication(format!(
+            "Fabushi account-bound inference credential is unavailable: {error}"
+        ))
+    })?;
+    if !metadata.file_type().is_file() || metadata.file_type().is_symlink() {
+        return Err(ProviderSessionError::Authentication(
+            "Fabushi account-bound inference credential must be a private regular file.".into(),
+        ));
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if metadata.permissions().mode() & 0o077 != 0 {
+            return Err(ProviderSessionError::Authentication(
+                "Fabushi account-bound inference credential must be private to the current user.".into(),
+            ));
+        }
+    }
+    let document: Value = serde_json::from_str(
+        &fs::read_to_string(path).map_err(|error| {
+            ProviderSessionError::Authentication(format!(
+                "Could not read Fabushi account-bound inference credential: {error}"
+            ))
+        })?,
+    )
+    .map_err(|error| {
+        ProviderSessionError::Authentication(format!(
+            "Fabushi account-bound inference credential JSON is invalid: {error}"
+        ))
+    })?;
+    let access_token = document
+        .get("accessToken")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| {
+            ProviderSessionError::Authentication(
+                "Fabushi account-bound inference credential is missing an access token.".into(),
+            )
+        })?
+        .to_string();
+    Ok(ResponsesHttpCredentials::Fabushi {
+        access_token,
+        endpoint: endpoint.to_string(),
+        credential_path: path.to_path_buf(),
+    })
+}
+
+fn configured_responses_credentials(auth_path: &Path) -> Result<ResponsesHttpCredentials, ProviderSessionError> {
+    let endpoint = env::var(FABUSHI_RESPONSES_URL_ENV)
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty());
+    match endpoint {
+        None => Ok(ResponsesHttpCredentials::ChatGpt(read_codex_credentials(auth_path)?)),
+        Some(endpoint) => {
+            let endpoint = validate_fabushi_responses_url(&endpoint)?;
+            let credential_path = env::var_os(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV)
+                .filter(|value| !value.is_empty())
+                .map(PathBuf::from)
+                .ok_or_else(|| {
+                    ProviderSessionError::Configuration(
+                        "Fabushi Responses transport requires the account-bound credential file.".into(),
+                    )
+                })?;
+            read_fabushi_responses_credentials(&endpoint, &credential_path)
+        }
+    }
+}
+
 struct CodexHttpTransport {
     client: AsyncClient,
-    credentials: CodexCredentials,
+    credentials: ResponsesHttpCredentials,
 }
 
 impl CodexHttpTransport {
@@ -782,34 +890,63 @@ impl CodexHttpTransport {
             .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
         Ok(Self {
             client,
-            credentials: read_codex_credentials(auth_path)?,
+            credentials: configured_responses_credentials(auth_path)?,
         })
     }
 }
 
 async fn send_codex_request(
     client: &AsyncClient,
-    credentials: &CodexCredentials,
+    credentials: &ResponsesHttpCredentials,
     request: &Value,
     should_cancel: &dyn Fn() -> bool,
 ) -> Result<AsyncResponse, ProviderSessionError> {
-    await_reqwest(
-        client
+    let request_builder = match credentials {
+        ResponsesHttpCredentials::ChatGpt(credentials) => client
             .post("https://chatgpt.com/backend-api/codex/responses")
             .header(
                 "authorization",
                 format!("Bearer {}", credentials.access_token),
             )
-            .header("ChatGPT-Account-Id", credentials.account_id.clone())
+            .header("ChatGPT-Account-Id", credentials.account_id.clone()),
+        ResponsesHttpCredentials::Fabushi {
+            access_token,
+            endpoint,
+            ..
+        } => client
+            .post(endpoint)
+            .header("authorization", format!("Bearer {access_token}")),
+    };
+    await_reqwest(
+        request_builder
             .header("content-type", "application/json")
             .header("accept", "text/event-stream")
             .header("user-agent", "fabushi-router/1")
             .json(request)
             .send(),
         should_cancel,
-        "the Codex provider request",
+        "the Responses provider request",
     )
     .await
+}
+
+async fn refresh_responses_credentials(
+    client: &AsyncClient,
+    current: &ResponsesHttpCredentials,
+    should_cancel: &dyn Fn() -> bool,
+) -> Result<ResponsesHttpCredentials, ProviderSessionError> {
+    match current {
+        ResponsesHttpCredentials::ChatGpt(credentials) => Ok(
+            ResponsesHttpCredentials::ChatGpt(
+                refresh_codex_credentials(client, credentials, should_cancel).await?,
+            ),
+        ),
+        ResponsesHttpCredentials::Fabushi {
+            endpoint,
+            credential_path,
+            ..
+        } => read_fabushi_responses_credentials(endpoint, credential_path),
+    }
 }
 
 impl CodexDirectTransport for CodexHttpTransport {
@@ -833,7 +970,7 @@ impl CodexDirectTransport for CodexHttpTransport {
             .map_err(codex_provider_error)?;
 
             if response.status().as_u16() == 401 {
-                credentials = refresh_codex_credentials(
+                credentials = refresh_responses_credentials(
                     &client,
                     &credentials,
                     should_cancel,
@@ -855,7 +992,7 @@ impl CodexDirectTransport for CodexHttpTransport {
                 let detail = await_reqwest(
                     response.text(),
                     should_cancel,
-                    "the Codex provider error response",
+                    "the Responses provider error response",
                 )
                 .await
                 .map_err(codex_provider_error)?
@@ -863,7 +1000,7 @@ impl CodexDirectTransport for CodexHttpTransport {
                 .take(4096)
                 .collect::<String>();
                 return Err(CodexDirectError::Transport(format!(
-                    "Codex direct request failed ({status}{}).",
+                    "Responses request failed ({status}{}).",
                     if detail.trim().is_empty() {
                         String::new()
                     } else {
