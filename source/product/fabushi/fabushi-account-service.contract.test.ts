@@ -6,7 +6,7 @@ import {
   normalizeFabushiApiBaseUrl,
   normalizeFabushiCiSession,
   normalizeFabushiSession,
-} from "./fabushi-account-service.js";
+} from "./fabushi-account-policy.js";
 
 function boundedCiSession(overrides: Record<string, unknown> = {}) {
   return {
