@@ -74,6 +74,8 @@ const FABUSHI_EXTENSION_COMMANDS: &[&str] = &[
     // existing Session/Transcript owner is reachable through the shipping
     // Coordinator -> Host gateway without opening a generic messaging namespace.
     "listHumanConversations",
+    "syncHumanConversations",
+    "syncHumanConversation",
     "createHumanConversation",
     "sendHumanMessage",
     "getHumanConversationTranscript",
