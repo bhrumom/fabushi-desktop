@@ -235,9 +235,26 @@ impl SandAgentDb {
         Self::open_with_options(db_path, options)
     }
 
+    pub fn open_conversation_store(
+        db_path: impl AsRef<Path>,
+        busy_timeout_ms: u64,
+    ) -> Result<Self, AgentDbProjectionError> {
+        let mut options = SandAgentDbOptions::default();
+        options.recovery.busy_timeout_ms = busy_timeout_ms;
+        Self::open_with_options_and_seed(db_path, options, false)
+    }
+
     pub fn open_with_options(
         db_path: impl AsRef<Path>,
         options: SandAgentDbOptions,
+    ) -> Result<Self, AgentDbProjectionError> {
+        Self::open_with_options_and_seed(db_path, options, true)
+    }
+
+    fn open_with_options_and_seed(
+        db_path: impl AsRef<Path>,
+        options: SandAgentDbOptions,
+        seed_default_agent_metadata: bool,
     ) -> Result<Self, AgentDbProjectionError> {
         let db_path = resolve_agent_db_path(db_path.as_ref());
         let agent_dir_name = db_path
@@ -261,9 +278,11 @@ impl SandAgentDb {
             handle_registered: AtomicBool::new(true),
             closed: AtomicBool::new(false),
         };
-        if let Err(error) = owner.seed_default_metadata_if_missing() {
-            owner.close(false);
-            return Err(error);
+        if seed_default_agent_metadata {
+            if let Err(error) = owner.seed_default_metadata_if_missing() {
+                owner.close(false);
+                return Err(error);
+            }
         }
         Ok(owner)
     }
@@ -326,6 +345,33 @@ impl SandAgentDb {
             .read_metadata()?
             .as_object()
             .and_then(|metadata| metadata.get(key).cloned()))
+    }
+
+    pub fn initialize_metadata_if_missing(
+        &self,
+        value: serde_json::Value,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if self.is_closed() || !value.is_object() {
+            return Ok(false);
+        }
+        let encoded = encode_hex(&serde_json::to_vec(&value)?);
+        let changed = self.run_write("initializeMetadata", |db| {
+            let existing = db
+                .query_row(GET_KV_SQL, params!["metadata"], |row| row.get::<_, String>(0))
+                .optional()?;
+            if existing.is_some() {
+                return Ok(false);
+            }
+            db.execute(SET_KV_SQL, params!["metadata", encoded])
+                .map(|changes| changes == 1)
+        })?;
+        if changed {
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata("metadata".to_string()),
+            );
+        }
+        Ok(changed)
     }
 
     pub fn set_metadata(
