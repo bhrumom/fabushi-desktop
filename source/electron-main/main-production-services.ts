@@ -584,10 +584,9 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         getMachineId: async () => machineId,
       });
       const getTrustedContents = (): MainBrowserWindow["webContents"] | undefined => runtime?.getMainWindow()?.webContents;
-      const broadcast = createProductionWindowBroadcaster(
-        bindings.native.BrowserWindow,
-        (window) => window.webContents === getTrustedContents(),
-      );
+      const broadcast = (channel: string, payload: unknown): void => {
+        getTrustedContents()?.send(channel, payload);
+      };
       desktopMetricsRuntime = createDesktopMetricsRuntime({
         ensureCursorAuthService: async () => await requireValue(account, "account").getAuthService(),
         ensureExperimentService: async () => {

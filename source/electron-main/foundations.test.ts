@@ -91,23 +91,14 @@ test("dock badge, process roots, and window broadcast preserve production semant
   assert.deepEqual(await resolveScanRoots(10, async () => { throw new Error("missing"); }, () => true), [10]);
 
   const received: Array<[string, unknown]> = [];
-  const trustedWindow = { webContents: { send: (channel: string, payload: unknown) => received.push([channel, payload]) } };
-  const auxiliaryWindow = { webContents: { send: (channel: string, payload: unknown) => received.push([`aux:${channel}`, payload]) } };
-  const allWindows = { getAllWindows: () => [trustedWindow, auxiliaryWindow] };
-  const frozenBroadcast = createProductionWindowBroadcaster(allWindows);
-  frozenBroadcast("global-event", { value: 3 });
-  assert.deepEqual(received, [
-    ["global-event", { value: 3 }],
-    ["aux:global-event", { value: 3 }],
-  ]);
-
-  received.length = 0;
-  const scopedBroadcast = createProductionWindowBroadcaster(
-    allWindows,
-    (window) => window === trustedWindow,
-  );
-  scopedBroadcast("renderer-event", { value: 7 });
-  assert.deepEqual(received, [["renderer-event", { value: 7 }]]);
+  const broadcast = createProductionWindowBroadcaster({
+    getAllWindows: () => [
+      { webContents: { send: (channel, payload) => received.push([channel, payload]) } },
+      { webContents: { send: (channel, payload) => received.push([channel, payload]) } },
+    ],
+  });
+  broadcast("event", { value: 7 });
+  assert.deepEqual(received, [["event", { value: 7 }], ["event", { value: 7 }]]);
 });
 
 test("update gates fail closed unless every safe-relaunch condition holds", () => {
