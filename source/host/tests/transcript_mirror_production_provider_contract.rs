@@ -256,6 +256,7 @@ fn production_provider_derives_generated_tool_occurrence_with_canonical_json_pro
 
     let user_blob_id = [0xa2];
     let turn_blob_id = [0xa1];
+    let step_blob_id = [0xa3];
     let user_bytes = length_delimited_field(1, b"run the tool");
     let tool = SendMessageToolCall {
         args: Some(SendMessageArgs {
@@ -274,11 +275,13 @@ fn production_provider_derives_generated_tool_occurrence_with_canonical_json_pro
     let step = length_delimited_field(2, &tool_call);
     let mut agent_turn = Vec::new();
     push_length_delimited(1, &user_blob_id, &mut agent_turn);
-    push_length_delimited(2, &step, &mut agent_turn);
+    push_length_delimited(2, &step_blob_id, &mut agent_turn);
     let turn_bytes = length_delimited_field(1, &agent_turn);
 
     futures::executor::block_on(store.set_blob(&(), &user_blob_id, &user_bytes))
         .expect("user blob");
+    futures::executor::block_on(store.set_blob(&(), &step_blob_id, &step))
+        .expect("step blob");
     futures::executor::block_on(store.set_blob(&(), &turn_blob_id, &turn_bytes))
         .expect("turn blob");
 
