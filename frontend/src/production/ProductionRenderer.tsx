@@ -2346,9 +2346,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       && accountRef.current?.kind === "logged-in";
     setIsRosterRetrying(true);
     try {
+      const humanValuePromise = transportRef.current === "connected"
+        ? client.call("syncHumanConversations").catch(async (error: unknown) => {
+            setNotice(error instanceof Error ? `Human sync unavailable: ${error.message}` : `Human sync unavailable: ${String(error)}`);
+            return await client.call("listHumanConversations");
+          })
+        : client.call("listHumanConversations");
       const [agentValue, humanValue] = await Promise.all([
         client.call("listAgents"),
-        client.call("listHumanConversations")
+        humanValuePromise
       ]);
       const projected = projectRendererAgents(agentValue);
       const projectedHumans = projectHumanConversations(humanValue);
@@ -2431,9 +2437,19 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === agentId);
     const agentName = humanConversation?.name ?? agentsRef.current.find((agent) => agent.id === agentId)?.name ?? UI_TEXT.title;
     try {
-      const page = humanConversation == null
-        ? await client.call("openAgentTail", { id: agentId, limit: 200 })
-        : await client.call("getHumanConversationTranscript", { conversationId: agentId });
+      let page: unknown;
+      if (humanConversation == null) {
+        page = await client.call("openAgentTail", { id: agentId, limit: 200 });
+      } else {
+        if (transportRef.current === "connected") {
+          try {
+            page = await client.call("syncHumanConversation", { conversationId: agentId });
+          } catch (error) {
+            setNotice(error instanceof Error ? `Human sync unavailable: ${error.message}` : `Human sync unavailable: ${String(error)}`);
+          }
+        }
+        page ??= await client.call("getHumanConversationTranscript", { conversationId: agentId });
+      }
       // Human conversations are read from the Host-local durable Session store.
       // A transport ready/reconnect notification may advance the Agent transport
       // generation while this local read is in flight; that must not discard an
