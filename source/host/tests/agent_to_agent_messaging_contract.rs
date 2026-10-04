@@ -12,9 +12,12 @@ use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
 };
 use mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane;
 
+static NEXT_TEMP_ROOT: AtomicUsize = AtomicUsize::new(0);
+
 fn temp_root()->std::path::PathBuf{
     let suffix=SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
-    std::env::temp_dir().join(format!("fabushi-agent-to-agent-{}-{suffix}",std::process::id()))
+    let ordinal=NEXT_TEMP_ROOT.fetch_add(1,Ordering::Relaxed);
+    std::env::temp_dir().join(format!("fabushi-agent-to-agent-{}-{suffix}-{ordinal}",std::process::id()))
 }
 fn profile(name:&str)->SandAgentProfile{SandAgentProfile{name:name.into(),description:String::new(),title:String::new(),avatar_shape:String::new(),avatar_color:String::new()}}
 
