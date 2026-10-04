@@ -13,6 +13,8 @@ pub struct CoordinatorProcessConfig {
     pub app_version: String,
     pub is_packaged: bool,
     pub data_dir: String,
+    #[serde(default)]
+    pub local_human_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -28,6 +30,14 @@ impl CoordinatorBootstrap {
         }
         if self.process_config.data_dir.trim().is_empty() {
             return Err("bootstrap.processConfig.dataDir must be non-empty".into());
+        }
+        if self
+            .process_config
+            .local_human_id
+            .as_deref()
+            .is_some_and(|value| value.trim().is_empty())
+        {
+            return Err("bootstrap.processConfig.localHumanId must be non-empty when provided".into());
         }
         Ok(self)
     }
