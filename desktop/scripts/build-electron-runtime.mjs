@@ -37,7 +37,7 @@ const common = {
 
 await build({
   ...common,
-  entryPoints: [path.join(repoRoot, "source", "product", "fabushi", "entry.ts")],
+  entryPoints: [path.join(repoRoot, "source", "electron-main", "entry.ts")],
   outfile: path.join(outMain, "main.cjs"),
 });
 
