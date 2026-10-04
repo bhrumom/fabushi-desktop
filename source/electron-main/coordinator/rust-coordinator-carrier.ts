@@ -48,6 +48,19 @@ function coordinatorExecutablePath(): string {
   return resolve(__dirname, "..", "..", "resources", "bin", coordinatorExecutableName());
 }
 
+function appHostExecutableName(): string {
+  return process.platform === "win32" ? "mahayana-app-host.exe" : "mahayana-app-host";
+}
+
+function appHostExecutablePath(): string {
+  const override = process.env.MAHAYANA_APP_HOST_BIN;
+  if (override != null && override.trim().length > 0) return override;
+  if (process.env.SAND_PACKAGED === "1") {
+    return join(process.resourcesPath, "bin", appHostExecutableName());
+  }
+  return resolve(__dirname, "..", "..", "resources", "bin", appHostExecutableName());
+}
+
 function writeEnvelope(
   child: ChildProcessWithoutNullStreams,
   channel: CarrierChannel,
@@ -102,7 +115,10 @@ utilityParentPort.once("message", (event) => {
     [`--bootstrap=${JSON.stringify(bootstrap.bootstrap)}`],
     {
       stdio: ["pipe", "pipe", "pipe"],
-      env: process.env,
+      env: {
+        ...process.env,
+        MAHAYANA_APP_HOST_BIN: appHostExecutablePath(),
+      },
       windowsHide: true,
     },
   );

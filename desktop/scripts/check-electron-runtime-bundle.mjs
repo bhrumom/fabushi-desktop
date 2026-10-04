@@ -41,7 +41,15 @@ if (!coordinatorCarrier.includes("process.parentPort")) {
   console.error("Rust Coordinator carrier must read process.parentPort in the emitted bundle.");
   process.exit(1);
 }
+if (!coordinatorCarrier.includes("MAHAYANA_APP_HOST_BIN")) {
+  console.error("Rust Coordinator carrier must bind the Mahayana app-host binary into the child environment.");
+  process.exit(1);
+}
+if (!coordinatorCarrier.includes("mahayana-app-host")) {
+  console.error("Rust Coordinator carrier must resolve the staged Mahayana app-host executable.");
+  process.exit(1);
+}
 
 console.log(
-  "Desktop runtime artifact graph passed: Electron main, preload, Rust Coordinator carrier, and Renderer are co-staged.",
+  "Desktop runtime artifact graph passed: Electron main, preload, Rust Coordinator carrier + app-host binary wiring, and Renderer are co-staged.",
 );
