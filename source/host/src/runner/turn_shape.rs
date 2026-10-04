@@ -420,9 +420,74 @@ pub fn checkpoint_ended_on_silent_tool_calls(
         return false;
     }
     let messages = match checkpoint {
+        RoutedProviderCheckpoint::Fabushi(checkpoint) => codex_checkpoint_messages(checkpoint),
         RoutedProviderCheckpoint::Cursor(checkpoint) => cursor_checkpoint_messages(checkpoint),
         RoutedProviderCheckpoint::Codex(checkpoint) => codex_checkpoint_messages(checkpoint),
         RoutedProviderCheckpoint::OpenRouter(checkpoint) => openrouter_checkpoint_messages(checkpoint),
     };
     turn_ended_on_silent_tool_calls(&messages)
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::extensions::inference::codex_direct_responses::{
+        CodexDirectCheckpoint, CodexDirectUsage,
+    };
+
+    fn responses_checkpoint() -> CodexDirectCheckpoint {
+        CodexDirectCheckpoint {
+            input: vec![
+                serde_json::json!({
+                    "type": "message",
+                    "role": "user",
+                    "content": "finish the task",
+                }),
+                serde_json::json!({
+                    "type": "function_call",
+                    "name": SAND_SEND_MESSAGE_TOOL_NAME,
+                    "call_id": "send-1",
+                    "arguments": "{}",
+                }),
+                serde_json::json!({
+                    "type": "function_call_output",
+                    "call_id": "send-1",
+                    "output": "{\"ok\":true}",
+                }),
+                serde_json::json!({
+                    "type": "function_call",
+                    "name": "ReadFile",
+                    "call_id": "read-1",
+                    "arguments": "{}",
+                }),
+                serde_json::json!({
+                    "type": "function_call_output",
+                    "call_id": "read-1",
+                    "output": "{\"ok\":true}",
+                }),
+            ],
+            text: String::new(),
+            response_id: "resp-1".into(),
+            usage: CodexDirectUsage::default(),
+            completed_steps: 2,
+            tool_calls_completed: 2,
+        }
+    }
+
+    #[test]
+    fn fabushi_checkpoint_preserves_responses_turn_shape_semantics() {
+        let checkpoint = responses_checkpoint();
+        let fabushi = checkpoint_ended_on_silent_tool_calls(
+            &RoutedProviderCheckpoint::Fabushi(checkpoint.clone()),
+            "",
+        );
+        let codex = checkpoint_ended_on_silent_tool_calls(
+            &RoutedProviderCheckpoint::Codex(checkpoint),
+            "",
+        );
+
+        assert!(fabushi);
+        assert_eq!(fabushi, codex);
+    }
 }
