@@ -3,6 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use crate::agent_isolation::{
@@ -1283,17 +1284,43 @@ impl ProductionSessionWorkers {
         if local_human_id == peer_human_id {
             return Err("human conversation participants must be distinct".into());
         }
-        let conversation_id = loop {
-            let candidate = Uuid::new_v4().to_string();
-            if !get_native_conversations_root(&self.agents_root)
-                .join(&candidate)
-                .exists()
-            {
-                break candidate;
-            }
-        };
+        let mut participant_ids = [local_human_id.to_string(), peer_human_id.to_string()];
+        participant_ids.sort();
+        let mut digest = Sha256::new();
+        for participant_id in &participant_ids {
+            digest.update((participant_id.len() as u64).to_be_bytes());
+            digest.update(participant_id.as_bytes());
+        }
+        let conversation_id = format!("human-direct-{:x}", digest.finalize());
         let db_path = get_native_conversation_db_path(&self.agents_root, &conversation_id)
             .map_err(|error| error.to_string())?;
+        if db_path.is_file() {
+            let owner = self.open_human_conversation_db_owner(&conversation_id)?;
+            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+            if !self.metadata_has_local_human(&metadata)? {
+                return Err("existing Human conversation does not contain the local identity".into());
+            }
+            let existing_participants = metadata
+                .get("participantIds")
+                .and_then(serde_json::Value::as_array)
+                .ok_or_else(|| "existing Human conversation participants are invalid".to_string())?;
+            if !existing_participants
+                .iter()
+                .any(|value| value.as_str() == Some(peer_human_id))
+            {
+                return Err("existing Human conversation does not contain the requested peer".into());
+            }
+            let existing_title = metadata
+                .get("title")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or(peer_human_id);
+            return Ok(serde_json::json!({
+                "id": conversation_id,
+                "kind": "human",
+                "title": existing_title,
+                "participantIds": metadata.get("participantIds").cloned().unwrap_or_else(|| serde_json::json!([])),
+            }));
+        }
         let conversation_dir = db_path
             .parent()
             .ok_or_else(|| "native conversation database has no parent".to_string())?;
