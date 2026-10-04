@@ -140,9 +140,28 @@ fn shape_hidden_nudge_turn_input(
     options: &TurnRunOptions,
     prompt: &str,
 ) -> ReplyNudgeTurnInput {
+    let pending_user_request = provider_messages
+        .iter()
+        .rev()
+        .find(|message| message.role == "user" && !message.content.trim().is_empty())
+        .or_else(|| {
+            lifecycle_messages
+                .iter()
+                .rev()
+                .find(|message| message.role == "user" && !message.content.trim().is_empty())
+        })
+        .map(|message| message.content.trim());
+    let nudge_content = pending_user_request.map_or_else(
+        || prompt.to_string(),
+        |request| {
+            format!(
+                "{prompt}\n\nThe user request still pending from this same turn is reproduced verbatim below. Answer this exact request when you invoke SendMessage; preserve every explicit marker, constraint, and requested output detail.\n\n--- BEGIN PENDING USER REQUEST ---\n{request}\n--- END PENDING USER REQUEST ---"
+            )
+        },
+    );
     let nudge = ProviderMessage {
         role: "user".into(),
-        content: prompt.to_string(),
+        content: nudge_content.clone(),
     };
     let mut shaped_lifecycle_messages = lifecycle_messages.to_vec();
     shaped_lifecycle_messages.push(nudge.clone());
@@ -150,7 +169,7 @@ fn shape_hidden_nudge_turn_input(
     shaped_provider_messages.push(nudge);
     let mut shaped_options = options.clone();
     shaped_options.message_id = None;
-    shaped_options.recent_message_text = Some(prompt.to_string());
+    shaped_options.recent_message_text = Some(nudge_content);
     shaped_options.recent_message_rich_text = None;
     shaped_options.recent_user_messages.clear();
     shaped_options.is_fork = false;

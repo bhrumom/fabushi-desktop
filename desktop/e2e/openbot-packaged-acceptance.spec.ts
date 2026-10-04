@@ -312,12 +312,14 @@ async function openAgent(page: Page, name: string): Promise<void> {
 }
 
 function completedAssistantTurns(page: Page): Locator {
-  // The shipping Grok-shaped renderer projects canonical transcript entries as
-  // assistant articles. A streaming/pending row is aria-busy; failed rows carry
-  // data-failed. Only a settled non-failed article may satisfy acceptance.
-  return page.locator(
+  // The shipping transcript has two canonical assistant completion shapes:
+  // ordinary assistant message articles, and SendMessage text-card articles
+  // whose inner message group owns data-role=assistant. Keep both fail-closed:
+  // a streaming/pending or failed article cannot satisfy packaged acceptance.
+  return page.locator([
     '[aria-label="Conversation transcript"] [role="article"][data-role="assistant"]:not([aria-busy="true"]):not([data-failed="true"])',
-  );
+    '[aria-label="Conversation transcript"] [role="article"]:not([aria-busy="true"]):not([data-failed="true"]):has(.sand-message[data-role="assistant"])',
+  ].join(', '));
 }
 
 async function submitTurn(page: Page, prompt: string): Promise<number> {

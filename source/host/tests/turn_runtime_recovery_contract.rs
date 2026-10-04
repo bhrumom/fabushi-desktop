@@ -155,7 +155,10 @@ fn frozen_reply_nudge_retries_are_epoch_fenced_and_bounded() {
 
 #[test]
 fn reply_nudge_checkpoint_input_is_hidden_from_the_original_user_identity() {
-    let lifecycle = vec![ProviderMessage { role: "user".into(), content: "original".into() }];
+    let lifecycle = vec![ProviderMessage {
+        role: "user".into(),
+        content: "original constraint FABUSHI-MARKER-7421".into(),
+    }];
     let provider = lifecycle.clone();
     let options = mahayana_host_runtime::runner::TurnRunOptions {
         inference_request_id: Some("request-1".into()),
@@ -171,11 +174,14 @@ fn reply_nudge_checkpoint_input_is_hidden_from_the_original_user_identity() {
         has_reply_context: true,
     };
     let shaped = shape_reply_nudge_turn_input(&lifecycle, &provider, &options);
-    assert_eq!(shaped.lifecycle_messages.last().unwrap().content, REPLY_NUDGE_PROMPT);
-    assert_eq!(shaped.provider_messages.last().unwrap().content, REPLY_NUDGE_PROMPT);
+    let shaped_nudge = shaped.lifecycle_messages.last().unwrap().content.as_str();
+    assert!(shaped_nudge.starts_with(REPLY_NUDGE_PROMPT));
+    assert!(shaped_nudge.contains("--- BEGIN PENDING USER REQUEST ---"));
+    assert!(shaped_nudge.contains("original constraint FABUSHI-MARKER-7421"));
+    assert_eq!(shaped.provider_messages.last().unwrap().content, shaped_nudge);
     assert_eq!(shaped.options.inference_request_id.as_deref(), Some("request-1"));
     assert_eq!(shaped.options.message_id, None);
-    assert_eq!(shaped.options.recent_message_text.as_deref(), Some(REPLY_NUDGE_PROMPT));
+    assert_eq!(shaped.options.recent_message_text.as_deref(), Some(shaped_nudge));
     assert_eq!(shaped.options.recent_message_rich_text, None);
     assert!(shaped.options.recent_user_messages.is_empty());
     assert_eq!(shaped.options.turn_started_at_ms, Some(41));
@@ -191,7 +197,7 @@ fn reply_nudge_checkpoint_input_is_hidden_from_the_original_user_identity() {
 fn closing_send_nudge_uses_the_same_hidden_checkpoint_identity_rules() {
     let lifecycle = vec![ProviderMessage {
         role: "user".into(),
-        content: "original".into(),
+        content: "original closing constraint CLOSING-MARKER-5937".into(),
     }];
     let provider = lifecycle.clone();
     let options = mahayana_host_runtime::runner::TurnRunOptions {
@@ -208,14 +214,11 @@ fn closing_send_nudge_uses_the_same_hidden_checkpoint_identity_rules() {
         has_reply_context: true,
     };
     let shaped = shape_closing_send_nudge_turn_input(&lifecycle, &provider, &options);
-    assert_eq!(
-        shaped.lifecycle_messages.last().unwrap().content,
-        CLOSING_SEND_NUDGE_PROMPT
-    );
-    assert_eq!(
-        shaped.provider_messages.last().unwrap().content,
-        CLOSING_SEND_NUDGE_PROMPT
-    );
+    let shaped_nudge = shaped.lifecycle_messages.last().unwrap().content.as_str();
+    assert!(shaped_nudge.starts_with(CLOSING_SEND_NUDGE_PROMPT));
+    assert!(shaped_nudge.contains("--- BEGIN PENDING USER REQUEST ---"));
+    assert!(shaped_nudge.contains("original closing constraint CLOSING-MARKER-5937"));
+    assert_eq!(shaped.provider_messages.last().unwrap().content, shaped_nudge);
     assert_eq!(
         shaped.options.inference_request_id.as_deref(),
         Some("request-2")
@@ -223,7 +226,7 @@ fn closing_send_nudge_uses_the_same_hidden_checkpoint_identity_rules() {
     assert_eq!(shaped.options.message_id, None);
     assert_eq!(
         shaped.options.recent_message_text.as_deref(),
-        Some(CLOSING_SEND_NUDGE_PROMPT)
+        Some(shaped_nudge)
     );
     assert_eq!(shaped.options.recent_message_rich_text, None);
     assert_eq!(shaped.options.turn_started_at_ms, Some(41));
