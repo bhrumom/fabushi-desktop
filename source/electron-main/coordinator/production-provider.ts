@@ -43,7 +43,6 @@ import {
   createCoordinatorTelemetrySinks,
 } from "./coordinator-telemetry.js";
 import { createElectronDesktopConnectivity } from "./desktop-connectivity.js";
-import { createProductionHumanIdentityStore } from "../account/human-identity.js";
 import type { BoxConnectionInfo } from "../../shared/node/egress-tunnel/box-connection.js";
 
 export interface ProductionCoordinatorAuthStatus extends CoordinatorAuthStatus {
@@ -368,7 +367,6 @@ export function createProductionCoordinatorAdapter<
       if (typeof dataDir !== "string" || dataDir.length === 0) {
         throw new Error("Production coordinator data directory is empty.");
       }
-      const humanIdentities = createProductionHumanIdentityStore(context.native.app.getPath("userData"));
       let localHumanId: string | null = null;
       const accountService = context.requireAccount();
       requiredFunction(
@@ -503,7 +501,8 @@ export function createProductionCoordinatorAdapter<
         createRuntime,
         authorizeAccount: async (slot, transition) => {
           const authorized = await ports.account.authorizeAccount(slot, transition, context);
-          localHumanId = authorized ? humanIdentities.resolve(slot) : null;
+          // Coordinator account slots are derived from the settled Fabushi authId (falling back to email only for legacy providers). Reuse that account identity across devices; DeviceId remains a separate session credential field.
+          localHumanId = authorized ? slot : null;
           return authorized;
         },
         revokeRefusedAccount: () => ports.account.revokeRefusedAccount(context),
