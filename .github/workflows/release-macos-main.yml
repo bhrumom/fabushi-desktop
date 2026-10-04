@@ -300,12 +300,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          app="$(find desktop/release -maxdepth 4 -type d -name '*.app' -print -quit)"
-          test -n "$app"
-          executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")"
-          executable="$app/Contents/MacOS/$executable_name"
+          source_app="$(find desktop/release -maxdepth 4 -type d -name '*.app' -print -quit)"
+          test -n "$source_app"
+
+          # Packaged macOS production startup intentionally prompts to move an app
+          # that is launched outside /Applications before creating BrowserWindow.
+          # Exercise the exact signed/notarized candidate as an installed app
+          # instead of bypassing that shipping startup contract in the test.
+          installed_app="/Applications/Fabushi Candidate ${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.app"
+          rm -rf "$installed_app"
+          /usr/bin/ditto "$source_app" "$installed_app"
+          codesign --verify --deep --strict --verbose=2 "$installed_app"
+          xcrun stapler validate "$installed_app"
+          spctl --assess --type execute --verbose=4 "$installed_app"
+
+          executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$installed_app/Contents/Info.plist")"
+          executable="$installed_app/Contents/MacOS/$executable_name"
           test -x "$executable"
           echo "executable=$executable" >> "$GITHUB_OUTPUT"
+          echo "Installed candidate app: $installed_app" >> "$GITHUB_STEP_SUMMARY"
           echo "Candidate executable: $executable" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Provision bounded production CI account session
@@ -348,7 +361,7 @@ jobs:
           OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
           OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
           OBF_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-candidate-acceptance
-          FABUSHI_ELECTRON_EXECUTABLE: ${{ github.workspace }}/${{ steps.candidate.outputs.executable }}
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ steps.candidate.outputs.executable }}
           FABUSHI_FEATURE_HOST_MODE: production
           FABUSHI_E2E: '0'
         run: |
