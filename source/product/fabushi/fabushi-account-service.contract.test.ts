@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   DEFAULT_FABUSHI_API_BASE_URL,
+  DEFAULT_FABUSHI_RESPONSES_URL,
   normalizeFabushiApiBaseUrl,
   normalizeFabushiCiSession,
   normalizeFabushiSession,
@@ -56,4 +57,15 @@ test("Fabushi API origin policy is HTTPS-first and rejects credential/query smug
   assert.throws(() => normalizeFabushiApiBaseUrl("https://user:secret@api.ombhrum.com"), /credentials/);
   assert.throws(() => normalizeFabushiApiBaseUrl("https://api.ombhrum.com?token=secret"), /query/);
   assert.throws(() => normalizeFabushiApiBaseUrl("https://api.ombhrum.com/#secret"), /fragment/);
+});
+
+
+test("Fabushi production Responses URL targets the deployed Codex-compatible first-party adapter", () => {
+  assert.equal(
+    DEFAULT_FABUSHI_RESPONSES_URL,
+    "https://api.ombhrum.com/codex-deepseek/v1/responses",
+  );
+  const endpoint = new URL(DEFAULT_FABUSHI_RESPONSES_URL);
+  assert.equal(endpoint.origin, new URL(DEFAULT_FABUSHI_API_BASE_URL).origin);
+  assert.equal(endpoint.pathname, "/codex-deepseek/v1/responses");
 });

@@ -1,4 +1,5 @@
 export const DEFAULT_FABUSHI_API_BASE_URL = "https://api.ombhrum.com";
+export const DEFAULT_FABUSHI_RESPONSES_URL = `${DEFAULT_FABUSHI_API_BASE_URL}/codex-deepseek/v1/responses`;
 
 export interface FabushiSession {
   readonly accessToken: string;

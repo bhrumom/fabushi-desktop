@@ -14,7 +14,7 @@ import type {
   ElectronProductionAdapterBindings,
 } from "../../electron-main/production-adapters.js";
 import {
-  DEFAULT_FABUSHI_API_BASE_URL,
+  DEFAULT_FABUSHI_RESPONSES_URL,
   FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV,
   FabushiAuthService,
 } from "./fabushi-account-service.js";
@@ -22,7 +22,6 @@ import {
 export const FABUSHI_RESPONSES_URL_ENV = "FABUSHI_RESPONSES_URL";
 export const FABUSHI_PRODUCT_MODE_ENV = "FABUSHI_PRODUCT_MODE";
 export const SAND_PRODUCT_FEATURE_GATE_DEFAULTS_ENV = "SAND_PRODUCT_FEATURE_GATE_DEFAULTS";
-export const DEFAULT_FABUSHI_RESPONSES_URL = `${DEFAULT_FABUSHI_API_BASE_URL}/v1/ai/responses`;
 
 function accountRuntimeOf(
   context: Pick<ProductionServiceContext, "requireCoordinator">,
