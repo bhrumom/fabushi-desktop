@@ -1636,7 +1636,7 @@ impl ProductionSessionWorkers {
         if text.is_empty() && attachments.is_empty() {
             return Err("sendHumanMessage requires text or attachments".into());
         }
-        if client_nonce.len() > 512 {
+        if client_nonce.len() > 200 {
             return Err("sendHumanMessage clientNonce is too long".into());
         }
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
@@ -1699,6 +1699,28 @@ impl ProductionSessionWorkers {
             }
             return Err("sendHumanMessage clientNonce already identifies different content".into());
         }
+
+        if let Some(client) = self.shipping_native_messaging()? {
+            if normalized_reply.is_some() || !normalized_attachments.is_empty() {
+                return Err(
+                    "Fabushi native messaging backend does not yet accept reply or attachment metadata; refusing local-only divergence"
+                        .into(),
+                );
+            }
+            let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+            let remote = client.send_direct_message(&peer_human_id, text, client_nonce)?;
+            let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
+            let remote_recipient = fabushi_identity_text(&remote.recipient_user_id)?;
+            if remote_sender != sender_id
+                || remote_recipient != peer_human_id
+                || remote.text.trim() != text
+                || remote.client_request_id.as_deref() != Some(client_nonce)
+            {
+                return Err("Fabushi Human message backend returned mismatched persisted content".into());
+            }
+            return self.materialize_remote_human_message(&owner, &remote);
+        }
+
         let timestamp_ms = composed_at_ms.unwrap_or_else(|| {
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
