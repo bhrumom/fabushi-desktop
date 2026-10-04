@@ -5,7 +5,7 @@ use std::future::Future;
 use std::io::{BufRead, BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::thread;
 use std::time::Duration;
 
@@ -268,13 +268,38 @@ impl From<CodexDirectError> for ProviderSessionError {
 
 pub const PROVIDER_IO_CANCEL_POLL_MS: u64 = 50;
 
-fn provider_io_runtime() -> Result<Runtime, ProviderSessionError> {
-    TokioRuntimeBuilder::new_current_thread()
-        .enable_io()
-        .enable_time()
-        .build()
+static PROVIDER_IO_RUNTIME: OnceLock<Result<Runtime, String>> = OnceLock::new();
+static RESPONSES_HTTP_CLIENT: OnceLock<Result<AsyncClient, String>> = OnceLock::new();
+
+fn provider_io_runtime() -> Result<&'static Runtime, ProviderSessionError> {
+    PROVIDER_IO_RUNTIME
+        .get_or_init(|| {
+            TokioRuntimeBuilder::new_multi_thread()
+                .worker_threads(1)
+                .thread_name("mahayana-provider-io")
+                .enable_io()
+                .enable_time()
+                .build()
+                .map_err(|error| error.to_string())
+        })
+        .as_ref()
         .map_err(|error| ProviderSessionError::Transport(format!(
             "Could not create provider I/O runtime: {error}"
+        )))
+}
+
+fn responses_http_client() -> Result<&'static AsyncClient, ProviderSessionError> {
+    RESPONSES_HTTP_CLIENT
+        .get_or_init(|| {
+            AsyncClient::builder()
+                .pool_idle_timeout(Duration::from_secs(90))
+                .tcp_keepalive(Duration::from_secs(60))
+                .build()
+                .map_err(|error| error.to_string())
+        })
+        .as_ref()
+        .map_err(|error| ProviderSessionError::Transport(format!(
+            "Could not create shared Responses HTTP client: {error}"
         )))
 }
 
@@ -896,9 +921,7 @@ struct CodexHttpTransport {
 
 impl CodexHttpTransport {
     fn with_credentials(credentials: ResponsesHttpCredentials) -> Result<Self, ProviderSessionError> {
-        let client = AsyncClient::builder()
-            .build()
-            .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
+        let client = responses_http_client()?.clone();
         Ok(Self { client, credentials })
     }
 
@@ -2299,7 +2322,7 @@ fn run_claude_code_provider_text(
 mod tests {
     use super::{
         RoutedProvider, await_cancelable_provider_io, jwt_audience,
-        provider_io_runtime, toml_string_setting,
+        provider_io_runtime, responses_http_client, toml_string_setting,
     };
     use base64::Engine;
     use base64::engine::general_purpose::URL_SAFE_NO_PAD;
@@ -2337,6 +2360,26 @@ mod tests {
         let token = format!("header.{payload}.signature");
         assert_eq!(jwt_audience(&token).as_deref(), Some("client-123"));
     }
+    #[test]
+    fn provider_io_runtime_is_process_shared() {
+        let first = provider_io_runtime().expect("first provider I/O runtime");
+        let second = provider_io_runtime().expect("second provider I/O runtime");
+        assert!(
+            std::ptr::eq(first, second),
+            "provider turns must reuse one process-owned Tokio runtime so HTTP keep-alive survives between turns"
+        );
+    }
+
+    #[test]
+    fn responses_http_client_is_process_shared() {
+        let first = responses_http_client().expect("first Responses HTTP client");
+        let second = responses_http_client().expect("second Responses HTTP client");
+        assert!(
+            std::ptr::eq(first, second),
+            "provider turns must reuse one process-owned HTTP client and connection pool"
+        );
+    }
+
     #[test]
     fn cancellable_provider_io_returns_while_the_io_future_is_silent() {
         let checks = Cell::new(0_u32);

@@ -31,7 +31,7 @@ sha2 = "0.10"
 subtle = "2"
 tar = "0.4"
 thiserror = "2"
-tokio = { version = "1", features = ["rt", "time", "net", "sync", "macros"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "time", "net", "sync", "macros"] }
 uuid = { version = "1", features = ["v4"] }
 url = "2"
 unicode-normalization = "0.1"
