@@ -22,6 +22,7 @@ interface BrowserAttempt {
 }
 export {
   DEFAULT_FABUSHI_API_BASE_URL,
+  DEFAULT_FABUSHI_RESPONSES_URL,
   normalizeFabushiApiBaseUrl,
   normalizeFabushiCiSession,
   normalizeFabushiSession,
