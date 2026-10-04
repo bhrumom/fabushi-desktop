@@ -79,7 +79,9 @@ use super::session_profile_files::{
 };
 use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_bytes;
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
-use super::native_messaging::{FabushiNativeMessagingClient, FabushiRemoteHumanMessage};
+use super::native_messaging::{
+    FabushiNativeMessagingClient, FabushiRemoteHumanMessage, fabushi_identity_text,
+};
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
@@ -1268,6 +1270,177 @@ impl ProductionSessionWorkers {
 
     fn native_conversation_owner_key(conversation_id: &str) -> String {
         format!("conversation:{conversation_id}")
+    }
+
+    fn shipping_native_messaging(&self) -> Result<Option<&FabushiNativeMessagingClient>, String> {
+        match (&self.native_messaging, self.native_messaging_required) {
+            (Some(client), _) => Ok(Some(client.as_ref())),
+            (None, true) => Err(self.native_messaging_error.clone().unwrap_or_else(|| {
+                "Fabushi native messaging is required but unavailable.".to_string()
+            })),
+            (None, false) => Ok(None),
+        }
+    }
+
+    fn peer_human_id_from_metadata(
+        &self,
+        metadata: &serde_json::Value,
+    ) -> Result<String, String> {
+        let local = self.local_human_id()?;
+        metadata
+            .get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .and_then(|participants| {
+                participants
+                    .iter()
+                    .filter_map(serde_json::Value::as_str)
+                    .find(|participant| *participant != local)
+            })
+            .map(str::to_string)
+            .ok_or_else(|| "Human conversation is missing its peer identity".to_string())
+    }
+
+    fn materialize_remote_human_message(
+        &self,
+        owner: &SandAgentDb,
+        remote: &FabushiRemoteHumanMessage,
+    ) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?;
+        let remote_id = fabushi_identity_text(&remote.id)?;
+        let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
+        let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
+        if sender_id != local_human_id && recipient_id != local_human_id {
+            return Err("remote Human message does not belong to the local Fabushi account".into());
+        }
+        let timestamp_ms = chrono::DateTime::parse_from_rfc3339(&remote.created_at)
+            .map_err(|error| format!("remote Human message timestamp is invalid: {error}"))?
+            .timestamp_millis() as f64;
+        let entry_id = format!("human-server-message:{remote_id}");
+        let mut entry = serde_json::json!({
+            "id": entry_id,
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": sender_id,
+            "content": remote.text,
+            "timestampMs": timestamp_ms,
+            "delivery": "sent",
+            "remoteMessageId": remote_id,
+            "remoteCreatedAt": remote.created_at,
+        });
+        let object = entry
+            .as_object_mut()
+            .ok_or_else(|| "remote Human message projection failed".to_string())?;
+        if let Some(author_name) = remote
+            .sender_username
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            object.insert("authorName".into(), serde_json::json!(author_name));
+        }
+        if let Some(client_nonce) = remote
+            .client_request_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            object.insert("clientNonce".into(), serde_json::json!(client_nonce));
+        }
+        if let Some(read_at) = remote
+            .read_at
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            object.insert("readAt".into(), serde_json::json!(read_at));
+        }
+        let existing = owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        if let Some(current) = existing.iter().find(|candidate| {
+            candidate.get("id").and_then(serde_json::Value::as_str)
+                == entry.get("id").and_then(serde_json::Value::as_str)
+        }) {
+            return Ok(current.clone());
+        }
+        if let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) {
+            if let Some(current) = existing.iter().find(|candidate| {
+                candidate.get("clientNonce").and_then(serde_json::Value::as_str)
+                    == Some(client_nonce)
+            }) {
+                if current.get("remoteMessageId").is_some() {
+                    return Ok(current.clone());
+                }
+                return Err(
+                    "local Human message already uses the server clientRequestId without a remote identity"
+                        .into(),
+                );
+            }
+        }
+        if !owner
+            .append_transcript_entry(&entry)
+            .map_err(|error| error.to_string())?
+        {
+            let replay = owner
+                .get_transcript_entries()
+                .map_err(|error| error.to_string())?
+                .into_iter()
+                .find(|candidate| candidate.get("id") == entry.get("id"))
+                .ok_or_else(|| "remote Human message was not durably materialized".to_string())?;
+            return Ok(replay);
+        }
+        let _ = owner
+            .set_metadata("lastActivityAt", serde_json::json!(timestamp_ms))
+            .map_err(|error| error.to_string())?;
+        Ok(entry)
+    }
+
+    pub fn sync_human_conversation(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let Some(client) = self.shipping_native_messaging()? else {
+            return owner.get_transcript_entries().map_err(|error| error.to_string());
+        };
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        for remote in client.list_direct_messages(&peer_human_id, None, 200)? {
+            self.materialize_remote_human_message(&owner, &remote)?;
+        }
+        owner.get_transcript_entries().map_err(|error| error.to_string())
+    }
+
+    pub fn sync_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
+        let Some(client) = self.shipping_native_messaging()? else {
+            return self.list_human_conversations();
+        };
+        let identity = client.identity()?;
+        if identity.user_id != self.local_human_id()? {
+            return Err(format!(
+                "Fabushi native messaging credential user {} does not match active Human identity {}",
+                identity.user_id,
+                self.local_human_id()?
+            ));
+        }
+        for friend in client.list_friends()? {
+            let peer_human_id = fabushi_identity_text(&friend.user_id)?;
+            let title = friend.display_name.trim();
+            let conversation = self.create_human_conversation(
+                &peer_human_id,
+                if title.is_empty() { &friend.username } else { title },
+            )?;
+            let conversation_id = conversation
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "synced Human conversation omitted its id".to_string())?;
+            self.sync_human_conversation(conversation_id)?;
+        }
+        self.list_human_conversations()
     }
 
     pub fn create_human_conversation(
