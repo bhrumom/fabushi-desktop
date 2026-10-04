@@ -168,13 +168,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          support="$RUNNER_TEMP/fabushi-asr-support"
-          rm -rf "$support"
-          git clone --filter=blob:none --no-checkout "https://github.com/$SUPPORT_REPO.git" "$support"
-          git -C "$support" sparse-checkout init --cone
-          git -C "$support" sparse-checkout set desktop/electron
-          git -C "$support" checkout "$SUPPORT_SHA"
-          manifest="$support/desktop/electron/offline-asr-engine.json"
+          manifest="source/packaging/offline-asr-engine.json"
           test -f "$manifest"
           repo="$(node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(m.whisperCpp.repository)' "$manifest")"
           commit="$(node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(m.whisperCpp.commit)' "$manifest")"
