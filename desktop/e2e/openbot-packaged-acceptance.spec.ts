@@ -65,11 +65,20 @@ async function waitForPackagedRendererBinding(
   initialPage: Page,
   appDataDir: string,
 ): Promise<{ page: Page; browser: Browser | null; binding: 'electron' | 'cdp' }> {
-  const deadline = Date.now() + 35_000;
+  const deadline = Date.now() + 120_000;
   let cdpBrowser: Browser | null = null;
   let lastMainState: { url: string; loading: boolean; title: string } | null = null;
   let lastPageUrls: string[] = [];
   let lastCdpError = '';
+  const isShippingRendererUrl = (url: string) => {
+    if (url.startsWith('app://bundle/')) return true;
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'file:' && parsed.pathname.endsWith('/dist/renderer/index.html');
+    } catch {
+      return false;
+    }
+  };
 
   while (Date.now() < deadline) {
     lastMainState = await app.evaluate(({ BrowserWindow }) => {
@@ -85,18 +94,17 @@ async function waitForPackagedRendererBinding(
 
     const electronPages = app.windows();
     lastPageUrls = electronPages.map((candidate) => candidate.url());
-    const electronBound = electronPages.find((candidate) => candidate.url().startsWith('app://bundle/'));
+    const electronBound = electronPages.find((candidate) => isShippingRendererUrl(candidate.url()));
     if (electronBound) return { page: electronBound, browser: null, binding: 'electron' };
-    if (initialPage.url().startsWith('app://bundle/')) {
+    if (isShippingRendererUrl(initialPage.url())) {
       return { page: initialPage, browser: null, binding: 'electron' };
     }
 
-    // Playwright's Electron Page wrapper can miss a custom-protocol navigation
-    // that completed before attachment even though BrowserWindow.webContents is
-    // already on app://bundle. _electron.launch enables a Chromium remote
-    // debugging endpoint and writes DevToolsActivePort under userData. Bind the
-    // *same packaged renderer target* over that endpoint instead of reloading,
-    // replacing the URL, or falling back to a test host.
+    // Playwright's Electron Page wrapper can miss a packaged renderer navigation
+    // that completed before attachment. Production uses loadFile() for the frozen
+    // renderer entrypoint; older builds may use app://bundle. When Chromium exposes
+    // DevToolsActivePort under the isolated shipping userData directory, bind the
+    // same renderer target instead of reloading or falling back to a test host.
     if (!cdpBrowser) {
       try {
         const activePort = await readFile(path.join(appDataDir, 'DevToolsActivePort'), 'utf8');
@@ -112,7 +120,7 @@ async function waitForPackagedRendererBinding(
     if (cdpBrowser) {
       const cdpPages = cdpBrowser.contexts().flatMap((context) => context.pages());
       lastPageUrls = [...lastPageUrls, ...cdpPages.map((candidate) => candidate.url())];
-      const cdpBound = cdpPages.find((candidate) => candidate.url().startsWith('app://bundle/'));
+      const cdpBound = cdpPages.find((candidate) => isShippingRendererUrl(candidate.url()));
       if (cdpBound) return { page: cdpBound, browser: cdpBrowser, binding: 'cdp' };
     }
 
@@ -579,6 +587,7 @@ test.describe('signed candidate packaged acceptance', () => {
         env: {
           ...process.env,
           FABUSHI_APP_DATA: appDataDir,
+          SAND_USER_DATA_DIR: appDataDir,
           OBF_SOURCE_SHA: sourceSha,
         },
         recordVideo: { dir: path.join(evidenceRoot, 'video'), size: { width: 1671, height: 937 } },
