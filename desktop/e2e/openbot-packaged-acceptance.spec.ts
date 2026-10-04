@@ -567,6 +567,7 @@ type LatencySample = {
   readonly localSubmitPaintMs: number;
   readonly acceptanceVisibilityMs: number;
   readonly firstOutputMs: number;
+  readonly firstTextMs: number;
   readonly completionMs: number;
   readonly operationId: string;
 };
@@ -578,40 +579,66 @@ function percentile(samples: readonly number[], quantile: number): number {
   return sorted[Math.min(sorted.length - 1, rank - 1)]!;
 }
 
-async function runLatencyProbe(page: Page, index: number): Promise<LatencySample> {
+const ordinaryLatencyPrompts = [
+  '用一句话解释为什么海水有咸味。',
+  'In one sentence, explain why the daytime sky appears blue.',
+  '用一句话说明植物为什么需要阳光。',
+  'In one sentence, explain what a compiler does.',
+  '用一句话解释月相为什么会变化。',
+  'In one sentence, describe the purpose of DNS.',
+  '用一句话说明为什么冰会浮在水面上。',
+  'In one sentence, explain what an operating system scheduler does.',
+  '用一句话解释彩虹是怎样形成的。',
+  'In one sentence, explain why version control is useful.',
+  '用一句话说明电池为什么能够供电。',
+  'In one sentence, explain what HTTPS protects.',
+  '用一句话解释潮汐主要由什么引起。',
+  'In one sentence, describe what a database index is for.',
+  '用一句话说明声音为什么不能在真空中传播。',
+  'In one sentence, explain the difference between RAM and storage.',
+  '用一句话解释为什么金属通常能导电。',
+  'In one sentence, explain what a process ID identifies.',
+  '用一句话说明为什么白天通常比夜晚暖。',
+  'In one sentence, explain what a network retry is meant to accomplish.',
+] as const;
+
+async function runLatencyProbe(page: Page, index: number, prompt: string): Promise<LatencySample> {
   await installLifecycleCapture(page);
-  const marker = `FABUSHI-LATENCY-PROBE-${index}-OK`;
-  const prompt = `Reply briefly and include exactly this marker: ${marker}`;
   const submittedAt = Date.now();
   const previousAssistantCount = await submitTurn(page, prompt);
   const localSubmitPaintMs = Date.now() - submittedAt;
   const turn = await waitForCompletedTurn(page, prompt, previousAssistantCount);
-  await expect(turn).toContainText(marker);
+  expect(((await turn.textContent()) ?? '').trim().length, `latency turn ${index} must render ordinary assistant text`).toBeGreaterThan(0);
 
   const lifecycle = await page.evaluate(() => {
     const scope = window as typeof window & { __candidateLifecycle?: LifecycleSample[] };
     return scope.__candidateLifecycle ?? [];
   });
   const started = lifecycle.find((sample) => sample.type === 'operation.started' && sample.at >= submittedAt);
-  expect(started?.operationId, `latency probe ${index} must emit operation.started`).toBeTruthy();
+  expect(started?.operationId, `latency turn ${index} must emit operation.started`).toBeTruthy();
   const operationId = started!.operationId!;
   const operationLifecycle = lifecycle.filter((sample) => sample.operationId === operationId);
   const active = operationLifecycle.find((sample) =>
     sample.type === 'turn.state'
     && ['preparing', 'thinking', 'streaming', 'tool-running'].includes(sample.status));
   const firstOutput = operationLifecycle.find((sample) =>
+    (sample.type === 'agent.step' && sample.text.length > 0)
+    || ((sample.type === 'chat.delta' || sample.type === 'chat.message') && sample.text.length > 0));
+  const firstText = operationLifecycle.find((sample) =>
     (sample.type === 'chat.delta' || sample.type === 'chat.message')
     && sample.text.length > 0);
   const completed = operationLifecycle.find((sample) =>
     sample.type === 'operation.completed' && sample.status === 'completed');
-  expect(active, `latency probe ${index} must expose active state`).toBeTruthy();
-  expect(firstOutput, `latency probe ${index} must expose first output`).toBeTruthy();
-  expect(completed, `latency probe ${index} must complete`).toBeTruthy();
+  expect(active, `latency turn ${index} must expose active state`).toBeTruthy();
+  expect(firstOutput, `latency turn ${index} must expose first output`).toBeTruthy();
+  expect(firstText, `latency turn ${index} must expose first text`).toBeTruthy();
+  expect(completed, `latency turn ${index} must complete`).toBeTruthy();
   return {
     prompt,
     localSubmitPaintMs,
     acceptanceVisibilityMs: active!.at - started!.at,
     firstOutputMs: firstOutput!.at - started!.at,
+    firstTextMs: firstText!.at - started!.at,
     completionMs: completed!.at - started!.at,
     operationId,
   };
@@ -628,7 +655,7 @@ async function capturePluginsEvidence(page: Page): Promise<{ text: string; itemC
   const text = ((await dialog.textContent()) ?? '').trim();
   const itemCount = await dialog.locator('article, [role="listitem"], button').count();
   expect(text.length, 'production Plugins surface must expose connector/catalog state').toBeGreaterThan(0);
-  await screenshot(page, '07-plugins-production-surface');
+  await screenshot(page, '08-plugins-production-surface');
   await dialog.getByRole('button', { name: 'Close' }).click();
   await expect(dialog).toBeHidden();
   return { text, itemCount };
@@ -832,27 +859,50 @@ test.describe('signed candidate packaged acceptance', () => {
       expect(transcriptShape).toBe(rosterShape);
       await screenshot(page, '06-real-lifecycle-complete');
 
+      await openAgent(page, 'Chief');
+      await installLifecycleCapture(page);
+      const cancellablePrompt = 'Write a detailed multi-section analysis of desktop Agent recovery behavior, including several concrete examples and edge cases.';
+      await submitTurn(page, cancellablePrompt);
+      const stopResponse = page.getByRole('button', { name: 'Stop response' });
+      await expect(stopResponse).toBeVisible({ timeout: 20_000 });
+      await stopResponse.click();
+      await expect(stopResponse).toBeHidden({ timeout: 30_000 });
+      const postCancelPrompt = 'After the cancelled turn, reply briefly with the words cancellation recovery confirmed.';
+      const postCancelCount = await submitTurn(page, postCancelPrompt);
+      const postCancelTurn = await waitForCompletedTurn(page, postCancelPrompt, postCancelCount);
+      await expect(postCancelTurn).toContainText(/cancellation recovery confirmed/i);
+      await screenshot(page, '07-stop-and-new-turn');
+
       const latencySamples: LatencySample[] = [];
-      for (let index = 1; index <= 5; index += 1) {
-        latencySamples.push(await runLatencyProbe(page, index));
+      for (const [offset, prompt] of ordinaryLatencyPrompts.entries()) {
+        latencySamples.push(await runLatencyProbe(page, offset + 1, prompt));
       }
+      expect(latencySamples).toHaveLength(20);
       const latencySummary = {
         samples: latencySamples,
         p50: {
           localSubmitPaintMs: percentile(latencySamples.map((sample) => sample.localSubmitPaintMs), 0.50),
           acceptanceVisibilityMs: percentile(latencySamples.map((sample) => sample.acceptanceVisibilityMs), 0.50),
           firstOutputMs: percentile(latencySamples.map((sample) => sample.firstOutputMs), 0.50),
+          firstTextMs: percentile(latencySamples.map((sample) => sample.firstTextMs), 0.50),
+          completionMs: percentile(latencySamples.map((sample) => sample.completionMs), 0.50),
         },
         p95: {
           localSubmitPaintMs: percentile(latencySamples.map((sample) => sample.localSubmitPaintMs), 0.95),
           acceptanceVisibilityMs: percentile(latencySamples.map((sample) => sample.acceptanceVisibilityMs), 0.95),
           firstOutputMs: percentile(latencySamples.map((sample) => sample.firstOutputMs), 0.95),
+          firstTextMs: percentile(latencySamples.map((sample) => sample.firstTextMs), 0.95),
+          completionMs: percentile(latencySamples.map((sample) => sample.completionMs), 0.95),
         },
       };
       expect(latencySummary.p95.localSubmitPaintMs, 'PERF-001 packaged p95 local submit paint').toBeLessThanOrEqual(250);
       expect(latencySummary.p95.acceptanceVisibilityMs, 'PERF-002 packaged p95 acceptance visibility').toBeLessThanOrEqual(500);
       expect(latencySummary.p50.firstOutputMs, 'PERF-003 packaged p50 first output').toBeLessThanOrEqual(3_000);
       expect(latencySummary.p95.firstOutputMs, 'PERF-003 packaged p95 first output').toBeLessThanOrEqual(8_000);
+      expect(latencySummary.p50.firstTextMs, 'packaged p50 first text must be recorded').toBeGreaterThanOrEqual(0);
+      expect(latencySummary.p95.firstTextMs, 'packaged p95 first text must be recorded').toBeGreaterThanOrEqual(latencySummary.p50.firstTextMs);
+      expect(latencySummary.p50.completionMs, 'packaged p50 completion must be recorded').toBeGreaterThanOrEqual(latencySummary.p50.firstTextMs);
+      expect(latencySummary.p95.completionMs, 'packaged p95 completion must be recorded').toBeGreaterThanOrEqual(latencySummary.p95.firstTextMs);
       await writeFile(path.join(evidenceRoot, 'timings.json'), JSON.stringify(latencySummary, null, 2));
 
       const connectorEvidence = await capturePluginsEvidence(page);

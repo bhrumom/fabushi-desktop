@@ -3648,7 +3648,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             onToggleSettings={activeAgent.isGroup
               ? groupInfoPaneRoute == null ? undefined : () => { setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setGroupInfoPaneOpen((open) => !open); }
               : bridge == null ? undefined : () => { setGroupInfoPaneOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setAgentSettingsOpen(true); }}
-            trailing={activeAgent.isGroup || bridge == null || agentChannelsController == null ? null : <SandButton aria-controls="sand-conversation-details" aria-expanded={channelsInfoPaneOpen} aria-label="Channels" data-info-row="channels" onClick={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setChannelsInfoPaneOpen((open) => !open); }} size="sm" variant="secondary"><SandIcon name="chat-bubbles" size="sm" />Channels</SandButton>}
+            trailing={<>
+              {activeAgent.isRunning && client != null ? <SandButton aria-label="Stop response" onClick={() => {
+                void client.call("interruptAgent", { id: activeAgent.id }).catch((error: unknown) => {
+                  setNotice(error instanceof Error ? error.message : String(error));
+                });
+              }} size="sm" variant="secondary">Stop</SandButton> : null}
+              {activeAgent.isGroup || bridge == null || agentChannelsController == null ? null : <SandButton aria-controls="sand-conversation-details" aria-expanded={channelsInfoPaneOpen} aria-label="Channels" data-info-row="channels" onClick={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setChannelsInfoPaneOpen((open) => !open); }} size="sm" variant="secondary"><SandIcon name="chat-bubbles" size="sm" />Channels</SandButton>}
+            </>}
           />
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
           {showTranscriptLoadError

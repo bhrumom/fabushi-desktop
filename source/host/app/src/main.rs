@@ -9843,6 +9843,44 @@ impl GatewayApi for UnifiedGatewayApi {
             }
             return Ok(value);
         }
+        if method == "interruptAgent" {
+            let agent_id = args
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "interruptAgent requires id".into()
+                ))?;
+            let was_in_flight = self.transcript_runtime.is_agent_running(agent_id);
+            let reason = "cancelled by user";
+            let direct = self.runner_registry.cancel_agent(agent_id, reason);
+            let group_member = self.runner_registry.cancel_group_member_agent(agent_id, reason);
+            let cancelled = direct.saturating_add(group_member);
+            if cancelled > 0 {
+                if let Err(error) = self.ack_obligations.record_interrupt(agent_id, started_at_ms() as f64) {
+                    eprintln!(
+                        "mahayana-host user_interrupt_ack_failed agent={agent_id} error={error}"
+                    );
+                }
+            }
+            let fields = TurnInterruptFields {
+                conversation_id: agent_id.to_string(),
+                reason: "user-cancel".into(),
+                had_active_run: cancelled > 0,
+                was_in_flight,
+            };
+            if let Err(error) = self.telemetry_logs.report_turn_interrupt(&fields) {
+                eprintln!(
+                    "mahayana-host user_interrupt_telemetry_failed agent={agent_id} error={error}"
+                );
+            }
+            return Ok(serde_json::json!({
+                "agentId": agent_id,
+                "interrupted": cancelled > 0,
+            }));
+        }
+
         if method == "getForeverBoxStatus" {
             let agent_id = required_box_agent_id(method, &args)?;
             let status = self.forever_box.get_status(agent_id);
