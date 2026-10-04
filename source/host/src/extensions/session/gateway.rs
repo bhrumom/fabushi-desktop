@@ -339,17 +339,24 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     return Err(SessionGatewayError::bad("senderId does not match the authenticated Human identity"));
                 }
             }
-            required_string(args, "text").and_then(|text| {
-                required_string(args, "clientNonce").and_then(|client_nonce| {
-                    session
-                        .append_human_message(
-                            conversation_id,
-                            text,
-                            client_nonce,
-                            optional_f64(args, "composedAtMs"),
-                        )
-                        .map_err(SessionGatewayError::internal)
-                })
+            let text = optional_string(args, "text")?.unwrap_or_default();
+            let reply_to_id = optional_string(args, "replyToId")?;
+            let attachments = match args.get("attachments") {
+                None | Some(Value::Null) => Vec::new(),
+                Some(Value::Array(values)) => values.clone(),
+                Some(_) => return Err(SessionGatewayError::bad("invalid attachments")),
+            };
+            required_string(args, "clientNonce").and_then(|client_nonce| {
+                session
+                    .append_human_message(
+                        conversation_id,
+                        text,
+                        client_nonce,
+                        optional_f64(args, "composedAtMs"),
+                        reply_to_id,
+                        &attachments,
+                    )
+                    .map_err(SessionGatewayError::internal)
             })
         }),
         "getHumanConversationTranscript" => required_string(args, "conversationId").and_then(|conversation_id| {
