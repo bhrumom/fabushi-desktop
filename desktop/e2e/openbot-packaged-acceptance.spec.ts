@@ -336,6 +336,99 @@ async function submitTurn(page: Page, prompt: string): Promise<number> {
   return previousAssistantCount;
 }
 
+type SubmitTiming = {
+  readonly previousAssistantCount: number;
+  readonly sendGestureAt: number;
+  readonly localSubmitPaintMs: number;
+};
+
+async function submitTimedTurn(page: Page, prompt: string): Promise<SubmitTiming> {
+  const previousAssistantCount = await completedAssistantTurns(page).count();
+  const input = page.getByRole('textbox', { name: 'Prompt' });
+  await input.fill(prompt);
+  const send = page.getByRole('button', { name: 'Send message' });
+  await expect(send).toBeEnabled();
+
+  // PERF-001 is explicitly measured from the real renderer send gesture, not
+  // from Playwright setup work such as counting turns, filling the composer,
+  // or auto-waiting before the click. Observe the canonical user row in the
+  // renderer and cross a paint boundary before recording the local paint time.
+  await page.evaluate((expectedPrompt) => {
+    const scope = window as typeof window & {
+      __candidateSubmitPaintProbe?: { gestureAt: number | null; paintedAt: number | null };
+      __candidateSubmitPaintObserver?: MutationObserver;
+    };
+    scope.__candidateSubmitPaintObserver?.disconnect();
+
+    const transcript = document.querySelector<HTMLElement>('[aria-label="Conversation transcript"]');
+    const button = [...document.querySelectorAll<HTMLButtonElement>('button')]
+      .find((candidate) => candidate.getAttribute('aria-label') === 'Send message');
+    if (transcript == null || button == null) {
+      throw new Error('Canonical transcript/send button is unavailable for PERF-001.');
+    }
+
+    const probe = { gestureAt: null as number | null, paintedAt: null as number | null };
+    scope.__candidateSubmitPaintProbe = probe;
+    let paintScheduled = false;
+    const submittedTurnExists = () => [...transcript.querySelectorAll<HTMLElement>('[role="article"][data-role="user"]')]
+      .some((row) => (row.innerText || '').includes(expectedPrompt));
+    const schedulePaintSample = () => {
+      if (paintScheduled || probe.gestureAt == null || !submittedTurnExists()) return;
+      paintScheduled = true;
+      // The first callback is the frame in which the committed DOM can render;
+      // the second callback runs after that frame's paint opportunity.
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        probe.paintedAt = Date.now();
+        scope.__candidateSubmitPaintObserver?.disconnect();
+      }));
+    };
+
+    const observer = new MutationObserver(schedulePaintSample);
+    observer.observe(transcript, { subtree: true, childList: true, characterData: true });
+    scope.__candidateSubmitPaintObserver = observer;
+    button.addEventListener('click', () => {
+      probe.gestureAt = Date.now();
+      schedulePaintSample();
+    }, { capture: true, once: true });
+  }, prompt);
+
+  await send.click();
+  await expect(
+    page
+      .locator('[aria-label="Conversation transcript"] [role="article"][data-role="user"]')
+      .filter({ hasText: prompt })
+      .last(),
+  ).toBeVisible({ timeout: 5_000 });
+
+  await expect.poll(
+    async () => page.evaluate(() => {
+      const scope = window as typeof window & {
+        __candidateSubmitPaintProbe?: { gestureAt: number | null; paintedAt: number | null };
+      };
+      const probe = scope.__candidateSubmitPaintProbe;
+      return probe?.gestureAt != null && probe?.paintedAt != null;
+    }),
+    { timeout: 5_000, message: 'PERF-001 must observe the canonical user bubble across a paint boundary.' },
+  ).toBe(true);
+
+  const probe = await page.evaluate(() => {
+    const scope = window as typeof window & {
+      __candidateSubmitPaintProbe?: { gestureAt: number | null; paintedAt: number | null };
+      __candidateSubmitPaintObserver?: MutationObserver;
+    };
+    scope.__candidateSubmitPaintObserver?.disconnect();
+    return scope.__candidateSubmitPaintProbe ?? null;
+  });
+  if (probe?.gestureAt == null || probe.paintedAt == null) {
+    throw new Error('PERF-001 submit paint probe did not settle.');
+  }
+  return {
+    previousAssistantCount,
+    sendGestureAt: probe.gestureAt,
+    localSubmitPaintMs: Math.max(0, probe.paintedAt - probe.gestureAt),
+  };
+}
+
 async function waitForCompletedTurn(
   page: Page,
   prompt: string,
@@ -533,9 +626,7 @@ const ordinaryLatencyPrompts = [
 
 async function runLatencyProbe(page: Page, index: number, prompt: string): Promise<LatencySample> {
   await installLifecycleCapture(page);
-  const submittedAt = Date.now();
-  const previousAssistantCount = await submitTurn(page, prompt);
-  const localSubmitPaintMs = Date.now() - submittedAt;
+  const { previousAssistantCount, sendGestureAt, localSubmitPaintMs } = await submitTimedTurn(page, prompt);
   const turn = await waitForCompletedTurn(page, prompt, previousAssistantCount);
   expect(((await turn.textContent()) ?? '').trim().length, `latency turn ${index} must render ordinary assistant text`).toBeGreaterThan(0);
 
@@ -546,7 +637,7 @@ async function runLatencyProbe(page: Page, index: number, prompt: string): Promi
     return scope.__candidateLifecycle ?? [];
   });
   const entryLifecycle = lifecycle.filter((sample) => sample.entryId === entryId);
-  const accepted = lifecycle.find((sample) => sample.type === 'turn.accepted' && sample.at >= submittedAt)
+  const accepted = lifecycle.find((sample) => sample.type === 'turn.accepted' && sample.at >= sendGestureAt)
     ?? entryLifecycle.find((sample) => sample.type === 'turn.output');
   const firstOutput = entryLifecycle.find((sample) => sample.type === 'turn.output');
   const firstText = entryLifecycle.find((sample) => sample.type === 'turn.text' && sample.text.length > 0);
@@ -558,10 +649,12 @@ async function runLatencyProbe(page: Page, index: number, prompt: string): Promi
   return {
     prompt,
     localSubmitPaintMs,
-    acceptanceVisibilityMs: accepted!.at - submittedAt,
-    firstOutputMs: firstOutput!.at - submittedAt,
-    firstTextMs: firstText!.at - submittedAt,
-    completionMs: completed!.at - submittedAt,
+    // Host acceptance occurs after the send gesture. Measuring from the earlier
+    // gesture is a conservative upper bound for PERF-002 and does not weaken it.
+    acceptanceVisibilityMs: accepted!.at - sendGestureAt,
+    firstOutputMs: firstOutput!.at - sendGestureAt,
+    firstTextMs: firstText!.at - sendGestureAt,
+    completionMs: completed!.at - sendGestureAt,
     entryId: entryId!,
   };
 }
@@ -810,6 +903,9 @@ test.describe('signed candidate packaged acceptance', () => {
           completionMs: percentile(latencySamples.map((sample) => sample.completionMs), 0.95),
         },
       };
+      // Persist the raw timing evidence before enforcing thresholds so a failed
+      // performance gate remains diagnosable without weakening the contract.
+      await writeFile(path.join(evidenceRoot, 'timings.json'), JSON.stringify(latencySummary, null, 2));
       expect(latencySummary.p95.localSubmitPaintMs, 'PERF-001 packaged p95 local submit paint').toBeLessThanOrEqual(250);
       expect(latencySummary.p95.acceptanceVisibilityMs, 'PERF-002 packaged p95 acceptance visibility').toBeLessThanOrEqual(500);
       expect(latencySummary.p50.firstOutputMs, 'PERF-003 packaged p50 first output').toBeLessThanOrEqual(3_000);
@@ -818,7 +914,6 @@ test.describe('signed candidate packaged acceptance', () => {
       expect(latencySummary.p95.firstTextMs, 'packaged p95 first text must be recorded').toBeGreaterThanOrEqual(latencySummary.p50.firstTextMs);
       expect(latencySummary.p50.completionMs, 'packaged p50 completion must be recorded').toBeGreaterThanOrEqual(latencySummary.p50.firstTextMs);
       expect(latencySummary.p95.completionMs, 'packaged p95 completion must be recorded').toBeGreaterThanOrEqual(latencySummary.p95.firstTextMs);
-      await writeFile(path.join(evidenceRoot, 'timings.json'), JSON.stringify(latencySummary, null, 2));
 
       const connectorEvidence = await capturePluginsEvidence(page);
       await writeFile(path.join(evidenceRoot, 'connectors.json'), JSON.stringify({
