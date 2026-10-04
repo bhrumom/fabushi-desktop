@@ -7273,7 +7273,7 @@ fn start_routed_provider_task(
                             ) {
                                 Ok(created_entry_id) => {
                                     *entry_id = Some(created_entry_id);
-                                    direct_stream_delivery_counter.record_delivery();
+                                    direct_stream_delivery_counter.record_host_delivery();
                                     direct_stream_runtime.track_runner_activity_update(
                                         &delta_agent_id,
                                         &ActivityUpdate::SendMessage,
