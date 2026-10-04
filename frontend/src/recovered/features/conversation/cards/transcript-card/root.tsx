@@ -72,7 +72,6 @@ export function TranscriptCardRootEntry({ contract, entry, adjacency, isReadOnly
     threadRootId,
     isDeliveryActionable: entry.draftSendState !== "sending",
   });
-  const exposesAssistantLifecycle = entry.message.type === "text";
   return (
     <TranscriptCardActionAnchor
       entry={entry}
@@ -81,12 +80,7 @@ export function TranscriptCardRootEntry({ contract, entry, adjacency, isReadOnly
       renderReactionActions={renderReactionActions}
       threadRootId={threadRootId}
     >
-      <div
-        aria-busy={exposesAssistantLifecycle && entry.streaming === true ? true : undefined}
-        data-entry-id={entry.id}
-        data-role={exposesAssistantLifecycle ? "assistant" : undefined}
-        role="article"
-      >
+      <div data-entry-id={entry.id} role="article">
         <TranscriptCardLeafProvider value={contract.leafProviders}>
           <Suspense fallback={<div aria-hidden="true" style={{ height: metadata.placeholderHeight, width: "100%" }} />}>
             {frame == null ? <><Leaf actionVerb={null} adjacency={adjacency} entry={entry} isKeyboardTarget={isKeyboardTarget} isStale={isStale} />{reactionPills}</> : (
