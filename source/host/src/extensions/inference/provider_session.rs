@@ -1621,7 +1621,7 @@ pub trait OpenRouterTransport {
 
 struct OpenRouterHttpTransport {
     client: AsyncClient,
-    runtime: Runtime,
+    runtime: &'static Runtime,
     api_key: String,
 }
 
