@@ -583,8 +583,11 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         getAccessToken: async ({ backendUrl }) => (await requireValue(account, "account").getAuthService()).getValidAccessToken({ backendUrl }),
         getMachineId: async () => machineId,
       });
-      const broadcast = createProductionWindowBroadcaster(bindings.native.BrowserWindow);
       const getTrustedContents = (): MainBrowserWindow["webContents"] | undefined => runtime?.getMainWindow()?.webContents;
+      const broadcast = createProductionWindowBroadcaster(
+        bindings.native.BrowserWindow,
+        (window) => window.webContents === getTrustedContents(),
+      );
       desktopMetricsRuntime = createDesktopMetricsRuntime({
         ensureCursorAuthService: async () => await requireValue(account, "account").getAuthService(),
         ensureExperimentService: async () => {

@@ -356,17 +356,18 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "88b1d48f5c646df54606b2d69135fbf253b26207",
+      "targetBlobSha": "f73293543f54444a423bd672656488915e5f6003",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
-        "source/electron-main/adapters/mcp-oauth.ts"
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/electron-main/window-broadcast.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
         "source/electron-main/coordinator/coordinator-executors.test.ts",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "rationale": "Extends only the typed ProductionMcpService contract with the Fabushi-approved Host lifecycle surface and the narrow installed Plugin Skills SDK-edge method. Electron Main remains the single MCP manager/Cursor SDK owner while Coordinator relays and Rust Host owns Plugin Skills lifecycle/cache/sync; no legacy Host runtime or duplicate manager is introduced."
+      "rationale": "Preserves the frozen Grok production composition while applying two explicit Fabushi product adaptations without moving ownership: the existing Host lifecycle/Plugin Skills SDK-edge surface remains in the single Electron MCP owner, and renderer-scoped BrowserWindow delivery now targets only the trusted main WebContents. The underlying Grok broadcaster retains its all-window default for truly global events, but MCP OAuth completion and dev-control renderer events no longer fan out to auxiliary/dev windows. Coordinator, Host, Runner, MCP manager, and MainEdge ownership remain unchanged."
     },
     {
       "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
@@ -497,6 +498,21 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Preserves the frozen Grok 0.18 Coordinator renderer source except for the explicit Fabushi user-interrupt extension required by the shipping Agent product: interruptAgent is admitted through the closed method table, its {agentId, interrupted} reply is fail-closed validated, and telemetry remains owned by the existing send domain. The production renderer exposes the corresponding Stop response control, while signed packaged acceptance verifies cancellation settles and a fresh post-cancel turn completes; no parallel transport, owner, or legacy shell is introduced."
+    },
+    {
+      "referencePath": "source/electron-main/window-broadcast.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "8dac95d998619aa69e9b7cfc88790b71cdc62cc1",
+      "behavioralEvidence": [
+        "source/electron-main/window-broadcast.ts",
+        "source/electron-main/main-production-services.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok all-BrowserWindow broadcaster as the default while adding one optional eligibility predicate required by POWER-005. Shipping production composition supplies the predicate and restricts renderer-scoped events to the trusted main WebContents; callers that intentionally need a truly global event retain the exact default fanout behavior."
     }
   ]
 }
