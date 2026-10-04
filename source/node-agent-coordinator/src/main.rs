@@ -2174,7 +2174,10 @@ fn execute_local_inference(
     };
 
     let activity = begin_inference_activity(&state, &agent_id);
-    thread::sleep(Duration::from_millis(1_200));
+    // The live Runner event stream is the production readiness gate. An older
+    // local-inference implementation inserted a fixed 1.2s presentation delay
+    // here; carrying that delay into routed Host execution needlessly stalls
+    // every first-party Fabushi turn after durable Host admission.
     wait_for_runner_event_stream(&state)?;
 
     let assistant_timestamp_ms = coordinator_now_ms();
