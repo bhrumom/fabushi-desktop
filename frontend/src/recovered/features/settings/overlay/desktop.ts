@@ -4,6 +4,7 @@ import type {
   CursorUsageUpgradeAction,
   DesktopAutoReviewInstructions,
   DesktopBridge,
+  DesktopCallMediaPreferences,
   DesktopTimeZoneState,
   DesktopUiPreferences,
   DesktopUpdateStatus,
@@ -31,6 +32,7 @@ export interface SettingsDesktopSnapshot {
   theme: ThemePreference;
   timeZone: DesktopTimeZoneState;
   uiPreferences: DesktopUiPreferences;
+  callMediaPreferences: DesktopCallMediaPreferences;
   localToolPermission: LocalToolPermissionState;
   securityKeyEnabled: boolean;
   update: DesktopUpdateStatus | null;
@@ -152,7 +154,7 @@ export function cursorAuthErrorMessage(reason: unknown): string {
 
 export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordinatorClient?: Pick<ProductionCoordinatorClient, "isEgressTunnelAvailable">): Promise<SettingsDesktopSnapshot> {
   const experimentSnapshot = loadExperimentSnapshot(bridge);
-  const [status, avatar, autoReview, theme, timeZone, uiPreferences, localToolPermission, securityKeyEnabled, update, usageResult, resolvedExperimentSnapshot, egressTunnel] = await Promise.all([
+  const [status, avatar, autoReview, theme, timeZone, uiPreferences, callMediaPreferences, localToolPermission, securityKeyEnabled, update, usageResult, resolvedExperimentSnapshot, egressTunnel] = await Promise.all([
     bridge.cursorAccount.getStatus(),
     // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L133195-L133204
     bridge.cursorAccount.getAvatar().catch(() => null),
@@ -160,6 +162,7 @@ export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordin
     bridge.theme.get(),
     bridge.timeZone.get(),
     bridge.uiPreferences.get(),
+    bridge.callMedia.getPreferences(),
     Promise.all([
       bridge.localToolPermission.get().then(normalizeLocalToolPermission, () => "ask" as const),
       bridge.localToolPermission.ceiling().then(normalizeLocalToolPermissionCeiling, () => null)
@@ -185,6 +188,7 @@ export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordin
     theme: theme.preference,
     timeZone,
     uiPreferences,
+    callMediaPreferences,
     localToolPermission,
     securityKeyEnabled,
     update,
@@ -202,6 +206,10 @@ export function setEgressTunnelEnabled(bridge: DesktopBridge, enabled: boolean):
 export function setTimeZoneOverride(bridge: DesktopBridge, timeZone: string | null): Promise<DesktopTimeZoneState> {
   return bridge.timeZone.setOverride(timeZone);
 }
+export function setCallMediaPreferences(bridge: DesktopBridge, preferences: DesktopCallMediaPreferences): Promise<DesktopCallMediaPreferences> {
+  return bridge.callMedia.setPreferences(preferences);
+}
+
 export async function setUiPreferences(bridge: DesktopBridge, preferences: DesktopUiPreferences): Promise<DesktopUiPreferences> {
   const updated = await bridge.uiPreferences.set(preferences);
   if (typeof document !== "undefined") {

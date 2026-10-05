@@ -8,6 +8,7 @@ export interface ThemeState {
 }
 export type DesktopUiDirection = "auto" | "ltr" | "rtl";
 export interface DesktopUiPreferences { locale: string; direction: DesktopUiDirection; reducedMotion: boolean; highContrast: boolean; textScale: number; }
+export interface DesktopCallMediaPreferences { microphoneId: string | null; cameraId: string | null; }
 
 export type CursorAuthStatus =
   | { kind: "logged-out"; errorMessage?: string }
@@ -451,6 +452,8 @@ export interface AgentDesktopBridge {
 }
 
 export interface DesktopCallMediaBridge {
+  getPreferences(): Promise<DesktopCallMediaPreferences>;
+  setPreferences(preferences: DesktopCallMediaPreferences): Promise<DesktopCallMediaPreferences>;
   requestPermissions(input: { audio: boolean; video: boolean }): Promise<{
     microphone: "granted" | "denied" | "prompt" | "not-requested";
     camera: "granted" | "denied" | "prompt" | "not-requested";

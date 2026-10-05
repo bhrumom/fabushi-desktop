@@ -31,7 +31,7 @@ import { createSandRecreateCommands, type RecreateOperationId } from "./box/box-
 import { createDesktopHostSettingsFields } from "./prefs/host-settings-fields.js";
 import { createReleaseMetadata } from "./update/release-metadata.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
-import { normalizeSandUiPreferences, resolveSandUiDirection } from "../shared/desktop.js";
+import { normalizeSandCallMediaPreferences, normalizeSandUiPreferences, resolveSandUiDirection } from "../shared/desktop.js";
 import { createDesktopCallMediaPort } from "./call-media.js";
 
 test("UI accessibility preferences normalize, persist, and resolve RTL", () => {
@@ -42,6 +42,18 @@ test("UI accessibility preferences normalize, persist, and resolve RTL", () => {
     assert.deepEqual(store.getUiPreferences(), { locale:"ar-SA", direction:"auto", reducedMotion:true, highContrast:true, textScale:1.25 });
     assert.equal(resolveSandUiDirection(store.getUiPreferences()), "rtl");
     assert.deepEqual(normalizeSandUiPreferences({ locale:"../../invalid", direction:"sideways", reducedMotion:"yes", highContrast:true, textScale:9 }), { locale:"system", direction:"auto", reducedMotion:false, highContrast:true, textScale:2 });
+  } finally { rmSync(dir,{recursive:true,force:true}); }
+});
+
+test("call media device preferences normalize and persist in the canonical settings store", () => {
+  const dir=mkdtempSync(join(tmpdir(),"fabushi-call-media-prefs-"));
+  try {
+    const store=new SandSettingsStore(join(dir,"settings.json"));
+    store.setCallMediaPreferences({ microphoneId:" mic-primary ", cameraId:"camera-primary" });
+    assert.deepEqual(store.getCallMediaPreferences(), { microphoneId:"mic-primary", cameraId:"camera-primary" });
+    assert.deepEqual(normalizeSandCallMediaPreferences({ microphoneId:"", cameraId:"bad\nvalue" }), { microphoneId:null, cameraId:null });
+    store.setCallMediaPreferences({ microphoneId:null, cameraId:null });
+    assert.deepEqual(store.getCallMediaPreferences(), { microphoneId:null, cameraId:null });
   } finally { rmSync(dir,{recursive:true,force:true}); }
 });
 

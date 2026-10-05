@@ -25,6 +25,13 @@ export interface SettingsCopy {
   readonly reduceMotionDescription: string;
   readonly highContrast: string;
   readonly highContrastDescription: string;
+  readonly mediaDevices: string;
+  readonly microphone: string;
+  readonly camera: string;
+  readonly defaultDevice: string;
+  readonly refreshDevices: string;
+  readonly grantMediaPermissions: string;
+  readonly mediaPermissionDescription: string;
   readonly directionAutomatic: string;
   readonly directionLtr: string;
   readonly directionRtl: string;
@@ -42,6 +49,7 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     textSize: "Text size", textSizeDescription: "Scales the interface without changing browser zoom.",
     reduceMotion: "Reduce motion", reduceMotionDescription: "Disables non-essential animation and smooth scrolling.",
     highContrast: "High contrast controls", highContrastDescription: "Strengthens control borders and keyboard focus indicators.",
+    mediaDevices: "Media & Devices", microphone: "Microphone", camera: "Camera", defaultDevice: "System default", refreshDevices: "Refresh devices", grantMediaPermissions: "Allow microphone & camera", mediaPermissionDescription: "Device preferences are stored locally and used by Human calls.",
     directionAutomatic: "Automatic", directionLtr: "Left to right", directionRtl: "Right to left",
     accessibilityCountOne: "{count} accessibility preference active", accessibilityCountOther: "{count} accessibility preferences active"
   },
@@ -54,6 +62,7 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     textSize: "文字大小", textSizeDescription: "在不改变浏览器缩放的情况下调整界面大小。",
     reduceMotion: "减少动态效果", reduceMotionDescription: "关闭非必要动画和平滑滚动。",
     highContrast: "高对比度控件", highContrastDescription: "增强控件边框和键盘焦点指示。",
+    mediaDevices: "媒体与设备", microphone: "麦克风", camera: "摄像头", defaultDevice: "系统默认", refreshDevices: "刷新设备", grantMediaPermissions: "允许麦克风和摄像头", mediaPermissionDescription: "设备偏好仅保存在本机，并用于 Human 通话。",
     directionAutomatic: "自动", directionLtr: "从左到右", directionRtl: "从右到左",
     accessibilityCountOne: "已启用 {count} 项辅助功能偏好", accessibilityCountOther: "已启用 {count} 项辅助功能偏好"
   },
@@ -66,6 +75,7 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     textSize: "文字大小", textSizeDescription: "在不改變瀏覽器縮放的情況下調整介面大小。",
     reduceMotion: "減少動態效果", reduceMotionDescription: "關閉非必要動畫與平滑捲動。",
     highContrast: "高對比度控制項", highContrastDescription: "增強控制項邊框與鍵盤焦點指示。",
+    mediaDevices: "媒體與裝置", microphone: "麥克風", camera: "相機", defaultDevice: "系統預設", refreshDevices: "重新整理裝置", grantMediaPermissions: "允許麥克風與相機", mediaPermissionDescription: "裝置偏好只儲存在本機，並用於 Human 通話。",
     directionAutomatic: "自動", directionLtr: "從左到右", directionRtl: "從右到左",
     accessibilityCountOne: "已啟用 {count} 項輔助功能偏好", accessibilityCountOther: "已啟用 {count} 項輔助功能偏好"
   },
@@ -78,6 +88,7 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     textSize: "文字サイズ", textSizeDescription: "ブラウザーのズームを変えずに画面を拡大縮小します。",
     reduceMotion: "モーションを減らす", reduceMotionDescription: "不要なアニメーションとスムーズスクロールを無効にします。",
     highContrast: "高コントラスト", highContrastDescription: "コントロール境界とキーボードフォーカスを強調します。",
+    mediaDevices: "メディアとデバイス", microphone: "マイク", camera: "カメラ", defaultDevice: "システム既定", refreshDevices: "デバイスを更新", grantMediaPermissions: "マイクとカメラを許可", mediaPermissionDescription: "デバイス設定はローカルに保存され、Human 通話で使用されます。",
     directionAutomatic: "自動", directionLtr: "左から右", directionRtl: "右から左",
     accessibilityCountOne: "アクセシビリティ設定 {count} 件が有効", accessibilityCountOther: "アクセシビリティ設定 {count} 件が有効"
   },
@@ -90,6 +101,7 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     textSize: "텍스트 크기", textSizeDescription: "브라우저 확대/축소를 바꾸지 않고 인터페이스를 조절합니다.",
     reduceMotion: "동작 줄이기", reduceMotionDescription: "불필요한 애니메이션과 부드러운 스크롤을 끕니다.",
     highContrast: "고대비 컨트롤", highContrastDescription: "컨트롤 테두리와 키보드 포커스 표시를 강화합니다.",
+    mediaDevices: "미디어 및 기기", microphone: "마이크", camera: "카메라", defaultDevice: "시스템 기본값", refreshDevices: "기기 새로고침", grantMediaPermissions: "마이크 및 카메라 허용", mediaPermissionDescription: "기기 환경설정은 로컬에 저장되고 Human 통화에 사용됩니다.",
     directionAutomatic: "자동", directionLtr: "왼쪽에서 오른쪽", directionRtl: "오른쪽에서 왼쪽",
     accessibilityCountOne: "접근성 환경설정 {count}개 사용 중", accessibilityCountOther: "접근성 환경설정 {count}개 사용 중"
   },
@@ -102,6 +114,7 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     textSize: "حجم النص", textSizeDescription: "يغيّر حجم الواجهة من دون تغيير تكبير المتصفح.",
     reduceMotion: "تقليل الحركة", reduceMotionDescription: "يعطّل الحركة غير الضرورية والتمرير السلس.",
     highContrast: "تباين عالٍ", highContrastDescription: "يقوّي حدود عناصر التحكم ومؤشرات تركيز لوحة المفاتيح.",
+    mediaDevices: "الوسائط والأجهزة", microphone: "الميكروفون", camera: "الكاميرا", defaultDevice: "الإعداد الافتراضي للنظام", refreshDevices: "تحديث الأجهزة", grantMediaPermissions: "السماح بالميكروفون والكاميرا", mediaPermissionDescription: "تُحفظ تفضيلات الأجهزة محليًا وتُستخدم في مكالمات Human.",
     directionAutomatic: "تلقائي", directionLtr: "من اليسار إلى اليمين", directionRtl: "من اليمين إلى اليسار",
     accessibilityCountOne: "{count} إعداد وصول نشط", accessibilityCountOther: "{count} إعدادات وصول نشطة"
   },
@@ -114,6 +127,7 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     textSize: "גודל טקסט", textSizeDescription: "משנה את קנה המידה של הממשק בלי לשנות את זום הדפדפן.",
     reduceMotion: "הפחתת תנועה", reduceMotionDescription: "מבטל אנימציה לא חיונית וגלילה חלקה.",
     highContrast: "ניגודיות גבוהה", highContrastDescription: "מחזק גבולות פקדים וסימוני מיקוד במקלדת.",
+    mediaDevices: "מדיה והתקנים", microphone: "מיקרופון", camera: "מצלמה", defaultDevice: "ברירת מחדל של המערכת", refreshDevices: "רענון התקנים", grantMediaPermissions: "מתן גישה למיקרופון ולמצלמה", mediaPermissionDescription: "העדפות ההתקנים נשמרות מקומית ומשמשות בשיחות Human.",
     directionAutomatic: "אוטומטי", directionLtr: "משמאל לימין", directionRtl: "מימין לשמאל",
     accessibilityCountOne: "העדפת נגישות {count} פעילה", accessibilityCountOther: "{count} העדפות נגישות פעילות"
   }

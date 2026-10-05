@@ -102,6 +102,27 @@ function stopStream(stream: MediaStream | null): void {
   for (const track of stream?.getTracks() ?? []) track.stop();
 }
 
+function callMediaConstraint(deviceId: string | null, enabled: boolean): boolean | MediaTrackConstraints {
+  if (!enabled) return false;
+  return deviceId == null ? true : { deviceId: { exact: deviceId } };
+}
+
+async function getPreferredUserMedia(bridge: DesktopBridge, input: { audio: boolean; video: boolean }): Promise<MediaStream> {
+  const preferences=await bridge.callMedia.getPreferences().catch(()=>({ microphoneId:null, cameraId:null }));
+  const preferred: MediaStreamConstraints = {
+    audio: callMediaConstraint(preferences.microphoneId,input.audio),
+    video: callMediaConstraint(preferences.cameraId,input.video),
+  };
+  try {
+    return await navigator.mediaDevices.getUserMedia(preferred);
+  } catch (error) {
+    const stalePreference=(input.audio && preferences.microphoneId!=null) || (input.video && preferences.cameraId!=null);
+    const recoverable=error instanceof DOMException && (error.name==="NotFoundError" || error.name==="OverconstrainedError");
+    if (!stalePreference || !recoverable) throw error;
+    return navigator.mediaDevices.getUserMedia({ audio: input.audio, video: input.video });
+  }
+}
+
 function mediaFailure(error: unknown): string {
   if (error instanceof DOMException && error.name === "NotAllowedError") return "Microphone/camera permission was denied.";
   return error instanceof Error ? error.message : String(error);
@@ -213,7 +234,7 @@ export function HumanCallControls({
     if (permission.microphone === "denied" || (video && permission.camera === "denied")) {
       throw new Error("Microphone/camera permission was denied.");
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video });
+    const stream = await getPreferredUserMedia(bridge, { audio: true, video });
     stopStream(localStreamRef.current);
     localStreamRef.current = stream;
     setMuted(false);
@@ -442,7 +463,7 @@ export function HumanCallControls({
     }
     const permission = await bridge.callMedia.requestPermissions({ audio: false, video: true });
     if (permission.camera === "denied") throw new Error("Camera permission was denied.");
-    const camera = await navigator.mediaDevices.getUserMedia({ video: true });
+    const camera = await getPreferredUserMedia(bridge, { audio: false, video: true });
     const track = camera.getVideoTracks()[0];
     if (track == null) throw new Error("Camera did not provide a video track.");
     stream.addTrack(track);

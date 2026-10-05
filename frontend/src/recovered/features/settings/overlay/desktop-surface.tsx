@@ -20,6 +20,7 @@ import {
   setEgressTunnelEnabled,
   setThemePreference,
   setTimeZoneOverride,
+  setCallMediaPreferences,
   setUiPreferences,
   subscribeToSettingsDesktop,
   egressTunnelFeatureGateEnabled,
@@ -167,6 +168,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
   const updateTheme = (theme: ThemePreference) => setSnapshot((current) => current == null ? current : { ...current, theme });
   const updateTimeZone = (timeZone: SettingsDesktopSnapshot["timeZone"]) => setSnapshot((current) => current == null ? current : { ...current, timeZone });
   const updateUiPreferences = (uiPreferences: SettingsDesktopSnapshot["uiPreferences"]) => setSnapshot((current) => current == null ? current : { ...current, uiPreferences });
+  const updateCallMediaPreferences = (callMediaPreferences: SettingsDesktopSnapshot["callMediaPreferences"]) => setSnapshot((current) => current == null ? current : { ...current, callMediaPreferences });
   const updateLocalToolPermission = (permission: SettingsDesktopSnapshot["localToolPermission"]["permission"]) => setSnapshot((current) => current == null ? current : {
     ...current,
     localToolPermission: { ...current.localToolPermission, permission }
@@ -243,6 +245,11 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
               onChange: (timeZone) => mutate(() => setTimeZoneOverride(bridge, timeZone), "settings-time-zone", updateTimeZone)
             }}
             uiPreferences={{ state: snapshot.uiPreferences, onChange: (preferences) => mutate(() => setUiPreferences(bridge, preferences), "settings-ui-preferences", updateUiPreferences) }}
+            callMediaPreferences={{
+              state: snapshot.callMediaPreferences,
+              onChange: (preferences) => mutate(() => setCallMediaPreferences(bridge, preferences), "settings-call-media", updateCallMediaPreferences),
+              onRequestPermissions: () => bridge.callMedia.requestPermissions({ audio: true, video: true })
+            }}
             theme={snapshot.theme}
           />
         );

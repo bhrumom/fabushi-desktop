@@ -844,6 +844,18 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
+    await page.evaluate(() => {
+      const mediaDevices = navigator.mediaDevices;
+      if (mediaDevices == null) throw new Error('navigator.mediaDevices is unavailable');
+      Object.defineProperty(mediaDevices, 'enumerateDevices', {
+        configurable: true,
+        value: async () => [
+          { deviceId: 'mic-studio-e2e', groupId: 'group-audio', kind: 'audioinput', label: 'Studio Microphone', toJSON: () => ({}) },
+          { deviceId: 'camera-hd-e2e', groupId: 'group-video', kind: 'videoinput', label: 'HD Camera', toJSON: () => ({}) },
+        ],
+      });
+    });
+
     await page.getByRole('button', { name: 'Account', exact: true }).click();
     await page.getByText('Settings', { exact: true }).click();
     const settings = page.getByRole('dialog', { name: 'Grok Bot settings' });
@@ -863,10 +875,30 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
     await expect(localizedSettings.getByRole('navigation', { name: 'أقسام الإعدادات' })).toBeVisible();
     await expect(localizedSettings.getByRole('heading', { name: 'عام', exact: true })).toBeVisible();
     await expect(localizedSettings.getByText('اللغة وإمكانية الوصول', { exact: true })).toBeVisible();
+    await expect(localizedSettings.getByText('الوسائط والأجهزة', { exact: true })).toBeVisible();
     await expect.poll(() => page.evaluate(() => ({
       lang: document.documentElement.lang,
       dir: document.documentElement.dir,
     }))).toEqual({ lang: 'ar', dir: 'rtl' });
+
+    const microphone = localizedSettings.getByRole('button', { name: 'الميكروفون' });
+    await microphone.focus();
+    await page.keyboard.press('Enter');
+    const studioMicrophone = page.getByRole('option', { name: 'Studio Microphone', exact: true });
+    await studioMicrophone.focus();
+    await page.keyboard.press('Enter');
+
+    const camera = localizedSettings.getByRole('button', { name: 'الكاميرا' });
+    await camera.focus();
+    await page.keyboard.press('Enter');
+    const hdCamera = page.getByRole('option', { name: 'HD Camera', exact: true });
+    await hdCamera.focus();
+    await page.keyboard.press('Enter');
+
+    await expect.poll(() => page.evaluate(async () => {
+      const candidate = window as unknown as { desktop: { callMedia: { getPreferences(): Promise<{ microphoneId: string | null; cameraId: string | null }> } } };
+      return candidate.desktop.callMedia.getPreferences();
+    })).toEqual({ microphoneId: 'mic-studio-e2e', cameraId: 'camera-hd-e2e' });
 
     const livePreferenceStatus = localizedSettings.locator('.sand-settings-a11y-status');
     await expect(livePreferenceStatus).toHaveAttribute('role', 'status');
@@ -954,6 +986,10 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
       highContrast: 'true',
       textScale: '1.25',
     });
+    await expect.poll(() => page.evaluate(async () => {
+      const candidate = window as unknown as { desktop: { callMedia: { getPreferences(): Promise<{ microphoneId: string | null; cameraId: string | null }> } } };
+      return candidate.desktop.callMedia.getPreferences();
+    })).toEqual({ microphoneId: 'mic-studio-e2e', cameraId: 'camera-hd-e2e' });
 
     await openMahayanaConversation(page);
     const prompt = page.getByRole('textbox', { name: 'Prompt' });
@@ -1025,6 +1061,8 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
           callMedia: {
             requestPermissions(input: { audio: boolean; video: boolean }): Promise<unknown>;
             listDisplaySources(): Promise<unknown>;
+            getPreferences(): Promise<{ microphoneId: string | null; cameraId: string | null }>;
+            setPreferences(preferences: { microphoneId: string | null; cameraId: string | null }): Promise<{ microphoneId: string | null; cameraId: string | null }>;
           };
         };
       };
@@ -1033,12 +1071,16 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
         hasGetUserMedia: typeof navigator.mediaDevices?.getUserMedia === 'function',
         permissionProbe: await candidate.desktop.callMedia.requestPermissions({ audio: false, video: false }),
         hasDisplaySourceBridge: typeof candidate.desktop.callMedia.listDisplaySources === 'function',
+        preferencesRoundTrip: await candidate.desktop.callMedia
+          .setPreferences({ microphoneId: 'call-mic-e2e', cameraId: 'call-camera-e2e' })
+          .then(() => candidate.desktop.callMedia.getPreferences()),
       };
     });
     expect(capability.hasPeerConnection).toBe(true);
     expect(capability.hasGetUserMedia).toBe(true);
     expect(capability.hasDisplaySourceBridge).toBe(true);
     expect(capability.permissionProbe).toEqual({ microphone: 'not-requested', camera: 'not-requested' });
+    expect(capability.preferencesRoundTrip).toEqual({ microphoneId: 'call-mic-e2e', cameraId: 'call-camera-e2e' });
   } finally {
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });

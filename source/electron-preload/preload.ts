@@ -184,6 +184,8 @@ export function createDesktopPreloadBridge(options: {
     callMedia: {
       requestPermissions: (input: { audio: boolean; video: boolean }) => edge("requestCallMediaPermissions", input),
       listDisplaySources: () => edge("listCallDisplaySources"),
+      getPreferences: () => edge("getCallMediaPreferences"),
+      setPreferences: (preferences: unknown) => edge("setCallMediaPreferences", { preferences }),
     },
     cursorAccount: {
       getStatus: () => edge("getCursorAuthStatus"),
