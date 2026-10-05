@@ -323,36 +323,90 @@ jobs:
           echo "Installed candidate app: $installed_app" >> "$GITHUB_STEP_SUMMARY"
           echo "Candidate executable: $executable" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Provision bounded production CI account session
+      - name: Provision bounded production CI account sessions
         shell: bash
         env:
           FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
           FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
+          FABUSHI_CI_PEER_TEST_USERNAME: ${{ secrets.FABUSHI_CI_PEER_TEST_USERNAME }}
+          FABUSHI_CI_PEER_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_PEER_TEST_PASSWORD }}
           FABUSHI_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
           DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app
+          PEER_DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-peer
         run: |
           set -euo pipefail
           test -n "$FABUSHI_CI_TEST_USERNAME"
           test -n "$FABUSHI_CI_TEST_PASSWORD"
+          test -n "$FABUSHI_CI_PEER_TEST_USERNAME" || { echo "::error::FABUSHI_CI_PEER_TEST_USERNAME is required for signed Phase 1 Human/multi-device acceptance."; exit 1; }
+          test -n "$FABUSHI_CI_PEER_TEST_PASSWORD" || { echo "::error::FABUSHI_CI_PEER_TEST_PASSWORD is required for signed Phase 1 Human/multi-device acceptance."; exit 1; }
+          test "$FABUSHI_CI_PEER_TEST_USERNAME" != "$FABUSHI_CI_TEST_USERNAME" || { echo "::error::Phase 1 call acceptance requires two distinct production Human accounts."; exit 1; }
+
           support="$RUNNER_TEMP/fabushi-support"
           test -f "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
           test -f "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
-          account_dir="$RUNNER_TEMP/fabushi-candidate-account"
-          app_session_dir="$RUNNER_TEMP/fabushi-candidate-app-session"
-          mkdir -p "$account_dir" "$app_session_dir"
-          chmod 700 "$account_dir" "$app_session_dir"
-          export FABUSHI_ACCOUNT_SESSION_FILE="$account_dir/session.json"
-          export FABUSHI_CI_ACCOUNT_SESSION_FILE="$app_session_dir/session.json"
-          node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
-          node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
-          chmod 600 "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
-          jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not)' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" >/dev/null
-          rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"
+
+          provision_session() {
+            local username="$1"
+            local password="$2"
+            local device_id="$3"
+            local account_dir="$4"
+            local app_session_dir="$5"
+            mkdir -p "$account_dir" "$app_session_dir"
+            chmod 700 "$account_dir" "$app_session_dir"
+            (
+              export FABUSHI_CI_TEST_USERNAME="$username"
+              export FABUSHI_CI_TEST_PASSWORD="$password"
+              export DEVICE_ID="$device_id"
+              export FABUSHI_ACCOUNT_SESSION_FILE="$account_dir/session.json"
+              export FABUSHI_CI_ACCOUNT_SESSION_FILE="$app_session_dir/session.json"
+              node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
+              node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+              chmod 600 "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+              jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not) and (.accessToken|type) == "string"' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" >/dev/null
+              rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"
+            )
+          }
+
+          primary_account_dir="$RUNNER_TEMP/fabushi-candidate-account"
+          primary_session_dir="$RUNNER_TEMP/fabushi-candidate-app-session"
+          peer_account_dir="$RUNNER_TEMP/fabushi-candidate-peer-account"
+          peer_session_dir="$RUNNER_TEMP/fabushi-candidate-peer-app-session"
+          provision_session "$FABUSHI_CI_TEST_USERNAME" "$FABUSHI_CI_TEST_PASSWORD" "$DEVICE_ID" "$primary_account_dir" "$primary_session_dir"
+          provision_session "$FABUSHI_CI_PEER_TEST_USERNAME" "$FABUSHI_CI_PEER_TEST_PASSWORD" "$PEER_DEVICE_ID" "$peer_account_dir" "$peer_session_dir"
+
+          primary_session="$primary_session_dir/session.json"
+          peer_session="$peer_session_dir/session.json"
           {
             echo "DEVICE_ID=$DEVICE_ID"
-            echo "FABUSHI_CI_ACCOUNT_SESSION_FILE=$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+            echo "PEER_DEVICE_ID=$PEER_DEVICE_ID"
+            echo "FABUSHI_CI_ACCOUNT_SESSION_FILE=$primary_session"
+            echo "FABUSHI_CI_PEER_ACCOUNT_SESSION_FILE=$peer_session"
+            echo "FABUSHI_CI_PEER_TEST_USERNAME=$FABUSHI_CI_PEER_TEST_USERNAME"
           } >> "$GITHUB_ENV"
-          echo "Bounded refresh-token-free production account session prepared for signed candidate acceptance." >> "$GITHUB_STEP_SUMMARY"
+          echo "Two distinct bounded refresh-token-free production account sessions prepared for signed Phase 1 acceptance." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Prepare production Human friendship
+        shell: bash
+        env:
+          FABUSHI_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
+        run: |
+          set -euo pipefail
+          primary_token="$(jq -r '.accessToken' "$FABUSHI_CI_ACCOUNT_SESSION_FILE")"
+          peer_token="$(jq -r '.accessToken' "$FABUSHI_CI_PEER_ACCOUNT_SESSION_FILE")"
+          test -n "$primary_token"
+          test -n "$peer_token"
+
+          friends="$(curl --fail --silent --show-error -H "authorization: Bearer $primary_token" "$FABUSHI_API_BASE_URL/api/social/friends")"
+          if ! jq -e --arg peer "$FABUSHI_CI_PEER_TEST_USERNAME" '.data.friends[]? | select((.username // .id | tostring) == $peer)' <<<"$friends" >/dev/null; then
+            request_body="$(jq -cn --arg target "$FABUSHI_CI_PEER_TEST_USERNAME" '{targetUserId:$target,message:"signed packaged Phase 1 acceptance"}')"
+            curl --fail --silent --show-error -H "authorization: Bearer $primary_token" -H 'content-type: application/json' --data "$request_body" "$FABUSHI_API_BASE_URL/api/social/friend-requests" >/dev/null
+            incoming="$(curl --fail --silent --show-error -H "authorization: Bearer $peer_token" "$FABUSHI_API_BASE_URL/api/social/friend-requests/incoming")"
+            request_id="$(jq -r --arg primary "$FABUSHI_CI_TEST_USERNAME" '.data.requests[]? | select((.username // .senderUsername // .sender_user_name // "") == $primary) | .requestId // .id' <<<"$incoming" | head -n 1)"
+            test -n "$request_id" || { echo "::error::Production peer account did not receive the friendship request."; exit 1; }
+            curl --fail --silent --show-error -X POST -H "authorization: Bearer $peer_token" "$FABUSHI_API_BASE_URL/api/social/friend-requests/$request_id/accept" >/dev/null
+          fi
+          curl --fail --silent --show-error -H "authorization: Bearer $primary_token" "$FABUSHI_API_BASE_URL/api/social/friends" | jq -e --arg peer "$FABUSHI_CI_PEER_TEST_USERNAME" '.data.friends[]? | select((.username // .id | tostring) == $peer)' >/dev/null
+          echo "Production Human friendship verified before signed-app feature acceptance." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run real signed packaged acceptance
         working-directory: desktop
