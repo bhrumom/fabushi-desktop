@@ -1283,6 +1283,25 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     ...reactionRootCallbacks
   }));
   const activeIsHuman = humanConversations.some((conversation) => conversation.id === activeAgentId);
+  const humanReactionTransport = useMemo(() => activeIsHuman && client != null ? {
+    async reactToMessage(input: { entryId: string; emoji: string; agentId: string }) {
+      const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
+      if (conversation == null) throw new Error("Human reaction conversation is unavailable");
+      const value = await client.call("reactHumanMessage", {
+        conversationId: input.agentId,
+        entryId: input.entryId,
+        emoji: input.emoji
+      });
+      const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
+      if (projected == null) throw new Error("Human reaction settlement returned an invalid transcript entry");
+      setEntriesByAgent((current) => {
+        const entries = current[input.agentId];
+        if (entries == null) return current;
+        const next = entries.map((entry) => entry.id === input.entryId ? projected : entry);
+        return { ...current, [input.agentId]: next };
+      });
+    }
+  } : undefined, [activeIsHuman, client]);
   const reactionScope = useMemo(() => ({
     accountSlot: transcriptAccountSlot,
     agentId: activeIsHuman || activeAgentId.length === 0 ? null : activeAgentId
@@ -1291,8 +1310,19 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const reactionLifecycleGenerationRef = useRef(0);
   const resolveReactionReactorName = useCallback((reactor: string) => agentsRef.current.find((agent) => agent.id === reactor)?.name ?? "the agent", []);
   const renderReactionPills = useCallback((props: TranscriptMessageReactionPillsProps) => {
-    if (reactionRoot == null || !props.isDeliveryActionable || (props.entry.kind !== "message" && props.entry.kind !== "send-message" && props.entry.kind !== "user-attachment")) return null;
+    if (!props.isDeliveryActionable || (props.entry.kind !== "message" && props.entry.kind !== "send-message" && props.entry.kind !== "user-attachment")) return null;
     const reactions = "reactions" in props.entry && Array.isArray(props.entry.reactions) ? props.entry.reactions : [];
+    if (activeIsHuman) {
+      if (humanReactionTransport == null || activeAgentId.length === 0) return null;
+      return <ReactionPills
+        agentId={activeAgentId}
+        entryId={props.entry.id}
+        reactions={reactions}
+        resolveReactorName={resolveReactionReactorName}
+        transport={humanReactionTransport}
+      />;
+    }
+    if (reactionRoot == null) return null;
     return <ReactionPills
       agentId={activeAgentId.length > 0 ? activeAgentId : null}
       controller={reactionRoot.pair.controller}
@@ -1300,14 +1330,26 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       reactions={reactions}
       resolveReactorName={resolveReactionReactorName}
     />;
-  }, [activeAgentId, reactionRoot, resolveReactionReactorName]);
+  }, [activeAgentId, activeIsHuman, humanReactionTransport, reactionRoot, resolveReactionReactorName]);
   const renderReactionActions = useCallback((props: TranscriptMessageReactionSlotProps) => {
-    if (reactionRoot == null || props.isReadOnly || !props.isDeliveryActionable) return null;
+    if (props.isReadOnly || !props.isDeliveryActionable) return null;
     if (props.entry.kind !== "message" && props.entry.kind !== "send-message" && props.entry.kind !== "user-attachment") return null;
     const reactions = "reactions" in props.entry && Array.isArray(props.entry.reactions) ? props.entry.reactions : [];
     const myReactions = "myReactions" in props.entry && props.entry.myReactions != null
       ? props.entry.myReactions
       : new Set(reactions.filter((reaction) => reaction.by === "me").map((reaction) => reaction.emoji));
+    if (activeIsHuman) {
+      if (humanReactionTransport == null || activeAgentId.length === 0) return null;
+      return <MessageReactionAction
+        agentId={activeAgentId}
+        entryId={props.entry.id}
+        myReactions={myReactions}
+        onExpandPicker={() => undefined}
+        onOpenChange={props.onOpenChange}
+        transport={humanReactionTransport}
+      />;
+    }
+    if (reactionRoot == null) return null;
     return <MessageReactionAction
       agentId={activeAgentId.length > 0 ? activeAgentId : null}
       controller={reactionRoot.pair.controller}
@@ -1316,7 +1358,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       onExpandPicker={() => undefined}
       onOpenChange={props.onOpenChange}
     />;
-  }, [activeAgentId, reactionRoot]);
+  }, [activeAgentId, activeIsHuman, humanReactionTransport, reactionRoot]);
   useEffect(() => {
     if (reactionRoot == null) return;
     reactionRoot.setScope(reactionScope);
@@ -3919,9 +3961,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 onReply={(entry) => { replyThreadController.selectReply(entry.id); }}
                 onStartThread={activeIsHuman ? undefined : (entry) => { replyThreadController.navigate(entry.id); }}
                 onResendFailedSend={(entry) => void resendFailedSend(entry)}
-                renderMessageReactionActions={activeIsHuman ? undefined : renderReactionActions}
+                renderMessageReactionActions={renderReactionActions}
                 renderComputerHandoff={activeIsHuman ? undefined : (entry) => renderComputerHandoffEntry(entry, computer)}
-                renderMessageReactionPills={activeIsHuman ? undefined : renderReactionPills}
+                renderMessageReactionPills={renderReactionPills}
                 resolveAttachmentMedia={resolveAttachmentMedia}
                 readAttachmentBytes={(path, maxBytes) => bridge.readAttachmentBytes(path, maxBytes)}
                 downloadAttachment={(path, suggestedName) => bridge.downloadAttachment(path, suggestedName)}
