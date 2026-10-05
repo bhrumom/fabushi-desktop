@@ -5,7 +5,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "40757ac5d15576cad958eae5589d1fb22c5c5fee",
+      "targetBlobSha": "68124981659748d7b561bc52776a4f46106d82dd",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx"
@@ -339,7 +339,7 @@
       "referencePath": "source/electron-main/coordinator/production-provider.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "1a78bcd74f26fda2c3bc6a6e2b78bf2c71534ebf",
+      "targetBlobSha": "3b7591fbaf07cd7a5b13bfda27bca717c8603e01",
       "behavioralEvidence": [
         "source/electron-main/coordinator/production-provider.ts",
         "source/electron-main/coordinator/coordinator-executors.ts",
