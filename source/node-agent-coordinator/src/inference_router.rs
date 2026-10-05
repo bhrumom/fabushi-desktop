@@ -1149,6 +1149,56 @@ pub fn project_transcript_entry(entry: &StoredEntry) -> Value {
     }
 }
 
+
+/// Build provider conversation history from the Host-owned canonical transcript.
+///
+/// User turns are ordinary transcript messages. User-visible Agent output is
+/// durably represented by `send-message` entries, not by the Coordinator's
+/// provider-completion shadow. Projecting those sends as assistant history keeps
+/// later turns from treating already-answered user messages as pending work.
+pub fn provider_messages_from_host_transcript(transcript: &Value) -> Vec<Value> {
+    transcript
+        .get("entries")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| {
+            match entry.get("kind").and_then(Value::as_str) {
+                Some("message")
+                    if entry.get("role").and_then(Value::as_str) == Some("user") =>
+                {
+                    Some(json!({
+                        "role": "user",
+                        "content": entry
+                            .get("content")
+                            .and_then(Value::as_str)
+                            .unwrap_or_default(),
+                    }))
+                }
+                Some("send-message")
+                    if entry
+                        .get("message")
+                        .and_then(Value::as_object)
+                        .and_then(|message| message.get("type"))
+                        .and_then(Value::as_str)
+                        == Some("text") =>
+                {
+                    Some(json!({
+                        "role": "assistant",
+                        "content": entry
+                            .get("message")
+                            .and_then(Value::as_object)
+                            .and_then(|message| message.get("content"))
+                            .and_then(Value::as_str)
+                            .unwrap_or_default(),
+                    }))
+                }
+                _ => None,
+            }
+        })
+        .collect()
+}
+
 pub fn turn_number_from_id(id: &str) -> Option<u64> {
     let rest = id.strip_prefix('t')?;
     let digit_count = rest.bytes().take_while(u8::is_ascii_digit).count();

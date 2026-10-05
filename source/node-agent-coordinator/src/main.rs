@@ -38,7 +38,7 @@ use mahayana_node_agent_coordinator::inference_router::{
     should_append_user_message, should_await_turn,
     parse_send_prompt_attachments,
     prepare_workflow_run_now_route, project_runner_turn_context, project_transcript_entry,
-    CoordinatorWorkflowRunNowRoute,
+    provider_messages_from_host_transcript, CoordinatorWorkflowRunNowRoute,
 };
 use mahayana_node_agent_coordinator::webauthn::{
     ApprovedWebAuthnConsent, WebAuthnCeremony,
@@ -2132,43 +2132,17 @@ fn execute_local_inference(
             );
         }
 
-        let stored_entries = store.entries(&agent_id);
-        let mut messages = stored_entries
-            .iter()
-            .map(|entry| {
-                let content =
-                    if append_user_message
-                        && entry.id == current_message_id
-                        && entry.role == StoredRole::User
-                    {
-                        runner_prompt.clone()
-                    } else {
-                        entry.content.clone()
-                    };
-                json!({
-                    "role": match entry.role {
-                        StoredRole::User => "user",
-                        StoredRole::Assistant => "assistant",
-                    },
-                    "content": content,
-                })
-            })
-            .collect::<Vec<_>>();
-        if !append_user_message {
-            messages.push(json!({
-                "role": "user",
-                "content": runner_prompt.clone(),
-            }));
-        }
-        // Host admission is authoritative, but the Coordinator transcript
-        // snapshot can still be empty during a fresh local-first turn. Never
-        // start the shipping Runner with an empty provider conversation.
-        if messages.is_empty() {
-            messages.push(json!({
-                "role": "user",
-                "content": runner_prompt,
-            }));
-        }
+        // Provider history must come from the Host-owned Session/Transcript,
+        // because user-visible Agent replies are durably written there as
+        // `send-message` entries by the SendMessage tool. The Coordinator's
+        // inference store is only a local projection and can lag those replies.
+        // `remote` was read before Host admission of this turn, so append the
+        // current runner prompt exactly once after projecting prior history.
+        let mut messages = provider_messages_from_host_transcript(&remote);
+        messages.push(json!({
+            "role": "user",
+            "content": runner_prompt,
+        }));
         (
             turn,
             messages,

@@ -1322,6 +1322,52 @@ fn coordinator_inference_router_uses_product_fallback_until_settings_override_it
 
 
 #[test]
+fn provider_history_projects_host_send_messages_as_assistant_turns() {
+    use mahayana_node_agent_coordinator::inference_router::provider_messages_from_host_transcript;
+
+    let messages = provider_messages_from_host_transcript(&json!({
+        "entries": [
+            {"kind":"message","id":"t1u","role":"user","content":"first"},
+            {"kind":"send-message","id":"t1s0","message":{"type":"text","content":"answer first"}},
+            {"kind":"widget","id":"ignore"},
+            {"kind":"message","id":"t2u","role":"user","content":"second"},
+            {"kind":"send-message","id":"t2s0","message":{"type":"image","content":"ignore"}},
+            {"kind":"send-message","id":"t2s1","message":{"type":"text","content":"answer second"}}
+        ]
+    }));
+
+    assert_eq!(
+        messages,
+        vec![
+            json!({"role":"user","content":"first"}),
+            json!({"role":"assistant","content":"answer first"}),
+            json!({"role":"user","content":"second"}),
+            json!({"role":"assistant","content":"answer second"}),
+        ]
+    );
+}
+
+
+#[test]
+fn shipping_local_inference_uses_host_canonical_history_for_provider_messages() {
+    let main = include_str!("../src/main.rs");
+    let history_projection = main
+        .find("let mut messages = provider_messages_from_host_transcript(&remote);")
+        .expect("shipping local inference projects Host transcript");
+    let current_prompt = main[history_projection..]
+        .find("\"role\": \"user\",")
+        .map(|offset| history_projection + offset)
+        .expect("current prompt follows canonical history projection");
+    let runner_start = main[history_projection..]
+        .find("\"runner.startRoutedProvider\"")
+        .map(|offset| history_projection + offset)
+        .expect("canonical history reaches shipping Runner");
+    assert!(history_projection < current_prompt);
+    assert!(current_prompt < runner_start);
+}
+
+
+#[test]
 fn inference_router_persists_bounded_transcripts_reactions_and_turn_ids() {
     use std::fs;
 
