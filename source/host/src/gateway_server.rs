@@ -78,7 +78,10 @@ const FABUSHI_EXTENSION_COMMANDS: &[&str] = &[
     "syncHumanConversation",
     "createHumanConversation",
     "sendHumanMessage",
+    "reactHumanMessage",
     "getHumanConversationTranscript",
+    "getHumanConversationTranscriptTail",
+    "searchHumanMessages",
     // Internal desktop MCP lifecycle settlement. The shipping desktop MCP owner
     // answers Host lifecycle requests through this single explicit callback.
     "mcp.resolveLifecycleRequest",
@@ -1198,9 +1201,14 @@ mod tests {
     fn fbcp_human_commands_are_explicit_gateway_extensions() {
         for method in [
             "listHumanConversations",
+            "syncHumanConversations",
+            "syncHumanConversation",
             "createHumanConversation",
             "sendHumanMessage",
+            "reactHumanMessage",
             "getHumanConversationTranscript",
+            "getHumanConversationTranscriptTail",
+            "searchHumanMessages",
         ] {
             assert!(is_gateway_command(method), "{method} must reach the production Session owner");
         }
