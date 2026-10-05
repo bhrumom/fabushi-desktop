@@ -80,7 +80,8 @@ use super::session_profile_files::{
 use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_bytes;
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
 use super::native_messaging::{
-    FabushiNativeMessagingClient, FabushiRemoteHumanMessage, fabushi_identity_text,
+    FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanMessage,
+    fabushi_identity_text,
 };
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
@@ -1355,6 +1356,50 @@ impl ProductionSessionWorkers {
         {
             object.insert("readAt".into(), serde_json::json!(read_at));
         }
+        if let Some(reply_to_message_id) = remote
+            .reply_to_message_id
+            .as_ref()
+            .map(fabushi_identity_text)
+            .transpose()?
+        {
+            object.insert(
+                "replyToId".into(),
+                serde_json::json!(format!("human-server-message:{reply_to_message_id}")),
+            );
+            object.insert(
+                "remoteReplyToMessageId".into(),
+                serde_json::json!(reply_to_message_id),
+            );
+        }
+        if !remote.attachments.is_empty() {
+            object.insert(
+                "attachments".into(),
+                serde_json::Value::Array(
+                    remote
+                        .attachments
+                        .iter()
+                        .map(|attachment| {
+                            serde_json::json!({
+                                "path": format!("fabushi-message-resource:{}", attachment.resource_id),
+                                "name": attachment.name,
+                                "size": attachment.size,
+                                "mimeType": attachment.content_type,
+                                "resourceId": attachment.resource_id,
+                                "remoteCreatedAt": attachment.created_at,
+                            })
+                        })
+                        .collect(),
+                ),
+            );
+        }
+        if !remote.reactions.is_empty() {
+            object.insert(
+                "remoteReactions".into(),
+                serde_json::to_value(&remote.reactions).map_err(|error| {
+                    format!("remote Human reactions could not be projected: {error}")
+                })?,
+            );
+        }
         let existing = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?;
@@ -1777,20 +1822,69 @@ impl ProductionSessionWorkers {
         }
 
         if let Some(client) = self.shipping_native_messaging()? {
-            if normalized_reply.is_some() || !normalized_attachments.is_empty() {
-                return Err(
-                    "Fabushi native messaging backend does not yet accept reply or attachment metadata; refusing local-only divergence"
-                        .into(),
+            let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+            let remote_reply_to_id = normalized_reply
+                .map(|reply_id| {
+                    existing
+                        .iter()
+                        .find(|entry| {
+                            entry.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
+                        })
+                        .and_then(|entry| entry.get("remoteMessageId"))
+                        .map(fabushi_identity_text)
+                        .transpose()?
+                        .ok_or_else(|| {
+                            "Fabushi Human reply target has no canonical remote message identity"
+                                .to_string()
+                        })
+                })
+                .transpose()?;
+            let mut uploaded =
+                Vec::<FabushiRemoteHumanAttachment>::with_capacity(normalized_attachments.len());
+            for attachment in &normalized_attachments {
+                let path = attachment
+                    .get("path")
+                    .and_then(serde_json::Value::as_str)
+                    .ok_or_else(|| "sendHumanMessage attachment requires path".to_string())?;
+                let name = attachment
+                    .get("name")
+                    .and_then(serde_json::Value::as_str)
+                    .ok_or_else(|| "sendHumanMessage attachment requires name".to_string())?;
+                uploaded.push(
+                    client.upload_direct_message_resource(std::path::Path::new(path), name)?,
                 );
             }
-            let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
-            let remote = client.send_direct_message(&peer_human_id, text, client_nonce)?;
+            let remote = client.send_direct_message(
+                &peer_human_id,
+                text,
+                client_nonce,
+                remote_reply_to_id.as_deref(),
+                &uploaded,
+            )?;
             let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
             let remote_recipient = fabushi_identity_text(&remote.recipient_user_id)?;
+            let remote_reply_matches = match (&remote_reply_to_id, &remote.reply_to_message_id) {
+                (None, None) => true,
+                (Some(expected), Some(actual)) => {
+                    fabushi_identity_text(actual).is_ok_and(|actual| actual == *expected)
+                }
+                _ => false,
+            };
+            let remote_resources = remote
+                .attachments
+                .iter()
+                .map(|attachment| attachment.resource_id.as_str())
+                .collect::<Vec<_>>();
+            let uploaded_resources = uploaded
+                .iter()
+                .map(|attachment| attachment.resource_id.as_str())
+                .collect::<Vec<_>>();
             if remote_sender != sender_id
                 || remote_recipient != peer_human_id
                 || remote.text.trim() != text
                 || remote.client_request_id.as_deref() != Some(client_nonce)
+                || !remote_reply_matches
+                || remote_resources != uploaded_resources
             {
                 return Err("Fabushi Human message backend returned mismatched persisted content".into());
             }
