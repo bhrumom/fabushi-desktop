@@ -838,7 +838,7 @@ test.describe('signed candidate packaged acceptance', () => {
 
       await openAgent(page, 'Chief');
       await installLifecycleCapture(page);
-      const lifecyclePrompt = 'Lifecycle acceptance: analyze the signed candidate and finish with CANDIDATE-LIFECYCLE-OK.';
+      const lifecyclePrompt = 'Lifecycle acceptance. Do not use tools. Your entire final answer must be exactly CANDIDATE-LIFECYCLE-OK. Copy those characters verbatim; do not explain, describe, quote, or paraphrase the marker.';
       const lifecycleSubmittedAt = Date.now();
       const lifecycleAssistantCount = await submitTurn(page, lifecyclePrompt);
       // Canonical Agent sends intentionally remain owned by the addressed
