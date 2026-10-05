@@ -1770,6 +1770,10 @@ fn shipping_call_session_uses_backend_ordering_then_materializes_canonical_owner
             memory,
         ),
     );
+    let transport_identity = dispatch(&runtime, "getCallTransportIdentity", json!({}));
+    assert_eq!(transport_identity["userId"], "1");
+    assert_eq!(transport_identity["deviceId"], "device-a");
+
     let conversation = runtime
         .create_human_conversation("2", "Peer")
         .expect("Human conversation");
