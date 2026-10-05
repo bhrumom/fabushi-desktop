@@ -375,6 +375,19 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 .map(Value::Array)
                 .map_err(SessionGatewayError::internal)
         }),
+        "searchHumanMessages" => required_string(args, "conversationId").and_then(|conversation_id| {
+            required_string(args, "query").and_then(|query| {
+                let limit = args
+                    .get("limit")
+                    .and_then(Value::as_u64)
+                    .and_then(|value| usize::try_from(value).ok())
+                    .unwrap_or(50);
+                session
+                    .search_human_messages(conversation_id, query, limit)
+                    .map(Value::Array)
+                    .map_err(SessionGatewayError::internal)
+            })
+        }),
         "createGroup" => {
             required_string(args, "name").and_then(|name| {
                 let description = optional_string(args, "description")?.unwrap_or_default();
