@@ -730,6 +730,40 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     assert_eq!(transcript[1], reply);
     assert_eq!(transcript[2], attachment_only);
     assert_eq!(transcript[3], agent_result);
+
+    let attachment_search = dispatch(
+        &runtime,
+        "searchHumanMessages",
+        json!({
+            "conversationId": conversation_id,
+            "query": "REPORT",
+            "limit": 10
+        }),
+    );
+    assert_eq!(attachment_search.as_array().map(Vec::len), Some(1));
+    assert_eq!(attachment_search[0]["id"], reply["id"]);
+    let agent_search = dispatch(
+        &runtime,
+        "searchHumanMessages",
+        json!({
+            "conversationId": conversation_id,
+            "query": "trusted agent",
+            "limit": 1
+        }),
+    );
+    assert_eq!(agent_search, json!([agent_result.clone()]));
+    let empty_search = dispatch_production_session_gateway_call(
+        &runtime,
+        "searchHumanMessages",
+        &json!({
+            "conversationId": conversation_id,
+            "query": "   "
+        }),
+    )
+    .expect("handled Human search")
+    .expect_err("empty Human search query must fail closed");
+    assert!(matches!(empty_search, SessionGatewayError::BadRequest(_)));
+
     let conversations_after_send = dispatch(&runtime, "listHumanConversations", json!({}));
     assert_eq!(conversations_after_send[0]["updatedAt"], 2345.0);
 
@@ -788,6 +822,17 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     .expect("handled foreign Human transcript")
     .expect_err("foreign Human identity must not read the conversation");
     assert!(matches!(denied, SessionGatewayError::Internal(_)));
+    let foreign_search = dispatch_production_session_gateway_call(
+        &foreign,
+        "searchHumanMessages",
+        &json!({
+            "conversationId": conversation_id,
+            "query": "hello"
+        }),
+    )
+    .expect("handled foreign Human search")
+    .expect_err("foreign Human identity must not search the conversation");
+    assert!(matches!(foreign_search, SessionGatewayError::Internal(_)));
     foreign.shutdown();
     restarted.shutdown();
     let _ = fs::remove_dir_all(root);
