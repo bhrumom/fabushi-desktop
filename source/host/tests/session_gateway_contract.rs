@@ -968,6 +968,37 @@ fn read_fixture_http_request(stream: &mut std::net::TcpStream) -> String {
     String::from_utf8_lossy(&request).into_owned()
 }
 
+fn spawn_remote_reaction_server() -> (String, thread::JoinHandle<Vec<String>>) {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind reaction fixture");
+    let address = listener.local_addr().expect("fixture address");
+    let handle = thread::spawn(move || {
+        let mut requests = Vec::new();
+        for (active, count, reacted_by_me) in [(true, 2_u64, true), (false, 1_u64, false)] {
+            let (mut stream, _) = listener.accept().expect("accept reaction mutation");
+            requests.push(read_fixture_http_request(&mut stream));
+            let body = json!({
+                "success": true,
+                "messageId": 11,
+                "reactions": [{
+                    "emoji": "👍",
+                    "count": count,
+                    "reactedByMe": reacted_by_me
+                }]
+            }).to_string();
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            ).expect("write reaction response");
+            stream.flush().expect("flush reaction response");
+            let _ = active;
+        }
+        requests
+    });
+    (format!("http://{address}"), handle)
+}
+
 fn spawn_remote_reply_attachment_server() -> (String, thread::JoinHandle<Vec<String>>) {
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind reply attachment fixture");
     let address = listener.local_addr().expect("fixture address");
@@ -1137,6 +1168,124 @@ fn shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity() {
     assert!(requests[1].contains(r#""replyToMessageId":"10""#));
     assert!(requests[1].contains(r#""resourceId":"resource-1""#));
     assert!(requests[1].contains(r#""clientRequestId":"shipping-reply-1""#));
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript() {
+    let root = temp_root("human-shipping-reaction");
+    let agents = root.join("agents");
+    fs::create_dir_all(&root).expect("fixture root");
+    let credential_path = root.join("host-credential.json");
+    fs::write(
+        &credential_path,
+        r#"{"accessToken":"fixture-token","deviceId":"device-a","userId":1}"#,
+    )
+    .expect("credential");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(&credential_path)
+            .expect("credential metadata")
+            .permissions();
+        permissions.set_mode(0o600);
+        fs::set_permissions(&credential_path, permissions).expect("private credential");
+    }
+
+    let (base_url, server) = spawn_remote_reaction_server();
+    let client = Arc::new(
+        FabushiNativeMessagingClient::new(&base_url, &credential_path)
+            .expect("shipping messaging client"),
+    );
+    let memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+            agents.clone(),
+        ),
+    );
+    let runtime = Arc::new(
+        ProductionSessionWorkers::with_agents_root_identity_messaging_and_dependencies(
+            &agents,
+            500,
+            Some("1".into()),
+            Some(client),
+            true,
+            None,
+            Arc::new(|| None),
+            memory,
+        ),
+    );
+    let created = runtime
+        .create_human_conversation("2", "Peer")
+        .expect("Human conversation");
+    let conversation_id = created["id"]
+        .as_str()
+        .expect("conversation id")
+        .to_string();
+    let owner = runtime
+        .open_human_conversation_db_owner(&conversation_id)
+        .expect("conversation owner");
+    assert!(owner
+        .append_transcript_entry(&json!({
+            "id": "human-server-message:11",
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": "2",
+            "content": "react to me",
+            "timestampMs": 1000.0,
+            "delivery": "sent",
+            "remoteMessageId": "11",
+            "remoteCreatedAt": "2026-10-05T01:00:01Z",
+            "remoteReactions": [],
+            "reactions": []
+        }))
+        .expect("remote message"));
+
+    let reacted = dispatch(
+        &runtime,
+        "reactHumanMessage",
+        json!({
+            "conversationId": conversation_id,
+            "entryId": "human-server-message:11",
+            "emoji": "👍"
+        }),
+    );
+    assert_eq!(reacted["remoteReactions"][0]["reactedByMe"], true);
+    assert_eq!(reacted["remoteReactions"][0]["count"], 2);
+    assert_eq!(
+        reacted["reactions"],
+        json!([
+            {"emoji": "👍", "by": "me"},
+            {"emoji": "👍", "by": "2"}
+        ])
+    );
+
+    let unreacted = dispatch(
+        &runtime,
+        "reactHumanMessage",
+        json!({
+            "conversationId": conversation_id,
+            "entryId": "human-server-message:11",
+            "emoji": "👍"
+        }),
+    );
+    assert_eq!(unreacted["remoteReactions"][0]["reactedByMe"], false);
+    assert_eq!(unreacted["reactions"], json!([{"emoji": "👍", "by": "2"}]));
+    let transcript = dispatch(
+        &runtime,
+        "getHumanConversationTranscript",
+        json!({"conversationId": conversation_id}),
+    );
+    assert_eq!(transcript[0], unreacted);
+
+    let requests = server.join().expect("reaction fixture");
+    assert_eq!(requests.len(), 2);
+    assert!(requests[0].starts_with("POST /api/social/messages/11/reactions "));
+    assert!(requests[0].contains(r#""active":true"#));
+    assert!(requests[1].contains(r#""active":false"#));
+    assert!(requests[0].contains(r#""emoji":"👍""#));
 
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
