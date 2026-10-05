@@ -62,6 +62,25 @@ async function readRequestBody(request: import('node:http').IncomingMessage): Pr
   return Buffer.concat(chunks);
 }
 
+type E2eHumanMessage = {
+  id: number;
+  senderUserId: string;
+  senderUsername: string;
+  recipientUserId: string;
+  recipientUsername: string;
+  text: string;
+  clientRequestId: string;
+  createdAt: string;
+  readAt: null;
+  isOutgoing: true;
+  replyToMessageId: null;
+  attachments: [];
+  reactions: [];
+};
+
+let e2eHumanMessages: E2eHumanMessage[] = [];
+let e2eHumanMessageSequence = 1;
+
 async function ensureE2eAuthBackend(): Promise<string> {
   if (e2eAuthBackendPromise != null) return await e2eAuthBackendPromise;
   e2eAuthBackendPromise = new Promise<string>((resolve, reject) => {
@@ -152,6 +171,90 @@ async function ensureE2eAuthBackend(): Promise<string> {
           userId: 'fabushi-e2e-account',
           provider: 'focused-e2e',
         }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/friends' && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, data: { friends: [] } }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/messages' && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const contactId = requestUrl.searchParams.get('contactId') ?? '';
+        const before = requestUrl.searchParams.get('before');
+        const requestedLimit = Number.parseInt(requestUrl.searchParams.get('limit') ?? '200', 10);
+        const limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(requestedLimit, 200)) : 200;
+        const rows = e2eHumanMessages
+          .filter((message) => message.recipientUserId === contactId || message.senderUserId === contactId)
+          .filter((message) => before == null || message.createdAt < before)
+          .slice(-limit);
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, data: { messages: rows } }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/messages' && request.method === 'POST') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const body = JSON.parse((await readRequestBody(request)).toString('utf8')) as {
+          targetUserId?: unknown;
+          text?: unknown;
+          clientRequestId?: unknown;
+          replyToMessageId?: unknown;
+          attachments?: unknown;
+        };
+        const targetUserId = typeof body.targetUserId === 'string' ? body.targetUserId.trim() : '';
+        const text = typeof body.text === 'string' ? body.text.trim() : '';
+        const clientRequestId = typeof body.clientRequestId === 'string' ? body.clientRequestId.trim() : '';
+        if (targetUserId.length === 0 || clientRequestId.length === 0
+          || body.replyToMessageId != null
+          || (Array.isArray(body.attachments) && body.attachments.length > 0)) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 400;
+          response.end(JSON.stringify({ success: false, error: 'invalid-focused-human-message' }));
+          return;
+        }
+        let message = e2eHumanMessages.find((candidate) => candidate.clientRequestId === clientRequestId);
+        if (message == null) {
+          message = {
+            id: e2eHumanMessageSequence++,
+            senderUserId: 'fabushi-e2e-account',
+            senderUsername: 'e2e@fabushi.local',
+            recipientUserId: targetUserId,
+            recipientUsername: targetUserId,
+            text,
+            clientRequestId,
+            createdAt: new Date().toISOString(),
+            readAt: null,
+            isOutgoing: true,
+            replyToMessageId: null,
+            attachments: [],
+            reactions: [],
+          };
+          e2eHumanMessages.push(message);
+        }
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, message }));
         return;
       }
       if (requestUrl.pathname === '/v1/ai/responses' && request.method === 'POST') {
@@ -511,6 +614,8 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
 
 
 test('Mahayana renders one Hermes-style assistant turn after a Human conversation survives restart and explicitly hands off', async () => {
+  e2eHumanMessages = [];
+  e2eHumanMessageSequence = 1;
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-agent-vertical-slice-'));
   let app: ElectronApplication | null = null;
   const humanMessage = 'Human durable message for the native Fabushi conversation.';
