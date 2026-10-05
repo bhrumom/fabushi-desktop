@@ -32,6 +32,22 @@ export interface SettingsCopy {
   readonly refreshDevices: string;
   readonly grantMediaPermissions: string;
   readonly mediaPermissionDescription: string;
+  readonly privacy: string;
+  readonly privacyMode: string;
+  readonly privacyModeDescription: string;
+  readonly stateEnabled: string;
+  readonly stateDisabled: string;
+  readonly stateUnavailable: string;
+  readonly desktopBehavior: string;
+  readonly notifications: string;
+  readonly notificationsDescription: string;
+  readonly storage: string;
+  readonly storageDescription: string;
+  readonly downloads: string;
+  readonly downloadsDescription: string;
+  readonly shortcuts: string;
+  readonly shortcutsDescription: string;
+  readonly advanced: string;
   readonly directionAutomatic: string;
   readonly directionLtr: string;
   readonly directionRtl: string;
@@ -50,6 +66,8 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     reduceMotion: "Reduce motion", reduceMotionDescription: "Disables non-essential animation and smooth scrolling.",
     highContrast: "High contrast controls", highContrastDescription: "Strengthens control borders and keyboard focus indicators.",
     mediaDevices: "Media & Devices", microphone: "Microphone", camera: "Camera", defaultDevice: "System default", refreshDevices: "Refresh devices", grantMediaPermissions: "Allow microphone & camera", mediaPermissionDescription: "Device preferences are stored locally and used by Human calls.",
+    privacy: "Privacy", privacyMode: "Privacy mode", privacyModeDescription: "Enforced by the Fabushi account policy and cannot be downgraded by a local desktop setting.", stateEnabled: "Enabled", stateDisabled: "Disabled", stateUnavailable: "Unavailable",
+    desktopBehavior: "Desktop behavior", notifications: "Notifications", notificationsDescription: "System notification preferences are intentionally disabled; in-app status/error announcements and unread badge behavior remain automatic.", storage: "Storage", storageDescription: "Conversation/session state and attachments stay in the canonical app-profile and Host stores; alternate storage roots are not selectable.", downloads: "Downloads", downloadsDescription: "Each attachment download uses the native Save As dialog; no persistent download-folder preference is applied.", shortcuts: "Shortcuts", shortcutsDescription: "Window shortcuts are fixed by the Electron owner and are not globally registered or user-remappable.", advanced: "Advanced",
     directionAutomatic: "Automatic", directionLtr: "Left to right", directionRtl: "Right to left",
     accessibilityCountOne: "{count} accessibility preference active", accessibilityCountOther: "{count} accessibility preferences active"
   },
@@ -63,6 +81,8 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     reduceMotion: "减少动态效果", reduceMotionDescription: "关闭非必要动画和平滑滚动。",
     highContrast: "高对比度控件", highContrastDescription: "增强控件边框和键盘焦点指示。",
     mediaDevices: "媒体与设备", microphone: "麦克风", camera: "摄像头", defaultDevice: "系统默认", refreshDevices: "刷新设备", grantMediaPermissions: "允许麦克风和摄像头", mediaPermissionDescription: "设备偏好仅保存在本机，并用于 Human 通话。",
+    privacy: "隐私", privacyMode: "隐私模式", privacyModeDescription: "由 Fabushi 账户策略强制执行，无法通过本地桌面设置降低保护。", stateEnabled: "已启用", stateDisabled: "已停用", stateUnavailable: "不可用",
+    desktopBehavior: "桌面行为", notifications: "通知", notificationsDescription: "系统通知偏好按设计保持关闭；应用内状态/错误播报和未读标记自动工作。", storage: "存储", storageDescription: "会话、转录和附件保存在规范的应用资料与 Host 存储中，不提供备用存储根目录。", downloads: "下载", downloadsDescription: "每次附件下载都使用系统“另存为”对话框，不应用永久下载文件夹偏好。", shortcuts: "快捷键", shortcutsDescription: "窗口快捷键由 Electron 所有者固定管理，不注册全局快捷键，也不提供用户重映射。", advanced: "高级",
     directionAutomatic: "自动", directionLtr: "从左到右", directionRtl: "从右到左",
     accessibilityCountOne: "已启用 {count} 项辅助功能偏好", accessibilityCountOther: "已启用 {count} 项辅助功能偏好"
   },
@@ -76,6 +96,8 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     reduceMotion: "減少動態效果", reduceMotionDescription: "關閉非必要動畫與平滑捲動。",
     highContrast: "高對比度控制項", highContrastDescription: "增強控制項邊框與鍵盤焦點指示。",
     mediaDevices: "媒體與裝置", microphone: "麥克風", camera: "相機", defaultDevice: "系統預設", refreshDevices: "重新整理裝置", grantMediaPermissions: "允許麥克風與相機", mediaPermissionDescription: "裝置偏好只儲存在本機，並用於 Human 通話。",
+    privacy: "隱私", privacyMode: "隱私模式", privacyModeDescription: "由 Fabushi 帳戶政策強制執行，無法透過本機桌面設定降低保護。", stateEnabled: "已啟用", stateDisabled: "已停用", stateUnavailable: "無法使用",
+    desktopBehavior: "桌面行為", notifications: "通知", notificationsDescription: "系統通知偏好依設計保持關閉；應用程式內狀態/錯誤播報與未讀標記會自動運作。", storage: "儲存空間", storageDescription: "對話、工作階段與附件保存在規範的應用程式資料與 Host 儲存中，不提供替代儲存根目錄。", downloads: "下載", downloadsDescription: "每次附件下載都使用系統「另存新檔」對話框，不套用永久下載資料夾偏好。", shortcuts: "快速鍵", shortcutsDescription: "視窗快速鍵由 Electron 所有者固定管理，不註冊全域快速鍵，也不提供使用者重新對應。", advanced: "進階",
     directionAutomatic: "自動", directionLtr: "從左到右", directionRtl: "從右到左",
     accessibilityCountOne: "已啟用 {count} 項輔助功能偏好", accessibilityCountOther: "已啟用 {count} 項輔助功能偏好"
   },
@@ -89,6 +111,8 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     reduceMotion: "モーションを減らす", reduceMotionDescription: "不要なアニメーションとスムーズスクロールを無効にします。",
     highContrast: "高コントラスト", highContrastDescription: "コントロール境界とキーボードフォーカスを強調します。",
     mediaDevices: "メディアとデバイス", microphone: "マイク", camera: "カメラ", defaultDevice: "システム既定", refreshDevices: "デバイスを更新", grantMediaPermissions: "マイクとカメラを許可", mediaPermissionDescription: "デバイス設定はローカルに保存され、Human 通話で使用されます。",
+    privacy: "プライバシー", privacyMode: "プライバシーモード", privacyModeDescription: "Fabushi アカウントポリシーで強制され、ローカルのデスクトップ設定から保護を弱めることはできません。", stateEnabled: "有効", stateDisabled: "無効", stateUnavailable: "利用不可",
+    desktopBehavior: "デスクトップの動作", notifications: "通知", notificationsDescription: "システム通知の設定は意図的に無効です。アプリ内の状態/エラー通知と未読バッジは自動で動作します。", storage: "ストレージ", storageDescription: "会話、セッション、添付ファイルは正規のアプリプロファイルと Host ストアに保存され、別の保存ルートは選択できません。", downloads: "ダウンロード", downloadsDescription: "添付ファイルのダウンロードごとにネイティブの「名前を付けて保存」を使用し、永続的なダウンロード先設定は適用しません。", shortcuts: "ショートカット", shortcutsDescription: "ウィンドウのショートカットは Electron 所有者が固定管理し、グローバル登録やユーザーによる再割り当ては行いません。", advanced: "詳細設定",
     directionAutomatic: "自動", directionLtr: "左から右", directionRtl: "右から左",
     accessibilityCountOne: "アクセシビリティ設定 {count} 件が有効", accessibilityCountOther: "アクセシビリティ設定 {count} 件が有効"
   },
@@ -102,6 +126,8 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     reduceMotion: "동작 줄이기", reduceMotionDescription: "불필요한 애니메이션과 부드러운 스크롤을 끕니다.",
     highContrast: "고대비 컨트롤", highContrastDescription: "컨트롤 테두리와 키보드 포커스 표시를 강화합니다.",
     mediaDevices: "미디어 및 기기", microphone: "마이크", camera: "카메라", defaultDevice: "시스템 기본값", refreshDevices: "기기 새로고침", grantMediaPermissions: "마이크 및 카메라 허용", mediaPermissionDescription: "기기 환경설정은 로컬에 저장되고 Human 통화에 사용됩니다.",
+    privacy: "개인정보 보호", privacyMode: "개인정보 보호 모드", privacyModeDescription: "Fabushi 계정 정책에서 강제하며 로컬 데스크톱 설정으로 보호 수준을 낮출 수 없습니다.", stateEnabled: "사용", stateDisabled: "사용 안 함", stateUnavailable: "사용할 수 없음",
+    desktopBehavior: "데스크톱 동작", notifications: "알림", notificationsDescription: "시스템 알림 환경설정은 의도적으로 비활성화되어 있으며 앱 내 상태/오류 알림과 읽지 않음 배지는 자동으로 동작합니다.", storage: "저장소", storageDescription: "대화, 세션 및 첨부 파일은 정식 앱 프로필과 Host 저장소에 유지되며 대체 저장소 루트를 선택할 수 없습니다.", downloads: "다운로드", downloadsDescription: "첨부 파일을 내려받을 때마다 네이티브 다른 이름으로 저장 대화상자를 사용하며 영구 다운로드 폴더 환경설정은 적용하지 않습니다.", shortcuts: "단축키", shortcutsDescription: "창 단축키는 Electron 소유자가 고정 관리하며 전역 등록이나 사용자 재매핑을 제공하지 않습니다.", advanced: "고급",
     directionAutomatic: "자동", directionLtr: "왼쪽에서 오른쪽", directionRtl: "오른쪽에서 왼쪽",
     accessibilityCountOne: "접근성 환경설정 {count}개 사용 중", accessibilityCountOther: "접근성 환경설정 {count}개 사용 중"
   },
@@ -115,6 +141,8 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     reduceMotion: "تقليل الحركة", reduceMotionDescription: "يعطّل الحركة غير الضرورية والتمرير السلس.",
     highContrast: "تباين عالٍ", highContrastDescription: "يقوّي حدود عناصر التحكم ومؤشرات تركيز لوحة المفاتيح.",
     mediaDevices: "الوسائط والأجهزة", microphone: "الميكروفون", camera: "الكاميرا", defaultDevice: "الإعداد الافتراضي للنظام", refreshDevices: "تحديث الأجهزة", grantMediaPermissions: "السماح بالميكروفون والكاميرا", mediaPermissionDescription: "تُحفظ تفضيلات الأجهزة محليًا وتُستخدم في مكالمات Human.",
+    privacy: "الخصوصية", privacyMode: "وضع الخصوصية", privacyModeDescription: "تفرضه سياسة حساب Fabushi ولا يمكن خفض مستوى الحماية من إعداد محلي على سطح المكتب.", stateEnabled: "مفعّل", stateDisabled: "معطّل", stateUnavailable: "غير متاح",
+    desktopBehavior: "سلوك سطح المكتب", notifications: "الإشعارات", notificationsDescription: "تفضيلات إشعارات النظام معطّلة عمدًا؛ تبقى إعلانات الحالة/الأخطاء داخل التطبيق وشارة غير المقروء تلقائية.", storage: "التخزين", storageDescription: "تبقى حالة المحادثات والجلسات والمرفقات في مخازن ملف التطبيق وHost المعيارية؛ لا يمكن اختيار جذر تخزين بديل.", downloads: "التنزيلات", downloadsDescription: "يستخدم كل تنزيل لمرفق مربع «حفظ باسم» الأصلي؛ لا يُطبّق تفضيل دائم لمجلد التنزيل.", shortcuts: "اختصارات لوحة المفاتيح", shortcutsDescription: "يدير Electron اختصارات النافذة الثابتة؛ ليست اختصارات عامة ولا قابلة لإعادة التعيين من المستخدم.", advanced: "متقدم",
     directionAutomatic: "تلقائي", directionLtr: "من اليسار إلى اليمين", directionRtl: "من اليمين إلى اليسار",
     accessibilityCountOne: "{count} إعداد وصول نشط", accessibilityCountOther: "{count} إعدادات وصول نشطة"
   },
@@ -128,6 +156,8 @@ const COPY: Record<SettingsLocaleKey, SettingsCopy> = {
     reduceMotion: "הפחתת תנועה", reduceMotionDescription: "מבטל אנימציה לא חיונית וגלילה חלקה.",
     highContrast: "ניגודיות גבוהה", highContrastDescription: "מחזק גבולות פקדים וסימוני מיקוד במקלדת.",
     mediaDevices: "מדיה והתקנים", microphone: "מיקרופון", camera: "מצלמה", defaultDevice: "ברירת מחדל של המערכת", refreshDevices: "רענון התקנים", grantMediaPermissions: "מתן גישה למיקרופון ולמצלמה", mediaPermissionDescription: "העדפות ההתקנים נשמרות מקומית ומשמשות בשיחות Human.",
+    privacy: "פרטיות", privacyMode: "מצב פרטיות", privacyModeDescription: "נאכף על ידי מדיניות חשבון Fabushi ולא ניתן להחליש אותו בהגדרת שולחן עבודה מקומית.", stateEnabled: "מופעל", stateDisabled: "כבוי", stateUnavailable: "לא זמין",
+    desktopBehavior: "התנהגות שולחן העבודה", notifications: "התראות", notificationsDescription: "העדפות התראות המערכת מושבתות במכוון; הודעות מצב/שגיאה בתוך היישום וסימון שלא נקרא פועלים אוטומטית.", storage: "אחסון", storageDescription: "מצב שיחות/הפעלות וקבצים מצורפים נשמרים במאגרי פרופיל היישום ו-Host הקנוניים; לא ניתן לבחור שורש אחסון חלופי.", downloads: "הורדות", downloadsDescription: "כל הורדת קובץ מצורף משתמשת בתיבת הדו-שיח המקורית 'שמירה בשם'; לא מוחלת העדפת תיקיית הורדות קבועה.", shortcuts: "קיצורי מקשים", shortcutsDescription: "קיצורי החלון מנוהלים באופן קבוע על ידי בעלות Electron ואינם נרשמים כקיצורים גלובליים או ניתנים למיפוי מחדש.", advanced: "מתקדם",
     directionAutomatic: "אוטומטי", directionLtr: "משמאל לימין", directionRtl: "מימין לשמאל",
     accessibilityCountOne: "העדפת נגישות {count} פעילה", accessibilityCountOther: "{count} העדפות נגישות פעילות"
   }

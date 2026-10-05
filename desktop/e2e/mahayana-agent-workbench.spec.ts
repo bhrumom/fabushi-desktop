@@ -862,6 +862,14 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
     await expect(settings).toBeVisible();
     await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
     await expect(settings.getByText('Language & Accessibility', { exact: true })).toBeVisible();
+    await expect(settings.getByText('Privacy', { exact: true })).toBeVisible();
+    await expect(settings.getByRole('status', { name: 'Privacy mode' })).toHaveText('Enabled');
+    await expect(settings.getByText('Desktop behavior', { exact: true })).toBeVisible();
+    await expect(settings.getByText('Notifications', { exact: true })).toBeVisible();
+    await expect(settings.getByText('Storage', { exact: true })).toBeVisible();
+    await expect(settings.getByText('Downloads', { exact: true })).toBeVisible();
+    await expect(settings.getByText('Shortcuts', { exact: true })).toBeVisible();
+    await expect(settings.getByText('Advanced', { exact: true })).toBeVisible();
 
     const language = settings.getByRole('button', { name: 'Language' });
     await language.focus();
@@ -876,6 +884,10 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
     await expect(localizedSettings.getByRole('heading', { name: 'عام', exact: true })).toBeVisible();
     await expect(localizedSettings.getByText('اللغة وإمكانية الوصول', { exact: true })).toBeVisible();
     await expect(localizedSettings.getByText('الوسائط والأجهزة', { exact: true })).toBeVisible();
+    await expect(localizedSettings.getByText('الخصوصية', { exact: true })).toBeVisible();
+    await expect(localizedSettings.getByRole('status', { name: 'وضع الخصوصية' })).toHaveText('مفعّل');
+    await expect(localizedSettings.getByText('سلوك سطح المكتب', { exact: true })).toBeVisible();
+    await expect(localizedSettings.getByText('متقدم', { exact: true })).toBeVisible();
     await expect.poll(() => page.evaluate(() => ({
       lang: document.documentElement.lang,
       dir: document.documentElement.dir,
@@ -899,6 +911,17 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
       const candidate = window as unknown as { desktop: { callMedia: { getPreferences(): Promise<{ microphoneId: string | null; cameraId: string | null }> } } };
       return candidate.desktop.callMedia.getPreferences();
     })).toEqual({ microphoneId: 'mic-studio-e2e', cameraId: 'camera-hd-e2e' });
+
+    await page.evaluate(() => {
+      const mediaDevices = navigator.mediaDevices;
+      if (mediaDevices == null) throw new Error('navigator.mediaDevices is unavailable');
+      Object.defineProperty(mediaDevices, 'enumerateDevices', {
+        configurable: true,
+        value: async () => { throw new Error('E2E media enumeration failure'); },
+      });
+    });
+    await localizedSettings.getByRole('button', { name: 'تحديث الأجهزة' }).click();
+    await expect(localizedSettings.getByRole('alert')).toContainText('E2E media enumeration failure');
 
     const livePreferenceStatus = localizedSettings.locator('.sand-settings-a11y-status');
     await expect(livePreferenceStatus).toHaveAttribute('role', 'status');

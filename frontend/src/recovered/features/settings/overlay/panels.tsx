@@ -37,6 +37,7 @@ export interface GeneralSettingsPanelProps {
     onChange(preferences: DesktopCallMediaPreferences): void | Promise<DesktopCallMediaPreferences>;
     onRequestPermissions(): Promise<unknown>;
   };
+  privacyModeEnabled?: boolean | null;
   platform?: SandIconPlatform;
 }
 
@@ -96,7 +97,7 @@ export function ThemePreferencePicker({ value, disabled = false, onChange }: The
   />;
 }
 
-export function GeneralSettingsPanel({ account, accountPending = false, accountError = null, theme, onAccountAction, onThemeChange, timeZone, localToolPermission, securityKey, autoReview, uiPreferences, callMediaPreferences, platform }: GeneralSettingsPanelProps) {
+export function GeneralSettingsPanel({ account, accountPending = false, accountError = null, theme, onAccountAction, onThemeChange, timeZone, localToolPermission, securityKey, autoReview, uiPreferences, callMediaPreferences, privacyModeEnabled, platform }: GeneralSettingsPanelProps) {
   const [emailCopied, setEmailCopied] = useState(false);
   const [themePending, setThemePending] = useState(false);
   const signedIn = account.kind === "logged-in";
@@ -153,9 +154,17 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
           <ThemePreferencePicker disabled={themePending} onChange={handleThemeChange} value={theme} />
         </label>
       </SettingsGroup>
+      {privacyModeEnabled !== undefined ? <SettingsGroup title={copy.privacy}>
+        <SettingsCapabilityRow
+          description={copy.privacyModeDescription}
+          status={privacyModeEnabled == null ? copy.stateUnavailable : privacyModeEnabled ? copy.stateEnabled : copy.stateDisabled}
+          title={copy.privacyMode}
+        />
+      </SettingsGroup> : null}
       {uiPreferences ? <SettingsGroup title={copy.languageAccessibility}><UiPreferencesSettingsPanel {...uiPreferences} /></SettingsGroup> : null}
       {callMediaPreferences ? <SettingsGroup title={copy.mediaDevices}><CallMediaSettingsPanel copy={copy} {...callMediaPreferences} /></SettingsGroup> : null}
-      {timeZone || localToolPermission || autoReview ? <SettingsGroup title="Agent">
+      <SettingsGroup title={copy.desktopBehavior}><DesktopBehaviorSettingsPanel copy={copy} /></SettingsGroup>
+      {timeZone || localToolPermission || autoReview ? <SettingsGroup title={copy.advanced}>
         {timeZone ? <TimeZoneSettingsPanel {...timeZone} /> : null}
         {localToolPermission ? <LocalToolPermissionSettingsPanel {...localToolPermission} /> : null}
         {autoReview ? <AutoReviewRulesPanel {...autoReview} /> : null}
@@ -172,6 +181,23 @@ const UI_LANGUAGE_OPTIONS = [
   { value: "ar", label: "العربية" }, { value: "he", label: "עברית" },
 ] as const;
 const UI_TEXT_SCALE_OPTIONS = [{ value: "0.9", label: "90%" }, { value: "1", label: "100%" }, { value: "1.1", label: "110%" }, { value: "1.25", label: "125%" }, { value: "1.5", label: "150%" }] as const;
+
+function SettingsCapabilityRow({ title, description, status }: { title: string; description: string; status?: string }) {
+  return <div className="sand-settings-row">
+    <span className="sand-settings-copy"><strong>{title}</strong><small>{description}</small></span>
+    {status == null ? null : <span aria-label={title} role="status">{status}</span>}
+  </div>;
+}
+
+function DesktopBehaviorSettingsPanel({ copy }: { copy: ReturnType<typeof settingsCopy> }) {
+  return <>
+    <SettingsCapabilityRow description={copy.notificationsDescription} title={copy.notifications} />
+    <SettingsCapabilityRow description={copy.storageDescription} title={copy.storage} />
+    <SettingsCapabilityRow description={copy.downloadsDescription} title={copy.downloads} />
+    <SettingsCapabilityRow description={copy.shortcutsDescription} title={copy.shortcuts} />
+  </>;
+}
+
 export function CallMediaSettingsPanel({
   state,
   onChange,

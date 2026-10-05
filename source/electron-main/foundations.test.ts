@@ -57,6 +57,17 @@ test("call media device preferences normalize and persist in the canonical setti
   } finally { rmSync(dir,{recursive:true,force:true}); }
 });
 
+test("system notification preferences remain disabled by the canonical settings owner", () => {
+  const dir=mkdtempSync(join(tmpdir(),"fabushi-notification-prefs-"));
+  try {
+    const store=new SandSettingsStore(join(dir,"settings.json"));
+    store.setNotificationConfig({ isEnabled:true, allowedApps:["example"] });
+    const notification=store.getNotificationConfig();
+    assert.equal(notification.isEnabled,false);
+    assert.deepEqual(notification.allowedApps,[]);
+  } finally { rmSync(dir,{recursive:true,force:true}); }
+});
+
 test("dev gates and latency clamps match Grok behavior", () => {
   assert.equal(setSimulatedGatewayLatencyMs(25.9), 25);
   assert.equal(getSimulatedGatewayLatencyMs(), 25);

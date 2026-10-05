@@ -250,6 +250,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
               onChange: (preferences) => mutate(() => setCallMediaPreferences(bridge, preferences), "settings-call-media", updateCallMediaPreferences),
               onRequestPermissions: () => bridge.callMedia.requestPermissions({ audio: true, video: true })
             }}
+            privacyModeEnabled={snapshot.privacyModeEnabled}
             theme={snapshot.theme}
           />
         );

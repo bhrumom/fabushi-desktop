@@ -33,6 +33,7 @@ export interface SettingsDesktopSnapshot {
   timeZone: DesktopTimeZoneState;
   uiPreferences: DesktopUiPreferences;
   callMediaPreferences: DesktopCallMediaPreferences;
+  privacyModeEnabled: boolean | null;
   localToolPermission: LocalToolPermissionState;
   securityKeyEnabled: boolean;
   update: DesktopUpdateStatus | null;
@@ -154,10 +155,11 @@ export function cursorAuthErrorMessage(reason: unknown): string {
 
 export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordinatorClient?: Pick<ProductionCoordinatorClient, "isEgressTunnelAvailable">): Promise<SettingsDesktopSnapshot> {
   const experimentSnapshot = loadExperimentSnapshot(bridge);
-  const [status, avatar, autoReview, theme, timeZone, uiPreferences, callMediaPreferences, localToolPermission, securityKeyEnabled, update, usageResult, resolvedExperimentSnapshot, egressTunnel] = await Promise.all([
+  const [status, avatar, privacyModeEnabled, autoReview, theme, timeZone, uiPreferences, callMediaPreferences, localToolPermission, securityKeyEnabled, update, usageResult, resolvedExperimentSnapshot, egressTunnel] = await Promise.all([
     bridge.cursorAccount.getStatus(),
     // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L133195-L133204
     bridge.cursorAccount.getAvatar().catch(() => null),
+    bridge.cursorAccount.getPrivacyModeEnabled().then((value) => value === true ? true : value === false ? false : null, () => null),
     bridge.autoReviewInstructions.get().catch(() => defaultAutoReviewSettings()),
     bridge.theme.get(),
     bridge.timeZone.get(),
@@ -189,6 +191,7 @@ export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordin
     timeZone,
     uiPreferences,
     callMediaPreferences,
+    privacyModeEnabled,
     localToolPermission,
     securityKeyEnabled,
     update,
