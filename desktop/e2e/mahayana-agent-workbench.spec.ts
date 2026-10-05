@@ -555,6 +555,17 @@ test('Human conversation shares the Agent workspace, survives restart, and expli
     await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Alice', exact: true }).click();
     await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible({ timeout: 10_000 });
 
+    // Human find-in-chat is backed by the canonical Host transcript search,
+    // not a renderer-only scan of whichever tail page happens to be mounted.
+    await page.keyboard.press('Control+f');
+    const findInChat = page.getByRole('textbox', { name: 'Find in chat' });
+    await expect(findInChat).toBeVisible();
+    await findInChat.fill('durable message');
+    await expect(page.locator('.sand-chat-find').getByRole('status')).toHaveText('1/1');
+    await findInChat.press('Enter');
+    await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible();
+    await page.getByRole('button', { name: 'Close find' }).click();
+
     // Explicit Human -> Agent continuation stays on the existing
     // Coordinator -> Host -> Runner path, but the trusted Host terminal
     // projection must land back in this same Human workspace.
