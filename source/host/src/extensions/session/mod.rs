@@ -1,4 +1,5 @@
 pub mod agent_db;
+pub mod call_session;
 pub mod agent_db_serde;
 pub mod agent_db_transcript_pages;
 pub mod agent_db_recovery;
