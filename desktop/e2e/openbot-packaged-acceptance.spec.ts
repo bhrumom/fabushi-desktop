@@ -433,6 +433,7 @@ async function waitForCompletedTurn(
   page: Page,
   prompt: string,
   previousAssistantCount: number,
+  expectedText?: string,
 ): Promise<Locator> {
   await expect(
     page
@@ -445,6 +446,17 @@ async function waitForCompletedTurn(
     async () => assistantTurns.count(),
     { timeout: 180_000, message: 'A new canonical completed assistant turn must be committed after the submitted turn.' },
   ).toBeGreaterThan(previousAssistantCount);
+
+  if (expectedText != null) {
+    // Routed Agent turns may legitimately commit an assistant preamble before
+    // one or more tool-call/result entries and the terminal assistant segment.
+    // Do not mistake that intermediate completed segment for the turn terminal:
+    // keep the semantic gate fail-closed on the expected terminal marker.
+    const terminal = assistantTurns.filter({ hasText: expectedText }).last();
+    await expect(terminal).toContainText(expectedText, { timeout: 180_000 });
+    return terminal;
+  }
+
   const turn = assistantTurns.last();
   await expect(turn).toBeVisible({ timeout: 10_000 });
   return turn;
@@ -829,8 +841,12 @@ test.describe('signed candidate packaged acceptance', () => {
       const lifecyclePrompt = 'Lifecycle acceptance: analyze the signed candidate and finish with CANDIDATE-LIFECYCLE-OK.';
       const lifecycleSubmittedAt = Date.now();
       const lifecycleAssistantCount = await submitTurn(page, lifecyclePrompt);
-      const lifecycleTurn = await waitForCompletedTurn(page, lifecyclePrompt, lifecycleAssistantCount);
-      await expect(lifecycleTurn).toContainText('CANDIDATE-LIFECYCLE-OK');
+      const lifecycleTurn = await waitForCompletedTurn(
+        page,
+        lifecyclePrompt,
+        lifecycleAssistantCount,
+        'CANDIDATE-LIFECYCLE-OK',
+      );
       const lifecycle = await page.evaluate(() => {
         const scope = window as typeof window & { __candidateLifecycle?: LifecycleSample[] };
         return scope.__candidateLifecycle ?? [];
