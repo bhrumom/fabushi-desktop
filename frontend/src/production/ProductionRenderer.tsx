@@ -1917,6 +1917,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       findInChatController.replaceEntries(
         projectHumanConversationTranscript(value, conversationName, conversationId)
       );
+      const settledSearch = findInChatController.getSnapshot();
+      if (settledSearch.current == null && settledSearch.matches.length > 0) {
+        findInChatController.step(1);
+      }
     }).catch((error: unknown) => {
       if (humanFindGenerationRef.current !== generation || activeAgentIdRef.current !== conversationId) return;
       setNotice(error instanceof Error ? `Human search unavailable: ${error.message}` : `Human search unavailable: ${String(error)}`);
