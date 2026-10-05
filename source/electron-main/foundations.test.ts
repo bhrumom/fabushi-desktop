@@ -30,6 +30,19 @@ import { createDesktopAccountAuthorizer } from "./account/account-authorization.
 import { createSandRecreateCommands, type RecreateOperationId } from "./box/box-recreate-commands.js";
 import { createDesktopHostSettingsFields } from "./prefs/host-settings-fields.js";
 import { createReleaseMetadata } from "./update/release-metadata.js";
+import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
+import { normalizeSandUiPreferences, resolveSandUiDirection } from "../shared/desktop.js";
+
+test("UI accessibility preferences normalize, persist, and resolve RTL", () => {
+  const dir=mkdtempSync(join(tmpdir(),"fabushi-ui-prefs-"));
+  try {
+    const store=new SandSettingsStore(join(dir,"settings.json"));
+    store.setUiPreferences({ locale:"ar-SA", direction:"auto", reducedMotion:true, highContrast:true, textScale:1.25 });
+    assert.deepEqual(store.getUiPreferences(), { locale:"ar-SA", direction:"auto", reducedMotion:true, highContrast:true, textScale:1.25 });
+    assert.equal(resolveSandUiDirection(store.getUiPreferences()), "rtl");
+    assert.deepEqual(normalizeSandUiPreferences({ locale:"../../invalid", direction:"sideways", reducedMotion:"yes", highContrast:true, textScale:9 }), { locale:"system", direction:"auto", reducedMotion:false, highContrast:true, textScale:2 });
+  } finally { rmSync(dir,{recursive:true,force:true}); }
+});
 
 test("dev gates and latency clamps match Grok behavior", () => {
   assert.equal(setSimulatedGatewayLatencyMs(25.9), 25);

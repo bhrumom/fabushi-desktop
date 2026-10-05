@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { CursorUsageSummary, CursorUsageUpgradeAction, DesktopTimeZoneState } from "../../../contracts/desktop-bridge";
+import type { CursorUsageSummary, CursorUsageUpgradeAction, DesktopTimeZoneState, DesktopUiPreferences } from "../../../contracts/desktop-bridge";
 import { egressTunnelStatusDescription, type EgressTunnelStatus, type UpdateStatus, type UpdateTrack } from "./updates";
 // @evidence src/app/dist/renderer/assets/index-BlqerJhg.js#L1
 import { INTERNAL_RELEASE_TRACK_CONFIG_URL, UPDATE_TRACK_LABELS, updateStatusMessage } from "./updates";
@@ -30,6 +30,7 @@ export interface GeneralSettingsPanelProps {
   localToolPermission?: { state: LocalToolPermissionState; onChange(permission: LocalToolPermission): void | Promise<LocalToolPermission> };
   securityKey?: { enabled: boolean; platform: NodeJS.Platform; onChange(enabled: boolean): void | Promise<boolean> };
   autoReview?: { settings: AutoReviewSettings; onChange(settings: AutoReviewSettings): void | Promise<unknown> };
+  uiPreferences?: { state: DesktopUiPreferences; onChange(preferences: DesktopUiPreferences): void | Promise<DesktopUiPreferences> };
   platform?: SandIconPlatform;
 }
 
@@ -89,7 +90,7 @@ export function ThemePreferencePicker({ value, disabled = false, onChange }: The
   />;
 }
 
-export function GeneralSettingsPanel({ account, accountPending = false, accountError = null, theme, onAccountAction, onThemeChange, timeZone, localToolPermission, securityKey, autoReview, platform }: GeneralSettingsPanelProps) {
+export function GeneralSettingsPanel({ account, accountPending = false, accountError = null, theme, onAccountAction, onThemeChange, timeZone, localToolPermission, securityKey, autoReview, uiPreferences, platform }: GeneralSettingsPanelProps) {
   const [emailCopied, setEmailCopied] = useState(false);
   const [themePending, setThemePending] = useState(false);
   const signedIn = account.kind === "logged-in";
@@ -145,6 +146,7 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
           <ThemePreferencePicker disabled={themePending} onChange={handleThemeChange} value={theme} />
         </label>
       </SettingsGroup>
+      {uiPreferences ? <SettingsGroup title="Language & Accessibility"><UiPreferencesSettingsPanel {...uiPreferences} /></SettingsGroup> : null}
       {timeZone || localToolPermission || autoReview ? <SettingsGroup title="Agent">
         {timeZone ? <TimeZoneSettingsPanel {...timeZone} /> : null}
         {localToolPermission ? <LocalToolPermissionSettingsPanel {...localToolPermission} /> : null}
@@ -155,6 +157,25 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
   );
 }
 
+const UI_LANGUAGE_OPTIONS = [
+  { value: "system", label: "System language" }, { value: "en", label: "English" },
+  { value: "zh-Hans", label: "简体中文" }, { value: "zh-Hant", label: "繁體中文" },
+  { value: "ja", label: "日本語" }, { value: "ko", label: "한국어" },
+  { value: "ar", label: "العربية" }, { value: "he", label: "עברית" },
+] as const;
+const UI_DIRECTION_OPTIONS = [{ value: "auto", label: "Automatic" }, { value: "ltr", label: "Left to right" }, { value: "rtl", label: "Right to left" }] as const;
+const UI_TEXT_SCALE_OPTIONS = [{ value: "0.9", label: "90%" }, { value: "1", label: "100%" }, { value: "1.1", label: "110%" }, { value: "1.25", label: "125%" }, { value: "1.5", label: "150%" }] as const;
+export function UiPreferencesSettingsPanel({ state, onChange }: { state: DesktopUiPreferences; onChange(preferences: DesktopUiPreferences): void | Promise<DesktopUiPreferences> }) {
+  const action=useAsyncAction(onChange);
+  const update=(patch: Partial<DesktopUiPreferences>)=>action.dispatch({ ...state, ...patch });
+  return <>
+    <label><span><strong>Language</strong><small>Sets document language metadata and locale-sensitive behavior.</small></span><SandSelect ariaLabel="Language" className="ui-select-trigger" disabled={action.isPending} onValueChange={(locale)=>update({locale})} options={UI_LANGUAGE_OPTIONS} placement="bottom-end" value={state.locale} /></label>
+    <label><span><strong>Reading direction</strong><small>Automatic follows the selected or system language.</small></span><SandSelect ariaLabel="Reading direction" className="ui-select-trigger" disabled={action.isPending} onValueChange={(direction)=>update({direction})} options={UI_DIRECTION_OPTIONS} placement="bottom-end" value={state.direction} /></label>
+    <label><span><strong>Text size</strong><small>Scales the interface without changing browser zoom.</small></span><SandSelect ariaLabel="Text size" className="ui-select-trigger" disabled={action.isPending} onValueChange={(value)=>update({textScale:Number(value)})} options={UI_TEXT_SCALE_OPTIONS} placement="bottom-end" value={String(state.textScale)} /></label>
+    <div className="sand-settings-row"><SandSwitch checked={state.reducedMotion} disabled={action.isPending} label={<span className="sand-settings-copy"><strong>Reduce motion</strong><small>Disables non-essential animation and smooth scrolling.</small></span>} onCheckedChange={(reducedMotion)=>update({reducedMotion})} /></div>
+    <div className="sand-settings-row"><SandSwitch checked={state.highContrast} disabled={action.isPending} label={<span className="sand-settings-copy"><strong>High contrast controls</strong><small>Strengthens control borders and keyboard focus indicators.</small></span>} onCheckedChange={(highContrast)=>update({highContrast})} /></div>
+  </>;
+}
 const SECURITY_KEY_PLATFORMS: readonly NodeJS.Platform[] = ["darwin", "win32"];
 
 export interface SecurityKeySettingsGroupProps {

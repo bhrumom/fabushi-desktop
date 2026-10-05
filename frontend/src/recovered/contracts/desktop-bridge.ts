@@ -6,6 +6,8 @@ export interface ThemeState {
   preference: ThemePreference;
   resolved: "light" | "dark";
 }
+export type DesktopUiDirection = "auto" | "ltr" | "rtl";
+export interface DesktopUiPreferences { locale: string; direction: DesktopUiDirection; reducedMotion: boolean; highContrast: boolean; textScale: number; }
 
 export type CursorAuthStatus =
   | { kind: "logged-out"; errorMessage?: string }
@@ -508,6 +510,10 @@ export interface DesktopBridge {
   readonly timeZone: {
     get(): Promise<DesktopTimeZoneState>;
     setOverride(timeZone: string | null): Promise<DesktopTimeZoneState>;
+  };
+  readonly uiPreferences: {
+    get(): Promise<DesktopUiPreferences>;
+    set(preferences: DesktopUiPreferences): Promise<DesktopUiPreferences>;
   };
   readonly autoReviewInstructions: {
     get(): Promise<DesktopAutoReviewInstructions>;

@@ -250,6 +250,10 @@ export function createDesktopPreloadBridge(options: {
       get: () => edge("getTimeZone"),
       setOverride: (timeZone: string | null) => edge("setTimeZoneOverride", { timeZone }),
     },
+    uiPreferences: {
+      get: () => edge("getUiPreferences"),
+      set: (preferences: unknown) => edge("setUiPreferences", { preferences }),
+    },
     autoReviewInstructions: {
       get: () => edge("getAutoReviewInstructions"),
       set: (instructions: unknown) => edge("setAutoReviewInstructions", { instructions }),

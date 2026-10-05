@@ -20,6 +20,7 @@ import {
   setEgressTunnelEnabled,
   setThemePreference,
   setTimeZoneOverride,
+  setUiPreferences,
   subscribeToSettingsDesktop,
   egressTunnelFeatureGateEnabled,
   normalizeEgressTunnelStatus,
@@ -159,6 +160,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
   const updateSnapshot = (update: DesktopUpdateStatus) => setSnapshot((current) => current == null ? current : { ...current, update });
   const updateTheme = (theme: ThemePreference) => setSnapshot((current) => current == null ? current : { ...current, theme });
   const updateTimeZone = (timeZone: SettingsDesktopSnapshot["timeZone"]) => setSnapshot((current) => current == null ? current : { ...current, timeZone });
+  const updateUiPreferences = (uiPreferences: SettingsDesktopSnapshot["uiPreferences"]) => setSnapshot((current) => current == null ? current : { ...current, uiPreferences });
   const updateLocalToolPermission = (permission: SettingsDesktopSnapshot["localToolPermission"]["permission"]) => setSnapshot((current) => current == null ? current : {
     ...current,
     localToolPermission: { ...current.localToolPermission, permission }
@@ -233,6 +235,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
               state: snapshot.timeZone,
               onChange: (timeZone) => mutate(() => setTimeZoneOverride(bridge, timeZone), "settings-time-zone", updateTimeZone)
             }}
+            uiPreferences={{ state: snapshot.uiPreferences, onChange: (preferences) => mutate(() => setUiPreferences(bridge, preferences), "settings-ui-preferences", updateUiPreferences) }}
             theme={snapshot.theme}
           />
         );

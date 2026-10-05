@@ -19,6 +19,7 @@ export type SettingsNoticeOperation =
   | "settings-local-tool-permission"
   | "settings-security-key"
   | "settings-time-zone"
+  | "settings-ui-preferences"
   | "settings-router-provider"
   | "settings-usage-cancel-trial"
   | "settings-update-check"

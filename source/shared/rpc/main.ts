@@ -29,6 +29,8 @@ export const MAIN_METHOD_TABLE = {
   setOnboardingSeen: { args: "object" },
   getTimeZone: { args: "none" },
   setTimeZoneOverride: { args: "object" },
+  getUiPreferences: { args: "none" },
+  setUiPreferences: { args: "object" },
   getAutoReviewInstructions: { args: "none" },
   setAutoReviewInstructions: { args: "object" },
   getLocalToolPermission: { args: "none" },
