@@ -381,6 +381,7 @@ jobs:
             echo "PEER_DEVICE_ID=$PEER_DEVICE_ID"
             echo "FABUSHI_CI_ACCOUNT_SESSION_FILE=$primary_session"
             echo "FABUSHI_CI_PEER_ACCOUNT_SESSION_FILE=$peer_session"
+            echo "FABUSHI_CI_TEST_USERNAME=$FABUSHI_CI_TEST_USERNAME"
             echo "FABUSHI_CI_PEER_TEST_USERNAME=$FABUSHI_CI_PEER_TEST_USERNAME"
           } >> "$GITHUB_ENV"
           echo "Two distinct bounded refresh-token-free production account sessions prepared for signed Phase 1 acceptance." >> "$GITHUB_STEP_SUMMARY"
@@ -430,7 +431,7 @@ jobs:
           bash "$recorder" start "$OBF_EVIDENCE_DIR"
           bash "$recorder" assert-live "$OBF_EVIDENCE_DIR"
           test_status=0
-          npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1 || test_status=$?
+          npx playwright test e2e/openbot-packaged-acceptance.spec.ts e2e/phase1-packaged-production-acceptance.spec.ts --workers=1 || test_status=$?
           stop_status=0
           bash "$recorder" stop "$OBF_EVIDENCE_DIR" || stop_status=$?
           verify_status=0
