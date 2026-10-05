@@ -2350,63 +2350,90 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       && accountRef.current?.kind === "logged-in";
     setIsRosterRetrying(true);
     try {
-      const humanValuePromise = transportRef.current === "connected"
-        ? client.call("syncHumanConversations").catch(async (error: unknown) => {
-            setNotice(error instanceof Error ? `Human sync unavailable: ${error.message}` : `Human sync unavailable: ${String(error)}`);
-            return await client.call("listHumanConversations");
-          })
-        : client.call("listHumanConversations");
-      const [agentValue, humanValue] = await Promise.all([
-        client.call("listAgents"),
-        humanValuePromise
-      ]);
+      // Agent roster readiness is local Host state and must not be held hostage
+      // by a remote Human sync. Publish the canonical Agent roster first so an
+      // empty/saved Agent state is actionable even while Human convergence is
+      // slow or temporarily unavailable.
+      const agentValue = await client.call("listAgents");
       const projected = projectRendererAgents(agentValue);
-      const projectedHumans = projectHumanConversations(humanValue);
-      const projectedConversations = [...projectedHumans, ...projected];
       if (!isCurrent()) return;
       setPrivacyBlocked(false);
       setRosterLoadFailed(false);
       setRosterFailure(null);
       setAgents(projected);
-      humanConversationsRef.current = projectedHumans;
-      setHumanConversations(projectedHumans);
-      reconcileCompleteRosterSelection(projectedConversations);
+      setHasLoadedAgents(true);
+      reconcileCompleteRosterSelection([
+        ...humanConversationsRef.current,
+        ...projected
+      ]);
 
-      // syncHumanConversations has already converged the Host-owned durable
-      // transcripts. If the user is looking at a Human conversation that was
-      // loaded before this reconnect, refresh that projection from the same
-      // Session/Transcript owner instead of leaving the renderer stale until a
-      // manual reopen. Reconciliation preserves queued/optimistic local entries.
-      const activeHumanId = activeAgentIdRef.current;
-      const activeHuman = projectedHumans.find((conversation) => conversation.id === activeHumanId);
-      if (activeHuman != null && entriesByAgentRef.current[activeHumanId] != null) {
+      // Human convergence has its own account/transport generation fence. It is
+      // intentionally detached from Agent roster readiness, but remains
+      // canonical Host-owned state and still falls back to the durable local
+      // Human roster if the shipping sync is unavailable.
+      void (async () => {
+        let humanValue: unknown;
         try {
-          const transcriptValue = await client.call("getHumanConversationTranscript", {
-            conversationId: activeHumanId
-          });
-          if (isCurrent() && activeAgentIdRef.current === activeHumanId) {
-            const projectedEntries = projectHumanConversationTranscript(
-              transcriptValue,
-              activeHuman.name,
-              activeHumanId
-            );
-            setEntriesByAgent((current) => ({
-              ...current,
-              [activeHumanId]: reconcileAuthoritativeTranscriptBaseline(
-                current[activeHumanId] ?? [],
-                projectedEntries
-              )
-            }));
-          }
+          humanValue = transportRef.current === "connected"
+            ? await client.call("syncHumanConversations")
+            : await client.call("listHumanConversations");
         } catch (error) {
-          if (isCurrent()) {
-            setNotice(error instanceof Error
-              ? `Human transcript refresh unavailable: ${error.message}`
-              : `Human transcript refresh unavailable: ${String(error)}`);
+          if (!isCurrent()) return;
+          setNotice(error instanceof Error
+            ? `Human sync unavailable: ${error.message}`
+            : `Human sync unavailable: ${String(error)}`);
+          try {
+            humanValue = await client.call("listHumanConversations");
+          } catch (fallbackError) {
+            if (isCurrent()) {
+              setNotice(fallbackError instanceof Error
+                ? `Human roster unavailable: ${fallbackError.message}`
+                : `Human roster unavailable: ${String(fallbackError)}`);
+            }
+            return;
           }
         }
-      }
-      setHasLoadedAgents(true);
+        if (!isCurrent()) return;
+        const projectedHumans = projectHumanConversations(humanValue);
+        humanConversationsRef.current = projectedHumans;
+        setHumanConversations(projectedHumans);
+        reconcileCompleteRosterSelection([...projectedHumans, ...projected]);
+
+        // syncHumanConversations has already converged the Host-owned durable
+        // transcripts. If the user is looking at a Human conversation that was
+        // loaded before this reconnect, refresh that projection from the same
+        // Session/Transcript owner instead of leaving the renderer stale until a
+        // manual reopen. Reconciliation preserves queued/optimistic local entries.
+        const activeHumanId = activeAgentIdRef.current;
+        const activeHuman = projectedHumans.find((conversation) => conversation.id === activeHumanId);
+        if (activeHuman != null && entriesByAgentRef.current[activeHumanId] != null) {
+          try {
+            const transcriptValue = await client.call("getHumanConversationTranscript", {
+              conversationId: activeHumanId
+            });
+            if (isCurrent() && activeAgentIdRef.current === activeHumanId) {
+              const projectedEntries = projectHumanConversationTranscript(
+                transcriptValue,
+                activeHuman.name,
+                activeHumanId
+              );
+              setEntriesByAgent((current) => ({
+                ...current,
+                [activeHumanId]: reconcileAuthoritativeTranscriptBaseline(
+                  current[activeHumanId] ?? [],
+                  projectedEntries
+                )
+              }));
+            }
+          } catch (error) {
+            if (isCurrent()) {
+              setNotice(error instanceof Error
+                ? `Human transcript refresh unavailable: ${error.message}`
+                : `Human transcript refresh unavailable: ${String(error)}`);
+            }
+          }
+        }
+      })();
     } catch (error) {
       if (!isCurrent()) return;
       if (isRosterPrivacyBlockFailure(error)) {
