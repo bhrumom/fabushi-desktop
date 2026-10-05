@@ -841,6 +841,20 @@ test.describe('signed candidate packaged acceptance', () => {
       const lifecyclePrompt = 'Lifecycle acceptance: analyze the signed candidate and finish with CANDIDATE-LIFECYCLE-OK.';
       const lifecycleSubmittedAt = Date.now();
       const lifecycleAssistantCount = await submitTurn(page, lifecyclePrompt);
+      // Canonical Agent sends intentionally remain owned by the addressed
+      // transcript even if roster hydration changes the visible selection
+      // while Host acceptance is starting. Research/Builder acceptance above
+      // already verifies this off-screen persistence contract by reopening the
+      // addressed Agent. Do the same for Chief before observing lifecycle
+      // completion so the gate follows the canonical addressed transcript
+      // rather than whichever row happens to be selected after hydration.
+      await openAgent(page, 'Chief');
+      await expect(
+        page
+          .locator('[aria-label="Conversation transcript"] [role="article"][data-role="user"]')
+          .filter({ hasText: lifecyclePrompt })
+          .last(),
+      ).toBeVisible({ timeout: 10_000 });
       const lifecycleTurn = await waitForCompletedTurn(
         page,
         lifecyclePrompt,
