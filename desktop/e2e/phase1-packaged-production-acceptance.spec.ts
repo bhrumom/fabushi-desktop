@@ -226,16 +226,123 @@ async function assertSettingsA11yI18n(candidate: Candidate): Promise<void> {
   await expect(settings).toBeVisible();
   await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
 
-  for (const text of ['Language & Accessibility', 'Privacy', 'Desktop behavior', 'Notifications', 'Storage', 'Downloads', 'Shortcuts', 'Advanced']) {
+  for (const text of ['Language & Accessibility', 'Privacy', 'Desktop behavior', 'Notifications', 'Storage', 'Downloads', 'Shortcuts', 'Advanced', 'Media & Devices']) {
     await expect(settings.getByText(text, { exact: true })).toBeVisible();
   }
   await expect(settings.getByRole('status', { name: 'Privacy mode' })).toHaveText('Enabled');
+  await expect(settings.getByText('Enforced by the Fabushi account policy and cannot be downgraded by a local desktop setting.', { exact: true })).toBeVisible();
+  await expect(settings.getByText('System notification preferences are intentionally disabled; in-app status/error announcements and unread badge behavior remain automatic.', { exact: true })).toBeVisible();
+  await expect(settings.getByText('Conversation/session state and attachments stay in the canonical app-profile and Host stores; alternate storage roots are not selectable.', { exact: true })).toBeVisible();
+  await expect(settings.getByText('Each attachment download uses the native Save As dialog; no persistent download-folder preference is applied.', { exact: true })).toBeVisible();
+  await expect(settings.getByText('Window shortcuts are fixed by the Electron owner and are not globally registered or user-remappable.', { exact: true })).toBeVisible();
 
   const theme = settings.getByRole('button', { name: 'Theme' });
   await theme.focus();
   await page.keyboard.press('Enter');
   await page.getByRole('option', { name: 'Dark', exact: true }).press('Enter');
   await expect(theme).toContainText('Dark');
+
+  const timezone = settings.getByRole('button', { name: 'Timezone' });
+  await timezone.focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('option', { name: 'America/New York', exact: true }).press('Enter');
+  await expect(timezone).toContainText('America/New York');
+  await timezone.focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('option', { name: /^Auto-detect/u }).press('Enter');
+  await expect(timezone).toContainText('Auto-detect');
+
+  await settings.getByRole('button', { name: 'Allow microphone & camera', exact: true }).click();
+  const permissionState = await page.evaluate(async () => {
+    const desktop = (window as unknown as {
+      desktop?: {
+        callMedia?: {
+          requestPermissions?: (input: { audio: boolean; video: boolean }) => Promise<{
+            microphone: 'granted' | 'denied' | 'prompt' | 'not-requested';
+            camera: 'granted' | 'denied' | 'prompt' | 'not-requested';
+          }>;
+        };
+      };
+    }).desktop;
+    if (typeof desktop?.callMedia?.requestPermissions !== 'function') throw new Error('shipping call-media permission bridge unavailable');
+    return desktop.callMedia.requestPermissions({ audio: true, video: true });
+  });
+  expect(permissionState.microphone).toBe('granted');
+  expect(permissionState.camera).toBe('granted');
+  await settings.getByRole('button', { name: 'Refresh devices', exact: true }).click();
+
+  const devices = await page.evaluate(async () => (await navigator.mediaDevices.enumerateDevices()).map((device) => ({
+    deviceId: device.deviceId,
+    kind: device.kind,
+    label: device.label,
+  })));
+  const microphoneDevices = devices.filter((device) => device.kind === 'audioinput');
+  const cameraDevices = devices.filter((device) => device.kind === 'videoinput');
+  const microphoneDevice = microphoneDevices.find((device) => device.deviceId.length > 0);
+  const cameraDevice = cameraDevices.find((device) => device.deviceId.length > 0);
+  expect(microphoneDevice, 'signed runner must expose a selectable microphone input').toBeTruthy();
+  expect(cameraDevice, 'signed runner must expose a selectable camera input').toBeTruthy();
+  if (microphoneDevice == null || cameraDevice == null) throw new Error('signed runner lacks selectable media devices');
+  const microphoneLabel = microphoneDevice.label || `Microphone ${microphoneDevices.indexOf(microphoneDevice) + 1}`;
+  const cameraLabel = cameraDevice.label || `Camera ${cameraDevices.indexOf(cameraDevice) + 1}`;
+
+  const microphone = settings.getByRole('button', { name: 'Microphone' });
+  await microphone.focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('option', { name: microphoneLabel, exact: true }).press('Enter');
+  await expect(microphone).toContainText(microphoneLabel);
+  const camera = settings.getByRole('button', { name: 'Camera' });
+  await camera.focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('option', { name: cameraLabel, exact: true }).press('Enter');
+  await expect(camera).toContainText(cameraLabel);
+
+  await expect.poll(async () => page.evaluate(async () => {
+    const desktop = (window as unknown as {
+      desktop?: {
+        callMedia?: {
+          getPreferences?: () => Promise<{ microphoneId: string | null; cameraId: string | null }>;
+        };
+      };
+    }).desktop;
+    if (typeof desktop?.callMedia?.getPreferences !== 'function') throw new Error('shipping call-media preference bridge unavailable');
+    const preferences = await desktop.callMedia.getPreferences();
+    return { microphoneId: preferences.microphoneId, cameraId: preferences.cameraId };
+  })).toEqual({ microphoneId: microphoneDevice.deviceId, cameraId: cameraDevice.deviceId });
+
+  const selectedCapture = await page.evaluate(async ({ microphoneId, cameraId }) => {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { deviceId: { exact: microphoneId } },
+      video: { deviceId: { exact: cameraId } },
+    });
+    try {
+      return {
+        audioDeviceId: stream.getAudioTracks()[0]?.getSettings().deviceId ?? null,
+        videoDeviceId: stream.getVideoTracks()[0]?.getSettings().deviceId ?? null,
+      };
+    } finally {
+      for (const track of stream.getTracks()) track.stop();
+    }
+  }, { microphoneId: microphoneDevice.deviceId, cameraId: cameraDevice.deviceId });
+  expect(selectedCapture.audioDeviceId).toBe(microphoneDevice.deviceId);
+  expect(selectedCapture.videoDeviceId).toBe(cameraDevice.deviceId);
+  await writeFile(path.join(phaseRoot, 'settings-media.json'), JSON.stringify({
+    permissionState,
+    selectedPreferences: {
+      microphoneId: microphoneDevice.deviceId,
+      microphoneLabel,
+      cameraId: cameraDevice.deviceId,
+      cameraLabel,
+    },
+    selectedCapture,
+    readOnlyContracts: {
+      privacyPolicyEnforced: true,
+      notificationsAutomatic: true,
+      canonicalStorageOnly: true,
+      nativeSaveAsDownloads: true,
+      fixedElectronShortcuts: true,
+    },
+  }, null, 2));
 
   await settings.getByRole('button', { name: 'Updates', exact: true }).click();
   await expect(settings.getByRole('heading', { name: 'Updates', exact: true })).toBeVisible();
@@ -275,14 +382,6 @@ async function assertSettingsA11yI18n(candidate: Candidate): Promise<void> {
     textScale: document.documentElement.style.getPropertyValue('--sand-ui-text-scale'),
   }))).toEqual({ reducedMotion: 'true', highContrast: 'true', textScale: '1.25' });
 
-  const devices = await page.evaluate(async () => (await navigator.mediaDevices.enumerateDevices()).map((device) => ({
-    deviceId: device.deviceId,
-    kind: device.kind,
-    label: device.label,
-  })));
-  expect(devices.some((device) => device.kind === 'audioinput'), 'signed runner must expose a real microphone input').toBe(true);
-  expect(devices.some((device) => device.kind === 'videoinput'), 'signed runner must expose a real camera input').toBe(true);
-
   await localized.getByRole('button', { name: 'إغلاق', exact: true }).click();
   await openHuman(page, (await page.locator('aside[aria-label="Agents"] button.sand-agent-item[aria-current="page"]').getAttribute('aria-label')) || '').catch(() => undefined);
   const prompt = page.getByRole('textbox', { name: 'Prompt' });
@@ -311,7 +410,6 @@ async function assertSettingsA11yI18n(candidate: Candidate): Promise<void> {
   await expect(prompt).toContainText('かな漢字🙂 العربية Fabushi');
   await screenshot(candidate, '07-settings-a11y-i18n');
 }
-
 async function runVoiceCall(a: Candidate, b: Candidate): Promise<void> {
   await a.page.getByRole('button', { name: 'Start voice call' }).click();
   await expect(a.page.getByRole('group', { name: 'Human call controls' }).getByRole('status')).toHaveText(/ringing|negotiating/u, { timeout: 30_000 });
@@ -443,7 +541,7 @@ test.describe('signed candidate Phase 1 production acceptance', () => {
 
       await assertSettingsA11yI18n(a);
 
-      await writeFile(path.join(phaseRoot, 'summary.json'), JSON.stringify({
+      await writeFile(path.join(phaseRoot, 'phase1-production.json'), JSON.stringify({
         sourceSha,
         expectedSourceSha,
         executable,
