@@ -2,7 +2,7 @@
 
 Status: P0 evidence; recursive gitlink, tracked generator/packaging roots, and external-acquisition entrypoints discovered; immutable external-resolution/resource-license/behavior closure not complete
 Frozen root: `telegramdesktop/tdesktop@33261535a0e747f125e0ed25486f01e556330677`  
-Captured: 2026-10-02
+Captured: 2026-10-02; refreshed against PR #27 on 2026-10-05
 
 ## Root tree
 
@@ -63,18 +63,18 @@ No item in this table is an instruction to ship Telegram dependencies. It is sou
 
 ## Build/resource closure still open
 
-`Telegram/CMakeLists.txt` proves that the product links or generates through codegen, lib_storage, lib_ui, lib_webrtc, lib_webview, tgcalls, FIDO2, ffmpeg, Stripe, MTProto/scheme generators, language generators, update-key generation, platform MIDL on Windows, and Apple Swift runtime. An exact frozen-tree inventory on htch-runtime records 3,073 files under `Telegram/Resources`, 35 shader sources, eight `.obj` model inputs, 36 files under `Telegram/build`, 30 under `Telegram/cmake`, and the Snap packaging input. `research/build-toolchain-resource-provenance.md` now maps the tracked generator inputs/outputs, shader baking, model baking and Windows/macOS/Linux packaging roots.
+`Telegram/CMakeLists.txt` proves that the product links or generates through codegen, lib_storage, lib_ui, lib_webrtc, lib_webview, tgcalls, FIDO2, ffmpeg, Stripe, MTProto/scheme generators, language generators, update-key generation, platform MIDL on Windows, and Apple Swift runtime. An exact GitHub recursive-tree inventory for frozen root `33261535a0e747f125e0ed25486f01e556330677` (`truncated=false`) records 3,073 files under `Telegram/Resources`, 35 shader sources, eight `.obj` model inputs, 36 files under `Telegram/build`, 30 under `Telegram/cmake`, and the Snap packaging input. `research/telegram-resources-blob-inventory.tsv` binds every resource path to its frozen Git blob SHA and size. `research/build-toolchain-resource-provenance.md` binds the frozen `prepare.py`/Linux Docker blobs and enumerates their explicit external-acquisition entrypoints without upgrading symbolic or mutable inputs to immutable evidence.
 
 A previous CMake-only scan correctly found no CMake `file(DOWNLOAD)`, `FetchContent`, or `ExternalProject_Add`, but that scope was too narrow. The frozen `Telegram/build/prepare/prepare.py` and `Telegram/build/docker/centos_env/Dockerfile` explicitly perform network acquisition using `git clone/fetch`, PowerShell `iwr`, `wget`, and `curl`. Build-time external acquisition therefore remains a real provenance blocker and must be enumerated rather than reported absent.
 
-The current PR #26 adoption audit found no Telegram prepare/Docker/Snap invocation, no tracked Telegram resource/shader tree, no `.qsb`/`.binobj`/`.obj` payload, and no binary addition in the FBCP production delta. Those Telegram build/resource inputs are therefore research-only for the current distributed branch rather than shipping dependencies. This does not turn mutable historical acquisition into immutable evidence and does not waive source-informed legal review.
+The current PR #27 changed-files audit finds no Telegram prepare/Docker/Snap invocation, no tracked Telegram resource/shader tree, no `.qsb`/`.binobj`/`.obj` payload, and no Telegram build/resource payload in the Phase 1 production delta. Those upstream build/resource inputs are therefore research/provenance inputs for this branch rather than shipping dependencies. This does not turn mutable historical acquisition into immutable evidence and does not waive source-informed legal review.
 
 P0 must still close:
 
 1. historical immutable build-input evidence only where needed to understand a source-derived behavior/build responsibility, while recording explicit non-adoption for Telegram-only dependencies not used by Fabushi;
 2. dependency/license review for dependencies actually adopted by distributed Fabushi, plus source-informed GPL/third-party review;
 3. copied/derived provenance for any upstream resource/shader/model/source content that a future or current production change actually copies or adapts; `research/telegram-resources-blob-inventory.tsv` now binds all 3,073 frozen resource blobs by path/SHA/size and `research/build-toolchain-resource-provenance.md` defines the mandatory copied/adapted release-review row, while the current FBCP branch still has no Telegram resource/shader/model payload;
-4. mixed-license/per-file provenance needed to interpret researched upstream sources where the selected behavior depends on those files; the floating `desktop-app/legal` reference is historically bounded and the pinned fcitx5-qt, hunspell, kcoreaddons and kimageformats per-file mappings are now captured in `research/mixed-license-per-file-provenance.md` and `research/license-maps/*.tsv`, while broader resource-level mixed-license cases remain open;
+4. mixed-license/per-file provenance needed to interpret researched upstream sources where the selected behavior depends on those files; the previously referenced `research/mixed-license-per-file-provenance.md` and `research/license-maps/*.tsv` artifacts are not present on authoritative PR #27 and must not be treated as completed evidence. Recreate source-backed mappings only for material copied/adapted or behaviorally relied-on inputs, and keep broader resource-level mixed-license cases open;
 5. behavior-level source-to-responsibility dossiers until no reachable product capability remains unknown.
 
 Until those close, source research coverage must not be reported as 100%.
