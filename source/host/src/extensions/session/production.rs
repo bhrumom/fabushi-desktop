@@ -1392,14 +1392,39 @@ impl ProductionSessionWorkers {
                 ),
             );
         }
-        if !remote.reactions.is_empty() {
-            object.insert(
-                "remoteReactions".into(),
-                serde_json::to_value(&remote.reactions).map_err(|error| {
-                    format!("remote Human reactions could not be projected: {error}")
-                })?,
-            );
+        let peer_human_id = if sender_id == local_human_id {
+            recipient_id.as_str()
+        } else {
+            sender_id.as_str()
+        };
+        let mut projected_reactions = Vec::new();
+        for reaction in &remote.reactions {
+            if reaction.reacted_by_me {
+                projected_reactions.push(serde_json::json!({
+                    "emoji": reaction.emoji,
+                    "by": "me",
+                }));
+            }
+            let peer_reaction_count = reaction
+                .count
+                .saturating_sub(u64::from(reaction.reacted_by_me));
+            for _ in 0..peer_reaction_count {
+                projected_reactions.push(serde_json::json!({
+                    "emoji": reaction.emoji,
+                    "by": peer_human_id,
+                }));
+            }
         }
+        object.insert(
+            "remoteReactions".into(),
+            serde_json::to_value(&remote.reactions).map_err(|error| {
+                format!("remote Human reactions could not be projected: {error}")
+            })?,
+        );
+        object.insert(
+            "reactions".into(),
+            serde_json::Value::Array(projected_reactions),
+        );
         let existing = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?;
@@ -1407,7 +1432,19 @@ impl ProductionSessionWorkers {
             candidate.get("id").and_then(serde_json::Value::as_str)
                 == entry.get("id").and_then(serde_json::Value::as_str)
         }) {
-            return Ok(current.clone());
+            if current == &entry {
+                return Ok(current.clone());
+            }
+            return owner
+                .update_transcript_entry(
+                    entry
+                        .get("id")
+                        .and_then(serde_json::Value::as_str)
+                        .ok_or_else(|| "remote Human message projection omitted its id".to_string())?,
+                    &entry,
+                )
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "remote Human message could not be durably refreshed".to_string());
         }
         if let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) {
             if let Some(current) = existing.iter().find(|candidate| {
@@ -2037,6 +2074,90 @@ impl ProductionSessionWorkers {
             return Err("Human handoff Agent activity metadata was not durably updated".into());
         }
         Ok(entry)
+    }
+
+    pub fn toggle_human_message_reaction(
+        &self,
+        conversation_id: &str,
+        entry_id: &str,
+        emoji: &str,
+    ) -> Result<serde_json::Value, String> {
+        let emoji = emoji.trim();
+        if emoji.is_empty() {
+            return Err("reactHumanMessage requires emoji".into());
+        }
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let entries = owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        let current = entries
+            .iter()
+            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(entry_id))
+            .cloned()
+            .ok_or_else(|| "Human reaction target is not in this conversation".to_string())?;
+        let remote_message_id = current
+            .get("remoteMessageId")
+            .map(fabushi_identity_text)
+            .transpose()?
+            .ok_or_else(|| "Human reaction target has no canonical remote message identity".to_string())?;
+        let currently_active = current
+            .get("remoteReactions")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|reactions| {
+                reactions.iter().any(|reaction| {
+                    reaction.get("emoji").and_then(serde_json::Value::as_str) == Some(emoji)
+                        && reaction
+                            .get("reactedByMe")
+                            .and_then(serde_json::Value::as_bool)
+                            == Some(true)
+                })
+            });
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "Fabushi Human reactions require the shipping messaging backend".to_string())?;
+        let remote_reactions =
+            client.set_direct_message_reaction(&remote_message_id, emoji, !currently_active)?;
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        let mut projected_reactions = Vec::new();
+        for reaction in &remote_reactions {
+            if reaction.reacted_by_me {
+                projected_reactions.push(serde_json::json!({
+                    "emoji": reaction.emoji,
+                    "by": "me",
+                }));
+            }
+            let peer_reaction_count = reaction
+                .count
+                .saturating_sub(u64::from(reaction.reacted_by_me));
+            for _ in 0..peer_reaction_count {
+                projected_reactions.push(serde_json::json!({
+                    "emoji": reaction.emoji,
+                    "by": peer_human_id,
+                }));
+            }
+        }
+        let mut next = current;
+        let object = next
+            .as_object_mut()
+            .ok_or_else(|| "Human reaction target is not a message object".to_string())?;
+        object.insert(
+            "remoteReactions".into(),
+            serde_json::to_value(&remote_reactions).map_err(|error| {
+                format!("remote Human reactions could not be projected: {error}")
+            })?,
+        );
+        object.insert(
+            "reactions".into(),
+            serde_json::Value::Array(projected_reactions),
+        );
+        owner
+            .update_transcript_entry(entry_id, &next)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())
     }
 
     pub fn search_human_messages(
