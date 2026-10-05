@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -245,6 +246,65 @@ impl FabushiNativeMessagingClient {
         envelope
             .resource
             .ok_or_else(|| "Fabushi Human attachment response omitted the persisted resource.".to_string())
+    }
+
+    pub fn download_direct_message_resource(
+        &self,
+        resource_id: &str,
+        expected_size: u64,
+    ) -> Result<Vec<u8>, String> {
+        const MAX_RESOURCE_BYTES: u64 = 32 * 1024 * 1024;
+        let resource_id = required_trimmed(resource_id, "resource id")?;
+        if resource_id.len() > 128 || resource_id.contains('/') || resource_id.contains('\\') {
+            return Err("Fabushi Human attachment resource id is invalid".into());
+        }
+        if expected_size == 0 || expected_size > MAX_RESOURCE_BYTES {
+            return Err("Fabushi Human attachment size exceeds the backend limit".into());
+        }
+        let credentials = read_credentials(&self.credential_path)?;
+        let encoded_resource_id: String =
+            url::form_urlencoded::byte_serialize(resource_id.as_bytes()).collect();
+        let mut response = self
+            .client
+            .get(self.endpoint(&format!(
+                "/api/social/message-resources/{encoded_resource_id}"
+            ))?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/octet-stream")
+            .send()
+            .map_err(|error| format!("Fabushi Human attachment download failed: {error}"))?;
+        let status = response.status();
+        if !status.is_success() {
+            let body = response.text().unwrap_or_default();
+            return Err(format!(
+                "Fabushi Human attachment download was rejected (HTTP {}): {}",
+                status.as_u16(),
+                body.chars().take(512).collect::<String>()
+            ));
+        }
+        if let Some(length) = response.content_length() {
+            if length != expected_size || length > MAX_RESOURCE_BYTES {
+                return Err(format!(
+                    "Fabushi Human attachment download length mismatch: expected {expected_size}, received {length}"
+                ));
+            }
+        }
+        let mut bytes = Vec::with_capacity(expected_size as usize);
+        response
+            .take(MAX_RESOURCE_BYTES + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|error| format!("Fabushi Human attachment body could not be read: {error}"))?;
+        if bytes.len() as u64 != expected_size || bytes.len() as u64 > MAX_RESOURCE_BYTES {
+            return Err(format!(
+                "Fabushi Human attachment body length mismatch: expected {expected_size}, received {}",
+                bytes.len()
+            ));
+        }
+        Ok(bytes)
     }
 
     pub fn send_direct_message(
