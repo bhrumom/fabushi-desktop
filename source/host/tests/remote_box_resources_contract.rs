@@ -54,15 +54,21 @@ fn prepared_and_cached_connections_are_reused_and_publish_terminal_folder() {
 }
 
 #[test]
-fn preparing_and_connection_failures_are_fail_closed_and_failures_are_retryable() {
+fn preparing_status_can_delegate_to_the_host_owned_bounded_readiness_wait() {
     let mut coordinator: RemoteBoxResourceCoordinator<String> =
         RemoteBoxResourceCoordinator::new(true, None);
-    let preparing = coordinator
-        .connect(true, || Ok(connection("unused", true)))
-        .unwrap_err();
-    assert_eq!(preparing.0, SAND_BOX_NOT_READY_MESSAGE);
-    assert!(!coordinator.has_cached_connection());
+    let mut ensure_calls = 0usize;
+    let prepared = coordinator
+        .connect(false, || {
+            ensure_calls += 1;
+            Ok(connection("ready-after-wait", true))
+        })
+        .expect("Host-owned readiness wait should be allowed to settle a preparing box");
+    assert_eq!(prepared.resource, "ready-after-wait");
+    assert_eq!(ensure_calls, 1);
+    assert!(coordinator.has_cached_connection());
 
+    coordinator.clear_connection();
     let timeout: RemoteConnectError = Arc::new(
         SandBoxDaemonUnreachableError::new("timeout", "deadline"),
     );

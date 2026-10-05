@@ -4,7 +4,9 @@ import type {
   CursorUsageUpgradeAction,
   DesktopAutoReviewInstructions,
   DesktopBridge,
+  DesktopCallMediaPreferences,
   DesktopTimeZoneState,
+  DesktopUiPreferences,
   DesktopUpdateStatus,
   ThemePreference,
   ThemeState,
@@ -29,6 +31,9 @@ export interface SettingsDesktopSnapshot {
   autoReview: AutoReviewSettings;
   theme: ThemePreference;
   timeZone: DesktopTimeZoneState;
+  uiPreferences: DesktopUiPreferences;
+  callMediaPreferences: DesktopCallMediaPreferences;
+  privacyModeEnabled: boolean | null;
   localToolPermission: LocalToolPermissionState;
   securityKeyEnabled: boolean;
   update: DesktopUpdateStatus | null;
@@ -150,13 +155,16 @@ export function cursorAuthErrorMessage(reason: unknown): string {
 
 export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordinatorClient?: Pick<ProductionCoordinatorClient, "isEgressTunnelAvailable">): Promise<SettingsDesktopSnapshot> {
   const experimentSnapshot = loadExperimentSnapshot(bridge);
-  const [status, avatar, autoReview, theme, timeZone, localToolPermission, securityKeyEnabled, update, usageResult, resolvedExperimentSnapshot, egressTunnel] = await Promise.all([
+  const [status, avatar, privacyModeEnabled, autoReview, theme, timeZone, uiPreferences, callMediaPreferences, localToolPermission, securityKeyEnabled, update, usageResult, resolvedExperimentSnapshot, egressTunnel] = await Promise.all([
     bridge.cursorAccount.getStatus(),
     // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L133195-L133204
     bridge.cursorAccount.getAvatar().catch(() => null),
+    bridge.cursorAccount.getPrivacyModeEnabled().then((value) => value === true ? true : value === false ? false : null, () => null),
     bridge.autoReviewInstructions.get().catch(() => defaultAutoReviewSettings()),
     bridge.theme.get(),
     bridge.timeZone.get(),
+    bridge.uiPreferences.get(),
+    bridge.callMedia.getPreferences(),
     Promise.all([
       bridge.localToolPermission.get().then(normalizeLocalToolPermission, () => "ask" as const),
       bridge.localToolPermission.ceiling().then(normalizeLocalToolPermissionCeiling, () => null)
@@ -181,6 +189,9 @@ export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordin
     autoReview,
     theme: theme.preference,
     timeZone,
+    uiPreferences,
+    callMediaPreferences,
+    privacyModeEnabled,
     localToolPermission,
     securityKeyEnabled,
     update,
@@ -197,6 +208,24 @@ export function setEgressTunnelEnabled(bridge: DesktopBridge, enabled: boolean):
 
 export function setTimeZoneOverride(bridge: DesktopBridge, timeZone: string | null): Promise<DesktopTimeZoneState> {
   return bridge.timeZone.setOverride(timeZone);
+}
+export function setCallMediaPreferences(bridge: DesktopBridge, preferences: DesktopCallMediaPreferences): Promise<DesktopCallMediaPreferences> {
+  return bridge.callMedia.setPreferences(preferences);
+}
+
+export async function setUiPreferences(bridge: DesktopBridge, preferences: DesktopUiPreferences): Promise<DesktopUiPreferences> {
+  const updated = await bridge.uiPreferences.set(preferences);
+  if (typeof document !== "undefined") {
+    const systemLocale = typeof navigator === "undefined" ? "en-US" : navigator.language;
+    const locale = updated.locale === "system" ? systemLocale : updated.locale;
+    const rtl = new Set(["ar","ckb","dv","fa","he","ku","ps","sd","ug","ur","yi"]).has(locale.split("-")[0]!.toLowerCase());
+    document.documentElement.lang = locale;
+    document.documentElement.dir = updated.direction === "auto" ? (rtl ? "rtl" : "ltr") : updated.direction;
+    document.documentElement.dataset.sandReducedMotion = updated.reducedMotion ? "true" : "false";
+    document.documentElement.dataset.sandHighContrast = updated.highContrast ? "true" : "false";
+    document.documentElement.style.setProperty("--sand-ui-text-scale", String(updated.textScale));
+  }
+  return updated;
 }
 
 export function setThemePreference(bridge: DesktopBridge, theme: ThemePreference): Promise<ThemeState> {

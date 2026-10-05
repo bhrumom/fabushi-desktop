@@ -70,6 +70,27 @@ const FABUSHI_EXTENSION_COMMANDS: &[&str] = &[
     "feature.auth.logout",
     "feature.interrupt",
     "feature.approval.resolve",
+    // FBCP-001 Human communication commands. These remain explicit so the
+    // existing Session/Transcript owner is reachable through the shipping
+    // Coordinator -> Host gateway without opening a generic messaging namespace.
+    "listHumanConversations",
+    "syncHumanConversations",
+    "syncHumanConversation",
+    "createHumanConversation",
+    "sendHumanMessage",
+    "reactHumanMessage",
+    "getHumanConversationTranscript",
+    "getHumanConversationTranscriptTail",
+    "searchHumanMessages",
+    // ADR-003 CallSession/Signaling commands. Keep live call truth in the
+    // canonical Host owner rather than widening Renderer/Electron ownership.
+    "createCallSession",
+    "getCallSession",
+    "listCallSessions",
+    "transitionCallSession",
+    "updateCallMedia",
+    "sendCallSignal",
+    "listCallSignals",
     // Internal desktop MCP lifecycle settlement. The shipping desktop MCP owner
     // answers Host lifecycle requests through this single explicit callback.
     "mcp.resolveLifecycleRequest",
@@ -1177,6 +1198,46 @@ fn handle_connection(
                 ));
             }
             respond_error(&mut stream, status, error.to_string())
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_gateway_command;
+
+    #[test]
+    fn fbcp_human_commands_are_explicit_gateway_extensions() {
+        for method in [
+            "listHumanConversations",
+            "syncHumanConversations",
+            "syncHumanConversation",
+            "createHumanConversation",
+            "sendHumanMessage",
+            "reactHumanMessage",
+            "getHumanConversationTranscript",
+            "getHumanConversationTranscriptTail",
+            "searchHumanMessages",
+            "createCallSession",
+            "getCallSession",
+            "listCallSessions",
+            "transitionCallSession",
+            "updateCallMedia",
+            "sendCallSignal",
+            "listCallSignals",
+        ] {
+            assert!(is_gateway_command(method), "{method} must reach the production Session owner");
+        }
+
+        for method in [
+            "human.anything",
+            "telegram.sendMessage",
+            "communication.dispatch",
+        ] {
+            assert!(
+                !is_gateway_command(method),
+                "{method} must not widen the explicit FBCP gateway boundary"
+            );
         }
     }
 }

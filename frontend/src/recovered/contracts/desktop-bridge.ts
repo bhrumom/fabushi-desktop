@@ -6,6 +6,9 @@ export interface ThemeState {
   preference: ThemePreference;
   resolved: "light" | "dark";
 }
+export type DesktopUiDirection = "auto" | "ltr" | "rtl";
+export interface DesktopUiPreferences { locale: string; direction: DesktopUiDirection; reducedMotion: boolean; highContrast: boolean; textScale: number; }
+export interface DesktopCallMediaPreferences { microphoneId: string | null; cameraId: string | null; }
 
 export type CursorAuthStatus =
   | { kind: "logged-out"; errorMessage?: string }
@@ -448,6 +451,16 @@ export interface AgentDesktopBridge {
   };
 }
 
+export interface DesktopCallMediaBridge {
+  getPreferences(): Promise<DesktopCallMediaPreferences>;
+  setPreferences(preferences: DesktopCallMediaPreferences): Promise<DesktopCallMediaPreferences>;
+  requestPermissions(input: { audio: boolean; video: boolean }): Promise<{
+    microphone: "granted" | "denied" | "prompt" | "not-requested";
+    camera: "granted" | "denied" | "prompt" | "not-requested";
+  }>;
+  listDisplaySources(): Promise<Array<{ id: string; name: string; displayId?: string }>>;
+}
+
 export interface DesktopBridge {
   resolveAttachmentMedia(url: string): Promise<AttachmentMedia | null>;
   readAttachmentText(path: string): Promise<AttachmentTextResult | null>;
@@ -463,6 +476,7 @@ export interface DesktopBridge {
   ): Promise<string[] | null>;
   discardStagedAttachment(path: string): Promise<void>;
   readonly mcp: McpDesktopBridge;
+  readonly callMedia: DesktopCallMediaBridge;
   forceGatewayReconnect(): Promise<void>;
   pickAvatarSource(): Promise<string | null>;
   pickAvatarFile(): Promise<AvatarFileSelection | null>;
@@ -508,6 +522,10 @@ export interface DesktopBridge {
   readonly timeZone: {
     get(): Promise<DesktopTimeZoneState>;
     setOverride(timeZone: string | null): Promise<DesktopTimeZoneState>;
+  };
+  readonly uiPreferences: {
+    get(): Promise<DesktopUiPreferences>;
+    set(preferences: DesktopUiPreferences): Promise<DesktopUiPreferences>;
   };
   readonly autoReviewInstructions: {
     get(): Promise<DesktopAutoReviewInstructions>;

@@ -1,4 +1,5 @@
 pub mod agent_db;
+pub mod call_session;
 pub mod agent_db_serde;
 pub mod agent_db_transcript_pages;
 pub mod agent_db_recovery;
@@ -15,6 +16,7 @@ pub mod session_paths;
 pub mod session_recovery;
 pub mod session_maintenance;
 pub mod session_materialization;
+pub mod native_messaging;
 pub mod session_conversation_state;
 pub mod session_projection;
 pub mod session_summaries;

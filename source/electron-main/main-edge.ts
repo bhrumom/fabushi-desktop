@@ -1,7 +1,7 @@
 import { isSandAgentModelSelection, resolveComputerUseModelSelection } from "../shared/agents/sand-agent-model.js";
 import { normalizeSandAutoReviewInstructions } from "../shared/sand-auto-review-instructions.js";
 import { isSandLocalToolAction, normalizeSandLocalToolPermission } from "../shared/local-tool-permission.js";
-import { isSandThemePreference } from "../shared/desktop.js";
+import { isSandThemePreference, normalizeSandCallMediaPreferences, normalizeSandUiPreferences } from "../shared/desktop.js";
 import { isSandUpdateTrack } from "../shared/update-track.js";
 import { isValidIanaTimeZone } from "../shared/timezone.js";
 import { sandWebauthnProxyMirroredEnablement } from "../shared/webauthn-proxy-availability.js";
@@ -10,6 +10,7 @@ import { isSandInferenceProvider } from "../shared/inference-router.js";
 import { getLocalInferenceCliStatus } from "../shared/node/inference-router-local.js";
 import { isSandBoxRuntime } from "../shared/box-runtime.js";
 import { getLocalDockerStatus, startLocalDockerBox, stopLocalDockerBox } from "./box/local-docker-host-connector.js";
+import type { DesktopCallMediaPort } from "./call-media.js";
 
 export const MAIN_EDGE_UNSERVED = "main/unserved-method";
 export const MAIN_EDGE_UPDATE_UNAVAILABLE = "main/update-unavailable";
@@ -55,6 +56,7 @@ export interface MainEdgeDeps {
   readonly emitEgressTunnelChanged: (enabled: boolean) => void;
   readonly emitWebauthnProxyChanged: (enabled: boolean) => void;
   readonly ensureTranscriptionManager: () => Promise<UnknownRecord>;
+  readonly callMedia?: DesktopCallMediaPort;
   readonly platform: NodeJS.Platform;
   readonly delay?: (milliseconds: number) => Promise<void>;
   readonly detectTimeZone?: () => string | null | undefined;
@@ -93,6 +95,10 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
 
     getTimeZone: () => ({ detectedTimeZone: (deps.detectTimeZone ?? detectTimeZone)() ?? null, overrideTimeZone: invoke(deps.settingsStore, "getUserTimeZoneOverride") ?? null }),
     setTimeZoneOverride: (raw) => { const { timeZone } = req(raw); if (timeZone === null) invoke(deps.settingsStore, "setUserTimeZoneOverride", undefined); else if (typeof timeZone === "string" && isValidIanaTimeZone(timeZone)) invoke(deps.settingsStore, "setUserTimeZoneOverride", timeZone); const detected = (deps.detectTimeZone ?? detectTimeZone)(); void deps.syncHostSettingsToBox({ ...(detected == null ? {} : { userTimeZone: detected }), userTimeZoneOverride: invoke(deps.settingsStore, "getUserTimeZoneOverride") ?? "" }); return { detectedTimeZone: (deps.detectTimeZone ?? detectTimeZone)() ?? null, overrideTimeZone: invoke(deps.settingsStore, "getUserTimeZoneOverride") ?? null }; },
+    getUiPreferences: () => invoke(deps.settingsStore, "getUiPreferences"),
+    setUiPreferences: (raw) => { const ui=normalizeSandUiPreferences(req(raw).preferences); invoke(deps.settingsStore, "setUiPreferences", ui); return invoke(deps.settingsStore, "getUiPreferences"); },
+    getCallMediaPreferences: () => invoke(deps.settingsStore, "getCallMediaPreferences"),
+    setCallMediaPreferences: (raw) => { const media=normalizeSandCallMediaPreferences(req(raw).preferences); invoke(deps.settingsStore, "setCallMediaPreferences", media); return invoke(deps.settingsStore, "getCallMediaPreferences"); },
     getAutoReviewInstructions: () => invoke(deps.settingsStore, "getAutoReviewInstructions"),
     setAutoReviewInstructions: async (raw) => { const value = req(raw).instructions; const instructions = typeof value === "object" && value != null && !Array.isArray(value) ? value as { isEnabled?: unknown; allowInstructions?: unknown; blockInstructions?: unknown } : undefined; const normalized = normalizeSandAutoReviewInstructions(instructions); invoke(deps.settingsStore, "setAutoReviewInstructions", normalized); try { await deps.syncHostSettingsToBox({ autoReviewInstructions: normalized }); } catch (error) { reportDesktopEdgeFailure("host-settings", "auto-review", error); } return invoke(deps.settingsStore, "getAutoReviewInstructions"); },
     getLocalToolPermission: () => invoke(deps.settingsStore, "getLocalToolPermission"),
@@ -100,6 +106,16 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     setLocalToolPermission: async (raw) => { invoke(deps.settingsStore, "setLocalToolPermission", normalizeSandLocalToolPermission(req(raw).permission)); for (let attempt = 0; attempt < 3; attempt += 1) { const permission = invoke(deps.settingsStore, "getLocalToolPermission"); try { const applied = await deps.syncHostSettingsToBox({ localToolPermission: permission }); if (applied?.localToolPermission === permission) break; } catch (error) { reportDesktopEdgeFailure("host-settings", "local-tool-retry", error); } await (deps.delay ?? sleep)(250 * (attempt + 1)); } return invoke(deps.settingsStore, "getLocalToolPermission"); },
     recordLocalToolApproval: async (raw) => { const { approvalId, action, target } = req(raw); invariant(typeof approvalId === "string" && approvalId.length > 0 && isSandLocalToolAction(action) && typeof target === "string", "A local-tool approval needs its request id and action."); await deps.recordLocalToolApproval({ id: approvalId, action, target }); },
     clearLocalToolApprovals: async () => { await deps.clearLocalToolApprovals().catch((error: unknown) => reportDesktopEdgeFailure("local-tool-approvals", "clear", error)); },
+
+    requestCallMediaPermissions: async (raw) => {
+      if (deps.callMedia == null) throw new EdgeCallFailure({ code: MAIN_EDGE_UNSERVED, detail: "Call media permissions are unavailable." });
+      const input = req(raw);
+      return await deps.callMedia.requestPermissions({ audio: input.audio === true, video: input.video === true });
+    },
+    listCallDisplaySources: async () => {
+      if (deps.callMedia == null) throw new EdgeCallFailure({ code: MAIN_EDGE_UNSERVED, detail: "Call display capture is unavailable." });
+      return await deps.callMedia.listDisplaySources();
+    },
 
     getThemeState: () => invoke(themeController(deps), "getState"),
     setThemePreference: (raw) => { const controller = themeController(deps); const preference = req(raw).preference; return isSandThemePreference(preference) ? invoke(controller, "setPreference", preference) : invoke(controller, "getState"); },

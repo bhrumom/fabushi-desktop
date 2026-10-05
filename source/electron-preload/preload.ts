@@ -181,6 +181,12 @@ export function createDesktopPreloadBridge(options: {
     onWidgetGallery: (listener: (payload: unknown) => void) => subscribeIpc(ipc, "sand:dev-widget-gallery", listener),
     onForceOnboarding: (listener: () => void) => subscribe("force-onboarding", () => listener()),
     transcribeAudio: (audio: Uint8Array, mimeType: string, language?: string) => edge("transcribeAudio", { audio, mimeType, language }),
+    callMedia: {
+      requestPermissions: (input: { audio: boolean; video: boolean }) => edge("requestCallMediaPermissions", input),
+      listDisplaySources: () => edge("listCallDisplaySources"),
+      getPreferences: () => edge("getCallMediaPreferences"),
+      setPreferences: (preferences: unknown) => edge("setCallMediaPreferences", { preferences }),
+    },
     cursorAccount: {
       getStatus: () => edge("getCursorAuthStatus"),
       login: () => edge("loginCursor"),
@@ -249,6 +255,10 @@ export function createDesktopPreloadBridge(options: {
     timeZone: {
       get: () => edge("getTimeZone"),
       setOverride: (timeZone: string | null) => edge("setTimeZoneOverride", { timeZone }),
+    },
+    uiPreferences: {
+      get: () => edge("getUiPreferences"),
+      set: (preferences: unknown) => edge("setUiPreferences", { preferences }),
     },
     autoReviewInstructions: {
       get: () => edge("getAutoReviewInstructions"),

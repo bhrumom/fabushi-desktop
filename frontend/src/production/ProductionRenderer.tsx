@@ -1,5 +1,5 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
-import type { CoordinatorPortBridge, CursorAuthStatus, DesktopAutoReviewInstructions, DesktopBridge, SidebarSection, ThemePreference } from "../recovered/contracts/desktop-bridge";
+import type { CoordinatorPortBridge, CursorAuthStatus, DesktopAutoReviewInstructions, DesktopBridge, DesktopUiPreferences, SidebarSection, ThemePreference } from "../recovered/contracts/desktop-bridge";
 import computerEntrypoint from "../recovered/features/computer/overlay/entrypoint";
 import { ConversationComposer } from "../recovered/features/conversation/workspace/composer";
 import { commitComposerAttachments, stageComposerFiles } from "../recovered/features/conversation/workspace/desktop";
@@ -108,6 +108,7 @@ import { commandPaletteLinksFromConversation, createCommandPaletteLinkMetadataPr
 import { commandPaletteUpdateCommand } from "./command-palette-update-command";
 import { commandPaletteRootCommands, type CommandPaletteComputerUpdateAction, type CommandPaletteInfoSection } from "./command-palette-root-commands";
 import { CoordinatorCallError, createCoordinatorClient, type ProductionCoordinatorClient } from "./coordinator-client";
+import { HumanCallControls } from "./human-call-media";
 import { UI_TEXT } from "./evidence";
 import { movePinnedAgent, partitionSidebarAgents } from "./sidebar-model";
 import { SignOutDialog } from "../recovered/features/account/session/sign-out";
@@ -128,6 +129,7 @@ import { ComputerReconnectBanner, ComputerRebuildProgressBanner, type ComputerRe
 import { createRosterSnapshotSource, createRosterSnapshotStore } from "../recovered/features/access/cover/roster-snapshot-store";
 import { createSettingsUpdateController } from "../recovered/features/settings/overlay/updates-controller";
 import { SettingsNoticeView } from "../recovered/features/settings/overlay/notice";
+import { applyDesktopUiPreferencesToDocument } from "../recovered/features/settings/overlay/localization";
 import { createSettingsNoticeController } from "./settings-notice-controller";
 import { createGroupMembersRootScope } from "./group-members-root";
 import { createProductionReactionRootScope } from "./reaction-root";
@@ -137,6 +139,9 @@ import type { TranscriptMessageReactionSlotProps } from "../recovered/features/c
 import { LocalToolPermissionDock, type LocalToolPermissionRequest } from "../recovered/features/permissions/local-tool/view";
 import {
   parseDesktopIntent,
+  projectHumanConversation,
+  projectHumanConversations,
+  projectHumanConversationTranscript,
   projectRendererAgent,
   projectRendererAgents,
   projectTranscriptEntry,
@@ -686,6 +691,7 @@ function SignInLanding({ account, bridge, onStatus }: { account: CursorAuthStatu
   );
 }
 
+
 export interface ProductionRendererProps {
   bridge: DesktopBridge;
   coordinatorPort: CoordinatorPortBridge;
@@ -864,7 +870,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       else focusComposer();
     }
   }));
-  const [findInChatController] = useState(() => createFindInChatController({ onNavigate: scrollToFindMatch }));
+  const findNavigateHandlerRef = useRef<(match: FindInChatMatch) => void>(scrollToFindMatch);
+  const [findInChatController] = useState(() => createFindInChatController({
+    onNavigate: (match) => findNavigateHandlerRef.current(match)
+  }));
   const findInChatLifecycleGenerationRef = useRef(0);
   useEffect(() => {
     const generation = ++findInChatLifecycleGenerationRef.current;
@@ -917,6 +926,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }));
   const [transport, setTransport] = useState<TransportState>("connecting");
   const [agents, setAgents] = useState<RendererAgent[]>([]);
+  const [humanConversations, setHumanConversations] = useState<RendererAgent[]>([]);
   const [pinnedAgentIds, setPinnedAgentIds] = useState<string[]>([]);
   const [selectedSidebarAgentIds, setSelectedSidebarAgentIds] = useState<string[]>([]);
   const sidebarSelectionAnchorRef = useRef<string | null>(null);
@@ -958,6 +968,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [settingsSection, setSettingsSection] = useState<SettingsSectionId>("general");
   const [pluginQuery, setPluginQuery] = useState("");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [newHumanDialogOpen, setNewHumanDialogOpen] = useState(false);
+  const [newHumanPeerId, setNewHumanPeerId] = useState("");
+  const [newHumanTitle, setNewHumanTitle] = useState("");
+  const [humanHandoffAgentId, setHumanHandoffAgentId] = useState("");
   const [account, setAccount] = useState<CursorAuthStatus | null>(null);
   const applyAccountStatus = useCallback((status: CursorAuthStatus) => {
     // Browser OAuth can finish and emit logged-in before the initiating login()
@@ -1020,7 +1034,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const openAgentRequestGenerationRef = useRef(0);
   const transportScopeGenerationRef = useRef(0);
   const findInChatOpenRef = useRef(findInChatOpen);
+  const humanFindGenerationRef = useRef(0);
   const agentsRef = useRef(agents);
+  const humanConversationsRef = useRef(humanConversations);
   const pinnedAgentIdsRef = useRef(pinnedAgentIds);
   const pinnedStateVersionRef = useRef(0);
   const rebuildRevisionRef = useRef(0);
@@ -1031,6 +1047,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   accountRef.current = account;
   findInChatOpenRef.current = findInChatOpen;
   agentsRef.current = agents;
+  humanConversationsRef.current = humanConversations;
   hasLoadedAgentsRef.current = hasLoadedAgents;
   pinnedAgentIdsRef.current = pinnedAgentIds;
   entriesByAgentRef.current = entriesByAgent;
@@ -1071,9 +1088,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const [transcriptPaginationController] = useState(() => createTranscriptPaginationController({
     fetchPage: async ({ id, limit, beforeSeq }) => {
-      if (client == null) throw new Error("coordinator is unavailable for getAgentTranscriptTail");
-      const agentName = agentsRef.current.find((agent) => agent.id === id)?.name ?? UI_TEXT.title;
-      return projectTranscriptPageResult(await client.call("getAgentTranscriptTail", { id, limit, beforeSeq }), agentName, id);
+      if (client == null) throw new Error("coordinator is unavailable for transcript history");
+      const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === id);
+      const agentName = humanConversation?.name ?? agentsRef.current.find((agent) => agent.id === id)?.name ?? UI_TEXT.title;
+      const page = humanConversation == null
+        ? await client.call("getAgentTranscriptTail", { id, limit, beforeSeq })
+        : await client.call("getHumanConversationTranscriptTail", { conversationId: id, limit, beforeSeq });
+      return projectTranscriptPageResult(page, agentName, id);
     }
   }));
   useStrictModeSafeDisposal(transcriptPaginationController);
@@ -1086,6 +1107,46 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const sendComposerPrompt = async (submission: ComposerSubmission): Promise<void> => {
     if (client == null) throw new Error("coordinator is unavailable for sendPrompt");
+    const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === submission.agentId);
+    if (humanConversation != null) {
+      const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
+      const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(bridge, draftAttachments);
+      for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
+      const result = await client.call("sendHumanMessage", {
+        conversationId: submission.agentId,
+        text: submission.prompt,
+        clientNonce: submission.nonce,
+        composedAtMs: submission.createdAtMs,
+        attachments,
+        ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
+      });
+      const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
+      if (authoritative != null) {
+        setEntriesByAgent((current) => {
+          const existing = current[submission.agentId] ?? [];
+          const correlatedIndex = existing.findIndex((entry) =>
+            entry.id === authoritative.id
+            || (entry.kind === "message" && entry.clientNonce === submission.nonce)
+          );
+          return {
+            ...current,
+            [submission.agentId]: correlatedIndex < 0
+              ? [...existing, authoritative]
+              : existing.map((entry, index) => index === correlatedIndex ? authoritative : entry)
+          };
+        });
+        acknowledgementController.reconcileEcho({
+          accountSlot: acknowledgementScopeRef.current.accountSlot,
+          agentId: submission.agentId,
+          nonce: submission.nonce,
+          echoedNonce: submission.nonce
+        });
+      }
+      const projectedHumans = projectHumanConversations(await client.call("listHumanConversations"));
+      humanConversationsRef.current = projectedHumans;
+      setHumanConversations(projectedHumans);
+      return;
+    }
     const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
     const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(bridge, draftAttachments);
     for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
@@ -1236,16 +1297,47 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     scope: { accountSlot: null, agentId: null },
     ...reactionRootCallbacks
   }));
+  const activeIsHuman = humanConversations.some((conversation) => conversation.id === activeAgentId);
+  const humanReactionTransport = useMemo(() => activeIsHuman && client != null ? {
+    async reactToMessage(input: { entryId: string; emoji: string; agentId: string }) {
+      const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
+      if (conversation == null) throw new Error("Human reaction conversation is unavailable");
+      const value = await client.call("reactHumanMessage", {
+        conversationId: input.agentId,
+        entryId: input.entryId,
+        emoji: input.emoji
+      });
+      const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
+      if (projected == null) throw new Error("Human reaction settlement returned an invalid transcript entry");
+      setEntriesByAgent((current) => {
+        const entries = current[input.agentId];
+        if (entries == null) return current;
+        const next = entries.map((entry) => entry.id === input.entryId ? projected : entry);
+        return { ...current, [input.agentId]: next };
+      });
+    }
+  } : undefined, [activeIsHuman, client]);
   const reactionScope = useMemo(() => ({
     accountSlot: transcriptAccountSlot,
-    agentId: activeAgentId.length > 0 ? activeAgentId : null
-  }), [activeAgentId, transcriptAccountSlot]);
+    agentId: activeIsHuman || activeAgentId.length === 0 ? null : activeAgentId
+  }), [activeAgentId, activeIsHuman, transcriptAccountSlot]);
   const reactionScopeGenerationRef = useRef(0);
   const reactionLifecycleGenerationRef = useRef(0);
   const resolveReactionReactorName = useCallback((reactor: string) => agentsRef.current.find((agent) => agent.id === reactor)?.name ?? "the agent", []);
   const renderReactionPills = useCallback((props: TranscriptMessageReactionPillsProps) => {
-    if (reactionRoot == null || !props.isDeliveryActionable || (props.entry.kind !== "message" && props.entry.kind !== "send-message" && props.entry.kind !== "user-attachment")) return null;
+    if (!props.isDeliveryActionable || (props.entry.kind !== "message" && props.entry.kind !== "send-message" && props.entry.kind !== "user-attachment")) return null;
     const reactions = "reactions" in props.entry && Array.isArray(props.entry.reactions) ? props.entry.reactions : [];
+    if (activeIsHuman) {
+      if (humanReactionTransport == null || activeAgentId.length === 0) return null;
+      return <ReactionPills
+        agentId={activeAgentId}
+        entryId={props.entry.id}
+        reactions={reactions}
+        resolveReactorName={resolveReactionReactorName}
+        transport={humanReactionTransport}
+      />;
+    }
+    if (reactionRoot == null) return null;
     return <ReactionPills
       agentId={activeAgentId.length > 0 ? activeAgentId : null}
       controller={reactionRoot.pair.controller}
@@ -1253,14 +1345,26 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       reactions={reactions}
       resolveReactorName={resolveReactionReactorName}
     />;
-  }, [activeAgentId, reactionRoot, resolveReactionReactorName]);
+  }, [activeAgentId, activeIsHuman, humanReactionTransport, reactionRoot, resolveReactionReactorName]);
   const renderReactionActions = useCallback((props: TranscriptMessageReactionSlotProps) => {
-    if (reactionRoot == null || props.isReadOnly || !props.isDeliveryActionable) return null;
+    if (props.isReadOnly || !props.isDeliveryActionable) return null;
     if (props.entry.kind !== "message" && props.entry.kind !== "send-message" && props.entry.kind !== "user-attachment") return null;
     const reactions = "reactions" in props.entry && Array.isArray(props.entry.reactions) ? props.entry.reactions : [];
     const myReactions = "myReactions" in props.entry && props.entry.myReactions != null
       ? props.entry.myReactions
       : new Set(reactions.filter((reaction) => reaction.by === "me").map((reaction) => reaction.emoji));
+    if (activeIsHuman) {
+      if (humanReactionTransport == null || activeAgentId.length === 0) return null;
+      return <MessageReactionAction
+        agentId={activeAgentId}
+        entryId={props.entry.id}
+        myReactions={myReactions}
+        onExpandPicker={() => undefined}
+        onOpenChange={props.onOpenChange}
+        transport={humanReactionTransport}
+      />;
+    }
+    if (reactionRoot == null) return null;
     return <MessageReactionAction
       agentId={activeAgentId.length > 0 ? activeAgentId : null}
       controller={reactionRoot.pair.controller}
@@ -1269,7 +1373,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       onExpandPicker={() => undefined}
       onOpenChange={props.onOpenChange}
     />;
-  }, [activeAgentId, reactionRoot]);
+  }, [activeAgentId, activeIsHuman, humanReactionTransport, reactionRoot]);
   useEffect(() => {
     if (reactionRoot == null) return;
     reactionRoot.setScope(reactionScope);
@@ -1300,7 +1404,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     void bridge.openExternal(url).catch((error: unknown) => setNotice(error instanceof Error ? error.message : String(error)));
   }, [bridge]);
 
-  const activeAgent = agents.find((agent) => agent.id === activeAgentId);
+  const allConversations = useMemo(() => [...humanConversations, ...agents], [agents, humanConversations]);
+  const activeAgent = allConversations.find((agent) => agent.id === activeAgentId);
   const conversationOutlineAgent = conversationOutlineAgentId == null
     ? null
     : agents.find((agent) => agent.id === conversationOutlineAgentId) ?? null;
@@ -1375,7 +1480,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     sharedRoomProvider?.setContext(sharedRoomContext);
   }, [sharedRoomContext, sharedRoomProvider]);
   const agentSettingsController = useMemo(() => {
-    if (activeAgent == null) return null;
+    if (activeAgent == null || activeIsHuman) return null;
     const initialAgent = projectAgentSettingsAgent({
       ...activeAgent.raw,
       id: activeAgent.id,
@@ -1395,21 +1500,21 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         return { dispose() { stopAgents(); stopUpsert(); } };
       }
     }, initialAgent);
-  }, [activeAgent?.id, client, paletteAccountIdentity]);
+  }, [activeAgent?.id, activeIsHuman, client, paletteAccountIdentity]);
   const agentSettingsSnapshot = useSyncExternalStore(
     agentSettingsController?.subscribe ?? emptyAgentSettingsSubscribe,
     agentSettingsController?.getSnapshot ?? readEmptyAgentSettingsSnapshot,
     agentSettingsController?.getSnapshot ?? readEmptyAgentSettingsSnapshot
   );
   const agentChannelsController = useMemo(() => {
-    if (activeAgent == null || activeAgent.isGroup || client == null || account?.kind !== "logged-in") return null;
+    if (activeAgent == null || activeAgent.isGroup || activeIsHuman || client == null || account?.kind !== "logged-in") return null;
     return createAgentInfoChannelsController({
       getAgentChannels: (args) => client.call("getAgentChannels", args),
       connectChannel: (args) => client.call("connectChannel", args),
       disconnectChannel: (args) => client.call("disconnectChannel", args),
       refreshChannel: (args) => client.call("refreshChannel", args)
     }, activeAgent.id);
-  }, [account?.kind, activeAgent?.id, client, paletteAccountIdentity]);
+  }, [account?.kind, activeAgent?.id, activeIsHuman, client, paletteAccountIdentity]);
   const sidebarLayout = useSyncExternalStore(uiLayoutStore.sidebarLayout.subscribe, uiLayoutStore.sidebarLayout.get, uiLayoutStore.sidebarLayout.get);
   const [sidebarResizePreview, setSidebarResizePreview] = useState<SidebarLayoutState | null>(null);
   const sidebarResizePreviewRef = useRef<SidebarLayoutState | null>(null);
@@ -1443,6 +1548,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     transcriptPaginationController.subscribe,
     transcriptPaginationController.getSnapshot,
     transcriptPaginationController.getSnapshot
+  );
+  const findInChatSnapshot = useSyncExternalStore(
+    findInChatController.subscribe,
+    findInChatController.getSnapshot,
+    findInChatController.getSnapshot
   );
   useEffect(() => {
     transcriptPaginationController.setScope(transcriptAccountSlot, activeAgentId.length > 0 ? activeAgentId : null);
@@ -1499,7 +1609,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     },
     [client]
   );
-  const visibleAgents = agents.filter((agent) => !agent.isHidden).map((agent) => ({ ...agent, isPinned: pinnedAgentIds.includes(agent.id) }));
+  const visibleAgents = [
+    ...humanConversations.map((conversation) => ({ ...conversation, isPinned: false })),
+    ...agents.filter((agent) => !agent.isHidden).map((agent) => ({ ...agent, isPinned: pinnedAgentIds.includes(agent.id) }))
+  ].sort((left, right) => right.updatedAt - left.updatedAt);
   const pinnedAccountKey = account?.kind === "logged-in" ? account.authId ?? account.email ?? "account" : account?.kind ?? "unknown";
   const settingsNoticeSurface = overlay === "settings" || overlay === "plugins" ? overlay : "none";
   const settingsNoticeScope = `${pinnedAccountKey}:${account?.kind ?? "unknown"}:${settingsNoticeSurface}`;
@@ -1601,7 +1714,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   useEffect(() => {
     avatarEditorAdapter.setScope({
       accountKey: account?.kind === "logged-in" ? pinnedAccountKey : null,
-      agent: client == null || activeAgent == null ? null : {
+      agent: client == null || activeAgent == null || activeIsHuman ? null : {
         id: activeAgent.id,
         isGroup: activeAgent.isGroup,
         avatarDataUrl: activeAgent.avatarDataUrl,
@@ -1610,7 +1723,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       }
     });
     setAvatarEditorOpen(false);
-  }, [account?.kind, activeAgent?.avatarColor, activeAgent?.avatarDataUrl, activeAgent?.avatarShape, activeAgent?.id, activeAgent?.isGroup, avatarEditorAdapter, client, pinnedAccountKey]);
+  }, [account?.kind, activeAgent?.avatarColor, activeAgent?.avatarDataUrl, activeAgent?.avatarShape, activeAgent?.id, activeAgent?.isGroup, activeIsHuman, avatarEditorAdapter, client, pinnedAccountKey]);
   const asyncTasksAccountSlot = account?.kind === "logged-in" ? pinnedAccountKey : null;
   useEffect(() => {
     if (asyncTasksProvider == null || client == null || asyncTasksAccountSlot == null) {
@@ -1678,7 +1791,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     clock: { now: () => Date.now() },
     pollingPolicy: createTeachRecordingPollingPolicy
   }));
-  const teachRecordingAgentId = activeAgent == null || activeAgent.isGroup ? null : activeAgent.id;
+  const teachRecordingAgentId = activeAgent == null || activeAgent.isGroup || activeIsHuman ? null : activeAgent.id;
   const teachRecordingAccountSlot = account?.kind === "logged-in" ? pinnedAccountKey : null;
   const teachRecordingLifecycleGenerationRef = useRef(0);
   useEffect(() => {
@@ -1728,6 +1841,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (sidebarSectionsWriteFailure != null) setNotice(sidebarSectionsWriteFailure.code);
   }, [sidebarSectionsWriteFailure]);
   const hiddenAgents = agents.filter((agent) => agent.isHidden);
+  const availableHandoffAgents = agents.filter((agent) => !agent.isHidden && !agent.isGroup);
+  useEffect(() => {
+    if (!activeIsHuman) return;
+    if (availableHandoffAgents.some((agent) => agent.id === humanHandoffAgentId)) return;
+    setHumanHandoffAgentId(availableHandoffAgents[0]?.id ?? "");
+  }, [activeIsHuman, availableHandoffAgents, humanHandoffAgentId]);
   const orgChartAgents = useMemo(() => agents.map((agent) => ({ ...agent, isRunning: agent.isRunning === true })), [agents]);
   const liveEntries = activeAgent == null ? EMPTY_ENTRIES : entriesByAgent[activeAgent.id] ?? EMPTY_ENTRIES;
   const entries = useMemo(
@@ -1736,13 +1855,71 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       : liveEntries,
     [activeAgentId, liveEntries, transcriptAccountSlot, transcriptPaginationSnapshot.accountSlot, transcriptPaginationSnapshot.agentId, transcriptPaginationSnapshot.entries]
   );
+  findNavigateHandlerRef.current = (match) => {
+    if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId) === true) return;
+    const conversationId = activeAgentIdRef.current;
+    const isHumanConversation = humanConversationsRef.current.some((conversation) => conversation.id === conversationId);
+    if (!isHumanConversation) {
+      scrollToFindMatch(match);
+      return;
+    }
+    const accountSlot = transcriptAccountSlot;
+    void (async () => {
+      for (let page = 0; page < 32; page += 1) {
+        if (
+          activeAgentIdRef.current !== conversationId
+          || transcriptAccountSlot !== accountSlot
+          || findInChatController.getSnapshot().scope.agentId !== conversationId
+        ) return;
+        if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId) === true) return;
+        const pagination = transcriptPaginationController.getSnapshot();
+        if (pagination.agentId !== conversationId || pagination.accountSlot !== accountSlot || !pagination.hasOlder) return;
+        await transcriptPaginationController.loadOlder();
+      }
+      transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId);
+    })().catch((error: unknown) => {
+      setNotice(error instanceof Error ? `Human search navigation unavailable: ${error.message}` : `Human search navigation unavailable: ${String(error)}`);
+    });
+  };
   useEffect(() => {
     findInChatController.setScope(transcriptAccountSlot, activeAgentId.length > 0 ? activeAgentId : null);
     if (account?.kind !== "logged-in" || activeAgentId.length === 0) setFindInChatOpen(false);
   }, [account?.kind, activeAgentId, findInChatController, transcriptAccountSlot]);
   useEffect(() => {
-    findInChatController.replaceEntries(entries);
-  }, [entries, findInChatController]);
+    const query = findInChatSnapshot.query.trim();
+    if (!activeIsHuman || query.length === 0) findInChatController.replaceEntries(entries);
+  }, [activeIsHuman, entries, findInChatController, findInChatSnapshot.query]);
+  useEffect(() => {
+    const query = findInChatSnapshot.query.trim();
+    if (!findInChatOpen || !activeIsHuman || query.length === 0 || client == null || activeAgent == null) return;
+    const generation = ++humanFindGenerationRef.current;
+    const conversationId = activeAgent.id;
+    const conversationName = activeAgent.name;
+    void client.call("searchHumanMessages", {
+      conversationId,
+      query,
+      limit: 200
+    }).then((value) => {
+      if (
+        humanFindGenerationRef.current !== generation
+        || activeAgentIdRef.current !== conversationId
+        || findInChatController.getSnapshot().query.trim() !== query
+      ) return;
+      findInChatController.replaceEntries(
+        projectHumanConversationTranscript(value, conversationName, conversationId)
+      );
+      const settledSearch = findInChatController.getSnapshot();
+      if (settledSearch.current == null && settledSearch.matches.length > 0) {
+        findInChatController.step(1);
+      }
+    }).catch((error: unknown) => {
+      if (humanFindGenerationRef.current !== generation || activeAgentIdRef.current !== conversationId) return;
+      setNotice(error instanceof Error ? `Human search unavailable: ${error.message}` : `Human search unavailable: ${String(error)}`);
+    });
+    return () => {
+      if (humanFindGenerationRef.current === generation) humanFindGenerationRef.current += 1;
+    };
+  }, [activeAgent, activeIsHuman, client, findInChatController, findInChatOpen, findInChatSnapshot.query]);
   useEffect(() => {
     const scopedAccountKey = account?.kind === "logged-in" && transport === "connected" ? transcriptAccountSlot : null;
     const scopedAgentId = scopedAccountKey == null || activeAgentId.length === 0 ? null : activeAgentId;
@@ -1954,7 +2131,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [entries, replyThreadController]);
   const transcriptCardInteractions = useMemo<TranscriptCardInteractionContext>(() => ({
     threadRootId: null,
-    isReadOnly: activeAgent == null || activeAgent.isGroup,
+    isReadOnly: activeAgent == null || activeAgent.isGroup || activeIsHuman,
     onReply: (entryId) => { replyThreadController.selectReply(entryId); },
     onThread: (entryId) => { replyThreadController.navigate(entryId); },
     getThreadSummary: () => null,
@@ -1970,7 +2147,50 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       row?.scrollIntoView({ block: "center", behavior: "smooth" });
     },
     isEntryInScope: (targetId) => replyThreadController.resolve(targetId).isInScope,
-  }), [activeAgent, entries, replyThreadController]);
+  }), [activeAgent, activeIsHuman, entries, replyThreadController]);
+  const handoffHumanConversationToAgent = useCallback(async () => {
+    if (client == null || activeAgent == null || !activeIsHuman || humanHandoffAgentId.length === 0) return;
+    const targetAgent = agentsRef.current.find((agent) => agent.id === humanHandoffAgentId);
+    if (targetAgent == null) {
+      setNotice("Choose an available Agent for the handoff.");
+      return;
+    }
+    const transcriptContext = entries
+      .filter((entry): entry is TranscriptMessage => entry.kind === "message" && entry.text.trim().length > 0)
+      .slice(-20)
+      .map((entry) => `${entry.author}: ${entry.text.trim()}`)
+      .join("\n");
+    if (transcriptContext.length === 0) {
+      setNotice("Send at least one Human message before handing the conversation to an Agent.");
+      return;
+    }
+    const clientNonce = makeClientNonce();
+    const now = Date.now();
+    setBusy(true);
+    try {
+      await client.call("sendPrompt", {
+        agentId: targetAgent.id,
+        prompt: `Continue from this Human conversation and help with the user's explicit handoff request. Preserve the Human/Agent distinction and use tools or artifacts when useful.\n\nHuman conversation: ${activeAgent.name}\n\n${transcriptContext}`,
+        directAddressedAcceptance: true,
+        requestSource: "human-handoff",
+        humanHandoffConversationId: activeAgent.id,
+        attachmentPaths: [],
+        attachmentNames: [],
+        clientNonce,
+        enterEpochMs: now,
+        composedAtMs: now
+      });
+      // Host/Runner durably projects the trusted Agent result into this Human
+      // transcript. Renderer state never fabricates an Agent-authored message
+      // and the user remains in the same conversation workspace.
+      setNotice(null);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(false);
+    }
+  }, [activeAgent, activeIsHuman, client, entries, humanHandoffAgentId]);
+
   const loadOlderTranscript = useCallback(() => transcriptPaginationController.loadOlder(), [transcriptPaginationController]);
   const paletteLinks = useMemo(
     () => commandPaletteLinksFromConversation(commandPaletteOpen ? conversationLinkCandidates(entries) : []),
@@ -1992,7 +2212,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     : { targetId: replySelection.targetId, preview: replySelection.preview };
   const transcribeAudio = useCallback((audio: Uint8Array, mimeType: string, language?: string) => bridge.transcribeAudio(audio, mimeType, language), [bridge]);
   const resolveAttachmentMedia = useCallback((source: string) => bridge.resolveAttachmentMedia(source), [bridge]);
-  const computer = useComputerExperience({ activeAgentId: activeAgent?.isGroup === true ? null : activeAgent?.id ?? null, bridge, client });
+  const computer = useComputerExperience({ activeAgentId: activeAgent == null || activeAgent.isGroup || activeIsHuman ? null : activeAgent.id, bridge, client });
   const teachRecordingComposition = useTeachRecordingComputerComposition({
     activeAgentId: teachRecordingAgentId,
     featureEnabled: teachRecordingFeatureEnabled,
@@ -2008,8 +2228,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     store: teachRecordingStore ?? EMPTY_TEACH_RECORDING_STORE
   });
   const activeComputerStatusSnapshots = useMemo(
-    () => activeAgent == null || activeAgent.isGroup || computer.statusStore == null ? null : computer.statusStore.statusSnapshotsFor(activeAgent.id),
-    [activeAgent, computer.statusStore]
+    () => activeAgent == null || activeAgent.isGroup || activeIsHuman || computer.statusStore == null ? null : computer.statusStore.statusSnapshotsFor(activeAgent.id),
+    [activeAgent, activeIsHuman, computer.statusStore]
   );
   const subscribeActiveComputerStatus = useCallback(
     (listener: () => void) => activeComputerStatusSnapshots?.subscribe(listener) ?? (() => {}),
@@ -2022,8 +2242,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const activeComputerStatus = useSyncExternalStore(subscribeActiveComputerStatus, readActiveComputerStatus, readActiveComputerStatus);
   const activeComputerImageUpdateAvailable = useMemo(
     () => activeComputerStatus.status?.imageUpdateAvailable === true
-      || computer.statusStore?.getStatus(activeAgent?.id ?? null)?.imageUpdateAvailable === true,
-    [activeAgent?.id, activeComputerStatus.status?.imageUpdateAvailable, computer.statusStore]
+      || computer.statusStore?.getStatus(activeIsHuman ? null : activeAgent?.id ?? null)?.imageUpdateAvailable === true,
+    [activeAgent?.id, activeComputerStatus.status?.imageUpdateAvailable, activeIsHuman, computer.statusStore]
   );
   const settingsComputerScope = `${account?.kind === "logged-in" ? pinnedAccountKey : "signed-out"}:${activeAgent?.id ?? ""}`;
   const settingsComputerGenerationRef = useRef(0);
@@ -2250,14 +2470,97 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       && accountRef.current?.kind === "logged-in";
     setIsRosterRetrying(true);
     try {
-      const projected = projectRendererAgents(await client.call("listAgents"));
+      // Agent roster readiness is local Host state and must not be held hostage
+      // by a remote Human sync. Publish the canonical Agent roster first so an
+      // empty/saved Agent state is actionable even while Human convergence is
+      // slow or temporarily unavailable.
+      const agentValue = await client.call("listAgents");
+      const projected = projectRendererAgents(agentValue);
       if (!isCurrent()) return;
       setPrivacyBlocked(false);
       setRosterLoadFailed(false);
       setRosterFailure(null);
       setAgents(projected);
-      reconcileCompleteRosterSelection(projected);
       setHasLoadedAgents(true);
+      reconcileCompleteRosterSelection([
+        ...humanConversationsRef.current,
+        ...projected
+      ]);
+
+      // Human convergence has its own account/transport generation fence. It is
+      // intentionally detached from Agent roster readiness, but remains
+      // canonical Host-owned state and still falls back to the durable local
+      // Human roster if the shipping sync is unavailable.
+      void (async () => {
+        let humanValue: unknown;
+        try {
+          humanValue = transportRef.current === "connected"
+            ? await client.call("syncHumanConversations")
+            : await client.call("listHumanConversations");
+        } catch (error) {
+          if (!isCurrent()) return;
+          setNotice(error instanceof Error
+            ? `Human sync unavailable: ${error.message}`
+            : `Human sync unavailable: ${String(error)}`);
+          try {
+            humanValue = await client.call("listHumanConversations");
+          } catch (fallbackError) {
+            if (isCurrent()) {
+              setNotice(fallbackError instanceof Error
+                ? `Human roster unavailable: ${fallbackError.message}`
+                : `Human roster unavailable: ${String(fallbackError)}`);
+            }
+            return;
+          }
+        }
+        if (!isCurrent()) return;
+        const projectedHumans = projectHumanConversations(humanValue);
+        humanConversationsRef.current = projectedHumans;
+        setHumanConversations(projectedHumans);
+        reconcileCompleteRosterSelection([...projectedHumans, ...projected]);
+
+        // syncHumanConversations has already converged the Host-owned durable
+        // transcripts. If the user is looking at a Human conversation that was
+        // loaded before this reconnect, refresh that projection from the same
+        // Session/Transcript owner instead of leaving the renderer stale until a
+        // manual reopen. Reconciliation preserves queued/optimistic local entries.
+        const activeHumanId = activeAgentIdRef.current;
+        const activeHuman = projectedHumans.find((conversation) => conversation.id === activeHumanId);
+        if (activeHuman != null && entriesByAgentRef.current[activeHumanId] == null) {
+          // A persisted Human selection may restore before the asynchronous Human
+          // roster has been projected. The first open attempt can therefore lack
+          // enough type information to address the Human transcript. Once the
+          // canonical Human roster arrives, retry that same selection instead of
+          // leaving the workspace permanently unloaded until the user changes chats.
+          void openAgentRef.current(activeHumanId);
+        } else if (activeHuman != null && entriesByAgentRef.current[activeHumanId] != null) {
+          try {
+            const transcriptValue = await client.call("getHumanConversationTranscript", {
+              conversationId: activeHumanId
+            });
+            if (isCurrent() && activeAgentIdRef.current === activeHumanId) {
+              const projectedEntries = projectHumanConversationTranscript(
+                transcriptValue,
+                activeHuman.name,
+                activeHumanId
+              );
+              setEntriesByAgent((current) => ({
+                ...current,
+                [activeHumanId]: reconcileAuthoritativeTranscriptBaseline(
+                  current[activeHumanId] ?? [],
+                  projectedEntries
+                )
+              }));
+            }
+          } catch (error) {
+            if (isCurrent()) {
+              setNotice(error instanceof Error
+                ? `Human transcript refresh unavailable: ${error.message}`
+                : `Human transcript refresh unavailable: ${String(error)}`);
+            }
+          }
+        }
+      })();
     } catch (error) {
       if (!isCurrent()) return;
       if (isRosterPrivacyBlockFailure(error)) {
@@ -2315,28 +2618,45 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
     const hasLoadedEntries = entriesByAgentRef.current[agentId] != null;
     transcriptPaginationController.setScope(transcriptAccountSlot, agentId);
-    const shouldOpen = selectionStore.select(agentId);
+    selectionStore.select(agentId);
     setOverlay(null);
     setWorkspaceRoute(null);
     setCommandPaletteOpen(false);
     if (hasLoadedEntries) selectionStore.settle(agentId);
-    if (!shouldOpen || hasLoadedEntries || client == null) {
+    if (hasLoadedEntries || client == null) {
       if (client == null) selectionStore.settle(agentId);
       return;
     }
-    const agentName = agentsRef.current.find((agent) => agent.id === agentId)?.name ?? UI_TEXT.title;
+    const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === agentId);
+    const agentName = humanConversation?.name ?? agentsRef.current.find((agent) => agent.id === agentId)?.name ?? UI_TEXT.title;
     try {
-      const page = await client.call("openAgentTail", { id: agentId, limit: 200 });
+      let page: unknown;
+      if (humanConversation == null) {
+        page = await client.call("openAgentTail", { id: agentId, limit: 200 });
+      } else {
+        if (transportRef.current === "connected") {
+          try {
+            await client.call("syncHumanConversation", { conversationId: agentId });
+          } catch (error) {
+            setNotice(error instanceof Error ? `Human sync unavailable: ${error.message}` : `Human sync unavailable: ${String(error)}`);
+          }
+        }
+        page = await client.call("getHumanConversationTranscriptTail", { conversationId: agentId, limit: 200 });
+      }
+      // Human conversations are read from the Host-local durable Session store.
+      // A transport ready/reconnect notification may advance the Agent transport
+      // generation while this local read is in flight; that must not discard an
+      // otherwise current Human transcript. Agent tail reads remain transport-fenced.
       if (accountScopeGenerationRef.current !== accountScopeGeneration
         || openAgentRequestGenerationRef.current !== requestGeneration
-        || transportScopeGenerationRef.current !== transportScopeGeneration
+        || (humanConversation == null && transportScopeGenerationRef.current !== transportScopeGeneration)
         || accountRef.current?.kind !== "logged-in") return;
       const projectedPage = projectTranscriptPageResult(page, agentName, agentId);
       setEntriesByAgent((current) => ({
         ...current,
-        // openAgentTail started only because this Agent had no loaded entries.
-        // Anything present now arrived while the request was in flight and must
-        // survive a stale initial page response.
+        // Initial reads start only because this conversation had no loaded
+        // entries. Anything present now arrived while the request was in flight
+        // and must survive a stale initial page response.
         [agentId]: reconcileLateInitialTranscriptPage(current[agentId] ?? [], projectedPage.entries)
       }));
       transcriptPaginationController.installInitialPage(projectedPage);
@@ -2346,7 +2666,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     } catch {
       if (accountScopeGenerationRef.current !== accountScopeGeneration
         || openAgentRequestGenerationRef.current !== requestGeneration
-        || transportScopeGenerationRef.current !== transportScopeGeneration
+        || (humanConversation == null && transportScopeGenerationRef.current !== transportScopeGeneration)
         || accountRef.current?.kind !== "logged-in") return;
       selectionStore.settle(agentId);
       selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });
@@ -2428,7 +2748,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setRosterLoadFailed(false);
       setRosterFailure(null);
       setAgents(projected);
-      reconcileCompleteRosterSelection(projected);
+      reconcileCompleteRosterSelection([...humanConversationsRef.current, ...projected].sort((left, right) => right.updatedAt - left.updatedAt));
       setHasLoadedAgents(true);
     });
     const stopUpsert = client.subscribe("agent-upserted", (value) => {
@@ -2567,7 +2887,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const accountSlot = account?.kind === "logged-in" ? pinnedAccountKey : null;
     void selectionStore.restore(accountSlot).then(() => {
       if (!active || accountSlot == null) return;
-      if (hasLoadedAgentsRef.current) reconcileCompleteRosterSelection(agentsRef.current);
+      if (hasLoadedAgentsRef.current) {
+        reconcileCompleteRosterSelection([...humanConversationsRef.current, ...agentsRef.current].sort((left, right) => right.updatedAt - left.updatedAt));
+      }
     });
     return () => { active = false; };
   }, [account?.kind, pinnedAccountKey, reconcileCompleteRosterSelection, selectionStore]);
@@ -2617,6 +2939,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       void rebuildMigrationStore.noteReconnect();
       void rebuildBoxStore.noteReconnect();
       void rebuildTransportStore.connect();
+      void client.call("syncHumanCalls").catch(() => {});
     };
     const stopTransport = client.subscribeTransport(reconnect);
     void Promise.all([
@@ -2632,6 +2955,16 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       rebuildTransportStore.reset();
     };
   }, [account?.kind, client, pinnedAccountKey, rebuildBoxStore, rebuildMigrationStore, rebuildTransportStore]);
+
+  useEffect(() => {
+    if (client == null || account?.kind !== "logged-in") return;
+    const syncVisibleHumanCalls = () => {
+      if (document.visibilityState !== "visible") return;
+      void client.call("syncHumanCalls").catch(() => {});
+    };
+    document.addEventListener("visibilitychange", syncVisibleHumanCalls);
+    return () => document.removeEventListener("visibilitychange", syncVisibleHumanCalls);
+  }, [account?.kind, client, pinnedAccountKey]);
 
   useStrictModeSafeDisposal(accessRosterStore);
   useStrictModeSafeDisposal(rebuildMigrationStore);
@@ -2823,6 +3156,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         selectionStore.reset();
         acknowledgementController.reset();
         completeRosterAgentIdsRef.current = [];
+        humanConversationsRef.current = [];
+        setHumanConversations([]);
         setAgents([]); setHasLoadedAgents(false); setActiveAgentId(""); setEntriesByAgent({});
         setPrivacyBlocked(false);
         setRosterLoadFailed(false);
@@ -2862,6 +3197,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         setChannelsInfoPaneOpen(false);
         setAsyncTasksAgentId(null);
         asyncTasksReturnFocusRef.current = null;
+        humanConversationsRef.current = [];
+        setHumanConversations([]);
       }
       applyAccountStatus(status);
       if (identityChanged) void bridge.onboarding.getSeen().then((seen) => resolveOnboarding(status, seen)).catch(() => {});
@@ -2874,6 +3211,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setWindowFullscreen(windowState.isFullscreen);
       setWindowMaximized(windowState.isMaximized);
     }).catch((error: unknown) => active && setNotice(error instanceof Error ? error.message : String(error)));
+    void bridge.uiPreferences.get().then((preferences)=>{ if(active) applyDesktopUiPreferencesToDocument(preferences); }).catch(()=>{});
     const stopAccount = bridge.cursorAccount.onStatusChanged(observeAccount);
     const themeInstaller = typeof document === "undefined" ? null : createRuntimeThemeInstaller(document as unknown as ThemeDocument, bridge.theme.initial.resolved);
     const stopTheme = bridge.theme.onChanged((theme) => { setThemePreference(theme.preference); setResolvedTheme(theme.resolved); themeInstaller?.update(theme.resolved); applyRootShellTheme(theme.resolved); });
@@ -2928,6 +3266,34 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     return () => { active = false; window.removeEventListener("focus", onFocus); };
   }, [client, refreshRoster, transport]);
 
+  const createHumanConversation = async () => {
+    if (client == null) return;
+    const peerHumanId = newHumanPeerId.trim();
+    if (peerHumanId.length === 0) {
+      setNotice("Human identity is required.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const created = projectHumanConversation(await client.call("createHumanConversation", {
+        peerHumanId,
+        ...(newHumanTitle.trim().length === 0 ? {} : { title: newHumanTitle.trim() })
+      }));
+      const projectedHumans = projectHumanConversations(await client.call("listHumanConversations"));
+      humanConversationsRef.current = projectedHumans;
+      setHumanConversations(projectedHumans);
+      reconcileCompleteRosterSelection([...projectedHumans, ...agentsRef.current]);
+      setNewHumanDialogOpen(false);
+      setNewHumanPeerId("");
+      setNewHumanTitle("");
+      if (created != null) await openAgent(created.id);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const createAgent = async () => {
     if (client == null) return;
     setBusy(true);
@@ -2966,12 +3332,16 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     },
     focusPrompt: () => document.querySelector<HTMLElement>(".sand-prompt-form textarea, .sand-prompt-form [contenteditable='true']")?.focus(),
     previousAgent: () => {
-      const agentIds = agentsRef.current.filter((agent) => !agent.isHidden).map((agent) => agent.id);
+      const agentIds = [...humanConversationsRef.current, ...agentsRef.current.filter((agent) => !agent.isHidden)]
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .map((agent) => agent.id);
       const agentId = resolveAdjacentAgentId(agentIds, activeAgentIdRef.current, "previous");
       if (agentId != null) void openAgentRef.current(agentId);
     },
     nextAgent: () => {
-      const agentIds = agentsRef.current.filter((agent) => !agent.isHidden).map((agent) => agent.id);
+      const agentIds = [...humanConversationsRef.current, ...agentsRef.current.filter((agent) => !agent.isHidden)]
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .map((agent) => agent.id);
       const agentId = resolveAdjacentAgentId(agentIds, activeAgentIdRef.current, "next");
       if (agentId != null) void openAgentRef.current(agentId);
     },
@@ -3253,8 +3623,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     await client.call("deleteAgents", { ids: [agentId] });
     const remaining = agentsRef.current.filter((agent) => agent.id !== agentId);
     setAgents(remaining);
-    completeRosterAgentIdsRef.current = remaining.map((agent) => agent.id);
-    selectionStore.reconcile({ agentIds: remaining.map((agent) => agent.id), isRosterComplete: true });
+    const remainingConversations = [...humanConversationsRef.current, ...remaining].sort((left, right) => right.updatedAt - left.updatedAt);
+    completeRosterAgentIdsRef.current = remainingConversations.map((agent) => agent.id);
+    selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: true });
   };
 
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js bytes 5502990-5504050
@@ -3508,7 +3879,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const showSignIn = bridge != null && account != null && account.kind !== "logged-in";
   const showRootLoading = bridge != null && account?.kind === "logged-in" && activeAgent == null && transport === "connecting" && !onboardingOpen;
-  const showRootEmptyWorkspace = bridge != null && account?.kind === "logged-in" && transport === "connected" && hasLoadedAgents && agents.length === 0 && activeAgent == null && workspaceRoute == null && !onboardingOpen;
+  const showRootEmptyWorkspace = bridge != null && account?.kind === "logged-in" && transport === "connected" && hasLoadedAgents && allConversations.length === 0 && activeAgent == null && workspaceRoute == null && !onboardingOpen;
   const accessCoverComposition = useMemo(() => projectAccessCoverComposition({
     access: sandAccess,
     roster: accessRosterSnapshot,
@@ -3527,7 +3898,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     isPrivacyBlocked: privacyBlocked,
     isShowingRestoredRoster: false,
     loadState: rosterFailure != null || rosterLoadFailed ? "error" : transport === "connecting" ? "loading" : "ready",
-    selectedAgentId: activeAgentId || null,
+    selectedAgentId: activeIsHuman ? null : activeAgentId || null,
     transport
   });
   useEffect(() => {
@@ -3538,7 +3909,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     });
   }, [connectionController, rosterAccessReadiness.hasReachedBox, rosterAccessReadiness.isPrivacyBlocked, rosterAccessReadiness.rosterFailureCode]);
   const rosterListStatus = rosterAccessReadiness.isLoaded
-    ? agents.length === 0
+    ? allConversations.length === 0
       ? <RosterStatus kind="empty" />
       : visibleAgents.length === 0
         ? <RosterStatus kind="all-hidden" onShowHiddenBots={() => setOverlay("hidden-chats")} />
@@ -3606,11 +3977,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         <div style={{ display: "grid", gridTemplateRows: "minmax(0, 1fr) auto auto auto", minHeight: 0 }}>
           <div style={{ display: "grid", gridTemplateRows: "auto minmax(0, 1fr)", minHeight: 0 }}>
             {connectionController == null ? null : <CoordinatorConnectionHost controller={connectionController} />}
-            <ConversationSidebar activeAgentId={activeAgentId} agents={visibleAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} selectedAgentIds={selectedSidebarAgentIds} onToggleAgentSelection={toggleSidebarAgentSelection} onRangeSelectAgent={rangeSelectSidebarAgent} onClearAgentSelection={clearSidebarAgentSelection} onMoveSelectedAgentsToSection={moveSelectedSidebarAgentsToSection} onMoveSelectedAgentsToNewSection={moveSelectedSidebarAgentsToNewSection} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => void duplicateAgent(agentId)} onHideAgent={(agentId) => void hideAgent(agentId)} onNewChat={() => void createAgent()} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={sidebarProfileAction.onSelect} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? openAsyncTasks : undefined} onShowFullConversation={openConversationOutline} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => void renameAgent(agentId, name)} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup })} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => void setAgentUnread(agentId, isUnread)} onTogglePin={toggleAgentPin} />
+            <ConversationSidebar activeAgentId={activeAgentId} agents={visibleAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} selectedAgentIds={selectedSidebarAgentIds} onToggleAgentSelection={toggleSidebarAgentSelection} onRangeSelectAgent={rangeSelectSidebarAgent} onClearAgentSelection={clearSidebarAgentSelection} onMoveSelectedAgentsToSection={moveSelectedSidebarAgentsToSection} onMoveSelectedAgentsToNewSection={moveSelectedSidebarAgentsToNewSection} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void duplicateAgent(agentId); }} onHideAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void hideAgent(agentId); }} onNewChat={() => void createAgent()} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) sidebarProfileAction.onSelect(agentId); }} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? (agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openAsyncTasks(agentId); } : undefined} onShowFullConversation={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openConversationOutline(agentId); }} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void renameAgent(agentId, name); }} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agent.id)) setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup }); }} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void setAgentUnread(agentId, isUnread); }} onTogglePin={(agentId, isPinned) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) toggleAgentPin(agentId, isPinned); }} />
           </div>
           {hiddenAgents.length > 0 && visibleAgents.length > 0 ? <SandButton aria-haspopup="dialog" onClick={() => setOverlay("hidden-chats")} size="sm" variant="secondary"><span>{UI_TEXT.hiddenBots}</span><SandBadge aria-label={`${hiddenAgents.length} hidden bots`}>{hiddenAgents.length}</SandBadge></SandButton> : null}
           {/* @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2602084 (s0n Plugins footer button/icon/text composition) */}
-          <div className="sand-agents-sidebar__plugins-entry"><SandButton className="sand-agents-sidebar__plugins" leadingIcon="plug" onClick={() => { setPluginQuery(""); setOverlay("plugins"); }} shape="pill" size="md" variant="secondary">{UI_TEXT.plugins}</SandButton></div>
+          <div className="sand-agents-sidebar__plugins-entry">
+            <SandButton className="sand-agents-sidebar__plugins" leadingIcon="chat-bubbles" onClick={() => setNewHumanDialogOpen(true)} shape="pill" size="md" variant="secondary">New Human chat</SandButton>
+            <SandButton className="sand-agents-sidebar__plugins" leadingIcon="plug" onClick={() => { setPluginQuery(""); setOverlay("plugins"); }} shape="pill" size="md" variant="secondary">{UI_TEXT.plugins}</SandButton>
+          </div>
           <AccountMenu
             account={account}
             accountLabel={UI_TEXT.account}
@@ -3639,7 +4013,19 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           params={{}}
         /></Suspense></main> : showRootEmptyWorkspace ? <RootShellEmptyWorkspace isVisible /> : activeAgent == null ? null : <div style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, width: "100%" }}>
           <main className="sand-chat-stage">
-          <ConversationAgentHeader
+          {activeIsHuman ? <div aria-labelledby="sand-conversation-heading" className="sand-chat-header" role="group">
+            <div className="sand-chat-header__identity">
+              <span id="sand-conversation-heading">{activeAgent.name}</span>
+              <small>Human</small>
+            </div>
+            <div style={{ alignItems: "center", display: "flex", gap: 8, marginLeft: "auto" }}>
+              {client == null ? null : <HumanCallControls bridge={bridge} client={client} conversation={activeAgent} />}
+              <select aria-label="Agent for Human handoff" disabled={busy || availableHandoffAgents.length === 0} onChange={(event) => setHumanHandoffAgentId(event.currentTarget.value)} value={humanHandoffAgentId}>
+                {availableHandoffAgents.length === 0 ? <option value="">No Agent available</option> : availableHandoffAgents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
+              </select>
+              <SandButton disabled={busy || humanHandoffAgentId.length === 0} onClick={() => void handoffHumanConversationToAgent()} size="sm" variant="secondary">Ask Agent</SandButton>
+            </div>
+          </div> : <ConversationAgentHeader
             agent={activeAgent}
             isComputerActive={computer.isComputerUseActive}
             isInfoOpen={activeAgent.isGroup ? groupInfoPaneOpen : computerInfoOpen}
@@ -3656,7 +4042,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               }} size="sm" variant="secondary">Stop</SandButton> : null}
               {activeAgent.isGroup || bridge == null || agentChannelsController == null ? null : <SandButton aria-controls="sand-conversation-details" aria-expanded={channelsInfoPaneOpen} aria-label="Channels" data-info-row="channels" onClick={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setChannelsInfoPaneOpen((open) => !open); }} size="sm" variant="secondary"><SandIcon name="chat-bubbles" size="sm" />Channels</SandButton>}
             </>}
-          />
+          />}
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
           {showTranscriptLoadError
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
@@ -3664,17 +4050,17 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 entries={entries}
                 hasOlder={transcriptPaginationSnapshot.hasOlder}
                 isLoadingOlder={transcriptPaginationSnapshot.isLoadingOlder}
-                isAgentRunning={activeAgent.isRunning}
+                isAgentRunning={activeIsHuman ? false : activeAgent.isRunning}
                 isTransportDown={transport === "down"}
                 loadOlder={loadOlderTranscript}
                 onCancelQueuedSend={cancelQueuedSend}
                 onDeleteFailedSend={removeTranscriptMessage}
                 onOpenReply={(targetId) => replyThreadController.navigate(targetId)}
                 onReply={(entry) => { replyThreadController.selectReply(entry.id); }}
-                onStartThread={(entry) => { replyThreadController.navigate(entry.id); }}
+                onStartThread={activeIsHuman ? undefined : (entry) => { replyThreadController.navigate(entry.id); }}
                 onResendFailedSend={(entry) => void resendFailedSend(entry)}
                 renderMessageReactionActions={renderReactionActions}
-                renderComputerHandoff={(entry) => renderComputerHandoffEntry(entry, computer)}
+                renderComputerHandoff={activeIsHuman ? undefined : (entry) => renderComputerHandoffEntry(entry, computer)}
                 renderMessageReactionPills={renderReactionPills}
                 resolveAttachmentMedia={resolveAttachmentMedia}
                 readAttachmentBytes={(path, maxBytes) => bridge.readAttachmentBytes(path, maxBytes)}
@@ -3684,18 +4070,30 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                   return resolution.status === "resolved" ? resolution.preview : null;
                 }}
                 isReplyTargetInScope={(targetId) => replyThreadController.resolve(targetId).isInScope}
-                onOpenAutomation={openTimelineAutomation}
-                resolveTranscriptCardInteractions={transcriptCardInteractions}
+                onOpenAutomation={activeIsHuman ? undefined : openTimelineAutomation}
+                resolveTranscriptCardInteractions={activeIsHuman ? undefined : transcriptCardInteractions}
                 transcriptCards={transcriptCardContract}
                 transcriptHandleRef={transcriptHandleRef}
               />}
           </main>
           <div className="sand-chat-input-dock">
-            {localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            {activeIsHuman ? null : localToolPermissionDock}
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
       </div>
+
+      {newHumanDialogOpen ? <div aria-label="New Human chat" aria-modal="true" className="sand-overlay" role="dialog">
+        <div className="sand-dialog" style={{ display: "grid", gap: 12, minWidth: 320, padding: 20 }}>
+          <h2>New Human chat</h2>
+          <label style={{ display: "grid", gap: 6 }}>Human identity<input autoFocus value={newHumanPeerId} onChange={(event) => setNewHumanPeerId(event.currentTarget.value)} placeholder="Peer Human ID" /></label>
+          <label style={{ display: "grid", gap: 6 }}>Conversation title<input value={newHumanTitle} onChange={(event) => setNewHumanTitle(event.currentTarget.value)} placeholder="Optional title" /></label>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <SandButton onClick={() => setNewHumanDialogOpen(false)} size="sm" variant="secondary">Cancel</SandButton>
+            <SandButton disabled={busy || newHumanPeerId.trim().length === 0} onClick={() => void createHumanConversation()} size="sm">Create</SandButton>
+          </div>
+        </div>
+      </div> : null}
 
       {conversationOutlineAgent == null ? null : <ConversationOutlinePanel
         agentId={conversationOutlineAgent.id}
@@ -3796,7 +4194,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
       {overlay === "hidden-chats" ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={null}><HiddenChatsDialog hiddenAgents={hiddenAgents} isOpen onClose={() => setOverlay(null)} onOpenAgent={(id) => void openAgent(id)} onUnhide={(id) => void unhide(id)} /></Suspense></div> : null}
       {overlay === "settings" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.settings)}><SettingsOverlayErrorBoundary onClose={() => setOverlay(null)}><SettingsDesktopSurface bridge={bridge} computer={settingsComputerMount} coordinatorClient={client} initialSection={settingsSection} isOpen onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} /></SettingsOverlayErrorBoundary></Suspense></div> : null}
-      {overlay === "plugins" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.plugins)}><PluginsDesktopSurface activeAgentId={activeAgent?.id ?? null} bridge={bridge} githubAuth={pluginAuthBanner} initialQuery={pluginQuery} isOpen key={pluginQuery} onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} privateSkillEnableSource={privateSkillEnableSource} privateSkillSource={pluginPrivateSkillSource} /></Suspense></div> : null}
+      {overlay === "plugins" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.plugins)}><PluginsDesktopSurface activeAgentId={activeIsHuman ? null : activeAgent?.id ?? null} bridge={bridge} githubAuth={pluginAuthBanner} initialQuery={pluginQuery} isOpen key={pluginQuery} onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} privateSkillEnableSource={privateSkillEnableSource} privateSkillSource={pluginPrivateSkillSource} /></Suspense></div> : null}
       {overlay === "about" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><RecoveredAboutDialog
         bridge={bridge}
         labels={{ copied: UI_TEXT.copied, copyVersionInfo: UI_TEXT.copyVersionInfo, copyright: UI_TEXT.copyright, title: UI_TEXT.title }}

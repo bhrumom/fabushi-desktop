@@ -317,10 +317,15 @@ impl ProductionTurnRunShellAdapter {
                     }
                     let cursor = checkpoint_store.persist(checkpoint)?;
                     // A durable tool-boundary checkpoint is observable provider
-                    // progress even when no text delta preceded it. Stop the
-                    // first-output watchdog only after persistence succeeds so
-                    // an unpersisted boundary can never authorize resume.
+                    // progress even when no text delta preceded it. It also
+                    // begins a fresh provider continuation, so persist first,
+                    // record the resumable boundary, then re-arm the watchdog
+                    // for the first output after that tool result. This keeps a
+                    // post-tool SSE stall bounded without making an unpersisted
+                    // checkpoint eligible for resume.
                     runtime_for_checkpoint.mark_stream_output(generation);
+                    runtime_for_checkpoint
+                        .rearm_output_deadline_after_checkpoint(generation);
                     let mut progress = progress.borrow_mut();
                     progress.record_output(0);
                     progress.checkpoint = Some(AttemptCheckpoint::new(
@@ -527,9 +532,17 @@ fn spawn_first_output_watchdog(
         let mut epoch = runtime.deadline_epoch(generation).unwrap_or_default();
         let mut started = Instant::now();
         while !attempt_done.load(Ordering::Acquire)
-            && runtime.deadline_armed(generation)
+            && runtime.is_current(generation)
             && !cancellation.is_cancelled()
         {
+            if !runtime.deadline_armed(generation) {
+                thread::sleep(if poll_interval.is_zero() {
+                    Duration::from_millis(1)
+                } else {
+                    poll_interval
+                });
+                continue;
+            }
             let current_epoch = match runtime.deadline_epoch(generation) {
                 Some(current_epoch) => current_epoch,
                 None => break,
@@ -645,5 +658,103 @@ fn classify_provider_failure(
                 });
             TransientStreamError::classify(message, status, None)
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::extensions::inference::codex_direct_responses::{
+        CodexDirectCheckpoint, CodexDirectUsage,
+    };
+    use serde_json::json;
+
+    struct MemoryCheckpointStore;
+
+    impl RoutedProviderCheckpointStore for MemoryCheckpointStore {
+        fn persist(
+            &self,
+            _checkpoint: &RoutedProviderCheckpoint,
+        ) -> Result<String, ProviderSessionError> {
+            Ok("checkpoint-1".into())
+        }
+    }
+
+    struct PostToolStallExecutor {
+        attempts: u32,
+    }
+
+    impl RoutedProviderAttemptExecutor for PostToolStallExecutor {
+        fn run_attempt(
+            &mut self,
+            resume_from: Option<&RoutedProviderCheckpoint>,
+            on_text_delta: &mut dyn FnMut(&str, &str),
+            on_checkpoint: &mut dyn FnMut(
+                &RoutedProviderCheckpoint,
+            ) -> Result<(), ProviderSessionError>,
+            should_cancel: &dyn Fn() -> bool,
+        ) -> Result<String, ProviderSessionError> {
+            self.attempts = self.attempts.saturating_add(1);
+            if self.attempts == 1 {
+                assert!(resume_from.is_none());
+                on_text_delta("working", "working");
+                on_checkpoint(&RoutedProviderCheckpoint::Fabushi(
+                    CodexDirectCheckpoint {
+                        input: vec![json!({"role":"user","content":"inspect"})],
+                        text: "working".into(),
+                        response_id: "response-1".into(),
+                        usage: CodexDirectUsage::default(),
+                        completed_steps: 1,
+                        tool_calls_completed: 1,
+                    },
+                ))?;
+                let started = Instant::now();
+                while !should_cancel() && started.elapsed() < Duration::from_secs(1) {
+                    thread::sleep(Duration::from_millis(1));
+                }
+                assert!(should_cancel(), "post-tool continuation must be watchdog-bounded");
+                return Err(ProviderSessionError::Cancelled(
+                    "provider continuation watchdog".into(),
+                ));
+            }
+
+            assert!(resume_from.is_some(), "retry must resume the durable tool checkpoint");
+            on_text_delta("done", "workingdone");
+            Ok("terminal".into())
+        }
+    }
+
+    #[test]
+    fn post_tool_provider_stall_resumes_from_durable_checkpoint() {
+        let adapter = ProductionTurnRunShellAdapter {
+            policy: StreamAttemptPolicy {
+                first_output_timeout: Duration::from_millis(20),
+                max_attempts: 2,
+                initial_backoff: Duration::from_millis(1),
+                max_backoff: Duration::from_millis(1),
+                max_retry_after: Duration::from_millis(1),
+            },
+            watchdog_poll_interval: Duration::from_millis(1),
+        };
+        let cancellation = RoutedProviderCancellation::default();
+        let mut executor = PostToolStallExecutor { attempts: 0 };
+        let mut retries = Vec::new();
+
+        let result = adapter
+            .run_with_retry(
+                &cancellation,
+                &MemoryCheckpointStore,
+                &mut executor,
+                &mut |_, _| {},
+                &mut |event| retries.push(event.clone()),
+            )
+            .expect("watchdog retry should resume and complete");
+
+        assert_eq!(result, "terminal");
+        assert_eq!(executor.attempts, 2);
+        assert_eq!(retries.len(), 1);
+        assert!(retries[0].watchdog_expired);
+        assert!(retries[0].resume_from_checkpoint);
     }
 }

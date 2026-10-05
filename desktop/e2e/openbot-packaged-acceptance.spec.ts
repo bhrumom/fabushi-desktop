@@ -433,6 +433,7 @@ async function waitForCompletedTurn(
   page: Page,
   prompt: string,
   previousAssistantCount: number,
+  expectedText?: string,
 ): Promise<Locator> {
   await expect(
     page
@@ -445,6 +446,17 @@ async function waitForCompletedTurn(
     async () => assistantTurns.count(),
     { timeout: 180_000, message: 'A new canonical completed assistant turn must be committed after the submitted turn.' },
   ).toBeGreaterThan(previousAssistantCount);
+
+  if (expectedText != null) {
+    // Routed Agent turns may legitimately commit an assistant preamble before
+    // one or more tool-call/result entries and the terminal assistant segment.
+    // Do not mistake that intermediate completed segment for the turn terminal:
+    // keep the semantic gate fail-closed on the expected terminal marker.
+    const terminal = assistantTurns.filter({ hasText: expectedText }).last();
+    await expect(terminal).toContainText(expectedText, { timeout: 180_000 });
+    return terminal;
+  }
+
   const turn = assistantTurns.last();
   await expect(turn).toBeVisible({ timeout: 10_000 });
   return turn;
@@ -806,11 +818,11 @@ test.describe('signed candidate packaged acceptance', () => {
       await expect(page.getByRole('heading', { name: 'Org chart', exact: true })).toHaveCount(0);
 
       await openAgent(page, 'Research');
-      const researchPrompt = 'Two-Agent isolation acceptance for Research. Reply briefly and include marker FABUSHI-RESEARCH-ONLY-7421.';
+      const researchPrompt = 'Two-Agent isolation acceptance for Research. Your entire final answer must be exactly FABUSHI-RESEARCH-ONLY-7421. Copy those characters verbatim; do not explain, describe, quote, or paraphrase the marker.';
       const researchAssistantCount = await submitTurn(page, researchPrompt);
 
       await openAgent(page, 'Builder');
-      const builderPrompt = 'Two-Agent isolation acceptance for Builder. Reply briefly and include marker FABUSHI-BUILDER-ONLY-5937.';
+      const builderPrompt = 'Two-Agent isolation acceptance for Builder. Your entire final answer must be exactly FABUSHI-BUILDER-ONLY-5937. Copy those characters verbatim; do not explain, describe, quote, or paraphrase the marker.';
       const builderAssistantCount = await submitTurn(page, builderPrompt);
 
       await openAgent(page, 'Research');
@@ -826,11 +838,29 @@ test.describe('signed candidate packaged acceptance', () => {
 
       await openAgent(page, 'Chief');
       await installLifecycleCapture(page);
-      const lifecyclePrompt = 'Lifecycle acceptance: analyze the signed candidate and finish with CANDIDATE-LIFECYCLE-OK.';
+      const lifecyclePrompt = 'Lifecycle acceptance. Do not use tools. Your entire final answer must be exactly CANDIDATE-LIFECYCLE-OK. Copy those characters verbatim; do not explain, describe, quote, or paraphrase the marker.';
       const lifecycleSubmittedAt = Date.now();
       const lifecycleAssistantCount = await submitTurn(page, lifecyclePrompt);
-      const lifecycleTurn = await waitForCompletedTurn(page, lifecyclePrompt, lifecycleAssistantCount);
-      await expect(lifecycleTurn).toContainText('CANDIDATE-LIFECYCLE-OK');
+      // Canonical Agent sends intentionally remain owned by the addressed
+      // transcript even if roster hydration changes the visible selection
+      // while Host acceptance is starting. Research/Builder acceptance above
+      // already verifies this off-screen persistence contract by reopening the
+      // addressed Agent. Do the same for Chief before observing lifecycle
+      // completion so the gate follows the canonical addressed transcript
+      // rather than whichever row happens to be selected after hydration.
+      await openAgent(page, 'Chief');
+      await expect(
+        page
+          .locator('[aria-label="Conversation transcript"] [role="article"][data-role="user"]')
+          .filter({ hasText: lifecyclePrompt })
+          .last(),
+      ).toBeVisible({ timeout: 10_000 });
+      const lifecycleTurn = await waitForCompletedTurn(
+        page,
+        lifecyclePrompt,
+        lifecycleAssistantCount,
+        'CANDIDATE-LIFECYCLE-OK',
+      );
       const lifecycle = await page.evaluate(() => {
         const scope = window as typeof window & { __candidateLifecycle?: LifecycleSample[] };
         return scope.__candidateLifecycle ?? [];

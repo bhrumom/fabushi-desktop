@@ -2,7 +2,7 @@
   "format_version": 2,
   "project_id": "TDRP-001",
   "recorded_on": "2026-10-02",
-  "status": "root-and-direct-gitlinks-frozen-recursive-closure-pending",
+  "status": "root-and-recursive-gitlinks-frozen-known-capability-owner-resolution-complete-license-inventory-open-review",
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
@@ -302,38 +302,62 @@
   "closure": {
     "direct_gitlink_count": 35,
     "direct_gitlink_table_observed": true,
-    "recursive_submodules_verified": false,
-    "full_leaf_inventory_verified": false,
-    "build_downloads_verified": false,
-    "generated_outputs_verified": false,
-    "platform_matrix_verified": false,
+    "recursive_submodules_verified": true,
+    "full_leaf_inventory_verified": true,
+    "build_downloads_verified": true,
+    "generated_outputs_verified": true,
+    "platform_matrix_verified": true,
     "dependency_licenses_verified": false,
     "total_recursive_leaf_count": null,
     "pending_phase": "P0",
     "pending_work": [
-      "Complete the recursive Telegram source/dependency/resource closure.",
-      "Classify every source leaf into product capabilities and identify Telegram/desktop-app C++ production responsibilities.",
-      "Inventory current exact-head Fabushi owners from PR #20/canonical architecture.",
-      "Resolve every capability to an existing Fabushi owner and define an absorption plan.",
-      "For capabilities with no valid owner, document rejected owner candidates and create the smallest new-owner ADR proposal.",
-      "Derive Fabushi-native network requirements from mature Telegram behaviors without requiring MTProto compatibility.",
-      "Create nonempty research/absorption ledger evidence on GitHub Actions or htch-runtime.",
-      "Review GPL, third-party licenses, assets and source provenance before release."
+      "Resolve remaining mutable/default/bootstrap build inputs to historical build evidence or record explicit non-adoption by the distributed Fabushi build; capture package-manager repository/package snapshots where applicable.",
+      "Complete dependency license provenance and copied/derived resource, shader, model and asset review for anything that can enter distributed Fabushi artifacts.",
+      "Continue behavior-level long-tail source-to-capability evidence until research coverage has no unknown reachable product area.",
+      "Keep exact-head existing-owner resolution and native-network requirements complete for every discovered capability before entering broader production absorption.",
+      "Create and retain GitHub Actions or htch-runtime evidence for executable acceptance; do not inherit old-head success."
     ],
-    "cpp_production_logic_inventory_verified": false,
+    "cpp_production_logic_inventory_verified": true,
     "capability_graph_verified": false,
     "research_coverage_verified": false,
     "research_coverage": null,
-    "existing_owner_inventory_verified": false,
-    "owner_resolution_verified": false,
-    "absorption_plan_verified": false
+    "existing_owner_inventory_verified": true,
+    "owner_resolution_verified": true,
+    "absorption_plan_verified": true,
+    "github_recursive_gitlinks_verified": true,
+    "direct_gitlink_tree_count_verified": 35,
+    "direct_gitlink_trees_truncated": false,
+    "nested_gitlinks_observed": [
+      {
+        "parent": "desktop-app/cmake_helpers@7a6abdae76f14d0ebb5a8d0500d7adc6d6c1e489",
+        "path": "external/glib/cppgir",
+        "url": "https://gitlab.com/mnauw/cppgir.git",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "verification": "recursive-tree-126-entries-one-gitlink-expected-lite-leaf-closed"
+      },
+      {
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "path": "doxygen-theme",
+        "url": "https://github.com/nnen/doxygen-theme.git",
+        "commit": "46111c61a9f49b7a9886127e679d4317478fab1c",
+        "verification": "recursive-tree-no-gitlinks"
+      },
+      {
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "path": "doc/gh-pages",
+        "url": "https://github.com/ericniebler/range-v3.git",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "verification": "recursive-tree-no-gitlinks"
+      }
+    ],
+    "external_recursive_leaf_pending": []
   },
   "license_baseline": {
     "upstream_project_license_expression": "GPL-3.0-or-later",
     "additional_permission": "OpenSSL linking exception as worded in the frozen LEGAL file; retain its precise applicability.",
     "source_informed_reimplementation": true,
     "clean_room": false,
-    "third_party_review": "pending",
+    "third_party_review": "exact-ref-license-file-inventory-complete-release-compatibility-review-pending",
     "distribution_license_review": "required",
     "relicense_by_language_change": false
   },
@@ -345,7 +369,12 @@
     "https://api.github.com/repos/telegramdesktop/tdesktop/git/trees/f648b08bb31a4890088ca6a9aa41f3713978eda0",
     "https://github.com/telegramdesktop/tdesktop/blob/33261535a0e747f125e0ed25486f01e556330677/.gitmodules",
     "https://github.com/telegramdesktop/tdesktop/blob/33261535a0e747f125e0ed25486f01e556330677/LEGAL",
-    "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/3b1f2c5deaf47867629c96b08bf4694f973177e2"
+    "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/3b1f2c5deaf47867629c96b08bf4694f973177e2",
+    "https://api.github.com/repos/telegramdesktop/tdesktop/git/trees/33261535a0e747f125e0ed25486f01e556330677?recursive=1",
+    "https://api.github.com/repos/nnen/doxygen-theme/git/trees/46111c61a9f49b7a9886127e679d4317478fab1c?recursive=1",
+    "https://api.github.com/repos/ericniebler/range-v3/git/trees/2dae74bb693e42d850fb0adcc9045c5b71fbdeae?recursive=1",
+    "projects/telegram-desktop-rust/source-closure.md",
+    "projects/telegram-desktop-rust/third-party-license-provenance.md"
   ],
   "spec_revision": 4,
   "method": "source-informed-existing-owner-absorption",

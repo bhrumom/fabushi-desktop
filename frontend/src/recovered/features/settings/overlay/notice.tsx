@@ -109,7 +109,7 @@ export function SettingsNoticeView({ notice, onDismiss, scheduler = BROWSER_SCHE
   const expired = useSyncExternalStore(expiry.subscribe, expiry.get, expiry.get);
   if (notice == null || expired) return null;
   const isError = notice.kind === "error";
-  return <div aria-live="polite" className={`${isError ? ERROR_CLASS : SUCCESS_CLASS} sand-settings-toast`} data-kind={notice.kind}>
+  return <div aria-live={isError ? "assertive" : "polite"} className={`${isError ? ERROR_CLASS : SUCCESS_CLASS} sand-settings-toast`} data-kind={notice.kind} role={isError ? "alert" : "status"}>
     <NoticeIcon name={isError ? "close" : "check"} />
     <span className={TEXT_CLASS}>{notice.text}</span>
     <SandIconButton aria-label="Dismiss" className={DISMISS_CLASS} icon="close" label="Dismiss" onClick={onDismiss} size="sm" />

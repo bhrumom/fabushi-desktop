@@ -5,7 +5,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "ee97740316fa1a9b48bfaa0bd2bc582cbed73c07",
+      "targetBlobSha": "1a442de80b32d0b4b91446d308abf2fbccc4f699",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx"
@@ -15,15 +15,16 @@
         "desktop/e2e/mahayana-agent-workbench.spec.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/pr20-verify-once.yml"
+        ".github/workflows/pr20-verify-once.yml",
+        "source/host/tests/session_gateway_contract.rs"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell."
+      "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell. Phase 1 additionally absorbs Human conversations into this same renderer owner: the existing sidebar/workspace/composer/transcript are reused, Human sends keep the recovered optimistic/reconnect queue, canonical attachment commit path and reply controller, and explicit Human-to-Agent handoff still crosses the established Coordinator-to-Host-to-Runner boundary. No parallel Human shell or message runtime is introduced. Phase 1 reconnect convergence now refreshes an already-open Human transcript from the same Host-owned canonical Session/Transcript immediately after native history sync, while baseline reconciliation preserves unresolved optimistic rows; the Host shipping-client contract separately proves bounded multi-page multi-device gap recovery without a renderer-side message truth. Human older-history loading now reuses the existing transcript pagination controller against a Host gateway that pages the same canonical Human Session SQLite owner; initial Human open syncs native transport then projects only the latest bounded tail, while scroll pagination retains the existing cursor, viewport-anchor, request-fencing, and deduplication ownership. Phase 1 roster recovery further separates local Agent roster readiness from shipping Human convergence: listAgents publishes the canonical loaded/empty Agent state before a potentially slow remote Human sync, while Human sync remains account/transport/attempt fenced, keeps its durable local fallback, and refreshes the active Human transcript after convergence. This prevents Human network latency from holding the canonical Agent shell in an indefinite loading state without weakening either synchronization path. Phase 1 Human reactions now reuse the recovered reaction pills/action surface while mutation and settlement remain Host-owned: the renderer calls the existing Coordinator client, receives the canonical updated Human transcript row, and never creates a reaction store. Human Find-in-chat likewise reuses the recovered find controller and canonical transcript pagination owner: full durable Human search is provided by the Host search gateway, while navigation to an older hit reveals bounded history through the existing pagination controller and virtual transcript handle instead of replacing the timeline with a parallel search result model. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Restored Human selections are also retried through the same canonical openAgent path once the asynchronous Human roster establishes the conversation type; same-selection reopen remains allowed only while no transcript page is loaded, closing the restart race where a Human id could be briefly addressed through the Agent tail method without introducing alternate state. A successful Host-settled Human send now upserts the authoritative row by canonical id/client nonce, so a concurrent initial-page or roster reconciliation cannot silently erase the accepted backend result from the visible transcript. Human remote-search settlement now promotes the first authoritative match through the existing find controller step path only when no current match exists, so the recovered ordinal/navigation contract and bounded older-page reveal converge without a renderer-side search truth. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition."
     },
     {
       "referencePath": "frontend/src/production/model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "a0700444f6d9c629a34a718df3a4d4c8bc8d5b4e",
+      "targetBlobSha": "9a90faaef705ebffff0d4be12c5e832460823dab",
       "behavioralEvidence": [
         "frontend/src/production/model.ts",
         "frontend/src/production/coordinator-client.ts"
@@ -34,7 +35,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/pr20-verify-once.yml"
       ],
-      "rationale": "Keeps Grok 0.18 Agent projection/filter/sort semantics while accepting the shipping Mahayana Coordinator agents event envelope { agents: [...] } in addition to the frozen direct array form. The adaptation is limited to transport normalization at the renderer projection boundary; Agent identity, hidden state, activity and ordering continue through the frozen Grok projection logic. It also normalizes authoritative Mahayana transcript echoes that carry Grok attachment contexts on user messages, preserving committed path/name/MIME/size metadata for mixed and attachment-only sends without relying on optimistic renderer state."
+      "rationale": "Keeps Grok 0.18 Agent projection/filter/sort semantics while accepting the shipping Mahayana Coordinator agents event envelope { agents: [...] } in addition to the frozen direct array form. The adaptation is limited to transport normalization at the renderer projection boundary; Agent identity, hidden state, activity and ordering continue through the frozen Grok projection logic. It also normalizes authoritative Mahayana transcript echoes that carry Grok attachment contexts on user messages, preserving committed path/name/MIME/size metadata for mixed and attachment-only sends without relying on optimistic renderer state. Phase 1 extends this same projection boundary with Human-conversation and Human-transcript normalization while preserving the RendererAgent/ConversationTranscriptEntry contracts, including canonical attachment metadata, reply relation fields and trusted Agent author names."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
@@ -55,7 +56,7 @@
       "referencePath": "source/electron-preload/preload.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "c9b7b30158ab2fa9cde1ac62794115c7ed8efe39",
+      "targetBlobSha": "08815a4808436d6d7ed4e0a0bb3c179c9556b2d2",
       "behavioralEvidence": [
         "source/electron-preload/preload.ts",
         "source/electron-preload/runtime/primary.ts",
@@ -65,15 +66,17 @@
         "source/electron-preload/preload-boundaries.test.ts",
         "source/electron-preload/coordinator-port-bridge.test.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/production/human-call-media.tsx",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence."
+      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "63115522354aaf9893b156e5e1097a888abee01e",
+      "targetBlobSha": "988a89ff68792b3764d8982df08e98c2a8fce49b",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
         "frontend/src/recovered/features/conversation/workspace/composer.tsx"
@@ -84,7 +87,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "desktop/e2e/grok-parity.spec.ts"
       ],
-      "rationale": "The frozen TipTap composer is preserved semantically, with only Fabushi ownership boundaries around local persistence and voice input. Agent switches fence queued transactions from the previous scope. Browser beforeinput releases the fence before ordinary edits; committed DOM input also performs a one-shot canonical-state rescue when ProseMirror has already reconciled the DOM without emitting an accepted onUpdate, preventing visible prompt text from diverging from the persisted Agent-scoped draft. Programmatic voice/dictation insertion explicitly releases the same fence before insertText. The focused Electron parity E2E reads the real client-persistence slice and guards this ownership boundary."
+      "rationale": "The frozen TipTap composer is preserved semantically, with only Fabushi ownership boundaries around local persistence and voice input. Agent switches fence queued transactions from the previous scope. Browser beforeinput releases the fence before ordinary edits; committed DOM input also performs a one-shot canonical-state rescue when ProseMirror has already reconciled the DOM without emitting an accepted onUpdate, preventing visible prompt text from diverging from the persisted Agent-scoped draft. Programmatic voice/dictation insertion explicitly releases the same fence before insertText. The focused Electron parity E2E reads the real client-persistence slice and guards this ownership boundary. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition."
     },
     {
       "referencePath": "source/electron-main/adapters/attachment-gateway.ts",
@@ -339,7 +342,7 @@
       "referencePath": "source/electron-main/coordinator/production-provider.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "dfb1f73df1939a8fe7b0d511ca1d8ee6a2df690c",
+      "targetBlobSha": "3b7591fbaf07cd7a5b13bfda27bca717c8603e01",
       "behavioralEvidence": [
         "source/electron-main/coordinator/production-provider.ts",
         "source/electron-main/coordinator/coordinator-executors.ts",
@@ -350,13 +353,13 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Keeps the Grok production Coordinator provider graph while wiring the approved Host MCP lifecycle and Plugin Skills loader calls to the existing Electron ProductionMcpService. This is dependency injection across the established Coordinator boundary: Electron provides the Cursor SDK edge, Rust Host owns Plugin Skills lifecycle/state, and no second manager or in-process Host replacement is introduced."
+      "rationale": "Keeps the Grok production Coordinator provider graph while wiring the approved Host MCP lifecycle and Plugin Skills loader calls to the existing Electron ProductionMcpService. This is dependency injection across the established Coordinator boundary: Electron provides the Cursor SDK edge, Rust Host owns Plugin Skills lifecycle/state, and no second manager or in-process Host replacement is introduced. Phase 1 also derives an account-scoped durable Fabushi Human identity only after successful account authorization and passes it through the existing Coordinator bootstrap into Host; account transitions clear that identity. This is identity dependency injection on the existing process graph, not a second communication runtime."
     },
     {
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "0e4efa00de8cb34ce91aa14d2b94792c88c0a352",
+      "targetBlobSha": "b5fd6292ac7dea50b38552c324ec870e28643b77",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "source/electron-main/adapters/mcp-oauth.ts",
@@ -518,6 +521,182 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "Preserves the frozen Grok 0.18 inference-router ownership and provider-selection contract while adding one Fabushi product provider identity required by the shipping account boundary. Fresh Fabushi profiles select the first-party provider in product composition; the independent Mahayana Host/Runner reuses the existing Responses lifecycle, tool, checkpoint, usage, and cancellation machinery with the account-bound Fabushi credential and official product endpoint. Cursor, Codex, Claude Code, and OpenRouter retain their original identities and ownership, and the upstream Grok default remains Cursor outside Fabushi composition. This adaptation prevents a Fabushi product bearer from being misrouted to Cursor private backend infrastructure without creating a parallel inference runtime or collapsing Coordinator/Host/Runner responsibility boundaries."
+    },
+    {
+      "referencePath": "frontend/src/recovered/contracts/surface-notice.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "0ddf77339c4ea91f49cada27b0bf54bc563994d4",
+      "behavioralEvidence": [
+        "frontend/src/recovered/contracts/surface-notice.ts",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2ccb6c4f94c094495c24907be32cee6447796d6d",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
+        "frontend/src/recovered/features/settings/overlay/desktop.ts",
+        "frontend/src/recovered/features/settings/overlay/panels.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        "frontend/src/production/human-call-media.tsx"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. Phase 1 Settings capability decisions stay projected from canonical production owners instead of inventing preference stores: privacy is read from the production account policy; media/device remains a persisted Settings/MainEdge preference; system notifications remain intentionally disabled by the canonical settings store; durable conversation/session/attachment storage keeps its existing app-profile/Host roots; attachment downloads keep native Save As ownership; and window shortcuts keep the fixed Electron owner rather than a global or user-remappable registry. The Settings surface makes those applicable or intentionally non-configurable decisions visible and accessible while existing advanced and update controls retain their established owners."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "ff8e61b13ea9475c502da6ed58a0906fd44538d6",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/desktop.ts",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/production/human-call-media.tsx",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. Phase 1 Settings capability decisions stay projected from canonical production owners instead of inventing preference stores: privacy is read from the production account policy; media/device remains a persisted Settings/MainEdge preference; system notifications remain intentionally disabled by the canonical settings store; durable conversation/session/attachment storage keeps its existing app-profile/Host roots; attachment downloads keep native Save As ownership; and window shortcuts keep the fixed Electron owner rather than a global or user-remappable registry. The Settings surface makes those applicable or intentionally non-configurable decisions visible and accessible while existing advanced and update controls retain their established owners."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/panels.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "789775317f3cba7c74737d956fe534ed05c819c1",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/panels.tsx",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        "frontend/src/production/human-call-media.tsx"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. Phase 1 Settings capability decisions stay projected from canonical production owners instead of inventing preference stores: privacy is read from the production account policy; media/device remains a persisted Settings/MainEdge preference; system notifications remain intentionally disabled by the canonical settings store; durable conversation/session/attachment storage keeps its existing app-profile/Host roots; attachment downloads keep native Save As ownership; and window shortcuts keep the fixed Electron owner rather than a global or user-remappable registry. The Settings surface makes those applicable or intentionally non-configurable decisions visible and accessible while existing advanced and update controls retain their established owners."
+    },
+    {
+      "referencePath": "source/electron-main/main-edge.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "34ebc09f00048d16649fb7b326b2335d85d03734",
+      "behavioralEvidence": [
+        "source/electron-main/main-edge.ts",
+        "source/shared/node/settings/sand-settings-store.ts",
+        "source/shared/rpc/main.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/production/human-call-media.tsx",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback."
+    },
+    {
+      "referencePath": "source/shared/desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "0d786b53d38efdaeba61ba2c6f4ad2902a2016b4",
+      "behavioralEvidence": [
+        "source/shared/desktop.ts",
+        "source/shared/node/settings/sand-settings-store.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/production/human-call-media.tsx",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback."
+    },
+    {
+      "referencePath": "source/shared/node/settings/sand-settings-store.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "52aeef0a22edeb64dab446a4aecf8c79590ee90f",
+      "behavioralEvidence": [
+        "source/shared/node/settings/sand-settings-store.ts",
+        "source/electron-main/main-edge.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/production/human-call-media.tsx",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback."
+    },
+    {
+      "referencePath": "source/electron-main/adapters/main-rpc.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2ae92ffde6e817c146a272f21ceee0e448ad6297",
+      "behavioralEvidence": [
+        "source/electron-main/adapters/main-rpc.ts",
+        "source/electron-main/call-media.ts",
+        "source/electron-main/main-edge.ts",
+        "source/electron-preload/preload.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Phase 1 Human realtime calls adapt the frozen Main RPC composition only to inject Electron-owned microphone/camera permission and desktopCapturer ports into the existing MainEdge. Durable Session/Transcript/Host/CallSession ownership and Coordinator transport remain unchanged; the renderer receives only typed media-device capabilities while signaling and claimed-device authority stay Host/backend-owned."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/notice.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c6a0c0f94010c819177d8c463ca96490b51dc3bd",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/notice.tsx",
+        "frontend/src/recovered/features/settings/overlay/localization.ts",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Settings notice rendering while adapting Fabushi accessibility semantics: successful dynamic notices are polite status announcements and failures are assertive alerts, so screen readers receive the existing canonical Settings mutation results without a second notification owner."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c79bf6787f5d423e7c958bc85bf068e65f45b0d3",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/view.tsx",
+        "frontend/src/recovered/features/settings/overlay/localization.ts",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Settings modal structure, focus trap, keyboard dismissal, and section ownership while adapting visible labels and accessible names to the canonical Fabushi UI locale. Section identity and routing remain unchanged; only localized presentation is added through the existing Settings owner."
     }
   ]
 }

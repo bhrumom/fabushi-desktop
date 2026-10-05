@@ -5,6 +5,7 @@ import type { SettingsOverlayParams } from "./entrypoint";
 import { SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
 import type { SandIconPlatform } from "../../../ui/sand-icon-registry";
 import { OverlayDialog } from "../../../ui/overlay-primitives";
+import { settingsCopy } from "./localization";
 import "./view.css";
 
 export type SettingsSectionId = "general" | "router" | "usage" | "beta";
@@ -44,6 +45,7 @@ export interface SettingsModalShellProps {
   closeOnEscape?: boolean;
   trapFocus?: boolean;
   iconPlatform?: SandIconPlatform;
+  locale?: string;
 }
 
 export function SettingsModalShell({
@@ -56,9 +58,18 @@ export function SettingsModalShell({
   closeOnBackdrop = true,
   closeOnEscape = true,
   trapFocus = true,
-  iconPlatform
+  iconPlatform,
+  locale = "system"
 }: SettingsModalShellProps) {
-  const visibleSections = settingsSectionsForUsage(sections, showUsage);
+  const copy = settingsCopy(locale);
+  const localizedSections = sections === SETTINGS_SECTIONS ? sections.map((section) => ({
+    ...section,
+    label: section.id === "general" ? copy.sectionGeneral
+      : section.id === "router" ? copy.sectionRouter
+        : section.id === "usage" ? copy.sectionUsageBilling
+          : copy.sectionUpdates
+  })) : sections;
+  const visibleSections = settingsSectionsForUsage(localizedSections, showUsage);
   const firstSection = visibleSections[0]?.id ?? "general";
   const resolveSection = (candidate: string | undefined): SettingsSectionId =>
     visibleSections.some((section) => section.id === candidate) ? candidate as SettingsSectionId : firstSection;
@@ -83,13 +94,13 @@ export function SettingsModalShell({
       className="sand-settings-dialog"
       closeOnBackdrop={closeOnBackdrop}
       closeOnEscape={closeOnEscape}
-      label="Grok Bot settings"
+      label={copy.settingsDialog}
       onClose={onClose}
       open={isOpen}
       trapFocus={trapFocus}
     >
       <div className="sand-settings-layout">
-        <nav aria-label="Settings sections" className="sand-settings-nav">
+        <nav aria-label={copy.settingsSections} className="sand-settings-nav">
           {visibleSections.map((section) => {
             const selected = section.id === active.id;
             return (
@@ -110,7 +121,7 @@ export function SettingsModalShell({
         </nav>
 
         <section aria-labelledby={headingId} className="sand-settings-panel" id={panelId}>
-          <SandIconButton aria-label="Close" className="sand-settings-panel__close" icon="close" label="Close" onClick={onClose} size="sm" />
+          <SandIconButton aria-label={copy.close} className="sand-settings-panel__close" icon="close" label={copy.close} onClick={onClose} size="sm" />
           <h2 id={headingId}>{active.label}</h2>
           <div className="sand-settings-panel__body">{renderSection(active.id)}</div>
         </section>

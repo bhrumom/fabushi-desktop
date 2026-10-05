@@ -20,6 +20,8 @@ import {
   setEgressTunnelEnabled,
   setThemePreference,
   setTimeZoneOverride,
+  setCallMediaPreferences,
+  setUiPreferences,
   subscribeToSettingsDesktop,
   egressTunnelFeatureGateEnabled,
   normalizeEgressTunnelStatus,
@@ -34,6 +36,7 @@ import { DEFAULT_ROUTER_PROVIDER, loadRouterProvider, saveRouterProvider, type R
 import type { AutoReviewSettings } from "./auto-review";
 import type { SettingsComputerMount } from "./computer";
 import { SettingsNoticeView, settingsNoticeFromEvent, type SettingsNotice } from "./notice";
+import { applyDesktopUiPreferencesToDocument } from "./localization";
 import { publishSurfaceNotice, type SettingsNoticeEvent } from "../../../contracts/surface-notice";
 import { SandButton } from "../../../ui/sand-kit-primitives";
 
@@ -144,6 +147,11 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
     return () => { active = false; };
   }, [bridge, isOpen]);
 
+  useEffect(() => {
+    if (!isOpen || snapshot == null) return;
+    applyDesktopUiPreferencesToDocument(snapshot.uiPreferences);
+  }, [isOpen, snapshot]);
+
   const mutate = async <Value,>(action: () => Promise<Value>, operation: SettingsNoticeEvent["operation"], apply: (value: Value) => void): Promise<Value> => {
     try {
       const value = await action();
@@ -159,6 +167,8 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
   const updateSnapshot = (update: DesktopUpdateStatus) => setSnapshot((current) => current == null ? current : { ...current, update });
   const updateTheme = (theme: ThemePreference) => setSnapshot((current) => current == null ? current : { ...current, theme });
   const updateTimeZone = (timeZone: SettingsDesktopSnapshot["timeZone"]) => setSnapshot((current) => current == null ? current : { ...current, timeZone });
+  const updateUiPreferences = (uiPreferences: SettingsDesktopSnapshot["uiPreferences"]) => setSnapshot((current) => current == null ? current : { ...current, uiPreferences });
+  const updateCallMediaPreferences = (callMediaPreferences: SettingsDesktopSnapshot["callMediaPreferences"]) => setSnapshot((current) => current == null ? current : { ...current, callMediaPreferences });
   const updateLocalToolPermission = (permission: SettingsDesktopSnapshot["localToolPermission"]["permission"]) => setSnapshot((current) => current == null ? current : {
     ...current,
     localToolPermission: { ...current.localToolPermission, permission }
@@ -182,6 +192,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
       <SettingsModalShell
       initialSection={initialSection}
       isOpen={isOpen}
+      locale={snapshot?.uiPreferences.locale ?? "system"}
       onClose={onClose}
       renderSection={(section: SettingsSectionId) => {
         if (snapshot == null) return (
@@ -233,6 +244,13 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
               state: snapshot.timeZone,
               onChange: (timeZone) => mutate(() => setTimeZoneOverride(bridge, timeZone), "settings-time-zone", updateTimeZone)
             }}
+            uiPreferences={{ state: snapshot.uiPreferences, onChange: (preferences) => mutate(() => setUiPreferences(bridge, preferences), "settings-ui-preferences", updateUiPreferences) }}
+            callMediaPreferences={{
+              state: snapshot.callMediaPreferences,
+              onChange: (preferences) => mutate(() => setCallMediaPreferences(bridge, preferences), "settings-call-media", updateCallMediaPreferences),
+              onRequestPermissions: () => bridge.callMedia.requestPermissions({ audio: true, video: true })
+            }}
+            privacyModeEnabled={snapshot.privacyModeEnabled}
             theme={snapshot.theme}
           />
         );

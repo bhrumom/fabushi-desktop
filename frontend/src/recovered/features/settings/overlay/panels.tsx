@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { CursorUsageSummary, CursorUsageUpgradeAction, DesktopTimeZoneState } from "../../../contracts/desktop-bridge";
+import type { CursorUsageSummary, CursorUsageUpgradeAction, DesktopCallMediaPreferences, DesktopTimeZoneState, DesktopUiPreferences } from "../../../contracts/desktop-bridge";
 import { egressTunnelStatusDescription, type EgressTunnelStatus, type UpdateStatus, type UpdateTrack } from "./updates";
 // @evidence src/app/dist/renderer/assets/index-BlqerJhg.js#L1
 import { INTERNAL_RELEASE_TRACK_CONFIG_URL, UPDATE_TRACK_LABELS, updateStatusMessage } from "./updates";
@@ -13,6 +13,7 @@ import { SandSelect } from "../../../ui/sand-floating-primitives";
 import { SandSwitch } from "../../../ui/sand-form-primitives";
 import { OverlayDialog } from "../../../ui/overlay-primitives";
 import { ROUTER_PROVIDERS, routerProviderById, type RouterProviderId } from "./router";
+import { formatAccessibilityPreferenceCount, settingsCopy } from "./localization";
 
 export type AccountState =
   | { kind: "logged-out"; errorMessage?: string }
@@ -30,6 +31,13 @@ export interface GeneralSettingsPanelProps {
   localToolPermission?: { state: LocalToolPermissionState; onChange(permission: LocalToolPermission): void | Promise<LocalToolPermission> };
   securityKey?: { enabled: boolean; platform: NodeJS.Platform; onChange(enabled: boolean): void | Promise<boolean> };
   autoReview?: { settings: AutoReviewSettings; onChange(settings: AutoReviewSettings): void | Promise<unknown> };
+  uiPreferences?: { state: DesktopUiPreferences; onChange(preferences: DesktopUiPreferences): void | Promise<DesktopUiPreferences> };
+  callMediaPreferences?: {
+    state: DesktopCallMediaPreferences;
+    onChange(preferences: DesktopCallMediaPreferences): void | Promise<DesktopCallMediaPreferences>;
+    onRequestPermissions(): Promise<unknown>;
+  };
+  privacyModeEnabled?: boolean | null;
   platform?: SandIconPlatform;
 }
 
@@ -89,12 +97,13 @@ export function ThemePreferencePicker({ value, disabled = false, onChange }: The
   />;
 }
 
-export function GeneralSettingsPanel({ account, accountPending = false, accountError = null, theme, onAccountAction, onThemeChange, timeZone, localToolPermission, securityKey, autoReview, platform }: GeneralSettingsPanelProps) {
+export function GeneralSettingsPanel({ account, accountPending = false, accountError = null, theme, onAccountAction, onThemeChange, timeZone, localToolPermission, securityKey, autoReview, uiPreferences, callMediaPreferences, privacyModeEnabled, platform }: GeneralSettingsPanelProps) {
   const [emailCopied, setEmailCopied] = useState(false);
   const [themePending, setThemePending] = useState(false);
   const signedIn = account.kind === "logged-in";
   const isAccountPending = accountPending;
   const visibleAccountError = accountError ?? (account.kind === "logged-out" ? account.errorMessage ?? null : null);
+  const copy = settingsCopy(uiPreferences?.state.locale ?? "system");
   useEffect(() => {
     if (!emailCopied) return;
     const timeout = window.setTimeout(() => setEmailCopied(false), 2000);
@@ -124,7 +133,7 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
 
   return (
     <div className="sand-settings-general">
-      <SettingsGroup title="Account">
+      <SettingsGroup title={copy.account}>
         <div className="sand-account-card" data-state={account.kind}>
           <span aria-hidden="true" className="sand-account-card__avatar">
             {signedIn && account.avatarDataUrl ? <img alt="" src={account.avatarDataUrl} /> : title.slice(0, 1).toLocaleUpperCase()}
@@ -139,13 +148,23 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
         {visibleAccountError ? <p className="sand-account__error">{visibleAccountError}</p> : null}
       </SettingsGroup>
 
-      <SettingsGroup title="Appearance">
+      <SettingsGroup title={copy.appearance}>
         <label>
-          <span>Theme</span>
+          <span>{copy.theme}</span>
           <ThemePreferencePicker disabled={themePending} onChange={handleThemeChange} value={theme} />
         </label>
       </SettingsGroup>
-      {timeZone || localToolPermission || autoReview ? <SettingsGroup title="Agent">
+      {privacyModeEnabled !== undefined ? <SettingsGroup title={copy.privacy}>
+        <SettingsCapabilityRow
+          description={copy.privacyModeDescription}
+          status={privacyModeEnabled == null ? copy.stateUnavailable : privacyModeEnabled ? copy.stateEnabled : copy.stateDisabled}
+          title={copy.privacyMode}
+        />
+      </SettingsGroup> : null}
+      {uiPreferences ? <SettingsGroup title={copy.languageAccessibility}><UiPreferencesSettingsPanel {...uiPreferences} /></SettingsGroup> : null}
+      {callMediaPreferences ? <SettingsGroup title={copy.mediaDevices}><CallMediaSettingsPanel copy={copy} {...callMediaPreferences} /></SettingsGroup> : null}
+      <SettingsGroup title={copy.desktopBehavior}><DesktopBehaviorSettingsPanel copy={copy} /></SettingsGroup>
+      {timeZone || localToolPermission || autoReview ? <SettingsGroup title={copy.advanced}>
         {timeZone ? <TimeZoneSettingsPanel {...timeZone} /> : null}
         {localToolPermission ? <LocalToolPermissionSettingsPanel {...localToolPermission} /> : null}
         {autoReview ? <AutoReviewRulesPanel {...autoReview} /> : null}
@@ -155,6 +174,92 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
   );
 }
 
+const UI_LANGUAGE_OPTIONS = [
+  { value: "system", label: "System language" }, { value: "en", label: "English" },
+  { value: "zh-Hans", label: "简体中文" }, { value: "zh-Hant", label: "繁體中文" },
+  { value: "ja", label: "日本語" }, { value: "ko", label: "한국어" },
+  { value: "ar", label: "العربية" }, { value: "he", label: "עברית" },
+] as const;
+const UI_TEXT_SCALE_OPTIONS = [{ value: "0.9", label: "90%" }, { value: "1", label: "100%" }, { value: "1.1", label: "110%" }, { value: "1.25", label: "125%" }, { value: "1.5", label: "150%" }] as const;
+
+function SettingsCapabilityRow({ title, description, status }: { title: string; description: string; status?: string }) {
+  return <div className="sand-settings-row">
+    <span className="sand-settings-copy"><strong>{title}</strong><small>{description}</small></span>
+    {status == null ? null : <span aria-label={title} role="status">{status}</span>}
+  </div>;
+}
+
+function DesktopBehaviorSettingsPanel({ copy }: { copy: ReturnType<typeof settingsCopy> }) {
+  return <>
+    <SettingsCapabilityRow description={copy.notificationsDescription} title={copy.notifications} />
+    <SettingsCapabilityRow description={copy.storageDescription} title={copy.storage} />
+    <SettingsCapabilityRow description={copy.downloadsDescription} title={copy.downloads} />
+    <SettingsCapabilityRow description={copy.shortcutsDescription} title={copy.shortcuts} />
+  </>;
+}
+
+export function CallMediaSettingsPanel({
+  state,
+  onChange,
+  onRequestPermissions,
+  copy,
+}: {
+  state: DesktopCallMediaPreferences;
+  onChange(preferences: DesktopCallMediaPreferences): void | Promise<DesktopCallMediaPreferences>;
+  onRequestPermissions(): Promise<unknown>;
+  copy: ReturnType<typeof settingsCopy>;
+}) {
+  const action=useAsyncAction(onChange);
+  const [devices,setDevices]=useState<MediaDeviceInfo[]>([]);
+  const [deviceError,setDeviceError]=useState<string | null>(null);
+  const refresh=async () => {
+    try {
+      const next=await navigator.mediaDevices?.enumerateDevices?.() ?? [];
+      setDevices(next);
+      setDeviceError(null);
+    } catch (error) {
+      setDeviceError(error instanceof Error ? error.message : String(error));
+    }
+  };
+  useEffect(()=>{ void refresh(); },[]);
+  const microphones=devices.filter((device)=>device.kind==="audioinput");
+  const cameras=devices.filter((device)=>device.kind==="videoinput");
+  const microphoneOptions=[{value:"",label:copy.defaultDevice},...microphones.map((device,index)=>({value:device.deviceId,label:device.label || `${copy.microphone} ${index+1}`}))];
+  const cameraOptions=[{value:"",label:copy.defaultDevice},...cameras.map((device,index)=>({value:device.deviceId,label:device.label || `${copy.camera} ${index+1}`}))];
+  const update=(patch:Partial<DesktopCallMediaPreferences>)=>action.dispatch({...state,...patch});
+  const grant=async()=>{ await onRequestPermissions(); await refresh(); };
+  return <>
+    <p className="sand-settings-copy"><small>{copy.mediaPermissionDescription}</small></p>
+    <label><span><strong>{copy.microphone}</strong></span><SandSelect ariaLabel={copy.microphone} className="ui-select-trigger" disabled={action.isPending} onValueChange={(value)=>update({microphoneId:value || null})} options={microphoneOptions} placement="bottom-end" value={state.microphoneId ?? ""} /></label>
+    <label><span><strong>{copy.camera}</strong></span><SandSelect ariaLabel={copy.camera} className="ui-select-trigger" disabled={action.isPending} onValueChange={(value)=>update({cameraId:value || null})} options={cameraOptions} placement="bottom-end" value={state.cameraId ?? ""} /></label>
+    <div className="sand-settings-row">
+      <SandButton onClick={()=>void refresh()} type="button">{copy.refreshDevices}</SandButton>
+      <SandButton onClick={()=>void grant().catch((error)=>setDeviceError(error instanceof Error?error.message:String(error)))} type="button">{copy.grantMediaPermissions}</SandButton>
+    </div>
+    {deviceError==null?null:<p role="alert">{deviceError}</p>}
+  </>;
+}
+
+export function UiPreferencesSettingsPanel({ state, onChange }: { state: DesktopUiPreferences; onChange(preferences: DesktopUiPreferences): void | Promise<DesktopUiPreferences> }) {
+  const action = useAsyncAction(onChange);
+  const copy = settingsCopy(state.locale);
+  const update = (patch: Partial<DesktopUiPreferences>) => action.dispatch({ ...state, ...patch });
+  const activeAccessibilityPreferences = Number(state.reducedMotion) + Number(state.highContrast) + Number(state.textScale !== 1);
+  const languageOptions = UI_LANGUAGE_OPTIONS.map((option) => option.value === "system" ? { ...option, label: copy.systemLanguage } : option);
+  const directionOptions = [
+    { value: "auto", label: copy.directionAutomatic },
+    { value: "ltr", label: copy.directionLtr },
+    { value: "rtl", label: copy.directionRtl }
+  ] as const;
+  return <>
+    <label><span><strong>{copy.language}</strong><small>{copy.languageDescription}</small></span><SandSelect ariaLabel={copy.language} className="ui-select-trigger" disabled={action.isPending} onValueChange={(locale)=>update({locale})} options={languageOptions} placement="bottom-end" value={state.locale} /></label>
+    <label><span><strong>{copy.readingDirection}</strong><small>{copy.readingDirectionDescription}</small></span><SandSelect ariaLabel={copy.readingDirection} className="ui-select-trigger" disabled={action.isPending} onValueChange={(direction)=>update({direction})} options={directionOptions} placement="bottom-end" value={state.direction} /></label>
+    <label><span><strong>{copy.textSize}</strong><small>{copy.textSizeDescription}</small></span><SandSelect ariaLabel={copy.textSize} className="ui-select-trigger" disabled={action.isPending} onValueChange={(value)=>update({textScale:Number(value)})} options={UI_TEXT_SCALE_OPTIONS} placement="bottom-end" value={String(state.textScale)} /></label>
+    <div className="sand-settings-row"><SandSwitch checked={state.reducedMotion} disabled={action.isPending} label={<span className="sand-settings-copy"><strong>{copy.reduceMotion}</strong><small>{copy.reduceMotionDescription}</small></span>} onCheckedChange={(reducedMotion)=>update({reducedMotion})} /></div>
+    <div className="sand-settings-row"><SandSwitch checked={state.highContrast} disabled={action.isPending} label={<span className="sand-settings-copy"><strong>{copy.highContrast}</strong><small>{copy.highContrastDescription}</small></span>} onCheckedChange={(highContrast)=>update({highContrast})} /></div>
+    <p aria-live="polite" className="sand-settings-a11y-status" role="status">{formatAccessibilityPreferenceCount(state.locale, activeAccessibilityPreferences)}</p>
+  </>;
+}
 const SECURITY_KEY_PLATFORMS: readonly NodeJS.Platform[] = ["darwin", "win32"];
 
 export interface SecurityKeySettingsGroupProps {

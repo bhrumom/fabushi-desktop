@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
-import { DEFAULT_SAND_THEME_PREFERENCE, isSandThemePreference, type SandThemePreference } from "../../desktop.js";
+import { DEFAULT_SAND_THEME_PREFERENCE, isSandThemePreference, normalizeSandCallMediaPreferences, normalizeSandUiPreferences, type SandCallMediaPreferences, type SandThemePreference, type SandUiDirection, type SandUiPreferences } from "../../desktop.js";
 import { SAND_DISABLED_NOTIFICATION_CONFIG } from "../../host-settings.js";
 import { SAND_DEFAULT_LOCAL_TOOL_PERMISSION, isSandLocalToolPermission, resolveSandLocalToolPermission, type SandLocalToolPermission } from "../../local-tool-permission.js";
 import { clampMcpCustomInstruction, getDefaultMcpCustomInstruction } from "../../mcp-custom-instructions.js";
@@ -28,6 +28,8 @@ export interface SandStoredSettings {
   localToolPermission?: SandLocalToolPermission; localToolPermissionCeiling?: SandLocalToolPermission;
   inferenceProvider?: SandInferenceProvider; inferenceRouterUsage?: SandInferenceRouterUsage;
   boxRuntime?: SandBoxRuntime;
+  uiLocale?: string; uiDirection?: SandUiDirection; reducedMotion?: boolean; highContrast?: boolean; textScale?: number;
+  callMicrophoneId?: string; callCameraId?: string;
   mcpCustomInstructionsAccountScope?: string; pinnedAgentIds?: string[]; sidebarSections?: SidebarSection[];
 }
 
@@ -87,6 +89,11 @@ function parseSettings(value: unknown): SandStoredSettings | null {
   }
   if (Array.isArray(raw.pinnedAgentIds)) result.pinnedAgentIds = [...new Set(stringArray(raw.pinnedAgentIds).filter((id) => id.length > 0))];
   if (Array.isArray(raw.sidebarSections)) result.sidebarSections = SidebarSections.carryFolds({ sections: raw.sidebarSections.filter((entry): entry is SidebarSection => typeof entry === "object" && entry != null && typeof (entry as { id?: unknown }).id === "string" && typeof (entry as { name?: unknown }).name === "string" && Array.isArray((entry as { agentIds?: unknown }).agentIds)) });
+  const ui = normalizeSandUiPreferences({ locale: raw.uiLocale, direction: raw.uiDirection, reducedMotion: raw.reducedMotion, highContrast: raw.highContrast, textScale: raw.textScale });
+  result.uiLocale = ui.locale; result.uiDirection = ui.direction; result.reducedMotion = ui.reducedMotion; result.highContrast = ui.highContrast; result.textScale = ui.textScale;
+  const media = normalizeSandCallMediaPreferences({ microphoneId: raw.callMicrophoneId, cameraId: raw.callCameraId });
+  if (media.microphoneId != null) result.callMicrophoneId = media.microphoneId;
+  if (media.cameraId != null) result.callCameraId = media.cameraId;
   return result;
 }
 
@@ -112,6 +119,10 @@ export class SandSettingsStore {
   setAutoUpdateWhenIdleOptIn(value: boolean): void { this.update((s) => ({ ...s, autoUpdateWhenIdleOptIn: value })); }
   getThemePreference(): SandThemePreference { return this.load().themePreference ?? DEFAULT_SAND_THEME_PREFERENCE; }
   setThemePreference(value: SandThemePreference): void { this.update((s) => ({ ...s, themePreference: value })); }
+  getUiPreferences(): SandUiPreferences { const s=this.load(); return normalizeSandUiPreferences({ locale:s.uiLocale, direction:s.uiDirection, reducedMotion:s.reducedMotion, highContrast:s.highContrast, textScale:s.textScale }); }
+  setUiPreferences(value: SandUiPreferences): void { const ui=normalizeSandUiPreferences(value); this.update((s)=>({ ...s, uiLocale:ui.locale, uiDirection:ui.direction, reducedMotion:ui.reducedMotion, highContrast:ui.highContrast, textScale:ui.textScale })); }
+  getCallMediaPreferences(): SandCallMediaPreferences { const s=this.load(); return normalizeSandCallMediaPreferences({ microphoneId:s.callMicrophoneId, cameraId:s.callCameraId }); }
+  setCallMediaPreferences(value: SandCallMediaPreferences): void { const media=normalizeSandCallMediaPreferences(value); this.update((s)=>{ const { callMicrophoneId:_microphone, callCameraId:_camera, ...rest }=s; return { ...rest, ...(media.microphoneId==null?{}:{callMicrophoneId:media.microphoneId}), ...(media.cameraId==null?{}:{callCameraId:media.cameraId}) }; }); }
   getBoxRuntime(): SandBoxRuntime { return this.load().boxRuntime ?? DEFAULT_SAND_BOX_RUNTIME; }
   setBoxRuntime(value: SandBoxRuntime): void { this.update((s) => ({ ...s, boxRuntime: value })); }
   getEgressTunnelEnabled(): boolean { return this.load().egressTunnelEnabled; }

@@ -113,7 +113,8 @@ fn shipping_provider_consumes_live_box_and_computer_state_in_frozen_prompt_order
 fn shipping_remote_box_and_computer_owners_are_consumed_not_test_only_helpers() {
     for binding in [
         "RemoteBoxResourceCoordinator",
-        ".connect(box_preparing",
+        ".connect(false, move ||",
+        ".box_()\n                    .ensure_ready(&agent_id)",
         ".computer_use_plan(&connection",
         ".clear_connection()",
     ] {

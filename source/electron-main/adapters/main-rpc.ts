@@ -9,6 +9,7 @@ import type { ElectronProductionAdapterBindings } from "../production-adapters.j
 import type { ProductionDisposable, ProductionServiceContext } from "../main-production-services.js";
 import { createElectronProductionIpcMainBinding, type ElectronProductionIpcMainSource } from "./ipc.js";
 import { requireFunction, requireObject } from "./provider-guards.js";
+import { createDesktopCallMediaPort } from "../call-media.js";
 
 type ExistingMainRpcCoreDeps = Pick<MainEdgeWiringDeps,
   "settingsStore"
@@ -98,6 +99,7 @@ export function createElectronProductionMainRpcBinding(
           return contents == null ? null : contents as unknown as NonNullable<ReturnType<MainEdgeWiringDeps["getTrustedContents"]>>;
         },
         broadcast: context.broadcast,
+        callMedia: createDesktopCallMediaPort(context.native, process.platform),
         platform: process.platform,
       };
     },

@@ -367,6 +367,7 @@ export function createProductionCoordinatorAdapter<
       if (typeof dataDir !== "string" || dataDir.length === 0) {
         throw new Error("Production coordinator data directory is empty.");
       }
+      let localHumanId: string | null = null;
       const accountService = context.requireAccount();
       requiredFunction(
         accountService?.getStatus,
@@ -489,16 +490,24 @@ export function createProductionCoordinatorAdapter<
             appVersion: context.resources.metadata.version,
             isPackaged: context.native.app.isPackaged,
             dataDir,
+            localHumanId: localHumanId ?? (() => {
+              throw new Error("Production coordinator local Human identity is unavailable before account authorization.");
+            })(),
           },
           artifactPath,
         });
 
       const accountRuntime = createCoordinatorAccountRuntime<Status>({
         createRuntime,
-        authorizeAccount: (slot, transition) =>
-          ports.account.authorizeAccount(slot, transition, context),
+        authorizeAccount: async (slot, transition) => {
+          const authorized = await ports.account.authorizeAccount(slot, transition, context);
+          // Coordinator account slots are derived from the settled Fabushi authId (falling back to email only for legacy providers). Reuse that account identity across devices; DeviceId remains a separate session credential field.
+          localHumanId = authorized ? slot : null;
+          return authorized;
+        },
         revokeRefusedAccount: () => ports.account.revokeRefusedAccount(context),
         prepareAccountTransition: (transition) => {
+          localHumanId = null;
           context.accountLifecycle.beginTransition();
           context.hostSettingsFields.onAccountDeparted();
           return ports.account.prepareAccountTransition(transition, context);

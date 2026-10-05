@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { basename, join } from "node:path";
 import test from "node:test";
 
 import { getSimulatedGatewayLatencyMs, setSimulatedGatewayLatencyMs, SIMULATED_GATEWAY_LATENCY_MAX_MS } from "./dev/dev-network-latency.js";
@@ -27,6 +30,43 @@ import { createDesktopAccountAuthorizer } from "./account/account-authorization.
 import { createSandRecreateCommands, type RecreateOperationId } from "./box/box-recreate-commands.js";
 import { createDesktopHostSettingsFields } from "./prefs/host-settings-fields.js";
 import { createReleaseMetadata } from "./update/release-metadata.js";
+import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
+import { normalizeSandCallMediaPreferences, normalizeSandUiPreferences, resolveSandUiDirection } from "../shared/desktop.js";
+import { createDesktopCallMediaPort } from "./call-media.js";
+
+test("UI accessibility preferences normalize, persist, and resolve RTL", () => {
+  const dir=mkdtempSync(join(tmpdir(),"fabushi-ui-prefs-"));
+  try {
+    const store=new SandSettingsStore(join(dir,"settings.json"));
+    store.setUiPreferences({ locale:"ar-SA", direction:"auto", reducedMotion:true, highContrast:true, textScale:1.25 });
+    assert.deepEqual(store.getUiPreferences(), { locale:"ar-SA", direction:"auto", reducedMotion:true, highContrast:true, textScale:1.25 });
+    assert.equal(resolveSandUiDirection(store.getUiPreferences()), "rtl");
+    assert.deepEqual(normalizeSandUiPreferences({ locale:"../../invalid", direction:"sideways", reducedMotion:"yes", highContrast:true, textScale:9 }), { locale:"system", direction:"auto", reducedMotion:false, highContrast:true, textScale:2 });
+  } finally { rmSync(dir,{recursive:true,force:true}); }
+});
+
+test("call media device preferences normalize and persist in the canonical settings store", () => {
+  const dir=mkdtempSync(join(tmpdir(),"fabushi-call-media-prefs-"));
+  try {
+    const store=new SandSettingsStore(join(dir,"settings.json"));
+    store.setCallMediaPreferences({ microphoneId:" mic-primary ", cameraId:"camera-primary" });
+    assert.deepEqual(store.getCallMediaPreferences(), { microphoneId:"mic-primary", cameraId:"camera-primary" });
+    assert.deepEqual(normalizeSandCallMediaPreferences({ microphoneId:"", cameraId:"bad\nvalue" }), { microphoneId:null, cameraId:null });
+    store.setCallMediaPreferences({ microphoneId:null, cameraId:null });
+    assert.deepEqual(store.getCallMediaPreferences(), { microphoneId:null, cameraId:null });
+  } finally { rmSync(dir,{recursive:true,force:true}); }
+});
+
+test("system notification preferences remain disabled by the canonical settings owner", () => {
+  const dir=mkdtempSync(join(tmpdir(),"fabushi-notification-prefs-"));
+  try {
+    const store=new SandSettingsStore(join(dir,"settings.json"));
+    store.setNotificationConfig({ isEnabled:true, allowedApps:["example"] });
+    const notification=store.getNotificationConfig();
+    assert.equal(notification.isEnabled,false);
+    assert.deepEqual(notification.allowedApps,[]);
+  } finally { rmSync(dir,{recursive:true,force:true}); }
+});
 
 test("dev gates and latency clamps match Grok behavior", () => {
   assert.equal(setSimulatedGatewayLatencyMs(25.9), 25);
@@ -386,4 +426,57 @@ test("release metadata resolves package identity and live update gates", async (
   });
   assert.equal(fallback.readAppReleaseMetadata().version, "9.9.9");
   assert.equal(await fallback.computeUpdateDisabledReasonLive(), null);
+});
+
+
+test("call media binding preserves native permission and desktopCapturer authority", async () => {
+  const requested: string[] = [];
+  const port = createDesktopCallMediaPort({
+    systemPreferences: {
+      getMediaAccessStatus: (kind) => kind === "microphone" ? "granted" : "not-determined",
+      askForMediaAccess: async (kind) => { requested.push(kind); return kind === "camera"; },
+    },
+    desktopCapturer: {
+      async getSources(options) {
+        assert.deepEqual(options.types, ["screen", "window"]);
+        return [
+          { id: "screen:1:0", name: "Display 1", display_id: "1" },
+          { id: "window:2:0", name: "Editor" },
+          { id: "window:2:0", name: "Duplicate" },
+          { id: "", name: "Invalid" },
+        ];
+      },
+    },
+  }, "darwin");
+
+  assert.deepEqual(await port.requestPermissions({ audio: true, video: true }), {
+    microphone: "granted",
+    camera: "granted",
+  });
+  assert.deepEqual(requested, ["camera"]);
+  assert.deepEqual(await port.listDisplaySources(), [
+    { id: "screen:1:0", name: "Display 1", displayId: "1" },
+    { id: "window:2:0", name: "Editor" },
+  ]);
+
+  const chromiumPrompt = createDesktopCallMediaPort({}, "linux");
+  assert.deepEqual(await chromiumPrompt.requestPermissions({ audio: true, video: false }), {
+    microphone: "prompt",
+    camera: "not-requested",
+  });
+  await assert.rejects(() => chromiumPrompt.listDisplaySources(), /desktopCapturer is unavailable/);
+});
+
+
+test("MAS packaging declares camera and microphone authority for Human calls", () => {
+  const desktopRoot = basename(process.cwd()) === "desktop" ? process.cwd() : join(process.cwd(), "desktop");
+  const entitlements = readFileSync(join(desktopRoot, "resources/mas/entitlements.mas.plist"), "utf8");
+  assert.match(entitlements, /com\.apple\.security\.device\.microphone/);
+  assert.match(entitlements, /com\.apple\.security\.device\.camera/);
+  const desktopPackage = JSON.parse(readFileSync(join(desktopRoot, "package.json"), "utf8")) as {
+    build?: { mas?: { extendInfo?: Record<string, unknown> } };
+  };
+  const extendInfo = desktopPackage.build?.mas?.extendInfo ?? {};
+  assert.equal(typeof extendInfo.NSMicrophoneUsageDescription, "string");
+  assert.equal(typeof extendInfo.NSCameraUsageDescription, "string");
 });

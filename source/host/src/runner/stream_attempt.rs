@@ -87,6 +87,22 @@ impl StreamAttemptRuntime {
         true
     }
 
+    /// A durable tool-boundary checkpoint proves that this attempt made
+    /// forward progress, but it also starts a new provider continuation whose
+    /// first output must remain bounded. Re-arm the same attempt-generation
+    /// deadline without clearing the attempt's aggregate output evidence.
+    pub fn rearm_output_deadline_after_checkpoint(
+        &self,
+        generation: StreamAttemptGeneration,
+    ) -> bool {
+        if !self.is_current(generation) {
+            return false;
+        }
+        self.deadline_disarmed.store(false, Ordering::Release);
+        self.deadline_epoch.fetch_add(1, Ordering::AcqRel);
+        true
+    }
+
     /// Equivalent to the frozen reset-first-token-deadline hook. A reset is
     /// ignored after output or after this attempt has been superseded.
     pub fn reset_first_output_deadline(
@@ -127,7 +143,6 @@ impl StreamAttemptRuntime {
         generation: StreamAttemptGeneration,
     ) -> bool {
         self.is_current(generation)
-            && !self.stream_output_produced.load(Ordering::Acquire)
             && !self.deadline_disarmed.load(Ordering::Acquire)
     }
 

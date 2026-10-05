@@ -162,7 +162,8 @@
       "entitlementsInherit": "resources/mas/entitlements.mas.inherit.plist",
       "provisioningProfile": "resources/mas/Fabushi_AppStore.provisionprofile",
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音输入和离线语音识别。"
+        "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音通话、语音输入和离线语音识别。",
+        "NSCameraUsageDescription": "全球法布施使用摄像头进行视频通话。"
       },
       "forceCodeSigning": true,
       "icon": "resources/icon.png"

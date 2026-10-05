@@ -28,7 +28,7 @@ enum Behavior {
     FailBeforeOutput,
     OutputCheckpointThenFail,
     OutputThenFail,
-    ToolCheckpointThenDelayedSuccess,
+    ToolCheckpointThenStallUntilCancelled,
     Success {
         delta: &'static str,
         accumulated: &'static str,
@@ -108,10 +108,14 @@ impl RoutedProviderAttemptExecutor for FakeExecutor {
                     "connection reset after partial output".into(),
                 ))
             }
-            Behavior::ToolCheckpointThenDelayedSuccess => {
+            Behavior::ToolCheckpointThenStallUntilCancelled => {
                 on_checkpoint(&tool_only_checkpoint())?;
-                thread::sleep(Duration::from_millis(40));
-                Ok("done".into())
+                while !should_cancel() {
+                    thread::sleep(Duration::from_millis(1));
+                }
+                Err(ProviderSessionError::Cancelled(
+                    "post-tool continuation watchdog".into(),
+                ))
             }
             Behavior::Success {
                 delta,
@@ -450,15 +454,21 @@ fn production_turn_adapter_first_output_watchdog_interrupts_silent_attempt() {
 }
 
 #[test]
-fn production_turn_adapter_tool_only_checkpoint_stops_first_output_watchdog() {
+fn production_turn_adapter_tool_only_checkpoint_rearms_watchdog_and_resumes() {
     let adapter = ProductionTurnRunShellAdapter {
-        policy: policy(1),
+        policy: policy(2),
         watchdog_poll_interval: Duration::from_millis(1),
     };
     let cancellation = RoutedProviderCancellation::default();
     let store = FakeStore::default();
-    let mut executor =
-        FakeExecutor::new(VecDeque::from([Behavior::ToolCheckpointThenDelayedSuccess]));
+    let mut executor = FakeExecutor::new(VecDeque::from([
+        Behavior::ToolCheckpointThenStallUntilCancelled,
+        Behavior::Success {
+            delta: "done",
+            accumulated: "done",
+            result: "done",
+        },
+    ]));
 
     let result = adapter
         .run(
@@ -467,10 +477,12 @@ fn production_turn_adapter_tool_only_checkpoint_stops_first_output_watchdog() {
             &mut executor,
             &mut |_delta, _| {},
         )
-        .expect("durable tool checkpoint is provider output");
+        .expect("post-tool watchdog must resume from the durable checkpoint");
 
     assert_eq!(result, "done");
-    assert_eq!(executor.attempts, 1);
+    assert_eq!(executor.attempts, 2);
+    assert_eq!(executor.resumes[0], None);
+    assert_eq!(executor.resumes[1], Some(tool_only_checkpoint()));
     assert_eq!(
         store.saved.lock().expect("saved checkpoints").as_slice(),
         &[tool_only_checkpoint()]

@@ -107,8 +107,6 @@ impl ForeverBoxRunnerResourcePort {
         &self,
     ) -> Result<RemoteConnection<Arc<Mutex<crate::r#box::generated_production::ProductionBoxResourceAccessor>>>, ProviderSessionError>
     {
-        let status = self.service.get_status(&self.agent_id);
-        let box_preparing = matches!(status.state.as_str(), "starting" | "preparing");
         let service = Arc::clone(&self.service);
         let agent_id = self.agent_id.clone();
         let mut coordinator = self
@@ -119,8 +117,13 @@ impl ForeverBoxRunnerResourcePort {
         // connectionPromise lifetime. Reuse/coalesce the guarded accessor for
         // the turn; long-lived background-shell polling explicitly invalidates
         // before each poll so recreation/credential changes cannot go stale.
+        // HostBox::ensure_ready owns bounded readiness polling (90s by default).
+        // The status projection may legitimately remain "starting"/"preparing"
+        // while the daemon is booting. Short-circuiting here bypasses that
+        // canonical wait and pushes transient startup failures into the model,
+        // which can otherwise loop on repeated Shell retries.
         coordinator
-            .connect(box_preparing, move || {
+            .connect(false, move || {
                 let ready = service
                     .box_()
                     .ensure_ready(&agent_id)
