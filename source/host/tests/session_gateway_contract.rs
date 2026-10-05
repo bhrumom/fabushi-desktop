@@ -1604,3 +1604,287 @@ fn shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap() {
     let _ = fs::remove_dir_all(root);
 }
 
+
+
+#[test]
+fn call_session_owner_fences_lifecycle_signaling_reconnect_and_restart() {
+    let root = temp_root("call-session-owner");
+    let agents = root.join("agents");
+    let memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+            agents.clone(),
+        ),
+    );
+    let runtime = Arc::new(
+        ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+            &agents,
+            500,
+            Some("human-local".into()),
+            Arc::new(|| None),
+            memory,
+        ),
+    );
+    let conversation = dispatch(
+        &runtime,
+        "createHumanConversation",
+        json!({
+            "localHumanId": "human-local",
+            "peerHumanId": "human-peer",
+            "title": "Call peer"
+        }),
+    );
+    let scope_id = conversation["id"].as_str().expect("conversation id");
+
+    let created = dispatch(
+        &runtime,
+        "createCallSession",
+        json!({
+            "scopeId": scope_id,
+            "participantIds": ["human-local", "human-peer"]
+        }),
+    );
+    let call_id = created["id"].as_str().expect("call id").to_string();
+    assert_eq!(created["scopeId"], scope_id);
+    assert_eq!(created["state"], "invited");
+    assert_eq!(created["generation"], 0);
+    assert_eq!(created["signalSeq"], 0);
+    assert!(runtime.call_session_store_path().expect("call db").ends_with(".call-sessions.db"));
+
+    let ringing = dispatch(
+        &runtime,
+        "transitionCallSession",
+        json!({"callId": call_id, "generation": 0, "action": "ring"}),
+    );
+    assert_eq!(ringing["state"], "ringing");
+
+    let negotiating = dispatch(
+        &runtime,
+        "transitionCallSession",
+        json!({"callId": call_id, "generation": 0, "action": "accept"}),
+    );
+    assert_eq!(negotiating["state"], "negotiating");
+
+    let offer = dispatch(
+        &runtime,
+        "sendCallSignal",
+        json!({
+            "callId": call_id,
+            "generation": 0,
+            "seq": 1,
+            "senderDeviceId": "device-a",
+            "kind": "offer",
+            "payload": {"sdp": "offer-v1"}
+        }),
+    );
+    assert_eq!(offer["seq"], 1);
+    assert_eq!(offer["kind"], "offer");
+
+    let replay = dispatch(
+        &runtime,
+        "sendCallSignal",
+        json!({
+            "callId": call_id,
+            "generation": 0,
+            "seq": 1,
+            "senderDeviceId": "device-a",
+            "kind": "offer",
+            "payload": {"sdp": "offer-v1"}
+        }),
+    );
+    assert_eq!(replay, offer);
+
+    let conflicting_replay = dispatch_production_session_gateway_call(
+        &runtime,
+        "sendCallSignal",
+        &json!({
+            "callId": call_id,
+            "generation": 0,
+            "seq": 1,
+            "senderDeviceId": "device-a",
+            "kind": "offer",
+            "payload": {"sdp": "different"}
+        }),
+    )
+    .expect("handled conflicting replay")
+    .expect_err("conflicting replay must fail");
+    assert!(matches!(
+        conflicting_replay,
+        SessionGatewayError::Internal(message)
+            if message.contains("conflicts with previously accepted payload")
+    ));
+
+    let gap = dispatch_production_session_gateway_call(
+        &runtime,
+        "sendCallSignal",
+        &json!({
+            "callId": call_id,
+            "generation": 0,
+            "seq": 3,
+            "senderDeviceId": "device-b",
+            "kind": "answer",
+            "payload": {"sdp": "answer-gap"}
+        }),
+    )
+    .expect("handled signal gap")
+    .expect_err("signal gap must fail");
+    assert!(matches!(
+        gap,
+        SessionGatewayError::Internal(message)
+            if message.contains("sequence gap")
+    ));
+
+    let answer = dispatch(
+        &runtime,
+        "sendCallSignal",
+        json!({
+            "callId": call_id,
+            "generation": 0,
+            "seq": 2,
+            "senderDeviceId": "device-b",
+            "kind": "answer",
+            "payload": {"sdp": "answer-v1"}
+        }),
+    );
+    assert_eq!(answer["seq"], 2);
+
+    let connected = dispatch(
+        &runtime,
+        "transitionCallSession",
+        json!({"callId": call_id, "generation": 0, "action": "connected"}),
+    );
+    assert_eq!(connected["state"], "connected");
+
+    let media = dispatch(
+        &runtime,
+        "updateCallMedia",
+        json!({
+            "callId": call_id,
+            "generation": 0,
+            "mediaCapabilities": {"audio": true, "video": true, "screenShare": true},
+            "deviceSelection": {"microphoneId": "mic-1", "cameraId": "cam-1"}
+        }),
+    );
+    assert_eq!(media["mediaCapabilities"]["audio"], true);
+    assert_eq!(media["deviceSelection"]["microphoneId"], "mic-1");
+
+    let reconnecting = dispatch(
+        &runtime,
+        "transitionCallSession",
+        json!({"callId": call_id, "generation": 0, "action": "reconnect"}),
+    );
+    assert_eq!(reconnecting["state"], "reconnecting");
+    assert_eq!(reconnecting["generation"], 1);
+    assert_eq!(reconnecting["signalSeq"], 0);
+
+    let stale = dispatch_production_session_gateway_call(
+        &runtime,
+        "sendCallSignal",
+        &json!({
+            "callId": call_id,
+            "generation": 0,
+            "seq": 3,
+            "senderDeviceId": "device-a",
+            "kind": "candidate",
+            "payload": {"candidate": "stale"}
+        }),
+    )
+    .expect("handled stale generation")
+    .expect_err("stale generation must fail");
+    assert!(matches!(
+        stale,
+        SessionGatewayError::Internal(message)
+            if message.contains("stale call generation")
+    ));
+
+    let resumed = dispatch(
+        &runtime,
+        "transitionCallSession",
+        json!({"callId": call_id, "generation": 1, "action": "resume"}),
+    );
+    assert_eq!(resumed["state"], "negotiating");
+    let candidate = dispatch(
+        &runtime,
+        "sendCallSignal",
+        json!({
+            "callId": call_id,
+            "generation": 1,
+            "seq": 1,
+            "senderDeviceId": "device-a",
+            "kind": "candidate",
+            "payload": {"candidate": "fresh"}
+        }),
+    );
+    assert_eq!(candidate["generation"], 1);
+    assert_eq!(candidate["seq"], 1);
+
+    let signals = dispatch(
+        &runtime,
+        "listCallSignals",
+        json!({"callId": call_id, "generation": 1, "afterSeq": 0, "limit": 20}),
+    );
+    assert_eq!(signals.as_array().map(Vec::len), Some(1));
+    assert_eq!(signals[0]["payload"]["candidate"], "fresh");
+
+    runtime.shutdown();
+    drop(runtime);
+
+    let restarted_memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+            agents.clone(),
+        ),
+    );
+    let restarted = Arc::new(
+        ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+            &agents,
+            500,
+            Some("human-local".into()),
+            Arc::new(|| None),
+            restarted_memory,
+        ),
+    );
+    let restored = dispatch(
+        &restarted,
+        "getCallSession",
+        json!({"callId": call_id}),
+    );
+    assert_eq!(restored["state"], "negotiating");
+    assert_eq!(restored["generation"], 1);
+    assert_eq!(restored["signalSeq"], 1);
+
+    let ended = dispatch(
+        &restarted,
+        "transitionCallSession",
+        json!({
+            "callId": call_id,
+            "generation": 1,
+            "action": "hangup",
+            "terminalReason": "user-ended"
+        }),
+    );
+    assert_eq!(ended["state"], "ended");
+    assert_eq!(ended["terminalReason"], "user-ended");
+
+    let after_terminal = dispatch_production_session_gateway_call(
+        &restarted,
+        "sendCallSignal",
+        &json!({
+            "callId": call_id,
+            "generation": 1,
+            "seq": 2,
+            "senderDeviceId": "device-a",
+            "kind": "candidate",
+            "payload": {"candidate": "late"}
+        }),
+    )
+    .expect("handled terminal signal")
+    .expect_err("terminal signal must fail");
+    assert!(matches!(
+        after_terminal,
+        SessionGatewayError::Internal(message)
+            if message.contains("terminal call session")
+    ));
+
+    restarted.shutdown();
+    drop(restarted);
+    let _ = fs::remove_dir_all(root);
+}
