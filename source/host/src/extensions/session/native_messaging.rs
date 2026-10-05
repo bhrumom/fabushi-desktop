@@ -134,6 +134,23 @@ struct SendRequest<'a> {
     attachments: Vec<SendAttachmentRequest<'a>>,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ReactionRequest<'a> {
+    emoji: &'a str,
+    active: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ReactionEnvelope {
+    success: bool,
+    message_id: Option<Value>,
+    #[serde(default)]
+    reactions: Vec<FabushiRemoteHumanReaction>,
+    error: Option<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct FabushiNativeMessagingClient {
     base_url: Url,
@@ -291,6 +308,67 @@ impl FabushiNativeMessagingClient {
         envelope
             .message
             .ok_or_else(|| "Fabushi Human message response omitted the persisted message.".to_string())
+    }
+
+    pub fn set_direct_message_reaction(
+        &self,
+        message_id: &str,
+        emoji: &str,
+        active: bool,
+    ) -> Result<Vec<FabushiRemoteHumanReaction>, String> {
+        let message_id = required_trimmed(message_id, "message id")?;
+        if message_id
+            .parse::<u64>()
+            .ok()
+            .filter(|value| *value > 0)
+            .is_none()
+        {
+            return Err("Fabushi Human reaction requires a positive canonical message id".into());
+        }
+        let emoji = required_trimmed(emoji, "reaction emoji")?;
+        if emoji.as_bytes().len() > 32 {
+            return Err("Fabushi Human reaction emoji exceeds the backend limit".into());
+        }
+        let credentials = read_credentials(&self.credential_path)?;
+        let path = format!("/api/social/messages/{message_id}/reactions");
+        let response = self
+            .client
+            .post(self.endpoint(&path)?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .json(&ReactionRequest { emoji, active })
+            .send()
+            .map_err(|error| format!("Fabushi Human reaction mutation failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human reaction response could not be read: {error}"))?;
+        let envelope: ReactionEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human reaction response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human reaction mutation was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        let returned_id = envelope
+            .message_id
+            .as_ref()
+            .ok_or_else(|| "Fabushi Human reaction response omitted the message id.".to_string())
+            .and_then(fabushi_identity_text)?;
+        if returned_id != message_id {
+            return Err("Fabushi Human reaction backend returned a mismatched message id".into());
+        }
+        Ok(envelope.reactions)
     }
 
     pub fn list_friends(&self) -> Result<Vec<FabushiRemoteHumanContact>, String> {
