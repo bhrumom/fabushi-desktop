@@ -446,10 +446,10 @@ test("call media binding preserves native permission and desktopCapturer authori
 
 
 test("MAS packaging declares camera and microphone authority for Human calls", () => {
-  const entitlements = readFileSync(join(process.cwd(), "desktop/resources/mas/entitlements.mas.plist"), "utf8");
+  const entitlements = readFileSync(join(process.cwd(), "resources/mas/entitlements.mas.plist"), "utf8");
   assert.match(entitlements, /com\.apple\.security\.device\.microphone/);
   assert.match(entitlements, /com\.apple\.security\.device\.camera/);
-  const desktopPackage = JSON.parse(readFileSync(join(process.cwd(), "desktop/package.json"), "utf8")) as {
+  const desktopPackage = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as {
     build?: { mas?: { extendInfo?: Record<string, unknown> } };
   };
   const extendInfo = desktopPackage.build?.mas?.extendInfo ?? {};
