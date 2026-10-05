@@ -35,14 +35,12 @@ jobs:
     env:
       EXPECTED_SOURCE_SHA: ${{ inputs.source_sha }}
       PACKAGE_RUN_ID: ${{ inputs.package_run_id }}
-      PRIMARY_DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app
-      PEER_DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-peer
+      PRIMARY_DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app-a
+      PEER_DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app-b
       PRIMARY_DEVICE_NAME: Fabushi Formal Primary ${{ github.run_id }}/${{ github.run_attempt }}
       PEER_DEVICE_NAME: Fabushi Formal Peer ${{ github.run_id }}/${{ github.run_attempt }}
       FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
       FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
-      FABUSHI_CI_PEER_TEST_USERNAME: ${{ secrets.FABUSHI_CI_PEER_TEST_USERNAME }}
-      FABUSHI_CI_PEER_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_PEER_TEST_PASSWORD }}
 
     steps:
       - name: Validate requested exact-main source
@@ -240,9 +238,10 @@ jobs:
           set -euo pipefail
           test -n "$FABUSHI_CI_TEST_USERNAME"
           test -n "$FABUSHI_CI_TEST_PASSWORD"
-          test -n "$FABUSHI_CI_PEER_TEST_USERNAME" || { echo "::error::FABUSHI_CI_PEER_TEST_USERNAME is required."; exit 1; }
-          test -n "$FABUSHI_CI_PEER_TEST_PASSWORD" || { echo "::error::FABUSHI_CI_PEER_TEST_PASSWORD is required."; exit 1; }
-          test "$FABUSHI_CI_TEST_USERNAME" != "$FABUSHI_CI_PEER_TEST_USERNAME" || { echo "::error::Formal dual-device Human acceptance requires distinct accounts."; exit 1; }
+          peer_username="fabushi_mcp_ci_peer"
+          peer_password="$(node -e 'const c=require("node:crypto");process.stdout.write(c.createHmac("sha256",process.env.FABUSHI_CI_TEST_PASSWORD).update("fabushi-mcp-ci-peer-v1").digest("base64url"))')"
+          echo "::add-mask::$peer_password"
+          test "$FABUSHI_CI_TEST_USERNAME" != "$peer_username" || { echo "::error::Formal dual-device Human acceptance requires distinct accounts."; exit 1; }
 
           provision() {
             local username="$1" password="$2" device_id="$3" account_file="$4" app_file="$5"
@@ -260,8 +259,10 @@ jobs:
           }
 
           provision "$FABUSHI_CI_TEST_USERNAME" "$FABUSHI_CI_TEST_PASSWORD" "$PRIMARY_DEVICE_ID" "$PRIMARY_ACCOUNT_SESSION_FILE" "$PRIMARY_APP_SESSION_FILE"
-          provision "$FABUSHI_CI_PEER_TEST_USERNAME" "$FABUSHI_CI_PEER_TEST_PASSWORD" "$PEER_DEVICE_ID" "$PEER_ACCOUNT_SESSION_FILE" "$PEER_APP_SESSION_FILE"
-          jq -e --arg primary "$FABUSHI_CI_TEST_USERNAME" --arg peer "$FABUSHI_CI_PEER_TEST_USERNAME"             '($primary|length)>0 and ($peer|length)>0 and $primary != $peer' <<< '{}' >/dev/null
+          provision "$peer_username" "$peer_password" "$PEER_DEVICE_ID" "$PEER_ACCOUNT_SESSION_FILE" "$PEER_APP_SESSION_FILE"
+          jq -e --arg primary "$FABUSHI_CI_TEST_USERNAME" --arg peer "$peer_username"             '($primary|length)>0 and ($peer|length)>0 and $primary != $peer' <<< '{}' >/dev/null
+          unset peer_password
+          echo "FABUSHI_CI_PEER_TEST_USERNAME=$peer_username" >> "$GITHUB_ENV"
           echo 'Two distinct refresh-token-free bounded production sessions are ready.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Require the bounded production accounts to already be Human peers
