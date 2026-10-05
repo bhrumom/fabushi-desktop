@@ -377,6 +377,11 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
         }),
         "searchHumanMessages" => required_string(args, "conversationId").and_then(|conversation_id| {
             required_string(args, "query").and_then(|query| {
+                if query.trim().is_empty() {
+                    return Err(SessionGatewayError::bad(
+                        "searchHumanMessages requires a non-empty query",
+                    ));
+                }
                 let limit = args
                     .get("limit")
                     .and_then(Value::as_u64)
