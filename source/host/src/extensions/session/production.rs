@@ -345,6 +345,11 @@ impl ProductionSessionWorkers {
             .local_human_id
             .as_deref()
             .ok_or_else(|| "CallSession creation requires an authenticated Human identity".to_string())?;
+        // Phase-1 CallSession is scoped to the existing canonical Human
+        // conversation owner. This access check prevents a call from becoming
+        // a second peer/room namespace; Shared Room call scopes can be added
+        // through their existing owner when that native path is implemented.
+        self.read_human_conversation_transcript(scope_id)?;
         self.call_sessions()?.create(scope_id, creator_id, participant_ids)
     }
 
