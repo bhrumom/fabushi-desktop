@@ -762,6 +762,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
             aria-labelledby={`${ids.author} ${ids.timestamp}`}
             className="sand-virtual-transcript__row sand-transcript-row"
             data-entry-id={entry.id}
+            data-delivery={entry.delivery ?? "sent"}
             data-failed={failed || undefined}
             data-index={index}
             data-pending={pending || undefined}

@@ -539,7 +539,11 @@ test('Mahayana renders one Hermes-style assistant turn after a Human conversatio
     await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
     await prompt.pressSequentially(humanMessage);
     await page.getByRole('button', { name: 'Send message' }).click();
-    await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible({ timeout: 10_000 });
+    const durableHumanTurn = page.getByRole('article').filter({ hasText: humanMessage }).last();
+    await expect(durableHumanTurn).toBeVisible({ timeout: 10_000 });
+    // The optimistic bubble is not the durability boundary. Wait for the same
+    // row to settle from pending to Host-accepted before terminating the app.
+    await expect(durableHumanTurn).toHaveAttribute('data-delivery', 'sent', { timeout: 15_000 });
 
     const roster = page.getByRole('region', { name: 'Agent list' });
     await expect(roster.getByRole('button', { name: 'Human Alice', exact: true })).toBeVisible();
