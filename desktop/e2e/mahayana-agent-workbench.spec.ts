@@ -959,7 +959,52 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
     await expect(settings.getByText('Downloads', { exact: true })).toBeVisible();
     await expect(settings.getByText('Shortcuts', { exact: true })).toBeVisible();
     await expect(settings.getByText('Advanced', { exact: true })).toBeVisible();
+    await expect(settings.getByText(/canonical app-profile and Host stores/u)).toBeVisible();
+    await expect(settings.getByText(/native Save As dialog/u)).toBeVisible();
+    await expect(settings.getByText(/fixed by the Electron owner/u)).toBeVisible();
+    await expect(settings.getByText(/Fabushi account policy/u)).toBeVisible();
 
+    const theme = settings.getByRole('button', { name: 'Theme' });
+    await theme.focus();
+    await page.keyboard.press('Enter');
+    const darkThemeOption = page.getByRole('option', { name: 'Dark', exact: true });
+    await darkThemeOption.focus();
+    await page.keyboard.press('Enter');
+    await expect(theme).toContainText('Dark');
+    await expect.poll(() => page.evaluate(async () => {
+      const candidate = window as unknown as { desktop: { theme: { get(): Promise<{ preference: string; resolved: string }> } } };
+      return candidate.desktop.theme.get();
+    })).toEqual({ preference: 'dark', resolved: 'dark' });
+
+    await expect(settings.getByRole('button', { name: 'Timezone' })).toBeVisible();
+    const localExecution = settings.getByRole('button', { name: 'Execution on Local Computer' });
+    await localExecution.focus();
+    await page.keyboard.press('Enter');
+    const neverAllow = page.getByRole('option', { name: 'Never allow', exact: true });
+    await neverAllow.focus();
+    await page.keyboard.press('Enter');
+    await expect(localExecution).toContainText('Never allow');
+
+    await settings.getByRole('button', { name: 'Updates', exact: true }).click();
+    await expect(settings.getByRole('heading', { name: 'Updates', exact: true })).toBeVisible();
+    const updateState = await page.evaluate(async () => {
+      const candidate = window as unknown as {
+        desktop: {
+          update: {
+            getStatus(): Promise<{ currentVersion: string; currentTrack: string; state: { type: string } }>;
+          };
+        };
+      };
+      const status = await candidate.desktop.update.getStatus();
+      return { currentVersion: status.currentVersion, currentTrack: status.currentTrack, stateType: status.state.type };
+    });
+    expect(updateState.currentVersion.length).toBeGreaterThan(0);
+    expect(['stable', 'nightly', 'dogfood']).toContain(updateState.currentTrack);
+    expect(['disabled', 'idle', 'checking', 'available', 'downloading', 'staging', 'ready']).toContain(updateState.stateType);
+    await expect(settings.getByText(`Grok Bot ${updateState.currentVersion}`, { exact: true })).toBeVisible();
+    await expect(settings.locator('output[aria-live="polite"]')).toBeVisible();
+
+    await settings.getByRole('button', { name: 'General', exact: true }).click();
     const language = settings.getByRole('button', { name: 'Language' });
     await language.focus();
     await page.keyboard.press('Enter');
