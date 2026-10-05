@@ -1613,6 +1613,100 @@ fn fixture_request_json(request: &str) -> serde_json::Value {
         .unwrap_or(serde_json::Value::Null)
 }
 
+fn spawn_call_ice_server() -> (String, thread::JoinHandle<String>) {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind ICE fixture");
+    let address = listener.local_addr().expect("ICE fixture address");
+    let handle = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().expect("accept ICE request");
+        let request = read_fixture_http_request(&mut stream);
+        let body = json!({
+            "success": true,
+            "iceServers": [
+                {"urls": ["stun:stun.cloudflare.com:3478"]},
+                {
+                    "urls": [
+                        "turn:turn.cloudflare.com:3478?transport=udp",
+                        "turns:turn.cloudflare.com:443?transport=tcp"
+                    ],
+                    "username": "temporary-user",
+                    "credential": "temporary-credential"
+                }
+            ],
+            "ttlSeconds": 3600
+        }).to_string();
+        write!(
+            stream,
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            body.len(),
+            body
+        ).expect("write ICE response");
+        stream.flush().expect("flush ICE response");
+        request
+    });
+    (format!("http://{address}"), handle)
+}
+
+#[test]
+fn shipping_call_ice_credentials_remain_host_owned_and_device_scoped() {
+    let root = temp_root("shipping-call-ice");
+    let agents = root.join("agents");
+    fs::create_dir_all(&root).expect("fixture root");
+    let credential_path = root.join("host-credential.json");
+    fs::write(
+        &credential_path,
+        r#"{"accessToken":"fixture-token","deviceId":"device-a","userId":1}"#,
+    ).expect("credential");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(&credential_path)
+            .expect("credential metadata")
+            .permissions();
+        permissions.set_mode(0o600);
+        fs::set_permissions(&credential_path, permissions).expect("private credential");
+    }
+
+    let (base_url, server) = spawn_call_ice_server();
+    let client = Arc::new(
+        FabushiNativeMessagingClient::new(&base_url, &credential_path)
+            .expect("shipping call ICE client"),
+    );
+    let memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+            agents.clone(),
+        ),
+    );
+    let runtime = Arc::new(
+        ProductionSessionWorkers::with_agents_root_identity_messaging_and_dependencies(
+            &agents,
+            500,
+            Some("1".into()),
+            Some(client),
+            true,
+            None,
+            Arc::new(|| None),
+            memory,
+        ),
+    );
+
+    let ice = dispatch(&runtime, "getCallIceServers", json!({}));
+    assert_eq!(ice["ttlSeconds"], 3600);
+    assert_eq!(ice["iceServers"].as_array().map(Vec::len), Some(2));
+    assert_eq!(
+        ice["iceServers"][1]["urls"][1],
+        "turns:turn.cloudflare.com:443?transport=tcp"
+    );
+
+    let request = server.join().expect("ICE fixture");
+    let request_lower = request.to_ascii_lowercase();
+    assert!(request.starts_with("GET /api/social/calls/ice "));
+    assert!(request_lower.contains("authorization: bearer fixture-token"));
+    assert!(request_lower.contains("x-fabushi-device-id: device-a"));
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
 fn spawn_remote_call_server(expected_requests: usize) -> (String, thread::JoinHandle<Vec<String>>) {
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind call fixture");
     let address = listener.local_addr().expect("call fixture address");

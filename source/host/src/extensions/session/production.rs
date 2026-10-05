@@ -554,6 +554,22 @@ impl ProductionSessionWorkers {
         }))
     }
 
+    pub fn call_ice_servers(&self) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?.to_string();
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "shipping Human call media transport requires native messaging".to_string())?;
+        let identity = client.identity()?;
+        if identity.user_id != local_human_id {
+            return Err("Fabushi call credential identity does not match active Human identity".into());
+        }
+        let (ice_servers, ttl_seconds) = client.get_human_call_ice_servers()?;
+        Ok(serde_json::json!({
+            "iceServers": ice_servers,
+            "ttlSeconds": ttl_seconds,
+        }))
+    }
+
     pub fn sync_human_calls(&self) -> Result<Vec<CallSession>, String> {
         let Some(client) = self.shipping_native_messaging()? else {
             return Ok(Vec::new());

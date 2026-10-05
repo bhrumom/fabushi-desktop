@@ -420,6 +420,9 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
         "getCallTransportIdentity" => session
             .call_transport_identity()
             .map_err(SessionGatewayError::internal),
+        "getCallIceServers" => session
+            .call_ice_servers()
+            .map_err(SessionGatewayError::internal),
         "syncHumanCalls" => session
             .sync_human_calls()
             .and_then(|calls| serde_json::to_value(calls).map_err(|error| error.to_string()))

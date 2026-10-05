@@ -210,6 +210,45 @@ struct CallEnvelope {
     error: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FabushiCallIceServer {
+    pub urls: Value,
+    pub username: Option<String>,
+    pub credential: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CallIceEnvelope {
+    success: bool,
+    #[serde(default)]
+    ice_servers: Vec<FabushiCallIceServer>,
+    ttl_seconds: Option<u64>,
+    error: Option<String>,
+}
+
+fn valid_call_ice_urls(value: &Value) -> bool {
+    let valid = |url: &str| {
+        let trimmed = url.trim();
+        !trimmed.is_empty()
+            && trimmed.len() <= 1024
+            && !trimmed.chars().any(char::is_whitespace)
+            && (trimmed.starts_with("stun:")
+                || trimmed.starts_with("turn:")
+                || trimmed.starts_with("turns:"))
+    };
+    match value {
+        Value::String(url) => valid(url),
+        Value::Array(urls) => {
+            !urls.is_empty()
+                && urls.len() <= 16
+                && urls.iter().all(|url| url.as_str().is_some_and(valid))
+        }
+        _ => false,
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct FabushiNativeMessagingClient {
     base_url: Url,
@@ -568,6 +607,56 @@ impl FabushiNativeMessagingClient {
             ));
         }
         Ok(envelope.data.map(|data| data.messages).unwrap_or_default())
+    }
+
+    pub fn get_human_call_ice_servers(
+        &self,
+    ) -> Result<(Vec<FabushiCallIceServer>, u64), String> {
+        let credentials = read_credentials(&self.credential_path)?;
+        let response = self
+            .client
+            .get(self.endpoint("/api/social/calls/ice")?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .send()
+            .map_err(|error| format!("Fabushi Human call ICE credential request failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human call ICE response could not be read: {error}"))?;
+        let envelope: CallIceEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human call ICE response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human call ICE credentials were rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        let ttl_seconds = envelope
+            .ttl_seconds
+            .filter(|ttl| (300..=86_400).contains(ttl))
+            .ok_or_else(|| "Fabushi Human call ICE response contained an invalid TTL".to_string())?;
+        if envelope.ice_servers.is_empty() || envelope.ice_servers.len() > 16 {
+            return Err("Fabushi Human call ICE response contained an invalid server list".into());
+        }
+        for server in &envelope.ice_servers {
+            if !valid_call_ice_urls(&server.urls)
+                || server.username.as_deref().is_some_and(|value| value.len() > 2048)
+                || server.credential.as_deref().is_some_and(|value| value.len() > 2048)
+            {
+                return Err("Fabushi Human call ICE response contained an invalid server".into());
+            }
+        }
+        Ok((envelope.ice_servers, ttl_seconds))
     }
 
     pub fn list_human_calls(&self, limit: usize) -> Result<Vec<FabushiRemoteHumanCall>, String> {
