@@ -106,7 +106,7 @@ function issueE2eLoginDeviceId(): string {
 }
 
 function isE2eSocialDeviceId(value: unknown): value is string {
-  if (typeof value !== 'string' || !/^fabushi-e2e-device(?:-\\d+)?$/u.test(value)) return false;
+  if (typeof value !== 'string' || !/^fabushi-e2e-device(?:-\d+)?$/u.test(value)) return false;
   e2eObservedSocialDeviceIds.add(value);
   return true;
 }
