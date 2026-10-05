@@ -1400,6 +1400,9 @@ impl ProductionSessionWorkers {
         &self,
         conversation_id: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
+        const PAGE_LIMIT: usize = 200;
+        const MAX_GAP_PAGES: usize = 32;
+
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         if !self.metadata_has_local_human(&metadata)? {
@@ -1409,8 +1412,79 @@ impl ProductionSessionWorkers {
             return owner.get_transcript_entries().map_err(|error| error.to_string());
         };
         let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
-        for remote in client.list_direct_messages(&peer_human_id, None, 200)? {
-            self.materialize_remote_human_message(&owner, &remote)?;
+        let existing = owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        let known_remote_ids = existing
+            .iter()
+            .filter_map(|entry| entry.get("remoteMessageId").and_then(serde_json::Value::as_str))
+            .map(str::to_string)
+            .collect::<BTreeSet<_>>();
+
+        // The shipping endpoint is newest-first. Walk bounded older pages until
+        // one known server message proves overlap, or the server reaches the end
+        // of history. This closes reconnect and fresh-device gaps without
+        // introducing a second message store or treating renderer state as truth.
+        let mut before: Option<String> = None;
+        let mut unseen_pages: Vec<Vec<FabushiRemoteHumanMessage>> = Vec::new();
+        let mut pages_read = 0usize;
+        loop {
+            let page = client.list_direct_messages(
+                &peer_human_id,
+                before.as_deref(),
+                PAGE_LIMIT,
+            )?;
+            if page.is_empty() {
+                break;
+            }
+            pages_read += 1;
+
+            let mut overlap_at = None;
+            for (index, remote) in page.iter().enumerate() {
+                let remote_id = fabushi_identity_text(&remote.id)?;
+                if known_remote_ids.contains(&remote_id) {
+                    overlap_at = Some(index);
+                    break;
+                }
+            }
+            let unseen_end = overlap_at.unwrap_or(page.len());
+            if unseen_end > 0 {
+                unseen_pages.push(page[..unseen_end].to_vec());
+            }
+
+            if overlap_at.is_some() || page.len() < PAGE_LIMIT {
+                break;
+            }
+            if pages_read >= MAX_GAP_PAGES {
+                return Err(format!(
+                    "Fabushi Human message reconnect gap exceeded the bounded recovery window of {} messages",
+                    PAGE_LIMIT * MAX_GAP_PAGES
+                ));
+            }
+
+            let next_before = page
+                .last()
+                .map(|message| message.created_at.trim())
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| {
+                    "Fabushi Human message sync page omitted its oldest timestamp".to_string()
+                })?
+                .to_string();
+            if before.as_deref() == Some(next_before.as_str()) {
+                return Err(
+                    "Fabushi Human message sync cursor did not advance; refusing an unbounded retry"
+                        .into(),
+                );
+            }
+            before = Some(next_before);
+        }
+
+        // Pages and rows arrive newest-first. Persist unseen rows oldest-first so
+        // canonical Session/Transcript replay remains deterministic after restart.
+        for page in unseen_pages.into_iter().rev() {
+            for remote in page.into_iter().rev() {
+                self.materialize_remote_human_message(&owner, &remote)?;
+            }
         }
         owner.get_transcript_entries().map_err(|error| error.to_string())
     }

@@ -2367,6 +2367,41 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       humanConversationsRef.current = projectedHumans;
       setHumanConversations(projectedHumans);
       reconcileCompleteRosterSelection(projectedConversations);
+
+      // syncHumanConversations has already converged the Host-owned durable
+      // transcripts. If the user is looking at a Human conversation that was
+      // loaded before this reconnect, refresh that projection from the same
+      // Session/Transcript owner instead of leaving the renderer stale until a
+      // manual reopen. Reconciliation preserves queued/optimistic local entries.
+      const activeHumanId = activeAgentIdRef.current;
+      const activeHuman = projectedHumans.find((conversation) => conversation.id === activeHumanId);
+      if (activeHuman != null && entriesByAgentRef.current[activeHumanId] != null) {
+        try {
+          const transcriptValue = await client.call("getHumanConversationTranscript", {
+            conversationId: activeHumanId
+          });
+          if (isCurrent() && activeAgentIdRef.current === activeHumanId) {
+            const projectedEntries = projectHumanConversationTranscript(
+              transcriptValue,
+              activeHuman.name,
+              activeHumanId
+            );
+            setEntriesByAgent((current) => ({
+              ...current,
+              [activeHumanId]: reconcileAuthoritativeTranscriptBaseline(
+                current[activeHumanId] ?? [],
+                projectedEntries
+              )
+            }));
+          }
+        } catch (error) {
+          if (isCurrent()) {
+            setNotice(error instanceof Error
+              ? `Human transcript refresh unavailable: ${error.message}`
+              : `Human transcript refresh unavailable: ${String(error)}`);
+          }
+        }
+      }
       setHasLoadedAgents(true);
     } catch (error) {
       if (!isCurrent()) return;

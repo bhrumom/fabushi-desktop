@@ -1,5 +1,8 @@
 use std::fs;
+use std::io::{Read, Write};
+use std::net::TcpListener;
 use std::sync::Arc;
+use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
@@ -7,6 +10,7 @@ use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
     persist_accepted_send_prompt,
 };
+use mahayana_host_runtime::extensions::session::native_messaging::FabushiNativeMessagingClient;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use serde_json::json;
 
@@ -29,6 +33,72 @@ fn dispatch(
     dispatch_production_session_gateway_call(runtime, method, &args)
         .expect("handled method")
         .expect("successful method")
+}
+
+
+fn spawn_remote_history_server() -> (String, thread::JoinHandle<Vec<String>>) {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind messaging fixture");
+    let address = listener.local_addr().expect("fixture address");
+    let handle = thread::spawn(move || {
+        let mut requests = Vec::new();
+        for page_index in 0..3 {
+            let (mut stream, _) = listener.accept().expect("accept messaging request");
+            let mut request = Vec::new();
+            let mut chunk = [0_u8; 4096];
+            loop {
+                let read = stream.read(&mut chunk).expect("read messaging request");
+                if read == 0 {
+                    break;
+                }
+                request.extend_from_slice(&chunk[..read]);
+                if request.windows(4).any(|window| window == b"\r\n\r\n") {
+                    break;
+                }
+            }
+            requests.push(String::from_utf8_lossy(&request).into_owned());
+
+            let (low, high) = match page_index {
+                0 => (202_u64, 401_u64),
+                1 => (2_u64, 201_u64),
+                2 => (1_u64, 1_u64),
+                _ => unreachable!(),
+            };
+            let messages = (low..=high)
+                .rev()
+                .map(|id| {
+                    let minute = id / 60;
+                    let second = id % 60;
+                    json!({
+                        "id": id,
+                        "senderUserId": 2,
+                        "senderUsername": "peer",
+                        "recipientUserId": 1,
+                        "recipientUsername": "local",
+                        "text": format!("remote-{id}"),
+                        "clientRequestId": serde_json::Value::Null,
+                        "createdAt": format!("1970-01-01T00:{minute:02}:{second:02}Z"),
+                        "readAt": serde_json::Value::Null,
+                        "isOutgoing": false
+                    })
+                })
+                .collect::<Vec<_>>();
+            let body = json!({
+                "success": true,
+                "data": { "messages": messages }
+            })
+            .to_string();
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            )
+            .expect("write messaging response");
+            stream.flush().expect("flush messaging response");
+        }
+        requests
+    });
+    (format!("http://{address}"), handle)
 }
 
 #[test]
@@ -837,3 +907,95 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     restarted.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap() {
+    let root = temp_root("human-multi-device-gap");
+    let agents = root.join("agents");
+    fs::create_dir_all(&root).expect("fixture root");
+    let credential_path = root.join("host-credential.json");
+    fs::write(
+        &credential_path,
+        r#"{"accessToken":"fixture-token","deviceId":"device-a","userId":1}"#,
+    )
+    .expect("credential");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(&credential_path)
+            .expect("credential metadata")
+            .permissions();
+        permissions.set_mode(0o600);
+        fs::set_permissions(&credential_path, permissions).expect("private credential");
+    }
+
+    let (base_url, server) = spawn_remote_history_server();
+    let client = Arc::new(
+        FabushiNativeMessagingClient::new(&base_url, &credential_path)
+            .expect("shipping messaging client"),
+    );
+    let memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+            agents.clone(),
+        ),
+    );
+    let runtime = Arc::new(
+        ProductionSessionWorkers::with_agents_root_identity_messaging_and_dependencies(
+            &agents,
+            500,
+            Some("1".into()),
+            Some(client),
+            true,
+            None,
+            Arc::new(|| None),
+            memory,
+        ),
+    );
+    let created = runtime
+        .create_human_conversation("2", "Peer")
+        .expect("Human conversation");
+    let conversation_id = created["id"]
+        .as_str()
+        .expect("conversation id")
+        .to_string();
+    let owner = runtime
+        .open_human_conversation_db_owner(&conversation_id)
+        .expect("conversation owner");
+    let anchor = json!({
+        "id": "human-server-message:1",
+        "kind": "message",
+        "role": "user",
+        "authorKind": "human",
+        "authorId": "2",
+        "content": "remote-1",
+        "timestampMs": 1000.0,
+        "delivery": "sent",
+        "remoteMessageId": "1",
+        "remoteCreatedAt": "1970-01-01T00:00:01Z"
+    });
+    assert!(owner.append_transcript_entry(&anchor).expect("anchor"));
+
+    let transcript = runtime
+        .sync_human_conversation(&conversation_id)
+        .expect("bounded reconnect recovery");
+    assert_eq!(transcript.len(), 401);
+    assert_eq!(transcript[0]["id"], "human-server-message:1");
+    assert_eq!(transcript[1]["id"], "human-server-message:2");
+    assert_eq!(transcript[400]["id"], "human-server-message:401");
+    assert_eq!(
+        owner
+            .get_metadata("lastActivityAt")
+            .expect("last activity"),
+        Some(json!(401000.0))
+    );
+
+    let requests = server.join().expect("messaging fixture");
+    assert_eq!(requests.len(), 3);
+    assert!(requests[0].starts_with("GET /api/social/messages?contactId=2&limit=200 "));
+    assert!(requests[1].contains("&before="));
+    assert!(requests[2].contains("&before="));
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
