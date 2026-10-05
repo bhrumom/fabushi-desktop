@@ -834,6 +834,104 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
   }
 });
 
+test('Settings accessibility and locale preferences persist through the shipping desktop bridge', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-settings-a11y-i18n-'));
+  let app: ElectronApplication | null = null;
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await page.getByRole('button', { name: 'Account', exact: true }).click();
+    await page.getByText('Settings', { exact: true }).click();
+    const settings = page.getByRole('dialog', { name: 'Grok Bot settings' });
+    await expect(settings).toBeVisible();
+    await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
+    await expect(settings.getByText('Language & Accessibility', { exact: true })).toBeVisible();
+    await expect(settings.getByRole('button', { name: 'Language' })).toBeVisible();
+    await expect(settings.getByRole('button', { name: 'Reading direction' })).toBeVisible();
+    await expect(settings.getByRole('button', { name: 'Text size' })).toBeVisible();
+    await expect(settings.getByRole('switch', { name: /Reduce motion/u })).toBeVisible();
+    await expect(settings.getByRole('switch', { name: /High contrast controls/u })).toBeVisible();
+    await expect(settings.getByRole('button', { name: 'Close', exact: true })).toBeVisible();
+
+    const stored = await page.evaluate(async () => {
+      const candidate = window as unknown as {
+        desktop: {
+          uiPreferences: {
+            set(input: {
+              locale: string;
+              direction: 'auto' | 'ltr' | 'rtl';
+              reducedMotion: boolean;
+              highContrast: boolean;
+              textScale: number;
+            }): Promise<{
+              locale: string;
+              direction: 'auto' | 'ltr' | 'rtl';
+              reducedMotion: boolean;
+              highContrast: boolean;
+              textScale: number;
+            }>;
+          };
+        };
+      };
+      return await candidate.desktop.uiPreferences.set({
+        locale: 'ar',
+        direction: 'rtl',
+        reducedMotion: true,
+        highContrast: true,
+        textScale: 1.25,
+      });
+    });
+    expect(stored).toEqual({
+      locale: 'ar',
+      direction: 'rtl',
+      reducedMotion: true,
+      highContrast: true,
+      textScale: 1.25,
+    });
+
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await expect.poll(() => page.evaluate(() => ({
+      lang: document.documentElement.lang,
+      dir: document.documentElement.dir,
+      reducedMotion: document.documentElement.dataset.sandReducedMotion,
+      highContrast: document.documentElement.dataset.sandHighContrast,
+      textScale: document.documentElement.style.getPropertyValue('--sand-ui-text-scale'),
+    }))).toEqual({
+      lang: 'ar',
+      dir: 'rtl',
+      reducedMotion: 'true',
+      highContrast: 'true',
+      textScale: '1.25',
+    });
+
+    await openMahayanaConversation(page);
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    const mixedDirectionDraft = '漢字🙂 العربية Fabushi';
+    await prompt.pressSequentially(mixedDirectionDraft);
+    await expect(prompt).toContainText(mixedDirectionDraft);
+
+    await page.getByRole('button', { name: 'Account', exact: true }).click();
+    await page.getByText('Settings', { exact: true }).click();
+    const restoredSettings = page.getByRole('dialog', { name: 'Grok Bot settings' });
+    await expect(restoredSettings).toBeVisible();
+    await restoredSettings.getByRole('button', { name: 'Close', exact: true }).focus();
+    await expect(restoredSettings.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(restoredSettings).toBeHidden();
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
 test('Human call surface exposes the shipping WebRTC and Electron media bridge', async () => {
   e2eHumanMessages = [];
   e2eHumanMessageSequence = 1;
