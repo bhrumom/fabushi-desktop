@@ -401,7 +401,7 @@ jobs:
             request_body="$(jq -cn --arg target "$FABUSHI_CI_PEER_TEST_USERNAME" '{targetUserId:$target,message:"signed packaged Phase 1 acceptance"}')"
             curl --fail --silent --show-error -H "authorization: Bearer $primary_token" -H 'content-type: application/json' --data "$request_body" "$FABUSHI_API_BASE_URL/api/social/friend-requests" >/dev/null
             incoming="$(curl --fail --silent --show-error -H "authorization: Bearer $peer_token" "$FABUSHI_API_BASE_URL/api/social/friend-requests/incoming")"
-            request_id="$(jq -r --arg primary "$FABUSHI_CI_TEST_USERNAME" '.data.requests[]? | select((.username // .senderUsername // .sender_user_name // "") == $primary) | .requestId // .id' <<<"$incoming" | head -n 1)"
+            request_id="$(jq -r --arg primary "$FABUSHI_CI_TEST_USERNAME" '.data.requests[]? | select((.fromUser.username // .fromUser.id | tostring) == $primary) | .requestId // .id' <<<"$incoming" | head -n 1)"
             test -n "$request_id" || { echo "::error::Production peer account did not receive the friendship request."; exit 1; }
             curl --fail --silent --show-error -X POST -H "authorization: Bearer $peer_token" "$FABUSHI_API_BASE_URL/api/social/friend-requests/$request_id/accept" >/dev/null
           fi
