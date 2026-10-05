@@ -806,11 +806,11 @@ test.describe('signed candidate packaged acceptance', () => {
       await expect(page.getByRole('heading', { name: 'Org chart', exact: true })).toHaveCount(0);
 
       await openAgent(page, 'Research');
-      const researchPrompt = 'Two-Agent isolation acceptance for Research. Reply briefly and include marker FABUSHI-RESEARCH-ONLY-7421.';
+      const researchPrompt = 'Two-Agent isolation acceptance for Research. Your entire final answer must be exactly FABUSHI-RESEARCH-ONLY-7421. Copy those characters verbatim; do not explain, describe, quote, or paraphrase the marker.';
       const researchAssistantCount = await submitTurn(page, researchPrompt);
 
       await openAgent(page, 'Builder');
-      const builderPrompt = 'Two-Agent isolation acceptance for Builder. Reply briefly and include marker FABUSHI-BUILDER-ONLY-5937.';
+      const builderPrompt = 'Two-Agent isolation acceptance for Builder. Your entire final answer must be exactly FABUSHI-BUILDER-ONLY-5937. Copy those characters verbatim; do not explain, describe, quote, or paraphrase the marker.';
       const builderAssistantCount = await submitTurn(page, builderPrompt);
 
       await openAgent(page, 'Research');
