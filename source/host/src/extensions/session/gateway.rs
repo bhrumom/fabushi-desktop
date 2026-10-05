@@ -417,6 +417,93 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     .map_err(SessionGatewayError::internal)
             })
         }),
+        "createCallSession" => required_string(args, "scopeId").and_then(|scope_id| {
+            let participant_ids = required_string_array(args, "participantIds")?;
+            session
+                .create_call_session(scope_id, &participant_ids)
+                .and_then(|call| serde_json::to_value(call).map_err(|error| error.to_string()))
+                .map_err(SessionGatewayError::internal)
+        }),
+        "getCallSession" => required_string(args, "callId").and_then(|call_id| {
+            session
+                .get_call_session(call_id)
+                .and_then(|call| serde_json::to_value(call).map_err(|error| error.to_string()))
+                .map_err(SessionGatewayError::internal)
+        }),
+        "listCallSessions" => required_string(args, "scopeId").and_then(|scope_id| {
+            let limit = args
+                .get("limit")
+                .and_then(Value::as_u64)
+                .and_then(|value| usize::try_from(value).ok())
+                .unwrap_or(50);
+            session
+                .list_call_sessions(scope_id, limit)
+                .and_then(|calls| serde_json::to_value(calls).map_err(|error| error.to_string()))
+                .map_err(SessionGatewayError::internal)
+        }),
+        "transitionCallSession" => required_string(args, "callId").and_then(|call_id| {
+            required_u64(args, "generation").and_then(|generation| {
+                required_string(args, "action").and_then(|action| {
+                    session
+                        .transition_call_session(
+                            call_id,
+                            generation,
+                            action,
+                            optional_string(args, "terminalReason")?,
+                        )
+                        .and_then(|call| serde_json::to_value(call).map_err(|error| error.to_string()))
+                        .map_err(SessionGatewayError::internal)
+                })
+            })
+        }),
+        "updateCallMedia" => required_string(args, "callId").and_then(|call_id| {
+            required_u64(args, "generation").and_then(|generation| {
+                let capabilities = args.get("mediaCapabilities").filter(|value| !value.is_null());
+                let devices = args.get("deviceSelection").filter(|value| !value.is_null());
+                session
+                    .update_call_media(call_id, generation, capabilities, devices)
+                    .and_then(|call| serde_json::to_value(call).map_err(|error| error.to_string()))
+                    .map_err(SessionGatewayError::internal)
+            })
+        }),
+        "sendCallSignal" => required_string(args, "callId").and_then(|call_id| {
+            required_u64(args, "generation").and_then(|generation| {
+                required_u64(args, "seq").and_then(|seq| {
+                    required_string(args, "senderDeviceId").and_then(|sender_device_id| {
+                        required_string(args, "kind").and_then(|kind| {
+                            let payload = args.get("payload").ok_or_else(|| {
+                                SessionGatewayError::bad("missing required field: payload")
+                            })?;
+                            session
+                                .append_call_signal(
+                                    call_id,
+                                    generation,
+                                    seq,
+                                    sender_device_id,
+                                    kind,
+                                    payload,
+                                )
+                                .and_then(|signal| serde_json::to_value(signal).map_err(|error| error.to_string()))
+                                .map_err(SessionGatewayError::internal)
+                        })
+                    })
+                })
+            })
+        }),
+        "listCallSignals" => required_string(args, "callId").and_then(|call_id| {
+            required_u64(args, "generation").and_then(|generation| {
+                let after_seq = args.get("afterSeq").and_then(Value::as_u64).unwrap_or(0);
+                let limit = args
+                    .get("limit")
+                    .and_then(Value::as_u64)
+                    .and_then(|value| usize::try_from(value).ok())
+                    .unwrap_or(100);
+                session
+                    .list_call_signals(call_id, generation, after_seq, limit)
+                    .and_then(|signals| serde_json::to_value(signals).map_err(|error| error.to_string()))
+                    .map_err(SessionGatewayError::internal)
+            })
+        }),
         "createGroup" => {
             required_string(args, "name").and_then(|name| {
                 let description = optional_string(args, "description")?.unwrap_or_default();
@@ -756,6 +843,12 @@ fn required_bool(args: &Value, field: &str) -> Result<bool, SessionGatewayError>
     args.get(field)
         .and_then(Value::as_bool)
         .ok_or_else(|| SessionGatewayError::bad(format!("missing or invalid {field}")))
+}
+
+fn required_u64(args: &Value, field: &str) -> Result<u64, SessionGatewayError> {
+    args.get(field)
+        .and_then(Value::as_u64)
+        .ok_or_else(|| SessionGatewayError::bad(format!("missing or invalid required field: {field}")))
 }
 
 fn optional_f64(args: &Value, field: &str) -> Option<f64> {
