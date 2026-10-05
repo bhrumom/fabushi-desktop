@@ -539,6 +539,21 @@ impl ProductionSessionWorkers {
         Err("remote Human call sync exceeded the bounded replay window".into())
     }
 
+    pub fn call_transport_identity(&self) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?.to_string();
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "shipping Human call transport requires native messaging".to_string())?;
+        let identity = client.identity()?;
+        if identity.user_id != local_human_id {
+            return Err("Fabushi call credential identity does not match active Human identity".into());
+        }
+        Ok(serde_json::json!({
+            "userId": identity.user_id,
+            "deviceId": identity.device_id,
+        }))
+    }
+
     pub fn sync_human_calls(&self) -> Result<Vec<CallSession>, String> {
         let Some(client) = self.shipping_native_messaging()? else {
             return Ok(Vec::new());
