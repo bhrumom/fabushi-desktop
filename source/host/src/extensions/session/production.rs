@@ -353,8 +353,27 @@ impl ProductionSessionWorkers {
         self.call_sessions()?.create(scope_id, creator_id, participant_ids)
     }
 
+    fn authorized_call_session(&self, call_id: &str) -> Result<CallSession, String> {
+        let local_human_id = self
+            .local_human_id
+            .as_deref()
+            .ok_or_else(|| "CallSession access requires an authenticated Human identity".to_string())?;
+        let call = self
+            .call_sessions()?
+            .get(call_id)?
+            .ok_or_else(|| "call session not found".to_string())?;
+        if !call.participant_ids.iter().any(|participant| participant == local_human_id) {
+            return Err("call session does not belong to the authenticated Human identity".into());
+        }
+        Ok(call)
+    }
+
     pub fn get_call_session(&self, call_id: &str) -> Result<Option<CallSession>, String> {
-        self.call_sessions()?.get(call_id)
+        match self.authorized_call_session(call_id) {
+            Ok(call) => Ok(Some(call)),
+            Err(error) if error == "call session not found" => Ok(None),
+            Err(error) => Err(error),
+        }
     }
 
     pub fn list_call_sessions(
@@ -362,7 +381,17 @@ impl ProductionSessionWorkers {
         scope_id: &str,
         limit: usize,
     ) -> Result<Vec<CallSession>, String> {
-        self.call_sessions()?.list_for_scope(scope_id, limit)
+        let local_human_id = self
+            .local_human_id
+            .as_deref()
+            .ok_or_else(|| "CallSession access requires an authenticated Human identity".to_string())?;
+        self.read_human_conversation_transcript(scope_id)?;
+        Ok(self
+            .call_sessions()?
+            .list_for_scope(scope_id, limit)?
+            .into_iter()
+            .filter(|call| call.participant_ids.iter().any(|participant| participant == local_human_id))
+            .collect())
     }
 
     pub fn transition_call_session(
@@ -372,6 +401,7 @@ impl ProductionSessionWorkers {
         action: &str,
         terminal_reason: Option<&str>,
     ) -> Result<CallSession, String> {
+        self.authorized_call_session(call_id)?;
         self.call_sessions()?
             .transition(call_id, expected_generation, action, terminal_reason)
     }
@@ -383,6 +413,7 @@ impl ProductionSessionWorkers {
         media_capabilities: Option<&serde_json::Value>,
         device_selection: Option<&serde_json::Value>,
     ) -> Result<CallSession, String> {
+        self.authorized_call_session(call_id)?;
         self.call_sessions()?.update_media(
             call_id,
             expected_generation,
@@ -400,6 +431,7 @@ impl ProductionSessionWorkers {
         kind: &str,
         payload: &serde_json::Value,
     ) -> Result<CallSignal, String> {
+        self.authorized_call_session(call_id)?;
         self.call_sessions()?.append_signal(
             call_id,
             expected_generation,
@@ -417,6 +449,7 @@ impl ProductionSessionWorkers {
         after_seq: u64,
         limit: usize,
     ) -> Result<Vec<CallSignal>, String> {
+        self.authorized_call_session(call_id)?;
         self.call_sessions()?
             .list_signals(call_id, generation, after_seq, limit)
     }
