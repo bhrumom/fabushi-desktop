@@ -328,16 +328,15 @@ jobs:
         env:
           FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
           FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
-          FABUSHI_CI_PEER_TEST_USERNAME: ${{ secrets.FABUSHI_CI_PEER_TEST_USERNAME }}
-          FABUSHI_CI_PEER_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_PEER_TEST_PASSWORD }}
           FABUSHI_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
         run: |
           set -euo pipefail
           test -n "$FABUSHI_CI_TEST_USERNAME"
           test -n "$FABUSHI_CI_TEST_PASSWORD"
-          test -n "$FABUSHI_CI_PEER_TEST_USERNAME"
-          test -n "$FABUSHI_CI_PEER_TEST_PASSWORD"
-          test "$FABUSHI_CI_TEST_USERNAME" != "$FABUSHI_CI_PEER_TEST_USERNAME"
+          peer_username="fabushi_mcp_ci_peer"
+          peer_password="$(node -e 'const c=require("node:crypto");process.stdout.write(c.createHmac("sha256",process.env.FABUSHI_CI_TEST_PASSWORD).update("fabushi-mcp-ci-peer-v1").digest("base64url"))')"
+          echo "::add-mask::$peer_password"
+          test "$FABUSHI_CI_TEST_USERNAME" != "$peer_username"
           support="$RUNNER_TEMP/fabushi-support"
           test -f "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
           test -f "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
@@ -365,7 +364,8 @@ jobs:
           }
 
           primary_session="$(provision a "$FABUSHI_CI_TEST_USERNAME" "$FABUSHI_CI_TEST_PASSWORD")"
-          peer_session="$(provision b "$FABUSHI_CI_PEER_TEST_USERNAME" "$FABUSHI_CI_PEER_TEST_PASSWORD")"
+          peer_session="$(provision b "$peer_username" "$peer_password")"
+          unset peer_password
           test "$primary_session" != "$peer_session"
 
           export FABUSHI_CI_ACCOUNT_SESSION_FILE="$primary_session"
