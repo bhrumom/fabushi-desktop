@@ -175,6 +175,53 @@ fn retain_executable_function_calls(output: &mut Vec<Value>, calls: &[Value]) {
     });
 }
 
+fn append_balanced_tool_step(
+    input: &mut Vec<Value>,
+    output: Vec<Value>,
+    results: Vec<Value>,
+) -> Result<(), CodexDirectError> {
+    let mut results_by_call_id = results
+        .into_iter()
+        .filter_map(|result| {
+            result
+                .get("call_id")
+                .and_then(Value::as_str)
+                .map(str::to_string)
+                .map(|call_id| (call_id, result))
+        })
+        .collect::<HashMap<_, _>>();
+
+    for item in output {
+        if item.get("type").and_then(Value::as_str) != Some("function_call") {
+            input.push(item);
+            continue;
+        }
+        let call_id = item
+            .get("call_id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| {
+                CodexDirectError::Protocol(
+                    "executable function_call is missing call_id during replay".into(),
+                )
+            })?
+            .to_string();
+        let result = results_by_call_id.remove(&call_id).ok_or_else(|| {
+            CodexDirectError::Protocol(format!(
+                "function_call {call_id} has no matching function_call_output during replay"
+            ))
+        })?;
+        input.push(item);
+        input.push(result);
+    }
+
+    if !results_by_call_id.is_empty() {
+        return Err(CodexDirectError::Protocol(
+            "tool step produced a function_call_output without a matching function_call".into(),
+        ));
+    }
+    Ok(())
+}
+
 fn parse_dsml_compat_calls(text: &str) -> Option<Vec<(String, Value)>> {
     const CALLS_OPEN: &str = "<｜｜DSML｜｜ calls>";
     const CALLS_CLOSE: &str = "</｜｜DSML｜｜ calls>";
@@ -553,8 +600,16 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
             }));
         }
 
-        input.extend(output);
-        input.extend(results);
+        // Keep each executed call adjacent to its result. The first-party
+        // Responses adapter maps every function_call item to an assistant
+        // tool_calls message. If parallel calls are replayed as
+        // [call1, call2, result1, result2], that adapter produces two adjacent
+        // assistant tool-call messages and the upstream Router correctly
+        // rejects the first one as lacking an immediately following tool
+        // result. Atomic [call1, result1, call2, result2] replay preserves the
+        // Responses meaning while satisfying the downstream chat transcript
+        // invariant.
+        append_balanced_tool_step(&mut input, output, results)?;
         if let Some(reminder) =
             tool_step_reminder.and_then(|hook| hook(&observed_tool_calls))
         {
@@ -584,6 +639,60 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parallel_tool_calls_are_replayed_as_adjacent_call_result_pairs() {
+        let mut input = vec![json!({ "role": "user", "content": "inspect both" })];
+        let output = vec![
+            json!({
+                "type": "reasoning",
+                "encrypted_content": "opaque",
+            }),
+            json!({
+                "type": "function_call",
+                "name": "ReadFile",
+                "call_id": "call-a",
+                "arguments": "{}",
+            }),
+            json!({
+                "type": "function_call",
+                "name": "ListFiles",
+                "call_id": "call-b",
+                "arguments": "{}",
+            }),
+        ];
+        let results = vec![
+            json!({
+                "type": "function_call_output",
+                "call_id": "call-a",
+                "output": "A",
+            }),
+            json!({
+                "type": "function_call_output",
+                "call_id": "call-b",
+                "output": "B",
+            }),
+        ];
+
+        append_balanced_tool_step(&mut input, output, results).unwrap();
+
+        assert_eq!(
+            input.iter().map(|item| {
+                (
+                    item.get("type").and_then(Value::as_str),
+                    item.get("call_id").and_then(Value::as_str),
+                )
+            }).collect::<Vec<_>>(),
+            vec![
+                (None, None),
+                (Some("reasoning"), None),
+                (Some("function_call"), Some("call-a")),
+                (Some("function_call_output"), Some("call-a")),
+                (Some("function_call"), Some("call-b")),
+                (Some("function_call_output"), Some("call-b")),
+            ]
+        );
+    }
 
     #[test]
     fn incomplete_provider_tool_calls_are_not_replayed_without_results() {
