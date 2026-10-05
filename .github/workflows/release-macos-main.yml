@@ -37,7 +37,7 @@ jobs:
     timeout-minutes: 180
     env:
       SUPPORT_REPO: bhrumom/fabushi
-      SUPPORT_SHA: 5d75920308fa17f5000308df1a0153309eb8e9ab
+      SUPPORT_SHA: b38106b1178b36748f1937c9f28b338e582e2cc6
     steps:
       - name: Checkout exact source
         uses: actions/checkout@v6
@@ -323,41 +323,65 @@ jobs:
           echo "Installed candidate app: $installed_app" >> "$GITHUB_STEP_SUMMARY"
           echo "Candidate executable: $executable" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Provision bounded production CI account session
+      - name: Provision two bounded production CI account sessions
         shell: bash
         env:
           FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
           FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
+          FABUSHI_CI_TEST_PEER_USERNAME: ${{ secrets.FABUSHI_CI_TEST_PEER_USERNAME }}
+          FABUSHI_CI_TEST_PEER_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PEER_PASSWORD }}
           FABUSHI_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
-          DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app
         run: |
           set -euo pipefail
           test -n "$FABUSHI_CI_TEST_USERNAME"
           test -n "$FABUSHI_CI_TEST_PASSWORD"
+          test -n "$FABUSHI_CI_TEST_PEER_USERNAME"
+          test -n "$FABUSHI_CI_TEST_PEER_PASSWORD"
+          test "$FABUSHI_CI_TEST_USERNAME" != "$FABUSHI_CI_TEST_PEER_USERNAME"
           support="$RUNNER_TEMP/fabushi-support"
           test -f "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
           test -f "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
-          account_dir="$RUNNER_TEMP/fabushi-candidate-account"
-          app_session_dir="$RUNNER_TEMP/fabushi-candidate-app-session"
-          mkdir -p "$account_dir" "$app_session_dir"
-          chmod 700 "$account_dir" "$app_session_dir"
-          export FABUSHI_ACCOUNT_SESSION_FILE="$account_dir/session.json"
-          export FABUSHI_CI_ACCOUNT_SESSION_FILE="$app_session_dir/session.json"
-          node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
-          node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
-          chmod 600 "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
-          jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not)' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" >/dev/null
-          rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"
+          test -f "$support/chatgpt-vps-control/scripts/prepare-ci-human-peer.mjs"
+
+          provision() {
+            local suffix="$1"
+            local username="$2"
+            local password="$3"
+            local account_dir="$RUNNER_TEMP/fabushi-candidate-account-$suffix"
+            local app_session_dir="$RUNNER_TEMP/fabushi-candidate-app-session-$suffix"
+            mkdir -p "$account_dir" "$app_session_dir"
+            chmod 700 "$account_dir" "$app_session_dir"
+            export FABUSHI_CI_TEST_USERNAME="$username"
+            export FABUSHI_CI_TEST_PASSWORD="$password"
+            export DEVICE_ID="gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-macos-app-$suffix"
+            export FABUSHI_ACCOUNT_SESSION_FILE="$account_dir/session.json"
+            export FABUSHI_CI_ACCOUNT_SESSION_FILE="$app_session_dir/session.json"
+            node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
+            node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+            chmod 600 "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+            jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not)' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" >/dev/null
+            rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"
+            printf '%s' "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+          }
+
+          primary_session="$(provision a "$FABUSHI_CI_TEST_USERNAME" "$FABUSHI_CI_TEST_PASSWORD")"
+          peer_session="$(provision b "$FABUSHI_CI_TEST_PEER_USERNAME" "$FABUSHI_CI_TEST_PEER_PASSWORD")"
+          test "$primary_session" != "$peer_session"
+
+          export FABUSHI_CI_ACCOUNT_SESSION_FILE="$primary_session"
+          export FABUSHI_CI_PEER_ACCOUNT_SESSION_FILE="$peer_session"
+          node "$support/chatgpt-vps-control/scripts/prepare-ci-human-peer.mjs"
+
           {
-            echo "DEVICE_ID=$DEVICE_ID"
-            echo "FABUSHI_CI_ACCOUNT_SESSION_FILE=$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+            echo "FABUSHI_CI_ACCOUNT_SESSION_FILE=$primary_session"
+            echo "FABUSHI_CI_PEER_ACCOUNT_SESSION_FILE=$peer_session"
           } >> "$GITHUB_ENV"
-          echo "Bounded refresh-token-free production account session prepared for signed candidate acceptance." >> "$GITHUB_STEP_SUMMARY"
+          echo "Two distinct bounded refresh-token-free production accounts and Human friendship/TURN preflight are ready." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run real signed packaged acceptance
         working-directory: desktop
         shell: bash
-        timeout-minutes: 60
+        timeout-minutes: 90
         env:
           OBF_REAL_ACCEPTANCE: '1'
           OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
@@ -375,20 +399,31 @@ jobs:
           test -s "$GITHUB_WORKSPACE/desktop/scripts/macos-session-video.swift"
           bash "$recorder" start "$OBF_EVIDENCE_DIR"
           bash "$recorder" assert-live "$OBF_EVIDENCE_DIR"
-          test_status=0
-          npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1 || test_status=$?
+          openbot_status=0
+          npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1 || openbot_status=$?
+          phase1_status=0
+          if [ "$openbot_status" -eq 0 ]; then
+            npx playwright test e2e/phase1-packaged-production-acceptance.spec.ts --workers=1 || phase1_status=$?
+          else
+            phase1_status=97
+          fi
           stop_status=0
           bash "$recorder" stop "$OBF_EVIDENCE_DIR" || stop_status=$?
           verify_status=0
           bash "$recorder" verify "$OBF_EVIDENCE_DIR" || verify_status=$?
-          test "$test_status" -eq 0
+          test "$openbot_status" -eq 0
+          test "$phase1_status" -eq 0
           test "$stop_status" -eq 0
           test "$verify_status" -eq 0
           test -s "$OBF_EVIDENCE_DIR/trace.zip"
           test -s "$OBF_EVIDENCE_DIR/runtime.log"
           test -s "$OBF_EVIDENCE_DIR/lifecycle.json"
           test -s "$OBF_EVIDENCE_DIR/candidate.json"
+          test -s "$OBF_EVIDENCE_DIR/phase1/summary.json"
+          test -s "$OBF_EVIDENCE_DIR/phase1/trace-a.zip"
+          test -s "$OBF_EVIDENCE_DIR/phase1/trace-b.zip"
           find "$OBF_EVIDENCE_DIR/screenshots" -type f -name '*.png' -size +0c -print -quit | grep -q .
+          find "$OBF_EVIDENCE_DIR/phase1/screenshots" -type f -name '*.png' -size +0c -print -quit | grep -q .
           find "$OBF_EVIDENCE_DIR" -type f \( -name '*.mp4' -o -name '*.mov' -o -name '*.webm' \) -size +0c -print -quit | grep -q .
 
       - name: Upload packaged acceptance evidence
