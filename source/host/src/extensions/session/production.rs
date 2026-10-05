@@ -1448,16 +1448,25 @@ impl ProductionSessionWorkers {
         }
         if let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) {
             if let Some(current) = existing.iter().find(|candidate| {
-                candidate.get("clientNonce").and_then(serde_json::Value::as_str)
-                    == Some(client_nonce)
+                candidate.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
             }) {
-                if current.get("remoteMessageId").is_some() {
-                    return Ok(current.clone());
+                let current_id = current.get("id").and_then(serde_json::Value::as_str)
+                    .ok_or_else(|| "local Human settlement row omitted its id".to_string())?;
+                let current_remote = current.get("remoteMessageId").and_then(serde_json::Value::as_str);
+                if let Some(current_remote) = current_remote {
+                    if current_remote != remote_id {
+                        return Err("local Human settlement row conflicts with a different remote identity".into());
+                    }
+                } else if !matches!(
+                    current.get("delivery").and_then(serde_json::Value::as_str),
+                    Some("pending" | "dispatching")
+                ) {
+                    return Err("local Human message already uses the server clientRequestId without a retryable settlement state".into());
                 }
-                return Err(
-                    "local Human message already uses the server clientRequestId without a remote identity"
-                        .into(),
-                );
+                return owner
+                    .settle_transcript_entry_identity(current_id, &entry)
+                    .map_err(|error| error.to_string())?
+                    .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string());
             }
         }
         if !owner
@@ -1493,6 +1502,29 @@ impl ProductionSessionWorkers {
         let Some(client) = self.shipping_native_messaging()? else {
             return owner.get_transcript_entries().map_err(|error| error.to_string());
         };
+        let local_human_id = self.local_human_id()?.to_string();
+        let pending = owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?
+            .into_iter()
+            .filter(|entry| {
+                entry.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id.as_str())
+                    && entry.get("remoteMessageId").is_none()
+                    && matches!(
+                        entry.get("delivery").and_then(serde_json::Value::as_str),
+                        Some("pending" | "dispatching")
+                    )
+                    && entry.get("clientNonce").and_then(serde_json::Value::as_str).is_some()
+            })
+            .collect::<Vec<_>>();
+        for entry in pending {
+            let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) else { continue; };
+            let text = entry.get("content").and_then(serde_json::Value::as_str).unwrap_or_default();
+            let reply_to_id = entry.get("replyToId").and_then(serde_json::Value::as_str);
+            let composed_at_ms = entry.get("composedAtMs").and_then(serde_json::Value::as_f64);
+            let attachments = entry.get("attachments").and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
+            let _ = self.append_human_message(conversation_id, text, client_nonce, composed_at_ms, reply_to_id, &attachments);
+        }
         let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
         let existing = owner
             .get_transcript_entries()
@@ -1840,100 +1872,161 @@ impl ProductionSessionWorkers {
                 Ok(serde_json::json!({ "path": path, "name": name }))
             })
             .collect::<Result<Vec<_>, String>>()?;
-        if let Some(entry) = existing.iter().find(|entry| {
-            entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
-        }) {
-            let same_sender = entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
-            let same_text = entry.get("content").and_then(serde_json::Value::as_str) == Some(text);
-            let same_reply = entry.get("replyToId").and_then(serde_json::Value::as_str) == normalized_reply;
-            let same_attachments = entry
-                .get("attachments")
-                .and_then(serde_json::Value::as_array)
-                .is_none_or(|value| value.is_empty())
-                && normalized_attachments.is_empty()
-                || entry.get("attachments") == Some(&serde_json::Value::Array(normalized_attachments.clone()));
-            if same_sender && same_text && same_reply && same_attachments {
-                return Ok(entry.clone());
-            }
-            return Err("sendHumanMessage clientNonce already identifies different content".into());
-        }
-
-        if let Some(client) = self.shipping_native_messaging()? {
-            let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
-            let remote_reply_to_id = normalized_reply
-                .map(|reply_id| {
-                    existing
-                        .iter()
-                        .find(|entry| {
-                            entry.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
-                        })
-                        .and_then(|entry| entry.get("remoteMessageId"))
-                        .map(fabushi_identity_text)
-                        .transpose()?
-                        .ok_or_else(|| {
-                            "Fabushi Human reply target has no canonical remote message identity"
-                                .to_string()
-                        })
-                })
-                .transpose()?;
-            let mut uploaded =
-                Vec::<FabushiRemoteHumanAttachment>::with_capacity(normalized_attachments.len());
-            for attachment in &normalized_attachments {
-                let path = attachment
-                    .get("path")
-                    .and_then(serde_json::Value::as_str)
-                    .ok_or_else(|| "sendHumanMessage attachment requires path".to_string())?;
-                let name = attachment
-                    .get("name")
-                    .and_then(serde_json::Value::as_str)
-                    .ok_or_else(|| "sendHumanMessage attachment requires name".to_string())?;
-                uploaded.push(
-                    client.upload_direct_message_resource(std::path::Path::new(path), name)?,
-                );
-            }
-            let remote = client.send_direct_message(
-                &peer_human_id,
-                text,
-                client_nonce,
-                remote_reply_to_id.as_deref(),
-                &uploaded,
-            )?;
-            let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
-            let remote_recipient = fabushi_identity_text(&remote.recipient_user_id)?;
-            let remote_reply_matches = match (&remote_reply_to_id, &remote.reply_to_message_id) {
-                (None, None) => true,
-                (Some(expected), Some(actual)) => {
-                    fabushi_identity_text(actual).is_ok_and(|actual| actual == *expected)
-                }
-                _ => false,
-            };
-            let remote_resources = remote
-                .attachments
-                .iter()
-                .map(|attachment| attachment.resource_id.as_str())
-                .collect::<Vec<_>>();
-            let uploaded_resources = uploaded
-                .iter()
-                .map(|attachment| attachment.resource_id.as_str())
-                .collect::<Vec<_>>();
-            if remote_sender != sender_id
-                || remote_recipient != peer_human_id
-                || remote.text.trim() != text
-                || remote.client_request_id.as_deref() != Some(client_nonce)
-                || !remote_reply_matches
-                || remote_resources != uploaded_resources
-            {
-                return Err("Fabushi Human message backend returned mismatched persisted content".into());
-            }
-            return self.materialize_remote_human_message(&owner, &remote);
-        }
-
         let timestamp_ms = composed_at_ms.unwrap_or_else(|| {
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_millis() as f64
         });
+        let mut existing_pending: Option<serde_json::Value> = None;
+        if let Some(entry) = existing.iter().find(|entry| {
+            entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
+        }) {
+            let same_sender = entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
+            let same_text = entry.get("content").and_then(serde_json::Value::as_str) == Some(text);
+            let same_reply = entry.get("replyToId").and_then(serde_json::Value::as_str) == normalized_reply;
+            let same_attachments = match entry.get("attachments").and_then(serde_json::Value::as_array) {
+                Some(values) => values.len() == normalized_attachments.len()
+                    && values.iter().zip(normalized_attachments.iter()).all(|(current, requested)| {
+                        current.get("name") == requested.get("name")
+                            && (current.get("path") == requested.get("path") || current.get("resourceId").is_some())
+                    }),
+                None => normalized_attachments.is_empty(),
+            };
+            if !(same_sender && same_text && same_reply && same_attachments) {
+                return Err("sendHumanMessage clientNonce already identifies different content".into());
+            }
+            if entry.get("remoteMessageId").is_some()
+                || entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
+            {
+                return Ok(entry.clone());
+            }
+            if !matches!(
+                entry.get("delivery").and_then(serde_json::Value::as_str),
+                Some("pending" | "dispatching")
+            ) {
+                return Err("sendHumanMessage clientNonce is not in a retryable settlement state".into());
+            }
+            existing_pending = Some(entry.clone());
+        }
+
+        if let Some(client) = self.shipping_native_messaging()? {
+            let local_entry_id = format!("human-message:{client_nonce}");
+            let mut pending_entry = existing_pending.unwrap_or_else(|| {
+                let mut entry = serde_json::json!({
+                    "id": local_entry_id.clone(),
+                    "kind": "message",
+                    "role": "user",
+                    "authorKind": "human",
+                    "authorId": sender_id,
+                    "content": text,
+                    "clientNonce": client_nonce,
+                    "composedAtMs": composed_at_ms,
+                    "timestampMs": timestamp_ms,
+                    "delivery": "pending",
+                });
+                let object = entry.as_object_mut().expect("Human pending message must be an object");
+                if let Some(reply_id) = normalized_reply { object.insert("replyToId".into(), serde_json::json!(reply_id)); }
+                if !normalized_attachments.is_empty() { object.insert("attachments".into(), serde_json::Value::Array(normalized_attachments.clone())); }
+                entry
+            });
+            if !existing.iter().any(|entry| entry.get("id") == pending_entry.get("id"))
+                && !owner.append_transcript_entry(&pending_entry).map_err(|error| error.to_string())?
+            {
+                return Err("Human pending send could not be durably recorded before dispatch".into());
+            }
+
+            let dispatch_result = (|| -> Result<serde_json::Value, String> {
+                let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+                let remote_reply_to_id = normalized_reply
+                    .map(|reply_id| {
+                        owner
+                            .get_transcript_entries()
+                            .map_err(|error| error.to_string())?
+                            .into_iter()
+                            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(reply_id))
+                            .and_then(|entry| entry.get("remoteMessageId").cloned())
+                            .map(|value| fabushi_identity_text(&value))
+                            .transpose()?
+                            .ok_or_else(|| "Fabushi Human reply target has no canonical remote message identity".to_string())
+                    })
+                    .transpose()?;
+
+                let mut uploaded = pending_entry
+                    .get("remoteDispatchAttachments")
+                    .cloned()
+                    .map(serde_json::from_value::<Vec<FabushiRemoteHumanAttachment>>)
+                    .transpose()
+                    .map_err(|error| format!("persisted Human dispatch attachments are invalid: {error}"))?
+                    .filter(|values| {
+                        values.len() == normalized_attachments.len()
+                            && values.iter().zip(normalized_attachments.iter()).all(|(remote, local)| {
+                                local.get("name").and_then(serde_json::Value::as_str) == Some(remote.name.as_str())
+                            })
+                    })
+                    .unwrap_or_default();
+                if uploaded.is_empty() && !normalized_attachments.is_empty() {
+                    uploaded = Vec::with_capacity(normalized_attachments.len());
+                    for attachment in &normalized_attachments {
+                        let path = attachment.get("path").and_then(serde_json::Value::as_str)
+                            .ok_or_else(|| "sendHumanMessage attachment requires path".to_string())?;
+                        let name = attachment.get("name").and_then(serde_json::Value::as_str)
+                            .ok_or_else(|| "sendHumanMessage attachment requires name".to_string())?;
+                        uploaded.push(client.upload_direct_message_resource(std::path::Path::new(path), name)?);
+                    }
+                }
+                if let Some(object) = pending_entry.as_object_mut() {
+                    object.insert("delivery".into(), serde_json::json!("dispatching"));
+                    object.remove("lastDispatchError");
+                    object.remove("lastDispatchFailedAtMs");
+                    if !uploaded.is_empty() {
+                        object.insert("remoteDispatchAttachments".into(), serde_json::to_value(&uploaded)
+                            .map_err(|error| format!("Human dispatch attachments could not be persisted: {error}"))?);
+                    }
+                }
+                owner.update_transcript_entry(&local_entry_id, &pending_entry)
+                    .map_err(|error| error.to_string())?
+                    .ok_or_else(|| "Human pending send disappeared before dispatch".to_string())?;
+
+                let remote = client.send_direct_message(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded)?;
+                let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
+                let remote_recipient = fabushi_identity_text(&remote.recipient_user_id)?;
+                let remote_reply_matches = match (&remote_reply_to_id, &remote.reply_to_message_id) {
+                    (None, None) => true,
+                    (Some(expected), Some(actual)) => fabushi_identity_text(actual).is_ok_and(|actual| actual == *expected),
+                    _ => false,
+                };
+                let remote_resources = remote.attachments.iter().map(|attachment| attachment.resource_id.as_str()).collect::<Vec<_>>();
+                let uploaded_resources = uploaded.iter().map(|attachment| attachment.resource_id.as_str()).collect::<Vec<_>>();
+                if remote_sender != sender_id
+                    || remote_recipient != peer_human_id
+                    || remote.text.trim() != text
+                    || remote.client_request_id.as_deref() != Some(client_nonce)
+                    || !remote_reply_matches
+                    || remote_resources != uploaded_resources
+                {
+                    return Err("Fabushi Human message backend returned mismatched persisted content".into());
+                }
+                self.materialize_remote_human_message(&owner, &remote)
+            })();
+
+            if let Err(error) = dispatch_result.as_ref() {
+                if let Ok(entries) = owner.get_transcript_entries() {
+                    if let Some(mut pending) = entries.into_iter().find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(local_entry_id.as_str())) {
+                        if let Some(object) = pending.as_object_mut() {
+                            object.insert("delivery".into(), serde_json::json!("pending"));
+                            object.insert("lastDispatchError".into(), serde_json::json!(error));
+                            object.insert("lastDispatchFailedAtMs".into(), serde_json::json!(
+                                std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as f64
+                            ));
+                        }
+                        let _ = owner.update_transcript_entry(&local_entry_id, &pending);
+                    }
+                }
+            }
+            return dispatch_result;
+        }
+
         let mut entry = serde_json::json!({
             "id": format!("human-message:{client_nonce}"),
             "kind": "message",

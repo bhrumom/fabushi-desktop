@@ -1173,6 +1173,202 @@ fn shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity() {
     let _ = fs::remove_dir_all(root);
 }
 
+fn spawn_ambiguous_human_send_server() -> (String, thread::JoinHandle<Vec<String>>) {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind ambiguous send fixture");
+    let address = listener.local_addr().expect("fixture address");
+    let handle = thread::spawn(move || {
+        let mut requests = Vec::new();
+
+        let (mut upload_stream, _) = listener.accept().expect("accept durable resource upload");
+        requests.push(read_fixture_http_request(&mut upload_stream));
+        let upload_body = json!({
+            "success": true,
+            "resource": {
+                "resourceId": "durable-resource-1",
+                "name": "resume.pdf",
+                "contentType": "application/octet-stream",
+                "size": 4,
+                "createdAt": "2026-10-05T02:00:00Z"
+            }
+        }).to_string();
+        write!(
+            upload_stream,
+            "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            upload_body.len(),
+            upload_body
+        ).expect("write durable resource response");
+        upload_stream.flush().expect("flush durable resource response");
+
+        let (mut first_send, _) = listener.accept().expect("accept ambiguous message send");
+        requests.push(read_fixture_http_request(&mut first_send));
+        drop(first_send);
+
+        let (mut replay_send, _) = listener.accept().expect("accept replayed message send");
+        requests.push(read_fixture_http_request(&mut replay_send));
+        let send_body = json!({
+            "success": true,
+            "deduplicated": true,
+            "message": {
+                "id": 21,
+                "senderUserId": 1,
+                "senderUsername": "local",
+                "recipientUserId": 2,
+                "recipientUsername": "peer",
+                "text": "durable restart",
+                "clientRequestId": "durable-send-1",
+                "createdAt": "2026-10-05T02:00:01Z",
+                "readAt": serde_json::Value::Null,
+                "isOutgoing": true,
+                "replyToMessageId": serde_json::Value::Null,
+                "attachments": [{
+                    "resourceId": "durable-resource-1",
+                    "name": "resume.pdf",
+                    "contentType": "application/octet-stream",
+                    "size": 4,
+                    "createdAt": "2026-10-05T02:00:00Z"
+                }],
+                "reactions": []
+            }
+        }).to_string();
+        write!(
+            replay_send,
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            send_body.len(),
+            send_body
+        ).expect("write replay response");
+        replay_send.flush().expect("flush replay response");
+
+        let (mut sync_stream, _) = listener.accept().expect("accept post-settlement sync");
+        requests.push(read_fixture_http_request(&mut sync_stream));
+        let sync_body = json!({"success":true,"data":{"messages":[]}}).to_string();
+        write!(
+            sync_stream,
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            sync_body.len(),
+            sync_body
+        ).expect("write sync response");
+        sync_stream.flush().expect("flush sync response");
+        requests
+    });
+    (format!("http://{address}"), handle)
+}
+
+#[test]
+fn shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload() {
+    let root = temp_root("human-shipping-durable-send");
+    let agents = root.join("agents");
+    fs::create_dir_all(&root).expect("fixture root");
+    let credential_path = root.join("host-credential.json");
+    fs::write(
+        &credential_path,
+        r#"{"accessToken":"fixture-token","deviceId":"device-a","userId":1}"#,
+    ).expect("credential");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(&credential_path)
+            .expect("credential metadata")
+            .permissions();
+        permissions.set_mode(0o600);
+        fs::set_permissions(&credential_path, permissions).expect("private credential");
+    }
+    let attachment_path = root.join("resume.pdf");
+    fs::write(&attachment_path, [5_u8, 6, 7, 8]).expect("attachment fixture");
+    let (base_url, server) = spawn_ambiguous_human_send_server();
+
+    let make_runtime = || {
+        let client = Arc::new(
+            FabushiNativeMessagingClient::new(&base_url, &credential_path)
+                .expect("shipping messaging client"),
+        );
+        let memory = Arc::new(
+            mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+                agents.clone(),
+            ),
+        );
+        ProductionSessionWorkers::with_agents_root_identity_messaging_and_dependencies(
+            &agents,
+            500,
+            Some("1".into()),
+            Some(client),
+            true,
+            None,
+            Arc::new(|| None),
+            memory,
+        )
+    };
+
+    let runtime = make_runtime();
+    let created = runtime
+        .create_human_conversation("2", "Peer")
+        .expect("Human conversation");
+    let conversation_id = created["id"]
+        .as_str()
+        .expect("conversation id")
+        .to_string();
+    let first_error = runtime
+        .append_human_message(
+            &conversation_id,
+            "durable restart",
+            "durable-send-1",
+            Some(2000.0),
+            None,
+            &[json!({
+                "path": attachment_path.to_string_lossy(),
+                "name": "resume.pdf"
+            })],
+        )
+        .expect_err("lost response must remain unsettled");
+    assert!(!first_error.is_empty());
+
+    let pending_owner = runtime
+        .open_human_conversation_db_owner(&conversation_id)
+        .expect("pending owner");
+    let pending = pending_owner
+        .get_transcript_entries()
+        .expect("pending transcript");
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0]["id"], "human-message:durable-send-1");
+    assert_eq!(pending[0]["delivery"], "pending");
+    assert_eq!(
+        pending[0]["remoteDispatchAttachments"][0]["resourceId"],
+        "durable-resource-1"
+    );
+    runtime.shutdown();
+
+    let restarted = make_runtime();
+    let settled = restarted
+        .sync_human_conversation(&conversation_id)
+        .expect("restart sync settles pending send");
+    assert_eq!(settled.len(), 1);
+    assert_eq!(settled[0]["id"], "human-server-message:21");
+    assert_eq!(settled[0]["remoteMessageId"], "21");
+    assert_eq!(settled[0]["delivery"], "sent");
+    assert_eq!(
+        settled[0]["attachments"][0]["resourceId"],
+        "durable-resource-1"
+    );
+    assert_eq!(settled[0].get("remoteDispatchAttachments"), None);
+    restarted.shutdown();
+
+    let requests = server.join().expect("durable send fixture");
+    assert_eq!(requests.len(), 4);
+    assert!(requests[0].starts_with("POST /api/social/message-resources "));
+    assert!(requests[1].starts_with("POST /api/social/messages "));
+    assert!(requests[2].starts_with("POST /api/social/messages "));
+    assert!(requests[2].contains(r#""clientRequestId":"durable-send-1""#));
+    assert!(requests[2].contains(r#""resourceId":"durable-resource-1""#));
+    assert!(requests[3].starts_with("GET /api/social/messages?"));
+    assert_eq!(
+        requests
+            .iter()
+            .filter(|request| request.starts_with("POST /api/social/message-resources "))
+            .count(),
+        1
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
 #[test]
 fn shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript() {
     let root = temp_root("human-shipping-reaction");

@@ -1287,6 +1287,41 @@ impl SandAgentDb {
         Ok(updated)
     }
 
+    pub fn settle_transcript_entry_identity(
+        &self,
+        entry_id: &str,
+        next: &serde_json::Value,
+    ) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+        let Some(next_id) = next.get("id").and_then(serde_json::Value::as_str) else {
+            return Ok(None);
+        };
+        let updated = self.run_write_value("settleTranscriptEntryIdentity", |db| {
+            let present = db
+                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| row.get::<_, String>(0))
+                .optional()?
+                .is_some();
+            if !present {
+                return Ok((None, false));
+            }
+            let changed = db.execute(
+                "UPDATE transcript_entries SET id = ?1, entry = ?2 WHERE id = ?3",
+                params![next_id, next.to_string(), entry_id],
+            )? > 0;
+            Ok((changed.then(|| next.clone()), changed))
+        })?;
+        if let Some(entry) = updated.as_ref() {
+            if entry_id != next_id {
+                let mut mutation = serde_json::Map::new();
+                mutation.insert("kind".into(), serde_json::Value::String("entry-deleted".into()));
+                mutation.insert("agentId".into(), serde_json::Value::String(self.agent_dir_name.clone()));
+                mutation.insert("entryId".into(), serde_json::Value::String(entry_id.to_string()));
+                publish_transcript_mutation(&mutation);
+            }
+            publish_entries_upserted(&self.db_path, vec![entry.clone()]);
+        }
+        Ok(updated)
+    }
+
     pub fn delete_transcript_entry(
         &self,
         entry_id: &str,
