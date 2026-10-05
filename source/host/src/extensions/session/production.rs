@@ -1869,6 +1869,49 @@ impl ProductionSessionWorkers {
         Ok(entry)
     }
 
+    pub fn search_human_messages(
+        &self,
+        conversation_id: &str,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let query = query.trim().to_lowercase();
+        if query.is_empty() {
+            return Err("searchHumanMessages requires a non-empty query".into());
+        }
+        let transcript = self.read_human_conversation_transcript(conversation_id)?;
+        let limit = limit.clamp(1, 200);
+        let mut matches = Vec::new();
+        for entry in transcript.into_iter().rev() {
+            let content_match = entry
+                .get("content")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|value| value.to_lowercase().contains(&query));
+            let author_match = entry
+                .get("authorName")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|value| value.to_lowercase().contains(&query));
+            let attachment_match = entry
+                .get("attachments")
+                .and_then(serde_json::Value::as_array)
+                .is_some_and(|attachments| {
+                    attachments.iter().any(|attachment| {
+                        attachment
+                            .get("name")
+                            .and_then(serde_json::Value::as_str)
+                            .is_some_and(|value| value.to_lowercase().contains(&query))
+                    })
+                });
+            if content_match || author_match || attachment_match {
+                matches.push(entry);
+                if matches.len() >= limit {
+                    break;
+                }
+            }
+        }
+        Ok(matches)
+    }
+
     pub fn read_human_conversation_transcript(
         &self,
         conversation_id: &str,
