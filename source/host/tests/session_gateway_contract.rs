@@ -1606,6 +1606,235 @@ fn shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap() {
 
 
 
+fn fixture_request_json(request: &str) -> serde_json::Value {
+    request
+        .split_once("\r\n\r\n")
+        .and_then(|(_, body)| serde_json::from_str(body).ok())
+        .unwrap_or(serde_json::Value::Null)
+}
+
+fn spawn_remote_call_server(expected_requests: usize) -> (String, thread::JoinHandle<Vec<String>>) {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind call fixture");
+    let address = listener.local_addr().expect("call fixture address");
+    let handle = thread::spawn(move || {
+        let mut requests = Vec::new();
+        let mut call_id = String::new();
+        let mut state = "invited".to_string();
+        let mut generation = 0_u64;
+        let mut events: Vec<serde_json::Value> = Vec::new();
+
+        for _ in 0..expected_requests {
+            let (mut stream, _) = listener.accept().expect("accept call request");
+            let request = read_fixture_http_request(&mut stream);
+            let request_line = request.lines().next().unwrap_or_default().to_string();
+            let request_json = fixture_request_json(&request);
+            requests.push(request.clone());
+
+            let body = if request_line.starts_with("POST /api/social/calls ") {
+                call_id = request_json["callId"].as_str().expect("call id body").to_string();
+                json!({
+                    "success": true,
+                    "deduplicated": false,
+                    "call": {
+                        "callId": call_id,
+                        "creatorUserId": 1,
+                        "peerUserId": 2,
+                        "state": state,
+                        "generation": generation,
+                        "eventSeq": events.len(),
+                        "terminalState": serde_json::Value::Null,
+                        "createdAt": "2026-10-05T04:00:00Z",
+                        "updatedAt": "2026-10-05T04:00:00Z"
+                    }
+                })
+            } else if request_line.starts_with("POST /api/social/calls/") {
+                let kind = request_json["kind"].as_str().expect("event kind").to_string();
+                let payload = request_json["payload"].clone();
+                generation = request_json["generation"].as_u64().expect("event generation");
+                if kind == "transition" {
+                    state = payload["state"].as_str().expect("transition state").to_string();
+                }
+                let seq = events.len() as u64 + 1;
+                let event = json!({
+                    "callId": call_id,
+                    "seq": seq,
+                    "generation": generation,
+                    "userId": 1,
+                    "deviceId": "device-a",
+                    "clientEventId": request_json["clientEventId"],
+                    "kind": kind,
+                    "payload": payload,
+                    "createdAt": format!("2026-10-05T04:00:{seq:02}Z")
+                });
+                events.push(event.clone());
+                json!({
+                    "success": true,
+                    "deduplicated": false,
+                    "event": event,
+                    "call": {
+                        "callId": call_id,
+                        "creatorUserId": 1,
+                        "peerUserId": 2,
+                        "state": state,
+                        "generation": generation,
+                        "eventSeq": seq,
+                        "terminalState": serde_json::Value::Null,
+                        "createdAt": "2026-10-05T04:00:00Z",
+                        "updatedAt": format!("2026-10-05T04:00:{seq:02}Z")
+                    }
+                })
+            } else if request_line.starts_with("GET /api/social/calls/") {
+                let after_seq = request_line
+                    .split("afterSeq=")
+                    .nth(1)
+                    .and_then(|tail| tail.split('&').next())
+                    .and_then(|value| value.parse::<u64>().ok())
+                    .unwrap_or(0);
+                let visible = events
+                    .iter()
+                    .filter(|event| event["seq"].as_u64().unwrap_or(0) > after_seq)
+                    .cloned()
+                    .collect::<Vec<_>>();
+                json!({
+                    "success": true,
+                    "call": {
+                        "callId": call_id,
+                        "creatorUserId": 1,
+                        "peerUserId": 2,
+                        "state": state,
+                        "generation": generation,
+                        "eventSeq": events.len(),
+                        "terminalState": serde_json::Value::Null,
+                        "createdAt": "2026-10-05T04:00:00Z",
+                        "updatedAt": "2026-10-05T04:00:09Z"
+                    },
+                    "events": visible,
+                    "nextAfterSeq": events.last().and_then(|event| event["seq"].as_u64()).unwrap_or(after_seq)
+                })
+            } else {
+                panic!("unexpected call fixture request: {request_line}");
+            };
+            let body = body.to_string();
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            ).expect("write call response");
+            stream.flush().expect("flush call response");
+        }
+        requests
+    });
+    (format!("http://{address}"), handle)
+}
+
+#[test]
+fn shipping_call_session_uses_backend_ordering_then_materializes_canonical_owner() {
+    let root = temp_root("shipping-call-session");
+    let agents = root.join("agents");
+    fs::create_dir_all(&root).expect("fixture root");
+    let credential_path = root.join("host-credential.json");
+    fs::write(
+        &credential_path,
+        r#"{"accessToken":"fixture-token","deviceId":"device-a","userId":1}"#,
+    ).expect("credential");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(&credential_path)
+            .expect("credential metadata")
+            .permissions();
+        permissions.set_mode(0o600);
+        fs::set_permissions(&credential_path, permissions).expect("private credential");
+    }
+
+    let (base_url, server) = spawn_remote_call_server(10);
+    let client = Arc::new(
+        FabushiNativeMessagingClient::new(&base_url, &credential_path)
+            .expect("shipping call client"),
+    );
+    let memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+            agents.clone(),
+        ),
+    );
+    let runtime = Arc::new(
+        ProductionSessionWorkers::with_agents_root_identity_messaging_and_dependencies(
+            &agents,
+            500,
+            Some("1".into()),
+            Some(client),
+            true,
+            None,
+            Arc::new(|| None),
+            memory,
+        ),
+    );
+    let conversation = runtime
+        .create_human_conversation("2", "Peer")
+        .expect("Human conversation");
+    let scope_id = conversation["id"].as_str().expect("scope id").to_string();
+
+    let created = dispatch(
+        &runtime,
+        "createCallSession",
+        json!({"scopeId": scope_id, "participantIds": ["1", "2"]}),
+    );
+    let call_id = created["id"].as_str().expect("call id").to_string();
+    assert_eq!(created["state"], "invited");
+
+    let accepted = dispatch(
+        &runtime,
+        "transitionCallSession",
+        json!({"callId": call_id, "generation": 0, "action": "accept"}),
+    );
+    assert_eq!(accepted["state"], "negotiating");
+
+    let signal = dispatch(
+        &runtime,
+        "sendCallSignal",
+        json!({
+            "callId": call_id,
+            "generation": 0,
+            "seq": 1,
+            "senderDeviceId": "device-a",
+            "kind": "offer",
+            "payload": {"sdp": "remote-first"}
+        }),
+    );
+    assert_eq!(signal["seq"], 1);
+    assert_eq!(signal["payload"]["sdp"], "remote-first");
+
+    let media = dispatch(
+        &runtime,
+        "updateCallMedia",
+        json!({
+            "callId": call_id,
+            "generation": 0,
+            "mediaCapabilities": {"audio": true, "video": true},
+            "deviceSelection": {"microphoneId": "mic-a", "cameraId": "cam-a"}
+        }),
+    );
+    assert_eq!(media["mediaCapabilities"]["video"], true);
+    assert_eq!(media["deviceSelection"]["cameraId"], "cam-a");
+
+    let requests = server.join().expect("call fixture");
+    assert_eq!(requests.len(), 10);
+    assert!(requests[0].starts_with("POST /api/social/calls "));
+    assert!(requests[0].contains(r#""targetUserId":"2""#));
+    assert!(requests[1].starts_with("GET /api/social/calls/"));
+    assert!(requests[2].starts_with("POST /api/social/calls/"));
+    assert!(requests[2].contains(r#""kind":"transition""#));
+    assert!(requests[4].starts_with("GET /api/social/calls/"));
+    assert!(requests[5].contains(r#""kind":"signal""#));
+    assert!(requests[5].contains(r#""signalSeq":1"#));
+    assert!(requests[8].contains(r#""kind":"media""#));
+    assert!(requests[8].contains(r#""cameraId":"cam-a""#));
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
 #[test]
 fn call_session_owner_fences_lifecycle_signaling_reconnect_and_restart() {
     let root = temp_root("call-session-owner");
