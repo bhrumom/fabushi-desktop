@@ -867,7 +867,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       else focusComposer();
     }
   }));
-  const [findInChatController] = useState(() => createFindInChatController({ onNavigate: scrollToFindMatch }));
+  const findNavigateHandlerRef = useRef<(match: FindInChatMatch) => void>(scrollToFindMatch);
+  const [findInChatController] = useState(() => createFindInChatController({
+    onNavigate: (match) => findNavigateHandlerRef.current(match)
+  }));
   const findInChatLifecycleGenerationRef = useRef(0);
   useEffect(() => {
     const generation = ++findInChatLifecycleGenerationRef.current;
@@ -1028,6 +1031,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const openAgentRequestGenerationRef = useRef(0);
   const transportScopeGenerationRef = useRef(0);
   const findInChatOpenRef = useRef(findInChatOpen);
+  const humanFindGenerationRef = useRef(0);
   const agentsRef = useRef(agents);
   const humanConversationsRef = useRef(humanConversations);
   const pinnedAgentIdsRef = useRef(pinnedAgentIds);
@@ -1534,6 +1538,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     transcriptPaginationController.getSnapshot,
     transcriptPaginationController.getSnapshot
   );
+  const findInChatSnapshot = useSyncExternalStore(
+    findInChatController.subscribe,
+    findInChatController.getSnapshot,
+    findInChatController.getSnapshot
+  );
   useEffect(() => {
     transcriptPaginationController.setScope(transcriptAccountSlot, activeAgentId.length > 0 ? activeAgentId : null);
   }, [activeAgentId, transcriptAccountSlot, transcriptPaginationController]);
@@ -1835,13 +1844,67 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       : liveEntries,
     [activeAgentId, liveEntries, transcriptAccountSlot, transcriptPaginationSnapshot.accountSlot, transcriptPaginationSnapshot.agentId, transcriptPaginationSnapshot.entries]
   );
+  findNavigateHandlerRef.current = (match) => {
+    if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId) === true) return;
+    const conversationId = activeAgentIdRef.current;
+    const isHumanConversation = humanConversationsRef.current.some((conversation) => conversation.id === conversationId);
+    if (!isHumanConversation) {
+      scrollToFindMatch(match);
+      return;
+    }
+    const accountSlot = transcriptAccountSlot;
+    void (async () => {
+      for (let page = 0; page < 32; page += 1) {
+        if (
+          activeAgentIdRef.current !== conversationId
+          || transcriptAccountSlot !== accountSlot
+          || findInChatController.getSnapshot().scope.agentId !== conversationId
+        ) return;
+        if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId) === true) return;
+        const pagination = transcriptPaginationController.getSnapshot();
+        if (pagination.agentId !== conversationId || pagination.accountSlot !== accountSlot || !pagination.hasOlder) return;
+        await transcriptPaginationController.loadOlder();
+      }
+      transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId);
+    })().catch((error: unknown) => {
+      setNotice(error instanceof Error ? `Human search navigation unavailable: ${error.message}` : `Human search navigation unavailable: ${String(error)}`);
+    });
+  };
   useEffect(() => {
     findInChatController.setScope(transcriptAccountSlot, activeAgentId.length > 0 ? activeAgentId : null);
     if (account?.kind !== "logged-in" || activeAgentId.length === 0) setFindInChatOpen(false);
   }, [account?.kind, activeAgentId, findInChatController, transcriptAccountSlot]);
   useEffect(() => {
-    findInChatController.replaceEntries(entries);
-  }, [entries, findInChatController]);
+    const query = findInChatSnapshot.query.trim();
+    if (!activeIsHuman || query.length === 0) findInChatController.replaceEntries(entries);
+  }, [activeIsHuman, entries, findInChatController, findInChatSnapshot.query]);
+  useEffect(() => {
+    const query = findInChatSnapshot.query.trim();
+    if (!findInChatOpen || !activeIsHuman || query.length === 0 || client == null || activeAgent == null) return;
+    const generation = ++humanFindGenerationRef.current;
+    const conversationId = activeAgent.id;
+    const conversationName = activeAgent.name;
+    void client.call("searchHumanMessages", {
+      conversationId,
+      query,
+      limit: 200
+    }).then((value) => {
+      if (
+        humanFindGenerationRef.current !== generation
+        || activeAgentIdRef.current !== conversationId
+        || findInChatController.getSnapshot().query.trim() !== query
+      ) return;
+      findInChatController.replaceEntries(
+        projectHumanConversationTranscript(value, conversationName, conversationId)
+      );
+    }).catch((error: unknown) => {
+      if (humanFindGenerationRef.current !== generation || activeAgentIdRef.current !== conversationId) return;
+      setNotice(error instanceof Error ? `Human search unavailable: ${error.message}` : `Human search unavailable: ${String(error)}`);
+    });
+    return () => {
+      if (humanFindGenerationRef.current === generation) humanFindGenerationRef.current += 1;
+    };
+  }, [activeAgent, activeIsHuman, client, findInChatController, findInChatOpen, findInChatSnapshot.query]);
   useEffect(() => {
     const scopedAccountKey = account?.kind === "logged-in" && transport === "connected" ? transcriptAccountSlot : null;
     const scopedAgentId = scopedAccountKey == null || activeAgentId.length === 0 ? null : activeAgentId;
