@@ -2222,6 +2222,7 @@ impl ProductionSessionWorkers {
                 .ok_or_else(|| "synced Human conversation omitted its id".to_string())?;
             self.sync_human_conversation(conversation_id)?;
         }
+        self.sync_human_calls()?;
         self.list_human_conversations()
     }
 
