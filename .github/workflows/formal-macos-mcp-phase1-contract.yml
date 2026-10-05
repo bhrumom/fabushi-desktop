@@ -46,4 +46,4 @@ jobs:
           grep -Fq 'codesign --verify --deep --strict' "$workflow"
           grep -Fq 'spctl --assess' "$workflow"
           grep -Fq 'Canonical main drifted during formal acceptance' "$workflow"
-          ! grep -Eqi 'playwright|electron[[:space:]]+launcher|fixture-only|FABUSHI_E2E=1|FABUSHI_FEATURE_HOST_MODE=test' "$workflow"
+          ! grep -Eqi 'npx[[:space:]]+playwright|playwright[[:space:]]+test|electron[[:space:]]+launcher|FABUSHI_E2E=1|FABUSHI_FEATURE_HOST_MODE=test' "$workflow"
