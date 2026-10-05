@@ -99,6 +99,17 @@ impl CallSessionStore {
         creator_id: &str,
         participant_ids: &[String],
     ) -> Result<CallSession, String> {
+        self.create_with_id(&Uuid::new_v4().to_string(), scope_id, creator_id, participant_ids)
+    }
+
+    pub fn create_with_id(
+        &self,
+        call_id: &str,
+        scope_id: &str,
+        creator_id: &str,
+        participant_ids: &[String],
+    ) -> Result<CallSession, String> {
+        let call_id = required(call_id, "call id")?;
         let scope_id = required(scope_id, "call scope id")?;
         let creator_id = required(creator_id, "call creator id")?;
         let mut participants = participant_ids
@@ -114,7 +125,7 @@ impl CallSessionStore {
         if !participants.iter().any(|value| value == creator_id) {
             return Err("call creator must be a call participant".into());
         }
-        let id = Uuid::new_v4().to_string();
+        let id = call_id.to_string();
         let now = now_ms();
         let participants_json = serde_json::to_string(&participants).map_err(|error| error.to_string())?;
         let connection = self.connection.lock().map_err(|_| "call session store poisoned".to_string())?;
