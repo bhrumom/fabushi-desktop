@@ -417,6 +417,10 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     .map_err(SessionGatewayError::internal)
             })
         }),
+        "syncHumanCalls" => session
+            .sync_human_calls()
+            .and_then(|calls| serde_json::to_value(calls).map_err(|error| error.to_string()))
+            .map_err(SessionGatewayError::internal),
         "createCallSession" => required_string(args, "scopeId").and_then(|scope_id| {
             let participant_ids = required_string_array(args, "participantIds")?;
             session
