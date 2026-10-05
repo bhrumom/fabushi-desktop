@@ -1635,6 +1635,18 @@ fn call_session_owner_fences_lifecycle_signaling_reconnect_and_restart() {
     );
     let scope_id = conversation["id"].as_str().expect("conversation id");
 
+    let invalid_scope = dispatch_production_session_gateway_call(
+        &runtime,
+        "createCallSession",
+        &json!({
+            "scopeId": "not-a-canonical-human-conversation",
+            "participantIds": ["human-local", "human-peer"]
+        }),
+    )
+    .expect("handled invalid call scope")
+    .expect_err("unknown scope must fail closed");
+    assert!(matches!(invalid_scope, SessionGatewayError::Internal(_)));
+
     let created = dispatch(
         &runtime,
         "createCallSession",
@@ -1886,5 +1898,35 @@ fn call_session_owner_fences_lifecycle_signaling_reconnect_and_restart() {
 
     restarted.shutdown();
     drop(restarted);
+
+    let foreign_memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+            agents.clone(),
+        ),
+    );
+    let foreign = Arc::new(
+        ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+            &agents,
+            500,
+            Some("human-foreign".into()),
+            Arc::new(|| None),
+            foreign_memory,
+        ),
+    );
+    let unauthorized = dispatch_production_session_gateway_call(
+        &foreign,
+        "getCallSession",
+        &json!({"callId": call_id}),
+    )
+    .expect("handled foreign call lookup")
+    .expect_err("foreign identity must not read call truth");
+    assert!(matches!(
+        unauthorized,
+        SessionGatewayError::Internal(message)
+            if message.contains("authenticated Human identity")
+    ));
+    foreign.shutdown();
+    drop(foreign);
+
     let _ = fs::remove_dir_all(root);
 }
