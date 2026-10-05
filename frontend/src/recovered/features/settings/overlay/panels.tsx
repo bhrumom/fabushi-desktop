@@ -13,6 +13,7 @@ import { SandSelect } from "../../../ui/sand-floating-primitives";
 import { SandSwitch } from "../../../ui/sand-form-primitives";
 import { OverlayDialog } from "../../../ui/overlay-primitives";
 import { ROUTER_PROVIDERS, routerProviderById, type RouterProviderId } from "./router";
+import { formatAccessibilityPreferenceCount, settingsCopy } from "./localization";
 
 export type AccountState =
   | { kind: "logged-out"; errorMessage?: string }
@@ -96,6 +97,7 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
   const signedIn = account.kind === "logged-in";
   const isAccountPending = accountPending;
   const visibleAccountError = accountError ?? (account.kind === "logged-out" ? account.errorMessage ?? null : null);
+  const copy = settingsCopy(uiPreferences?.state.locale ?? "system");
   useEffect(() => {
     if (!emailCopied) return;
     const timeout = window.setTimeout(() => setEmailCopied(false), 2000);
@@ -125,7 +127,7 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
 
   return (
     <div className="sand-settings-general">
-      <SettingsGroup title="Account">
+      <SettingsGroup title={copy.account}>
         <div className="sand-account-card" data-state={account.kind}>
           <span aria-hidden="true" className="sand-account-card__avatar">
             {signedIn && account.avatarDataUrl ? <img alt="" src={account.avatarDataUrl} /> : title.slice(0, 1).toLocaleUpperCase()}
@@ -140,13 +142,13 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
         {visibleAccountError ? <p className="sand-account__error">{visibleAccountError}</p> : null}
       </SettingsGroup>
 
-      <SettingsGroup title="Appearance">
+      <SettingsGroup title={copy.appearance}>
         <label>
-          <span>Theme</span>
+          <span>{copy.theme}</span>
           <ThemePreferencePicker disabled={themePending} onChange={handleThemeChange} value={theme} />
         </label>
       </SettingsGroup>
-      {uiPreferences ? <SettingsGroup title="Language & Accessibility"><UiPreferencesSettingsPanel {...uiPreferences} /></SettingsGroup> : null}
+      {uiPreferences ? <SettingsGroup title={copy.languageAccessibility}><UiPreferencesSettingsPanel {...uiPreferences} /></SettingsGroup> : null}
       {timeZone || localToolPermission || autoReview ? <SettingsGroup title="Agent">
         {timeZone ? <TimeZoneSettingsPanel {...timeZone} /> : null}
         {localToolPermission ? <LocalToolPermissionSettingsPanel {...localToolPermission} /> : null}
@@ -163,17 +165,25 @@ const UI_LANGUAGE_OPTIONS = [
   { value: "ja", label: "日本語" }, { value: "ko", label: "한국어" },
   { value: "ar", label: "العربية" }, { value: "he", label: "עברית" },
 ] as const;
-const UI_DIRECTION_OPTIONS = [{ value: "auto", label: "Automatic" }, { value: "ltr", label: "Left to right" }, { value: "rtl", label: "Right to left" }] as const;
 const UI_TEXT_SCALE_OPTIONS = [{ value: "0.9", label: "90%" }, { value: "1", label: "100%" }, { value: "1.1", label: "110%" }, { value: "1.25", label: "125%" }, { value: "1.5", label: "150%" }] as const;
 export function UiPreferencesSettingsPanel({ state, onChange }: { state: DesktopUiPreferences; onChange(preferences: DesktopUiPreferences): void | Promise<DesktopUiPreferences> }) {
-  const action=useAsyncAction(onChange);
-  const update=(patch: Partial<DesktopUiPreferences>)=>action.dispatch({ ...state, ...patch });
+  const action = useAsyncAction(onChange);
+  const copy = settingsCopy(state.locale);
+  const update = (patch: Partial<DesktopUiPreferences>) => action.dispatch({ ...state, ...patch });
+  const activeAccessibilityPreferences = Number(state.reducedMotion) + Number(state.highContrast) + Number(state.textScale !== 1);
+  const languageOptions = UI_LANGUAGE_OPTIONS.map((option) => option.value === "system" ? { ...option, label: copy.systemLanguage } : option);
+  const directionOptions = [
+    { value: "auto", label: copy.directionAutomatic },
+    { value: "ltr", label: copy.directionLtr },
+    { value: "rtl", label: copy.directionRtl }
+  ] as const;
   return <>
-    <label><span><strong>Language</strong><small>Sets document language metadata and locale-sensitive behavior.</small></span><SandSelect ariaLabel="Language" className="ui-select-trigger" disabled={action.isPending} onValueChange={(locale)=>update({locale})} options={UI_LANGUAGE_OPTIONS} placement="bottom-end" value={state.locale} /></label>
-    <label><span><strong>Reading direction</strong><small>Automatic follows the selected or system language.</small></span><SandSelect ariaLabel="Reading direction" className="ui-select-trigger" disabled={action.isPending} onValueChange={(direction)=>update({direction})} options={UI_DIRECTION_OPTIONS} placement="bottom-end" value={state.direction} /></label>
-    <label><span><strong>Text size</strong><small>Scales the interface without changing browser zoom.</small></span><SandSelect ariaLabel="Text size" className="ui-select-trigger" disabled={action.isPending} onValueChange={(value)=>update({textScale:Number(value)})} options={UI_TEXT_SCALE_OPTIONS} placement="bottom-end" value={String(state.textScale)} /></label>
-    <div className="sand-settings-row"><SandSwitch checked={state.reducedMotion} disabled={action.isPending} label={<span className="sand-settings-copy"><strong>Reduce motion</strong><small>Disables non-essential animation and smooth scrolling.</small></span>} onCheckedChange={(reducedMotion)=>update({reducedMotion})} /></div>
-    <div className="sand-settings-row"><SandSwitch checked={state.highContrast} disabled={action.isPending} label={<span className="sand-settings-copy"><strong>High contrast controls</strong><small>Strengthens control borders and keyboard focus indicators.</small></span>} onCheckedChange={(highContrast)=>update({highContrast})} /></div>
+    <label><span><strong>{copy.language}</strong><small>{copy.languageDescription}</small></span><SandSelect ariaLabel={copy.language} className="ui-select-trigger" disabled={action.isPending} onValueChange={(locale)=>update({locale})} options={languageOptions} placement="bottom-end" value={state.locale} /></label>
+    <label><span><strong>{copy.readingDirection}</strong><small>{copy.readingDirectionDescription}</small></span><SandSelect ariaLabel={copy.readingDirection} className="ui-select-trigger" disabled={action.isPending} onValueChange={(direction)=>update({direction})} options={directionOptions} placement="bottom-end" value={state.direction} /></label>
+    <label><span><strong>{copy.textSize}</strong><small>{copy.textSizeDescription}</small></span><SandSelect ariaLabel={copy.textSize} className="ui-select-trigger" disabled={action.isPending} onValueChange={(value)=>update({textScale:Number(value)})} options={UI_TEXT_SCALE_OPTIONS} placement="bottom-end" value={String(state.textScale)} /></label>
+    <div className="sand-settings-row"><SandSwitch checked={state.reducedMotion} disabled={action.isPending} label={<span className="sand-settings-copy"><strong>{copy.reduceMotion}</strong><small>{copy.reduceMotionDescription}</small></span>} onCheckedChange={(reducedMotion)=>update({reducedMotion})} /></div>
+    <div className="sand-settings-row"><SandSwitch checked={state.highContrast} disabled={action.isPending} label={<span className="sand-settings-copy"><strong>{copy.highContrast}</strong><small>{copy.highContrastDescription}</small></span>} onCheckedChange={(highContrast)=>update({highContrast})} /></div>
+    <p aria-live="polite" className="sand-settings-a11y-status" role="status">{formatAccessibilityPreferenceCount(state.locale, activeAccessibilityPreferences)}</p>
   </>;
 }
 const SECURITY_KEY_PLATFORMS: readonly NodeJS.Platform[] = ["darwin", "win32"];

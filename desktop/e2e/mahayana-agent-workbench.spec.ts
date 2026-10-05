@@ -834,7 +834,7 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
   }
 });
 
-test('Settings accessibility and locale preferences persist through the shipping desktop bridge', async () => {
+test('Settings localization, accessibility, bidirectional text, and IME stay on shipping Electron surfaces', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-settings-a11y-i18n-'));
   let app: ElectronApplication | null = null;
 
@@ -850,24 +850,60 @@ test('Settings accessibility and locale preferences persist through the shipping
     await expect(settings).toBeVisible();
     await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
     await expect(settings.getByText('Language & Accessibility', { exact: true })).toBeVisible();
-    await expect(settings.getByRole('button', { name: 'Language' })).toBeVisible();
-    await expect(settings.getByRole('button', { name: 'Reading direction' })).toBeVisible();
-    await expect(settings.getByRole('button', { name: 'Text size' })).toBeVisible();
-    await expect(settings.getByRole('switch', { name: /Reduce motion/u })).toBeVisible();
-    await expect(settings.getByRole('switch', { name: /High contrast controls/u })).toBeVisible();
-    await expect(settings.getByRole('button', { name: 'Close', exact: true })).toBeVisible();
 
-    const stored = await page.evaluate(async () => {
+    const language = settings.getByRole('button', { name: 'Language' });
+    await language.focus();
+    await page.keyboard.press('Enter');
+    const arabicOption = page.getByRole('option', { name: 'العربية', exact: true });
+    await arabicOption.focus();
+    await page.keyboard.press('Enter');
+
+    const localizedSettings = page.locator('.sand-settings-dialog');
+    await expect(localizedSettings).toHaveAttribute('aria-label', 'إعدادات Grok Bot');
+    await expect(localizedSettings.getByRole('navigation', { name: 'أقسام الإعدادات' })).toBeVisible();
+    await expect(localizedSettings.getByRole('heading', { name: 'عام', exact: true })).toBeVisible();
+    await expect(localizedSettings.getByText('اللغة وإمكانية الوصول', { exact: true })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => ({
+      lang: document.documentElement.lang,
+      dir: document.documentElement.dir,
+    }))).toEqual({ lang: 'ar', dir: 'rtl' });
+
+    const livePreferenceStatus = localizedSettings.locator('.sand-settings-a11y-status');
+    await expect(livePreferenceStatus).toHaveAttribute('role', 'status');
+    const arabicOne = await page.evaluate(() => new Intl.NumberFormat('ar').format(1));
+    const arabicTwo = await page.evaluate(() => new Intl.NumberFormat('ar').format(2));
+    const arabicThree = await page.evaluate(() => new Intl.NumberFormat('ar').format(3));
+
+    const reduceMotion = localizedSettings.getByRole('switch', { name: /تقليل الحركة/u });
+    await reduceMotion.focus();
+    await page.keyboard.press('Space');
+    await expect(livePreferenceStatus).toContainText(arabicOne);
+
+    const highContrast = localizedSettings.getByRole('switch', { name: /تباين عالٍ/u });
+    await highContrast.focus();
+    await page.keyboard.press('Space');
+    await expect(livePreferenceStatus).toContainText(arabicTwo);
+
+    const direction = localizedSettings.getByRole('button', { name: 'اتجاه القراءة' });
+    await direction.focus();
+    await page.keyboard.press('Enter');
+    const rtlOption = page.getByRole('option', { name: 'من اليمين إلى اليسار', exact: true });
+    await rtlOption.focus();
+    await page.keyboard.press('Enter');
+
+    const textSize = localizedSettings.getByRole('button', { name: 'حجم النص' });
+    await textSize.focus();
+    await page.keyboard.press('Enter');
+    const textScaleOption = page.getByRole('option', { name: '125%', exact: true });
+    await textScaleOption.focus();
+    await page.keyboard.press('Enter');
+    await expect(livePreferenceStatus).toContainText(arabicThree);
+
+    await expect.poll(() => page.evaluate(async () => {
       const candidate = window as unknown as {
         desktop: {
           uiPreferences: {
-            set(input: {
-              locale: string;
-              direction: 'auto' | 'ltr' | 'rtl';
-              reducedMotion: boolean;
-              highContrast: boolean;
-              textScale: number;
-            }): Promise<{
+            get(): Promise<{
               locale: string;
               direction: 'auto' | 'ltr' | 'rtl';
               reducedMotion: boolean;
@@ -877,20 +913,27 @@ test('Settings accessibility and locale preferences persist through the shipping
           };
         };
       };
-      return await candidate.desktop.uiPreferences.set({
-        locale: 'ar',
-        direction: 'rtl',
-        reducedMotion: true,
-        highContrast: true,
-        textScale: 1.25,
-      });
-    });
-    expect(stored).toEqual({
+      return await candidate.desktop.uiPreferences.get();
+    })).toEqual({
       locale: 'ar',
       direction: 'rtl',
       reducedMotion: true,
       highContrast: true,
       textScale: 1.25,
+    });
+
+    await expect.poll(() => page.evaluate(() => ({
+      lang: document.documentElement.lang,
+      dir: document.documentElement.dir,
+      reducedMotion: document.documentElement.dataset.sandReducedMotion,
+      highContrast: document.documentElement.dataset.sandHighContrast,
+      textScale: document.documentElement.style.getPropertyValue('--sand-ui-text-scale'),
+    }))).toEqual({
+      lang: 'ar',
+      dir: 'rtl',
+      reducedMotion: 'true',
+      highContrast: 'true',
+      textScale: '1.25',
     });
 
     await app.close();
@@ -914,16 +957,41 @@ test('Settings accessibility and locale preferences persist through the shipping
 
     await openMahayanaConversation(page);
     const prompt = page.getByRole('textbox', { name: 'Prompt' });
-    const mixedDirectionDraft = '漢字🙂 العربية Fabushi';
-    await prompt.pressSequentially(mixedDirectionDraft);
-    await expect(prompt).toContainText(mixedDirectionDraft);
+    await expect(prompt).toHaveAttribute('dir', 'auto');
+    const typography = await prompt.evaluate((element) => {
+      const root = getComputedStyle(document.documentElement);
+      const style = getComputedStyle(element);
+      return {
+        fallback: root.getPropertyValue('--fabushi-ui-font-fallback'),
+        unicodeBidi: style.unicodeBidi,
+      };
+    });
+    expect(typography.fallback).toContain('Noto Sans CJK SC');
+    expect(typography.fallback).toContain('Noto Sans Arabic');
+    expect(typography.fallback).toContain('Apple Color Emoji');
+    expect(typography.unicodeBidi).toBe('plaintext');
+
+    await prompt.focus();
+    await prompt.dispatchEvent('compositionstart', { data: '' });
+    await page.keyboard.insertText('かな漢字');
+    await page.keyboard.press('Enter');
+    await expect(prompt).toContainText('かな漢字');
+    await expect(page.getByRole('button', { name: 'Stop response' })).toHaveCount(0);
+    await prompt.dispatchEvent('compositionend', { data: 'かな漢字' });
+    await page.keyboard.insertText('🙂 العربية Fabushi');
+    await expect(prompt).toContainText('かな漢字🙂 العربية Fabushi');
 
     await page.getByRole('button', { name: 'Account', exact: true }).click();
     await page.getByText('Settings', { exact: true }).click();
-    const restoredSettings = page.getByRole('dialog', { name: 'Grok Bot settings' });
-    await expect(restoredSettings).toBeVisible();
-    await restoredSettings.getByRole('button', { name: 'Close', exact: true }).focus();
-    await expect(restoredSettings.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+    const restoredSettings = page.locator('.sand-settings-dialog');
+    await expect(restoredSettings).toHaveAttribute('aria-label', 'إعدادات Grok Bot');
+    const firstSettingsNavigationItem = restoredSettings.getByRole('button', { name: 'عام', exact: true });
+    await firstSettingsNavigationItem.focus();
+    await page.keyboard.press('Shift+Tab');
+    expect(await page.evaluate(() => document.querySelector('.sand-settings-dialog')?.contains(document.activeElement) === true)).toBe(true);
+    const close = restoredSettings.getByRole('button', { name: 'إغلاق', exact: true });
+    await close.focus();
+    await expect(close).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(restoredSettings).toBeHidden();
   } finally {

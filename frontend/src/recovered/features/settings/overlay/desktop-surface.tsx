@@ -35,6 +35,7 @@ import { DEFAULT_ROUTER_PROVIDER, loadRouterProvider, saveRouterProvider, type R
 import type { AutoReviewSettings } from "./auto-review";
 import type { SettingsComputerMount } from "./computer";
 import { SettingsNoticeView, settingsNoticeFromEvent, type SettingsNotice } from "./notice";
+import { applyDesktopUiPreferencesToDocument } from "./localization";
 import { publishSurfaceNotice, type SettingsNoticeEvent } from "../../../contracts/surface-notice";
 import { SandButton } from "../../../ui/sand-kit-primitives";
 
@@ -145,6 +146,11 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
     return () => { active = false; };
   }, [bridge, isOpen]);
 
+  useEffect(() => {
+    if (!isOpen || snapshot == null) return;
+    applyDesktopUiPreferencesToDocument(snapshot.uiPreferences);
+  }, [isOpen, snapshot]);
+
   const mutate = async <Value,>(action: () => Promise<Value>, operation: SettingsNoticeEvent["operation"], apply: (value: Value) => void): Promise<Value> => {
     try {
       const value = await action();
@@ -184,6 +190,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
       <SettingsModalShell
       initialSection={initialSection}
       isOpen={isOpen}
+      locale={snapshot?.uiPreferences.locale ?? "system"}
       onClose={onClose}
       renderSection={(section: SettingsSectionId) => {
         if (snapshot == null) return (

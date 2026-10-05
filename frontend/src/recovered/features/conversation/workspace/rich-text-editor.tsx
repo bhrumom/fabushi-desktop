@@ -716,6 +716,7 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
   const previousExternalContent = useRef({ prompt, richText });
   const clearFence = useRef<{ generation: number; before: string } | null>(null);
   const scopeFence = useRef<{ scopeKey: string; before: string } | null>(null);
+  const compositionActive = useRef(false);
   const emittedChangeSerial = useRef(0);
   const observedScopeKey = useRef(scopeKey);
   const observedClearGeneration = useRef(clearGeneration);
@@ -728,12 +729,22 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
     editorProps: {
       attributes: {
         class: "sand-prompt-field",
+        dir: "auto",
         spellcheck: "false",
         "aria-label": "Prompt",
         "aria-multiline": "true",
         role: "textbox"
       },
       handleDOMEvents: {
+        compositionstart: () => {
+          compositionActive.current = true;
+          scopeFence.current = null;
+          return false;
+        },
+        compositionend: () => {
+          compositionActive.current = false;
+          return false;
+        },
         beforeinput: () => {
           // A real browser edit is the ownership handoff from the old scope to
           // the newly selected Agent. Release the scope fence before TipTap
@@ -780,7 +791,7 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
         }
       },
       handleKeyDown: (_view, event) => {
-        if (event.isComposing) return false;
+        if (event.isComposing || compositionActive.current) return false;
         if (event.key === "Escape") {
           event.preventDefault();
           callbacks.current.onEscape();
@@ -876,7 +887,7 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
   }, [disabled, editor, onPasteFiles]);
 
   useEffect(() => {
-    if (editor == null) return;
+    if (editor == null || compositionActive.current) return;
     const previous = previousExternalContent.current;
     previousExternalContent.current = { prompt, richText };
     const expected = promptEditorContent(prompt, richText);

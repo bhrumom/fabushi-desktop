@@ -129,6 +129,7 @@ import { ComputerReconnectBanner, ComputerRebuildProgressBanner, type ComputerRe
 import { createRosterSnapshotSource, createRosterSnapshotStore } from "../recovered/features/access/cover/roster-snapshot-store";
 import { createSettingsUpdateController } from "../recovered/features/settings/overlay/updates-controller";
 import { SettingsNoticeView } from "../recovered/features/settings/overlay/notice";
+import { applyDesktopUiPreferencesToDocument } from "../recovered/features/settings/overlay/localization";
 import { createSettingsNoticeController } from "./settings-notice-controller";
 import { createGroupMembersRootScope } from "./group-members-root";
 import { createProductionReactionRootScope } from "./reaction-root";
@@ -690,17 +691,6 @@ function SignInLanding({ account, bridge, onStatus }: { account: CursorAuthStatu
   );
 }
 
-const RTL_UI_LANGUAGES = new Set(["ar","ckb","dv","fa","he","ku","ps","sd","ug","ur","yi"]);
-function applyUiPreferences(preferences: DesktopUiPreferences): void {
-  if (typeof document==="undefined") return;
-  const systemLocale=typeof navigator==="undefined" ? "en-US" : navigator.language;
-  const locale=preferences.locale==="system" ? systemLocale : preferences.locale;
-  document.documentElement.lang=locale;
-  document.documentElement.dir=preferences.direction==="auto" ? (RTL_UI_LANGUAGES.has(locale.split("-")[0]!.toLowerCase()) ? "rtl" : "ltr") : preferences.direction;
-  document.documentElement.dataset.sandReducedMotion=preferences.reducedMotion ? "true" : "false";
-  document.documentElement.dataset.sandHighContrast=preferences.highContrast ? "true" : "false";
-  document.documentElement.style.setProperty("--sand-ui-text-scale", String(preferences.textScale));
-}
 
 export interface ProductionRendererProps {
   bridge: DesktopBridge;
@@ -3221,7 +3211,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setWindowFullscreen(windowState.isFullscreen);
       setWindowMaximized(windowState.isMaximized);
     }).catch((error: unknown) => active && setNotice(error instanceof Error ? error.message : String(error)));
-    void bridge.uiPreferences.get().then((preferences)=>{ if(active) applyUiPreferences(preferences); }).catch(()=>{});
+    void bridge.uiPreferences.get().then((preferences)=>{ if(active) applyDesktopUiPreferencesToDocument(preferences); }).catch(()=>{});
     const stopAccount = bridge.cursorAccount.onStatusChanged(observeAccount);
     const themeInstaller = typeof document === "undefined" ? null : createRuntimeThemeInstaller(document as unknown as ThemeDocument, bridge.theme.initial.resolved);
     const stopTheme = bridge.theme.onChanged((theme) => { setThemePreference(theme.preference); setResolvedTheme(theme.resolved); themeInstaller?.update(theme.resolved); applyRootShellTheme(theme.resolved); });
