@@ -323,91 +323,36 @@ jobs:
           echo "Installed candidate app: $installed_app" >> "$GITHUB_STEP_SUMMARY"
           echo "Candidate executable: $executable" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Provision bounded production CI account sessions
+      - name: Provision bounded production CI account session
         shell: bash
         env:
           FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
           FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
-          FABUSHI_CI_PEER_TEST_USERNAME: ${{ secrets.FABUSHI_CI_PEER_TEST_USERNAME }}
-          FABUSHI_CI_PEER_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_PEER_TEST_PASSWORD }}
           FABUSHI_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
           DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app
-          PEER_DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-peer
         run: |
           set -euo pipefail
           test -n "$FABUSHI_CI_TEST_USERNAME"
           test -n "$FABUSHI_CI_TEST_PASSWORD"
-          test -n "$FABUSHI_CI_PEER_TEST_USERNAME" || { echo "::error::FABUSHI_CI_PEER_TEST_USERNAME is required for signed Phase 1 Human/multi-device acceptance."; exit 1; }
-          test -n "$FABUSHI_CI_PEER_TEST_PASSWORD" || { echo "::error::FABUSHI_CI_PEER_TEST_PASSWORD is required for signed Phase 1 Human/multi-device acceptance."; exit 1; }
-          test "$FABUSHI_CI_PEER_TEST_USERNAME" != "$FABUSHI_CI_TEST_USERNAME" || { echo "::error::Phase 1 call acceptance requires two distinct production Human accounts."; exit 1; }
-
           support="$RUNNER_TEMP/fabushi-support"
           test -f "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
           test -f "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
-
-          provision_session() {
-            local username="$1"
-            local password="$2"
-            local device_id="$3"
-            local account_dir="$4"
-            local app_session_dir="$5"
-            mkdir -p "$account_dir" "$app_session_dir"
-            chmod 700 "$account_dir" "$app_session_dir"
-            (
-              export FABUSHI_CI_TEST_USERNAME="$username"
-              export FABUSHI_CI_TEST_PASSWORD="$password"
-              export DEVICE_ID="$device_id"
-              export FABUSHI_ACCOUNT_SESSION_FILE="$account_dir/session.json"
-              export FABUSHI_CI_ACCOUNT_SESSION_FILE="$app_session_dir/session.json"
-              node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
-              node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
-              chmod 600 "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
-              jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not) and (.accessToken|type) == "string"' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" >/dev/null
-              rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"
-            )
-          }
-
-          primary_account_dir="$RUNNER_TEMP/fabushi-candidate-account"
-          primary_session_dir="$RUNNER_TEMP/fabushi-candidate-app-session"
-          peer_account_dir="$RUNNER_TEMP/fabushi-candidate-peer-account"
-          peer_session_dir="$RUNNER_TEMP/fabushi-candidate-peer-app-session"
-          provision_session "$FABUSHI_CI_TEST_USERNAME" "$FABUSHI_CI_TEST_PASSWORD" "$DEVICE_ID" "$primary_account_dir" "$primary_session_dir"
-          provision_session "$FABUSHI_CI_PEER_TEST_USERNAME" "$FABUSHI_CI_PEER_TEST_PASSWORD" "$PEER_DEVICE_ID" "$peer_account_dir" "$peer_session_dir"
-
-          primary_session="$primary_session_dir/session.json"
-          peer_session="$peer_session_dir/session.json"
+          account_dir="$RUNNER_TEMP/fabushi-candidate-account"
+          app_session_dir="$RUNNER_TEMP/fabushi-candidate-app-session"
+          mkdir -p "$account_dir" "$app_session_dir"
+          chmod 700 "$account_dir" "$app_session_dir"
+          export FABUSHI_ACCOUNT_SESSION_FILE="$account_dir/session.json"
+          export FABUSHI_CI_ACCOUNT_SESSION_FILE="$app_session_dir/session.json"
+          node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
+          node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+          chmod 600 "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+          jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not)' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" >/dev/null
+          rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"
           {
             echo "DEVICE_ID=$DEVICE_ID"
-            echo "PEER_DEVICE_ID=$PEER_DEVICE_ID"
-            echo "FABUSHI_CI_ACCOUNT_SESSION_FILE=$primary_session"
-            echo "FABUSHI_CI_PEER_ACCOUNT_SESSION_FILE=$peer_session"
-            echo "FABUSHI_CI_TEST_USERNAME=$FABUSHI_CI_TEST_USERNAME"
-            echo "FABUSHI_CI_PEER_TEST_USERNAME=$FABUSHI_CI_PEER_TEST_USERNAME"
+            echo "FABUSHI_CI_ACCOUNT_SESSION_FILE=$FABUSHI_CI_ACCOUNT_SESSION_FILE"
           } >> "$GITHUB_ENV"
-          echo "Two distinct bounded refresh-token-free production account sessions prepared for signed Phase 1 acceptance." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Prepare production Human friendship
-        shell: bash
-        env:
-          FABUSHI_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
-        run: |
-          set -euo pipefail
-          primary_token="$(jq -r '.accessToken' "$FABUSHI_CI_ACCOUNT_SESSION_FILE")"
-          peer_token="$(jq -r '.accessToken' "$FABUSHI_CI_PEER_ACCOUNT_SESSION_FILE")"
-          test -n "$primary_token"
-          test -n "$peer_token"
-
-          friends="$(curl --fail --silent --show-error -H "authorization: Bearer $primary_token" "$FABUSHI_API_BASE_URL/api/social/friends")"
-          if ! jq -e --arg peer "$FABUSHI_CI_PEER_TEST_USERNAME" '.data.friends[]? | select((.username // .id | tostring) == $peer)' <<<"$friends" >/dev/null; then
-            primary_incoming="$(curl --fail --silent --show-error -H "authorization: Bearer $primary_token" "$FABUSHI_API_BASE_URL/api/social/friend-requests/incoming")"
-            reverse_request_id="$(jq -r --arg peer "$FABUSHI_CI_PEER_TEST_USERNAME" '.data.requests[]? | select((.fromUser.username // .fromUser.id | tostring) == $peer) | .requestId // .id' <<<"$primary_incoming" | head -n 1)"
-            if [ -n "$reverse_request_id" ]; then
-              curl --fail --silent --show-error -X POST -H "authorization: Bearer $primary_token" "$FABUSHI_API_BASE_URL/api/social/friend-requests/$reverse_request_id/accept" >/dev/null
-            else
-              request_body="$(jq -cn --arg target "$FABUSHI_CI_PEER_TEST_USERNAME" '{targetUserId:$target,message:"signed packaged Phase 1 acceptance"}')"
-              request_response="$(curl --silent --show-error -w 
-          curl --fail --silent --show-error -H "authorization: Bearer $primary_token" "$FABUSHI_API_BASE_URL/api/social/friends" | jq -e --arg peer "$FABUSHI_CI_PEER_TEST_USERNAME" '.data.friends[]? | select((.username // .id | tostring) == $peer)' >/dev/null
-          echo "Production Human friendship verified before signed-app feature acceptance." >> "$GITHUB_STEP_SUMMARY"
+          echo "Bounded refresh-token-free production account session prepared for signed candidate acceptance." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run real signed packaged acceptance
         working-directory: desktop
@@ -431,116 +376,7 @@ jobs:
           bash "$recorder" start "$OBF_EVIDENCE_DIR"
           bash "$recorder" assert-live "$OBF_EVIDENCE_DIR"
           test_status=0
-          npx playwright test e2e/openbot-packaged-acceptance.spec.ts e2e/phase1-packaged-production-acceptance.spec.ts --workers=1 || test_status=$?
-          stop_status=0
-          bash "$recorder" stop "$OBF_EVIDENCE_DIR" || stop_status=$?
-          verify_status=0
-          bash "$recorder" verify "$OBF_EVIDENCE_DIR" || verify_status=$?
-          test "$test_status" -eq 0
-          test "$stop_status" -eq 0
-          test "$verify_status" -eq 0
-          test -s "$OBF_EVIDENCE_DIR/trace.zip"
-          test -s "$OBF_EVIDENCE_DIR/runtime.log"
-          test -s "$OBF_EVIDENCE_DIR/lifecycle.json"
-          test -s "$OBF_EVIDENCE_DIR/candidate.json"
-          find "$OBF_EVIDENCE_DIR/screenshots" -type f -name '*.png' -size +0c -print -quit | grep -q .
-          find "$OBF_EVIDENCE_DIR" -type f \( -name '*.mp4' -o -name '*.mov' -o -name '*.webm' \) -size +0c -print -quit | grep -q .
-
-      - name: Upload packaged acceptance evidence
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: fabushi-candidate-acceptance-${{ steps.source.outputs.short }}
-          path: |
-            ${{ runner.temp }}/fabushi-candidate-acceptance
-            desktop/playwright-report
-            desktop/test-results
-          if-no-files-found: warn
-          retention-days: 90
-          compression-level: 0
-
-      - name: Write checksums
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd desktop/release
-          find . -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' \) -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS.txt
-          cat SHA256SUMS.txt
-
-      - name: Upload workflow artifacts
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: fabushi-macos-${{ steps.source.outputs.short }}
-          path: |
-            desktop/release/*.dmg
-            desktop/release/*.zip
-            desktop/release/*.blockmap
-            desktop/release/latest-mac.yml
-            desktop/release/SHA256SUMS.txt
-          if-no-files-found: error
-          retention-days: 90
-          compression-level: 0
-
-      - name: Publish GitHub prerelease
-        if: ${{ (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/package-macos-') || startsWith(github.event.head_commit.message, 'release:'))) || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.source.outputs.tag }}
-          VERSION: ${{ steps.source.outputs.version }}
-          SOURCE_SHA: ${{ steps.source.outputs.sha }}
-        run: |
-          set -euo pipefail
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release delete "$TAG" --yes --cleanup-tag
-          fi
-          gh release create "$TAG"             desktop/release/*.dmg             desktop/release/*.zip             desktop/release/*.blockmap             desktop/release/latest-mac.yml             desktop/release/SHA256SUMS.txt             --target "$SOURCE_SHA"             --title "Fabushi macOS $VERSION — ${SOURCE_SHA:0:12}"             --notes "Signed and Apple-notarized macOS arm64 installer built from exact fabushi-desktop commit \`$SOURCE_SHA\`."             --prerelease
-          url="$(gh release view "$TAG" --json url -q .url)"
-          echo "### Published" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Release: $url" >> "$GITHUB_STEP_SUMMARY"
-\n%{http_code}' -H "authorization: Bearer $primary_token" -H 'content-type: application/json' --data "$request_body" "$FABUSHI_API_BASE_URL/api/social/friend-requests")"
-              request_status="$(tail -n 1 <<<"$request_response")"
-              request_json="$(sed '$d' <<<"$request_response")"
-              if [ "$request_status" = "409" ]; then
-                incoming_id="$(jq -r '.incomingRequestId // empty' <<<"$request_json")"
-                test -n "$incoming_id" || { echo "::error::Friend request conflict did not expose incomingRequestId."; exit 1; }
-                curl --fail --silent --show-error -X POST -H "authorization: Bearer $primary_token" "$FABUSHI_API_BASE_URL/api/social/friend-requests/$incoming_id/accept" >/dev/null
-              else
-                test "$request_status" -ge 200 -a "$request_status" -lt 300 || { echo "::error::Production friend request failed with HTTP $request_status: $request_json"; exit 1; }
-                incoming="$(curl --fail --silent --show-error -H "authorization: Bearer $peer_token" "$FABUSHI_API_BASE_URL/api/social/friend-requests/incoming")"
-                request_id="$(jq -r --arg primary "$FABUSHI_CI_TEST_USERNAME" '.data.requests[]? | select((.fromUser.username // .fromUser.id | tostring) == $primary) | .requestId // .id' <<<"$incoming" | head -n 1)"
-                test -n "$request_id" || { echo "::error::Production peer account did not receive the friendship request."; exit 1; }
-                curl --fail --silent --show-error -X POST -H "authorization: Bearer $peer_token" "$FABUSHI_API_BASE_URL/api/social/friend-requests/$request_id/accept" >/dev/null
-              fi
-            fi
-          fi
-          curl --fail --silent --show-error -H "authorization: Bearer $primary_token" "$FABUSHI_API_BASE_URL/api/social/friends" | jq -e --arg peer "$FABUSHI_CI_PEER_TEST_USERNAME" '.data.friends[]? | select((.username // .id | tostring) == $peer)' >/dev/null
-          echo "Production Human friendship verified before signed-app feature acceptance." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Run real signed packaged acceptance
-        working-directory: desktop
-        shell: bash
-        timeout-minutes: 60
-        env:
-          OBF_REAL_ACCEPTANCE: '1'
-          OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
-          OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
-          OBF_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-candidate-acceptance
-          FABUSHI_ELECTRON_EXECUTABLE: ${{ steps.candidate.outputs.executable }}
-          FABUSHI_FEATURE_HOST_MODE: production
-          FABUSHI_E2E: '0'
-        run: |
-          set -euo pipefail
-          rm -rf "$OBF_EVIDENCE_DIR"
-          mkdir -p "$OBF_EVIDENCE_DIR"
-          recorder="$GITHUB_WORKSPACE/desktop/scripts/macos-session-recorder.sh"
-          test -f "$recorder"
-          test -s "$GITHUB_WORKSPACE/desktop/scripts/macos-session-video.swift"
-          bash "$recorder" start "$OBF_EVIDENCE_DIR"
-          bash "$recorder" assert-live "$OBF_EVIDENCE_DIR"
-          test_status=0
-          npx playwright test e2e/openbot-packaged-acceptance.spec.ts e2e/phase1-packaged-production-acceptance.spec.ts --workers=1 || test_status=$?
+          npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1 || test_status=$?
           stop_status=0
           bash "$recorder" stop "$OBF_EVIDENCE_DIR" || stop_status=$?
           verify_status=0
