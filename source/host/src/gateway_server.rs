@@ -82,6 +82,15 @@ const FABUSHI_EXTENSION_COMMANDS: &[&str] = &[
     "getHumanConversationTranscript",
     "getHumanConversationTranscriptTail",
     "searchHumanMessages",
+    // ADR-003 CallSession/Signaling commands. Keep live call truth in the
+    // canonical Host owner rather than widening Renderer/Electron ownership.
+    "createCallSession",
+    "getCallSession",
+    "listCallSessions",
+    "transitionCallSession",
+    "updateCallMedia",
+    "sendCallSignal",
+    "listCallSignals",
     // Internal desktop MCP lifecycle settlement. The shipping desktop MCP owner
     // answers Host lifecycle requests through this single explicit callback.
     "mcp.resolveLifecycleRequest",
@@ -1209,6 +1218,13 @@ mod tests {
             "getHumanConversationTranscript",
             "getHumanConversationTranscriptTail",
             "searchHumanMessages",
+            "createCallSession",
+            "getCallSession",
+            "listCallSessions",
+            "transitionCallSession",
+            "updateCallMedia",
+            "sendCallSignal",
+            "listCallSignals",
         ] {
             assert!(is_gateway_command(method), "{method} must reach the production Session owner");
         }
