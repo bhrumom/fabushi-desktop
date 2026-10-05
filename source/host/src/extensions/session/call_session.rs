@@ -392,7 +392,7 @@ impl CallSessionStore {
     }
 }
 
-fn transition_target(
+pub(super) fn transition_target(
     current: &CallSession,
     action: &str,
     terminal_reason: Option<&str>,
