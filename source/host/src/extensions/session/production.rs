@@ -31,6 +31,7 @@ use super::agent_db::{
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
+use super::call_session::{CallSession, CallSessionStore, CallSignal};
 use super::agent_db_serde::{
     AwaitingUserResponse, EpisodeTurn, MemoryPromptSnapshot, SandProfile, SpendGuardState,
     UnreadState,
@@ -155,6 +156,8 @@ pub struct ProductionSessionWorkers {
     native_messaging: Option<Arc<FabushiNativeMessagingClient>>,
     native_messaging_required: bool,
     native_messaging_error: Option<String>,
+    call_session_store: Option<Arc<CallSessionStore>>,
+    call_session_store_error: Option<String>,
     busy_timeout_ms: u64,
 }
 
@@ -285,6 +288,11 @@ impl ProductionSessionWorkers {
         let local_human_id = local_human_id
             .map(|value| value.trim().to_string())
             .filter(|value| !value.is_empty());
+        let (call_session_store, call_session_store_error) =
+            match CallSessionStore::open(&agents_root, busy_timeout_ms) {
+                Ok(store) => (Some(Arc::new(store)), None),
+                Err(error) => (None, Some(error)),
+            };
         Self {
             memory_service,
             agents_root,
@@ -303,8 +311,109 @@ impl ProductionSessionWorkers {
             native_messaging,
             native_messaging_required,
             native_messaging_error,
+            call_session_store,
+            call_session_store_error,
             busy_timeout_ms,
         }
+    }
+
+    pub fn call_session_store_path(&self) -> Result<&Path, String> {
+        self.call_session_store
+            .as_ref()
+            .map(|store| store.path())
+            .ok_or_else(|| {
+                self.call_session_store_error
+                    .clone()
+                    .unwrap_or_else(|| "CallSession store is unavailable".into())
+            })
+    }
+
+    fn call_sessions(&self) -> Result<&Arc<CallSessionStore>, String> {
+        self.call_session_store.as_ref().ok_or_else(|| {
+            self.call_session_store_error
+                .clone()
+                .unwrap_or_else(|| "CallSession store is unavailable".into())
+        })
+    }
+
+    pub fn create_call_session(
+        &self,
+        scope_id: &str,
+        participant_ids: &[String],
+    ) -> Result<CallSession, String> {
+        let creator_id = self
+            .local_human_id
+            .as_deref()
+            .ok_or_else(|| "CallSession creation requires an authenticated Human identity".to_string())?;
+        self.call_sessions()?.create(scope_id, creator_id, participant_ids)
+    }
+
+    pub fn get_call_session(&self, call_id: &str) -> Result<Option<CallSession>, String> {
+        self.call_sessions()?.get(call_id)
+    }
+
+    pub fn list_call_sessions(
+        &self,
+        scope_id: &str,
+        limit: usize,
+    ) -> Result<Vec<CallSession>, String> {
+        self.call_sessions()?.list_for_scope(scope_id, limit)
+    }
+
+    pub fn transition_call_session(
+        &self,
+        call_id: &str,
+        expected_generation: u64,
+        action: &str,
+        terminal_reason: Option<&str>,
+    ) -> Result<CallSession, String> {
+        self.call_sessions()?
+            .transition(call_id, expected_generation, action, terminal_reason)
+    }
+
+    pub fn update_call_media(
+        &self,
+        call_id: &str,
+        expected_generation: u64,
+        media_capabilities: Option<&serde_json::Value>,
+        device_selection: Option<&serde_json::Value>,
+    ) -> Result<CallSession, String> {
+        self.call_sessions()?.update_media(
+            call_id,
+            expected_generation,
+            media_capabilities,
+            device_selection,
+        )
+    }
+
+    pub fn append_call_signal(
+        &self,
+        call_id: &str,
+        expected_generation: u64,
+        seq: u64,
+        sender_device_id: &str,
+        kind: &str,
+        payload: &serde_json::Value,
+    ) -> Result<CallSignal, String> {
+        self.call_sessions()?.append_signal(
+            call_id,
+            expected_generation,
+            seq,
+            sender_device_id,
+            kind,
+            payload,
+        )
+    }
+
+    pub fn list_call_signals(
+        &self,
+        call_id: &str,
+        generation: u64,
+        after_seq: u64,
+        limit: usize,
+    ) -> Result<Vec<CallSignal>, String> {
+        self.call_sessions()?
+            .list_signals(call_id, generation, after_seq, limit)
     }
 
     pub fn worker_pool(&self) -> Arc<ProductionAgentWorkerPool> {
