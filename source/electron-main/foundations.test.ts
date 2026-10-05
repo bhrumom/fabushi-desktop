@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import test from "node:test";
 
 import { getSimulatedGatewayLatencyMs, setSimulatedGatewayLatencyMs, SIMULATED_GATEWAY_LATENCY_MAX_MS } from "./dev/dev-network-latency.js";
@@ -446,10 +446,11 @@ test("call media binding preserves native permission and desktopCapturer authori
 
 
 test("MAS packaging declares camera and microphone authority for Human calls", () => {
-  const entitlements = readFileSync(join(process.cwd(), "resources/mas/entitlements.mas.plist"), "utf8");
+  const desktopRoot = basename(process.cwd()) === "desktop" ? process.cwd() : join(process.cwd(), "desktop");
+  const entitlements = readFileSync(join(desktopRoot, "resources/mas/entitlements.mas.plist"), "utf8");
   assert.match(entitlements, /com\.apple\.security\.device\.microphone/);
   assert.match(entitlements, /com\.apple\.security\.device\.camera/);
-  const desktopPackage = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as {
+  const desktopPackage = JSON.parse(readFileSync(join(desktopRoot, "package.json"), "utf8")) as {
     build?: { mas?: { extendInfo?: Record<string, unknown> } };
   };
   const extendInfo = desktopPackage.build?.mas?.extendInfo ?? {};
