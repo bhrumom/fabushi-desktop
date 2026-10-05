@@ -369,6 +369,15 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     .map_err(SessionGatewayError::internal)
             })
         }),
+        "reactHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {
+            required_string(args, "entryId").and_then(|entry_id| {
+                required_string(args, "emoji").and_then(|emoji| {
+                    session
+                        .toggle_human_message_reaction(conversation_id, entry_id, emoji)
+                        .map_err(SessionGatewayError::internal)
+                })
+            })
+        }),
         "getHumanConversationTranscript" => required_string(args, "conversationId").and_then(|conversation_id| {
             session
                 .read_human_conversation_transcript(conversation_id)
