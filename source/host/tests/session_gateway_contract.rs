@@ -931,6 +931,217 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     let _ = fs::remove_dir_all(root);
 }
 
+
+fn read_fixture_http_request(stream: &mut std::net::TcpStream) -> String {
+    let mut request = Vec::new();
+    let mut chunk = [0_u8; 4096];
+    let mut header_end = None;
+    let mut content_length = 0usize;
+    loop {
+        let read = stream.read(&mut chunk).expect("read fixture request");
+        if read == 0 {
+            break;
+        }
+        request.extend_from_slice(&chunk[..read]);
+        if header_end.is_none() {
+            if let Some(index) = request.windows(4).position(|window| window == b"\r\n\r\n") {
+                header_end = Some(index + 4);
+                let headers = String::from_utf8_lossy(&request[..index + 4]);
+                content_length = headers
+                    .lines()
+                    .find_map(|line| {
+                        line.split_once(':').and_then(|(name, value)| {
+                            name.eq_ignore_ascii_case("content-length")
+                                .then(|| value.trim().parse::<usize>().ok())
+                                .flatten()
+                        })
+                    })
+                    .unwrap_or(0);
+            }
+        }
+        if let Some(header_end) = header_end {
+            if request.len() >= header_end + content_length {
+                break;
+            }
+        }
+    }
+    String::from_utf8_lossy(&request).into_owned()
+}
+
+fn spawn_remote_reply_attachment_server() -> (String, thread::JoinHandle<Vec<String>>) {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind reply attachment fixture");
+    let address = listener.local_addr().expect("fixture address");
+    let handle = thread::spawn(move || {
+        let mut requests = Vec::new();
+
+        let (mut upload_stream, _) = listener.accept().expect("accept resource upload");
+        requests.push(read_fixture_http_request(&mut upload_stream));
+        let upload_body = json!({
+            "success": true,
+            "resource": {
+                "resourceId": "resource-1",
+                "name": "report.pdf",
+                "contentType": "application/octet-stream",
+                "size": 4,
+                "createdAt": "2026-10-05T01:00:00Z"
+            }
+        }).to_string();
+        write!(
+            upload_stream,
+            "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            upload_body.len(),
+            upload_body
+        ).expect("write resource response");
+        upload_stream.flush().expect("flush resource response");
+
+        let (mut send_stream, _) = listener.accept().expect("accept message send");
+        requests.push(read_fixture_http_request(&mut send_stream));
+        let send_body = json!({
+            "success": true,
+            "deduplicated": false,
+            "message": {
+                "id": 11,
+                "senderUserId": 1,
+                "senderUsername": "local",
+                "recipientUserId": 2,
+                "recipientUsername": "peer",
+                "text": "reply with file",
+                "clientRequestId": "shipping-reply-1",
+                "createdAt": "2026-10-05T01:00:01Z",
+                "readAt": serde_json::Value::Null,
+                "isOutgoing": true,
+                "replyToMessageId": 10,
+                "attachments": [{
+                    "resourceId": "resource-1",
+                    "name": "report.pdf",
+                    "contentType": "application/octet-stream",
+                    "size": 4,
+                    "createdAt": "2026-10-05T01:00:00Z"
+                }],
+                "reactions": []
+            }
+        }).to_string();
+        write!(
+            send_stream,
+            "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            send_body.len(),
+            send_body
+        ).expect("write send response");
+        send_stream.flush().expect("flush send response");
+        requests
+    });
+    (format!("http://{address}"), handle)
+}
+
+#[test]
+fn shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity() {
+    let root = temp_root("human-shipping-reply-attachment");
+    let agents = root.join("agents");
+    fs::create_dir_all(&root).expect("fixture root");
+    let credential_path = root.join("host-credential.json");
+    fs::write(
+        &credential_path,
+        r#"{"accessToken":"fixture-token","deviceId":"device-a","userId":1}"#,
+    )
+    .expect("credential");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(&credential_path)
+            .expect("credential metadata")
+            .permissions();
+        permissions.set_mode(0o600);
+        fs::set_permissions(&credential_path, permissions).expect("private credential");
+    }
+    let attachment_path = root.join("report.pdf");
+    fs::write(&attachment_path, [1_u8, 2, 3, 4]).expect("attachment fixture");
+
+    let (base_url, server) = spawn_remote_reply_attachment_server();
+    let client = Arc::new(
+        FabushiNativeMessagingClient::new(&base_url, &credential_path)
+            .expect("shipping messaging client"),
+    );
+    let memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+            agents.clone(),
+        ),
+    );
+    let runtime = Arc::new(
+        ProductionSessionWorkers::with_agents_root_identity_messaging_and_dependencies(
+            &agents,
+            500,
+            Some("1".into()),
+            Some(client),
+            true,
+            None,
+            Arc::new(|| None),
+            memory,
+        ),
+    );
+    let created = runtime
+        .create_human_conversation("2", "Peer")
+        .expect("Human conversation");
+    let conversation_id = created["id"]
+        .as_str()
+        .expect("conversation id")
+        .to_string();
+    let owner = runtime
+        .open_human_conversation_db_owner(&conversation_id)
+        .expect("conversation owner");
+    assert!(owner
+        .append_transcript_entry(&json!({
+            "id": "human-server-message:10",
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": "2",
+            "content": "remote anchor",
+            "timestampMs": 1000.0,
+            "delivery": "sent",
+            "remoteMessageId": "10",
+            "remoteCreatedAt": "2026-10-05T00:59:59Z"
+        }))
+        .expect("remote anchor"));
+
+    let sent = dispatch(
+        &runtime,
+        "sendHumanMessage",
+        json!({
+            "conversationId": conversation_id,
+            "senderId": "1",
+            "text": "reply with file",
+            "clientNonce": "shipping-reply-1",
+            "replyToId": "human-server-message:10",
+            "attachments": [{
+                "path": attachment_path.to_string_lossy(),
+                "name": "report.pdf"
+            }]
+        }),
+    );
+    assert_eq!(sent["id"], "human-server-message:11");
+    assert_eq!(sent["remoteMessageId"], "11");
+    assert_eq!(sent["replyToId"], "human-server-message:10");
+    assert_eq!(sent["remoteReplyToMessageId"], "10");
+    assert_eq!(sent["attachments"][0]["resourceId"], "resource-1");
+    assert_eq!(
+        sent["attachments"][0]["path"],
+        "fabushi-message-resource:resource-1"
+    );
+    assert_eq!(sent["attachments"][0]["name"], "report.pdf");
+
+    let requests = server.join().expect("shipping send fixture");
+    assert_eq!(requests.len(), 2);
+    assert!(requests[0].starts_with("POST /api/social/message-resources "));
+    assert!(requests[0].contains("filename=\"report.pdf\""));
+    assert!(requests[1].starts_with("POST /api/social/messages "));
+    assert!(requests[1].contains(r#""replyToMessageId":"10""#));
+    assert!(requests[1].contains(r#""resourceId":"resource-1""#));
+    assert!(requests[1].contains(r#""clientRequestId":"shipping-reply-1""#));
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
 #[test]
 fn shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap() {
     let root = temp_root("human-multi-device-gap");
