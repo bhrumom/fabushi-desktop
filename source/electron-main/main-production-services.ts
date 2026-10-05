@@ -89,6 +89,17 @@ export interface ElectronProductionNativeBindings {
   };
   readonly shell: { openExternal(url: string): Promise<unknown> };
   readonly screen: WindowStatePersistenceScreen;
+  readonly desktopCapturer?: {
+    getSources(options: {
+      readonly types: readonly ("screen" | "window")[];
+      readonly thumbnailSize?: { readonly width: number; readonly height: number };
+      readonly fetchWindowIcons?: boolean;
+    }): Promise<readonly { readonly id?: unknown; readonly name?: unknown; readonly display_id?: unknown }[]>;
+  };
+  readonly systemPreferences?: {
+    askForMediaAccess?(mediaType: "microphone" | "camera"): Promise<boolean>;
+    getMediaAccessStatus?(mediaType: "microphone" | "camera"): string;
+  };
 }
 
 export function createElectronProductionNativeBindings(electron: {
@@ -99,6 +110,8 @@ export function createElectronProductionNativeBindings(electron: {
   readonly Menu: ElectronProductionNativeBindings["Menu"];
   readonly shell: ElectronProductionNativeBindings["shell"];
   readonly screen: ElectronProductionNativeBindings["screen"];
+  readonly desktopCapturer?: ElectronProductionNativeBindings["desktopCapturer"];
+  readonly systemPreferences?: ElectronProductionNativeBindings["systemPreferences"];
 }): ElectronProductionNativeBindings {
   const required = ["app", "safeStorage", "ipcMain", "BrowserWindow", "Menu", "shell", "screen"] as const;
   const missing = required.filter((name) => electron[name] == null);
@@ -108,7 +121,7 @@ export function createElectronProductionNativeBindings(electron: {
   if (typeof electron.Menu.buildFromTemplate !== "function" || typeof electron.Menu.setApplicationMenu !== "function") throw new Error("Electron production ABI requires Menu construction and installation.");
   if (typeof electron.shell.openExternal !== "function") throw new Error("Electron production ABI requires shell.openExternal().");
   if (typeof electron.safeStorage.isEncryptionAvailable !== "function" || typeof electron.safeStorage.encryptString !== "function" || typeof electron.safeStorage.decryptString !== "function") throw new Error("Electron production ABI requires safeStorage encryption methods.");
-  return { app: electron.app, safeStorage: electron.safeStorage, ipcMain: electron.ipcMain, BrowserWindow: electron.BrowserWindow, Menu: electron.Menu, shell: electron.shell, screen: electron.screen };
+  return { app: electron.app, safeStorage: electron.safeStorage, ipcMain: electron.ipcMain, BrowserWindow: electron.BrowserWindow, Menu: electron.Menu, shell: electron.shell, screen: electron.screen, ...(electron.desktopCapturer == null ? {} : { desktopCapturer: electron.desktopCapturer }), ...(electron.systemPreferences == null ? {} : { systemPreferences: electron.systemPreferences }) };
 }
 
 export interface ElectronProductionResources {

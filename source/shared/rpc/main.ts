@@ -71,6 +71,8 @@ export const MAIN_METHOD_TABLE = {
   getBoxRuntime: { args: "none" },
   setBoxRuntime: { args: "object" },
   transcribeAudio: { args: "object" },
+  requestCallMediaPermissions: { args: "object" },
+  listCallDisplaySources: { args: "none" },
   getCursorAuthStatus: { args: "none" },
   loginCursor: { args: "none" },
   cancelCursorLogin: { args: "none" },

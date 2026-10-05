@@ -1733,6 +1733,8 @@ fn spawn_remote_call_server(expected_requests: usize) -> (String, thread::JoinHa
                         "callId": call_id,
                         "creatorUserId": 1,
                         "peerUserId": 2,
+                        "creatorDeviceId": "device-a",
+                        "peerDeviceId": serde_json::Value::Null,
                         "state": state,
                         "generation": generation,
                         "eventSeq": events.len(),
@@ -1769,6 +1771,8 @@ fn spawn_remote_call_server(expected_requests: usize) -> (String, thread::JoinHa
                         "callId": call_id,
                         "creatorUserId": 1,
                         "peerUserId": 2,
+                        "creatorDeviceId": "device-a",
+                        "peerDeviceId": serde_json::Value::Null,
                         "state": state,
                         "generation": generation,
                         "eventSeq": seq,
@@ -1795,6 +1799,8 @@ fn spawn_remote_call_server(expected_requests: usize) -> (String, thread::JoinHa
                         "callId": call_id,
                         "creatorUserId": 1,
                         "peerUserId": 2,
+                        "creatorDeviceId": "device-a",
+                        "peerDeviceId": serde_json::Value::Null,
                         "state": state,
                         "generation": generation,
                         "eventSeq": events.len(),
@@ -1842,7 +1848,7 @@ fn shipping_call_session_uses_backend_ordering_then_materializes_canonical_owner
         fs::set_permissions(&credential_path, permissions).expect("private credential");
     }
 
-    let (base_url, server) = spawn_remote_call_server(10);
+    let (base_url, server) = spawn_remote_call_server(11);
     let client = Arc::new(
         FabushiNativeMessagingClient::new(&base_url, &credential_path)
             .expect("shipping call client"),
@@ -1900,7 +1906,7 @@ fn shipping_call_session_uses_backend_ordering_then_materializes_canonical_owner
             "payload": {"sdp": "remote-first"}
         }),
     );
-    assert_eq!(signal["seq"], 1);
+    assert_eq!(signal["seq"], 2);
     assert_eq!(signal["payload"]["sdp"], "remote-first");
 
     let media = dispatch(
@@ -1916,8 +1922,18 @@ fn shipping_call_session_uses_backend_ordering_then_materializes_canonical_owner
     assert_eq!(media["mediaCapabilities"]["video"], true);
     assert_eq!(media["deviceSelection"]["cameraId"], "cam-a");
 
+    let lease = dispatch(
+        &runtime,
+        "getCallTransportLease",
+        json!({"callId": call_id}),
+    );
+    assert_eq!(lease["role"], "creator");
+    assert_eq!(lease["claimedDeviceId"], "device-a");
+    assert_eq!(lease["isOwner"], true);
+    assert_eq!(lease["claimAvailable"], false);
+
     let requests = server.join().expect("call fixture");
-    assert_eq!(requests.len(), 10);
+    assert_eq!(requests.len(), 11);
     assert!(requests[0].starts_with("POST /api/social/calls "));
     assert!(requests[0].contains(r#""targetUserId":"2""#));
     assert!(requests[1].starts_with("GET /api/social/calls/"));
@@ -1925,7 +1941,8 @@ fn shipping_call_session_uses_backend_ordering_then_materializes_canonical_owner
     assert!(requests[2].contains(r#""kind":"transition""#));
     assert!(requests[4].starts_with("GET /api/social/calls/"));
     assert!(requests[5].contains(r#""kind":"signal""#));
-    assert!(requests[5].contains(r#""signalSeq":1"#));
+    assert!(requests[5].contains(r#""signalKind":"offer""#));
+    assert!(!requests[5].contains(r#""signalSeq""#));
     assert!(requests[8].contains(r#""kind":"media""#));
     assert!(requests[8].contains(r#""cameraId":"cam-a""#));
 

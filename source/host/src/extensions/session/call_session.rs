@@ -293,6 +293,47 @@ impl CallSessionStore {
         kind: &str,
         payload: &Value,
     ) -> Result<CallSignal, String> {
+        self.append_signal_ordered(
+            call_id,
+            expected_generation,
+            seq,
+            sender_device_id,
+            kind,
+            payload,
+            false,
+        )
+    }
+
+    pub fn append_remote_signal(
+        &self,
+        call_id: &str,
+        expected_generation: u64,
+        event_seq: u64,
+        sender_device_id: &str,
+        kind: &str,
+        payload: &Value,
+    ) -> Result<CallSignal, String> {
+        self.append_signal_ordered(
+            call_id,
+            expected_generation,
+            event_seq,
+            sender_device_id,
+            kind,
+            payload,
+            true,
+        )
+    }
+
+    fn append_signal_ordered(
+        &self,
+        call_id: &str,
+        expected_generation: u64,
+        seq: u64,
+        sender_device_id: &str,
+        kind: &str,
+        payload: &Value,
+        allow_monotonic_gap: bool,
+    ) -> Result<CallSignal, String> {
         let call_id = required(call_id, "call id")?;
         let sender_device_id = required(sender_device_id, "sender device id")?;
         let kind = required(kind, "call signal kind")?;
@@ -338,7 +379,7 @@ impl CallSessionStore {
             }
             return Err("call signal sequence conflicts with previously accepted payload".into());
         }
-        if seq != current.2 + 1 {
+        if !allow_monotonic_gap && seq != current.2 + 1 {
             return Err(format!(
                 "call signal sequence gap: expected {}, received {}",
                 current.2 + 1,

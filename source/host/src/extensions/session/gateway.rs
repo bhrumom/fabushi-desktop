@@ -420,6 +420,11 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
         "getCallTransportIdentity" => session
             .call_transport_identity()
             .map_err(SessionGatewayError::internal),
+        "getCallTransportLease" => required_string(args, "callId").and_then(|call_id| {
+            session
+                .call_transport_lease(call_id)
+                .map_err(SessionGatewayError::internal)
+        }),
         "getCallIceServers" => session
             .call_ice_servers()
             .map_err(SessionGatewayError::internal),

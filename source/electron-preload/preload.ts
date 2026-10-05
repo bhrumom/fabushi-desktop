@@ -181,6 +181,10 @@ export function createDesktopPreloadBridge(options: {
     onWidgetGallery: (listener: (payload: unknown) => void) => subscribeIpc(ipc, "sand:dev-widget-gallery", listener),
     onForceOnboarding: (listener: () => void) => subscribe("force-onboarding", () => listener()),
     transcribeAudio: (audio: Uint8Array, mimeType: string, language?: string) => edge("transcribeAudio", { audio, mimeType, language }),
+    callMedia: {
+      requestPermissions: (input: { audio: boolean; video: boolean }) => edge("requestCallMediaPermissions", input),
+      listDisplaySources: () => edge("listCallDisplaySources"),
+    },
     cursorAccount: {
       getStatus: () => edge("getCursorAuthStatus"),
       login: () => edge("loginCursor"),

@@ -108,6 +108,7 @@ import { commandPaletteLinksFromConversation, createCommandPaletteLinkMetadataPr
 import { commandPaletteUpdateCommand } from "./command-palette-update-command";
 import { commandPaletteRootCommands, type CommandPaletteComputerUpdateAction, type CommandPaletteInfoSection } from "./command-palette-root-commands";
 import { CoordinatorCallError, createCoordinatorClient, type ProductionCoordinatorClient } from "./coordinator-client";
+import { HumanCallControls } from "./human-call-media";
 import { UI_TEXT } from "./evidence";
 import { movePinnedAgent, partitionSidebarAgents } from "./sidebar-model";
 import { SignOutDialog } from "../recovered/features/account/session/sign-out";
@@ -4028,6 +4029,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               <small>Human</small>
             </div>
             <div style={{ alignItems: "center", display: "flex", gap: 8, marginLeft: "auto" }}>
+              {client == null ? null : <HumanCallControls bridge={bridge} client={client} conversation={activeAgent} />}
               <select aria-label="Agent for Human handoff" disabled={busy || availableHandoffAgents.length === 0} onChange={(event) => setHumanHandoffAgentId(event.currentTarget.value)} value={humanHandoffAgentId}>
                 {availableHandoffAgents.length === 0 ? <option value="">No Agent available</option> : availableHandoffAgents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
               </select>

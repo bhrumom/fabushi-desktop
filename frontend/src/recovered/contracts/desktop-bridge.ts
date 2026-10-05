@@ -450,6 +450,14 @@ export interface AgentDesktopBridge {
   };
 }
 
+export interface DesktopCallMediaBridge {
+  requestPermissions(input: { audio: boolean; video: boolean }): Promise<{
+    microphone: "granted" | "denied" | "prompt" | "not-requested";
+    camera: "granted" | "denied" | "prompt" | "not-requested";
+  }>;
+  listDisplaySources(): Promise<Array<{ id: string; name: string; displayId?: string }>>;
+}
+
 export interface DesktopBridge {
   resolveAttachmentMedia(url: string): Promise<AttachmentMedia | null>;
   readAttachmentText(path: string): Promise<AttachmentTextResult | null>;
@@ -465,6 +473,7 @@ export interface DesktopBridge {
   ): Promise<string[] | null>;
   discardStagedAttachment(path: string): Promise<void>;
   readonly mcp: McpDesktopBridge;
+  readonly callMedia: DesktopCallMediaBridge;
   forceGatewayReconnect(): Promise<void>;
   pickAvatarSource(): Promise<string | null>;
   pickAvatarFile(): Promise<AvatarFileSelection | null>;

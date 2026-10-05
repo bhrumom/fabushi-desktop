@@ -32,6 +32,7 @@ import { createDesktopHostSettingsFields } from "./prefs/host-settings-fields.js
 import { createReleaseMetadata } from "./update/release-metadata.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import { normalizeSandUiPreferences, resolveSandUiDirection } from "../shared/desktop.js";
+import { createDesktopCallMediaPort } from "./call-media.js";
 
 test("UI accessibility preferences normalize, persist, and resolve RTL", () => {
   const dir=mkdtempSync(join(tmpdir(),"fabushi-ui-prefs-"));
@@ -402,4 +403,56 @@ test("release metadata resolves package identity and live update gates", async (
   });
   assert.equal(fallback.readAppReleaseMetadata().version, "9.9.9");
   assert.equal(await fallback.computeUpdateDisabledReasonLive(), null);
+});
+
+
+test("call media binding preserves native permission and desktopCapturer authority", async () => {
+  const requested: string[] = [];
+  const port = createDesktopCallMediaPort({
+    systemPreferences: {
+      getMediaAccessStatus: (kind) => kind === "microphone" ? "granted" : "not-determined",
+      askForMediaAccess: async (kind) => { requested.push(kind); return kind === "camera"; },
+    },
+    desktopCapturer: {
+      async getSources(options) {
+        assert.deepEqual(options.types, ["screen", "window"]);
+        return [
+          { id: "screen:1:0", name: "Display 1", display_id: "1" },
+          { id: "window:2:0", name: "Editor" },
+          { id: "window:2:0", name: "Duplicate" },
+          { id: "", name: "Invalid" },
+        ];
+      },
+    },
+  }, "darwin");
+
+  assert.deepEqual(await port.requestPermissions({ audio: true, video: true }), {
+    microphone: "granted",
+    camera: "granted",
+  });
+  assert.deepEqual(requested, ["camera"]);
+  assert.deepEqual(await port.listDisplaySources(), [
+    { id: "screen:1:0", name: "Display 1", displayId: "1" },
+    { id: "window:2:0", name: "Editor" },
+  ]);
+
+  const chromiumPrompt = createDesktopCallMediaPort({}, "linux");
+  assert.deepEqual(await chromiumPrompt.requestPermissions({ audio: true, video: false }), {
+    microphone: "prompt",
+    camera: "not-requested",
+  });
+  await assert.rejects(() => chromiumPrompt.listDisplaySources(), /desktopCapturer is unavailable/);
+});
+
+
+test("MAS packaging declares camera and microphone authority for Human calls", () => {
+  const entitlements = readFileSync(join(process.cwd(), "desktop/resources/mas/entitlements.mas.plist"), "utf8");
+  assert.match(entitlements, /com\.apple\.security\.device\.microphone/);
+  assert.match(entitlements, /com\.apple\.security\.device\.camera/);
+  const desktopPackage = JSON.parse(readFileSync(join(process.cwd(), "desktop/package.json"), "utf8")) as {
+    build?: { mas?: { extendInfo?: Record<string, unknown> } };
+  };
+  const extendInfo = desktopPackage.build?.mas?.extendInfo ?? {};
+  assert.equal(typeof extendInfo.NSMicrophoneUsageDescription, "string");
+  assert.equal(typeof extendInfo.NSCameraUsageDescription, "string");
 });

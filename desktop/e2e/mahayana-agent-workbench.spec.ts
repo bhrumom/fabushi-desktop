@@ -613,6 +613,51 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
 });
 
 
+test('Human call surface exposes the shipping WebRTC and Electron media bridge', async () => {
+  e2eHumanMessages = [];
+  e2eHumanMessageSequence = 1;
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-call-media-'));
+  let app: ElectronApplication | null = null;
+  try {
+    app = await launchDesktopApp(appDataDir);
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
+    await dialog.getByRole('textbox', { name: 'Human identity' }).fill('human-call-peer-e2e');
+    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill('Human Call Peer');
+    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+
+    await expect(page.getByRole('group', { name: 'Human call controls' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Start voice call' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Start video call' })).toBeVisible();
+    const capability = await page.evaluate(async () => {
+      const candidate = window as unknown as {
+        desktop: {
+          callMedia: {
+            requestPermissions(input: { audio: boolean; video: boolean }): Promise<unknown>;
+            listDisplaySources(): Promise<unknown>;
+          };
+        };
+      };
+      return {
+        hasPeerConnection: typeof RTCPeerConnection === 'function',
+        hasGetUserMedia: typeof navigator.mediaDevices?.getUserMedia === 'function',
+        permissionProbe: await candidate.desktop.callMedia.requestPermissions({ audio: false, video: false }),
+        hasDisplaySourceBridge: typeof candidate.desktop.callMedia.listDisplaySources === 'function',
+      };
+    });
+    expect(capability.hasPeerConnection).toBe(true);
+    expect(capability.hasGetUserMedia).toBe(true);
+    expect(capability.hasDisplaySourceBridge).toBe(true);
+    expect(capability.permissionProbe).toEqual({ microphone: 'not-requested', camera: 'not-requested' });
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
 test('Mahayana renders one Hermes-style assistant turn after a Human conversation survives restart and explicitly hands off', async () => {
   e2eHumanMessages = [];
   e2eHumanMessageSequence = 1;

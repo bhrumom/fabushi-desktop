@@ -75,6 +75,10 @@ pub struct FabushiRemoteHumanCall {
     pub call_id: String,
     pub creator_user_id: Value,
     pub peer_user_id: Value,
+    #[serde(default)]
+    pub creator_device_id: Option<String>,
+    #[serde(default)]
+    pub peer_device_id: Option<String>,
     pub state: String,
     pub generation: u64,
     pub event_seq: u64,

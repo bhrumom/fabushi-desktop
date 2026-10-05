@@ -437,16 +437,6 @@ impl ProductionSessionWorkers {
                     .transition(&event.call_id, current.generation, action, terminal_reason)?;
             }
             "signal" => {
-                let seq = event
-                    .payload
-                    .get("signalSeq")
-                    .and_then(serde_json::Value::as_u64)
-                    .ok_or_else(|| "remote call signal omitted signalSeq".to_string())?;
-                let sender_device_id = event
-                    .payload
-                    .get("senderDeviceId")
-                    .and_then(serde_json::Value::as_str)
-                    .ok_or_else(|| "remote call signal omitted senderDeviceId".to_string())?;
                 let kind = event
                     .payload
                     .get("signalKind")
@@ -456,11 +446,11 @@ impl ProductionSessionWorkers {
                     .payload
                     .get("signal")
                     .ok_or_else(|| "remote call signal omitted signal payload".to_string())?;
-                self.call_sessions()?.append_signal(
+                self.call_sessions()?.append_remote_signal(
                     &event.call_id,
                     event.generation,
-                    seq,
-                    sender_device_id,
+                    event.seq,
+                    &event.device_id,
                     kind,
                     payload,
                 )?;
@@ -567,6 +557,44 @@ impl ProductionSessionWorkers {
         Ok(serde_json::json!({
             "iceServers": ice_servers,
             "ttlSeconds": ttl_seconds,
+        }))
+    }
+
+    pub fn call_transport_lease(&self, call_id: &str) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?.to_string();
+        let local = self.authorized_call_session(call_id)?;
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "shipping Human call media transport requires native messaging".to_string())?;
+        let identity = client.identity()?;
+        if identity.user_id != local_human_id {
+            return Err("Fabushi call credential identity does not match active Human identity".into());
+        }
+        let cursor = self.call_sessions()?.remote_event_seq(call_id)?;
+        let (remote, _, _) = client.get_human_call(call_id, cursor, 1)?;
+        self.validate_remote_call(&remote, &local)?;
+        if remote.event_seq < cursor {
+            return Err("Fabushi call backend event cursor regressed behind the canonical Host owner".into());
+        }
+        let creator = fabushi_identity_text(&remote.creator_user_id)?;
+        let role = if creator == local_human_id { "creator" } else { "peer" };
+        let claimed_device_id = if role == "creator" {
+            remote.creator_device_id.as_deref()
+        } else {
+            remote.peer_device_id.as_deref()
+        };
+        Ok(serde_json::json!({
+            "userId": local_human_id,
+            "deviceId": identity.device_id,
+            "role": role,
+            "claimedDeviceId": claimed_device_id,
+            "isOwner": claimed_device_id == Some(identity.device_id.as_str()),
+            "claimAvailable": claimed_device_id.is_none(),
+            "creatorDeviceId": remote.creator_device_id,
+            "peerDeviceId": remote.peer_device_id,
+            "state": remote.state,
+            "generation": remote.generation,
+            "eventSeq": remote.event_seq,
         }))
     }
 
@@ -822,30 +850,18 @@ impl ProductionSessionWorkers {
         if identity.device_id != sender_device_id {
             return Err("call signal senderDeviceId must match the authenticated Host device".into());
         }
-        if seq <= current.signal_seq {
-            self.call_sessions()?.append_signal(
-                call_id,
-                expected_generation,
-                seq,
-                sender_device_id,
-                kind,
-                payload,
-            )?;
-        } else if seq != current.signal_seq + 1 {
-            return Err(format!(
-                "call signal sequence gap: expected {}, received {}",
-                current.signal_seq + 1,
-                seq
-            ));
-        }
         let remote_payload = serde_json::json!({
-            "signalSeq": seq,
             "senderDeviceId": sender_device_id,
             "signalKind": kind,
             "signal": payload,
         });
-        let client_event_id = format!("signal:{expected_generation}:{seq}");
-        client.append_human_call_event(
+        let id_payload = serde_json::json!({
+            "deviceId": identity.device_id,
+            "kind": kind,
+            "signal": payload,
+        });
+        let client_event_id = Self::stable_call_event_id("signal", expected_generation, &id_payload)?;
+        let (_, accepted_event) = client.append_human_call_event(
             call_id,
             &client_event_id,
             expected_generation,
@@ -854,9 +870,14 @@ impl ProductionSessionWorkers {
         )?;
         self.sync_call_session_from_remote(call_id)?;
         self.call_sessions()?
-            .list_signals(call_id, expected_generation, seq.saturating_sub(1), 1)?
+            .list_signals(
+                call_id,
+                expected_generation,
+                accepted_event.seq.saturating_sub(1),
+                1,
+            )?
             .into_iter()
-            .find(|signal| signal.seq == seq)
+            .find(|signal| signal.seq == accepted_event.seq)
             .ok_or_else(|| "remote call signal did not materialize in canonical CallSession owner".to_string())
     }
 
