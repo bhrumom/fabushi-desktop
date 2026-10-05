@@ -3,8 +3,9 @@ use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::types::Type;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::Value;
 use uuid::Uuid;
 
 const CALL_SESSION_DB_FILENAME: &str = ".call-sessions.db";
@@ -400,6 +401,15 @@ fn now_ms() -> i64 {
         .as_millis() as i64
 }
 
+fn parse_json_column<T: serde::de::DeserializeOwned>(
+    raw: &str,
+    column: usize,
+) -> rusqlite::Result<T> {
+    serde_json::from_str(raw).map_err(|error| {
+        rusqlite::Error::FromSqlConversionFailure(column, Type::Text, Box::new(error))
+    })
+}
+
 fn map_session(row: &rusqlite::Row<'_>) -> rusqlite::Result<CallSession> {
     let participant_ids_json: String = row.get(6)?;
     let media_capabilities_json: String = row.get(7)?;
@@ -411,9 +421,9 @@ fn map_session(row: &rusqlite::Row<'_>) -> rusqlite::Result<CallSession> {
         state: row.get(3)?,
         generation: row.get::<_, i64>(4)? as u64,
         signal_seq: row.get::<_, i64>(5)? as u64,
-        participant_ids: serde_json::from_str(&participant_ids_json).unwrap_or_default(),
-        media_capabilities: serde_json::from_str(&media_capabilities_json).unwrap_or_else(|_| json!({})),
-        device_selection: serde_json::from_str(&device_selection_json).unwrap_or_else(|_| json!({})),
+        participant_ids: parse_json_column(&participant_ids_json, 6)?,
+        media_capabilities: parse_json_column(&media_capabilities_json, 7)?,
+        device_selection: parse_json_column(&device_selection_json, 8)?,
         terminal_reason: row.get(9)?,
         created_at_ms: row.get(10)?,
         updated_at_ms: row.get(11)?,
@@ -428,7 +438,7 @@ fn map_signal(row: &rusqlite::Row<'_>) -> rusqlite::Result<CallSignal> {
         seq: row.get::<_, i64>(2)? as u64,
         sender_device_id: row.get(3)?,
         kind: row.get(4)?,
-        payload: serde_json::from_str(&payload_json).unwrap_or_else(|_| json!({})),
+        payload: parse_json_column(&payload_json, 5)?,
         created_at_ms: row.get(6)?,
     })
 }
