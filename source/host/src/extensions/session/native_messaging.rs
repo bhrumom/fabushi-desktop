@@ -264,7 +264,7 @@ impl FabushiNativeMessagingClient {
         let credentials = read_credentials(&self.credential_path)?;
         let encoded_resource_id: String =
             url::form_urlencoded::byte_serialize(resource_id.as_bytes()).collect();
-        let mut response = self
+        let response = self
             .client
             .get(self.endpoint(&format!(
                 "/api/social/message-resources/{encoded_resource_id}"
