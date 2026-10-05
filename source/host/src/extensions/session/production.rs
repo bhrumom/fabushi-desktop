@@ -1407,7 +1407,7 @@ impl ProductionSessionWorkers {
             }
             let peer_reaction_count = reaction
                 .count
-                .saturating_sub(u64::from(reaction.reacted_by_me));
+                .saturating_sub(if reaction.reacted_by_me { 1 } else { 0 });
             for _ in 0..peer_reaction_count {
                 projected_reactions.push(serde_json::json!({
                     "emoji": reaction.emoji,
@@ -2132,7 +2132,7 @@ impl ProductionSessionWorkers {
             }
             let peer_reaction_count = reaction
                 .count
-                .saturating_sub(u64::from(reaction.reacted_by_me));
+                .saturating_sub(if reaction.reacted_by_me { 1 } else { 0 });
             for _ in 0..peer_reaction_count {
                 projected_reactions.push(serde_json::json!({
                     "emoji": reaction.emoji,
