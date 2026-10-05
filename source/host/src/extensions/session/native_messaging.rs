@@ -29,6 +29,24 @@ pub struct FabushiRemoteHumanContact {
     pub status: String,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FabushiRemoteHumanAttachment {
+    pub resource_id: String,
+    pub name: String,
+    pub content_type: String,
+    pub size: u64,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FabushiRemoteHumanReaction {
+    pub emoji: String,
+    pub count: u64,
+    pub reacted_by_me: bool,
+}
+
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct FabushiRemoteHumanMessage {
@@ -43,6 +61,11 @@ pub struct FabushiRemoteHumanMessage {
     pub read_at: Option<String>,
     #[serde(default)]
     pub is_outgoing: bool,
+    pub reply_to_message_id: Option<Value>,
+    #[serde(default)]
+    pub attachments: Vec<FabushiRemoteHumanAttachment>,
+    #[serde(default)]
+    pub reactions: Vec<FabushiRemoteHumanReaction>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -65,6 +88,15 @@ struct SendEnvelope {
 #[derive(Debug, Deserialize)]
 struct ListData {
     messages: Vec<FabushiRemoteHumanMessage>,
+    #[serde(default)]
+    next_after_id: Option<Value>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ResourceEnvelope {
+    success: bool,
+    resource: Option<FabushiRemoteHumanAttachment>,
+    error: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -88,10 +120,20 @@ struct ListEnvelope {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+struct SendAttachmentRequest<'a> {
+    resource_id: &'a str,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct SendRequest<'a> {
     target_user_id: &'a str,
     text: &'a str,
     client_request_id: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reply_to_message_id: Option<&'a str>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    attachments: Vec<SendAttachmentRequest<'a>>,
 }
 
 #[derive(Debug, Clone)]
@@ -140,15 +182,73 @@ impl FabushiNativeMessagingClient {
         })
     }
 
+    pub fn upload_direct_message_resource(
+        &self,
+        path: &Path,
+        name: &str,
+    ) -> Result<FabushiRemoteHumanAttachment, String> {
+        let name = required_trimmed(name, "attachment name")?;
+        let bytes = fs::read(path)
+            .map_err(|error| format!("Fabushi Human attachment could not be read from {}: {error}", path.display()))?;
+        if bytes.is_empty() {
+            return Err("Fabushi Human attachment is empty".into());
+        }
+        let credentials = read_credentials(&self.credential_path)?;
+        let part = reqwest::blocking::multipart::Part::bytes(bytes)
+            .file_name(name.to_string())
+            .mime_str("application/octet-stream")
+            .map_err(|error| format!("Fabushi Human attachment MIME metadata was invalid: {error}"))?;
+        let response = self
+            .client
+            .post(self.endpoint("/api/social/message-resources")?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .multipart(reqwest::blocking::multipart::Form::new().part("file", part))
+            .send()
+            .map_err(|error| format!("Fabushi Human attachment upload failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human attachment response could not be read: {error}"))?;
+        let envelope: ResourceEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human attachment response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human attachment upload was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        envelope
+            .resource
+            .ok_or_else(|| "Fabushi Human attachment response omitted the persisted resource.".to_string())
+    }
+
     pub fn send_direct_message(
         &self,
         peer_human_id: &str,
         text: &str,
         client_request_id: &str,
+        reply_to_message_id: Option<&str>,
+        attachments: &[FabushiRemoteHumanAttachment],
     ) -> Result<FabushiRemoteHumanMessage, String> {
         let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
-        let text = required_trimmed(text, "message text")?;
+        let text = text.trim();
         let client_request_id = required_trimmed(client_request_id, "client request id")?;
+        let reply_to_message_id = reply_to_message_id
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        if text.is_empty() && attachments.is_empty() {
+            return Err("Fabushi Human message requires text or attachments".into());
+        }
         let credentials = read_credentials(&self.credential_path)?;
         let response = self
             .client
@@ -163,6 +263,13 @@ impl FabushiNativeMessagingClient {
                 target_user_id: peer_human_id,
                 text,
                 client_request_id,
+                reply_to_message_id,
+                attachments: attachments
+                    .iter()
+                    .map(|attachment| SendAttachmentRequest {
+                        resource_id: attachment.resource_id.as_str(),
+                    })
+                    .collect(),
             })
             .send()
             .map_err(|error| format!("Fabushi Human message send failed: {error}"))?;
