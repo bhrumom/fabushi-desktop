@@ -375,6 +375,21 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 .map(Value::Array)
                 .map_err(SessionGatewayError::internal)
         }),
+        "getHumanConversationTranscriptTail" => required_string(args, "conversationId").and_then(|conversation_id| {
+            let query = TranscriptWindowQuery {
+                before_seq: optional_i64(args, "beforeSeq"),
+                limit: optional_i64(args, "limit").unwrap_or(200),
+            };
+            session
+                .read_human_conversation_transcript_tail(conversation_id, query)
+                .map(|page| {
+                    json!({
+                        "entries": page.entries,
+                        "nextBeforeSeq": page.next_before_seq,
+                    })
+                })
+                .map_err(SessionGatewayError::internal)
+        }),
         "searchHumanMessages" => required_string(args, "conversationId").and_then(|conversation_id| {
             required_string(args, "query").and_then(|query| {
                 if query.trim().is_empty() {

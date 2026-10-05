@@ -2002,6 +2002,21 @@ impl ProductionSessionWorkers {
             .map_err(|error| error.to_string())
     }
 
+    pub fn read_human_conversation_transcript_tail(
+        &self,
+        conversation_id: &str,
+        query: TranscriptWindowQuery,
+    ) -> Result<TranscriptPage, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        owner
+            .get_transcript_tail(query)
+            .map_err(|error| error.to_string())
+    }
+
     pub fn list_agent_summaries(
         &self,
         active_agent_id: Option<&str>,

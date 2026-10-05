@@ -1081,9 +1081,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const [transcriptPaginationController] = useState(() => createTranscriptPaginationController({
     fetchPage: async ({ id, limit, beforeSeq }) => {
-      if (client == null) throw new Error("coordinator is unavailable for getAgentTranscriptTail");
-      const agentName = agentsRef.current.find((agent) => agent.id === id)?.name ?? UI_TEXT.title;
-      return projectTranscriptPageResult(await client.call("getAgentTranscriptTail", { id, limit, beforeSeq }), agentName, id);
+      if (client == null) throw new Error("coordinator is unavailable for transcript history");
+      const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === id);
+      const agentName = humanConversation?.name ?? agentsRef.current.find((agent) => agent.id === id)?.name ?? UI_TEXT.title;
+      const page = humanConversation == null
+        ? await client.call("getAgentTranscriptTail", { id, limit, beforeSeq })
+        : await client.call("getHumanConversationTranscriptTail", { conversationId: id, limit, beforeSeq });
+      return projectTranscriptPageResult(page, agentName, id);
     }
   }));
   useStrictModeSafeDisposal(transcriptPaginationController);
@@ -2478,12 +2482,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       } else {
         if (transportRef.current === "connected") {
           try {
-            page = await client.call("syncHumanConversation", { conversationId: agentId });
+            await client.call("syncHumanConversation", { conversationId: agentId });
           } catch (error) {
             setNotice(error instanceof Error ? `Human sync unavailable: ${error.message}` : `Human sync unavailable: ${String(error)}`);
           }
         }
-        page ??= await client.call("getHumanConversationTranscript", { conversationId: agentId });
+        page = await client.call("getHumanConversationTranscriptTail", { conversationId: agentId, limit: 200 });
       }
       // Human conversations are read from the Host-local durable Session store.
       // A transport ready/reconnect notification may advance the Agent transport
@@ -2493,20 +2497,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         || openAgentRequestGenerationRef.current !== requestGeneration
         || (humanConversation == null && transportScopeGenerationRef.current !== transportScopeGeneration)
         || accountRef.current?.kind !== "logged-in") return;
-      if (humanConversation != null) {
-        const projectedEntries = projectHumanConversationTranscript(page, agentName, agentId);
-        setEntriesByAgent((current) => ({ ...current, [agentId]: projectedEntries }));
-      } else {
-        const projectedPage = projectTranscriptPageResult(page, agentName, agentId);
-        setEntriesByAgent((current) => ({
-          ...current,
-          // openAgentTail started only because this Agent had no loaded entries.
-          // Anything present now arrived while the request was in flight and must
-          // survive a stale initial page response.
-          [agentId]: reconcileLateInitialTranscriptPage(current[agentId] ?? [], projectedPage.entries)
-        }));
-        transcriptPaginationController.installInitialPage(projectedPage);
-      }
+      const projectedPage = projectTranscriptPageResult(page, agentName, agentId);
+      setEntriesByAgent((current) => ({
+        ...current,
+        // Initial reads start only because this conversation had no loaded
+        // entries. Anything present now arrived while the request was in flight
+        // and must survive a stale initial page response.
+        [agentId]: reconcileLateInitialTranscriptPage(current[agentId] ?? [], projectedPage.entries)
+      }));
+      transcriptPaginationController.installInitialPage(projectedPage);
       selectionStore.settle(agentId);
       selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });
       setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
@@ -3882,11 +3881,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
             : <ConversationTranscript
                 entries={entries}
-                hasOlder={activeIsHuman ? false : transcriptPaginationSnapshot.hasOlder}
-                isLoadingOlder={activeIsHuman ? false : transcriptPaginationSnapshot.isLoadingOlder}
+                hasOlder={transcriptPaginationSnapshot.hasOlder}
+                isLoadingOlder={transcriptPaginationSnapshot.isLoadingOlder}
                 isAgentRunning={activeIsHuman ? false : activeAgent.isRunning}
                 isTransportDown={transport === "down"}
-                loadOlder={activeIsHuman ? undefined : loadOlderTranscript}
+                loadOlder={loadOlderTranscript}
                 onCancelQueuedSend={cancelQueuedSend}
                 onDeleteFailedSend={removeTranscriptMessage}
                 onOpenReply={(targetId) => replyThreadController.navigate(targetId)}

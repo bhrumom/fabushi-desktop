@@ -800,6 +800,30 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     assert_eq!(transcript[2], attachment_only);
     assert_eq!(transcript[3], agent_result);
 
+    let human_tail = dispatch(
+        &runtime,
+        "getHumanConversationTranscriptTail",
+        json!({
+            "conversationId": conversation_id,
+            "limit": 2
+        }),
+    );
+    assert_eq!(human_tail["entries"], json!([attachment_only.clone(), agent_result.clone()]));
+    let older_cursor = human_tail["nextBeforeSeq"]
+        .as_i64()
+        .expect("Human transcript tail should expose an older-page cursor");
+    let human_older = dispatch(
+        &runtime,
+        "getHumanConversationTranscriptTail",
+        json!({
+            "conversationId": conversation_id,
+            "limit": 2,
+            "beforeSeq": older_cursor
+        }),
+    );
+    assert_eq!(human_older["entries"], json!([first.clone(), reply.clone()]));
+    assert!(human_older["nextBeforeSeq"].is_null());
+
     let attachment_search = dispatch(
         &runtime,
         "searchHumanMessages",
