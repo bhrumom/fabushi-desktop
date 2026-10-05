@@ -2523,7 +2523,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         // manual reopen. Reconciliation preserves queued/optimistic local entries.
         const activeHumanId = activeAgentIdRef.current;
         const activeHuman = projectedHumans.find((conversation) => conversation.id === activeHumanId);
-        if (activeHuman != null && entriesByAgentRef.current[activeHumanId] != null) {
+        if (activeHuman != null && entriesByAgentRef.current[activeHumanId] == null) {
+          // A persisted Human selection may restore before the asynchronous Human
+          // roster has been projected. The first open attempt can therefore lack
+          // enough type information to address the Human transcript. Once the
+          // canonical Human roster arrives, retry that same selection instead of
+          // leaving the workspace permanently unloaded until the user changes chats.
+          void openAgentRef.current(activeHumanId);
+        } else if (activeHuman != null && entriesByAgentRef.current[activeHumanId] != null) {
           try {
             const transcriptValue = await client.call("getHumanConversationTranscript", {
               conversationId: activeHumanId
@@ -2608,12 +2615,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
     const hasLoadedEntries = entriesByAgentRef.current[agentId] != null;
     transcriptPaginationController.setScope(transcriptAccountSlot, agentId);
-    const shouldOpen = selectionStore.select(agentId);
+    selectionStore.select(agentId);
     setOverlay(null);
     setWorkspaceRoute(null);
     setCommandPaletteOpen(false);
     if (hasLoadedEntries) selectionStore.settle(agentId);
-    if (!shouldOpen || hasLoadedEntries || client == null) {
+    if (hasLoadedEntries || client == null) {
       if (client == null) selectionStore.settle(agentId);
       return;
     }
