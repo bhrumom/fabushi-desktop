@@ -1,5 +1,11 @@
 export type FindableTranscriptEntry =
-  | { readonly id: string; readonly kind: "message"; readonly text: string }
+  | {
+      readonly id: string;
+      readonly kind: "message";
+      readonly text: string;
+      readonly author?: string;
+      readonly attachments?: readonly { readonly name: string }[];
+    }
   | { readonly id: string; readonly kind: "notice"; readonly text: string }
   | {
       readonly id: string;
@@ -57,7 +63,17 @@ function copyScope(scope: FindInChatScope): FindInChatScope {
 export function findInChatSearchText(
   entry: FindableTranscriptEntry,
 ): string {
-  if (entry.kind === "message" || entry.kind === "notice") {
+  if (entry.kind === "message") {
+    const message = entry as Extract<FindableTranscriptEntry, { kind: "message" }>;
+    return [
+      typeof message.text === "string" ? message.text : "",
+      typeof message.author === "string" ? message.author : "",
+      ...(Array.isArray(message.attachments)
+        ? message.attachments.flatMap((attachment) => typeof attachment?.name === "string" ? [attachment.name] : [])
+        : []),
+    ].filter((value) => value.length > 0).join("\n");
+  }
+  if (entry.kind === "notice") {
     return typeof (entry as { text?: unknown }).text === "string"
       ? (entry as { text: string }).text
       : "";
