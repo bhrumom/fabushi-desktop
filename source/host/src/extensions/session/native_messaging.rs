@@ -75,6 +75,7 @@ pub struct FabushiRemoteHumanCall {
     pub call_id: String,
     pub creator_user_id: Value,
     pub peer_user_id: Value,
+    pub state: String,
     pub generation: u64,
     pub event_seq: u64,
     pub terminal_state: Option<String>,
@@ -200,6 +201,8 @@ struct AppendCallEventRequest<'a> {
 struct CallEnvelope {
     success: bool,
     call: Option<FabushiRemoteHumanCall>,
+    #[serde(default)]
+    calls: Vec<FabushiRemoteHumanCall>,
     #[serde(default)]
     events: Vec<FabushiRemoteHumanCallEvent>,
     event: Option<FabushiRemoteHumanCallEvent>,
@@ -565,6 +568,42 @@ impl FabushiNativeMessagingClient {
             ));
         }
         Ok(envelope.data.map(|data| data.messages).unwrap_or_default())
+    }
+
+    pub fn list_human_calls(&self, limit: usize) -> Result<Vec<FabushiRemoteHumanCall>, String> {
+        let credentials = read_credentials(&self.credential_path)?;
+        let mut url = self.endpoint("/api/social/calls")?;
+        url.query_pairs_mut()
+            .append_pair("limit", &limit.clamp(1, 200).to_string());
+        let response = self
+            .client
+            .get(url)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .send()
+            .map_err(|error| format!("Fabushi Human call discovery failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human call discovery response could not be read: {error}"))?;
+        let envelope: CallEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human call discovery response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human call discovery was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        Ok(envelope.calls)
     }
 
     pub fn create_human_call(
