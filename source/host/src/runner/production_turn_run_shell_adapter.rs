@@ -317,10 +317,15 @@ impl ProductionTurnRunShellAdapter {
                     }
                     let cursor = checkpoint_store.persist(checkpoint)?;
                     // A durable tool-boundary checkpoint is observable provider
-                    // progress even when no text delta preceded it. Stop the
-                    // first-output watchdog only after persistence succeeds so
-                    // an unpersisted boundary can never authorize resume.
+                    // progress even when no text delta preceded it. It also
+                    // begins a fresh provider continuation, so persist first,
+                    // record the resumable boundary, then re-arm the watchdog
+                    // for the first output after that tool result. This keeps a
+                    // post-tool SSE stall bounded without making an unpersisted
+                    // checkpoint eligible for resume.
                     runtime_for_checkpoint.mark_stream_output(generation);
+                    runtime_for_checkpoint
+                        .rearm_output_deadline_after_checkpoint(generation);
                     let mut progress = progress.borrow_mut();
                     progress.record_output(0);
                     progress.checkpoint = Some(AttemptCheckpoint::new(
@@ -527,9 +532,17 @@ fn spawn_first_output_watchdog(
         let mut epoch = runtime.deadline_epoch(generation).unwrap_or_default();
         let mut started = Instant::now();
         while !attempt_done.load(Ordering::Acquire)
-            && runtime.deadline_armed(generation)
+            && runtime.is_current(generation)
             && !cancellation.is_cancelled()
         {
+            if !runtime.deadline_armed(generation) {
+                thread::sleep(if poll_interval.is_zero() {
+                    Duration::from_millis(1)
+                } else {
+                    poll_interval
+                });
+                continue;
+            }
             let current_epoch = match runtime.deadline_epoch(generation) {
                 Some(current_epoch) => current_epoch,
                 None => break,
