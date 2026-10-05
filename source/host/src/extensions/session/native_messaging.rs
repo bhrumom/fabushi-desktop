@@ -69,6 +69,33 @@ pub struct FabushiRemoteHumanMessage {
     pub reactions: Vec<FabushiRemoteHumanReaction>,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FabushiRemoteHumanCall {
+    pub call_id: String,
+    pub creator_user_id: Value,
+    pub peer_user_id: Value,
+    pub generation: u64,
+    pub event_seq: u64,
+    pub terminal_state: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FabushiRemoteHumanCallEvent {
+    pub call_id: String,
+    pub seq: u64,
+    pub generation: u64,
+    pub user_id: Value,
+    pub device_id: String,
+    pub client_event_id: String,
+    pub kind: String,
+    pub payload: Value,
+    pub created_at: String,
+}
+
 #[derive(Debug, Deserialize)]
 struct CredentialFile {
     #[serde(rename = "accessToken")]
@@ -149,6 +176,34 @@ struct ReactionEnvelope {
     message_id: Option<Value>,
     #[serde(default)]
     reactions: Vec<FabushiRemoteHumanReaction>,
+    error: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateCallRequest<'a> {
+    call_id: &'a str,
+    target_user_id: &'a str,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AppendCallEventRequest<'a> {
+    client_event_id: &'a str,
+    generation: u64,
+    kind: &'a str,
+    payload: &'a Value,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CallEnvelope {
+    success: bool,
+    call: Option<FabushiRemoteHumanCall>,
+    #[serde(default)]
+    events: Vec<FabushiRemoteHumanCallEvent>,
+    event: Option<FabushiRemoteHumanCallEvent>,
+    next_after_seq: Option<u64>,
     error: Option<String>,
 }
 
@@ -510,6 +565,183 @@ impl FabushiNativeMessagingClient {
             ));
         }
         Ok(envelope.data.map(|data| data.messages).unwrap_or_default())
+    }
+
+    pub fn create_human_call(
+        &self,
+        call_id: &str,
+        peer_human_id: &str,
+    ) -> Result<FabushiRemoteHumanCall, String> {
+        let call_id = required_trimmed(call_id, "call id")?;
+        let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
+        let credentials = read_credentials(&self.credential_path)?;
+        let response = self
+            .client
+            .post(self.endpoint("/api/social/calls")?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .json(&CreateCallRequest {
+                call_id,
+                target_user_id: peer_human_id,
+            })
+            .send()
+            .map_err(|error| format!("Fabushi Human call creation failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human call creation response could not be read: {error}"))?;
+        let envelope: CallEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human call creation response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human call creation was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        let call = envelope
+            .call
+            .ok_or_else(|| "Fabushi Human call creation response omitted the call.".to_string())?;
+        if call.call_id != call_id {
+            return Err("Fabushi Human call backend returned a mismatched call id".into());
+        }
+        Ok(call)
+    }
+
+    pub fn get_human_call(
+        &self,
+        call_id: &str,
+        after_seq: u64,
+        limit: usize,
+    ) -> Result<(FabushiRemoteHumanCall, Vec<FabushiRemoteHumanCallEvent>, u64), String> {
+        let call_id = required_trimmed(call_id, "call id")?;
+        let encoded_call_id: String =
+            url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
+        let credentials = read_credentials(&self.credential_path)?;
+        let mut url = self.endpoint(&format!("/api/social/calls/{encoded_call_id}"))?;
+        {
+            let mut query = url.query_pairs_mut();
+            query.append_pair("afterSeq", &after_seq.to_string());
+            query.append_pair("limit", &limit.clamp(1, 200).to_string());
+        }
+        let response = self
+            .client
+            .get(url)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .send()
+            .map_err(|error| format!("Fabushi Human call sync failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human call sync response could not be read: {error}"))?;
+        let envelope: CallEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human call sync response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human call sync was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        let call = envelope
+            .call
+            .ok_or_else(|| "Fabushi Human call sync response omitted the call.".to_string())?;
+        if call.call_id != call_id {
+            return Err("Fabushi Human call backend returned a mismatched call id".into());
+        }
+        let next_after_seq = envelope
+            .next_after_seq
+            .unwrap_or_else(|| envelope.events.last().map(|event| event.seq).unwrap_or(after_seq));
+        Ok((call, envelope.events, next_after_seq))
+    }
+
+    pub fn append_human_call_event(
+        &self,
+        call_id: &str,
+        client_event_id: &str,
+        generation: u64,
+        kind: &str,
+        payload: &Value,
+    ) -> Result<(FabushiRemoteHumanCall, FabushiRemoteHumanCallEvent), String> {
+        let call_id = required_trimmed(call_id, "call id")?;
+        let client_event_id = required_trimmed(client_event_id, "call event id")?;
+        let kind = required_trimmed(kind, "call event kind")?;
+        if !payload.is_object() {
+            return Err("Fabushi Human call event payload must be an object".into());
+        }
+        let encoded_call_id: String =
+            url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
+        let credentials = read_credentials(&self.credential_path)?;
+        let response = self
+            .client
+            .post(self.endpoint(&format!(
+                "/api/social/calls/{encoded_call_id}/events"
+            ))?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .json(&AppendCallEventRequest {
+                client_event_id,
+                generation,
+                kind,
+                payload,
+            })
+            .send()
+            .map_err(|error| format!("Fabushi Human call event send failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human call event response could not be read: {error}"))?;
+        let envelope: CallEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human call event response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human call event was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        let call = envelope
+            .call
+            .ok_or_else(|| "Fabushi Human call event response omitted the call.".to_string())?;
+        let event = envelope
+            .event
+            .ok_or_else(|| "Fabushi Human call event response omitted the event.".to_string())?;
+        if call.call_id != call_id || event.call_id != call_id {
+            return Err("Fabushi Human call backend returned a mismatched call id".into());
+        }
+        if event.client_event_id != client_event_id
+            || event.generation != generation
+            || event.kind != kind
+            || event.payload != *payload
+        {
+            return Err("Fabushi Human call backend returned a mismatched canonical event".into());
+        }
+        Ok((call, event))
     }
 
     fn endpoint(&self, path: &str) -> Result<Url, String> {
