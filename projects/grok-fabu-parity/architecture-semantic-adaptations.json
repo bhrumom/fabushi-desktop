@@ -5,7 +5,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "2d8bc0a78efbccb105a420ff4980d1cbcd765a92",
+      "targetBlobSha": "4176efd7f048e77a6eb0a57291ac2fb76275f26e",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx"
@@ -56,7 +56,7 @@
       "referencePath": "source/electron-preload/preload.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "2cb2e413944b3c6aa8efd35fef47b50a84cb4703",
+      "targetBlobSha": "fcd78b8b8929455caef51eee7b8b71094b6c875c",
       "behavioralEvidence": [
         "source/electron-preload/preload.ts",
         "source/electron-preload/runtime/primary.ts",
@@ -357,7 +357,7 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "0e4efa00de8cb34ce91aa14d2b94792c88c0a352",
+      "targetBlobSha": "b5fd6292ac7dea50b38552c324ec870e28643b77",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "source/electron-main/adapters/mcp-oauth.ts",
@@ -585,7 +585,7 @@
       "referencePath": "source/electron-main/main-edge.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "fb1a3f02159592c084ae31028a419fe9ceee37b6",
+      "targetBlobSha": "5cc18605fc31b00ee5efdbfa7276020e5c2862f4",
       "behavioralEvidence": [
         "source/electron-main/main-edge.ts",
         "source/shared/node/settings/sand-settings-store.ts",
@@ -629,6 +629,25 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged."
+    },
+    {
+      "referencePath": "source/electron-main/adapters/main-rpc.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2ae92ffde6e817c146a272f21ceee0e448ad6297",
+      "behavioralEvidence": [
+        "source/electron-main/adapters/main-rpc.ts",
+        "source/electron-main/call-media.ts",
+        "source/electron-main/main-edge.ts",
+        "source/electron-preload/preload.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Phase 1 Human realtime calls adapt the frozen Main RPC composition only to inject Electron-owned microphone/camera permission and desktopCapturer ports into the existing MainEdge. Durable Session/Transcript/Host/CallSession ownership and Coordinator transport remain unchanged; the renderer receives only typed media-device capabilities while signaling and claimed-device authority stay Host/backend-owned."
     }
   ]
 }

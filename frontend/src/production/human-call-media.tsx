@@ -280,7 +280,7 @@ export function HumanCallControls({
       if (event.candidate == null || disposedRef.current) return;
       const current = callRef.current;
       if (current == null) return;
-      void sendSignal(current, "candidate", event.candidate.toJSON()).catch((candidateError) => void failCall(mediaFailure(candidateError)));
+      void sendSignal(current, "candidate", event.candidate.toJSON() as unknown as Record<string, unknown>).catch((candidateError) => void failCall(mediaFailure(candidateError)));
     };
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === "connected") {
