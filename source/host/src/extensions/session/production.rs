@@ -1301,6 +1301,74 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "Human conversation is missing its peer identity".to_string())
     }
 
+    fn materialize_remote_human_attachment(
+        &self,
+        attachment: &FabushiRemoteHumanAttachment,
+    ) -> Result<serde_json::Value, String> {
+        let resource_id = attachment.resource_id.trim();
+        if resource_id.is_empty()
+            || resource_id.len() > 128
+            || !resource_id
+                .chars()
+                .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
+        {
+            return Err("remote Human attachment resource id is invalid".into());
+        }
+        if attachment.size == 0 || attachment.size > 32 * 1024 * 1024 {
+            return Err("remote Human attachment size exceeds the supported limit".into());
+        }
+        let mut name = attachment
+            .name
+            .chars()
+            .map(|character| match character {
+                '/' | '\\' | '\0' => '_',
+                character if character.is_control() => '_',
+                character => character,
+            })
+            .take(255)
+            .collect::<String>();
+        if name.trim().is_empty() {
+            name = "attachment".into();
+        }
+        let resource_root = self
+            .agents_root
+            .join("human-message-resources")
+            .join(resource_id);
+        fs::create_dir_all(&resource_root).map_err(|error| {
+            format!(
+                "remote Human attachment directory could not be created: {error}"
+            )
+        })?;
+        let path = resource_root.join(name);
+        let ready = fs::metadata(&path)
+            .ok()
+            .is_some_and(|metadata| metadata.is_file() && metadata.len() == attachment.size);
+        if !ready {
+            let client = self
+                .shipping_native_messaging()?
+                .ok_or_else(|| "remote Human attachment requires shipping native messaging".to_string())?;
+            let bytes = client.download_direct_message_resource(resource_id, attachment.size)?;
+            let temporary_path = resource_root.join(".download.tmp");
+            fs::write(&temporary_path, &bytes).map_err(|error| {
+                format!("remote Human attachment could not be staged: {error}")
+            })?;
+            if let Err(error) = fs::rename(&temporary_path, &path) {
+                let _ = fs::remove_file(&temporary_path);
+                return Err(format!(
+                    "remote Human attachment could not be committed atomically: {error}"
+                ));
+            }
+        }
+        Ok(serde_json::json!({
+            "path": path.to_string_lossy(),
+            "name": attachment.name,
+            "size": attachment.size,
+            "mimeType": attachment.content_type,
+            "resourceId": attachment.resource_id,
+            "remoteCreatedAt": attachment.created_at,
+        }))
+    }
+
     fn materialize_remote_human_message(
         &self,
         owner: &SandAgentDb,
@@ -1372,25 +1440,12 @@ impl ProductionSessionWorkers {
             );
         }
         if !remote.attachments.is_empty() {
-            object.insert(
-                "attachments".into(),
-                serde_json::Value::Array(
-                    remote
-                        .attachments
-                        .iter()
-                        .map(|attachment| {
-                            serde_json::json!({
-                                "path": format!("fabushi-message-resource:{}", attachment.resource_id),
-                                "name": attachment.name,
-                                "size": attachment.size,
-                                "mimeType": attachment.content_type,
-                                "resourceId": attachment.resource_id,
-                                "remoteCreatedAt": attachment.created_at,
-                            })
-                        })
-                        .collect(),
-                ),
-            );
+            let attachments = remote
+                .attachments
+                .iter()
+                .map(|attachment| self.materialize_remote_human_attachment(attachment))
+                .collect::<Result<Vec<_>, _>>()?;
+            object.insert("attachments".into(), serde_json::Value::Array(attachments));
         }
         let peer_human_id = if sender_id == local_human_id {
             recipient_id.as_str()
