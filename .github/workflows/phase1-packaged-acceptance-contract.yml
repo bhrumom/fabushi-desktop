@@ -1,0 +1,41 @@
+name: Phase 1 packaged acceptance contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'desktop/e2e/phase1-packaged-production-acceptance.spec.ts'
+      - '.github/workflows/release-macos-main.yml'
+      - '.github/workflows/phase1-packaged-acceptance-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parse:
+    name: Parse signed Phase 1 acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Install desktop test dependencies
+        working-directory: desktop
+        shell: bash
+        run: npm ci --ignore-scripts
+      - name: Parse packaged Phase 1 spec without executing shipping acceptance
+        working-directory: desktop
+        env:
+          OBF_REAL_ACCEPTANCE: '0'
+        shell: bash
+        run: npx playwright test e2e/phase1-packaged-production-acceptance.spec.ts --list
