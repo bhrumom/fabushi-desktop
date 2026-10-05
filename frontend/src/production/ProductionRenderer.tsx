@@ -1131,11 +1131,19 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       });
       const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
       if (authoritative != null) {
-        setEntriesByAgent((current) => ({
-          ...current,
-          [submission.agentId]: (current[submission.agentId] ?? []).map((entry) =>
-            entry.kind === "message" && entry.clientNonce === submission.nonce ? authoritative : entry)
-        }));
+        setEntriesByAgent((current) => {
+          const existing = current[submission.agentId] ?? [];
+          const correlatedIndex = existing.findIndex((entry) =>
+            entry.id === authoritative.id
+            || (entry.kind === "message" && entry.clientNonce === submission.nonce)
+          );
+          return {
+            ...current,
+            [submission.agentId]: correlatedIndex < 0
+              ? [...existing, authoritative]
+              : existing.map((entry, index) => index === correlatedIndex ? authoritative : entry)
+          };
+        });
         acknowledgementController.reconcileEcho({
           accountSlot: acknowledgementScopeRef.current.accountSlot,
           agentId: submission.agentId,
