@@ -174,8 +174,9 @@ jobs:
             cd "$PACKAGE_DIR"
             shasum -a 256 -c SHA256SUMS.txt | tee "$EVIDENCE_DIR/package/checksum-verification.txt"
           )
-          mapfile -t zips < <(find "$PACKAGE_DIR" -maxdepth 1 -type f -name 'fabushi-*-macos-arm64.zip' -print)
-          mapfile -t dmgs < <(find "$PACKAGE_DIR" -maxdepth 1 -type f -name 'fabushi-*-macos-arm64.dmg' -print)
+          shopt -s nullglob
+          zips=("$PACKAGE_DIR"/fabushi-*-macos-arm64.zip)
+          dmgs=("$PACKAGE_DIR"/fabushi-*-macos-arm64.dmg)
           test "${#zips[@]}" -eq 1
           test "${#dmgs[@]}" -eq 1
           zip="${zips[0]}"
@@ -188,7 +189,7 @@ jobs:
           rm -rf "$stage"
           mkdir -p "$stage"
           ditto -x -k "$zip" "$stage"
-          mapfile -t apps < <(find "$stage" -maxdepth 2 -type d -name '*.app' -print)
+          apps=("$stage"/*.app)
           test "${#apps[@]}" -eq 1
           source_app="${apps[0]}"
           app="/Applications/Fabushi.app"
@@ -487,7 +488,7 @@ jobs:
           )
           category_csv="${note#*categories=}"
           for category in "${required_categories[@]}"; do
-            printf ',%s,' ",$category_csv," | grep -Fq ",$category," || {
+            printf '%s' ",$category_csv," | grep -Fq ",$category," || {
               echo "::error::Formal PASS note is missing required category: $category"
               exit 1
             }
