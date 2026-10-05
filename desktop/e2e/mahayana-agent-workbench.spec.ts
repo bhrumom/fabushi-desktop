@@ -98,6 +98,18 @@ let e2eHumanMessages: E2eHumanMessage[] = [];
 let e2eHumanMessageSequence = 1;
 let e2eHumanResourceSequence = 1;
 let e2eHumanResources = new Map<string, E2eHumanResource>();
+let e2eLoginDeviceSequence = 1;
+const e2eObservedSocialDeviceIds = new Set<string>();
+
+function issueE2eLoginDeviceId(): string {
+  return `fabushi-e2e-device-${e2eLoginDeviceSequence++}`;
+}
+
+function isE2eSocialDeviceId(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^fabushi-e2e-device(?:-\\d+)?$/u.test(value)) return false;
+  e2eObservedSocialDeviceIds.add(value);
+  return true;
+}
 
 function parseE2eMultipartFile(contentType: string | undefined, body: Buffer): { name: string; contentType: string; bytes: Buffer } | null {
   const boundaryMatch = /boundary=(?:"([^"]+)"|([^;\s]+))/iu.exec(contentType ?? '');
@@ -170,7 +182,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
             accessTokenExpiresAt: expiresAt,
             refreshTokenExpiresAt: expiresAt,
             sessionId: 'fabushi-e2e-session',
-            deviceId: 'fabushi-e2e-device',
+            deviceId: issueE2eLoginDeviceId(),
             username: 'e2e@fabushi.local',
             userId: 'fabushi-e2e-account',
             provider: 'focused-e2e',
@@ -214,7 +226,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
       }
       if (requestUrl.pathname === '/api/social/friends' && request.method === 'GET') {
         if (request.headers.authorization !== `Bearer ${token}`
-          || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
           response.setHeader('content-type', 'application/json');
           response.statusCode = 401;
           response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
@@ -227,7 +239,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
       }
       if (requestUrl.pathname === '/api/social/message-resources' && request.method === 'POST') {
         if (request.headers.authorization !== `Bearer ${token}`
-          || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
           response.setHeader('content-type', 'application/json');
           response.statusCode = 401;
           response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
@@ -261,7 +273,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
       const resourceMatch = /^\/api\/social\/message-resources\/([^/]+)$/u.exec(requestUrl.pathname);
       if (resourceMatch != null && request.method === 'GET') {
         if (request.headers.authorization !== `Bearer ${token}`
-          || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
           response.setHeader('content-type', 'application/json');
           response.statusCode = 401;
           response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
@@ -281,7 +293,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
       }
       if (requestUrl.pathname === '/api/social/messages' && request.method === 'GET') {
         if (request.headers.authorization !== `Bearer ${token}`
-          || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
           response.setHeader('content-type', 'application/json');
           response.statusCode = 401;
           response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
@@ -302,7 +314,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
       }
       if (requestUrl.pathname === '/api/social/messages' && request.method === 'POST') {
         if (request.headers.authorization !== `Bearer ${token}`
-          || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
           response.setHeader('content-type', 'application/json');
           response.statusCode = 401;
           response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
@@ -369,7 +381,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
       const reactionMatch = /^\/api\/social\/messages\/(\d+)\/reactions$/u.exec(requestUrl.pathname);
       if (reactionMatch != null && request.method === 'POST') {
         if (request.headers.authorization !== `Bearer ${token}`
-          || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
           response.setHeader('content-type', 'application/json');
           response.statusCode = 401;
           response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
@@ -831,6 +843,83 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
   } finally {
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
+test('two shipping Electron device sessions converge one Human conversation through canonical remote sync', async () => {
+  e2eHumanMessages = [];
+  e2eHumanMessageSequence = 1;
+  e2eHumanResourceSequence = 1;
+  e2eHumanResources = new Map<string, E2eHumanResource>();
+  e2eObservedSocialDeviceIds.clear();
+
+  const appDataDirA = await mkdtemp(path.join(tmpdir(), 'fabushi-human-convergence-a-'));
+  const appDataDirB = await mkdtemp(path.join(tmpdir(), 'fabushi-human-convergence-b-'));
+  let appA: ElectronApplication | null = null;
+  let appB: ElectronApplication | null = null;
+
+  const createHumanConversation = async (page: Page, humanId: string, title: string): Promise<void> => {
+    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
+    await dialog.getByRole('textbox', { name: 'Human identity' }).fill(humanId);
+    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill(title);
+    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+  };
+
+  const sendHumanTurn = async (page: Page, text: string): Promise<void> => {
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await prompt.pressSequentially(text);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const turn = page.getByRole('article').filter({ hasText: text }).last();
+    await expect(turn).toBeVisible({ timeout: 10_000 });
+    await expect(turn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+  };
+
+  const reopenConversation = async (page: Page, title: string): Promise<void> => {
+    const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: title, exact: true });
+    await expect(peer).toBeVisible({ timeout: 15_000 });
+    await peer.click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+  };
+
+  try {
+    appA = await launchDesktopApp(appDataDirA);
+    const pageA = await appA.firstWindow();
+    await completeBrowserLogin(pageA);
+    await openMahayanaConversation(pageA);
+
+    appB = await launchDesktopApp(appDataDirB);
+    const pageB = await appB.firstWindow();
+    await completeBrowserLogin(pageB);
+    await openMahayanaConversation(pageB);
+
+    const convergencePeerId = 'human-convergence-peer-e2e';
+    const convergenceTitle = 'Human Convergence Peer';
+    await createHumanConversation(pageA, convergencePeerId, convergenceTitle);
+    await createHumanConversation(pageB, convergencePeerId, convergenceTitle);
+
+    const fromA = 'Dual-device Human convergence from Electron device A.';
+    await sendHumanTurn(pageA, fromA);
+
+    await createHumanConversation(pageB, 'human-convergence-switch-b-e2e', 'Human Convergence Switch B');
+    await reopenConversation(pageB, convergenceTitle);
+    await expect(pageB.getByRole('article').filter({ hasText: fromA }).last()).toBeVisible({ timeout: 15_000 });
+
+    const fromB = 'Dual-device Human convergence from Electron device B.';
+    await sendHumanTurn(pageB, fromB);
+
+    await createHumanConversation(pageA, 'human-convergence-switch-a-e2e', 'Human Convergence Switch A');
+    await reopenConversation(pageA, convergenceTitle);
+    await expect(pageA.getByRole('article').filter({ hasText: fromA }).last()).toBeVisible({ timeout: 15_000 });
+    await expect(pageA.getByRole('article').filter({ hasText: fromB }).last()).toBeVisible({ timeout: 15_000 });
+
+    expect(e2eObservedSocialDeviceIds.size).toBeGreaterThanOrEqual(2);
+  } finally {
+    await appB?.close().catch(() => undefined);
+    await appA?.close().catch(() => undefined);
+    await rm(appDataDirB, { recursive: true, force: true });
+    await rm(appDataDirA, { recursive: true, force: true });
   }
 });
 
