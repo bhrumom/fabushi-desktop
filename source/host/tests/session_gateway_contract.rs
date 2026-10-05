@@ -1835,6 +1835,139 @@ fn shipping_call_session_uses_backend_ordering_then_materializes_canonical_owner
     let _ = fs::remove_dir_all(root);
 }
 
+fn spawn_incoming_call_discovery_server() -> (String, thread::JoinHandle<Vec<String>>) {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind incoming call fixture");
+    let address = listener.local_addr().expect("incoming fixture address");
+    let handle = thread::spawn(move || {
+        let mut requests = Vec::new();
+        let call_id = "remote-incoming-call-1";
+
+        let (mut list_stream, _) = listener.accept().expect("accept call discovery");
+        requests.push(read_fixture_http_request(&mut list_stream));
+        let list_body = json!({
+            "success": true,
+            "calls": [{
+                "callId": call_id,
+                "creatorUserId": 2,
+                "peerUserId": 1,
+                "state": "negotiating",
+                "generation": 0,
+                "eventSeq": 1,
+                "terminalState": serde_json::Value::Null,
+                "createdAt": "2026-10-05T04:10:00Z",
+                "updatedAt": "2026-10-05T04:10:01Z"
+            }]
+        }).to_string();
+        write!(
+            list_stream,
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            list_body.len(),
+            list_body
+        ).expect("write call discovery");
+        list_stream.flush().expect("flush call discovery");
+
+        let (mut replay_stream, _) = listener.accept().expect("accept incoming call replay");
+        requests.push(read_fixture_http_request(&mut replay_stream));
+        let replay_body = json!({
+            "success": true,
+            "call": {
+                "callId": call_id,
+                "creatorUserId": 2,
+                "peerUserId": 1,
+                "state": "negotiating",
+                "generation": 0,
+                "eventSeq": 1,
+                "terminalState": serde_json::Value::Null,
+                "createdAt": "2026-10-05T04:10:00Z",
+                "updatedAt": "2026-10-05T04:10:01Z"
+            },
+            "events": [{
+                "callId": call_id,
+                "seq": 1,
+                "generation": 0,
+                "userId": 1,
+                "deviceId": "device-a",
+                "clientEventId": "transition:0:accept",
+                "kind": "transition",
+                "payload": {"action": "accept", "state": "negotiating"},
+                "createdAt": "2026-10-05T04:10:01Z"
+            }],
+            "nextAfterSeq": 1
+        }).to_string();
+        write!(
+            replay_stream,
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            replay_body.len(),
+            replay_body
+        ).expect("write incoming call replay");
+        replay_stream.flush().expect("flush incoming call replay");
+        requests
+    });
+    (format!("http://{address}"), handle)
+}
+
+#[test]
+fn shipping_call_discovery_materializes_incoming_call_into_canonical_human_scope() {
+    let root = temp_root("incoming-call-discovery");
+    let agents = root.join("agents");
+    fs::create_dir_all(&root).expect("fixture root");
+    let credential_path = root.join("host-credential.json");
+    fs::write(
+        &credential_path,
+        r#"{"accessToken":"fixture-token","deviceId":"device-a","userId":1}"#,
+    ).expect("credential");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(&credential_path)
+            .expect("credential metadata")
+            .permissions();
+        permissions.set_mode(0o600);
+        fs::set_permissions(&credential_path, permissions).expect("private credential");
+    }
+    let (base_url, server) = spawn_incoming_call_discovery_server();
+    let client = Arc::new(
+        FabushiNativeMessagingClient::new(&base_url, &credential_path)
+            .expect("incoming call client"),
+    );
+    let memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+            agents.clone(),
+        ),
+    );
+    let runtime = Arc::new(
+        ProductionSessionWorkers::with_agents_root_identity_messaging_and_dependencies(
+            &agents,
+            500,
+            Some("1".into()),
+            Some(client),
+            true,
+            None,
+            Arc::new(|| None),
+            memory,
+        ),
+    );
+
+    let calls = dispatch(&runtime, "syncHumanCalls", json!({}));
+    assert_eq!(calls.as_array().map(Vec::len), Some(1));
+    assert_eq!(calls[0]["id"], "remote-incoming-call-1");
+    assert_eq!(calls[0]["creatorId"], "2");
+    assert_eq!(calls[0]["state"], "negotiating");
+    assert_eq!(calls[0]["participantIds"], json!(["1", "2"]));
+
+    let conversations = dispatch(&runtime, "listHumanConversations", json!({}));
+    assert_eq!(conversations.as_array().map(Vec::len), Some(1));
+    assert_eq!(calls[0]["scopeId"], conversations[0]["id"]);
+
+    let requests = server.join().expect("incoming call fixture");
+    assert_eq!(requests.len(), 2);
+    assert!(requests[0].starts_with("GET /api/social/calls?limit=200 "));
+    assert!(requests[1].starts_with("GET /api/social/calls/remote-incoming-call-1?afterSeq=0&limit=200 "));
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
 #[test]
 fn call_session_owner_fences_lifecycle_signaling_reconnect_and_restart() {
     let root = temp_root("call-session-owner");
