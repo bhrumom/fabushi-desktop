@@ -64,7 +64,6 @@ fn spawn_remote_history_server() -> (String, thread::JoinHandle<Vec<String>>) {
                 _ => unreachable!(),
             };
             let messages = (low..=high)
-                .rev()
                 .map(|id| {
                     let minute = id / 60;
                     let second = id % 60;

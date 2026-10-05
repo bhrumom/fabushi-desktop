@@ -1421,10 +1421,11 @@ impl ProductionSessionWorkers {
             .map(str::to_string)
             .collect::<BTreeSet<_>>();
 
-        // The shipping endpoint is newest-first. Walk bounded older pages until
-        // one known server message proves overlap, or the server reaches the end
-        // of history. This closes reconnect and fresh-device gaps without
-        // introducing a second message store or treating renderer state as truth.
+        // The shipping endpoint selects newest rows but returns each page
+        // oldest-first. Walk bounded older pages until one known server message
+        // proves overlap, or the server reaches the end of history. This closes
+        // reconnect and fresh-device gaps without introducing a second message
+        // store or treating renderer state as truth.
         let mut before: Option<String> = None;
         let mut unseen_pages: Vec<Vec<FabushiRemoteHumanMessage>> = Vec::new();
         let mut pages_read = 0usize;
@@ -1440,16 +1441,16 @@ impl ProductionSessionWorkers {
             pages_read += 1;
 
             let mut overlap_at = None;
-            for (index, remote) in page.iter().enumerate() {
+            for (index, remote) in page.iter().enumerate().rev() {
                 let remote_id = fabushi_identity_text(&remote.id)?;
                 if known_remote_ids.contains(&remote_id) {
                     overlap_at = Some(index);
                     break;
                 }
             }
-            let unseen_end = overlap_at.unwrap_or(page.len());
-            if unseen_end > 0 {
-                unseen_pages.push(page[..unseen_end].to_vec());
+            let unseen_start = overlap_at.map_or(0, |index| index + 1);
+            if unseen_start < page.len() {
+                unseen_pages.push(page[unseen_start..].to_vec());
             }
 
             if overlap_at.is_some() || page.len() < PAGE_LIMIT {
@@ -1463,7 +1464,7 @@ impl ProductionSessionWorkers {
             }
 
             let next_before = page
-                .last()
+                .first()
                 .map(|message| message.created_at.trim())
                 .filter(|value| !value.is_empty())
                 .ok_or_else(|| {
@@ -1479,10 +1480,11 @@ impl ProductionSessionWorkers {
             before = Some(next_before);
         }
 
-        // Pages and rows arrive newest-first. Persist unseen rows oldest-first so
-        // canonical Session/Transcript replay remains deterministic after restart.
+        // Page windows arrive newest-window first while rows inside each page are
+        // oldest-first. Reverse only the page windows so canonical
+        // Session/Transcript replay remains deterministic after restart.
         for page in unseen_pages.into_iter().rev() {
-            for remote in page.into_iter().rev() {
+            for remote in page {
                 self.materialize_remote_human_message(&owner, &remote)?;
             }
         }
