@@ -1059,6 +1059,18 @@ fn spawn_remote_reply_attachment_server() -> (String, thread::JoinHandle<Vec<Str
             send_body
         ).expect("write send response");
         send_stream.flush().expect("flush send response");
+
+        let (mut resource_stream, _) = listener.accept().expect("accept resource download");
+        requests.push(read_fixture_http_request(&mut resource_stream));
+        let resource = [1_u8, 2, 3, 4];
+        write!(
+            resource_stream,
+            "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            resource.len()
+        ).expect("write resource download headers");
+        resource_stream.write_all(&resource).expect("write resource download body");
+        resource_stream.flush().expect("flush resource download");
+
         requests
     });
     (format!("http://{address}"), handle)
@@ -1154,20 +1166,22 @@ fn shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity() {
     assert_eq!(sent["replyToId"], "human-server-message:10");
     assert_eq!(sent["remoteReplyToMessageId"], "10");
     assert_eq!(sent["attachments"][0]["resourceId"], "resource-1");
-    assert_eq!(
-        sent["attachments"][0]["path"],
-        "fabushi-message-resource:resource-1"
-    );
+    let materialized_path = sent["attachments"][0]["path"]
+        .as_str()
+        .expect("materialized attachment path");
+    assert!(materialized_path.ends_with("human-message-resources/resource-1/report.pdf"));
+    assert_eq!(fs::read(materialized_path).expect("materialized attachment bytes"), [1_u8, 2, 3, 4]);
     assert_eq!(sent["attachments"][0]["name"], "report.pdf");
 
     let requests = server.join().expect("shipping send fixture");
-    assert_eq!(requests.len(), 2);
+    assert_eq!(requests.len(), 3);
     assert!(requests[0].starts_with("POST /api/social/message-resources "));
     assert!(requests[0].contains("filename=\"report.pdf\""));
     assert!(requests[1].starts_with("POST /api/social/messages "));
     assert!(requests[1].contains(r#""replyToMessageId":"10""#));
     assert!(requests[1].contains(r#""resourceId":"resource-1""#));
     assert!(requests[1].contains(r#""clientRequestId":"shipping-reply-1""#));
+    assert!(requests[2].starts_with("GET /api/social/message-resources/resource-1 "));
 
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
@@ -1237,6 +1251,17 @@ fn spawn_ambiguous_human_send_server() -> (String, thread::JoinHandle<Vec<String
             send_body
         ).expect("write replay response");
         replay_send.flush().expect("flush replay response");
+
+        let (mut resource_stream, _) = listener.accept().expect("accept durable resource download");
+        requests.push(read_fixture_http_request(&mut resource_stream));
+        let resource = [5_u8, 6, 7, 8];
+        write!(
+            resource_stream,
+            "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            resource.len()
+        ).expect("write durable resource download headers");
+        resource_stream.write_all(&resource).expect("write durable resource download body");
+        resource_stream.flush().expect("flush durable resource download");
 
         let (mut sync_stream, _) = listener.accept().expect("accept post-settlement sync");
         requests.push(read_fixture_http_request(&mut sync_stream));
@@ -1352,13 +1377,14 @@ fn shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reuploa
     restarted.shutdown();
 
     let requests = server.join().expect("durable send fixture");
-    assert_eq!(requests.len(), 4);
+    assert_eq!(requests.len(), 5);
     assert!(requests[0].starts_with("POST /api/social/message-resources "));
     assert!(requests[1].starts_with("POST /api/social/messages "));
     assert!(requests[2].starts_with("POST /api/social/messages "));
     assert!(requests[2].contains(r#""clientRequestId":"durable-send-1""#));
     assert!(requests[2].contains(r#""resourceId":"durable-resource-1""#));
-    assert!(requests[3].starts_with("GET /api/social/messages?"));
+    assert!(requests[3].starts_with("GET /api/social/message-resources/durable-resource-1 "));
+    assert!(requests[4].starts_with("GET /api/social/messages?"));
     assert_eq!(
         requests
             .iter()
