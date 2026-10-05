@@ -2948,6 +2948,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       void rebuildMigrationStore.noteReconnect();
       void rebuildBoxStore.noteReconnect();
       void rebuildTransportStore.connect();
+      void client.call("syncHumanCalls").catch(() => {});
     };
     const stopTransport = client.subscribeTransport(reconnect);
     void Promise.all([
@@ -2963,6 +2964,16 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       rebuildTransportStore.reset();
     };
   }, [account?.kind, client, pinnedAccountKey, rebuildBoxStore, rebuildMigrationStore, rebuildTransportStore]);
+
+  useEffect(() => {
+    if (client == null || account?.kind !== "logged-in") return;
+    const syncVisibleHumanCalls = () => {
+      if (document.visibilityState !== "visible") return;
+      void client.call("syncHumanCalls").catch(() => {});
+    };
+    document.addEventListener("visibilitychange", syncVisibleHumanCalls);
+    return () => document.removeEventListener("visibilitychange", syncVisibleHumanCalls);
+  }, [account?.kind, client, pinnedAccountKey]);
 
   useStrictModeSafeDisposal(accessRosterStore);
   useStrictModeSafeDisposal(rebuildMigrationStore);
