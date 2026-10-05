@@ -62,6 +62,20 @@ async function readRequestBody(request: import('node:http').IncomingMessage): Pr
   return Buffer.concat(chunks);
 }
 
+type E2eHumanAttachment = {
+  resourceId: string;
+  name: string;
+  contentType: string;
+  size: number;
+  createdAt: string;
+};
+
+type E2eHumanReaction = {
+  emoji: string;
+  count: number;
+  reactedByMe: boolean;
+};
+
 type E2eHumanMessage = {
   id: number;
   senderUserId: string;
@@ -73,13 +87,38 @@ type E2eHumanMessage = {
   createdAt: string;
   readAt: null;
   isOutgoing: true;
-  replyToMessageId: null;
-  attachments: [];
-  reactions: [];
+  replyToMessageId: number | null;
+  attachments: E2eHumanAttachment[];
+  reactions: E2eHumanReaction[];
 };
+
+type E2eHumanResource = E2eHumanAttachment & { bytes: Buffer };
 
 let e2eHumanMessages: E2eHumanMessage[] = [];
 let e2eHumanMessageSequence = 1;
+let e2eHumanResourceSequence = 1;
+let e2eHumanResources = new Map<string, E2eHumanResource>();
+
+function parseE2eMultipartFile(contentType: string | undefined, body: Buffer): { name: string; contentType: string; bytes: Buffer } | null {
+  const boundaryMatch = /boundary=(?:"([^"]+)"|([^;\s]+))/iu.exec(contentType ?? '');
+  const boundary = boundaryMatch?.[1] ?? boundaryMatch?.[2];
+  if (boundary == null || boundary.length === 0) return null;
+  const headerEnd = body.indexOf(Buffer.from('\r\n\r\n'));
+  if (headerEnd < 0) return null;
+  const payloadStart = headerEnd + 4;
+  const payloadEnd = body.indexOf(Buffer.from(`\r\n--${boundary}`), payloadStart);
+  if (payloadEnd < payloadStart) return null;
+  const headers = body.subarray(0, headerEnd).toString('utf8');
+  const filenameMatch = /filename="([^"]+)"/iu.exec(headers);
+  const partTypeMatch = /content-type:\s*([^\r\n]+)/iu.exec(headers);
+  const name = filenameMatch?.[1]?.trim() ?? '';
+  if (name.length === 0) return null;
+  return {
+    name,
+    contentType: partTypeMatch?.[1]?.trim() || 'application/octet-stream',
+    bytes: body.subarray(payloadStart, payloadEnd),
+  };
+}
 
 async function ensureE2eAuthBackend(): Promise<string> {
   if (e2eAuthBackendPromise != null) return await e2eAuthBackendPromise;
@@ -186,6 +225,60 @@ async function ensureE2eAuthBackend(): Promise<string> {
         response.end(JSON.stringify({ success: true, data: { friends: [] } }));
         return;
       }
+      if (requestUrl.pathname === '/api/social/message-resources' && request.method === 'POST') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const upload = parseE2eMultipartFile(
+          typeof request.headers['content-type'] === 'string' ? request.headers['content-type'] : undefined,
+          await readRequestBody(request),
+        );
+        if (upload == null || upload.bytes.length === 0) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 400;
+          response.end(JSON.stringify({ success: false, error: 'invalid-human-message-resource' }));
+          return;
+        }
+        const resource: E2eHumanResource = {
+          resourceId: `e2e-resource-${e2eHumanResourceSequence++}`,
+          name: upload.name,
+          contentType: upload.contentType,
+          size: upload.bytes.length,
+          createdAt: new Date().toISOString(),
+          bytes: Buffer.from(upload.bytes),
+        };
+        e2eHumanResources.set(resource.resourceId, resource);
+        const { bytes: _bytes, ...metadata } = resource;
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, resource: metadata }));
+        return;
+      }
+      const resourceMatch = /^\/api\/social\/message-resources\/([^/]+)$/u.exec(requestUrl.pathname);
+      if (resourceMatch != null && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const resource = e2eHumanResources.get(decodeURIComponent(resourceMatch[1]));
+        if (resource == null) {
+          response.statusCode = 404;
+          response.end('missing Human message resource');
+          return;
+        }
+        response.setHeader('content-type', 'application/octet-stream');
+        response.setHeader('content-length', String(resource.bytes.length));
+        response.statusCode = 200;
+        response.end(resource.bytes);
+        return;
+      }
       if (requestUrl.pathname === '/api/social/messages' && request.method === 'GET') {
         if (request.headers.authorization !== `Bearer ${token}`
           || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
@@ -225,9 +318,25 @@ async function ensureE2eAuthBackend(): Promise<string> {
         const targetUserId = typeof body.targetUserId === 'string' ? body.targetUserId.trim() : '';
         const text = typeof body.text === 'string' ? body.text.trim() : '';
         const clientRequestId = typeof body.clientRequestId === 'string' ? body.clientRequestId.trim() : '';
-        if (targetUserId.length === 0 || clientRequestId.length === 0
-          || body.replyToMessageId != null
-          || (Array.isArray(body.attachments) && body.attachments.length > 0)) {
+        const attachmentRefs = Array.isArray(body.attachments) ? body.attachments : [];
+        const attachments = attachmentRefs.flatMap((candidate): E2eHumanAttachment[] => {
+          if (candidate == null || typeof candidate !== 'object' || Array.isArray(candidate)) return [];
+          const resourceId = 'resourceId' in candidate && typeof candidate.resourceId === 'string'
+            ? candidate.resourceId.trim()
+            : '';
+          const resource = e2eHumanResources.get(resourceId);
+          if (resource == null) return [];
+          const { bytes: _bytes, ...metadata } = resource;
+          return [metadata];
+        });
+        const replyTarget = body.replyToMessageId == null
+          ? null
+          : e2eHumanMessages.find((candidate) => String(candidate.id) === String(body.replyToMessageId)) ?? null;
+        if (targetUserId.length === 0
+          || clientRequestId.length === 0
+          || (text.length === 0 && attachments.length === 0)
+          || attachments.length !== attachmentRefs.length
+          || (body.replyToMessageId != null && replyTarget == null)) {
           response.setHeader('content-type', 'application/json');
           response.statusCode = 400;
           response.end(JSON.stringify({ success: false, error: 'invalid-focused-human-message' }));
@@ -246,8 +355,8 @@ async function ensureE2eAuthBackend(): Promise<string> {
             createdAt: new Date().toISOString(),
             readAt: null,
             isOutgoing: true,
-            replyToMessageId: null,
-            attachments: [],
+            replyToMessageId: replyTarget?.id ?? null,
+            attachments,
             reactions: [],
           };
           e2eHumanMessages.push(message);
@@ -255,6 +364,31 @@ async function ensureE2eAuthBackend(): Promise<string> {
         response.setHeader('content-type', 'application/json');
         response.statusCode = 200;
         response.end(JSON.stringify({ success: true, message }));
+        return;
+      }
+      const reactionMatch = /^\/api\/social\/messages\/(\d+)\/reactions$/u.exec(requestUrl.pathname);
+      if (reactionMatch != null && request.method === 'POST') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || request.headers['x-fabushi-device-id'] !== 'fabushi-e2e-device') {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const message = e2eHumanMessages.find((candidate) => String(candidate.id) === reactionMatch[1]);
+        const body = JSON.parse((await readRequestBody(request)).toString('utf8')) as { emoji?: unknown; active?: unknown };
+        const emoji = typeof body.emoji === 'string' ? body.emoji.trim() : '';
+        if (message == null || emoji.length === 0 || typeof body.active !== 'boolean') {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 400;
+          response.end(JSON.stringify({ success: false, error: 'invalid-focused-human-reaction' }));
+          return;
+        }
+        message.reactions = message.reactions.filter((reaction) => reaction.emoji !== emoji);
+        if (body.active) message.reactions.push({ emoji, count: 1, reactedByMe: true });
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, messageId: message.id, reactions: message.reactions }));
         return;
       }
       if (requestUrl.pathname === '/v1/ai/responses' && request.method === 'POST') {
@@ -612,6 +746,93 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
   }
 });
 
+
+test('Human reply, attachment, reaction, and search stay on the shipping conversation contracts', async () => {
+  e2eHumanMessages = [];
+  e2eHumanMessageSequence = 1;
+  e2eHumanResourceSequence = 1;
+  e2eHumanResources = new Map<string, E2eHumanResource>();
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-message-parity-'));
+  const attachmentName = 'phase1-human-reply.txt';
+  const attachmentBytes = Buffer.from('Fabushi Human attachment exact-head evidence.', 'utf8');
+  let app: ElectronApplication | null = null;
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
+    await dialog.getByRole('textbox', { name: 'Human identity' }).fill('human-parity-peer-e2e');
+    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill('Human Parity Peer');
+    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    const rootText = 'Human parity root for reply search.';
+    await prompt.pressSequentially(rootText);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const rootTurn = page.getByRole('article').filter({ hasText: rootText }).last();
+    await expect(rootTurn).toBeVisible({ timeout: 10_000 });
+    await expect(rootTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+
+    await rootTurn.hover();
+    await rootTurn.getByRole('button', { name: 'Reply to your message' }).click();
+    await expect(page.getByRole('button', { name: 'Cancel reply' })).toBeVisible();
+
+    await page.locator('input.sand-prompt-file-input').setInputFiles({
+      name: attachmentName,
+      mimeType: 'text/plain',
+      buffer: attachmentBytes,
+    });
+    await expect(page.getByRole('list', { name: 'Attachments' }).getByRole('listitem', { name: attachmentName })).toBeVisible();
+
+    const replyText = 'Human parity reply with attachment.';
+    await prompt.pressSequentially(replyText);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const replyTurn = page.getByRole('article').filter({ hasText: replyText }).last();
+    await expect(replyTurn).toBeVisible({ timeout: 10_000 });
+    await expect(replyTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+    await expect(replyTurn.getByText(attachmentName, { exact: true })).toBeVisible();
+    await expect(replyTurn.getByRole('button', { name: 'Jump to replied message' })).toBeVisible();
+
+    expect(e2eHumanMessages).toHaveLength(2);
+    expect(e2eHumanMessages[1]?.replyToMessageId).toBe(e2eHumanMessages[0]?.id);
+    expect(e2eHumanMessages[1]?.attachments.map((attachment) => attachment.name)).toEqual([attachmentName]);
+    const uploadedResource = [...e2eHumanResources.values()].find((resource) => resource.name === attachmentName);
+    expect(uploadedResource?.bytes.equals(attachmentBytes)).toBe(true);
+
+    await replyTurn.hover();
+    await replyTurn.getByRole('button', { name: 'Add reaction' }).click();
+    await page.getByRole('button', { name: 'React with 👍' }).click();
+    await expect(replyTurn.getByRole('button', { name: /You reacted with 👍/u })).toBeVisible();
+    await expect.poll(() => e2eHumanMessages[1]?.reactions).toEqual([
+      { emoji: '👍', count: 1, reactedByMe: true },
+    ]);
+
+    await page.keyboard.press('Control+f');
+    const findInChat = page.getByRole('textbox', { name: 'Find in chat' });
+    await expect(findInChat).toBeVisible();
+    await findInChat.fill('phase1-human-reply');
+    await expect(page.locator('.sand-chat-find').getByRole('status')).toHaveText('1/1');
+    await page.getByRole('button', { name: 'Close find' }).click();
+
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Parity Peer', exact: true }).click();
+    const restoredReply = page.getByRole('article').filter({ hasText: replyText }).last();
+    await expect(restoredReply).toBeVisible({ timeout: 10_000 });
+    await expect(restoredReply.getByText(attachmentName, { exact: true })).toBeVisible();
+    await expect(restoredReply.getByRole('button', { name: 'Jump to replied message' })).toBeVisible();
+    await expect(restoredReply.getByRole('button', { name: /You reacted with 👍/u })).toBeVisible();
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
 
 test('Human call surface exposes the shipping WebRTC and Electron media bridge', async () => {
   e2eHumanMessages = [];
