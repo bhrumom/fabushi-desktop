@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -158,6 +158,21 @@ fn output_items(completed: &Value, observed: &[Value]) -> Vec<Value> {
         .filter(|values| !values.is_empty())
         .cloned()
         .unwrap_or_else(|| observed.to_vec())
+}
+
+fn retain_executable_function_calls(output: &mut Vec<Value>, calls: &[Value]) {
+    let executable_call_ids = calls
+        .iter()
+        .filter_map(|call| call.get("call_id").and_then(Value::as_str))
+        .collect::<HashSet<_>>();
+    output.retain(|item| {
+        if item.get("type").and_then(Value::as_str) != Some("function_call") {
+            return true;
+        }
+        item.get("call_id")
+            .and_then(Value::as_str)
+            .is_some_and(|call_id| executable_call_ids.contains(call_id))
+    });
 }
 
 fn parse_dsml_compat_calls(text: &str) -> Option<Vec<(String, Value)>> {
@@ -492,6 +507,14 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
             });
         }
 
+        // Only replay tool calls for which this Host will append a matching
+        // function_call_output. Provider streams can occasionally include an
+        // incomplete function_call item alongside the completed calls. Feeding
+        // that orphan back into the next request corrupts the conversation and
+        // makes the Router reject it as an assistant tool call without a
+        // corresponding tool result.
+        retain_executable_function_calls(&mut output, &calls);
+
         let calls_in_step = calls.len();
         let mut results = Vec::new();
         let mut observed_tool_calls = Vec::with_capacity(calls_in_step);
@@ -556,4 +579,47 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
     Err(CodexDirectError::Protocol(format!(
         "provider exceeded Fabushi's {max_steps}-step tool limit"
     )))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn incomplete_provider_tool_calls_are_not_replayed_without_results() {
+        let mut output = vec![
+            json!({
+                "type": "message",
+                "role": "assistant",
+                "content": [{"type": "output_text", "text": "working"}],
+            }),
+            json!({
+                "type": "function_call",
+                "name": "ReadFile",
+                "call_id": "call-complete",
+                "arguments": "{}",
+            }),
+            json!({
+                "type": "function_call",
+                "name": "RunShell",
+                "arguments": "{}",
+            }),
+        ];
+        let calls = vec![output[1].clone()];
+
+        retain_executable_function_calls(&mut output, &calls);
+
+        assert_eq!(output.len(), 2);
+        assert_eq!(
+            output[1].get("call_id").and_then(Value::as_str),
+            Some("call-complete")
+        );
+        assert!(
+            output.iter().all(|item| {
+                item.get("type").and_then(Value::as_str) != Some("function_call")
+                    || item.get("call_id").and_then(Value::as_str) == Some("call-complete")
+            }),
+            "no orphan function_call may be replayed without a matching result"
+        );
+    }
 }
