@@ -27,6 +27,11 @@ CREATE TABLE IF NOT EXISTS call_sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_call_sessions_scope_updated
     ON call_sessions(scope_id, updated_at_ms DESC, id DESC);
+CREATE TABLE IF NOT EXISTS call_remote_sync (
+    call_id TEXT PRIMARY KEY,
+    event_seq INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (call_id) REFERENCES call_sessions(id) ON DELETE CASCADE
+);
 CREATE TABLE IF NOT EXISTS call_signals (
     call_id TEXT NOT NULL,
     generation INTEGER NOT NULL,
@@ -148,6 +153,32 @@ impl CallSessionStore {
             )
             .optional()
             .map_err(|error| error.to_string())
+    }
+
+    pub fn remote_event_seq(&self, call_id: &str) -> Result<u64, String> {
+        let call_id = required(call_id, "call id")?;
+        let connection = self.connection.lock().map_err(|_| "call session store poisoned".to_string())?;
+        connection
+            .query_row(
+                "SELECT event_seq FROM call_remote_sync WHERE call_id = ?",
+                params![call_id],
+                |row| row.get::<_, i64>(0),
+            )
+            .optional()
+            .map(|value| value.unwrap_or(0) as u64)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn set_remote_event_seq(&self, call_id: &str, event_seq: u64) -> Result<(), String> {
+        let call_id = required(call_id, "call id")?;
+        let connection = self.connection.lock().map_err(|_| "call session store poisoned".to_string())?;
+        connection
+            .execute(
+                "INSERT INTO call_remote_sync (call_id, event_seq) VALUES (?, ?) ON CONFLICT(call_id) DO UPDATE SET event_seq = MAX(call_remote_sync.event_seq, excluded.event_seq)",
+                params![call_id, event_seq as i64],
+            )
+            .map_err(|error| error.to_string())?;
+        Ok(())
     }
 
     pub fn list_for_scope(&self, scope_id: &str, limit: usize) -> Result<Vec<CallSession>, String> {
