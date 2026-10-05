@@ -510,7 +510,7 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
 });
 
 
-test('Human conversation shares the Agent workspace, survives restart, and explicitly hands off to Mahayana', async () => {
+test('Mahayana renders one Hermes-style assistant turn after a Human conversation survives restart and explicitly hands off', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-agent-vertical-slice-'));
   let app: ElectronApplication | null = null;
   const humanMessage = 'Human durable message for the native Fabushi conversation.';
