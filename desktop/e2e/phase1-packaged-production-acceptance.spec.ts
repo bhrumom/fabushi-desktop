@@ -249,6 +249,22 @@ async function assertSettingsAccessibilityAndI18n(page: Page): Promise<Record<st
   }
   await expect(dialog.locator('[aria-live="polite"][role="status"]').first()).toBeVisible();
 
+  const settingsNav = page.getByRole('navigation', { name: 'Settings sections' });
+  await settingsNav.getByRole('button', { name: 'Updates', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Updates', exact: true })).toBeVisible();
+  const updaterSurface = page.locator('.sand-settings-beta-stack');
+  await expect(updaterSurface).toBeVisible();
+  await expect(updaterSurface.locator('[role="status"], output[aria-live="polite"]').first()).toBeVisible();
+  const updateTrack = page.getByRole('button', { name: 'Update Track' });
+  const checkUpdates = page.getByRole('button', { name: /Check for Updates|Restart to Update/ });
+  expect(
+    (await updateTrack.count()) + (await checkUpdates.count()),
+    'signed packaged Settings must expose the production updater state/action surface',
+  ).toBeGreaterThan(0);
+  await settingsNav.getByRole('button', { name: 'General', exact: true }).click();
+  dialog = page.getByRole('dialog', { name: 'Grok Bot settings' });
+  await expect(dialog.getByRole('heading', { name: 'Appearance', exact: true })).toBeVisible();
+
   await chooseSandSelect(page, 'Theme', 'Dark');
   await chooseSandSelect(page, 'Text size', '125%');
   const reduceMotion = dialog.getByRole('switch', { name: /Reduce motion/ });
