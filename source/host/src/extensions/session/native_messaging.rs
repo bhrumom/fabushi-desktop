@@ -88,8 +88,6 @@ struct SendEnvelope {
 #[derive(Debug, Deserialize)]
 struct ListData {
     messages: Vec<FabushiRemoteHumanMessage>,
-    #[serde(default)]
-    next_after_id: Option<Value>,
 }
 
 #[derive(Debug, Deserialize)]
