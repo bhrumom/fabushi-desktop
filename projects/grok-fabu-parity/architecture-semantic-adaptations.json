@@ -5,7 +5,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "eabb0d81cc81b244031d293ec6d7951fd33944a3",
+      "targetBlobSha": "eb87c37050cfbebcbe30bf11a5b74025389f1ddd",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx"
@@ -18,7 +18,7 @@
         ".github/workflows/pr20-verify-once.yml",
         "source/host/tests/session_gateway_contract.rs"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell. Phase 1 additionally absorbs Human conversations into this same renderer owner: the existing sidebar/workspace/composer/transcript are reused, Human sends keep the recovered optimistic/reconnect queue, canonical attachment commit path and reply controller, and explicit Human-to-Agent handoff still crosses the established Coordinator-to-Host-to-Runner boundary. No parallel Human shell or message runtime is introduced. Phase 1 reconnect convergence now refreshes an already-open Human transcript from the same Host-owned canonical Session/Transcript immediately after native history sync, while baseline reconciliation preserves unresolved optimistic rows; the Host shipping-client contract separately proves bounded multi-page multi-device gap recovery without a renderer-side message truth. Human older-history loading now reuses the existing transcript pagination controller against a Host gateway that pages the same canonical Human Session SQLite owner; initial Human open syncs native transport then projects only the latest bounded tail, while scroll pagination retains the existing cursor, viewport-anchor, request-fencing, and deduplication ownership. Phase 1 roster recovery further separates local Agent roster readiness from shipping Human convergence: listAgents publishes the canonical loaded/empty Agent state before a potentially slow remote Human sync, while Human sync remains account/transport/attempt fenced, keeps its durable local fallback, and refreshes the active Human transcript after convergence. This prevents Human network latency from holding the canonical Agent shell in an indefinite loading state without weakening either synchronization path. Phase 1 Human reactions now reuse the recovered reaction pills/action surface while mutation and settlement remain Host-owned: the renderer calls the existing Coordinator client, receives the canonical updated Human transcript row, and never creates a reaction store. Human Find-in-chat likewise reuses the recovered find controller and canonical transcript pagination owner: full durable Human search is provided by the Host search gateway, while navigation to an older hit reveals bounded history through the existing pagination controller and virtual transcript handle instead of replacing the timeline with a parallel search result model."
+      "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell. Phase 1 additionally absorbs Human conversations into this same renderer owner: the existing sidebar/workspace/composer/transcript are reused, Human sends keep the recovered optimistic/reconnect queue, canonical attachment commit path and reply controller, and explicit Human-to-Agent handoff still crosses the established Coordinator-to-Host-to-Runner boundary. No parallel Human shell or message runtime is introduced. Phase 1 reconnect convergence now refreshes an already-open Human transcript from the same Host-owned canonical Session/Transcript immediately after native history sync, while baseline reconciliation preserves unresolved optimistic rows; the Host shipping-client contract separately proves bounded multi-page multi-device gap recovery without a renderer-side message truth. Human older-history loading now reuses the existing transcript pagination controller against a Host gateway that pages the same canonical Human Session SQLite owner; initial Human open syncs native transport then projects only the latest bounded tail, while scroll pagination retains the existing cursor, viewport-anchor, request-fencing, and deduplication ownership. Phase 1 roster recovery further separates local Agent roster readiness from shipping Human convergence: listAgents publishes the canonical loaded/empty Agent state before a potentially slow remote Human sync, while Human sync remains account/transport/attempt fenced, keeps its durable local fallback, and refreshes the active Human transcript after convergence. This prevents Human network latency from holding the canonical Agent shell in an indefinite loading state without weakening either synchronization path. Phase 1 Human reactions now reuse the recovered reaction pills/action surface while mutation and settlement remain Host-owned: the renderer calls the existing Coordinator client, receives the canonical updated Human transcript row, and never creates a reaction store. Human Find-in-chat likewise reuses the recovered find controller and canonical transcript pagination owner: full durable Human search is provided by the Host search gateway, while navigation to an older hit reveals bounded history through the existing pagination controller and virtual transcript handle instead of replacing the timeline with a parallel search result model. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner."
     },
     {
       "referencePath": "frontend/src/production/model.ts",
@@ -56,7 +56,7 @@
       "referencePath": "source/electron-preload/preload.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "c9b7b30158ab2fa9cde1ac62794115c7ed8efe39",
+      "targetBlobSha": "2cb2e413944b3c6aa8efd35fef47b50a84cb4703",
       "behavioralEvidence": [
         "source/electron-preload/preload.ts",
         "source/electron-preload/runtime/primary.ts",
@@ -68,7 +68,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence."
+      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
@@ -519,6 +519,116 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "Preserves the frozen Grok 0.18 inference-router ownership and provider-selection contract while adding one Fabushi product provider identity required by the shipping account boundary. Fresh Fabushi profiles select the first-party provider in product composition; the independent Mahayana Host/Runner reuses the existing Responses lifecycle, tool, checkpoint, usage, and cancellation machinery with the account-bound Fabushi credential and official product endpoint. Cursor, Codex, Claude Code, and OpenRouter retain their original identities and ownership, and the upstream Grok default remains Cursor outside Fabushi composition. This adaptation prevents a Fabushi product bearer from being misrouted to Cursor private backend infrastructure without creating a parallel inference runtime or collapsing Coordinator/Host/Runner responsibility boundaries."
+    },
+    {
+      "referencePath": "frontend/src/recovered/contracts/surface-notice.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "80406b8c9c3c57550a0c69dfbece395aef0168d5",
+      "behavioralEvidence": [
+        "frontend/src/recovered/contracts/surface-notice.ts",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "9f7d2914b1fb3796b583a07d0df0bc6673b24385",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
+        "frontend/src/recovered/features/settings/overlay/desktop.ts",
+        "frontend/src/recovered/features/settings/overlay/panels.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "9a0a49b1dbd12982f004fa642877acee96c9514f",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/desktop.ts",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/panels.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "d14b1e07eb5b34fb2fcd1551e823471fd204207e",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/panels.tsx",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged."
+    },
+    {
+      "referencePath": "source/electron-main/main-edge.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "fb1a3f02159592c084ae31028a419fe9ceee37b6",
+      "behavioralEvidence": [
+        "source/electron-main/main-edge.ts",
+        "source/shared/node/settings/sand-settings-store.ts",
+        "source/shared/rpc/main.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged."
+    },
+    {
+      "referencePath": "source/shared/desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "b259190ae4a458c00110573b2a3a5ef82fbc6ad5",
+      "behavioralEvidence": [
+        "source/shared/desktop.ts",
+        "source/shared/node/settings/sand-settings-store.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged."
+    },
+    {
+      "referencePath": "source/shared/node/settings/sand-settings-store.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "4aeb6bc1c9aa60ba9d44091217594bfa3a87c882",
+      "behavioralEvidence": [
+        "source/shared/node/settings/sand-settings-store.ts",
+        "source/electron-main/main-edge.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged."
     }
   ]
 }

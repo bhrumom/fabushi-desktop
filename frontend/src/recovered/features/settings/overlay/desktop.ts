@@ -185,7 +185,7 @@ export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordin
     theme: theme.preference,
     timeZone,
     uiPreferences,
-    localToolPermission:
+    localToolPermission,
     securityKeyEnabled,
     update,
     usageSummary: usageResult.summary,
@@ -202,7 +202,20 @@ export function setEgressTunnelEnabled(bridge: DesktopBridge, enabled: boolean):
 export function setTimeZoneOverride(bridge: DesktopBridge, timeZone: string | null): Promise<DesktopTimeZoneState> {
   return bridge.timeZone.setOverride(timeZone);
 }
-export function setUiPreferences(bridge: DesktopBridge, preferences: DesktopUiPreferences): Promise<DesktopUiPreferences> { return bridge.uiPreferences.set(preferences); }
+export async function setUiPreferences(bridge: DesktopBridge, preferences: DesktopUiPreferences): Promise<DesktopUiPreferences> {
+  const updated = await bridge.uiPreferences.set(preferences);
+  if (typeof document !== "undefined") {
+    const systemLocale = typeof navigator === "undefined" ? "en-US" : navigator.language;
+    const locale = updated.locale === "system" ? systemLocale : updated.locale;
+    const rtl = new Set(["ar","ckb","dv","fa","he","ku","ps","sd","ug","ur","yi"]).has(locale.split("-")[0]!.toLowerCase());
+    document.documentElement.lang = locale;
+    document.documentElement.dir = updated.direction === "auto" ? (rtl ? "rtl" : "ltr") : updated.direction;
+    document.documentElement.dataset.sandReducedMotion = updated.reducedMotion ? "true" : "false";
+    document.documentElement.dataset.sandHighContrast = updated.highContrast ? "true" : "false";
+    document.documentElement.style.setProperty("--sand-ui-text-scale", String(updated.textScale));
+  }
+  return updated;
+}
 
 export function setThemePreference(bridge: DesktopBridge, theme: ThemePreference): Promise<ThemeState> {
   return bridge.theme.set(theme);
