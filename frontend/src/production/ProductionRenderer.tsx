@@ -11,6 +11,7 @@ import { createTranscriptAcknowledgementController } from "../recovered/features
 import { createReplyThreadController, type ReplySelection } from "../recovered/features/conversation/workspace/reply-thread-controller";
 import type { ComposerReplyTarget } from "../recovered/features/conversation/workspace/reply-preview";
 import { ConversationSidebar } from "../recovered/features/conversation/workspace/sidebar";
+import { AgentAvatar } from "../recovered/features/conversation/workspace/agent-avatar";
 import { createSidebarProfileAction } from "../recovered/features/conversation/workspace/sidebar-profile-action";
 import { createSidebarSearchTrigger } from "../recovered/features/conversation/workspace/sidebar-search-trigger";
 import { ConversationAgentHeader } from "../recovered/features/conversation/workspace/chat-header";
@@ -51,6 +52,7 @@ import { createAgentSettingsController, projectAgentSettingsAgent } from "../rec
 import { AgentSettingsPanel } from "../recovered/features/agent-info/settings/view";
 import { GroupMembersPane } from "../recovered/features/agent-info/group-members/view";
 import { createAvatarEditorProductionAdapter } from "../recovered/features/agent-info/avatar-editor/production-adapter";
+import { AVATAR_COLORS, AVATAR_SHAPES } from "../recovered/features/agent-info/avatar-editor/model";
 import { AvatarEditorView } from "../recovered/features/agent-info/avatar-editor/view";
 import { createPluginAuthProductionAdapter } from "../recovered/features/plugins/overlay/production-adapter";
 import { projectGroupMemberAgent } from "../recovered/features/agent-info/group-members/model";
@@ -139,10 +141,10 @@ import type { TranscriptMessageReactionSlotProps } from "../recovered/features/c
 import { LocalToolPermissionDock, type LocalToolPermissionRequest } from "../recovered/features/permissions/local-tool/view";
 import {
   parseDesktopIntent,
-  projectHumanConversation,
   projectHumanConversations,
   projectHumanConversationTranscript,
   projectRendererAgent,
+  projectRendererAgentUpsert,
   projectRendererAgents,
   projectTranscriptEntry,
   projectTranscriptFeedEntries,
@@ -353,6 +355,15 @@ function mergeAuthoritativeTranscriptMessage(
   };
 }
 
+function transcriptEntriesCorrelate(left: ConversationTranscriptEntry, right: ConversationTranscriptEntry): boolean {
+  if (left.id === right.id) return true;
+  return left.kind === "message"
+    && right.kind === "message"
+    && left.clientNonce != null
+    && right.clientNonce != null
+    && left.clientNonce === right.clientNonce;
+}
+
 function reconcileAuthoritativeTranscriptBaseline(
   current: readonly ConversationTranscriptEntry[],
   incoming: readonly ConversationTranscriptEntry[],
@@ -373,16 +384,28 @@ function reconcileAuthoritativeTranscriptBaseline(
     && entry.role === "user"
     && entry.clientNonce != null
     && entry.id.startsWith("pending-")
-    && !incoming.some((incomingEntry) =>
-      incomingEntry.id === entry.id
-      || (
-        incomingEntry.kind === "message"
-        && incomingEntry.clientNonce != null
-        && incomingEntry.clientNonce === entry.clientNonce
-      )
-    )
+    && !incoming.some((incomingEntry) => transcriptEntriesCorrelate(incomingEntry, entry))
   );
   return [...baseline, ...unresolvedOptimistic];
+}
+
+/**
+ * The transcript feed may deliver an appended/updated event before its initial
+ * snapshot when the renderer subscribes during an active turn. A snapshot is
+ * authoritative for older history, but it must not erase a newer live event
+ * that this exact feed subscription already observed.
+ */
+function reconcileTranscriptFeedBaseline(
+  current: readonly ConversationTranscriptEntry[],
+  incoming: readonly ConversationTranscriptEntry[],
+  preBaselineEntryIds: ReadonlySet<string>,
+): ConversationTranscriptEntry[] {
+  const baseline = reconcileAuthoritativeTranscriptBaseline(current, incoming);
+  const arrivedAfterSnapshot = current.filter((entry) =>
+    preBaselineEntryIds.has(entry.id)
+    && !baseline.some((candidate) => transcriptEntriesCorrelate(candidate, entry))
+  );
+  return [...baseline, ...arrivedAfterSnapshot];
 }
 
 function reconcileLateInitialTranscriptPage(
@@ -390,13 +413,9 @@ function reconcileLateInitialTranscriptPage(
   incoming: readonly ConversationTranscriptEntry[],
 ): ConversationTranscriptEntry[] {
   const baseline = reconcileAuthoritativeTranscriptBaseline(current, incoming);
-  const arrivedWhileLoading = current.filter((currentEntry) => !incoming.some((incomingEntry) => {
-    if (incomingEntry.id === currentEntry.id) return true;
-    return incomingEntry.kind === "message"
-      && currentEntry.kind === "message"
-      && incomingEntry.clientNonce != null
-      && incomingEntry.clientNonce === currentEntry.clientNonce;
-  }));
+  const arrivedWhileLoading = current.filter((currentEntry) =>
+    !incoming.some((incomingEntry) => transcriptEntriesCorrelate(incomingEntry, currentEntry))
+  );
   return [...baseline, ...arrivedWhileLoading];
 }
 
@@ -968,9 +987,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [settingsSection, setSettingsSection] = useState<SettingsSectionId>("general");
   const [pluginQuery, setPluginQuery] = useState("");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const [newHumanDialogOpen, setNewHumanDialogOpen] = useState(false);
-  const [newHumanPeerId, setNewHumanPeerId] = useState("");
-  const [newHumanTitle, setNewHumanTitle] = useState("");
+  const [newAgentDialogOpen, setNewAgentDialogOpen] = useState(false);
+  const [newAgentName, setNewAgentName] = useState("New chat");
+  const [newAgentDescription, setNewAgentDescription] = useState("");
+  const [newAgentAvatarShape, setNewAgentAvatarShape] = useState<(typeof AVATAR_SHAPES)[number]>("wedge");
+  const [newAgentAvatarColor, setNewAgentAvatarColor] = useState<(typeof AVATAR_COLORS)[number]["id"]>("cyan");
   const [humanHandoffAgentId, setHumanHandoffAgentId] = useState("");
   const [account, setAccount] = useState<CursorAuthStatus | null>(null);
   const applyAccountStatus = useCallback((status: CursorAuthStatus) => {
@@ -2753,9 +2774,17 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     });
     const stopUpsert = client.subscribe("agent-upserted", (value) => {
       if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
-      const projected = projectRendererAgent(value);
+      const projected = projectRendererAgentUpsert(value);
       if (projected != null) setAgents((current) => [projected, ...current.filter((agent) => agent.id !== projected.id)].sort((a, b) => b.updatedAt - a.updatedAt));
     });
+    const transcriptBaselineSeen = new Set<string>();
+    const preBaselineFeedEntryIds = new Map<string, Set<string>>();
+    const rememberPreBaselineFeedEntry = (ownerId: string, entryId: string) => {
+      if (transcriptBaselineSeen.has(ownerId)) return;
+      const ids = preBaselineFeedEntryIds.get(ownerId) ?? new Set<string>();
+      ids.add(entryId);
+      preBaselineFeedEntryIds.set(ownerId, ids);
+    };
     const stopTranscript = reactionRoot?.feed.observeEntriesFeed({
       onBaseline: ({ agentId: ownerId, entries: rawEntries }) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
@@ -2773,16 +2802,20 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             },
           });
         }
+        const preserveEntryIds = new Set(preBaselineFeedEntryIds.get(ownerId) ?? []);
         setEntriesByAgent((current) => ({
           ...current,
-          [ownerId]: reconcileAuthoritativeTranscriptBaseline(current[ownerId] ?? [], projectedEntries)
+          [ownerId]: reconcileTranscriptFeedBaseline(current[ownerId] ?? [], projectedEntries, preserveEntryIds)
         }));
+        transcriptBaselineSeen.add(ownerId);
+        preBaselineFeedEntryIds.delete(ownerId);
       },
       onUpdated: ({ agentId: ownerId, after: event }) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
         const owner = agentsRef.current.find((agent) => agent.id === ownerId);
         const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
         if (projected == null || !ownerId) return;
+        rememberPreBaselineFeedEntry(ownerId, projected.id);
         setEntriesByAgent((current) => {
           const existing = current[ownerId] ?? [];
           if (!existing.some((entry) => entry.id === projected.id)) return current;
@@ -2798,6 +2831,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       },
       onCleared: (ownerId) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
+        transcriptBaselineSeen.add(ownerId);
+        preBaselineFeedEntryIds.delete(ownerId);
         setEntriesByAgent((current) => {
           if (!(ownerId in current)) return current;
           const next = { ...current };
@@ -2813,6 +2848,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const owner = agentsRef.current.find((agent) => agent.id === ownerId);
       const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
       if (projected == null || !ownerId) return;
+      rememberPreBaselineFeedEntry(ownerId, projected.id);
       const clientNonce = event && typeof event === "object" && "clientNonce" in event && typeof event.clientNonce === "string" ? event.clientNonce : null;
       const acknowledgementBefore = clientNonce == null ? null : acknowledgementController.getSnapshot().records.find((record) => record.nonce === clientNonce || record.priorNonces.includes(clientNonce));
       const resolvedNonce = acknowledgementBefore?.nonce ?? clientNonce;
@@ -3266,48 +3302,38 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     return () => { active = false; window.removeEventListener("focus", onFocus); };
   }, [client, refreshRoster, transport]);
 
-  const createHumanConversation = async () => {
-    if (client == null) return;
-    const peerHumanId = newHumanPeerId.trim();
-    if (peerHumanId.length === 0) {
-      setNotice("Human identity is required.");
-      return;
-    }
-    setBusy(true);
-    try {
-      const created = projectHumanConversation(await client.call("createHumanConversation", {
-        peerHumanId,
-        ...(newHumanTitle.trim().length === 0 ? {} : { title: newHumanTitle.trim() })
-      }));
-      const projectedHumans = projectHumanConversations(await client.call("listHumanConversations"));
-      humanConversationsRef.current = projectedHumans;
-      setHumanConversations(projectedHumans);
-      reconcileCompleteRosterSelection([...projectedHumans, ...agentsRef.current]);
-      setNewHumanDialogOpen(false);
-      setNewHumanPeerId("");
-      setNewHumanTitle("");
-      if (created != null) await openAgent(created.id);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : String(error));
-    } finally {
-      setBusy(false);
-    }
+  const openNewAgentDialog = () => {
+    setNewAgentName("New chat");
+    setNewAgentDescription("");
+    setNewAgentAvatarShape("wedge");
+    setNewAgentAvatarColor("cyan");
+    setNewAgentDialogOpen(true);
   };
 
   const createAgent = async () => {
     if (client == null) return;
+    const name = newAgentName.trim() || "New chat";
     setBusy(true);
     try {
-      const result = await client.call("createAgent", { name: "New chat", description: "", origin: "user", isKickstartRequested: false, clientNonce: makeClientNonce() });
+      const result = await client.call("createAgent", {
+        name,
+        description: newAgentDescription.trim(),
+        avatarShape: newAgentAvatarShape,
+        avatarColor: newAgentAvatarColor,
+        origin: "user",
+        isKickstartRequested: false,
+        clientNonce: makeClientNonce()
+      });
       const created = result && typeof result === "object" && "agent" in result ? (result as { agent: unknown }).agent : result;
       const projected = projectRendererAgent(created);
       await refreshRoster();
+      setNewAgentDialogOpen(false);
       if (projected != null) await openAgent(projected.id);
     } catch (error) { setNotice(error instanceof Error ? error.message : String(error)); }
     finally { setBusy(false); }
   };
 
-  createAgentRef.current = createAgent;
+  createAgentRef.current = openNewAgentDialog;
   openAgentRef.current = openAgent;
 
   const globalShortcutActions = useMemo(() => createRootShellShortcutActions({
@@ -3977,12 +4003,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         <div style={{ display: "grid", gridTemplateRows: "minmax(0, 1fr) auto auto auto", minHeight: 0 }}>
           <div style={{ display: "grid", gridTemplateRows: "auto minmax(0, 1fr)", minHeight: 0 }}>
             {connectionController == null ? null : <CoordinatorConnectionHost controller={connectionController} />}
-            <ConversationSidebar activeAgentId={activeAgentId} agents={visibleAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} selectedAgentIds={selectedSidebarAgentIds} onToggleAgentSelection={toggleSidebarAgentSelection} onRangeSelectAgent={rangeSelectSidebarAgent} onClearAgentSelection={clearSidebarAgentSelection} onMoveSelectedAgentsToSection={moveSelectedSidebarAgentsToSection} onMoveSelectedAgentsToNewSection={moveSelectedSidebarAgentsToNewSection} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void duplicateAgent(agentId); }} onHideAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void hideAgent(agentId); }} onNewChat={() => void createAgent()} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) sidebarProfileAction.onSelect(agentId); }} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? (agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openAsyncTasks(agentId); } : undefined} onShowFullConversation={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openConversationOutline(agentId); }} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void renameAgent(agentId, name); }} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agent.id)) setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup }); }} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void setAgentUnread(agentId, isUnread); }} onTogglePin={(agentId, isPinned) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) toggleAgentPin(agentId, isPinned); }} />
+            <ConversationSidebar activeAgentId={activeAgentId} agents={visibleAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} selectedAgentIds={selectedSidebarAgentIds} onToggleAgentSelection={toggleSidebarAgentSelection} onRangeSelectAgent={rangeSelectSidebarAgent} onClearAgentSelection={clearSidebarAgentSelection} onMoveSelectedAgentsToSection={moveSelectedSidebarAgentsToSection} onMoveSelectedAgentsToNewSection={moveSelectedSidebarAgentsToNewSection} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void duplicateAgent(agentId); }} onHideAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void hideAgent(agentId); }} onNewChat={openNewAgentDialog} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) sidebarProfileAction.onSelect(agentId); }} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? (agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openAsyncTasks(agentId); } : undefined} onShowFullConversation={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openConversationOutline(agentId); }} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void renameAgent(agentId, name); }} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agent.id)) setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup }); }} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void setAgentUnread(agentId, isUnread); }} onTogglePin={(agentId, isPinned) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) toggleAgentPin(agentId, isPinned); }} />
           </div>
           {hiddenAgents.length > 0 && visibleAgents.length > 0 ? <SandButton aria-haspopup="dialog" onClick={() => setOverlay("hidden-chats")} size="sm" variant="secondary"><span>{UI_TEXT.hiddenBots}</span><SandBadge aria-label={`${hiddenAgents.length} hidden bots`}>{hiddenAgents.length}</SandBadge></SandButton> : null}
           {/* @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2602084 (s0n Plugins footer button/icon/text composition) */}
           <div className="sand-agents-sidebar__plugins-entry">
-            <SandButton className="sand-agents-sidebar__plugins" leadingIcon="chat-bubbles" onClick={() => setNewHumanDialogOpen(true)} shape="pill" size="md" variant="secondary">New Human chat</SandButton>
             <SandButton className="sand-agents-sidebar__plugins" leadingIcon="plug" onClick={() => { setPluginQuery(""); setOverlay("plugins"); }} shape="pill" size="md" variant="secondary">{UI_TEXT.plugins}</SandButton>
           </div>
           <AccountMenu
@@ -4083,17 +4108,67 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         </div>}
       </div>
 
-      {newHumanDialogOpen ? <div aria-label="New Human chat" aria-modal="true" className="sand-overlay" role="dialog">
-        <div className="sand-dialog" style={{ display: "grid", gap: 12, minWidth: 320, padding: 20 }}>
-          <h2>New Human chat</h2>
-          <label style={{ display: "grid", gap: 6 }}>Human identity<input autoFocus value={newHumanPeerId} onChange={(event) => setNewHumanPeerId(event.currentTarget.value)} placeholder="Peer Human ID" /></label>
-          <label style={{ display: "grid", gap: 6 }}>Conversation title<input value={newHumanTitle} onChange={(event) => setNewHumanTitle(event.currentTarget.value)} placeholder="Optional title" /></label>
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <SandButton onClick={() => setNewHumanDialogOpen(false)} size="sm" variant="secondary">Cancel</SandButton>
-            <SandButton disabled={busy || newHumanPeerId.trim().length === 0} onClick={() => void createHumanConversation()} size="sm">Create</SandButton>
+      <OverlayDialog
+        className="sand-new-agent-dialog"
+        label="Create agent"
+        onClose={() => { if (!busy) setNewAgentDialogOpen(false); }}
+        open={newAgentDialogOpen}
+      >
+        <form onSubmit={(event) => { event.preventDefault(); if (!busy) void createAgent(); }}>
+          <header>
+            <div>
+              <h2>Create agent</h2>
+              <p>Choose the agent identity before its first conversation.</p>
+            </div>
+            <AgentAvatar agentId="new-agent-avatar-preview" color={newAgentAvatarColor} shape={newAgentAvatarShape} size="xl" state="thinking" />
+          </header>
+          <div className="sand-new-agent-dialog__body">
+            <label>
+              <span>Name</span>
+              <input autoFocus maxLength={120} onChange={(event) => setNewAgentName(event.currentTarget.value)} placeholder="Agent name" value={newAgentName} />
+            </label>
+            <label>
+              <span>Description</span>
+              <textarea maxLength={500} onChange={(event) => setNewAgentDescription(event.currentTarget.value)} placeholder="What should this agent help with?" rows={3} value={newAgentDescription} />
+            </label>
+            <fieldset>
+              <legend>Avatar shape</legend>
+              <div aria-label="Avatar shape" className="sand-new-agent-dialog__shape-grid" role="group">
+                {AVATAR_SHAPES.map((shape) => <button
+                  aria-label={`Avatar shape ${shape}`}
+                  aria-pressed={newAgentAvatarShape === shape}
+                  className="sand-new-agent-dialog__shape"
+                  key={shape}
+                  onClick={() => setNewAgentAvatarShape(shape)}
+                  type="button"
+                >
+                  <AgentAvatar agentId={`new-agent-shape-${shape}`} color={newAgentAvatarColor} isStatic shape={shape} size="lg" />
+                </button>)}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Avatar color</legend>
+              <div aria-label="Avatar color" className="sand-new-agent-dialog__color-grid" role="group">
+                {AVATAR_COLORS.map((color) => <button
+                  aria-label={`Avatar color ${color.label}`}
+                  aria-pressed={newAgentAvatarColor === color.id}
+                  className="sand-new-agent-dialog__color"
+                  key={color.id}
+                  onClick={() => setNewAgentAvatarColor(color.id)}
+                  style={{ background: color.value }}
+                  title={color.label}
+                  type="button"
+                />)}
+              </div>
+            </fieldset>
+            <p className="sand-new-agent-dialog__hint">You can upload or generate an image later from Agent settings.</p>
           </div>
-        </div>
-      </div> : null}
+          <footer>
+            <SandButton disabled={busy} onClick={() => setNewAgentDialogOpen(false)} size="sm" variant="secondary">Cancel</SandButton>
+            <SandButton disabled={busy || newAgentName.trim().length === 0} size="sm" type="submit">Create</SandButton>
+          </footer>
+        </form>
+      </OverlayDialog>
 
       {conversationOutlineAgent == null ? null : <ConversationOutlinePanel
         agentId={conversationOutlineAgent.id}
