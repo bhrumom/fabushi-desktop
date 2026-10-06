@@ -4133,7 +4133,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             </label>
             <fieldset>
               <legend>Avatar shape</legend>
-              <div aria-label="Avatar shape" className="sand-new-agent-dialog__shape-grid" role="group">
+              <div className="sand-new-agent-dialog__shape-grid">
                 {AVATAR_SHAPES.map((shape) => <button
                   aria-label={`Avatar shape ${shape}`}
                   aria-pressed={newAgentAvatarShape === shape}
@@ -4148,7 +4148,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             </fieldset>
             <fieldset>
               <legend>Avatar color</legend>
-              <div aria-label="Avatar color" className="sand-new-agent-dialog__color-grid" role="group">
+              <div className="sand-new-agent-dialog__color-grid">
                 {AVATAR_COLORS.map((color) => <button
                   aria-label={`Avatar color ${color.label}`}
                   aria-pressed={newAgentAvatarColor === color.id}
