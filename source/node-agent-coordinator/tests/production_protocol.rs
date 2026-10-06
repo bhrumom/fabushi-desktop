@@ -945,7 +945,6 @@ exit 17
             },
         );
         let mut saw_local_accept = false;
-        let mut saw_local_error = false;
         for _ in 0..8 {
             let (channel, frame) = recv_application_frame(
                 &rx,
@@ -954,28 +953,16 @@ exit 17
                 Duration::from_secs(2),
             );
             assert_eq!(channel, CarrierChannel::Data);
-            match frame {
-                CoordinatorFrame::Reply {
-                    request_id,
-                    outcome: ReplyOutcome::Ok { value },
-                } if request_id == "r-local-inference" => {
-                    assert_eq!(value["accepted"], true);
-                    assert_eq!(value["provider"], "codex");
-                    assert_eq!(value["clientNonce"], "local-inference-1");
-                    saw_local_accept = true;
-                }
-                CoordinatorFrame::Event { family, payload } if family == "transcript" => {
-                    if payload["agentId"] == "agent-local"
-                        && payload["entry"]["message"]["content"]
-                            .as_str()
-                            .is_some_and(|value| value.contains("Router error:"))
-                    {
-                        saw_local_error = true;
-                    }
-                }
-                _ => {}
-            }
-            if saw_local_accept && saw_local_error {
+            if let CoordinatorFrame::Reply {
+                request_id,
+                outcome: ReplyOutcome::Ok { value },
+            } = frame
+                && request_id == "r-local-inference"
+            {
+                assert_eq!(value["accepted"], true);
+                assert_eq!(value["provider"], "codex");
+                assert_eq!(value["clientNonce"], "local-inference-1");
+                saw_local_accept = true;
                 break;
             }
         }
@@ -983,9 +970,35 @@ exit 17
             saw_local_accept,
             "shipping Coordinator did not accept a local-provider sendPrompt"
         );
+
+        // Provider/router failures remain recoverable diagnostics, but the
+        // renderer-visible transcript is Host-owned and must not receive a
+        // synthetic assistant "Router error" message.
+        let inference_path = data_dir.join("inference-router-transcript.json");
+        let mut saw_private_local_error = false;
+        for _ in 0..100 {
+            if let Ok(raw) = fs::read_to_string(&inference_path)
+                && let Ok(value) = serde_json::from_str::<Value>(&raw)
+            {
+                saw_private_local_error = value["agents"]["agent-local"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .any(|entry| {
+                        entry["role"] == "assistant"
+                            && entry["content"]
+                                .as_str()
+                                .is_some_and(|content| content.contains("Router error:"))
+                    });
+                if saw_private_local_error {
+                    break;
+                }
+            }
+            thread::sleep(Duration::from_millis(20));
+        }
         assert!(
-            saw_local_error,
-            "shipping Coordinator did not settle a failed local-provider turn into transcript state"
+            saw_private_local_error,
+            "shipping Coordinator did not retain a failed local-provider turn in private inference diagnostics"
         );
 
         drop(stdin);
