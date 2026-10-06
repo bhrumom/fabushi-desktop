@@ -609,9 +609,15 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   if (await primary.count() === 0) {
     // A fresh authenticated account may already contain the shipping default
     // Grok Agent. That proves the roster is loaded, but it is not the focused
-    // fixture this suite needs. Create exactly one New chat through the real
-    // production New -> createAgent -> refreshRoster path.
+    // fixture this suite needs. Open the production identity picker and create
+    // exactly one Agent through the same New -> createAgent -> refreshRoster path.
     await page.getByRole('button', { name: 'New', exact: true }).click();
+    const createAgent = page.getByRole('dialog', { name: 'Create agent' });
+    await expect(createAgent).toBeVisible();
+    await expect(createAgent.getByRole('group', { name: 'Avatar shape' })).toBeVisible();
+    await expect(createAgent.getByRole('group', { name: 'Avatar color' })).toBeVisible();
+    await createAgent.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(createAgent).toBeHidden();
   }
   await expect(primary).toHaveCount(1, { timeout: 15_000 });
   await expect(primary).toBeVisible({ timeout: 15_000 });
@@ -751,6 +757,13 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
 
     const turn = await expectHermesAssistantTurn(page, '收到：请分析这个任务');
     await expect(turn).toHaveCount(1);
+    // A late transcript baseline must never swallow a live assistant reply.
+    // Keep observing the same canonical turn after the runtime has had time to
+    // publish its initial snapshot/reconciliation events.
+    await page.waitForTimeout(1_000);
+    await expect(turn).toHaveCount(1);
+    await expect(turn.getByRole('group', { name: 'Agent message' })).toContainText('收到：请分析这个任务');
+    await expect(page.getByRole('button', { name: 'New Human chat', exact: true })).toHaveCount(0);
     await expect(promptInput).toBeVisible();
   } finally {
     await app?.close().catch(() => undefined);
