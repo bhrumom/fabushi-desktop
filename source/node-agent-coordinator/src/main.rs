@@ -37,7 +37,7 @@ use mahayana_node_agent_coordinator::inference_router::{
     prepare_agent_inbound_wake_routes, redrive_agent_inbound_after_priority_preemption,
     should_append_user_message, should_await_turn,
     parse_send_prompt_attachments,
-    prepare_workflow_run_now_route, project_runner_turn_context, project_transcript_entry,
+    prepare_workflow_run_now_route, project_runner_turn_context,
     provider_messages_from_host_transcript, CoordinatorWorkflowRunNowRoute,
 };
 use mahayana_node_agent_coordinator::webauthn::{
@@ -1782,22 +1782,6 @@ fn configured_inference_provider(state: &CoordinatorState) -> InferenceProvider 
     routed_inference_provider(state, "")
 }
 
-fn emit_inference_transcript(
-    state: &Arc<CoordinatorState>,
-    agent_id: &str,
-    event_type: &str,
-    entry: Value,
-) {
-    state.post_event(
-        "transcript",
-        json!({
-            "type": event_type,
-            "entry": entry,
-            "agentId": agent_id,
-        }),
-    );
-}
-
 fn project_inference_activity(
     agents: &[Value],
     agent_id: &str,
@@ -1955,25 +1939,17 @@ fn record_inference_error(
         reactions: Vec::new(),
         timestamp_ms,
     };
-    let persisted = state
+    let _ = state
         .inference_store_lock
         .lock()
         .map_err(|_| ())
         .and_then(|_guard| {
             state
                 .inference_store
-                .append(agent_id, [entry.clone()])
+                .append(agent_id, [entry])
                 .map(|_| ())
                 .map_err(|_| ())
         });
-    if persisted.is_ok() {
-        emit_inference_transcript(
-            state,
-            agent_id,
-            "appended",
-            project_transcript_entry(&entry),
-        );
-    }
 }
 
 fn wait_for_runner_event_stream(state: &Arc<CoordinatorState>) -> Result<(), Failure> {
@@ -2122,14 +2098,8 @@ fn execute_local_inference(
                 reactions: Vec::new(),
                 timestamp_ms,
             };
-            store.append(&agent_id, [user_entry.clone()]);
+            store.append(&agent_id, [user_entry]);
             state.inference_store.persist(&store)?;
-            emit_inference_transcript(
-                &state,
-                &agent_id,
-                "appended",
-                project_transcript_entry(&user_entry),
-            );
         }
 
         // Provider history must come from the Host-owned Session/Transcript,
@@ -2208,7 +2178,6 @@ fn execute_local_inference(
         }
 
         let started = Instant::now();
-        let mut assistant_stream_started = false;
         loop {
             match stream_rx.recv_timeout(Duration::from_millis(250)) {
                 Ok(value) => {
@@ -2217,24 +2186,11 @@ fn execute_local_inference(
                         continue;
                     }
                     match event {
-                        RunnerInferenceEvent::Delta { content } => {
-                            emit_inference_transcript(
-                                &state,
-                                &agent_id,
-                                if assistant_stream_started { "updated" } else { "appended" },
-                                json!({
-                                    "kind": "send-message",
-                                    "id": assistant_id,
-                                    "message": {
-                                        "type": "text",
-                                        "content": content,
-                                    },
-                                    "streaming": true,
-                                    "timestampMs": assistant_timestamp_ms,
-                                }),
-                            );
-                            assistant_stream_started = true;
-                        }
+                        // Provider deltas are runner-internal progress. The user-visible
+                        // transcript is owned exclusively by the Host Session store and
+                        // its canonical send-message events, so never project these
+                        // summaries onto the renderer transcript channel.
+                        RunnerInferenceEvent::Delta { .. } => {}
                         RunnerInferenceEvent::Completed { content } => return Ok(content),
                         RunnerInferenceEvent::Failed { message } => {
                             return Err(Failure::new("INFERENCE_PROVIDER_FAILED", message));
@@ -2309,60 +2265,17 @@ fn execute_local_inference(
             .inference_store
             .append(&agent_id, [assistant_entry.clone()])?;
     }
-    let mut final_entry = project_transcript_entry(&assistant_entry);
-    final_entry["streaming"] = Value::Bool(false);
-    emit_inference_transcript(&state, &agent_id, "updated", final_entry);
+    // Keep the provider-local completion for diagnostics/recovery only. The Host
+    // has already persisted the canonical user-visible send-message entry.
     Ok(())
 }
 
-fn merged_local_transcript(
+fn authoritative_host_transcript(
     state: &Arc<CoordinatorState>,
     method: &str,
     args: &Value,
 ) -> Result<Value, Failure> {
-    let agent_id = args
-        .get("id")
-        .and_then(Value::as_str)
-        .unwrap_or("");
-    let host_method = host_transcript_method(method);
-    let mut remote = dispatch_gateway_value(state, host_method, args.clone())?;
-    if agent_id.is_empty() {
-        return Ok(remote);
-    }
-    let local_entries = {
-        let _guard = state.inference_store_lock.lock().map_err(|_| {
-            Failure::new(
-                "INFERENCE_STORE_LOCK_FAILED",
-                "inference transcript lock poisoned",
-            )
-        })?;
-        state
-            .inference_store
-            .load()
-            .entries(agent_id)
-            .iter()
-            .map(project_transcript_entry)
-            .collect::<Vec<_>>()
-    };
-    let Some(root) = remote.as_object_mut() else {
-        return Ok(remote);
-    };
-    let Some(remote_entries) = root.get("entries").and_then(Value::as_array) else {
-        return Ok(remote);
-    };
-    let mut entries = remote_entries.clone();
-    entries.extend(local_entries);
-    let limit = args
-        .get("limit")
-        .and_then(Value::as_u64)
-        .filter(|value| *value > 0)
-        .and_then(|value| usize::try_from(value).ok())
-        .unwrap_or(500);
-    if entries.len() > limit {
-        entries.drain(..entries.len() - limit);
-    }
-    root.insert("entries".into(), Value::Array(entries));
-    Ok(remote)
+    dispatch_gateway_value(state, host_transcript_method(method), args.clone())
 }
 
 fn enqueue_inference_request(
@@ -2468,46 +2381,6 @@ fn dispatch_inference_if_handled(
     method: &str,
     args: &Value,
 ) -> bool {
-    if method == "reactToMessage" {
-        let agent_id = args
-            .get("agentId")
-            .and_then(Value::as_str)
-            .unwrap_or("");
-        let entry_id = args
-            .get("entryId")
-            .and_then(Value::as_str)
-            .unwrap_or("");
-        let emoji = args
-            .get("emoji")
-            .and_then(Value::as_str)
-            .unwrap_or("");
-        let updated = state
-            .inference_store_lock
-            .lock()
-            .ok()
-            .and_then(|_guard| {
-                state
-                    .inference_store
-                    .toggle_local_reaction(agent_id, entry_id, emoji)
-                    .ok()
-                    .flatten()
-            });
-        if let Some(entry) = updated {
-            emit_inference_transcript(
-                state,
-                agent_id,
-                "updated",
-                project_transcript_entry(&entry),
-            );
-            state.complete_request(
-                channel,
-                request_id,
-                ReplyOutcome::Ok { value: Value::Null },
-            );
-            return true;
-        }
-    }
-
     let inference_agent_id = args
         .get("agentId")
         .or_else(|| args.get("id"))
@@ -2524,7 +2397,7 @@ fn dispatch_inference_if_handled(
         let method = method.to_string();
         let args = args.clone();
         thread::spawn(move || {
-            match merged_local_transcript(&worker_state, &method, &args) {
+            match authoritative_host_transcript(&worker_state, &method, &args) {
                 Ok(value) => worker_state.complete_request(
                     channel,
                     &request_id,
