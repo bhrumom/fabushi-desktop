@@ -517,3 +517,31 @@ html[data-sand-high-contrast="true"] :is(button,input,textarea,select,[role="but
   .sand-new-agent-dialog__body { padding: 16px; }
   .sand-new-agent-dialog footer { padding: 12px 16px 16px; }
 }
+
+
+/*
+ * Shipping transcript alignment: the recovered message anchor used
+ * width: fit-content, whose min-content width collapses CJK text to one glyph
+ * when overflow-wrap:anywhere is active. Keep one ordinary bubble per turn,
+ * align user turns to the trailing edge, and let both roles size to content
+ * without the one-character vertical-column regression.
+ */
+.sand-virtual-transcript .sand-transcript-row {
+  display: flex;
+  min-width: 0;
+}
+.sand-virtual-transcript .sand-transcript-row[data-role="user"] {
+  justify-content: flex-end;
+}
+.sand-virtual-transcript .sand-transcript-row[data-role="assistant"] {
+  justify-content: flex-start;
+}
+.sand-virtual-transcript .sand-transcript-row > .sand-message-action-anchor {
+  width: auto;
+  max-width: min(88%, 640px, calc(100% - 82px));
+  min-width: 0;
+}
+.sand-virtual-transcript .sand-transcript-row > .sand-message-action-anchor > .sand-message {
+  width: auto;
+  max-width: 100%;
+}
