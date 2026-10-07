@@ -221,3 +221,19 @@ No production responsibility is declared verified by this read alone. Seven narr
 These files make SB-03/SB-07 stricter than a generic schedule/silent pair. `SendMenu::Type` distinguishes disabled, reminder, silent-only and scheduled-to-user eligibility; send-when-online is emitted only for the scheduled-to-user case, reminder suppresses silent send, and silent-only suppresses scheduling. Keyboard shortcuts call the same typed policy rather than bypassing it. The same menu also carries effect, spoiler, caption placement, photo-quality, cover and paid-price applicability, while its thread-level unread actions preserve topic/sublist identity. Fabushi must therefore model these as typed applicability/trigger responsibilities in existing Message/Presence/Conversation/Composer owners; the two files are read-complete but remain unknown because those responsibilities are not fully mapped, shipping-composed and evidenced.
 
 Coverage after this read only: `unread=15,769`, `unknown=15,788`, `omitted=0`, `baseline_ready=false`, `acceptance.accepted=false`.
+
+
+### Thread/send-detail dependency authority
+
+| path | blob | read status | classification | mapping status |
+| --- | --- | --- | --- | --- |
+| `Telegram/SourceFiles/menu/menu_send_details.h` | `cf57a6cd8c6b90aece73443572b84c464f016a30` | complete, 1,274 bytes | typed send eligibility/applicability contract | open |
+| `Telegram/SourceFiles/api/api_common.cpp` | `9e86c94abff19adeacf898dd33d2206e9c33913d` | complete, 1,287 bytes | send-when-online/thread routing transport projection | open |
+| `Telegram/SourceFiles/data/data_thread.h` | `9756e25020f83f91a89fbedd1810205df7178a27` | complete, 4,262 bytes | canonical upstream Thread lifecycle contract | open |
+| `Telegram/SourceFiles/data/data_thread.cpp` | `c1367fdcdb86c22e2b484e648f08edf8854a9478` | complete, 5,986 bytes | typed topic/sublist identity, unread/notification/pin/active-child behavior | open |
+
+The send details make applicability typed rather than boolean: Disabled, SilentOnly, Scheduled, ScheduledToUser, Reminder and EditCommentPrice are distinct modes, while spoiler/caption/photo-quality/cover/effect/price are independent axes. `DefaultSendWhenOnlineOptions` confirms that Telegram's special timestamp is a transport encoding of a presence-triggered send contract and may inherit Ctrl-silent state; Fabushi must model the trigger semantically rather than copy the sentinel.
+
+`Data::Thread` is the common upstream abstraction for history, forum topic and saved-message sublist. Its identity is not reducible to one topic root: topic uses `topicRootId()`, saved sublist uses `monoforumPeerId()/maybeSublistPeer()`, and all share notification queues, unread mention/reaction/poll-vote state, mute/pin state and active-subsection continuity. Its `canToggleUnread` rules also differ by topic/forum/community/self-saved-sublist/monoforum-admin. This confirms SB-02 must introduce a source-neutral typed child destination/state representation inside existing Conversation owners rather than coercing saved/community child identity into `thread_root_message_id = topic:<id>`. No new SavedMessages product owner is justified.
+
+Coverage after these complete reads only: `unread=15,765`, `unknown=15,788`, `omitted=0`, `baseline_ready=false`, `acceptance.accepted=false`.
