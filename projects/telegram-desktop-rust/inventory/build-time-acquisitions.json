@@ -12,9 +12,11 @@
     "candidate_file": "build-time-acquisition-candidates.txt",
     "candidate_lines_total": 320,
     "immutable_commit_pin_occurrences_classified": 17,
-    "candidate_lines_pending_classification": 170,
-    "note": "Counts are candidate-line accounting, not dependency cardinality. Run 37602112794 exposed 326 broad-scan lines; six were scanner false positives caused by substring matches on resource:/local source variables/QRC_GENERATED_FROM. The scanner is now anchored for YAML source: and Docker FROM, so 320 candidates are expected. The original 150-line set is fully dispositioned; 170 newly surfaced candidates remain pending until the corrected scan is independently proven on the next exact HEAD.",
-    "candidate_lines_classified": 150
+    "candidate_lines_pending_classification": 0,
+    "note": "All 320 corrected-scan candidate lines now have explicit dispositions: 17 immutable commit-pin occurrences plus 303 grouped dispositions. Candidate classification is complete, but recursive authority closure remains open because mutable refs/tags, nested submodules/gitlinks, tool bootstrap inputs, package-manager inputs, and other source/build inputs still require exact child/input accounting. This does not advance baseline_ready or acceptance.",
+    "candidate_lines_classified": 320,
+    "disposition_closure_status": "complete",
+    "recursive_authority_closure_status": "open"
   },
   "immutable_commit_pin_occurrences": [
     {
@@ -485,6 +487,386 @@
         804
       ],
       "authority_scope": "build-source-authority"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/telegram-bot-api/Dockerfile",
+      "source_lines": [
+        10,
+        27,
+        29,
+        8
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/canary-bot-api.yml",
+      "source_lines": [
+        43,
+        46,
+        54
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/canary.yml",
+      "source_lines": [
+        1096,
+        1159,
+        1166,
+        1188,
+        1236,
+        1237,
+        1244,
+        1253,
+        1261,
+        1270,
+        1278,
+        1302,
+        1373,
+        1419,
+        1426,
+        1467,
+        1472,
+        1478,
+        1491,
+        154,
+        1556,
+        1561,
+        1567,
+        1644,
+        1649,
+        1655,
+        366,
+        389,
+        477,
+        509,
+        517,
+        530,
+        564,
+        571,
+        583,
+        663,
+        718,
+        728,
+        761,
+        784,
+        817,
+        846,
+        923,
+        954,
+        976,
+        982
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/cant-reproduce.yml",
+      "source_lines": [
+        11
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/changelog.yml",
+      "source_lines": [
+        22,
+        24,
+        32,
+        45
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/copyright_year_updater.yml",
+      "source_lines": [
+        14
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/docker.yml",
+      "source_lines": [
+        20,
+        26,
+        31
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/issue_closer.yml",
+      "source_lines": [
+        12
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/linux.yml",
+      "source_lines": [
+        102,
+        110,
+        126,
+        184,
+        209,
+        65,
+        71,
+        83,
+        89,
+        93
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/lock.yml",
+      "source_lines": [
+        11
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/mac.yml",
+      "source_lines": [
+        132,
+        63,
+        74,
+        85
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/mac_packaged.yml",
+      "source_lines": [
+        103,
+        121,
+        139,
+        184,
+        71,
+        81
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/master_updater.yml",
+      "source_lines": [
+        11
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/needs-user-action.yml",
+      "source_lines": [
+        13
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/snap.yml",
+      "source_lines": [
+        54,
+        68,
+        86
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/stale.yml",
+      "source_lines": [
+        10
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/unused_styles_updater.yml",
+      "source_lines": [
+        14
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/user_agent_updater.yml",
+      "source_lines": [
+        14
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/waiting-for-answer.yml",
+      "source_lines": [
+        13
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/win.yml",
+      "source_lines": [
+        113,
+        122,
+        136,
+        144,
+        157,
+        247,
+        86
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/winget.yml",
+      "source_lines": [
+        10,
+        16
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "docs",
+      "source_path": "Telegram/build/sign_update.py",
+      "source_lines": [
+        93
+      ],
+      "authority_scope": "docs-help-only"
+    },
+    {
+      "disposition": "generated-input",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_lines": [
+        1021,
+        158,
+        168,
+        190,
+        201,
+        212,
+        223,
+        234,
+        250,
+        261,
+        276,
+        287,
+        309,
+        329,
+        342,
+        371,
+        383,
+        394,
+        409,
+        421,
+        433,
+        447,
+        462,
+        477,
+        499,
+        510,
+        521,
+        532,
+        545,
+        556,
+        567,
+        578,
+        590,
+        597,
+        756,
+        789,
+        805,
+        823,
+        835,
+        856,
+        901,
+        911,
+        931,
+        964,
+        975,
+        993
+      ],
+      "authority_scope": "internal-build-stage"
+    },
+    {
+      "disposition": "mutable-tag-or-branch-input",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_lines": [
+        3
+      ],
+      "authority_scope": "build-source-authority"
+    },
+    {
+      "disposition": "recursive-child-input",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_lines": [
+        454,
+        469,
+        488,
+        875,
+        956
+      ],
+      "authority_scope": "build-source-authority"
+    },
+    {
+      "disposition": "recursive-child-input",
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_lines": [
+        1528,
+        1529,
+        1601,
+        1670,
+        1788
+      ],
+      "authority_scope": "build-source-authority"
+    },
+    {
+      "disposition": "self-repository-local-source",
+      "source_path": "snap/snapcraft.yaml",
+      "source_lines": [
+        39
+      ],
+      "authority_scope": "self-repository-source"
+    },
+    {
+      "disposition": "self-repository-release-operation",
+      "source_path": "Telegram/build/release.py",
+      "source_lines": [
+        71
+      ],
+      "authority_scope": "self-repository-operation"
+    },
+    {
+      "disposition": "tool-bootstrap",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_lines": [
+        14,
+        16,
+        30
+      ],
+      "authority_scope": "toolchain-authority"
+    },
+    {
+      "disposition": "tool-bootstrap",
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_lines": [
+        541,
+        542,
+        556,
+        580,
+        583
+      ],
+      "authority_scope": "toolchain-authority"
     }
   ],
   "resolved_short_ref_contexts": [

@@ -307,8 +307,10 @@
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
     "candidate_lines_total": 320,
     "immutable_commit_pin_occurrences_classified": 17,
-    "candidate_lines_pending_classification": 170,
+    "candidate_lines_pending_classification": 0,
     "closure_status": "open",
-    "candidate_lines_classified": 150
+    "candidate_lines_classified": 320,
+    "disposition_closure_status": "complete",
+    "recursive_authority_closure_status": "open"
   }
 }
