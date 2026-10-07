@@ -1,4 +1,4 @@
-use crate::actor::{ActorId, ActorKind, ParticipantRole};
+use crate::actor::{ActorId, ActorKind, ParticipantRole, Presence, PresenceStatus};
 use crate::blob_store::{BlobStoreError, FileBlobStore};
 use crate::bot::BotInvocation;
 use crate::community::{CommunityState, MemberStatus};
@@ -7,7 +7,10 @@ use crate::conversation::{
 };
 use crate::engine::topic_id_from_root;
 use crate::engine::{Command, EngineError, Event, MessagingEngine};
-use crate::message::{ClientMessageId, DeliveryState, Message, MessageContent, MessageId};
+use crate::message::{
+    ClientMessageId, DeliveryState, Message, MessageContent, MessageId, PendingPresenceSend,
+    PresenceSendTrigger,
+};
 use crate::payment::Money;
 use crate::protocol::{
     ClientCommand, ClientEnvelope, ServerEnvelope, ServerEvent, FABUSHI_MESSAGING_PROTOCOL_VERSION,
@@ -214,6 +217,9 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 limit,
                 server_time_ms,
             )?]),
+            ClientCommand::SetPresence { presence } => {
+                self.set_presence_and_release_triggers(&actor_id, presence, server_time_ms)
+            }
             ClientCommand::StartTyping {
                 conversation_id,
                 action,
@@ -275,6 +281,99 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 Ok(responses)
             }
         }
+    }
+
+    fn set_presence_and_release_triggers(
+        &mut self,
+        actor_id: &ActorId,
+        presence: Presence,
+        server_time_ms: i64,
+    ) -> Result<Vec<ServerEnvelope>, MessagingServiceError> {
+        let was_online = self
+            .engine
+            .state()
+            .actors
+            .get(actor_id)
+            .is_some_and(|actor| actor.presence.status == PresenceStatus::Online);
+        let becomes_online = presence.status == PresenceStatus::Online;
+
+        let mut events = self.engine.execute(Command::SetPresence {
+            actor_id: actor_id.clone(),
+            presence,
+        })?;
+
+        if !was_online && becomes_online {
+            let pending = self
+                .engine
+                .state()
+                .pending_presence_sends
+                .values()
+                .filter(|pending| {
+                    matches!(
+                        &pending.trigger,
+                        PresenceSendTrigger::WhenParticipantOnline { actor_id: target }
+                            if target == actor_id
+                    )
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+
+            for pending in pending {
+                let queued = self.engine.execute(Command::QueueMessage {
+                    conversation_id: pending.conversation_id.clone(),
+                    local_message_id: pending.local_message_id.clone(),
+                    client_message_id: pending.client_message_id.clone(),
+                    sender_id: pending.sender_id.clone(),
+                    content: pending.content.clone(),
+                    reply_to_message_id: pending.reply_to_message_id.clone(),
+                    thread_root_message_id: pending.thread_root_message_id.clone(),
+                    created_at_ms: server_time_ms,
+                    scheduled_at_ms: None,
+                    silent: pending.silent,
+                    protected_content: pending.protected_content,
+                });
+                let Ok(queued) = queued else {
+                    // Current send policy may have changed while the trigger was pending.
+                    // Keep the durable pending request rather than dropping it or blocking
+                    // the target actor's presence transition.
+                    continue;
+                };
+                events.extend(queued);
+                events.extend(self.engine.execute(Command::AcknowledgeMessage {
+                    conversation_id: pending.conversation_id.clone(),
+                    local_message_id: pending.local_message_id.clone(),
+                    server_message_id: pending.local_message_id.clone(),
+                    accepted_at_ms: server_time_ms,
+                })?);
+                events.extend(self.engine.execute(Command::RemovePresenceTriggeredSend {
+                    client_message_id: pending.client_message_id,
+                })?);
+            }
+        }
+
+        let bot_invocations = events
+            .iter()
+            .filter_map(|event| match event {
+                Event::MessageQueued { message } => Some(message),
+                _ => None,
+            })
+            .flat_map(|message| self.bot_invocations_for_message(message))
+            .collect::<Vec<_>>();
+
+        self.cursor = self.cursor.saturating_add(events.len() as u64);
+        let mut responses = events
+            .into_iter()
+            .filter_map(|event| self.project_event(actor_id, event, server_time_ms))
+            .collect::<Vec<_>>();
+        responses.extend(bot_invocations.into_iter().map(|invocation| ServerEnvelope {
+            protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+            cursor: Some(self.cursor.to_string()),
+            server_time_ms,
+            event: ServerEvent::BotInvocationRequested { invocation },
+        }));
+        let journal = self.journal_entries(actor_id, &responses);
+        self.persist_with_events(server_time_ms, &journal)?;
+        Ok(responses)
     }
 
     fn search_envelope(
@@ -619,6 +718,74 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     ));
                 }
                 Ok(Some(replay(existing)))
+            }
+            ClientCommand::SendWhenParticipantOnline {
+                conversation_id,
+                client_message_id,
+                target_actor_id,
+                content,
+                reply_to_message_id,
+                thread_root_message_id,
+                silent,
+                protected_content,
+            } => {
+                let stable_id = stable_message_id(actor_id, client_message_id);
+                if let Some(existing) = self
+                    .engine
+                    .state()
+                    .messages
+                    .get(conversation_id)
+                    .and_then(|messages| messages.get(&stable_id))
+                {
+                    if &existing.sender_id != actor_id
+                        || &existing.content != content
+                        || &existing.reply_to_message_id != reply_to_message_id
+                        || &existing.thread_root_message_id != thread_root_message_id
+                        || existing.scheduled_at_ms.is_some()
+                        || &existing.silent != silent
+                        || &existing.protected_content != protected_content
+                    {
+                        return Err(MessagingServiceError::IdempotencyConflict(
+                            client_message_id.0.clone(),
+                        ));
+                    }
+                    return Ok(Some(replay(existing)));
+                }
+                if let Some(existing) = self
+                    .engine
+                    .state()
+                    .pending_presence_sends
+                    .get(client_message_id)
+                {
+                    let trigger_matches = matches!(
+                        &existing.trigger,
+                        PresenceSendTrigger::WhenParticipantOnline { actor_id: target }
+                            if target == target_actor_id
+                    );
+                    if &existing.sender_id != actor_id
+                        || &existing.conversation_id != conversation_id
+                        || !trigger_matches
+                        || &existing.content != content
+                        || &existing.reply_to_message_id != reply_to_message_id
+                        || &existing.thread_root_message_id != thread_root_message_id
+                        || &existing.silent != silent
+                        || &existing.protected_content != protected_content
+                    {
+                        return Err(MessagingServiceError::IdempotencyConflict(
+                            client_message_id.0.clone(),
+                        ));
+                    }
+                    return Ok(Some(vec![ServerEnvelope {
+                        protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                        cursor: Some(self.cursor.to_string()),
+                        server_time_ms,
+                        event: ServerEvent::PresenceTriggeredSendChanged {
+                            client_message_id: client_message_id.clone(),
+                            pending: Some(existing.clone()),
+                        },
+                    }]));
+                }
+                Ok(None)
             }
             ClientCommand::ForwardMessage {
                 source_conversation_id,
@@ -1474,6 +1641,12 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .flat_map(|by_topic| by_topic.values())
                     .cloned()
                     .collect(),
+                pending_presence_sends: state
+                    .pending_presence_sends
+                    .values()
+                    .filter(|pending| &pending.sender_id == actor_id)
+                    .cloned()
+                    .collect(),
                 invoices: state
                     .invoices
                     .values()
@@ -1724,6 +1897,32 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     },
                 ]
             }
+            ClientCommand::SendWhenParticipantOnline {
+                conversation_id,
+                client_message_id,
+                target_actor_id,
+                content,
+                reply_to_message_id,
+                thread_root_message_id,
+                silent,
+                protected_content,
+            } => vec![Command::QueuePresenceTriggeredSend {
+                pending: PendingPresenceSend {
+                    local_message_id: stable_message_id(actor_id, &client_message_id),
+                    conversation_id,
+                    client_message_id,
+                    sender_id: actor_id.clone(),
+                    trigger: PresenceSendTrigger::WhenParticipantOnline {
+                        actor_id: target_actor_id,
+                    },
+                    content,
+                    reply_to_message_id,
+                    thread_root_message_id,
+                    silent,
+                    protected_content,
+                    created_at_ms: now_ms,
+                },
+            }],
             ClientCommand::ForwardMessage {
                 source_conversation_id,
                 message_id,
@@ -2127,6 +2326,18 @@ impl<S: MessagingStateStore> MessagingService<S> {
             Event::DraftChanged { draft } => ServerEvent::DraftChanged { draft },
             Event::FolderUpserted { folder } => ServerEvent::FolderChanged { folder },
             Event::FolderDeleted { folder_id } => ServerEvent::FolderDeleted { folder_id },
+            Event::PresenceTriggeredSendQueued { pending } => {
+                ServerEvent::PresenceTriggeredSendChanged {
+                    client_message_id: pending.client_message_id.clone(),
+                    pending: Some(pending),
+                }
+            }
+            Event::PresenceTriggeredSendRemoved { client_message_id } => {
+                ServerEvent::PresenceTriggeredSendChanged {
+                    client_message_id,
+                    pending: None,
+                }
+            }
             Event::MessageQueued { message } => ServerEvent::MessageAdded { message },
             Event::MessageAcknowledged {
                 conversation_id,
@@ -2318,6 +2529,13 @@ impl<S: MessagingStateStore> MessagingService<S> {
                         })
                 {
                     Self::extend_conversation_audience(&mut audience, conversation);
+                }
+            }
+            ServerEvent::PresenceTriggeredSendChanged { pending, .. } => {
+                if let Some(pending) = pending {
+                    audience.insert(pending.sender_id.clone());
+                    let PresenceSendTrigger::WhenParticipantOnline { actor_id } = &pending.trigger;
+                    audience.insert(actor_id.clone());
                 }
             }
             ServerEvent::PresenceChanged { actor_id, .. } => {
