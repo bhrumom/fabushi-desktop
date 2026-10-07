@@ -258,7 +258,28 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   // roster row. Readiness is the canonical Agent list plus its stable shell
   // actions; opening "New" would enter the Create agent dialog and is not an
   // account/session readiness signal.
-  await expect(page.getByRole('region', { name: 'Agent list' })).toBeVisible({ timeout: 15_000 });
+  const roster = page.getByRole('region', { name: 'Agent list' });
+  await expect(roster).toBeVisible({ timeout: 15_000 });
+
+  // Agent Network is intentionally fail-closed until a real Agent exists.
+  // A fresh authenticated account can have an empty canonical Host roster, so
+  // establish the fixture through the shipping New -> Create agent flow instead
+  // of bypassing the product gate or injecting synthetic Host state.
+  const loadedAgentRows = roster.locator('button.sand-agent-item');
+  const emptyRoster = roster.getByText('No saved agents yet.', { exact: true });
+  await expect.poll(async () => {
+    if (await loadedAgentRows.count() > 0) return 'loaded';
+    return await emptyRoster.isVisible().catch(() => false) ? 'empty' : 'pending';
+  }, { timeout: 15_000 }).not.toBe('pending');
+  if (await loadedAgentRows.count() === 0) {
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+    const createAgent = page.getByRole('dialog', { name: 'Create agent' });
+    await expect(createAgent).toBeVisible();
+    await createAgent.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(createAgent).toBeHidden();
+    await expect.poll(async () => loadedAgentRows.count(), { timeout: 15_000 }).toBeGreaterThan(0);
+  }
+
   await expect(page.getByRole('button', { name: 'Agent network', exact: true })).toBeVisible({ timeout: 15_000 });
 }
 
