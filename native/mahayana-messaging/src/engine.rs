@@ -720,6 +720,15 @@ fn community_has_access(community: &CommunityState, actor_id: &ActorId) -> bool 
         || community.is_subscriber(actor_id)
 }
 
+fn destination_message_conversation_id(
+    destination: &ConversationDestination,
+) -> &ConversationId {
+    match destination.child.as_ref() {
+        Some(ConversationChildIdentity::Conversation { conversation_id }) => conversation_id,
+        _ => &destination.conversation_id,
+    }
+}
+
 fn append_community_audit(
     community: &mut CommunityState,
     actor_id: &ActorId,
@@ -1680,10 +1689,8 @@ impl MessagingEngine {
                 self.require_actor(&actor_id)?;
                 let conversation_id = destination.conversation_id.clone();
                 let conversation = self.require_conversation(&conversation_id)?;
-                let has_access = self
-                    .state
-                    .communities
-                    .get(&conversation_id)
+                let community = self.state.communities.get(&conversation_id);
+                let has_access = community
                     .map(|community| {
                         community_has_access(community, &actor_id)
                             || conversation.owner_id.as_ref() == Some(&actor_id)
@@ -1697,11 +1704,64 @@ impl MessagingEngine {
                     });
                 if !has_access {
                     return Err(EngineError::CommunityAccessDenied {
-                        conversation_id,
-                        actor_id,
+                        conversation_id: conversation_id.clone(),
+                        actor_id: actor_id.clone(),
                     });
                 }
-                let message = self.require_message(&destination.conversation_id, &message_id)?;
+                match destination.child.as_ref() {
+                    Some(ConversationChildIdentity::Topic { root_message_id }) => {
+                        let topic_exists = community.is_some_and(|community| {
+                            community.topics.contains_key(root_message_id)
+                                || topic_id_from_root(&MessageId(root_message_id.clone()))
+                                    .is_some_and(|topic_id| community.topics.contains_key(topic_id))
+                        }) || self
+                            .state
+                            .messages
+                            .get(&conversation_id)
+                            .is_some_and(|messages| messages.contains_key(&MessageId(root_message_id.clone())));
+                        if !topic_exists {
+                            return Err(EngineError::InvalidConversationChildDestination);
+                        }
+                    }
+                    Some(ConversationChildIdentity::SavedSublist { participant_id }) => {
+                        let participant_exists = conversation.owner_id.as_ref() == Some(participant_id)
+                            || conversation
+                                .participants
+                                .iter()
+                                .any(|participant| &participant.actor_id == participant_id)
+                            || community.is_some_and(|community| {
+                                community.members.contains_key(participant_id)
+                                    || community.is_subscriber(participant_id)
+                            });
+                        if !participant_exists {
+                            return Err(EngineError::InvalidConversationChildDestination);
+                        }
+                    }
+                    Some(ConversationChildIdentity::Conversation {
+                        conversation_id: child_conversation_id,
+                    }) => {
+                        let child = self.require_conversation(child_conversation_id)?;
+                        let child_access = child.owner_id.as_ref() == Some(&actor_id)
+                            || child
+                                .participants
+                                .iter()
+                                .any(|participant| participant.actor_id == actor_id)
+                            || self
+                                .state
+                                .communities
+                                .get(child_conversation_id)
+                                .is_some_and(|community| community_has_access(community, &actor_id));
+                        if !child_access {
+                            return Err(EngineError::CommunityAccessDenied {
+                                conversation_id: child_conversation_id.clone(),
+                                actor_id: actor_id.clone(),
+                            });
+                        }
+                    }
+                    None => {}
+                }
+                let message_conversation_id = destination_message_conversation_id(&destination);
+                let message = self.require_message(message_conversation_id, &message_id)?;
                 if let Some(ConversationChildIdentity::Topic { root_message_id }) =
                     &destination.child
                 {
@@ -1763,10 +1823,8 @@ impl MessagingEngine {
                 self.require_actor(&actor_id)?;
                 let conversation_id = destination.conversation_id.clone();
                 let conversation = self.require_conversation(&conversation_id)?;
-                let has_access = self
-                    .state
-                    .communities
-                    .get(&conversation_id)
+                let community = self.state.communities.get(&conversation_id);
+                let has_access = community
                     .map(|community| {
                         community_has_access(community, &actor_id)
                             || conversation.owner_id.as_ref() == Some(&actor_id)
@@ -1780,12 +1838,67 @@ impl MessagingEngine {
                     });
                 if !has_access {
                     return Err(EngineError::CommunityAccessDenied {
-                        conversation_id,
-                        actor_id,
+                        conversation_id: conversation_id.clone(),
+                        actor_id: actor_id.clone(),
                     });
                 }
+                match destination.child.as_ref() {
+                    Some(ConversationChildIdentity::Topic { root_message_id }) => {
+                        let topic_exists = community.is_some_and(|community| {
+                            community.topics.contains_key(root_message_id)
+                                || topic_id_from_root(&MessageId(root_message_id.clone()))
+                                    .is_some_and(|topic_id| community.topics.contains_key(topic_id))
+                        }) || self
+                            .state
+                            .messages
+                            .get(&conversation_id)
+                            .is_some_and(|messages| messages.contains_key(&MessageId(root_message_id.clone())));
+                        if !topic_exists {
+                            return Err(EngineError::InvalidConversationChildDestination);
+                        }
+                    }
+                    Some(ConversationChildIdentity::SavedSublist { participant_id }) => {
+                        let participant_exists = conversation.owner_id.as_ref() == Some(participant_id)
+                            || conversation
+                                .participants
+                                .iter()
+                                .any(|participant| &participant.actor_id == participant_id)
+                            || community.is_some_and(|community| {
+                                community.members.contains_key(participant_id)
+                                    || community.is_subscriber(participant_id)
+                            });
+                        if !participant_exists {
+                            return Err(EngineError::InvalidConversationChildDestination);
+                        }
+                    }
+                    Some(ConversationChildIdentity::Conversation {
+                        conversation_id: child_conversation_id,
+                    }) => {
+                        let child = self.require_conversation(child_conversation_id)?;
+                        let child_access = child.owner_id.as_ref() == Some(&actor_id)
+                            || child
+                                .participants
+                                .iter()
+                                .any(|participant| participant.actor_id == actor_id)
+                            || self
+                                .state
+                                .communities
+                                .get(child_conversation_id)
+                                .is_some_and(|community| community_has_access(community, &actor_id));
+                        if !child_access {
+                            return Err(EngineError::CommunityAccessDenied {
+                                conversation_id: child_conversation_id.clone(),
+                                actor_id: actor_id.clone(),
+                            });
+                        }
+                    }
+                    None => {}
+                }
                 if let Some(reply_to_message_id) = &reply_to_message_id {
-                    self.require_message(&destination.conversation_id, reply_to_message_id)?;
+                    self.require_message(
+                        destination_message_conversation_id(&destination),
+                        reply_to_message_id,
+                    )?;
                 }
                 Ok(vec![Event::ConversationChildDraftChanged {
                     destination,
@@ -3109,7 +3222,7 @@ impl MessagingEngine {
                 let position = self
                     .state
                     .messages
-                    .get(&destination.conversation_id)
+                    .get(destination_message_conversation_id(&destination))
                     .and_then(|messages| messages.get(&message_id))
                     .map(|message| {
                         ConversationMessagePosition::new(
