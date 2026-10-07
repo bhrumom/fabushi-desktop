@@ -1238,7 +1238,38 @@
           "rationale": "qttools-litehtml is a further nested gitlink below qlitehtml and inherits the non-reachability of qttools/qlitehtml for accepted TDesktop builds."
         }
       ],
-      "note": "This closes only the audited Qt superproject branch reachability question. Root/child/archive/other recursive acquisitions, patches, generated inputs, resources, and tool/package inputs remain open and require individual build-reachability disposition."
+      "note": "This closes only the audited Qt superproject branch reachability question. Root/child/archive/other recursive acquisitions, patches, generated inputs, resources, and tool/package inputs remain open and require individual build-reachability disposition.",
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": "coin/",
+          "disposition": "upstream-qt-ci-provisioning-not-tdesktop-build",
+          "basis": "TDesktop only clones Qt, explicitly initializes selected submodules, then configure/cmake/build; it never invokes Qt COIN provisioning."
+        },
+        {
+          "path_prefix": "tests/manual/",
+          "disposition": "upstream-qt-test-only-not-tdesktop-build",
+          "basis": "Manual Qt repository tests are not invoked by the accepted TDesktop Qt build commands."
+        },
+        {
+          "path_exact": "README.git",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_suffix": "/ABOUT-NLS",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "init-repository",
+          "disposition": "qt-init-repository-tool-not-invoked",
+          "basis": "TDesktop uses explicit git submodule update selections instead of Qt init-repository."
+        },
+        {
+          "path_exact": "init-repository.pl",
+          "disposition": "qt-init-repository-tool-not-invoked",
+          "basis": "TDesktop uses explicit git submodule update selections instead of Qt init-repository."
+        }
+      ],
+      "root_candidate_policy_status": "partial-open"
     },
     "openssl": {
       "repository": "https://github.com/openssl/openssl",
@@ -1320,7 +1351,56 @@
       ],
       "descendant_non_reachability": "All descendants of these unfetched gitlinks inherit non-reachability unless an independent accepted TDesktop build entry acquires the same repository/commit.",
       "disposition": "not-reachable-from-accepted-tdesktop-openssl-build",
-      "note": "The OpenSSL source itself remains reachable and in scope. Only its gitlink children and descendants are excluded by this rule."
+      "note": "The OpenSSL source itself remains reachable and in scope. Only its gitlink children and descendants are excluded by this rule.",
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-openssl-ci-only"
+        },
+        {
+          "path_prefix": "test/",
+          "disposition": "upstream-openssl-test-only"
+        },
+        {
+          "path_prefix": "doc/",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_prefix": "README",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_prefix": "NOTES",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "CHANGES.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "fuzz/README.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": ".gitmodules",
+          "disposition": "gitlink-metadata-not-acquisition"
+        },
+        {
+          "path_exact": "apps/tsget.in",
+          "disposition": "runtime-source-token-false-positive",
+          "basis": "The grep matches runtime WWW::Curl symbol names, not a build-time fetch command."
+        },
+        {
+          "path_exact": "crypto/http/http_lib.c",
+          "disposition": "runtime-source-token-false-positive",
+          "basis": "The grep matches comments about HTTP client compatibility, not a build-time fetch command."
+        },
+        {
+          "path_exact": "dev/release.sh",
+          "disposition": "upstream-openssl-release-tool-not-tdesktop-build"
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-openssl-authority"
     }
   }
 }
