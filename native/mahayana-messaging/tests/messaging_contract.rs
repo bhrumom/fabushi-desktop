@@ -322,6 +322,66 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
     assert_eq!(forwarded.scheduled_at_ms, Some(30));
     assert!(forwarded.silent);
 
+    engine
+        .execute(Command::QueueMessage {
+            conversation_id: ConversationId::new("chat:source"),
+            local_message_id: MessageId::new("source:captioned"),
+            client_message_id: ClientMessageId("client:captioned".into()),
+            sender_id: ActorId::new("human:forwarder"),
+            content: MessageContent::Photo {
+                media: MediaRef {
+                    id: "media:captioned".into(),
+                    file_name: Some("photo.jpg".into()),
+                    mime_type: Some("image/jpeg".into()),
+                    size_bytes: Some(1),
+                    width: Some(1),
+                    height: Some(1),
+                    duration_ms: None,
+                    thumbnail_id: None,
+                    local_path: None,
+                    remote_url: None,
+                    content_hash: None,
+                },
+                caption: FormattedText::plain("private caption"),
+                spoiler: false,
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: None,
+            created_at_ms: 3,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+        })
+        .unwrap();
+    engine
+        .execute(Command::ForwardMessage {
+            source_conversation_id: ConversationId::new("chat:source"),
+            message_id: MessageId::new("source:captioned"),
+            destination_conversation_id: ConversationId::new("chat:destination"),
+            local_message_id: MessageId::new("forward:privacy"),
+            client_message_id: ClientMessageId("client:forward-privacy".into()),
+            sender_id: ActorId::new("human:forwarder"),
+            thread_root_message_id: None,
+            created_at_ms: 4,
+            scheduled_at_ms: None,
+            silent: false,
+            privacy: ForwardPrivacy {
+                drop_sender_names: false,
+                drop_captions: true,
+            },
+        })
+        .unwrap();
+    let private_forward = &engine.state().messages[&ConversationId::new("chat:destination")]
+        [&MessageId::new("forward:privacy")];
+    assert_eq!(private_forward.forward_origin, None);
+    match &private_forward.content {
+        MessageContent::Photo { caption, .. } => {
+            assert!(caption.text.is_empty());
+            assert!(caption.entities.is_empty());
+        }
+        other => panic!("expected photo, got {other:?}"),
+    }
+
     let mut blocked_destination = Conversation::direct(
         "chat:blocked-forward",
         "Blocked forward",
