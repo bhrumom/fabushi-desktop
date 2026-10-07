@@ -893,6 +893,81 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
   }
 });
 
+test('shipping Human Forward uses the canonical picker and survives restart', async () => {
+  e2eHumanMessages = [];
+  e2eHumanMessageSequence = 1;
+  e2eHumanResourceSequence = 1;
+  e2eHumanResources = new Map<string, E2eHumanResource>();
+  e2eObservedSocialDeviceIds.clear();
+
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-forward-e2e-'));
+  let app: ElectronApplication | null = null;
+
+  const createHumanConversation = async (page: Page, humanId: string, title: string): Promise<void> => {
+    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
+    await dialog.getByRole('textbox', { name: 'Human identity' }).fill(humanId);
+    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill(title);
+    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+  };
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await createHumanConversation(page, 'human-forward-source-e2e', 'Forward Source');
+    const sourceText = 'Forward persistence evidence from the shipping Human workspace.';
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await prompt.pressSequentially(sourceText);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const sourceTurn = page.getByRole('article').filter({ hasText: sourceText }).last();
+    await expect(sourceTurn).toBeVisible({ timeout: 10_000 });
+    await expect(sourceTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+
+    await createHumanConversation(page, 'human-forward-destination-e2e', 'Forward Destination');
+    await page.getByRole('region', { name: 'Agent list' })
+      .getByRole('button', { name: 'Forward Source', exact: true })
+      .click();
+    const restoredSource = page.getByRole('article').filter({ hasText: sourceText }).last();
+    await expect(restoredSource).toBeVisible({ timeout: 10_000 });
+
+    await restoredSource.click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Forward', exact: true }).click();
+
+    const forwardDialog = page.getByRole('dialog', { name: 'Forward message' });
+    await expect(forwardDialog).toBeVisible();
+    const recipients = forwardDialog.getByRole('listbox', { name: 'Forward recipients' });
+    await expect(recipients.getByRole('option', { name: /Forward Destination/u })).toBeVisible({ timeout: 10_000 });
+    await recipients.getByRole('option', { name: /Forward Destination/u }).click();
+    await expect(forwardDialog.getByText('1 selected', { exact: true })).toBeVisible();
+    await forwardDialog.getByRole('button', { name: 'Forward', exact: true }).click();
+    await expect(forwardDialog).toBeHidden({ timeout: 15_000 });
+
+    await page.getByRole('region', { name: 'Agent list' })
+      .getByRole('button', { name: 'Forward Destination', exact: true })
+      .click();
+    const forwarded = page.getByRole('article').filter({ hasText: sourceText }).last();
+    await expect(forwarded).toBeVisible({ timeout: 15_000 });
+    await expect(forwarded).not.toHaveAttribute('data-pending');
+
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await page.getByRole('region', { name: 'Agent list' })
+      .getByRole('button', { name: 'Forward Destination', exact: true })
+      .click();
+    await expect(page.getByRole('article').filter({ hasText: sourceText }).last()).toBeVisible({ timeout: 15_000 });
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
 test('two shipping Electron device sessions converge one Human conversation through canonical remote sync', async () => {
   e2eHumanMessages = [];
   e2eHumanMessageSequence = 1;
