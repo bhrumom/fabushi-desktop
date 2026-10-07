@@ -2148,7 +2148,7 @@ impl MessagingEngine {
                 // canonical Message. Do not accept arbitrary parent messages as
                 // unread/notification evidence until that relation lands.
                 if matches!(
-                    destination.child,
+                    &destination.child,
                     Some(ConversationChildIdentity::SavedSublist { .. })
                 ) && !owned_ids.is_empty()
                 {
