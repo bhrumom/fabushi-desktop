@@ -301,6 +301,7 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
             local_message_id: MessageId::new("forward:1"),
             client_message_id: ClientMessageId("client:forward".into()),
             sender_id: ActorId::new("human:forwarder"),
+            thread_root_message_id: Some(MessageId::new("topic:destination")),
             created_at_ms: 3,
             scheduled_at_ms: Some(30),
             silent: true,
@@ -313,6 +314,10 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
         Some("chat:source:source:1")
     );
     assert!(matches!(forwarded.content, MessageContent::Text { .. }));
+    assert_eq!(
+        forwarded.thread_root_message_id.as_ref(),
+        Some(&MessageId::new("topic:destination"))
+    );
     assert_eq!(forwarded.scheduled_at_ms, Some(30));
     assert!(forwarded.silent);
 
@@ -336,6 +341,7 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
             local_message_id: MessageId::new("forward:blocked"),
             client_message_id: ClientMessageId("client:forward-blocked".into()),
             sender_id: ActorId::new("human:forwarder"),
+            thread_root_message_id: None,
             created_at_ms: 3,
             scheduled_at_ms: None,
             silent: false,
@@ -366,6 +372,7 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
             local_message_id: MessageId::new("forward:channel-blocked"),
             client_message_id: ClientMessageId("client:forward-channel-blocked".into()),
             sender_id: ActorId::new("human:forwarder"),
+            thread_root_message_id: None,
             created_at_ms: 3,
             scheduled_at_ms: None,
             silent: false,
@@ -401,6 +408,7 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
             local_message_id: MessageId::new("forward:protected"),
             client_message_id: ClientMessageId("client:forward-protected".into()),
             sender_id: ActorId::new("human:forwarder"),
+            thread_root_message_id: None,
             created_at_ms: 5,
             scheduled_at_ms: None,
             silent: false,
@@ -495,6 +503,7 @@ fn secret_conversations_reject_plaintext_and_protect_encrypted_messages() {
             local_message_id: MessageId::new("secret:forward"),
             client_message_id: ClientMessageId("client:forward-secret".into()),
             sender_id: ActorId::new("human:alice"),
+            thread_root_message_id: None,
             created_at_ms: 4,
             scheduled_at_ms: None,
             silent: false,

@@ -130,6 +130,8 @@ pub enum ClientCommand {
         destination_conversation_id: ConversationId,
         client_message_id: ClientMessageId,
         #[serde(default)]
+        thread_root_message_id: Option<MessageId>,
+        #[serde(default)]
         scheduled_at_ms: Option<i64>,
         #[serde(default)]
         silent: bool,
