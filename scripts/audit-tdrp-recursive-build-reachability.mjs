@@ -193,6 +193,15 @@ auditRootCandidates(
   {requireComplete:libjxl.root_candidate_policy_status==='complete-for-current-libjxl-authority',scope:'libjxl-root-candidates'}
 );
 
+const libavif=rules.libavif;
+for (const authority of libavif.observed_authorities||[]) {
+  auditRootCandidates(
+    keyOf(libavif.repository,authority.commit),
+    libavif.root_candidate_disposition_policy,
+    {requireComplete:libavif.root_candidate_policy_status==='complete-for-current-libavif-authorities',scope:'libavif-root-candidates-'+authority.ref}
+  );
+}
+
 const result={
   project_id:'TDRP-001',
   spec_revision:9,
