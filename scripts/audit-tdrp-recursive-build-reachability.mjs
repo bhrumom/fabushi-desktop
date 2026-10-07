@@ -118,13 +118,21 @@ const totals=(authorities)=>authorities.reduce((out,authority)=>{
 
 const excludedAuthorities=[...excluded.keys()].map(key=>all.get(key)).filter(Boolean);
 const remaining=[...all.entries()].filter(([key])=>!excluded.has(key)).map(([,authority])=>authority);
-const parseCandidatePath=(line)=>{
+const parseCandidate=(line)=>{
   const match=String(line).match(/^HEAD:(.*?):(\d+):(.*)$/);
-  return match?.[1]||null;
+  return match ? { path:match[1], line:Number(match[2]), body:match[3] } : null;
 };
 const classifyByPolicy=(candidate,policy)=>{
-  const candidatePath=parseCandidatePath(candidate);
-  if(candidatePath==null) return null;
+  const parsed=parseCandidate(candidate);
+  if(parsed==null) return null;
+  const candidatePath=parsed.path;
+  if(parsed.body.trimStart().startsWith('#')){
+    return {
+      path:candidatePath,
+      disposition:'comment-only-acquisition-token',
+      basis:'Discovery matched a source comment; comments cannot execute build-time acquisition.'
+    };
+  }
   for(const rule of policy||[]){
     if(rule.path_exact&&candidatePath===rule.path_exact) return {path:candidatePath,disposition:rule.disposition,basis:rule.basis||null};
     if(rule.path_prefix&&candidatePath.startsWith(rule.path_prefix)) return {path:candidatePath,disposition:rule.disposition,basis:rule.basis||null};
