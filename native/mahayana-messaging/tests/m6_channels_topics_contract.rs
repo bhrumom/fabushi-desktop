@@ -1568,6 +1568,175 @@ fn child_unread_things_and_incoming_notifications_reconcile_without_reaction_pay
 
 
 #[test]
+fn server_authoritative_saved_sublist_membership_is_persistent_prunes_stale_state_and_gates_pages() {
+    let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
+    for actor_id in ["human:owner", "human:peer"] {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context(actor_id, &format!("profile:saved-membership:{actor_id}")),
+                    ClientCommand::UpsertProfile {
+                        actor: Actor::human(actor_id, actor_id),
+                    },
+                ),
+                1,
+            )
+            .unwrap();
+    }
+
+    let conversation_id = ConversationId::new("conversation:saved-membership");
+    let mut conversation = Conversation::direct(
+        conversation_id.0.clone(),
+        "Saved membership fixture",
+        vec![participant("human:owner", ParticipantRole::Owner)],
+        2,
+    );
+    conversation.kind = ConversationKind::SavedMessages;
+    conversation.owner_id = Some(ActorId::new("human:owner"));
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "create-saved-membership"),
+                ClientCommand::CreateConversation { conversation },
+            ),
+            2,
+        )
+        .unwrap();
+
+    let sent = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "send-saved-membership"),
+                ClientCommand::SendMessage {
+                    conversation_id: conversation_id.clone(),
+                    client_message_id: ClientMessageId("client:saved-membership".into()),
+                    content: text_message("authoritative child item"),
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    scheduled_at_ms: None,
+                    silent: false,
+                    protected_content: false,
+                },
+            ),
+            3,
+        )
+        .unwrap();
+    let message_id = sent
+        .iter()
+        .find_map(|envelope| match &envelope.event {
+            ServerEvent::MessageChanged { message } | ServerEvent::MessageAdded { message } => {
+                Some(message.id.clone())
+            }
+            _ => None,
+        })
+        .expect("saved membership message");
+
+    let destination = ConversationDestination::saved_sublist(
+        conversation_id.clone(),
+        ActorId::new("human:peer"),
+    );
+
+    let denied_before = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "saved-membership-page-before"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination: destination.clone(),
+                    message_ids: vec![message_id.clone()],
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(1),
+                },
+            ),
+            4,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        denied_before,
+        MessagingServiceError::Engine(EngineError::ConversationChildMessageMismatch)
+    ));
+
+    service
+        .reconcile_saved_sublist_membership(
+            destination.clone(),
+            ActorId::new("human:owner"),
+            vec![message_id.clone()],
+            5,
+        )
+        .unwrap();
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "saved-membership-page-after"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination: destination.clone(),
+                    message_ids: vec![message_id.clone()],
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(1),
+                },
+            ),
+            6,
+        )
+        .unwrap();
+
+    let store = service.into_store();
+    let mut service = MessagingService::load(store).unwrap();
+    let restored = service
+        .engine()
+        .state()
+        .conversation_child_states
+        .iter()
+        .find(|child| {
+            child.destination == destination && child.actor_id == ActorId::new("human:owner")
+        })
+        .expect("saved membership child restored");
+    assert_eq!(restored.authoritative_message_ids, vec![message_id.0.clone()]);
+    assert_eq!(restored.pagination.message_ids, vec![message_id.0.clone()]);
+
+    service
+        .reconcile_saved_sublist_membership(
+            destination.clone(),
+            ActorId::new("human:owner"),
+            Vec::new(),
+            7,
+        )
+        .unwrap();
+    let pruned = service
+        .engine()
+        .state()
+        .conversation_child_states
+        .iter()
+        .find(|child| {
+            child.destination == destination && child.actor_id == ActorId::new("human:owner")
+        })
+        .expect("saved membership child retained");
+    assert!(pruned.authoritative_message_ids.is_empty());
+    assert!(pruned.pagination.message_ids.is_empty());
+
+    let denied_after_revoke = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "saved-membership-page-after-revoke"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination,
+                    message_ids: vec![message_id],
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(1),
+                },
+            ),
+            8,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        denied_after_revoke,
+        MessagingServiceError::Engine(EngineError::ConversationChildMessageMismatch)
+    ));
+}
+
+#[test]
 fn server_authoritative_saved_sublist_parent_access_is_actor_scoped_persistent_and_revocable() {
     let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
     for actor_id in ["human:owner", "human:admin"] {
