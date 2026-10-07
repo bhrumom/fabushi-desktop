@@ -1980,7 +1980,6 @@
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current-head GitHub Actions compile/test/integration evidence is pending",
-        "The shipping Host path now mirrors the canonical privacy contract, but native ForwardPrivacy and Host Session policy are not yet consolidated into one executable policy implementation",
         "Paid-send revalidation plus repeat/suggested/effect/video/ephemeral applicability remain open ShareBox responsibilities"
       ],
       "production_entrypoints": [
@@ -2002,7 +2001,9 @@
         "path:frontend/src/production/ForwardMessageDialog.tsx#ForwardMessageDialog",
         "path:frontend/src/production/ProductionRenderer.tsx#forwardHumanMessage",
         "path:source/host/src/extensions/session/gateway.rs#forwardHumanMessage",
-        "path:source/host/src/extensions/session/production.rs#forward_human_message"
+        "path:source/host/src/extensions/session/production.rs#forward_human_message",
+        "path:source/host/Cargo.toml#fabushi-messaging-core",
+        "path:source/host/src/extensions/session/production.rs#ForwardPrivacy::normalized"
       ],
       "test_evidence": [
         "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content",
@@ -2137,7 +2138,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox forward submission semantics using canonical Fabushi MessagingService/Message identity owners.",
       "reviewer": null,
-      "notes": "The shipping Human Conversation path now exposes Forward from ConversationTranscript and routes multi-recipient submission through the existing Host Session owner; it does not introduce a second Message store. The Host test covers destination dedupe, partial settlement, privacy coupling, replay conflict and restart idempotency. This row remains implemented, not verified: exact-head GitHub Actions evidence is pending, and the native ForwardPrivacy policy and shipping Host policy still need consolidation/reuse to avoid two executable policy implementations even though state ownership remains singular."
+      "notes": "Shipping Human Forward now reuses canonical fabushi-messaging-core ForwardPrivacy::normalized() before Host persistence, removing the prior duplicated executable privacy policy while the existing Host Session remains the sole shipping Human Message owner. This row remains implemented, not verified: exact-head native/Host integration, Electron E2E, temporal/reload/restart/recovery and independent evidence are pending."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -2259,7 +2260,7 @@
       "job": null,
       "artifact_id": null,
       "artifact_digest": null,
-      "composition_root": "Fabushi canonical Search / Conversation domain",
+      "composition_root": "Fabushi ProductShell -> canonical Conversation recipient Picker -> canonical Search / MessagingService",
       "composition_slot": "Recipient picker search provider",
       "capability_component": "Permission-before-exposure recipient search",
       "variation_axes": [
@@ -2285,8 +2286,8 @@
       "detail_section": "Not applicable",
       "capability_surface": "Canonical Search provider",
       "route_contract": "No new route; recipient results project into the existing picker surface.",
-      "search_scope": "Not applicable to this native send-time slice",
-      "search_provider": "Not applicable to this native send-time slice",
+      "search_scope": "Canonical Search recipient destination scope (pre-exposure authorization)",
+      "search_provider": "MessagingService::recipient_search_envelope -> canonical SearchIndex recipient provider",
       "search_result_types": [],
       "search_filters": [],
       "search_permission_contract": "Recipient search must filter before exposure, while this row guarantees a second fail-closed authorization check at actual send time.",
