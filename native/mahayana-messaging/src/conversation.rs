@@ -452,6 +452,11 @@ pub struct ConversationChildRuntimeState {
     pub unread_things: ConversationChildUnreadThings,
     #[serde(default)]
     pub pending_incoming_notification_message_ids: Vec<String>,
+    /// Trusted server/native membership snapshot for SavedSublist children.
+    /// Empty is fail-closed: renderer-visible parent messages never imply child
+    /// membership.
+    #[serde(default)]
+    pub authoritative_message_ids: Vec<String>,
     pub draft_text: String,
     pub draft_reply_to_message_id: Option<String>,
     pub draft_updated_at_ms: Option<i64>,
@@ -476,6 +481,7 @@ impl ConversationChildRuntimeState {
             marked_unread: false,
             unread_things: ConversationChildUnreadThings::default(),
             pending_incoming_notification_message_ids: Vec::new(),
+            authoritative_message_ids: Vec::new(),
             draft_text: String::new(),
             draft_reply_to_message_id: None,
             draft_updated_at_ms: None,
@@ -531,6 +537,43 @@ impl ConversationChildRuntimeState {
     pub fn clear_pending_incoming_notification(&mut self, message_id: &str) {
         self.pending_incoming_notification_message_ids
             .retain(|id| id != message_id);
+    }
+
+    pub fn reconcile_authoritative_message_ids(&mut self, message_ids: Vec<String>) -> bool {
+        if message_ids
+            .iter()
+            .any(|message_id| message_id.trim().is_empty() || message_id.len() > 200)
+        {
+            return false;
+        }
+        let unique = message_ids
+            .iter()
+            .collect::<std::collections::BTreeSet<_>>();
+        if unique.len() != message_ids.len() {
+            return false;
+        }
+        self.authoritative_message_ids = message_ids;
+        self.pagination
+            .message_ids
+            .retain(|id| self.authoritative_message_ids.iter().any(|allowed| allowed == id));
+        self.pending_incoming_notification_message_ids
+            .retain(|id| self.authoritative_message_ids.iter().any(|allowed| allowed == id));
+        self.unread_things
+            .mention_message_ids
+            .retain(|id| self.authoritative_message_ids.iter().any(|allowed| allowed == id));
+        self.unread_things
+            .reaction_message_ids
+            .retain(|id| self.authoritative_message_ids.iter().any(|allowed| allowed == id));
+        self.unread_things
+            .poll_vote_message_ids
+            .retain(|id| self.authoritative_message_ids.iter().any(|allowed| allowed == id));
+        true
+    }
+
+    pub fn has_authoritative_message(&self, message_id: &str) -> bool {
+        self.authoritative_message_ids
+            .iter()
+            .any(|allowed| allowed == message_id)
     }
 
     pub fn advance_outbox_read_till(&mut self, position: ConversationMessagePosition) -> bool {
@@ -594,6 +637,7 @@ impl ConversationChildRuntimeState {
         self.marked_unread = false;
         self.unread_things = ConversationChildUnreadThings::default();
         self.pending_incoming_notification_message_ids.clear();
+        self.authoritative_message_ids.clear();
         self.pinned = false;
         self.restore_pinned_when_non_empty = false;
         self.no_paid_messages = false;
