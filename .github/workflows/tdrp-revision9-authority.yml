@@ -1,0 +1,77 @@
+name: TDRP Revision 9 source authority
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/specs/telegram-desktop-rust-equivalence-migration.md'
+      - 'projects/telegram-desktop-rust/**'
+      - 'projects/fabushi-communication-platform/quality/**'
+      - 'scripts/validate-tdrp-revision9-authority.mjs'
+      - '.github/workflows/tdrp-revision9-authority.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  candidate-authority:
+    name: Candidate source authority / recursive inventory
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact event SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Validate Revision 9 candidate authority
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/validate-tdrp-revision9-authority.mjs
+      - name: Assert candidate remains fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const lock = require('./projects/telegram-desktop-rust/upstream.lock.json');
+          if (lock.upstream.accepted !== false) throw new Error('candidate must not self-promote');
+          if (lock.acceptance.accepted !== false || lock.acceptance.baseline_ready !== false) throw new Error('candidate acceptance must remain false');
+          if (!(lock.coverage.unknown_minimum > 0 && lock.coverage.unread_minimum > 0)) throw new Error('candidate must not fabricate semantic coverage');
+          NODE
+      - name: Upload source-authority evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-revision9-authority-${{ github.sha }}
+          path: artifacts/tdrp-authority
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  accepted-gate-contract:
+    name: Accepted gate is executable and fail-closed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Verify accepted mode rejects current candidate
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if node scripts/validate-tdrp-revision9-authority.mjs --require-accepted > accepted.log 2>&1; then
+            cat accepted.log
+            echo "accepted gate unexpectedly passed before P0 closure" >&2
+            exit 1
+          fi
+          grep -E 'accepted mode requires|G-INVENTORY' accepted.log
+          echo "Fail-closed accepted gate correctly rejected the unclosed candidate."
