@@ -154,7 +154,9 @@ export function createConversationWorkspaceController(options: ConversationWorks
   const childSelection = options.childHistory == null
     ? null
     : createConversationChildSelectionController({
-      resolveLegacyTopicRoot: options.childHistory.resolveLegacyTopicRoot
+      ...(options.childHistory.resolveLegacyTopicRoot == null
+        ? {}
+        : { resolveLegacyTopicRoot: options.childHistory.resolveLegacyTopicRoot })
     });
   const childPagination = options.childHistory == null
     ? null
