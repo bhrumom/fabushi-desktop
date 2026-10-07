@@ -7,9 +7,9 @@
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15757,
+    "unread": 15755,
     "omitted": 0,
-    "responsibilities_total": 14,
+    "responsibilities_total": 16,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -3366,6 +3366,472 @@
         "ProductShell -> Story capability surface -> canonical domain commands/events"
       ],
       "notes": "Read-complete and mapped only; no implemented/verified claim."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_kind": "source",
+      "module_id": "tdesktop.media.stories",
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/story-stealth-complete-read.md",
+      "capability_ids": [
+        "CAP-STORY-STEALTH-PRIVACY"
+      ],
+      "dependency_ids": [
+        "Story",
+        "PaymentEntitlement",
+        "ProductShell"
+      ],
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/story.rs",
+        "native/mahayana-messaging/src/payment.rs",
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "existing_owner": "Canonical Story/privacy owner + existing payment/entitlement model + ProductShell capability projection",
+      "rejected_existing_owners": [
+        "A Telegram-specific stealth subsystem would duplicate Story/privacy ownership.",
+        "Client-only UI entitlement state cannot own security-sensitive anonymous-view authorization."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/story.rs",
+        "native/mahayana-messaging/src/payment.rs",
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "Story",
+        "Entitlement",
+        "future Story stealth command/state",
+        "future typed Story capability projection"
+      ],
+      "target_language": "Rust + TypeScript",
+      "language_rationale": "Security-sensitive Story privacy, entitlement and service timing belong in existing Rust owners; UI projection belongs in ProductShell.",
+      "state_owner": "Canonical Story/privacy state plus canonical entitlement truth",
+      "lifecycle_owner": "Messaging Story service with ProductShell surface lifetime",
+      "persistence_and_restart": "Activation/cooldown must be durable, account-scoped and recoverable; UI timers are derived projection only.",
+      "concurrency_and_cancellation": "One activation request at a time per account/feature; duplicate/late/out-of-order settlements must be fenced and idempotent.",
+      "security_boundary": "Anonymous-view behavior requires authoritative entitlement and server-side privacy enforcement; client UI cannot grant or extend the mode.",
+      "network_service_dependencies": [
+        "Story service anonymous-view contract",
+        "Entitlement/subscription authorization service"
+      ],
+      "service_owner": "Existing Fabushi messaging/payment stack; Story-stealth integration not yet implemented",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "No current executable Story-stealth activation/cooldown service contract or entitlement binding was found.",
+        "No current shipping ProductShell Story-stealth surface/evidence."
+      ],
+      "production_entrypoints": [
+        "Future ProductShell Story action -> canonical Story/privacy service -> entitlement authorization -> authoritative state/event"
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:native/mahayana-messaging/src/story.rs",
+        "path:native/mahayana-messaging/src/payment.rs"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell",
+      "composition_slot": "Story capability surface / privacy action",
+      "capability_component": "Story anonymous-view privacy action",
+      "variation_axes": [
+        "eligible-vs-ineligible",
+        "active-vs-cooldown-vs-ready",
+        "continuation-vs-no-continuation"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Story privacy",
+        "Canonical Entitlement",
+        "ProductShell overlay/action"
+      ],
+      "duplicate_root_check": "No second Story, payment, settings or navigation root introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "object-action",
+      "primary_navigation_target": "Existing Story capability surface",
+      "collection_surface": "Existing Story source",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Current Story/source owner",
+      "detail_section": "Story privacy action",
+      "capability_surface": "Story capability surface",
+      "route_contract": "Action remains inside the canonical Story capability surface and returns/continues through existing route state.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Use canonical ProductShell dialog/menu/action patterns; no Qt layout retained.",
+      "accessibility_contract": "Active/cooldown/upgrade states and countdown require accessible names/status updates.",
+      "keyboard_contract": "Keyboard activation uses the same typed action as pointer activation.",
+      "state_continuity_contract": "Authoritative active/cooldown state survives close/reopen/reconnect/restart and cannot be reset by surface disposal.",
+      "ui_acceptance_scenarios": [
+        "Already-active action continues once without duplicate activation",
+        "Cooldown action cannot bypass deadline",
+        "Non-entitled actor cannot activate client-side",
+        "Activation settlement closes surface exactly once"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Fabushi semantic tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "Menu",
+        "Dialog",
+        "Button",
+        "Toast/Banner"
+      ],
+      "screen_pattern_id": "StoryMediaCapabilitySurface",
+      "screen_slots": [
+        "object actions",
+        "privacy status/activation dialog"
+      ],
+      "visual_state_matrix": [
+        "unavailable",
+        "upgrade",
+        "ready",
+        "activating",
+        "active",
+        "cooldown",
+        "error"
+      ],
+      "density_contract": "Existing canonical dialog/menu density.",
+      "icon_asset_contract": "Canonical Fabushi icon registry.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "No independent business state in animation.",
+      "reduced_motion_contract": "Countdown/state semantics preserved without requiring motion.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "critical",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "G-PRODUCTION",
+        "G-SECURITY-PRIVACY",
+        "G-TEMPORAL"
+      ],
+      "oracle_ids": [],
+      "invariant_ids": [],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-TEMPORAL",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop source authority; no Telegram product/runtime owner is retained.",
+      "reviewer": null,
+      "source_path": "Telegram/SourceFiles/media/stories/media_stories_stealth.h",
+      "source_blob_sha": "649cfa1eb5abcad11706741753bb70232fe43c7a",
+      "responsibility_id": "TDRP-R9-STORY-STEALTH-PUBLIC-CONTRACT-001",
+      "source_symbols": [
+        "StealthModeDescriptor",
+        "SetupStealthMode",
+        "AddStealthModeMenu",
+        "TimeLeftText"
+      ],
+      "behavior_contract": "Expose anonymous-view activation, continuation and time-left semantics through canonical Story privacy/entitlement owners.",
+      "state_machine": "action -> inspect authoritative active/eligibility state -> continue if active else activation surface -> authoritative settlement",
+      "side_effects": [
+        "May continue/open Story after authorized activation"
+      ],
+      "failure_cases": [
+        "Client-only entitlement bypass",
+        "duplicate activation",
+        "stale active/cooldown projection"
+      ],
+      "ui_disposition": "Qt menu/dialog replaced by canonical Fabushi Story object action/dialog.",
+      "non_ui_responsibilities": [
+        "Active/cooldown state contract",
+        "activation continuation/idempotency"
+      ],
+      "platform_delta": "C++/Qt entrypoints become typed ProductShell action plus Rust command/state.",
+      "command_event_contracts": [
+        "Story stealth action -> authoritative privacy/entitlement command/event"
+      ],
+      "notes": "Read-complete and mapped-open; service entitlement/privacy implementation remains blocked."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_kind": "source",
+      "module_id": "tdesktop.media.stories",
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/story-stealth-complete-read.md",
+      "capability_ids": [
+        "CAP-STORY-STEALTH-PRIVACY"
+      ],
+      "dependency_ids": [
+        "Story",
+        "PaymentEntitlement",
+        "ProductShell"
+      ],
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/story.rs",
+        "native/mahayana-messaging/src/payment.rs",
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "existing_owner": "Canonical Story/privacy owner + existing payment/entitlement model + ProductShell capability projection",
+      "rejected_existing_owners": [
+        "A Telegram-specific stealth subsystem would duplicate Story/privacy ownership.",
+        "Client-only UI entitlement state cannot own security-sensitive anonymous-view authorization."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/story.rs",
+        "native/mahayana-messaging/src/payment.rs",
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "Story",
+        "Entitlement",
+        "future Story stealth command/state",
+        "future typed Story capability projection"
+      ],
+      "target_language": "Rust + TypeScript",
+      "language_rationale": "Security-sensitive Story privacy, entitlement and service timing belong in existing Rust owners; UI projection belongs in ProductShell.",
+      "state_owner": "Canonical Story/privacy state plus canonical entitlement truth",
+      "lifecycle_owner": "Messaging Story service with ProductShell surface lifetime",
+      "persistence_and_restart": "Activation/cooldown must be durable, account-scoped and recoverable; UI timers are derived projection only.",
+      "concurrency_and_cancellation": "One activation request at a time per account/feature; duplicate/late/out-of-order settlements must be fenced and idempotent.",
+      "security_boundary": "Anonymous-view behavior requires authoritative entitlement and server-side privacy enforcement; client UI cannot grant or extend the mode.",
+      "network_service_dependencies": [
+        "Story service anonymous-view contract",
+        "Entitlement/subscription authorization service"
+      ],
+      "service_owner": "Existing Fabushi messaging/payment stack; Story-stealth integration not yet implemented",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "No current executable Story-stealth activation/cooldown service contract or entitlement binding was found.",
+        "No current shipping ProductShell Story-stealth surface/evidence."
+      ],
+      "production_entrypoints": [
+        "Future ProductShell Story action -> canonical Story/privacy service -> entitlement authorization -> authoritative state/event"
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:native/mahayana-messaging/src/story.rs",
+        "path:native/mahayana-messaging/src/payment.rs"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell",
+      "composition_slot": "Story capability surface / privacy action",
+      "capability_component": "Story anonymous-view privacy action",
+      "variation_axes": [
+        "eligible-vs-ineligible",
+        "active-vs-cooldown-vs-ready",
+        "continuation-vs-no-continuation"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Story privacy",
+        "Canonical Entitlement",
+        "ProductShell overlay/action"
+      ],
+      "duplicate_root_check": "No second Story, payment, settings or navigation root introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "object-action",
+      "primary_navigation_target": "Existing Story capability surface",
+      "collection_surface": "Existing Story source",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Current Story/source owner",
+      "detail_section": "Story privacy action",
+      "capability_surface": "Story capability surface",
+      "route_contract": "Action remains inside the canonical Story capability surface and returns/continues through existing route state.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Use canonical ProductShell dialog/menu/action patterns; no Qt layout retained.",
+      "accessibility_contract": "Active/cooldown/upgrade states and countdown require accessible names/status updates.",
+      "keyboard_contract": "Keyboard activation uses the same typed action as pointer activation.",
+      "state_continuity_contract": "Authoritative active/cooldown state survives close/reopen/reconnect/restart and cannot be reset by surface disposal.",
+      "ui_acceptance_scenarios": [
+        "Already-active action continues once without duplicate activation",
+        "Cooldown action cannot bypass deadline",
+        "Non-entitled actor cannot activate client-side",
+        "Activation settlement closes surface exactly once"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Fabushi semantic tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "Menu",
+        "Dialog",
+        "Button",
+        "Toast/Banner"
+      ],
+      "screen_pattern_id": "StoryMediaCapabilitySurface",
+      "screen_slots": [
+        "object actions",
+        "privacy status/activation dialog"
+      ],
+      "visual_state_matrix": [
+        "unavailable",
+        "upgrade",
+        "ready",
+        "activating",
+        "active",
+        "cooldown",
+        "error"
+      ],
+      "density_contract": "Existing canonical dialog/menu density.",
+      "icon_asset_contract": "Canonical Fabushi icon registry.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "No independent business state in animation.",
+      "reduced_motion_contract": "Countdown/state semantics preserved without requiring motion.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "critical",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "G-PRODUCTION",
+        "G-SECURITY-PRIVACY",
+        "G-TEMPORAL"
+      ],
+      "oracle_ids": [],
+      "invariant_ids": [],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-TEMPORAL",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop source authority; no Telegram product/runtime owner is retained.",
+      "reviewer": null,
+      "source_path": "Telegram/SourceFiles/media/stories/media_stories_stealth.cpp",
+      "source_blob_sha": "8bd47aaf5b5b454a6f2ac0b4641b285646d4a9b3",
+      "responsibility_id": "TDRP-R9-STORY-STEALTH-LIFECYCLE-001",
+      "source_symbols": [
+        "StateValue",
+        "StealthModeBox",
+        "MakeButton",
+        "SetupStealthMode",
+        "AddStealthModeMenu",
+        "TimeLeftText"
+      ],
+      "behavior_contract": "Use authoritative enabled/cooldown deadlines, entitlement eligibility and a duplicate-request fence; activate/close/continue exactly once on authoritative settlement.",
+      "state_machine": "unavailable|ready|active|cooldown -> optional activation request -> pending -> active settlement or failure -> cooldown/expiry boundary",
+      "side_effects": [
+        "Activation request",
+        "authoritative feedback/continuation"
+      ],
+      "failure_cases": [
+        "Repeated clicks issue concurrent activations",
+        "cooldown bypass",
+        "clock boundary never updates",
+        "late callback reopens/disposed surface"
+      ],
+      "ui_disposition": "Pure styling/painter details replaced; eligibility/timing/request settlement retained.",
+      "non_ui_responsibilities": [
+        "Deadline-driven state",
+        "entitlement gating",
+        "duplicate request fencing",
+        "settlement callback exactly once"
+      ],
+      "platform_delta": "Timer/UI projection derived from durable Rust/service state.",
+      "command_event_contracts": [
+        "ActivateStoryStealth (future) -> StoryStealthChanged (future)"
+      ],
+      "notes": "Read-complete and mapped-open; no implemented/verified claim."
     }
   ]
 }
