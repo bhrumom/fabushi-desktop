@@ -251,11 +251,11 @@
   },
   "coverage": {
     "root_source_entries_total": 6355,
-    "recursive_source_entries_total": null,
-    "unknown_minimum": 6355,
-    "unread_minimum": 6355,
+    "recursive_source_entries_total": 15788,
+    "unknown_minimum": 15788,
+    "unread_minimum": 15788,
     "omitted_known": 0,
-    "note": "Conservative Revision 9 starting counters. Recursive leaf expansion and semantic reading are not yet accepted."
+    "note": "Revision 9 recursive non-directory count verified by GitHub Actions run 37596744991 at cc318d81532c44f8710681039cc1dba3dafe72cc. Semantic responsibility reading has not been bulk-credited."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -291,5 +291,16 @@
       "no-lfs-attributes",
       "revision9-schema-and-governance-contract"
     ]
+  },
+  "recursive_inventory_evidence": {
+    "runner": "github-actions",
+    "run_id": 37596744991,
+    "run_attempt": 1,
+    "job_id": 112711134608,
+    "validation_head_sha": "cc318d81532c44f8710681039cc1dba3dafe72cc",
+    "artifact_id": 11470099433,
+    "artifact_name": "tdrp-revision9-authority-cc318d81532c44f8710681039cc1dba3dafe72cc",
+    "artifact_digest": "sha256:087136a99675f1a112602e748573c9d20aeaa27e3e2b308f00603d0d9f4a3dad",
+    "recursive_non_directory_entries": 15788
   }
 }
