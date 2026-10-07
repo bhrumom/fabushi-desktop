@@ -1857,6 +1857,12 @@ impl MessagingEngine {
                     reply_to_message_id: None,
                     updated_at_ms: 0,
                 })?;
+                for message_id in &message_ids {
+                    self.require_message(
+                        destination_message_conversation_id(&destination),
+                        message_id,
+                    )?;
+                }
                 let message_ids = message_ids
                     .into_iter()
                     .map(|message_id| message_id.0)
