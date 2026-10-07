@@ -285,6 +285,20 @@ auditRootCandidates(
   {requireComplete:boostRegex.root_candidate_policy_status==='complete-for-current-boost-regex-authority',scope:'boost-regex-root-candidates'}
 );
 
+for (const [rulesKey,status,scope] of [
+  ['implib','complete-for-current-implib-authority','implib-root-candidates'],
+  ['zlib','complete-for-current-zlib-authority','zlib-root-candidates'],
+  ['openh264','complete-for-current-openh264-authority','openh264-root-candidates'],
+  ['xkbcommon','complete-for-current-xkbcommon-authority','xkbcommon-root-candidates']
+]) {
+  const rule=rules[rulesKey];
+  auditRootCandidates(
+    keyOf(rule.repository,rule.commit),
+    rule.root_candidate_disposition_policy,
+    {requireComplete:rule.root_candidate_policy_status===status,scope}
+  );
+}
+
 const result={
   project_id:'TDRP-001',
   spec_revision:9,

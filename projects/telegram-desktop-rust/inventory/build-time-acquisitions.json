@@ -2263,6 +2263,137 @@
       ],
       "root_candidate_policy_status": "complete-for-current-boost-regex-authority",
       "note": "This closes acquisition-pattern candidates for the Boost.Regex root snapshot used by accepted prepare.py; regex runtime semantics remain in source scope."
+    },
+    "implib": {
+      "repository": "https://github.com/yugr/Implib.so",
+      "commit": "ecf7bb51a92a0fb16834c5b698570ab25f9f1d21",
+      "build_entries": [
+        "Telegram/build/docker/centos_env/Dockerfile"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "Accepted builder fetches exact Implib.so commit ecf7bb51..., then invokes only implib-gen.py plus compiler/archive commands for selected system libraries. Upstream CI, specs and architecture comments are not executed source acquisitions."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-implib-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "arch/arm/",
+          "disposition": "compiled-source-comment-not-acquisition"
+        },
+        {
+          "path_prefix": "specs/",
+          "disposition": "documentation-not-acquisition"
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-implib-authority",
+      "note": "Closes acquisition-pattern candidates for exact Implib.so Docker input; import-library generation semantics remain in source scope."
+    },
+    "zlib": {
+      "repository": "https://github.com/madler/zlib",
+      "commit": "e3dc0a85b7032e98380dec011bc8f2c2ee0d8fca",
+      "build_entries": [
+        "Telegram/build/prepare/prepare.py",
+        "Telegram/build/docker/centos_env/Dockerfile",
+        "snap/snapcraft.yaml"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "Accepted zlib stage pins e3dc0a85..., builds zlib and contrib/minizip directly; Windows disables zlib/minizip tests, while macOS enters contrib/minizip explicitly and never enters contrib/ada."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "Accepted Docker zlib stage fetches exact e3dc0a85..., sets ZLIB_BUILD_TESTING=OFF and ZLIB_MINIZIP_BUILD_TESTING=OFF, and builds zlib/minizip directly."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-zlib-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "contrib/ada/",
+          "disposition": "compiled-source-identifier-not-build-acquisition",
+          "basis": "Candidate matches are Ada parameter names such as source inside the immutable tree; accepted TDesktop builds contrib/minizip, not contrib/ada."
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-zlib-authority",
+      "note": "Closes acquisition-pattern candidates for exact zlib source root; compression/minizip behavior remains in semantic scope."
+    },
+    "openh264": {
+      "repository": "https://github.com/cisco/openh264",
+      "commit": "652bdb7719f30b52b08e506645a7322ff1b2cc6f",
+      "ref": "v2.6.0",
+      "build_entries": [
+        "Telegram/build/prepare/prepare.py",
+        "Telegram/build/docker/centos_env/Dockerfile"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "Accepted OpenH264 stage clones v2.6.0 and builds with Meson; it does not invoke the upstream Makefile targets that clone gmp-api/googletest, upstream CI, or upstream build/Dockerfile."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "Accepted Docker OpenH264 stage shallow-clones v2.6.0 and uses Meson compile/install directly."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-openh264-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_exact": ".travis.yml",
+          "disposition": "upstream-openh264-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "build/Dockerfile",
+          "disposition": "upstream-openh264-development-container-not-invoked"
+        },
+        {
+          "path_exact": "Makefile",
+          "disposition": "upstream-openh264-makefile-fetch-targets-not-invoked",
+          "basis": "Accepted TDesktop uses Meson for v2.6.0 and never invokes Makefile targets that clone gmp-api or googletest."
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-openh264-authority",
+      "note": "Closes acquisition-pattern candidates for OpenH264 v2.6.0; codec semantics remain in source scope."
+    },
+    "xkbcommon": {
+      "repository": "https://github.com/xkbcommon/libxkbcommon",
+      "commit": "d2a08f761c796733e42fac4099f5c38d443e88e1",
+      "ref": "xkbcommon-1.6.0",
+      "build_entries": [
+        "Telegram/build/docker/centos_env/Dockerfile"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "Accepted xkbcommon stage shallow-clones xkbcommon-1.6.0 and uses Meson with docs/Wayland/xkbregistry disabled. It does not execute upstream GitHub workflows or key-table update URL comments."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-xkbcommon-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_exact": "scripts/makekeys",
+          "disposition": "source-comment-reference-not-acquisition"
+        },
+        {
+          "path_exact": "src/ks_tables.h",
+          "disposition": "generated-source-comment-reference-not-acquisition"
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-xkbcommon-authority",
+      "note": "Closes acquisition-pattern candidates for xkbcommon-1.6.0; keyboard mapping/runtime behavior remains in semantic scope."
     }
   }
 }

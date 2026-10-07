@@ -475,6 +475,42 @@ const prepareRegexStage=prepareQt.match(/stage\('regex',[\s\S]*?\n"""\)/)?.[0]||
 fail(prepareRegexStage.includes('git clone -b boost-1.83.0 https://github.com/boostorg/regex.git'),'accepted Boost.Regex prepare ref drift');
 fail(!prepareRegexStage.includes('boostorg/boost')&&!prepareRegexStage.includes('boostdep'),'accepted Boost.Regex stage unexpectedly invokes upstream CI dependency bootstrap');
 
+const implibReachability=recursiveReachability.implib;
+fail(implibReachability?.commit==='ecf7bb51a92a0fb16834c5b698570ab25f9f1d21','Implib authority drift');
+fail(implibReachability.root_candidate_policy_status==='complete-for-current-implib-authority','Implib policy not fail-closed complete');
+const dockerImplibStage=dockerQt.match(/git init Implib\.so[\s\S]*?implib \/usr\/lib64\/libOpenGL\.so/)?.[0]||'';
+fail(dockerImplibStage.includes('git fetch --depth=1 origin ecf7bb51a92a0fb16834c5b698570ab25f9f1d21'),'accepted Implib pin drift');
+fail(dockerImplibStage.includes('../implib-gen.py'),'accepted Implib production invocation drift');
+
+const zlibReachability=recursiveReachability.zlib;
+fail(zlibReachability?.commit==='e3dc0a85b7032e98380dec011bc8f2c2ee0d8fca','zlib authority drift');
+fail(zlibReachability.root_candidate_policy_status==='complete-for-current-zlib-authority','zlib policy not fail-closed complete');
+const dockerZlibStage=dockerStage(dockerQt,'zlib');
+const prepareZlibStage=prepareQt.match(/stage\('zlib',[\s\S]*?\n"""\)/)?.[0]||'';
+fail(dockerZlibStage.includes('git fetch --depth=1 origin e3dc0a85b7032e98380dec011bc8f2c2ee0d8fca'),'accepted Docker zlib pin drift');
+fail(prepareZlibStage.includes('git checkout e3dc0a85b7032e98380dec011bc8f2c2ee0d8fca'),'accepted prepare zlib pin drift');
+for (const option of ['ZLIB_BUILD_TESTING=OFF','ZLIB_MINIZIP_BUILD_TESTING=OFF']) fail(dockerZlibStage.includes(option),'accepted Docker zlib option drift: '+option);
+fail(!dockerZlibStage.includes('contrib/ada')&&!prepareZlibStage.includes('contrib/ada'),'accepted zlib build unexpectedly invokes contrib/ada');
+
+const openh264Reachability=recursiveReachability.openh264;
+fail(openh264Reachability?.commit==='652bdb7719f30b52b08e506645a7322ff1b2cc6f','OpenH264 authority drift');
+fail(openh264Reachability.root_candidate_policy_status==='complete-for-current-openh264-authority','OpenH264 policy not fail-closed complete');
+const prepareOpenh264Stage=prepareQt.match(/stage\('openh264',[\s\S]*?\n"""\)/)?.[0]||'';
+const dockerOpenh264Stage=dockerStage(dockerQt,'openh264');
+for (const [name,stage] of [['prepare.py',prepareOpenh264Stage],['Dockerfile',dockerOpenh264Stage]]) {
+  fail(stage.includes('git clone -b v2.6.0'),'accepted OpenH264 ref drift in '+name);
+  fail(/meson (setup|build)/.test(stage),'accepted OpenH264 Meson path drift in '+name);
+  fail(!/\bmake\b/.test(stage),'accepted OpenH264 stage unexpectedly invokes Makefile fetch-capable path in '+name);
+}
+
+const xkbcommonReachability=recursiveReachability.xkbcommon;
+fail(xkbcommonReachability?.commit==='d2a08f761c796733e42fac4099f5c38d443e88e1','xkbcommon authority drift');
+fail(xkbcommonReachability.root_candidate_policy_status==='complete-for-current-xkbcommon-authority','xkbcommon policy not fail-closed complete');
+const dockerXkbcommonStage=dockerStage(dockerQt,'xkbcommon');
+fail(dockerXkbcommonStage.includes('git clone -b xkbcommon-1.6.0 --depth=1'),'accepted xkbcommon ref drift');
+for (const option of ['enable-docs=false','enable-wayland=false','enable-xkbregistry=false']) fail(dockerXkbcommonStage.includes(option),'accepted xkbcommon option drift: '+option);
+fail(!dockerXkbcommonStage.includes('scripts/makekeys'),'accepted xkbcommon build unexpectedly regenerates key tables');
+
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
 fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');
