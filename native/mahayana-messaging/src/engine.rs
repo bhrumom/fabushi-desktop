@@ -159,6 +159,38 @@ pub enum Command {
         reply_to_message_id: Option<MessageId>,
         updated_at_ms: i64,
     },
+    ReplaceConversationChildWindow {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_ids: Vec<MessageId>,
+        skipped_before: Option<u32>,
+        skipped_after: Option<u32>,
+        full_count: Option<u32>,
+    },
+    SetConversationChildPinned {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        pinned: bool,
+    },
+    SetConversationChildActive {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        active: bool,
+    },
+    SetConversationChildMarkedUnread {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        marked_unread: bool,
+    },
+    SetConversationChildNoPaidMessages {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        no_paid_messages: bool,
+    },
+    DestroyConversationChild {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+    },
     SetReaction {
         conversation_id: ConversationId,
         message_id: MessageId,
@@ -424,6 +456,38 @@ pub enum Event {
         text: String,
         reply_to_message_id: Option<String>,
         updated_at_ms: i64,
+    },
+    ConversationChildWindowReplaced {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_ids: Vec<String>,
+        skipped_before: Option<u32>,
+        skipped_after: Option<u32>,
+        full_count: Option<u32>,
+    },
+    ConversationChildPinnedChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        pinned: bool,
+    },
+    ConversationChildActiveChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        active: bool,
+    },
+    ConversationChildMarkedUnreadChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        marked_unread: bool,
+    },
+    ConversationChildNoPaidMessagesChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        no_paid_messages: bool,
+    },
+    ConversationChildDestroyed {
+        destination: ConversationDestination,
+        actor_id: ActorId,
     },
     ReactionUpdated {
         conversation_id: ConversationId,
@@ -1908,6 +1972,159 @@ impl MessagingEngine {
                     updated_at_ms,
                 }])
             }
+            Command::ReplaceConversationChildWindow {
+                destination,
+                actor_id,
+                message_ids,
+                skipped_before,
+                skipped_after,
+                full_count,
+            } => {
+                self.decide(Command::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    actor_id: actor_id.clone(),
+                    text: String::new(),
+                    reply_to_message_id: None,
+                    updated_at_ms: 0,
+                })?;
+                for message_id in &message_ids {
+                    self.decide(Command::MarkConversationChildRead {
+                        destination: destination.clone(),
+                        actor_id: actor_id.clone(),
+                        message_id: message_id.clone(),
+                    })?;
+                }
+                let message_ids = message_ids
+                    .into_iter()
+                    .map(|message_id| message_id.0)
+                    .collect::<Vec<_>>();
+                let mut pagination = crate::conversation::ConversationChildPaginationState::default();
+                if !pagination.replace_window(
+                    message_ids.clone(),
+                    skipped_before,
+                    skipped_after,
+                    full_count,
+                ) {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                Ok(vec![Event::ConversationChildWindowReplaced {
+                    destination,
+                    actor_id,
+                    message_ids,
+                    skipped_before,
+                    skipped_after,
+                    full_count,
+                }])
+            }
+            Command::SetConversationChildPinned {
+                destination,
+                actor_id,
+                pinned,
+            } => {
+                self.decide(Command::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    actor_id: actor_id.clone(),
+                    text: String::new(),
+                    reply_to_message_id: None,
+                    updated_at_ms: 0,
+                })?;
+                Ok(vec![Event::ConversationChildPinnedChanged {
+                    destination,
+                    actor_id,
+                    pinned,
+                }])
+            }
+            Command::SetConversationChildActive {
+                destination,
+                actor_id,
+                active,
+            } => {
+                self.decide(Command::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    actor_id: actor_id.clone(),
+                    text: String::new(),
+                    reply_to_message_id: None,
+                    updated_at_ms: 0,
+                })?;
+                Ok(vec![Event::ConversationChildActiveChanged {
+                    destination,
+                    actor_id,
+                    active,
+                }])
+            }
+            Command::SetConversationChildMarkedUnread {
+                destination,
+                actor_id,
+                marked_unread,
+            } => {
+                self.decide(Command::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    actor_id: actor_id.clone(),
+                    text: String::new(),
+                    reply_to_message_id: None,
+                    updated_at_ms: 0,
+                })?;
+                let conversation = self.require_conversation(&destination.conversation_id)?;
+                let currently_unread = self
+                    .state
+                    .conversation_child_states
+                    .iter()
+                    .find(|state| state.destination == destination && state.actor_id == actor_id)
+                    .is_some_and(|state| state.marked_unread || state.unread_count.unwrap_or(0) > 0);
+                let context = crate::conversation::ConversationChildUnreadContext {
+                    parent_is_self: conversation.owner_id.as_ref() == Some(&actor_id),
+                    parent_is_community: self.state.communities.contains_key(&destination.conversation_id),
+                    actor_is_monoforum_admin: false,
+                };
+                if !destination.can_toggle_unread(currently_unread, context) {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                Ok(vec![Event::ConversationChildMarkedUnreadChanged {
+                    destination,
+                    actor_id,
+                    marked_unread,
+                }])
+            }
+            Command::SetConversationChildNoPaidMessages {
+                destination,
+                actor_id,
+                no_paid_messages,
+            } => {
+                self.decide(Command::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    actor_id: actor_id.clone(),
+                    text: String::new(),
+                    reply_to_message_id: None,
+                    updated_at_ms: 0,
+                })?;
+                if !matches!(
+                    destination.child,
+                    Some(ConversationChildIdentity::SavedSublist { .. })
+                ) {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                Ok(vec![Event::ConversationChildNoPaidMessagesChanged {
+                    destination,
+                    actor_id,
+                    no_paid_messages,
+                }])
+            }
+            Command::DestroyConversationChild {
+                destination,
+                actor_id,
+            } => {
+                self.decide(Command::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    actor_id: actor_id.clone(),
+                    text: String::new(),
+                    reply_to_message_id: None,
+                    updated_at_ms: 0,
+                })?;
+                Ok(vec![Event::ConversationChildDestroyed {
+                    destination,
+                    actor_id,
+                }])
+            }
             Command::SetReaction {
                 conversation_id,
                 message_id,
@@ -3292,6 +3509,86 @@ impl MessagingEngine {
                         child.set_draft(text, reply_to_message_id, updated_at_ms);
                     }
                 }
+            }
+            Event::ConversationChildWindowReplaced {
+                destination,
+                actor_id,
+                message_ids,
+                skipped_before,
+                skipped_after,
+                full_count,
+            } => {
+                if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                    let empty = message_ids.is_empty();
+                    if child.pagination.replace_window(
+                        message_ids,
+                        skipped_before,
+                        skipped_after,
+                        full_count,
+                    ) {
+                        if empty {
+                            child.note_locally_empty();
+                        } else {
+                            child.note_non_empty();
+                        }
+                    }
+                }
+            }
+            Event::ConversationChildPinnedChanged {
+                destination,
+                actor_id,
+                pinned,
+            } => {
+                if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                    child.pinned = pinned;
+                    if pinned {
+                        child.restore_pinned_when_non_empty = false;
+                    }
+                }
+            }
+            Event::ConversationChildActiveChanged {
+                destination,
+                actor_id,
+                active,
+            } => {
+                if active {
+                    for child in &mut self.state.conversation_child_states {
+                        if child.actor_id == actor_id
+                            && child.destination.conversation_id == destination.conversation_id
+                        {
+                            child.active = false;
+                        }
+                    }
+                }
+                if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                    child.set_active(active);
+                }
+            }
+            Event::ConversationChildMarkedUnreadChanged {
+                destination,
+                actor_id,
+                marked_unread,
+            } => {
+                if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                    child.marked_unread = marked_unread;
+                }
+            }
+            Event::ConversationChildNoPaidMessagesChanged {
+                destination,
+                actor_id,
+                no_paid_messages,
+            } => {
+                if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                    child.no_paid_messages = no_paid_messages;
+                }
+            }
+            Event::ConversationChildDestroyed {
+                destination,
+                actor_id,
+            } => {
+                self.state.conversation_child_states.retain(|child| {
+                    child.destination != destination || child.actor_id != actor_id
+                });
             }
             Event::ReactionUpdated {
                 conversation_id,
