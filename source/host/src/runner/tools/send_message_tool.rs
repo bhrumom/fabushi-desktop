@@ -111,10 +111,6 @@ impl SendMessageDeliveryCounter {
     fn record_success(&self) {
         self.sent_message_count.fetch_add(1, Ordering::SeqCst);
     }
-
-    pub fn record_host_delivery(&self) {
-        self.sent_message_count.fetch_add(1, Ordering::SeqCst);
-    }
 }
 
 pub struct CountingSendMessageSink {
