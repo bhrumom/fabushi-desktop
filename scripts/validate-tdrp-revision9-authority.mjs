@@ -8,12 +8,32 @@ const fail = (ok, msg) => { if (!ok) throw new Error(msg); };
 const read = p => fs.readFile(path.join(root,p),'utf8');
 const readJson = async p => JSON.parse(await read(p));
 
-async function get(url, json=true) {
+const getCache = new Map();
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+async function getUncached(url, json=true) {
   const headers={'User-Agent':'fabushi-tdrp-r9-gate','Accept':'application/vnd.github+json'};
   if (process.env.GITHUB_TOKEN && url.startsWith('https://api.github.com/')) headers.Authorization='Bearer '+process.env.GITHUB_TOKEN;
-  const r=await fetch(url,{headers});
-  fail(r.ok,`GET ${url} -> ${r.status}`);
-  return json ? r.json() : r.text();
+  for (let attempt=0; attempt<4; attempt++) {
+    const r=await fetch(url,{headers});
+    if (r.ok) return json ? r.json() : r.text();
+    const retryable = r.status===403 || r.status===429 || r.status>=500;
+    if (!retryable || attempt===3) {
+      const detail=(await r.text()).slice(0,500);
+      throw new Error(`GET ${url} -> ${r.status}${detail ? `: ${detail}` : ''}`);
+    }
+    const retryAfter=Number(r.headers.get('retry-after'));
+    const delay=Number.isFinite(retryAfter) && retryAfter>0
+      ? Math.min(retryAfter*1000, 30000)
+      : 1000*(2**attempt);
+    await sleep(delay);
+  }
+  throw new Error(`GET ${url} exhausted retries`);
+}
+function get(url, json=true) {
+  const key=(json ? 'json:' : 'text:')+url;
+  if (!getCache.has(key)) getCache.set(key,getUncached(url,json));
+  return getCache.get(key);
 }
 const ghTree=(repo,sha)=>get(`https://api.github.com/repos/${repo}/git/trees/${sha}?recursive=1`);
 function parseGitmodules(raw) {
