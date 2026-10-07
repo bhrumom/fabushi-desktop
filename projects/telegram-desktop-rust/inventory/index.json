@@ -14,7 +14,7 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15788,
-    "unread_minimum": 15765,
+    "unread_minimum": 15764,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -41,5 +41,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Rebased to telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b. Root cardinality remains 6,355 non-directory entries; the changed lib_webview pin remains 32 non-directory entries, so recursive total remains 15,788. Twenty-three previously read source entries are blob-identical on the new baseline, so unread_minimum remains 15,765. Prior recursive evidence is historical-only until current-head GitHub Actions revalidates the new baseline."
+  "note": "Rebased to telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b. Root cardinality remains 6,355 non-directory entries; the changed lib_webview pin remains 32 non-directory entries, so recursive total remains 15,788. Twenty-four source entries are now read-complete on the accepted baseline; the newly added entry is Telegram/SourceFiles/media/stories/media_stories_share.cpp@cac84bc4f383fdc260e046ead9ee1fa96738a2f8. unread_minimum is therefore 15,764. Prior recursive evidence is historical-only until current-head GitHub Actions revalidates the new baseline. Prior recursive evidence is historical-only until current-head GitHub Actions revalidates the new baseline."
 }
