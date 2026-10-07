@@ -16,7 +16,7 @@ Acceptance status: **not complete; requirements only updated by this revision**
 
 ### TDRP-SRC-01 — Exact baseline
 
-本 Revision 当前读取并接受的 tdesktop `dev` discovery HEAD 为 `d346b42a1d30ef60dc989b6e5191bb8e571f6bd5`；`f23c37857220eb84f8559f0901ea26fb304b564b` 与更早 `33261535a0e747f125e0ed25486f01e556330677` 均为历史 baseline。accepted identity 不等于 source completeness：递归 source/build authority、逐文件语义读取和责任闭合未完成前，baseline_ready/acceptance.accepted 仍为 false。
+本 Revision 当前读取并接受的 tdesktop `dev` discovery HEAD 为 `d346b42a1d30ef60dc989b6e5191bb8e571f6bd5`（root tree `5db05afa460bb030ac36316beb6496df03742c59`）；`f23c37857220eb84f8559f0901ea26fb304b564b` 与更早 `33261535a0e747f125e0ed25486f01e556330677` 均为历史 baseline。accepted identity 不等于 source completeness：递归 source/build authority、逐文件语义读取和责任闭合未完成前，baseline_ready/acceptance.accepted 仍为 false。
 
 下一执行在 GitHub Actions 内重新确认上游 HEAD，并统一更新现有 `projects/telegram-desktop-rust/upstream.lock.json`、inventory、ledger 和 dossiers；记录旧→新差异。每项 evidence 同时绑定 upstream 与 Fabushi target SHA。不得只改文档中的 SHA 就宣称 rebaseline 完成。
 
