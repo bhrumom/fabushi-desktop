@@ -37,11 +37,17 @@ Current Fabushi already has suitable canonical owners:
 
 No new Schedule/Telegram owner is justified.
 
-Current gap:
-- the canonical message contract currently carries only `scheduled_at_ms: Option<i64>`; it does not yet represent a typed presence-triggered schedule without a magic timestamp;
-- presence/LastSeen privacy is not yet wired into a durable "when recipient becomes online" trigger lifecycle;
-- persistence, restart recovery, multi-device settlement, cancellation/reschedule, and server-side presence-trigger execution therefore remain open;
-- UI eligibility, keyboard/accessibility, reminder semantics, repeat policy, and exact-head E2E evidence remain open.
+Current implementation status:
+- the canonical native messaging model now has a source-neutral typed `PresenceSendTrigger::WhenParticipantOnline` and `PendingPresenceSend`; Telegram's magic timestamp sentinel is not copied;
+- pending presence sends live inside the existing serialized `MessagingState`, are exposed in actor-scoped sync, survive `MessagingService::load()`, and are keyed by the canonical `ClientMessageId`;
+- `MessagingService` releases matching pending sends only on a non-online -> Online presence transition, reuses the canonical QueueMessage/AcknowledgeMessage path, removes the pending trigger only after successful queue/ack, and stable message identity makes duplicate Online events / client replays idempotent;
+- target eligibility is fail-closed to a distinct Human participant in a canonical Direct Conversation and reuses the current QueueMessage policy before the trigger is accepted;
+- focused Rust contract coverage now exercises durable pending state, sync visibility, restart recovery, Offline->Online release, duplicate Online idempotency, and post-release client replay.
+
+Still open:
+- shipping composer/menu eligibility is not yet wired, including last-seen visibility, notifications-service exclusion and any Stars requirement;
+- reminder mode, repeat policy, cancellation/reschedule, explicit terminal failure settlement when policy changes while pending, and multi-device UI settlement remain open;
+- exact-head GitHub Actions evidence is pending, so this responsibility is implemented only at the native-domain slice and is not verified.
 
 The correct direction is to extend the existing canonical message schedule policy with a typed trigger and reuse Presence/Privacy/Conversation owners, not to copy Telegram's sentinel or create a ShareBox scheduler.
 
