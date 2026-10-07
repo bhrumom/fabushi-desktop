@@ -95,6 +95,12 @@ jobs:
           if (discovered.length - classified.size !== inventory.discovery.candidate_lines_pending_classification) throw new Error('pending acquisition count disagrees with live discovery');
           NODE
 
+      - name: Discover external recursive child authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-external-child-authority.mjs
+
       - name: Upload source-authority evidence
         uses: actions/upload-artifact@v4
         with:
