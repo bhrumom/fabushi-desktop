@@ -3,7 +3,8 @@ use crate::blob_store::{BlobStoreError, FileBlobStore};
 use crate::bot::BotInvocation;
 use crate::community::{CommunityState, MemberStatus};
 use crate::conversation::{
-    Conversation, ConversationDraft, ConversationId, ConversationKind, Topic, TopicDraft,
+    Conversation, ConversationDestination, ConversationDraft, ConversationId, ConversationKind,
+    Topic, TopicDraft,
 };
 use crate::engine::topic_id_from_root;
 use crate::engine::{Command, EngineError, Event, MessagingEngine};
@@ -980,6 +981,30 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     return Err(denied("conversation state update requires membership"));
                 }
             }
+            ClientCommand::MarkConversationChildRead { destination, .. }
+            | ClientCommand::SetConversationChildDraft { destination, .. } => {
+                let conversation_id = &destination.conversation_id;
+                let existing = self
+                    .engine
+                    .state()
+                    .conversations
+                    .get(conversation_id)
+                    .ok_or_else(|| denied("conversation child target does not exist"))?;
+                let caller_is_member = existing
+                    .participants
+                    .iter()
+                    .any(|participant| &participant.actor_id == actor_id)
+                    || existing.owner_id.as_ref() == Some(actor_id)
+                    || self
+                        .engine
+                        .state()
+                        .communities
+                        .get(conversation_id)
+                        .is_some_and(|community| community.is_subscriber(actor_id));
+                if !caller_is_member {
+                    return Err(denied("conversation child state update requires membership"));
+                }
+            }
             ClientCommand::MarkTopicRead {
                 conversation_id, ..
             }
@@ -1433,11 +1458,23 @@ impl<S: MessagingStateStore> MessagingService<S> {
         server_time_ms: i64,
     ) -> u32 {
         let state = self.engine.state();
-        let cursor = state
+        let destination = ConversationDestination::topic(
+            conversation_id.clone(),
+            format!("topic:{topic_id}"),
+        );
+        let typed_cursor = state
+            .conversation_child_states
+            .iter()
+            .find(|child| child.destination == destination && &child.actor_id == actor_id)
+            .and_then(|child| child.inbox_read_till.as_ref())
+            .map(|position| position.message_id.as_str());
+        let legacy_cursor = state
             .topic_read_cursors
             .get(conversation_id)
             .and_then(|by_actor| by_actor.get(actor_id))
-            .and_then(|by_topic| by_topic.get(topic_id));
+            .and_then(|by_topic| by_topic.get(topic_id))
+            .map(|message_id| message_id.0.as_str());
+        let cursor_message_id = typed_cursor.or(legacy_cursor);
         let mut messages = state
             .messages
             .get(conversation_id)
@@ -1449,10 +1486,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 .cmp(&right.created_at_ms)
                 .then_with(|| left.id.cmp(&right.id))
         });
-        let read_index = cursor.and_then(|message_id| {
+        let read_index = cursor_message_id.and_then(|message_id| {
             messages
                 .iter()
-                .position(|message| &message.id == message_id)
+                .position(|message| message.id.0 == message_id)
         });
         let unread = messages
             .iter()
@@ -2016,6 +2053,14 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 actor_id: actor_id.clone(),
                 message_id,
             }],
+            ClientCommand::MarkConversationChildRead {
+                destination,
+                message_id,
+            } => vec![Command::MarkConversationChildRead {
+                destination,
+                actor_id: actor_id.clone(),
+                message_id,
+            }],
             ClientCommand::SetTopicDraft {
                 conversation_id,
                 topic_id,
@@ -2030,6 +2075,17 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     reply_to_message_id: reply_to_message_id.map(|id| id.0),
                     updated_at_ms: now_ms,
                 },
+            }],
+            ClientCommand::SetConversationChildDraft {
+                destination,
+                text,
+                reply_to_message_id,
+            } => vec![Command::SetConversationChildDraft {
+                destination,
+                actor_id: actor_id.clone(),
+                text,
+                reply_to_message_id,
+                updated_at_ms: now_ms,
             }],
             ClientCommand::SetReaction {
                 conversation_id,
@@ -2411,6 +2467,8 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 message_id,
             },
             Event::TopicDraftChanged { draft } => ServerEvent::TopicDraftChanged { draft },
+            Event::ConversationChildReadChanged { .. }
+            | Event::ConversationChildDraftChanged { .. } => return None,
             Event::InvoiceCreated { invoice } => ServerEvent::InvoiceChanged { invoice },
             Event::OrderUpserted { order } => ServerEvent::OrderChanged { order },
             Event::WalletChanged { .. } => return None,

@@ -5,8 +5,8 @@ use crate::community::{
     CommunityAuditEntry, CommunityMember, CommunityState, ForumTopicState, InviteLink, JoinRequest,
 };
 use crate::conversation::{
-    Conversation, ConversationDraft, ConversationFolder, ConversationId, NotificationSettings,
-    TopicDraft,
+    Conversation, ConversationDestination, ConversationDraft, ConversationFolder, ConversationId,
+    NotificationSettings, TopicDraft,
 };
 use crate::message::{
     ClientMessageId, ForwardPrivacy, Message, MessageContent, MessageId, PendingPresenceSend,
@@ -189,9 +189,18 @@ pub enum ClientCommand {
         topic_id: String,
         message_id: MessageId,
     },
+    MarkConversationChildRead {
+        destination: ConversationDestination,
+        message_id: MessageId,
+    },
     SetTopicDraft {
         conversation_id: ConversationId,
         topic_id: String,
+        text: String,
+        reply_to_message_id: Option<MessageId>,
+    },
+    SetConversationChildDraft {
+        destination: ConversationDestination,
         text: String,
         reply_to_message_id: Option<MessageId>,
     },
