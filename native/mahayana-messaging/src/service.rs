@@ -1547,6 +1547,8 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 message_id,
                 destination_conversation_id,
                 client_message_id,
+                scheduled_at_ms,
+                silent,
             } => vec![Command::ForwardMessage {
                 source_conversation_id,
                 message_id,
@@ -1555,6 +1557,8 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 client_message_id,
                 sender_id: actor_id.clone(),
                 created_at_ms: now_ms,
+                scheduled_at_ms,
+                silent,
             }],
             ClientCommand::EditMessage {
                 conversation_id,

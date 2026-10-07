@@ -99,6 +99,8 @@ pub enum Command {
         client_message_id: ClientMessageId,
         sender_id: ActorId,
         created_at_ms: i64,
+        scheduled_at_ms: Option<i64>,
+        silent: bool,
     },
     AcknowledgeMessage {
         conversation_id: ConversationId,
@@ -1159,6 +1161,8 @@ impl MessagingEngine {
                 client_message_id,
                 sender_id,
                 created_at_ms,
+                scheduled_at_ms,
+                silent,
             } => {
                 self.require_conversation(&destination_conversation_id)?;
                 self.require_actor(&sender_id)?;
@@ -1205,8 +1209,8 @@ impl MessagingEngine {
                     delivery_state: DeliveryState::Pending { client_message_id },
                     created_at_ms,
                     edited_at_ms: None,
-                    scheduled_at_ms: None,
-                    silent: false,
+                    scheduled_at_ms,
+                    silent,
                     protected_content: original.protected_content,
                     pinned: false,
                     deleted: false,

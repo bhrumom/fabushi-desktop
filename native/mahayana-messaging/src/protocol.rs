@@ -129,6 +129,10 @@ pub enum ClientCommand {
         message_id: MessageId,
         destination_conversation_id: ConversationId,
         client_message_id: ClientMessageId,
+        #[serde(default)]
+        scheduled_at_ms: Option<i64>,
+        #[serde(default)]
+        silent: bool,
     },
     BeginBlobUpload {
         metadata: BlobMetadata,
