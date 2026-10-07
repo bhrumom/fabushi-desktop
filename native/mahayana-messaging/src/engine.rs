@@ -1588,6 +1588,7 @@ impl MessagingEngine {
                     content,
                     reply_to_message_id: None,
                     thread_root_message_id,
+                    conversation_child: None,
                     forward_origin,
                     reply_markup: original.reply_markup,
                     reactions: Vec::new(),
