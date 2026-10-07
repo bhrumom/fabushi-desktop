@@ -279,6 +279,31 @@ fail(prepareOpenalStage.includes('git checkout coreaudio_device_uid'),'accepted 
 fail(dockerOpenalStage.includes('git clone -b 1.25.2 --depth=1'),'accepted Docker OpenAL ref drift');
 fail(snapOpenalStage.includes('source-tag: 1.24.3'),'accepted Snap OpenAL ref drift');
 
+const ffmpegReachability=recursiveReachability.ffmpeg;
+fail(ffmpegReachability?.repository==='https://github.com/FFmpeg/FFmpeg','FFmpeg reachability authority missing');
+fail(ffmpegReachability.root_candidate_policy_status==='complete-for-current-ffmpeg-authorities','FFmpeg root candidate policy is not fail-closed complete');
+const expectedFfmpegCommits=new Set(['1041abdc962f4cc4f394aa8de9dc5236c0c3b9e7','f1e3a2bf7a2f2cde936d1ed97f09a26853d20125']);
+for (const authority of ffmpegReachability.observed_authorities||[]) expectedFfmpegCommits.delete(authority.commit);
+fail(expectedFfmpegCommits.size===0,'FFmpeg observed authority set drift');
+const ffmpegPolicy=ffmpegReachability.root_candidate_disposition_policy||[];
+for (const [kind,value] of [
+  ['path_prefix','.forgejo/'],['path_prefix','doc/'],['path_prefix','tests/'],['path_prefix','tools/'],
+  ['path_prefix','libavcodec/'],['path_prefix','libavfilter/'],['path_prefix','libavformat/'],
+  ['path_exact','Changelog'],['path_exact','RELEASE_NOTES']
+]) fail(ffmpegPolicy.some(rule=>rule[kind]===value),'FFmpeg acquisition disposition missing: '+value);
+const prepareFfmpegStage=prepareQt.match(/stage\('ffmpeg',[\s\S]*?\n"""\)/)?.[0]||'';
+const dockerFfmpegStage=dockerQt.match(/FROM builder AS ffmpeg[\s\S]*?rm -rf FFmpeg/)?.[0]||'';
+const snapFfmpegStage=snapQt.match(/\n  ffmpeg:\n[\s\S]*?\n  [a-z0-9_-]+:/)?.[0]||'';
+for (const [name,stage] of [['prepare.py',prepareFfmpegStage],['Dockerfile',dockerFfmpegStage],['snapcraft.yaml',snapFfmpegStage]]) {
+  fail(stage.includes('--disable-programs'),'accepted FFmpeg build lost --disable-programs in '+name);
+  fail(stage.includes('--disable-doc'),'accepted FFmpeg build lost --disable-doc in '+name);
+  fail(stage.includes('--disable-network'),'accepted FFmpeg build lost --disable-network in '+name);
+  fail(stage.includes('--disable-everything'),'accepted FFmpeg build lost --disable-everything in '+name);
+}
+fail(prepareFfmpegStage.includes('git clone -b n8.1.3'),'accepted prepare.py FFmpeg ref drift');
+fail(dockerFfmpegStage.includes('git clone -b n8.1.3 --depth=1'),'accepted Docker FFmpeg ref drift');
+fail(snapFfmpegStage.includes('source-branch: n6.1.6'),'accepted Snap FFmpeg ref drift');
+
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
 fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');
