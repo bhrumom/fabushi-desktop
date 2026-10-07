@@ -259,9 +259,9 @@
     "root_source_entries_total": 6355,
     "recursive_source_entries_total": 15788,
     "unknown_minimum": 15788,
-    "unread_minimum": 15748,
+    "unread_minimum": 15746,
     "omitted_known": 0,
-    "note": "Revision 9 live authority is telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. The immediate historical baseline e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39 is provenance only. The six Story slider/view/stealth reads retain identical blob identities at d346 and are provenance-rebound, not re-read. All seven IV/Markdown source entries changed by the d346 delta were read completely at d346 and are mapped-open; the changed lib_ui child receives no inherited semantic-read credit. Recursive/root/build-time counts remain provisional until current-head source-authority workflow evidence is terminal-success. Source semantic closure remains open; unknown is 15,788, unread_minimum is 15,748 and omitted is 0."
+    "note": "Revision 9 live authority is telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. The immediate historical baseline e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39 is provenance only. The six Story slider/view/stealth reads retain identical blob identities at d346 and are provenance-rebound, not re-read. All seven IV/Markdown source entries changed by the d346 delta were read completely at d346 and are mapped-open; the changed lib_ui child receives no inherited semantic-read credit. Telegram/SourceFiles/data/data_saved_messages.h@82b9aed5cb2e1250fc0f4c5c2013bd58c689a344 and data_saved_messages.cpp@2be216670b644eb012e7a241af78b3adda639619 are now complete-read and mapped-open in saved-messages-complete-read.md; this grants read accounting only, not production/verification credit. Recursive/root/build-time counts remain provisional until current-head source-authority workflow evidence is terminal-success. Source semantic closure remains open; unknown is 15,788, unread_minimum is 15,746 and omitted is 0."
   },
   "acceptance": {
     "baseline_ready": false,
