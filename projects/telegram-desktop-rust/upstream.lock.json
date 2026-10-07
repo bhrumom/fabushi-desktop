@@ -253,9 +253,9 @@
     "root_source_entries_total": 6355,
     "recursive_source_entries_total": 15788,
     "unknown_minimum": 15788,
-    "unread_minimum": 15788,
+    "unread_minimum": 15786,
     "omitted_known": 0,
-    "note": "Revision 9 recursive non-directory count verified by GitHub Actions run 37596744991 at cc318d81532c44f8710681039cc1dba3dafe72cc. Semantic responsibility reading has not been bulk-credited."
+    "note": "Revision 9 recursive non-directory count is 15,788. Two exact upstream entries (Telegram/SourceFiles/boxes/share_box.cpp and share_box.h) have now been read end-to-end and recorded in projects/telegram-desktop-rust/dossiers/share-box-complete-read.md. Unknown remains 15,788 because their responsibility-to-production mappings are not yet fully closed; omitted remains 0."
   },
   "acceptance": {
     "baseline_ready": false,
