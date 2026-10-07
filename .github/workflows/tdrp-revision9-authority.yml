@@ -36,7 +36,7 @@ jobs:
           const lock = require('./projects/telegram-desktop-rust/upstream.lock.json');
           if (lock.upstream.accepted === true) {
             const evidence = lock.baseline_identity_evidence;
-            if (evidence == null || !Number.isInteger(evidence.run_id) || typeof evidence.head_sha !== 'string' || typeof evidence.artifact_digest !== 'string') {
+            if (evidence == null || !Number.isInteger(evidence.run_id) || typeof evidence.validation_head_sha !== 'string' || typeof evidence.artifact_digest !== 'string') {
               throw new Error('accepted baseline identity requires explicit GitHub Actions provenance');
             }
           }
