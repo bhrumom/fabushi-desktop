@@ -1187,6 +1187,26 @@
         ".github/workflows/release-macos-main.yml"
       ],
       "rationale": "Preserves the frozen Grok Agent Network interaction model while adapting only its layout lifecycle to the canonical Fabushi workspace. When explicit dimensions are absent, the Agent Network region fills its current workspace, ResizeObserver owns live rendered geometry, layout/pan/zoom all consume that measured geometry, and the non-passive wheel listener is rebound when live layout dimensions change. This removes the recovered fixed 760x500 behavior and the stale-listener dependency bug without creating a second shell, state owner, or Agent runtime. Existing region/button accessibility semantics remain intact; the exact-head recovered-foundations contract locks measurement/listener dependencies, while the real Electron parity journey proves parent-fill geometry, aria-pressed state, wheel zoom behavior, and captures responsive Agent Network screenshot evidence. The release workflow now treats this evidence-locked architecture adaptation as a packaging-affecting input, so the same exact HEAD must re-pass the strict architecture gate before signed/notarized packaged acceptance can exist."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/conversation-workspace-controller.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "6cb9cf97bccd174d0c38b28998116c0f0f51467e",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/conversation-workspace-controller.ts",
+        "frontend/src/recovered/features/conversation/workspace/child-selection.ts",
+        "frontend/src/recovered/features/conversation/workspace/child-pagination.ts",
+        "frontend/src/recovered/features/conversation/workspace/child-history-composition.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/child-selection.contract.test.ts",
+        "frontend/src/recovered/features/conversation/workspace/child-pagination.contract.test.ts",
+        "frontend/src/recovered/features/conversation/workspace/conversation-workspace-controller.child.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the recovered Grok ConversationWorkspaceController as the single shipping workspace owner while adding one source-neutral typed child-history capability. Topic, SavedSublist and nested-conversation destinations reuse canonical Conversation identity; legacy topic ids require an explicit resolver to canonical root-message identity and fail closed when unresolved. Child selection drives the existing child pagination request lifecycle, workspace account/Agent scope changes clear child state, exact child destruction clears selection without implicit parent fallback, and omitting childHistory preserves the existing Agent/Bot path. This is a typed composition extension inside the canonical workspace, not a Telegram-specific shell, message store, search truth, or second Conversation owner."
     }
   ]
 }
