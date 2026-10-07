@@ -1439,3 +1439,129 @@ fn slow_mode_and_moderation_are_enforced_by_the_rust_state_machine() {
         .iter()
         .any(|entry| entry.action == CommunityAuditAction::MemberChanged));
 }
+
+#[test]
+fn child_unread_things_and_incoming_notifications_reconcile_without_reaction_payload_aliasing() {
+    let mut engine = MessagingEngine::new();
+    for actor_id in ["human:owner", "human:admin"] {
+        engine
+            .execute(Command::UpsertActor {
+                actor: Actor::human(actor_id, actor_id),
+            })
+            .unwrap();
+    }
+    engine
+        .execute(Command::UpsertConversation {
+            conversation: channel_conversation(),
+        })
+        .unwrap();
+    engine
+        .execute(Command::UpdateCommunity {
+            actor_id: ActorId::new("human:owner"),
+            community: channel_community(),
+        })
+        .unwrap();
+    engine
+        .execute(Command::UpsertForumTopic {
+            actor_id: ActorId::new("human:owner"),
+            topic: ForumTopicState {
+                id: "study".into(),
+                conversation_id: ConversationId::new("channel:m6"),
+                title: "Study".into(),
+                icon: None,
+                creator_id: ActorId::new("human:owner"),
+                created_at_ms: 12,
+                pinned: false,
+                closed: false,
+                hidden: false,
+                unread_count: 0,
+                last_message_id: None,
+            },
+        })
+        .unwrap();
+
+    let message_id = MessageId::new("message:topic-unread");
+    engine
+        .execute(Command::QueueMessage {
+            conversation_id: ConversationId::new("channel:m6"),
+            local_message_id: message_id.clone(),
+            client_message_id: ClientMessageId("client:topic-unread".into()),
+            sender_id: ActorId::new("human:owner"),
+            content: text_message("topic unread signal"),
+            reply_to_message_id: None,
+            thread_root_message_id: Some(MessageId::new("topic:study")),
+            created_at_ms: 20,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+        })
+        .unwrap();
+
+    let destination = ConversationDestination::topic(
+        ConversationId::new("channel:m6"),
+        "topic:study",
+    );
+    engine
+        .execute(Command::ReconcileConversationChildUnreadThings {
+            destination: destination.clone(),
+            actor_id: ActorId::new("human:owner"),
+            known: true,
+            mention_message_ids: vec![message_id.clone()],
+            reaction_message_ids: vec![message_id.clone()],
+            poll_vote_message_ids: vec![message_id.clone()],
+            pending_incoming_notification_message_ids: vec![
+                message_id.clone(),
+                message_id.clone(),
+            ],
+        })
+        .unwrap();
+
+    let child = engine
+        .state()
+        .conversation_child_states
+        .iter()
+        .find(|state| {
+            state.destination == destination && state.actor_id == ActorId::new("human:owner")
+        })
+        .expect("child runtime");
+    assert!(child.unread_things.known);
+    assert_eq!(child.unread_things.mention_message_ids, vec![message_id.0.clone()]);
+    assert_eq!(child.unread_things.reaction_message_ids, vec![message_id.0.clone()]);
+    assert_eq!(child.unread_things.poll_vote_message_ids, vec![message_id.0.clone()]);
+    assert_eq!(
+        child.pending_incoming_notification_message_ids,
+        vec![message_id.0.clone()],
+    );
+    assert!(
+        engine
+            .state()
+            .messages
+            .get(&ConversationId::new("channel:m6"))
+            .and_then(|messages| messages.get(&message_id))
+            .is_some_and(|message| message.reactions.is_empty()),
+        "child unread reaction ids must not synthesize Message.reactions",
+    );
+
+    engine
+        .execute(Command::MarkConversationChildRead {
+            destination: destination.clone(),
+            actor_id: ActorId::new("human:owner"),
+            message_id: message_id.clone(),
+        })
+        .unwrap();
+
+    let child = engine
+        .state()
+        .conversation_child_states
+        .iter()
+        .find(|state| {
+            state.destination == destination && state.actor_id == ActorId::new("human:owner")
+        })
+        .expect("child runtime after read");
+    assert!(child.pending_incoming_notification_message_ids.is_empty());
+    assert_eq!(
+        child.unread_things.reaction_message_ids,
+        vec![message_id.0],
+        "reading the message notification does not alias or clear unread-reaction truth",
+    );
+}
