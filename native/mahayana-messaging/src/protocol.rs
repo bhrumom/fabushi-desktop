@@ -15,7 +15,7 @@ use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppRequest, MiniAppResponse, MiniAppSession,
 };
 use crate::payment::{CustomerInfo, Invoice, PaymentOrder};
-use crate::search::{SearchQuery, SearchResult};
+use crate::search::{RecipientSearchRequirements, SearchQuery, SearchResult};
 use crate::story::{Story, StoryId};
 use crate::wallet::{LedgerEntry, WalletAccount};
 use serde::{Deserialize, Serialize};
@@ -63,6 +63,11 @@ pub enum ClientCommand {
     },
     Search {
         query: SearchQuery,
+    },
+    SearchRecipients {
+        query: SearchQuery,
+        #[serde(default)]
+        requirements: RecipientSearchRequirements,
     },
     UpsertProfile {
         actor: Actor,
