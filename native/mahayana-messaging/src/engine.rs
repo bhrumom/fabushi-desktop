@@ -5,9 +5,9 @@ use crate::community::{
     CommunityState, ForumTopicState, InviteLink, JoinRequest, MemberStatus,
 };
 use crate::conversation::{
-    Conversation, ConversationChildRuntimeState, ConversationDestination, ConversationDraft,
-    ConversationFolder, ConversationId, ConversationKind, ConversationMessagePosition,
-    NotificationSettings, TopicDraft,
+    Conversation, ConversationChildIdentity, ConversationChildRuntimeState,
+    ConversationDestination, ConversationDraft, ConversationFolder, ConversationId,
+    ConversationKind, ConversationMessagePosition, NotificationSettings, TopicDraft,
 };
 use crate::message::{
     ClientMessageId, DeliveryState, ForwardPrivacy, Message, MessageContent, MessageId,
@@ -144,8 +144,20 @@ pub enum Command {
         actor_id: ActorId,
         message_id: MessageId,
     },
+    MarkConversationChildRead {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_id: MessageId,
+    },
     SetTopicDraft {
         draft: TopicDraft,
+    },
+    SetConversationChildDraft {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        text: String,
+        reply_to_message_id: Option<MessageId>,
+        updated_at_ms: i64,
     },
     SetReaction {
         conversation_id: ConversationId,
@@ -398,8 +410,20 @@ pub enum Event {
         actor_id: ActorId,
         message_id: MessageId,
     },
+    ConversationChildReadChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_id: MessageId,
+    },
     TopicDraftChanged {
         draft: TopicDraft,
+    },
+    ConversationChildDraftChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        text: String,
+        reply_to_message_id: Option<String>,
+        updated_at_ms: i64,
     },
     ReactionUpdated {
         conversation_id: ConversationId,
@@ -600,6 +624,10 @@ pub enum EngineError {
     },
     #[error("message does not belong to forum topic {topic_id:?}")]
     TopicMessageMismatch { topic_id: String },
+    #[error("conversation child destination is invalid")]
+    InvalidConversationChildDestination,
+    #[error("message does not belong to the selected conversation child")]
+    ConversationChildMessageMismatch,
     #[error(transparent)]
     Community(#[from] CommunityError),
     #[error("bot operation permission denied")]
@@ -1641,6 +1669,57 @@ impl MessagingEngine {
                     message_id,
                 }])
             }
+            Command::MarkConversationChildRead {
+                destination,
+                actor_id,
+                message_id,
+            } => {
+                if !destination.is_valid() {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                self.require_actor(&actor_id)?;
+                let conversation_id = destination.conversation_id.clone();
+                let conversation = self.require_conversation(&conversation_id)?;
+                let has_access = self
+                    .state
+                    .communities
+                    .get(&conversation_id)
+                    .map(|community| {
+                        community_has_access(community, &actor_id)
+                            || conversation.owner_id.as_ref() == Some(&actor_id)
+                    })
+                    .unwrap_or_else(|| {
+                        conversation.owner_id.as_ref() == Some(&actor_id)
+                            || conversation
+                                .participants
+                                .iter()
+                                .any(|participant| participant.actor_id == actor_id)
+                    });
+                if !has_access {
+                    return Err(EngineError::CommunityAccessDenied {
+                        conversation_id,
+                        actor_id,
+                    });
+                }
+                let message = self.require_message(&destination.conversation_id, &message_id)?;
+                if let Some(ConversationChildIdentity::Topic { root_message_id }) =
+                    &destination.child
+                {
+                    let belongs = message
+                        .thread_root_message_id
+                        .as_ref()
+                        .is_some_and(|root| root.0 == *root_message_id)
+                        || message.id.0 == *root_message_id;
+                    if !belongs {
+                        return Err(EngineError::ConversationChildMessageMismatch);
+                    }
+                }
+                Ok(vec![Event::ConversationChildReadChanged {
+                    destination,
+                    actor_id,
+                    message_id,
+                }])
+            }
             Command::SetTopicDraft { draft } => {
                 self.require_actor(&draft.actor_id)?;
                 let community = self
@@ -1670,6 +1749,51 @@ impl MessagingEngine {
                     });
                 }
                 Ok(vec![Event::TopicDraftChanged { draft }])
+            }
+            Command::SetConversationChildDraft {
+                destination,
+                actor_id,
+                text,
+                reply_to_message_id,
+                updated_at_ms,
+            } => {
+                if !destination.is_valid() {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                self.require_actor(&actor_id)?;
+                let conversation_id = destination.conversation_id.clone();
+                let conversation = self.require_conversation(&conversation_id)?;
+                let has_access = self
+                    .state
+                    .communities
+                    .get(&conversation_id)
+                    .map(|community| {
+                        community_has_access(community, &actor_id)
+                            || conversation.owner_id.as_ref() == Some(&actor_id)
+                    })
+                    .unwrap_or_else(|| {
+                        conversation.owner_id.as_ref() == Some(&actor_id)
+                            || conversation
+                                .participants
+                                .iter()
+                                .any(|participant| participant.actor_id == actor_id)
+                    });
+                if !has_access {
+                    return Err(EngineError::CommunityAccessDenied {
+                        conversation_id,
+                        actor_id,
+                    });
+                }
+                if let Some(reply_to_message_id) = &reply_to_message_id {
+                    self.require_message(&destination.conversation_id, reply_to_message_id)?;
+                }
+                Ok(vec![Event::ConversationChildDraftChanged {
+                    destination,
+                    actor_id,
+                    text,
+                    reply_to_message_id: reply_to_message_id.map(|id| id.0),
+                    updated_at_ms,
+                }])
             }
             Command::SetReaction {
                 conversation_id,
@@ -2977,6 +3101,28 @@ impl MessagingEngine {
                     .or_default()
                     .insert(topic_id, message_id);
             }
+            Event::ConversationChildReadChanged {
+                destination,
+                actor_id,
+                message_id,
+            } => {
+                let position = self
+                    .state
+                    .messages
+                    .get(&destination.conversation_id)
+                    .and_then(|messages| messages.get(&message_id))
+                    .map(|message| {
+                        ConversationMessagePosition::new(
+                            message.created_at_ms,
+                            message.id.0.clone(),
+                        )
+                    });
+                if let Some(position) = position {
+                    if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                        let _ = child.advance_inbox_read_till(position, None);
+                    }
+                }
+            }
             Event::TopicDraftChanged { draft } => {
                 let destination = ConversationDestination::topic(
                     draft.conversation_id.clone(),
@@ -3017,6 +3163,21 @@ impl MessagingEngine {
                         .entry(draft.actor_id.clone())
                         .or_default()
                         .insert(draft.topic_id.clone(), draft);
+                }
+            }
+            Event::ConversationChildDraftChanged {
+                destination,
+                actor_id,
+                text,
+                reply_to_message_id,
+                updated_at_ms,
+            } => {
+                if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                    if text.trim().is_empty() && reply_to_message_id.is_none() {
+                        child.clear_draft();
+                    } else {
+                        child.set_draft(text, reply_to_message_id, updated_at_ms);
+                    }
                 }
             }
             Event::ReactionUpdated {
