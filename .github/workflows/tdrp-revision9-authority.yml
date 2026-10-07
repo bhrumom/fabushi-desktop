@@ -399,6 +399,65 @@ jobs:
           retention-days: 90
           compression-level: 0
 
+
+  recursive-fixed-point-authority-gate:
+    name: Recursive authority fixed-point gate
+    needs: recursive-next-authority-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      SCANNED_REPORT_DIRS: artifacts/tdrp-layer-root:artifacts/tdrp-layer-child:artifacts/tdrp-layer-next
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download root recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-root
+      - name: Download child recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-child
+      - name: Download third-layer recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-next-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-next
+      - name: Recursively scan until immutable gitlink authority fixed point
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-fixed-point.mjs
+      - name: Assert fixed point does not imply disposition closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('artifacts/tdrp-recursive-closure/recursive-closure-aggregate.json', 'utf8'));
+          if (report.gitlink_fixed_point_status !== 'closed') throw new Error('gitlink fixed point is not closed');
+          if (report.unresolved_gitlink_authorities !== 0) throw new Error('unresolved gitlink authorities remain');
+          if (report.source_closure_ready !== false) throw new Error('gitlink closure must not fabricate full source closure');
+          if (report.recursive_disposition_status !== 'open') throw new Error('recursive input disposition must remain open');
+          NODE
+      - name: Upload recursive fixed-point evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-closure-${{ github.sha }}
+          path: artifacts/tdrp-recursive-closure
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
   root-source-archive-accounting:
     name: Root source archive accounting
     runs-on: ubuntu-24.04
