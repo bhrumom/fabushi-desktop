@@ -121,6 +121,27 @@ impl<S: MessagingStateStore> MessagingService<S> {
         self.cursor
     }
 
+    /// Install or revoke the server/native-authoritative account relation that
+    /// permits SavedSublist children under a non-self parent Conversation.
+    /// This intentionally has no client protocol command.
+    pub fn reconcile_saved_sublist_parent_access(
+        &mut self,
+        conversation_id: ConversationId,
+        actor_id: ActorId,
+        allowed: bool,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        let events = self.engine.execute(Command::ReconcileSavedSublistParentAccess {
+            conversation_id,
+            actor_id,
+            allowed,
+        })?;
+        self.cursor = self
+            .cursor
+            .saturating_add(u64::try_from(events.len()).unwrap_or(u64::MAX));
+        self.persist(server_time_ms)
+    }
+
     pub fn into_store(self) -> S {
         self.store
     }
@@ -2543,6 +2564,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
             | Event::ConversationChildActiveChanged { .. }
             | Event::ConversationChildMarkedUnreadChanged { .. }
             | Event::ConversationChildUnreadThingsReconciled { .. }
+            | Event::SavedSublistParentAccessReconciled { .. }
             | Event::ConversationChildNoPaidMessagesChanged { .. }
             | Event::ConversationChildDestroyed { .. } => return None,
             Event::InvoiceCreated { invoice } => ServerEvent::InvoiceChanged { invoice },
