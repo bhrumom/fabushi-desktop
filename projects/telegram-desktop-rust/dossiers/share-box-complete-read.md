@@ -67,7 +67,7 @@ Existing Fabushi owners inspected:
 - `native/mahayana-messaging/src/service.rs` — visibility and idempotent send replay honor scheduled/silent fields.
 - `native/mahayana-messaging/src/engine.rs` — canonical send/forward state transitions.
 
-Disposition: existing messaging domain owns the state. `824daf3aefe47c747d8abe648108265b17d8255f` now preserves `scheduled_at_ms` and `silent` through the canonical forward protocol/service/engine/Message path. Machine-readable responsibility: `TDRP-R9-SHARE-SEND-OPTIONS-001`; oracle `ORA-TDRP-SHARE-SEND-OPTIONS-001`; invariants `INV-TDRP-SHARE-SCHEDULE-PRESERVE-001` and `INV-TDRP-SHARE-SILENT-PRESERVE-001`. This slice is implemented, not verified. Open gaps still include reminder/schedule-until-online semantics and exact UI menu/picker eligibility/evidence.
+Disposition: existing messaging domain owns the state. `824daf3aefe47c747d8abe648108265b17d8255f` now preserves `scheduled_at_ms` and `silent` through the canonical forward protocol/service/engine/Message path. Machine-readable responsibility: `TDRP-R9-SHARE-SEND-OPTIONS-001`; oracle `ORA-TDRP-SHARE-SEND-OPTIONS-001`; invariants `INV-TDRP-SHARE-SCHEDULE-PRESERVE-001` and `INV-TDRP-SHARE-SILENT-PRESERVE-001`. This slice is implemented, not verified. The accepted `history_view_schedule_box.{h,cpp}` + `api_common.h` source has now also been read completely: "send when online" is a distinct eligibility-gated send type, while Telegram's `0x7FFFFFFE` timestamp is only a transport sentinel. Fabushi already has canonical Presence, LastSeen privacy, Conversation and Message owners, but its current `scheduled_at_ms` model does not yet express a typed presence trigger; reminder/send-when-online persistence, recovery, server execution, UI eligibility and exact E2E therefore remain open. See `scheduled-send-complete-read.md`.
 
 ### SB-04 forward provenance, options, fan-out and idempotency
 
@@ -171,7 +171,7 @@ Pure Qt paint/style mechanics (`Painter`, exact columns/pixels, Telegram style r
 ## Coverage accounting
 
 This dossier supports the following narrow counter movement only:
-- `unread: 15788 -> 15782` (the original ShareBox `.cpp/.h` pair plus the separately recorded `share_box.style`, `Telegram/cmake/td_ui.cmake`, and `ui/chat/forward_options_box.{h,cpp}` reads)
+- `unread: 15788 -> 15779` (the original ShareBox `.cpp/.h` pair plus the separately recorded `share_box.style`, `Telegram/cmake/td_ui.cmake`, `ui/chat/forward_options_box.{h,cpp}`, `history_view_schedule_box.{h,cpp}`, and `api/api_common.h` reads)
 - `unknown: 15788` unchanged
 - `omitted: 0` unchanged
 - `baseline_ready: false`
