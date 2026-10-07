@@ -981,6 +981,30 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     return Err(denied("conversation state update requires membership"));
                 }
             }
+            ClientCommand::MarkConversationChildRead { destination, .. }
+            | ClientCommand::SetConversationChildDraft { destination, .. } => {
+                let conversation_id = &destination.conversation_id;
+                let existing = self
+                    .engine
+                    .state()
+                    .conversations
+                    .get(conversation_id)
+                    .ok_or_else(|| denied("conversation child target does not exist"))?;
+                let caller_is_member = existing
+                    .participants
+                    .iter()
+                    .any(|participant| &participant.actor_id == actor_id)
+                    || existing.owner_id.as_ref() == Some(actor_id)
+                    || self
+                        .engine
+                        .state()
+                        .communities
+                        .get(conversation_id)
+                        .is_some_and(|community| community.is_subscriber(actor_id));
+                if !caller_is_member {
+                    return Err(denied("conversation child state update requires membership"));
+                }
+            }
             ClientCommand::MarkTopicRead {
                 conversation_id, ..
             }
@@ -2029,6 +2053,14 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 actor_id: actor_id.clone(),
                 message_id,
             }],
+            ClientCommand::MarkConversationChildRead {
+                destination,
+                message_id,
+            } => vec![Command::MarkConversationChildRead {
+                destination,
+                actor_id: actor_id.clone(),
+                message_id,
+            }],
             ClientCommand::SetTopicDraft {
                 conversation_id,
                 topic_id,
@@ -2043,6 +2075,17 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     reply_to_message_id: reply_to_message_id.map(|id| id.0),
                     updated_at_ms: now_ms,
                 },
+            }],
+            ClientCommand::SetConversationChildDraft {
+                destination,
+                text,
+                reply_to_message_id,
+            } => vec![Command::SetConversationChildDraft {
+                destination,
+                actor_id: actor_id.clone(),
+                text,
+                reply_to_message_id,
+                updated_at_ms: now_ms,
             }],
             ClientCommand::SetReaction {
                 conversation_id,
