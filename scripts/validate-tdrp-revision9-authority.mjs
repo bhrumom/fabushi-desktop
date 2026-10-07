@@ -192,6 +192,26 @@ fail(dockerTgOwtStage.includes('git fetch --depth=1 origin e2d0e88d1bde6cc600da5
 fail(dockerTgOwtStage.includes('git submodule update --init --recursive --depth=1'),'accepted Docker tg_owt recursive submodule build drift');
 fail(snapTgOwtStage.includes('source-commit: e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted Snap tg_owt pin drift');
 
+const libjxlReachability=recursiveReachability.libjxl;
+fail(libjxlReachability?.repository==='https://github.com/libjxl/libjxl','libjxl reachability authority missing');
+fail(libjxlReachability.commit==='a7a9c787341cf703dede03c2009fa460cae5e5df','libjxl reachability commit drift');
+fail(libjxlReachability.root_candidate_policy_status==='complete-for-current-libjxl-authority','libjxl root candidate policy is not fail-closed complete');
+const libjxlPolicy=libjxlReachability.root_candidate_disposition_policy||[];
+for (const [kind,value] of [
+  ['path_prefix','.github/'],['path_prefix','doc/'],['path_prefix','tools/'],
+  ['path_exact','deps.sh'],['path_exact','.gitmodules'],['path_exact','third_party/CMakeLists.txt']
+]) fail(libjxlPolicy.some(rule=>rule[kind]===value),'libjxl acquisition disposition missing: '+value);
+const prepareLibjxlStage=prepareQt.match(/stage\('libjxl',[\s\S]*?\n"""\)/)?.[0]||'';
+const dockerLibjxlStage=dockerQt.match(/FROM builder AS jxl[\s\S]*?rm -rf libjxl/)?.[0]||'';
+fail(prepareLibjxlStage.includes('git clone -b v0.12.0 --recursive --shallow-submodules'),'accepted prepare.py libjxl acquisition drift');
+for (const option of ['-DBUILD_TESTING=OFF','-DJPEGXL_ENABLE_DEVTOOLS=OFF','-DJPEGXL_ENABLE_TOOLS=OFF','-DJPEGXL_ENABLE_PLUGINS=OFF']) {
+  fail(prepareLibjxlStage.includes(option),'accepted prepare.py libjxl option drift: '+option);
+}
+fail(dockerLibjxlStage.includes('git clone -b v0.12.0 --depth=1 https://github.com/libjxl/libjxl.git'),'accepted Docker libjxl acquisition drift');
+for (const option of ['-DBUILD_TESTING=OFF','-DJPEGXL_ENABLE_DEVTOOLS=OFF','-DJPEGXL_ENABLE_TOOLS=OFF','-DJPEGXL_ENABLE_BENCHMARK=OFF']) {
+  fail(dockerLibjxlStage.includes(option),'accepted Docker libjxl option drift: '+option);
+}
+
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
 fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');
