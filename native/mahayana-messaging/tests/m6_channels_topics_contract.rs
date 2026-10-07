@@ -659,6 +659,36 @@ fn typed_child_read_and_draft_share_the_canonical_conversation_state() {
         ActorId::new("human:peer"),
     );
 
+    let unbound_saved_child_read = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "read-unbound-saved-child"),
+                ClientCommand::MarkConversationChildRead {
+                    destination: destination.clone(),
+                    message_id: message_id.clone(),
+                },
+            ),
+            4,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        unbound_saved_child_read,
+        MessagingServiceError::Engine(EngineError::ConversationChildMessageMismatch)
+    ));
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "bind-saved-child"),
+                ClientCommand::BindMessageToConversationChild {
+                    destination: destination.clone(),
+                    message_id: message_id.clone(),
+                },
+            ),
+            4,
+        )
+        .unwrap();
+
     service
         .handle(
             ClientEnvelope::new(
