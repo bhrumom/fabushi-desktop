@@ -2098,7 +2098,7 @@ impl MessagingEngine {
                     updated_at_ms: 0,
                 })?;
                 if !matches!(
-                    destination.child,
+                    &destination.child,
                     Some(ConversationChildIdentity::SavedSublist { .. })
                 ) {
                     return Err(EngineError::InvalidConversationChildDestination);
