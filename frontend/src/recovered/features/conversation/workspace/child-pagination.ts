@@ -166,7 +166,7 @@ export function createConversationChildPageRequestController(
           const retryAnchor = queuedAroundRetry;
           queuedAroundRetry = undefined;
           emit();
-          await start("around", retryAnchor);
+          void start("around", retryAnchor);
           return;
         }
 
