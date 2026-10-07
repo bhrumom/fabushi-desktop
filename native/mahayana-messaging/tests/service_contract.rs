@@ -212,10 +212,11 @@ fn forward_retries_are_idempotent_and_option_conflicts_fail_closed() {
             6,
         )
         .unwrap_err();
-    assert_eq!(
+    assert!(matches!(
         conflict,
-        MessagingServiceError::IdempotencyConflict("client:forward-idempotent".into())
-    );
+        MessagingServiceError::IdempotencyConflict(ref client_message_id)
+            if client_message_id == "client:forward-idempotent"
+    ));
 
     let privacy_conflict = service
         .handle(
@@ -238,10 +239,11 @@ fn forward_retries_are_idempotent_and_option_conflicts_fail_closed() {
             7,
         )
         .unwrap_err();
-    assert_eq!(
+    assert!(matches!(
         privacy_conflict,
-        MessagingServiceError::IdempotencyConflict("client:forward-idempotent".into())
-    );
+        MessagingServiceError::IdempotencyConflict(ref client_message_id)
+            if client_message_id == "client:forward-idempotent"
+    ));
 }
 
 #[test]
