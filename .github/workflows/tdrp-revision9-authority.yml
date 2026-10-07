@@ -458,6 +458,70 @@ jobs:
           retention-days: 90
           compression-level: 0
 
+
+  recursive-build-reachability-gate:
+    name: Recursive build reachability gate
+    needs: recursive-fixed-point-authority-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      REPORT_DIRS: artifacts/tdrp-layer-root:artifacts/tdrp-layer-child:artifacts/tdrp-layer-next:artifacts/tdrp-layer-closure
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download root authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-root
+      - name: Download child authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-child
+      - name: Download third-layer authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-next-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-next
+      - name: Download fixed-point authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-closure-${{ github.sha }}
+          path: artifacts/tdrp-layer-closure
+      - name: Audit recursive build reachability from accepted TDesktop build paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-tdrp-recursive-build-reachability.mjs
+      - name: Assert reachability accounting remains fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('artifacts/tdrp-recursive-reachability/recursive-build-reachability.json','utf8'));
+          if (report.target_commit !== process.env.GITHUB_SHA) throw new Error('reachability evidence HEAD drift');
+          if (report.proven_non_reachable_authorities <= 0) throw new Error('reachability audit proved no dispositions');
+          if (report.reachability_disposition_status !== 'partial-audited-open') throw new Error('reachability audit must remain partial/open');
+          if (report.source_closure_ready !== false) throw new Error('partial reachability must not fabricate source closure');
+          NODE
+      - name: Upload recursive build reachability evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-reachability-${{ github.sha }}
+          path: artifacts/tdrp-recursive-reachability
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
   root-source-archive-accounting:
     name: Root source archive accounting
     runs-on: ubuntu-24.04
