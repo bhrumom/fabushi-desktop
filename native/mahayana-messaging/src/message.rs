@@ -1,5 +1,5 @@
 use crate::actor::ActorId;
-use crate::conversation::ConversationId;
+use crate::conversation::{ConversationChildIdentity, ConversationId};
 use crate::secret_chat::EncryptedSecretMessage;
 use serde::{Deserialize, Serialize};
 
@@ -343,6 +343,8 @@ pub struct Message {
     pub content: MessageContent,
     pub reply_to_message_id: Option<MessageId>,
     pub thread_root_message_id: Option<MessageId>,
+    #[serde(default)]
+    pub conversation_child: Option<ConversationChildIdentity>,
     pub forward_origin: Option<String>,
     pub reply_markup: Option<ReplyMarkup>,
     pub reactions: Vec<ReactionSummary>,
