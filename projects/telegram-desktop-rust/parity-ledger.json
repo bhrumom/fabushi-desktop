@@ -7,9 +7,9 @@
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15755,
+    "unread": 15753,
     "omitted": 0,
-    "responsibilities_total": 16,
+    "responsibilities_total": 18,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -3823,6 +3823,510 @@
         "ActivateStoryStealth (future) -> StoryStealthChanged (future)"
       ],
       "notes": "Read-complete and mapped-open; no implemented/verified claim."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "module_id": "tdesktop.iv.markdown.button-row",
+      "capability_ids": [
+        "CAP-RICH-MESSAGE-BUTTON-ACTION",
+        "CAP-RICH-MESSAGE-BUTTON-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        "ConversationTranscript",
+        "TranscriptCard",
+        "ExternalUrl",
+        "CanonicalButton"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/iv-markdown-button-row-complete-read.md",
+      "existing_owner_candidates": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "existing_owner": "Canonical ConversationTranscript + TranscriptCard interaction/URL owners + canonical Button primitive",
+      "rejected_existing_owners": [
+        "A Telegram/Markdown-specific button runtime would duplicate canonical TranscriptCard interaction ownership.",
+        "A second URL/open-external owner would bypass the existing desktop/native URL boundary.",
+        "A second transcript root or message store is prohibited."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "target_language": "TypeScript/React",
+      "language_rationale": "This responsibility is shipping transcript interaction/presentation projection; durable action truth remains behind existing typed desktop/native contracts, so React/TypeScript is the best-fit existing owner and no C++ runtime is retained.",
+      "state_owner": "Canonical transcript entry + existing TranscriptCard interaction adapter",
+      "lifecycle_owner": "ConversationTranscript/TranscriptCard mount scope and typed action request lifecycle",
+      "persistence_and_restart": "Button presentation is derived from canonical transcript state. Durable action effects belong to their existing domain/service owner; no button-local persistent truth is introduced.",
+      "concurrency_and_cancellation": "Generation/scope fencing must reject late action settlement after replacement/dispose; duplicate pending action must not create parallel state.",
+      "security_boundary": "URL/Auth/CopyText semantics remain distinct. External open goes through the existing desktop/native URL boundary; renderer state cannot mint accepted-auth privilege.",
+      "network_service_dependencies": [
+        "Existing typed widget/action transport where applicable",
+        "Existing desktop/native external URL boundary"
+      ],
+      "service_owner": "Existing Fabushi transcript/action/account/platform owners",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "fabushi-ui-replacement",
+      "blockers": [
+        "Shipping rich-message button composition and exact-head behavior/temporal/accessibility evidence remain open."
+      ],
+      "production_entrypoints": [
+        "ConversationTranscript -> TranscriptCard action/URL projection -> canonical Button primitive -> typed desktop/native action boundary"
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ConversationTranscript",
+      "composition_slot": "TranscriptCard rich-message action/button slot",
+      "capability_component": "Typed rich-message button action",
+      "variation_axes": [
+        "url",
+        "auth",
+        "copy-text",
+        "disabled",
+        "pending"
+      ],
+      "shared_owner_contracts": [
+        "Canonical transcript identity",
+        "TranscriptCard action lifecycle",
+        "Desktop external URL boundary",
+        "Canonical Button accessibility"
+      ],
+      "duplicate_root_check": "No Telegram/Markdown button runtime, second transcript root, second URL owner or second message store is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "object-action",
+      "primary_navigation_target": "Messages / canonical ConversationWorkspace",
+      "collection_surface": "Canonical ConversationTranscript",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Current rich-message transcript entry",
+      "detail_section": "Not applicable",
+      "capability_surface": "Inline TranscriptCard action row",
+      "route_contract": "Action remains inside canonical ConversationWorkspace and delegates through existing typed action/external-open owners.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No Search owner.",
+      "search_local_remote_contract": "No Search owner.",
+      "responsive_disposition": "Use canonical transcript/card/button responsive behavior; Qt geometry is not ported literally.",
+      "accessibility_contract": "Disabled and pending state, accessible label/tooltip/context semantics, keyboard activation and focus must use canonical button contracts.",
+      "keyboard_contract": "Keyboard activation must call the same typed action as pointer activation and disabled controls must remain non-actionable.",
+      "state_continuity_contract": "Replacement/dispose/scope change fences stale action settlement; durable effects remain canonical after reload/restart.",
+      "ui_acceptance_scenarios": [
+        "Disabled control cannot activate",
+        "URL/Auth/CopyText expose distinct copy/context behavior",
+        "Pending action cannot settle into a replaced transcript entry",
+        "Keyboard and pointer use one action path"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Fabushi semantic button/status tokens through canonical component adapter"
+      ],
+      "legacy_token_adapter": "Existing sand-kit implementation may remain below the compatibility layer; new IV-derived code must not expose source-named tokens as its public API.",
+      "canonical_component_ids": [
+        "ConversationTranscript",
+        "TranscriptCard",
+        "Button",
+        "Tooltip",
+        "ContextMenu"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "transcript entry actions"
+      ],
+      "visual_state_matrix": [
+        "default",
+        "hover",
+        "focus",
+        "disabled",
+        "pending",
+        "error",
+        "narrow/elided"
+      ],
+      "density_contract": "Reuse canonical transcript/button density.",
+      "icon_asset_contract": "Canonical Fabushi icon registry only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Loading/ripple are derived interaction feedback only and cannot own business state.",
+      "reduced_motion_contract": "Pending state remains visible without requiring animation; decorative motion quiesces under reduced-motion/idle/dispose.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "TDRP-COMP-01",
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-EVIDENCE"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-IV-BUTTON-ROW-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-IV-BUTTON-STALE-001",
+        "INV-TDRP-IV-BUTTON-DISABLED-001",
+        "INV-TDRP-IV-BUTTON-COPY-001",
+        "INV-TDRP-IV-BUTTON-LOADING-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal provenance remains in project records.",
+      "reviewer": null,
+      "notes": "Read-complete and mapped only; no implemented/verified claim.",
+      "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_button_row.h",
+      "source_blob_sha": "0b9a011680bac413aecefe8b1aa2750b30ab62a0",
+      "source_kind": "header",
+      "responsibility_id": "TDRP-R9-IV-BUTTON-ROW-CONTRACT-001",
+      "source_symbols": [
+        "LaidOutButton",
+        "ButtonRowRuntime",
+        "RichButtonLoadingState",
+        "RichButtonLoading",
+        "RichButtonLoadingCoverage",
+        "RichButtonUrl",
+        "RichButtonTooltip",
+        "ButtonRowHitIndex",
+        "RefreshButtonRowHandlers"
+      ],
+      "behavior_contract": "Expose a source-neutral rich-message button contract whose current runtime identity, typed action, disabled state, URL/copy semantics and request-derived loading state are projected through the canonical transcript/card owners.",
+      "state_machine": "canonical transcript button -> enabled|disabled -> optional pending action -> authoritative settlement -> derived ready/error state; replacement/dispose invalidates stale runtime state",
+      "side_effects": [
+        "Delegates action through canonical TranscriptCard/desktop action boundary",
+        "May copy URL/text or request external navigation through existing owner"
+      ],
+      "failure_cases": [
+        "stale button activation after entry replacement",
+        "disabled control remains actionable",
+        "URL/Auth/CopyText semantics collapse",
+        "loading becomes renderer-only durable truth"
+      ],
+      "ui_disposition": "Qt structs/painter types are not ported; typed action/lifecycle/accessibility semantics map to canonical TranscriptCard and Button components.",
+      "non_ui_responsibilities": [
+        "runtime identity",
+        "typed action kind",
+        "disabled gating",
+        "copy/context semantics",
+        "request-bound loading identity"
+      ],
+      "platform_delta": "React/TypeScript canonical transcript-card interaction replaces Qt click-handler/painter presentation.",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandButton",
+        "normalizeLinkUrl"
+      ],
+      "command_event_contracts": [
+        "Transcript button action -> existing typed action/native boundary",
+        "URL/Auth/CopyText -> existing URL/clipboard/context behavior"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "module_id": "tdesktop.iv.markdown.button-row",
+      "capability_ids": [
+        "CAP-RICH-MESSAGE-BUTTON-ACTION",
+        "CAP-RICH-MESSAGE-BUTTON-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        "ConversationTranscript",
+        "TranscriptCard",
+        "ExternalUrl",
+        "CanonicalButton"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/iv-markdown-button-row-complete-read.md",
+      "existing_owner_candidates": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "existing_owner": "Canonical ConversationTranscript + TranscriptCard interaction/URL owners + canonical Button primitive",
+      "rejected_existing_owners": [
+        "A Telegram/Markdown-specific button runtime would duplicate canonical TranscriptCard interaction ownership.",
+        "A second URL/open-external owner would bypass the existing desktop/native URL boundary.",
+        "A second transcript root or message store is prohibited."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "target_language": "TypeScript/React",
+      "language_rationale": "This responsibility is shipping transcript interaction/presentation projection; durable action truth remains behind existing typed desktop/native contracts, so React/TypeScript is the best-fit existing owner and no C++ runtime is retained.",
+      "state_owner": "Canonical transcript entry + existing TranscriptCard interaction adapter",
+      "lifecycle_owner": "ConversationTranscript/TranscriptCard mount scope and typed action request lifecycle",
+      "persistence_and_restart": "Button presentation is derived from canonical transcript state. Durable action effects belong to their existing domain/service owner; no button-local persistent truth is introduced.",
+      "concurrency_and_cancellation": "Generation/scope fencing must reject late action settlement after replacement/dispose; duplicate pending action must not create parallel state.",
+      "security_boundary": "URL/Auth/CopyText semantics remain distinct. External open goes through the existing desktop/native URL boundary; renderer state cannot mint accepted-auth privilege.",
+      "network_service_dependencies": [
+        "Existing typed widget/action transport where applicable",
+        "Existing desktop/native external URL boundary"
+      ],
+      "service_owner": "Existing Fabushi transcript/action/account/platform owners",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "fabushi-ui-replacement",
+      "blockers": [
+        "Shipping rich-message button composition and exact-head behavior/temporal/accessibility evidence remain open."
+      ],
+      "production_entrypoints": [
+        "ConversationTranscript -> TranscriptCard action/URL projection -> canonical Button primitive -> typed desktop/native action boundary"
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ConversationTranscript",
+      "composition_slot": "TranscriptCard rich-message action/button slot",
+      "capability_component": "Typed rich-message button action",
+      "variation_axes": [
+        "url",
+        "auth",
+        "copy-text",
+        "disabled",
+        "pending"
+      ],
+      "shared_owner_contracts": [
+        "Canonical transcript identity",
+        "TranscriptCard action lifecycle",
+        "Desktop external URL boundary",
+        "Canonical Button accessibility"
+      ],
+      "duplicate_root_check": "No Telegram/Markdown button runtime, second transcript root, second URL owner or second message store is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "object-action",
+      "primary_navigation_target": "Messages / canonical ConversationWorkspace",
+      "collection_surface": "Canonical ConversationTranscript",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Current rich-message transcript entry",
+      "detail_section": "Not applicable",
+      "capability_surface": "Inline TranscriptCard action row",
+      "route_contract": "Action remains inside canonical ConversationWorkspace and delegates through existing typed action/external-open owners.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No Search owner.",
+      "search_local_remote_contract": "No Search owner.",
+      "responsive_disposition": "Use canonical transcript/card/button responsive behavior; Qt geometry is not ported literally.",
+      "accessibility_contract": "Disabled and pending state, accessible label/tooltip/context semantics, keyboard activation and focus must use canonical button contracts.",
+      "keyboard_contract": "Keyboard activation must call the same typed action as pointer activation and disabled controls must remain non-actionable.",
+      "state_continuity_contract": "Replacement/dispose/scope change fences stale action settlement; durable effects remain canonical after reload/restart.",
+      "ui_acceptance_scenarios": [
+        "Disabled control cannot activate",
+        "URL/Auth/CopyText expose distinct copy/context behavior",
+        "Pending action cannot settle into a replaced transcript entry",
+        "Keyboard and pointer use one action path"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Fabushi semantic button/status tokens through canonical component adapter"
+      ],
+      "legacy_token_adapter": "Existing sand-kit implementation may remain below the compatibility layer; new IV-derived code must not expose source-named tokens as its public API.",
+      "canonical_component_ids": [
+        "ConversationTranscript",
+        "TranscriptCard",
+        "Button",
+        "Tooltip",
+        "ContextMenu"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "transcript entry actions"
+      ],
+      "visual_state_matrix": [
+        "default",
+        "hover",
+        "focus",
+        "disabled",
+        "pending",
+        "error",
+        "narrow/elided"
+      ],
+      "density_contract": "Reuse canonical transcript/button density.",
+      "icon_asset_contract": "Canonical Fabushi icon registry only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Loading/ripple are derived interaction feedback only and cannot own business state.",
+      "reduced_motion_contract": "Pending state remains visible without requiring animation; decorative motion quiesces under reduced-motion/idle/dispose.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "TDRP-COMP-01",
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-EVIDENCE"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-IV-BUTTON-ROW-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-IV-BUTTON-STALE-001",
+        "INV-TDRP-IV-BUTTON-DISABLED-001",
+        "INV-TDRP-IV-BUTTON-COPY-001",
+        "INV-TDRP-IV-BUTTON-LOADING-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal provenance remains in project records.",
+      "reviewer": null,
+      "notes": "Read-complete and mapped only; no implemented/verified claim.",
+      "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_button_row.cpp",
+      "source_blob_sha": "cf02fad9c6b76a2b2d9f3f7404b2e763cab41b64",
+      "source_kind": "source",
+      "responsibility_id": "TDRP-R9-IV-BUTTON-ROW-LIFECYCLE-001",
+      "source_symbols": [
+        "RichPageButtonClickHandler::onClick",
+        "RichPageButtonClickHandler::tooltip",
+        "RichPageButtonClickHandler::copyToClipboardText",
+        "RefreshButtonRowHandlers",
+        "RichButtonLoadingActive",
+        "RichButtonLoadingIdle",
+        "PaintRichButtonLoading",
+        "AddButtonRowRipple",
+        "StopButtonRowRipple"
+      ],
+      "behavior_contract": "Re-resolve the current button for every interaction, fail closed when runtime ownership expires, preserve URL/Auth/CopyText distinctions, and derive loading/ripple feedback from current request/lifecycle state that quiesces after settlement or disposal.",
+      "state_machine": "mounted current row -> idle -> pending/feedback -> settled; scope/replacement/dispose invalidates callbacks; loading animation -> active only while authoritative request exists and paint coverage remains live -> quiescent",
+      "side_effects": [
+        "Invokes current typed button action",
+        "Copies typed URL/text payload",
+        "Schedules bounded derived repaint feedback"
+      ],
+      "failure_cases": [
+        "late callback mutates replacement entry",
+        "duplicate pending activation",
+        "loading timer/animation survives idle/disposal",
+        "non-left click executes action",
+        "handler identity survives disabled row"
+      ],
+      "ui_disposition": "Pure layout/color/ripple painting is replaced by canonical Fabushi components; lifecycle, action, pending/disabled and copy/context semantics remain required.",
+      "non_ui_responsibilities": [
+        "weak-lifetime stale fencing",
+        "current-slot handler refresh",
+        "authoritative-request loading gating",
+        "idle animation quiescence",
+        "action/copy/context routing"
+      ],
+      "platform_delta": "Browser/React event and lifecycle mechanisms replace Qt ClickHandler/timer/ripple implementation behind the same canonical transcript state.",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "createWidgetInteractionAdapter",
+        "ConversationTranscript"
+      ],
+      "command_event_contracts": [
+        "Current TranscriptCard action -> typed transport -> authoritative settlement",
+        "scope/dispose -> generation fence -> stale result rejection"
+      ]
     }
   ],
   "rebaseline": {
