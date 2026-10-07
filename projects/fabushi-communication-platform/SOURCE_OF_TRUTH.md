@@ -58,7 +58,7 @@ Repository: `bhrumom/fabushi-desktop`
 
 Revision 3 读取：main `860f03a8553c779fe006c7826f190c3014a571dc`；PR #20 已合并（merge `ee66bacdf47f36af2ae96c0a8a8ec401460426e7`）。每次执行重新读取 live refs，不能继续把 PR #20 当作未合并工作分支。
 
-上游 discovery HEAD 已 rebaseline 到 `d346b42a1d30ef60dc989b6e5191bb8e571f6bd5`（tree `b4095fab77f923fca2a4b99d710ec333aa6757ab`）；`f23c37857220eb84f8559f0901ea26fb304b564b` 与 `33261535a0e747f125e0ed25486f01e556330677` 均降为历史证据。机器 lock/inventory/ledger/dossiers 已重绑新 identity，但 source completeness 仍 open，旧 Actions 不得证明新 baseline 完整。
+上游 discovery HEAD 已 rebaseline 到 `d346b42a1d30ef60dc989b6e5191bb8e571f6bd5`（tree `5db05afa460bb030ac36316beb6496df03742c59`）；`f23c37857220eb84f8559f0901ea26fb304b564b` 与 `33261535a0e747f125e0ed25486f01e556330677` 均降为历史证据。机器 lock/inventory/ledger/dossiers 已重绑新 identity，但 source completeness 仍 open，旧 Actions 不得证明新 baseline 完整。
 
 ## Next task / completion
 
