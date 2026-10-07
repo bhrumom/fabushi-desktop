@@ -11,7 +11,7 @@
     "commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
     "tree": "b4095fab77f923fca2a4b99d710ec333aa6757ab",
     "committed_at": "2026-10-07T15:02:09Z",
-    "accepted": false
+    "accepted": true
   },
   "previous_historical_baseline": {
     "commit": "33261535a0e747f125e0ed25486f01e556330677",
@@ -269,38 +269,34 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "The rebased upstream identity is machine-validated but not yet provenance-bound as accepted. A GitHub Actions authority artifact for 72b3b71c3d6e450e5ef94a3112dd750a0168aa0b must be produced and then bound by run/job/artifact/digest before upstream.accepted may return to true. Full Revision 9 source closure also remains open; acceptance.accepted/baseline_ready stay false until unknown=0, unread=0, omitted=0."
+    "note": "The upstream baseline identity is provenance-bound to GitHub Actions run 37652251698 / job 112898298716 / artifact 11497690488 for telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b. Full Revision 9 source closure remains open: acceptance.accepted/baseline_ready stay false until unknown=0, unread=0, omitted=0 and all recursive/build authorities and responsibilities are closed."
   },
   "baseline_identity_evidence": {
-    "status": "validated-identity-provenance-pending",
-    "previous_historical_evidence": {
-      "runner": "github-actions",
-      "run_id": 37595836244,
-      "run_attempt": 1,
-      "job_id": 112708122838,
-      "validation_head_sha": "44b59492d10cdb69091e018864a2e4de42d2cfc0",
-      "artifact_id": 11469718663,
-      "artifact_name": "tdrp-revision9-authority-44b59492d10cdb69091e018864a2e4de42d2cfc0",
-      "artifact_digest": "sha256:2d63ef6b03ee9c22359cee7d304df7c3c97f5dd8ab4ab8b909abf454fb822dcf",
-      "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
-      "evidence_status": "historical-only"
-    }
+    "status": "accepted",
+    "runner": "github-actions",
+    "run_id": 37652251698,
+    "run_attempt": 1,
+    "job_id": 112898298716,
+    "validation_head_sha": "9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+    "artifact_id": 11497690488,
+    "artifact_name": "tdrp-revision9-authority-9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+    "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
+    "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+    "recursive_non_directory_entries": 15788
   },
   "recursive_inventory_evidence": {
-    "status": "pending-current-head-revalidation",
-    "previous_historical_evidence": {
-      "runner": "github-actions",
-      "run_id": 37596744991,
-      "run_attempt": 1,
-      "job_id": 112711134608,
-      "validation_head_sha": "cc318d81532c44f8710681039cc1dba3dafe72cc",
-      "artifact_id": 11470099433,
-      "artifact_name": "tdrp-revision9-authority-cc318d81532c44f8710681039cc1dba3dafe72cc",
-      "artifact_digest": "sha256:087136a99675f1a112602e748573c9d20aeaa27e3e2b308f00603d0d9f4a3dad",
-      "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
-      "recursive_non_directory_entries": 15788,
-      "evidence_status": "historical-only"
-    }
+    "status": "accepted-baseline-identity-only-source-closure-open",
+    "runner": "github-actions",
+    "run_id": 37652251698,
+    "run_attempt": 1,
+    "job_id": 112898298716,
+    "validation_head_sha": "9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+    "artifact_id": 11497690488,
+    "artifact_name": "tdrp-revision9-authority-9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+    "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
+    "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+    "recursive_non_directory_entries": 15788,
+    "source_closure_ready": false
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
