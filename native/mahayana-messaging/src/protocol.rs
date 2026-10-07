@@ -204,6 +204,10 @@ pub enum ClientCommand {
         text: String,
         reply_to_message_id: Option<MessageId>,
     },
+    BindMessageToConversationChild {
+        destination: ConversationDestination,
+        message_id: MessageId,
+    },
     ReplaceConversationChildWindow {
         destination: ConversationDestination,
         message_ids: Vec<MessageId>,
