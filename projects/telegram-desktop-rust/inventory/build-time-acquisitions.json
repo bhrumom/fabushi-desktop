@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+  "upstream_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
   "discovery": {
     "evidence_run_id": 37602112794,
     "evidence_head_sha": "6ea14a975654843140e77278261a73fb38cf072c",
@@ -13,14 +13,15 @@
     "candidate_lines_total": 320,
     "immutable_commit_pin_occurrences_classified": 17,
     "candidate_lines_pending_classification": 0,
-    "note": "All 320 corrected-scan candidate lines now have explicit dispositions: 17 immutable commit-pin occurrences plus 303 grouped dispositions. Candidate classification is complete, but recursive authority closure remains open because mutable refs/tags, nested submodules/gitlinks, tool bootstrap inputs, package-manager inputs, and other source/build inputs still require exact child/input accounting. This does not advance baseline_ready or acceptance. The three previously pending external nested repositories are now expected to be live-scanned and fully dispositioned by the exact-HEAD external-child discovery gate; overall recursive authority remains open for root mutable/tool/package inputs.",
+    "note": "All 320 corrected-scan candidate lines now have explicit dispositions: 17 immutable commit-pin occurrences plus 303 grouped dispositions. Candidate classification is complete, but recursive authority closure remains open because mutable refs/tags, nested submodules/gitlinks, tool bootstrap inputs, package-manager inputs, and other source/build inputs still require exact child/input accounting. This does not advance baseline_ready or acceptance. The three previously pending external nested repositories are now expected to be live-scanned and fully dispositioned by the exact-HEAD external-child discovery gate; overall recursive authority remains open for root mutable/tool/package inputs. Live baseline moved to e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39; candidate line identities were remapped against the changed accepted build files and current-head evidence must replace the historical run.",
     "candidate_lines_classified": 320,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
     "recursive_child_input_occurrences_recorded": 11,
     "recursive_child_unique_repositories_recorded": 9,
     "recursive_child_unique_external_nested_scans_pending": 0,
-    "recursive_child_unique_external_nested_scans_complete": 3
+    "recursive_child_unique_external_nested_scans_complete": 3,
+    "evidence_status": "historical-only"
   },
   "immutable_commit_pin_occurrences": [
     {
@@ -40,7 +41,7 @@
       "source_line": 163,
       "repository": "https://github.com/desktop-app/patches.git",
       "ref_kind": "commit",
-      "commit": "ebcd707f1763651089e3e7220ddd4f97cbcf87e0",
+      "commit": "aec474953ff7ee9b6e4cd9b8658288ea86d124f3",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -161,7 +162,7 @@
       "source_line": 126,
       "repository": "https://github.com/desktop-app/patches.git",
       "ref_kind": "commit",
-      "commit": "ebcd707f1763651089e3e7220ddd4f97cbcf87e0",
+      "commit": "aec474953ff7ee9b6e4cd9b8658288ea86d124f3",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -224,9 +225,9 @@
       "disposition": "ci-only",
       "source_path": ".github/workflows/canary.yml",
       "source_lines": [
-        1208,
+        47,
         286,
-        47
+        1208
       ],
       "authority_scope": "ci-only"
     },
@@ -234,11 +235,11 @@
       "disposition": "ci-only",
       "source_path": ".github/workflows/mac_packaged.yml",
       "source_lines": [
+        98,
+        99,
         112,
         130,
-        151,
-        98,
-        99
+        151
       ],
       "authority_scope": "ci-only"
     },
@@ -263,16 +264,16 @@
       "disposition": "exact-immutable-input-support",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
       "source_lines": [
-        1006,
+        87,
         162,
         172,
         291,
         451,
         466,
         485,
-        87,
         953,
-        983
+        983,
+        1006
       ],
       "authority_scope": "build-source-authority"
     },
@@ -280,12 +281,12 @@
       "disposition": "exact-immutable-input-support",
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_lines": [
-        1785,
-        1904,
-        1983,
         521,
         526,
-        633
+        634,
+        1786,
+        1905,
+        1984
       ],
       "authority_scope": "build-source-authority"
     },
@@ -305,14 +306,14 @@
       "disposition": "exact-ref-requires-full-resolution",
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_lines": [
-        1447,
-        1453,
-        1487,
-        1517,
-        1525,
-        1587,
         576,
-        773
+        774,
+        1448,
+        1453,
+        1488,
+        1517,
+        1526,
+        1588
       ],
       "authority_scope": "build-source-authority"
     },
@@ -365,29 +366,29 @@
       "disposition": "mutable-tag-or-branch-input",
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_lines": [
-        1024,
-        1067,
-        1129,
-        1164,
-        1168,
-        1172,
-        1355,
-        1417,
-        1452,
-        1492,
-        1599,
-        1668,
-        1883,
         609,
         622,
-        671,
+        672,
         708,
-        755,
-        825,
-        833,
-        898,
-        956,
-        985
+        756,
+        826,
+        834,
+        899,
+        957,
+        986,
+        1025,
+        1068,
+        1130,
+        1165,
+        1169,
+        1173,
+        1356,
+        1418,
+        1452,
+        1492,
+        1600,
+        1669,
+        1883
       ],
       "authority_scope": "build-source-authority"
     },
@@ -488,7 +489,7 @@
       "disposition": "versioned-download-input",
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_lines": [
-        804
+        805
       ],
       "authority_scope": "build-source-authority"
     },
@@ -496,10 +497,10 @@
       "disposition": "ci-only",
       "source_path": ".github/telegram-bot-api/Dockerfile",
       "source_lines": [
+        8,
         10,
         27,
-        29,
-        8
+        29
       ],
       "authority_scope": "ci-only"
     },
@@ -517,32 +518,7 @@
       "disposition": "ci-only",
       "source_path": ".github/workflows/canary.yml",
       "source_lines": [
-        1096,
-        1159,
-        1166,
-        1188,
-        1236,
-        1237,
-        1244,
-        1253,
-        1261,
-        1270,
-        1278,
-        1302,
-        1373,
-        1419,
-        1426,
-        1467,
-        1472,
-        1478,
-        1491,
         154,
-        1556,
-        1561,
-        1567,
-        1644,
-        1649,
-        1655,
         366,
         389,
         477,
@@ -562,7 +538,32 @@
         923,
         954,
         976,
-        982
+        982,
+        1096,
+        1159,
+        1166,
+        1188,
+        1236,
+        1237,
+        1244,
+        1253,
+        1261,
+        1270,
+        1278,
+        1302,
+        1373,
+        1419,
+        1426,
+        1467,
+        1472,
+        1478,
+        1491,
+        1556,
+        1561,
+        1567,
+        1644,
+        1649,
+        1655
       ],
       "authority_scope": "ci-only"
     },
@@ -615,16 +616,16 @@
       "disposition": "ci-only",
       "source_path": ".github/workflows/linux.yml",
       "source_lines": [
-        102,
-        110,
-        126,
-        184,
-        209,
         65,
         71,
         83,
         89,
-        93
+        93,
+        102,
+        110,
+        126,
+        184,
+        209
       ],
       "authority_scope": "ci-only"
     },
@@ -640,10 +641,10 @@
       "disposition": "ci-only",
       "source_path": ".github/workflows/mac.yml",
       "source_lines": [
-        132,
         63,
         74,
-        85
+        85,
+        132
       ],
       "authority_scope": "ci-only"
     },
@@ -651,12 +652,12 @@
       "disposition": "ci-only",
       "source_path": ".github/workflows/mac_packaged.yml",
       "source_lines": [
+        71,
+        81,
         103,
         121,
         139,
-        184,
-        71,
-        81
+        184
       ],
       "authority_scope": "ci-only"
     },
@@ -722,13 +723,13 @@
       "disposition": "ci-only",
       "source_path": ".github/workflows/win.yml",
       "source_lines": [
+        86,
         113,
         122,
         136,
         144,
         157,
-        247,
-        86
+        247
       ],
       "authority_scope": "ci-only"
     },
@@ -753,7 +754,6 @@
       "disposition": "generated-input",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
       "source_lines": [
-        1021,
         158,
         168,
         190,
@@ -798,7 +798,8 @@
         931,
         964,
         975,
-        993
+        993,
+        1021
       ],
       "authority_scope": "internal-build-stage"
     },
@@ -826,11 +827,11 @@
       "disposition": "recursive-child-input",
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_lines": [
-        1528,
         1529,
-        1601,
-        1670,
-        1788
+        1530,
+        1602,
+        1671,
+        1789
       ],
       "authority_scope": "build-source-authority"
     },
@@ -1160,7 +1161,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+    "accepted_upstream_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -1196,17 +1197,17 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "9482a53e60386743ae797d75cecc36767cd63646",
+          "blob": "93ff2c8ab4f3275644145012c9231718530c1486",
           "evidence": "Qt 5 initializes only qtbase qtimageformats qtsvg; Qt 6 prepare initializes only qtbase qtimageformats qtshadertools qtsvg."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "5516c448c628d5928d690687ed948d67b5cdaac3",
+          "blob": "09a05179b48b4f9185697134002bad4e486ca4fd",
           "evidence": "Qt 6 Linux image initializes only qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "5cff7cf59aedc430b0a9a2d6d66ab6fe3c29bd9f",
+          "blob": "b363829e5c131fce5e80e0644c0fb6546da8ad6c",
           "evidence": "Snap Qt source-submodules lists only qtbase qtdeclarative qtimageformats qtshadertools qtsvg qtwayland."
         }
       ],
@@ -1283,8 +1284,8 @@
     },
     "openssl": {
       "repository": "https://github.com/openssl/openssl",
-      "commit": "a7e992847de83aa36be0c399c89db3fb827b0be2",
-      "ref": "openssl-3.2.1",
+      "commit": "45e844fa2a14ec92d146bd8f5778ac130b6625fb",
+      "ref": "openssl-3.5.9",
       "build_entries": [
         "Telegram/build/prepare/prepare.py",
         "Telegram/build/docker/centos_env/Dockerfile",
@@ -1293,17 +1294,17 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "9482a53e60386743ae797d75cecc36767cd63646",
+          "blob": "93ff2c8ab4f3275644145012c9231718530c1486",
           "evidence": "Clones OpenSSL and builds libraries directly; no git submodule init/update in the OpenSSL stage."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "5516c448c628d5928d690687ed948d67b5cdaac3",
+          "blob": "09a05179b48b4f9185697134002bad4e486ca4fd",
           "evidence": "Shallow clones OpenSSL, configures no-tests/no-dso, builds and installs; no submodule init/update."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "5cff7cf59aedc430b0a9a2d6d66ab6fe3c29bd9f",
+          "blob": "b363829e5c131fce5e80e0644c0fb6546da8ad6c",
           "evidence": "Snap OpenSSL part uses source-tag/plugin make and does not request source-submodules."
         }
       ],
@@ -1613,8 +1614,8 @@
     },
     "ada": {
       "repository": "https://github.com/ada-url/ada",
-      "commit": "010f7c45aeaff1205452e7da2df8702cf725fb3e",
-      "ref": "v3.2.4",
+      "commit": "6b4612162c34e7ffcee08c03b107b449e07a5683",
+      "ref": "v3.2.9",
       "build_entries": [
         "Telegram/build/prepare/prepare.py",
         "Telegram/build/docker/centos_env/Dockerfile",
@@ -1623,15 +1624,15 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Clones ada v3.2.4 and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF before building/installing."
+          "evidence": "Clones ada v3.2.9 and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF before building/installing."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Clones ada v3.2.4 shallow and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
+          "evidence": "Clones ada v3.2.9 shallow and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "evidence": "Pins ada v3.2.4 and passes ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
+          "evidence": "Pins ada v3.2.9 and passes ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
         }
       ],
       "root_candidate_disposition_policy": [
