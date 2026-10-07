@@ -253,9 +253,9 @@
     "root_source_entries_total": 6355,
     "recursive_source_entries_total": 15788,
     "unknown_minimum": 15788,
-    "unread_minimum": 15773,
+    "unread_minimum": 15771,
     "omitted_known": 0,
-    "note": "Revision 9 recursive non-directory count is 15,788. Fifteen exact upstream entries have now been read end-to-end and recorded in the ShareBox/source-read dossiers: Telegram/SourceFiles/boxes/share_box.cpp, share_box.h, share_box.style, Telegram/cmake/td_ui.cmake, Telegram/SourceFiles/ui/chat/forward_options_box.h, forward_options_box.cpp, Telegram/SourceFiles/history/view/history_view_schedule_box.h, history_view_schedule_box.cpp, Telegram/SourceFiles/api/api_common.h, Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h, history_view_forward_panel.cpp, Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h, share_message_phrase_factory.cpp, Telegram/SourceFiles/data/data_saved_sublist.h, and data_saved_sublist.cpp. Unknown remains 15,788 because their responsibility-to-production mappings are not yet fully closed; omitted remains 0."
+    "note": "Revision 9 recursive non-directory count is 15,788. Seventeen exact upstream entries have now been read end-to-end and recorded in the ShareBox/source-read dossiers, including data_saved_sublist.{h,cpp} and data_saved_messages.{h,cpp}. Unknown remains 15,788 because their responsibility-to-production mappings are not yet fully closed; omitted remains 0."
   },
   "acceptance": {
     "baseline_ready": false,
