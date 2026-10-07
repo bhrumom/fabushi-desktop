@@ -33,59 +33,6 @@ use crate::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout;
 pub const ROUTED_MCP_PROTOCOL_VERSION: &str = "2025-03-26";
 pub const ROUTED_MCP_MAX_BODY_BYTES: usize = 1_048_576;
 
-const CONVERSATION_FAST_LANE_MAX_CHARS: usize = 280;
-
-/// Conservative CHAT-013 classifier for simple conversational turns.
-///
-/// This is an optimization only: ambiguous or action-oriented turns stay on the
-/// full tool path, so classification is never required for correctness.
-pub fn is_conversation_fast_lane(messages: &[ProviderMessage]) -> bool {
-    let Some(message) = messages.iter().rev().find(|message| message.role == "user") else {
-        return false;
-    };
-    let text = message.content.trim();
-    if text.is_empty()
-        || text.chars().count() > CONVERSATION_FAST_LANE_MAX_CHARS
-        || text.contains('\n')
-        || text.contains('`')
-        || text.contains("http://")
-        || text.contains("https://")
-    {
-        return false;
-    }
-
-    let lower = text.to_lowercase();
-    const ACTION_MARKERS: &[&str] = &[
-        " search ", " browse ", " open ", " create ", " build ", " edit ",
-        " modify ", " delete ", " remove ", " install ", " download ", " upload ",
-        " run ", " execute ", " send ", " email ", " calendar ", " github ",
-        " slack ", " terminal ", " shell ", " file ", " folder ", " website ",
-        " webpage ", " script ", " code ", " tool ", " tools ",
-        "搜索", "查找", "浏览", "打开", "创建", "新建", "构建", "编辑", "修改",
-        "删除", "安装", "下载", "上传", "运行", "执行", "发送", "邮件", "日历",
-        "文件", "文件夹", "终端", "脚本", "代码", "网站", "网页", "调用", "工具",
-    ];
-    const LOCAL_MACHINE_MARKERS: &[&str] = &[
-        "desktop", "downloads", "documents", "my computer", "local file", "local files",
-        "桌面", "下载目录", "下载文件", "文档", "电脑", "本机", "本地文件",
-    ];
-    let padded = format!(" {lower} ");
-    !ACTION_MARKERS.iter().any(|marker| padded.contains(marker))
-        && !LOCAL_MACHINE_MARKERS.iter().any(|marker| lower.contains(marker))
-}
-
-/// Return an empty direct-tool schema for a simple conversation.
-///
-/// CHAT-013 uses the provider's native text stream for these turns; the Host
-/// projects that stream into the canonical transcript. Classification is an
-/// optimization only, so non-matches continue on the full tool path.
-pub fn conversation_fast_lane_tools(
-    messages: &[ProviderMessage],
-    _tools: &[RoutedToolDefinition],
-) -> Option<Vec<RoutedToolDefinition>> {
-    is_conversation_fast_lane(messages).then(Vec::new)
-}
-
 #[derive(Clone, Default)]
 pub struct RoutedProviderCancellation {
     cancelled: Arc<AtomicBool>,
@@ -448,23 +395,12 @@ pub fn run_routed_provider_in_runner(
 ) -> Result<String, ProviderSessionError> {
     run.cancellation.check()?;
 
-    let conversation_fast_lane =
-        run.provider == RoutedProvider::Fabushi && is_conversation_fast_lane(run.messages);
-    let mut system_prompt = render_request_context_system_prompt_with_capabilities(
+    let system_prompt = render_request_context_system_prompt_with_capabilities(
         &run.request_context.context,
         run.request_context.rules.as_deref(),
         run.cloud_agents_enabled,
         run.multitask_enabled,
     );
-    if conversation_fast_lane {
-        if !system_prompt.is_empty() {
-            system_prompt.push_str("\n\n");
-        }
-        system_prompt.push_str(
-            "CHAT-013 fast lane: answer this simple conversational turn directly in plain text. \
-Do not emit tool syntax or attempt a SendMessage call; the Host streams your text into the canonical user-visible transcript.",
-        );
-    }
     let mut provider_messages = Vec::with_capacity(run.messages.len() + usize::from(!system_prompt.is_empty()));
     if !system_prompt.is_empty() {
         provider_messages.push(ProviderMessage {
@@ -478,12 +414,7 @@ Do not emit tool syntax or attempt a SendMessage call; the Host streams your tex
         Vec::new()
     } else {
         run.cancellation.check()?;
-        let tools = run.bridge.list_tools()?;
-        if conversation_fast_lane {
-            conversation_fast_lane_tools(run.messages, &tools).unwrap_or(tools)
-        } else {
-            tools
-        }
+        run.bridge.list_tools()?
     };
     let mut mcp_server = if run.provider == RoutedProvider::ClaudeCode {
         Some(start_routed_mcp_server_for_run(
@@ -884,37 +815,4 @@ fn write_response(
     write!(stream, "\r\n")?;
     stream.write_all(&body)?;
     stream.flush()
-}
-
-
-#[cfg(test)]
-mod conversation_fast_lane_tests {
-    use super::{ProviderMessage, is_conversation_fast_lane};
-
-    fn user_message(content: &str) -> Vec<ProviderMessage> {
-        vec![ProviderMessage { role: "user".into(), content: content.into() }]
-    }
-
-    #[test]
-    fn local_machine_requests_never_enter_toolless_fast_lane() {
-        for text in [
-            "看看我桌面上有什么",
-            "帮我看看下载目录",
-            "检查一下我电脑上的内容",
-            "What's on my Desktop?",
-            "List my Downloads.",
-            "Check Documents on my computer.",
-        ] {
-            assert!(
-                !is_conversation_fast_lane(&user_message(text)),
-                "local-machine request was incorrectly classified as tool-less chat: {text}",
-            );
-        }
-    }
-
-    #[test]
-    fn ordinary_small_talk_still_uses_fast_lane() {
-        assert!(is_conversation_fast_lane(&user_message("你好，最近怎么样？")));
-        assert!(is_conversation_fast_lane(&user_message("How are you today?")));
-    }
 }
