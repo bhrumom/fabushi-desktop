@@ -603,6 +603,11 @@ html[data-sand-high-contrast="true"] :is(button,input,textarea,select,[role="but
 }
 .fabushi-forward-dialog__recipient:hover,
 .fabushi-forward-dialog__recipient:focus-within { background: var(--fabushi-surface-hover, var(--cursor-bg-tertiary)); }
+.fabushi-forward-dialog__recipient[data-active="true"] {
+  background: var(--fabushi-surface-hover, var(--cursor-bg-tertiary));
+  outline: 1px solid var(--fabushi-border-focus, var(--cursor-stroke-accent));
+  outline-offset: -1px;
+}
 .fabushi-forward-dialog__recipient input,
 .fabushi-forward-dialog__privacy input { width: 16px; height: 16px; accent-color: var(--fabushi-accent, var(--cursor-bg-accent)); }
 .fabushi-forward-dialog__privacy { display: grid; gap: 2px; margin: 0; padding: 8px; border: 1px solid var(--fabushi-border-default, var(--cursor-stroke-secondary)); border-radius: var(--fabushi-radius-control, var(--cursor-radius-lg)); }
