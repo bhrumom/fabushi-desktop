@@ -284,6 +284,7 @@ jobs:
           frontend/src/recovered/features/recovered-navigation.contract.test.ts
           frontend/src/recovered/features/conversation/workspace/child-pagination.contract.test.ts
           frontend/src/recovered/features/conversation/workspace/child-selection.contract.test.ts
+          frontend/src/recovered/features/conversation/workspace/conversation-workspace-controller.child.contract.test.ts
           frontend/src/recovered/features/reaction-system.contract.test.ts
           frontend/src/recovered/features/agent-info-members.contract.test.ts
           frontend/src/recovered/features/shared-room.contract.test.ts
