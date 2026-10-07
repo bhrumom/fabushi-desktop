@@ -1255,16 +1255,21 @@
         "ConversationDestination",
         "ConversationDestinationSelection",
         "pub fn can_toggle_unread(",
-        "thread_root_message_id"
+        "thread_root_message_id",
+        "ConversationChildRuntimeState",
+        "ConversationChildMutation",
+        "ClientCommand::UpdateConversationChild",
+        "ServerEvent::ConversationChildChanged"
       ],
       "target_language": "Rust",
       "language_rationale": "Thread routing is canonical message/conversation domain state already owned by Rust.",
       "command_event_contracts": [
-        "ClientCommand::ForwardMessage.thread_root_message_id -> Command::ForwardMessage.thread_root_message_id -> Event::MessageQueued Message.thread_root_message_id"
+        "ClientCommand::ForwardMessage.thread_root_message_id -> Command::ForwardMessage.thread_root_message_id -> Event::MessageQueued Message.thread_root_message_id",
+        "ClientCommand::UpdateConversationChild -> Command::UpdateConversationChild -> Event::ConversationChildChanged -> canonical ConversationChildRuntimeState -> ServerEvent::ConversationChildChanged"
       ],
       "state_owner": "Canonical Message thread_root_message_id with Conversation/Topic identity",
       "lifecycle_owner": "MessagingService + MessagingEngine canonical forward/send lifecycle",
-      "persistence_and_restart": "Thread routing persists on the canonical Message through the existing state store; no share-specific persistence is added.",
+      "persistence_and_restart": "Thread routing persists on the canonical Message. Source-neutral ConversationChildRuntimeState is serialized inside the existing MessagingState snapshot and projected through actor-scoped SyncBatch; no share-specific persistence is added.",
       "concurrency_and_cancellation": "The typed destination is carried inside the same idempotent forward command as the client message identity.",
       "security_boundary": "Destination authorization remains enforced at the canonical forward send boundary; adding a thread identity does not bypass Conversation/Community policy.",
       "network_service_dependencies": [
@@ -1276,13 +1281,14 @@
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current-head Rust GitHub Actions evidence is pending",
-        "Child-scoped pagination, skipped-gap/retry/cancellation and client-side merge are not yet keyed by ConversationChildIdentity",
-        "Existing topic read/draft state has not yet been generalized to SavedSublist/nested child identity",
-        "Pin/list restoration, active-child continuity, notification/unread reconciliation and child-level no-paid-messages exception remain open",
-        "Shipping nested picker UI has not yet composed the typed child identity/destruction contract"
+        "Child-scoped pagination request commands, skipped-gap retry/cancellation and client-side merge are not yet shipping-composed",
+        "Legacy Topic read/draft compatibility maps still require load-time migration into ConversationChildRuntimeState",
+        "Notification/reaction reconciliation and child-list pagination composition remain open",
+        "Shipping nested picker UI has not yet composed the typed child mutation/destruction contract"
       ],
       "production_entrypoints": [
-        "Canonical recipient/topic selection -> ClientCommand::ForwardMessage -> MessagingService -> MessagingEngine -> Message.thread_root_message_id"
+        "Canonical recipient/topic selection -> ClientCommand::ForwardMessage -> MessagingService -> MessagingEngine -> Message.thread_root_message_id",
+        "Canonical child UI/state caller -> ClientCommand::UpdateConversationChild -> MessagingService authenticated actor binding -> MessagingEngine access validation -> ConversationChildRuntimeState"
       ],
       "production_evidence": [
         "commit:18289a68a55a3166f42013b9ea8cb84b7565faf1",
@@ -1290,15 +1296,22 @@
         "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage",
         "commit:bc3252c40684f4420ee0f2f51dc7b9237cc58038",
         "path:native/mahayana-messaging/src/conversation.rs#ConversationChildIdentity",
-        "path:native/mahayana-messaging/src/conversation.rs#ConversationDestinationSelection"
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationDestinationSelection",
+        "commit:7244aacd8f97ba9928773bf14ae2d8bca192c723",
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState",
+        "commit:74d31b394dcb08da6aaf1c34bd7cda1b251cc663",
+        "path:native/mahayana-messaging/src/protocol.rs#UpdateConversationChild",
+        "path:native/mahayana-messaging/src/service.rs#UpdateConversationChild",
+        "path:native/mahayana-messaging/src/engine.rs#UpdateConversationChild"
       ],
       "test_evidence": [
         "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content",
         "native/mahayana-messaging/src/conversation.rs#child_destination_tests::topic_saved_sublist_and_nested_conversation_keep_distinct_identity",
         "native/mahayana-messaging/src/conversation.rs#child_destination_tests::destroying_exact_child_clears_selection_without_parent_fallback",
-        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::unread_toggle_policy_preserves_topic_community_and_saved_sublist_rules"
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::unread_toggle_policy_preserves_topic_community_and_saved_sublist_rules",
+        "native/mahayana-messaging/tests/service_contract.rs#sync_projects_only_actor_scoped_typed_child_runtime_state"
       ],
-      "target_commit": "bc3252c40684f4420ee0f2f51dc7b9237cc58038",
+      "target_commit": "74d31b394dcb08da6aaf1c34bd7cda1b251cc663",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -1342,7 +1355,7 @@
       "responsive_disposition": "Reuse canonical picker responsiveness.",
       "accessibility_contract": "Reuse canonical Picker/ListRow selection semantics; exact shipping a11y evidence remains open.",
       "keyboard_contract": "Reuse canonical picker keyboard selection; exact shipping keyboard evidence remains open.",
-      "state_continuity_contract": "Typed child identity and exact destruction fencing now exist in the canonical Conversation owner. Durable child read/draft/pagination/pin/active state migration remains open; thread_root_message_id persistence still covers the existing Topic forward path.",
+      "state_continuity_contract": "Typed child identity, durable read/draft/pagination/pin/active/no-paid runtime state, actor-scoped Sync projection, typed mutation and exact destruction now exist in the canonical Conversation owner. Legacy Topic compatibility-map migration, child-list request/retry composition and shipping picker lifecycle remain open; thread_root_message_id persistence still covers the existing Topic forward path.",
       "ui_acceptance_scenarios": [
         "Forward to a typed thread preserves the selected thread relation instead of targeting only its parent conversation",
         "Topic, SavedSublist and nested/community child destinations never alias one another",
@@ -1435,7 +1448,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-thread selection semantics using canonical Fabushi Conversation/Topic/Message owners.",
       "reviewer": null,
-      "notes": "First SB-02 source-neutral identity slice implemented in the existing Conversation owner: Topic=root Message identity, SavedSublist=participant identity, nested/community child=Conversation identity; exact destroyed-child selection fencing and upstream-derived unread-toggle distinctions are covered by focused Rust unit tests. This does not close SavedSublist lifecycle/state: pagination/read/draft/pin/active-child/payment-exception and shipping picker composition remain open, so the row stays implemented/pending and global unknown does not decrement."
+      "notes": "SB-02 now keeps Topic=root Message identity, SavedSublist=participant identity and nested/community child=Conversation identity inside the existing Conversation owner, with durable ConversationChildRuntimeState for read/draft/pagination/pin/active/no-paid state. Full SyncBatch projects only the authenticated actor's child state under visible parents, and ClientCommand::UpdateConversationChild routes typed draft/active/pin/destroy mutations through MessagingService into Engine access validation; focused service coverage uses a SavedSublist and proves cross-actor state is not exposed. Legacy Topic compatibility migration, child-list pagination/retry/notification/reaction composition and shipping picker lifecycle remain open, so the row stays implemented/pending and global unknown does not decrement."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",

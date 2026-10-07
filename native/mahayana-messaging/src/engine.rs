@@ -5,8 +5,9 @@ use crate::community::{
     CommunityState, ForumTopicState, InviteLink, JoinRequest, MemberStatus,
 };
 use crate::conversation::{
-    Conversation, ConversationDraft, ConversationFolder, ConversationId, ConversationKind,
-    NotificationSettings, TopicDraft,
+    Conversation, ConversationChildIdentity, ConversationChildMutation,
+    ConversationChildRuntimeState, ConversationDestination, ConversationDraft, ConversationFolder,
+    ConversationId, ConversationKind, ConversationMessagePosition, NotificationSettings, TopicDraft,
 };
 use crate::message::{
     ClientMessageId, DeliveryState, ForwardPrivacy, Message, MessageContent, MessageId,
@@ -68,6 +69,11 @@ pub enum Command {
     },
     SetDraft {
         draft: ConversationDraft,
+    },
+    UpdateConversationChild {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        mutation: ConversationChildMutation,
     },
     SetConversationNotifications {
         conversation_id: ConversationId,
@@ -346,6 +352,11 @@ pub enum Event {
     DraftChanged {
         draft: ConversationDraft,
     },
+    ConversationChildChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        mutation: ConversationChildMutation,
+    },
     ConversationNotificationsUpdated {
         conversation_id: ConversationId,
         settings: NotificationSettings,
@@ -471,6 +482,10 @@ pub struct MessagingState {
     pub marked_unread_by_actor: BTreeMap<ConversationId, BTreeSet<ActorId>>,
     pub drafts: BTreeMap<ConversationId, BTreeMap<ActorId, ConversationDraft>>,
     pub topic_drafts: BTreeMap<ConversationId, BTreeMap<ActorId, BTreeMap<String, TopicDraft>>>,
+    /// Canonical source-neutral child lifecycle state. Topic-only legacy maps above
+    /// remain protocol-compatibility projections until their load-time migration
+    /// is completed; new saved-sublist/community child state belongs here.
+    pub conversation_child_states: Vec<ConversationChildRuntimeState>,
     pub pending_presence_sends: BTreeMap<ClientMessageId, PendingPresenceSend>,
     pub invoices: BTreeMap<String, Invoice>,
     pub orders: BTreeMap<String, PaymentOrder>,
@@ -481,6 +496,23 @@ pub struct MessagingState {
     pub mini_apps: BTreeMap<String, MiniAppManifest>,
     pub mini_app_grants: BTreeMap<(String, ActorId), MiniAppGrant>,
     pub mini_app_sessions: BTreeMap<String, MiniAppSession>,
+}
+
+impl MessagingState {
+    fn child_state_mut(
+        &mut self,
+        destination: ConversationDestination,
+        actor_id: ActorId,
+    ) -> Option<&mut ConversationChildRuntimeState> {
+        if let Some(index) = self.conversation_child_states.iter().position(|state| {
+            state.destination == destination && state.actor_id == actor_id
+        }) {
+            return self.conversation_child_states.get_mut(index);
+        }
+        let state = ConversationChildRuntimeState::new(destination, actor_id)?;
+        self.conversation_child_states.push(state);
+        self.conversation_child_states.last_mut()
+    }
 }
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
@@ -495,6 +527,13 @@ pub enum EngineError {
     ConversationNotFound(ConversationId),
     #[error("conversation participant data is invalid")]
     InvalidConversationParticipant,
+    #[error("conversation child destination or mutation is invalid")]
+    InvalidConversationChild,
+    #[error("actor {actor_id:?} does not have access to conversation child {destination:?}")]
+    ConversationChildAccessDenied {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+    },
     #[error("message {message_id:?} does not exist in conversation {conversation_id:?}")]
     MessageNotFound {
         conversation_id: ConversationId,
@@ -953,6 +992,27 @@ impl MessagingEngine {
                 self.require_conversation(&draft.conversation_id)?;
                 self.require_actor(&draft.actor_id)?;
                 Ok(vec![Event::DraftChanged { draft }])
+            }
+            Command::UpdateConversationChild {
+                destination,
+                actor_id,
+                mutation,
+            } => {
+                self.require_child_destination_access(&destination, &actor_id)?;
+                if matches!(
+                    &mutation,
+                    ConversationChildMutation::SetDraft {
+                        reply_to_message_id: Some(message_id),
+                        ..
+                    } if message_id.trim().is_empty() || message_id.len() > 200
+                ) {
+                    return Err(EngineError::InvalidConversationChild);
+                }
+                Ok(vec![Event::ConversationChildChanged {
+                    destination,
+                    actor_id,
+                    mutation,
+                }])
             }
             Command::SetConversationNotifications {
                 conversation_id,
@@ -2780,6 +2840,60 @@ impl MessagingEngine {
                         .insert(draft.actor_id.clone(), draft);
                 }
             }
+            Event::ConversationChildChanged {
+                destination,
+                actor_id,
+                mutation,
+            } => {
+                match mutation {
+                    ConversationChildMutation::Destroy => {
+                        self.state.conversation_child_states.retain(|state| {
+                            state.destination != destination || state.actor_id != actor_id
+                        });
+                    }
+                    ConversationChildMutation::SetActive { active } => {
+                        if active {
+                            for state in &mut self.state.conversation_child_states {
+                                if state.actor_id == actor_id
+                                    && state.destination.conversation_id == destination.conversation_id
+                                {
+                                    state.set_active(false);
+                                }
+                            }
+                        }
+                        if let Some(child) =
+                            self.state.child_state_mut(destination, actor_id)
+                        {
+                            child.set_active(active);
+                        }
+                    }
+                    ConversationChildMutation::SetPinned { pinned } => {
+                        if let Some(child) =
+                            self.state.child_state_mut(destination, actor_id)
+                        {
+                            child.pinned = pinned;
+                            if !pinned {
+                                child.restore_pinned_when_non_empty = false;
+                            }
+                        }
+                    }
+                    ConversationChildMutation::SetDraft {
+                        text,
+                        reply_to_message_id,
+                        updated_at_ms,
+                    } => {
+                        if let Some(child) =
+                            self.state.child_state_mut(destination, actor_id)
+                        {
+                            if text.trim().is_empty() && reply_to_message_id.is_none() {
+                                child.clear_draft();
+                            } else {
+                                child.set_draft(text, reply_to_message_id, updated_at_ms);
+                            }
+                        }
+                    }
+                }
+            }
             Event::ConversationNotificationsUpdated {
                 conversation_id,
                 settings,
@@ -2923,6 +3037,30 @@ impl MessagingEngine {
                 actor_id,
                 message_id,
             } => {
+                let position = self
+                    .state
+                    .messages
+                    .get(&conversation_id)
+                    .and_then(|messages| messages.get(&message_id))
+                    .map(|message| {
+                        ConversationMessagePosition::new(
+                            message.created_at_ms,
+                            message.id.0.clone(),
+                        )
+                    });
+                if let Some(position) = position {
+                    let destination = ConversationDestination::topic(
+                        conversation_id.clone(),
+                        format!("topic:{topic_id}"),
+                    );
+                    if let Some(child) =
+                        self.state.child_state_mut(destination, actor_id.clone())
+                    {
+                        let _ = child.advance_inbox_read_till(position, None);
+                    }
+                }
+                // Protocol compatibility projection while topic callers migrate to
+                // the source-neutral child runtime state above.
                 self.state
                     .topic_read_cursors
                     .entry(conversation_id)
@@ -2932,6 +3070,24 @@ impl MessagingEngine {
                     .insert(topic_id, message_id);
             }
             Event::TopicDraftChanged { draft } => {
+                let destination = ConversationDestination::topic(
+                    draft.conversation_id.clone(),
+                    format!("topic:{}", draft.topic_id),
+                );
+                if let Some(child) = self
+                    .state
+                    .child_state_mut(destination, draft.actor_id.clone())
+                {
+                    if draft.text.trim().is_empty() && draft.reply_to_message_id.is_none() {
+                        child.clear_draft();
+                    } else {
+                        child.set_draft(
+                            draft.text.clone(),
+                            draft.reply_to_message_id.clone(),
+                            draft.updated_at_ms,
+                        );
+                    }
+                }
                 if draft.text.trim().is_empty() && draft.reply_to_message_id.is_none() {
                     if let Some(by_actor) = self.state.topic_drafts.get_mut(&draft.conversation_id)
                     {
@@ -3088,6 +3244,73 @@ impl MessagingEngine {
         order.status = PaymentStatus::Paid;
         order.updated_at_ms = updated_at_ms;
         self.execute(Command::UpsertOrder { order })
+    }
+
+    fn require_child_destination_access(
+        &self,
+        destination: &ConversationDestination,
+        actor_id: &ActorId,
+    ) -> Result<(), EngineError> {
+        self.require_actor(actor_id)?;
+        if !destination.is_valid() || destination.child.is_none() {
+            return Err(EngineError::InvalidConversationChild);
+        }
+        let parent = self.require_conversation(&destination.conversation_id)?;
+        let parent_access = parent.owner_id.as_ref() == Some(actor_id)
+            || parent
+                .participants
+                .iter()
+                .any(|participant| &participant.actor_id == actor_id)
+            || self
+                .state
+                .communities
+                .get(&destination.conversation_id)
+                .is_some_and(|community| community_has_access(community, actor_id));
+        if !parent_access {
+            return Err(EngineError::ConversationChildAccessDenied {
+                destination: destination.clone(),
+                actor_id: actor_id.clone(),
+            });
+        }
+        match destination.child.as_ref().expect("checked above") {
+            ConversationChildIdentity::Topic { root_message_id } => {
+                let topic_id = topic_id_from_root(&MessageId::new(root_message_id.clone()))
+                    .ok_or(EngineError::InvalidConversationChild)?;
+                if !self
+                    .state
+                    .communities
+                    .get(&destination.conversation_id)
+                    .is_some_and(|community| community.topics.contains_key(topic_id))
+                {
+                    return Err(EngineError::InvalidConversationChild);
+                }
+            }
+            ConversationChildIdentity::SavedSublist { .. } => {
+                if !matches!(parent.kind, ConversationKind::SavedMessages) {
+                    return Err(EngineError::InvalidConversationChild);
+                }
+            }
+            ConversationChildIdentity::Conversation { conversation_id } => {
+                let child = self.require_conversation(conversation_id)?;
+                let child_access = child.owner_id.as_ref() == Some(actor_id)
+                    || child
+                        .participants
+                        .iter()
+                        .any(|participant| &participant.actor_id == actor_id)
+                    || self
+                        .state
+                        .communities
+                        .get(conversation_id)
+                        .is_some_and(|community| community_has_access(community, actor_id));
+                if !child_access {
+                    return Err(EngineError::ConversationChildAccessDenied {
+                        destination: destination.clone(),
+                        actor_id: actor_id.clone(),
+                    });
+                }
+            }
+        }
+        Ok(())
     }
 
     fn require_actor(&self, id: &ActorId) -> Result<&Actor, EngineError> {

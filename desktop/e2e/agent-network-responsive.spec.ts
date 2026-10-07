@@ -111,6 +111,34 @@ async function ensureE2eAuthBackend(): Promise<string> {
         }));
         return;
       }
+      // The shipping logged-in workspace immediately asks the Host to reconcile
+      // canonical Human contacts and calls. Keep this focused backend honest by
+      // implementing the production HTTP envelopes instead of letting those
+      // requests fall through to the auth-only 404 handler. An empty social
+      // account is valid and prevents unrelated Human sync failures from
+      // aborting the Agent Network route transition.
+      if (requestUrl.pathname === '/api/social/friends' && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || request.headers['x-fabushi-device-id'] !== 'fabushi-agent-network-e2e-device') {
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-session' }));
+          return;
+        }
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, data: { friends: [] } }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/calls' && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || request.headers['x-fabushi-device-id'] !== 'fabushi-agent-network-e2e-device') {
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-session' }));
+          return;
+        }
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, calls: [] }));
+        return;
+      }
       response.statusCode = 404;
       response.end(JSON.stringify({ error: 'not-found' }));
     });
@@ -230,7 +258,28 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   // roster row. Readiness is the canonical Agent list plus its stable shell
   // actions; opening "New" would enter the Create agent dialog and is not an
   // account/session readiness signal.
-  await expect(page.getByRole('region', { name: 'Agent list' })).toBeVisible({ timeout: 15_000 });
+  const roster = page.getByRole('region', { name: 'Agent list' });
+  await expect(roster).toBeVisible({ timeout: 15_000 });
+
+  // Agent Network is intentionally fail-closed until a real Agent exists.
+  // A fresh authenticated account can have an empty canonical Host roster, so
+  // establish the fixture through the shipping New -> Create agent flow instead
+  // of bypassing the product gate or injecting synthetic Host state.
+  const loadedAgentRows = roster.locator('button.sand-agent-item');
+  const emptyRoster = roster.getByText('No saved agents yet.', { exact: true });
+  await expect.poll(async () => {
+    if (await loadedAgentRows.count() > 0) return 'loaded';
+    return await emptyRoster.isVisible().catch(() => false) ? 'empty' : 'pending';
+  }, { timeout: 15_000 }).not.toBe('pending');
+  if (await loadedAgentRows.count() === 0) {
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+    const createAgent = page.getByRole('dialog', { name: 'Create agent' });
+    await expect(createAgent).toBeVisible();
+    await createAgent.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(createAgent).toBeHidden();
+    await expect.poll(async () => loadedAgentRows.count(), { timeout: 15_000 }).toBeGreaterThan(0);
+  }
+
   await expect(page.getByRole('button', { name: 'Agent network', exact: true })).toBeVisible({ timeout: 15_000 });
 }
 
@@ -294,7 +343,8 @@ test('shipping Agent Network binds to the live workspace and supports real wheel
     await expect(firstAgentNode).toHaveAttribute('aria-pressed', /true|false/);
 
     const scene = network.locator('.sand-org-chart-network__scene');
-    // Exercise the native wheel path rather than dispatching a synthetic WheelEvent; the screenshot below is the visual evidence companion.\n    const transformBeforeWheel = await scene.evaluate((element) => getComputedStyle(element).transform);
+    // Exercise the native wheel path rather than dispatching a synthetic WheelEvent; the screenshot below is the visual evidence companion.
+    const transformBeforeWheel = await scene.evaluate((element) => getComputedStyle(element).transform);
     const sceneBox = await scene.boundingBox();
     expect(sceneBox).not.toBeNull();
     await page.mouse.move(

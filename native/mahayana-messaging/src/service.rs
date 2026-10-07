@@ -3,7 +3,8 @@ use crate::blob_store::{BlobStoreError, FileBlobStore};
 use crate::bot::BotInvocation;
 use crate::community::{CommunityState, MemberStatus};
 use crate::conversation::{
-    Conversation, ConversationDraft, ConversationId, ConversationKind, Topic, TopicDraft,
+    Conversation, ConversationDestination, ConversationDraft, ConversationId, ConversationKind,
+    Topic, TopicDraft,
 };
 use crate::engine::topic_id_from_root;
 use crate::engine::{Command, EngineError, Event, MessagingEngine};
@@ -980,6 +981,17 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     return Err(denied("conversation state update requires membership"));
                 }
             }
+            ClientCommand::UpdateConversationChild { destination, .. } => {
+                let existing = self
+                    .engine
+                    .state()
+                    .conversations
+                    .get(&destination.conversation_id)
+                    .ok_or_else(|| denied("conversation child parent does not exist"))?;
+                if !self.actor_can_see_conversation(actor_id, existing) {
+                    return Err(denied("conversation child update requires parent access"));
+                }
+            }
             ClientCommand::MarkTopicRead {
                 conversation_id, ..
             }
@@ -1337,6 +1349,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 folders: Vec::new(),
                 drafts: Vec::new(),
                 topic_drafts: Vec::new(),
+                conversation_child_states: Vec::new(),
                 pending_presence_sends: Vec::new(),
                 invoices: Vec::new(),
                 orders: Vec::new(),
@@ -1433,11 +1446,23 @@ impl<S: MessagingStateStore> MessagingService<S> {
         server_time_ms: i64,
     ) -> u32 {
         let state = self.engine.state();
-        let cursor = state
+        let destination = ConversationDestination::topic(
+            conversation_id.clone(),
+            format!("topic:{topic_id}"),
+        );
+        let typed_cursor = state
+            .conversation_child_states
+            .iter()
+            .find(|child| child.destination == destination && &child.actor_id == actor_id)
+            .and_then(|child| child.inbox_read_till.as_ref())
+            .map(|position| position.message_id.as_str());
+        let legacy_cursor = state
             .topic_read_cursors
             .get(conversation_id)
             .and_then(|by_actor| by_actor.get(actor_id))
-            .and_then(|by_topic| by_topic.get(topic_id));
+            .and_then(|by_topic| by_topic.get(topic_id))
+            .map(|message_id| message_id.0.as_str());
+        let cursor_message_id = typed_cursor.or(legacy_cursor);
         let mut messages = state
             .messages
             .get(conversation_id)
@@ -1449,10 +1474,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 .cmp(&right.created_at_ms)
                 .then_with(|| left.id.cmp(&right.id))
         });
-        let read_index = cursor.and_then(|message_id| {
+        let read_index = cursor_message_id.and_then(|message_id| {
             messages
                 .iter()
-                .position(|message| &message.id == message_id)
+                .position(|message| message.id.0 == message_id)
         });
         let unread = messages
             .iter()
@@ -1646,6 +1671,15 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .filter_map(|conversation_id| state.topic_drafts.get(conversation_id))
                     .filter_map(|by_actor| by_actor.get(actor_id))
                     .flat_map(|by_topic| by_topic.values())
+                    .cloned()
+                    .collect(),
+                conversation_child_states: state
+                    .conversation_child_states
+                    .iter()
+                    .filter(|child| {
+                        &child.actor_id == actor_id
+                            && visible_conversation_ids.contains(&child.destination.conversation_id)
+                    })
                     .cloned()
                     .collect(),
                 pending_presence_sends: state
@@ -1861,6 +1895,14 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     reply_to_message_id: reply_to_message_id.map(|id| id.0),
                     updated_at_ms: now_ms,
                 },
+            }],
+            ClientCommand::UpdateConversationChild {
+                destination,
+                mutation,
+            } => vec![Command::UpdateConversationChild {
+                destination,
+                actor_id: actor_id.clone(),
+                mutation,
             }],
             ClientCommand::SetConversationNotifications {
                 conversation_id,
@@ -2331,6 +2373,26 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 marked_unread,
             },
             Event::DraftChanged { draft } => ServerEvent::DraftChanged { draft },
+            Event::ConversationChildChanged {
+                destination,
+                actor_id: child_actor_id,
+                ..
+            } => {
+                let state = self
+                    .engine
+                    .state()
+                    .conversation_child_states
+                    .iter()
+                    .find(|state| {
+                        state.destination == destination && state.actor_id == child_actor_id
+                    })
+                    .cloned();
+                ServerEvent::ConversationChildChanged {
+                    destination,
+                    actor_id: child_actor_id,
+                    state,
+                }
+            }
             Event::FolderUpserted { folder } => ServerEvent::FolderChanged { folder },
             Event::FolderDeleted { folder_id } => ServerEvent::FolderDeleted { folder_id },
             Event::PresenceTriggeredSendQueued { pending } => {
@@ -2581,6 +2643,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
             ServerEvent::DraftChanged { draft } => {
                 audience.clear();
                 audience.insert(draft.actor_id.clone());
+            }
+            ServerEvent::ConversationChildChanged { actor_id, .. } => {
+                audience.clear();
+                audience.insert(actor_id.clone());
             }
             ServerEvent::TopicDraftChanged { draft } => {
                 audience.clear();
