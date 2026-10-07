@@ -17,9 +17,13 @@ export interface OrgChartGraphProps {
   onOpenAgent?(agentId: string): void;
 }
 
-export function OrgChartGraph({ agents, width = 760, height = 500, now = Date.now(), selectedAgentId, onSelectAgent, onOpenAgent }: OrgChartGraphProps) {
+export function OrgChartGraph({ agents, width, height, now = Date.now(), selectedAgentId, onSelectAgent, onOpenAgent }: OrgChartGraphProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [measuredSize, setMeasuredSize] = useState({ width: width ?? 760, height: height ?? 500 });
+  const layoutWidth = width ?? measuredSize.width;
+  const layoutHeight = height ?? measuredSize.height;
   const edges = useMemo(() => buildOrgChartEdges(agents), [agents]);
-  const positions = useMemo(() => layoutOrgChart({ nodeIds: [...agents].sort((a, b) => Number(b.isGroup) - Number(a.isGroup) || a.id.localeCompare(b.id)).map((agent) => agent.id), edges, width, height }), [agents, edges, width, height]);
+  const positions = useMemo(() => layoutOrgChart({ nodeIds: [...agents].sort((a, b) => Number(b.isGroup) - Number(a.isGroup) || a.id.localeCompare(b.id)).map((agent) => agent.id), edges, width: layoutWidth, height: layoutHeight }), [agents, edges, layoutWidth, layoutHeight]);
   const byId = useMemo(() => new Map(agents.map((agent) => [agent.id, agent])), [agents]);
   const [localSelected, setLocalSelected] = useState<string | null>(null);
   const selected = selectedAgentId === undefined ? localSelected : selectedAgentId;
@@ -35,6 +39,22 @@ export function OrgChartGraph({ agents, width = 760, height = 500, now = Date.no
   };
 
   useEffect(() => {
+    if (width != null && height != null) return;
+    const container = containerRef.current;
+    if (container == null || typeof ResizeObserver === "undefined") return;
+    const updateSize = () => {
+      const rect = container.getBoundingClientRect();
+      const nextWidth = width ?? Math.max(1, Math.round(rect.width));
+      const nextHeight = height ?? Math.max(1, Math.round(rect.height));
+      setMeasuredSize((current) => current.width === nextWidth && current.height === nextHeight ? current : { width: nextWidth, height: nextHeight });
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [layoutHeight, layoutWidth]);
+
+  useEffect(() => {
     const scene = sceneRef.current;
     if (scene == null) return;
     const onWheel = (event: WheelEvent) => {
@@ -42,7 +62,7 @@ export function OrgChartGraph({ agents, width = 760, height = 500, now = Date.no
       setIsPanning(false);
       const rect = scene.getBoundingClientRect();
       const multiplier = wheelZoomFactor(event.deltaY, event.deltaMode, event.ctrlKey);
-      updateViewport(zoomViewport(viewportRef.current, multiplier, { x: event.clientX - rect.left, y: event.clientY - rect.top }, { width, height }));
+      updateViewport(zoomViewport(viewportRef.current, multiplier, { x: event.clientX - rect.left, y: event.clientY - rect.top }, { width: layoutWidth, height: layoutHeight }));
     };
     scene.addEventListener("wheel", onWheel, { passive: false });
     return () => scene.removeEventListener("wheel", onWheel);
@@ -65,7 +85,7 @@ export function OrgChartGraph({ agents, width = 760, height = 500, now = Date.no
     const delta = { x: event.clientX - pointer.lastX, y: event.clientY - pointer.lastY };
     pointer.lastX = event.clientX;
     pointer.lastY = event.clientY;
-    if (pointer.isMoved) updateViewport(panViewport(viewportRef.current, delta, { width, height }, 0.5));
+    if (pointer.isMoved) updateViewport(panViewport(viewportRef.current, delta, { width: layoutWidth, height: layoutHeight }, 0.5));
   };
 
   const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
@@ -90,7 +110,7 @@ export function OrgChartGraph({ agents, width = 760, height = 500, now = Date.no
   }
 
   return (
-    <div aria-label="Agent network" className="sand-org-chart-network" role="region" style={{ width, height }}>
+    <div aria-label="Agent network" className="sand-org-chart-network" role="region" style={{ width: layoutWidth, height: layoutHeight }}>
       <div
         className="sand-org-chart-network__scene"
         onDoubleClick={resetViewport}
@@ -101,7 +121,7 @@ export function OrgChartGraph({ agents, width = 760, height = 500, now = Date.no
         ref={sceneRef}
         style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`, transformOrigin: "0 0", touchAction: "none", cursor: isPanning ? "grabbing" : "grab" }}
       >
-        <svg aria-hidden="true" height={height} style={{ position: "absolute", inset: 0, overflow: "visible" }} viewBox={`0 0 ${width} ${height}`} width={width}>
+        <svg aria-hidden="true" height={layoutHeight} style={{ position: "absolute", inset: 0, overflow: "visible" }} viewBox={`0 0 ${layoutWidth} ${layoutHeight}`} width={layoutWidth}>
           {edges.map((edge) => {
             const source = positions.get(edge.sourceId);
             const target = positions.get(edge.targetId);
