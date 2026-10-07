@@ -29,6 +29,19 @@ function ghRepo(url) {
   const m=url.match(/github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?$/);
   return m ? `${m[1]}/${m[2].replace(/\.git$/,'')}` : null;
 }
+function dockerStage(raw, stageName) {
+  const stages=[...raw.matchAll(/^FROM[^\r\n]*$/gim)];
+  const wanted=String(stageName).toLowerCase();
+  for (let index=0; index<stages.length; index++) {
+    const line=stages[index][0];
+    const alias=line.match(/[ \t]+AS[ \t]+([^ \t#]+)/i)?.[1]?.toLowerCase();
+    if (alias!==wanted) continue;
+    const start=stages[index].index;
+    const end=index+1<stages.length ? stages[index+1].index : raw.length;
+    return raw.slice(start,end);
+  }
+  return '';
+}
 async function gitlabTree(project, sha) {
   let page=1, all=[];
   while (true) {
@@ -292,7 +305,8 @@ for (const [kind,value] of [
   ['path_exact','Changelog'],['path_exact','RELEASE_NOTES']
 ]) fail(ffmpegPolicy.some(rule=>rule[kind]===value),'FFmpeg acquisition disposition missing: '+value);
 const prepareFfmpegStage=prepareQt.match(/stage\('ffmpeg',[\s\S]*?\n"""\)/)?.[0]||'';
-const dockerFfmpegStage=dockerQt.match(/FROM builder AS ffmpeg[\s\S]*?rm -rf FFmpeg/)?.[0]||'';
+const dockerFfmpegStage=dockerStage(dockerQt,'ffmpeg');
+fail(dockerFfmpegStage.length>0,'unable to isolate accepted FFmpeg build stage in Dockerfile');
 const snapFfmpegStage=snapQt.match(/\n  ffmpeg:\n[\s\S]*?\n  [a-z0-9_-]+:/)?.[0]||'';
 for (const [name,stage] of [['prepare.py',prepareFfmpegStage],['Dockerfile',dockerFfmpegStage],['snapcraft.yaml',snapFfmpegStage]]) {
   fail(stage.includes('--disable-programs'),'accepted FFmpeg build lost --disable-programs in '+name);
