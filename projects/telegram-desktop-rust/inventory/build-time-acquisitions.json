@@ -1267,9 +1267,14 @@
           "path_exact": "init-repository.pl",
           "disposition": "qt-init-repository-tool-not-invoked",
           "basis": "TDesktop uses explicit git submodule update selections instead of Qt init-repository."
+        },
+        {
+          "path_exact": "cmake/QtIRGitHelpers.cmake",
+          "disposition": "qt-init-repository-helper-not-invoked",
+          "basis": "Accepted TDesktop Qt acquisition explicitly initializes only the selected qt5 submodules with git submodule update, then configures/builds the checked-out tree; it does not invoke Qt init-repository or its QtIRGitHelpers clone/fetch machinery."
         }
       ],
-      "root_candidate_policy_status": "partial-open"
+      "root_candidate_policy_status": "complete-for-current-qt-authorities"
     },
     "openssl": {
       "repository": "https://github.com/openssl/openssl",
