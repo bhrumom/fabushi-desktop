@@ -2467,6 +2467,8 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 message_id,
             },
             Event::TopicDraftChanged { draft } => ServerEvent::TopicDraftChanged { draft },
+            Event::ConversationChildReadChanged { .. }
+            | Event::ConversationChildDraftChanged { .. } => return None,
             Event::InvoiceCreated { invoice } => ServerEvent::InvoiceChanged { invoice },
             Event::OrderUpserted { order } => ServerEvent::OrderChanged { order },
             Event::WalletChanged { .. } => return None,
