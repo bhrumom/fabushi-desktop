@@ -1,0 +1,57 @@
+name: TDRP Revision 9 source authority
+
+on:
+  pull_request:
+    paths:
+      - 'projects/telegram-desktop-rust/**'
+      - 'projects/fabushi-communication-platform/**'
+      - 'docs/specs/telegram-desktop-rust-equivalence-migration.md'
+      - 'scripts/validate-tdrp-revision9-authority.mjs'
+      - '.github/workflows/tdrp-revision9-source-authority.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-authority:
+    name: Source authority / recursive inventory
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Bind exact tested HEAD
+        run: test "$GITHUB_SHA" = "$(git rev-parse HEAD)"
+      - name: Resolve accepted upstream tree
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const lock=JSON.parse(fs.readFileSync('projects/telegram-desktop-rust/upstream.lock.json','utf8'));
+          const r=await fetch('https://api.github.com/repos/'+lock.upstream.repository+'/git/commits/'+lock.upstream.commit,{headers:{Authorization:'Bearer '+process.env.GH_TOKEN,'User-Agent':'fabushi-tdrp-r9'}});
+          if(!r.ok) throw new Error('commit lookup failed '+r.status);
+          const c=await r.json();
+          console.log('UPSTREAM_COMMIT='+c.sha);
+          console.log('UPSTREAM_TREE='+c.tree.sha);
+          console.log('LOCK_TREE='+lock.upstream.tree);
+          NODE
+      - name: Validate Revision 9 authority
+        run: node scripts/validate-tdrp-revision9-authority.mjs
+      - name: Require accepted mode to fail closed only on incomplete acceptance
+        run: |
+          set +e
+          node scripts/validate-tdrp-revision9-authority.mjs --require-accepted > /tmp/accepted.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/accepted.log
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+          grep -Eq 'accepted mode requires acceptance.accepted=true|accepted mode requires baseline_ready=true|G-INVENTORY unknown must be 0|G-INVENTORY unread must be 0' /tmp/accepted.log
+          ! grep -Eqi 'baseline drift|traceability.*missing|validator.*error|source commit differs|blob mismatch' /tmp/accepted.log
+      - name: Upload current-head source-authority evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-revision9-authority-${{ github.sha }}
+          path: artifacts/tdrp-authority
+          if-no-files-found: error
