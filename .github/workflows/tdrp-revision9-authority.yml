@@ -101,6 +101,12 @@ jobs:
           set -euo pipefail
           node scripts/discover-tdrp-external-child-authority.mjs
 
+      - name: Discover root mutable and tool authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-root-open-authority.mjs
+
       - name: Upload source-authority evidence
         uses: actions/upload-artifact@v4
         with:
