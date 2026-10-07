@@ -208,3 +208,15 @@ This dossier supports the following narrow counter movement only:
 - `acceptance.accepted: false`
 
 No production responsibility is declared verified by this read alone. Seven narrow ShareBox responsibilities are now machine-readable and implemented (`TDRP-R9-SHARE-SEND-OPTIONS-001`, `TDRP-R9-SHARE-DESTINATION-POLICY-001`, `TDRP-R9-SHARE-LINK-ENTITY-OFFSET-001`, `TDRP-R9-SHARE-THREAD-DESTINATION-001`, `TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001`, `TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001`, `TDRP-R9-SHARE-FORWARD-PRIVACY-001`), but current-head GitHub Actions and independent evidence remain pending and the other SB-01…SB-08 slices remain open. Therefore `unknown` stays 15,788 and ShareBox is not mapped/verified as a whole.
+
+
+### Send-menu dependency authority
+
+| path | blob | read status | classification | mapping status |
+| --- | --- | --- | --- | --- |
+| `Telegram/SourceFiles/menu/menu_send.h` | `8f6c908d85fd448441f5b451617d502a6fa3c568` | complete, 2,203 bytes | typed send-menu/action contract | open |
+| `Telegram/SourceFiles/menu/menu_send.cpp` | `1bbd5494928f7fa08192cb56bd40146dc0ec4d5f` | complete, 30,851 bytes | send-mode eligibility, shortcuts, effects and unread-thread actions | open |
+
+These files make SB-03/SB-07 stricter than a generic schedule/silent pair. `SendMenu::Type` distinguishes disabled, reminder, silent-only and scheduled-to-user eligibility; send-when-online is emitted only for the scheduled-to-user case, reminder suppresses silent send, and silent-only suppresses scheduling. Keyboard shortcuts call the same typed policy rather than bypassing it. The same menu also carries effect, spoiler, caption placement, photo-quality, cover and paid-price applicability, while its thread-level unread actions preserve topic/sublist identity. Fabushi must therefore model these as typed applicability/trigger responsibilities in existing Message/Presence/Conversation/Composer owners; the two files are read-complete but remain unknown because those responsibilities are not fully mapped, shipping-composed and evidenced.
+
+Coverage after this read only: `unread=15,769`, `unknown=15,788`, `omitted=0`, `baseline_ready=false`, `acceptance.accepted=false`.
