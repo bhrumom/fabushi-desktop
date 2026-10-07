@@ -1208,8 +1208,8 @@
         "Message.thread_root_message_id"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/share-box-complete-read.md",
-      "behavior_contract": "A forward destination may resolve to a typed child thread/topic rather than only its parent conversation; the resolved thread identity must survive protocol projection and domain message creation instead of being flattened to the parent.",
-      "state_machine": "canonical destination selection -> optional typed thread root -> ForwardMessage protocol -> MessagingService projection -> MessagingEngine command -> pending Message carrying thread_root_message_id.",
+      "behavior_contract": "A forward destination may resolve to a typed child rather than only its parent Conversation. Canonical destination identity distinguishes Topic by root Message identity, SavedSublist by participant identity, and nested/community Conversation by Conversation identity; exact child destruction clears selection without silently falling back to the parent.",
+      "state_machine": "canonical parent candidate -> optional typed child selection -> exact ConversationDestination identity -> destroyed-child fencing -> optional topic root projection -> ForwardMessage protocol -> MessagingService -> MessagingEngine -> Message.thread_root_message_id",
       "side_effects": [
         "Routes the forwarded canonical Message to the selected thread root",
         "Does not create a second thread or conversation store"
@@ -1223,7 +1223,10 @@
       "non_ui_responsibilities": [
         "Typed forward destination routing",
         "Protocol compatibility for absent thread root",
-        "Canonical Message thread relation preservation"
+        "Canonical Message thread relation preservation",
+        "Source-neutral Topic/SavedSublist/nested-Conversation child identity",
+        "Exact destroyed-child selection cleanup",
+        "Thread-derived unread-toggle eligibility differences"
       ],
       "platform_delta": "Telegram Data::Thread selection is represented by the existing Fabushi Conversation plus Message.thread_root_message_id model.",
       "existing_owner_candidates": [
@@ -1241,12 +1244,17 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs",
         "native/mahayana-messaging/src/protocol.rs",
         "native/mahayana-messaging/src/service.rs",
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/message.rs"
       ],
       "fabushi_target_symbols": [
+        "ConversationChildIdentity",
+        "ConversationDestination",
+        "ConversationDestinationSelection",
+        "pub fn can_toggle_unread(",
         "thread_root_message_id"
       ],
       "target_language": "Rust",
@@ -1268,7 +1276,10 @@
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current-head Rust GitHub Actions evidence is pending",
-        "Shipping nested picker lifecycle/destruction and canonical topic eligibility evidence remain open"
+        "Child-scoped pagination, skipped-gap/retry/cancellation and client-side merge are not yet keyed by ConversationChildIdentity",
+        "Existing topic read/draft state has not yet been generalized to SavedSublist/nested child identity",
+        "Pin/list restoration, active-child continuity, notification/unread reconciliation and child-level no-paid-messages exception remain open",
+        "Shipping nested picker UI has not yet composed the typed child identity/destruction contract"
       ],
       "production_entrypoints": [
         "Canonical recipient/topic selection -> ClientCommand::ForwardMessage -> MessagingService -> MessagingEngine -> Message.thread_root_message_id"
@@ -1276,12 +1287,18 @@
       "production_evidence": [
         "commit:18289a68a55a3166f42013b9ea8cb84b7565faf1",
         "path:native/mahayana-messaging/src/protocol.rs#ForwardMessage",
-        "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage"
+        "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage",
+        "commit:bc3252c40684f4420ee0f2f51dc7b9237cc58038",
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildIdentity",
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationDestinationSelection"
       ],
       "test_evidence": [
-        "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content"
+        "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content",
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::topic_saved_sublist_and_nested_conversation_keep_distinct_identity",
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::destroying_exact_child_clears_selection_without_parent_fallback",
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::unread_toggle_policy_preserves_topic_community_and_saved_sublist_rules"
       ],
-      "target_commit": "18289a68a55a3166f42013b9ea8cb84b7565faf1",
+      "target_commit": "bc3252c40684f4420ee0f2f51dc7b9237cc58038",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -1325,9 +1342,11 @@
       "responsive_disposition": "Reuse canonical picker responsiveness.",
       "accessibility_contract": "Reuse canonical Picker/ListRow selection semantics; exact shipping a11y evidence remains open.",
       "keyboard_contract": "Reuse canonical picker keyboard selection; exact shipping keyboard evidence remains open.",
-      "state_continuity_contract": "Selected typed destination is encoded in the command and persists on Message; picker lifecycle semantics remain a separate open slice.",
+      "state_continuity_contract": "Typed child identity and exact destruction fencing now exist in the canonical Conversation owner. Durable child read/draft/pagination/pin/active state migration remains open; thread_root_message_id persistence still covers the existing Topic forward path.",
       "ui_acceptance_scenarios": [
-        "Forward to a typed thread preserves the selected thread relation instead of targeting only its parent conversation"
+        "Forward to a typed thread preserves the selected thread relation instead of targeting only its parent conversation",
+        "Topic, SavedSublist and nested/community child destinations never alias one another",
+        "Destroying the selected child clears the selection instead of forwarding to the parent"
       ],
       "design_system_version": "FBCP Revision 7 live Fabushi design system",
       "semantic_token_usage": [
@@ -1416,7 +1435,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-thread selection semantics using canonical Fabushi Conversation/Topic/Message owners.",
       "reviewer": null,
-      "notes": "This row closes only preservation of an already-resolved typed thread destination through the native forward path. Picker lifecycle, topic existence/closed-state selection UX, saved-message sublists/community child selection, and the rest of ShareBox remain open, so global unknown does not decrement."
+      "notes": "First SB-02 source-neutral identity slice implemented in the existing Conversation owner: Topic=root Message identity, SavedSublist=participant identity, nested/community child=Conversation identity; exact destroyed-child selection fencing and upstream-derived unread-toggle distinctions are covered by focused Rust unit tests. This does not close SavedSublist lifecycle/state: pagination/read/draft/pin/active-child/payment-exception and shipping picker composition remain open, so the row stays implemented/pending and global unknown does not decrement."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
