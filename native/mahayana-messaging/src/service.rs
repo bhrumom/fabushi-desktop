@@ -982,7 +982,13 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 }
             }
             ClientCommand::MarkConversationChildRead { destination, .. }
-            | ClientCommand::SetConversationChildDraft { destination, .. } => {
+            | ClientCommand::SetConversationChildDraft { destination, .. }
+            | ClientCommand::ReplaceConversationChildWindow { destination, .. }
+            | ClientCommand::SetConversationChildPinned { destination, .. }
+            | ClientCommand::SetConversationChildActive { destination, .. }
+            | ClientCommand::SetConversationChildMarkedUnread { destination, .. }
+            | ClientCommand::SetConversationChildNoPaidMessages { destination, .. }
+            | ClientCommand::DestroyConversationChild { destination, .. } => {
                 let conversation_id = &destination.conversation_id;
                 let existing = self
                     .engine
@@ -1363,6 +1369,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 drafts: Vec::new(),
                 topic_drafts: Vec::new(),
                 pending_presence_sends: Vec::new(),
+                conversation_children: Vec::new(),
                 invoices: Vec::new(),
                 orders: Vec::new(),
                 stories: Vec::new(),
@@ -1689,6 +1696,16 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .pending_presence_sends
                     .values()
                     .filter(|pending| &pending.sender_id == actor_id)
+                    .cloned()
+                    .collect(),
+                conversation_children: state
+                    .conversation_child_states
+                    .iter()
+                    .filter(|child| {
+                        &child.actor_id == actor_id
+                            && visible_conversation_ids.contains(&child.destination.conversation_id)
+                    })
+                    .take(max_items)
                     .cloned()
                     .collect(),
                 invoices: state
@@ -2087,6 +2104,58 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 reply_to_message_id,
                 updated_at_ms: now_ms,
             }],
+            ClientCommand::ReplaceConversationChildWindow {
+                destination,
+                message_ids,
+                skipped_before,
+                skipped_after,
+                full_count,
+            } => vec![Command::ReplaceConversationChildWindow {
+                destination,
+                actor_id: actor_id.clone(),
+                message_ids,
+                skipped_before,
+                skipped_after,
+                full_count,
+            }],
+            ClientCommand::SetConversationChildPinned {
+                destination,
+                pinned,
+            } => vec![Command::SetConversationChildPinned {
+                destination,
+                actor_id: actor_id.clone(),
+                pinned,
+            }],
+            ClientCommand::SetConversationChildActive {
+                destination,
+                active,
+            } => vec![Command::SetConversationChildActive {
+                destination,
+                actor_id: actor_id.clone(),
+                active,
+            }],
+            ClientCommand::SetConversationChildMarkedUnread {
+                destination,
+                marked_unread,
+            } => vec![Command::SetConversationChildMarkedUnread {
+                destination,
+                actor_id: actor_id.clone(),
+                marked_unread,
+            }],
+            ClientCommand::SetConversationChildNoPaidMessages {
+                destination,
+                no_paid_messages,
+            } => vec![Command::SetConversationChildNoPaidMessages {
+                destination,
+                actor_id: actor_id.clone(),
+                no_paid_messages,
+            }],
+            ClientCommand::DestroyConversationChild { destination } => {
+                vec![Command::DestroyConversationChild {
+                    destination,
+                    actor_id: actor_id.clone(),
+                }]
+            }
             ClientCommand::SetReaction {
                 conversation_id,
                 message_id,
@@ -2468,7 +2537,13 @@ impl<S: MessagingStateStore> MessagingService<S> {
             },
             Event::TopicDraftChanged { draft } => ServerEvent::TopicDraftChanged { draft },
             Event::ConversationChildReadChanged { .. }
-            | Event::ConversationChildDraftChanged { .. } => return None,
+            | Event::ConversationChildDraftChanged { .. }
+            | Event::ConversationChildWindowReplaced { .. }
+            | Event::ConversationChildPinnedChanged { .. }
+            | Event::ConversationChildActiveChanged { .. }
+            | Event::ConversationChildMarkedUnreadChanged { .. }
+            | Event::ConversationChildNoPaidMessagesChanged { .. }
+            | Event::ConversationChildDestroyed { .. } => return None,
             Event::InvoiceCreated { invoice } => ServerEvent::InvoiceChanged { invoice },
             Event::OrderUpserted { order } => ServerEvent::OrderChanged { order },
             Event::WalletChanged { .. } => return None,

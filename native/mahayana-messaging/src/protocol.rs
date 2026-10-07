@@ -204,6 +204,32 @@ pub enum ClientCommand {
         text: String,
         reply_to_message_id: Option<MessageId>,
     },
+    ReplaceConversationChildWindow {
+        destination: ConversationDestination,
+        message_ids: Vec<MessageId>,
+        skipped_before: Option<u32>,
+        skipped_after: Option<u32>,
+        full_count: Option<u32>,
+    },
+    SetConversationChildPinned {
+        destination: ConversationDestination,
+        pinned: bool,
+    },
+    SetConversationChildActive {
+        destination: ConversationDestination,
+        active: bool,
+    },
+    SetConversationChildMarkedUnread {
+        destination: ConversationDestination,
+        marked_unread: bool,
+    },
+    SetConversationChildNoPaidMessages {
+        destination: ConversationDestination,
+        no_paid_messages: bool,
+    },
+    DestroyConversationChild {
+        destination: ConversationDestination,
+    },
     SetReaction {
         conversation_id: ConversationId,
         message_id: MessageId,
@@ -359,6 +385,8 @@ pub enum ServerEvent {
         topic_drafts: Vec<TopicDraft>,
         #[serde(default)]
         pending_presence_sends: Vec<PendingPresenceSend>,
+        #[serde(default)]
+        conversation_children: Vec<crate::conversation::ConversationChildRuntimeState>,
         invoices: Vec<Invoice>,
         orders: Vec<PaymentOrder>,
         stories: Vec<Story>,

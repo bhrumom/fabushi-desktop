@@ -608,15 +608,14 @@ fn typed_child_read_and_draft_share_the_canonical_conversation_state() {
     }
 
     let conversation_id = ConversationId::new("conversation:saved-child");
-    let conversation = Conversation::direct(
+    let mut conversation = Conversation::direct(
         conversation_id.0.clone(),
         "Saved child fixture",
-        vec![
-            participant("human:owner", ParticipantRole::Owner),
-            participant("human:peer", ParticipantRole::Member),
-        ],
+        vec![participant("human:owner", ParticipantRole::Owner)],
         2,
     );
+    conversation.kind = ConversationKind::SavedMessages;
+    conversation.owner_id = Some(ActorId::new("human:owner"));
     service
         .handle(
             ClientEnvelope::new(
@@ -825,6 +824,371 @@ fn typed_child_read_and_draft_share_the_canonical_conversation_state() {
         denied,
         MessagingServiceError::UnauthorizedCommand(reason)
             if reason.contains("conversation child state update requires membership")
+    ));
+}
+
+#[test]
+fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_scoped() {
+    let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
+    for actor_id in ["human:owner", "human:peer", "human:outsider"] {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context(actor_id, &format!("profile:lifecycle:{actor_id}")),
+                    ClientCommand::UpsertProfile {
+                        actor: Actor::human(actor_id, actor_id),
+                    },
+                ),
+                1,
+            )
+            .unwrap();
+    }
+
+    let parent_id = ConversationId::new("conversation:child-lifecycle");
+    let child_id = ConversationId::new("conversation:child-lifecycle:nested");
+    let saved_parent_id = ConversationId::new("conversation:child-lifecycle:saved");
+    let mut saved_parent = Conversation::direct(
+        saved_parent_id.0.clone(),
+        "Saved child lifecycle parent",
+        vec![participant("human:owner", ParticipantRole::Owner)],
+        2,
+    );
+    saved_parent.kind = ConversationKind::SavedMessages;
+    saved_parent.owner_id = Some(ActorId::new("human:owner"));
+    for (request_id, conversation) in [
+        (
+            "create-child-lifecycle-parent",
+            Conversation::direct(
+                parent_id.0.clone(),
+                "Child lifecycle parent",
+                vec![
+                    participant("human:owner", ParticipantRole::Owner),
+                    participant("human:peer", ParticipantRole::Member),
+                ],
+                2,
+            ),
+        ),
+        (
+            "create-child-lifecycle-nested",
+            Conversation::direct(
+                child_id.0.clone(),
+                "Child lifecycle nested",
+                vec![
+                    participant("human:owner", ParticipantRole::Owner),
+                    participant("human:peer", ParticipantRole::Member),
+                ],
+                2,
+            ),
+        ),
+        ("create-child-lifecycle-saved", saved_parent),
+    ] {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context("human:owner", request_id),
+                    ClientCommand::CreateConversation { conversation },
+                ),
+                2,
+            )
+            .unwrap();
+    }
+
+    let sent = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "send-child-lifecycle"),
+                ClientCommand::SendMessage {
+                    conversation_id: child_id.clone(),
+                    client_message_id: ClientMessageId("client:child-lifecycle".into()),
+                    content: text_message("child page item"),
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    scheduled_at_ms: None,
+                    silent: false,
+                    protected_content: false,
+                },
+            ),
+            3,
+        )
+        .unwrap();
+    let message_id = sent
+        .iter()
+        .find_map(|envelope| match &envelope.event {
+            ServerEvent::MessageChanged { message } => Some(message.id.clone()),
+            _ => None,
+        })
+        .expect("sent message");
+
+    let destination =
+        ConversationDestination::nested_conversation(parent_id.clone(), child_id.clone());
+    let saved_destination =
+        ConversationDestination::saved_sublist(saved_parent_id.clone(), ActorId::new("human:peer"));
+
+    let invalid_direct_saved = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "direct-saved-child-denied"),
+                ClientCommand::SetConversationChildNoPaidMessages {
+                    destination: ConversationDestination::saved_sublist(
+                        parent_id.clone(),
+                        ActorId::new("human:peer"),
+                    ),
+                    no_paid_messages: true,
+                },
+            ),
+            3,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        invalid_direct_saved,
+        MessagingServiceError::Engine(EngineError::InvalidConversationChildDestination)
+    ));
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "child-window"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination: destination.clone(),
+                    message_ids: vec![message_id.clone()],
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(1),
+                },
+            ),
+            4,
+        )
+        .unwrap();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "child-pin"),
+                ClientCommand::SetConversationChildPinned {
+                    destination: destination.clone(),
+                    pinned: true,
+                },
+            ),
+            5,
+        )
+        .unwrap();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "child-active"),
+                ClientCommand::SetConversationChildActive {
+                    destination: destination.clone(),
+                    active: true,
+                },
+            ),
+            6,
+        )
+        .unwrap();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "child-marked-unread"),
+                ClientCommand::SetConversationChildMarkedUnread {
+                    destination: destination.clone(),
+                    marked_unread: true,
+                },
+            ),
+            7,
+        )
+        .unwrap();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "child-no-paid"),
+                ClientCommand::SetConversationChildNoPaidMessages {
+                    destination: saved_destination.clone(),
+                    no_paid_messages: true,
+                },
+            ),
+            8,
+        )
+        .unwrap();
+
+    let unprovable_saved_page = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "saved-page-fail-closed"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination: saved_destination.clone(),
+                    message_ids: vec![message_id.clone()],
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(1),
+                },
+            ),
+            9,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        unprovable_saved_page,
+        MessagingServiceError::Engine(EngineError::ConversationChildMessageMismatch)
+    ));
+
+    let first_sync = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "sync-child-lifecycle"),
+                ClientCommand::Sync {
+                    cursor: None,
+                    limit: 100,
+                },
+            ),
+            10,
+        )
+        .unwrap();
+    match sync_batch(&first_sync) {
+        ServerEvent::SyncBatch {
+            conversation_children,
+            ..
+        } => {
+            assert!(conversation_children.iter().any(|child| {
+                child.destination == destination
+                    && child.actor_id == ActorId::new("human:owner")
+                    && child.pagination.message_ids == vec![message_id.0.clone()]
+                    && child.pinned
+                    && child.active
+                    && child.marked_unread
+            }));
+            assert!(conversation_children.iter().any(|child| {
+                child.destination == saved_destination
+                    && child.actor_id == ActorId::new("human:owner")
+                    && child.no_paid_messages
+            }));
+        }
+        event => panic!("unexpected child lifecycle sync: {event:?}"),
+    }
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "child-empty-window"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination: destination.clone(),
+                    message_ids: Vec::new(),
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(0),
+                },
+            ),
+            11,
+        )
+        .unwrap();
+    let empty = service
+        .engine()
+        .state()
+        .conversation_child_states
+        .iter()
+        .find(|child| {
+            child.destination == destination && child.actor_id == ActorId::new("human:owner")
+        })
+        .expect("empty child remains persisted");
+    assert!(!empty.pinned);
+    assert!(empty.restore_pinned_when_non_empty);
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "child-restored-window"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination: destination.clone(),
+                    message_ids: vec![message_id.clone()],
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(1),
+                },
+            ),
+            12,
+        )
+        .unwrap();
+    let restored = service
+        .engine()
+        .state()
+        .conversation_child_states
+        .iter()
+        .find(|child| {
+            child.destination == destination && child.actor_id == ActorId::new("human:owner")
+        })
+        .expect("restored child");
+    assert!(restored.pinned);
+    assert!(!restored.restore_pinned_when_non_empty);
+
+    let denied_saved_unread = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "saved-unread-denied"),
+                ClientCommand::SetConversationChildMarkedUnread {
+                    destination: saved_destination.clone(),
+                    marked_unread: true,
+                },
+            ),
+            13,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        denied_saved_unread,
+        MessagingServiceError::Engine(EngineError::InvalidConversationChildDestination)
+    ));
+
+    let outsider_denied = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:outsider", "child-destroy-denied"),
+                ClientCommand::DestroyConversationChild {
+                    destination: destination.clone(),
+                },
+            ),
+            14,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        outsider_denied,
+        MessagingServiceError::UnauthorizedCommand(reason)
+            if reason.contains("conversation child state update requires membership")
+    ));
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "child-destroy"),
+                ClientCommand::DestroyConversationChild {
+                    destination: destination.clone(),
+                },
+            ),
+            15,
+        )
+        .unwrap();
+    assert!(!service
+        .engine()
+        .state()
+        .conversation_child_states
+        .iter()
+        .any(|child| {
+            child.destination == destination && child.actor_id == ActorId::new("human:owner")
+        }));
+
+    let after_destroy = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "sync-after-child-destroy"),
+                ClientCommand::Sync {
+                    cursor: None,
+                    limit: 100,
+                },
+            ),
+            16,
+        )
+        .unwrap();
+    assert!(matches!(
+        sync_batch(&after_destroy),
+        ServerEvent::SyncBatch {
+            conversation_children,
+            ..
+        } if conversation_children.iter().all(|child| child.destination != destination)
+            && conversation_children.iter().any(|child| child.destination == saved_destination)
     ));
 }
 
