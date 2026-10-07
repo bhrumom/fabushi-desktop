@@ -186,7 +186,7 @@ fail(qtRootPolicy.some(rule=>rule.path_exact==='cmake/QtIRGitHelpers.cmake'&&rul
 
 const tgOwtReachability=recursiveReachability.tg_owt;
 fail(tgOwtReachability?.repository==='https://github.com/desktop-app/tg_owt','tg_owt reachability authority missing');
-fail(tgOwtReachability.commit==='e2d0e88d1bde6cc600da5dc92581dc97e4c1e685','tg_owt reachability commit drift');
+fail(tgOwtReachability.commit==='d1cf250ea73de26c4c1f0a3c8173eb2648efbb04','tg_owt reachability commit drift');
 fail(tgOwtReachability.root_candidate_policy_status==='complete-for-current-tg-owt-authority','tg_owt root candidate policy is not fail-closed complete');
 const tgOwtPolicy=tgOwtReachability.root_candidate_disposition_policy||[];
 for (const [kind,value,disposition] of [
@@ -199,11 +199,11 @@ for (const [kind,value,disposition] of [
 const prepareTgOwtStage=prepareQt.match(/stage\('tg_owt',[\s\S]*?\n"""\)/)?.[0]||'';
 const dockerTgOwtStage=dockerQt.match(/git init tg_owt[\s\S]*?rm -rf tg_owt/)?.[0]||'';
 const snapTgOwtStage=snapQt.match(/\n  webrtc:\n[\s\S]*?\n  tlottie:/)?.[0]||snapQt.match(/\n  webrtc:\n[\s\S]*$/)?.[0]||'';
-fail(prepareTgOwtStage.includes('git checkout e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted prepare.py tg_owt pin drift');
+fail(prepareTgOwtStage.includes('git checkout d1cf250ea73de26c4c1f0a3c8173eb2648efbb04'),'accepted prepare.py tg_owt pin drift');
 fail(prepareTgOwtStage.includes('git submodule update --init --recursive'),'accepted prepare.py tg_owt recursive submodule build drift');
-fail(dockerTgOwtStage.includes('git fetch --depth=1 origin e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted Docker tg_owt pin drift');
+fail(dockerTgOwtStage.includes('git fetch --depth=1 origin d1cf250ea73de26c4c1f0a3c8173eb2648efbb04'),'accepted Docker tg_owt pin drift');
 fail(dockerTgOwtStage.includes('git submodule update --init --recursive --depth=1'),'accepted Docker tg_owt recursive submodule build drift');
-fail(snapTgOwtStage.includes('source-commit: e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted Snap tg_owt pin drift');
+fail(snapTgOwtStage.includes('source-commit: d1cf250ea73de26c4c1f0a3c8173eb2648efbb04'),'accepted Snap tg_owt pin drift');
 
 const libjxlReachability=recursiveReachability.libjxl;
 fail(libjxlReachability?.repository==='https://github.com/libjxl/libjxl','libjxl reachability authority missing');
@@ -458,7 +458,7 @@ for (const [kind,value] of [
   ['path_prefix','.github/'],['path_exact','.travis.yml'],['path_exact','README.md'],
   ['path_exact','config.guess'],['path_exact','config.sub'],['path_prefix','test/']
 ]) fail(libsrtpPolicy.some(rule=>rule[kind]===value),'libsrtp acquisition disposition missing: '+value);
-const tgOwtTree=await ghTree('desktop-app/tg_owt','e2d0e88d1bde6cc600da5dc92581dc97e4c1e685');
+const tgOwtTree=await ghTree('desktop-app/tg_owt','d1cf250ea73de26c4c1f0a3c8173eb2648efbb04');
 const libsrtpEntry=(tgOwtTree.tree||[]).find(item=>item.path==='src/third_party/libsrtp');
 fail(libsrtpEntry?.mode==='160000','accepted tg_owt libsrtp path is no longer a gitlink');
 fail(libsrtpEntry.sha==='a566a9cfcd619e8327784aa7cff4a1276dc1e895','accepted tg_owt libsrtp gitlink commit drift');
