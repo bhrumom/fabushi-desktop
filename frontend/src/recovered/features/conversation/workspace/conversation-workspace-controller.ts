@@ -22,6 +22,21 @@ import {
   type TranscriptFeedSource,
 } from "../cards/transcript-card/reaction-feed";
 import type { ReactionActionController } from "../cards/transcript-card/reaction-actions";
+import {
+  createConversationChildPageRequestController,
+  type ConversationChildPageFetcher,
+  type ConversationChildPageRequestController,
+  type ConversationChildPageRequestControllerOptions
+} from "./child-pagination";
+import {
+  conversationDestinationScopeKey,
+  createConversationChildSelectionController,
+  type ConversationChildIdentity,
+  type ConversationChildSelectionController,
+  type ConversationDestination,
+  type LegacyTopicDestination,
+  type LegacyTopicRootResolver
+} from "./child-selection";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5323918
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5306234
@@ -49,6 +64,16 @@ export interface ConversationWorkspaceControllerOptions {
     readonly feed: TranscriptFeedSource;
     readonly controller: ReactionActionController;
   };
+  /**
+   * Optional canonical typed-child history capability. Omitted preserves the
+   * existing Agent/Bot workspace path without a second Conversation root.
+   */
+  childHistory?: {
+    readonly fetchPage: ConversationChildPageFetcher;
+    readonly getBoundary: ConversationChildPageRequestControllerOptions["getBoundary"];
+    readonly commitPage: ConversationChildPageRequestControllerOptions["commitPage"];
+    readonly resolveLegacyTopicRoot?: LegacyTopicRootResolver;
+  };
 }
 
 export interface ConversationWorkspaceTranscriptProps {
@@ -74,6 +99,11 @@ export interface ConversationWorkspaceController {
   getFindController(): FindInChatController | null;
   getFindTranscriptHandle(): FindInChatTranscriptHandle | null;
   getReactionFeedAdapter(): ReactionFeedAdapter | null;
+  getChildSelection(): ConversationChildSelectionController | null;
+  getChildPagination(): ConversationChildPageRequestController | null;
+  selectConversationChild(destination: ConversationDestination): boolean;
+  selectLegacyTopicChild(destination: LegacyTopicDestination): boolean;
+  clearDestroyedConversationChild(conversationId: string, child: ConversationChildIdentity): boolean;
   installInitialPage(page: TranscriptHistoryPage): boolean;
   loadOlder(): Promise<void>;
   replaceReplyEntries(entries: readonly ConversationTranscriptEntry[]): void;
@@ -121,6 +151,25 @@ export function createConversationWorkspaceController(options: ConversationWorks
       feed: options.reactionFeed.feed,
       controller: options.reactionFeed.controller,
     });
+  const childSelection = options.childHistory == null
+    ? null
+    : createConversationChildSelectionController({
+      resolveLegacyTopicRoot: options.childHistory.resolveLegacyTopicRoot
+    });
+  const childPagination = options.childHistory == null
+    ? null
+    : createConversationChildPageRequestController({
+      fetchPage: options.childHistory.fetchPage,
+      getBoundary: options.childHistory.getBoundary,
+      commitPage: options.childHistory.commitPage
+    });
+  const unsubscribeChildSelection = childSelection?.subscribe(() => {
+    const destination = childSelection.getSnapshot().selected;
+    childPagination?.setScope(
+      destination == null ? null : conversationDestinationScopeKey(destination)
+    );
+    emit();
+  }) ?? (() => {});
   const syncReplyEntries = () => replyController.replaceEntries(paginationController.getSnapshot().entries);
   const unsubscribePagination = paginationController.subscribe(() => {
     const snapshot = paginationController.getSnapshot();
@@ -166,6 +215,17 @@ export function createConversationWorkspaceController(options: ConversationWorks
     getFindController: () => findInChat?.controller ?? null,
     getFindTranscriptHandle: () => findInChat?.transcriptHandle ?? null,
     getReactionFeedAdapter: () => reactionFeedAdapter,
+    getChildSelection: () => childSelection,
+    getChildPagination: () => childPagination,
+    selectConversationChild(destination) {
+      return childSelection?.select(destination) ?? false;
+    },
+    selectLegacyTopicChild(destination) {
+      return childSelection?.selectLegacyTopic(destination) ?? false;
+    },
+    clearDestroyedConversationChild(conversationId, child) {
+      return childSelection?.clearDestroyedChild(conversationId, child) ?? false;
+    },
     installInitialPage(page) {
       return paginationController.installInitialPage(page);
     },
@@ -193,11 +253,18 @@ export function createConversationWorkspaceController(options: ConversationWorks
       replyController.setScope({ accountSlot, agentId });
       paginationController.setScope(accountSlot, agentId);
       reactionFeedAdapter?.setScope({ accountSlot, agentId });
+      // Child destinations are account-scoped canonical state. Never carry a
+      // selection across a workspace account/Agent scope transition.
+      childSelection?.clear();
+      childPagination?.setScope(null);
     },
     dispose() {
       if (disposed) return;
       disposed = true;
       unsubscribePagination();
+      unsubscribeChildSelection();
+      childPagination?.dispose();
+      childSelection?.dispose();
       paginationController.dispose();
       reactionFeedAdapter?.dispose();
       options.reactionFeed?.controller.dispose();
