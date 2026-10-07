@@ -52,7 +52,7 @@ export function OrgChartGraph({ agents, width, height, now = Date.now(), selecte
     const observer = new ResizeObserver(updateSize);
     observer.observe(container);
     return () => observer.disconnect();
-  }, [layoutHeight, layoutWidth]);
+  }, [height, width]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -66,7 +66,7 @@ export function OrgChartGraph({ agents, width, height, now = Date.now(), selecte
     };
     scene.addEventListener("wheel", onWheel, { passive: false });
     return () => scene.removeEventListener("wheel", onWheel);
-  }, [height, width]);
+  }, [layoutHeight, layoutWidth]);
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
