@@ -9,7 +9,8 @@ use crate::conversation::{
     TopicDraft,
 };
 use crate::message::{
-    ClientMessageId, ForwardPrivacy, Message, MessageContent, MessageId, ReactionSummary,
+    ClientMessageId, ForwardPrivacy, Message, MessageContent, MessageId, PendingPresenceSend,
+    PresenceSendTrigger, ReactionSummary,
 };
 use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppRequest, MiniAppResponse, MiniAppSession,
@@ -128,6 +129,16 @@ pub enum ClientCommand {
         reply_to_message_id: Option<MessageId>,
         thread_root_message_id: Option<MessageId>,
         scheduled_at_ms: Option<i64>,
+        silent: bool,
+        protected_content: bool,
+    },
+    SendWhenParticipantOnline {
+        conversation_id: ConversationId,
+        client_message_id: ClientMessageId,
+        target_actor_id: ActorId,
+        content: MessageContent,
+        reply_to_message_id: Option<MessageId>,
+        thread_root_message_id: Option<MessageId>,
         silent: bool,
         protected_content: bool,
     },
@@ -337,6 +348,8 @@ pub enum ServerEvent {
         drafts: Vec<ConversationDraft>,
         #[serde(default)]
         topic_drafts: Vec<TopicDraft>,
+        #[serde(default)]
+        pending_presence_sends: Vec<PendingPresenceSend>,
         invoices: Vec<Invoice>,
         orders: Vec<PaymentOrder>,
         stories: Vec<Story>,
@@ -356,6 +369,10 @@ pub enum ServerEvent {
     PresenceChanged {
         actor_id: ActorId,
         presence: Presence,
+    },
+    PresenceTriggeredSendChanged {
+        client_message_id: ClientMessageId,
+        pending: Option<PendingPresenceSend>,
     },
     ConversationChanged {
         conversation: Conversation,
