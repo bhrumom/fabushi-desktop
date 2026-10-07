@@ -4061,7 +4061,16 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               : bridge == null ? undefined : () => { setGroupInfoPaneOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setAgentSettingsOpen(true); }}
             trailing={<>
               {activeAgent.isRunning && client != null ? <SandButton aria-label="Stop response" onClick={() => {
-                void client.call("interruptAgent", { id: activeAgent.id }).catch((error: unknown) => {
+                void client.call("interruptAgent", { id: activeAgent.id }).then((result) => {
+                  const interrupted = typeof result === "object"
+                    && result !== null
+                    && "interrupted" in result
+                    && result.interrupted === true;
+                  if (!interrupted) return;
+                  setAgents((current) => current.map((agent) => agent.id === activeAgent.id
+                    ? { ...agent, isRunning: false }
+                    : agent));
+                }).catch((error: unknown) => {
                   setNotice(error instanceof Error ? error.message : String(error));
                 });
               }} size="sm" variant="secondary">Stop</SandButton> : null}
