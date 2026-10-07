@@ -283,5 +283,5 @@ console.log(JSON.stringify({
   gitlink_fixed_point_status: 'closed',
   recursive_disposition_status: 'open',
   source_closure_ready: false,
-  new_totals
+  new_totals: newTotals
 }, null, 2));
