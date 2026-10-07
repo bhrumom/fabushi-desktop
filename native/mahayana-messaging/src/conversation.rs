@@ -305,6 +305,23 @@ impl ConversationDestination {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", rename_all_fields = "camelCase", tag = "type")]
+pub enum ConversationChildMutation {
+    SetDraft {
+        text: String,
+        reply_to_message_id: Option<String>,
+        updated_at_ms: i64,
+    },
+    SetActive {
+        active: bool,
+    },
+    SetPinned {
+        pinned: bool,
+    },
+    Destroy,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConversationMessagePosition {
