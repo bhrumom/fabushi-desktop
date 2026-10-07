@@ -17,7 +17,7 @@ use crate::extensions::telemetry::webauthn_proxy_telemetry::{
 pub const SAND_WEBAUTHN_LIVENESS_WINDOW_MS: u64 = 30_000;
 pub const SAND_WEBAUTHN_CEREMONY_TIMEOUT_MS: u64 = 120_000;
 pub const SAND_NO_WEBAUTHN_MACHINE_MESSAGE: &str =
-    "Your computer isn't connected right now, so the security key can't be reached. Open Grok Bot on the machine your key is plugged into and try again.";
+    "Your computer isn't connected right now, so the security key can't be reached. Open Fabushi on the machine your key is plugged into and try again.";
 pub const SAND_WEBAUTHN_MACHINE_UNAVAILABLE_MESSAGE: &str =
     "Your computer looks disconnected, so the security key can't be reached. Reconnect it and try again.";
 pub const SAND_WEBAUTHN_CEREMONY_TIMEOUT_MESSAGE: &str =

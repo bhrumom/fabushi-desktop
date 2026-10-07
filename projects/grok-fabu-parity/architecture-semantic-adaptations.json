@@ -5,7 +5,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "d121152802e2169c737d697a53f23a47db0bf67e",
+      "targetBlobSha": "374007fd3c035a058c0420ac92b1521bdfb3dd05",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx"
@@ -20,13 +20,13 @@
         "desktop/e2e/openbot-packaged-acceptance.spec.ts",
         ".github/workflows/release-macos-main.yml"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell. Phase 1 additionally absorbs Human conversations into this same renderer owner: the existing sidebar/workspace/composer/transcript are reused, Human sends keep the recovered optimistic/reconnect queue, canonical attachment commit path and reply controller, and explicit Human-to-Agent handoff still crosses the established Coordinator-to-Host-to-Runner boundary. No parallel Human shell or message runtime is introduced. Phase 1 reconnect convergence now refreshes an already-open Human transcript from the same Host-owned canonical Session/Transcript immediately after native history sync, while baseline reconciliation preserves unresolved optimistic rows; the Host shipping-client contract separately proves bounded multi-page multi-device gap recovery without a renderer-side message truth. Human older-history loading now reuses the existing transcript pagination controller against a Host gateway that pages the same canonical Human Session SQLite owner; initial Human open syncs native transport then projects only the latest bounded tail, while scroll pagination retains the existing cursor, viewport-anchor, request-fencing, and deduplication ownership. Phase 1 roster recovery further separates local Agent roster readiness from shipping Human convergence: listAgents publishes the canonical loaded/empty Agent state before a potentially slow remote Human sync, while Human sync remains account/transport/attempt fenced, keeps its durable local fallback, and refreshes the active Human transcript after convergence. This prevents Human network latency from holding the canonical Agent shell in an indefinite loading state without weakening either synchronization path. Phase 1 Human reactions now reuse the recovered reaction pills/action surface while mutation and settlement remain Host-owned: the renderer calls the existing Coordinator client, receives the canonical updated Human transcript row, and never creates a reaction store. Human Find-in-chat likewise reuses the recovered find controller and canonical transcript pagination owner: full durable Human search is provided by the Host search gateway, while navigation to an older hit reveals bounded history through the existing pagination controller and virtual transcript handle instead of replacing the timeline with a parallel search result model. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Restored Human selections are also retried through the same canonical openAgent path once the asynchronous Human roster establishes the conversation type; same-selection reopen remains allowed only while no transcript page is loaded, closing the restart race where a Human id could be briefly addressed through the Agent tail method without introducing alternate state. A successful Host-settled Human send now upserts the authoritative row by canonical id/client nonce, so a concurrent initial-page or roster reconciliation cannot silently erase the accepted backend result from the visible transcript. Human remote-search settlement now promotes the first authoritative match through the existing find controller step path only when no current match exists, so the recovered ordinal/navigation contract and bounded older-page reveal converge without a renderer-side search truth. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Stop response also settles the renderer running projection only after the canonical Host interrupt call confirms `interrupted: true`, so CHAT-011's packaged acceptance can hide the stop control and accept a subsequent turn without moving operation ownership into the renderer."
+      "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell. Phase 1 additionally absorbs Human conversations into this same renderer owner: the existing sidebar/workspace/composer/transcript are reused, Human sends keep the recovered optimistic/reconnect queue, canonical attachment commit path and reply controller, and explicit Human-to-Agent handoff still crosses the established Coordinator-to-Host-to-Runner boundary. No parallel Human shell or message runtime is introduced. Phase 1 reconnect convergence now refreshes an already-open Human transcript from the same Host-owned canonical Session/Transcript immediately after native history sync, while baseline reconciliation preserves unresolved optimistic rows; the Host shipping-client contract separately proves bounded multi-page multi-device gap recovery without a renderer-side message truth. Human older-history loading now reuses the existing transcript pagination controller against a Host gateway that pages the same canonical Human Session SQLite owner; initial Human open syncs native transport then projects only the latest bounded tail, while scroll pagination retains the existing cursor, viewport-anchor, request-fencing, and deduplication ownership. Phase 1 roster recovery further separates local Agent roster readiness from shipping Human convergence: listAgents publishes the canonical loaded/empty Agent state before a potentially slow remote Human sync, while Human sync remains account/transport/attempt fenced, keeps its durable local fallback, and refreshes the active Human transcript after convergence. This prevents Human network latency from holding the canonical Agent shell in an indefinite loading state without weakening either synchronization path. Phase 1 Human reactions now reuse the recovered reaction pills/action surface while mutation and settlement remain Host-owned: the renderer calls the existing Coordinator client, receives the canonical updated Human transcript row, and never creates a reaction store. Human Find-in-chat likewise reuses the recovered find controller and canonical transcript pagination owner: full durable Human search is provided by the Host search gateway, while navigation to an older hit reveals bounded history through the existing pagination controller and virtual transcript handle instead of replacing the timeline with a parallel search result model. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Restored Human selections are also retried through the same canonical openAgent path once the asynchronous Human roster establishes the conversation type; same-selection reopen remains allowed only while no transcript page is loaded, closing the restart race where a Human id could be briefly addressed through the Agent tail method without introducing alternate state. A successful Host-settled Human send now upserts the authoritative row by canonical id/client nonce, so a concurrent initial-page or roster reconciliation cannot silently erase the accepted backend result from the visible transcript. Human remote-search settlement now promotes the first authoritative match through the existing find controller step path only when no current match exists, so the recovered ordinal/navigation contract and bounded older-page reveal converge without a renderer-side search truth. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Stop response also settles the renderer running projection only after the canonical Host interrupt call confirms `interrupted: true`, so CHAT-011's packaged acceptance can hide the stop control and accept a subsequent turn without moving operation ownership into the renderer. The shipping renderer removes the obsolete iOS menu entry and keeps account labels consistent with Fabushi branding."
     },
     {
       "referencePath": "frontend/src/production/model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "cbeac59538a817ed2854ca495e4decf8625caf0a",
+      "targetBlobSha": "a8607a383ec32f6fba7142bd7ce8ae93f6af7dc5",
       "behavioralEvidence": [
         "frontend/src/production/model.ts",
         "frontend/src/production/coordinator-client.ts"
@@ -37,7 +37,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/pr20-verify-once.yml"
       ],
-      "rationale": "Keeps Grok 0.18 Agent projection/filter/sort semantics while accepting the shipping Mahayana Coordinator agents event envelope { agents: [...] } in addition to the frozen direct array form. The adaptation is limited to transport normalization at the renderer projection boundary; Agent identity, hidden state, activity and ordering continue through the frozen Grok projection logic. It also normalizes authoritative Mahayana transcript echoes that carry Grok attachment contexts on user messages, preserving committed path/name/MIME/size metadata for mixed and attachment-only sends without relying on optimistic renderer state. Phase 1 extends this same projection boundary with Human-conversation and Human-transcript normalization while preserving the RendererAgent/ConversationTranscriptEntry contracts, including canonical attachment metadata, reply relation fields and trusted Agent author names."
+      "rationale": "Keeps Grok 0.18 Agent projection/filter/sort semantics while accepting the shipping Mahayana Coordinator agents event envelope { agents: [...] } in addition to the frozen direct array form. The adaptation is limited to transport normalization at the renderer projection boundary; Agent identity, hidden state, activity and ordering continue through the frozen Grok projection logic. It also normalizes authoritative Mahayana transcript echoes that carry Grok attachment contexts on user messages, preserving committed path/name/MIME/size metadata for mixed and attachment-only sends without relying on optimistic renderer state. Phase 1 extends this same projection boundary with Human-conversation and Human-transcript normalization while preserving the RendererAgent/ConversationTranscriptEntry contracts, including canonical attachment metadata, reply relation fields and trusted Agent author names. The renderer also maps legacy Grok/Grok Bot default profile names to the Fabushi product label while preserving all other configured Agent names."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
@@ -327,7 +327,7 @@
       "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "09d8600ee4040db2c5709da8b2f822d9e25de0d9",
+      "targetBlobSha": "0e12efd790bdfb60bb54d07048c80547c3581080",
       "behavioralEvidence": [
         "source/electron-main/coordinator/coordinator-executors.ts",
         "source/electron-main/coordinator/production-provider.ts",
@@ -451,7 +451,7 @@
       "referencePath": "source/shared/node/mcp/tools-discovery.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "103d530e7fdae13a4b2b56c52aac8693b633a1d4",
+      "targetBlobSha": "ae33a1211849a163873648de0018f03b5d6f06c4",
       "behavioralEvidence": [
         "source/shared/node/mcp/tools-discovery.ts",
         "source/shared/node/mcp/mcp-discovery-settlement.ts",
@@ -579,7 +579,7 @@
       "referencePath": "frontend/src/recovered/features/settings/overlay/panels.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "789775317f3cba7c74737d956fe534ed05c819c1",
+      "targetBlobSha": "994d0e009430e6dfb0b1edb39f717b673be40a8f",
       "behavioralEvidence": [
         "frontend/src/recovered/features/settings/overlay/panels.tsx",
         "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
@@ -590,7 +590,7 @@
         "desktop/e2e/mahayana-agent-workbench.spec.ts",
         "frontend/src/production/human-call-media.tsx"
       ],
-      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. Phase 1 Settings capability decisions stay projected from canonical production owners instead of inventing preference stores: privacy is read from the production account policy; media/device remains a persisted Settings/MainEdge preference; system notifications remain intentionally disabled by the canonical settings store; durable conversation/session/attachment storage keeps its existing app-profile/Host roots; attachment downloads keep native Save As ownership; and window shortcuts keep the fixed Electron owner rather than a global or user-remappable registry. The Settings surface makes those applicable or intentionally non-configurable decisions visible and accessible while existing advanced and update controls retain their established owners."
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. Phase 1 Settings capability decisions stay projected from canonical production owners instead of inventing preference stores: privacy is read from the production account policy; media/device remains a persisted Settings/MainEdge preference; system notifications remain intentionally disabled by the canonical settings store; durable conversation/session/attachment storage keeps its existing app-profile/Host roots; attachment downloads keep native Save As ownership; and window shortcuts keep the fixed Electron owner rather than a global or user-remappable registry. The Settings surface makes those applicable or intentionally non-configurable decisions visible and accessible while existing advanced and update controls retain their established owners. Account, theme, security-key, local-computer permission, and timezone copy now use the active Settings locale; legacy product names render Fabushi."
     },
     {
       "referencePath": "source/electron-main/main-edge.ts",
@@ -699,6 +699,423 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Preserves the frozen Settings modal structure, focus trap, keyboard dismissal, and section ownership while adapting visible labels and accessible names to the canonical Fabushi UI locale. Section identity and routing remain unchanged; only localized presentation is added through the existing Settings owner."
+    },
+    {
+      "referencePath": "frontend/src/production/command-palette-root-commands.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "48c7c7878843756a800414aa6f9db68b723aed47",
+      "behavioralEvidence": [
+        "frontend/src/production/command-palette-root-commands.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/production/evidence.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2f97fde079e0ca0180d0ae709fa4c291fd9c7a99",
+      "behavioralEvidence": [
+        "frontend/src/production/evidence.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/access/cover/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c7bd674ed0f6f3a73e6dc532c6db69e5e21f7cb2",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/access/cover/view.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/account/session/menu.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "d7f2fe093ad210eee719441ea54f725222970391",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/account/session/menu.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/agent-info/shared-room/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "5603d2b7dc1ee9dde296a3689786d068cde245a1",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/agent-info/shared-room/view.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/computer/rebuild/banner.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "eaf9324f9f8eef3a264ba80da124f4ab52752282",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/computer/rebuild/banner.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/computer/shell/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "3289962193d6bca326229a0abf63d99e84a65af4",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/computer/shell/view.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/computer/update/confirmation.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "abb473539ed217cf1ee00329c48a1a9795df177d",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/computer/update/confirmation.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/resolver.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "43cbf95294b1954294f3295705ed8661bcb6f032",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/resolver.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/electron-main/account/cursor-auth-wiring.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "41d55e676a84664249a11e134b3d2c3aa7c838b2",
+      "behavioralEvidence": [
+        "source/electron-main/account/cursor-auth-wiring.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/electron-main/account/cursor-auth.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c2e4c95306f8822adb22176d594b488e9717b28f",
+      "behavioralEvidence": [
+        "source/electron-main/account/cursor-auth.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/electron-main/dev/dev-controls-window.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "079aae8e532553edb7984b6b00fdd702bb5ece8b",
+      "behavioralEvidence": [
+        "source/electron-main/dev/dev-controls-window.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/electron-main/startup/startup-move-check.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "f49f51c7497bfc8352b3ba3d9221ae9f582b59ea",
+      "behavioralEvidence": [
+        "source/electron-main/startup/startup-move-check.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/agents/disk-saver.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "d175b498b15fd13290de1f28c160d914efc10fdf",
+      "behavioralEvidence": [
+        "source/shared/agents/disk-saver.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/channel-messaging.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "33a52c1eddd7ea71114d3cccb9071158651b1f24",
+      "behavioralEvidence": [
+        "source/shared/channel-messaging.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/local-exec-gateway.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "a0e6c5e2959ed2169f766c25845baea66e9d6e10",
+      "behavioralEvidence": [
+        "source/shared/local-exec-gateway.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/local-tool-permission-machinery.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "b8b0c1636eef216040c9e8024682f21781af196f",
+      "behavioralEvidence": [
+        "source/shared/local-tool-permission-machinery.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/mcp-account-slot-lifecycle.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "e162c6a2509acea35d3af5e485e29e5cad38855f",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/mcp-account-slot-lifecycle.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/mcp-auth-watch-lifecycle.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "eb538d8bc3df4e86e948cfed805343e31c7c014f",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/mcp-auth-watch-lifecycle.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/mcp-display-runtime.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "ec8cd459d779827629bf8dcd1920faff568b2d2f",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/mcp-display-runtime.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/mcp-listing-summaries.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "bcdc9cbbfd6da7d585a5ef9901514ec5a0c598c9",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/mcp-listing-summaries.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/os-notification.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "ffaf599dada09e938f362d75aa202327eed3a4ad",
+      "behavioralEvidence": [
+        "source/shared/os-notification.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/product-name.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2b3707cc8e2dfb08a8717e7ce9868dcc6bdcf818",
+      "behavioralEvidence": [
+        "source/shared/product-name.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/sand-spotlight.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "21ab8a595ed7cd77c4fd1d674a097401e094cbcc",
+      "behavioralEvidence": [
+        "source/shared/sand-spotlight.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/webauthn-gateway.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c7ad9fa32953417618d9e71dce43d7cf2ca44d2c",
+      "behavioralEvidence": [
+        "source/shared/webauthn-gateway.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/auto-review.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "72525e61e61f4360b272e7031c2bde8e3aa376a1",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/auto-review.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This recovered settings panel preserves rule behavior while localizing user-facing labels and descriptions for the active Settings locale and using Fabushi identity."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/computer-view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "60335e93cdb628e13d985fda2c8f970779345e64",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/computer-view.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This recovered settings panel preserves computer update/reset behavior while replacing legacy product labels with Fabushi."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/updates.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2da4ba45f821bec3242ff88ae2b82f1246219182",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/updates.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This recovered settings status copy preserves update and egress behavior while replacing legacy product labels with Fabushi."
     }
   ]
 }

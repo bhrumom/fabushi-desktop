@@ -508,9 +508,9 @@ pub fn apply_extracted_memories(
 pub fn build_episode_system_prompt() -> String {
     [
         MEMORY_EPISODE_PROMPT_MARKER,
-        "You maintain the long-term memory of a personal desktop assistant named Grok Bot.",
-        "You are given the most recent turns of a conversation between the user and Grok Bot, in order, each tagged with its date.",
-        "Write ONE short journal-style sentence (two at most) capturing what the user and Grok Bot were actually working on across these turns — the throughline, key decisions, and outcomes — so it stays useful months from now.",
+        "You maintain the long-term memory of a personal desktop assistant named Fabushi.",
+        "You are given the most recent turns of a conversation between the user and Fabushi, in order, each tagged with its date.",
+        "Write ONE short journal-style sentence (two at most) capturing what the user and Fabushi were actually working on across these turns — the throughline, key decisions, and outcomes — so it stays useful months from now.",
         "Anchor any time references with the absolute dates shown, never relative words like \"yesterday\". Drop greetings, acknowledgements, and anything ephemeral. Never invent details.",
         "Output just the sentence(s), no preamble or bullets. Output exactly NONE if nothing in this stretch is worth remembering.",
     ]
@@ -526,7 +526,7 @@ pub fn build_episode_user_prompt(turns: &[EpisodeTurn]) -> String {
                 lines.push(format!("User: {}", turn.user.trim()));
             }
             if !turn.agent.trim().is_empty() {
-                lines.push(format!("Grok Bot: {}", turn.agent.trim()));
+                lines.push(format!("Fabushi: {}", turn.agent.trim()));
             }
             lines.join("\n")
         })

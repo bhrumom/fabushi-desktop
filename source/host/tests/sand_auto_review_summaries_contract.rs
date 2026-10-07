@@ -21,7 +21,7 @@ fn shell_and_mcp_summaries_preserve_frozen_user_visible_shape() {
     );
     assert_eq!(
         describe_sand_shell_auto_review_action("box_shell", None, None),
-        "Run a command on Grok Bot's computer"
+        "Run a command on Fabushi's computer"
     );
 
     let args = json!({
@@ -136,7 +136,7 @@ fn browser_and_computer_text_summaries_never_echo_secret_like_values() {
     assert_eq!(
         summarize_sand_computer_typed_text(secret),
         format!(
-            "Type {} characters on Grok Bot's computer",
+            "Type {} characters on Fabushi's computer",
             secret.chars().count()
         )
     );

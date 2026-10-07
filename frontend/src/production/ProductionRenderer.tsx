@@ -316,8 +316,8 @@ function computerActionResult(value: unknown): { status: string; reason?: string
   };
 }
 
-const COMPUTER_UPDATE_UNTRACKABLE_COPY = "The computer update started, but Grok Bot can't track its progress. Restart Grok Bot after the computer is available again.";
-const COMPUTER_RESET_UNTRACKABLE_COPY = "The computer reset started, but Grok Bot can't track its progress. Restart Grok Bot after the computer is available again.";
+const COMPUTER_UPDATE_UNTRACKABLE_COPY = "The computer update started, but Fabushi can't track its progress. Restart Fabushi after the computer is available again.";
+const COMPUTER_RESET_UNTRACKABLE_COPY = "The computer reset started, but Fabushi can't track its progress. Restart Fabushi after the computer is available again.";
 
 function optimisticAcknowledgementEntries(nonce: string, attachments: readonly { path: string; name: string }[]) {
   return [
@@ -461,7 +461,7 @@ function RootInfoPaneHeader({ children, onClose, closeLabel = "Close details" }:
   </header>;
 }
 const FEEDBACK_ERRORS: Record<FeedbackCode, string> = {
-  "access-denied": "Grok Bot isn't available for this account.",
+  "access-denied": "Fabushi isn't available for this account.",
   "invalid-feedback": "Write between 1 and 10,000 characters.",
   "not-signed-in": ["Sign in to ", UI_TEXT.title, " before sending feedback."].join(""),
   "rate-limited": "You've sent several reports. Try again in a few minutes.",
@@ -469,8 +469,8 @@ const FEEDBACK_ERRORS: Record<FeedbackCode, string> = {
   unavailable: "We couldn't deliver this report. Try again."
 };
 const UPDATE_REQUIRED_LABELS = {
-  descriptionPrefix: "This version of Grok Bot (",
-  descriptionSuffix: ") is no longer supported. Update to keep using Grok Bot — your agents keep running the whole time.",
+  descriptionPrefix: "This version of Fabushi (",
+  descriptionSuffix: ") is no longer supported. Update to keep using Fabushi — your agents keep running the whole time.",
   downloading: "Downloading update…",
   error: "Couldn't download the update. Check your connection and try again.",
   preparing: "Preparing update…",
@@ -3776,7 +3776,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (readyVersion == null) return;
     void groupMembersRoot.alert.alert({
       title: "Update ready",
-      description: `Restart to finish installing Grok Bot ${readyVersion}. Your agents and work will be right where you left them.`,
+      description: `Restart to finish installing Fabushi ${readyVersion}. Your agents and work will be right where you left them.`,
       confirmLabel: "Restart to update",
       confirmLeadingIcon: "cloud-download",
       pendingLabel: "Restarting…",
@@ -3784,7 +3784,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       perform: async () => {
         const current = await settingsUpdateController.refresh();
         const currentVersion = current?.state.type === "ready" ? current.state.version : null;
-        if (currentVersion !== readyVersion) return `Grok Bot ${readyVersion} is no longer staged. Grok Bot will offer the next build when it is ready.`;
+        if (currentVersion !== readyVersion) return `Fabushi ${readyVersion} is no longer staged. Fabushi will offer the next build when it is ready.`;
         await settingsUpdateController.install();
         return null;
       }
@@ -4015,15 +4015,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             accountLabel={UI_TEXT.account}
             bridge={bridge}
             displayName={accountName(account)}
-            experimentsSnapshot={bridge.experiments.initialSnapshot}
             isOpen={accountMenuOpen}
-            labels={{ about: UI_TEXT.about, changeLimit: "Change limit", helpCenter: UI_TEXT.helpCenter, included: "Included", ios: "Get Grok Bot for iOS", logOut: UI_TEXT.logOut, onDemand: "On-demand", sendFeedback: UI_TEXT.sendFeedback, settings: UI_TEXT.settings, signIn: UI_TEXT.signIn, spendThisCycle: "Spend this cycle", weeklyUsage: "Weekly usage" }}
+            labels={{ about: UI_TEXT.about, changeLimit: "Change limit", helpCenter: UI_TEXT.helpCenter, included: "Included", logOut: UI_TEXT.logOut, onDemand: "On-demand", sendFeedback: UI_TEXT.sendFeedback, settings: UI_TEXT.settings, signIn: UI_TEXT.signIn, spendThisCycle: "Spend this cycle", weeklyUsage: "Weekly usage" }}
             onError={setNotice}
             onOpenAbout={() => setOverlay("about")}
             onOpenChange={setAccountMenuOpen}
             onOpenFeedback={() => setOverlay("feedback")}
             onOpenHelp={() => void bridge.openExternal("https://cursor.com/help")}
-            onOpenIos={() => void bridge.openExternal("https://apps.apple.com/us/app/grok-bot/id6794501026")}
             onOpenSettings={() => { setSettingsSection("general"); setManageSharedRoomId(null); setOverlay("settings"); }}
             onOpenUsage={() => void bridge.openExternal("https://cursor.com/dashboard/spending")}
             onRequestLogout={() => { setOverlay("confirm-logout"); setAccountMenuOpen(false); }}

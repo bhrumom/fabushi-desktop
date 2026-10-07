@@ -147,7 +147,7 @@ function peerByName(page: Page, name: string): Locator {
 async function completeBrowserLogin(page: Page): Promise<void> {
   type LoginPhase = 'onboarding' | 'login' | 'browser-waiting' | 'ready' | 'waiting';
   const workspace = page.getByTestId('messenger-workspace');
-  const signInLanding = page.getByRole('main', { name: 'Grok Bot' });
+  const signInLanding = page.getByRole('main', { name: 'Fabushi' });
   const onboarding = page.locator('.sand-onboarding[data-step]');
 
   const readAccountKind = async (): Promise<string | null> => page.evaluate(async () => {

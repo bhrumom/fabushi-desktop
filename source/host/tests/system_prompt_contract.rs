@@ -27,7 +27,7 @@ use serde_json::json;
 #[test]
 fn frozen_base_prompt_variants_preserve_grok_send_message_and_cloud_agent_contracts() {
     assert!(DEFAULT_SAND_SYSTEM_PROMPT.starts_with(
-        "You are Grok Bot, a warm, concise desktop assistant.\n\n## How a turn works"
+        "You are Fabushi, a warm, concise desktop assistant.\n\n## How a turn works"
     ));
     assert!(DEFAULT_SAND_SYSTEM_PROMPT.contains(
         "ALWAYS hand it to a Cursor cloud agent with the CloudAgent tool"
@@ -99,7 +99,7 @@ fn frozen_reply_reminder_and_subagent_helpers_are_source_closed() {
     assert!(!is_media_review_subagent_type(Some("generalPurpose")));
 
     let prompt = build_sand_subagent_system_prompt(Some("browserUse"), true);
-    assert!(prompt.starts_with("You are Grok Bot running as the browserUse subagent."));
+    assert!(prompt.starts_with("You are Fabushi running as the browserUse subagent."));
     assert!(prompt.contains("Operate in readonly mode: do not modify anything."));
     assert!(prompt.contains("## Staying safe while you work"));
 }

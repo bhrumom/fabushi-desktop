@@ -266,12 +266,12 @@ pub fn summarize_blocked_action(
     let exact = canonical_target.get("exact_action").unwrap_or(&Value::Null);
     let summary = match action {
         "click" => format!(
-            "Click at ({}, {}) on Grok Bot's computer{purpose}",
+            "Click at ({}, {}) on Fabushi's computer{purpose}",
             display_number(exact.get("x")),
             display_number(exact.get("y"))
         ),
         "drag" => format!(
-            "Drag from ({}, {}) to ({}, {}) on Grok Bot's computer{purpose}",
+            "Drag from ({}, {}) to ({}, {}) on Fabushi's computer{purpose}",
             display_number(exact.get("x")),
             display_number(exact.get("y")),
             display_number(exact.get("x2")),
@@ -281,10 +281,10 @@ pub fn summarize_blocked_action(
             exact.get("text").and_then(Value::as_str).unwrap_or_default(),
         ),
         "key" => format!(
-            "Press {} on Grok Bot's computer{purpose}",
+            "Press {} on Fabushi's computer{purpose}",
             exact.get("key").and_then(Value::as_str).unwrap_or("a key")
         ),
-        other => format!("{other} on Grok Bot's computer{purpose}"),
+        other => format!("{other} on Fabushi's computer{purpose}"),
     };
     json!({
         "surface": "computer",

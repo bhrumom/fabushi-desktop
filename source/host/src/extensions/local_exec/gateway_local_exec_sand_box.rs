@@ -30,7 +30,7 @@ pub fn describe_local_exec_bytes(bytes: usize) -> String {
 
 pub fn local_exec_file_too_large_message(actual_bytes: usize, max_bytes: usize) -> String {
     format!(
-        "File is {}, which exceeds Grok Bot's {} limit for reading or transferring a single file over local-exec. Read a slice with offset/limit, or use a shell command (grep, head, tail) to extract just what you need.",
+        "File is {}, which exceeds Fabushi's {} limit for reading or transferring a single file over local-exec. Read a slice with offset/limit, or use a shell command (grep, head, tail) to extract just what you need.",
         describe_local_exec_bytes(actual_bytes),
         describe_local_exec_bytes(max_bytes),
     )

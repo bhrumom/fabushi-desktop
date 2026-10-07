@@ -164,7 +164,7 @@ impl SandSubagentHostAdapter {
         review: Option<&LaunchReview>,
     ) -> Result<SubagentRunDispatch, String> {
         if !self.sessions.contains(agent_id) {
-            return Err(format!("Unknown Grok Bot subagent: {agent_id}"));
+            return Err(format!("Unknown Fabushi subagent: {agent_id}"));
         }
         if self.running.contains(agent_id) {
             return Err("That background subagent is already running.".to_string());

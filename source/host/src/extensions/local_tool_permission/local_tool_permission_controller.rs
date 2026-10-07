@@ -43,7 +43,7 @@ pub const SAND_LOCAL_TOOLS_PREPARATORY_MESSAGE: &str =
 pub const SAND_LOCAL_TOOLS_ASK_CANCELLED_MESSAGE: &str =
     "The request to use the user's computer was cancelled before the user answered.";
 pub const SAND_NO_LOCAL_MACHINE_MESSAGE: &str =
-    "Your local machine isn't connected right now (the Grok Bot desktop app must be open and online to run commands on it). Try again once it's reachable.";
+    "Your local machine isn't connected right now (the Fabushi desktop app must be open and online to run commands on it). Try again once it's reachable.";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SandLocalToolScope {

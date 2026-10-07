@@ -25,8 +25,8 @@ fn frozen_reference_documents_keep_the_expected_prompt_contract() {
     assert!(SAND_BOX_DEBUGGING_REFERENCE_DOC.starts_with("# Debugging the box\n"));
     assert!(SAND_BOX_DEBUGGING_REFERENCE_DOC.contains("box-doctor"));
     assert!(SAND_BOX_DEBUGGING_REFERENCE_DOC.contains("request_box_help"));
-    assert!(SAND_APP_UI_REFERENCE_DOC.starts_with("# The Grok Bot app UI"));
-    assert!(SAND_APP_UI_REFERENCE_DOC.contains("Update Grok Bot's Computer"));
+    assert!(SAND_APP_UI_REFERENCE_DOC.starts_with("# The Fabushi app UI"));
+    assert!(SAND_APP_UI_REFERENCE_DOC.contains("Update Fabushi's Computer"));
     assert!(SAND_APP_UI_REFERENCE_DOC.ends_with('\n'));
 }
 

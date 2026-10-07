@@ -69,9 +69,9 @@ export async function runStartupMoveCheck(
     confirmMove: async () => {
       const result = await deps.dialog.showMessageBox({
         type: "question",
-        title: "Move Grok Bot to Applications",
-        message: "Move Grok Bot to the Applications folder?",
-        detail: "Grok Bot cannot install updates from its current location. It will reopen after moving.",
+        title: "Move Fabushi to Applications",
+        message: "Move Fabushi to the Applications folder?",
+        detail: "Fabushi cannot install updates from its current location. It will reopen after moving.",
         buttons: ["Move to Applications", "Not Now"],
         defaultId: 0,
         cancelId: 1,
@@ -82,9 +82,9 @@ export async function runStartupMoveCheck(
       deps.reportFailure?.("startup", "move-to-applications", error);
       await deps.dialog.showMessageBox({
         type: "error",
-        title: "Couldn't Move Grok Bot",
-        message: "Grok Bot couldn't move to Applications",
-        detail: "Move Grok Bot to the Applications folder manually, then reopen Grok Bot",
+        title: "Couldn't Move Fabushi",
+        message: "Fabushi couldn't move to Applications",
+        detail: "Move Fabushi to the Applications folder manually, then reopen Fabushi",
         buttons: ["OK"],
         defaultId: 0,
       });

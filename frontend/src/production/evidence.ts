@@ -161,6 +161,7 @@ export const PRODUCTION_RENDERER_GAPS = {
   broadcast: "The shipped command availability explicitly marks broadcast unavailable because it has no current user path."
 } as const;
 
+// These are active Fabushi product strings. PRODUCTION_UI_EVIDENCE above preserves verbatim reference-artifact anchors.
 export const UI_TEXT = {
   account: "Account",
   about: "About",
@@ -169,8 +170,8 @@ export const UI_TEXT = {
   continueInBrowser: "Continue in your browser",
   copied: "Copied",
   copyVersionInfo: "Copy version info",
-  copyright: "Copyright © 2026 SpaceXAI",
-  feedbackIntroduction: "Tell the Grok Bot team what happened or what you want changed. Reports go straight to the team.",
+  copyright: "Copyright © 2026 Fabushi. All rights reserved.",
+  feedbackIntroduction: "Tell the Fabushi team what happened or what you want changed. Reports go straight to the team.",
   feedbackPlaceholder: "What happened? What did you expect?",
   helpCenter: "Help Center",
   hiddenBots: "Hidden Bots",
@@ -184,7 +185,7 @@ export const UI_TEXT = {
   signIn: "Sign in",
   signInTagline: "Your team of always-on agents that you can give real work to.",
   signOut: "Sign out",
-  signOutDescription: "You’ll need to sign in again to use your Cursor account with Grok Bot.",
+  signOutDescription: "You’ll need to sign in again to use your Cursor account with Fabushi.",
   signOutTitle: "Sign out?",
-  title: "Grok Bot"
+  title: "Fabushi"
 } as const;
