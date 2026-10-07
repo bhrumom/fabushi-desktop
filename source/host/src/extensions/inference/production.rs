@@ -128,13 +128,24 @@ impl ProductionInferenceSettings {
     }
 }
 
+fn resolve_production_inference_provider(
+    fabushi_product_mode: Option<&str>,
+    packaged: Option<&str>,
+    configured: &str,
+) -> RoutedProvider {
+    if fabushi_product_mode == Some("1") || packaged == Some("1") {
+        return RoutedProvider::Fabushi;
+    }
+    RoutedProvider::parse(configured).unwrap_or(RoutedProvider::Cursor)
+}
+
 impl InferenceSettings for ProductionInferenceSettings {
     fn inference_provider(&self) -> RoutedProvider {
-        if std::env::var("FABUSHI_PRODUCT_MODE").ok().as_deref() == Some("1") {
-            return RoutedProvider::Fabushi;
-        }
-        RoutedProvider::parse(&self.settings.get_inference_provider())
-            .unwrap_or(RoutedProvider::Cursor)
+        resolve_production_inference_provider(
+            std::env::var("FABUSHI_PRODUCT_MODE").ok().as_deref(),
+            std::env::var("SAND_PACKAGED").ok().as_deref(),
+            &self.settings.get_inference_provider(),
+        )
     }
 
     fn record_inference_usage(&self, provider: RoutedProvider, usage: InferenceUsage) {
@@ -368,7 +379,7 @@ impl CursorInferenceAuth for ProductionCursorInferenceAuth {
     }
 }
 
-/// Shipping Grok-shaped inference extension surface.
+/// Shipping Fabushi inference extension surface.
 ///
 /// Web search/fetch are constructed from the same authenticated Host auth owner
 /// used by the rest of the production extension graph. No renderer-side or
@@ -546,5 +557,37 @@ pub fn start_production_inference_extension(
         labeling_client,
         labeling_tracker: Arc::new(Mutex::new(FollowupLabelingTracker::default())),
         attached_media,
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::{RoutedProvider, resolve_production_inference_provider};
+
+    #[test]
+    fn packaged_fabushi_is_pinned_to_first_party_inference() {
+        for configured in ["cursor", "codex", "claude-code", "openrouter", "unknown"] {
+            assert_eq!(
+                resolve_production_inference_provider(None, Some("1"), configured),
+                RoutedProvider::Fabushi,
+            );
+        }
+    }
+
+    #[test]
+    fn explicit_product_mode_is_pinned_to_first_party_inference() {
+        assert_eq!(
+            resolve_production_inference_provider(Some("1"), None, "cursor"),
+            RoutedProvider::Fabushi,
+        );
+    }
+
+    #[test]
+    fn development_mode_preserves_explicit_router_selection() {
+        assert_eq!(
+            resolve_production_inference_provider(None, None, "openrouter"),
+            RoutedProvider::OpenRouter,
+        );
     }
 }
