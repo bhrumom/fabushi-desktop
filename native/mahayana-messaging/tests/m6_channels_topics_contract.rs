@@ -845,33 +845,51 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
             .unwrap();
     }
 
-    let conversation_id = ConversationId::new("conversation:child-lifecycle");
-    service
-        .handle(
-            ClientEnvelope::new(
-                context("human:owner", "create-child-lifecycle"),
-                ClientCommand::CreateConversation {
-                    conversation: Conversation::direct(
-                        conversation_id.0.clone(),
-                        "Child lifecycle",
-                        vec![
-                            participant("human:owner", ParticipantRole::Owner),
-                            participant("human:peer", ParticipantRole::Member),
-                        ],
-                        2,
-                    ),
-                },
+    let parent_id = ConversationId::new("conversation:child-lifecycle");
+    let child_id = ConversationId::new("conversation:child-lifecycle:nested");
+    for (request_id, conversation) in [
+        (
+            "create-child-lifecycle-parent",
+            Conversation::direct(
+                parent_id.0.clone(),
+                "Child lifecycle parent",
+                vec![
+                    participant("human:owner", ParticipantRole::Owner),
+                    participant("human:peer", ParticipantRole::Member),
+                ],
+                2,
             ),
-            2,
-        )
-        .unwrap();
+        ),
+        (
+            "create-child-lifecycle-nested",
+            Conversation::direct(
+                child_id.0.clone(),
+                "Child lifecycle nested",
+                vec![
+                    participant("human:owner", ParticipantRole::Owner),
+                    participant("human:peer", ParticipantRole::Member),
+                ],
+                2,
+            ),
+        ),
+    ] {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context("human:owner", request_id),
+                    ClientCommand::CreateConversation { conversation },
+                ),
+                2,
+            )
+            .unwrap();
+    }
 
     let sent = service
         .handle(
             ClientEnvelope::new(
                 context("human:owner", "send-child-lifecycle"),
                 ClientCommand::SendMessage {
-                    conversation_id: conversation_id.clone(),
+                    conversation_id: child_id.clone(),
                     client_message_id: ClientMessageId("client:child-lifecycle".into()),
                     content: text_message("child page item"),
                     reply_to_message_id: None,
@@ -892,10 +910,10 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
         })
         .expect("sent message");
 
-    let destination = ConversationDestination::saved_sublist(
-        conversation_id.clone(),
-        ActorId::new("human:peer"),
-    );
+    let destination =
+        ConversationDestination::nested_conversation(parent_id.clone(), child_id.clone());
+    let saved_destination =
+        ConversationDestination::saved_sublist(parent_id.clone(), ActorId::new("human:peer"));
 
     service
         .handle(
@@ -939,15 +957,47 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
     service
         .handle(
             ClientEnvelope::new(
-                context("human:owner", "child-no-paid"),
-                ClientCommand::SetConversationChildNoPaidMessages {
+                context("human:owner", "child-marked-unread"),
+                ClientCommand::SetConversationChildMarkedUnread {
                     destination: destination.clone(),
-                    no_paid_messages: true,
+                    marked_unread: true,
                 },
             ),
             7,
         )
         .unwrap();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "child-no-paid"),
+                ClientCommand::SetConversationChildNoPaidMessages {
+                    destination: saved_destination.clone(),
+                    no_paid_messages: true,
+                },
+            ),
+            8,
+        )
+        .unwrap();
+
+    let unprovable_saved_page = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "saved-page-fail-closed"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination: saved_destination.clone(),
+                    message_ids: vec![message_id.clone()],
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(1),
+                },
+            ),
+            9,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        unprovable_saved_page,
+        MessagingServiceError::Engine(EngineError::ConversationChildMessageMismatch)
+    ));
 
     let first_sync = service
         .handle(
@@ -958,23 +1008,30 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
                     limit: 100,
                 },
             ),
-            8,
+            10,
         )
         .unwrap();
-    assert!(matches!(
-        sync_batch(&first_sync),
+    match sync_batch(&first_sync) {
         ServerEvent::SyncBatch {
             conversation_children,
             ..
-        } if conversation_children.iter().any(|child| {
-            child.destination == destination
-                && child.actor_id == ActorId::new("human:owner")
-                && child.pagination.message_ids == vec![message_id.0.clone()]
-                && child.pinned
-                && child.active
-                && child.no_paid_messages
-        })
-    ));
+        } => {
+            assert!(conversation_children.iter().any(|child| {
+                child.destination == destination
+                    && child.actor_id == ActorId::new("human:owner")
+                    && child.pagination.message_ids == vec![message_id.0.clone()]
+                    && child.pinned
+                    && child.active
+                    && child.marked_unread
+            }));
+            assert!(conversation_children.iter().any(|child| {
+                child.destination == saved_destination
+                    && child.actor_id == ActorId::new("human:owner")
+                    && child.no_paid_messages
+            }));
+        }
+        event => panic!("unexpected child lifecycle sync: {event:?}"),
+    }
 
     service
         .handle(
@@ -988,7 +1045,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
                     full_count: Some(0),
                 },
             ),
-            9,
+            11,
         )
         .unwrap();
     let empty = service
@@ -1015,7 +1072,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
                     full_count: Some(1),
                 },
             ),
-            10,
+            12,
         )
         .unwrap();
     let restored = service
@@ -1030,20 +1087,20 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
     assert!(restored.pinned);
     assert!(!restored.restore_pinned_when_non_empty);
 
-    let denied_unread = service
+    let denied_saved_unread = service
         .handle(
             ClientEnvelope::new(
-                context("human:owner", "child-unread-denied"),
+                context("human:owner", "saved-unread-denied"),
                 ClientCommand::SetConversationChildMarkedUnread {
-                    destination: destination.clone(),
+                    destination: saved_destination.clone(),
                     marked_unread: true,
                 },
             ),
-            11,
+            13,
         )
         .unwrap_err();
     assert!(matches!(
-        denied_unread,
+        denied_saved_unread,
         MessagingServiceError::Engine(EngineError::InvalidConversationChildDestination)
     ));
 
@@ -1055,7 +1112,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
                     destination: destination.clone(),
                 },
             ),
-            12,
+            14,
         )
         .unwrap_err();
     assert!(matches!(
@@ -1072,7 +1129,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
                     destination: destination.clone(),
                 },
             ),
-            13,
+            15,
         )
         .unwrap();
     assert!(!service
@@ -1093,7 +1150,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
                     limit: 100,
                 },
             ),
-            14,
+            16,
         )
         .unwrap();
     assert!(matches!(
@@ -1102,6 +1159,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
             conversation_children,
             ..
         } if conversation_children.iter().all(|child| child.destination != destination)
+            && conversation_children.iter().any(|child| child.destination == saved_destination)
     ));
 }
 
