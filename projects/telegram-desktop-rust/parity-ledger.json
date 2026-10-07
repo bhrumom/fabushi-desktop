@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
-  "target_commit": "18289a68a55a3166f42013b9ea8cb84b7565faf1",
+  "target_commit": "df02b3bd1146bac38fcf41a37c819d0662851890",
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15786,
+    "unread": 15784,
     "omitted": 0,
-    "responsibilities_total": 6,
+    "responsibilities_total": 7,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -1417,6 +1417,254 @@
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-thread selection semantics using canonical Fabushi Conversation/Topic/Message owners.",
       "reviewer": null,
       "notes": "This row closes only preservation of an already-resolved typed thread destination through the native forward path. Picker lifecycle, topic existence/closed-state selection UX, saved-message sublists/community child selection, and the rest of ShareBox remain open, so global unknown does not decrement."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+      "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
+      "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
+      "source_kind": "source",
+      "module_id": "tdesktop.boxes.share",
+      "responsibility_id": "TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001",
+      "source_symbols": [
+        "Inner::Chat",
+        "chatThread",
+        "chooseForumTopic",
+        "ShareBox::submit"
+      ],
+      "capability_ids": [
+        "CAP-CONVERSATION-TOPIC-DESTINATION-ELIGIBILITY"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Topic",
+        "CommunityState",
+        "ClientCommand::ForwardMessage",
+        "MessagingEngine"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/share-box-complete-read.md",
+      "behavior_contract": "A forward targeting a typed community topic must fail closed unless that topic exists and is currently eligible; missing, closed, or hidden topics must never be accepted as forward destinations.",
+      "state_machine": "resolved typed topic destination -> canonical community lookup -> topic existence check -> closed/hidden eligibility check -> either fail closed or continue canonical forward authorization/send lifecycle.",
+      "side_effects": [
+        "Rejects stale or ineligible topic destinations before queuing a forwarded Message",
+        "Reuses canonical Conversation/Community/Topic truth instead of a ShareBox-local topic store"
+      ],
+      "failure_cases": [
+        "Missing topic accepted as a destination",
+        "Closed topic accepts a forward",
+        "Hidden topic accepts a forward",
+        "Eligibility check bypasses canonical destination authorization"
+      ],
+      "ui_disposition": "Reuse canonical Fabushi Conversation/Topic picker and ConversationWorkspace; Telegram nested picker presentation is not ported.",
+      "non_ui_responsibilities": [
+        "Topic existence validation at forward boundary",
+        "Closed/hidden topic fail-closed policy",
+        "Shared ordinary-send/forward topic eligibility semantics"
+      ],
+      "platform_delta": "Telegram topic eligibility is enforced in the existing Fabushi Rust messaging/community state machine, independent of Qt picker presentation.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/community.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "existing_owner": "Fabushi canonical Conversation/Community/Topic + MessagingEngine forward boundary",
+      "rejected_existing_owners": [
+        "New ShareBox topic policy owner: would duplicate canonical Community/Topic truth",
+        "Renderer-only eligibility: stale or forged protocol commands must still fail closed"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/tests/m6_channels_topics_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "Command::ForwardMessage",
+        "topic_id_from_root",
+        "EngineError::ForumTopicNotFound",
+        "EngineError::ForumTopicClosed"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Topic eligibility is canonical messaging/community domain policy and belongs in the existing Rust owner.",
+      "command_event_contracts": [
+        "ClientCommand::ForwardMessage.thread_root_message_id -> Command::ForwardMessage -> canonical CommunityState topic lookup -> fail closed before Event::MessageQueued"
+      ],
+      "state_owner": "Canonical CommunityState topics plus Conversation/Message thread relation",
+      "lifecycle_owner": "MessagingService + MessagingEngine forward lifecycle",
+      "persistence_and_restart": "Topic closed/hidden/existence state remains owned by the existing canonical CommunityState persistence; no share-specific state is introduced.",
+      "concurrency_and_cancellation": "Eligibility is revalidated inside command execution against current canonical state, so stale picker state cannot authorize an ineligible topic.",
+      "security_boundary": "Topic eligibility is a native fail-closed gate in addition to existing participant, message/media/poll, channel/community, slow-mode, and secret-content authorization.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Current-head Rust GitHub Actions evidence is pending",
+        "Shipping nested picker lifecycle/destruction and saved/community child destination UI evidence remain open"
+      ],
+      "production_entrypoints": [
+        "Canonical topic picker -> ClientCommand::ForwardMessage -> MessagingService -> MessagingEngine topic eligibility -> Event::MessageQueued"
+      ],
+      "production_evidence": [
+        "commit:df02b3bd1146bac38fcf41a37c819d0662851890",
+        "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage"
+      ],
+      "test_evidence": [
+        "commit:c13a85a2a193660f95cfa9cefe29808cdb368fd4",
+        "native/mahayana-messaging/tests/m6_channels_topics_contract.rs#channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped"
+      ],
+      "target_commit": "df02b3bd1146bac38fcf41a37c819d0662851890",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical Conversation messaging domain",
+      "composition_slot": "Conversation recipient/topic selection and forward message action",
+      "capability_component": "Typed forward topic eligibility",
+      "variation_axes": [
+        "existing-open-topic",
+        "missing-topic",
+        "closed-topic",
+        "hidden-topic"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation",
+        "Canonical Topic",
+        "Canonical Message thread relation"
+      ],
+      "duplicate_root_check": "No Telegram Thread root, separate forum app, or second Conversation/Message store was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped picker / Conversation action",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace / canonical picker",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Forward to selected conversation/topic",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical recipient/topic picker and message action",
+      "route_contract": "Typed topic/thread remains within the existing Messages/Conversation route.",
+      "search_scope": "Contextual participant/conversation picker",
+      "search_provider": "Existing canonical Search/provider stack",
+      "search_result_types": [
+        "Conversation"
+      ],
+      "search_filters": [
+        "Destination eligibility",
+        "Topic existence",
+        "Topic closed/hidden state"
+      ],
+      "search_permission_contract": "Picker exposure must remain authorization-filtered; native send policy remains fail-closed.",
+      "search_local_remote_contract": "Reuse canonical search/picker results; no ShareBox-specific search truth.",
+      "responsive_disposition": "Reuse canonical picker responsiveness.",
+      "accessibility_contract": "Reuse canonical Picker/ListRow selection semantics; exact shipping a11y evidence remains open.",
+      "keyboard_contract": "Reuse canonical picker keyboard selection; exact shipping keyboard evidence remains open.",
+      "state_continuity_contract": "The native send boundary revalidates the selected topic against current canonical state; stale UI selection cannot bypass eligibility.",
+      "ui_acceptance_scenarios": [
+        "Forward to an existing open topic succeeds and preserves the topic relation",
+        "Forward to a missing topic is rejected",
+        "Forward to a closed topic is rejected",
+        "Forward to a hidden topic is rejected"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical picker and Conversation tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "Picker",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "Message actions",
+        "Destination picker"
+      ],
+      "visual_state_matrix": [
+        "open-topic",
+        "missing-topic-error",
+        "closed-topic-error",
+        "hidden-topic-error"
+      ],
+      "density_contract": "Reuse canonical picker density.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "Reuse canonical Conversation/Participant avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Reuse canonical picker motion.",
+      "reduced_motion_contract": "Reuse application reduced-motion behavior.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SHARE-TOPIC-ELIGIBILITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-FORWARD-TOPIC-EXISTS-001",
+        "INV-TDRP-FORWARD-TOPIC-OPEN-VISIBLE-001",
+        "INV-TDRP-FORWARD-TOPIC-NO-QUEUE-ON-DENY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "PROP-TDRP-FORWARD-TOPIC-ELIGIBILITY-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-FORWARD-TOPIC-ELIGIBILITY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-FORWARD-TOPIC-ELIGIBILITY-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-FORWARD-TOPIC-REVALIDATION-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-FORWARD-STALE-TOPIC-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-FORWARD-TOPIC-FAIL-CLOSED-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-FORWARD-MISSING-TOPIC-001",
+        "REG-TDRP-FORWARD-CLOSED-TOPIC-001",
+        "REG-TDRP-FORWARD-HIDDEN-TOPIC-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "forward-topic-destination",
+        "forward-topic-ineligible"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-topic destination semantics using canonical Fabushi Conversation/Community/Topic owners.",
+      "reviewer": null,
+      "notes": "This row closes only native topic existence/closed/hidden eligibility at the forward boundary. Nested picker lifecycle/destruction, saved-message sublists/community-child selection, UI evidence, and exact-head runtime evidence remain open, so global unknown does not decrement."
     }
   ]
 }
