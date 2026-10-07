@@ -168,7 +168,7 @@ for(const qt of rules.qt_superproject?.observed_authorities||[]){
   auditRootCandidates(
     keyOf(rules.qt_superproject.repository,qt.commit),
     rules.qt_superproject.root_candidate_disposition_policy,
-    {requireComplete:false,scope:'qt-superproject-root-candidates'}
+    {requireComplete:rules.qt_superproject.root_candidate_policy_status==='complete-for-current-qt-authorities',scope:'qt-superproject-root-candidates'}
   );
 }
 auditRootCandidates(
