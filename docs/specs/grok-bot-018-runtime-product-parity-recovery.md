@@ -169,6 +169,7 @@ When this spec says “remove Fabushi-only behavior with no Grok counterpart”,
 - **BRAND-004 — Acceptance.** The production sign-in heading, update/Computer surfaces, account errors, Host notices, and assistant identity prompts use Fabushi wording; packaged acceptance locates the Fabushi sign-in surface; compatibility identifiers remain unchanged.
 - **BRAND-005 — Assistant identity.** The system prompt and generated profile instructions identify the desktop assistant as Fabushi, including when a legacy default profile is named Grok or Grok Bot. Keep the model provider distinct from the product identity; report a model name only when the runtime supplies it.
 - **FILE-001 — User-computer file requests.** For an explicit request to locate or inspect a file on the user's computer, use the connected-computer file tools and search a named folder from context when the user has not supplied an exact path. Check actual connection/tool status before reporting unavailability. Do not tell users that every file operation always requires an approval; honor real tool approval responses, and modify files only when the requested change is explicit.
+- **BRAND-006 — Settings identity and localization.** Every Settings heading, label, description, option, placeholder, and accessibility name must use Fabushi branding and the active Settings locale. The supported Chinese locale must not mix hardcoded English copy into translated settings; English may appear only for proper names and technical identifiers.
 
 
 ### Chat / turn lifecycle
