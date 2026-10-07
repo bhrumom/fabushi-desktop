@@ -1893,6 +1893,72 @@
       ],
       "root_candidate_policy_status": "complete-for-current-libheif-authority",
       "note": "This closes acquisition-pattern candidates for the immutable libheif v1.23.5 root used by accepted prepare/Docker source builds. Snap consumes distro libheif-dev and is a package/toolchain input rather than a second libheif source snapshot."
+    },
+    "breakpad": {
+      "repository": "https://chromium.googlesource.com/breakpad/breakpad",
+      "observed_authorities": [
+        {
+          "commit": "dfcb7b6799b7c1e2c8d65e857d8afede185471d8",
+          "ref": "dfcb7b6799",
+          "build_entries": [
+            "Telegram/build/prepare/prepare.py"
+          ]
+        },
+        {
+          "commit": "9aebd3d8ef5a246deb2c929b5666aaba160ebce6",
+          "ref": "9aebd3d8ef5a246deb2c929b5666aaba160ebce6",
+          "build_entries": [
+            "Telegram/build/docker/centos_env/Dockerfile"
+          ]
+        }
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "The accepted stackwalk/breakpad stages clone Breakpad and pin dfcb7b6799, apply the pinned TDesktop breakpad.diff input, manually acquire googletest release-1.11.0, and on the applicable mac paths manually acquire linux-syscall-support at e1e7b0ad8e. The stages build with TDesktop-provided gyp/Xcode/CMake flows and do not run Breakpad DEPS/gclient, upstream GitHub Actions, or SWIG helper Makefiles."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "The accepted Docker breakpad stage fetches exact Breakpad commit 9aebd3d8ef5a246deb2c929b5666aaba160ebce6, manually initializes only src/third_party/lss at exact commit 29164a80da4d41134950d76d55199ea33fbb9613, then runs ./configure, make, and make install. It does not initialize src/testing, execute DEPS/gclient, or invoke Breakpad upstream CI/bootstrap dependency fetches."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-breakpad-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_exact": "DEPS",
+          "disposition": "upstream-breakpad-deps-manifest-not-invoked",
+          "basis": "Accepted TDesktop Breakpad paths manually acquire their selected googletest/LSS inputs and never execute gclient or the upstream DEPS dependency resolver."
+        },
+        {
+          "path_prefix": "autotools/",
+          "disposition": "upstream-breakpad-autotools-reference-not-acquisition",
+          "basis": "The accepted Docker path runs the checked-out ./configure locally; candidate URL strings in config.guess/config.sub are update/help metadata, not executed repository acquisition."
+        },
+        {
+          "path_prefix": "docs/",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_prefix": "src/common/",
+          "disposition": "compiled-runtime-network-reference-not-build-acquisition",
+          "basis": "libcurl matches are compiled/runtime upload implementation references inside the already-fetched Breakpad source, not build-time source acquisition."
+        },
+        {
+          "path_prefix": "src/third_party/curl/",
+          "disposition": "vendored-runtime-header-reference-not-build-acquisition",
+          "basis": "The candidate strings are vendored curl API/header text contained in the immutable Breakpad tree and do not fetch another source authority."
+        },
+        {
+          "path_prefix": "src/third_party/libdisasm/swig/",
+          "disposition": "upstream-breakpad-swig-helper-not-invoked",
+          "basis": "The accepted TDesktop Breakpad builds do not invoke the libdisasm SWIG helper Makefiles; their apt-install text is tooling guidance, not an executed acquisition."
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-breakpad-authorities",
+      "note": "This closes acquisition-pattern candidates for both independently acquired Breakpad root snapshots. The selected googletest/LSS inputs, TDesktop breakpad.diff patch authority, and any recursively discovered gitlink/source inputs remain separately governed by root/child/patch reachability accounting."
     }
   }
 }

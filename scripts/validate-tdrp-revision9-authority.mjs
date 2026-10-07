@@ -342,6 +342,39 @@ for (const [name,stage] of [['prepare.py',prepareLibheifStage],['Dockerfile',doc
   fail(!stage.includes('scripts/'),'accepted libheif build unexpectedly invokes upstream helper scripts in '+name);
 }
 
+const breakpadReachability=recursiveReachability.breakpad;
+fail(breakpadReachability?.repository==='https://chromium.googlesource.com/breakpad/breakpad','Breakpad reachability authority missing');
+fail(breakpadReachability.root_candidate_policy_status==='complete-for-current-breakpad-authorities','Breakpad root candidate policy is not fail-closed complete');
+const expectedBreakpadCommits=new Set(['dfcb7b6799b7c1e2c8d65e857d8afede185471d8','9aebd3d8ef5a246deb2c929b5666aaba160ebce6']);
+for (const authority of breakpadReachability.observed_authorities||[]) expectedBreakpadCommits.delete(authority.commit);
+fail(expectedBreakpadCommits.size===0,'Breakpad observed authority set drift');
+const breakpadPolicy=breakpadReachability.root_candidate_disposition_policy||[];
+for (const [kind,value] of [
+  ['path_prefix','.github/'],['path_exact','DEPS'],['path_prefix','autotools/'],
+  ['path_prefix','docs/'],['path_prefix','src/common/'],['path_prefix','src/third_party/curl/'],
+  ['path_prefix','src/third_party/libdisasm/swig/']
+]) fail(breakpadPolicy.some(rule=>rule[kind]===value),'Breakpad acquisition disposition missing: '+value);
+const prepareBreakpadStage=prepareQt.match(/stage\('breakpad',[\s\S]*?\n"""\)/)?.[0]||'';
+const prepareStackwalkStage=prepareQt.match(/stage\('stackwalk',[\s\S]*?\n"""\)/)?.[0]||'';
+const dockerBreakpadStage=dockerStage(dockerQt,'breakpad');
+for (const [name,stage] of [['prepare.py breakpad',prepareBreakpadStage],['prepare.py stackwalk',prepareStackwalkStage]]) {
+  fail(stage.length>0,'unable to isolate accepted Breakpad build stage in '+name);
+  fail(stage.includes('https://chromium.googlesource.com/breakpad/breakpad'),'accepted Breakpad repository drift in '+name);
+  fail(stage.includes('git checkout dfcb7b6799'),'accepted Breakpad prepare pin drift in '+name);
+  fail(stage.includes('depends:patches/breakpad.diff')&&stage.includes('git apply ../patches/breakpad.diff'),'accepted Breakpad patch application drift in '+name);
+  fail(stage.includes('git clone -b release-1.11.0 https://github.com/google/googletest src/testing'),'accepted Breakpad googletest input drift in '+name);
+  fail(!/\bgclient\b|depot_tools/.test(stage),'accepted Breakpad prepare stage unexpectedly invokes upstream dependency bootstrap in '+name);
+}
+fail(prepareBreakpadStage.includes('git checkout e1e7b0ad8e'),'accepted Breakpad prepare LSS pin drift');
+fail(prepareStackwalkStage.includes('git checkout e1e7b0ad8e'),'accepted stackwalk LSS pin drift');
+fail(dockerBreakpadStage.length>0,'unable to isolate accepted Breakpad Docker stage');
+fail(dockerBreakpadStage.includes('git fetch --depth=1 origin 9aebd3d8ef5a246deb2c929b5666aaba160ebce6'),'accepted Breakpad Docker pin drift');
+fail(dockerBreakpadStage.includes('git init src/third_party/lss'),'accepted Breakpad Docker LSS initialization drift');
+fail(dockerBreakpadStage.includes('git fetch --depth=1 origin 29164a80da4d41134950d76d55199ea33fbb9613'),'accepted Breakpad Docker LSS pin drift');
+fail(dockerBreakpadStage.includes('./configure')&&dockerBreakpadStage.includes('make -j$(nproc)')&&dockerBreakpadStage.includes('make DESTDIR=/usr/src/breakpad-cache install'),'accepted Breakpad Docker build path drift');
+fail(!dockerBreakpadStage.includes('src/testing'),'accepted Breakpad Docker stage unexpectedly initializes testing dependency');
+fail(!/\bgclient\b|depot_tools/.test(dockerBreakpadStage),'accepted Breakpad Docker stage unexpectedly invokes upstream dependency bootstrap');
+
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
 fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');

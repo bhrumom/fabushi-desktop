@@ -234,6 +234,15 @@ auditRootCandidates(
   {requireComplete:libheif.root_candidate_policy_status==='complete-for-current-libheif-authority',scope:'libheif-root-candidates'}
 );
 
+const breakpad=rules.breakpad;
+for (const authority of breakpad.observed_authorities||[]) {
+  auditRootCandidates(
+    keyOf(breakpad.repository,authority.commit),
+    breakpad.root_candidate_disposition_policy,
+    {requireComplete:breakpad.root_candidate_policy_status==='complete-for-current-breakpad-authorities',scope:'breakpad-root-candidates-'+authority.ref}
+  );
+}
+
 const result={
   project_id:'TDRP-001',
   spec_revision:9,
