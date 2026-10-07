@@ -2586,6 +2586,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
             | Event::ConversationChildMarkedUnreadChanged { .. }
             | Event::ConversationChildUnreadThingsReconciled { .. }
             | Event::SavedSublistParentAccessReconciled { .. }
+            | Event::SavedSublistMembershipReconciled { .. }
             | Event::ConversationChildNoPaidMessagesChanged { .. }
             | Event::ConversationChildDestroyed { .. } => return None,
             Event::InvoiceCreated { invoice } => ServerEvent::InvoiceChanged { invoice },
