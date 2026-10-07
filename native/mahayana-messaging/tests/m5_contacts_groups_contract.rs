@@ -289,6 +289,117 @@ fn contacts_and_groups_are_searchable_through_the_messaging_protocol() {
                 && results.iter().all(|result| result.id != "group:m5-search-blocked")
                 && results.iter().all(|result| result.id != "group:m5-search-media-blocked")
     ));
+
+    for (id, title, disable) in [
+        ("group:m5-search-other-blocked", "Dharma Other Blocked", "other"),
+        ("group:m5-search-inline-blocked", "Dharma Inline Blocked", "inline"),
+        ("group:m5-search-game-blocked", "Dharma Game Blocked", "game"),
+    ] {
+        let mut conversation = group_conversation(id);
+        conversation.title = title.into();
+        match disable {
+            "other" => conversation.permissions.can_send_other = false,
+            "inline" => conversation.permissions.can_send_inline = false,
+            "game" => conversation.permissions.can_send_games = false,
+            _ => unreachable!(),
+        }
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context("human:owner", &format!("create:{id}")),
+                    ClientCommand::CreateConversation { conversation },
+                ),
+                9,
+            )
+            .unwrap();
+    }
+
+    for (requirement, blocked_id) in [
+        (
+            RecipientSearchRequirements {
+                require_send_other: true,
+                ..RecipientSearchRequirements::default()
+            },
+            "group:m5-search-other-blocked",
+        ),
+        (
+            RecipientSearchRequirements {
+                require_inline: true,
+                ..RecipientSearchRequirements::default()
+            },
+            "group:m5-search-inline-blocked",
+        ),
+        (
+            RecipientSearchRequirements {
+                require_game: true,
+                ..RecipientSearchRequirements::default()
+            },
+            "group:m5-search-game-blocked",
+        ),
+    ] {
+        let typed = service
+            .handle(
+                ClientEnvelope::new(
+                    context("human:owner", &format!("search:{blocked_id}")),
+                    ClientCommand::SearchRecipients {
+                        query: SearchQuery {
+                            text: "dharma".into(),
+                            scope: SearchScope::Global,
+                            conversation_id: None,
+                            sender_id: None,
+                            from_ms: None,
+                            to_ms: None,
+                            limit: 20,
+                        },
+                        requirements: requirement,
+                    },
+                ),
+                10,
+            )
+            .unwrap();
+        assert!(matches!(
+            &typed[0].event,
+            ServerEvent::SearchResults { results, .. }
+                if results.iter().any(|result| result.id == "group:m5-search")
+                    && results.iter().all(|result| result.id != blocked_id)
+        ));
+    }
+}
+
+#[test]
+fn typed_recipient_permissions_deserialize_old_snapshots_fail_closed() {
+    let permissions: fabushi_messaging_core::ConversationPermissions = serde_json::from_value(
+        serde_json::json!({
+            "canSendMessages": true,
+            "canSendMedia": true,
+            "canSendPolls": true,
+            "canAddMembers": true,
+            "canPinMessages": true,
+            "canManageTopics": true,
+            "canManageCalls": true
+        }),
+    )
+    .unwrap();
+    assert!(!permissions.can_send_other);
+    assert!(!permissions.can_send_inline);
+    assert!(!permissions.can_send_games);
+
+    let restrictions: MemberRestrictions = serde_json::from_value(
+        serde_json::json!({
+            "sendMessages": false,
+            "sendMedia": false,
+            "sendPolls": false,
+            "embedLinks": false,
+            "addMembers": false,
+            "pinMessages": false,
+            "changeInfo": false,
+            "untilMs": null
+        }),
+    )
+    .unwrap();
+    assert!(!restrictions.send_other);
+    assert!(!restrictions.send_inline);
+    assert!(!restrictions.send_games);
 }
 
 #[test]
