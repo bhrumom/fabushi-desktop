@@ -142,6 +142,27 @@ impl<S: MessagingStateStore> MessagingService<S> {
         self.persist(server_time_ms)
     }
 
+    /// Replace the trusted server/native membership snapshot for one SavedSublist.
+    /// This is deliberately not part of ClientCommand; only the canonical sync/feed
+    /// side may assert child ownership for parent messages.
+    pub fn reconcile_saved_sublist_membership(
+        &mut self,
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_ids: Vec<MessageId>,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        let events = self.engine.execute(Command::ReconcileSavedSublistMembership {
+            destination,
+            actor_id,
+            message_ids,
+        })?;
+        self.cursor = self
+            .cursor
+            .saturating_add(u64::try_from(events.len()).unwrap_or(u64::MAX));
+        self.persist(server_time_ms)
+    }
+
     pub fn into_store(self) -> S {
         self.store
     }
