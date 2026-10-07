@@ -37,6 +37,7 @@ import {
   type LegacyTopicDestination,
   type LegacyTopicRootResolver
 } from "./child-selection";
+import { bindConversationChildSelectionToPagination } from "./child-history-composition";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5323918
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5306234
@@ -165,13 +166,14 @@ export function createConversationWorkspaceController(options: ConversationWorks
       getBoundary: options.childHistory.getBoundary,
       commitPage: options.childHistory.commitPage
     });
-  const unsubscribeChildSelection = childSelection?.subscribe(() => {
-    const destination = childSelection.getSnapshot().selected;
-    childPagination?.setScope(
-      destination == null ? null : conversationDestinationScopeKey(destination)
-    );
-    emit();
-  }) ?? (() => {});
+  const unsubscribeChildSelection = childSelection != null && childPagination != null
+    ? bindConversationChildSelectionToPagination(
+      childSelection,
+      childPagination,
+      conversationDestinationScopeKey,
+      emit
+    )
+    : (() => {});
   const syncReplyEntries = () => replyController.replaceEntries(paginationController.getSnapshot().entries);
   const unsubscribePagination = paginationController.subscribe(() => {
     const snapshot = paginationController.getSnapshot();
