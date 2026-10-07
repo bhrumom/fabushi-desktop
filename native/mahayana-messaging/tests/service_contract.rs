@@ -162,6 +162,7 @@ fn forward_retries_are_idempotent_and_option_conflicts_fail_closed() {
         thread_root_message_id: None,
         scheduled_at_ms: Some(50),
         silent: true,
+        privacy: ForwardPrivacy::default(),
     };
 
     service
@@ -205,6 +206,7 @@ fn forward_retries_are_idempotent_and_option_conflicts_fail_closed() {
                     thread_root_message_id: None,
                     scheduled_at_ms: Some(50),
                     silent: false,
+                    privacy: ForwardPrivacy::default(),
                 },
             ),
             6,
