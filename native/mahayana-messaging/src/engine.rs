@@ -159,6 +159,11 @@ pub enum Command {
         reply_to_message_id: Option<MessageId>,
         updated_at_ms: i64,
     },
+    BindMessageToConversationChild {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_id: MessageId,
+    },
     ReplaceConversationChildWindow {
         destination: ConversationDestination,
         actor_id: ActorId,
@@ -456,6 +461,10 @@ pub enum Event {
         text: String,
         reply_to_message_id: Option<String>,
         updated_at_ms: i64,
+    },
+    MessageConversationChildBound {
+        destination: ConversationDestination,
+        message_id: MessageId,
     },
     ConversationChildWindowReplaced {
         destination: ConversationDestination,
@@ -1351,6 +1360,7 @@ impl MessagingEngine {
                     content,
                     reply_to_message_id,
                     thread_root_message_id,
+                    conversation_child: None,
                     forward_origin: None,
                     reply_markup: None,
                     reactions: Vec::new(),
@@ -1838,6 +1848,13 @@ impl MessagingEngine {
                         return Err(EngineError::ConversationChildMessageMismatch);
                     }
                 }
+                if matches!(
+                    &destination.child,
+                    Some(ConversationChildIdentity::SavedSublist { .. })
+                ) && message.conversation_child.as_ref() != destination.child.as_ref()
+                {
+                    return Err(EngineError::ConversationChildMessageMismatch);
+                }
                 Ok(vec![Event::ConversationChildReadChanged {
                     destination,
                     actor_id,
@@ -1972,6 +1989,39 @@ impl MessagingEngine {
                     updated_at_ms,
                 }])
             }
+            Command::BindMessageToConversationChild {
+                destination,
+                actor_id,
+                message_id,
+            } => {
+                if destination.child.is_none() {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                // Reuse the canonical child authorization/identity validation without
+                // introducing another SavedMessages or topic owner.
+                self.decide(Command::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    actor_id,
+                    text: String::new(),
+                    reply_to_message_id: None,
+                    updated_at_ms: 0,
+                })?;
+                let message_conversation_id =
+                    destination_message_conversation_id(&destination).clone();
+                let message = self.require_message(&message_conversation_id, &message_id)?;
+                if message.deleted {
+                    return Err(EngineError::ConversationChildMessageMismatch);
+                }
+                if let Some(existing) = &message.conversation_child {
+                    if Some(existing) != destination.child.as_ref() {
+                        return Err(EngineError::ConversationChildMessageMismatch);
+                    }
+                }
+                Ok(vec![Event::MessageConversationChildBound {
+                    destination,
+                    message_id,
+                }])
+            }
             Command::ReplaceConversationChildWindow {
                 destination,
                 actor_id,
@@ -1987,17 +2037,6 @@ impl MessagingEngine {
                     reply_to_message_id: None,
                     updated_at_ms: 0,
                 })?;
-                // SavedSublist membership is not derivable from the current canonical
-                // Message shape yet. Never accept arbitrary parent messages into that
-                // child just to populate a page; empty lifecycle snapshots remain valid
-                // until a source-neutral message-to-child relation lands.
-                if matches!(
-                    &destination.child,
-                    Some(ConversationChildIdentity::SavedSublist { .. })
-                ) && !message_ids.is_empty()
-                {
-                    return Err(EngineError::ConversationChildMessageMismatch);
-                }
                 for message_id in &message_ids {
                     self.decide(Command::MarkConversationChildRead {
                         destination: destination.clone(),
@@ -3520,6 +3559,21 @@ impl MessagingEngine {
                     } else {
                         child.set_draft(text, reply_to_message_id, updated_at_ms);
                     }
+                }
+            }
+            Event::MessageConversationChildBound {
+                destination,
+                message_id,
+            } => {
+                let conversation_id =
+                    destination_message_conversation_id(&destination).clone();
+                if let Some(message) = self
+                    .state
+                    .messages
+                    .get_mut(&conversation_id)
+                    .and_then(|messages| messages.get_mut(&message_id))
+                {
+                    message.conversation_child = destination.child;
                 }
             }
             Event::ConversationChildWindowReplaced {
