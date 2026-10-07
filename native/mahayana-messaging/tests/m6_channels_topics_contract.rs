@@ -1565,3 +1565,161 @@ fn child_unread_things_and_incoming_notifications_reconcile_without_reaction_pay
         "reading the message notification does not alias or clear unread-reaction truth",
     );
 }
+
+
+#[test]
+fn server_authoritative_saved_sublist_parent_access_is_actor_scoped_persistent_and_revocable() {
+    let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
+    for actor_id in ["human:owner", "human:admin"] {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context(actor_id, &format!("profile:parent-access:{actor_id}")),
+                    ClientCommand::UpsertProfile {
+                        actor: Actor::human(actor_id, actor_id),
+                    },
+                ),
+                1,
+            )
+            .unwrap();
+    }
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "create-parent-access-channel"),
+                ClientCommand::CreateConversation {
+                    conversation: channel_conversation(),
+                },
+            ),
+            2,
+        )
+        .unwrap();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "create-parent-access-community"),
+                ClientCommand::UpdateCommunity {
+                    community: channel_community(),
+                },
+            ),
+            3,
+        )
+        .unwrap();
+
+    let destination = ConversationDestination::saved_sublist(
+        ConversationId::new("channel:m6"),
+        ActorId::new("human:admin"),
+    );
+    let denied_before = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "parent-access-denied-before"),
+                ClientCommand::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    text: "must remain denied".into(),
+                    reply_to_message_id: None,
+                },
+            ),
+            4,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        denied_before,
+        MessagingServiceError::Engine(EngineError::InvalidConversationChildDestination)
+    ));
+
+    service
+        .reconcile_saved_sublist_parent_access(
+            ConversationId::new("channel:m6"),
+            ActorId::new("human:owner"),
+            true,
+            5,
+        )
+        .unwrap();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "parent-access-draft"),
+                ClientCommand::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    text: "authorized child".into(),
+                    reply_to_message_id: None,
+                },
+            ),
+            6,
+        )
+        .unwrap();
+
+    let store = service.into_store();
+    let mut service = MessagingService::load(store).unwrap();
+    assert!(service
+        .engine()
+        .state()
+        .saved_sublist_parent_access
+        .get(&ConversationId::new("channel:m6"))
+        .is_some_and(|actors| actors.contains(&ActorId::new("human:owner"))));
+    assert!(service
+        .engine()
+        .state()
+        .conversation_child_states
+        .iter()
+        .any(|child| child.destination == destination
+            && child.actor_id == ActorId::new("human:owner")));
+
+    let denied_other_actor = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:admin", "parent-access-other-actor"),
+                ClientCommand::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    text: "must remain actor scoped".into(),
+                    reply_to_message_id: None,
+                },
+            ),
+            7,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        denied_other_actor,
+        MessagingServiceError::Engine(EngineError::InvalidConversationChildDestination)
+    ));
+
+    service
+        .reconcile_saved_sublist_parent_access(
+            ConversationId::new("channel:m6"),
+            ActorId::new("human:owner"),
+            false,
+            8,
+        )
+        .unwrap();
+    assert!(!service
+        .engine()
+        .state()
+        .saved_sublist_parent_access
+        .contains_key(&ConversationId::new("channel:m6")));
+    assert!(!service
+        .engine()
+        .state()
+        .conversation_child_states
+        .iter()
+        .any(|child| child.destination == destination
+            && child.actor_id == ActorId::new("human:owner")));
+
+    let denied_after = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "parent-access-denied-after"),
+                ClientCommand::SetConversationChildDraft {
+                    destination,
+                    text: "must be revoked".into(),
+                    reply_to_message_id: None,
+                },
+            ),
+            9,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        denied_after,
+        MessagingServiceError::Engine(EngineError::InvalidConversationChildDestination)
+    ));
+}
