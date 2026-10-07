@@ -131,6 +131,27 @@ function scoreEntry(entry: CommandPaletteEntry, tokens: readonly string[], norma
   return score + (fuzzyPaletteScore(normalizedLabel, normalizedQuery) ?? 0);
 }
 
+export function dedupeCommandPaletteAgents(
+  agents: readonly CommandPaletteAgent[],
+): CommandPaletteAgent[] {
+  const deduped: CommandPaletteAgent[] = [];
+  const indexById = new Map<string, number>();
+  for (const agent of agents) {
+    const existing = indexById.get(agent.id);
+    if (existing == null) {
+      indexById.set(agent.id, deduped.length);
+      deduped.push(agent);
+      continue;
+    }
+    // A roster row may be replaced while the current collection/search
+    // projection still holds the previous object. Preserve the original slot
+    // but project the newest row, so canonical participant identity appears
+    // exactly once across scope/filter rebuilds.
+    deduped[existing] = agent;
+  }
+  return deduped;
+}
+
 export function commandPaletteEntries({
   agents,
   commands,
@@ -150,7 +171,8 @@ export function commandPaletteEntries({
   query: string;
   tab: CommandPaletteTab;
 }): CommandPaletteEntry[] {
-  const visibleAgents = agents.filter((agent) => !agent.isHidden).map((agent): CommandPaletteEntry => ({ kind: "agent", agent }));
+  const canonicalAgents = dedupeCommandPaletteAgents(agents);
+  const visibleAgents = canonicalAgents.filter((agent) => !agent.isHidden).map((agent): CommandPaletteEntry => ({ kind: "agent", agent }));
   const commandEntries = commands.map((command): CommandPaletteEntry => ({ kind: "command", command }));
   const messageEntries = messages.map((message): CommandPaletteEntry => ({ kind: "message", message }));
   const fileEntries = files.map((file): CommandPaletteEntry => ({ kind: "file", file }));
@@ -159,7 +181,7 @@ export function commandPaletteEntries({
   const base = [...visibleAgents, ...routineEntries, ...fileEntries, ...linkEntries, ...messageEntries, ...commandEntries].filter((entry) => entryMatchesTab(entry, tab));
   const tokens = paletteSearchTokens(query);
   if (tokens.length === 0) return tab === "all" ? [...visibleAgents, ...commandEntries] : base;
-  const hiddenAgents = agents.filter((agent) => agent.isHidden).map((agent): CommandPaletteEntry => ({ kind: "agent", agent, isHidden: true }));
+  const hiddenAgents = canonicalAgents.filter((agent) => agent.isHidden).map((agent): CommandPaletteEntry => ({ kind: "agent", agent, isHidden: true }));
   const normalizedQuery = tokens.join(" ");
   const score = (entries: CommandPaletteEntry[]) => entries
     .map((entry) => ({ entry, score: scoreEntry(entry, tokens, normalizedQuery) }))
