@@ -1665,6 +1665,86 @@
       ],
       "root_candidate_policy_status": "complete-for-current-ada-authority",
       "note": "The policy closes acquisition-pattern matches for the Ada root snapshot. No CPM dependency acquisition is reachable in the accepted TDesktop build configuration."
+    },
+    "openal_soft": {
+      "observed_authorities": [
+        {
+          "repository": "https://github.com/kcat/openal-soft",
+          "commit": "b2c48f7718ef3fcf67921a8b6534c4914e328970",
+          "ref": "1.25.2",
+          "build_entries": [
+            "Telegram/build/docker/centos_env/Dockerfile"
+          ]
+        },
+        {
+          "repository": "https://github.com/kcat/openal-soft",
+          "commit": "dc7d7054a5b4f3bec1dc23a42fd616a0847af948",
+          "ref": "1.24.3",
+          "build_entries": [
+            "snap/snapcraft.yaml"
+          ]
+        },
+        {
+          "repository": "https://github.com/telegramdesktop/openal-soft",
+          "commit": "291c0fdbbdd767f00c45c7fca562614faea57647",
+          "ref": "291c0fdbbd",
+          "build_entries": [
+            "Telegram/build/prepare/prepare.py"
+          ]
+        },
+        {
+          "repository": "https://github.com/telegramdesktop/openal-soft",
+          "commit": "c2eab43d72890c58d4b51d5d98eafb9f011e1c89",
+          "ref": "coreaudio_device_uid",
+          "build_entries": [
+            "Telegram/build/prepare/prepare.py"
+          ]
+        }
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "Builds the Telegram Desktop OpenAL fork from immutable Windows/Mac snapshots with CMake; utilities/examples/tests are disabled and no dependency download command is invoked."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "Clones kcat/openal-soft 1.25.2 shallow and builds the checked-out tree with utilities/examples/config install disabled."
+        },
+        {
+          "path": "snap/snapcraft.yaml",
+          "evidence": "Pins kcat/openal-soft 1.24.3 and builds via CMake with utilities/examples/config disabled."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-openal-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_exact": ".travis.yml",
+          "disposition": "upstream-openal-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "fmt-",
+          "disposition": "vendored-source-reference-not-build-acquisition",
+          "basis": "fmt-* is already present inside the immutable OpenAL source snapshot; matching URLs/package text occur inside vendored source or metadata and no accepted TDesktop OpenAL build invokes a fetch from these paths."
+        },
+        {
+          "path_prefix": "gsl/",
+          "disposition": "vendored-source-reference-not-build-acquisition",
+          "basis": "GSL content is already vendored in the immutable OpenAL source snapshot and is consumed as source, not acquired by the accepted TDesktop CMake invocation."
+        },
+        {
+          "path_prefix": "tests/",
+          "disposition": "upstream-openal-test-source-not-external-acquisition"
+        },
+        {
+          "path_exact": "README.md",
+          "disposition": "documentation-not-acquisition"
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-openal-authorities",
+      "note": "This closes acquisition-pattern matches for the four OpenAL root snapshots observed in accepted TDesktop build paths; it does not remove the vendored fmt/GSL source from source-accounting scope."
     }
   }
 }
