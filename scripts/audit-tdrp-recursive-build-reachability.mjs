@@ -118,6 +118,65 @@ const totals=(authorities)=>authorities.reduce((out,authority)=>{
 
 const excludedAuthorities=[...excluded.keys()].map(key=>all.get(key)).filter(Boolean);
 const remaining=[...all.entries()].filter(([key])=>!excluded.has(key)).map(([,authority])=>authority);
+const parseCandidatePath=(line)=>{
+  const match=String(line).match(/^HEAD:(.*?):(\d+):(.*)$/);
+  return match?.[1]||null;
+};
+const classifyByPolicy=(candidate,policy)=>{
+  const candidatePath=parseCandidatePath(candidate);
+  if(candidatePath==null) return null;
+  for(const rule of policy||[]){
+    if(rule.path_exact&&candidatePath===rule.path_exact) return {path:candidatePath,disposition:rule.disposition,basis:rule.basis||null};
+    if(rule.path_prefix&&candidatePath.startsWith(rule.path_prefix)) return {path:candidatePath,disposition:rule.disposition,basis:rule.basis||null};
+    if(rule.path_suffix&&candidatePath.endsWith(rule.path_suffix)) return {path:candidatePath,disposition:rule.disposition,basis:rule.basis||null};
+  }
+  return null;
+};
+
+const rootCandidateAudits=[];
+let rootCandidateDispositionedTotal=0;
+let rootCandidateRemainingOpenTotal=0;
+const auditRootCandidates=(authorityKey,policy,{requireComplete=false,scope})=>{
+  const authority=all.get(authorityKey);
+  fail(authority,'candidate-policy authority missing: '+authorityKey);
+  fail(rootKeys.has(authorityKey),'candidate-policy authority is not a root authority: '+authorityKey);
+  const counts={};
+  const open=[];
+  for(const candidate of authority.acquisition_candidates||[]){
+    const classification=classifyByPolicy(candidate,policy);
+    if(classification){
+      counts[classification.disposition]=(counts[classification.disposition]||0)+1;
+      rootCandidateDispositionedTotal++;
+    }else{
+      open.push(candidate);
+      rootCandidateRemainingOpenTotal++;
+    }
+  }
+  if(requireComplete) fail(open.length===0,scope+' candidate policy left '+open.length+' candidates open');
+  rootCandidateAudits.push({
+    authority:authorityKey,
+    scope,
+    candidate_total:(authority.acquisition_candidates||[]).length,
+    dispositioned:(authority.acquisition_candidates||[]).length-open.length,
+    open:open.length,
+    disposition_counts:counts,
+    open_candidates:open
+  });
+};
+
+for(const qt of rules.qt_superproject?.observed_authorities||[]){
+  auditRootCandidates(
+    keyOf(rules.qt_superproject.repository,qt.commit),
+    rules.qt_superproject.root_candidate_disposition_policy,
+    {requireComplete:false,scope:'qt-superproject-root-candidates'}
+  );
+}
+auditRootCandidates(
+  opensslParent,
+  openssl.root_candidate_disposition_policy,
+  {requireComplete:openssl.root_candidate_policy_status==='complete-for-current-openssl-authority',scope:'openssl-root-candidates'}
+);
+
 const result={
   project_id:'TDRP-001',
   spec_revision:9,
@@ -130,6 +189,9 @@ const result={
   proven_non_reachable_totals:totals(excludedAuthorities),
   remaining_open_totals:totals(remaining),
   reachability_disposition_status:'partial-audited-open',
+  root_candidate_dispositioned_total:rootCandidateDispositionedTotal,
+  root_candidate_remaining_open_total:rootCandidateRemainingOpenTotal,
+  root_candidate_audits:rootCandidateAudits,
   source_closure_ready:false,
   rule_scopes:[
     'qt-superproject-explicit-submodule-selection',
@@ -146,6 +208,8 @@ console.log(JSON.stringify({
   proven_non_reachable_authorities:result.proven_non_reachable_authorities,
   proven_non_reachable_totals:result.proven_non_reachable_totals,
   remaining_open_totals:result.remaining_open_totals,
+  root_candidate_dispositioned_total:result.root_candidate_dispositioned_total,
+  root_candidate_remaining_open_total:result.root_candidate_remaining_open_total,
   reachability_disposition_status:result.reachability_disposition_status,
   source_closure_ready:false
 },null,2));
