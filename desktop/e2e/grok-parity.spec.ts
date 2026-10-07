@@ -1227,7 +1227,41 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await page.getByRole('button', { name: 'Agent network' }).click();
       const orgChart = page.getByRole('main').filter({ has: page.getByRole('heading', { name: 'Org chart' }) });
       await expect(orgChart.getByRole('heading', { name: 'Org chart' })).toBeVisible();
-      await expect(orgChart.getByRole('region', { name: 'Agent network' })).toBeVisible();
+
+      const network = orgChart.getByRole('region', { name: 'Agent network' });
+      await expect(network).toBeVisible();
+      const geometry = await network.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const parentRect = element.parentElement?.getBoundingClientRect();
+        return {
+          width: rect.width,
+          height: rect.height,
+          parentWidth: parentRect?.width ?? 0,
+          parentHeight: parentRect?.height ?? 0,
+        };
+      });
+      expect(geometry.width).toBeGreaterThan(0);
+      expect(geometry.height).toBeGreaterThan(0);
+      expect(Math.abs(geometry.width - geometry.parentWidth)).toBeLessThanOrEqual(1);
+      expect(Math.abs(geometry.height - geometry.parentHeight)).toBeLessThanOrEqual(1);
+
+      const firstAgentNode = network.locator('.sand-org-chart-network__node').first();
+      await expect(firstAgentNode).toBeVisible();
+      await expect(firstAgentNode).toHaveAttribute('aria-pressed', /true|false/);
+
+      const scene = network.locator('.sand-org-chart-network__scene');
+      const transformBeforeWheel = await scene.evaluate((element) => getComputedStyle(element).transform);
+      await scene.dispatchEvent('wheel', {
+        clientX: 120,
+        clientY: 120,
+        ctrlKey: false,
+        deltaMode: 0,
+        deltaY: -120,
+      });
+      await expect.poll(async () => scene.evaluate((element) => getComputedStyle(element).transform))
+        .not.toBe(transformBeforeWheel);
+
+      await network.screenshot({ path: test.info().outputPath('agent-network-responsive.png') });
       await expect(orgChart.getByText(/\d+ agents? · \d+ groups? · \d+ message links?/)).toBeVisible();
       await orgChart.getByRole('button', { name: 'Close org chart' }).click();
       await expect(page.getByRole('heading', { name: 'Org chart' })).toHaveCount(0);
