@@ -1954,8 +1954,8 @@
       ],
       "fabushi_target_symbols": [
         "ForwardPrivacy",
-        "ForwardPrivacy::normalized",
-        "MessageContent::clear_caption",
+        "pub fn normalized(self) -> Self",
+        "pub fn clear_caption(&mut self)",
         "ClientCommand::ForwardMessage",
         "Command::ForwardMessage",
         "fn idempotent_send_replay("
@@ -2193,8 +2193,8 @@
       "fabushi_target_symbols": [
         "RecipientSearchRequirements",
         "ClientCommand::SearchRecipients",
-        "MessagingService::recipient_search_envelope",
-        "MessagingService::actor_can_send_to_recipient"
+        "fn recipient_search_envelope(",
+        "fn actor_can_send_to_recipient("
       ],
       "target_language": "Rust",
       "language_rationale": "Recipient exposure is a privacy/authorization boundary and must execute in the canonical native messaging service before results cross to UI.",
