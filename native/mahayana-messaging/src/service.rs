@@ -455,56 +455,106 @@ impl<S: MessagingStateStore> MessagingService<S> {
         command: &ClientCommand,
         server_time_ms: i64,
     ) -> Result<Option<Vec<ServerEnvelope>>, MessagingServiceError> {
-        let ClientCommand::SendMessage {
-            conversation_id,
-            client_message_id,
-            content,
-            reply_to_message_id,
-            thread_root_message_id,
-            scheduled_at_ms,
-            silent,
-            protected_content,
-        } = command
-        else {
-            return Ok(None);
+        let replay = |existing: &Message| {
+            vec![ServerEnvelope {
+                protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                cursor: Some(self.cursor.to_string()),
+                server_time_ms,
+                event: ServerEvent::MessageChanged {
+                    message: existing.clone(),
+                },
+            }]
         };
-        let stable_id = stable_message_id(actor_id, client_message_id);
-        let legacy_id = MessageId::new(format!("local:{}", client_message_id.0));
-        let existing = self
-            .engine
-            .state()
-            .messages
-            .get(conversation_id)
-            .and_then(|messages| {
-                messages
-                    .get(&stable_id)
-                    .or_else(|| messages.get(&legacy_id))
-            });
-        let Some(existing) = existing else {
-            return Ok(None);
-        };
-        // The stable/legacy lookup key already binds this replay to the authenticated
-        // actor + client_message_id, without extending the canonical Message schema.
-        if &existing.sender_id != actor_id
-            || &existing.content != content
-            || &existing.reply_to_message_id != reply_to_message_id
-            || &existing.thread_root_message_id != thread_root_message_id
-            || &existing.scheduled_at_ms != scheduled_at_ms
-            || &existing.silent != silent
-            || &existing.protected_content != protected_content
-        {
-            return Err(MessagingServiceError::IdempotencyConflict(
-                client_message_id.0.clone(),
-            ));
+
+        match command {
+            ClientCommand::SendMessage {
+                conversation_id,
+                client_message_id,
+                content,
+                reply_to_message_id,
+                thread_root_message_id,
+                scheduled_at_ms,
+                silent,
+                protected_content,
+            } => {
+                let stable_id = stable_message_id(actor_id, client_message_id);
+                let legacy_id = MessageId::new(format!("local:{}", client_message_id.0));
+                let existing = self
+                    .engine
+                    .state()
+                    .messages
+                    .get(conversation_id)
+                    .and_then(|messages| {
+                        messages
+                            .get(&stable_id)
+                            .or_else(|| messages.get(&legacy_id))
+                    });
+                let Some(existing) = existing else {
+                    return Ok(None);
+                };
+                // The stable/legacy lookup key already binds this replay to the authenticated
+                // actor + client_message_id, without extending the canonical Message schema.
+                if &existing.sender_id != actor_id
+                    || &existing.content != content
+                    || &existing.reply_to_message_id != reply_to_message_id
+                    || &existing.thread_root_message_id != thread_root_message_id
+                    || &existing.scheduled_at_ms != scheduled_at_ms
+                    || &existing.silent != silent
+                    || &existing.protected_content != protected_content
+                {
+                    return Err(MessagingServiceError::IdempotencyConflict(
+                        client_message_id.0.clone(),
+                    ));
+                }
+                Ok(Some(replay(existing)))
+            }
+            ClientCommand::ForwardMessage {
+                source_conversation_id,
+                message_id,
+                destination_conversation_id,
+                client_message_id,
+                thread_root_message_id,
+                scheduled_at_ms,
+                silent,
+            } => {
+                let stable_id = stable_message_id(actor_id, client_message_id);
+                let legacy_id = MessageId::new(format!("local:{}", client_message_id.0));
+                let existing = self
+                    .engine
+                    .state()
+                    .messages
+                    .get(destination_conversation_id)
+                    .and_then(|messages| {
+                        messages
+                            .get(&stable_id)
+                            .or_else(|| messages.get(&legacy_id))
+                    });
+                let Some(existing) = existing else {
+                    return Ok(None);
+                };
+                let source = self
+                    .engine
+                    .state()
+                    .messages
+                    .get(source_conversation_id)
+                    .and_then(|messages| messages.get(message_id));
+                let expected_origin = source
+                    .and_then(|message| message.forward_origin.clone())
+                    .unwrap_or_else(|| format!("{}:{}", source_conversation_id.0, message_id.0));
+                if &existing.sender_id != actor_id
+                    || existing.forward_origin.as_deref() != Some(expected_origin.as_str())
+                    || &existing.thread_root_message_id != thread_root_message_id
+                    || &existing.scheduled_at_ms != scheduled_at_ms
+                    || &existing.silent != silent
+                {
+                    return Err(MessagingServiceError::IdempotencyConflict(
+                        client_message_id.0.clone(),
+                    ));
+                }
+                Ok(Some(replay(existing)))
+            }
+            _ => Ok(None),
         }
-        Ok(Some(vec![ServerEnvelope {
-            protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
-            cursor: Some(self.cursor.to_string()),
-            server_time_ms,
-            event: ServerEvent::MessageChanged {
-                message: existing.clone(),
-            },
-        }]))
     }
 
     fn bot_invocations_for_message(&self, message: &Message) -> Vec<BotInvocation> {
@@ -1554,7 +1604,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 source_conversation_id,
                 message_id,
                 destination_conversation_id,
-                local_message_id: MessageId::new(format!("local:{}", client_message_id.0)),
+                local_message_id: stable_message_id(actor_id, &client_message_id),
                 client_message_id,
                 sender_id: actor_id.clone(),
                 thread_root_message_id,
