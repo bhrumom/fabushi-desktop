@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
-  "target_commit": "34d19cc79a6821698a45017ebe89ce3b0722d073",
+  "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15761,
+    "unread": 15757,
     "omitted": 0,
-    "responsibilities_total": 10,
+    "responsibilities_total": 14,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -2427,6 +2427,945 @@
       "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted ShareBox authorization semantics inside the existing Fabushi Conversation/Community policy owner.",
       "reviewer": null,
       "notes": "Shipping Human Forward now passes the actual sourceEntryId into Host recipient discovery. Host validates the settled source message, derives media/protected requirements, and calls the same fabushi_messaging_core::recipient_search_authorized function used by native SearchRecipients before returning candidates. The shipping candidate universe is still Human-direct and send-other/inline/game permission axes are not yet modeled by canonical Conversation state, so those typed requests fail closed and this row remains implemented/pending, not verified."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_kind": "source",
+      "module_id": "tdesktop.media.stories",
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/story-slider-view-complete-read.md",
+      "dependency_ids": [
+        "Story",
+        "Resource",
+        "ProductShell"
+      ],
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/story.rs",
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "rejected_existing_owners": [
+        "A source-specific Telegram Story runtime would duplicate canonical Story ownership.",
+        "Conversation/Agent runtime cannot own Story playback or viewer lifecycle merely for reuse."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "target_language": "Rust + TypeScript",
+      "language_rationale": "Story truth/state belongs in the existing Rust messaging Story owner; the shipping capability projection belongs in the existing React/TypeScript ProductShell without retaining Telegram C++ or Qt presentation.",
+      "state_owner": "Existing Fabushi Story owner plus canonical Resource/media playback state",
+      "lifecycle_owner": "Existing Story/Resource lifecycle with ProductShell capability-surface mount lifecycle",
+      "persistence_and_restart": "Story identity, visibility, reaction and profile pinning remain in canonical messaging state; viewer-local navigation/progress must be derived/recoverable and must not create a second persistent Story store.",
+      "concurrency_and_cancellation": "Async media/view work must use generation/lifetime fencing and cancellation; stale Story/media callbacks must not mutate a replaced or disposed surface.",
+      "security_boundary": "Story visibility/action permissions are checked by canonical Story/Conversation/permission owners before projection or mutation.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging Story service",
+        "Existing Resource/media service"
+      ],
+      "service_owner": "Existing Fabushi messaging/resource stack",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "blockers": [
+        "Shipping Story viewer capability surface and current-head functional/temporal/packaged evidence remain open."
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:native/mahayana-messaging/src/story.rs"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell",
+      "composition_slot": "Story capability surface / overlay",
+      "capability_component": "Typed Story viewer/progress capability",
+      "variation_axes": [
+        "image-vs-video",
+        "owner-vs-viewer",
+        "single-vs-multi-story-source"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Story identity/privacy",
+        "Canonical Resource/media lifecycle",
+        "ProductShell routing/overlay"
+      ],
+      "duplicate_root_check": "No new Telegram/Story application root, second Story store, second Resource owner, or retained C++ runtime is introduced by this mapping.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "capability-surface",
+      "primary_navigation_target": "Existing ProductShell route/overlay origin",
+      "collection_surface": "Story source/participant/conversation origin; no new primary app",
+      "creation_flow": "Not covered by these source files.",
+      "object_action_scope": "Current Story",
+      "detail_section": "Story caption/repost/comments/profile actions where applicable",
+      "capability_surface": "Typed Story viewer overlay/surface",
+      "route_contract": "Open from an existing canonical owner and close/back to the origin route without creating a parallel navigation root.",
+      "search_scope": "Not applicable to these four files",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No new Search surface.",
+      "search_local_remote_contract": "No new Search surface.",
+      "responsive_disposition": "Adapt Qt geometry/painter behavior through live Fabushi responsive capability-surface contracts while preserving navigation/progress semantics.",
+      "accessibility_contract": "Viewer controls, story position/progress, actions and close/back require canonical names/focus/keyboard semantics.",
+      "keyboard_contract": "Keyboard navigation/pause/action input must call the same typed Story capability actions as pointer controls.",
+      "state_continuity_contract": "Story identity, active index and playback/pause semantics must not regress across overlay interaction, route switch, reconnect/reload when applicable.",
+      "ui_acceptance_scenarios": [
+        "Open/close/back preserves origin",
+        "Story switch clamps index and resets progress",
+        "Keyboard/pointer invoke one canonical action path"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Fabushi semantic tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ProductShell",
+        "IconButton",
+        "Menu",
+        "Popover",
+        "Overlay/CapabilitySurface"
+      ],
+      "screen_pattern_id": "StoryMediaCapabilitySurface",
+      "screen_slots": [
+        "content",
+        "progress",
+        "actions",
+        "caption/comments"
+      ],
+      "visual_state_matrix": [
+        "image",
+        "video",
+        "paused",
+        "menu-open",
+        "caption-expanded",
+        "comments-shown",
+        "permission-denied",
+        "loading/error"
+      ],
+      "density_contract": "Reuse canonical media/capability-surface density.",
+      "icon_asset_contract": "Use canonical Fabushi icon registry; no Telegram product assets.",
+      "avatar_contract": "Use canonical Participant/Profile avatar projection.",
+      "content_copy_keys": [],
+      "motion_contract": "Playback/progress motion follows Story playback state; no independent animation truth.",
+      "reduced_motion_contract": "Respect application reduced-motion policy while preserving functional progress/navigation state.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "TDRP-COMP-01",
+        "G-INVENTORY",
+        "G-PRODUCTION",
+        "G-TEMPORAL"
+      ],
+      "oracle_ids": [],
+      "invariant_ids": [],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-TEMPORAL",
+        "G-UI-FUNCTIONAL",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop source authority; Qt presentation is not retained and legal provenance remains in project records.",
+      "reviewer": null,
+      "source_path": "Telegram/SourceFiles/media/stories/media_stories_slider.h",
+      "source_blob_sha": "37dbca0504c3423a14665c5b692f2dc2699d5469",
+      "responsibility_id": "TDRP-R9-STORY-SLIDER-PUBLIC-CONTRACT-001",
+      "source_symbols": [
+        "SliderData",
+        "Slider::show",
+        "Slider::updatePlayback"
+      ],
+      "capability_ids": [
+        "CAP-STORY-PROGRESS-NAVIGATION"
+      ],
+      "behavior_contract": "Expose bounded index/total and video-stream progress input as one Story progress capability contract; no presentation-specific state owner.",
+      "state_machine": "story/context selected -> normalized index/total -> progress reset -> playback updates -> surface replacement/dispose",
+      "side_effects": [
+        "Projects active Story progress only"
+      ],
+      "failure_cases": [
+        "Out-of-range index",
+        "zero total",
+        "stale progress surviving Story switch"
+      ],
+      "ui_disposition": "Replace Qt slider with canonical Fabushi Story progress component.",
+      "non_ui_responsibilities": [
+        "Bounded Story index/total",
+        "playback progress reset contract"
+      ],
+      "platform_delta": "Qt widget API becomes typed ProductShell Story capability props/actions.",
+      "existing_owner": "Canonical Story owner + ProductShell capability projection",
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/story.rs",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "Story",
+        "future typed Story capability mount"
+      ],
+      "command_event_contracts": [
+        "Story selection/playback state -> one progress projection"
+      ],
+      "coverage_disposition": "fabushi-ui-replacement",
+      "production_entrypoints": [
+        "ProductShell -> typed Story capability surface -> canonical Story/Resource owner"
+      ],
+      "notes": "Read-complete and mapped only; no shipping Story viewer/progress surface is claimed implemented."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_kind": "source",
+      "module_id": "tdesktop.media.stories",
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/story-slider-view-complete-read.md",
+      "dependency_ids": [
+        "Story",
+        "Resource",
+        "ProductShell"
+      ],
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/story.rs",
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "rejected_existing_owners": [
+        "A source-specific Telegram Story runtime would duplicate canonical Story ownership.",
+        "Conversation/Agent runtime cannot own Story playback or viewer lifecycle merely for reuse."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "target_language": "Rust + TypeScript",
+      "language_rationale": "Story truth/state belongs in the existing Rust messaging Story owner; the shipping capability projection belongs in the existing React/TypeScript ProductShell without retaining Telegram C++ or Qt presentation.",
+      "state_owner": "Existing Fabushi Story owner plus canonical Resource/media playback state",
+      "lifecycle_owner": "Existing Story/Resource lifecycle with ProductShell capability-surface mount lifecycle",
+      "persistence_and_restart": "Story identity, visibility, reaction and profile pinning remain in canonical messaging state; viewer-local navigation/progress must be derived/recoverable and must not create a second persistent Story store.",
+      "concurrency_and_cancellation": "Async media/view work must use generation/lifetime fencing and cancellation; stale Story/media callbacks must not mutate a replaced or disposed surface.",
+      "security_boundary": "Story visibility/action permissions are checked by canonical Story/Conversation/permission owners before projection or mutation.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging Story service",
+        "Existing Resource/media service"
+      ],
+      "service_owner": "Existing Fabushi messaging/resource stack",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "blockers": [
+        "Shipping Story viewer capability surface and current-head functional/temporal/packaged evidence remain open."
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:native/mahayana-messaging/src/story.rs"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell",
+      "composition_slot": "Story capability surface / overlay",
+      "capability_component": "Typed Story viewer/progress capability",
+      "variation_axes": [
+        "image-vs-video",
+        "owner-vs-viewer",
+        "single-vs-multi-story-source"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Story identity/privacy",
+        "Canonical Resource/media lifecycle",
+        "ProductShell routing/overlay"
+      ],
+      "duplicate_root_check": "No new Telegram/Story application root, second Story store, second Resource owner, or retained C++ runtime is introduced by this mapping.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "capability-surface",
+      "primary_navigation_target": "Existing ProductShell route/overlay origin",
+      "collection_surface": "Story source/participant/conversation origin; no new primary app",
+      "creation_flow": "Not covered by these source files.",
+      "object_action_scope": "Current Story",
+      "detail_section": "Story caption/repost/comments/profile actions where applicable",
+      "capability_surface": "Typed Story viewer overlay/surface",
+      "route_contract": "Open from an existing canonical owner and close/back to the origin route without creating a parallel navigation root.",
+      "search_scope": "Not applicable to these four files",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No new Search surface.",
+      "search_local_remote_contract": "No new Search surface.",
+      "responsive_disposition": "Adapt Qt geometry/painter behavior through live Fabushi responsive capability-surface contracts while preserving navigation/progress semantics.",
+      "accessibility_contract": "Viewer controls, story position/progress, actions and close/back require canonical names/focus/keyboard semantics.",
+      "keyboard_contract": "Keyboard navigation/pause/action input must call the same typed Story capability actions as pointer controls.",
+      "state_continuity_contract": "Story identity, active index and playback/pause semantics must not regress across overlay interaction, route switch, reconnect/reload when applicable.",
+      "ui_acceptance_scenarios": [
+        "Open/close/back preserves origin",
+        "Story switch clamps index and resets progress",
+        "Keyboard/pointer invoke one canonical action path"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Fabushi semantic tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ProductShell",
+        "IconButton",
+        "Menu",
+        "Popover",
+        "Overlay/CapabilitySurface"
+      ],
+      "screen_pattern_id": "StoryMediaCapabilitySurface",
+      "screen_slots": [
+        "content",
+        "progress",
+        "actions",
+        "caption/comments"
+      ],
+      "visual_state_matrix": [
+        "image",
+        "video",
+        "paused",
+        "menu-open",
+        "caption-expanded",
+        "comments-shown",
+        "permission-denied",
+        "loading/error"
+      ],
+      "density_contract": "Reuse canonical media/capability-surface density.",
+      "icon_asset_contract": "Use canonical Fabushi icon registry; no Telegram product assets.",
+      "avatar_contract": "Use canonical Participant/Profile avatar projection.",
+      "content_copy_keys": [],
+      "motion_contract": "Playback/progress motion follows Story playback state; no independent animation truth.",
+      "reduced_motion_contract": "Respect application reduced-motion policy while preserving functional progress/navigation state.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "TDRP-COMP-01",
+        "G-INVENTORY",
+        "G-PRODUCTION",
+        "G-TEMPORAL"
+      ],
+      "oracle_ids": [],
+      "invariant_ids": [],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-TEMPORAL",
+        "G-UI-FUNCTIONAL",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop source authority; Qt presentation is not retained and legal provenance remains in project records.",
+      "reviewer": null,
+      "source_path": "Telegram/SourceFiles/media/stories/media_stories_slider.cpp",
+      "source_blob_sha": "bdb547186edc53fbfd64dd1434f861a27fb3be0d",
+      "responsibility_id": "TDRP-R9-STORY-SLIDER-STATE-001",
+      "source_symbols": [
+        "Slider::show",
+        "Slider::resetProgress",
+        "Slider::updatePlayback",
+        "Slider::layout",
+        "Slider::paint"
+      ],
+      "capability_ids": [
+        "CAP-STORY-PROGRESS-NAVIGATION"
+      ],
+      "behavior_contract": "Clamp active Story index, normalize total, reset progress before changed Story projection, and bound visible segments to available geometry without changing canonical Story order.",
+      "state_machine": "input data -> clamp/normalize -> reset playback progress -> derive bounded visible segments -> active playback progress update",
+      "side_effects": [
+        "Invalidates active progress projection on playback change"
+      ],
+      "failure_cases": [
+        "Previous Story progress leaks into next Story",
+        "visible segment geometry changes canonical ordering",
+        "video progress has competing owner"
+      ],
+      "ui_disposition": "Painting/layout is presentation-replaced; clamp/reset/progress semantics remain required.",
+      "non_ui_responsibilities": [
+        "Clamp/normalize",
+        "progress reset",
+        "single active playback projection"
+      ],
+      "platform_delta": "Responsive segment layout belongs to Fabushi capability component.",
+      "existing_owner": "Canonical Story owner + Resource/media playback + ProductShell projection",
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/story.rs",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "Story",
+        "future Story progress state projection"
+      ],
+      "command_event_contracts": [
+        "Story changed -> reset progress",
+        "Playback changed -> update active Story progress"
+      ],
+      "coverage_disposition": "fabushi-ui-replacement",
+      "production_entrypoints": [
+        "ProductShell -> Story capability surface -> Resource playback state"
+      ],
+      "notes": "Read-complete and mapped only; responsive/progress behavior needs production code and exact-head tests."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_kind": "source",
+      "module_id": "tdesktop.media.stories",
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/story-slider-view-complete-read.md",
+      "dependency_ids": [
+        "Story",
+        "Resource",
+        "ProductShell"
+      ],
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/story.rs",
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "rejected_existing_owners": [
+        "A source-specific Telegram Story runtime would duplicate canonical Story ownership.",
+        "Conversation/Agent runtime cannot own Story playback or viewer lifecycle merely for reuse."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "target_language": "Rust + TypeScript",
+      "language_rationale": "Story truth/state belongs in the existing Rust messaging Story owner; the shipping capability projection belongs in the existing React/TypeScript ProductShell without retaining Telegram C++ or Qt presentation.",
+      "state_owner": "Existing Fabushi Story owner plus canonical Resource/media playback state",
+      "lifecycle_owner": "Existing Story/Resource lifecycle with ProductShell capability-surface mount lifecycle",
+      "persistence_and_restart": "Story identity, visibility, reaction and profile pinning remain in canonical messaging state; viewer-local navigation/progress must be derived/recoverable and must not create a second persistent Story store.",
+      "concurrency_and_cancellation": "Async media/view work must use generation/lifetime fencing and cancellation; stale Story/media callbacks must not mutate a replaced or disposed surface.",
+      "security_boundary": "Story visibility/action permissions are checked by canonical Story/Conversation/permission owners before projection or mutation.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging Story service",
+        "Existing Resource/media service"
+      ],
+      "service_owner": "Existing Fabushi messaging/resource stack",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "blockers": [
+        "Shipping Story viewer capability surface and current-head functional/temporal/packaged evidence remain open."
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:native/mahayana-messaging/src/story.rs"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell",
+      "composition_slot": "Story capability surface / overlay",
+      "capability_component": "Typed Story viewer/progress capability",
+      "variation_axes": [
+        "image-vs-video",
+        "owner-vs-viewer",
+        "single-vs-multi-story-source"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Story identity/privacy",
+        "Canonical Resource/media lifecycle",
+        "ProductShell routing/overlay"
+      ],
+      "duplicate_root_check": "No new Telegram/Story application root, second Story store, second Resource owner, or retained C++ runtime is introduced by this mapping.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "capability-surface",
+      "primary_navigation_target": "Existing ProductShell route/overlay origin",
+      "collection_surface": "Story source/participant/conversation origin; no new primary app",
+      "creation_flow": "Not covered by these source files.",
+      "object_action_scope": "Current Story",
+      "detail_section": "Story caption/repost/comments/profile actions where applicable",
+      "capability_surface": "Typed Story viewer overlay/surface",
+      "route_contract": "Open from an existing canonical owner and close/back to the origin route without creating a parallel navigation root.",
+      "search_scope": "Not applicable to these four files",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No new Search surface.",
+      "search_local_remote_contract": "No new Search surface.",
+      "responsive_disposition": "Adapt Qt geometry/painter behavior through live Fabushi responsive capability-surface contracts while preserving navigation/progress semantics.",
+      "accessibility_contract": "Viewer controls, story position/progress, actions and close/back require canonical names/focus/keyboard semantics.",
+      "keyboard_contract": "Keyboard navigation/pause/action input must call the same typed Story capability actions as pointer controls.",
+      "state_continuity_contract": "Story identity, active index and playback/pause semantics must not regress across overlay interaction, route switch, reconnect/reload when applicable.",
+      "ui_acceptance_scenarios": [
+        "Open/close/back preserves origin",
+        "Story switch clamps index and resets progress",
+        "Keyboard/pointer invoke one canonical action path"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Fabushi semantic tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ProductShell",
+        "IconButton",
+        "Menu",
+        "Popover",
+        "Overlay/CapabilitySurface"
+      ],
+      "screen_pattern_id": "StoryMediaCapabilitySurface",
+      "screen_slots": [
+        "content",
+        "progress",
+        "actions",
+        "caption/comments"
+      ],
+      "visual_state_matrix": [
+        "image",
+        "video",
+        "paused",
+        "menu-open",
+        "caption-expanded",
+        "comments-shown",
+        "permission-denied",
+        "loading/error"
+      ],
+      "density_contract": "Reuse canonical media/capability-surface density.",
+      "icon_asset_contract": "Use canonical Fabushi icon registry; no Telegram product assets.",
+      "avatar_contract": "Use canonical Participant/Profile avatar projection.",
+      "content_copy_keys": [],
+      "motion_contract": "Playback/progress motion follows Story playback state; no independent animation truth.",
+      "reduced_motion_contract": "Respect application reduced-motion policy while preserving functional progress/navigation state.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "TDRP-COMP-01",
+        "G-INVENTORY",
+        "G-PRODUCTION",
+        "G-TEMPORAL"
+      ],
+      "oracle_ids": [],
+      "invariant_ids": [],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-TEMPORAL",
+        "G-UI-FUNCTIONAL",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop source authority; Qt presentation is not retained and legal provenance remains in project records.",
+      "reviewer": null,
+      "source_path": "Telegram/SourceFiles/media/stories/media_stories_view.h",
+      "source_blob_sha": "0f3e59e99503aa4924937ac715eccdbcd0966fa3",
+      "responsibility_id": "TDRP-R9-STORY-VIEW-PUBLIC-CONTRACT-001",
+      "source_symbols": [
+        "View::show",
+        "View::ready",
+        "View::subjumpFor",
+        "View::jumpFor",
+        "View::togglePaused",
+        "View::shareRequested",
+        "View::deleteRequested",
+        "View::reportRequested",
+        "View::toggleInProfileRequested",
+        "View::setupStealthMode",
+        "View::commentsShownValue"
+      ],
+      "capability_ids": [
+        "CAP-STORY-VIEWER-LIFECYCLE",
+        "CAP-STORY-OBJECT-ACTIONS"
+      ],
+      "behavior_contract": "One Story capability surface exposes navigation, playback/pause, object actions, caption/repost/reaction/comments/stealth and lifecycle without owning a second Story truth.",
+      "state_machine": "mount -> show context -> ready -> navigate/playback/interact -> object action settlement -> close/dispose",
+      "side_effects": [
+        "Invokes canonical Story/Message/Conversation/Profile/Resource actions"
+      ],
+      "failure_cases": [
+        "Parallel Story store",
+        "action bypasses permission owner",
+        "close/back loses origin",
+        "disposed surface accepts late callback"
+      ],
+      "ui_disposition": "Map to one ProductShell Story capability surface using canonical components/tokens.",
+      "non_ui_responsibilities": [
+        "Lifecycle/navigation",
+        "pause/input continuity",
+        "typed Story actions",
+        "comments/reaction projection"
+      ],
+      "platform_delta": "Qt façade becomes typed React capability contract backed by existing Rust Story owner.",
+      "existing_owner": "Canonical Story owner + ProductShell capability surface + existing domain action owners",
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/story.rs",
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "Story",
+        "ClientCommand::DeleteStory",
+        "ClientCommand::ViewStory",
+        "ClientCommand::ReactStory",
+        "future typed Story capability mount"
+      ],
+      "command_event_contracts": [
+        "Story actions -> existing messaging commands/events",
+        "Share -> canonical Forward/recipient authorization path"
+      ],
+      "coverage_disposition": "fabushi-ui-replacement",
+      "production_entrypoints": [
+        "ProductShell -> Story capability surface -> messaging/resource/profile/conversation owners"
+      ],
+      "notes": "Read-complete and mapped only; shipping surface and several actions remain unimplemented/unproven."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_kind": "source",
+      "module_id": "tdesktop.media.stories",
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/story-slider-view-complete-read.md",
+      "dependency_ids": [
+        "Story",
+        "Resource",
+        "ProductShell"
+      ],
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/story.rs",
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "rejected_existing_owners": [
+        "A source-specific Telegram Story runtime would duplicate canonical Story ownership.",
+        "Conversation/Agent runtime cannot own Story playback or viewer lifecycle merely for reuse."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "target_language": "Rust + TypeScript",
+      "language_rationale": "Story truth/state belongs in the existing Rust messaging Story owner; the shipping capability projection belongs in the existing React/TypeScript ProductShell without retaining Telegram C++ or Qt presentation.",
+      "state_owner": "Existing Fabushi Story owner plus canonical Resource/media playback state",
+      "lifecycle_owner": "Existing Story/Resource lifecycle with ProductShell capability-surface mount lifecycle",
+      "persistence_and_restart": "Story identity, visibility, reaction and profile pinning remain in canonical messaging state; viewer-local navigation/progress must be derived/recoverable and must not create a second persistent Story store.",
+      "concurrency_and_cancellation": "Async media/view work must use generation/lifetime fencing and cancellation; stale Story/media callbacks must not mutate a replaced or disposed surface.",
+      "security_boundary": "Story visibility/action permissions are checked by canonical Story/Conversation/permission owners before projection or mutation.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging Story service",
+        "Existing Resource/media service"
+      ],
+      "service_owner": "Existing Fabushi messaging/resource stack",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "blockers": [
+        "Shipping Story viewer capability surface and current-head functional/temporal/packaged evidence remain open."
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:native/mahayana-messaging/src/story.rs"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell",
+      "composition_slot": "Story capability surface / overlay",
+      "capability_component": "Typed Story viewer/progress capability",
+      "variation_axes": [
+        "image-vs-video",
+        "owner-vs-viewer",
+        "single-vs-multi-story-source"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Story identity/privacy",
+        "Canonical Resource/media lifecycle",
+        "ProductShell routing/overlay"
+      ],
+      "duplicate_root_check": "No new Telegram/Story application root, second Story store, second Resource owner, or retained C++ runtime is introduced by this mapping.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "capability-surface",
+      "primary_navigation_target": "Existing ProductShell route/overlay origin",
+      "collection_surface": "Story source/participant/conversation origin; no new primary app",
+      "creation_flow": "Not covered by these source files.",
+      "object_action_scope": "Current Story",
+      "detail_section": "Story caption/repost/comments/profile actions where applicable",
+      "capability_surface": "Typed Story viewer overlay/surface",
+      "route_contract": "Open from an existing canonical owner and close/back to the origin route without creating a parallel navigation root.",
+      "search_scope": "Not applicable to these four files",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No new Search surface.",
+      "search_local_remote_contract": "No new Search surface.",
+      "responsive_disposition": "Adapt Qt geometry/painter behavior through live Fabushi responsive capability-surface contracts while preserving navigation/progress semantics.",
+      "accessibility_contract": "Viewer controls, story position/progress, actions and close/back require canonical names/focus/keyboard semantics.",
+      "keyboard_contract": "Keyboard navigation/pause/action input must call the same typed Story capability actions as pointer controls.",
+      "state_continuity_contract": "Story identity, active index and playback/pause semantics must not regress across overlay interaction, route switch, reconnect/reload when applicable.",
+      "ui_acceptance_scenarios": [
+        "Open/close/back preserves origin",
+        "Story switch clamps index and resets progress",
+        "Keyboard/pointer invoke one canonical action path"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Fabushi semantic tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ProductShell",
+        "IconButton",
+        "Menu",
+        "Popover",
+        "Overlay/CapabilitySurface"
+      ],
+      "screen_pattern_id": "StoryMediaCapabilitySurface",
+      "screen_slots": [
+        "content",
+        "progress",
+        "actions",
+        "caption/comments"
+      ],
+      "visual_state_matrix": [
+        "image",
+        "video",
+        "paused",
+        "menu-open",
+        "caption-expanded",
+        "comments-shown",
+        "permission-denied",
+        "loading/error"
+      ],
+      "density_contract": "Reuse canonical media/capability-surface density.",
+      "icon_asset_contract": "Use canonical Fabushi icon registry; no Telegram product assets.",
+      "avatar_contract": "Use canonical Participant/Profile avatar projection.",
+      "content_copy_keys": [],
+      "motion_contract": "Playback/progress motion follows Story playback state; no independent animation truth.",
+      "reduced_motion_contract": "Respect application reduced-motion policy while preserving functional progress/navigation state.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "TDRP-COMP-01",
+        "G-INVENTORY",
+        "G-PRODUCTION",
+        "G-TEMPORAL"
+      ],
+      "oracle_ids": [],
+      "invariant_ids": [],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-TEMPORAL",
+        "G-UI-FUNCTIONAL",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop source authority; Qt presentation is not retained and legal provenance remains in project records.",
+      "reviewer": null,
+      "source_path": "Telegram/SourceFiles/media/stories/media_stories_view.cpp",
+      "source_blob_sha": "8fe4a5de24fd67abe0b64da0a45ec4e0fd901b30",
+      "responsibility_id": "TDRP-R9-STORY-VIEW-DELEGATION-001",
+      "source_symbols": [
+        "View::show",
+        "View::updatePlayback",
+        "View::subjumpFor",
+        "View::jumpFor",
+        "View::togglePaused",
+        "View::contentPressed",
+        "View::menuShown",
+        "View::tryProcessKeyInput",
+        "View::shareRequested",
+        "View::deleteRequested",
+        "View::reportRequested",
+        "View::toggleInProfileRequested",
+        "View::attachReactionsToMenu",
+        "View::commentsShownValue"
+      ],
+      "capability_ids": [
+        "CAP-STORY-VIEWER-LIFECYCLE",
+        "CAP-STORY-OBJECT-ACTIONS"
+      ],
+      "behavior_contract": "Delegate all Story viewer interactions to one controller/state owner so keyboard, pointer, menu, playback and actions cannot diverge into parallel truths.",
+      "state_machine": "interaction -> canonical controller/action owner -> authoritative state/event -> derived surface projection",
+      "side_effects": [
+        "Routes object actions and playback/input state through canonical owners"
+      ],
+      "failure_cases": [
+        "Pointer and keyboard paths diverge",
+        "menu/press pause reason lost",
+        "first async result mutates a replaced Story",
+        "comments/reactions use second store"
+      ],
+      "ui_disposition": "Delegation semantics retained; Qt controller façade itself is not ported.",
+      "non_ui_responsibilities": [
+        "Single action path",
+        "pause reason continuity",
+        "lifetime fencing",
+        "comments/reaction authoritative projection"
+      ],
+      "platform_delta": "Use typed hooks/controllers in existing ProductShell surface rather than C++ façade.",
+      "existing_owner": "Canonical Story owner + Resource playback + ProductShell action composition",
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/story.rs",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "Story",
+        "future Story capability controller/hooks"
+      ],
+      "command_event_contracts": [
+        "Pointer/keyboard/menu -> same typed action",
+        "Authoritative Story events -> one projection"
+      ],
+      "coverage_disposition": "fabushi-ui-replacement",
+      "production_entrypoints": [
+        "ProductShell -> Story capability surface -> canonical domain commands/events"
+      ],
+      "notes": "Read-complete and mapped only; no implemented/verified claim."
     }
   ]
 }
