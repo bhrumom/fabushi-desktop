@@ -326,6 +326,14 @@ jobs:
           console.log('UPSTREAM_COMMIT='+commit.sha);
           console.log('UPSTREAM_TREE='+commit.tree.sha);
           console.log('LOCK_TREE='+lock.upstream.tree);
+          const branchResponse=await fetch('https://api.github.com/repos/'+lock.upstream.repository+'/branches/dev',{headers:{Authorization:'Bearer '+process.env.GH_TOKEN,'User-Agent':'fabushi-tdrp-r9'}});
+          if(!branchResponse.ok) throw new Error('dev branch lookup failed '+branchResponse.status);
+          const liveBranch=await branchResponse.json();
+          const liveCommitResponse=await fetch('https://api.github.com/repos/'+lock.upstream.repository+'/git/commits/'+liveBranch.commit.sha,{headers:{Authorization:'Bearer '+process.env.GH_TOKEN,'User-Agent':'fabushi-tdrp-r9'}});
+          if(!liveCommitResponse.ok) throw new Error('live dev commit lookup failed '+liveCommitResponse.status);
+          const liveCommit=await liveCommitResponse.json();
+          console.log('LIVE_DEV_COMMIT='+liveBranch.commit.sha);
+          console.log('LIVE_DEV_TREE='+liveCommit.tree.sha);
           async function printGitlinks(repo, sha, label) {
             const cr=await fetch('https://api.github.com/repos/'+repo+'/git/commits/'+sha,{headers:{Authorization:'Bearer '+process.env.GH_TOKEN,'User-Agent':'fabushi-tdrp-r9'}});
             if(!cr.ok) throw new Error(label+' commit lookup failed '+cr.status);
