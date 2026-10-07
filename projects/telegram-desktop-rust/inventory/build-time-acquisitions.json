@@ -129,7 +129,7 @@
       "source_line": 954,
       "repository": "https://github.com/desktop-app/tg_owt.git",
       "ref_kind": "commit",
-      "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -206,7 +206,7 @@
       "source_line": 510,
       "repository": "https://github.com/desktop-app/tg_owt.git",
       "ref_kind": "commit",
-      "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -954,7 +954,7 @@
     {
       "id": "tg-owt-abseil",
       "parent_repository": "desktop-app/tg_owt",
-      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "parent_commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "child_path": "src/third_party/abseil-cpp",
       "child_repository": "abseil/abseil-cpp",
       "child_commit": "d7aaad83b488fd62bd51c81ecf16cd938532cc0a",
@@ -963,7 +963,7 @@
     {
       "id": "tg-owt-crc32c",
       "parent_repository": "desktop-app/tg_owt",
-      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "parent_commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "child_path": "src/third_party/crc32c/src",
       "child_repository": "google/crc32c",
       "child_commit": "21fc8ef30415a635e7351ffa0e5d5367943d4a94",
@@ -972,7 +972,7 @@
     {
       "id": "tg-owt-libsrtp",
       "parent_repository": "desktop-app/tg_owt",
-      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "parent_commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "child_path": "src/third_party/libsrtp",
       "child_repository": "cisco/libsrtp",
       "child_commit": "a566a9cfcd619e8327784aa7cff4a1276dc1e895",
@@ -981,7 +981,7 @@
     {
       "id": "tg-owt-libyuv",
       "parent_repository": "desktop-app/tg_owt",
-      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "parent_commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "child_path": "src/third_party/libyuv",
       "child_repository": "gitlab.com/chromiumsrc/libyuv",
       "child_commit": "04821d1e7d60845525e8db55c7bcd41ef5be9406",
@@ -1082,7 +1082,7 @@
       },
       "parent_build_exclusion": {
         "repository": "desktop-app/tg_owt",
-        "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+        "commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
         "forbidden_child_tooling_reference_pattern": "riscv_script|tools_libyuv|src/third_party/libyuv/(DEPS|infra)|third_party/libyuv/(DEPS|infra)",
         "expected_reference_count": 0,
         "rationale": "tg_owt consumes libyuv as the pinned embedded gitlink. The child repository's standalone gclient manifest, LUCI/CI, autoroller and RISC-V toolchain scripts are not invoked by the parent build and are therefore non-parent-build authority, while generated/build/resource files remain inventoried as child content."
@@ -1415,7 +1415,7 @@
     },
     "tg_owt": {
       "repository": "https://github.com/desktop-app/tg_owt",
-      "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "build_entries": [
         "Telegram/build/prepare/prepare.py",
         "Telegram/build/docker/centos_env/Dockerfile",
@@ -1424,15 +1424,15 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Clones tg_owt, checks out exact e2d0e88d1bde6cc600da5dc92581dc97e4c1e685, recursively initializes its pinned submodules, then invokes CMake build."
+          "evidence": "Clones tg_owt, checks out exact d1cf250ea73de26c4c1f0a3c8173eb2648efbb04, recursively initializes its pinned submodules, then invokes CMake build."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Initializes tg_owt at exact e2d0e88d1bde6cc600da5dc92581dc97e4c1e685, recursively initializes submodules, configures CMake, builds, and installs."
+          "evidence": "Initializes tg_owt at exact d1cf250ea73de26c4c1f0a3c8173eb2648efbb04, recursively initializes submodules, configures CMake, builds, and installs."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "evidence": "The webrtc part pins tg_owt source-commit e2d0e88d1bde6cc600da5dc92581dc97e4c1e685 and builds it with the CMake plugin."
+          "evidence": "The webrtc part pins tg_owt source-commit d1cf250ea73de26c4c1f0a3c8173eb2648efbb04 and builds it with the CMake plugin."
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2203,7 +2203,7 @@
       "repository": "https://github.com/cisco/libsrtp",
       "commit": "a566a9cfcd619e8327784aa7cff4a1276dc1e895",
       "parent_repository": "https://github.com/desktop-app/tg_owt",
-      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "parent_commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "child_path": "src/third_party/libsrtp",
       "build_entries": [
         "Telegram/build/prepare/prepare.py",
@@ -2212,7 +2212,7 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Accepted tg_owt is pinned to e2d0e88d1bde6cc600da5dc92581dc97e4c1e685 and fetched with git submodule update --init --recursive; its src/third_party/libsrtp gitlink resolves to a566a9cfcd619e8327784aa7cff4a1276dc1e895. TDesktop does not execute libsrtp's own GitHub/Travis CI, Coverity, config update URLs or test download comments."
+          "evidence": "Accepted tg_owt is pinned to d1cf250ea73de26c4c1f0a3c8173eb2648efbb04 and fetched with git submodule update --init --recursive; its src/third_party/libsrtp gitlink resolves to a566a9cfcd619e8327784aa7cff4a1276dc1e895. TDesktop does not execute libsrtp's own GitHub/Travis CI, Coverity, config update URLs or test download comments."
         }
       ],
       "root_candidate_disposition_policy": [
