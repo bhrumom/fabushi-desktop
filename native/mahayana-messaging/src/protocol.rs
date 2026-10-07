@@ -5,8 +5,9 @@ use crate::community::{
     CommunityAuditEntry, CommunityMember, CommunityState, ForumTopicState, InviteLink, JoinRequest,
 };
 use crate::conversation::{
-    Conversation, ConversationChildRuntimeState, ConversationDraft, ConversationFolder,
-    ConversationId, NotificationSettings, TopicDraft,
+    Conversation, ConversationChildMutation, ConversationChildRuntimeState,
+    ConversationDestination, ConversationDraft, ConversationFolder, ConversationId,
+    NotificationSettings, TopicDraft,
 };
 use crate::message::{
     ClientMessageId, ForwardPrivacy, Message, MessageContent, MessageId, PendingPresenceSend,
@@ -111,6 +112,10 @@ pub enum ClientCommand {
         conversation_id: ConversationId,
         text: String,
         reply_to_message_id: Option<MessageId>,
+    },
+    UpdateConversationChild {
+        destination: ConversationDestination,
+        mutation: ConversationChildMutation,
     },
     SetConversationNotifications {
         conversation_id: ConversationId,
@@ -390,6 +395,11 @@ pub enum ServerEvent {
     },
     DraftChanged {
         draft: ConversationDraft,
+    },
+    ConversationChildChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        state: Option<ConversationChildRuntimeState>,
     },
     TopicDraftChanged {
         draft: TopicDraft,
