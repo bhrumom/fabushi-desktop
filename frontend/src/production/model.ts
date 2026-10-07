@@ -130,7 +130,8 @@ export function projectRendererAgent(value: unknown, now = Date.now()): Renderer
   if (!isRecord(value)) return null;
   const id = stringValue(value.id);
   if (id == null) return null;
-  const name = stringValue(value.name) ?? "New chat";
+  const configuredName = stringValue(value.name) ?? "New chat";
+  const name = ["grok", "grok bot"].includes(configuredName.trim().toLowerCase()) ? "Fabushi" : configuredName;
   const awaitingUserResponse = value.awaitingUserResponse ?? null;
   const lastEntry = parseRendererAgentLastEntry(value.lastEntry);
   const lastMessagePreview = typeof value.lastMessagePreview === "string" ? value.lastMessagePreview : null;
