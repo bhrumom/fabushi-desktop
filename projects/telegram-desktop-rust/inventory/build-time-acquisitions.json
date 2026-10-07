@@ -1745,6 +1745,90 @@
       ],
       "root_candidate_policy_status": "complete-for-current-openal-authorities",
       "note": "This closes acquisition-pattern matches for the four OpenAL root snapshots observed in accepted TDesktop build paths; it does not remove the vendored fmt/GSL source from source-accounting scope."
+    },
+    "ffmpeg": {
+      "repository": "https://github.com/FFmpeg/FFmpeg",
+      "observed_authorities": [
+        {
+          "commit": "1041abdc962f4cc4f394aa8de9dc5236c0c3b9e7",
+          "ref": "n8.1.3",
+          "build_entries": [
+            "Telegram/build/prepare/prepare.py",
+            "Telegram/build/docker/centos_env/Dockerfile"
+          ]
+        },
+        {
+          "commit": "f1e3a2bf7a2f2cde936d1ed97f09a26853d20125",
+          "ref": "n6.1.6",
+          "build_entries": [
+            "snap/snapcraft.yaml"
+          ]
+        }
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "Builds FFmpeg n8.1.3 with programs/docs/network/everything disabled and only an explicit codec/protocol/filter subset re-enabled; external libraries are supplied by TDesktop's prior dependency stages."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "Builds FFmpeg n8.1.3 shallow with --disable-programs --disable-doc --disable-network --disable-autodetect --disable-everything and explicit local/system dependency inputs."
+        },
+        {
+          "path": "snap/snapcraft.yaml",
+          "evidence": "Pins FFmpeg n6.1.6 and configures --disable-programs --disable-doc --disable-network --disable-autodetect --disable-everything with explicit build packages/features."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".forgejo/",
+          "disposition": "upstream-ffmpeg-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_exact": ".travis.yml",
+          "disposition": "upstream-ffmpeg-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "doc/",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_prefix": "tests/",
+          "disposition": "upstream-ffmpeg-test-only-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "tools/",
+          "disposition": "upstream-ffmpeg-tool-not-invoked",
+          "basis": "Accepted TDesktop disables FFmpeg programs and invokes configure/build directly; standalone FFmpeg tools are not part of that build path."
+        },
+        {
+          "path_prefix": "libavcodec/",
+          "disposition": "compiled-source-reference-not-build-acquisition"
+        },
+        {
+          "path_prefix": "libavfilter/",
+          "disposition": "compiled-source-reference-not-build-acquisition"
+        },
+        {
+          "path_prefix": "libavformat/",
+          "disposition": "compiled-source-network-or-protocol-reference-not-build-acquisition",
+          "basis": "These matches are source-level protocol/URL behavior, not build-time repository acquisition; accepted TDesktop additionally configures --disable-network and only re-enables protocol=file."
+        },
+        {
+          "path_prefix": "libavutil/",
+          "disposition": "compiled-source-reference-not-build-acquisition"
+        },
+        {
+          "path_exact": "Changelog",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "RELEASE_NOTES",
+          "disposition": "documentation-not-acquisition"
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-ffmpeg-authorities",
+      "note": "This closes acquisition-pattern matches for the two FFmpeg root snapshots used by accepted TDesktop. It does not classify FFmpeg product/media behavior out of migration scope."
     }
   }
 }
