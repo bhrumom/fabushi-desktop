@@ -189,3 +189,262 @@ pub struct ConversationFolder {
     pub exclude_read: bool,
     pub exclude_archived: bool,
 }
+
+
+/// Source-neutral identity for a selectable child destination inside the canonical
+/// Conversation owner. A topic is keyed by its root Message identity, while a
+/// saved sublist is keyed by the participant whose saved history it represents.
+/// A nested Conversation covers community child histories without creating a
+/// second Group/Channel/SavedMessages owner.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", rename_all_fields = "camelCase", tag = "kind")]
+pub enum ConversationChildIdentity {
+    Topic { root_message_id: String },
+    SavedSublist { participant_id: ActorId },
+    Conversation { conversation_id: ConversationId },
+}
+
+impl ConversationChildIdentity {
+    pub fn is_valid(&self) -> bool {
+        match self {
+            Self::Topic { root_message_id } => {
+                let value = root_message_id.trim();
+                !value.is_empty() && value.len() <= 200
+            }
+            Self::SavedSublist { participant_id } => participant_id.is_valid(),
+            Self::Conversation { conversation_id } => conversation_id.is_valid(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConversationDestination {
+    pub conversation_id: ConversationId,
+    pub child: Option<ConversationChildIdentity>,
+}
+
+impl ConversationDestination {
+    pub fn root(conversation_id: ConversationId) -> Self {
+        Self {
+            conversation_id,
+            child: None,
+        }
+    }
+
+    pub fn topic(
+        conversation_id: ConversationId,
+        root_message_id: impl Into<String>,
+    ) -> Self {
+        Self {
+            conversation_id,
+            child: Some(ConversationChildIdentity::Topic {
+                root_message_id: root_message_id.into(),
+            }),
+        }
+    }
+
+    pub fn saved_sublist(
+        conversation_id: ConversationId,
+        participant_id: ActorId,
+    ) -> Self {
+        Self {
+            conversation_id,
+            child: Some(ConversationChildIdentity::SavedSublist { participant_id }),
+        }
+    }
+
+    pub fn nested_conversation(
+        conversation_id: ConversationId,
+        child_conversation_id: ConversationId,
+    ) -> Self {
+        Self {
+            conversation_id,
+            child: Some(ConversationChildIdentity::Conversation {
+                conversation_id: child_conversation_id,
+            }),
+        }
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.conversation_id.is_valid()
+            && self.child.as_ref().map_or(true, ConversationChildIdentity::is_valid)
+            && !matches!(
+                &self.child,
+                Some(ConversationChildIdentity::Conversation { conversation_id })
+                    if conversation_id == &self.conversation_id
+            )
+    }
+
+    /// Mirrors the upstream Thread distinction without importing its UI/runtime:
+    /// topics and community histories can be marked read but not manually marked
+    /// unread; self SavedSublist and monoforum-admin history rows cannot toggle
+    /// unread at all.
+    pub fn can_toggle_unread(
+        &self,
+        currently_unread: bool,
+        context: ConversationChildUnreadContext,
+    ) -> bool {
+        if (matches!(&self.child, Some(ConversationChildIdentity::Topic { .. }))
+            || context.parent_is_community)
+            && !currently_unread
+        {
+            return false;
+        }
+        if matches!(
+            &self.child,
+            Some(ConversationChildIdentity::SavedSublist { .. })
+        ) && context.parent_is_self
+        {
+            return false;
+        }
+        if self.child.is_none() && context.actor_is_monoforum_admin {
+            return false;
+        }
+        true
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ConversationChildUnreadContext {
+    pub parent_is_self: bool,
+    pub parent_is_community: bool,
+    pub actor_is_monoforum_admin: bool,
+}
+
+/// Ephemeral picker selection over canonical Conversation identities. Destruction
+/// is identity-specific: destroying a topic/sublist/nested child clears only an
+/// exact matching selection and never collapses it silently to the parent.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ConversationDestinationSelection {
+    selected: Option<ConversationDestination>,
+}
+
+impl ConversationDestinationSelection {
+    pub fn selected(&self) -> Option<&ConversationDestination> {
+        self.selected.as_ref()
+    }
+
+    pub fn select(&mut self, destination: ConversationDestination) -> bool {
+        if !destination.is_valid() {
+            return false;
+        }
+        self.selected = Some(destination);
+        true
+    }
+
+    pub fn deselect(&mut self) {
+        self.selected = None;
+    }
+
+    pub fn clear_destroyed_child(
+        &mut self,
+        parent_conversation_id: &ConversationId,
+        child: &ConversationChildIdentity,
+    ) -> bool {
+        let matches = self.selected.as_ref().is_some_and(|selected| {
+            &selected.conversation_id == parent_conversation_id
+                && selected.child.as_ref() == Some(child)
+        });
+        if matches {
+            self.selected = None;
+        }
+        matches
+    }
+}
+
+#[cfg(test)]
+mod child_destination_tests {
+    use super::*;
+
+    #[test]
+    fn topic_saved_sublist_and_nested_conversation_keep_distinct_identity() {
+        let parent = ConversationId::new("conversation:parent");
+        let topic = ConversationDestination::topic(parent.clone(), "topic:42");
+        let saved = ConversationDestination::saved_sublist(
+            parent.clone(),
+            ActorId::new("human:42"),
+        );
+        let nested = ConversationDestination::nested_conversation(
+            parent.clone(),
+            ConversationId::new("conversation:child"),
+        );
+
+        assert!(topic.is_valid());
+        assert!(saved.is_valid());
+        assert!(nested.is_valid());
+        assert_ne!(topic, saved);
+        assert_ne!(saved, nested);
+        assert_ne!(topic, nested);
+        assert!(!ConversationDestination::nested_conversation(
+            parent.clone(),
+            parent,
+        )
+        .is_valid());
+    }
+
+    #[test]
+    fn destroying_exact_child_clears_selection_without_parent_fallback() {
+        let parent = ConversationId::new("conversation:parent");
+        let topic_child = ConversationChildIdentity::Topic {
+            root_message_id: "topic:42".into(),
+        };
+        let saved_child = ConversationChildIdentity::SavedSublist {
+            participant_id: ActorId::new("human:42"),
+        };
+        let mut selection = ConversationDestinationSelection::default();
+        assert!(selection.select(ConversationDestination {
+            conversation_id: parent.clone(),
+            child: Some(topic_child.clone()),
+        }));
+
+        assert!(!selection.clear_destroyed_child(&parent, &saved_child));
+        assert!(selection.selected().is_some());
+        assert!(selection.clear_destroyed_child(&parent, &topic_child));
+        assert!(selection.selected().is_none());
+    }
+
+    #[test]
+    fn unread_toggle_policy_preserves_topic_community_and_saved_sublist_rules() {
+        let parent = ConversationId::new("conversation:parent");
+        let topic = ConversationDestination::topic(parent.clone(), "topic:42");
+        assert!(!topic.can_toggle_unread(
+            false,
+            ConversationChildUnreadContext::default(),
+        ));
+        assert!(topic.can_toggle_unread(
+            true,
+            ConversationChildUnreadContext::default(),
+        ));
+
+        let community = ConversationDestination::root(parent.clone());
+        assert!(!community.can_toggle_unread(
+            false,
+            ConversationChildUnreadContext {
+                parent_is_community: true,
+                ..ConversationChildUnreadContext::default()
+            },
+        ));
+
+        let saved = ConversationDestination::saved_sublist(
+            parent.clone(),
+            ActorId::new("human:42"),
+        );
+        assert!(!saved.can_toggle_unread(
+            true,
+            ConversationChildUnreadContext {
+                parent_is_self: true,
+                ..ConversationChildUnreadContext::default()
+            },
+        ));
+
+        let monoforum_admin = ConversationDestination::root(parent);
+        assert!(!monoforum_admin.can_toggle_unread(
+            true,
+            ConversationChildUnreadContext {
+                actor_is_monoforum_admin: true,
+                ..ConversationChildUnreadContext::default()
+            },
+        ));
+    }
+}
