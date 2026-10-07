@@ -110,7 +110,7 @@ export function OrgChartGraph({ agents, width, height, now = Date.now(), selecte
   }
 
   return (
-    <div aria-label="Agent network" className="sand-org-chart-network" role="region" style={{ width: layoutWidth, height: layoutHeight }}>
+    <div aria-label="Agent network" className="sand-org-chart-network" ref={containerRef} role="region" style={{ width: width ?? "100%", height: height ?? "100%" }}>
       <div
         className="sand-org-chart-network__scene"
         onDoubleClick={resetViewport}
