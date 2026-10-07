@@ -222,6 +222,41 @@ fn wire_protocol_is_fabushi_owned_and_versioned() {
 }
 
 #[test]
+fn formatted_text_prefix_shifts_entities_by_utf16_units_atomically() {
+    let mut text = FormattedText {
+        text: "善友 bold".into(),
+        entities: vec![TextEntity {
+            offset_utf16: 3,
+            length_utf16: 4,
+            kind: TextEntityKind::Bold,
+        }],
+    };
+    let prefix = "🔗 https://fabushi.example\n";
+    let shift = u32::try_from(prefix.encode_utf16().count()).unwrap();
+
+    text.prepend_plain_text(prefix).unwrap();
+
+    assert_eq!(text.text, format!("{prefix}善友 bold"));
+    assert_eq!(text.entities[0].offset_utf16, 3 + shift);
+    assert_eq!(text.entities[0].length_utf16, 4);
+
+    let mut overflow = FormattedText {
+        text: "x".into(),
+        entities: vec![TextEntity {
+            offset_utf16: u32::MAX,
+            length_utf16: 1,
+            kind: TextEntityKind::Bold,
+        }],
+    };
+    let before = overflow.clone();
+    assert_eq!(
+        overflow.prepend_plain_text("x"),
+        Err(TextEntityOffsetOverflow)
+    );
+    assert_eq!(overflow, before);
+}
+
+#[test]
 fn forwarding_preserves_origin_and_rejects_protected_content() {
     let mut engine = MessagingEngine::new();
     engine
