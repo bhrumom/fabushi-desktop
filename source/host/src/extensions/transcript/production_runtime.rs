@@ -1323,7 +1323,7 @@ impl ProductionTranscriptRuntime {
             .track_box_request_entry(agent_id, entry)
     }
 
-    pub fn append_generated_send_message(
+    pub fn append_generated_send_message_entry(
         &self,
         sessions: &ProductionSessionWorkers,
         agent_id: &str,
@@ -1331,7 +1331,7 @@ impl ProductionTranscriptRuntime {
         timestamp_ms: u64,
         reply_thread_target: Option<&str>,
         is_fork: bool,
-    ) -> Result<String, String> {
+    ) -> Result<Value, String> {
         let entries = sessions.read_agent_transcript_entries(agent_id)?;
         let entry = self
             .lock_state()
@@ -1344,22 +1344,44 @@ impl ProductionTranscriptRuntime {
                 is_fork,
                 timestamp_ms,
             );
-        let entry_id = entry
+        entry
             .get("id")
             .and_then(Value::as_str)
-            .map(ToOwned::to_owned)
             .ok_or_else(|| "generated send pipeline did not produce an entry id".to_string())?;
-        sessions.append_agent_transcript_entries(agent_id, &[entry])?;
-        Ok(entry_id)
+        sessions.append_agent_transcript_entries(agent_id, std::slice::from_ref(&entry))?;
+        Ok(entry)
     }
 
-    pub fn update_generated_send_message_content(
+    pub fn append_generated_send_message(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        agent_id: &str,
+        message: &Value,
+        timestamp_ms: u64,
+        reply_thread_target: Option<&str>,
+        is_fork: bool,
+    ) -> Result<String, String> {
+        self.append_generated_send_message_entry(
+            sessions,
+            agent_id,
+            message,
+            timestamp_ms,
+            reply_thread_target,
+            is_fork,
+        )?
+        .get("id")
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned)
+        .ok_or_else(|| "generated send pipeline did not produce an entry id".to_string())
+    }
+
+    pub fn update_generated_send_message_content_entry(
         &self,
         sessions: &ProductionSessionWorkers,
         agent_id: &str,
         entry_id: &str,
         content: &str,
-    ) -> Result<(), String> {
+    ) -> Result<Value, String> {
         let entries = sessions.read_agent_transcript_entries(agent_id)?;
         let current = entries
             .iter()
@@ -1380,8 +1402,18 @@ impl ProductionTranscriptRuntime {
         next.insert("message".into(), Value::Object(message));
         sessions
             .update_agent_transcript_entry(agent_id, entry_id, &Value::Object(next))?
-            .ok_or_else(|| format!("generated send entry {entry_id} disappeared during update"))?;
-        Ok(())
+            .ok_or_else(|| format!("generated send entry {entry_id} disappeared during update"))
+    }
+
+    pub fn update_generated_send_message_content(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        agent_id: &str,
+        entry_id: &str,
+        content: &str,
+    ) -> Result<(), String> {
+        self.update_generated_send_message_content_entry(sessions, agent_id, entry_id, content)
+            .map(|_| ())
     }
 
     pub fn resolve_box_request_tracking(&self, request_id: &str) -> bool {

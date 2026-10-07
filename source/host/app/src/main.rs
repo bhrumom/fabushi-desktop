@@ -624,6 +624,7 @@ struct ProductionSendMessageSink {
     sessions: Arc<ProductionSessionWorkers>,
     forever_box: Arc<ForeverBoxService>,
     transcript_manager: Arc<TranscriptManager>,
+    events: GatewayEventHub,
     ack_obligations: Arc<AckObligations>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     ack_token: Option<String>,
@@ -802,9 +803,9 @@ impl SendMessageSink for ProductionSendMessageSink {
             }
         }
 
-        let entry_id = self
+        let entry = self
             .transcript_runtime
-            .append_generated_send_message(
+            .append_generated_send_message_entry(
                 self.sessions.as_ref(),
                 &self.agent_id,
                 &message,
@@ -816,6 +817,21 @@ impl SendMessageSink for ProductionSendMessageSink {
                 "could not persist SendMessage for {}: {error}",
                 self.agent_id
             )))?;
+        let entry_id = entry
+            .get("id")
+            .and_then(serde_json::Value::as_str)
+            .map(ToOwned::to_owned)
+            .ok_or_else(|| ProviderSessionError::Tool(
+                "persisted SendMessage entry did not contain an id".to_string()
+            ))?;
+        self.events.publish(serde_json::json!({
+            "channel": "transcript",
+            "payload": {
+                "type": "appended",
+                "agentId": self.agent_id,
+                "entry": entry,
+            }
+        }));
         self.fulfill_ack_obligation();
         self.transcript_runtime.track_runner_activity_update(
             &self.agent_id,
@@ -7270,24 +7286,32 @@ fn start_routed_provider_task(
                 if direct_conversation_fast_lane && !accumulated.is_empty() {
                     if let Ok(mut entry_id) = delta_direct_stream_entry_id.lock() {
                         if let Some(existing_entry_id) = entry_id.as_deref() {
-                            if let Err(error) = direct_stream_runtime.update_generated_send_message_content(
+                            match direct_stream_runtime.update_generated_send_message_content_entry(
                                 direct_stream_sessions.as_ref(),
                                 &delta_agent_id,
                                 existing_entry_id,
                                 accumulated,
                             ) {
-                                eprintln!(
+                                Ok(entry) => delta_events.publish(serde_json::json!({
+                                    "channel": "transcript",
+                                    "payload": {
+                                        "type": "updated",
+                                        "agentId": delta_agent_id.clone(),
+                                        "entry": entry,
+                                    }
+                                })),
+                                Err(error) => eprintln!(
                                     "mahayana-host fast_lane_stream_update_failed agent={} entry={} error={error}",
                                     delta_agent_id,
                                     existing_entry_id,
-                                );
+                                ),
                             }
                         } else {
                             let message = serde_json::json!({
                                 "type": "text",
                                 "content": accumulated,
                             });
-                            match direct_stream_runtime.append_generated_send_message(
+                            match direct_stream_runtime.append_generated_send_message_entry(
                                 direct_stream_sessions.as_ref(),
                                 &delta_agent_id,
                                 &message,
@@ -7295,8 +7319,27 @@ fn start_routed_provider_task(
                                 direct_stream_reply_thread_target.as_deref(),
                                 direct_stream_is_fork,
                             ) {
-                                Ok(created_entry_id) => {
+                                Ok(entry) => {
+                                    let Some(created_entry_id) = entry
+                                        .get("id")
+                                        .and_then(serde_json::Value::as_str)
+                                        .map(ToOwned::to_owned)
+                                    else {
+                                        eprintln!(
+                                            "mahayana-host fast_lane_stream_append_missing_id agent={}",
+                                            delta_agent_id,
+                                        );
+                                        return;
+                                    };
                                     *entry_id = Some(created_entry_id);
+                                    delta_events.publish(serde_json::json!({
+                                        "channel": "transcript",
+                                        "payload": {
+                                            "type": "appended",
+                                            "agentId": delta_agent_id.clone(),
+                                            "entry": entry,
+                                        }
+                                    }));
                                     direct_stream_delivery_counter.record_host_delivery();
                                     direct_stream_runtime.track_runner_activity_update(
                                         &delta_agent_id,
@@ -7406,6 +7449,7 @@ fn start_routed_provider_task(
                     sessions: worker_sessions,
                     forever_box: Arc::clone(&forever_box),
                     transcript_manager: Arc::clone(&worker_transcript_manager),
+                    events: worker_events.clone(),
                     ack_obligations: Arc::clone(&worker_ack_obligations),
                     transcript_runtime: Arc::clone(&worker_transcript_runtime),
                     ack_token: worker_ack_token.clone(),
