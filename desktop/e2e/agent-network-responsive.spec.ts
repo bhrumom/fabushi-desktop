@@ -216,7 +216,7 @@ async function measuredGeometry(network: ReturnType<Page['getByRole']>) {
     await expect(firstAgentNode).toHaveAttribute('aria-pressed', /true|false/);
 
     const scene = network.locator('.sand-org-chart-network__scene');
-    const transformBeforeWheel = await scene.evaluate((element) => getComputedStyle(element).transform);
+    // Exercise the native wheel path rather than dispatching a synthetic WheelEvent; the screenshot below is the visual evidence companion.\n    const transformBeforeWheel = await scene.evaluate((element) => getComputedStyle(element).transform);
     const sceneBox = await scene.boundingBox();
     expect(sceneBox).not.toBeNull();
     await page.mouse.move(
