@@ -60,6 +60,15 @@ Disposition: map to canonical Conversation/Topic typed destination and canonical
 
 The implementation file was reread in bounded line ranges after the initial connector rendering truncated; no truncated rendering is credited as complete. Beyond ShareBox selection, these files carry stable parent + child identity, destroyed lifecycle, around/before/after pagination with skipped-gap accounting and request cancellation/retry, client-side-message merge, last/list-message reconciliation, inbox/outbox read cursors, unread/mark/reaction state, delayed read settlement, child-scoped draft behavior, list/pin restoration, preload, notification clearing, and a child-level no-paid-messages exception. Existing Fabushi Topic/read/draft owners cover only a subset; these two source entries therefore remain unknown.
 
+#### SavedMessages parent-owner dependency authority
+
+| path | blob | read status | classification | mapping status |
+| --- | --- | --- | --- | --- |
+| `Telegram/SourceFiles/data/data_saved_messages.h` | `82b9aed5cb2e1250fc0f4c5c2013bd58c689a344` | complete, 4,056 bytes | saved-child collection/cache/lifecycle owner | open |
+| `Telegram/SourceFiles/data/data_saved_messages.cpp` | `2be216670b644eb012e7a241af78b3adda639619` | complete, 17,635 bytes | child loading, stale refresh, pin/list, destroy cleanup and active-child lifecycle | open |
+
+This parent owner adds responsibilities beyond the individual SavedSublist: support/unsupported state, exact child cache identity, stale batched refresh, request callback coalescing, pinned and paginated child-list loading, active-child continuity, child deletion cleanup, shared-media unload, forward-draft clearing, recent-child projection, unread-count reconciliation and parent-chat/monoforum behavior. These responsibilities must extend canonical Conversation/thread/list/read/draft/resource owners rather than introduce a SavedMessages product subsystem.
+
 ### SB-03 send-mode derivation and schedule/silent/reminder semantics
 
 Source symbols: `sendMenuDetails`, `showMenu`, `submit`.
@@ -164,6 +173,18 @@ Behavior:
 - successful multi-recipient share closes the layer only after the local dispatch loop is created.
 
 Disposition: canonical Message formatted-text/entity owner plus OS clipboard adapter and canonical Conversation picker. `cf60178cab2142e75e9b0f5b7d24145b0b997b15` adds `FormattedText::prepend_plain_text`, which shifts existing entity offsets by the prefix length in UTF-16 code units and fails atomically on offset overflow. Machine-readable responsibility: `TDRP-R9-SHARE-LINK-ENTITY-OFFSET-001`; oracle `ORA-TDRP-SHARE-LINK-ENTITY-OFFSET-001`; invariants `INV-TDRP-SHARE-LINK-UTF16-OFFSET-001` and `INV-TDRP-SHARE-LINK-ATOMIC-OVERFLOW-001`. This narrow slice is implemented, not verified. Clipboard ownership, duplicate-submit fencing, multi-recipient settlement, SendOther pre-exposure, and exact shipping UI evidence remain open.
+
+## Shipping composition audit
+
+Current shipping composition is not yet equivalent to the implemented native-core slices:
+
+- `frontend/src/production/ProductionRenderer.tsx` is the real shipping Conversation root and renders `ConversationTranscript`; its transcript call currently exposes Reply/Thread/Copy/Reaction behavior but no Forward action.
+- Human sends from that renderer call Host method `sendHumanMessage`.
+- `source/host/src/extensions/session/gateway.rs` projects `sendHumanMessage` into `Session::append_human_message`.
+- `Session::append_human_message` is the existing shipping owner for participant checks, reply validation, clientNonce idempotency, pending/dispatching settlement, attachment upload, remote persisted-content validation and retry recovery.
+- `source/host/Cargo.toml` has no dependency on `native/mahayana-messaging` / `fabushi-messaging-core`.
+
+Therefore `TDRP-R9-SHARE-FORWARD-PRIVACY-001` and `TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001` remain implemented domain slices only. They cannot be called shipping-complete or verified until the canonical Host/Coordinator composition carries those responsibilities without creating a second Message/Search owner, and exact-head tests prove that path.
 
 ## Exact-head evidence routing
 
