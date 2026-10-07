@@ -177,6 +177,14 @@ auditRootCandidates(
   {requireComplete:openssl.root_candidate_policy_status==='complete-for-current-openssl-authority',scope:'openssl-root-candidates'}
 );
 
+const tgOwt=rules.tg_owt;
+const tgOwtKey=keyOf(tgOwt.repository,tgOwt.commit);
+auditRootCandidates(
+  tgOwtKey,
+  tgOwt.root_candidate_disposition_policy,
+  {requireComplete:tgOwt.root_candidate_policy_status==='complete-for-current-tg-owt-authority',scope:'tg-owt-root-candidates'}
+);
+
 const result={
   project_id:'TDRP-001',
   spec_revision:9,
