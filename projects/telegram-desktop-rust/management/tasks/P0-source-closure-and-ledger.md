@@ -1,87 +1,73 @@
-# P0 — Telegram Source Research and Existing-Owner Resolution
+# P0 — Revision 9 source authority, inventory and traceability closure
 
-Status: active  
-Project: TDRP-001 Revision 4  
-Parent: FBCP-001  
-Execution: executable checks only on GitHub Actions or htch-runtime.
+Status: active / fail-closed  
+Project: TDRP-001 Revision 9  
+Parent: FBCP-001 Revision 7  
+Execution: executable validation only in GitHub Actions.
 
 ## Goal
 
-Completely understand Telegram Desktop's communication capabilities and route them into the current Fabushi architecture.
+Establish one accepted exact `telegramdesktop/tdesktop` baseline and prove complete source accounting before any global migration-complete claim.
 
-## Required outputs
+The accepted scope is recursive and includes tracked files, direct and nested gitlinks/submodules, build-time acquisitions, patches, LFS/external objects, generated-input contracts, functional resources/locales/assets, build/packaging/updater, tests, tooling, docs and licenses.
 
-### A. Recursive source closure
+## Hard counters
 
-Inventory root source, nested submodules, downloads, patches, generators, resources, shaders, platform definitions and licenses.
+P0 cannot exit until the accepted baseline proves:
 
-### B. Capability graph
+- `unknown = 0`
+- `unread = 0`
+- `omitted = 0`
 
-Every product-relevant source region belongs to one or more capabilities.
+Tree enumeration is not semantic reading. Directory citation is not responsibility understanding. A generated inventory is not permission to bulk-mark rows `understood`, `mapped`, `implemented` or `verified`.
 
-### C. C++ responsibility inventory
+## Required machine authorities
 
-Identify product logic, protocol/state machines, UI behavior, platform policy, build/runtime tools and third-party C++.
+1. `projects/telegram-desktop-rust/upstream.lock.json` — exact candidate/accepted source authority and recursive pins.
+2. `projects/telegram-desktop-rust/contracts/parity-ledger.schema.json` — Revision 9 row contract.
+3. a ledger instance covering every non-directory source entry and every independently owned responsibility.
+4. module dossiers containing symbols, state machines, lifecycle, failure semantics, ownership and behavior oracles.
+5. `projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md` — requirement/oracle/invariant/test/evidence/reviewer chain.
+6. GitHub Actions evidence from the same exact Fabushi HEAD.
 
-### D. Existing-owner resolution
+## Bidirectional gate
 
-For every capability record:
+Every applicable responsibility must resolve both directions:
 
-- owner candidates from current exact-head Fabushi
-- selected existing_owner
-- absorption plan
-- model/state changes
-- UX changes
-- native-network requirements
-- tests
-- blockers
+`source file -> source symbol -> responsibility -> capability -> existing Fabushi owner -> target path/symbol -> shipping entrypoint -> tests/evidence`
 
-### E. New owner exception
+and
 
-Only when existing_owner is none:
+`shipping entrypoint/target symbol -> owner -> capability/responsibility -> source symbol/file -> requirement/oracle/invariant -> current-head evidence`.
 
-- rejected existing owners + reasons
-- new_owner_proposal
-- minimal responsibility
-- ADR path
+The validator must fail on orphan source entries, orphan target symbols, duplicate canonical roots, verified rows without exact-head evidence, or any row that bypasses existing-owner-first.
 
-### F. Research dossiers
+## Canonical composition gates
 
-Prioritize:
+Revision 9 additionally requires:
 
-1. message/history lifecycle
-2. conversation/dialog lifecycle
-3. groups/members/permissions
-4. drafts/composer/scheduled send
-5. attachments/media
-6. sync/reconnect/multi-device behavior
-7. search
-8. notifications
-9. calls/screen sharing
-10. channel/topic
-11. settings/privacy
-12. long-tail product capabilities
+- one ProductShell/navigation composition;
+- one canonical Conversation/Message/Participant model family;
+- one canonical Search owner for contextual/object/universal scopes and pickers;
+- one typed ConversationCreation flow;
+- existing Plugins/MCP/Marketplace/Computer/Automations/Task owners;
+- Fabushi semantic design tokens and canonical component/screen contracts;
+- no source-named second visual or product architecture.
 
-## Prohibited
+## Current candidate
 
-- standalone Telegram product shell
-- Telegram Provider
-- MTProto-as-Fabushi-network
-- source file → target file completion
-- broad parallel Communication Core
-- same-name placeholder modules
-- source reading counted as implementation
-- local executable validation
+On 2026-10-07, live upstream `dev` was observed at `f23c37857220eb84f8559f0901ea26fb304b564b` with tree `782e61795af00688671ce3a03d3b646504e3cd5f`.
+
+That observation is **candidate discovery only**. It does not become accepted because a human or connector saw it. GitHub Actions must independently re-read and validate the exact commit/tree, direct and nested gitlinks, changed build-time pins, root inventory and Revision 9 contracts before promotion.
+
+Historical `33261535a0e747f125e0ed25486f01e556330677` evidence is historical only and cannot satisfy Revision 9.
+
+## No-stall rule
+
+A service/account/platform blocker blocks only its dependent responsibility. Continue all independent source reading, owner resolution, implementation, tests and service contracts. Do not hide blockers with mocks, fake local responses, disabled assertions or skipped release gates.
 
 ## Exit
 
-P0 passes only when:
+P0 passes only when the accepted exact baseline, full recursive inventory, full semantic-read/responsibility coverage, owner resolution, schema/ledger validators and Revision 9 traceability/composition gates all pass on one exact Fabushi HEAD in GitHub Actions.
 
-- recursive research closure is complete;
-- all product source areas are capability-classified;
-- C++ production responsibilities are known;
-- every researched capability has exact-head owner resolution;
-- any new owner proposal is minimal and ADR-backed;
-- native-network implications are captured;
-- ledger is nonempty/fail-closed;
-- executable validation, if used, ran only on allowed infrastructure.
+P0 exit is not product completion; production responsibilities, existing Bot regression, real services, signed packaged temporal acceptance and independent release `ACCEPT` remain separate gates.
