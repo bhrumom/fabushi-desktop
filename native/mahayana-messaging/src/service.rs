@@ -1854,6 +1854,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 option_ids,
             }],
             ClientCommand::Search { .. }
+            | ClientCommand::SearchRecipients { .. }
             | ClientCommand::ListCommunityMembers { .. }
             | ClientCommand::ListCommunityAuditLog { .. }
             | ClientCommand::StartTyping { .. }
