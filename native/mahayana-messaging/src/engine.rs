@@ -1272,6 +1272,22 @@ impl MessagingEngine {
                     }
                 }
                 if let Some(community) = self.state.communities.get(&destination_conversation_id) {
+                    if let Some(thread_root) = &thread_root_message_id {
+                        if let Some(topic_id) = topic_id_from_root(thread_root) {
+                            let topic = community.topics.get(topic_id).ok_or_else(|| {
+                                EngineError::ForumTopicNotFound {
+                                    conversation_id: destination_conversation_id.clone(),
+                                    topic_id: topic_id.to_string(),
+                                }
+                            })?;
+                            if topic.closed || topic.hidden {
+                                return Err(EngineError::ForumTopicClosed {
+                                    conversation_id: destination_conversation_id.clone(),
+                                    topic_id: topic_id.to_string(),
+                                });
+                            }
+                        }
+                    }
                     if let Some(seconds) = community.slow_mode_seconds {
                         let bypass = community.can_moderate(&sender_id);
                         if !bypass {

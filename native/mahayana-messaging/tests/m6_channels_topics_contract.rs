@@ -339,6 +339,57 @@ fn channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped() 
         })
         .expect("topic message");
 
+    let forwarded_topic = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "topic-forward"),
+                ClientCommand::ForwardMessage {
+                    source_conversation_id: ConversationId::new("channel:m6"),
+                    message_id: topic_message.clone(),
+                    destination_conversation_id: ConversationId::new("channel:m6"),
+                    client_message_id: ClientMessageId("client:topic-forward".into()),
+                    thread_root_message_id: Some(MessageId::new("topic:study")),
+                    scheduled_at_ms: None,
+                    silent: false,
+                },
+            ),
+            14,
+        )
+        .unwrap()
+        .into_iter()
+        .find_map(|envelope| match envelope.event {
+            ServerEvent::MessageAdded { message } => Some(message),
+            _ => None,
+        })
+        .expect("forwarded topic message");
+    assert_eq!(
+        forwarded_topic.thread_root_message_id.as_ref(),
+        Some(&MessageId::new("topic:study"))
+    );
+
+    let missing_topic = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "topic-forward-missing"),
+                ClientCommand::ForwardMessage {
+                    source_conversation_id: ConversationId::new("channel:m6"),
+                    message_id: topic_message.clone(),
+                    destination_conversation_id: ConversationId::new("channel:m6"),
+                    client_message_id: ClientMessageId("client:topic-forward-missing".into()),
+                    thread_root_message_id: Some(MessageId::new("topic:missing")),
+                    scheduled_at_ms: None,
+                    silent: false,
+                },
+            ),
+            14,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        missing_topic,
+        MessagingServiceError::Engine(EngineError::ForumTopicNotFound { topic_id, .. })
+            if topic_id == "missing"
+    ));
+
     let topic_before_read = service
         .handle(
             ClientEnvelope::new(
