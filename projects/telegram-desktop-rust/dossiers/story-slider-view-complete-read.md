@@ -54,6 +54,10 @@ Symbols: `shareRequested`, `deleteRequested`, `reportRequested`, `toggleInProfil
 
 These actions must reuse existing canonical owners: Story identity/privacy/delete/pin/reaction in the messaging Story owner; Share/Forward through canonical Message/Conversation/Search/permission owners; media/file origin through Resource; participant/profile routing through canonical Profile; comments/replies through Conversation/Transcript when applicable. No StoryShare, StoryReactionStore, StoryCommentsStore or Telegram-specific UI root is justified.
 
+## Revision 9 traceability
+
+The four Story slider/view ledger rows are governed by the existing Revision 9 requirements `TDRP-MOD-01`, `TDRP-MOD-02`, `TDRP-OWN-01`, `TDRP-COMP-01`, `G-INVENTORY`, `G-PRODUCTION`, and `G-TEMPORAL`. These IDs describe the applicable source/module completeness, existing-owner-first composition, production wiring, and temporal evidence gates; they do not imply that the mapped Story surface is implemented or verified.
+
 ## Existing-owner-first audit
 
 Current exact main `3bc92400826cc4ca7ac665b467708e22261edc61` contains `native/mahayana-messaging/src/story.rs` plus protocol/service/engine commands for publish/delete/view/react and canonical Story persistence. Existing Resource/attachment/media owners remain responsible for media bytes/cache/playback; ProductShell already owns capability overlays. A scan of the shipping `frontend/src/production/ProductionRenderer.tsx` did not establish a shipping Story viewer composition. Therefore:
