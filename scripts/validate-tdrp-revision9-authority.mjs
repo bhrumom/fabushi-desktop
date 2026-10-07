@@ -127,6 +127,47 @@ for (const child of recursiveChildren) {
   fail(entry && entry.mode==='160000','recursive child path is not a gitlink at parent: '+child.id);
   fail(entry.sha===child.child_commit,'recursive child gitlink SHA drift: '+child.id);
 }
+const recursiveReachability=acquisitionInventory.recursive_build_reachability;
+fail(recursiveReachability?.status==='partial-audited-disposition-open','recursive build reachability status must remain explicitly partial/open');
+fail(recursiveReachability.accepted_upstream_commit===lock.upstream.commit,'recursive build reachability upstream commit drift');
+const qtReachability=recursiveReachability.qt_superproject;
+fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
+const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).map(item=>[item.path,item]));
+const expectedQtEvidence=[
+  ['Telegram/build/prepare/prepare.py','9482a53e60386743ae797d75cecc36767cd63646'],
+  ['Telegram/build/docker/centos_env/Dockerfile','5516c448c628d5928d690687ed948d67b5cdaac3'],
+  ['snap/snapcraft.yaml','5cff7cf59aedc430b0a9a2d6d66ab6fe3c29bd9f']
+];
+for (const [sourcePath,blob] of expectedQtEvidence) {
+  const evidence=qtEvidenceByPath.get(sourcePath);
+  fail(evidence?.blob===blob,'Qt reachability evidence blob drift: '+sourcePath);
+  const tree=await ghTree(lock.upstream.repository,lock.upstream.commit);
+  const sourceEntry=(tree.tree||[]).find(item=>item.path===sourcePath);
+  fail(sourceEntry?.sha===blob,'Qt reachability source blob does not match accepted upstream: '+sourcePath);
+}
+const prepareQt=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/Telegram/build/prepare/prepare.py`,false);
+const dockerQt=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/Telegram/build/docker/centos_env/Dockerfile`,false);
+const snapQt=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/snap/snapcraft.yaml`,false);
+for (const exact of [
+  'git submodule update --init --recursive --progress qtbase qtimageformats qtsvg',
+  'git submodule update --init --recursive --progress qtbase qtimageformats qtshadertools qtsvg'
+]) fail(prepareQt.includes(exact),'accepted prepare.py Qt submodule selection drift: '+exact);
+fail(dockerQt.includes('qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools'),'accepted Docker Qt submodule selection drift');
+for (const module of ['qtbase','qtdeclarative','qtimageformats','qtshadertools','qtsvg','qtwayland']) {
+  fail(snapQt.includes('      - '+module),'accepted Snap Qt submodule selection missing '+module);
+}
+fail(!prepareQt.includes('qttools'),'prepare.py unexpectedly initializes qttools');
+fail(!dockerQt.includes('qttools'),'Docker Qt build unexpectedly initializes qttools');
+fail(!snapQt.includes('      - qttools'),'Snap Qt build unexpectedly initializes qttools');
+const nonReachable=qtReachability.explicitly_non_reachable_dispositions||[];
+const byRepo=new Map(nonReachable.map(item=>[item.repository,item]));
+fail(byRepo.get('https://github.com/qt/qttools')?.disposition==='not-reachable-from-accepted-tdesktop-qt-build','qttools reachability disposition missing');
+fail(byRepo.get('https://code.qt.io/playground/qlitehtml')?.disposition==='not-reachable-via-non-reachable-parent','qlitehtml reachability disposition missing');
+fail(byRepo.get('https://code.qt.io/qt/qttools-litehtml')?.commit==='6ca1ab0419e770e6d35a1ef690238773a1dafcee','qttools-litehtml immutable child disposition missing');
+for (const commit of byRepo.get('https://github.com/qt/qttools')?.commits||[]) {
+  fail(/^[0-9a-f]{40}$/.test(commit),'qttools non-reachable commit is not immutable');
+}
+
 const rowRequired=schema.$defs?.row?.required||[];
 const responsibilityIds=new Set();
 const targetSymbolOwners=new Map();
