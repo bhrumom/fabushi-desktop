@@ -227,6 +227,13 @@ for (const authority of ffmpeg.observed_authorities||[]) {
   );
 }
 
+const libheif=rules.libheif;
+auditRootCandidates(
+  keyOf(libheif.repository,libheif.commit),
+  libheif.root_candidate_disposition_policy,
+  {requireComplete:libheif.root_candidate_policy_status==='complete-for-current-libheif-authority',scope:'libheif-root-candidates'}
+);
+
 const result={
   project_id:'TDRP-001',
   spec_revision:9,

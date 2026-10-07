@@ -318,6 +318,30 @@ fail(prepareFfmpegStage.includes('git clone -b n8.1.3'),'accepted prepare.py FFm
 fail(dockerFfmpegStage.includes('git clone -b n8.1.3 --depth=1'),'accepted Docker FFmpeg ref drift');
 fail(snapFfmpegStage.includes('source-branch: n6.1.6'),'accepted Snap FFmpeg ref drift');
 
+const libheifReachability=recursiveReachability.libheif;
+fail(libheifReachability?.repository==='https://github.com/strukturag/libheif','libheif reachability authority missing');
+fail(libheifReachability.commit==='413e2a87e6a70b3eccc3a3adc5801179dd2d9e00','libheif reachability commit drift');
+fail(libheifReachability.root_candidate_policy_status==='complete-for-current-libheif-authority','libheif root candidate policy is not fail-closed complete');
+const libheifPolicy=libheifReachability.root_candidate_disposition_policy||[];
+for (const [kind,value] of [
+  ['path_prefix','.github/'],['path_prefix','scripts/'],['path_prefix','third-party/'],
+  ['path_exact','build-emscripten.sh'],['path_exact','README.md'],['path_exact','SECURITY.md'],
+  ['path_prefix','examples/'],['path_prefix','heifio/'],['path_prefix','libheif/']
+]) fail(libheifPolicy.some(rule=>rule[kind]===value),'libheif acquisition disposition missing: '+value);
+const prepareLibheifStage=prepareQt.match(/stage\('libheif',[\s\S]*?\n"""\)/)?.[0]||'';
+const dockerLibheifStage=dockerStage(dockerQt,'heif');
+for (const [name,stage] of [['prepare.py',prepareLibheifStage],['Dockerfile',dockerLibheifStage]]) {
+  fail(stage.length>0,'unable to isolate accepted libheif build stage in '+name);
+  fail(stage.includes('git clone -b v1.23.5'),'accepted libheif ref drift in '+name);
+  for (const option of [
+    'BUILD_SHARED_LIBS=OFF','BUILD_DOCUMENTATION=OFF','BUILD_TESTING=OFF','ENABLE_PLUGIN_LOADING=OFF',
+    'WITH_LIBDE265=OFF','WITH_X265=OFF','WITH_X264=OFF','WITH_OpenH264_DECODER=OFF',
+    'WITH_SvtEnc=OFF','WITH_RAV1E=OFF','WITH_FFMPEG_DECODER=ON','WITH_LIBSHARPYUV=OFF','WITH_EXAMPLES=OFF'
+  ]) fail(stage.includes(option),'accepted libheif build option drift in '+name+': '+option);
+  fail(!stage.includes('third-party/'),'accepted libheif build unexpectedly invokes third-party helper in '+name);
+  fail(!stage.includes('scripts/'),'accepted libheif build unexpectedly invokes upstream helper scripts in '+name);
+}
+
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
 fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');

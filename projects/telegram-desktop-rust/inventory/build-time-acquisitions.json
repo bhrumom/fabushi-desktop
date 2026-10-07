@@ -1829,6 +1829,70 @@
       ],
       "root_candidate_policy_status": "complete-for-current-ffmpeg-authorities",
       "note": "This closes acquisition-pattern matches for the two FFmpeg root snapshots used by accepted TDesktop. It does not classify FFmpeg product/media behavior out of migration scope."
+    },
+    "libheif": {
+      "repository": "https://github.com/strukturag/libheif",
+      "commit": "413e2a87e6a70b3eccc3a3adc5801179dd2d9e00",
+      "ref": "v1.23.5",
+      "build_entries": [
+        "Telegram/build/prepare/prepare.py",
+        "Telegram/build/docker/centos_env/Dockerfile"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "Clones libheif v1.23.5, applies the accepted TDesktop patch, disables documentation/tests/plugin loading/examples and unselected codec integrations, enables the existing FFmpeg decoder, then builds/installs with CMake. It does not invoke libheif CI/fuzz/bootstrap or third-party/*.cmd fetch helpers."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "The heif stage clones libheif v1.23.5 shallow, applies the accepted patch, consumes the prior FFmpeg stage, disables documentation/tests/plugin loading/examples and unselected codecs, enables WITH_FFMPEG_DECODER, and builds/installs directly with CMake."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-libheif-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "scripts/",
+          "disposition": "upstream-libheif-ci-fuzz-bootstrap-helper-not-invoked",
+          "basis": "Accepted TDesktop libheif stages invoke clone/patch/CMake directly and do not execute libheif scripts/ CI, OSS-Fuzz, compiler-install, Emscripten, or bootstrap helpers."
+        },
+        {
+          "path_prefix": "third-party/",
+          "disposition": "upstream-libheif-manual-third-party-fetch-helper-not-invoked",
+          "basis": "Accepted TDesktop libheif stages do not invoke third-party/*.cmd download helpers; selected dependencies come from existing TDesktop/system inputs and CMake discovery."
+        },
+        {
+          "path_exact": "build-emscripten.sh",
+          "disposition": "upstream-libheif-emscripten-helper-not-invoked"
+        },
+        {
+          "path_exact": "README.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "SECURITY.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_prefix": "examples/",
+          "disposition": "upstream-libheif-examples-disabled",
+          "basis": "Accepted TDesktop passes WITH_EXAMPLES=OFF."
+        },
+        {
+          "path_prefix": "heifio/",
+          "disposition": "compiled-or-disabled-source-reference-not-build-acquisition",
+          "basis": "URL/library references in heifio source are not executed source acquisition commands; accepted TDesktop also disables examples and optional image packages."
+        },
+        {
+          "path_prefix": "libheif/",
+          "disposition": "compiled-source-reference-not-build-acquisition",
+          "basis": "Candidate matches are source/header specification or codec references inside the already-fetched immutable libheif tree, not build-time source acquisition."
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-libheif-authority",
+      "note": "This closes acquisition-pattern candidates for the immutable libheif v1.23.5 root used by accepted prepare/Docker source builds. Snap consumes distro libheif-dev and is a package/toolchain input rather than a second libheif source snapshot."
     }
   }
 }
