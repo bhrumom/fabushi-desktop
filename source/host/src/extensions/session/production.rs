@@ -2599,7 +2599,13 @@ impl ProductionSessionWorkers {
             return Err("forwardHumanMessage source has no forwardable content".into());
         }
 
-        let drop_sender_names = drop_sender_names || drop_captions;
+        let privacy = fabushi_messaging_core::ForwardPrivacy {
+            drop_sender_names,
+            drop_captions,
+        }
+        .normalized();
+        let drop_sender_names = privacy.drop_sender_names;
+        let drop_captions = privacy.drop_captions;
         let forwarded_text = if drop_captions && !attachments.is_empty() {
             ""
         } else {
