@@ -110,7 +110,7 @@ Required principles:
 - Fabushi code, services, compatibility layers, product surfaces, or background processes that have no Grok counterpart must be removed from the canonical desktop implementation unless this spec explicitly approves a Fabushi-specific extension boundary;
 - **FBCP-001 is such an explicitly approved product extension boundary.** It requires Telegram Desktop's complete communication capabilities to be researched and absorbed into the existing Grok-shaped Fabushi owners wherever possible. It does **not** approve a parallel Communication Core, Telegram Provider, Telegram network dependency, or second product model. New communication infrastructure/owners are permitted only when the current exact-head architecture has no suitable owner and a focused ADR proves the smallest required responsibility;
 - the final shipped desktop application must not retain a second parallel legacy Fabushi runtime beside the Grok-shaped architecture;
-- Fabushi branding, service endpoints, signing identity, account implementation details, and approved native capabilities may differ through narrow adapters, but those differences must not create a different desktop orchestration architecture;
+- Fabushi branding is mandatory throughout the shipped user experience and assistant-facing product instructions. Service endpoints, signing identity, account implementation details, and approved native capabilities may differ through narrow adapters, but those differences must not create a different desktop orchestration architecture;
 - ordinary chat, Agents, creation flow, Plugins/connectors/MCP, process lifecycle, retry/recovery, power behavior, and UI interaction must match the approved Grok reference behavior;
 - no-op mirror files, placeholder counterparts, or manifest-only status changes are not parity evidence; every completed mapping must demonstrate production wiring and the corresponding desktop product effect.
 
@@ -160,6 +160,14 @@ When this spec says “remove Fabushi-only behavior with no Grok counterpart”,
 - Expanding this desktop rebuild into iOS/Android work.
 
 ## 4. Requirements
+
+### Fabushi product identity
+
+- **BRAND-001 — Fabushi identity.** All user-visible application copy and assistant-facing product instructions in the shipped desktop application must identify the product as Fabushi. This includes sign-in, onboarding, account and settings surfaces, feedback, update and computer recovery notices, notifications, accessibility labels, and error messages.
+- **BRAND-002 — Compatibility and provenance.** Do not rename backend RPC/protobuf services, server feature-gate keys, persisted directory or migration-marker names, generated wire identifiers, or immutable reference-artifact evidence solely to change branding. Keep such legacy identifiers non-user-facing, document them as compatibility/provenance, and expose Fabushi wording at user-facing boundaries.
+- **BRAND-003 — External product links.** A legacy third-party App Store destination must not be relabeled as Fabushi. Omit that menu action until an official Fabushi destination is configured.
+- **BRAND-004 — Acceptance.** The production sign-in heading, update/Computer surfaces, account errors, Host notices, and assistant identity prompts use Fabushi wording; packaged acceptance locates the Fabushi sign-in surface; compatibility identifiers remain unchanged.
+
 
 ### Chat / turn lifecycle
 
