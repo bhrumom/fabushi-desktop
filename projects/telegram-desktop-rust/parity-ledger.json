@@ -1726,8 +1726,8 @@
       ],
       "fabushi_target_symbols": [
         "stable_message_id",
-        "MessagingService::idempotent_send_replay",
-        "MessagingService::project_command"
+        "fn idempotent_send_replay(",
+        "fn project_command("
       ],
       "target_language": "Rust",
       "language_rationale": "Idempotency is canonical message service state and must be enforced below the renderer.",
