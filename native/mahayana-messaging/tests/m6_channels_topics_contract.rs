@@ -390,6 +390,83 @@ fn channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped() 
             if topic_id == "missing"
     ));
 
+    for (request_suffix, closed, hidden) in [
+        ("closed", true, false),
+        ("hidden", false, true),
+    ] {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context("human:owner", &format!("topic-{request_suffix}-update")),
+                    ClientCommand::UpsertForumTopic {
+                        topic: ForumTopicState {
+                            id: "study".into(),
+                            conversation_id: ConversationId::new("channel:m6"),
+                            title: "Study".into(),
+                            icon: None,
+                            creator_id: ActorId::new("human:owner"),
+                            created_at_ms: 12,
+                            pinned: false,
+                            closed,
+                            hidden,
+                            unread_count: 0,
+                            last_message_id: Some(topic_message.0.clone()),
+                        },
+                    },
+                ),
+                14,
+            )
+            .unwrap();
+        let ineligible_topic = service
+            .handle(
+                ClientEnvelope::new(
+                    context("human:owner", &format!("topic-forward-{request_suffix}")),
+                    ClientCommand::ForwardMessage {
+                        source_conversation_id: ConversationId::new("channel:m6"),
+                        message_id: topic_message.clone(),
+                        destination_conversation_id: ConversationId::new("channel:m6"),
+                        client_message_id: ClientMessageId(
+                            format!("client:topic-forward-{request_suffix}"),
+                        ),
+                        thread_root_message_id: Some(MessageId::new("topic:study")),
+                        scheduled_at_ms: None,
+                        silent: false,
+                    },
+                ),
+                14,
+            )
+            .unwrap_err();
+        assert!(matches!(
+            ineligible_topic,
+            MessagingServiceError::Engine(EngineError::ForumTopicClosed { topic_id, .. })
+                if topic_id == "study"
+        ));
+    }
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "topic-reopen"),
+                ClientCommand::UpsertForumTopic {
+                    topic: ForumTopicState {
+                        id: "study".into(),
+                        conversation_id: ConversationId::new("channel:m6"),
+                        title: "Study".into(),
+                        icon: None,
+                        creator_id: ActorId::new("human:owner"),
+                        created_at_ms: 12,
+                        pinned: false,
+                        closed: false,
+                        hidden: false,
+                        unread_count: 0,
+                        last_message_id: Some(topic_message.0.clone()),
+                    },
+                },
+            ),
+            14,
+        )
+        .unwrap();
+
     let topic_before_read = service
         .handle(
             ClientEnvelope::new(
