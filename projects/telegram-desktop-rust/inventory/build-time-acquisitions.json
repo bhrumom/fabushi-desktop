@@ -1239,6 +1239,88 @@
         }
       ],
       "note": "This closes only the audited Qt superproject branch reachability question. Root/child/archive/other recursive acquisitions, patches, generated inputs, resources, and tool/package inputs remain open and require individual build-reachability disposition."
+    },
+    "openssl": {
+      "repository": "https://github.com/openssl/openssl",
+      "commit": "a7e992847de83aa36be0c399c89db3fb827b0be2",
+      "ref": "openssl-3.2.1",
+      "build_entries": [
+        "Telegram/build/prepare/prepare.py",
+        "Telegram/build/docker/centos_env/Dockerfile",
+        "snap/snapcraft.yaml"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "blob": "9482a53e60386743ae797d75cecc36767cd63646",
+          "evidence": "Clones OpenSSL and builds libraries directly; no git submodule init/update in the OpenSSL stage."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "blob": "5516c448c628d5928d690687ed948d67b5cdaac3",
+          "evidence": "Shallow clones OpenSSL, configures no-tests/no-dso, builds and installs; no submodule init/update."
+        },
+        {
+          "path": "snap/snapcraft.yaml",
+          "blob": "5cff7cf59aedc430b0a9a2d6d66ab6fe3c29bd9f",
+          "evidence": "Snap OpenSSL part uses source-tag/plugin make and does not request source-submodules."
+        }
+      ],
+      "direct_gitlinks_not_fetched": [
+        [
+          "cloudflare-quiche",
+          "https://github.com/cloudflare/quiche",
+          "7ab6a55cfe471267d61e4d28ba43d41defcd87e0"
+        ],
+        [
+          "fuzz/corpora",
+          "https://github.com/openssl/fuzz-corpora",
+          "8663e2d71fa934e7846fa4c5fb6de7cb3afc53fd"
+        ],
+        [
+          "gost-engine",
+          "https://github.com/gost-engine/engine",
+          "2a8a5e0ecaa3e3d6f4ec722a49aa72476755c2b7"
+        ],
+        [
+          "krb5",
+          "https://github.com/krb5/krb5",
+          "aa9b4a2a64046afd2fab7cb49c346295874a5fb6"
+        ],
+        [
+          "oqs-provider",
+          "https://github.com/open-quantum-safe/oqs-provider",
+          "8c746d7e294d6948c2f361a8f2fa376a63a2db30"
+        ],
+        [
+          "pyca-cryptography",
+          "https://github.com/pyca/cryptography",
+          "7e33b0e7739d633c77b8c478620167f693ed13f4"
+        ],
+        [
+          "python-ecdsa",
+          "https://github.com/tlsfuzzer/python-ecdsa",
+          "4de8d5bf89089d1140eb99aa5d7eb2dc8e6337b6"
+        ],
+        [
+          "tlsfuzzer",
+          "https://github.com/tlsfuzzer/tlsfuzzer",
+          "dbd56c149072e656ca8d6a43a59588f3e7513da2"
+        ],
+        [
+          "tlslite-ng",
+          "https://github.com/tlsfuzzer/tlslite-ng",
+          "771e9f59d639dbb0e2fa8e646c8e588405d3903e"
+        ],
+        [
+          "wycheproof",
+          "https://github.com/google/wycheproof",
+          "2196000605e45d91097147c9c71f26b72af58003"
+        ]
+      ],
+      "descendant_non_reachability": "All descendants of these unfetched gitlinks inherit non-reachability unless an independent accepted TDesktop build entry acquires the same repository/commit.",
+      "disposition": "not-reachable-from-accepted-tdesktop-openssl-build",
+      "note": "The OpenSSL source itself remains reachable and in scope. Only its gitlink children and descendants are excluded by this rule."
     }
   }
 }
