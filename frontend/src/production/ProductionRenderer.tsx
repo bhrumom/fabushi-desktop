@@ -101,6 +101,7 @@ import { WorkspaceIndicator } from "../recovered/features/window-chrome/workspac
 import { applyRootShellTheme, applyRootShellZoomFactor, shouldRefreshRootShellOnFocus } from "../recovered/features/window-chrome/model";
 import { createRuntimeThemeInstaller, RUNTIME_THEME_CLASS, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
 import { CommandPalette } from "./CommandPalette";
+import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
 import { AgentDeleteConfirmation, type AgentDeleteTarget } from "./AgentDeleteConfirmation";
 import type { CommandPaletteCommand } from "./command-palette-model";
 import { createCommandPaletteMessageProvider, type CommandPaletteMessage } from "./command-palette-message-provider";
@@ -988,6 +989,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [pluginQuery, setPluginQuery] = useState("");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [newAgentDialogOpen, setNewAgentDialogOpen] = useState(false);
+  const [forwardTarget, setForwardTarget] = useState<{ sourceConversationId: string; message: TranscriptMessage } | null>(null);
   const [newAgentName, setNewAgentName] = useState("New chat");
   const [newAgentDescription, setNewAgentDescription] = useState("");
   const [newAgentAvatarShape, setNewAgentAvatarShape] = useState<(typeof AVATAR_SHAPES)[number]>("wedge");
@@ -1125,6 +1127,68 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   useStrictModeSafeDisposal(pluginAuthAdapter);
   useStrictModeSafeDisposal(replyThreadController);
   useStrictModeSafeDisposal(hiddenChatsMutationController);
+
+  const searchForwardRecipients = useCallback(async (input: {
+    sourceConversationId: string;
+    query: string;
+    limit: number;
+  }): Promise<readonly ForwardRecipient[]> => {
+    if (client == null) throw new Error("coordinator is unavailable for recipient search");
+    const raw = await client.call("searchHumanRecipients", input);
+    return projectHumanConversations(raw).map((conversation) => ({
+      id: conversation.id,
+      name: conversation.name,
+    }));
+  }, [client]);
+
+  const forwardHumanMessage = useCallback(async (input: {
+    sourceConversationId: string;
+    sourceEntryId: string;
+    destinationConversationIds: readonly string[];
+    clientNonce: string;
+    dropSenderNames: boolean;
+    dropCaptions: boolean;
+  }): Promise<readonly ForwardSettlement[]> => {
+    if (client == null) throw new Error("coordinator is unavailable for forwarding");
+    const result = await client.call("forwardHumanMessage", input);
+    if (result == null || typeof result !== "object" || !("destinations" in result) || !Array.isArray(result.destinations)) {
+      throw new Error("forwardHumanMessage returned an invalid settlement");
+    }
+    return result.destinations.map((candidate) => {
+      if (candidate == null || typeof candidate !== "object") {
+        throw new Error("forwardHumanMessage returned an invalid destination settlement");
+      }
+      const conversationId = "conversationId" in candidate && typeof candidate.conversationId === "string"
+        ? candidate.conversationId
+        : null;
+      const status = "status" in candidate && (candidate.status === "sent" || candidate.status === "failed")
+        ? candidate.status
+        : null;
+      if (conversationId == null || status == null) {
+        throw new Error("forwardHumanMessage returned an invalid destination settlement");
+      }
+      return {
+        conversationId,
+        status,
+        ...("error" in candidate && typeof candidate.error === "string" ? { error: candidate.error } : {}),
+      };
+    });
+  }, [client]);
+
+  const settleForward = useCallback((settlement: readonly ForwardSettlement[]) => {
+    const sent = settlement.filter((item) => item.status === "sent").length;
+    const failed = settlement.length - sent;
+    setNotice(failed === 0
+      ? `Forwarded to ${sent} conversation${sent === 1 ? "" : "s"}.`
+      : `Forwarded to ${sent}; ${failed} destination${failed === 1 ? "" : "s"} still need attention.`);
+    if (client == null) return;
+    void client.call("listHumanConversations").then((value) => {
+      const projected = projectHumanConversations(value);
+      humanConversationsRef.current = projected;
+      setHumanConversations(projected);
+      reconcileCompleteRosterSelection([...projected, ...agentsRef.current].sort((left, right) => right.updatedAt - left.updatedAt));
+    }).catch(() => {});
+  }, [client, reconcileCompleteRosterSelection]);
 
   const sendComposerPrompt = async (submission: ComposerSubmission): Promise<void> => {
     if (client == null) throw new Error("coordinator is unavailable for sendPrompt");
@@ -4088,6 +4152,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 onCancelQueuedSend={cancelQueuedSend}
                 onDeleteFailedSend={removeTranscriptMessage}
                 onOpenReply={(targetId) => replyThreadController.navigate(targetId)}
+                onForward={activeIsHuman ? (entry) => setForwardTarget({ sourceConversationId: activeAgent.id, message: entry }) : undefined}
                 onReply={(entry) => { replyThreadController.selectReply(entry.id); }}
                 onStartThread={activeIsHuman ? undefined : (entry) => { replyThreadController.navigate(entry.id); }}
                 onResendFailedSend={(entry) => void resendFailedSend(entry)}
@@ -4114,6 +4179,16 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </div>
         </div>}
       </div>
+
+      <ForwardMessageDialog
+        forwardMessage={forwardHumanMessage}
+        message={forwardTarget?.message ?? null}
+        onClose={() => setForwardTarget(null)}
+        onSettled={settleForward}
+        open={forwardTarget != null}
+        searchRecipients={searchForwardRecipients}
+        sourceConversationId={forwardTarget?.sourceConversationId ?? null}
+      />
 
       <OverlayDialog
         className="sand-new-agent-dialog"
