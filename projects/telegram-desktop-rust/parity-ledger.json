@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
-  "target_commit": "df02b3bd1146bac38fcf41a37c819d0662851890",
+  "target_commit": "b598bd9f98903f245842ac81547bd6d5bfdf0acc",
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15784,
+    "unread": 15782,
     "omitted": 0,
-    "responsibilities_total": 7,
+    "responsibilities_total": 8,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -1665,6 +1665,228 @@
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-topic destination semantics using canonical Fabushi Conversation/Community/Topic owners.",
       "reviewer": null,
       "notes": "This row closes only native topic existence/closed/hidden eligibility at the forward boundary. Nested picker lifecycle/destruction, saved-message sublists/community-child selection, UI evidence, and exact-head runtime evidence remain open, so global unknown does not decrement."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+      "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
+      "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
+      "source_kind": "source",
+      "module_id": "tdesktop.boxes.share",
+      "responsibility_id": "TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001",
+      "source_symbols": [
+        "ShareBox::submit",
+        "ShareBox::DefaultForwardCallback",
+        "Api::SendOptions"
+      ],
+      "capability_ids": [
+        "CAP-MESSAGE-FORWARD-IDEMPOTENT-SETTLEMENT"
+      ],
+      "dependency_ids": [
+        "ClientCommand::ForwardMessage",
+        "MessagingService::idempotent_send_replay",
+        "stable_message_id",
+        "Message.delivery_state"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/share-box-complete-read.md",
+      "behavior_contract": "A repeated forward submission carrying the same authenticated actor and client_message_id must replay the already-created canonical message instead of creating a duplicate; reusing that id with conflicting forward options or provenance must fail closed.",
+      "state_machine": "forward request -> actor-scoped stable message identity -> existing destination lookup -> exact replay compatibility check -> MessageChanged replay OR IdempotencyConflict OR first execution -> canonical ForwardMessage queue/ack lifecycle.",
+      "side_effects": [
+        "Prevents duplicate destination messages on retry",
+        "Returns the existing canonical message for compatible replay",
+        "Rejects conflicting reuse of a forward idempotency key"
+      ],
+      "failure_cases": [
+        "Duplicate forward creates a second message",
+        "Retry degrades to duplicate-message engine error instead of idempotent replay",
+        "Same client_message_id silently accepts conflicting schedule/silent/thread/source provenance"
+      ],
+      "ui_disposition": "No ShareBox-specific UI owner; duplicate-submit protection is native canonical messaging behavior and must compose with the existing picker/composer.",
+      "non_ui_responsibilities": [
+        "Actor-scoped forward idempotency key",
+        "Compatible replay",
+        "Conflicting replay rejection"
+      ],
+      "platform_delta": "Telegram forward submission behavior is represented by Fabushi canonical client_message_id and MessagingService replay semantics.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/message.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "existing_owner": "Fabushi canonical MessagingService idempotency boundary",
+      "rejected_existing_owners": [
+        "ShareBox-local duplicate guard: would not protect protocol retries or other clients",
+        "Renderer debounce only: cannot provide durable idempotency"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/tests/service_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "stable_message_id",
+        "MessagingService::idempotent_send_replay",
+        "MessagingService::project_command"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Idempotency is canonical message service state and must be enforced below the renderer.",
+      "command_event_contracts": [
+        "ClientCommand::ForwardMessage + authenticated actor + client_message_id -> stable_message_id -> compatible existing MessageChanged replay or IdempotencyConflict"
+      ],
+      "state_owner": "Canonical destination Message keyed by actor-scoped stable client message identity",
+      "lifecycle_owner": "MessagingService request/replay lifecycle",
+      "persistence_and_restart": "The replay lookup uses persisted canonical Message state, so compatible retries remain idempotent after service reload.",
+      "concurrency_and_cancellation": "Actor-scoped stable identity collapses duplicate submissions onto one canonical destination key; conflicting payload reuse fails closed before executing another forward.",
+      "security_boundary": "Authenticated actor participates in the stable key and existing sender/provenance/options are rechecked before replay.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Current-head Rust GitHub Actions evidence is pending",
+        "Multi-recipient fan-out settlement and forward privacy option semantics remain open"
+      ],
+      "production_entrypoints": [
+        "ClientCommand::ForwardMessage -> MessagingService::idempotent_send_replay -> canonical forward execution/replay"
+      ],
+      "production_evidence": [
+        "commit:b598bd9f98903f245842ac81547bd6d5bfdf0acc",
+        "path:native/mahayana-messaging/src/service.rs#idempotent_send_replay"
+      ],
+      "test_evidence": [
+        "commit:e4494def67715379e619ba5882078347c00c08e8",
+        "native/mahayana-messaging/tests/service_contract.rs#forward_retries_are_idempotent_and_option_conflicts_fail_closed"
+      ],
+      "target_commit": "b598bd9f98903f245842ac81547bd6d5bfdf0acc",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical Conversation messaging domain",
+      "composition_slot": "Forward message command settlement",
+      "capability_component": "Canonical forward idempotent settlement",
+      "variation_axes": [
+        "first-submit",
+        "compatible-retry",
+        "conflicting-retry",
+        "legacy-local-id-replay"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Message",
+        "Canonical MessagingService client_message_id idempotency"
+      ],
+      "duplicate_root_check": "No ShareBox/Telegram duplicate-submit store or second message identity owner was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation action",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace / canonical picker",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Forward selected message(s)",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical message action",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Destination authorization remains independently fail-closed before first execution; replay cannot broaden authorization.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "No new UI.",
+      "accessibility_contract": "No new UI.",
+      "keyboard_contract": "No new UI.",
+      "state_continuity_contract": "Persisted canonical Message identity is the replay anchor across request retries/reload.",
+      "ui_acceptance_scenarios": [
+        "Double-submit/retry does not create a second forwarded message",
+        "Reusing the same client message id with changed forward options is rejected"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "Message actions"
+      ],
+      "visual_state_matrix": [],
+      "density_contract": "No new UI.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No new avatar behavior.",
+      "content_copy_keys": [],
+      "motion_contract": "No new motion.",
+      "reduced_motion_contract": "No new motion.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SHARE-FORWARD-IDEMPOTENCY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-FORWARD-RETRY-ONE-MESSAGE-001",
+        "INV-TDRP-FORWARD-ID-CONFLICT-FAIL-CLOSED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "PROP-TDRP-FORWARD-IDEMPOTENCY-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-FORWARD-IDEMPOTENCY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-FORWARD-IDEMPOTENCY-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-FORWARD-RETRY-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-FORWARD-DUPLICATE-SUBMIT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-FORWARD-IDEMPOTENCY-ACTOR-SCOPE-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-FORWARD-DUPLICATE-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "forward-idempotent-replay"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox forward submission semantics using canonical Fabushi MessagingService/Message identity owners.",
+      "reviewer": null,
+      "notes": "This row closes only single-destination forward replay/conflict behavior. Multi-recipient fan-out settlement, privacy options, paid-send revalidation, UI duplicate-click fencing, and exact-head runtime evidence remain open, so global unknown does not decrement."
     }
   ]
 }
