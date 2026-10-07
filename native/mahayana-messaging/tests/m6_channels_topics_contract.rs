@@ -512,7 +512,7 @@ fn channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped() 
     service
         .handle(
             ClientEnvelope::new(
-                context("human:subscriber", "topic-read"),
+                context("human:subscriber", "topic-read-first"),
                 ClientCommand::MarkTopicRead {
                     conversation_id: ConversationId::new("channel:m6"),
                     topic_id: "study".into(),
@@ -522,10 +522,10 @@ fn channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped() 
             16,
         )
         .unwrap();
-    let topic_after_read = service
+    let topic_after_first_read = service
         .handle(
             ClientEnvelope::new(
-                context("human:subscriber", "topic-sync-after-read"),
+                context("human:subscriber", "topic-sync-after-first-read"),
                 ClientCommand::Sync {
                     cursor: None,
                     limit: 100,
@@ -535,7 +535,48 @@ fn channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped() 
         )
         .unwrap();
     assert!(matches!(
-        sync_batch(&topic_after_read),
+        sync_batch(&topic_after_first_read),
+        ServerEvent::SyncBatch {
+            conversations,
+            topic_drafts,
+            ..
+        } if conversations.iter().any(|conversation| {
+            conversation.id == ConversationId::new("channel:m6")
+                && conversation.topics.iter().any(|topic| {
+                    // Reading the older topic post advances the actor-scoped cursor
+                    // only through that message; the later same-topic forward remains unread.
+                    topic.id == "study" && topic.unread_count == 1
+                })
+        }) && topic_drafts.iter().any(|draft| draft.topic_id == "study")
+    ));
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:subscriber", "topic-read-latest"),
+                ClientCommand::MarkTopicRead {
+                    conversation_id: ConversationId::new("channel:m6"),
+                    topic_id: "study".into(),
+                    message_id: forwarded_topic.id,
+                },
+            ),
+            18,
+        )
+        .unwrap();
+    let topic_after_latest_read = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:subscriber", "topic-sync-after-latest-read"),
+                ClientCommand::Sync {
+                    cursor: None,
+                    limit: 100,
+                },
+            ),
+            19,
+        )
+        .unwrap();
+    assert!(matches!(
+        sync_batch(&topic_after_latest_read),
         ServerEvent::SyncBatch {
             conversations,
             topic_drafts,
