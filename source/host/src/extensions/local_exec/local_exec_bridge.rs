@@ -15,7 +15,7 @@ pub const SAND_LOCAL_EXEC_LIVENESS_WINDOW_MS: u64 = 30_000;
 pub const SAND_LOCAL_EXEC_RESPONSE_TIMEOUT_MS: u64 = 10_000;
 pub const DEFAULT_SAND_COMPUTER_ID: &str = "this-computer";
 pub const SAND_NO_LOCAL_MACHINE_MESSAGE: &str =
-    "Your local machine isn't connected right now (the Grok Bot desktop app must be open and online to run commands on it). Try again once it's reachable.";
+    "Your local machine isn't connected right now (the Fabushi desktop app must be open and online to run commands on it). Try again once it's reachable.";
 const COMPUTER_UNAVAILABLE_SUFFIX: &str =
     "is unavailable — it looks disconnected. Reconnect it (or focus the computer you want commands to run on) and try again.";
 

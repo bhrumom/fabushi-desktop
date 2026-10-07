@@ -8,14 +8,12 @@ export interface AccountMenuProps {
   accountLabel: string;
   bridge: Pick<DesktopBridge, "cursorAccount">;
   displayName: string;
-  experimentsSnapshot: unknown;
   isOpen: boolean;
   updatePill?: ReactNode;
   onError(message: string): void;
   onOpenAbout(): void;
   onOpenFeedback(): void;
   onOpenHelp(): void;
-  onOpenIos(): void;
   onOpenSettings(): void;
   onOpenUsage(): void;
   onOpenChange(open: boolean): void;
@@ -33,15 +31,7 @@ export interface AccountMenuProps {
     onDemand: string;
     spendThisCycle: string;
     changeLimit: string;
-    ios: string;
   };
-}
-
-function isIosLinkEnabled(snapshot: unknown): boolean {
-  if (typeof snapshot !== "object" || snapshot == null || Array.isArray(snapshot)) return false;
-  const gates = (snapshot as { featureGates?: unknown }).featureGates;
-  return typeof gates === "object" && gates != null && !Array.isArray(gates)
-    && (gates as { sand_get_grok_bot_ios?: unknown }).sand_get_grok_bot_ios === true;
 }
 
 function percentLabel(value: number | null): string {
@@ -227,7 +217,6 @@ export function AccountMenu({
   onOpenAbout,
   onOpenFeedback,
   onOpenHelp,
-  onOpenIos,
   onOpenSettings,
   onOpenUsage,
   onOpenChange,
@@ -286,7 +275,6 @@ export function AccountMenu({
     onOpenChange(false);
     action();
   };
-  const showIosLink = isIosLinkEnabled(experimentsSnapshot);
   const usageNow = Date.now();
   const usageIdentity = accountUsageIdentity(account);
   const usageSummary = usageSnapshot?.identity === usageIdentity ? usageSnapshot.summary : null;
@@ -315,7 +303,6 @@ export function AccountMenu({
               <SandMenuItem index={nextMenuIndex()} onSelect={() => closeAnd(onOpenUsage)}>{labels.changeLimit}</SandMenuItem>
             </div> : null}
           </> : null}
-          {showIosLink ? <SandMenuItem index={nextMenuIndex()} onSelect={() => closeAnd(onOpenIos)}>{labels.ios}</SandMenuItem> : null}
           <SandMenuItem index={nextMenuIndex()} onSelect={() => closeAnd(onOpenSettings)}>{labels.settings}</SandMenuItem>
           <SandMenuItem index={nextMenuIndex()} onSelect={() => closeAnd(onOpenAbout)}>{labels.about}</SandMenuItem>
           <SandMenuItem index={nextMenuIndex()} onSelect={() => closeAnd(onOpenHelp)}>{labels.helpCenter}</SandMenuItem>

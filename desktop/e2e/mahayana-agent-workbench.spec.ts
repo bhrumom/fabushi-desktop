@@ -578,7 +578,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     // Exercise the shipping recovered-Grok sign-in surface instead of the
     // retired DesktopAuthBoundary. Its button calls cursorAccount.login(),
     // which owns the Electron/main auth contract used by the production shell.
-    const signInSurface = page.getByRole('main', { name: 'Grok Bot', exact: true });
+    const signInSurface = page.getByRole('main', { name: 'Fabushi', exact: true });
     await expect(signInSurface).toBeVisible({ timeout: 15_000 });
     await signInSurface.getByRole('button', { name: 'Sign in', exact: true }).click();
   }
@@ -620,7 +620,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     return typeof candidate.desktop?.cursorAccount?.getStatus === 'function';
   }, { timeout: 15_000 });
   await expect.poll(accountKind, { timeout: 10_000 }).toBe('logged-in');
-  await expect(page.getByRole('main', { name: 'Grok Bot', exact: true })).toBeHidden({ timeout: 10_000 });
+  await expect(page.getByRole('main', { name: 'Fabushi', exact: true })).toBeHidden({ timeout: 10_000 });
 
   const fatal = page.locator('.sand-error-boundary--app');
   if (await fatal.count()) {
@@ -994,7 +994,7 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
 
     await page.getByRole('button', { name: 'Account', exact: true }).click();
     await page.getByText('Settings', { exact: true }).click();
-    const settings = page.getByRole('dialog', { name: 'Grok Bot settings' });
+    const settings = page.getByRole('dialog', { name: 'Fabushi settings' });
     await expect(settings).toBeVisible();
     await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
     await expect(settings.getByText('Language & Accessibility', { exact: true })).toBeVisible();
@@ -1048,7 +1048,7 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
     expect(updateState.currentVersion.length).toBeGreaterThan(0);
     expect(['stable', 'nightly', 'dogfood']).toContain(updateState.currentTrack);
     expect(['disabled', 'idle', 'checking', 'available', 'downloading', 'staging', 'ready']).toContain(updateState.stateType);
-    await expect(settings.getByText(`Grok Bot ${updateState.currentVersion}`, { exact: true })).toBeVisible();
+    await expect(settings.getByText(`Fabushi ${updateState.currentVersion}`, { exact: true })).toBeVisible();
     await expect(settings.locator('output[aria-live="polite"]')).toBeVisible();
 
     await settings.getByRole('button', { name: 'General', exact: true }).click();
@@ -1060,7 +1060,7 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
     await page.keyboard.press('Enter');
 
     const localizedSettings = page.locator('.sand-settings-dialog');
-    await expect(localizedSettings).toHaveAttribute('aria-label', 'إعدادات Grok Bot');
+    await expect(localizedSettings).toHaveAttribute('aria-label', 'إعدادات Fabushi');
     await expect(localizedSettings.getByRole('navigation', { name: 'أقسام الإعدادات' })).toBeVisible();
     await expect(localizedSettings.getByRole('heading', { name: 'عام', exact: true })).toBeVisible();
     await expect(localizedSettings.getByText('اللغة وإمكانية الوصول', { exact: true })).toBeVisible();
@@ -1224,7 +1224,7 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
     await page.getByRole('button', { name: 'Account', exact: true }).click();
     await page.getByText('Settings', { exact: true }).click();
     const restoredSettings = page.locator('.sand-settings-dialog');
-    await expect(restoredSettings).toHaveAttribute('aria-label', 'إعدادات Grok Bot');
+    await expect(restoredSettings).toHaveAttribute('aria-label', 'إعدادات Fabushi');
     const firstSettingsNavigationItem = restoredSettings.getByRole('button', { name: 'عام', exact: true });
     await firstSettingsNavigationItem.focus();
     await page.keyboard.press('Shift+Tab');

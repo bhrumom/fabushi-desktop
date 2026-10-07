@@ -57,7 +57,7 @@ pub fn shell_location_phrase(surface: &str) -> &'static str {
     if surface == "host_shell" {
         "on your local computer"
     } else {
-        "on Grok Bot's computer"
+        "on Fabushi's computer"
     }
 }
 
@@ -65,7 +65,7 @@ pub fn generic_sand_shell_auto_review_summary(surface: &str) -> &'static str {
     if surface == "host_shell" {
         "Run a command on your local computer"
     } else {
-        "Run a command on Grok Bot's computer"
+        "Run a command on Fabushi's computer"
     }
 }
 
@@ -408,7 +408,7 @@ pub fn summarize_sand_subagent_action(action: &str, prompt: &str) -> String {
     if action == "steer" {
         format!("Send a follow-up to a running task: “{instruction}”")
     } else {
-        format!("Run a task on Grok Bot's computer: “{instruction}”")
+        format!("Run a task on Fabushi's computer: “{instruction}”")
     }
 }
 
@@ -485,7 +485,7 @@ pub fn summarize_sand_browser_auto_review_action(args: &SandBrowserSummaryArgs) 
                 summarize("Open a new browser tab".into())
             }
         }
-        op => compact(&format!("Browser {op} on Grok Bot's computer"), 340),
+        op => compact(&format!("Browser {op} on Fabushi's computer"), 340),
     }
 }
 
@@ -509,7 +509,7 @@ pub fn summarize_typed_text(text: &str) -> String {
 }
 
 pub fn summarize_sand_computer_typed_text(text: &str) -> String {
-    format!("{} on Grok Bot's computer", summarize_typed_text(text))
+    format!("{} on Fabushi's computer", summarize_typed_text(text))
 }
 
 fn normalize_whitespace(value: &str) -> String {

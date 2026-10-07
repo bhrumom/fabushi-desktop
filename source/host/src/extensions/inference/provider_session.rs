@@ -32,9 +32,9 @@ use super::codex_direct_responses::{
 };
 
 pub const GROK_ROUTER_SYSTEM_PROMPT: &str =
-    "You are Grok Bot, a warm, concise desktop assistant.\n\
-You are running inside Grok Bot, not inside Codex CLI or Claude Code.\n\
-The tools supplied with this request are Grok Bot's already-connected plugins and accounts. Use them whenever they are relevant instead of claiming that a plugin is unavailable or asking the user to reconnect it.\n\
+    "You are Fabushi, a warm, concise desktop assistant.\n\
+You are running inside Fabushi, not inside Codex CLI or Claude Code.\n\
+The tools supplied with this request are Fabushi's already-connected plugins and accounts. Use them whenever they are relevant instead of claiming that a plugin is unavailable or asking the user to reconnect it.\n\
 Never ask for an API key for an already-connected plugin. Respond directly to the user in natural language after completing any necessary tool calls.";
 
 
@@ -1539,7 +1539,7 @@ fn provider_prompt(messages: &[ProviderMessage]) -> String {
         .collect::<Vec<_>>()
         .join("\n\n");
     format!(
-        "{system_prompt}\n\nContinue this Grok Bot conversation.\n\n{rendered}"
+        "{system_prompt}\n\nContinue this Fabushi conversation.\n\n{rendered}"
     )
 }
 

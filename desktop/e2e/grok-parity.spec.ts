@@ -141,7 +141,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     // Exercise the shipping recovered-Grok sign-in surface instead of the
     // retired DesktopAuthBoundary. Its button calls cursorAccount.login(),
     // which owns the Electron/main auth contract used by the production shell.
-    const signInSurface = page.getByRole('main', { name: 'Grok Bot', exact: true });
+    const signInSurface = page.getByRole('main', { name: 'Fabushi', exact: true });
     await expect(signInSurface).toBeVisible({ timeout: 15_000 });
     await signInSurface.getByRole('button', { name: 'Sign in', exact: true }).click();
   }
@@ -183,7 +183,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     return typeof candidate.desktop?.cursorAccount?.getStatus === 'function';
   }, { timeout: 15_000 });
   await expect.poll(accountKind, { timeout: 10_000 }).toBe('logged-in');
-  await expect(page.getByRole('main', { name: 'Grok Bot', exact: true })).toBeHidden({ timeout: 10_000 });
+  await expect(page.getByRole('main', { name: 'Fabushi', exact: true })).toBeHidden({ timeout: 10_000 });
 
   const fatal = page.locator('.sand-error-boundary--app');
   if (await fatal.count()) {
@@ -1346,7 +1346,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
 
       // Computer is a sibling info pane in the recovered Grok header. Switching
       // to it closes Agent Settings rather than nesting another legacy overlay.
-      await page.getByRole('button', { name: "Grok Bot's Computer" }).click();
+      await page.getByRole('button', { name: "Fabushi's Computer" }).click();
       await expect(settings).toHaveCount(0);
       const details = page.getByRole('complementary', { name: 'Conversation details' });
       await expect(details).toBeVisible();

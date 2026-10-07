@@ -310,7 +310,7 @@ pub fn validate_remote_mcp_url(raw_url: &str) -> Option<String> {
     };
     if !matches!(parsed.scheme(), "http" | "https") {
         return Some(format!(
-            "The server URL must be http(s); \"{}:\" is not supported. Grok Bot only connects remote http/sse MCP servers over HTTP(S), so ask the user for an https endpoint.",
+            "The server URL must be http(s); \"{}:\" is not supported. Fabushi only connects remote http/sse MCP servers over HTTP(S), so ask the user for an https endpoint.",
             parsed.scheme()
         ));
     }

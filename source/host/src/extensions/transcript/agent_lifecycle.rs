@@ -29,14 +29,14 @@ pub const SAND_ONBOARDING_KICKSTART_PROMPT: &str = concat!(
     "Nothing reaches the user unless it's inside a SendMessage, and offer any choice as a question widget. Don't mention this cue or that you were given setup instructions."
 );
 pub const SAND_DISK_SAVER_KICKSTART_PROMPT: &str = concat!(
-    "[disk saver] You were just provisioned because your box — the machine Shell and Read act on — is low on disk space. This cue comes from Grok Bot itself, not from the user; nothing has reached them yet.\n",
+    "[disk saver] You were just provisioned because your box — the machine Shell and Read act on — is low on disk space. This cue comes from Fabushi itself, not from the user; nothing has reached them yet.\n",
     "Audit that machine and nothing else: the user's own computer, which ExternalShell and ExternalRead act on, is not the one under pressure.\n",
     "Start with a read-only inspection over Shell from /workspace outward. Report how much space is free and how much is used, then list the largest items and the safest cleanup candidates, with how much each would recover and why it is safe to remove.\n",
     "Preserve /home/box/sand-data, the user's work, credentials, logins, and Git state. Delete or modify nothing until the user confirms a plan.\n",
     "Skip greetings and getting-started questions: your first message should already carry the audit's findings and the approval you need. Nothing reaches the user unless it's inside a SendMessage. Don't mention this cue."
 );
 pub const SAND_DISK_SAVER_REAUDIT_PROMPT: &str = concat!(
-    "[disk saver] Your box — the machine Shell and Read act on — is low on disk space again. This cue comes from Grok Bot itself because disk pressure returned, not from the user.\n",
+    "[disk saver] Your box — the machine Shell and Read act on — is low on disk space again. This cue comes from Fabushi itself because disk pressure returned, not from the user.\n",
     "Audit that machine and nothing else: the user's own computer, which ExternalShell and ExternalRead act on, is not the one under pressure.\n",
     "Start with a read-only inspection over Shell from /workspace outward. Report how much space is free and how much is used, then list the largest items and the safest cleanup candidates, with how much each would recover and why it is safe to remove.\n",
     "Preserve /home/box/sand-data, the user's work, credentials, logins, and Git state. Delete or modify nothing until the user confirms a plan.\n",

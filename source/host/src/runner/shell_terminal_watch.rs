@@ -214,7 +214,7 @@ impl ShellTerminalPollState {
         ShellWatchSettlement {
             status: ShellWatchStatus::Error,
             detail: Some(
-                "Grok Bot is no longer allowed to read this command's output on the user's computer, so its completion cannot be observed. The command keeps running; ask the user to approve reading its output file for the result."
+                "Fabushi is no longer allowed to read this command's output on the user's computer, so its completion cannot be observed. The command keeps running; ask the user to approve reading its output file for the result."
                     .to_string(),
             ),
             output_path: self.output_path.clone(),

@@ -5,7 +5,7 @@ use thiserror::Error;
 pub const SAND_BOX_NOT_READY_MESSAGE: &str =
     "The computer is still starting up (downloading its image or booting). Try again in a moment.";
 pub const SAND_BOX_NOT_RESPONDING_MESSAGE: &str =
-    "The computer isn't responding — it may be wedged. Try again in a moment, or recover it from Settings → Updates → Update Grok Bot's Computer.";
+    "The computer isn't responding — it may be wedged. Try again in a moment, or recover it from Settings → Updates → Update Fabushi's Computer.";
 pub const SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE: &str =
     "Every desktop monitor on the shared computer is in use right now, so this agent can't get its own screen. Wait a moment and try again — one frees up when another agent or parallel computer-use subagent finishes.";
 

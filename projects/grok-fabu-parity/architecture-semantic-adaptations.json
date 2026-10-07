@@ -5,7 +5,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "d121152802e2169c737d697a53f23a47db0bf67e",
+      "targetBlobSha": "72801fa5f3ed830322518cfb0af5cfcc274241bd",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx"
@@ -327,7 +327,7 @@
       "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "09d8600ee4040db2c5709da8b2f822d9e25de0d9",
+      "targetBlobSha": "0e12efd790bdfb60bb54d07048c80547c3581080",
       "behavioralEvidence": [
         "source/electron-main/coordinator/coordinator-executors.ts",
         "source/electron-main/coordinator/production-provider.ts",
@@ -451,7 +451,7 @@
       "referencePath": "source/shared/node/mcp/tools-discovery.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "103d530e7fdae13a4b2b56c52aac8693b633a1d4",
+      "targetBlobSha": "ae33a1211849a163873648de0018f03b5d6f06c4",
       "behavioralEvidence": [
         "source/shared/node/mcp/tools-discovery.ts",
         "source/shared/node/mcp/mcp-discovery-settlement.ts",

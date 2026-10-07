@@ -114,7 +114,7 @@ impl<AgentBoxType, UserBoxType> FileTransferController<AgentBoxType, UserBoxType
         };
         match requested {
             None => Err(BoxTransferError(format!(
-                "No computer is connected right now (the Grok Bot desktop app must be open and online to transfer files). Connected computers: {known}."
+                "No computer is connected right now (the Fabushi desktop app must be open and online to transfer files). Connected computers: {known}."
             ))),
             Some(id) => Err(BoxTransferError(format!(
                 "Unknown computer \"{id}\". Connected computers: {known}."

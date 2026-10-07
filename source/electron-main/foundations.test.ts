@@ -231,9 +231,12 @@ test("window shortcut classifier matches platform chords", () => {
 
 
 test("process redaction keeps only Grok helper labels and hashes every original name", () => {
-  const helper = sanitizeProcessName("/Applications/Grok Bot Helper (GPU)");
-  assert.equal(helper.name, "Grok Bot Helper (GPU)");
-  assert.equal(helper.nameHash, hashProcessName("/Applications/Grok Bot Helper (GPU)"));
+  const helper = sanitizeProcessName("/Applications/Fabushi Helper (GPU)");
+  assert.equal(helper.name, "Fabushi Helper (GPU)");
+  assert.equal(helper.nameHash, hashProcessName("/Applications/Fabushi Helper (GPU)"));
+  const legacyHelper = sanitizeProcessName("/Applications/Grok Bot Helper (GPU)");
+  assert.equal(legacyHelper.name, "Grok Bot Helper (GPU)");
+  assert.equal(legacyHelper.nameHash, hashProcessName("/Applications/Grok Bot Helper (GPU)"));
   const foreign = sanitizeProcessName("/tmp/secret-app --token=abc");
   assert.equal(foreign.name, "secret-app");
   assert.equal(foreign.nameHash.length, 64);
@@ -367,7 +370,7 @@ test("box recreate commands preserve tracked, untrackable, fallback and rejected
   assert.deepEqual(await unavailable.recreateComputer({}), { status: "dev-fallback" });
   assert.deepEqual(await unavailable.forceRecreateComputer(), {
     status: "rejected",
-    reason: "Reset Grok Bot's Computer is unavailable without a backend connection.",
+    reason: "Reset Fabushi's Computer is unavailable without a backend connection.",
   });
 });
 
