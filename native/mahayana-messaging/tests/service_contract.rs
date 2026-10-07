@@ -200,7 +200,7 @@ fn forward_retries_are_idempotent_and_option_conflicts_fail_closed() {
                 context("human:forwarder"),
                 ClientCommand::ForwardMessage {
                     source_conversation_id: ConversationId::new("chat:source"),
-                    message_id: source_message_id,
+                    message_id: source_message_id.clone(),
                     destination_conversation_id: ConversationId::new("chat:destination"),
                     client_message_id: ClientMessageId("client:forward-idempotent".into()),
                     thread_root_message_id: None,
