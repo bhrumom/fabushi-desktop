@@ -31,7 +31,7 @@ use super::codex_direct_responses::{
     run_codex_direct_responses_with_lifecycle_and_tool_step_reminder,
 };
 
-pub const GROK_ROUTER_SYSTEM_PROMPT: &str =
+pub const FABUSHI_ROUTER_SYSTEM_PROMPT: &str =
     "You are Fabushi, a warm, concise desktop assistant.\n\
 You are running inside Fabushi, not inside Codex CLI or Claude Code.\n\
 The tools supplied with this request are Fabushi's already-connected plugins and accounts. Use them whenever they are relevant instead of claiming that a plugin is unavailable or asking the user to reconnect it.\n\
@@ -46,9 +46,9 @@ fn assembled_provider_system_prompt(messages: &[ProviderMessage]) -> String {
         .filter(|content| !content.is_empty())
         .collect::<Vec<_>>();
     if additions.is_empty() {
-        GROK_ROUTER_SYSTEM_PROMPT.to_string()
+        FABUSHI_ROUTER_SYSTEM_PROMPT.to_string()
     } else {
-        format!("{GROK_ROUTER_SYSTEM_PROMPT}\n\n{}", additions.join("\n\n"))
+        format!("{FABUSHI_ROUTER_SYSTEM_PROMPT}\n\n{}", additions.join("\n\n"))
     }
 }
 
@@ -1250,9 +1250,13 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let mut transport = CodexHttpTransport::new_fabushi()?;
-    let system_prompt = assembled_provider_system_prompt(messages);
+    let model = configured_fabushi_model();
+    let system_prompt = format!(
+        "{}\n\nRuntime inference metadata: provider=Fabushi first-party Responses API; model={model}. If the user asks which provider or model is active, answer from this runtime metadata and do not infer a different vendor identity.",
+        assembled_provider_system_prompt(messages),
+    );
     let mut request = CodexDirectOptions::new(
-        configured_fabushi_model(),
+        model,
         system_prompt,
         messages
             .iter()
@@ -2182,7 +2186,7 @@ fn run_claude_code_provider_text(
             &path,
             serde_json::to_vec(&json!({
                 "mcpServers": {
-                    "grok_bot_plugins": {
+                    "fabushi_plugins": {
                         "type": "http",
                         "url": url
                     }
@@ -2196,7 +2200,7 @@ fn run_claude_code_provider_text(
             .arg(&path)
             .arg("--strict-mcp-config")
             .arg("--allowedTools")
-            .arg("mcp__grok_bot_plugins__*");
+            .arg("mcp__fabushi_plugins__*");
         mcp_config_path = Some(path);
     }
     if let Some(model) = env::var("SAND_CLAUDE_MODEL")
@@ -2321,13 +2325,19 @@ fn run_claude_code_provider_text(
 #[cfg(test)]
 mod tests {
     use super::{
-        RoutedProvider, await_cancelable_provider_io, jwt_audience,
+        FABUSHI_ROUTER_SYSTEM_PROMPT, RoutedProvider, await_cancelable_provider_io, jwt_audience,
         provider_io_runtime, responses_http_client, toml_string_setting,
     };
     use base64::Engine;
     use base64::engine::general_purpose::URL_SAFE_NO_PAD;
     use std::cell::Cell;
     use std::future::pending;
+
+    #[test]
+    fn fabushi_router_prompt_declares_product_identity() {
+        assert!(FABUSHI_ROUTER_SYSTEM_PROMPT.contains("You are Fabushi"));
+        assert!(FABUSHI_ROUTER_SYSTEM_PROMPT.contains("Fabushi's already-connected plugins"));
+    }
 
     #[test]
     fn parses_reference_provider_names() {
