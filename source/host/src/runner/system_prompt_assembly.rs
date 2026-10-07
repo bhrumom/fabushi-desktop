@@ -36,7 +36,16 @@ pub fn render_agent_profile_section(
     profile: &AgentProfileForPrompt,
     shared_room: bool,
 ) -> Option<String> {
-    let title = profile.name.trim();
+    let configured_title = profile.name.trim();
+    // Grok and Grok Bot were legacy product defaults, not user-authored agent names.
+    // Keep those defaults aligned with the Fabushi product identity in assistant-facing prompts.
+    let title = if configured_title.eq_ignore_ascii_case("grok")
+        || configured_title.eq_ignore_ascii_case("grok bot")
+    {
+        "Fabushi"
+    } else {
+        configured_title
+    };
     let description = profile.description.trim();
     let mut lines = Vec::new();
     if !title.is_empty() {
