@@ -7,9 +7,9 @@
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15750,
+    "unread": 15748,
     "omitted": 0,
-    "responsibilities_total": 21,
+    "responsibilities_total": 24,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -5168,6 +5168,840 @@
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blob; Qt widget/painter code is not retained and legal/source provenance remains recorded.",
+      "reviewer": null,
+      "notes": "Read-complete and mapped only; no implemented/verified claim."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_article.h",
+      "source_blob_sha": "ed6c7afd9f15330e4ed1f254c4bcaf8786344d6b",
+      "source_kind": "header",
+      "module_id": "tdesktop.iv.markdown.article",
+      "responsibility_id": "TDRP-R9-IV-ARTICLE-CONTRACT-001",
+      "source_symbols": [
+        "MarkdownArticle",
+        "MarkdownArticleSelection",
+        "MarkdownArticleSearchSource",
+        "MarkdownArticleHitTestResult",
+        "MarkdownArticleHorizontalScrollHit",
+        "MarkdownArticleEditControlHit",
+        "MarkdownArticleDropLocation",
+        "MarkdownArticleScrollAnchor",
+        "MarkdownArticleMediaGeometry"
+      ],
+      "capability_ids": [
+        "CAP-RICH-CONTENT-ARTICLE"
+      ],
+      "dependency_ids": [
+        "ConversationTranscript",
+        "FindInChat",
+        "Math",
+        "Resource",
+        "ExternalUrl"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/iv-markdown-article-complete-read.md",
+      "behavior_contract": "Expose one source-neutral rich-content contract for selection/search, typed hit testing, edit/drop targets, anchors/scroll, media geometry, visibility, formatted-date/cache lifecycle and heavy-resource teardown under the canonical ConversationTranscript.",
+      "state_machine": "canonical content -> laid-out/searchable/selectable projection -> interaction/edit/search state -> relayout/invalidate/unload -> reconstruct from canonical content",
+      "side_effects": [
+        "Delegates typed media/link/action/resource behavior",
+        "Projects selection/search/anchor/geometry state"
+      ],
+      "failure_cases": [
+        "parallel article truth",
+        "stale hit/edit identity after relayout",
+        "scroll/search identity lost on layout change",
+        "heavy derived resources become canonical truth"
+      ],
+      "ui_disposition": "Qt article/painter structures are replaced; the source-neutral state/selection/search/interaction contract maps to canonical ConversationTranscript owners.",
+      "non_ui_responsibilities": [
+        "selection/search identity",
+        "typed hit/edit target model",
+        "anchor/scroll continuity",
+        "resource/cache lifecycle",
+        "heavy-part teardown"
+      ],
+      "platform_delta": "React/browser rich-content components replace Qt article/painter/event structures.",
+      "existing_owner_candidates": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "existing_owner": "Fabushi ProductShell / ConversationWorkspace / ConversationTranscript with existing Search, Math, Resource and URL/action owners",
+      "rejected_existing_owners": [
+        "A Telegram/IV article runtime would duplicate canonical ConversationTranscript ownership.",
+        "A second Search, Resource, URL or message store is prohibited.",
+        "Qt layout/painter ownership is platform presentation, not a source-neutral product owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ConversationTranscript",
+        "createFindInChatController",
+        "TranscriptAttachmentGallery"
+      ],
+      "target_language": "TypeScript/React",
+      "language_rationale": "Applicable behavior is transcript rich-content projection, lifecycle, search/navigation and interaction; existing canonical renderer owners are TypeScript/React while durable resource/domain truth remains behind typed existing contracts.",
+      "command_event_contracts": [
+        "Current transcript selection/search -> existing owner",
+        "Typed media/action hit -> existing Resource/action owner",
+        "relayout/reload -> reconstruct derived projection"
+      ],
+      "state_owner": "Canonical Conversation transcript/content identity plus existing Search/Resource/Math/action owners",
+      "lifecycle_owner": "ConversationWorkspace / ConversationTranscript current scope",
+      "persistence_and_restart": "Canonical transcript/resource state persists in existing owners. Layout, selection caches, runtime maps and render resources are derived and must be reconstructable after reload/restart.",
+      "concurrency_and_cancellation": "Content/layout generation, media runtime, highlight jobs and async resource/action results must be fenced by current identity; stale runtime/cache pointers are pruned on invalidation/replacement.",
+      "security_boundary": "Typed link/media/action owners retain authorization/navigation boundaries; renderer hit testing, edit targets and caches cannot grant service capability.",
+      "network_service_dependencies": [
+        "Existing Resource/media resolver",
+        "Existing Search/conversation service where remote results are required",
+        "Existing typed action/external-open boundaries"
+      ],
+      "service_owner": "Existing Fabushi Conversation/Search/Resource/platform owners",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "fabushi-ui-replacement",
+      "blockers": [
+        "Shipping equivalents for the recovered article state/cache/interaction edge cases and exact-head current production evidence remain open."
+      ],
+      "production_entrypoints": [
+        "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing Search/Math/Resource/URL/action owners"
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "path:frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / ConversationWorkspace / ConversationTranscript",
+      "composition_slot": "ConversationTranscript rich-content projection",
+      "capability_component": "Canonical rich-content article behavior",
+      "variation_axes": [
+        "content-generation",
+        "layout-generation",
+        "visible-range",
+        "search-selection",
+        "media-runtime",
+        "horizontal-scroll",
+        "edit-mode"
+      ],
+      "shared_owner_contracts": [
+        "Canonical transcript identity",
+        "FindInChat",
+        "AssistantMath",
+        "Resource/media lifecycle",
+        "Desktop external URL/action boundary"
+      ],
+      "duplicate_root_check": "No IV/Telegram article root, second Transcript, second Search, second Resource store or second URL owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "canonical-screen-interaction",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "ConversationWorkspace",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Current canonical transcript rich-content object",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationTranscript rich-content surface",
+      "route_contract": "All behavior remains composed under the current ConversationWorkspace route and delegates to existing canonical owners.",
+      "search_scope": "Search: object-scoped Conversation transcript search",
+      "search_provider": "Existing FindInChat controller/provider",
+      "search_result_types": [
+        "Message"
+      ],
+      "search_filters": [],
+      "search_permission_contract": "Search remains scoped to the current canonical Conversation and existing permission contract; no new Search truth.",
+      "search_local_remote_contract": "Delegates local/remote result behavior to the existing FindInChat/Search owner.",
+      "responsive_disposition": "Preserve identity, anchor, selection, scroll and bounded-work semantics through canonical responsive transcript layout; do not port Qt geometry.",
+      "accessibility_contract": "Selection, links, buttons, details/quote toggles, media and edit controls require canonical focus/name/state/keyboard semantics and semantic fallbacks.",
+      "keyboard_contract": "Keyboard navigation/copy/action must resolve through the same canonical identity and typed action boundaries as pointer/touch.",
+      "state_continuity_contract": "Canonical content/search/resource identity survives relayout/reload; derived caches and runtime maps are rebuilt or invalidated by generation and owner identity.",
+      "ui_acceptance_scenarios": [
+        "Content replacement fences stale caches/runtime",
+        "Search/selection/anchors remain correct across relayout",
+        "Horizontal scroll restores by owner identity",
+        "Typed hit testing preserves action distinctions",
+        "Heavy resources unload without deleting canonical content"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Fabushi transcript/search/resource semantic components only"
+      ],
+      "legacy_token_adapter": "Recovered sand implementation may remain below compatibility adapters; new IV-derived behavior cannot establish source-named public UI APIs.",
+      "canonical_component_ids": [
+        "ConversationTranscript",
+        "FindInChat",
+        "MediaViewer",
+        "Math",
+        "ContextMenu",
+        "Tooltip"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "transcript rich-content",
+        "inline capability interaction",
+        "object-scoped search"
+      ],
+      "visual_state_matrix": [
+        "idle",
+        "selected",
+        "search-match",
+        "collapsed",
+        "expanded",
+        "resource-loading",
+        "resource-unloaded",
+        "horizontal-scroll",
+        "editing"
+      ],
+      "density_contract": "Reuse canonical ConversationWorkspace density.",
+      "icon_asset_contract": "Canonical Fabushi icons only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Reveal/ripple/loading are derived feedback only and cannot own canonical state.",
+      "reduced_motion_contract": "All selection/action/search/resource semantics remain available without decorative animation.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "TDRP-COMP-01",
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-SEARCH",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-PERF-SOAK",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-IV-ARTICLE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-IV-ARTICLE-PATCH-001",
+        "INV-TDRP-IV-ARTICLE-CACHE-001",
+        "INV-TDRP-IV-ARTICLE-SCROLL-001",
+        "INV-TDRP-IV-ARTICLE-DROP-001",
+        "INV-TDRP-IV-ARTICLE-HIT-001",
+        "INV-TDRP-IV-ARTICLE-VISIBLE-001",
+        "INV-TDRP-IV-ARTICLE-RUNTIME-001",
+        "INV-TDRP-IV-ARTICLE-HEAVY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-SEARCH",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-PERF-SOAK",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
+      "reviewer": null,
+      "notes": "Read-complete and mapped only; no implemented/verified claim."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_article.cpp",
+      "source_blob_sha": "15adf3076d04850c89b6683ab6e76626537d36d0",
+      "source_kind": "source",
+      "module_id": "tdesktop.iv.markdown.article",
+      "responsibility_id": "TDRP-R9-IV-ARTICLE-CONTENT-LIFECYCLE-001",
+      "source_symbols": [
+        "RebuildCachedTextLeafs",
+        "ReuseMediaBlocks",
+        "MarkdownArticle::Impl::setContent",
+        "MarkdownArticle::Impl::updatePreparedLeaf",
+        "prunePendingHighlightProcessesForContent",
+        "invalidateGeometry",
+        "invalidateLayout",
+        "finalizeRelayout",
+        "relayout",
+        "relayoutRetained"
+      ],
+      "capability_ids": [
+        "CAP-RICH-CONTENT-ARTICLE"
+      ],
+      "dependency_ids": [
+        "ConversationTranscript",
+        "FindInChat",
+        "Math",
+        "Resource",
+        "ExternalUrl"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/iv-markdown-article-complete-read.md",
+      "behavior_contract": "Reuse rich-content layout/media/cache state only under compatible stable identities, fail whole-content when partial patch invariants do not hold, fence stale highlight/media/runtime state across generations, and rebuild canonical derived indexes after relayout.",
+      "state_machine": "content generation -> compatible cache/media reuse or full reset -> layout generation -> finalized live runtime/indexes -> invalidation captures recoverable scroll state and prunes stale derived ownership",
+      "side_effects": [
+        "Loads/unloads derived media and formula resources",
+        "Schedules/prunes syntax highlighting",
+        "Rebuilds layout/search/anchor indexes"
+      ],
+      "failure_cases": [
+        "cache crosses incompatible media runtime",
+        "partial patch changes structural identity",
+        "dead media reused",
+        "highlight callback points at destroyed block",
+        "retained relayout used after incompatibility"
+      ],
+      "ui_disposition": "Rendering mechanics are replaced but content-generation/cache/resource ownership, fallback and recovery semantics remain required.",
+      "non_ui_responsibilities": [
+        "identity-keyed cache reuse",
+        "partial-update fallback",
+        "media/highlight/runtime pruning",
+        "formula cache generations",
+        "layout recovery"
+      ],
+      "platform_delta": "React memoization/resource generation/Abort fencing replaces C++ cache and pointer mechanics behind existing canonical owners.",
+      "existing_owner_candidates": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "existing_owner": "Fabushi ProductShell / ConversationWorkspace / ConversationTranscript with existing Search, Math, Resource and URL/action owners",
+      "rejected_existing_owners": [
+        "A Telegram/IV article runtime would duplicate canonical ConversationTranscript ownership.",
+        "A second Search, Resource, URL or message store is prohibited.",
+        "Qt layout/painter ownership is platform presentation, not a source-neutral product owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "AssistantMessageContent",
+        "AssistantMath",
+        "TranscriptAttachmentGallery"
+      ],
+      "target_language": "TypeScript/React",
+      "language_rationale": "Applicable behavior is transcript rich-content projection, lifecycle, search/navigation and interaction; existing canonical renderer owners are TypeScript/React while durable resource/domain truth remains behind typed existing contracts.",
+      "command_event_contracts": [
+        "canonical content update -> compatible projection patch or whole reconciliation",
+        "resource/math generation change -> derived cache invalidation",
+        "unload/reload -> rebuild derived runtime from canonical state"
+      ],
+      "state_owner": "Canonical Conversation transcript/content identity plus existing Search/Resource/Math/action owners",
+      "lifecycle_owner": "ConversationWorkspace / ConversationTranscript current scope",
+      "persistence_and_restart": "Canonical transcript/resource state persists in existing owners. Layout, selection caches, runtime maps and render resources are derived and must be reconstructable after reload/restart.",
+      "concurrency_and_cancellation": "Content/layout generation, media runtime, highlight jobs and async resource/action results must be fenced by current identity; stale runtime/cache pointers are pruned on invalidation/replacement.",
+      "security_boundary": "Typed link/media/action owners retain authorization/navigation boundaries; renderer hit testing, edit targets and caches cannot grant service capability.",
+      "network_service_dependencies": [
+        "Existing Resource/media resolver",
+        "Existing Search/conversation service where remote results are required",
+        "Existing typed action/external-open boundaries"
+      ],
+      "service_owner": "Existing Fabushi Conversation/Search/Resource/platform owners",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "fabushi-ui-replacement",
+      "blockers": [
+        "Shipping equivalents for the recovered article state/cache/interaction edge cases and exact-head current production evidence remain open."
+      ],
+      "production_entrypoints": [
+        "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing Search/Math/Resource/URL/action owners"
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "path:frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / ConversationWorkspace / ConversationTranscript",
+      "composition_slot": "ConversationTranscript rich-content projection",
+      "capability_component": "Canonical rich-content article behavior",
+      "variation_axes": [
+        "content-generation",
+        "layout-generation",
+        "visible-range",
+        "search-selection",
+        "media-runtime",
+        "horizontal-scroll",
+        "edit-mode"
+      ],
+      "shared_owner_contracts": [
+        "Canonical transcript identity",
+        "FindInChat",
+        "AssistantMath",
+        "Resource/media lifecycle",
+        "Desktop external URL/action boundary"
+      ],
+      "duplicate_root_check": "No IV/Telegram article root, second Transcript, second Search, second Resource store or second URL owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "canonical-screen-interaction",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "ConversationWorkspace",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Current canonical transcript rich-content object",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationTranscript rich-content surface",
+      "route_contract": "All behavior remains composed under the current ConversationWorkspace route and delegates to existing canonical owners.",
+      "search_scope": "Search: object-scoped Conversation transcript search",
+      "search_provider": "Existing FindInChat controller/provider",
+      "search_result_types": [
+        "Message"
+      ],
+      "search_filters": [],
+      "search_permission_contract": "Search remains scoped to the current canonical Conversation and existing permission contract; no new Search truth.",
+      "search_local_remote_contract": "Delegates local/remote result behavior to the existing FindInChat/Search owner.",
+      "responsive_disposition": "Preserve identity, anchor, selection, scroll and bounded-work semantics through canonical responsive transcript layout; do not port Qt geometry.",
+      "accessibility_contract": "Selection, links, buttons, details/quote toggles, media and edit controls require canonical focus/name/state/keyboard semantics and semantic fallbacks.",
+      "keyboard_contract": "Keyboard navigation/copy/action must resolve through the same canonical identity and typed action boundaries as pointer/touch.",
+      "state_continuity_contract": "Canonical content/search/resource identity survives relayout/reload; derived caches and runtime maps are rebuilt or invalidated by generation and owner identity.",
+      "ui_acceptance_scenarios": [
+        "Content replacement fences stale caches/runtime",
+        "Search/selection/anchors remain correct across relayout",
+        "Horizontal scroll restores by owner identity",
+        "Typed hit testing preserves action distinctions",
+        "Heavy resources unload without deleting canonical content"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Fabushi transcript/search/resource semantic components only"
+      ],
+      "legacy_token_adapter": "Recovered sand implementation may remain below compatibility adapters; new IV-derived behavior cannot establish source-named public UI APIs.",
+      "canonical_component_ids": [
+        "ConversationTranscript",
+        "FindInChat",
+        "MediaViewer",
+        "Math",
+        "ContextMenu",
+        "Tooltip"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "transcript rich-content",
+        "inline capability interaction",
+        "object-scoped search"
+      ],
+      "visual_state_matrix": [
+        "idle",
+        "selected",
+        "search-match",
+        "collapsed",
+        "expanded",
+        "resource-loading",
+        "resource-unloaded",
+        "horizontal-scroll",
+        "editing"
+      ],
+      "density_contract": "Reuse canonical ConversationWorkspace density.",
+      "icon_asset_contract": "Canonical Fabushi icons only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Reveal/ripple/loading are derived feedback only and cannot own canonical state.",
+      "reduced_motion_contract": "All selection/action/search/resource semantics remain available without decorative animation.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "TDRP-COMP-01",
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-SEARCH",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-PERF-SOAK",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-IV-ARTICLE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-IV-ARTICLE-PATCH-001",
+        "INV-TDRP-IV-ARTICLE-CACHE-001",
+        "INV-TDRP-IV-ARTICLE-SCROLL-001",
+        "INV-TDRP-IV-ARTICLE-DROP-001",
+        "INV-TDRP-IV-ARTICLE-HIT-001",
+        "INV-TDRP-IV-ARTICLE-VISIBLE-001",
+        "INV-TDRP-IV-ARTICLE-RUNTIME-001",
+        "INV-TDRP-IV-ARTICLE-HEAVY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-SEARCH",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-PERF-SOAK",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
+      "reviewer": null,
+      "notes": "Read-complete and mapped only; no implemented/verified claim."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_article.cpp",
+      "source_blob_sha": "15adf3076d04850c89b6683ab6e76626537d36d0",
+      "source_kind": "source",
+      "module_id": "tdesktop.iv.markdown.article",
+      "responsibility_id": "TDRP-R9-IV-ARTICLE-INTERACTION-001",
+      "source_symbols": [
+        "HitTextSegment",
+        "HitBlockSegment",
+        "editDropTarget",
+        "editStructuralDropTarget",
+        "expandDetailsToAnchor",
+        "scrollAnchorForTop",
+        "restoreScrollState",
+        "revealSegment",
+        "beginHorizontalScroll",
+        "updateHorizontalScroll",
+        "endHorizontalScroll"
+      ],
+      "capability_ids": [
+        "CAP-RICH-CONTENT-ARTICLE"
+      ],
+      "dependency_ids": [
+        "ConversationTranscript",
+        "FindInChat",
+        "Math",
+        "Resource",
+        "ExternalUrl"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/iv-markdown-article-complete-read.md",
+      "behavior_contract": "Resolve search/selection/hit/edit/drop/navigation/scroll interactions against current stable segment and owner identities, reject invalid structural drops, reveal hidden/overflow content through canonical owners, and restore/clamp scroll state after relayout.",
+      "state_machine": "current segment/owner identity -> search/select/hit/edit/scroll interaction -> typed action or bounded geometry change -> relayout restores/clamps by owner identity -> interaction settlement/cancel",
+      "side_effects": [
+        "May expand details/quote ancestors",
+        "May update scoped horizontal scroll",
+        "May delegate typed link/media/action behavior"
+      ],
+      "failure_cases": [
+        "generic click broadens typed capability",
+        "drop targets selected subtree",
+        "stale pixel scroll restored to wrong owner",
+        "visible-range optimization changes hit correctness"
+      ],
+      "ui_disposition": "Qt input geometry is replaced; identity-based selection/search/edit/scroll semantics map to canonical ConversationWorkspace interaction owners.",
+      "non_ui_responsibilities": [
+        "typed hit arbitration",
+        "structural drop validity",
+        "anchor/details navigation",
+        "stable scroll restoration",
+        "visible-range correctness"
+      ],
+      "platform_delta": "Browser pointer/keyboard/touch and canonical Search controllers replace Qt event/hit mechanics.",
+      "existing_owner_candidates": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "existing_owner": "Fabushi ProductShell / ConversationWorkspace / ConversationTranscript with existing Search, Math, Resource and URL/action owners",
+      "rejected_existing_owners": [
+        "A Telegram/IV article runtime would duplicate canonical ConversationTranscript ownership.",
+        "A second Search, Resource, URL or message store is prohibited.",
+        "Qt layout/painter ownership is platform presentation, not a source-neutral product owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ConversationTranscript",
+        "createFindInChatController",
+        "conversationLinkCandidates"
+      ],
+      "target_language": "TypeScript/React",
+      "language_rationale": "Applicable behavior is transcript rich-content projection, lifecycle, search/navigation and interaction; existing canonical renderer owners are TypeScript/React while durable resource/domain truth remains behind typed existing contracts.",
+      "command_event_contracts": [
+        "FindInChat result -> canonical transcript reveal",
+        "typed transcript hit -> existing action/resource owner",
+        "horizontal scroll -> current stable owner only"
+      ],
+      "state_owner": "Canonical Conversation transcript/content identity plus existing Search/Resource/Math/action owners",
+      "lifecycle_owner": "ConversationWorkspace / ConversationTranscript current scope",
+      "persistence_and_restart": "Canonical transcript/resource state persists in existing owners. Layout, selection caches, runtime maps and render resources are derived and must be reconstructable after reload/restart.",
+      "concurrency_and_cancellation": "Content/layout generation, media runtime, highlight jobs and async resource/action results must be fenced by current identity; stale runtime/cache pointers are pruned on invalidation/replacement.",
+      "security_boundary": "Typed link/media/action owners retain authorization/navigation boundaries; renderer hit testing, edit targets and caches cannot grant service capability.",
+      "network_service_dependencies": [
+        "Existing Resource/media resolver",
+        "Existing Search/conversation service where remote results are required",
+        "Existing typed action/external-open boundaries"
+      ],
+      "service_owner": "Existing Fabushi Conversation/Search/Resource/platform owners",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "fabushi-ui-replacement",
+      "blockers": [
+        "Shipping equivalents for the recovered article state/cache/interaction edge cases and exact-head current production evidence remain open."
+      ],
+      "production_entrypoints": [
+        "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing Search/Math/Resource/URL/action owners"
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "path:frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / ConversationWorkspace / ConversationTranscript",
+      "composition_slot": "ConversationTranscript rich-content projection",
+      "capability_component": "Canonical rich-content article behavior",
+      "variation_axes": [
+        "content-generation",
+        "layout-generation",
+        "visible-range",
+        "search-selection",
+        "media-runtime",
+        "horizontal-scroll",
+        "edit-mode"
+      ],
+      "shared_owner_contracts": [
+        "Canonical transcript identity",
+        "FindInChat",
+        "AssistantMath",
+        "Resource/media lifecycle",
+        "Desktop external URL/action boundary"
+      ],
+      "duplicate_root_check": "No IV/Telegram article root, second Transcript, second Search, second Resource store or second URL owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "canonical-screen-interaction",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "ConversationWorkspace",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Current canonical transcript rich-content object",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationTranscript rich-content surface",
+      "route_contract": "All behavior remains composed under the current ConversationWorkspace route and delegates to existing canonical owners.",
+      "search_scope": "Search: object-scoped Conversation transcript search",
+      "search_provider": "Existing FindInChat controller/provider",
+      "search_result_types": [
+        "Message"
+      ],
+      "search_filters": [],
+      "search_permission_contract": "Search remains scoped to the current canonical Conversation and existing permission contract; no new Search truth.",
+      "search_local_remote_contract": "Delegates local/remote result behavior to the existing FindInChat/Search owner.",
+      "responsive_disposition": "Preserve identity, anchor, selection, scroll and bounded-work semantics through canonical responsive transcript layout; do not port Qt geometry.",
+      "accessibility_contract": "Selection, links, buttons, details/quote toggles, media and edit controls require canonical focus/name/state/keyboard semantics and semantic fallbacks.",
+      "keyboard_contract": "Keyboard navigation/copy/action must resolve through the same canonical identity and typed action boundaries as pointer/touch.",
+      "state_continuity_contract": "Canonical content/search/resource identity survives relayout/reload; derived caches and runtime maps are rebuilt or invalidated by generation and owner identity.",
+      "ui_acceptance_scenarios": [
+        "Content replacement fences stale caches/runtime",
+        "Search/selection/anchors remain correct across relayout",
+        "Horizontal scroll restores by owner identity",
+        "Typed hit testing preserves action distinctions",
+        "Heavy resources unload without deleting canonical content"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Fabushi transcript/search/resource semantic components only"
+      ],
+      "legacy_token_adapter": "Recovered sand implementation may remain below compatibility adapters; new IV-derived behavior cannot establish source-named public UI APIs.",
+      "canonical_component_ids": [
+        "ConversationTranscript",
+        "FindInChat",
+        "MediaViewer",
+        "Math",
+        "ContextMenu",
+        "Tooltip"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "transcript rich-content",
+        "inline capability interaction",
+        "object-scoped search"
+      ],
+      "visual_state_matrix": [
+        "idle",
+        "selected",
+        "search-match",
+        "collapsed",
+        "expanded",
+        "resource-loading",
+        "resource-unloaded",
+        "horizontal-scroll",
+        "editing"
+      ],
+      "density_contract": "Reuse canonical ConversationWorkspace density.",
+      "icon_asset_contract": "Canonical Fabushi icons only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Reveal/ripple/loading are derived feedback only and cannot own canonical state.",
+      "reduced_motion_contract": "All selection/action/search/resource semantics remain available without decorative animation.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "TDRP-COMP-01",
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-SEARCH",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-PERF-SOAK",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-IV-ARTICLE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-IV-ARTICLE-PATCH-001",
+        "INV-TDRP-IV-ARTICLE-CACHE-001",
+        "INV-TDRP-IV-ARTICLE-SCROLL-001",
+        "INV-TDRP-IV-ARTICLE-DROP-001",
+        "INV-TDRP-IV-ARTICLE-HIT-001",
+        "INV-TDRP-IV-ARTICLE-VISIBLE-001",
+        "INV-TDRP-IV-ARTICLE-RUNTIME-001",
+        "INV-TDRP-IV-ARTICLE-HEAVY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-SEARCH",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-PERF-SOAK",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
       "notes": "Read-complete and mapped only; no implemented/verified claim."
     }
