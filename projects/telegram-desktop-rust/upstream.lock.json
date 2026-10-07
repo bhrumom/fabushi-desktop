@@ -253,9 +253,9 @@
     "root_source_entries_total": 6355,
     "recursive_source_entries_total": 15788,
     "unknown_minimum": 15788,
-    "unread_minimum": 15757,
+    "unread_minimum": 15755,
     "omitted_known": 0,
-    "note": "Revision 9 recursive non-directory count remains 15,788 at telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b. Thirty-one exact source entries are now read-complete, including media_stories_slider.{h,cpp} and media_stories_view.{h,cpp} on their accepted blob identities; unread is 15,757. Unknown remains 15,788 because responsibility closure is still open; omitted remains 0."
+    "note": "Revision 9 recursive non-directory count remains 15,788 at telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b. Thirty-three exact source entries are now read-complete, including media_stories_slider.{h,cpp} and media_stories_view.{h,cpp} on their accepted blob identities; including media_stories_stealth.{h,cpp}; unread is 15,755. Unknown remains 15,788 because responsibility closure is still open; omitted remains 0."
   },
   "acceptance": {
     "baseline_ready": false,
