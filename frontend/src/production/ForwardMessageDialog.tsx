@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
 import { SandButton } from "../recovered/ui/sand-kit-primitives";
@@ -136,7 +136,7 @@ export function ForwardMessageDialog({
     });
   };
 
-  const handleRecipientKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleRecipientKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (submitting || recipients.length === 0) return;
     if (isForwardSubmitShortcut(event)) {
       event.preventDefault();
