@@ -238,3 +238,18 @@ The send details make applicability typed rather than boolean: Disabled, SilentO
 `Data::Thread` is the common upstream abstraction for history, forum topic and saved-message sublist. Its identity is not reducible to one topic root: topic uses `topicRootId()`, saved sublist uses `monoforumPeerId()/maybeSublistPeer()`, and all share notification queues, unread mention/reaction/poll-vote state, mute/pin state and active-subsection continuity. Its `canToggleUnread` rules also differ by topic/forum/community/self-saved-sublist/monoforum-admin. This confirms SB-02 must introduce a source-neutral typed child destination/state representation inside existing Conversation owners rather than coercing saved/community child identity into `thread_root_message_id = topic:<id>`. No new SavedMessages product owner is justified.
 
 Coverage after these complete reads only: `unread=15,765`, `unknown=15,788`, `omitted=0`, `baseline_ready=false`, `acceptance.accepted=false`.
+
+### Story-share caller authority
+
+| path | blob | read status | classification | mapping status |
+| --- | --- | --- | --- | --- |
+| `Telegram/SourceFiles/media/stories/media_stories_share.cpp` | `cac84bc4f383fdc260e046ead9ee1fa96738a2f8` | complete, 320 lines | ShareBox caller policy, paid approval, fan-out settlement and send-option projection | open |
+
+This caller was read in full at accepted upstream `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`. It adds transferable responsibilities beyond the ShareBox root itself: source disappearance revalidation; pre-exposure destination filtering using the exact required send right plus inline/media rights; a user exception that may ignore money restrictions without bypassing other canonical policy; duplicate-submit fencing; a second error check at submit time; paid approval revalidation before any send; single- and multi-message counting when an optional comment accompanies the story; deterministic link-plus-comment entity offset shifting; typed schedule/repeat/silent/quick-reply/effect/suggest/caption-invert options; per-destination Stars consumption bounded by both destination price and remaining approval; independent per-destination random request identity; partial success/failure settlement; and closing the surface only when the entire fan-out request set settles.
+
+The Fabushi mapping must stay in existing Search/Conversation/Message/Payment/Composer owners. In particular, recipient authorization must occur before exposure and again at submission, approved value must be consumed per destination rather than treated as a global boolean, and fan-out completion must not be inferred from the first successful destination. No StoryShare, TelegramPayments, or second Message owner is justified by this source.
+
+This read only advances source completeness. It does not verify any responsibility because the paid approval, full destination universe, and packaged shipping evidence remain incomplete.
+
+Coverage after this complete read only: `unread=15,764`, `unknown=15,788`, `omitted=0`, `baseline_ready=false`, `acceptance.accepted=false`.
+
