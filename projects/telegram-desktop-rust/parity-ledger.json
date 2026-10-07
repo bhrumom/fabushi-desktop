@@ -2217,7 +2217,7 @@
         "ClientCommand::SearchRecipients",
         "fn recipient_search_envelope(",
         "fn actor_can_send_to_recipient(",
-        "ProductionSessionWorkers::search_human_recipients",
+        "pub fn search_human_recipients(",
         "ForwardMessageDialog"
       ],
       "target_language": "Rust",
