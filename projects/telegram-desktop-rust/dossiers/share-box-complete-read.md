@@ -49,7 +49,7 @@ Existing Fabushi owners inspected:
 - `native/mahayana-messaging/src/conversation.rs` — canonical `Conversation`, `ConversationKind`, `Topic`, `ConversationDraft`, `TopicDraft`.
 - canonical ProductShell/Conversation creation and picker contracts defined by FBCP IA/component contracts.
 
-Disposition: map to canonical Conversation/Topic typed destination and canonical Participant/Search picker. No second Group/Channel/Topic app. `18289a68a55a3166f42013b9ea8cb84b7565faf1` adds `thread_root_message_id` to the canonical forward protocol/service/engine path and preserves it on the destination Message, with a serde default for legacy payloads. Machine-readable responsibility: `TDRP-R9-SHARE-THREAD-DESTINATION-001`; oracle `ORA-TDRP-SHARE-THREAD-DESTINATION-001`; invariants `INV-TDRP-FORWARD-THREAD-NOT-FLATTENED-001` and `INV-TDRP-FORWARD-LEGACY-NONE-001`. This slice is implemented, not verified. Exact shipping picker lifecycle/destruction, saved-message sublist/community-child mapping, topic eligibility and E2E remain open.
+Disposition: map to canonical Conversation/Topic typed destination and canonical Participant/Search picker. No second Group/Channel/Topic app. `18289a68a55a3166f42013b9ea8cb84b7565faf1` adds `thread_root_message_id` to the canonical forward protocol/service/engine path and preserves it on the destination Message, with a serde default for legacy payloads. Machine-readable responsibility: `TDRP-R9-SHARE-THREAD-DESTINATION-001`; oracle `ORA-TDRP-SHARE-THREAD-DESTINATION-001`; invariants `INV-TDRP-FORWARD-THREAD-NOT-FLATTENED-001` and `INV-TDRP-FORWARD-LEGACY-NONE-001`. `df02b3bd1146bac38fcf41a37c819d0662851890` adds native revalidation that the selected topic exists and is neither closed nor hidden; `c13a85a2a193660f95cfa9cefe29808cdb368fd4` adds explicit missing/closed/hidden regression coverage. That policy is tracked separately as `TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001` so typed-route preservation is not conflated with eligibility. Both slices remain implemented, not verified until current-head GitHub Actions evidence exists. Exact shipping picker lifecycle/destruction and saved-message sublist/community-child mapping remain open.
 
 ### SB-03 send-mode derivation and schedule/silent/reminder semantics
 
@@ -164,10 +164,10 @@ Pure Qt paint/style mechanics (`Painter`, exact columns/pixels, Telegram style r
 ## Coverage accounting
 
 This dossier supports the following narrow counter movement only:
-- `unread: 15788 -> 15786`
+- `unread: 15788 -> 15784` (the original ShareBox `.cpp/.h` pair plus the separately recorded `share_box.style` and `Telegram/cmake/td_ui.cmake` reads)
 - `unknown: 15788` unchanged
 - `omitted: 0` unchanged
 - `baseline_ready: false`
 - `acceptance.accepted: false`
 
-No production responsibility is declared verified by this read alone. Four narrow responsibilities are now machine-readable and implemented (`TDRP-R9-SHARE-SEND-OPTIONS-001`, `TDRP-R9-SHARE-DESTINATION-POLICY-001`, `TDRP-R9-SHARE-LINK-ENTITY-OFFSET-001`, `TDRP-R9-SHARE-THREAD-DESTINATION-001`), but current-head GitHub Actions and independent evidence remain pending and the other SB-01…SB-08 slices remain open. Therefore `unknown` stays 15,788 and ShareBox is not mapped/verified as a whole.
+No production responsibility is declared verified by this read alone. Five narrow ShareBox responsibilities are now machine-readable and implemented (`TDRP-R9-SHARE-SEND-OPTIONS-001`, `TDRP-R9-SHARE-DESTINATION-POLICY-001`, `TDRP-R9-SHARE-LINK-ENTITY-OFFSET-001`, `TDRP-R9-SHARE-THREAD-DESTINATION-001`, `TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001`), but current-head GitHub Actions and independent evidence remain pending and the other SB-01…SB-08 slices remain open. Therefore `unknown` stays 15,788 and ShareBox is not mapped/verified as a whole.
