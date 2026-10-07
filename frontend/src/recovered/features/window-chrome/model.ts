@@ -21,18 +21,22 @@ export function setWindowChromeVariables(
   platform: WindowPlatform,
   isFullscreen: boolean,
 ): (() => void) | undefined {
-  if (typeof document === "undefined" || platform === "darwin" || isFullscreen) {
-    return undefined;
+  if (typeof document === "undefined") return undefined;
+
+  const root = document.documentElement;
+  const style = root.style;
+  root.dataset.platform = platform;
+
+  if (platform !== "darwin" && !isFullscreen) {
+    style.setProperty(
+      "--sand-window-controls-inset",
+      scaledWindowChromeDimension(WINDOW_CHROME_METRICS.controlsInset),
+    );
+    style.setProperty("--sand-window-controls-block", windowChromeBlock(platform));
   }
 
-  const style = document.documentElement.style;
-  style.setProperty(
-    "--sand-window-controls-inset",
-    scaledWindowChromeDimension(WINDOW_CHROME_METRICS.controlsInset),
-  );
-  style.setProperty("--sand-window-controls-block", windowChromeBlock(platform));
-
   return () => {
+    if (root.dataset.platform === platform) delete root.dataset.platform;
     style.removeProperty("--sand-window-controls-inset");
     style.removeProperty("--sand-window-controls-block");
   };
