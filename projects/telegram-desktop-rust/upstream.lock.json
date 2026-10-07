@@ -253,9 +253,9 @@
     "root_source_entries_total": 6355,
     "recursive_source_entries_total": 15788,
     "unknown_minimum": 15788,
-    "unread_minimum": 15761,
+    "unread_minimum": 15757,
     "omitted_known": 0,
-    "note": "Revision 9 recursive non-directory count remains 15,788 after rebaseline to 72b3b71c3d6e450e5ef94a3112dd750a0168aa0b: root cardinality is unchanged and Telegram/lib_webview remains 32 non-directory entries at pin 427d2470a41d8678ee9a95b4291a078e15a5e549. Twenty-seven exact source entries are now read-complete, including media_stories_share.cpp/.h and media_stories_sibling.cpp/.h on their accepted blob identities; unread is 15,761. Unknown remains 15,788 because responsibility closure is still open; omitted remains 0."
+    "note": "Revision 9 recursive non-directory count remains 15,788 at telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b. Thirty-one exact source entries are now read-complete, including media_stories_slider.{h,cpp} and media_stories_view.{h,cpp} on their accepted blob identities; unread is 15,757. Unknown remains 15,788 because responsibility closure is still open; omitted remains 0."
   },
   "acceptance": {
     "baseline_ready": false,
