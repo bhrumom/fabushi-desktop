@@ -9,7 +9,8 @@ use crate::conversation::{
     NotificationSettings, TopicDraft,
 };
 use crate::message::{
-    ClientMessageId, DeliveryState, Message, MessageContent, MessageId, ReactionSummary,
+    ClientMessageId, DeliveryState, ForwardPrivacy, Message, MessageContent, MessageId,
+    ReactionSummary,
 };
 use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppPermission, MiniAppRequest, MiniAppResponse,
@@ -102,6 +103,7 @@ pub enum Command {
         created_at_ms: i64,
         scheduled_at_ms: Option<i64>,
         silent: bool,
+        privacy: ForwardPrivacy,
     },
     AcknowledgeMessage {
         conversation_id: ConversationId,
@@ -1165,6 +1167,7 @@ impl MessagingEngine {
                 created_at_ms,
                 scheduled_at_ms,
                 silent,
+                privacy,
             } => {
                 let conversation = self.require_conversation(&destination_conversation_id)?;
                 self.require_actor(&sender_id)?;
@@ -1342,18 +1345,31 @@ impl MessagingEngine {
                         message_id: local_message_id,
                     });
                 }
-                let forward_origin = original
-                    .forward_origin
-                    .clone()
-                    .unwrap_or_else(|| format!("{}:{}", original.conversation_id.0, original.id.0));
+                let privacy = privacy.normalized();
+                let forward_origin = if privacy.drop_sender_names {
+                    None
+                } else {
+                    Some(
+                        original
+                            .forward_origin
+                            .clone()
+                            .unwrap_or_else(|| {
+                                format!("{}:{}", original.conversation_id.0, original.id.0)
+                            }),
+                    )
+                };
+                let mut content = original.content;
+                if privacy.drop_captions {
+                    content.clear_caption();
+                }
                 let message = Message {
                     id: local_message_id,
                     conversation_id: destination_conversation_id,
                     sender_id,
-                    content: original.content,
+                    content,
                     reply_to_message_id: None,
                     thread_root_message_id,
-                    forward_origin: Some(forward_origin),
+                    forward_origin,
                     reply_markup: original.reply_markup,
                     reactions: Vec::new(),
                     delivery_state: DeliveryState::Pending { client_message_id },
