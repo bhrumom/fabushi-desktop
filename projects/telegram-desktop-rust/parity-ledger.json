@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
-  "target_commit": "470171e326134da2d3ab5753de331aa85552744d",
+  "target_commit": "cf60178cab2142e75e9b0f5b7d24145b0b997b15",
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
     "unread": 15786,
     "omitted": 0,
-    "responsibilities_total": 4,
+    "responsibilities_total": 5,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -966,6 +966,221 @@
       "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted ShareBox authorization semantics inside the existing Fabushi Conversation/Community policy owner.",
       "reviewer": null,
       "notes": "This row closes the send-time destination authorization slice only. Recipient pre-exposure eligibility for inline/game/send-other rights remains open and therefore ShareBox source unknown does not decrement."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+      "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
+      "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
+      "source_kind": "source",
+      "module_id": "tdesktop.boxes.share",
+      "responsibility_id": "TDRP-R9-SHARE-LINK-ENTITY-OFFSET-001",
+      "source_symbols": [
+        "FastShareLink",
+        "TextWithTags::tags"
+      ],
+      "capability_ids": [
+        "CAP-SHARE-LINK-FORMATTED-COMMENT"
+      ],
+      "dependency_ids": [
+        "FormattedText",
+        "TextEntity"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/share-box-complete-read.md",
+      "behavior_contract": "When a shared link is prepended to a formatted comment, every existing entity offset must move by the prefix length measured in UTF-16 code units so formatting remains attached to the same user-authored text; overflow must fail atomically rather than corrupt formatting metadata.",
+      "state_machine": "formatted comment + plain link prefix -> compute UTF-16 prefix length -> validate every shifted entity offset -> atomically shift entity offsets -> prepend prefix to canonical formatted text.",
+      "side_effects": [
+        "Updates the canonical FormattedText value only",
+        "Preserves entity lengths and kinds while shifting offsets"
+      ],
+      "failure_cases": [
+        "Using UTF-8 byte length misplaces CJK/emoji formatting",
+        "Offset overflow partially mutates text or entities",
+        "Prefix operation drops or changes existing entity metadata"
+      ],
+      "ui_disposition": "The existing Fabushi share/composer surface reuses canonical FormattedText; no Telegram ShareBox text model or bespoke editor is introduced.",
+      "non_ui_responsibilities": [
+        "UTF-16 entity-coordinate preservation",
+        "Atomic overflow handling",
+        "Canonical formatted-text reuse"
+      ],
+      "platform_delta": "Telegram QString/TextWithTags offset semantics are represented by source-neutral UTF-16 coordinates already used by Fabushi TextEntity.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/message.rs",
+        "native/mahayana-messaging/src/protocol.rs"
+      ],
+      "existing_owner": "Fabushi canonical FormattedText/TextEntity message model",
+      "rejected_existing_owners": [
+        "Renderer-only string concatenation: would duplicate canonical formatted-text semantics and can corrupt offsets",
+        "New share-text owner: unnecessary parallel text truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/message.rs"
+      ],
+      "fabushi_target_symbols": [
+        "prepend_plain_text"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Formatted message content and entity coordinate semantics are canonical non-UI message-domain responsibilities already owned by Rust.",
+      "command_event_contracts": [
+        "Share/composer adapter -> FormattedText::prepend_plain_text -> existing SendMessage canonical message path"
+      ],
+      "state_owner": "Canonical FormattedText embedded in MessageContent",
+      "lifecycle_owner": "Canonical Message lifecycle; helper performs a pure atomic transformation before send",
+      "persistence_and_restart": "No new persistence; transformed FormattedText is persisted through the existing Message state and store.",
+      "concurrency_and_cancellation": "Pure synchronous transformation with no shared mutable owner; overflow is checked before mutation.",
+      "security_boundary": "Fail-closed overflow behavior prevents malformed entity offsets from being silently persisted or sent.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Current-head Rust GitHub Actions evidence is pending",
+        "Clipboard adapter, duplicate-submit fencing, multi-recipient settlement, and recipient SendOther pre-exposure remain separate SB-08 slices"
+      ],
+      "production_entrypoints": [
+        "Canonical share/composer formatting -> FormattedText::prepend_plain_text -> existing SendMessage/Message lifecycle"
+      ],
+      "production_evidence": [
+        "commit:cf60178cab2142e75e9b0f5b7d24145b0b997b15",
+        "path:native/mahayana-messaging/src/message.rs#prepend_plain_text"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/tests/messaging_contract.rs#formatted_text_prefix_shifts_entities_by_utf16_units_atomically"
+      ],
+      "target_commit": "cf60178cab2142e75e9b0f5b7d24145b0b997b15",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical Conversation messaging domain",
+      "composition_slot": "Composer/share formatted-text transformation",
+      "capability_component": "Canonical formatted-link comment composition",
+      "variation_axes": [
+        "ASCII prefix",
+        "non-BMP/emoji prefix",
+        "existing formatted entities",
+        "offset overflow"
+      ],
+      "shared_owner_contracts": [
+        "Canonical FormattedText",
+        "Canonical TextEntity UTF-16 coordinate system",
+        "Canonical Message send lifecycle"
+      ],
+      "duplicate_root_check": "No second text model, share editor, Message store, or source-specific formatting owner was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation object action",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Share link with optional formatted comment",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing share/composer action surface",
+      "route_contract": "Remain in the current canonical Conversation route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable to entity transformation; destination authorization remains canonical messaging policy.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "No layout change in this message-domain slice.",
+      "accessibility_contract": "No new UI control in this message-domain slice.",
+      "keyboard_contract": "No keyboard change in this message-domain slice.",
+      "state_continuity_contract": "The transformed text/entities become one canonical message payload and survive normal persistence/reload semantics.",
+      "ui_acceptance_scenarios": [
+        "A formatted comment retains formatting after a link prefix containing non-BMP characters"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "No new visual tokens"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "Message actions",
+        "Composer"
+      ],
+      "visual_state_matrix": [
+        "share-link-comment"
+      ],
+      "density_contract": "No visual density change.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No new motion.",
+      "reduced_motion_contract": "No new motion.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SHARE-LINK-ENTITY-OFFSET-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SHARE-LINK-ENTITY-OFFSET-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SHARE-LINK-UTF16-OFFSET-001",
+        "INV-TDRP-SHARE-LINK-ATOMIC-OVERFLOW-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-SHARE-LINK-ENTITY-OFFSET-001"
+      ],
+      "property_state_case_ids": [
+        "PROP-TDRP-SHARE-LINK-ENTITY-OFFSET-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-SHARE-LINK-FORMATTED-COMMENT-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-SHARE-LINK-OFFSET-OVERFLOW-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-SHARE-LINK-OFFSET-VALIDATION-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-SHARE-LINK-UTF8-OFFSET-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "formatted-share-link-non-bmp-prefix",
+        "formatted-share-link-overflow"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox formatted-comment semantics using the existing Fabushi formatted-message owner.",
+      "reviewer": null,
+      "notes": "This row closes only UTF-16-safe link-prefix entity shifting. It does not close the rest of FastShareLink or ShareBox, so global unknown does not decrement."
     }
   ]
 }

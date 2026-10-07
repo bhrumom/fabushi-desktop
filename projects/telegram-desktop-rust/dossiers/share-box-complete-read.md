@@ -151,7 +151,7 @@ Behavior:
 - duplicate share submission is fenced by an in-flight boolean;
 - successful multi-recipient share closes the layer only after the local dispatch loop is created.
 
-Disposition: canonical Message formatted-text/entity owner plus OS clipboard adapter and canonical Conversation picker. Exact target symbol/evidence remains open.
+Disposition: canonical Message formatted-text/entity owner plus OS clipboard adapter and canonical Conversation picker. `cf60178cab2142e75e9b0f5b7d24145b0b997b15` adds `FormattedText::prepend_plain_text`, which shifts existing entity offsets by the prefix length in UTF-16 code units and fails atomically on offset overflow. Machine-readable responsibility: `TDRP-R9-SHARE-LINK-ENTITY-OFFSET-001`; oracle `ORA-TDRP-SHARE-LINK-ENTITY-OFFSET-001`; invariants `INV-TDRP-SHARE-LINK-UTF16-OFFSET-001` and `INV-TDRP-SHARE-LINK-ATOMIC-OVERFLOW-001`. This narrow slice is implemented, not verified. Clipboard ownership, duplicate-submit fencing, multi-recipient settlement, SendOther pre-exposure, and exact shipping UI evidence remain open.
 
 ## Lifecycle, failure and concurrency summary
 
@@ -170,4 +170,4 @@ This dossier supports the following narrow counter movement only:
 - `baseline_ready: false`
 - `acceptance.accepted: false`
 
-No production responsibility is declared verified by this read alone. Two narrow responsibilities are now machine-readable and implemented (`TDRP-R9-SHARE-SEND-OPTIONS-001`, `TDRP-R9-SHARE-DESTINATION-POLICY-001`), but current-head GitHub Actions and independent evidence remain pending and the other SB-01…SB-08 slices remain open. Therefore `unknown` stays 15,788 and ShareBox is not mapped/verified as a whole.
+No production responsibility is declared verified by this read alone. Three narrow responsibilities are now machine-readable and implemented (`TDRP-R9-SHARE-SEND-OPTIONS-001`, `TDRP-R9-SHARE-DESTINATION-POLICY-001`, `TDRP-R9-SHARE-LINK-ENTITY-OFFSET-001`), but current-head GitHub Actions and independent evidence remain pending and the other SB-01…SB-08 slices remain open. Therefore `unknown` stays 15,788 and ShareBox is not mapped/verified as a whole.
