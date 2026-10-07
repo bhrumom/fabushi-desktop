@@ -18,6 +18,8 @@ on:
       - 'desktop/**'
       - 'source/**'
       - 'frontend/**'
+      - 'projects/grok-fabu-parity/architecture-semantic-adaptations.json'
+      - 'scripts/check-grok-architecture.mjs'
       - 'contracts/**'
       - 'native/**'
       - 'source/mahayana/**'
