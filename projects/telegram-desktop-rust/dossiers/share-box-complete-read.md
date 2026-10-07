@@ -88,6 +88,9 @@ Behavior:
 Existing Fabushi owners inspected:
 - `native/mahayana-messaging/src/protocol.rs` — `ClientCommand::ForwardMessage`.
 - `native/mahayana-messaging/src/engine.rs` — `Command::ForwardMessage`, canonical `forward_origin`, and message state transitions.
+- `native/mahayana-messaging/src/service.rs` — actor-scoped `stable_message_id` plus compatible replay/conflict handling.
+
+Current production slice: `b598bd9f98903f245842ac81547bd6d5bfdf0acc` moves forward creation onto the same actor-scoped stable message identity used by canonical sends and extends service replay handling to forwards; `e4494def67715379e619ba5882078347c00c08e8` proves same-payload retry replays one existing message while changed options using the same id fail closed. Machine-readable responsibility: `TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001`. This is implemented, not verified. It closes only single-destination replay/conflict behavior; provenance privacy/drop-name/drop-caption semantics, multi-recipient fan-out settlement, paid-send revalidation and UI duplicate-submit fencing remain open.
 - `native/mahayana-messaging/src/message.rs` — `Message.forward_origin`, reply relation, stable/client identities.
 - Host transcript send pipeline under `source/host/src/extensions/transcript/` owns existing Bot send acceptance/fanout and must not regress.
 
@@ -168,10 +171,10 @@ Pure Qt paint/style mechanics (`Painter`, exact columns/pixels, Telegram style r
 ## Coverage accounting
 
 This dossier supports the following narrow counter movement only:
-- `unread: 15788 -> 15784` (the original ShareBox `.cpp/.h` pair plus the separately recorded `share_box.style` and `Telegram/cmake/td_ui.cmake` reads)
+- `unread: 15788 -> 15782` (the original ShareBox `.cpp/.h` pair plus the separately recorded `share_box.style`, `Telegram/cmake/td_ui.cmake`, and `ui/chat/forward_options_box.{h,cpp}` reads)
 - `unknown: 15788` unchanged
 - `omitted: 0` unchanged
 - `baseline_ready: false`
 - `acceptance.accepted: false`
 
-No production responsibility is declared verified by this read alone. Five narrow ShareBox responsibilities are now machine-readable and implemented (`TDRP-R9-SHARE-SEND-OPTIONS-001`, `TDRP-R9-SHARE-DESTINATION-POLICY-001`, `TDRP-R9-SHARE-LINK-ENTITY-OFFSET-001`, `TDRP-R9-SHARE-THREAD-DESTINATION-001`, `TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001`), but current-head GitHub Actions and independent evidence remain pending and the other SB-01…SB-08 slices remain open. Therefore `unknown` stays 15,788 and ShareBox is not mapped/verified as a whole.
+No production responsibility is declared verified by this read alone. Six narrow ShareBox responsibilities are now machine-readable and implemented (`TDRP-R9-SHARE-SEND-OPTIONS-001`, `TDRP-R9-SHARE-DESTINATION-POLICY-001`, `TDRP-R9-SHARE-LINK-ENTITY-OFFSET-001`, `TDRP-R9-SHARE-THREAD-DESTINATION-001`, `TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001`, `TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001`), but current-head GitHub Actions and independent evidence remain pending and the other SB-01…SB-08 slices remain open. Therefore `unknown` stays 15,788 and ShareBox is not mapped/verified as a whole.
