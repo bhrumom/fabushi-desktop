@@ -261,7 +261,7 @@
     "unknown_minimum": 15788,
     "unread_minimum": 15755,
     "omitted_known": 0,
-    "note": "Revision 9 live authority is now telegramdesktop/tdesktop@e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39. The six story reads retain identical blob identities across the 15-commit delta and are provenance-rebound, not re-read. Recursive/root/build-time counts remain provisional until the current-head source-authority workflow recomputes the xxHash gitlink and changed build inputs. Source semantic closure remains open; omitted remains 0."
+    "note": "Revision 9 live authority is telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. The immediate historical baseline e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39 is provenance only. The six Story slider/view/stealth reads retain identical blob identities at the new authority and are provenance-rebound, not re-read. Recursive/root/build-time counts remain provisional until current-head source-authority workflow evidence is terminal-success. The seven changed IV/Markdown source files and changed lib_ui child receive no inherited semantic-read credit. Source semantic closure remains open; omitted remains 0."
   },
   "acceptance": {
     "baseline_ready": false,
