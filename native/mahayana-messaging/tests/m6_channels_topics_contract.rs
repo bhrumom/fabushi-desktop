@@ -705,6 +705,109 @@ fn typed_child_read_and_draft_share_the_canonical_conversation_state() {
         Some(message_id.0.as_str())
     );
 
+    let invalid_saved_child = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "draft-missing-saved-child"),
+                ClientCommand::SetConversationChildDraft {
+                    destination: ConversationDestination::saved_sublist(
+                        conversation_id.clone(),
+                        ActorId::new("human:missing"),
+                    ),
+                    text: "must not materialize".into(),
+                    reply_to_message_id: None,
+                },
+            ),
+            6,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        invalid_saved_child,
+        MessagingServiceError::Engine(EngineError::InvalidConversationChildDestination)
+    ));
+
+    let child_conversation_id = ConversationId::new("conversation:nested-child");
+    let child_conversation = Conversation::direct(
+        child_conversation_id.0.clone(),
+        "Nested child fixture",
+        vec![
+            participant("human:owner", ParticipantRole::Owner),
+            participant("human:peer", ParticipantRole::Member),
+        ],
+        7,
+    );
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "create-nested-child"),
+                ClientCommand::CreateConversation {
+                    conversation: child_conversation,
+                },
+            ),
+            7,
+        )
+        .unwrap();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "send-nested-child"),
+                ClientCommand::SendMessage {
+                    conversation_id: child_conversation_id.clone(),
+                    client_message_id: ClientMessageId("client:nested-child".into()),
+                    content: text_message("nested child message"),
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    scheduled_at_ms: None,
+                    silent: false,
+                    protected_content: false,
+                },
+            ),
+            8,
+        )
+        .unwrap();
+    let nested_message_id = service
+        .engine()
+        .state()
+        .messages
+        .get(&child_conversation_id)
+        .and_then(|messages| messages.values().next())
+        .expect("nested child message")
+        .id
+        .clone();
+    let nested_destination = ConversationDestination::nested_conversation(
+        conversation_id.clone(),
+        child_conversation_id.clone(),
+    );
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "read-nested-child"),
+                ClientCommand::MarkConversationChildRead {
+                    destination: nested_destination.clone(),
+                    message_id: nested_message_id.clone(),
+                },
+            ),
+            9,
+        )
+        .unwrap();
+    let nested_child = service
+        .engine()
+        .state()
+        .conversation_child_states
+        .iter()
+        .find(|state| {
+            state.destination == nested_destination
+                && state.actor_id == ActorId::new("human:owner")
+        })
+        .expect("nested canonical child state");
+    assert_eq!(
+        nested_child
+            .inbox_read_till
+            .as_ref()
+            .map(|position| position.message_id.as_str()),
+        Some(nested_message_id.0.as_str())
+    );
+
     let denied = service
         .handle(
             ClientEnvelope::new(
@@ -715,7 +818,7 @@ fn typed_child_read_and_draft_share_the_canonical_conversation_state() {
                     reply_to_message_id: None,
                 },
             ),
-            6,
+            10,
         )
         .unwrap_err();
     assert!(matches!(
