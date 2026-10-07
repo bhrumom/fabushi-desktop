@@ -1147,6 +1147,25 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Preserves the frozen Grok allowlisted external-URL parsing boundary while adapting TDRP Revision 9 credential containment. Ordinary external URLs strip foreign web-login token parameters from query and fragment, including repeatedly encoded parameter names, while a distinct server-accepted path may preserve the exact URL only when it is HTTP(S), credential-free, and matches the expected first-party origin. The accepted-auth capability remains owned by the Fabushi account adapter and is not exposed to MainEdge. Exact-head focused contract evidence and independent review prove this privilege boundary without weakening the general external-URL gate."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/org-chart/workspace/graph.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "a1fd0a426dba3964dfbc9bab82e4ed01a0f7f967",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/org-chart/workspace/graph.tsx",
+        "frontend/src/recovered/features/org-chart/workspace/view.tsx",
+        "projects/fabushi-communication-platform/visual-acceptance.md"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "rationale": "Preserves the frozen Grok Agent Network interaction model while adapting only its layout lifecycle to the canonical Fabushi workspace. When explicit dimensions are absent, the Agent Network region fills its current workspace, ResizeObserver owns live rendered geometry, layout/pan/zoom all consume that measured geometry, and the non-passive wheel listener is rebound when live layout dimensions change. This removes the recovered fixed 760x500 behavior and the stale-listener dependency bug without creating a second shell, state owner, or Agent runtime. Existing region/button accessibility semantics remain intact; the exact-head recovered-foundations contract locks measurement/listener dependencies, while the real Electron parity journey proves parent-fill geometry, aria-pressed state, wheel zoom behavior, and captures responsive Agent Network screenshot evidence."
     }
   ]
 }
