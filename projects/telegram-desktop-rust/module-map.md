@@ -1,8 +1,8 @@
 # 全量源文件/模块 → Fabushi Owner 对照规则
 
 Status: active  
-Project: TDRP-001 Revision 8  
-Parent: FBCP-001 Revision 6  
+Project: TDRP-001 Revision 9  
+Parent: FBCP-001 Revision 7  
 Updated: 2026-10-07
 
 ## Purpose
@@ -18,6 +18,8 @@ Updated: 2026-10-07
 对所有用户可见责任还必须记录：`ui_entry_class`、canonical route/root/slot、collection/filter、creation flow、object action/detail section、capability surface、search scope/provider/result/filter/permission、keyboard/accessibility、responsive/state-continuity。Group/Channel/Topic 等不能因上游页面独立而映射成第二应用；Search consumer 不得自建 search truth。
 
 还必须记录 `design_system_version`、semantic tokens、canonical component IDs、screen pattern/slot、visual state matrix、icon/avatar/copy/motion contract、visual baseline/evidence 与任何 design exception ADR。能用现有 canonical component 表达却自建 feature-local primitive/pattern 的映射不得通过。
+
+测试字段同样是 required record：`quality_risk`、`requirement_ids`、`oracle_ids`、`invariant_ids`、unit/property-state/contract/integration/functional-E2E/temporal/fault/UI/visual/a11y/performance/soak/security case IDs、regression IDs、exploratory charter、fixture/environment、flake status、execution evidence、acceptance reviewer 与 release-gate status。没有 oracle/traceability 的 mapped/implemented 不能升级 verified。
 
 字段、状态和完整 gate 以 TDRP-001 §2/§8 为准。旧目录级表仅能作为导航，不能证明逐文件覆盖。proposed path 不等于已存在 production code。
 

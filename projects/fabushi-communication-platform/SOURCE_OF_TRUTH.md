@@ -2,7 +2,7 @@
 
 Status: active  
 Project ID: FBCP-001  
-Revision: 6  
+Revision: 7  
 Date: 2026-10-07  
 Repository: `bhrumom/fabushi-desktop`
 
@@ -15,8 +15,8 @@ Repository: `bhrumom/fabushi-desktop`
 ## Normative documents
 
 - root `AGENTS.md`
-- `docs/specs/fabushi-bot-communication-platform.md` — FBCP-001 Revision 6
-- `docs/specs/telegram-desktop-rust-equivalence-migration.md` — TDRP-001 Revision 8
+- `docs/specs/fabushi-bot-communication-platform.md` — FBCP-001 Revision 7
+- `docs/specs/telegram-desktop-rust-equivalence-migration.md` — TDRP-001 Revision 9
 - current canonical Bot architecture/spec and exact-head implementation
 - `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md` and `module-map.md`
 - `projects/fabushi-communication-platform/ui-information-architecture.md`
@@ -24,6 +24,7 @@ Repository: `bhrumom/fabushi-desktop`
 - `projects/fabushi-communication-platform/ui-component-contract.md`
 - `projects/fabushi-communication-platform/canonical-screen-patterns.md`
 - `projects/fabushi-communication-platform/visual-acceptance.md`
+- `projects/fabushi-communication-platform/quality/README.md` and all normative quality plans/oracles/contracts under `quality/`
 - current task, existing architecture-map, dossiers, ledger, ADR and evidence
 
 以上新 Revision 替代旧 project metadata/研究材料中 research-only、选择性吸收、where accepted 或 blocked 可算最终验收的口径。旧数据保留历史身份，不自动改为 verified；现有 schema/validator 尚需按新合同扩展。
@@ -45,6 +46,10 @@ Repository: `bhrumom/fabushi-desktop`
 - UI 必须使用 Fabushi semantic design tokens、canonical components 与 canonical screen patterns；AI/开发者不得按模块自由发明新的 visual grammar。
 - 当前 recovered `sand-*` / `cursor-*` 可作为兼容实现细节，但新迁移 UI 不直接把来源命名当公共 API；目标层为 Fabushi-owned semantic aliases/wrappers。
 - 核心 UI 变更必须有 current-head GitHub Actions visual regression、light/dark、locale、responsive、keyboard/a11y、reduced-motion 和状态矩阵证据。
+- 功能/QA 使用 requirement→oracle/invariant→test case→execution evidence→independent verdict 的双向 RTM；没有 traceability 不得 verified。
+- 动态 Agent/消息/UI 行为必须做 temporal acceptance；final/terminal 在 settlement、切换、reconnect、reload、restart 后不可消失/回滚/被 intermediate 替代。
+- 人工/后阶段发现的 defect 必须形成永久 regression case 和 gap analysis；flaky/skipped/blocked/not-run 不算 pass。
+- release candidate 必须由独立验收者复核 packaged timeline/screenshots/video/evidence，0 open P0/P1/blocker 才可 ACCEPT。
 - 产品名/图标/窗口/文案/安装更新全部 Fabushi；无 Telegram/Grok Bot/Gok Bot 产品品牌；必要法律声明和 provenance 保留。
 - 所有可执行验证仅 GitHub Actions，不沿用本项目旧 htch-runtime allowance。
 - 完整迁移需要 0 in-scope open blockers、0 omitted/unmapped、0 stub/fake fallback 和 exact-head 生产/发布证据。
@@ -59,4 +64,4 @@ Revision 3 读取：main `860f03a8553c779fe006c7826f190c3014a571dc`；PR #20 已
 
 `management/tasks/P0-product-domain-and-telegram-absorption.md`
 
-先做新基线全量差异与 current owner 对照，再按已明确责任推进真实实现。遇到阻塞记录解除条件并推进不依赖该阻塞的下一项，不能放宽 gate。此次只修订文档，未完成模块迁移或 UI 改造；全产品完成以 FBCP-001 AC-01 至 AC-40 全部通过为准。
+先做新基线全量差异与 current owner 对照，再按已明确责任推进真实实现。遇到阻塞记录解除条件并推进不依赖该阻塞的下一项，不能放宽 gate。此次只修订文档，未完成模块迁移或 UI 改造；全产品完成以 FBCP-001 AC-01 至 AC-50 全部通过为准。

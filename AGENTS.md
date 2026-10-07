@@ -189,4 +189,6 @@ TDRP-001 remains source-informed and is not clean-room. Do not claim Rust automa
 
 ### Execution
 
-All builds, lint, generators, schema checks, tests, benchmarks, fuzzing, packaging and acceptance run only in GitHub Actions or `htch-runtime`.
+**FBCP-001 / TDRP-001 project exception:** all executable verification for this migration project runs **only in GitHub Actions**. The repository-wide `htch-runtime` allowance above does not apply to FBCP/TDRP. This includes build, lint, generator, schema, unit/property/state-machine, contract, integration, E2E, temporal, visual, accessibility, performance, soak, fault-injection, package and acceptance runs.
+
+Read-only investigation, spec/test-plan editing, evidence review and Git/API operations may occur outside Actions. Missing runner/account/service/signing configuration is blocked, never pass.

@@ -2,7 +2,7 @@
 
 Status: active  
 Acceptance contract ID: FVA-001  
-Revision: 1  
+Revision: 2  
 Parent: FBCP-001 Revision 6  
 Execution: GitHub Actions only  
 Updated: 2026-10-07
@@ -72,6 +72,16 @@ Approved baseline 必须来自已验收 design contract，不能把失败状态�
 ## 11. State continuity
 
 切换 Conversation/primary domain、打开关闭 detail/overlay、进入退出 Search/Call/Media/Settings 后，验证 draft、scroll、selection、unread anchor、search query、running Agent/task/call、upload state。无理由丢失即失败。
+
+## 11.1 Timeline visual acceptance
+
+对任何会随时间变化的关键流程，不能只截最终图。至少在 `submitted/accepted/first-visible-progress/tool-or-substate/terminal/settled+2s/settled+8s/switch-back/reconnect-or-reload/restart` 中适用节点保存 screenshot + DOM/semantic manifest + lifecycle trace。
+
+Conversation/Agent turn 必须能证明：terminal final 不是短暂闪现；settlement 后不会消失、被较早 intermediate 覆盖、重排到错误位置或在 refresh/restart 后改变语义。UI timeline 与 backend/canonical transcript manifest 必须能按 stable IDs 对齐。
+
+## 11.2 Video review is an acceptance action
+
+关键 packaged journey 必须录制完整 session video。Artifact 存在不等于审阅完成：独立 reviewer 必须从开始到结束实际检查，并记录 reviewer、charter、time range、observations、defects/none、verdict。只看 final screenshot 不能替代 temporal review。
 
 ## 12. Large-data / performance visual acceptance
 

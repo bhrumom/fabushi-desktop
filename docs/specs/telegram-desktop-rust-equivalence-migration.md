@@ -2,9 +2,9 @@
 
 Status: active  
 Spec ID: TDRP-001  
-Revision: 8  
+Revision: 9  
 Last updated: 2026-10-07  
-Parent: `docs/specs/fabushi-bot-communication-platform.md` (FBCP-001 Revision 6)  
+Parent: `docs/specs/fabushi-bot-communication-platform.md` (FBCP-001 Revision 7)  
 Project: `projects/telegram-desktop-rust`  
 Acceptance status: **not complete; requirements only updated by this revision**
 
@@ -90,6 +90,14 @@ visual_state_matrix, density_contract, icon_asset_contract, avatar_contract
 content_copy_keys, motion_contract, reduced_motion_contract
 visual_baseline_ids, visual_evidence, accessibility_evidence
 design_exception_adr, design_reviewer
+quality_risk, requirement_ids, oracle_ids, invariant_ids
+unit_case_ids, property_state_case_ids, contract_case_ids, integration_case_ids
+functional_e2e_case_ids, temporal_case_ids, fault_recovery_case_ids
+ui_functional_case_ids, visual_case_ids, accessibility_case_ids
+performance_case_ids, soak_case_ids, security_case_ids
+regression_ids, exploratory_charter_ids, release_gate_ids
+test_fixture_ids, test_environment_ids, coverage_matrix_status, flake_status
+test_execution_evidence, acceptance_reviewer, release_gate_status
 license_and_provenance, reviewer, notes
 ```
 
@@ -110,6 +118,9 @@ license_and_provenance, reviewer, notes
 **TDRP-MOD-02:** 定义行为 oracle：相同输入及对应服务事件，在 Fabushi 应产生什么输出、可见状态、持久化结果和副作用。说明因自有协议、平台、UI 或品牌改变的差异；允许实现不同，但不得把功能缩水包装成架构优化。
 
 **TDRP-MOD-03:** 每个 dossier 必须继续写清 exact-head existing owner、target path/symbol、typed contract、production composition、必要服务端职责、完整测试场景及迁移/回滚。只有研究笔记不算模块完成。
+
+**TDRP-MOD-04 — Test oracle before verified.** 每个 product responsibility 必须绑定 requirement IDs 与一个明确 oracle；涉及排序、状态机、并发、异步、recovery 的责任必须列 invariant 和 event-sequence cases。`eventually visible`、单一 marker、单 screenshot 或单 mock response 不能单独证明等价。
+**TDRP-MOD-05 — Escaped defect closure.** 人工/后阶段发现的迁移问题必须在 regression ledger 中记录 affected requirement、missed gate、root cause、最小复现、补加测试层与永久 regression ID；修复后只跑原 happy-path 不能关闭。
 
 ## 4. 架构与重写语言
 
@@ -178,8 +189,9 @@ Telegram 中 dialog/history/people/media/username/filter 等搜索职责必须�
 3. 对每个文件/责任选择现有 Fabushi owner，必要新 owner 经最小 ADR 批准。
 4. 在 Fabushi 自有路径用选定语言实现，补齐真实服务端/平台依赖。
 5. 接入唯一 shipping composition，迁移数据/路由/权限，移除被替代的重复 ownership。
-6. 在 GitHub Actions 做模块、集成、服务端 E2E、既有 Bot 回归及正式应用验收。
-7. 记录 current-head evidence 和 reviewer，最后才能把相应责任标 verified。
+6. 在 GitHub Actions 按 quality risk 执行 unit/table、property/state-machine、contract、integration、真实 E2E、temporal/recovery、UI functional/visual/a11y，以及适用 performance/security/fault/soak。
+7. 对动态用户旅程生成 timeline trace/DOM manifest/screenshots/video，并按 oracle 检查 terminal settlement、ordering、reconnect/restart 后一致性。
+8. 更新 RTM、regression ledger、current-head evidence，并由独立 acceptance reviewer 复核后，最后才能把相应责任标 verified。
 
 已批准且无依赖的模块可并行推进；缺权限、账号、服务或某个模块被阻塞时不停止其他安全可推进的任务。仍然不得跳过本模块的必要前置与既有 Bot 硬门。
 
@@ -193,6 +205,15 @@ Telegram 中 dialog/history/people/media/username/filter 等搜索职责必须�
 - **G-PRODUCTION:** 对应 Rust/best-fit 实现真实接入当前 shipping product；无原 Telegram C++ owner、TDLib 包装或平行 runtime。
 - **G-COMPOSITION:** 每个能力都绑定唯一 canonical root + typed slot；无按 Human/Agent/Group/Channel/Telegram 来源复制的完整 workspace/list/profile/composer/resource/settings root；novel capability 只有经 ADR 的最小 owner/surface，并复用 canonical truth。
 - **G-BEHAVIOR:** 功能/错误/顺序/重复/取消/销毁/重启/网络恢复等与合同等价；mock 仅作局部测试，不代替真实 E2E。
+- **G-TRACEABILITY:** 每个 applicable requirement/responsibility 绑定 risk、oracle/invariants、test IDs、current-head evidence 与 acceptance verdict；0 orphan requirement、0 无依据 test、0 verified-without-evidence。
+- **G-PROPERTY-STATE:** 高风险状态机/排序/幂等/merge/replay/cancel/restart 通过 table-driven + property/state-machine scenarios，包括 duplicate/out-of-order/late snapshot。
+- **G-TEMPORAL:** 动态流程按完整时间序列验收；Conversation/Agent terminal result 经 settlement quiet window、switch-away/back、reconnect、reload、restart 后保持，不允许 final disappearing/intermediate replacement/completed rollback。
+- **G-UI-FUNCTIONAL:** UI route/control/action/state ownership 真实可操作，禁止仅以 screenshot 证明功能；关键 user journey 由 packaged candidate 执行。
+- **G-REGRESSION:** escaped/manual defect 都有永久 regression ID、root-cause lower-layer coverage 与 current-head rerun；flaky critical test 不得通过 rerun-until-green。
+- **G-EXPLORATORY:** 风险导向 packaged journey/session video/timeline 由独立 reviewer 实际审阅并记录 charter、观察和 verdict。
+- **G-FAULT-RECOVERY:** timeout/disconnect/reconnect/restart/cancel/stale/duplicate/out-of-order/permission/service failure 中适用场景 fail-closed。
+- **G-PERF-SOAK:** approved performance/resource budgets 与长时运行/large-data soak 通过，无无界内存/CPU/磁盘/DOM/state 增长。
+- **G-SECURITY-PRIVACY:** account isolation、permission/secret lifecycle、Mini App/WebMCP、redaction、negative security/privacy 与适用 accessibility gates 通过。
 - **G-BOT:** 原 Agent、Coordinator/Host/Runner、MCP/Plugins、Computer、Automations、审批、任务和产物能力无回退。
 - **G-UI-BRAND:** 左竖栏/消息/联系人/插件市场与统一 workspace 真实可用，合法来源记录外产品品牌全为 Fabushi。
 - **G-UI-IA:** 每个用户可见 capability 有唯一 entry classification/route；Group/Channel/Topic 等不会形成平行 App；统一 ConversationCreation flow、object actions、capability surfaces 与返回路径可验证。
@@ -224,4 +245,4 @@ TDRP-001 只有以下同时成立才能 accepted：
 
 本 Revision 未宣称已逐个阅读全部上游文件、未刷新锁文件/全量账本、未重写产品或运行新 gate。下一任务必须先完成 baseline/ledger/schema/validator 的真实差异审计，再按已有无阻塞 owner 推进实现；旧研究和代码可以复用，但状态必须基于新合同重新证明。
 
-References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 6 ; current canonical Fabushi/Bot specifications.
+References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 7 ; current canonical Fabushi/Bot specifications.

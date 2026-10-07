@@ -2,11 +2,11 @@
 
 Status: active  
 Spec ID: FBCP-001  
-Revision: 6  
+Revision: 7  
 Last updated: 2026-10-07  
 Owner: Fabushi Desktop  
 Canonical project: `projects/fabushi-communication-platform`  
-Companion implementation contract: `docs/specs/telegram-desktop-rust-equivalence-migration.md` (TDRP-001 Revision 8)  
+Companion implementation contract: `docs/specs/telegram-desktop-rust-equivalence-migration.md` (TDRP-001 Revision 9)  
 Implementation status: **requirements updated; full migration not accepted**
 
 > **最终产品是一个完整的 Fabushi Bot：在现有 Fabushi 架构内，逐文件、逐模块理解 `telegramdesktop/tdesktop`，把其全部非 UI 代码职责用最合适的语言等价重写；原 UI 表现层由统一 Fabushi UI 替代，但 UI 中承载的功能与业务逻辑不得遗漏。最终同时具备现有 Bot 的全部能力和 Telegram Desktop 源码所体现的全部产品能力，而不是绑定 Telegram、添加入口、做 Provider 接入、选择性借鉴或局部 Demo。**
@@ -261,6 +261,40 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 
 **FBCP-DS-10 — Visual change 必须有证据。** 任何影响核心 screen、token、component、layout 或 interaction state 的变更，都必须在 GitHub Actions 生成 current-head visual artifacts，并通过 `visual-acceptance.md` 的 structural、light/dark、locale、responsive、keyboard/a11y 和 state-continuity gates；不能用“看起来差不多”验收。
 
+### 8.3 Quality / Test Governance
+
+以下质量文档是本 Spec 的 normative acceptance companions：
+
+- `projects/fabushi-communication-platform/quality/TEST_STRATEGY.md`
+- `projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md`
+- `projects/fabushi-communication-platform/quality/evidence-contract.md`
+- `projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md`
+- `projects/fabushi-communication-platform/quality/defect-regression-policy.md`
+- `projects/fabushi-communication-platform/quality/exploratory-test-plan.md`
+- `projects/fabushi-communication-platform/quality/plans/*.md`
+- `projects/fabushi-communication-platform/quality/oracles/*.md`
+
+该体系采用 ISO/IEC/IEEE 29119 系列的软件测试过程/文档思想、ISTQB 的风险驱动/可追溯/独立性原则、ISO/IEC 25010 质量属性、WCAG 2.2 AA 与 OWASP security verification 思路作为参考；这表示工程方法参考，不构成任何认证声明。
+
+**FBCP-QA-01 — Test basis before test execution.** 每个被测试 capability 先有 stable requirement ID、行为合同、状态机/不变量和可接受差异；测试不能靠“实现看起来合理”自行定义正确性。
+**FBCP-QA-02 — Requirement-to-evidence traceability.** 每个 applicable requirement/AC 必须双向追溯到 oracle/invariant、test case、current-head execution evidence 和 acceptance verdict。没有 traceability 的绿色测试不能把责任标 verified。
+**FBCP-QA-03 — Risk-based depth.** 依据影响 × 概率 × 时序/并发复杂度标 P0/P1/P2/P3 风险；消息 settlement、transcript ordering/reconciliation、Agent streaming/tool/final、cross-conversation isolation、reconnect/restart、permissions/security 默认属于高风险，要求更深测试层。
+**FBCP-QA-04 — Layered verification.** 高风险功能不能只靠 E2E；必须组合 unit、table-driven、property/state-machine、contract、integration、real packaged E2E、temporal/recovery、visual/a11y，以及适用的 performance/security/fault tests。mock 只能证明局部行为。
+**FBCP-QA-05 — Temporal correctness is product correctness.** 实时/异步功能必须验证从用户动作到 terminal settlement 的完整时间序列，而不是只等某个 DOM/text 最终出现。turn/message/tool/upload/call/search 等适用能力都必须有 temporal oracle。
+**FBCP-QA-06 — Stable settlement.** terminal/final/committed 状态在 quiet window、切换对象后返回、reconnect、reload、restart 后必须保持语义一致；不能出现 final 消失、旧 intermediate 回来、completed 回退为 streaming、重复或重排。
+**FBCP-QA-07 — Canonical ordering.** UI DOM order、renderer projection、canonical persisted transcript/collection ordering 必须一致；乱序、duplicate、late snapshot、baseline/live race、optimistic/authoritative merge 均有 deterministic oracle。
+**FBCP-QA-08 — Negative and recovery paths.** 每项关键功能至少覆盖权限拒绝、服务错误、timeout、cancel、duplicate、out-of-order、disconnect/reconnect、restart 和 stale data 中适用路径；只测 happy path 不得 verified。
+**FBCP-QA-09 — UI functional testing is separate from visual testing.** UI 要同时证明 controls/routes/actions/state ownership 真正可用，以及 layout/style/a11y/locale/responsive 正确；截图漂亮不能代替功能测试，DOM assertion 绿色也不能代替视觉验收。
+**FBCP-QA-10 — Timeline visual evidence.** 对 streaming/tool/final、upload、call、sync、reconnect 等动态场景，视觉验收必须在关键状态点和 settlement 后采样 screenshot + DOM manifest + lifecycle trace；整段 session video 必须实际审阅，不能只上传 artifact 就算验收。
+**FBCP-QA-11 — Defect becomes permanent regression.** 人工验收、生产或任何后阶段发现的 defect，修复时必须新增最小可复现 regression case，并根据 root cause 补齐更低层测试；没有 regression evidence 不得关闭。
+**FBCP-QA-12 — Flaky/blocked/skipped is not pass.** flaky、quarantined、skipped、not-run、blocked 均不是 passing evidence。关键 gate 发现 flaky 必须保留 owner、根因、修复期限并阻止 release，禁止 rerun-until-green 作为验收。
+**FBCP-QA-13 — Independent acceptance.** 实现者/实现会话可以写测试并生成证据，但不能作为唯一 release acceptance reviewer。独立验收必须重新读取 spec/RTM、实际检查 evidence，并对 packaged user journey/video 做风险导向审阅。
+**FBCP-QA-14 — Exact-source evidence.** 所有执行证据绑定 target SHA、upstream baseline、workflow/run/attempt/job、环境/fixture、test case IDs、artifact ID/digest。相关 HEAD/spec/oracle 改变使受影响旧证据降为历史。
+**FBCP-QA-15 — Release is a separate decision.** code complete、tests green、artifact exists 都不是自动 release。只有 release entry/exit criteria、0 blocking defects、RTM 完整、independent acceptance 与 summary verdict 全部通过才可 ACCEPT。
+**FBCP-QA-16 — Escaped defect feedback loop.** 人工后来发现但自动测试没发现的问题必须形成 gap analysis：为什么现有 oracle/case/gate 没抓到、在哪一层补 test、是否扩大同类风险扫描；不能只补当前单点。
+**FBCP-QA-17 — Test data/environment are controlled.** 关键测试使用版本化 fixture/seed/locale/theme/viewport/network/fault profile，避免随机时间/头像/账号数据让测试失去可重复性；真实 protected account 另按秘密与清理合同管理。
+**FBCP-QA-18 — All executable verification GitHub Actions only.** 对 FBCP/TDRP，unit/property/state-machine/contract/integration/E2E/visual/a11y/performance/soak/fault/package/acceptance 全部只在 GitHub Actions 运行。
+
 ## 9. 品牌、命名与来源记录
 
 **FBCP-BRAND-01:** 产品名、窗口标题、导航、默认头像/图标、空状态、通知、托盘、设置、安装包、更新界面和用户文案统一使用 Fabushi。不得残留 Telegram、Grok Bot、Gok Bot 的产品品牌、Logo、默认品牌素材或独立产品入口。
@@ -344,6 +378,16 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 | AC-38 | 大会话/长标题/多附件/多成员/大量搜索结果/Agent tool events 下无裁切重叠、无无界增长，虚拟化/滚动/sticky/ellipsis 行为符合 screen contract |
 | AC-39 | 用户可见品牌 asset、图标、头像 fallback、文案、通知和系统 surface 统一 Fabushi；来源品牌只存在合法 provenance/compatibility 记录 |
 | AC-40 | 新 UI primitive/pattern/screen/token 只有在 existing design system 无法承接时才可新增，并有 design rationale、owner、复用范围、迁移计划和 visual acceptance evidence |
+| AC-41 | applicable requirements/AC 100% 进入 RTM；每项均有 oracle/invariant、test IDs、current-head evidence 和独立 verdict，无 orphan requirement/test |
+| AC-42 | 高风险功能同时通过 unit/table/property-state-machine/contract/integration 与 real packaged E2E；只靠 happy-path 或 mock 不得 verified |
+| AC-43 | Conversation/Agent turn 的 submitted→accepted→streaming/tool→terminal→settled 全生命周期通过 temporal oracle；terminal final 在 quiet window、switch/reconnect/reload/restart 后不消失、不回滚、不重复、不串线 |
+| AC-44 | transcript/collection ordering、optimistic→authoritative merge、late baseline/snapshot、duplicate/out-of-order event 有 property + integration + packaged regression 证据，DOM/projection/persisted order 一致 |
+| AC-45 | UI functional + visual + interaction + a11y + responsive + locale + timeline evidence 均通过；session video 被独立 reviewer 实际审阅而非仅存在 artifact |
+| AC-46 | 所有 escaped/manual defects 已进入 regression ledger；每个已关闭 defect 有 reproducible test、root-cause lower-layer coverage 与 current-head evidence |
+| AC-47 | disconnect/reconnect、timeout、cancel、restart、stale/duplicate/out-of-order、permission/service failure 的适用 fault/recovery scenarios 全通过；0 rerun-until-green 掩盖的 flaky critical gate |
+| AC-48 | approved performance/soak budgets 在 large history/roster/search/attachments/Agent tool events 下通过，长会话无无界内存/CPU/磁盘增长或 UI drift |
+| AC-49 | security/privacy negative paths、account isolation、secret/permission lifecycle、Mini App/WebMCP boundaries、logs/redaction 与适用 WCAG/OWASP gates 通过 |
+| AC-50 | exact-head release candidate 满足 entry/exit criteria、0 open P0/P1/blocker、RTM/evidence bundle 完整、独立 acceptance report 为 ACCEPT；blocked/skipped/flaky/not-run 均不能计为通过 |
 
 ## 14. 本次交付与后续任务
 
