@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -70,6 +71,31 @@ test("agent network trigger is fail-closed behind availability gate", () => {
   assert.deepEqual(calls, ["close", "open"]);
   assert.equal(AGENT_NETWORK_TRIGGER.ariaLabel, "Agent network");
   assert.equal(AGENT_NETWORK_TRIGGER.icon, "cube-nodes");
+});
+
+test("agent network graph keeps responsive measurement and live wheel geometry in sync", () => {
+  const graphSource = readFileSync(
+    new URL("./org-chart/workspace/graph.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(graphSource, /ref=\{containerRef\}/);
+  assert.match(
+    graphSource,
+    /style=\{\{ width: width \?\? "100%", height: height \?\? "100%" \}\}/,
+  );
+  assert.match(
+    graphSource,
+    /observer\.observe\(container\);[\s\S]*?\}, \[height, width\]\);/,
+  );
+  assert.match(
+    graphSource,
+    /scene\.addEventListener\("wheel", onWheel, \{ passive: false \}\);[\s\S]*?\}, \[layoutHeight, layoutWidth\]\);/,
+  );
+  assert.match(
+    graphSource,
+    /zoomViewport\(viewportRef\.current,[\s\S]*?\{ width: layoutWidth, height: layoutHeight \}\)/,
+  );
 });
 
 test("sidebar profile action forwards exactly the selected agent identity", () => {
