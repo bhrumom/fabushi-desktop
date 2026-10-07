@@ -14,7 +14,7 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15788,
-    "unread_minimum": 15748,
+    "unread_minimum": 15746,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -42,7 +42,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Rebased live authority to telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. Root and recursive cardinality remain subject to current-head source-authority evidence. All seven IV/Markdown source entries changed by the d346 delta are now read-complete at exact accepted blobs: iv_markdown_article.{h,cpp}, iv_markdown_article_text.{h,cpp}, iv_markdown_button_row.{h,cpp}, and iv_markdown_view_widget.cpp. They are mapped-open in dedicated dossiers/ledger rows; no implementation or verification credit is inherited. The changed lib_ui child authority receives no inherited semantic-read credit. unread_minimum is 15,748; unknown remains 15,788 and omitted remains 0 while responsibility closure is open.",
+  "note": "Rebased live authority to telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. Root and recursive cardinality remain subject to current-head source-authority evidence. All seven IV/Markdown source entries changed by the d346 delta are read-complete at exact accepted blobs and mapped-open. Telegram/SourceFiles/data/data_saved_messages.h@82b9aed5cb2e1250fc0f4c5c2013bd58c689a344 and data_saved_messages.cpp@2be216670b644eb012e7a241af78b3adda639619 are also now read-complete and mapped-open in saved-messages-complete-read.md. No implementation or verification credit is inferred from those reads. The changed lib_ui child authority receives no inherited semantic-read credit. unread_minimum is 15,746; unknown remains 15,788 and omitted remains 0 while responsibility closure is open.",
   "rebaseline": {
     "from_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
     "to_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
