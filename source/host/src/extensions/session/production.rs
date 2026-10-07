@@ -3580,6 +3580,7 @@ mod sharebox_shipping_tests {
         assert_eq!(visible[0].get("id").and_then(serde_json::Value::as_str), Some(beta.as_str()));
 
         let beta_owner = workers.open_human_conversation_db_owner(&beta).unwrap();
+        let destination_before = beta_owner.get_transcript_entries().unwrap();
         assert!(beta_owner
             .set_metadata("participantIds", serde_json::json!(["human-beta"]))
             .unwrap());
@@ -3602,8 +3603,9 @@ mod sharebox_shipping_tests {
             .pointer("/destinations/0/error")
             .and_then(serde_json::Value::as_str)
             .is_some_and(|error| error.contains("no longer authorized")));
-        assert!(
-            workers.read_human_conversation_transcript(&beta).unwrap().is_empty(),
+        let destination_after = beta_owner.get_transcript_entries().unwrap();
+        assert_eq!(
+            destination_after, destination_before,
             "submit-time authorization must fail before a destination transcript mutation"
         );
 
