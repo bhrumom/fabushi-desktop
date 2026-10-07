@@ -70,18 +70,18 @@ jobs:
           const fs = require('node:fs');
           const inventory = require('./projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
           const discovered = fs.readFileSync('artifacts/tdrp-authority/build-time-acquisition-candidates.txt', 'utf8').split(/\\r?\\n/).filter(Boolean);
-          const byPrefix = new Set(discovered.map(line => line.slice(0, line.indexOf(':', line.indexOf(':') + 1))));
+          const hasLiveKey = (key) => discovered.some(line => line.startsWith(key + ':'));
           const classified = new Set();
           for (const item of inventory.immutable_commit_pin_occurrences || []) {
             const key = item.source_path + ':' + item.source_line;
-            if (!byPrefix.has(key)) throw new Error('immutable acquisition missing from live discovery: ' + key);
+            if (!hasLiveKey(key)) throw new Error('immutable acquisition missing from live discovery: ' + key);
             if (classified.has(key)) throw new Error('duplicate classified acquisition: ' + key);
             classified.add(key);
           }
           for (const group of inventory.candidate_disposition_groups || []) {
             for (const line of group.source_lines || []) {
               const key = group.source_path + ':' + line;
-              if (!byPrefix.has(key)) throw new Error('dispositioned acquisition missing from live discovery: ' + key);
+              if (!hasLiveKey(key)) throw new Error('dispositioned acquisition missing from live discovery: ' + key);
               if (classified.has(key)) throw new Error('duplicate classified acquisition: ' + key);
               classified.add(key);
             }
