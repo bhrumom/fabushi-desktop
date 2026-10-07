@@ -8,16 +8,16 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
-    "tree": "a692d0cb658e9e9df3309f0e21a035421a93f6bb",
-    "committed_at": "2026-10-07T18:27:22Z",
+    "commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+    "tree": "5db05afa460bb030ac36316beb6496df03742c59",
+    "committed_at": "2026-10-07T20:02:22Z",
     "accepted": true
   },
   "previous_historical_baseline": {
-    "commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
-    "tree": "b4095fab77f923fca2a4b99d710ec333aa6757ab",
+    "commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
+    "tree": "a692d0cb658e9e9df3309f0e21a035421a93f6bb",
     "evidence_status": "historical-only",
-    "reason": "Revision 9 rebaseline moved live dev authority to e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39; all 72b3 evidence is diagnostic/historical only."
+    "reason": "Revision 9 live dev authority advanced one commit to d346b42a1d30ef60dc989b6e5191bb8e571f6bd5; all e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39 source-authority runs are diagnostic/historical only."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
@@ -29,8 +29,8 @@
     "root_non_directory_count": 6355
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 15,
-    "changed_paths": 5
+    "ahead_by": 1,
+    "changed_paths": 8
   },
   "direct_gitlinks": [
     {
@@ -191,7 +191,7 @@
     {
       "path": "Telegram/lib_ui",
       "repository": "desktop-app/lib_ui",
-      "commit": "17afd92aa67bb74705be2b75670d09ae094a96e0"
+      "commit": "a0f588b7522d6f3bfac4c19b5824a4e325295020"
     },
     {
       "path": "Telegram/lib_webrtc",
@@ -275,7 +275,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live upstream baseline is e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39; current-head Revision 9 source-authority evidence is required. Full source closure remains open until unknown=0, unread=0, omitted=0 and every recursive/build authority and responsibility is verified."
+    "note": "Live upstream baseline is d346b42a1d30ef60dc989b6e5191bb8e571f6bd5; current-head Revision 9 source-authority evidence is required. Full source closure remains open until unknown=0, unread=0, omitted=0 and every recursive/build authority and responsibility is verified."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -289,7 +289,7 @@
     "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
     "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
     "recursive_non_directory_entries": 15788,
-    "superseded_by_upstream_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39"
+    "superseded_by_upstream_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5"
   },
   "recursive_inventory_evidence": {
     "status": "historical-only",
@@ -304,7 +304,7 @@
     "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
     "recursive_non_directory_entries": 15788,
     "source_closure_ready": false,
-    "superseded_by_upstream_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39"
+    "superseded_by_upstream_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5"
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
