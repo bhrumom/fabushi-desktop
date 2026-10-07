@@ -153,6 +153,10 @@ Behavior:
 
 Disposition: canonical Message formatted-text/entity owner plus OS clipboard adapter and canonical Conversation picker. `cf60178cab2142e75e9b0f5b7d24145b0b997b15` adds `FormattedText::prepend_plain_text`, which shifts existing entity offsets by the prefix length in UTF-16 code units and fails atomically on offset overflow. Machine-readable responsibility: `TDRP-R9-SHARE-LINK-ENTITY-OFFSET-001`; oracle `ORA-TDRP-SHARE-LINK-ENTITY-OFFSET-001`; invariants `INV-TDRP-SHARE-LINK-UTF16-OFFSET-001` and `INV-TDRP-SHARE-LINK-ATOMIC-OVERFLOW-001`. This narrow slice is implemented, not verified. Clipboard ownership, duplicate-submit fencing, multi-recipient settlement, SendOther pre-exposure, and exact shipping UI evidence remain open.
 
+## Exact-head evidence routing
+
+The Rust desktop runtime now executes the complete `native/mahayana-messaging` contract suite and uploads a machine-readable `rust-messaging-responsibilities-<sha>` artifact. Both that workflow and the macOS exact-source packaging workflow include `projects/telegram-desktop-rust/**` in their push path filters, so a traceability change cannot become the live `main` HEAD without generating fresh runtime and packaging evidence for that same HEAD. Until those current-head runs are terminal-success, all ShareBox rows remain `implemented`, not `verified`.
+
 ## Lifecycle, failure and concurrency summary
 
 The source does not treat Share as a stateless modal. Important transferable responsibilities include request→query correlation, debounce/cache, stale replacement handling, nested thread lifetimes, asynchronous restriction refresh, approval revalidation, duplicate-submit fencing, multi-request settlement, source-item disappearance, destination authorization, and explicit send errors. These must be represented by existing Fabushi owners before this source file can become mapped/verified.
