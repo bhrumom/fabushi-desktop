@@ -281,6 +281,66 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
     assert_eq!(forwarded.scheduled_at_ms, Some(30));
     assert!(forwarded.silent);
 
+    let mut blocked_destination = Conversation::direct(
+        "chat:blocked-forward",
+        "Blocked forward",
+        vec![participant("human:forwarder", ParticipantRole::Owner)],
+        3,
+    );
+    blocked_destination.permissions.can_send_messages = false;
+    engine
+        .execute(Command::UpsertConversation {
+            conversation: blocked_destination,
+        })
+        .unwrap();
+    let blocked_error = engine
+        .execute(Command::ForwardMessage {
+            source_conversation_id: ConversationId::new("chat:source"),
+            message_id: MessageId::new("source:1"),
+            destination_conversation_id: ConversationId::new("chat:blocked-forward"),
+            local_message_id: MessageId::new("forward:blocked"),
+            client_message_id: ClientMessageId("client:forward-blocked".into()),
+            sender_id: ActorId::new("human:forwarder"),
+            created_at_ms: 3,
+            scheduled_at_ms: None,
+            silent: false,
+        })
+        .unwrap_err();
+    assert_eq!(
+        blocked_error,
+        EngineError::MessageSendPermissionDenied(ConversationId::new("chat:blocked-forward"))
+    );
+
+    let mut channel_destination = Conversation::direct(
+        "channel:read-only-forward",
+        "Read-only channel",
+        vec![participant("human:forwarder", ParticipantRole::Member)],
+        3,
+    );
+    channel_destination.kind = ConversationKind::Channel;
+    engine
+        .execute(Command::UpsertConversation {
+            conversation: channel_destination,
+        })
+        .unwrap();
+    let channel_error = engine
+        .execute(Command::ForwardMessage {
+            source_conversation_id: ConversationId::new("chat:source"),
+            message_id: MessageId::new("source:1"),
+            destination_conversation_id: ConversationId::new("channel:read-only-forward"),
+            local_message_id: MessageId::new("forward:channel-blocked"),
+            client_message_id: ClientMessageId("client:forward-channel-blocked".into()),
+            sender_id: ActorId::new("human:forwarder"),
+            created_at_ms: 3,
+            scheduled_at_ms: None,
+            silent: false,
+        })
+        .unwrap_err();
+    assert_eq!(
+        channel_error,
+        EngineError::CommunitySendRestricted(ConversationId::new("channel:read-only-forward"))
+    );
+
     engine
         .execute(Command::QueueMessage {
             conversation_id: ConversationId::new("chat:source"),

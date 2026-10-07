@@ -1164,8 +1164,152 @@ impl MessagingEngine {
                 scheduled_at_ms,
                 silent,
             } => {
-                self.require_conversation(&destination_conversation_id)?;
+                let conversation = self.require_conversation(&destination_conversation_id)?;
                 self.require_actor(&sender_id)?;
+                let original = self
+                    .require_message(&source_conversation_id, &message_id)?
+                    .clone();
+                if original.deleted {
+                    return Err(EngineError::MessageNotFound {
+                        conversation_id: source_conversation_id,
+                        message_id,
+                    });
+                }
+                if original.protected_content {
+                    return Err(EngineError::ProtectedContent);
+                }
+
+                // Forwarding is still a send into the destination conversation. Reuse the
+                // canonical destination policy instead of letting the forward path bypass
+                // membership, media/poll, community, channel, slow-mode, or secret-chat gates.
+                let sender_is_participant = conversation
+                    .participants
+                    .iter()
+                    .any(|participant| participant.actor_id == sender_id)
+                    || conversation.owner_id.as_ref() == Some(&sender_id);
+                if !sender_is_participant {
+                    return Err(EngineError::SenderNotParticipant {
+                        conversation_id: destination_conversation_id.clone(),
+                        actor_id: sender_id.clone(),
+                    });
+                }
+                if !conversation.permissions.can_send_messages {
+                    return Err(EngineError::MessageSendPermissionDenied(
+                        destination_conversation_id.clone(),
+                    ));
+                }
+                if message_content_uses_media(&original.content)
+                    && !conversation.permissions.can_send_media
+                {
+                    return Err(EngineError::MediaSendPermissionDenied(
+                        destination_conversation_id.clone(),
+                    ));
+                }
+                if matches!(&original.content, MessageContent::Poll { .. })
+                    && !conversation.permissions.can_send_polls
+                {
+                    return Err(EngineError::PollSendPermissionDenied(
+                        destination_conversation_id.clone(),
+                    ));
+                }
+                if let Some(member) = self
+                    .state
+                    .communities
+                    .get(&destination_conversation_id)
+                    .and_then(|community| community.members.get(&sender_id))
+                {
+                    if matches!(member.status, MemberStatus::Left | MemberStatus::Banned)
+                        || (matches!(member.status, MemberStatus::Restricted)
+                            && member.restrictions.send_messages)
+                    {
+                        return Err(EngineError::CommunitySendRestricted(
+                            destination_conversation_id.clone(),
+                        ));
+                    }
+                    if message_content_uses_media(&original.content)
+                        && matches!(member.status, MemberStatus::Restricted)
+                        && member.restrictions.send_media
+                    {
+                        return Err(EngineError::CommunityMediaRestricted(
+                            destination_conversation_id.clone(),
+                        ));
+                    }
+                    if matches!(&original.content, MessageContent::Poll { .. })
+                        && matches!(member.status, MemberStatus::Restricted)
+                        && member.restrictions.send_polls
+                    {
+                        return Err(EngineError::CommunityPollRestricted(
+                            destination_conversation_id.clone(),
+                        ));
+                    }
+                }
+                if matches!(conversation.kind, ConversationKind::Channel) {
+                    let can_post =
+                        conversation.owner_id.as_ref() == Some(&sender_id)
+                            || conversation.participants.iter().any(|participant| {
+                                participant.actor_id == sender_id
+                                    && matches!(
+                                        participant.role,
+                                        ParticipantRole::Owner | ParticipantRole::Admin
+                                    )
+                            })
+                            || self
+                                .state
+                                .communities
+                                .get(&destination_conversation_id)
+                                .is_some_and(|community| {
+                                    community.members.get(&sender_id).is_some_and(|member| {
+                                        matches!(member.status, MemberStatus::Administrator)
+                                            && member.admin_rights.post_messages
+                                    })
+                                });
+                    if !can_post {
+                        return Err(EngineError::CommunitySendRestricted(
+                            destination_conversation_id.clone(),
+                        ));
+                    }
+                }
+                if let Some(community) = self.state.communities.get(&destination_conversation_id) {
+                    if let Some(seconds) = community.slow_mode_seconds {
+                        let bypass = community.can_moderate(&sender_id);
+                        if !bypass {
+                            let latest_sender_message = self
+                                .state
+                                .messages
+                                .get(&destination_conversation_id)
+                                .into_iter()
+                                .flat_map(|messages| messages.values())
+                                .filter(|message| {
+                                    message.sender_id == sender_id
+                                        && !message.deleted
+                                        && message
+                                            .scheduled_at_ms
+                                            .is_none_or(|scheduled| scheduled <= created_at_ms)
+                                })
+                                .max_by_key(|message| (message.created_at_ms, message.id.clone()));
+                            if let Some(message) = latest_sender_message {
+                                let retry_at = message
+                                    .created_at_ms
+                                    .saturating_add(i64::from(seconds).saturating_mul(1_000));
+                                if created_at_ms < retry_at {
+                                    return Err(EngineError::SlowModeActive {
+                                        conversation_id: destination_conversation_id.clone(),
+                                        retry_at_ms: retry_at,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                let is_secret_conversation = matches!(conversation.kind, ConversationKind::Secret);
+                let is_secret_content = matches!(&original.content, MessageContent::Secret { .. });
+                let is_service_content = matches!(&original.content, MessageContent::Service { .. });
+                if is_secret_conversation && !is_secret_content && !is_service_content {
+                    return Err(EngineError::SecretPlaintextRejected);
+                }
+                if !is_secret_conversation && is_secret_content {
+                    return Err(EngineError::SecretContentOutsideSecretConversation);
+                }
                 if client_message_id.0.trim().is_empty() || client_message_id.0.len() > 200 {
                     return Err(EngineError::InvalidClientMessageId);
                 }
@@ -1179,18 +1323,6 @@ impl MessagingEngine {
                         conversation_id: destination_conversation_id,
                         message_id: local_message_id,
                     });
-                }
-                let original = self
-                    .require_message(&source_conversation_id, &message_id)?
-                    .clone();
-                if original.deleted {
-                    return Err(EngineError::MessageNotFound {
-                        conversation_id: source_conversation_id,
-                        message_id,
-                    });
-                }
-                if original.protected_content {
-                    return Err(EngineError::ProtectedContent);
                 }
                 let forward_origin = original
                     .forward_origin
