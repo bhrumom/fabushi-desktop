@@ -591,6 +591,141 @@ fn channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped() 
 }
 
 #[test]
+fn typed_child_read_and_draft_share_the_canonical_conversation_state() {
+    let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
+    for actor_id in ["human:owner", "human:peer", "human:outsider"] {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context(actor_id, &format!("profile:{actor_id}")),
+                    ClientCommand::UpsertProfile {
+                        actor: Actor::human(actor_id, actor_id),
+                    },
+                ),
+                1,
+            )
+            .unwrap();
+    }
+
+    let conversation_id = ConversationId::new("conversation:saved-child");
+    let conversation = Conversation::direct(
+        conversation_id.0.clone(),
+        "Saved child fixture",
+        vec![
+            participant("human:owner", ParticipantRole::Owner),
+            participant("human:peer", ParticipantRole::Member),
+        ],
+        2,
+    );
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "create-saved-child"),
+                ClientCommand::CreateConversation { conversation },
+            ),
+            2,
+        )
+        .unwrap();
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "send-saved-child"),
+                ClientCommand::SendMessage {
+                    conversation_id: conversation_id.clone(),
+                    client_message_id: ClientMessageId("client:saved-child".into()),
+                    content: text_message("canonical child message"),
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    scheduled_at_ms: None,
+                    silent: false,
+                    protected_content: false,
+                },
+            ),
+            3,
+        )
+        .unwrap();
+
+    let message_id = service
+        .engine()
+        .state()
+        .messages
+        .get(&conversation_id)
+        .and_then(|messages| messages.values().next())
+        .expect("saved child message")
+        .id
+        .clone();
+    let destination = ConversationDestination::saved_sublist(
+        conversation_id.clone(),
+        ActorId::new("human:peer"),
+    );
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "draft-saved-child"),
+                ClientCommand::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    text: "child draft".into(),
+                    reply_to_message_id: Some(message_id.clone()),
+                },
+            ),
+            4,
+        )
+        .unwrap();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "read-saved-child"),
+                ClientCommand::MarkConversationChildRead {
+                    destination: destination.clone(),
+                    message_id: message_id.clone(),
+                },
+            ),
+            5,
+        )
+        .unwrap();
+
+    let child = service
+        .engine()
+        .state()
+        .conversation_child_states
+        .iter()
+        .find(|state| {
+            state.destination == destination && state.actor_id == ActorId::new("human:owner")
+        })
+        .expect("canonical child state");
+    assert_eq!(child.draft_text, "child draft");
+    assert_eq!(
+        child.draft_reply_to_message_id.as_deref(),
+        Some(message_id.0.as_str())
+    );
+    assert_eq!(
+        child.inbox_read_till.as_ref().map(|position| position.message_id.as_str()),
+        Some(message_id.0.as_str())
+    );
+
+    let denied = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:outsider", "draft-saved-child-denied"),
+                ClientCommand::SetConversationChildDraft {
+                    destination,
+                    text: "forbidden".into(),
+                    reply_to_message_id: None,
+                },
+            ),
+            6,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        denied,
+        MessagingServiceError::UnauthorizedCommand(reason)
+            if reason.contains("conversation child state update requires membership")
+    ));
+}
+
+#[test]
 fn slow_mode_and_moderation_are_enforced_by_the_rust_state_machine() {
     let mut engine = MessagingEngine::new();
     for actor_id in ["human:owner", "human:admin", "human:member"] {
