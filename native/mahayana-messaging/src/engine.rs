@@ -194,6 +194,14 @@ pub enum Command {
         poll_vote_message_ids: Vec<MessageId>,
         pending_incoming_notification_message_ids: Vec<MessageId>,
     },
+    /// Server/native authority for account-scoped SavedSublist parent access.
+    /// No ClientCommand exposes this relation: a renderer cannot turn an
+    /// arbitrary community into a SavedSublist parent.
+    ReconcileSavedSublistParentAccess {
+        conversation_id: ConversationId,
+        actor_id: ActorId,
+        allowed: bool,
+    },
     SetConversationChildNoPaidMessages {
         destination: ConversationDestination,
         actor_id: ActorId,
@@ -498,6 +506,11 @@ pub enum Event {
         unread_things: ConversationChildUnreadThings,
         pending_incoming_notification_message_ids: Vec<String>,
     },
+    SavedSublistParentAccessReconciled {
+        conversation_id: ConversationId,
+        actor_id: ActorId,
+        allowed: bool,
+    },
     ConversationChildNoPaidMessagesChanged {
         destination: ConversationDestination,
         actor_id: ActorId,
@@ -582,6 +595,10 @@ pub struct MessagingState {
     /// remain protocol-compatibility projections until their load-time migration
     /// is completed; new saved-sublist/community child state belongs here.
     pub conversation_child_states: Vec<ConversationChildRuntimeState>,
+    /// Server/native-authoritative account access to a Conversation that owns
+    /// SavedSublist children. This is the source-neutral replacement for the
+    /// upstream account-scoped parent/admin relation.
+    pub saved_sublist_parent_access: BTreeMap<ConversationId, BTreeSet<ActorId>>,
     pub pending_presence_sends: BTreeMap<ClientMessageId, PendingPresenceSend>,
     pub invoices: BTreeMap<String, Invoice>,
     pub orders: BTreeMap<String, PaymentOrder>,
@@ -1760,6 +1777,43 @@ impl MessagingEngine {
                     message_id,
                 }])
             }
+            Command::ReconcileSavedSublistParentAccess {
+                conversation_id,
+                actor_id,
+                allowed,
+            } => {
+                self.require_actor(&actor_id)?;
+                let conversation = self.require_conversation(&conversation_id)?;
+                if !matches!(conversation.kind, ConversationKind::Group | ConversationKind::Channel)
+                    || !self.state.communities.contains_key(&conversation_id)
+                {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                if allowed {
+                    let community = self
+                        .state
+                        .communities
+                        .get(&conversation_id)
+                        .expect("community existence checked");
+                    let has_access = community_has_access(community, &actor_id)
+                        || conversation.owner_id.as_ref() == Some(&actor_id)
+                        || conversation
+                            .participants
+                            .iter()
+                            .any(|participant| participant.actor_id == actor_id);
+                    if !has_access {
+                        return Err(EngineError::CommunityAccessDenied {
+                            conversation_id,
+                            actor_id,
+                        });
+                    }
+                }
+                Ok(vec![Event::SavedSublistParentAccessReconciled {
+                    conversation_id,
+                    actor_id,
+                    allowed,
+                }])
+            }
             Command::MarkConversationChildRead {
                 destination,
                 actor_id,
@@ -1806,16 +1860,20 @@ impl MessagingEngine {
                         }
                     }
                     Some(ConversationChildIdentity::SavedSublist { participant_id }) => {
-                        // Telegram SavedSublist is owned either by self Saved Messages or by
-                        // an explicit monoforum parent chat. Fabushi does not yet model the
-                        // monoforum parent relation, so accept only the canonical self
-                        // SavedMessages parent and fail closed for all other parent kinds.
+                        // SavedSublist is valid only under self SavedMessages or an
+                        // explicit server/native-authoritative parent relation for this
+                        // account. Community-ness alone is never sufficient.
                         let self_saved_messages = matches!(
                             conversation.kind,
                             ConversationKind::SavedMessages
                         ) && conversation.owner_id.as_ref() == Some(&actor_id);
+                        let server_parent = self
+                            .state
+                            .saved_sublist_parent_access
+                            .get(&conversation_id)
+                            .is_some_and(|actors| actors.contains(&actor_id));
                         let participant_exists = self.state.actors.contains_key(participant_id);
-                        if !self_saved_messages || !participant_exists {
+                        if (!self_saved_messages && !server_parent) || !participant_exists {
                             return Err(EngineError::InvalidConversationChildDestination);
                         }
                     }
@@ -1940,16 +1998,20 @@ impl MessagingEngine {
                         }
                     }
                     Some(ConversationChildIdentity::SavedSublist { participant_id }) => {
-                        // Telegram SavedSublist is owned either by self Saved Messages or by
-                        // an explicit monoforum parent chat. Fabushi does not yet model the
-                        // monoforum parent relation, so accept only the canonical self
-                        // SavedMessages parent and fail closed for all other parent kinds.
+                        // SavedSublist is valid only under self SavedMessages or an
+                        // explicit server/native-authoritative parent relation for this
+                        // account. Community-ness alone is never sufficient.
                         let self_saved_messages = matches!(
                             conversation.kind,
                             ConversationKind::SavedMessages
                         ) && conversation.owner_id.as_ref() == Some(&actor_id);
+                        let server_parent = self
+                            .state
+                            .saved_sublist_parent_access
+                            .get(&conversation_id)
+                            .is_some_and(|actors| actors.contains(&actor_id));
                         let participant_exists = self.state.actors.contains_key(participant_id);
-                        if !self_saved_messages || !participant_exists {
+                        if (!self_saved_messages && !server_parent) || !participant_exists {
                             return Err(EngineError::InvalidConversationChildDestination);
                         }
                     }
@@ -3721,6 +3783,39 @@ impl MessagingEngine {
                     child.replace_pending_incoming_notifications(
                         pending_incoming_notification_message_ids,
                     );
+                }
+            }
+            Event::SavedSublistParentAccessReconciled {
+                conversation_id,
+                actor_id,
+                allowed,
+            } => {
+                if allowed {
+                    self.state
+                        .saved_sublist_parent_access
+                        .entry(conversation_id)
+                        .or_default()
+                        .insert(actor_id);
+                } else {
+                    let remove_parent = self
+                        .state
+                        .saved_sublist_parent_access
+                        .get_mut(&conversation_id)
+                        .is_some_and(|actors| {
+                            actors.remove(&actor_id);
+                            actors.is_empty()
+                        });
+                    if remove_parent {
+                        self.state.saved_sublist_parent_access.remove(&conversation_id);
+                    }
+                    self.state.conversation_child_states.retain(|child| {
+                        !(child.actor_id == actor_id
+                            && child.destination.conversation_id == conversation_id
+                            && matches!(
+                                child.destination.child,
+                                Some(ConversationChildIdentity::SavedSublist { .. })
+                            ))
+                    });
                 }
             }
             Event::ConversationChildNoPaidMessagesChanged {
