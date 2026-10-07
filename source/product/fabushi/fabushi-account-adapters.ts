@@ -14,9 +14,13 @@ import type {
   ElectronProductionAdapterBindings,
 } from "../../electron-main/production-adapters.js";
 import {
+  parseServerAcceptedAuthExternalUrl,
+} from "../../shared/external-url-policy.js";
+import {
   DEFAULT_FABUSHI_RESPONSES_URL,
   FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV,
   FabushiAuthService,
+  normalizeFabushiApiBaseUrl,
 } from "./fabushi-account-service.js";
 
 export const FABUSHI_RESPONSES_URL_ENV = "FABUSHI_RESPONSES_URL";
@@ -45,6 +49,18 @@ function productHostCredentialPath(context: ProductionServiceContext): string {
   return join(context.native.app.getPath("userData"), "fabushi-host-access-credential-v1.json");
 }
 
+async function openServerAcceptedFabushiLoginUrl(
+  context: Pick<ProductionServiceContext, "env" | "native">,
+  value: string,
+): Promise<void> {
+  const expectedOrigin = normalizeFabushiApiBaseUrl(context.env.FABUSHI_API_BASE_URL);
+  const accepted = parseServerAcceptedAuthExternalUrl(value, expectedOrigin);
+  if (accepted == null) {
+    throw new Error("Fabushi browser sign-in returned an external URL outside the accepted first-party origin.");
+  }
+  await context.native.shell.openExternal(accepted);
+}
+
 function installProductEnvironment(context: ProductionServiceContext): string {
   const credentialPath = productHostCredentialPath(context);
   context.env[FABUSHI_PRODUCT_MODE_ENV] = "1";
@@ -71,11 +87,11 @@ export function createFabushiProductionAccountOAuthBinding(): ElectronProduction
       const hostAccessCredentialFile = installProductEnvironment(context);
       return {
         openExternal: async (url) => {
-          await context.native.shell.openExternal(url);
+          await openServerAcceptedFabushiLoginUrl(context, url);
         },
         createAuthService: () => new FabushiAuthService({
           openExternal: async (url) => {
-            await context.native.shell.openExternal(url);
+            await openServerAcceptedFabushiLoginUrl(context, url);
           },
           env: context.env,
           machineId: context.machineId,
