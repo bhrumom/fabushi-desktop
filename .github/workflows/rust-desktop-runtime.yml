@@ -326,6 +326,17 @@ jobs:
           console.log('UPSTREAM_COMMIT='+commit.sha);
           console.log('UPSTREAM_TREE='+commit.tree.sha);
           console.log('LOCK_TREE='+lock.upstream.tree);
+          async function printGitlinks(repo, sha, label) {
+            const cr=await fetch('https://api.github.com/repos/'+repo+'/git/commits/'+sha,{headers:{Authorization:'Bearer '+process.env.GH_TOKEN,'User-Agent':'fabushi-tdrp-r9'}});
+            if(!cr.ok) throw new Error(label+' commit lookup failed '+cr.status);
+            const co=await cr.json();
+            const tr=await fetch('https://api.github.com/repos/'+repo+'/git/trees/'+co.tree.sha+'?recursive=1',{headers:{Authorization:'Bearer '+process.env.GH_TOKEN,'User-Agent':'fabushi-tdrp-r9'}});
+            if(!tr.ok) throw new Error(label+' tree lookup failed '+tr.status);
+            const tree=await tr.json();
+            for (const entry of tree.tree ?? []) if (entry.mode === '160000') console.log(label+'_GITLINK '+entry.path+'='+entry.sha);
+          }
+          await printGitlinks('openssl/openssl','45e844fa2a14ec92d146bd8f5778ac130b6625fb','OPENSSL');
+          await printGitlinks('desktop-app/tg_owt','d1cf250ea73de26c4c1f0a3c8173eb2648efbb04','TGOWT');
           NODE
       - name: Validate Revision 9 authority
         run: node scripts/validate-tdrp-revision9-authority.mjs
