@@ -2641,8 +2641,7 @@
         "frontend/src/production/ProductionRenderer.tsx"
       ],
       "fabushi_target_symbols": [
-        "Story",
-        "future typed Story capability mount"
+        "StoryId"
       ],
       "command_event_contracts": [
         "Story selection/playback state -> one progress projection"
@@ -2869,8 +2868,7 @@
         "frontend/src/production/ProductionRenderer.tsx"
       ],
       "fabushi_target_symbols": [
-        "Story",
-        "future Story progress state projection"
+        "StoryView"
       ],
       "command_event_contracts": [
         "Story changed -> reset progress",
@@ -3113,8 +3111,7 @@
         "Story",
         "ClientCommand::DeleteStory",
         "ClientCommand::ViewStory",
-        "ClientCommand::ReactStory",
-        "future typed Story capability mount"
+        "ClientCommand::ReactStory"
       ],
       "command_event_contracts": [
         "Story actions -> existing messaging commands/events",
@@ -3354,8 +3351,7 @@
         "frontend/src/production/ProductionRenderer.tsx"
       ],
       "fabushi_target_symbols": [
-        "Story",
-        "future Story capability controller/hooks"
+        "record_view"
       ],
       "command_event_contracts": [
         "Pointer/keyboard/menu -> same typed action",
@@ -3405,10 +3401,8 @@
         "frontend/src/production/ProductionRenderer.tsx"
       ],
       "fabushi_target_symbols": [
-        "Story",
-        "Entitlement",
-        "future Story stealth command/state",
-        "future typed Story capability projection"
+        "StoryPrivacyKind",
+        "Entitlement"
       ],
       "target_language": "Rust + TypeScript",
       "language_rationale": "Security-sensitive Story privacy, entitlement and service timing belong in existing Rust owners; UI projection belongs in ProductShell.",
@@ -3635,10 +3629,7 @@
         "frontend/src/production/ProductionRenderer.tsx"
       ],
       "fabushi_target_symbols": [
-        "Story",
-        "Entitlement",
-        "future Story stealth command/state",
-        "future typed Story capability projection"
+        "StoryPrivacy"
       ],
       "target_language": "Rust + TypeScript",
       "language_rationale": "Security-sensitive Story privacy, entitlement and service timing belong in existing Rust owners; UI projection belongs in ProductShell.",
