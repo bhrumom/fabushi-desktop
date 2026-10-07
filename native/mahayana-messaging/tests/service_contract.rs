@@ -84,6 +84,138 @@ fn self_hosted_service_persists_and_restores_state() {
     );
 }
 
+
+#[test]
+fn forward_retries_are_idempotent_and_option_conflicts_fail_closed() {
+    let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
+    let actor_id = ActorId::new("human:forwarder");
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:forwarder"),
+                ClientCommand::UpsertProfile {
+                    actor: Actor::human("human:forwarder", "Forwarder"),
+                },
+            ),
+            1,
+        )
+        .unwrap();
+
+    for (id, title) in [("chat:source", "Source"), ("chat:destination", "Destination")] {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context("human:forwarder"),
+                    ClientCommand::CreateConversation {
+                        conversation: Conversation::direct(
+                            id,
+                            title,
+                            vec![Participant {
+                                actor_id: actor_id.clone(),
+                                role: ParticipantRole::Owner,
+                                joined_at_ms: 1,
+                                muted_until_ms: None,
+                            }],
+                            1,
+                        ),
+                    },
+                ),
+                2,
+            )
+            .unwrap();
+    }
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:forwarder"),
+                ClientCommand::SendMessage {
+                    conversation_id: ConversationId::new("chat:source"),
+                    client_message_id: ClientMessageId("client:source".into()),
+                    content: MessageContent::Text {
+                        text: FormattedText::plain("forward me"),
+                    },
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    scheduled_at_ms: None,
+                    silent: false,
+                    protected_content: false,
+                },
+            ),
+            3,
+        )
+        .unwrap();
+
+    let source_message_id = service.engine().state().messages
+        [&ConversationId::new("chat:source")]
+        .keys()
+        .next()
+        .cloned()
+        .expect("source message");
+
+    let forward = || ClientCommand::ForwardMessage {
+        source_conversation_id: ConversationId::new("chat:source"),
+        message_id: source_message_id.clone(),
+        destination_conversation_id: ConversationId::new("chat:destination"),
+        client_message_id: ClientMessageId("client:forward-idempotent".into()),
+        thread_root_message_id: None,
+        scheduled_at_ms: Some(50),
+        silent: true,
+    };
+
+    service
+        .handle(
+            ClientEnvelope::new(context("human:forwarder"), forward()),
+            4,
+        )
+        .unwrap();
+    assert_eq!(
+        service.engine().state().messages[&ConversationId::new("chat:destination")].len(),
+        1
+    );
+
+    let replay = service
+        .handle(
+            ClientEnvelope::new(context("human:forwarder"), forward()),
+            5,
+        )
+        .unwrap();
+    assert!(matches!(
+        replay.as_slice(),
+        [ServerEnvelope {
+            event: ServerEvent::MessageChanged { .. },
+            ..
+        }]
+    ));
+    assert_eq!(
+        service.engine().state().messages[&ConversationId::new("chat:destination")].len(),
+        1
+    );
+
+    let conflict = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:forwarder"),
+                ClientCommand::ForwardMessage {
+                    source_conversation_id: ConversationId::new("chat:source"),
+                    message_id: source_message_id,
+                    destination_conversation_id: ConversationId::new("chat:destination"),
+                    client_message_id: ClientMessageId("client:forward-idempotent".into()),
+                    thread_root_message_id: None,
+                    scheduled_at_ms: Some(50),
+                    silent: false,
+                },
+            ),
+            6,
+        )
+        .unwrap_err();
+    assert_eq!(
+        conflict,
+        MessagingServiceError::IdempotencyConflict("client:forward-idempotent".into())
+    );
+}
+
 #[test]
 fn sync_uses_the_fabushi_protocol_cursor() {
     let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
