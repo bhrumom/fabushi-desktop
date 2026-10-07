@@ -524,7 +524,7 @@ for (const [name,stage] of [['prepare.py',prepareOpenSslStage],['Dockerfile',doc
 }
 const opensslTree=await ghTree('openssl/openssl',opensslReachability.commit);
 const expectedOpenSslChildren=opensslReachability.direct_gitlinks_not_fetched||[];
-fail(expectedOpenSslChildren.length===10,'OpenSSL unfetched direct-gitlink accounting drift');
+fail(expectedOpenSslChildren.length===11,'OpenSSL unfetched direct-gitlink accounting drift');
 for (const item of expectedOpenSslChildren) {
   fail(Array.isArray(item)&&item.length===3,'OpenSSL unfetched gitlink record malformed');
   const [childPath,childRepository,childCommit]=item;
