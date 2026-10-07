@@ -115,7 +115,7 @@ fn extraction_parse_dedupe_relevance_and_episode_prompt_match_frozen_rules() {
         },
     ]);
     assert!(episode.contains("User: question"));
-    assert!(episode.contains("Grok Bot: answer"));
+    assert!(episode.contains("Fabushi: answer"));
 }
 
 #[test]
