@@ -212,6 +212,26 @@ for (const option of ['-DBUILD_TESTING=OFF','-DJPEGXL_ENABLE_DEVTOOLS=OFF','-DJP
   fail(dockerLibjxlStage.includes(option),'accepted Docker libjxl option drift: '+option);
 }
 
+const libavifReachability=recursiveReachability.libavif;
+fail(libavifReachability?.repository==='https://github.com/AOMediaCodec/libavif','libavif reachability authority missing');
+fail(libavifReachability.root_candidate_policy_status==='complete-for-current-libavif-authorities','libavif root candidate policy is not fail-closed complete');
+const expectedLibavifCommits=new Set(['c5240fc79fe5c2407e10afd35f5505ef6333ea49','1aadfad932c98c069a1204261b1856f81f3bc199']);
+for (const authority of libavifReachability.observed_authorities||[]) expectedLibavifCommits.delete(authority.commit);
+fail(expectedLibavifCommits.size===0,'libavif observed authority set drift');
+const libavifPolicy=libavifReachability.root_candidate_disposition_policy||[];
+for (const [kind,value] of [
+  ['path_prefix','.github/'],['path_prefix','cmake/Modules/Local'],['path_prefix','ext/'],
+  ['path_prefix','src/'],['path_prefix','tests/'],['path_exact','README.md']
+]) fail(libavifPolicy.some(rule=>rule[kind]===value),'libavif acquisition disposition missing: '+value);
+const prepareLibavifStage=prepareQt.match(/stage\('libavif',[\s\S]*?\n"""\)/)?.[0]||'';
+const dockerLibavifStage=dockerQt.match(/git clone -b v1\.4\.2 --depth=1 https:\/\/github\.com\/AOMediaCodec\/libavif\.git[\s\S]*?rm -rf libavif/)?.[0]||'';
+const snapLibavifStage=snapQt.match(/\n  avif:\n[\s\S]*?\n  ffmpeg:/)?.[0]||'';
+for (const [name,stage] of [['prepare.py',prepareLibavifStage],['Dockerfile',dockerLibavifStage],['snapcraft.yaml',snapLibavifStage]]) {
+  fail(stage.includes('AVIF_CODEC_DAV1D=SYSTEM'),'accepted libavif build lost DAV1D=SYSTEM in '+name);
+  fail(stage.includes('AVIF_LIBYUV=OFF'),'accepted libavif build lost LIBYUV=OFF in '+name);
+}
+fail(snapLibavifStage.includes('source-tag: v1.3.0'),'accepted Snap libavif ref drift');
+
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
 fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');
