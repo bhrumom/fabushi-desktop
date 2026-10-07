@@ -56,7 +56,7 @@ jobs:
           (
             cd "$work"
             grep -RInE --exclude-dir=.git --exclude='*.patch' --exclude='*.diff' \
-              '(git[[:space:]]+(clone|fetch|submodule)|curl[[:space:]]|wget[[:space:]]|(^|[;&|[:space:]])(iwr|Invoke-WebRequest)[[:space:]]|git\+https?://|source[[:space:]]*:|source-(url|commit|tag|branch):|GIT_REPOSITORY|GIT_TAG|URL[[:space:]]+https?://|python(3(\.[0-9]+)*)?[[:space:]]+-m[[:space:]]+pip[[:space:]]+install|pip(3)?[[:space:]]+install|pacman[[:space:]]+-S|apt(-get)?[[:space:]]+(install|update)|dnf[[:space:]][^#]*install|brew[[:space:]]+install|cargo[[:space:]]+install|uses:[[:space:]]|FROM[[:space:]]|https://github\.com/.+\.git|https://gitlab\.com/.+\.git)' \
+              '(git[[:space:]]+(clone|fetch|submodule)|curl[[:space:]]|wget[[:space:]]|(^|[;&|[:space:]])(iwr|Invoke-WebRequest)[[:space:]]|git\+https?://|^[[:space:]]*source[[:space:]]*:|source-(url|commit|tag|branch):|GIT_REPOSITORY|GIT_TAG|URL[[:space:]]+https?://|python(3(\.[0-9]+)*)?[[:space:]]+-m[[:space:]]+pip[[:space:]]+install|pip(3)?[[:space:]]+install|pacman[[:space:]]+-S|apt(-get)?[[:space:]]+(install|update)|dnf[[:space:]][^#]*install|brew[[:space:]]+install|cargo[[:space:]]+install|uses:[[:space:]]|^[[:space:]]*FROM[[:space:]]|https://github\.com/.+\.git|https://gitlab\.com/.+\.git)' \
               Telegram/build Telegram/cmake cmake snap tools .github 2>/dev/null || true
           ) | LC_ALL=C sort -u > "$GITHUB_WORKSPACE/artifacts/tdrp-authority/build-time-acquisition-candidates.txt"
           test -s artifacts/tdrp-authority/build-time-acquisition-candidates.txt
