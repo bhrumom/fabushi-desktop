@@ -35,7 +35,7 @@ const add=(source,repo,commit,metadata={})=>{
 for(const a of root.authorities||[]) add('root-mutable',a.repository,a.commit,{authority_id:a.id,occurrences:a.occurrences});
 for(const a of inv.immutable_commit_pin_occurrences||[]) add('root-exact-pin',a.repository,a.commit,{authority_id:a.id,source_path:a.source_path,source_line:a.source_line});
 for(const a of inv.resolved_short_ref_contexts||[]) add('root-resolved-short-ref',a.repository,a.resolved_commit,{source_path:a.source_path,source_line:a.source_line,observed_ref:a.observed_short_ref});
-for(const a of inv.recursive_child_inputs||[]) add('known-recursive-child',a.repository,a.commit,{authority_id:a.id,parent:a.parent});
+for(const a of inv.recursive_child_inputs||[]) add('known-recursive-child',a.child_repository||a.repository,a.child_commit||a.commit,{authority_id:a.id,parent_repository:a.parent_repository,parent_commit:a.parent_commit,child_path:a.child_path});
 const authorities=[...all.values()].sort((a,b)=>authorityKey(a.repository,a.commit).localeCompare(authorityKey(b.repository,b.commit)));
 authorities.forEach((a,i)=>a.id='ROOT-SOURCE-'+String(i+1).padStart(3,'0'));
 
