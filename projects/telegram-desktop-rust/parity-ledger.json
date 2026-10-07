@@ -7,9 +7,9 @@
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15748,
+    "unread": 15746,
     "omitted": 0,
-    "responsibilities_total": 26,
+    "responsibilities_total": 36,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -6461,6 +6461,1975 @@
       "license_and_provenance": "Behavior is reimplemented source-neutrally from accepted Data::Thread/SavedSublist responsibilities using canonical Fabushi Conversation/Message/Engine owners.",
       "reviewer": null,
       "notes": "Implemented native/domain slice only. Current-head execution, server-sync composition and SavedSublist message membership remain open; global source unknown/unread are not decremented by this implementation."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/data/data_saved_messages.h",
+      "source_blob_sha": "82b9aed5cb2e1250fc0f4c5c2013bd58c689a344",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.saved_messages",
+      "responsibility_id": "TDRP-R9-SAVED-MESSAGES-PARENT-SCOPE-001",
+      "source_symbols": [
+        "SavedMessages",
+        "parent",
+        "monoforum"
+      ],
+      "capability_ids": [
+        "CAP-SAVED-MESSAGES-PARENT-SCOPE"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "MessagingState",
+        "Canonical server/native sync"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/saved-messages-complete-read.md",
+      "behavior_contract": "Explicit parent-scoped SavedMessages access is authoritative and revocable; generic community identity is insufficient.",
+      "state_machine": "Explicit parent-scoped SavedMessages access is authoritative and revocable; generic community identity is insufficient. State transitions must be driven by canonical authoritative events and preserve fail-closed semantics.",
+      "side_effects": [
+        "Mutates only canonical Conversation/Messaging child state through existing owners"
+      ],
+      "failure_cases": [
+        "Authoritative parent relation missing",
+        "Permission revocation leaves stale child access"
+      ],
+      "ui_disposition": "Reuse canonical Messages/Conversation child-list surfaces; do not port Telegram presentation.",
+      "non_ui_responsibilities": [
+        "Explicit parent-scoped SavedMessages access is authoritative and revocable; generic community identity is insufficient."
+      ],
+      "platform_delta": "Re-express the source behavior inside existing Fabushi Conversation/Messaging owners and trusted server/native sync; no Telegram runtime or second message store.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "rejected_existing_owners": [
+        "Renderer-local state: cannot mint authoritative parent/membership relations",
+        "New SavedMessages subsystem: prohibited parallel conversation/message truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "fabushi_target_symbols": [
+        "reconcile_saved_sublist_parent_access"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
+      "command_event_contracts": [
+        "Trusted server/native sync/event -> canonical MessagingState reconciliation"
+      ],
+      "state_owner": "Canonical MessagingState / Conversation child runtime",
+      "lifecycle_owner": "Canonical Mahayana messaging service/engine",
+      "persistence_and_restart": "Must persist/recover through the existing messaging store; no parallel cache may become authoritative.",
+      "concurrency_and_cancellation": "Server/native generations and request lifecycle must fence stale settlement, dedupe duplicate work and retire canceled scope.",
+      "security_boundary": "Renderer/client cannot mint parent access or SavedSublist membership; only authoritative server/native sync/feed may reconcile those relations.",
+      "network_service_dependencies": [
+        "Fabushi authoritative messaging/sync service"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Authoritative server/native feed and full shipping composition remain open"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SAVED-MESSAGES-PARENT-SCOPE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SAVED-MESSAGES-PARENT-SCOPE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SAVED-MESSAGES-PARENT-SCOPE-001-AUTHORITY"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
+      "reviewer": null,
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/data/data_saved_messages.h",
+      "source_blob_sha": "82b9aed5cb2e1250fc0f4c5c2013bd58c689a344",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.saved_messages",
+      "responsibility_id": "TDRP-R9-SAVED-MESSAGES-UNSUPPORTED-001",
+      "source_symbols": [
+        "SavedMessages",
+        "supported"
+      ],
+      "capability_ids": [
+        "CAP-SAVED-MESSAGES-FAIL-CLOSED"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "MessagingState",
+        "Canonical server/native sync"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/saved-messages-complete-read.md",
+      "behavior_contract": "Unsupported or authority-unavailable SavedMessages state must fail closed.",
+      "state_machine": "Unsupported or authority-unavailable SavedMessages state must fail closed. State transitions must be driven by canonical authoritative events and preserve fail-closed semantics.",
+      "side_effects": [
+        "Mutates only canonical Conversation/Messaging child state through existing owners"
+      ],
+      "failure_cases": [
+        "Unsupported parent is treated as available",
+        "Renderer infers support"
+      ],
+      "ui_disposition": "Reuse canonical Messages/Conversation child-list surfaces; do not port Telegram presentation.",
+      "non_ui_responsibilities": [
+        "Unsupported or authority-unavailable SavedMessages state must fail closed."
+      ],
+      "platform_delta": "Re-express the source behavior inside existing Fabushi Conversation/Messaging owners and trusted server/native sync; no Telegram runtime or second message store.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "rejected_existing_owners": [
+        "Renderer-local state: cannot mint authoritative parent/membership relations",
+        "New SavedMessages subsystem: prohibited parallel conversation/message truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs"
+      ],
+      "fabushi_target_symbols": [
+        "saved_sublist"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
+      "command_event_contracts": [
+        "Trusted server/native sync/event -> canonical MessagingState reconciliation"
+      ],
+      "state_owner": "Canonical MessagingState / Conversation child runtime",
+      "lifecycle_owner": "Canonical Mahayana messaging service/engine",
+      "persistence_and_restart": "Must persist/recover through the existing messaging store; no parallel cache may become authoritative.",
+      "concurrency_and_cancellation": "Server/native generations and request lifecycle must fence stale settlement, dedupe duplicate work and retire canceled scope.",
+      "security_boundary": "Renderer/client cannot mint parent access or SavedSublist membership; only authoritative server/native sync/feed may reconcile those relations.",
+      "network_service_dependencies": [
+        "Fabushi authoritative messaging/sync service"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Authoritative server/native feed and full shipping composition remain open"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SAVED-MESSAGES-UNSUPPORTED-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SAVED-MESSAGES-UNSUPPORTED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SAVED-MESSAGES-UNSUPPORTED-001-AUTHORITY"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
+      "reviewer": null,
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/data/data_saved_messages.cpp",
+      "source_blob_sha": "2be216670b644eb012e7a241af78b3adda639619",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.saved_messages",
+      "responsibility_id": "TDRP-R9-SAVED-MESSAGES-REQUEST-BATCH-001",
+      "source_symbols": [
+        "request",
+        "refresh",
+        "stale"
+      ],
+      "capability_ids": [
+        "CAP-CHILD-REQUEST-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "MessagingState",
+        "Canonical server/native sync"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/saved-messages-complete-read.md",
+      "behavior_contract": "Duplicate/stale child requests coalesce and stale settlement cannot overwrite a newer generation.",
+      "state_machine": "Duplicate/stale child requests coalesce and stale settlement cannot overwrite a newer generation. State transitions must be driven by canonical authoritative events and preserve fail-closed semantics.",
+      "side_effects": [
+        "Mutates only canonical Conversation/Messaging child state through existing owners"
+      ],
+      "failure_cases": [
+        "Duplicate request fan-out",
+        "Stale response wins after scope change"
+      ],
+      "ui_disposition": "Reuse canonical Messages/Conversation child-list surfaces; do not port Telegram presentation.",
+      "non_ui_responsibilities": [
+        "Duplicate/stale child requests coalesce and stale settlement cannot overwrite a newer generation."
+      ],
+      "platform_delta": "Re-express the source behavior inside existing Fabushi Conversation/Messaging owners and trusted server/native sync; no Telegram runtime or second message store.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "rejected_existing_owners": [
+        "Renderer-local state: cannot mint authoritative parent/membership relations",
+        "New SavedMessages subsystem: prohibited parallel conversation/message truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs"
+      ],
+      "fabushi_target_symbols": [
+        "reconcile"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
+      "command_event_contracts": [
+        "Trusted server/native sync/event -> canonical MessagingState reconciliation"
+      ],
+      "state_owner": "Canonical MessagingState / Conversation child runtime",
+      "lifecycle_owner": "Canonical Mahayana messaging service/engine",
+      "persistence_and_restart": "Must persist/recover through the existing messaging store; no parallel cache may become authoritative.",
+      "concurrency_and_cancellation": "Server/native generations and request lifecycle must fence stale settlement, dedupe duplicate work and retire canceled scope.",
+      "security_boundary": "Renderer/client cannot mint parent access or SavedSublist membership; only authoritative server/native sync/feed may reconcile those relations.",
+      "network_service_dependencies": [
+        "Fabushi authoritative messaging/sync service"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Authoritative server/native feed and full shipping composition remain open"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SAVED-MESSAGES-REQUEST-BATCH-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SAVED-MESSAGES-REQUEST-BATCH-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SAVED-MESSAGES-REQUEST-BATCH-001-AUTHORITY"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
+      "reviewer": null,
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/data/data_saved_messages.cpp",
+      "source_blob_sha": "2be216670b644eb012e7a241af78b3adda639619",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.saved_messages",
+      "responsibility_id": "TDRP-R9-SAVED-MESSAGES-PAGINATION-001",
+      "source_symbols": [
+        "load",
+        "loadMore",
+        "pinned"
+      ],
+      "capability_ids": [
+        "CAP-CHILD-PAGINATION"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "MessagingState",
+        "Canonical server/native sync"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/saved-messages-complete-read.md",
+      "behavior_contract": "Child list pagination is ordered, boundary-aware, duplicate-safe and does not invent membership.",
+      "state_machine": "Child list pagination is ordered, boundary-aware, duplicate-safe and does not invent membership. State transitions must be driven by canonical authoritative events and preserve fail-closed semantics.",
+      "side_effects": [
+        "Mutates only canonical Conversation/Messaging child state through existing owners"
+      ],
+      "failure_cases": [
+        "Duplicate child",
+        "Stale page boundary",
+        "Pinned refresh invents child"
+      ],
+      "ui_disposition": "Reuse canonical Messages/Conversation child-list surfaces; do not port Telegram presentation.",
+      "non_ui_responsibilities": [
+        "Child list pagination is ordered, boundary-aware, duplicate-safe and does not invent membership."
+      ],
+      "platform_delta": "Re-express the source behavior inside existing Fabushi Conversation/Messaging owners and trusted server/native sync; no Telegram runtime or second message store.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "rejected_existing_owners": [
+        "Renderer-local state: cannot mint authoritative parent/membership relations",
+        "New SavedMessages subsystem: prohibited parallel conversation/message truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs"
+      ],
+      "fabushi_target_symbols": [
+        "replace_window"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
+      "command_event_contracts": [
+        "Trusted server/native sync/event -> canonical MessagingState reconciliation"
+      ],
+      "state_owner": "Canonical MessagingState / Conversation child runtime",
+      "lifecycle_owner": "Canonical Mahayana messaging service/engine",
+      "persistence_and_restart": "Must persist/recover through the existing messaging store; no parallel cache may become authoritative.",
+      "concurrency_and_cancellation": "Server/native generations and request lifecycle must fence stale settlement, dedupe duplicate work and retire canceled scope.",
+      "security_boundary": "Renderer/client cannot mint parent access or SavedSublist membership; only authoritative server/native sync/feed may reconcile those relations.",
+      "network_service_dependencies": [
+        "Fabushi authoritative messaging/sync service"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Authoritative server/native feed and full shipping composition remain open"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SAVED-MESSAGES-PAGINATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SAVED-MESSAGES-PAGINATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SAVED-MESSAGES-PAGINATION-001-AUTHORITY"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
+      "reviewer": null,
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/data/data_saved_messages.cpp",
+      "source_blob_sha": "2be216670b644eb012e7a241af78b3adda639619",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.saved_messages",
+      "responsibility_id": "TDRP-R9-SAVED-MESSAGES-PIN-EMPTY-RESTORE-001",
+      "source_symbols": [
+        "pinned",
+        "empty",
+        "restore"
+      ],
+      "capability_ids": [
+        "CAP-CHILD-PIN-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "MessagingState",
+        "Canonical server/native sync"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/saved-messages-complete-read.md",
+      "behavior_contract": "Temporary emptiness preserves authoritative pin; actual destruction clears the child/pin.",
+      "state_machine": "Temporary emptiness preserves authoritative pin; actual destruction clears the child/pin. State transitions must be driven by canonical authoritative events and preserve fail-closed semantics.",
+      "side_effects": [
+        "Mutates only canonical Conversation/Messaging child state through existing owners"
+      ],
+      "failure_cases": [
+        "Temporary empty drops pin",
+        "Destroyed child remains pinned"
+      ],
+      "ui_disposition": "Reuse canonical Messages/Conversation child-list surfaces; do not port Telegram presentation.",
+      "non_ui_responsibilities": [
+        "Temporary emptiness preserves authoritative pin; actual destruction clears the child/pin."
+      ],
+      "platform_delta": "Re-express the source behavior inside existing Fabushi Conversation/Messaging owners and trusted server/native sync; no Telegram runtime or second message store.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "rejected_existing_owners": [
+        "Renderer-local state: cannot mint authoritative parent/membership relations",
+        "New SavedMessages subsystem: prohibited parallel conversation/message truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs"
+      ],
+      "fabushi_target_symbols": [
+        "note_locally_empty"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
+      "command_event_contracts": [
+        "Trusted server/native sync/event -> canonical MessagingState reconciliation"
+      ],
+      "state_owner": "Canonical MessagingState / Conversation child runtime",
+      "lifecycle_owner": "Canonical Mahayana messaging service/engine",
+      "persistence_and_restart": "Must persist/recover through the existing messaging store; no parallel cache may become authoritative.",
+      "concurrency_and_cancellation": "Server/native generations and request lifecycle must fence stale settlement, dedupe duplicate work and retire canceled scope.",
+      "security_boundary": "Renderer/client cannot mint parent access or SavedSublist membership; only authoritative server/native sync/feed may reconcile those relations.",
+      "network_service_dependencies": [
+        "Fabushi authoritative messaging/sync service"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Authoritative server/native feed and full shipping composition remain open"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SAVED-MESSAGES-PIN-EMPTY-RESTORE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SAVED-MESSAGES-PIN-EMPTY-RESTORE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SAVED-MESSAGES-PIN-EMPTY-RESTORE-001-AUTHORITY"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
+      "reviewer": null,
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/data/data_saved_messages.cpp",
+      "source_blob_sha": "2be216670b644eb012e7a241af78b3adda639619",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.saved_messages",
+      "responsibility_id": "TDRP-R9-SAVED-MESSAGES-ACTIVE-SUBSECTION-001",
+      "source_symbols": [
+        "active",
+        "sublist"
+      ],
+      "capability_ids": [
+        "CAP-CHILD-ACTIVE-SELECTION"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "MessagingState",
+        "Canonical server/native sync"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/saved-messages-complete-read.md",
+      "behavior_contract": "One canonical active child exists per parent scope and destroying it clears selection.",
+      "state_machine": "One canonical active child exists per parent scope and destroying it clears selection. State transitions must be driven by canonical authoritative events and preserve fail-closed semantics.",
+      "side_effects": [
+        "Mutates only canonical Conversation/Messaging child state through existing owners"
+      ],
+      "failure_cases": [
+        "Multiple active children",
+        "Destroy silently selects another child"
+      ],
+      "ui_disposition": "Reuse canonical Messages/Conversation child-list surfaces; do not port Telegram presentation.",
+      "non_ui_responsibilities": [
+        "One canonical active child exists per parent scope and destroying it clears selection."
+      ],
+      "platform_delta": "Re-express the source behavior inside existing Fabushi Conversation/Messaging owners and trusted server/native sync; no Telegram runtime or second message store.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "rejected_existing_owners": [
+        "Renderer-local state: cannot mint authoritative parent/membership relations",
+        "New SavedMessages subsystem: prohibited parallel conversation/message truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs"
+      ],
+      "fabushi_target_symbols": [
+        "select"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
+      "command_event_contracts": [
+        "Trusted server/native sync/event -> canonical MessagingState reconciliation"
+      ],
+      "state_owner": "Canonical MessagingState / Conversation child runtime",
+      "lifecycle_owner": "Canonical Mahayana messaging service/engine",
+      "persistence_and_restart": "Must persist/recover through the existing messaging store; no parallel cache may become authoritative.",
+      "concurrency_and_cancellation": "Server/native generations and request lifecycle must fence stale settlement, dedupe duplicate work and retire canceled scope.",
+      "security_boundary": "Renderer/client cannot mint parent access or SavedSublist membership; only authoritative server/native sync/feed may reconcile those relations.",
+      "network_service_dependencies": [
+        "Fabushi authoritative messaging/sync service"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Authoritative server/native feed and full shipping composition remain open"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SAVED-MESSAGES-ACTIVE-SUBSECTION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SAVED-MESSAGES-ACTIVE-SUBSECTION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SAVED-MESSAGES-ACTIVE-SUBSECTION-001-AUTHORITY"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
+      "reviewer": null,
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/data/data_saved_messages.cpp",
+      "source_blob_sha": "2be216670b644eb012e7a241af78b3adda639619",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.saved_messages",
+      "responsibility_id": "TDRP-R9-SAVED-MESSAGES-CLEANUP-001",
+      "source_symbols": [
+        "destroy",
+        "notifications",
+        "sharedMedia",
+        "forwardDraft"
+      ],
+      "capability_ids": [
+        "CAP-CHILD-DESTROY-CLEANUP"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "MessagingState",
+        "Canonical server/native sync"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/saved-messages-complete-read.md",
+      "behavior_contract": "Exact-child destruction retires child-scoped notification/draft/resource projections without erasing parent-global state.",
+      "state_machine": "Exact-child destruction retires child-scoped notification/draft/resource projections without erasing parent-global state. State transitions must be driven by canonical authoritative events and preserve fail-closed semantics.",
+      "side_effects": [
+        "Mutates only canonical Conversation/Messaging child state through existing owners"
+      ],
+      "failure_cases": [
+        "Stale child notification survives",
+        "Forward draft/resource leak after destroy"
+      ],
+      "ui_disposition": "Reuse canonical Messages/Conversation child-list surfaces; do not port Telegram presentation.",
+      "non_ui_responsibilities": [
+        "Exact-child destruction retires child-scoped notification/draft/resource projections without erasing parent-global state."
+      ],
+      "platform_delta": "Re-express the source behavior inside existing Fabushi Conversation/Messaging owners and trusted server/native sync; no Telegram runtime or second message store.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "rejected_existing_owners": [
+        "Renderer-local state: cannot mint authoritative parent/membership relations",
+        "New SavedMessages subsystem: prohibited parallel conversation/message truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs"
+      ],
+      "fabushi_target_symbols": [
+        "clear_destroyed_child"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
+      "command_event_contracts": [
+        "Trusted server/native sync/event -> canonical MessagingState reconciliation"
+      ],
+      "state_owner": "Canonical MessagingState / Conversation child runtime",
+      "lifecycle_owner": "Canonical Mahayana messaging service/engine",
+      "persistence_and_restart": "Must persist/recover through the existing messaging store; no parallel cache may become authoritative.",
+      "concurrency_and_cancellation": "Server/native generations and request lifecycle must fence stale settlement, dedupe duplicate work and retire canceled scope.",
+      "security_boundary": "Renderer/client cannot mint parent access or SavedSublist membership; only authoritative server/native sync/feed may reconcile those relations.",
+      "network_service_dependencies": [
+        "Fabushi authoritative messaging/sync service"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Authoritative server/native feed and full shipping composition remain open"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SAVED-MESSAGES-CLEANUP-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SAVED-MESSAGES-CLEANUP-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SAVED-MESSAGES-CLEANUP-001-AUTHORITY"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
+      "reviewer": null,
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/data/data_saved_messages.cpp",
+      "source_blob_sha": "2be216670b644eb012e7a241af78b3adda639619",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.saved_messages",
+      "responsibility_id": "TDRP-R9-SAVED-MESSAGES-RECENT-ORDER-001",
+      "source_symbols": [
+        "recent",
+        "list"
+      ],
+      "capability_ids": [
+        "CAP-CHILD-RECENT-ORDER"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "MessagingState",
+        "Canonical server/native sync"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/saved-messages-complete-read.md",
+      "behavior_contract": "Recent child projection is stable, deduped and removes destroyed/stale children.",
+      "state_machine": "Recent child projection is stable, deduped and removes destroyed/stale children. State transitions must be driven by canonical authoritative events and preserve fail-closed semantics.",
+      "side_effects": [
+        "Mutates only canonical Conversation/Messaging child state through existing owners"
+      ],
+      "failure_cases": [
+        "Destroyed child remains recent",
+        "Duplicate recent child"
+      ],
+      "ui_disposition": "Reuse canonical Messages/Conversation child-list surfaces; do not port Telegram presentation.",
+      "non_ui_responsibilities": [
+        "Recent child projection is stable, deduped and removes destroyed/stale children."
+      ],
+      "platform_delta": "Re-express the source behavior inside existing Fabushi Conversation/Messaging owners and trusted server/native sync; no Telegram runtime or second message store.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "rejected_existing_owners": [
+        "Renderer-local state: cannot mint authoritative parent/membership relations",
+        "New SavedMessages subsystem: prohibited parallel conversation/message truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs"
+      ],
+      "fabushi_target_symbols": [
+        "destroy"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
+      "command_event_contracts": [
+        "Trusted server/native sync/event -> canonical MessagingState reconciliation"
+      ],
+      "state_owner": "Canonical MessagingState / Conversation child runtime",
+      "lifecycle_owner": "Canonical Mahayana messaging service/engine",
+      "persistence_and_restart": "Must persist/recover through the existing messaging store; no parallel cache may become authoritative.",
+      "concurrency_and_cancellation": "Server/native generations and request lifecycle must fence stale settlement, dedupe duplicate work and retire canceled scope.",
+      "security_boundary": "Renderer/client cannot mint parent access or SavedSublist membership; only authoritative server/native sync/feed may reconcile those relations.",
+      "network_service_dependencies": [
+        "Fabushi authoritative messaging/sync service"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Authoritative server/native feed and full shipping composition remain open"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SAVED-MESSAGES-RECENT-ORDER-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SAVED-MESSAGES-RECENT-ORDER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SAVED-MESSAGES-RECENT-ORDER-001-AUTHORITY"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
+      "reviewer": null,
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/data/data_saved_messages.cpp",
+      "source_blob_sha": "2be216670b644eb012e7a241af78b3adda639619",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.saved_messages",
+      "responsibility_id": "TDRP-R9-SAVED-MESSAGES-UNREAD-RECONCILE-001",
+      "source_symbols": [
+        "unreadCount",
+        "reconcile"
+      ],
+      "capability_ids": [
+        "CAP-CHILD-UNREAD-RECONCILE"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "MessagingState",
+        "Canonical server/native sync"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/saved-messages-complete-read.md",
+      "behavior_contract": "Unread state derives from authoritative child/message relation and monotonic canonical read cursors; unknown remains unknown.",
+      "state_machine": "Unread state derives from authoritative child/message relation and monotonic canonical read cursors; unknown remains unknown. State transitions must be driven by canonical authoritative events and preserve fail-closed semantics.",
+      "side_effects": [
+        "Mutates only canonical Conversation/Messaging child state through existing owners"
+      ],
+      "failure_cases": [
+        "Guessed unread count",
+        "Read cursor regresses",
+        "Unknown coerced to zero"
+      ],
+      "ui_disposition": "Reuse canonical Messages/Conversation child-list surfaces; do not port Telegram presentation.",
+      "non_ui_responsibilities": [
+        "Unread state derives from authoritative child/message relation and monotonic canonical read cursors; unknown remains unknown."
+      ],
+      "platform_delta": "Re-express the source behavior inside existing Fabushi Conversation/Messaging owners and trusted server/native sync; no Telegram runtime or second message store.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "rejected_existing_owners": [
+        "Renderer-local state: cannot mint authoritative parent/membership relations",
+        "New SavedMessages subsystem: prohibited parallel conversation/message truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs"
+      ],
+      "fabushi_target_symbols": [
+        "advance_inbox_read_till"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
+      "command_event_contracts": [
+        "Trusted server/native sync/event -> canonical MessagingState reconciliation"
+      ],
+      "state_owner": "Canonical MessagingState / Conversation child runtime",
+      "lifecycle_owner": "Canonical Mahayana messaging service/engine",
+      "persistence_and_restart": "Must persist/recover through the existing messaging store; no parallel cache may become authoritative.",
+      "concurrency_and_cancellation": "Server/native generations and request lifecycle must fence stale settlement, dedupe duplicate work and retire canceled scope.",
+      "security_boundary": "Renderer/client cannot mint parent access or SavedSublist membership; only authoritative server/native sync/feed may reconcile those relations.",
+      "network_service_dependencies": [
+        "Fabushi authoritative messaging/sync service"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Authoritative server/native feed and full shipping composition remain open"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SAVED-MESSAGES-UNREAD-RECONCILE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SAVED-MESSAGES-UNREAD-RECONCILE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SAVED-MESSAGES-UNREAD-RECONCILE-001-AUTHORITY"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
+      "reviewer": null,
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/data/data_saved_messages.cpp",
+      "source_blob_sha": "2be216670b644eb012e7a241af78b3adda639619",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.saved_messages",
+      "responsibility_id": "TDRP-R9-SAVED-MESSAGES-MEMBERSHIP-001",
+      "source_symbols": [
+        "sublist",
+        "message",
+        "remove"
+      ],
+      "capability_ids": [
+        "CAP-SAVED-SUBLIST-MEMBERSHIP"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "MessagingState",
+        "Canonical server/native sync"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/saved-messages-complete-read.md",
+      "behavior_contract": "A non-empty SavedSublist accepts/projects a message only when authoritative server/native state proves exact child membership.",
+      "state_machine": "A non-empty SavedSublist accepts/projects a message only when authoritative server/native state proves exact child membership. State transitions must be driven by canonical authoritative events and preserve fail-closed semantics.",
+      "side_effects": [
+        "Mutates only canonical Conversation/Messaging child state through existing owners"
+      ],
+      "failure_cases": [
+        "Parent visibility guessed as child membership",
+        "Message admitted to wrong SavedSublist"
+      ],
+      "ui_disposition": "Reuse canonical Messages/Conversation child-list surfaces; do not port Telegram presentation.",
+      "non_ui_responsibilities": [
+        "A non-empty SavedSublist accepts/projects a message only when authoritative server/native state proves exact child membership."
+      ],
+      "platform_delta": "Re-express the source behavior inside existing Fabushi Conversation/Messaging owners and trusted server/native sync; no Telegram runtime or second message store.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "rejected_existing_owners": [
+        "Renderer-local state: cannot mint authoritative parent/membership relations",
+        "New SavedMessages subsystem: prohibited parallel conversation/message truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "fabushi_target_symbols": [
+        "destination_message_conversation_id"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
+      "command_event_contracts": [
+        "Trusted server/native sync/event -> canonical MessagingState reconciliation"
+      ],
+      "state_owner": "Canonical MessagingState / Conversation child runtime",
+      "lifecycle_owner": "Canonical Mahayana messaging service/engine",
+      "persistence_and_restart": "Must persist/recover through the existing messaging store; no parallel cache may become authoritative.",
+      "concurrency_and_cancellation": "Server/native generations and request lifecycle must fence stale settlement, dedupe duplicate work and retire canceled scope.",
+      "security_boundary": "Renderer/client cannot mint parent access or SavedSublist membership; only authoritative server/native sync/feed may reconcile those relations.",
+      "network_service_dependencies": [
+        "Fabushi authoritative messaging/sync service"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Authoritative server/native feed and full shipping composition remain open"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SAVED-MESSAGES-MEMBERSHIP-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SAVED-MESSAGES-MEMBERSHIP-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SAVED-MESSAGES-MEMBERSHIP-001-AUTHORITY"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
+      "reviewer": null,
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
     }
   ],
   "rebaseline": {
