@@ -70,7 +70,12 @@ jobs:
           const fs = require('node:fs');
           const inventory = require('./projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
           const discovered = fs.readFileSync('artifacts/tdrp-authority/build-time-acquisition-candidates.txt', 'utf8').split(/\\r?\\n/).filter(Boolean);
-          const hasLiveKey = (key) => discovered.some(line => line.startsWith(key + ':'));
+          const liveKeys = new Set(discovered.map(line => {
+            const match = line.match(/^(.*):(\\d+):/);
+            if (!match) throw new Error('unparseable acquisition discovery line: ' + line);
+            return match[1] + ':' + match[2];
+          }));
+          const hasLiveKey = (key) => liveKeys.has(key);
           const classified = new Set();
           for (const item of inventory.immutable_commit_pin_occurrences || []) {
             const key = item.source_path + ':' + item.source_line;

@@ -17,9 +17,9 @@
     "candidate_lines_classified": 320,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
-    "recursive_child_input_occurrences_recorded": 10,
-    "recursive_child_unique_repositories_recorded": 8,
-    "recursive_child_unique_external_nested_scans_pending": 2
+    "recursive_child_input_occurrences_recorded": 11,
+    "recursive_child_unique_repositories_recorded": 9,
+    "recursive_child_unique_external_nested_scans_pending": 3
   },
   "immutable_commit_pin_occurrences": [
     {
@@ -918,8 +918,8 @@
       "source_line": 1447,
       "repository": "https://chromium.googlesource.com/breakpad/breakpad",
       "observed_short_ref": "dfcb7b6799",
-      "resolved_commit": null,
-      "status": "pending-full-resolution"
+      "resolved_commit": "dfcb7b6799b7c1e2c8d65e857d8afede185471d8",
+      "status": "resolved-via-github-mirror"
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
@@ -934,8 +934,8 @@
       "source_line": 1487,
       "repository": "https://chromium.googlesource.com/breakpad/breakpad",
       "observed_short_ref": "dfcb7b6799",
-      "resolved_commit": null,
-      "status": "pending-full-resolution"
+      "resolved_commit": "dfcb7b6799b7c1e2c8d65e857d8afede185471d8",
+      "status": "resolved-via-github-mirror"
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
@@ -1035,6 +1035,15 @@
       "child_path": "m4",
       "child_repository": "gitlab.freedesktop.org/xorg/util/xcb-util-m4",
       "child_commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
+      "nested_scan_status": "pending-external-scan"
+    },
+    {
+      "id": "crashpad-mini-chromium",
+      "parent_repository": "desktop-app/crashpad",
+      "parent_commit": "3279fae3f02a0370ef54d4f9d264f52f337b0f1d",
+      "child_path": "third_party/mini_chromium",
+      "child_repository": "chromium.googlesource.com/chromium/mini_chromium",
+      "child_commit": "14b219d5d503e305a6d853e64de201659cfcbe2d",
       "nested_scan_status": "pending-external-scan"
     }
   ]
