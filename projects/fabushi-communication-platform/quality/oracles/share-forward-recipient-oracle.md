@@ -14,7 +14,7 @@ Required invariants:
 
 ## ORA-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001
 
-A destination can be emitted by canonical Search only after current authenticated Conversation/Community policy authorizes the requested send capability. Message, media and poll requirements are checked before indexing/exposure; channel results additionally require current posting authority, and left/banned/restricted community state fails closed. Renderer hiding is never the authorization boundary.
+A destination can be emitted by canonical Search only after current authenticated Conversation/Community policy authorizes the requested send capability. Message, media and poll requirements are checked before indexing/exposure. Typed send-other, inline and game requests must also be authorized before exposure; if the canonical Conversation owner cannot represent a requested permission axis yet, Search fails closed rather than assuming eligibility. Protected source content is never exposed as forwardable, standard/secret content must target a compatible conversation kind, channel results additionally require current posting authority, and left/banned/restricted community state fails closed. Renderer hiding is never the authorization boundary. Shipping Host recipient discovery must pass the actual source message identity into this same source-neutral authorization function before returning any candidate.
 
 Required invariants:
 - `INV-TDRP-RECIPIENT-AUTH-BEFORE-EXPOSURE-001`

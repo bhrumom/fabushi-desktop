@@ -2166,24 +2166,27 @@
         "AdminRights"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/share-box-complete-read.md",
-      "behavior_contract": "Recipient search must enforce destination send eligibility before a candidate is exposed. The typed recipient search reuses canonical Search and filters to visible conversations where the authenticated actor can send messages and, when requested, media or polls; restricted/banned/left community status and channel posting rights fail closed.",
-      "state_machine": "authenticated recipient query -> canonical visibility check -> canonical send/media/poll/community/channel eligibility -> index eligible Conversations only -> canonical ranking/search -> expose Conversation results",
+      "behavior_contract": "Recipient search enforces destination eligibility before exposure through one source-neutral authorization function shared by native SearchRecipients and the shipping Host picker. Message/media/poll policy, community/channel state, protected-source denial and standard/secret compatibility are checked before exposure; send-other/inline/game are typed requirements and fail closed while their permission axes are not yet represented by the canonical Conversation owner.",
+      "state_machine": "authenticated recipient query + actual source message identity -> source requirement derivation -> canonical visibility/policy facts -> recipient_search_authorized -> index/expose eligible candidates only",
       "side_effects": [
         "No search result is created for an ineligible recipient Conversation",
         "No second search index or picker truth is introduced"
       ],
       "failure_cases": [
-        "Search indexes a conversation before send permission evaluation",
+        "Search indexes or returns a conversation before send permission evaluation",
         "Blocked destination appears and UI is expected to hide it",
         "Media-disabled destination appears for a media-required recipient query",
-        "Read-only channel appears as a sendable recipient"
+        "Read-only channel appears as a sendable recipient",
+        "Protected source message produces forward recipients",
+        "Inline/game/send-other request is exposed without a represented canonical permission axis",
+        "Standard content is exposed for a secret-only destination or secret content for a non-secret destination"
       ],
-      "ui_disposition": "Canonical Picker/Search surfaces must call SearchRecipients for send destination discovery. This native slice closes pre-exposure service filtering, not the still-missing shipping forward picker wiring.",
+      "ui_disposition": "Canonical Picker/Search surfaces must use the source-neutral recipient authorization boundary before exposure. Shipping Human Forward now passes sourceEntryId and calls that policy in Host; full Group/Channel/typed-child candidate composition remains open.",
       "non_ui_responsibilities": [
         "Apply authorization before recipient result exposure",
-        "Reuse canonical SearchIndex after filtering",
-        "Enforce ConversationPermissions send/media/poll requirements",
-        "Enforce community membership restrictions and channel posting rights"
+        "Reuse canonical SearchIndex/provider truth after filtering",
+        "Enforce Conversation/Community send/media/poll requirements and channel posting authority",
+        "Fail closed for protected sources, incompatible secret/standard content, and unrepresented send-other/inline/game permission axes"
       ],
       "platform_delta": "Telegram filter callbacks become a source-neutral recipient-search command over existing Fabushi Search/Conversation/Permission owners.",
       "existing_owner_candidates": [
@@ -2202,25 +2205,32 @@
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/search.rs",
         "native/mahayana-messaging/src/protocol.rs",
-        "native/mahayana-messaging/src/service.rs"
+        "native/mahayana-messaging/src/service.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/gateway.rs",
+        "frontend/src/production/ForwardMessageDialog.tsx"
       ],
       "fabushi_target_symbols": [
         "RecipientSearchRequirements",
+        "RecipientAuthorizationInput",
+        "recipient_search_authorized",
         "ClientCommand::SearchRecipients",
         "fn recipient_search_envelope(",
-        "fn actor_can_send_to_recipient("
+        "fn actor_can_send_to_recipient(",
+        "ProductionSessionWorkers::search_human_recipients",
+        "ForwardMessageDialog"
       ],
       "target_language": "Rust",
       "language_rationale": "Recipient exposure is a privacy/authorization boundary and must execute in the canonical native messaging service before results cross to UI.",
       "command_event_contracts": [
-        "ClientCommand::SearchRecipients -> MessagingService::recipient_search_envelope -> ServerEvent::SearchResults",
-        "RecipientSearchRequirements media/poll requirements are enforced before SearchIndex indexing"
+        "ClientCommand::SearchRecipients -> MessagingService::recipient_search_envelope -> recipient_search_authorized -> SearchIndex -> ServerEvent::SearchResults",
+        "ForwardMessageDialog(sourceEntryId) -> Host searchHumanRecipients -> source-message validation/requirement derivation -> recipient_search_authorized -> eligible Human-direct candidates"
       ],
       "state_owner": "Canonical Conversation/Community authorization state; SearchRecipients is a query, not a new persisted owner",
       "lifecycle_owner": "MessagingService canonical search request lifecycle",
       "persistence_and_restart": "No new persistence; eligibility is recomputed from canonical current Conversation/Community state for every query.",
       "concurrency_and_cancellation": "Each request computes against one service state snapshot; no stale renderer-side permission cache is authoritative.",
-      "security_boundary": "Unauthorized/ineligible recipient Conversations are omitted before SearchIndex result generation and before UI exposure.",
+      "security_boundary": "No candidate may cross native SearchIndex/Host provider output until recipient_search_authorized permits it. Protected sources and unsupported typed capability requirements fail closed.",
       "network_service_dependencies": [
         "Existing Fabushi messaging service and canonical synchronized Conversation/Community state"
       ],
@@ -2230,12 +2240,13 @@
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current-head GitHub Actions compile/test/integration evidence pending",
-        "ProductionRenderer now has a shipping recipient picker backed by Host Session Human Conversation truth, but it does not yet execute the full native SearchRecipients media/poll/community/channel eligibility contract",
-        "Inline/game/send-other, topic/child-target and secret/protected-content recipient eligibility remain open"
+        "Shipping candidate enumeration remains Human-direct; canonical Group/Channel/topic/saved-sublist child destinations are not yet composed into this picker",
+        "Canonical Conversation permission state does not yet represent authorized send-other/inline/game axes; typed requests therefore fail closed",
+        "Exact-head Electron E2E, policy-refresh temporal/reload/restart evidence and independent acceptance remain open"
       ],
       "production_entrypoints": [
-        "ProductionRenderer ConversationTranscript onForward -> ForwardMessageDialog search -> Host gateway searchHumanRecipients -> ProductionSessionWorkers::search_human_recipients -> existing Human Conversation list truth",
-        "Full native eligibility contract remains ClientCommand::SearchRecipients -> MessagingService pre-exposure authorization -> SearchIndex -> SearchResults"
+        "ProductionRenderer ConversationTranscript onForward -> ForwardMessageDialog(sourceEntryId) -> Host gateway searchHumanRecipients -> ProductionSessionWorkers::search_human_recipients -> fabushi_messaging_core::recipient_search_authorized -> existing Human Conversation list truth",
+        "ClientCommand::SearchRecipients -> MessagingService::recipient_search_envelope -> actor_can_send_to_recipient -> recipient_search_authorized -> SearchIndex -> SearchResults"
       ],
       "production_evidence": [
         "commit:48d4334b8b57490398ebe36e6fdaf93067a3a099",
@@ -2248,13 +2259,17 @@
         "path:frontend/src/production/ForwardMessageDialog.tsx#ForwardMessageDialog",
         "path:frontend/src/production/ProductionRenderer.tsx#searchForwardRecipients",
         "path:source/host/src/extensions/session/gateway.rs#searchHumanRecipients",
-        "path:source/host/src/extensions/session/production.rs#search_human_recipients"
+        "path:source/host/src/extensions/session/production.rs#search_human_recipients",
+        "commit:a50fd7cf28b6dcebda7240d94208e524b18f145e",
+        "path:native/mahayana-messaging/src/search.rs#recipient_search_authorized"
       ],
       "test_evidence": [
         "native/mahayana-messaging/tests/m5_contacts_groups_contract.rs#contacts_and_groups_are_searchable",
-        "source/host/src/extensions/session/production.rs#sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart"
+        "source/host/src/extensions/session/production.rs#sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart",
+        "native/mahayana-messaging/src/search.rs#recipient_policy_tests::recipient_authorization_fails_before_exposure_for_typed_share_requirements",
+        "native/mahayana-messaging/src/search.rs#recipient_policy_tests::recipient_requirements_deserialize_old_media_poll_shape_with_safe_defaults"
       ],
-      "target_commit": "34d19cc79a6821698a45017ebe89ce3b0722d073",
+      "target_commit": "a50fd7cf28b6dcebda7240d94208e524b18f145e",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -2267,12 +2282,17 @@
         "message-only",
         "media-required",
         "poll-required",
+        "send-other-required",
+        "inline-required",
+        "game-required",
+        "protected-source",
+        "standard/secret content",
         "group/channel/direct eligibility"
       ],
       "shared_owner_contracts": [
         "Canonical Search",
-        "Canonical ConversationPermissions",
-        "Canonical Community membership/admin policy"
+        "Canonical Conversation/Community policy",
+        "Canonical Host Session Conversation projection"
       ],
       "duplicate_root_check": "No ShareBox-specific SearchIndex, recipient store, or UI-only authorization owner was introduced.",
       "novel_capability": false,
@@ -2290,16 +2310,18 @@
       "search_provider": "MessagingService::recipient_search_envelope -> canonical SearchIndex recipient provider",
       "search_result_types": [],
       "search_filters": [],
-      "search_permission_contract": "Recipient search must filter before exposure, while this row guarantees a second fail-closed authorization check at actual send time.",
-      "search_local_remote_contract": "Open follow-up: canonical picker/provider eligibility must project the same synchronized policy without creating a second truth.",
+      "search_permission_contract": "recipient_search_authorized is the shared pre-exposure boundary. Unsupported typed permission axes fail closed; actual send remains independently fail-closed.",
+      "search_local_remote_contract": "Shipping Host uses the same source-neutral authorization function but currently contributes Human-direct candidates only. Full canonical Group/Channel/typed-child provider composition remains open.",
       "responsive_disposition": "Native query slice only; existing Picker responsive contract remains authoritative.",
       "accessibility_contract": "Native query slice only; existing SearchField/Picker/ListRow accessibility contract remains authoritative.",
       "keyboard_contract": "Native query slice only; existing canonical picker keyboard contract remains authoritative.",
-      "state_continuity_contract": "Eligibility is recomputed from current canonical policy, so permission changes cannot rely on stale UI hiding.",
+      "state_continuity_contract": "Every query revalidates the actual source message and current candidate policy before exposure; stale renderer-side hiding is never authoritative.",
       "ui_acceptance_scenarios": [
         "Conversation with can_send_messages=false is absent before UI exposure",
         "Media-disabled conversation is absent when require_media=true",
-        "Eligible conversation remains searchable"
+        "Protected source message yields no eligible forward destination",
+        "Unsupported send-other/inline/game requirement fails closed instead of exposing a candidate",
+        "Eligible Human-direct conversation remains searchable through the shipping picker"
       ],
       "design_system_version": "FBCP Revision 7 live Fabushi design system",
       "semantic_token_usage": [
@@ -2385,7 +2407,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted ShareBox authorization semantics inside the existing Fabushi Conversation/Community policy owner.",
       "reviewer": null,
-      "notes": "The forward picker is now present on the real Human Conversation shipping route and its query reads the existing Host Session Conversation truth, so no second persisted Search or recipient store was introduced. This does not yet close the native SearchRecipients responsibility: the shipping query currently covers authenticated Human direct conversations only and does not execute the full media/poll/community/channel/content eligibility contract. Keep implemented/pending until one canonical authorization policy is composed and current-head evidence proves it."
+      "notes": "Shipping Human Forward now passes the actual sourceEntryId into Host recipient discovery. Host validates the settled source message, derives media/protected requirements, and calls the same fabushi_messaging_core::recipient_search_authorized function used by native SearchRecipients before returning candidates. The shipping candidate universe is still Human-direct and send-other/inline/game permission axes are not yet modeled by canonical Conversation state, so those typed requests fail closed and this row remains implemented/pending, not verified."
     }
   ]
 }
