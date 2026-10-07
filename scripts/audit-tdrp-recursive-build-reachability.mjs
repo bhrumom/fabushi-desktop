@@ -202,6 +202,13 @@ for (const authority of libavif.observed_authorities||[]) {
   );
 }
 
+const ada=rules.ada;
+auditRootCandidates(
+  keyOf(ada.repository,ada.commit),
+  ada.root_candidate_disposition_policy,
+  {requireComplete:ada.root_candidate_policy_status==='complete-for-current-ada-authority',scope:'ada-root-candidates'}
+);
+
 const result={
   project_id:'TDRP-001',
   spec_revision:9,
