@@ -1532,6 +1532,79 @@
       ],
       "root_candidate_policy_status": "complete-for-current-libjxl-authority",
       "note": "This closes acquisition-pattern candidates for the libjxl root only. Recursive libjxl child authorities remain separately in source/build reachability accounting."
+    },
+    "libavif": {
+      "repository": "https://github.com/AOMediaCodec/libavif",
+      "observed_authorities": [
+        {
+          "commit": "c5240fc79fe5c2407e10afd35f5505ef6333ea49",
+          "ref": "v1.4.2",
+          "build_entries": [
+            "Telegram/build/prepare/prepare.py",
+            "Telegram/build/docker/centos_env/Dockerfile"
+          ]
+        },
+        {
+          "commit": "1aadfad932c98c069a1204261b1856f81f3bc199",
+          "ref": "v1.3.0",
+          "build_entries": [
+            "snap/snapcraft.yaml"
+          ]
+        }
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "Clones libavif v1.4.2 and configures AVIF_CODEC_DAV1D=SYSTEM, AVIF_LIBYUV=OFF, BUILD_SHARED_LIBS=OFF; it does not select LOCAL codec/dependency acquisition."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "Clones libavif v1.4.2 shallow and uses system dav1d with AVIF_LIBYUV=OFF; no libavif ext helper or LOCAL dependency mode is invoked."
+        },
+        {
+          "path": "snap/snapcraft.yaml",
+          "evidence": "Pins libavif v1.3.0 and configures AVIF_CODEC_DAV1D=SYSTEM and AVIF_LIBYUV=OFF with libdav1d-dev as a build package."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-libavif-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "cmake/Modules/Local",
+          "disposition": "inactive-local-dependency-module",
+          "basis": "libavif LOCAL modules can fetch codec/dependency sources, but accepted TDesktop selects DAV1D=SYSTEM, LIBYUV=OFF and leaves other codec/local options OFF; these modules are therefore not entered by the accepted build."
+        },
+        {
+          "path_prefix": "ext/",
+          "disposition": "upstream-libavif-local-dependency-helper-not-invoked",
+          "basis": "Accepted TDesktop does not invoke libavif ext/*.cmd or helper scripts and does not select LOCAL codec modes."
+        },
+        {
+          "path_prefix": "src/",
+          "disposition": "compiled-source-reference-not-build-acquisition",
+          "basis": "Matches are specification/reference URLs inside compiled libavif source, not executed build acquisition commands."
+        },
+        {
+          "path_prefix": "include/",
+          "disposition": "header-reference-not-build-acquisition"
+        },
+        {
+          "path_prefix": "tests/",
+          "disposition": "upstream-libavif-test-only-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "android_jni/",
+          "disposition": "upstream-libavif-android-example-or-doc-not-tdesktop-build"
+        },
+        {
+          "path_exact": "README.md",
+          "disposition": "documentation-not-acquisition"
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-libavif-authorities",
+      "note": "This closes acquisition-pattern candidates for both libavif root snapshots used by accepted TDesktop paths. The selected dav1d dependency remains separately represented by TDesktop's own source/build authority."
     }
   }
 }
