@@ -1,81 +1,56 @@
-# Telegram Research → Existing Fabushi Owner Map
+# 全量源文件/模块 → Fabushi Owner 对照规则
 
 Status: active  
-Project: TDRP-001 Revision 4  
-Parent: FBCP-001  
-Purpose: map capabilities to current Fabushi ownership, not to source-equivalent target modules.
+Project: TDRP-001 Revision 5  
+Parent: FBCP-001 Revision 3  
+Updated: 2026-10-07
 
-## Decision rule
+## Purpose
 
-For every capability:
+本文件定义完整迁移对照要求，不是已完成的全量对照表。旧的“只映射能力、不做 source-equivalent target mapping”口径废止。
 
-1. research Telegram behavior;
-2. inspect the current Fabushi exact HEAD;
-3. list plausible existing owners;
-4. select `existing_owner`;
-5. define `absorption_plan`;
-6. if and only if none fits, create `new_owner_proposal` with ADR.
+必须同时提供逐源文件映射与逐模块行为合同。等价目标是功能/责任/状态机/产品效果，不是同名文件/类/目录。多文件可合并到一个 owner，一个文件可拆到多个 owner，但每个 source responsibility 都必须能反查其实现与证据。
 
-## Initial hypotheses
+## Required record
 
-| Telegram capability | Source areas to research | Existing Fabushi owner candidates |
+每个源文件记录 exact repository/commit/path/blob、分类、module/responsibility IDs、完整理解记录、UI 与非 UI 责任划分、capabilities/dependencies、existing owner 候选与选择、Fabushi target paths/symbols、语言与理由、状态/lifecycle/persistence/security/concurrency、服务端依赖、生产入口、测试/证据、target SHA、blockers 与 licenses/provenance。
+
+字段、状态和完整 gate 以 TDRP-001 §2/§8 为准。旧目录级表仅能作为导航，不能证明逐文件覆盖。proposed path 不等于已存在 production code。
+
+## Owner-first hypotheses
+
+以下是研究/映射起点，必须读当前源码替换为 exact-head 路径/符号；不是完整能力清单，也不是实现完成声明。
+
+| 源职责区域 | 必须承接的责任示例 | 优先检查的 Fabushi owner |
 | --- | --- | --- |
-| Dialog list/folders/archive | dialogs, history, data | sidebar / conversation list |
-| Private chat/history | history, data, api | conversation workspace / transcript |
-| Message variants | history, data, chat_helpers | transcript model/cards |
-| Composer/draft | history/composer/ui | existing composer / draft owner |
-| Reply/quote/forward | history, data | transcript relation/provenance |
-| Reactions/polls | data, history, ui | existing reaction/transcript owners |
-| Groups/members | info, profile, data, boxes | Shared Room / group members |
-| Admin/permissions | info, api, settings | room controller / permissions |
-| Topics/forums | history, data, api | conversation thread/topic |
-| Channels | data, api, history | room/conversation + channel mode |
-| Search | dialogs, history, api | existing search/command surfaces |
-| Scheduled send | history, api | Automations + composer |
-| Attachments/files | media, storage, api | attachments/artifacts/resources |
-| Upload/download | media, storage, api | resource lifecycle + transfer infra |
-| Calls/screen share | calls, lib_webrtc, tgcalls | existing calls/Computer/realtime owners |
-| Stickers/GIF/emoji | chat_helpers, ui, media | composer/rich transcript |
-| Stories | data, api, ui | product shell or minimal Story owner |
-| Bot interactions | inline_bots, api, ui | Agent/composer interaction |
-| Mini Apps | lib_webview, api, ui | Plugins/MCP/Web capability |
-| Notifications | platform, tray, settings | desktop/platform lifecycle |
-| Settings/privacy | settings, data | settings/permissions |
-| Local storage/recovery | storage, data | durable state/storage owners |
-| Multi-device sync | mtproto/api/data | durable state + native sync infrastructure |
-| Presence/typing | data/ui | Shared Room/conversation projection |
-| Export | export, storage | artifacts/data lifecycle |
-| i18n/accessibility | lang, ui, platform | existing product shell |
-| install/update | core, platform, build | existing platform/release owners |
+| dialogs/history/data | 列表、顺序、历史、gap、未读、编辑删除、relations、草稿 | navigation/list、conversation、transcript、composer |
+| contacts/info/profile/groups | 身份、成员、角色、群频道话题、privacy | identity、Shared Room/member、permissions |
+| api/mtproto/session | 消息确认、重试、幂等、同步、重连、协议状态 | durable state、既有 command/event owner、最小 native network infra |
+| storage/media/export | 持久化、迁移、传输、缓存、播放、编辑、导出 | attachments/artifacts/resources、storage/data lifecycle |
+| calls/tgcalls/lib_webrtc | 会话、信令、设备、流、共享、取消/恢复 | Computer/媒体/平台 owner；缺失 call-session 以最小 ADR 补齐 |
+| bots/inline/webview | 命令/callback、交互、安全会话、Mini Apps | typed Agent interactions、Composer、Plugins/MCP/Web surface |
+| business/payments/credits/gifts | 自动化、权益、价值流、结算、审计 | Automations/Task/settings，缺失服务以最小 ADR 补齐 |
+| settings/platform/core | 本地锁、通知、窗口/后台、凭据、更新 | account/secrets/settings/platform/lifecycle |
+| ui/boxes/window/history views | 表现层替代及混合文件中的全部非 UI 业务 | React/TS UI；非 UI 责任回到相应 Rust/domain owner |
+| build/generator/resources/dependencies | 工具链、schema、资源、许可证、可重现发布 | Fabushi 自有 CI/packaging、最薄平台适配、审查过的通用依赖 |
 
-P0 must replace hypotheses with exact-head evidence.
+## Decision procedure
 
-## Broad new owners are forbidden
+1. 全文件读取及调用关系研究，列出所有独立 responsibility。
+2. 检查 current exact-head Fabushi 合理 owner，选择并解释 existing_owner。
+3. 不存在合理 owner 时，写 rejected owners、最小责任和批准 ADR；禁止整体 TelegramRuntime/CommunicationCore。
+4. 确定 target paths/symbols 与 best-fit language；C++ 非 UI 产品逻辑默认 Rust。
+5. 实现真实状态机和依赖，接入 shipping composition，再记录测试证据。
+6. 每个文件/责任取得证据后单独升级状态，不批量冒进。
 
-Do not propose:
+## UI and network distinctions
 
-- TelegramCore
-- TelegramRuntime
-- TelegramProvider
-- TelegramMessaging
-- CommunicationCore
-- MessengerRuntime
+不迁 Qt 表现实现，不等于不迁 UI 文件中的业务与用户功能。微信式左竖栏/消息/联系人/插件市场和 Fabushi 品牌由 FBCP-001 规定。
 
-A new owner must be capability-specific and minimal.
+不接官方 Telegram 网络，不等于跳过 mtproto/api/session/storage 责任；其对应行为必须进入 Fabushi 自有服务/协议。上游服务端缺失时补充 Fabushi server contract/implementation，并以真实 E2E 闭合。
 
-## Native network implications
+## Completion
 
-Telegram protocol code may produce requirements for Fabushi's own:
+0 omitted/unmapped files or responsibilities；所有 non-UI 产品责任 rewritten + wired + verified；所有 UI/platform/toolchain 替代有证明；法律来源记录保留；0 open in-scope blocker。数量相等、目录级 mapping、编译绿或旧 dossier 都不是完成证据。
 
-- ordering
-- duplicate suppression
-- offline queue
-- reconnect
-- gap recovery
-- multi-device sync
-- media resume
-- message identity
-- push
-- call signaling
-
-Record these as infrastructure requirements, not as Telegram protocol compatibility requirements.
+所有可执行验证只在 GitHub Actions。现有旧 baseline graph/ledger 先做差异审计，不得继承未验证的新基线状态。
