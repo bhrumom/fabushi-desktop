@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
-  "target_commit": "cf60178cab2142e75e9b0f5b7d24145b0b997b15",
+  "target_commit": "18289a68a55a3166f42013b9ea8cb84b7565faf1",
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
     "unread": 15786,
     "omitted": 0,
-    "responsibilities_total": 5,
+    "responsibilities_total": 6,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -1181,6 +1181,242 @@
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox formatted-comment semantics using the existing Fabushi formatted-message owner.",
       "reviewer": null,
       "notes": "This row closes only UTF-16-safe link-prefix entity shifting. It does not close the rest of FastShareLink or ShareBox, so global unknown does not decrement."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+      "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
+      "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
+      "source_kind": "source",
+      "module_id": "tdesktop.boxes.share",
+      "responsibility_id": "TDRP-R9-SHARE-THREAD-DESTINATION-001",
+      "source_symbols": [
+        "Inner::Chat",
+        "chatThread",
+        "selected",
+        "chooseForumTopic",
+        "chooseMonoforumSublist",
+        "chooseCommunityChat"
+      ],
+      "capability_ids": [
+        "CAP-CONVERSATION-TYPED-THREAD-DESTINATION"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Topic",
+        "ClientCommand::ForwardMessage",
+        "Message.thread_root_message_id"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/share-box-complete-read.md",
+      "behavior_contract": "A forward destination may resolve to a typed child thread/topic rather than only its parent conversation; the resolved thread identity must survive protocol projection and domain message creation instead of being flattened to the parent.",
+      "state_machine": "canonical destination selection -> optional typed thread root -> ForwardMessage protocol -> MessagingService projection -> MessagingEngine command -> pending Message carrying thread_root_message_id.",
+      "side_effects": [
+        "Routes the forwarded canonical Message to the selected thread root",
+        "Does not create a second thread or conversation store"
+      ],
+      "failure_cases": [
+        "Forum/topic destination is flattened to parent conversation",
+        "Forward protocol drops a selected thread root",
+        "Thread routing diverges between ordinary sends and forwards"
+      ],
+      "ui_disposition": "Reuse canonical Fabushi Conversation/Topic picker and ConversationWorkspace; Telegram nested picker presentation is not ported.",
+      "non_ui_responsibilities": [
+        "Typed forward destination routing",
+        "Protocol compatibility for absent thread root",
+        "Canonical Message thread relation preservation"
+      ],
+      "platform_delta": "Telegram Data::Thread selection is represented by the existing Fabushi Conversation plus Message.thread_root_message_id model.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/message.rs"
+      ],
+      "existing_owner": "Fabushi canonical Conversation/Topic + Message thread relation",
+      "rejected_existing_owners": [
+        "New forum/share destination owner: would duplicate canonical Conversation/Topic identity",
+        "Renderer-only routing: thread identity must survive the native protocol/domain boundary"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/message.rs"
+      ],
+      "fabushi_target_symbols": [
+        "thread_root_message_id"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Thread routing is canonical message/conversation domain state already owned by Rust.",
+      "command_event_contracts": [
+        "ClientCommand::ForwardMessage.thread_root_message_id -> Command::ForwardMessage.thread_root_message_id -> Event::MessageQueued Message.thread_root_message_id"
+      ],
+      "state_owner": "Canonical Message thread_root_message_id with Conversation/Topic identity",
+      "lifecycle_owner": "MessagingService + MessagingEngine canonical forward/send lifecycle",
+      "persistence_and_restart": "Thread routing persists on the canonical Message through the existing state store; no share-specific persistence is added.",
+      "concurrency_and_cancellation": "The typed destination is carried inside the same idempotent forward command as the client message identity.",
+      "security_boundary": "Destination authorization remains enforced at the canonical forward send boundary; adding a thread identity does not bypass Conversation/Community policy.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Current-head Rust GitHub Actions evidence is pending",
+        "Shipping nested picker lifecycle/destruction and canonical topic eligibility evidence remain open"
+      ],
+      "production_entrypoints": [
+        "Canonical recipient/topic selection -> ClientCommand::ForwardMessage -> MessagingService -> MessagingEngine -> Message.thread_root_message_id"
+      ],
+      "production_evidence": [
+        "commit:18289a68a55a3166f42013b9ea8cb84b7565faf1",
+        "path:native/mahayana-messaging/src/protocol.rs#ForwardMessage",
+        "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content"
+      ],
+      "target_commit": "18289a68a55a3166f42013b9ea8cb84b7565faf1",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical Conversation messaging domain",
+      "composition_slot": "Conversation recipient/topic selection and forward message action",
+      "capability_component": "Typed forward thread destination",
+      "variation_axes": [
+        "parent conversation",
+        "topic/thread destination",
+        "absent legacy field"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation",
+        "Canonical Topic",
+        "Canonical Message thread relation"
+      ],
+      "duplicate_root_check": "No Telegram Thread root, separate forum app, or second Conversation/Message store was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped picker / Conversation action",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace / canonical picker",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Forward to selected conversation/topic",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical recipient/topic picker and message action",
+      "route_contract": "Typed topic/thread remains within the existing Messages/Conversation route.",
+      "search_scope": "Contextual participant/conversation picker",
+      "search_provider": "Existing canonical Search/provider stack",
+      "search_result_types": [
+        "Conversation"
+      ],
+      "search_filters": [
+        "Destination eligibility"
+      ],
+      "search_permission_contract": "Picker exposure must remain authorization-filtered; native send policy remains fail-closed.",
+      "search_local_remote_contract": "Reuse canonical search/picker results; no ShareBox-specific search truth.",
+      "responsive_disposition": "Reuse canonical picker responsiveness.",
+      "accessibility_contract": "Reuse canonical Picker/ListRow selection semantics; exact shipping a11y evidence remains open.",
+      "keyboard_contract": "Reuse canonical picker keyboard selection; exact shipping keyboard evidence remains open.",
+      "state_continuity_contract": "Selected typed destination is encoded in the command and persists on Message; picker lifecycle semantics remain a separate open slice.",
+      "ui_acceptance_scenarios": [
+        "Forward to a typed thread preserves the selected thread relation instead of targeting only its parent conversation"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical picker and Conversation tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "Picker",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "Message actions",
+        "Destination picker"
+      ],
+      "visual_state_matrix": [
+        "parent-destination",
+        "thread-destination"
+      ],
+      "density_contract": "Reuse canonical picker density.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "Reuse canonical Conversation/Participant avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Reuse canonical picker motion.",
+      "reduced_motion_contract": "Reuse application reduced-motion behavior.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SHARE-THREAD-DESTINATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SHARE-THREAD-DESTINATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-FORWARD-THREAD-NOT-FLATTENED-001",
+        "INV-TDRP-FORWARD-LEGACY-NONE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "PROP-TDRP-FORWARD-THREAD-DESTINATION-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-FORWARD-THREAD-DESTINATION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-FORWARD-THREAD-PROJECTION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-FORWARD-THREAD-PERSISTENCE-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-FORWARD-THREAD-DROP-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-FORWARD-THREAD-AUTHORIZATION-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-FORWARD-THREAD-FLATTEN-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "forward-topic-destination"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-thread selection semantics using canonical Fabushi Conversation/Topic/Message owners.",
+      "reviewer": null,
+      "notes": "This row closes only preservation of an already-resolved typed thread destination through the native forward path. Picker lifecycle, topic existence/closed-state selection UX, saved-message sublists/community child selection, and the rest of ShareBox remain open, so global unknown does not decrement."
     }
   ]
 }
