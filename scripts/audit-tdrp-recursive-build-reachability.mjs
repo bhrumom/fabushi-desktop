@@ -185,6 +185,14 @@ auditRootCandidates(
   {requireComplete:tgOwt.root_candidate_policy_status==='complete-for-current-tg-owt-authority',scope:'tg-owt-root-candidates'}
 );
 
+const libjxl=rules.libjxl;
+const libjxlKey=keyOf(libjxl.repository,libjxl.commit);
+auditRootCandidates(
+  libjxlKey,
+  libjxl.root_candidate_disposition_policy,
+  {requireComplete:libjxl.root_candidate_policy_status==='complete-for-current-libjxl-authority',scope:'libjxl-root-candidates'}
+);
+
 const result={
   project_id:'TDRP-001',
   spec_revision:9,
