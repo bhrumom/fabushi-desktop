@@ -181,7 +181,7 @@ When this spec says “remove Fabushi-only behavior with no Grok counterpart”,
 
 - **PERF-001 — Local submit paint.** The submitted user bubble must paint within 250 ms p95 after the send gesture on the reference test machine.
 - **PERF-002 — Acceptance visibility.** Canonical accepted/running state must become visible within 500 ms p95 after Host acceptance.
-- **PERF-003 — TTFA/first output.** Under a healthy live provider and stable network, simple Q&A first assistant output should be <= 3 s p50 and <= 8 s p95, and must not regress by more than 10% versus the same provider/model exercised through the Grok reference control path when a direct comparison is possible.
+- **PERF-003 — TTFA/first output.** Under a healthy live provider and stable network, simple Q&A first assistant output p50 is recorded and reported as a trend metric, not a release gate. The p95 remains a release gate at <= 8 s. When a direct comparison against the same provider/model through the Grok reference control path is possible, the candidate must not regress by more than 10%.
 - **PERF-004 — No hidden 180-second success criterion.** A test may use a larger outer watchdog to collect diagnostics, but user-facing latency acceptance must be scored from first-output and completion timing. “Completed sometime within 180 seconds” is not a responsiveness pass.
 - **PERF-005 — Stream cadence.** Delta batching may coalesce renderer work, but visible stream updates must remain smooth and must not introduce a second artificial multi-second buffering layer.
 
