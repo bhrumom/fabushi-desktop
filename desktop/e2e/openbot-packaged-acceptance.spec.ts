@@ -275,19 +275,30 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   throw new Error('Packaged Fabushi did not reach the canonical Agent workspace');
 }
 
-async function createCoworker(page: Page, name: string, _description: string): Promise<void> {
+async function createCoworker(page: Page, name: string, description: string): Promise<void> {
   const sidebar = page.locator('aside[aria-label="Agents"]');
   const heading = page.locator('#sand-conversation-heading');
 
   // The signed product can already own one empty "New chat" after first-run
-  // bootstrap. That row is the canonical create target, not a fixture to
-  // discard. Reuse it for the first named Agent; only invoke New when the
-  // currently selected Agent is already durable/non-empty.
+  // bootstrap. Reuse that canonical empty Agent when it is selected. Otherwise
+  // exercise the shipping New -> Create agent identity picker and create the
+  // named Agent with its description before the first conversation starts.
   if ((await heading.textContent().catch(() => null))?.trim() !== 'New chat') {
     const create = page.getByRole('button', { name: 'New', exact: true });
     await expect(create).toBeVisible({ timeout: 20_000 });
     await create.click();
-    await expect(heading).toHaveText('New chat', { timeout: 20_000 });
+
+    const dialog = page.getByRole('dialog', { name: 'Create agent' });
+    await expect(dialog).toBeVisible({ timeout: 20_000 });
+    await dialog.getByLabel('Name').fill(name);
+    if (description.trim().length > 0) {
+      await dialog.getByLabel('Description').fill(description);
+    }
+    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(dialog).toBeHidden({ timeout: 20_000 });
+    await expect(peerByName(page, name)).toBeVisible({ timeout: 20_000 });
+    await expect(heading).toHaveText(name, { timeout: 20_000 });
+    return;
   }
 
   const activeRow = sidebar.locator('button.sand-agent-item[aria-current="page"]').first();
