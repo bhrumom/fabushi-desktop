@@ -1,8 +1,8 @@
 # 全量源文件/模块 → Fabushi Owner 对照规则
 
 Status: active  
-Project: TDRP-001 Revision 6  
-Parent: FBCP-001 Revision 4  
+Project: TDRP-001 Revision 7  
+Parent: FBCP-001 Revision 5  
 Updated: 2026-10-07
 
 ## Purpose
@@ -14,6 +14,8 @@ Updated: 2026-10-07
 ## Required record
 
 每个源文件记录 exact repository/commit/path/blob、分类、module/responsibility IDs、完整理解记录、UI 与非 UI 责任划分、capabilities/dependencies、existing owner 候选与选择、Fabushi target paths/symbols、语言与理由、状态/lifecycle/persistence/security/concurrency、服务端依赖、生产入口、测试/证据、target SHA、blockers 与 licenses/provenance。
+
+对所有用户可见责任还必须记录：`ui_entry_class`、canonical route/root/slot、collection/filter、creation flow、object action/detail section、capability surface、search scope/provider/result/filter/permission、keyboard/accessibility、responsive/state-continuity。Group/Channel/Topic 等不能因上游页面独立而映射成第二应用；Search consumer 不得自建 search truth。
 
 字段、状态和完整 gate 以 TDRP-001 §2/§8 为准。旧目录级表仅能作为导航，不能证明逐文件覆盖。proposed path 不等于已存在 production code。
 

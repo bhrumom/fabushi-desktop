@@ -11,8 +11,8 @@ Product implementation acceptance: not claimed
 
 ## Durable changes
 
-- FBCP-001 Revision 3：完整功能并集、UI/服务端/品牌/发布要求与 AC-01 至 AC-24。
-- TDRP-001 Revision 5：全仓库/递归源清单、逐文件和逐责任对照、逐模块行为合同、实际重写与生产取证；废止 research-only 完成定义。
+- FBCP-001 Revision 5：完整功能并集、single-composition、UI information architecture/interaction contract、统一创建与统一 Search、服务端/品牌/发布要求与 AC-01 至 AC-31。
+- TDRP-001 Revision 7：全仓库/递归源清单、逐文件和逐责任对照、逐模块行为合同、UI entry/search ledger、实际重写与生产取证；废止 research-only 完成定义。
 - 两个项目 SOURCE_OF_TRUTH、module-map 与 P0 task 同步新口径。
 - 保留 current-owner-first、Coordinator/Host/Runner、native Fabushi network、无平行 runtime 和 source-informed license/provenance 约束。
 - 本项目所有可执行验证收紧为 GitHub Actions only。
@@ -29,5 +29,7 @@ Product implementation acceptance: not claimed
 ## Verification and remaining work
 
 本次是文档修订；未运行 build/test/generator/schema/benchmark/fuzz/package/acceptance，未改 production code、现有 ledger 状态或 upstream lock，未声称已完成 UI、全文件理解或功能迁移。
+
+本次进一步把 UI 迁移原则从“统一 workspace”细化为可执行的信息架构合同：功能入口按作用域分类；Group/Channel/Topic 留在统一 Messages/Conversation 体系；新建私聊/群组/频道/Agent/Hybrid 复用 typed ConversationCreation flow；Search 统一为 contextual/object/Universal 三层 UX 与一个 canonical Search owner；picker、权限、本地/远端合并、排序/去重/分页/取消/stale fencing 都纳入 migration ledger 与 gate。
 
 下一执行以更新后的 P0 task 为准：在 GitHub Actions 建立一致 baseline、扩展既有账本/gate、重新审计实际实现并按无阻塞 owner 持续推进。blocked 是待办，不是完成；完整交付以 FBCP-001 全部 AC 与 current-head 生产证据为准。

@@ -2,11 +2,11 @@
 
 Status: active  
 Spec ID: FBCP-001  
-Revision: 4  
+Revision: 5  
 Last updated: 2026-10-07  
 Owner: Fabushi Desktop  
 Canonical project: `projects/fabushi-communication-platform`  
-Companion implementation contract: `docs/specs/telegram-desktop-rust-equivalence-migration.md` (TDRP-001 Revision 6)  
+Companion implementation contract: `docs/specs/telegram-desktop-rust-equivalence-migration.md` (TDRP-001 Revision 7)  
 Implementation status: **requirements updated; full migration not accepted**
 
 > **最终产品是一个完整的 Fabushi Bot：在现有 Fabushi 架构内，逐文件、逐模块理解 `telegramdesktop/tdesktop`，把其全部非 UI 代码职责用最合适的语言等价重写；原 UI 表现层由统一 Fabushi UI 替代，但 UI 中承载的功能与业务逻辑不得遗漏。最终同时具备现有 Bot 的全部能力和 Telegram Desktop 源码所体现的全部产品能力，而不是绑定 Telegram、添加入口、做 Provider 接入、选择性借鉴或局部 Demo。**
@@ -204,6 +204,34 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 
 **FBCP-UI-08 — 其他产品表面同样只允许 typed differences。** 联系人/Agent/群资料、媒体查看/编辑、搜索、设置、通知、通话、Stories、商业/支付、Mini Apps 等都必须优先接入统一 product shell 和对应 canonical surface。只有当前架构完全缺失且 existing-owner audit 失败时，才可按 FBCP-UW-05 新增最小 capability owner/surface；该 surface 仍由统一 shell/router 管理，不得形成独立应用。
 
+### 8.1 UI Information Architecture / Interaction Contract
+
+本节定义 Telegram 全量能力迁入 Fabushi 后如何决定功能入口、创建路径、搜索范围和专用 surface。目标不是照搬 Telegram 菜单层级，也不是把每个新能力都堆到左栏；目标是让全部能力在一个可学习、可发现、可扩展的 Fabushi 信息架构中工作。详细 companion contract：`projects/fabushi-communication-platform/ui-information-architecture.md`。
+
+**FBCP-UI-09 — 入口按用户任务与作用域分层，不按源码来源分层。** 每个用户可见 capability 必须有且只有一个主要入口类别：`primary-domain`、`collection-action`、`creation-action`、`object-action`、`detail-section`、`capability-surface`、`global-command` 或 `system-surface`。上游存在独立菜单/窗口/模块，不构成新增一级入口的理由。
+
+**FBCP-UI-10 — 一级导航保持稳定且低噪声。** 左侧窄竖栏承载稳定、跨对象、长期独立浏览的产品领域。消息、联系人、插件市场是明确一级入口；既有 Agents、任务、Computer、Automations、账号/设置等能力继续可达。Group、Channel、Topic、Poll、Call、Story、Media、Forward 等不得仅因来源独立而自动升级为一级 App。
+
+**FBCP-UI-11 — Conversation kind 是统一消息领域中的类型，不是独立应用。** Direct Human、Agent、Group、Channel、Hybrid、Topic/Thread 共享同一 Conversation list/workspace。中间列表可提供 `全部 / 未读 / 私聊 / 群组 / 频道 / Agent` 等 filter/view，但 filter 不拥有第二份 list/store/workspace。
+
+**FBCP-UI-12 — 统一创建入口。** 消息入口中左列表顶部的统一 `New / +` action 打开唯一 `ConversationCreationSurface` 或等价 typed creation flow，至少承接 Human 私聊、新建群组、新建频道、新建/选择 Agent 会话、Human + Agent 混合房间以及后续发现的 Conversation-like kind。它们是 `CreateConversationIntent { kind, participants, capabilities, policy }` 的 typed variants；Group/Channel 专有字段以 typed sections 出现，成员选择复用统一 Participant search/eligibility/permission。
+
+**FBCP-UI-13 — Contacts 创建与 Conversation 创建分工。** 联系人入口的 `+` 用于添加/邀请/管理 Participant identity/contact relation；消息入口的 `+` 用于创建 Conversation。联系人详情中的“发消息”必须 find-or-create 同一 Direct Conversation 后进入同一个 ConversationWorkspace；不得打开 ContactChatWindow。
+
+**FBCP-UI-14 — Search 只有一个 canonical domain，UI 有三级作用域。** 入口内搜索用于当前一级领域；对象内搜索用于当前 Conversation/Resource/Task 等对象；Universal Search 通过 `Cmd/Ctrl+K` 与统一可达入口跨整个 Fabushi 搜索。三者只是 scope 不同，不是不同搜索系统。
+
+**FBCP-UI-15 — Search contract 必须统一。** 所有搜索入口最终进入同一 Search owner 的 typed query/result/provider 合同。结果至少可包含 Participant、Conversation、Message、Resource、Agent、Task、Artifact、Plugin、Setting/Command。联系人搜索、群成员/频道管理员 picker、新建会话成员搜索也复用 Participant Search + eligibility policy；模块只能贡献 SearchProvider/filter/result renderer，不能创建第二 Search root、第二索引真相或第二权限判断。
+
+**FBCP-UI-16 — Search 安全与本地/远端组合。** 查询执行前应用 account、membership、privacy、block、retention、resource/task/artifact visibility 等权限，禁止先泄露结果再由 UI 隐藏。local index 与 Fabushi remote historical search 可以并存，但必须位于同一 Search owner 后，统一 ranking、dedupe、cursor/pagination、debounce、cancellation、stale-query fencing 和 result provenance。
+
+**FBCP-UI-17 — 对象动作靠近对象，避免全局入口泛滥。** Reply/Forward/Edit/Delete/Reaction/Pin、Call、查看资料、成员管理、频道权限、媒体/文件操作等优先位于当前 Message/Conversation/Profile/Resource 的 header、context menu、toolbar 或 detail section。只有跨对象且持续独立的领域才成为一级入口。
+
+**FBCP-UI-18 — 专用 surface 必须可返回且不丢上下文。** Call、Story viewer、media editor、payment/settlement、Mini App 等需要沉浸式 UI 时，允许 full-screen/panel/modal/overlay，但必须由统一 router/shell 打开；关闭后恢复原 selection、draft、scroll、search query、running task/call 等上下文，且不建立第二账号、设置、消息列表或资源真相。
+
+**FBCP-UI-19 — 导航、快捷键、可访问与响应式是一套合同。** 一级导航、collection filter、object action、global command 必须有一致 keyboard/focus/accessibility semantics；`Cmd/Ctrl+K` 保留给 Universal Search。窄窗口可折叠中间列表或详情面板，但核心入口、返回路径与活动任务/通话状态必须仍可达。
+
+**FBCP-UI-20 — UI 迁移不是像素复刻。** 微信截图和 Telegram UI 只提供信息架构/行为参考；最终视觉由 Fabushi 自有设计系统决定。验收关注入口合理性、能力可发现性、状态连续、认知负担、键盘/屏幕阅读器可用和完整功能，不逐像素复制外部产品。
+
 ## 9. 品牌、命名与来源记录
 
 **FBCP-BRAND-01:** 产品名、窗口标题、导航、默认头像/图标、空状态、通知、托盘、设置、安装包、更新界面和用户文案统一使用 Fabushi。不得残留 Telegram、Grok Bot、Gok Bot 的产品品牌、Logo、默认品牌素材或独立产品入口。
@@ -273,6 +301,11 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 | AC-24 | 独立逐项验收、许可证/分发审查、支持平台包与 release provenance 完整 |
 | AC-25 | 所有同类产品表面遵守 single-composition：无 Bot/Human/Group/Channel/来源型平行完整 workspace/list/profile/composer/resource/settings 实现；差异均为 typed capability composition |
 | AC-26 | 当前 Fabushi 完全缺失的上游能力均通过 rejected-owner analysis + ADR 建立最小 source-neutral owner，并接入统一 shell/canonical truth；0 因“没有现成架构”而丢失的功能 |
+| AC-27 | 每个用户可见 capability 都有唯一 UI entry classification 与 canonical route；无因源码/品牌来源而新增的重复一级入口或独立 App |
+| AC-28 | 消息领域使用一个 Conversation list/workspace 与一个 typed ConversationCreation flow；Human/Agent/Group/Channel/Hybrid/Topic 的创建、筛选、详情均不复制状态栈 |
+| AC-29 | Search 只有一个 canonical owner；入口内、对象内、Universal Search 三种作用域及所有 picker/search consumer 均复用 typed query/result/provider 合同 |
+| AC-30 | Search 的 account/privacy/membership/block/retention/resource/task 权限、本地+远端合并、排序/去重/分页/取消/stale fencing 有真实行为和负面测试证据 |
+| AC-31 | 导航、对象动作、专用 surface、响应式折叠、键盘/焦点/屏幕阅读器与状态连续性通过 packaged UI acceptance；无隐藏/不可返回/上下文丢失的迁移功能 |
 
 ## 14. 本次交付与后续任务
 

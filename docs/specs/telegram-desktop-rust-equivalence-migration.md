@@ -2,9 +2,9 @@
 
 Status: active  
 Spec ID: TDRP-001  
-Revision: 6  
+Revision: 7  
 Last updated: 2026-10-07  
-Parent: `docs/specs/fabushi-bot-communication-platform.md` (FBCP-001 Revision 4)  
+Parent: `docs/specs/fabushi-bot-communication-platform.md` (FBCP-001 Revision 5)  
 Project: `projects/telegram-desktop-rust`  
 Acceptance status: **not complete; requirements only updated by this revision**
 
@@ -78,6 +78,12 @@ target_commit, workflow_run, run_attempt, job, artifact_id, artifact_digest
 composition_root, composition_slot, capability_component
 variation_axes, shared_owner_contracts, duplicate_root_check
 novel_capability, owner_absence_evidence, minimal_owner_adr
+ui_entry_class, primary_navigation_target, collection_surface, creation_flow
+object_action_scope, detail_section, capability_surface, route_contract
+search_scope, search_provider, search_result_types, search_filters
+search_permission_contract, search_local_remote_contract
+responsive_disposition, accessibility_contract, keyboard_contract
+state_continuity_contract, ui_acceptance_scenarios
 license_and_provenance, reviewer, notes
 ```
 
@@ -137,6 +143,18 @@ UI 文件必须证明每项交互和非 UI 逻辑均被承接。功能不得因�
 
 产品标识统一为 Fabushi，清理 Telegram/Grok Bot/Gok Bot 品牌、Logo、默认素材和独立入口；保留法律要求的 LICENSE/NOTICE/版权与 source provenance。历史研究中的上游名字不能被抹去，否则账本失去可验证性。新 owner 名称使用业务职责，不使用来源品牌。
 
+### TDRP-UI-IA — 每个用户可见责任必须有入口归属
+
+每个上游 UI/交互责任都必须记录 `ui_entry_class` 与 canonical route，按 FBCP-001 §8.1 分类。禁止“上游有一个页面/菜单，所以 Fabushi 也新增一个一级页面”的机械映射。Group/Channel/Topic 等属于 Conversation kinds/filter/views；新建群组、新建频道等必须进入统一 typed ConversationCreation flow。Contact 的添加/邀请归 Participant/contact relation；Contact 的“发消息”进入同一 Direct Conversation/ConversationWorkspace。
+
+Call/Story/media editor/payment 等只有在确实需要专用交互时才可拥有 capability surface，并必须由统一 shell/router 管理且可返回原上下文。
+
+### TDRP-UI-SEARCH — 搜索是一套 domain contract
+
+Telegram 中 dialog/history/people/media/username/filter 等搜索职责必须拆解并升级到 Fabushi canonical Search owner。入口内搜索、对象内搜索、Universal Search、联系人 picker、群成员/管理员 picker 等必须共享 typed query/result/provider 与权限合同；不得把不同页面搜索实现成彼此独立的索引/state truth。
+
+模块 dossier 需要覆盖 scope/filter/result type、local/remote source、ranking/dedupe、cursor/pagination、debounce、cancellation、stale-result fencing、account/privacy/membership/block/retention permission、结果 provenance、点击结果后的 canonical navigation。SearchProvider 只提供领域结果，不拥有独立 Search 产品。
+
 ## 7. 模块实施闭环
 
 每个已批准模块依次执行：
@@ -163,6 +181,8 @@ UI 文件必须证明每项交互和非 UI 逻辑均被承接。功能不得因�
 - **G-BEHAVIOR:** 功能/错误/顺序/重复/取消/销毁/重启/网络恢复等与合同等价；mock 仅作局部测试，不代替真实 E2E。
 - **G-BOT:** 原 Agent、Coordinator/Host/Runner、MCP/Plugins、Computer、Automations、审批、任务和产物能力无回退。
 - **G-UI-BRAND:** 左竖栏/消息/联系人/插件市场与统一 workspace 真实可用，合法来源记录外产品品牌全为 Fabushi。
+- **G-UI-IA:** 每个用户可见 capability 有唯一 entry classification/route；Group/Channel/Topic 等不会形成平行 App；统一 ConversationCreation flow、object actions、capability surfaces 与返回路径可验证。
+- **G-SEARCH:** 一个 canonical Search owner 支撑 contextual/object/universal 三层搜索和所有 picker；权限、本地/远端合并、排序/去重/分页/取消/stale fencing 及 typed result navigation 全闭合。
 - **G-RELEASE:** 服务部署、隐私安全、许可证、迁移回滚、性能、支持平台签名/安装/更新与 packaged acceptance 全闭合。
 - **G-EVIDENCE:** upstream/target/checkout/run/attempt/job/artifact digest/provenance 一致，HEAD 变化使受影响旧证据失效。
 
@@ -187,4 +207,4 @@ TDRP-001 只有以下同时成立才能 accepted：
 
 本 Revision 未宣称已逐个阅读全部上游文件、未刷新锁文件/全量账本、未重写产品或运行新 gate。下一任务必须先完成 baseline/ledger/schema/validator 的真实差异审计，再按已有无阻塞 owner 推进实现；旧研究和代码可以复用，但状态必须基于新合同重新证明。
 
-References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 4 ; current canonical Fabushi/Bot specifications.
+References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 5 ; current canonical Fabushi/Bot specifications.
