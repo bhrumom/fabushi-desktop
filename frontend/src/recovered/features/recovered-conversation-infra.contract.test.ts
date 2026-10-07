@@ -28,6 +28,12 @@ import {
   createComposerDraftStateStore,
   type ComposerDraftPersistence,
 } from "./conversation/workspace/draft-state.ts";
+import {
+  isForwardRecipientNavigationKey,
+  isForwardSubmitShortcut,
+  isForwardToggleShortcut,
+  nextForwardRecipientIndex,
+} from "../../production/forward-recipient-navigation.ts";
 
 const flush = async (): Promise<void> => {
   await Promise.resolve();
@@ -276,4 +282,25 @@ test("composer draft restore does not overwrite a staged attachment added while 
     attachments: [{ path: "/tmp/agent-notes.txt", name: "agent-notes.txt" }],
   });
   store.dispose();
+});
+
+
+test("forward recipient keyboard policy preserves picker boundaries and submit semantics", () => {
+  assert.equal(nextForwardRecipientIndex(0, 0, "ArrowDown"), null);
+  assert.equal(nextForwardRecipientIndex(0, 8, "ArrowUp"), 0);
+  assert.equal(nextForwardRecipientIndex(0, 8, "ArrowDown"), 1);
+  assert.equal(nextForwardRecipientIndex(1, 8, "PageDown", 3), 4);
+  assert.equal(nextForwardRecipientIndex(4, 8, "PageUp", 3), 1);
+  assert.equal(nextForwardRecipientIndex(4, 8, "Home"), 0);
+  assert.equal(nextForwardRecipientIndex(4, 8, "End"), 7);
+  assert.equal(nextForwardRecipientIndex(7, 8, "ArrowDown"), 7);
+
+  assert.equal(isForwardRecipientNavigationKey("PageDown"), true);
+  assert.equal(isForwardRecipientNavigationKey("Enter"), false);
+  assert.equal(isForwardSubmitShortcut({ key: "Enter", ctrlKey: true, metaKey: false }), true);
+  assert.equal(isForwardSubmitShortcut({ key: "Enter", ctrlKey: false, metaKey: true }), true);
+  assert.equal(isForwardSubmitShortcut({ key: "Enter", ctrlKey: false, metaKey: false }), false);
+  assert.equal(isForwardToggleShortcut({ key: "Enter", ctrlKey: false, metaKey: false }), true);
+  assert.equal(isForwardToggleShortcut({ key: " ", ctrlKey: false, metaKey: false }), true);
+  assert.equal(isForwardToggleShortcut({ key: "Enter", ctrlKey: true, metaKey: false }), false);
 });
