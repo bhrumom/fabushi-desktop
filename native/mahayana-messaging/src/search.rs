@@ -30,6 +30,15 @@ pub struct SearchQuery {
     pub limit: u32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecipientSearchRequirements {
+    #[serde(default)]
+    pub require_media: bool,
+    #[serde(default)]
+    pub require_polls: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum SearchResultKind {
