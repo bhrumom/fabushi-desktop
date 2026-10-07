@@ -6,7 +6,7 @@ use crate::community::{
 };
 use crate::conversation::{
     Conversation, ConversationChildIdentity, ConversationChildRuntimeState,
-    ConversationDestination, ConversationDraft, ConversationFolder, ConversationId,
+    ConversationChildUnreadThings, ConversationDestination, ConversationDraft, ConversationFolder, ConversationId,
     ConversationKind, ConversationMessagePosition, NotificationSettings, TopicDraft,
 };
 use crate::message::{
@@ -181,6 +181,18 @@ pub enum Command {
         destination: ConversationDestination,
         actor_id: ActorId,
         marked_unread: bool,
+    },
+    /// Server-authoritative reconciliation for child-level unread signals and
+    /// pending incoming notification ids. This intentionally has no
+    /// ClientCommand counterpart: renderer/client code cannot mint unread truth.
+    ReconcileConversationChildUnreadThings {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        known: bool,
+        mention_message_ids: Vec<MessageId>,
+        reaction_message_ids: Vec<MessageId>,
+        poll_vote_message_ids: Vec<MessageId>,
+        pending_incoming_notification_message_ids: Vec<MessageId>,
     },
     SetConversationChildNoPaidMessages {
         destination: ConversationDestination,
@@ -479,6 +491,12 @@ pub enum Event {
         destination: ConversationDestination,
         actor_id: ActorId,
         marked_unread: bool,
+    },
+    ConversationChildUnreadThingsReconciled {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        unread_things: ConversationChildUnreadThings,
+        pending_incoming_notification_message_ids: Vec<String>,
     },
     ConversationChildNoPaidMessagesChanged {
         destination: ConversationDestination,
@@ -2097,6 +2115,79 @@ impl MessagingEngine {
                     marked_unread,
                 }])
             }
+            Command::ReconcileConversationChildUnreadThings {
+                destination,
+                actor_id,
+                known,
+                mention_message_ids,
+                reaction_message_ids,
+                poll_vote_message_ids,
+                pending_incoming_notification_message_ids,
+            } => {
+                if destination.child.is_none() {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                // Reuse the canonical destination authorization/identity contract
+                // without producing a draft mutation.
+                self.decide(Command::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    actor_id: actor_id.clone(),
+                    text: String::new(),
+                    reply_to_message_id: None,
+                    updated_at_ms: 0,
+                })?;
+
+                let mut owned_ids = pending_incoming_notification_message_ids.clone();
+                if known {
+                    owned_ids.extend(mention_message_ids.iter().cloned());
+                    owned_ids.extend(reaction_message_ids.iter().cloned());
+                    owned_ids.extend(poll_vote_message_ids.iter().cloned());
+                }
+
+                // SavedSublist membership is still not representable on the
+                // canonical Message. Do not accept arbitrary parent messages as
+                // unread/notification evidence until that relation lands.
+                if matches!(
+                    destination.child,
+                    Some(ConversationChildIdentity::SavedSublist { .. })
+                ) && !owned_ids.is_empty()
+                {
+                    return Err(EngineError::ConversationChildMessageMismatch);
+                }
+
+                for message_id in &owned_ids {
+                    self.decide(Command::MarkConversationChildRead {
+                        destination: destination.clone(),
+                        actor_id: actor_id.clone(),
+                        message_id: message_id.clone(),
+                    })?;
+                }
+
+                let mut unread_things = ConversationChildUnreadThings::default();
+                unread_things.reconcile(
+                    known,
+                    mention_message_ids.into_iter().map(|id| id.0).collect(),
+                    reaction_message_ids.into_iter().map(|id| id.0).collect(),
+                    poll_vote_message_ids.into_iter().map(|id| id.0).collect(),
+                );
+                let mut pending = ConversationChildUnreadThings::default();
+                pending.reconcile(
+                    true,
+                    pending_incoming_notification_message_ids
+                        .into_iter()
+                        .map(|id| id.0)
+                        .collect(),
+                    Vec::new(),
+                    Vec::new(),
+                );
+
+                Ok(vec![Event::ConversationChildUnreadThingsReconciled {
+                    destination,
+                    actor_id,
+                    unread_things,
+                    pending_incoming_notification_message_ids: pending.mention_message_ids,
+                }])
+            }
             Command::SetConversationChildNoPaidMessages {
                 destination,
                 actor_id,
@@ -3460,8 +3551,42 @@ impl MessagingEngine {
                         )
                     });
                 if let Some(position) = position {
+                    let pending = self
+                        .state
+                        .conversation_child_states
+                        .iter()
+                        .find(|child| {
+                            child.destination == destination && child.actor_id == actor_id
+                        })
+                        .map(|child| child.pending_incoming_notification_message_ids.clone())
+                        .unwrap_or_default();
+                    let message_conversation_id =
+                        destination_message_conversation_id(&destination).clone();
+                    let clear_ids = self
+                        .state
+                        .messages
+                        .get(&message_conversation_id)
+                        .map(|messages| {
+                            pending
+                                .iter()
+                                .filter_map(|id| {
+                                    let message_id = MessageId(id.clone());
+                                    let message = messages.get(&message_id)?;
+                                    let candidate = ConversationMessagePosition::new(
+                                        message.created_at_ms,
+                                        message.id.0.clone(),
+                                    );
+                                    (candidate <= position).then(|| id.clone())
+                                })
+                                .collect::<BTreeSet<_>>()
+                        })
+                        .unwrap_or_default();
                     if let Some(child) = self.state.child_state_mut(destination, actor_id) {
-                        let _ = child.advance_inbox_read_till(position, None);
+                        if child.advance_inbox_read_till(position, None) {
+                            child
+                                .pending_incoming_notification_message_ids
+                                .retain(|id| !clear_ids.contains(id));
+                        }
                     }
                 }
             }
@@ -3583,6 +3708,19 @@ impl MessagingEngine {
             } => {
                 if let Some(child) = self.state.child_state_mut(destination, actor_id) {
                     child.marked_unread = marked_unread;
+                }
+            }
+            Event::ConversationChildUnreadThingsReconciled {
+                destination,
+                actor_id,
+                unread_things,
+                pending_incoming_notification_message_ids,
+            } => {
+                if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                    child.unread_things = unread_things;
+                    child.replace_pending_incoming_notifications(
+                        pending_incoming_notification_message_ids,
+                    );
                 }
             }
             Event::ConversationChildNoPaidMessagesChanged {
