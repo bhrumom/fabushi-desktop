@@ -69,4 +69,4 @@ await build({
   outfile: path.join(outCoordinator, "main.cjs"),
 });
 
-console.log("built Grok-shaped Fabushi product main/preload and Rust Coordinator carrier");
+console.log("built Fabushi product main/preload and Rust Coordinator carrier");
