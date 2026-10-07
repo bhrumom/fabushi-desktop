@@ -1605,6 +1605,66 @@
       ],
       "root_candidate_policy_status": "complete-for-current-libavif-authorities",
       "note": "This closes acquisition-pattern candidates for both libavif root snapshots used by accepted TDesktop paths. The selected dav1d dependency remains separately represented by TDesktop's own source/build authority."
+    },
+    "ada": {
+      "repository": "https://github.com/ada-url/ada",
+      "commit": "010f7c45aeaff1205452e7da2df8702cf725fb3e",
+      "ref": "v3.2.4",
+      "build_entries": [
+        "Telegram/build/prepare/prepare.py",
+        "Telegram/build/docker/centos_env/Dockerfile",
+        "snap/snapcraft.yaml"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "Clones ada v3.2.4 and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF before building/installing."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "Clones ada v3.2.4 shallow and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
+        },
+        {
+          "path": "snap/snapcraft.yaml",
+          "evidence": "Pins ada v3.2.4 and passes ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-ada-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "cmake/",
+          "disposition": "inactive-ada-test-benchmark-tool-dependency-framework",
+          "basis": "Ada includes CPM.cmake only when ADA_TESTING, ADA_BENCHMARKS, or ADA_TOOLS is enabled. Accepted TDesktop disables testing/tools and ADA_BENCHMARKS defaults OFF, so CPM fetch logic is not entered."
+        },
+        {
+          "path_prefix": "benchmarks/",
+          "disposition": "upstream-ada-benchmarks-disabled",
+          "basis": "ADA_BENCHMARKS defaults OFF and accepted TDesktop does not enable it."
+        },
+        {
+          "path_prefix": "tools/",
+          "disposition": "upstream-ada-tools-disabled",
+          "basis": "Accepted TDesktop explicitly sets ADA_TOOLS=OFF."
+        },
+        {
+          "path_prefix": "tests/",
+          "disposition": "upstream-ada-tests-disabled",
+          "basis": "Accepted TDesktop explicitly sets ADA_TESTING=OFF."
+        },
+        {
+          "path_prefix": "include/",
+          "disposition": "header-reference-not-build-acquisition"
+        },
+        {
+          "path_exact": "README.md",
+          "disposition": "documentation-not-acquisition"
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-ada-authority",
+      "note": "The policy closes acquisition-pattern matches for the Ada root snapshot. No CPM dependency acquisition is reachable in the accepted TDesktop build configuration."
     }
   }
 }
