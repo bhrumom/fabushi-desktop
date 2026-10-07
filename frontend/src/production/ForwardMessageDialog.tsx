@@ -2,6 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
 import { SandButton } from "../recovered/ui/sand-kit-primitives";
+import {
+  isForwardRecipientNavigationKey,
+  isForwardSubmitShortcut,
+  isForwardToggleShortcut,
+  nextForwardRecipientIndex,
+} from "./forward-recipient-navigation";
 
 export interface ForwardRecipient {
   readonly id: string;
@@ -52,6 +58,7 @@ export function ForwardMessageDialog({
   onSettled,
 }: ForwardMessageDialogProps) {
   const searchRef = useRef<HTMLInputElement | null>(null);
+  const recipientListRef = useRef<HTMLDivElement | null>(null);
   const generationRef = useRef(0);
   const [query, setQuery] = useState("");
   const [recipients, setRecipients] = useState<readonly ForwardRecipient[]>([]);
@@ -62,6 +69,7 @@ export function ForwardMessageDialog({
   const [submitting, setSubmitting] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
+  const [activeRecipientIndex, setActiveRecipientIndex] = useState(0);
 
   const scopeKey = open && message != null && sourceConversationId != null
     ? `${sourceConversationId}:${message.id}`
@@ -77,6 +85,7 @@ export function ForwardMessageDialog({
       setDropCaptions(false);
       setFailure(null);
       setRequestId(null);
+      setActiveRecipientIndex(0);
       return;
     }
     generationRef.current += 1;
@@ -87,6 +96,7 @@ export function ForwardMessageDialog({
     setDropCaptions(false);
     setFailure(null);
     setRequestId(createForwardRequestId(sourceConversationId, message.id));
+    setActiveRecipientIndex(0);
   }, [scopeKey, message, sourceConversationId]);
 
   useEffect(() => {
@@ -98,6 +108,7 @@ export function ForwardMessageDialog({
         .then((next) => {
           if (generation !== generationRef.current) return;
           setRecipients(next);
+          setActiveRecipientIndex((current) => next.length === 0 ? 0 : Math.min(current, next.length - 1));
           setFailure(null);
         })
         .catch((error: unknown) => {
@@ -116,6 +127,37 @@ export function ForwardMessageDialog({
     () => recipients.filter((recipient) => selected.has(recipient.id)),
     [recipients, selected],
   );
+
+  const focusActiveRecipient = (index: number) => {
+    window.requestAnimationFrame(() => {
+      recipientListRef.current
+        ?.querySelector<HTMLElement>(`[data-forward-recipient-index="${index}"]`)
+        ?.scrollIntoView({ block: "nearest" });
+    });
+  };
+
+  const handleRecipientKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (submitting || recipients.length === 0) return;
+    if (isForwardSubmitShortcut(event)) {
+      event.preventDefault();
+      void submit();
+      return;
+    }
+    if (isForwardRecipientNavigationKey(event.key)) {
+      event.preventDefault();
+      const next = nextForwardRecipientIndex(activeRecipientIndex, recipients.length, event.key);
+      if (next != null) {
+        setActiveRecipientIndex(next);
+        focusActiveRecipient(next);
+      }
+      return;
+    }
+    if (isForwardToggleShortcut(event)) {
+      event.preventDefault();
+      const recipient = recipients[activeRecipientIndex];
+      if (recipient != null) toggleRecipient(recipient.id);
+    }
+  };
 
   const toggleRecipient = (id: string) => {
     if (submitting) return;
@@ -193,14 +235,34 @@ export function ForwardMessageDialog({
             value={query}
           />
         </label>
-        <div aria-busy={searching || undefined} aria-label="Forward recipients" className="fabushi-forward-dialog__recipients" role="group">
+        <div
+          aria-activedescendant={recipients.length === 0 ? undefined : `fabushi-forward-recipient-${activeRecipientIndex}`}
+          aria-busy={searching || undefined}
+          aria-label="Forward recipients"
+          aria-multiselectable="true"
+          className="fabushi-forward-dialog__recipients"
+          onKeyDown={handleRecipientKeyDown}
+          ref={recipientListRef}
+          role="listbox"
+          tabIndex={0}
+        >
           {recipients.length === 0 && !searching
             ? <p role="status">{query.length === 0 ? "No eligible conversations." : "No eligible conversations match this search."}</p>
-            : recipients.map((recipient) => <label className="fabushi-forward-dialog__recipient" key={recipient.id}>
+            : recipients.map((recipient, index) => <label
+              aria-selected={selected.has(recipient.id)}
+              className="fabushi-forward-dialog__recipient"
+              data-active={activeRecipientIndex === index ? "true" : undefined}
+              data-forward-recipient-index={index}
+              id={`fabushi-forward-recipient-${index}`}
+              key={recipient.id}
+              onMouseEnter={() => setActiveRecipientIndex(index)}
+              role="option"
+            >
               <input
                 checked={selected.has(recipient.id)}
                 disabled={submitting}
                 onChange={() => toggleRecipient(recipient.id)}
+                tabIndex={-1}
                 type="checkbox"
               />
               <span>{recipient.name}</span>
