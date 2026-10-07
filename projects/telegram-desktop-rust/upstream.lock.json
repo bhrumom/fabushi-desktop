@@ -11,7 +11,7 @@
     "commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
     "tree": "b4095fab77f923fca2a4b99d710ec333aa6757ab",
     "committed_at": "2026-10-07T15:02:09Z",
-    "accepted": true
+    "accepted": false
   },
   "previous_historical_baseline": {
     "commit": "33261535a0e747f125e0ed25486f01e556330677",
@@ -269,10 +269,10 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "The upstream baseline identity is accepted by GitHub Actions, but full Revision 9 source closure is still open. acceptance.accepted/baseline_ready stay false until recursive inventory plus semantic read/responsibility coverage reaches unknown=0, unread=0, omitted=0."
+    "note": "The rebased upstream identity is machine-validated but not yet provenance-bound as accepted. A GitHub Actions authority artifact for 72b3b71c3d6e450e5ef94a3112dd750a0168aa0b must be produced and then bound by run/job/artifact/digest before upstream.accepted may return to true. Full Revision 9 source closure also remains open; acceptance.accepted/baseline_ready stay false until unknown=0, unread=0, omitted=0."
   },
   "baseline_identity_evidence": {
-    "status": "pending-current-head-revalidation",
+    "status": "validated-identity-provenance-pending",
     "previous_historical_evidence": {
       "runner": "github-actions",
       "run_id": 37595836244,
