@@ -659,6 +659,18 @@ fn typed_child_read_and_draft_share_the_canonical_conversation_state() {
         ActorId::new("human:peer"),
     );
 
+    // Parent-message visibility is not SavedSublist membership. This typed-child
+    // state test must first install the same trusted server/native membership
+    // truth that production read/draft reply paths require.
+    service
+        .reconcile_saved_sublist_membership(
+            destination.clone(),
+            ActorId::new("human:owner"),
+            vec![message_id.clone()],
+            4,
+        )
+        .unwrap();
+
     service
         .handle(
             ClientEnvelope::new(
