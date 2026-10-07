@@ -147,9 +147,9 @@ const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
 const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).map(item=>[item.path,item]));
 const expectedQtEvidence=[
-  ['Telegram/build/prepare/prepare.py','9482a53e60386743ae797d75cecc36767cd63646'],
-  ['Telegram/build/docker/centos_env/Dockerfile','5516c448c628d5928d690687ed948d67b5cdaac3'],
-  ['snap/snapcraft.yaml','5cff7cf59aedc430b0a9a2d6d66ab6fe3c29bd9f']
+  ['Telegram/build/prepare/prepare.py','93ff2c8ab4f3275644145012c9231718530c1486'],
+  ['Telegram/build/docker/centos_env/Dockerfile','09a05179b48b4f9185697134002bad4e486ca4fd'],
+  ['snap/snapcraft.yaml','b363829e5c131fce5e80e0644c0fb6546da8ad6c']
 ];
 for (const [sourcePath,blob] of expectedQtEvidence) {
   const evidence=qtEvidenceByPath.get(sourcePath);
@@ -247,7 +247,7 @@ fail(snapLibavifStage.includes('source-tag: v1.3.0'),'accepted Snap libavif ref 
 
 const adaReachability=recursiveReachability.ada;
 fail(adaReachability?.repository==='https://github.com/ada-url/ada','Ada reachability authority missing');
-fail(adaReachability.commit==='010f7c45aeaff1205452e7da2df8702cf725fb3e','Ada reachability commit drift');
+fail(adaReachability.commit==='6b4612162c34e7ffcee08c03b107b449e07a5683','Ada reachability commit drift');
 fail(adaReachability.root_candidate_policy_status==='complete-for-current-ada-authority','Ada root candidate policy is not fail-closed complete');
 const adaPolicy=adaReachability.root_candidate_disposition_policy||[];
 for (const [kind,value] of [
@@ -262,7 +262,7 @@ for (const [name,stage] of [['prepare.py',prepareAdaStage],['Dockerfile',dockerA
   fail(stage.includes('ADA_TOOLS=OFF'),'accepted Ada build lost ADA_TOOLS=OFF in '+name);
   fail(stage.includes('ADA_INCLUDE_URL_PATTERN=OFF'),'accepted Ada build lost ADA_INCLUDE_URL_PATTERN=OFF in '+name);
 }
-fail(snapAdaStage.includes('source-tag: v3.2.4'),'accepted Snap Ada ref drift');
+fail(snapAdaStage.includes('source-tag: v3.2.9'),'accepted Snap Ada ref drift');
 
 const openalReachability=recursiveReachability.openal_soft;
 fail(openalReachability?.root_candidate_policy_status==='complete-for-current-openal-authorities','OpenAL root candidate policy is not fail-closed complete');
@@ -513,7 +513,7 @@ fail(!dockerXkbcommonStage.includes('scripts/makekeys'),'accepted xkbcommon buil
 
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
-fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');
+fail(opensslReachability.commit==='45e844fa2a14ec92d146bd8f5778ac130b6625fb','OpenSSL reachability commit drift');
 fail(opensslReachability.disposition==='not-reachable-from-accepted-tdesktop-openssl-build','OpenSSL child disposition missing');
 const prepareOpenSslStage=prepareQt.match(/stage\('openssl3',[\s\S]*?\n"""\)/)?.[0]||'';
 const dockerOpenSslStage=dockerQt.match(/FROM builder AS openssl[\s\S]*?\nFROM builder AS xkbcommon/)?.[0]||'';
