@@ -47,10 +47,24 @@ test("window chrome DOM variables install and clean up only when applicable", ()
   const doc = fakeDocument();
   (globalThis as Record<string, unknown>).document = doc;
   try {
-    assert.equal(setWindowChromeVariables("darwin", false), undefined);
-    assert.equal(setWindowChromeVariables("win32", true), undefined);
+    const disposeDarwin = setWindowChromeVariables("darwin", false);
+    assert.equal(typeof disposeDarwin, "function");
+    assert.equal(doc.documentElement.dataset.platform, "darwin");
+    assert.equal(doc.documentElement.style.values.has("--sand-window-controls-inset"), false);
+    assert.equal(doc.documentElement.style.values.has("--sand-window-controls-block"), false);
+    disposeDarwin?.();
+    assert.equal(doc.documentElement.dataset.platform, undefined);
+
+    const disposeFullscreen = setWindowChromeVariables("win32", true);
+    assert.equal(typeof disposeFullscreen, "function");
+    assert.equal(doc.documentElement.dataset.platform, "win32");
+    assert.equal(doc.documentElement.style.values.has("--sand-window-controls-inset"), false);
+    assert.equal(doc.documentElement.style.values.has("--sand-window-controls-block"), false);
+    disposeFullscreen?.();
+    assert.equal(doc.documentElement.dataset.platform, undefined);
 
     const dispose = setWindowChromeVariables("win32", false);
+    assert.equal(doc.documentElement.dataset.platform, "win32");
     assert.equal(
       doc.documentElement.style.values.get("--sand-window-controls-inset"),
       "calc(140px / var(--sand-zoom-factor, 1))",
@@ -74,6 +88,7 @@ test("window chrome DOM variables install and clean up only when applicable", ()
     assert.equal(doc.documentElement.style.values.get("--sand-zoom-factor"), "1");
 
     dispose?.();
+    assert.equal(doc.documentElement.dataset.platform, undefined);
     assert.equal(doc.documentElement.style.values.has("--sand-window-controls-inset"), false);
     assert.equal(doc.documentElement.style.values.has("--sand-window-controls-block"), false);
   } finally {
