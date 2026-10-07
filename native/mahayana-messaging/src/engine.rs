@@ -202,6 +202,14 @@ pub enum Command {
         actor_id: ActorId,
         allowed: bool,
     },
+    /// Server/native authority for the exact messages owned by one SavedSublist.
+    /// No ClientCommand exposes this relation: renderer-visible parent messages
+    /// are never sufficient evidence of child membership.
+    ReconcileSavedSublistMembership {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_ids: Vec<MessageId>,
+    },
     SetConversationChildNoPaidMessages {
         destination: ConversationDestination,
         actor_id: ActorId,
@@ -511,6 +519,11 @@ pub enum Event {
         actor_id: ActorId,
         allowed: bool,
     },
+    SavedSublistMembershipReconciled {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_ids: Vec<String>,
+    },
     ConversationChildNoPaidMessagesChanged {
         destination: ConversationDestination,
         actor_id: ActorId,
@@ -612,6 +625,16 @@ pub struct MessagingState {
 }
 
 impl MessagingState {
+    fn child_state(
+        &self,
+        destination: &ConversationDestination,
+        actor_id: &ActorId,
+    ) -> Option<&ConversationChildRuntimeState> {
+        self.conversation_child_states
+            .iter()
+            .find(|state| &state.destination == destination && &state.actor_id == actor_id)
+    }
+
     fn child_state_mut(
         &mut self,
         destination: ConversationDestination,
@@ -1814,6 +1837,44 @@ impl MessagingEngine {
                     allowed,
                 }])
             }
+            Command::ReconcileSavedSublistMembership {
+                destination,
+                actor_id,
+                message_ids,
+            } => {
+                if !matches!(
+                    &destination.child,
+                    Some(ConversationChildIdentity::SavedSublist { .. })
+                ) {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                // Reuse the canonical parent/actor authorization contract without
+                // creating a renderer-visible draft mutation.
+                self.decide(Command::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    actor_id: actor_id.clone(),
+                    text: String::new(),
+                    reply_to_message_id: None,
+                    updated_at_ms: 0,
+                })?;
+                let message_ids = message_ids
+                    .into_iter()
+                    .map(|message_id| message_id.0)
+                    .collect::<Vec<_>>();
+                let mut validation = ConversationChildRuntimeState::new(
+                    destination.clone(),
+                    actor_id.clone(),
+                )
+                .ok_or(EngineError::InvalidConversationChildDestination)?;
+                if !validation.reconcile_authoritative_message_ids(message_ids.clone()) {
+                    return Err(EngineError::ConversationChildMessageMismatch);
+                }
+                Ok(vec![Event::SavedSublistMembershipReconciled {
+                    destination,
+                    actor_id,
+                    message_ids,
+                }])
+            }
             Command::MarkConversationChildRead {
                 destination,
                 actor_id,
@@ -1875,6 +1936,15 @@ impl MessagingEngine {
                         let participant_exists = self.state.actors.contains_key(participant_id);
                         if (!self_saved_messages && !server_parent) || !participant_exists {
                             return Err(EngineError::InvalidConversationChildDestination);
+                        }
+                        let authoritative_membership = self
+                            .state
+                            .child_state(&destination, &actor_id)
+                            .is_some_and(|child| {
+                                child.has_authoritative_message(message_id.0.as_str())
+                            });
+                        if !authoritative_membership {
+                            return Err(EngineError::ConversationChildMessageMismatch);
                         }
                     }
                     Some(ConversationChildIdentity::Conversation {
@@ -2043,6 +2113,20 @@ impl MessagingEngine {
                         destination_message_conversation_id(&destination),
                         reply_to_message_id,
                     )?;
+                    if matches!(
+                        &destination.child,
+                        Some(ConversationChildIdentity::SavedSublist { .. })
+                    ) {
+                        let authoritative_membership = self
+                            .state
+                            .child_state(&destination, &actor_id)
+                            .is_some_and(|child| {
+                                child.has_authoritative_message(reply_to_message_id.0.as_str())
+                            });
+                        if !authoritative_membership {
+                            return Err(EngineError::ConversationChildMessageMismatch);
+                        }
+                    }
                 }
                 Ok(vec![Event::ConversationChildDraftChanged {
                     destination,
@@ -2067,17 +2151,6 @@ impl MessagingEngine {
                     reply_to_message_id: None,
                     updated_at_ms: 0,
                 })?;
-                // SavedSublist membership is not derivable from the current canonical
-                // Message shape yet. Never accept arbitrary parent messages into that
-                // child just to populate a page; empty lifecycle snapshots remain valid
-                // until a source-neutral message-to-child relation lands.
-                if matches!(
-                    &destination.child,
-                    Some(ConversationChildIdentity::SavedSublist { .. })
-                ) && !message_ids.is_empty()
-                {
-                    return Err(EngineError::ConversationChildMessageMismatch);
-                }
                 for message_id in &message_ids {
                     self.decide(Command::MarkConversationChildRead {
                         destination: destination.clone(),
@@ -2204,17 +2277,6 @@ impl MessagingEngine {
                     owned_ids.extend(mention_message_ids.iter().cloned());
                     owned_ids.extend(reaction_message_ids.iter().cloned());
                     owned_ids.extend(poll_vote_message_ids.iter().cloned());
-                }
-
-                // SavedSublist membership is still not representable on the
-                // canonical Message. Do not accept arbitrary parent messages as
-                // unread/notification evidence until that relation lands.
-                if matches!(
-                    &destination.child,
-                    Some(ConversationChildIdentity::SavedSublist { .. })
-                ) && !owned_ids.is_empty()
-                {
-                    return Err(EngineError::ConversationChildMessageMismatch);
                 }
 
                 for message_id in &owned_ids {
@@ -3783,6 +3845,16 @@ impl MessagingEngine {
                     child.replace_pending_incoming_notifications(
                         pending_incoming_notification_message_ids,
                     );
+                }
+            }
+            Event::SavedSublistMembershipReconciled {
+                destination,
+                actor_id,
+                message_ids,
+            } => {
+                if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                    let accepted = child.reconcile_authoritative_message_ids(message_ids);
+                    debug_assert!(accepted, "validated SavedSublist membership event");
                 }
             }
             Event::SavedSublistParentAccessReconciled {
