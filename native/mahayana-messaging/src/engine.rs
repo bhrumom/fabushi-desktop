@@ -5,8 +5,8 @@ use crate::community::{
     CommunityState, ForumTopicState, InviteLink, JoinRequest, MemberStatus,
 };
 use crate::conversation::{
-    Conversation, ConversationDraft, ConversationFolder, ConversationId, ConversationKind,
-    NotificationSettings, TopicDraft,
+    Conversation, ConversationChildRuntimeState, ConversationDraft, ConversationFolder,
+    ConversationId, ConversationKind, NotificationSettings, TopicDraft,
 };
 use crate::message::{
     ClientMessageId, DeliveryState, ForwardPrivacy, Message, MessageContent, MessageId,
@@ -471,6 +471,10 @@ pub struct MessagingState {
     pub marked_unread_by_actor: BTreeMap<ConversationId, BTreeSet<ActorId>>,
     pub drafts: BTreeMap<ConversationId, BTreeMap<ActorId, ConversationDraft>>,
     pub topic_drafts: BTreeMap<ConversationId, BTreeMap<ActorId, BTreeMap<String, TopicDraft>>>,
+    /// Canonical source-neutral child lifecycle state. Topic-only legacy maps above
+    /// remain protocol-compatibility projections until their load-time migration
+    /// is completed; new saved-sublist/community child state belongs here.
+    pub conversation_child_states: Vec<ConversationChildRuntimeState>,
     pub pending_presence_sends: BTreeMap<ClientMessageId, PendingPresenceSend>,
     pub invoices: BTreeMap<String, Invoice>,
     pub orders: BTreeMap<String, PaymentOrder>,
