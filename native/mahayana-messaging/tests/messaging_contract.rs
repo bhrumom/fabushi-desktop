@@ -305,6 +305,7 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
             created_at_ms: 3,
             scheduled_at_ms: Some(30),
             silent: true,
+            privacy: ForwardPrivacy::default(),
         })
         .unwrap();
     let forwarded = &engine.state().messages[&ConversationId::new("chat:destination")]
@@ -345,6 +346,7 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
             created_at_ms: 3,
             scheduled_at_ms: None,
             silent: false,
+            privacy: ForwardPrivacy::default(),
         })
         .unwrap_err();
     assert_eq!(
@@ -376,6 +378,7 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
             created_at_ms: 3,
             scheduled_at_ms: None,
             silent: false,
+            privacy: ForwardPrivacy::default(),
         })
         .unwrap_err();
     assert_eq!(
@@ -412,6 +415,7 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
             created_at_ms: 5,
             scheduled_at_ms: None,
             silent: false,
+            privacy: ForwardPrivacy::default(),
         })
         .unwrap_err();
     assert_eq!(error, EngineError::ProtectedContent);
@@ -507,6 +511,7 @@ fn secret_conversations_reject_plaintext_and_protect_encrypted_messages() {
             created_at_ms: 4,
             scheduled_at_ms: None,
             silent: false,
+            privacy: ForwardPrivacy::default(),
         })
         .unwrap_err();
     assert!(matches!(forward_error, EngineError::ProtectedContent));
