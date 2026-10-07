@@ -516,6 +516,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 thread_root_message_id,
                 scheduled_at_ms,
                 silent,
+                privacy,
             } => {
                 let stable_id = stable_message_id(actor_id, client_message_id);
                 let legacy_id = MessageId::new(format!("local:{}", client_message_id.0));
@@ -538,11 +539,30 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .messages
                     .get(source_conversation_id)
                     .and_then(|messages| messages.get(message_id));
-                let expected_origin = source
-                    .and_then(|message| message.forward_origin.clone())
-                    .unwrap_or_else(|| format!("{}:{}", source_conversation_id.0, message_id.0));
+                let privacy = privacy.normalized();
+                let expected_origin = if privacy.drop_sender_names {
+                    None
+                } else {
+                    Some(
+                        source
+                            .and_then(|message| message.forward_origin.clone())
+                            .unwrap_or_else(|| {
+                                format!("{}:{}", source_conversation_id.0, message_id.0)
+                            }),
+                    )
+                };
+                let expected_content = source.map(|message| {
+                    let mut content = message.content.clone();
+                    if privacy.drop_captions {
+                        content.clear_caption();
+                    }
+                    content
+                });
                 if &existing.sender_id != actor_id
-                    || existing.forward_origin.as_deref() != Some(expected_origin.as_str())
+                    || existing.forward_origin.as_deref() != expected_origin.as_deref()
+                    || expected_content
+                        .as_ref()
+                        .is_some_and(|content| &existing.content != content)
                     || &existing.thread_root_message_id != thread_root_message_id
                     || &existing.scheduled_at_ms != scheduled_at_ms
                     || &existing.silent != silent
@@ -1600,6 +1620,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 thread_root_message_id,
                 scheduled_at_ms,
                 silent,
+                privacy,
             } => vec![Command::ForwardMessage {
                 source_conversation_id,
                 message_id,
@@ -1611,6 +1632,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 created_at_ms: now_ms,
                 scheduled_at_ms,
                 silent,
+                privacy,
             }],
             ClientCommand::EditMessage {
                 conversation_id,
