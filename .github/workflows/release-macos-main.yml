@@ -358,7 +358,6 @@ jobs:
         working-directory: desktop
         shell: bash
         timeout-minutes: 60
-        continue-on-error: true # User-requested release: retain packaged acceptance evidence without blocking publication.
         env:
           OBF_REAL_ACCEPTANCE: '1'
           OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
