@@ -926,8 +926,9 @@
       "source_line": 1453,
       "repository": "https://chromium.googlesource.com/linux-syscall-support",
       "observed_short_ref": "e1e7b0ad8e",
-      "resolved_commit": null,
-      "status": "pending-full-resolution"
+      "resolved_commit": "e1e7b0ad8ee99a875b272c8e33e308472e897660",
+      "status": "resolved-via-independent-packaging-authority",
+      "resolution_evidence": "GitHub code search found Buildroot linux-syscall-support package pin with the same short prefix and full 40-hex commit."
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
@@ -942,8 +943,9 @@
       "source_line": 1517,
       "repository": "https://chromium.googlesource.com/linux-syscall-support",
       "observed_short_ref": "e1e7b0ad8e",
-      "resolved_commit": null,
-      "status": "pending-full-resolution"
+      "resolved_commit": "e1e7b0ad8ee99a875b272c8e33e308472e897660",
+      "status": "resolved-via-independent-packaging-authority",
+      "resolution_evidence": "GitHub code search found Buildroot linux-syscall-support package pin with the same short prefix and full 40-hex commit."
     }
   ],
   "recursive_child_inputs": [
