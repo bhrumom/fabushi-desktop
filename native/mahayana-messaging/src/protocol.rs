@@ -5,8 +5,8 @@ use crate::community::{
     CommunityAuditEntry, CommunityMember, CommunityState, ForumTopicState, InviteLink, JoinRequest,
 };
 use crate::conversation::{
-    Conversation, ConversationDraft, ConversationFolder, ConversationId, NotificationSettings,
-    TopicDraft,
+    Conversation, ConversationChildRuntimeState, ConversationDraft, ConversationFolder,
+    ConversationId, NotificationSettings, TopicDraft,
 };
 use crate::message::{
     ClientMessageId, ForwardPrivacy, Message, MessageContent, MessageId, PendingPresenceSend,
@@ -348,6 +348,8 @@ pub enum ServerEvent {
         drafts: Vec<ConversationDraft>,
         #[serde(default)]
         topic_drafts: Vec<TopicDraft>,
+        #[serde(default)]
+        conversation_child_states: Vec<ConversationChildRuntimeState>,
         #[serde(default)]
         pending_presence_sends: Vec<PendingPresenceSend>,
         invoices: Vec<Invoice>,
