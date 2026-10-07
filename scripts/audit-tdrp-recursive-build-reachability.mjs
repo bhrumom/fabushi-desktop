@@ -218,6 +218,15 @@ for (const authority of openalSoft.observed_authorities||[]) {
   );
 }
 
+const ffmpeg=rules.ffmpeg;
+for (const authority of ffmpeg.observed_authorities||[]) {
+  auditRootCandidates(
+    keyOf(ffmpeg.repository,authority.commit),
+    ffmpeg.root_candidate_disposition_policy,
+    {requireComplete:ffmpeg.root_candidate_policy_status==='complete-for-current-ffmpeg-authorities',scope:'ffmpeg-root-candidates-'+authority.ref}
+  );
+}
+
 const result={
   project_id:'TDRP-001',
   spec_revision:9,
