@@ -60,6 +60,8 @@ fn conversation_fast_lane_rejects_action_or_external_resource_turns() {
         "Open https://example.com and summarize it.",
         "请搜索网页并下载文件。",
         "修改这个代码文件并运行测试。",
+        "请分析这个任务，规划步骤，调用工具并给出最终结果。",
+        "Use the available tools to inspect this task and report back.",
         "第一行\n第二行",
     ] {
         assert!(

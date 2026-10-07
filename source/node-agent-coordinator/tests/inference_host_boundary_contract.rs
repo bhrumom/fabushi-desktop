@@ -56,6 +56,35 @@ fn renderer_tail_alias_is_normalized_before_host_dispatch() {
 }
 
 #[test]
+fn renderer_transcript_is_host_authoritative_not_provider_projection() {
+    let main = fs::read_to_string(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/main.rs"),
+    )
+    .expect("coordinator main source");
+
+    assert!(
+        main.contains("fn authoritative_host_transcript("),
+        "renderer transcript reads must have an explicit Host-authoritative boundary"
+    );
+    assert!(
+        main.contains("dispatch_gateway_value(state, host_transcript_method(method), args.clone())"),
+        "renderer transcript reads must dispatch to the Host-owned Session transcript"
+    );
+    assert!(
+        !main.contains("fn merged_local_transcript("),
+        "provider-local inference history must never be merged into renderer transcript reads"
+    );
+    assert!(
+        !main.contains("fn emit_inference_transcript("),
+        "provider-local inference progress/summaries must never publish on the renderer transcript channel"
+    );
+    assert!(
+        !main.contains("toggle_local_reaction(agent_id, entry_id, emoji)"),
+        "message reactions must settle against the Host-owned canonical transcript"
+    );
+}
+
+#[test]
 fn coordinator_waits_for_terminal_only_when_await_turn_is_explicit_true() {
     assert!(should_await_turn(&json!({"awaitTurn":true})));
     assert!(!should_await_turn(&json!({"awaitTurn":false})));

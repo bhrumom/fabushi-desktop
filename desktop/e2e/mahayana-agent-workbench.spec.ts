@@ -416,15 +416,49 @@ async function ensureE2eAuthBackend(): Promise<string> {
         const text = isSelfHosted
           ? '收到：自建 Bot 请规划步骤'
           : '收到：请分析这个任务';
+        const providerRequest = JSON.parse(body.toString('utf8')) as { input?: unknown };
+        const isToolContinuation = Array.isArray(providerRequest.input)
+          && providerRequest.input.some((item) => item != null
+            && typeof item === 'object'
+            && !Array.isArray(item)
+            && 'type' in item
+            && item.type === 'function_call_output');
         response.setHeader('content-type', 'text/event-stream');
         response.statusCode = 200;
+        if (isToolContinuation) {
+          // The visible assistant body was already persisted by the shipping
+          // Host-owned SendMessage tool. Finish the provider turn with private
+          // diagnostic text only; it must never become a renderer transcript.
+          response.end([
+            `data: ${JSON.stringify({ type: 'response.output_text.delta', delta: 'done' })}\n\n`,
+            `data: ${JSON.stringify({
+              type: 'response.completed',
+              response: {
+                id: 'fabushi-e2e-response-final',
+                output: [],
+                usage: {
+                  input_tokens: 8,
+                  output_tokens: 1,
+                  input_tokens_details: { cached_tokens: 0 },
+                },
+              },
+            })}\n\n`,
+          ].join(''));
+          return;
+        }
+        const call = {
+          type: 'function_call',
+          name: 'SendMessage',
+          call_id: 'fabushi-e2e-send-message',
+          arguments: JSON.stringify({ type: 'text', content: text }),
+        };
         response.end([
-          `data: ${JSON.stringify({ type: 'response.output_text.delta', delta: text })}\n\n`,
+          `data: ${JSON.stringify({ type: 'response.output_item.done', item: call })}\n\n`,
           `data: ${JSON.stringify({
             type: 'response.completed',
             response: {
               id: 'fabushi-e2e-response',
-              output: [],
+              output: [call],
               usage: {
                 input_tokens: 8,
                 output_tokens: 8,
@@ -609,9 +643,15 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   if (await primary.count() === 0) {
     // A fresh authenticated account may already contain the shipping default
     // Grok Agent. That proves the roster is loaded, but it is not the focused
-    // fixture this suite needs. Create exactly one New chat through the real
-    // production New -> createAgent -> refreshRoster path.
+    // fixture this suite needs. Open the production identity picker and create
+    // exactly one Agent through the same New -> createAgent -> refreshRoster path.
     await page.getByRole('button', { name: 'New', exact: true }).click();
+    const createAgent = page.getByRole('dialog', { name: 'Create agent' });
+    await expect(createAgent).toBeVisible();
+    await expect(createAgent.getByRole('group', { name: 'Avatar shape' })).toBeVisible();
+    await expect(createAgent.getByRole('group', { name: 'Avatar color' })).toBeVisible();
+    await createAgent.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(createAgent).toBeHidden();
   }
   await expect(primary).toHaveCount(1, { timeout: 15_000 });
   await expect(primary).toBeVisible({ timeout: 15_000 });
@@ -751,6 +791,13 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
 
     const turn = await expectHermesAssistantTurn(page, '收到：请分析这个任务');
     await expect(turn).toHaveCount(1);
+    // A late transcript baseline must never swallow a live assistant reply.
+    // Keep observing the same canonical turn after the runtime has had time to
+    // publish its initial snapshot/reconciliation events.
+    await page.waitForTimeout(1_000);
+    await expect(turn).toHaveCount(1);
+    await expect(turn.getByRole('group', { name: 'Agent message' })).toContainText('收到：请分析这个任务');
+    await expect(page.getByRole('button', { name: 'New Human chat', exact: true })).toHaveCount(0);
     await expect(promptInput).toBeVisible();
   } finally {
     await app?.close().catch(() => undefined);
@@ -1244,7 +1291,7 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
   }
 });
 
-test('Mahayana renders one Hermes-style assistant turn after a Human conversation survives restart and explicitly hands off', async () => {
+test('Human conversation survives restart and explicitly hands off into one Hermes-style assistant turn', async () => {
   e2eHumanMessages = [];
   e2eHumanMessageSequence = 1;
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-agent-vertical-slice-'));

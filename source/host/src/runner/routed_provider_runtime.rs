@@ -60,10 +60,10 @@ pub fn is_conversation_fast_lane(messages: &[ProviderMessage]) -> bool {
         " modify ", " delete ", " remove ", " install ", " download ", " upload ",
         " run ", " execute ", " send ", " email ", " calendar ", " github ",
         " slack ", " terminal ", " shell ", " file ", " folder ", " website ",
-        " webpage ", " script ", " code ",
+        " webpage ", " script ", " code ", " tool ", " tools ",
         "搜索", "查找", "浏览", "打开", "创建", "新建", "构建", "编辑", "修改",
         "删除", "安装", "下载", "上传", "运行", "执行", "发送", "邮件", "日历",
-        "文件", "文件夹", "终端", "脚本", "代码", "网站", "网页",
+        "文件", "文件夹", "终端", "脚本", "代码", "网站", "网页", "调用", "工具",
     ];
     let padded = format!(" {lower} ");
     !ACTION_MARKERS.iter().any(|marker| padded.contains(marker))

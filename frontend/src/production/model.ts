@@ -172,6 +172,11 @@ export function projectRendererAgent(value: unknown, now = Date.now()): Renderer
   };
 }
 
+export function projectRendererAgentUpsert(value: unknown, now = Date.now()): RendererAgent | null {
+  if (isRecord(value) && isRecord(value.agent)) return projectRendererAgent(value.agent, now);
+  return projectRendererAgent(value, now);
+}
+
 export function projectRendererAgents(value: unknown, now = Date.now()): RendererAgent[] {
   const rows = Array.isArray(value)
     ? value
