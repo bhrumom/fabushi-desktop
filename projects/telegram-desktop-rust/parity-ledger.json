@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
-  "target_commit": "21ab7870a3ba3129172942d722befb83c321f413",
+  "target_commit": "34d19cc79a6821698a45017ebe89ce3b0722d073",
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
     "unread": 15775,
     "omitted": 0,
-    "responsibilities_total": 9,
+    "responsibilities_total": 10,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -2124,6 +2124,244 @@
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox forward submission semantics using canonical Fabushi MessagingService/Message identity owners.",
       "reviewer": null,
       "notes": "This row closes only canonical forward sender/caption privacy normalization, native materialization, and replay conflict semantics. Multi-recipient fan-out, paid-send approval revalidation, duplicate-submit UI fencing, and exact shipping forward-options UI remain open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+      "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
+      "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
+      "source_kind": "source",
+      "module_id": "tdesktop.boxes.share",
+      "responsibility_id": "TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001",
+      "source_symbols": [
+        "FastShareMessage/filterCallback",
+        "FastShareLink/filterCallback",
+        "ShareBox::Inner::peopleReceived",
+        "ShareBox::Inner::applyChatFilter"
+      ],
+      "capability_ids": [
+        "CAP-SEARCH-RECIPIENT-AUTHORIZATION"
+      ],
+      "dependency_ids": [
+        "RecipientSearchRequirements",
+        "ClientCommand::SearchRecipients",
+        "MessagingService::recipient_search_envelope",
+        "ConversationPermissions",
+        "CommunityMember",
+        "AdminRights"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/share-box-complete-read.md",
+      "behavior_contract": "Recipient search must enforce destination send eligibility before a candidate is exposed. The typed recipient search reuses canonical Search and filters to visible conversations where the authenticated actor can send messages and, when requested, media or polls; restricted/banned/left community status and channel posting rights fail closed.",
+      "state_machine": "authenticated recipient query -> canonical visibility check -> canonical send/media/poll/community/channel eligibility -> index eligible Conversations only -> canonical ranking/search -> expose Conversation results",
+      "side_effects": [
+        "No search result is created for an ineligible recipient Conversation",
+        "No second search index or picker truth is introduced"
+      ],
+      "failure_cases": [
+        "Search indexes a conversation before send permission evaluation",
+        "Blocked destination appears and UI is expected to hide it",
+        "Media-disabled destination appears for a media-required recipient query",
+        "Read-only channel appears as a sendable recipient"
+      ],
+      "ui_disposition": "Canonical Picker/Search surfaces must call SearchRecipients for send destination discovery. This native slice closes pre-exposure service filtering, not the still-missing shipping forward picker wiring.",
+      "non_ui_responsibilities": [
+        "Apply authorization before recipient result exposure",
+        "Reuse canonical SearchIndex after filtering",
+        "Enforce ConversationPermissions send/media/poll requirements",
+        "Enforce community membership restrictions and channel posting rights"
+      ],
+      "platform_delta": "Telegram filter callbacks become a source-neutral recipient-search command over existing Fabushi Search/Conversation/Permission owners.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/community.rs"
+      ],
+      "existing_owner": "Canonical Search + MessagingService authorization + Conversation/Community policy owners",
+      "rejected_existing_owners": [
+        "Renderer-only filtering is after-exposure and is not an authorization boundary",
+        "ShareBox-specific search would duplicate canonical Search truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "fabushi_target_symbols": [
+        "RecipientSearchRequirements",
+        "ClientCommand::SearchRecipients",
+        "MessagingService::recipient_search_envelope",
+        "MessagingService::actor_can_send_to_recipient"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Recipient exposure is a privacy/authorization boundary and must execute in the canonical native messaging service before results cross to UI.",
+      "command_event_contracts": [
+        "ClientCommand::SearchRecipients -> MessagingService::recipient_search_envelope -> ServerEvent::SearchResults",
+        "RecipientSearchRequirements media/poll requirements are enforced before SearchIndex indexing"
+      ],
+      "state_owner": "Canonical Conversation/Community authorization state; SearchRecipients is a query, not a new persisted owner",
+      "lifecycle_owner": "MessagingService canonical search request lifecycle",
+      "persistence_and_restart": "No new persistence; eligibility is recomputed from canonical current Conversation/Community state for every query.",
+      "concurrency_and_cancellation": "Each request computes against one service state snapshot; no stale renderer-side permission cache is authoritative.",
+      "security_boundary": "Unauthorized/ineligible recipient Conversations are omitted before SearchIndex result generation and before UI exposure.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service and canonical synchronized Conversation/Community state"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Current-head Rust GitHub Actions evidence pending",
+        "Shipping forward/picker UI is not yet wired to SearchRecipients",
+        "Inline/game/send-other and content-specific secret/protected recipient eligibility remain open"
+      ],
+      "production_entrypoints": [
+        "Canonical recipient picker request -> ClientCommand::SearchRecipients -> MessagingService pre-exposure authorization -> SearchIndex -> SearchResults"
+      ],
+      "production_evidence": [
+        "commit:48d4334b8b57490398ebe36e6fdaf93067a3a099",
+        "commit:a704b54cb52565261c1e4d7e0293aabba4e02bb5",
+        "commit:293d74112b6c3b32e8a0b869800277fb92961522",
+        "commit:34d19cc79a6821698a45017ebe89ce3b0722d073"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/tests/m5_contacts_groups_contract.rs#contacts_and_groups_are_searchable"
+      ],
+      "target_commit": "34d19cc79a6821698a45017ebe89ce3b0722d073",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical Search / Conversation domain",
+      "composition_slot": "Recipient picker search provider",
+      "capability_component": "Permission-before-exposure recipient search",
+      "variation_axes": [
+        "message-only",
+        "media-required",
+        "poll-required",
+        "group/channel/direct eligibility"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Search",
+        "Canonical ConversationPermissions",
+        "Canonical Community membership/admin policy"
+      ],
+      "duplicate_root_check": "No ShareBox-specific SearchIndex, recipient store, or UI-only authorization owner was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Canonical Picker / contextual collection search",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Conversation destination picker",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Forward/share destination discovery",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical Search provider",
+      "route_contract": "No new route; recipient results project into the existing picker surface.",
+      "search_scope": "Not applicable to this native send-time slice",
+      "search_provider": "Not applicable to this native send-time slice",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Recipient search must filter before exposure, while this row guarantees a second fail-closed authorization check at actual send time.",
+      "search_local_remote_contract": "Open follow-up: canonical picker/provider eligibility must project the same synchronized policy without creating a second truth.",
+      "responsive_disposition": "Native query slice only; existing Picker responsive contract remains authoritative.",
+      "accessibility_contract": "Native query slice only; existing SearchField/Picker/ListRow accessibility contract remains authoritative.",
+      "keyboard_contract": "Native query slice only; existing canonical picker keyboard contract remains authoritative.",
+      "state_continuity_contract": "Eligibility is recomputed from current canonical policy, so permission changes cannot rely on stale UI hiding.",
+      "ui_acceptance_scenarios": [
+        "Conversation with can_send_messages=false is absent before UI exposure",
+        "Media-disabled conversation is absent when require_media=true",
+        "Eligible conversation remains searchable"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "No new visual tokens"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "Message actions",
+        "Recipient picker"
+      ],
+      "visual_state_matrix": [
+        "recipient-search-eligible",
+        "recipient-search-permission-filtered"
+      ],
+      "density_contract": "No visual density change.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No new motion.",
+      "reduced_motion_contract": "No new motion.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-RECIPIENT-AUTH-BEFORE-EXPOSURE-001",
+        "INV-TDRP-RECIPIENT-MEDIA-POLL-ELIGIBILITY-001",
+        "INV-TDRP-RECIPIENT-CHANNEL-POSTING-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "PROP-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-SHARE-RECIPIENT-POLICY-REFRESH-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [
+        "REG-TDRP-RECIPIENT-PREEXPOSURE-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "m5-search-blocked",
+        "m5-search-media-blocked"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted ShareBox authorization semantics inside the existing Fabushi Conversation/Community policy owner.",
+      "reviewer": null,
+      "notes": "This row closes only native pre-exposure filtering for canonical conversation send/media/poll eligibility. Shipping picker wiring, inline/game/send-other parity, topic/child-target eligibility, secret/protected content rules, and current-head evidence remain open."
     }
   ]
 }
