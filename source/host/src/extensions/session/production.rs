@@ -2076,6 +2076,12 @@ impl ProductionSessionWorkers {
             candidate.get("id").and_then(serde_json::Value::as_str)
                 == entry.get("id").and_then(serde_json::Value::as_str)
         }) {
+            if let Some(context) = current.get("forwardContext").cloned() {
+                entry
+                    .as_object_mut()
+                    .ok_or_else(|| "remote Human message projection failed".to_string())?
+                    .insert("forwardContext".into(), context);
+            }
             if current == &entry {
                 return Ok(current.clone());
             }
@@ -2094,6 +2100,12 @@ impl ProductionSessionWorkers {
             if let Some(current) = existing.iter().find(|candidate| {
                 candidate.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
             }) {
+                if let Some(context) = current.get("forwardContext").cloned() {
+                    entry
+                        .as_object_mut()
+                        .ok_or_else(|| "remote Human message projection failed".to_string())?
+                        .insert("forwardContext".into(), context);
+                }
                 let current_id = current.get("id").and_then(serde_json::Value::as_str)
                     .ok_or_else(|| "local Human settlement row omitted its id".to_string())?;
                 let current_remote = current.get("remoteMessageId").and_then(serde_json::Value::as_str);
@@ -2453,6 +2465,213 @@ impl ProductionSessionWorkers {
         Ok(conversations)
     }
 
+    pub fn search_human_recipients(
+        &self,
+        source_conversation_id: &str,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let source_owner = self.open_human_conversation_db_owner(source_conversation_id)?;
+        let source_metadata = source_owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&source_metadata)? {
+            return Err("local Human identity is not a participant in the source conversation".into());
+        }
+
+        let normalized_query = query.trim().to_lowercase();
+        let mut recipients = self
+            .list_human_conversations()?
+            .into_iter()
+            .filter(|conversation| {
+                if normalized_query.is_empty() {
+                    return true;
+                }
+                let title_matches = conversation
+                    .get("title")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|title| title.to_lowercase().contains(&normalized_query));
+                let participant_matches = conversation
+                    .get("participantIds")
+                    .and_then(serde_json::Value::as_array)
+                    .is_some_and(|ids| {
+                        ids.iter().any(|id| {
+                            id.as_str()
+                                .is_some_and(|id| id.to_lowercase().contains(&normalized_query))
+                        })
+                    });
+                title_matches || participant_matches
+            })
+            .collect::<Vec<_>>();
+
+        recipients.sort_by(|left, right| {
+            let left_updated = left
+                .get("updatedAt")
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or_default();
+            let right_updated = right
+                .get("updatedAt")
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or_default();
+            right_updated
+                .partial_cmp(&left_updated)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| {
+                    left.get("title")
+                        .and_then(serde_json::Value::as_str)
+                        .cmp(&right.get("title").and_then(serde_json::Value::as_str))
+                })
+                .then_with(|| {
+                    left.get("id")
+                        .and_then(serde_json::Value::as_str)
+                        .cmp(&right.get("id").and_then(serde_json::Value::as_str))
+                })
+        });
+        recipients.truncate(limit.clamp(1, 100));
+        Ok(recipients)
+    }
+
+    pub fn forward_human_message(
+        &self,
+        source_conversation_id: &str,
+        source_entry_id: &str,
+        destination_conversation_ids: &[String],
+        client_nonce: &str,
+        drop_sender_names: bool,
+        drop_captions: bool,
+    ) -> Result<serde_json::Value, String> {
+        let client_nonce = client_nonce.trim();
+        if client_nonce.is_empty() || client_nonce.len() > 200 {
+            return Err("forwardHumanMessage requires a valid clientNonce".into());
+        }
+        if destination_conversation_ids.is_empty() {
+            return Err("forwardHumanMessage requires at least one destination".into());
+        }
+
+        let mut seen_destinations = BTreeSet::new();
+        let mut destinations = Vec::new();
+        for destination in destination_conversation_ids {
+            let destination = destination.trim();
+            if destination.is_empty() {
+                return Err("forwardHumanMessage destination id must not be empty".into());
+            }
+            if seen_destinations.insert(destination.to_string()) {
+                destinations.push(destination.to_string());
+            }
+        }
+        if destinations.len() > 32 {
+            return Err("forwardHumanMessage supports at most 32 unique destinations".into());
+        }
+
+        let source_owner = self.open_human_conversation_db_owner(source_conversation_id)?;
+        let source_metadata = source_owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&source_metadata)? {
+            return Err("local Human identity is not a participant in the source conversation".into());
+        }
+        let source_entry_id = source_entry_id.trim();
+        let source_entry = source_owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?
+            .into_iter()
+            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(source_entry_id))
+            .ok_or_else(|| "forwardHumanMessage source message is missing".to_string())?;
+        if source_entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+            || source_entry.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
+        {
+            return Err("forwardHumanMessage source must be a settled canonical message".into());
+        }
+        if source_entry
+            .get("protectedContent")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false)
+        {
+            return Err("forwardHumanMessage source is protected and cannot be forwarded".into());
+        }
+
+        let source_text = source_entry
+            .get("content")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default();
+        let attachments = source_entry
+            .get("attachments")
+            .and_then(serde_json::Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        if source_text.trim().is_empty() && attachments.is_empty() {
+            return Err("forwardHumanMessage source has no forwardable content".into());
+        }
+
+        let drop_sender_names = drop_sender_names || drop_captions;
+        let forwarded_text = if drop_captions && !attachments.is_empty() {
+            ""
+        } else {
+            source_text
+        };
+        let mut forward_context = serde_json::json!({
+            "requestId": client_nonce,
+            "sourceConversationId": source_conversation_id,
+            "sourceEntryId": source_entry_id,
+            "privacy": {
+                "dropSenderNames": drop_sender_names,
+                "dropCaptions": drop_captions,
+            },
+        });
+        if !drop_sender_names {
+            let mut origin = serde_json::Map::new();
+            if let Some(author_id) = source_entry.get("authorId").cloned() {
+                origin.insert("authorId".into(), author_id);
+            }
+            if let Some(author_name) = source_entry.get("authorName").cloned() {
+                origin.insert("authorName".into(), author_name);
+            }
+            if !origin.is_empty() {
+                forward_context
+                    .as_object_mut()
+                    .expect("forward context is an object")
+                    .insert("origin".into(), serde_json::Value::Object(origin));
+            }
+        }
+
+        let mut settlement = Vec::with_capacity(destinations.len());
+        for destination_conversation_id in destinations {
+            let mut digest = Sha256::new();
+            digest.update(client_nonce.as_bytes());
+            digest.update([0]);
+            digest.update(destination_conversation_id.as_bytes());
+            let destination_nonce = format!("human-forward-{:x}", digest.finalize());
+
+            match self.append_human_message_with_context(
+                &destination_conversation_id,
+                forwarded_text,
+                &destination_nonce,
+                None,
+                None,
+                &attachments,
+                Some(&forward_context),
+            ) {
+                Ok(entry) => settlement.push(serde_json::json!({
+                    "conversationId": destination_conversation_id,
+                    "clientNonce": destination_nonce,
+                    "status": "sent",
+                    "entry": entry,
+                })),
+                Err(error) => settlement.push(serde_json::json!({
+                    "conversationId": destination_conversation_id,
+                    "clientNonce": destination_nonce,
+                    "status": "failed",
+                    "error": error,
+                })),
+            }
+        }
+
+        Ok(serde_json::json!({
+            "requestId": client_nonce,
+            "privacy": {
+                "dropSenderNames": drop_sender_names,
+                "dropCaptions": drop_captions,
+            },
+            "destinations": settlement,
+        }))
+    }
+
     pub fn append_human_message(
         &self,
         conversation_id: &str,
@@ -2461,6 +2680,27 @@ impl ProductionSessionWorkers {
         composed_at_ms: Option<f64>,
         reply_to_id: Option<&str>,
         attachments: &[serde_json::Value],
+    ) -> Result<serde_json::Value, String> {
+        self.append_human_message_with_context(
+            conversation_id,
+            text,
+            client_nonce,
+            composed_at_ms,
+            reply_to_id,
+            attachments,
+            None,
+        )
+    }
+
+    fn append_human_message_with_context(
+        &self,
+        conversation_id: &str,
+        text: &str,
+        client_nonce: &str,
+        composed_at_ms: Option<f64>,
+        reply_to_id: Option<&str>,
+        attachments: &[serde_json::Value],
+        forward_context: Option<&serde_json::Value>,
     ) -> Result<serde_json::Value, String> {
         let sender_id = self.local_human_id()?;
         let text = text.trim();
@@ -2538,8 +2778,9 @@ impl ProductionSessionWorkers {
                     }),
                 None => normalized_attachments.is_empty(),
             };
-            if !(same_sender && same_text && same_reply && same_attachments) {
-                return Err("sendHumanMessage clientNonce already identifies different content".into());
+            let same_forward_context = entry.get("forwardContext") == forward_context;
+            if !(same_sender && same_text && same_reply && same_attachments && same_forward_context) {
+                return Err("sendHumanMessage clientNonce already identifies different content or forward context".into());
             }
             if entry.get("remoteMessageId").is_some()
                 || entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
@@ -2573,6 +2814,7 @@ impl ProductionSessionWorkers {
                 let object = entry.as_object_mut().expect("Human pending message must be an object");
                 if let Some(reply_id) = normalized_reply { object.insert("replyToId".into(), serde_json::json!(reply_id)); }
                 if !normalized_attachments.is_empty() { object.insert("attachments".into(), serde_json::Value::Array(normalized_attachments.clone())); }
+                if let Some(context) = forward_context { object.insert("forwardContext".into(), context.clone()); }
                 entry
             });
             if !existing.iter().any(|entry| entry.get("id") == pending_entry.get("id"))
@@ -2695,6 +2937,9 @@ impl ProductionSessionWorkers {
                 "attachments".into(),
                 serde_json::Value::Array(normalized_attachments.clone()),
             );
+        }
+        if let Some(context) = forward_context {
+            object.insert("forwardContext".into(), context.clone());
         }
         if !owner
             .append_transcript_entry(&entry)
