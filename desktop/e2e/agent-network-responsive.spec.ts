@@ -20,11 +20,17 @@ function e2eAuthToken(): string {
   ].join('.');
 }
 
+async function readRequestBody(request: import('node:http').IncomingMessage): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of request) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  return Buffer.concat(chunks);
+}
+
 async function ensureE2eAuthBackend(): Promise<string> {
   if (e2eAuthBackendPromise != null) return await e2eAuthBackendPromise;
   e2eAuthBackendPromise = new Promise<string>((resolve, reject) => {
     const token = e2eAuthToken();
-    const server = createServer((request, response) => {
+    const server = createServer(async (request, response) => {
       const requestUrl = new URL(request.url ?? '/', 'http://127.0.0.1');
       response.setHeader('content-type', 'application/json');
       if (requestUrl.pathname === '/auth/poll') {
@@ -35,6 +41,74 @@ async function ensureE2eAuthBackend(): Promise<string> {
       if (requestUrl.pathname === '/oauth/token') {
         response.statusCode = 200;
         response.end(JSON.stringify({ access_token: token, refresh_token: token }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/auth/browser/start' && request.method === 'POST') {
+        const origin = `http://${request.headers.host ?? '127.0.0.1'}`;
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+          attemptId: 'fabushi-agent-network-e2e-attempt',
+          loginUrl: `${origin}/fabushi-agent-network-e2e-login`,
+          pollSecret: 'fabushi-agent-network-e2e-poll-secret',
+          expiresAt: Date.now() + 60_000,
+          pollAfterMs: 250,
+        }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/auth/browser/attempts/fabushi-agent-network-e2e-attempt' && request.method === 'POST') {
+        const body = JSON.parse((await readRequestBody(request)).toString('utf8')) as { pollSecret?: unknown };
+        if (body.pollSecret !== 'fabushi-agent-network-e2e-poll-secret') {
+          response.statusCode = 403;
+          response.end(JSON.stringify({ error: { code: 'invalid-poll-secret' } }));
+          return;
+        }
+        const expiresAt = 4_102_444_800_000;
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+          status: 'completed',
+          session: {
+            accessToken: token,
+            refreshToken: token,
+            accessTokenExpiresAt: expiresAt,
+            refreshTokenExpiresAt: expiresAt,
+            sessionId: 'fabushi-agent-network-e2e-session',
+            deviceId: 'fabushi-agent-network-e2e-device',
+            username: 'e2e@fabushi.local',
+            userId: 'fabushi-e2e-account',
+            provider: 'focused-e2e',
+          },
+        }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/auth/user-info') {
+        if (request.headers.authorization !== `Bearer ${token}`) {
+          response.statusCode = 401;
+          response.end(JSON.stringify({ error: { code: 'invalid-access-token' } }));
+          return;
+        }
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+          id: 'fabushi-e2e-account',
+          username: 'e2e@fabushi.local',
+          email: 'e2e@fabushi.local',
+          displayName: 'Fabushi E2E',
+        }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/auth/refresh' && request.method === 'POST') {
+        const expiresAt = 4_102_444_800_000;
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+          accessToken: token,
+          refreshToken: token,
+          accessTokenExpiresAt: expiresAt,
+          refreshTokenExpiresAt: expiresAt,
+          sessionId: 'fabushi-agent-network-e2e-session',
+          deviceId: 'fabushi-agent-network-e2e-device',
+          username: 'e2e@fabushi.local',
+          userId: 'fabushi-e2e-account',
+          provider: 'focused-e2e',
+        }));
         return;
       }
       response.statusCode = 404;
@@ -76,6 +150,7 @@ async function launchDesktopApp(appDataDir: string) {
       SAND_USER_DATA_DIR: appDataDir,
       SAND_BACKEND_URL: e2eAuthBackendUrl,
       CURSOR_API_BASE_URL: e2eAuthBackendUrl,
+      FABUSHI_API_BASE_URL: e2eAuthBackendUrl,
       SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
       SAND_DISABLE_SENTRY: '1',
       FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
