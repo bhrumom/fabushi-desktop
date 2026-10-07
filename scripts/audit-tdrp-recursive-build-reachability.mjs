@@ -264,6 +264,27 @@ auditRootCandidates(
   {requireComplete:opus.root_candidate_policy_status==='complete-for-current-opus-authority',scope:'opus-root-candidates'}
 );
 
+const tde2e=rules.tde2e;
+auditRootCandidates(
+  keyOf(tde2e.repository,tde2e.commit),
+  tde2e.root_candidate_disposition_policy,
+  {requireComplete:tde2e.root_candidate_policy_status==='complete-for-current-tde2e-authority',scope:'tde2e-root-candidates'}
+);
+
+const libsrtp=rules.libsrtp;
+auditRootCandidates(
+  keyOf(libsrtp.repository,libsrtp.commit),
+  libsrtp.root_candidate_disposition_policy,
+  {requireComplete:libsrtp.root_candidate_policy_status==='complete-for-current-libsrtp-authority',scope:'libsrtp-root-candidates'}
+);
+
+const boostRegex=rules.boost_regex;
+auditRootCandidates(
+  keyOf(boostRegex.repository,boostRegex.commit),
+  boostRegex.root_candidate_disposition_policy,
+  {requireComplete:boostRegex.root_candidate_policy_status==='complete-for-current-boost-regex-authority',scope:'boost-regex-root-candidates'}
+);
+
 const result={
   project_id:'TDRP-001',
   spec_revision:9,

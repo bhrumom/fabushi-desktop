@@ -429,6 +429,52 @@ for (const option of ['OPUS_BUILD_TESTING','OPUS_BUILD_PROGRAMS','OPUS_DRED','OP
 }
 fail(!opusCmake.includes('download_model.sh')&&!opusCmake.includes('dnn/torch/'),'Opus production CMake unexpectedly invokes neural acquisition/training helper');
 
+const tde2eReachability=recursiveReachability.tde2e;
+fail(tde2eReachability?.repository==='https://github.com/tdlib/td','TDE2E reachability authority missing');
+fail(tde2eReachability.commit==='51743dfd01dff6179e2d8f7095729caa4e2222e9','TDE2E reachability commit drift');
+fail(tde2eReachability.root_candidate_policy_status==='complete-for-current-tde2e-authority','TDE2E root candidate policy is not fail-closed complete');
+const tde2ePolicy=tde2eReachability.root_candidate_disposition_policy||[];
+for (const [kind,value] of [
+  ['path_exact','build.html'],['path_prefix','example/'],['path_prefix','benchmark/'],
+  ['path_exact','CMake/GetGitRevisionDescription.cmake'],['path_prefix','tdutils/generate/'],['path_prefix','td/generate/']
+]) fail(tde2ePolicy.some(rule=>rule[kind]===value),'TDE2E acquisition disposition missing: '+value);
+const prepareTde2eStage=prepareQt.match(/stage\('tde2e',[\s\S]*?\n"""\)/)?.[0]||'';
+const dockerTde2eStage=dockerStage(dockerQt,'tde2e');
+const snapTde2eStage=snapQt.match(/\n  tde2e:\n[\s\S]*?\n  tlottie:/)?.[0]||'';
+for (const [name,stage] of [['prepare.py',prepareTde2eStage],['Dockerfile',dockerTde2eStage],['snapcraft.yaml',snapTde2eStage]]) {
+  fail(stage.length>0,'unable to isolate accepted TDE2E stage in '+name);
+  fail(stage.includes('TD_E2E_ONLY=ON'),'accepted TDE2E build lost TD_E2E_ONLY=ON in '+name);
+}
+fail(prepareTde2eStage.includes('git checkout 51743df'),'accepted prepare.py TDE2E pin drift');
+fail(dockerTde2eStage.includes('git fetch --depth=1 origin 51743dfd01dff6179e2d8f7095729caa4e2222e9'),'accepted Docker TDE2E pin drift');
+fail(snapTde2eStage.includes('source-commit: 51743dfd01dff6179e2d8f7095729caa4e2222e9'),'accepted Snap TDE2E pin drift');
+
+const libsrtpReachability=recursiveReachability.libsrtp;
+fail(libsrtpReachability?.repository==='https://github.com/cisco/libsrtp','libsrtp reachability authority missing');
+fail(libsrtpReachability.commit==='a566a9cfcd619e8327784aa7cff4a1276dc1e895','libsrtp reachability commit drift');
+fail(libsrtpReachability.root_candidate_policy_status==='complete-for-current-libsrtp-authority','libsrtp root candidate policy is not fail-closed complete');
+const libsrtpPolicy=libsrtpReachability.root_candidate_disposition_policy||[];
+for (const [kind,value] of [
+  ['path_prefix','.github/'],['path_exact','.travis.yml'],['path_exact','README.md'],
+  ['path_exact','config.guess'],['path_exact','config.sub'],['path_prefix','test/']
+]) fail(libsrtpPolicy.some(rule=>rule[kind]===value),'libsrtp acquisition disposition missing: '+value);
+const tgOwtTree=await ghTree('desktop-app/tg_owt','e2d0e88d1bde6cc600da5dc92581dc97e4c1e685');
+const libsrtpEntry=(tgOwtTree.tree||[]).find(item=>item.path==='src/third_party/libsrtp');
+fail(libsrtpEntry?.mode==='160000','accepted tg_owt libsrtp path is no longer a gitlink');
+fail(libsrtpEntry.sha==='a566a9cfcd619e8327784aa7cff4a1276dc1e895','accepted tg_owt libsrtp gitlink commit drift');
+fail(prepareQt.match(/stage\('tg_owt',[\s\S]*?\n"""\)/)?.[0]?.includes('git submodule update --init --recursive'),'accepted prepare.py tg_owt no longer recursively fetches libsrtp');
+
+const boostRegexReachability=recursiveReachability.boost_regex;
+fail(boostRegexReachability?.repository==='https://github.com/boostorg/regex','Boost.Regex reachability authority missing');
+fail(boostRegexReachability.commit==='4cbcd3078e6ae10d05124379623a1bf03fcb9350','Boost.Regex reachability commit drift');
+fail(boostRegexReachability.root_candidate_policy_status==='complete-for-current-boost-regex-authority','Boost.Regex root candidate policy is not fail-closed complete');
+const boostRegexPolicy=boostRegexReachability.root_candidate_disposition_policy||[];
+fail(boostRegexPolicy.some(rule=>rule.path_prefix==='.github/'),'Boost.Regex CI disposition missing');
+fail(boostRegexPolicy.some(rule=>rule.path_exact==='README.md'),'Boost.Regex README disposition missing');
+const prepareRegexStage=prepareQt.match(/stage\('regex',[\s\S]*?\n"""\)/)?.[0]||'';
+fail(prepareRegexStage.includes('git clone -b boost-1.83.0 https://github.com/boostorg/regex.git'),'accepted Boost.Regex prepare ref drift');
+fail(!prepareRegexStage.includes('boostorg/boost')&&!prepareRegexStage.includes('boostdep'),'accepted Boost.Regex stage unexpectedly invokes upstream CI dependency bootstrap');
+
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
 fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');

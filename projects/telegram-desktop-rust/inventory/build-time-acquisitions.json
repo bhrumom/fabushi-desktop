@@ -2129,6 +2129,140 @@
       ],
       "root_candidate_policy_status": "complete-for-current-opus-authority",
       "note": "This closes acquisition-pattern candidates for the immutable Opus v1.5.2 root used by accepted prepare/Docker builds. Codec/runtime semantics remain in source responsibility scope."
+    },
+    "tde2e": {
+      "repository": "https://github.com/tdlib/td",
+      "commit": "51743dfd01dff6179e2d8f7095729caa4e2222e9",
+      "ref": "51743df",
+      "build_entries": [
+        "Telegram/build/prepare/prepare.py",
+        "Telegram/build/docker/centos_env/Dockerfile",
+        "snap/snapcraft.yaml"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "The accepted tde2e stage pins 51743df, configures TD_E2E_ONLY=ON, and builds the E2E library surface. It does not invoke TDLib examples, build-instruction generator, mobile/web helper scripts, benchmark utilities or example/ios patch acquisition."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "The accepted Docker tde2e stage fetches exact commit 51743dfd01dff6179e2d8f7095729caa4e2222e9 and configures TD_E2E_ONLY=ON before build/install."
+        },
+        {
+          "path": "snap/snapcraft.yaml",
+          "evidence": "The accepted Snap tde2e part pins exact commit 51743dfd01dff6179e2d8f7095729caa4e2222e9 and configures TD_E2E_ONLY=ON."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_exact": "CHANGELOG.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "README.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "build.html",
+          "disposition": "upstream-tdlib-interactive-build-instruction-generator-not-invoked"
+        },
+        {
+          "path_prefix": "example/",
+          "disposition": "upstream-tdlib-example-helper-not-invoked",
+          "basis": "Accepted TDesktop uses TD_E2E_ONLY=ON and does not execute Android/iOS/web/UWP/example build helpers."
+        },
+        {
+          "path_prefix": "benchmark/",
+          "disposition": "upstream-tdlib-benchmark-not-invoked",
+          "basis": "The candidate executable named wget is a local benchmark target, not an acquisition performed by accepted TDesktop."
+        },
+        {
+          "path_exact": "CMake/GetGitRevisionDescription.cmake",
+          "disposition": "git-metadata-inspection-not-source-acquisition"
+        },
+        {
+          "path_prefix": "tdutils/generate/",
+          "disposition": "generated-source-input-text-not-acquisition",
+          "basis": "Candidate matches are MIME type data strings such as text/vnd.curl inside the immutable source tree."
+        },
+        {
+          "path_prefix": "td/generate/",
+          "disposition": "source-comment-or-generator-input-not-acquisition"
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-tde2e-authority",
+      "note": "This closes acquisition-pattern candidates for the exact TDLib snapshot used only as TDE2E build input. It does not authorize TDLib as a Fabushi runtime or remove source-derived E2E/security semantics from migration analysis."
+    },
+    "libsrtp": {
+      "repository": "https://github.com/cisco/libsrtp",
+      "commit": "a566a9cfcd619e8327784aa7cff4a1276dc1e895",
+      "parent_repository": "https://github.com/desktop-app/tg_owt",
+      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "child_path": "src/third_party/libsrtp",
+      "build_entries": [
+        "Telegram/build/prepare/prepare.py",
+        "Telegram/build/docker/centos_env/Dockerfile"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "Accepted tg_owt is pinned to e2d0e88d1bde6cc600da5dc92581dc97e4c1e685 and fetched with git submodule update --init --recursive; its src/third_party/libsrtp gitlink resolves to a566a9cfcd619e8327784aa7cff4a1276dc1e895. TDesktop does not execute libsrtp's own GitHub/Travis CI, Coverity, config update URLs or test download comments."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-libsrtp-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_exact": ".travis.yml",
+          "disposition": "upstream-libsrtp-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_exact": "README.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "config.guess",
+          "disposition": "autotools-config-reference-not-acquisition"
+        },
+        {
+          "path_exact": "config.sub",
+          "disposition": "autotools-config-reference-not-acquisition"
+        },
+        {
+          "path_prefix": "test/",
+          "disposition": "upstream-libsrtp-test-comment-not-build-acquisition"
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-libsrtp-authority",
+      "note": "This closes acquisition-pattern candidates for the exact libsrtp child reached through accepted tg_owt recursive submodule checkout. SRTP/security behavior remains in semantic source scope."
+    },
+    "boost_regex": {
+      "repository": "https://github.com/boostorg/regex",
+      "commit": "4cbcd3078e6ae10d05124379623a1bf03fcb9350",
+      "ref": "boost-1.83.0",
+      "build_entries": [
+        "Telegram/build/prepare/prepare.py"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "The accepted regex stage clones Boost.Regex tag boost-1.83.0 as a source input only. It does not execute Boost.Regex's upstream GitHub Actions workflow, clone the Boost superproject, initialize boostdep, or follow README installation examples."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-boost-regex-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_exact": "README.md",
+          "disposition": "documentation-not-acquisition"
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-boost-regex-authority",
+      "note": "This closes acquisition-pattern candidates for the Boost.Regex root snapshot used by accepted prepare.py; regex runtime semantics remain in source scope."
     }
   }
 }
