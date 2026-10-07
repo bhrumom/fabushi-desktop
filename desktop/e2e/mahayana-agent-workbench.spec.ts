@@ -416,9 +416,9 @@ async function ensureE2eAuthBackend(): Promise<string> {
         const text = isSelfHosted
           ? '收到：自建 Bot 请规划步骤'
           : '收到：请分析这个任务';
-        const request = JSON.parse(body.toString('utf8')) as { input?: unknown };
-        const isToolContinuation = Array.isArray(request.input)
-          && request.input.some((item) => item != null
+        const providerRequest = JSON.parse(body.toString('utf8')) as { input?: unknown };
+        const isToolContinuation = Array.isArray(providerRequest.input)
+          && providerRequest.input.some((item) => item != null
             && typeof item === 'object'
             && !Array.isArray(item)
             && 'type' in item
