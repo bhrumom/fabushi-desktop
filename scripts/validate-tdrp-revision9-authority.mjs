@@ -61,6 +61,52 @@ fail(ledger.coverage?.unknown>=lock.coverage.unknown_minimum,'ledger unknown cou
 fail(ledger.coverage?.unread>=lock.coverage.unread_minimum,'ledger unread count understates lock minimum');
 fail(ledger.coverage?.omitted===lock.coverage.omitted_known,'ledger omitted count disagrees with lock');
 fail(Array.isArray(ledger.rows),'ledger rows must be an array');
+const rowRequired=schema.$defs?.row?.required||[];
+const responsibilityIds=new Set();
+const targetSymbolOwners=new Map();
+for (const row of ledger.rows) {
+  for (const key of rowRequired) fail(Object.prototype.hasOwnProperty.call(row,key),'ledger row '+(row.responsibility_id||'<unknown>')+' missing required field '+key);
+  fail(row.source_commit===lock.upstream.commit,'row '+row.responsibility_id+' source commit differs from accepted upstream');
+  fail(!responsibilityIds.has(row.responsibility_id),'duplicate responsibility id '+row.responsibility_id);
+  responsibilityIds.add(row.responsibility_id);
+  const sourceObject=(await ghTree(lock.upstream.repository,lock.upstream.commit)).tree.find(e=>e.path===row.source_path);
+  fail(sourceObject,'row source path absent from accepted upstream tree: '+row.source_path);
+  fail(sourceObject.sha===row.source_blob_sha,'row source blob mismatch: '+row.source_path);
+  fail(await fs.stat(path.join(root,row.source_analysis_path)).then(()=>true).catch(()=>false),'row dossier missing: '+row.source_analysis_path);
+  fail(row.existing_owner || row.novel_capability===true,'existing-owner-first unresolved for '+row.responsibility_id);
+  if (row.novel_capability!==true) {
+    fail(row.new_owner_proposal==null && row.new_owner_adr==null,'non-novel row must not introduce a new owner: '+row.responsibility_id);
+  }
+  const parallelRootText=[row.existing_owner,row.composition_root,row.search_provider,...(row.fabushi_target_paths||[])].filter(Boolean).join(' ');
+  fail(!/Telegram(Core|Runtime|Provider|Messaging|Search|Contacts|Media|Workspace|ConversationRoot|MessageStore|DraftStore|ReactionStore)/i.test(parallelRootText),'source-named parallel owner/root detected in '+row.responsibility_id);
+  fail(Array.isArray(row.fabushi_target_paths) && row.fabushi_target_paths.length>0,'target path missing for '+row.responsibility_id);
+  fail(Array.isArray(row.fabushi_target_symbols) && row.fabushi_target_symbols.length>0,'target symbol missing for '+row.responsibility_id);
+  const targetTexts=[];
+  for (const targetPath of row.fabushi_target_paths) {
+    fail(await fs.stat(path.join(root,targetPath)).then(()=>true).catch(()=>false),'target path missing: '+targetPath);
+    targetTexts.push(await read(targetPath));
+  }
+  const combinedTarget=targetTexts.join('\n');
+  for (const symbol of row.fabushi_target_symbols) {
+    fail(combinedTarget.includes(symbol),'target symbol '+symbol+' not found for '+row.responsibility_id);
+    const key=row.fabushi_target_paths.join(',')+'#'+symbol;
+    const prior=targetSymbolOwners.get(key);
+    if (prior && prior!==row.responsibility_id) fail(false,'target symbol has multiple responsibility owners without explicit split: '+key);
+    targetSymbolOwners.set(key,row.responsibility_id);
+  }
+  const traceText=rtm+'\n'+await read(row.source_analysis_path);
+  for (const id of [...row.requirement_ids,...row.oracle_ids,...row.invariant_ids]) fail(traceText.includes(id),'traceability id '+id+' missing from RTM/dossier for '+row.responsibility_id);
+  if (['implemented','verified'].includes(row.implementation_status)) {
+    fail(row.production_entrypoints.length>0,'implemented row lacks shipping entrypoint: '+row.responsibility_id);
+    fail(row.production_evidence.length>0,'implemented row lacks production evidence: '+row.responsibility_id);
+    fail(row.test_evidence.length>0,'implemented row lacks test evidence: '+row.responsibility_id);
+    fail(row.existing_owner!=null,'implemented row lacks existing/new canonical owner: '+row.responsibility_id);
+  }
+  if (/search/i.test(row.responsibility_id+' '+row.capability_ids.join(' '))) {
+    fail(/Search/i.test(row.search_scope) && row.search_provider.length>0,'Search row lacks canonical Search scope/provider: '+row.responsibility_id);
+    fail(/ProductShell/i.test(row.composition_root),'Search row must compose under ProductShell: '+row.responsibility_id);
+  }
+}
 for (const field of ['source_symbols','responsibility_id','existing_owner','fabushi_target_symbols','production_entrypoints','composition_root','search_scope','design_system_version','requirement_ids','oracle_ids','invariant_ids','test_execution_evidence']) {
   fail(JSON.stringify(schema).includes('"'+field+'"'),'schema missing '+field);
 }
