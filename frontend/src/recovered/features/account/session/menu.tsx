@@ -210,7 +210,6 @@ export function AccountMenu({
   accountLabel,
   bridge,
   displayName,
-  experimentsSnapshot,
   isOpen,
   updatePill,
   onError,
