@@ -9,6 +9,16 @@
 .sand-agents-sidebar__header { display: flex; align-items: center; justify-content: space-between; height: 50px; padding: 0 12px 0 16px; border-bottom: 1px solid var(--cursor-stroke-tertiary); }
 .sand-agents-sidebar__header strong { font-size: var(--cursor-font-size-lg); }
 .sand-agents-sidebar__new-actions { display: flex; gap: 3px; }
+
+/* macOS owns the traffic-light controls. Match the Grok Bot shell: leave the
+ * native control cluster untouched on the left and keep Fabushi collaboration /
+ * new-chat actions aligned on the right of the titlebar instead of underneath it. */
+html[data-platform="darwin"] .sand-agents-sidebar__header {
+  padding-left: 78px;
+}
+html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
+  margin-left: auto;
+}
 .sand-agents-sidebar__rail-new { display: flex; justify-content: center; width: 100%; padding: 8px 0; }
 .sand-agents-sidebar__new-actions button,
 .sand-agents-sidebar__rail-new button { flex: 0 0 auto; }
