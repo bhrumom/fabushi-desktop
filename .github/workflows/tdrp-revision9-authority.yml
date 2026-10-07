@@ -301,3 +301,100 @@ jobs:
           if-no-files-found: error
           retention-days: 90
           compression-level: 0
+
+  recursive-next-authority-shards:
+    name: Recursive next authority shard ${{ matrix.shard }}
+    needs: recursive-child-authority-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    env:
+      SHARD_INDEX: ${{ matrix.shard }}
+      SHARD_COUNT: 16
+      PARENT_REPORT_DIR: artifacts/tdrp-layer-parent
+      ALREADY_REPORT_DIRS: artifacts/tdrp-layer-root:artifacts/tdrp-layer-parent
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download root recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-root
+      - name: Download child recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-parent
+      - name: Recursively discover third immutable authority layer
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-next-layer.mjs
+      - name: Upload next recursive authority shard
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-next-${{ github.sha }}-${{ matrix.shard }}
+          path: artifacts/tdrp-recursive-next
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  recursive-next-authority-gate:
+    name: Recursive next authority accounting gate
+    needs: recursive-next-authority-shards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SHARD_COUNT: 16
+      PARENT_REPORT_DIR: artifacts/tdrp-layer-parent
+      ALREADY_REPORT_DIRS: artifacts/tdrp-layer-root:artifacts/tdrp-layer-parent
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download root recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-root
+      - name: Download child recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-parent
+      - name: Download next recursive authority shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: tdrp-recursive-next-${{ github.sha }}-*
+          path: artifacts/tdrp-recursive-next-merged
+          merge-multiple: true
+      - name: Prove every third-layer immutable authority was scanned exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-next-layer.mjs --validate-reports artifacts/tdrp-recursive-next-merged
+      - name: Upload aggregate next recursive authority evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-next-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-recursive-next-merged
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
