@@ -2,11 +2,11 @@
 
 Status: active  
 Spec ID: FBCP-001  
-Revision: 5  
+Revision: 6  
 Last updated: 2026-10-07  
 Owner: Fabushi Desktop  
 Canonical project: `projects/fabushi-communication-platform`  
-Companion implementation contract: `docs/specs/telegram-desktop-rust-equivalence-migration.md` (TDRP-001 Revision 7)  
+Companion implementation contract: `docs/specs/telegram-desktop-rust-equivalence-migration.md` (TDRP-001 Revision 8)  
 Implementation status: **requirements updated; full migration not accepted**
 
 > **最终产品是一个完整的 Fabushi Bot：在现有 Fabushi 架构内，逐文件、逐模块理解 `telegramdesktop/tdesktop`，把其全部非 UI 代码职责用最合适的语言等价重写；原 UI 表现层由统一 Fabushi UI 替代，但 UI 中承载的功能与业务逻辑不得遗漏。最终同时具备现有 Bot 的全部能力和 Telegram Desktop 源码所体现的全部产品能力，而不是绑定 Telegram、添加入口、做 Provider 接入、选择性借鉴或局部 Demo。**
@@ -232,6 +232,35 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 
 **FBCP-UI-20 — UI 迁移不是像素复刻。** 微信截图和 Telegram UI 只提供信息架构/行为参考；最终视觉由 Fabushi 自有设计系统决定。验收关注入口合理性、能力可发现性、状态连续、认知负担、键盘/屏幕阅读器可用和完整功能，不逐像素复制外部产品。
 
+### 8.2 Fabushi Design System / Canonical Components / Screen Patterns
+
+以下文档是本 Spec 的 normative UI companion，任何 AI、开发者或迁移模块都必须遵守；不能只看功能需求后自由发挥视觉样式：
+
+- `projects/fabushi-communication-platform/design-system.md` — Fabushi visual language、semantic tokens、theme、typography、spacing、color、icon/avatar、motion、content style。
+- `projects/fabushi-communication-platform/ui-component-contract.md` — canonical UI primitives/patterns、状态、可访问性与扩展规则。
+- `projects/fabushi-communication-platform/canonical-screen-patterns.md` — 核心 screen/workspace 的结构与 slot。
+- `projects/fabushi-communication-platform/visual-acceptance.md` — screenshot/interaction/a11y/responsive/locale/visual-regression 验收合同。
+
+**FBCP-DS-01 — AI 不得自由发明第二视觉语言。** 新能力首先选择既有 design token、canonical component、screen pattern 与 typed slot；只有已有系统无法表达真实产品责任时，才允许扩展 design system，并记录理由、复用范围、兼容迁移和 visual acceptance。
+
+**FBCP-DS-02 — Semantic token only.** 业务/功能 UI 不直接使用任意 hex、rgba、font-size、radius、shadow、z-index、animation duration 或来源品牌 token。颜色、排版、间距、尺寸、圆角、边框、阴影、motion、layering 必须来自 Fabushi semantic token contract。数据可视化、媒体内容、第三方嵌入和明确 legacy adapter 例外必须被精确登记。
+
+**FBCP-DS-03 — Fabushi namespace 是目标公共合同。** 当前 exact-head 存在历史 `sand-*` / `cursor-*` token 与 recovered primitives；它们可在兼容层内保持以避免破坏既有 Bot，但 Telegram-derived 新 UI 不得把这些历史来源命名当作新的产品 API。目标是 `fabushi-*` semantic aliases/components；最终产品表面、DOM/a11y 文案、用户可见 asset 不暴露来源品牌。
+
+**FBCP-DS-04 — Canonical component first.** Button、IconButton、SearchField、Input、Menu、Dialog、Tooltip、Tabs、Avatar、Badge、ListRow、ConversationRow、ParticipantRow、ResultRow、Empty/Loading/Error、Composer、ProfileSection、DetailPanel、Toast/Banner、Picker、Creation flow 等必须有一个 canonical component/pattern owner。功能模块不能复制一套局部 button/list/menu/dialog 体系。
+
+**FBCP-DS-05 — Canonical screens 是结构权威，不是截图。** Messages、Contacts、Conversation、Profile、Creation、Search、Marketplace、Settings、Tasks/Automations、Computer、Call、Story/Media、Mini App 等核心 surface 具有固定结构、slot、action hierarchy 和 state matrix。新 capability 加到既有 slot；确需新 screen pattern 时先扩展 screen contract。
+
+**FBCP-DS-06 — Density 与层级统一。** 默认 desktop density 使用统一 4px rhythm、统一 control/list/header heights、统一 text hierarchy 与 progressive disclosure。高频动作显式，低频/危险动作放入 menu/detail；不能为了“功能完整”把所有动作同时铺在主界面。
+
+**FBCP-DS-07 — Motion 只表达状态变化。** hover/selection/panel/message/task/Agent-thinking/call 等反馈使用统一 duration/easing；`prefers-reduced-motion` 下取消非必要 animation。禁止纯装饰、持续抢注意力或不同页面各自定义的动效语言。
+
+**FBCP-DS-08 — Content design 统一。** 按钮/菜单/错误/空状态/确认/权限提示使用一致动词、时态、破坏性文案与中英文 terminology。产品概念在 UI 中只有一个名称；不得同一对象同时出现“频道/channel/broadcast room”等无规则混称。
+
+**FBCP-DS-09 — Icons / avatars / assets 统一。** 一级导航和通用动作使用一个 canonical icon family 与尺寸体系；不得混用 emoji、Telegram/微信/Grok/Cursor 品牌图标或不同线宽图标作为通用 UI。Human/Agent/Group/Channel 复用统一 Avatar primitive，通过 typed fallback/badge/status 表达类型差异。
+
+**FBCP-DS-10 — Visual change 必须有证据。** 任何影响核心 screen、token、component、layout 或 interaction state 的变更，都必须在 GitHub Actions 生成 current-head visual artifacts，并通过 `visual-acceptance.md` 的 structural、light/dark、locale、responsive、keyboard/a11y 和 state-continuity gates；不能用“看起来差不多”验收。
+
 ## 9. 品牌、命名与来源记录
 
 **FBCP-BRAND-01:** 产品名、窗口标题、导航、默认头像/图标、空状态、通知、托盘、设置、安装包、更新界面和用户文案统一使用 Fabushi。不得残留 Telegram、Grok Bot、Gok Bot 的产品品牌、Logo、默认品牌素材或独立产品入口。
@@ -306,6 +335,15 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 | AC-29 | Search 只有一个 canonical owner；入口内、对象内、Universal Search 三种作用域及所有 picker/search consumer 均复用 typed query/result/provider 合同 |
 | AC-30 | Search 的 account/privacy/membership/block/retention/resource/task 权限、本地+远端合并、排序/去重/分页/取消/stale fencing 有真实行为和负面测试证据 |
 | AC-31 | 导航、对象动作、专用 surface、响应式折叠、键盘/焦点/屏幕阅读器与状态连续性通过 packaged UI acceptance；无隐藏/不可返回/上下文丢失的迁移功能 |
+| AC-32 | Fabushi semantic design tokens 成为 UI 公共合同；新迁移 UI 0 任意颜色/字号/间距/圆角/阴影/motion magic values，legacy/source-named token 仅限登记的兼容层 |
+| AC-33 | Button/Input/Menu/Dialog/ListRow/Search/Avatar/Composer/Profile/feedback 等 canonical component owner 唯一；0 功能模块自建重复 primitive/pattern family |
+| AC-34 | 所有核心 surface 均匹配 canonical screen pattern、slot、action hierarchy 和 loading/empty/error/offline/permission/data-heavy state matrix |
+| AC-35 | Fabushi light/dark visual language、typography、spacing、shape、elevation、icon/avatar、content copy 与 motion 一致，无拼接式多套视觉系统 |
+| AC-36 | fixed visual test matrix 覆盖支持的关键 viewport、light/dark、中文/英文、长文本/RTL、keyboard/focus/screen reader 与 reduced-motion |
+| AC-37 | current-head GitHub Actions 生成并校验 approved visual baselines；非预期 geometry/style/state diff fail closed，故意变更需明确 review/provenance |
+| AC-38 | 大会话/长标题/多附件/多成员/大量搜索结果/Agent tool events 下无裁切重叠、无无界增长，虚拟化/滚动/sticky/ellipsis 行为符合 screen contract |
+| AC-39 | 用户可见品牌 asset、图标、头像 fallback、文案、通知和系统 surface 统一 Fabushi；来源品牌只存在合法 provenance/compatibility 记录 |
+| AC-40 | 新 UI primitive/pattern/screen/token 只有在 existing design system 无法承接时才可新增，并有 design rationale、owner、复用范围、迁移计划和 visual acceptance evidence |
 
 ## 14. 本次交付与后续任务
 

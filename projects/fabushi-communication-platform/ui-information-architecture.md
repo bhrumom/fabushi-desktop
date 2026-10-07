@@ -1,8 +1,8 @@
 # Fabushi Unified UI Information Architecture & Interaction Contract
 
 Status: active  
-Parent: FBCP-001 Revision 5  
-Migration contract: TDRP-001 Revision 7  
+Parent: FBCP-001 Revision 6  
+Migration contract: TDRP-001 Revision 8  
 Updated: 2026-10-07
 
 ## 1. Purpose
@@ -10,6 +10,8 @@ Updated: 2026-10-07
 本合同规定完整 Telegram Desktop 能力迁入 Fabushi 后的 UI/UX 组织原则。上游 UI 是行为与功能来源，不是目标菜单树。最终只有一个 Fabushi product shell；能力按用户任务、作用域和对象关系放置，不能按 Telegram 模块名复制页面或一级入口。
 
 UI 目标同时满足：完整功能、低认知负担、可发现、统一状态、可返回、键盘/可访问、响应式、现有 Bot 无回退。
+
+本文件只决定“功能放哪里、如何进入、如何返回”。视觉语言、组件、screen 结构和验收分别由 `design-system.md`、`ui-component-contract.md`、`canonical-screen-patterns.md`、`visual-acceptance.md` 约束；任何 AI/实现者必须同时读取，不能依据本 IA 文档自由创造视觉样式。
 
 ## 2. Entry classification
 

@@ -2,9 +2,9 @@
 
 Status: active  
 Spec ID: TDRP-001  
-Revision: 7  
+Revision: 8  
 Last updated: 2026-10-07  
-Parent: `docs/specs/fabushi-bot-communication-platform.md` (FBCP-001 Revision 5)  
+Parent: `docs/specs/fabushi-bot-communication-platform.md` (FBCP-001 Revision 6)  
 Project: `projects/telegram-desktop-rust`  
 Acceptance status: **not complete; requirements only updated by this revision**
 
@@ -84,6 +84,12 @@ search_scope, search_provider, search_result_types, search_filters
 search_permission_contract, search_local_remote_contract
 responsive_disposition, accessibility_contract, keyboard_contract
 state_continuity_contract, ui_acceptance_scenarios
+design_system_version, semantic_token_usage, legacy_token_adapter
+canonical_component_ids, screen_pattern_id, screen_slots
+visual_state_matrix, density_contract, icon_asset_contract, avatar_contract
+content_copy_keys, motion_contract, reduced_motion_contract
+visual_baseline_ids, visual_evidence, accessibility_evidence
+design_exception_adr, design_reviewer
 license_and_provenance, reviewer, notes
 ```
 
@@ -155,6 +161,14 @@ Telegram 中 dialog/history/people/media/username/filter 等搜索职责必须�
 
 模块 dossier 需要覆盖 scope/filter/result type、local/remote source、ranking/dedupe、cursor/pagination、debounce、cancellation、stale-result fencing、account/privacy/membership/block/retention permission、结果 provenance、点击结果后的 canonical navigation。SearchProvider 只提供领域结果，不拥有独立 Search 产品。
 
+### TDRP-UI-DESIGN — Design-system migration contract
+
+所有 migrated UI responsibility 必须继续映射到 Fabushi design-system version、semantic tokens、canonical component IDs 与 canonical screen pattern/slot。默认不允许 feature-local CSS/JSX 自由创造另一套 visual grammar；需要新 primitive/pattern/token 时，先证明 canonical component/pattern 无法承接，再扩展共享 design system 并取得 review。
+
+当前 exact-head 存在 recovered Sand primitives、runtime theme token generator 及 `cursor-*` aliases。它们是现状兼容事实，不是新 Telegram-derived UI 的公共命名权威。实施应先建立 Fabushi semantic layer/wrappers，再逐步把新功能与受影响旧 surface 接到该层；不得为了重命名而破坏 immutable evidence 或原 Bot 行为。
+
+每个 dossier 还必须覆盖 loading/empty/error/offline/permission/disabled/selected/focus/hover/pressed/data-heavy states、light/dark、locale/long text、responsive collapse、keyboard/focus restore、screen reader、reduced motion、icon/avatar/copy consistency 和 visual baseline。
+
 ## 7. 模块实施闭环
 
 每个已批准模块依次执行：
@@ -183,6 +197,9 @@ Telegram 中 dialog/history/people/media/username/filter 等搜索职责必须�
 - **G-UI-BRAND:** 左竖栏/消息/联系人/插件市场与统一 workspace 真实可用，合法来源记录外产品品牌全为 Fabushi。
 - **G-UI-IA:** 每个用户可见 capability 有唯一 entry classification/route；Group/Channel/Topic 等不会形成平行 App；统一 ConversationCreation flow、object actions、capability surfaces 与返回路径可验证。
 - **G-SEARCH:** 一个 canonical Search owner 支撑 contextual/object/universal 三层搜索和所有 picker；权限、本地/远端合并、排序/去重/分页/取消/stale fencing 及 typed result navigation 全闭合。
+- **G-DESIGN-SYSTEM:** migrated UI 只使用 Fabushi semantic token/component/screen contracts；legacy source-named token 只在登记的 compatibility/evidence adapter 中，0 feature-local second visual system。
+- **G-COMPONENTS:** canonical primitives/patterns owner 唯一；新增 primitive/pattern 有 design exception review、复用范围和 migration plan。
+- **G-VISUAL:** fixed viewport + light/dark + locale + state + keyboard/a11y + reduced-motion visual matrix 由 current-head GitHub Actions 生成并与 approved baseline 比较；非预期 diff fail。
 - **G-RELEASE:** 服务部署、隐私安全、许可证、迁移回滚、性能、支持平台签名/安装/更新与 packaged acceptance 全闭合。
 - **G-EVIDENCE:** upstream/target/checkout/run/attempt/job/artifact digest/provenance 一致，HEAD 变化使受影响旧证据失效。
 
@@ -207,4 +224,4 @@ TDRP-001 只有以下同时成立才能 accepted：
 
 本 Revision 未宣称已逐个阅读全部上游文件、未刷新锁文件/全量账本、未重写产品或运行新 gate。下一任务必须先完成 baseline/ledger/schema/validator 的真实差异审计，再按已有无阻塞 owner 推进实现；旧研究和代码可以复用，但状态必须基于新合同重新证明。
 
-References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 5 ; current canonical Fabushi/Bot specifications.
+References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 6 ; current canonical Fabushi/Bot specifications.
