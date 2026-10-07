@@ -107,6 +107,12 @@ jobs:
           set -euo pipefail
           node scripts/discover-tdrp-root-open-authority.mjs
 
+      - name: Discover tool and versioned source authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-root-tool-authority.mjs
+
       - name: Upload source-authority evidence
         uses: actions/upload-artifact@v4
         with:
