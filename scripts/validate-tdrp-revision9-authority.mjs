@@ -104,6 +104,10 @@ const authorityDocs=[
 for (const [label,document] of authorityDocs) {
   fail(document.includes(authorityCommit),label+' commit authority differs from lock');
   fail(document.includes(authorityTree),label+' root-tree authority differs from lock');
+  const authorityPair = document
+    .split(/\n/)
+    .some(line => line.includes(authorityCommit) && line.includes(authorityTree));
+  fail(authorityPair,label+' does not bind the live commit and root tree on one authority statement');
 }
 fail(inventoryIndex.upstream?.commit===authorityCommit,'inventory index upstream commit drift');
 fail(inventoryIndex.upstream?.tree===authorityTree,'inventory index upstream tree drift');
