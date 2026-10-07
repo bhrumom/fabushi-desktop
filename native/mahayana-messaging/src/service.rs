@@ -981,6 +981,17 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     return Err(denied("conversation state update requires membership"));
                 }
             }
+            ClientCommand::UpdateConversationChild { destination, .. } => {
+                let existing = self
+                    .engine
+                    .state()
+                    .conversations
+                    .get(&destination.conversation_id)
+                    .ok_or_else(|| denied("conversation child parent does not exist"))?;
+                if !self.actor_can_see_conversation(actor_id, existing) {
+                    return Err(denied("conversation child update requires parent access"));
+                }
+            }
             ClientCommand::MarkTopicRead {
                 conversation_id, ..
             }
@@ -1885,6 +1896,14 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     updated_at_ms: now_ms,
                 },
             }],
+            ClientCommand::UpdateConversationChild {
+                destination,
+                mutation,
+            } => vec![Command::UpdateConversationChild {
+                destination,
+                actor_id: actor_id.clone(),
+                mutation,
+            }],
             ClientCommand::SetConversationNotifications {
                 conversation_id,
                 settings,
@@ -2354,6 +2373,26 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 marked_unread,
             },
             Event::DraftChanged { draft } => ServerEvent::DraftChanged { draft },
+            Event::ConversationChildChanged {
+                destination,
+                actor_id: child_actor_id,
+                ..
+            } => {
+                let state = self
+                    .engine
+                    .state()
+                    .conversation_child_states
+                    .iter()
+                    .find(|state| {
+                        state.destination == destination && state.actor_id == child_actor_id
+                    })
+                    .cloned();
+                ServerEvent::ConversationChildChanged {
+                    destination,
+                    actor_id: child_actor_id,
+                    state,
+                }
+            }
             Event::FolderUpserted { folder } => ServerEvent::FolderChanged { folder },
             Event::FolderDeleted { folder_id } => ServerEvent::FolderDeleted { folder_id },
             Event::PresenceTriggeredSendQueued { pending } => {
@@ -2604,6 +2643,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
             ServerEvent::DraftChanged { draft } => {
                 audience.clear();
                 audience.insert(draft.actor_id.clone());
+            }
+            ServerEvent::ConversationChildChanged { actor_id, .. } => {
+                audience.clear();
+                audience.insert(actor_id.clone());
             }
             ServerEvent::TopicDraftChanged { draft } => {
                 audience.clear();
