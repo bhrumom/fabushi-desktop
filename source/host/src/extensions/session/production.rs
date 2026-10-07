@@ -3459,3 +3459,92 @@ impl ProductionSessionWorkers {
         futures::executor::block_on(self.pool.close_all());
     }
 }
+
+
+#[cfg(test)]
+mod sharebox_shipping_tests {
+    use super::*;
+
+    fn test_workers(root: &Path) -> ProductionSessionWorkers {
+        ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+            root.to_path_buf(),
+            2_000,
+            Some("human-local".to_string()),
+            Arc::new(|| None),
+            Arc::new(MemoryService::new(root.to_path_buf())),
+        )
+    }
+
+    fn conversation_id(value: &serde_json::Value) -> String {
+        value.get("id").and_then(serde_json::Value::as_str).unwrap().to_string()
+    }
+
+    #[test]
+    fn shipping_human_forward_reuses_session_owner_across_retry_and_restart() {
+        let root = std::env::temp_dir().join(format!("fabushi-forward-{}", Uuid::new_v4()));
+        let workers = test_workers(&root);
+        let source = conversation_id(&workers.create_human_conversation("human-source", "Source").unwrap());
+        let alpha = conversation_id(&workers.create_human_conversation("human-alpha", "Alpha").unwrap());
+        let beta = conversation_id(&workers.create_human_conversation("human-beta", "Beta").unwrap());
+
+        let source_entry = workers
+            .append_human_message(&source, "forward me", "source-nonce", Some(10.0), None, &[])
+            .unwrap();
+        let source_entry_id = source_entry.get("id").and_then(serde_json::Value::as_str).unwrap();
+
+        let search = workers.search_human_recipients(&source, "beta", 50).unwrap();
+        assert_eq!(search.len(), 1);
+        assert_eq!(search[0].get("id").and_then(serde_json::Value::as_str), Some(beta.as_str()));
+
+        let missing = "human-direct-does-not-exist".to_string();
+        let destinations = vec![alpha.clone(), missing.clone(), alpha.clone()];
+        let first = workers
+            .forward_human_message(&source, source_entry_id, &destinations, "forward-request-1", false, true)
+            .unwrap();
+        let settlement = first.get("destinations").and_then(serde_json::Value::as_array).unwrap();
+        assert_eq!(settlement.len(), 2, "duplicate destinations must collapse before fan-out");
+        assert_eq!(settlement[0].get("status").and_then(serde_json::Value::as_str), Some("sent"));
+        assert_eq!(settlement[1].get("status").and_then(serde_json::Value::as_str), Some("failed"));
+
+        let alpha_entries = workers.read_human_conversation_transcript(&alpha).unwrap();
+        assert_eq!(alpha_entries.len(), 1);
+        let forwarded = &alpha_entries[0];
+        let context = forwarded.get("forwardContext").unwrap();
+        assert_eq!(context.pointer("/privacy/dropSenderNames").and_then(serde_json::Value::as_bool), Some(true));
+        assert_eq!(context.pointer("/privacy/dropCaptions").and_then(serde_json::Value::as_bool), Some(true));
+        assert!(context.get("origin").is_none(), "drop captions must also suppress sender provenance");
+
+        let replay = workers
+            .forward_human_message(&source, source_entry_id, &destinations, "forward-request-1", false, true)
+            .unwrap();
+        assert_eq!(
+            replay.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("sent"),
+        );
+        assert_eq!(workers.read_human_conversation_transcript(&alpha).unwrap().len(), 1);
+
+        let changed = workers
+            .forward_human_message(&source, source_entry_id, &[alpha.clone()], "forward-request-1", false, false)
+            .unwrap();
+        assert_eq!(
+            changed.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("failed"),
+        );
+        assert!(changed.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
+            .is_some_and(|error| error.contains("forward context")));
+
+        workers.shutdown();
+
+        let restarted = test_workers(&root);
+        let replay_after_restart = restarted
+            .forward_human_message(&source, source_entry_id, &[alpha.clone()], "forward-request-1", false, true)
+            .unwrap();
+        assert_eq!(
+            replay_after_restart.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("sent"),
+        );
+        assert_eq!(restarted.read_human_conversation_transcript(&alpha).unwrap().len(), 1);
+        restarted.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+}
