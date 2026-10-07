@@ -312,6 +312,28 @@ pub struct ReactionSummary {
     pub recent_actor_ids: Vec<ActorId>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PresenceSendTrigger {
+    WhenParticipantOnline { actor_id: ActorId },
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PendingPresenceSend {
+    pub local_message_id: MessageId,
+    pub conversation_id: ConversationId,
+    pub client_message_id: ClientMessageId,
+    pub sender_id: ActorId,
+    pub trigger: PresenceSendTrigger,
+    pub content: MessageContent,
+    pub reply_to_message_id: Option<MessageId>,
+    pub thread_root_message_id: Option<MessageId>,
+    pub silent: bool,
+    pub protected_content: bool,
+    pub created_at_ms: i64,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Message {
