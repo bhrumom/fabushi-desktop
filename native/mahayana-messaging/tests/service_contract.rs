@@ -931,3 +931,94 @@ fn presence_triggered_send_persists_releases_once_and_replays_idempotently() {
         1
     );
 }
+
+
+#[test]
+fn sync_projects_only_actor_scoped_typed_child_runtime_state() {
+    let actor = ActorId::new("human:child-owner");
+    let other = ActorId::new("human:other");
+    let parent_id = ConversationId::new("saved:child-owner");
+
+    let mut state = MessagingState::default();
+    state
+        .actors
+        .insert(actor.clone(), Actor::human(actor.0.clone(), "Child owner"));
+    state
+        .actors
+        .insert(other.clone(), Actor::human(other.0.clone(), "Other"));
+    state.conversations.insert(
+        parent_id.clone(),
+        Conversation {
+            id: parent_id.clone(),
+            kind: ConversationKind::SavedMessages,
+            title: "Saved".into(),
+            description: None,
+            avatar_url: None,
+            participants: vec![Participant {
+                actor_id: actor.clone(),
+                role: ParticipantRole::Owner,
+                joined_at_ms: 1,
+                muted_until_ms: None,
+            }],
+            owner_id: Some(actor.clone()),
+            last_message_id: None,
+            last_read_message_id: None,
+            unread_count: 0,
+            mention_count: 0,
+            pinned_message_ids: Vec::new(),
+            notification_settings: NotificationSettings::default(),
+            permissions: ConversationPermissions::default(),
+            history_visibility: HistoryVisibility::AllMembers,
+            topics: Vec::new(),
+            folder_ids: Vec::new(),
+            archived: false,
+            pinned: false,
+            marked_unread: false,
+            created_at_ms: 1,
+            updated_at_ms: 1,
+        },
+    );
+
+    let destination =
+        ConversationDestination::saved_sublist(parent_id.clone(), ActorId::new("human:peer"));
+    let mut own_child =
+        ConversationChildRuntimeState::new(destination.clone(), actor.clone()).unwrap();
+    own_child.set_active(true);
+    own_child.set_draft("typed child draft", None, 2);
+    assert!(own_child.pagination.replace_window(
+        vec!["message:2".into(), "message:1".into()],
+        Some(0),
+        Some(0),
+        Some(2),
+    ));
+    let other_child =
+        ConversationChildRuntimeState::new(destination, other.clone()).unwrap();
+    state.conversation_child_states = vec![own_child.clone(), other_child];
+
+    let mut store = MemoryStateStore::default();
+    store
+        .save(&MessagingSnapshot::new(state, 7, 3))
+        .expect("seed canonical state");
+    let mut service = MessagingService::load(store).unwrap();
+
+    let sync = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:child-owner"),
+                ClientCommand::Sync {
+                    cursor: None,
+                    limit: 100,
+                },
+            ),
+            4,
+        )
+        .unwrap();
+
+    assert!(sync.iter().any(|envelope| matches!(
+        &envelope.event,
+        ServerEvent::SyncBatch {
+            conversation_child_states,
+            ..
+        } if conversation_child_states == &vec![own_child.clone()]
+    )));
+}
