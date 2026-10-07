@@ -7,9 +7,9 @@
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15751,
+    "unread": 15750,
     "omitted": 0,
-    "responsibilities_total": 20,
+    "responsibilities_total": 21,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -4887,6 +4887,289 @@
         "Inline button -> typed TranscriptCard action transport -> authoritative settlement",
         "Resource result -> current generation projection only"
       ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_view_widget.cpp",
+      "source_blob_sha": "431b61464f8e0b89d1615366813d3fc8bd176196",
+      "source_kind": "source",
+      "module_id": "tdesktop.iv.markdown.view-widget",
+      "responsibility_id": "TDRP-R9-IV-VIEW-WIDGET-LIFECYCLE-001",
+      "source_symbols": [
+        "MarkdownDocumentWidget::setArticle",
+        "articleContentChanged",
+        "contextMenuEvent",
+        "wheelEvent",
+        "touchEvent",
+        "dragActionStart",
+        "dragActionUpdate",
+        "dragActionFinish",
+        "copySelectedText",
+        "copyCodeBlock",
+        "watchFormattedDateVisibility",
+        "scheduleFormattedDateRefresh",
+        "textPaintContext"
+      ],
+      "capability_ids": [
+        "CAP-RICH-TEXT-INTERACTION-LIFECYCLE",
+        "CAP-TYPED-COPY-CONTEXT",
+        "CAP-ARTICLE-SELECTION",
+        "CAP-ARTICLE-SCROLL-ZOOM"
+      ],
+      "dependency_ids": [
+        "ConversationTranscript",
+        "FindInChat",
+        "ExternalUrl",
+        "Resource",
+        "ProductShell"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/iv-markdown-view-widget-complete-read.md",
+      "behavior_contract": "Keep article/transcript pointer, keyboard, touch, selection, copy, link/media activation, scroll/zoom, visibility work and replacement/disposal lifecycle bound to the current canonical ConversationWorkspace scope with deterministic activation arbitration and no stale callbacks.",
+      "state_machine": "current content mounted -> hover/press/select/scroll/action -> settlement/cancel; replacement/focus-loss/touch-cancel/dispose clears transient owners; visibility toggles derived timer/loading work without changing canonical content",
+      "side_effects": [
+        "Copies typed selected/link/code content through canonical clipboard path",
+        "Delegates current media/link/action activation",
+        "Schedules bounded relayout/repaint/date refresh"
+      ],
+      "failure_cases": [
+        "replaced article retains pressed/media callback",
+        "selection click activates link/media",
+        "touch/scroll lifecycle never ends",
+        "hidden timer continues unbounded",
+        "copy path leaks session-window capability",
+        "missing media causes infinite relayout"
+      ],
+      "ui_disposition": "Qt QWidget/event/painter mechanics are replaced by canonical web/desktop ConversationWorkspace primitives; selection/action/visibility/cancellation semantics remain required.",
+      "non_ui_responsibilities": [
+        "replacement/dispose fencing",
+        "typed copy semantics",
+        "selection/action arbitration",
+        "horizontal scroll lifecycle",
+        "visibility-bounded work",
+        "anchor/toggle state continuity"
+      ],
+      "platform_delta": "React/browser events, Abort/generation fencing and canonical desktop bridge replace Qt event classes/QPointer/timers.",
+      "existing_owner_candidates": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "existing_owner": "Canonical ConversationWorkspace/ConversationTranscript + existing FindInChat/Resource/URL/action composition",
+      "rejected_existing_owners": [
+        "A Telegram/IV Markdown document application root would violate the single ProductShell/ConversationWorkspace composition.",
+        "A second URL, Resource, selection or transcript owner is unnecessary.",
+        "Qt widget ownership is platform presentation, not a portable product owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "createFindInChatController",
+        "MediaViewer",
+        "extractBareLink",
+        "conversationLinkCandidates"
+      ],
+      "target_language": "TypeScript/React",
+      "language_rationale": "Applicable behavior is ConversationWorkspace interaction/lifecycle projection and belongs in the existing web renderer owners; durable domain/resource truth remains behind existing typed contracts.",
+      "command_event_contracts": [
+        "Current selection/copy -> canonical clipboard/content projection",
+        "Current link/media action -> existing typed URL/Resource/action owner",
+        "scope replacement/dispose -> transient interaction cancellation"
+      ],
+      "state_owner": "Canonical ConversationTranscript/content identity plus transient renderer selection/interaction state",
+      "lifecycle_owner": "ConversationWorkspace/ConversationTranscript mount scope",
+      "persistence_and_restart": "Selection/hover/ripple/zoom interaction state is derived/session-local unless an existing canonical route/scroll owner explicitly persists it; transcript/resource truth remains canonical and reload-safe.",
+      "concurrency_and_cancellation": "Replacement/dispose/focus/touch cancellation fences old handlers and async media/repaint work; relayout/media retry and timers are bounded.",
+      "security_boundary": "Typed prepared-link/media/action dispatch uses existing boundaries; copy-code feedback removes session-window capability; renderer selection never grants service privilege.",
+      "network_service_dependencies": [
+        "Existing Resource/media resolver",
+        "Existing link metadata/external-open boundary"
+      ],
+      "service_owner": "Existing Fabushi Conversation/Resource/platform owners",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "fabushi-ui-replacement",
+      "blockers": [
+        "Shipping equivalents for selection/toggle/scroll/visibility edge cases and current-head temporal/accessibility evidence remain open."
+      ],
+      "production_entrypoints": [
+        "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing FindInChat/URL/Resource/action owners"
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "path:frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / ConversationWorkspace",
+      "composition_slot": "ConversationTranscript rich-text interaction surface",
+      "capability_component": "Transcript selection/link/media/scroll interaction controller",
+      "variation_axes": [
+        "mouse-vs-keyboard-vs-touch",
+        "selection-vs-action",
+        "visible-vs-hidden",
+        "zoomed-vs-100-percent",
+        "link-vs-media-vs-toggle"
+      ],
+      "shared_owner_contracts": [
+        "ConversationTranscript identity",
+        "FindInChat navigation",
+        "Resource/media lifecycle",
+        "Desktop external URL boundary",
+        "ProductShell route/focus"
+      ],
+      "duplicate_root_check": "No IV/Telegram document root, second Transcript store, second URL owner or second Resource owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "canonical-screen-interaction",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "ConversationWorkspace",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Current transcript/article content",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationTranscript rich-text surface",
+      "route_contract": "All interaction remains under the current ConversationWorkspace route and returns/focuses through existing ProductShell state.",
+      "search_scope": "Object-scoped Conversation search",
+      "search_provider": "Existing FindInChat provider/controller",
+      "search_result_types": [
+        "Message"
+      ],
+      "search_filters": [],
+      "search_permission_contract": "Uses the current Conversation scope; this row does not introduce a new Search truth.",
+      "search_local_remote_contract": "Delegates search behavior to existing FindInChat owner.",
+      "responsive_disposition": "Preserve selection, anchors, scroll/touch behavior and bounded relayout through canonical responsive transcript layout; do not port Qt geometry.",
+      "accessibility_contract": "Selection/copy/link/media/toggle controls need canonical focus, keyboard, name/state semantics; focus loss must clean transient pressed state.",
+      "keyboard_contract": "Keyboard copy/navigation/actions share canonical commands and may not bypass the same typed activation/selection guards as pointer input.",
+      "state_continuity_contract": "Canonical content/anchors remain stable across relayout/zoom/replacement; transient pressed/hover/selection work is cancelled when its scope is no longer current.",
+      "ui_acceptance_scenarios": [
+        "Replace content while pressed/media pending",
+        "Selection prevents accidental activation",
+        "Touch cancel balances horizontal scroll",
+        "Hidden/minimized work quiesces",
+        "Typed copy context remains distinct",
+        "Zoom/reflow preserves anchor continuity"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Fabushi transcript/action/menu/tooltip tokens only"
+      ],
+      "legacy_token_adapter": "Existing recovered implementation may remain below compatibility adapters; IV/Telegram source names must not become new public UI APIs.",
+      "canonical_component_ids": [
+        "ConversationTranscript",
+        "ContextMenu",
+        "Tooltip",
+        "MediaViewer",
+        "FindInChat"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "transcript",
+        "context menu",
+        "inline capability interaction"
+      ],
+      "visual_state_matrix": [
+        "idle",
+        "hover",
+        "pressed",
+        "selecting",
+        "context-menu",
+        "media-action",
+        "link-action",
+        "hidden",
+        "zoomed",
+        "loading"
+      ],
+      "density_contract": "Reuse canonical ConversationWorkspace density.",
+      "icon_asset_contract": "Canonical Fabushi icons only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Ripple/loading feedback is derived and must stop on cancel/focus loss/replacement.",
+      "reduced_motion_contract": "All action/selection/scroll semantics work without decorative animation.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "TDRP-COMP-01",
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-PERF-SOAK",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-IV-VIEW-WIDGET-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-IV-VIEW-REPLACE-001",
+        "INV-TDRP-IV-SELECTION-ACTION-001",
+        "INV-TDRP-IV-COPY-TYPED-001",
+        "INV-TDRP-IV-SCROLL-LIFECYCLE-001",
+        "INV-TDRP-IV-VISIBLE-WORK-001",
+        "INV-TDRP-IV-MEDIA-ARBITRATION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-PERF-SOAK",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blob; Qt widget/painter code is not retained and legal/source provenance remains recorded.",
+      "reviewer": null,
+      "notes": "Read-complete and mapped only; no implemented/verified claim."
     }
   ],
   "rebaseline": {
