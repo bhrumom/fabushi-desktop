@@ -320,7 +320,7 @@ jobs:
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           const lock=JSON.parse(fs.readFileSync('projects/telegram-desktop-rust/upstream.lock.json','utf8'));
-          const r=await fetch('https://api.github.com/repos/'+lock.upstream.repository+'/git/commits/'+lock.upstream.commit,{headers:{Authorization:'Bearer '+process.env.GH_TOKEN,'User-Agent':'fabushi-tdrp-r9'});
+          const r=await fetch('https://api.github.com/repos/'+lock.upstream.repository+'/git/commits/'+lock.upstream.commit,{headers:{Authorization:'Bearer '+process.env.GH_TOKEN,'User-Agent':'fabushi-tdrp-r9'}});
           if(!r.ok) throw new Error('commit lookup failed '+r.status);
           const commit=await r.json();
           console.log('UPSTREAM_COMMIT='+commit.sha);
