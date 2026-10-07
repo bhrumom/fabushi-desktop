@@ -919,6 +919,32 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
         })
         .expect("sent message");
 
+    let saved_sent = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "send-saved-child-lifecycle"),
+                ClientCommand::SendMessage {
+                    conversation_id: saved_parent_id.clone(),
+                    client_message_id: ClientMessageId("client:saved-child-lifecycle".into()),
+                    content: text_message("saved child page item"),
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    scheduled_at_ms: None,
+                    silent: false,
+                    protected_content: false,
+                },
+            ),
+            3,
+        )
+        .unwrap();
+    let saved_message_id = saved_sent
+        .iter()
+        .find_map(|envelope| match &envelope.event {
+            ServerEvent::MessageChanged { message } => Some(message.id.clone()),
+            _ => None,
+        })
+        .expect("sent saved message");
+
     let destination =
         ConversationDestination::nested_conversation(parent_id.clone(), child_id.clone());
     let saved_destination =
@@ -1014,7 +1040,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
                 context("human:owner", "saved-page-fail-closed"),
                 ClientCommand::ReplaceConversationChildWindow {
                     destination: saved_destination.clone(),
-                    message_ids: vec![message_id.clone()],
+                    message_ids: vec![saved_message_id.clone()],
                     skipped_before: Some(0),
                     skipped_after: Some(0),
                     full_count: Some(1),
@@ -1027,6 +1053,34 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
         unprovable_saved_page,
         MessagingServiceError::Engine(EngineError::ConversationChildMessageMismatch)
     ));
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "bind-saved-child-membership"),
+                ClientCommand::BindMessageToConversationChild {
+                    destination: saved_destination.clone(),
+                    message_id: saved_message_id.clone(),
+                },
+            ),
+            9,
+        )
+        .unwrap();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "saved-page-after-bind"),
+                ClientCommand::ReplaceConversationChildWindow {
+                    destination: saved_destination.clone(),
+                    message_ids: vec![saved_message_id.clone()],
+                    skipped_before: Some(0),
+                    skipped_after: Some(0),
+                    full_count: Some(1),
+                },
+            ),
+            9,
+        )
+        .unwrap();
 
     let first_sync = service
         .handle(
@@ -1057,6 +1111,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
                 child.destination == saved_destination
                     && child.actor_id == ActorId::new("human:owner")
                     && child.no_paid_messages
+                    && child.pagination.message_ids == vec![saved_message_id.0.clone()]
             }));
         }
         event => panic!("unexpected child lifecycle sync: {event:?}"),
