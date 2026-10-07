@@ -4145,3 +4145,66 @@ impl MessagingEngine {
             })
     }
 }
+
+
+#[cfg(test)]
+mod recent_open_history_tests {
+    use super::*;
+
+    #[test]
+    fn recent_open_history_is_bounded_deduped_and_move_front() {
+        let actor_id = ActorId::new("human:recent-open");
+        let parent_id = ConversationId::new("conversation:recent-open-parent");
+        let mut engine = MessagingEngine::new();
+
+        for index in 0..=MAX_RECENT_OPEN_DESTINATIONS {
+            let destination = ConversationDestination::nested_conversation(
+                parent_id.clone(),
+                ConversationId::new(format!("conversation:recent-open-child:{index}")),
+            );
+            engine.note_destination_opened(&actor_id, &destination);
+        }
+
+        let recent = engine.recent_open_destinations(&actor_id);
+        assert_eq!(recent.len(), MAX_RECENT_OPEN_DESTINATIONS);
+        assert_eq!(
+            recent.first(),
+            Some(&ConversationDestination::nested_conversation(
+                parent_id.clone(),
+                ConversationId::new(format!(
+                    "conversation:recent-open-child:{}",
+                    MAX_RECENT_OPEN_DESTINATIONS
+                )),
+            ))
+        );
+        assert!(!recent.contains(&ConversationDestination::nested_conversation(
+            parent_id.clone(),
+            ConversationId::new("conversation:recent-open-child:0"),
+        )));
+
+        let existing = ConversationDestination::nested_conversation(
+            parent_id,
+            ConversationId::new("conversation:recent-open-child:5"),
+        );
+        engine.note_destination_opened(&actor_id, &existing);
+        let recent = engine.recent_open_destinations(&actor_id);
+        assert_eq!(recent.len(), MAX_RECENT_OPEN_DESTINATIONS);
+        assert_eq!(recent.first(), Some(&existing));
+        assert_eq!(recent.iter().filter(|item| *item == &existing).count(), 1);
+    }
+
+    #[test]
+    fn recent_open_history_is_runtime_only_across_state_restore() {
+        let actor_id = ActorId::new("human:recent-open");
+        let destination = ConversationDestination::nested_conversation(
+            ConversationId::new("conversation:recent-open-parent"),
+            ConversationId::new("conversation:recent-open-child"),
+        );
+        let mut engine = MessagingEngine::new();
+        engine.note_destination_opened(&actor_id, &destination);
+        assert_eq!(engine.recent_open_destinations(&actor_id), &[destination]);
+
+        let restored = MessagingEngine::from_state(engine.state().clone());
+        assert!(restored.recent_open_destinations(&actor_id).is_empty());
+    }
+}
