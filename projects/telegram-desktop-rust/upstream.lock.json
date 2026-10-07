@@ -253,9 +253,9 @@
     "root_source_entries_total": 6355,
     "recursive_source_entries_total": 15788,
     "unknown_minimum": 15788,
-    "unread_minimum": 15769,
+    "unread_minimum": 15765,
     "omitted_known": 0,
-    "note": "Revision 9 recursive non-directory count is 15,788. Nineteen exact upstream entries have now been read end-to-end and recorded in the ShareBox/source-read dossiers, including data_saved_sublist.{h,cpp}, data_saved_messages.{h,cpp}, and menu/menu_send.{h,cpp}. Unknown remains 15,788 because their responsibility-to-production mappings are not yet fully closed; omitted remains 0."
+    "note": "Revision 9 recursive non-directory count is 15,788. Twenty-three exact upstream entries have now been read end-to-end and recorded in the ShareBox/source-read dossiers, including data_saved_sublist.{h,cpp}, data_saved_messages.{h,cpp}, menu/menu_send.{h,cpp}, menu/menu_send_details.h, api/api_common.cpp, and data/data_thread.{h,cpp}. Unknown remains 15,788 because their responsibility-to-production mappings are not yet fully closed; omitted remains 0."
   },
   "acceptance": {
     "baseline_ready": false,
