@@ -110,7 +110,7 @@ function selectedPaths(entries, predicate) {
 }
 
 function parseCandidate(raw) {
-  const match = raw.match(/^HEAD:(.*?):(\\d+):(.*)$/);
+  const match = raw.match(/^HEAD:(.*?):(\d+):(.*)$/);
   fail(match, 'unparseable external acquisition candidate: ' + raw);
   return { path: match[1], line: Number(match[2]), text: match[3].trim() };
 }
