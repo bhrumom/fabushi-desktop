@@ -5,15 +5,15 @@
   "upstream_repository": "telegramdesktop/tdesktop",
   "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
   "discovery": {
-    "evidence_run_id": 37599901141,
-    "evidence_head_sha": "ae1ac10ec40d67232d17adf170d0a2e673b7fc5d",
-    "artifact_id": 11471884811,
-    "artifact_digest": "sha256:4a66f6b054d1b30b91da7635fc310610ce01cf508c37dee05acad4a2567fdf63",
+    "evidence_run_id": 37602112794,
+    "evidence_head_sha": "6ea14a975654843140e77278261a73fb38cf072c",
+    "artifact_id": 11473257080,
+    "artifact_digest": "sha256:b0d6324f98cc19fd3e164c74c6b96882ef9afaa08f0c8175fa835775a6e909bd",
     "candidate_file": "build-time-acquisition-candidates.txt",
-    "candidate_lines_total": 150,
+    "candidate_lines_total": 326,
     "immutable_commit_pin_occurrences_classified": 17,
-    "candidate_lines_pending_classification": 133,
-    "note": "Counts are candidate-line accounting, not dependency cardinality. Pending lines include documentation, CI-only fetches, mutable refs/tags/branches, tool bootstraps, and additional build inputs that still require exact disposition."
+    "candidate_lines_pending_classification": 309,
+    "note": "Counts are candidate-line accounting, not dependency cardinality. GitHub Actions run 37602112794 broadened acquisition discovery beyond clone/fetch/curl/wget and proved the prior 150-line scan incomplete; 326 exact-upstream candidate lines are now accounted for, with 17 existing immutable commit-pin occurrences classified and 309 still requiring explicit disposition. Closure remains open."
   },
   "immutable_commit_pin_occurrences": [
     {

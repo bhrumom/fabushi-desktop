@@ -60,6 +60,12 @@ jobs:
               Telegram/build Telegram/cmake cmake snap tools .github 2>/dev/null || true
           ) | LC_ALL=C sort -u > "$GITHUB_WORKSPACE/artifacts/tdrp-authority/build-time-acquisition-candidates.txt"
           test -s artifacts/tdrp-authority/build-time-acquisition-candidates.txt
+          actual_count="$(wc -l < artifacts/tdrp-authority/build-time-acquisition-candidates.txt | tr -d '[:space:]')"
+          expected_count="$(node -p "require('./projects/telegram-desktop-rust/inventory/build-time-acquisitions.json').discovery.candidate_lines_total")"
+          if [ "$actual_count" != "$expected_count" ]; then
+            echo "::error::build-time acquisition candidate drift: discovered $actual_count, inventory expects $expected_count"
+            exit 1
+          fi
 
       - name: Upload source-authority evidence
         uses: actions/upload-artifact@v4
