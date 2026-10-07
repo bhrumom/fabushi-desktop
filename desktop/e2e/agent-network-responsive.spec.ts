@@ -226,12 +226,12 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     throw new Error(`renderer root fatal: ${rendererErrors.at(-1) ?? surfaceText}`);
   }
 
-  const roster = page.getByRole('region', { name: 'Agent list' });
-  const primary = roster.getByRole('button', { name: 'New chat', exact: true });
-  if (await primary.count() === 0) {
-    await page.getByRole('button', { name: 'New', exact: true }).click();
-  }
-  await expect(primary).toBeVisible({ timeout: 15_000 });
+  // The current shipping shell no longer materializes a synthetic "New chat"
+  // roster row. Readiness is the canonical Agent list plus its stable shell
+  // actions; opening "New" would enter the Create agent dialog and is not an
+  // account/session readiness signal.
+  await expect(page.getByRole('region', { name: 'Agent list' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('button', { name: 'Agent network', exact: true })).toBeVisible({ timeout: 15_000 });
 }
 
 async function measuredGeometry(network: ReturnType<Page['getByRole']>) {
