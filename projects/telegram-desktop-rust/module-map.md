@@ -1,8 +1,8 @@
 # 全量源文件/模块 → Fabushi Owner 对照规则
 
 Status: active  
-Project: TDRP-001 Revision 5  
-Parent: FBCP-001 Revision 3  
+Project: TDRP-001 Revision 6  
+Parent: FBCP-001 Revision 4  
 Updated: 2026-10-07
 
 ## Purpose
@@ -39,6 +39,8 @@ Updated: 2026-10-07
 1. 全文件读取及调用关系研究，列出所有独立 responsibility。
 2. 检查 current exact-head Fabushi 合理 owner，选择并解释 existing_owner。
 3. 不存在合理 owner 时，写 rejected owners、最小责任和批准 ADR；禁止整体 TelegramRuntime/CommunicationCore。
+3a. 若为当前 Fabushi 完全没有的 novel capability，新增最小 source-neutral owner，而不是删功能；记录 owner-absence evidence，并通过 typed capability contract 接入统一 shell/canonical truth。
+3b. 为每项 UI/product responsibility 记录唯一 canonical `composition_root` 与 typed `composition_slot`；不得按 Human/Agent/Group/Channel/来源复制完整 workspace/list/profile/composer/resource/settings root。
 4. 确定 target paths/symbols 与 best-fit language；C++ 非 UI 产品逻辑默认 Rust。
 5. 实现真实状态机和依赖，接入 shipping composition，再记录测试证据。
 6. 每个文件/责任取得证据后单独升级状态，不批量冒进。

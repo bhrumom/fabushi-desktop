@@ -2,9 +2,9 @@
 
 Status: active  
 Spec ID: TDRP-001  
-Revision: 5  
+Revision: 6  
 Last updated: 2026-10-07  
-Parent: `docs/specs/fabushi-bot-communication-platform.md` (FBCP-001 Revision 3)  
+Parent: `docs/specs/fabushi-bot-communication-platform.md` (FBCP-001 Revision 4)  
 Project: `projects/telegram-desktop-rust`  
 Acceptance status: **not complete; requirements only updated by this revision**
 
@@ -75,6 +75,9 @@ network_service_dependencies, service_owner, deployment_evidence
 implementation_status, coverage_disposition, blockers
 production_entrypoints, production_evidence, test_evidence
 target_commit, workflow_run, run_attempt, job, artifact_id, artifact_digest
+composition_root, composition_slot, capability_component
+variation_axes, shared_owner_contracts, duplicate_root_check
+novel_capability, owner_absence_evidence, minimal_owner_adr
 license_and_provenance, reviewer, notes
 ```
 
@@ -102,6 +105,14 @@ license_and_provenance, reviewer, notes
 
 **TDRP-OWN-01:** inspect existing owners -> select/extend owner -> production wiring。只有所有合理 owner 不适合，才用有批准 ADR 的最小新 owner；禁止整体搬入 TelegramSubsystem/CommunicationCore。
 
+**TDRP-COMP-01 — Single root composition.** 对每个 source responsibility，mapping 必须同时标注其 canonical `composition_root` 与 `composition_slot`。同一产品概念不得因为 Human/Agent/Group/Channel/来源不同而产生完整平行 root。Conversation 统一进入一个 ConversationWorkspace；Profile 统一进入一个 Participant/Profile framework；消息列表、Transcript、Composer、Resource viewer/editor、Search、Settings、Marketplace 等同理。
+
+**TDRP-COMP-02 — Typed capability differences only.** 上游专有行为应映射成 typed domain state + typed capability/component，例如 entry renderer、profile section、composer action、side panel、viewer、overlay 或 policy。组件可以有专门实现，但只能拥有自身最小状态/生命周期，不能复制父级 workspace 的 canonical state。
+
+**TDRP-COMP-03 — Novel capability procedure.** 如果 Telegram 源码暴露当前 Fabushi 完全不存在的职责，必须标记 `novel_capability=true`。先完成 exact-head owner-absence evidence；若确实没有 owner，写 rejected-owner analysis 和最小 source-neutral ADR，再新增最小 domain owner。新 owner 必须通过 typed command/event/capability contract 接入统一 product shell，并复用 identity/resource/permissions/navigation。不存在“因为 Fabushi 没有所以 N/A”的出口。
+
+**TDRP-COMP-04 — Dedicated surface is not a second app.** Call、Story、media editor、payments 等能力如果行为需要专门 surface/full-screen overlay，可以新增 capability-specific surface；但它由统一 router/workspace lifecycle 管理，不能自带第二套账号、conversation list、profile truth、message store、settings stack 或插件系统。
+
 **TDRP-LANG-01:** C++ 非 UI 产品代码默认重写为 Rust。不得保留原 tdesktop/desktop-app C++ core 作为业务 owner，不得借 FFI、TDLib、sidecar、subprocess 或“过渡适配器”宣称已迁移。
 
 **TDRP-LANG-02:** React/TypeScript 实现 Fabushi UI/交互投影；最薄系统桥接使用合适平台语言。生成器、schemas、构建工具使用 Fabushi 现有工具链中的 best-fit 实现。每项选择需 rationale，非默认语言需 ADR/审查；不机械把 UI 代码翻成 Rust。
@@ -121,6 +132,8 @@ license_and_provenance, reviewer, notes
 遵循 FBCP-001 §8：微信式信息结构为左侧竖向主导航 + 列表/搜索区 + 主工作区 + 按需详情。消息、联系人、插件市场是竖栏一级入口；保留 Agents、任务、Computer、Automations、账号设置等现有主能力。市场迁移复用原 owner 与权限，不做第二套市场。
 
 UI 文件必须证明每项交互和非 UI 逻辑均被承接。功能不得因不用 Qt 而消失。统一 human/agent/group/channel workspace、草稿、滚动、未读、streaming、任务与产物状态，原 Bot 与通信能力同时可用。
+
+所有 UI 映射都必须标注 canonical root + typed slot。禁止以共享 store 为理由保留两套完整 UI composition，例如 Bot/Human chat window、Agent/Human profile root、Telegram/Fabushi media viewer。允许的是一个 root 里的 typed sections/renderers/actions/overlays。对当前 Fabushi 没有的 UI 能力，先证明没有现有 surface 可承接，再新增最小 capability surface，并保持统一 shell/router、canonical state 与导航。
 
 产品标识统一为 Fabushi，清理 Telegram/Grok Bot/Gok Bot 品牌、Logo、默认素材和独立入口；保留法律要求的 LICENSE/NOTICE/版权与 source provenance。历史研究中的上游名字不能被抹去，否则账本失去可验证性。新 owner 名称使用业务职责，不使用来源品牌。
 
@@ -146,6 +159,7 @@ UI 文件必须证明每项交互和非 UI 逻辑均被承接。功能不得因�
 - **G-FILE:** 每个文件及 non-UI responsibility 均有处置；0 directory-only placeholders；双向 target trace 无遗漏。
 - **G-MODULE:** 每个模块有完整理解、状态机、oracle、existing-owner resolution、language rationale、typed contracts。
 - **G-PRODUCTION:** 对应 Rust/best-fit 实现真实接入当前 shipping product；无原 Telegram C++ owner、TDLib 包装或平行 runtime。
+- **G-COMPOSITION:** 每个能力都绑定唯一 canonical root + typed slot；无按 Human/Agent/Group/Channel/Telegram 来源复制的完整 workspace/list/profile/composer/resource/settings root；novel capability 只有经 ADR 的最小 owner/surface，并复用 canonical truth。
 - **G-BEHAVIOR:** 功能/错误/顺序/重复/取消/销毁/重启/网络恢复等与合同等价；mock 仅作局部测试，不代替真实 E2E。
 - **G-BOT:** 原 Agent、Coordinator/Host/Runner、MCP/Plugins、Computer、Automations、审批、任务和产物能力无回退。
 - **G-UI-BRAND:** 左竖栏/消息/联系人/插件市场与统一 workspace 真实可用，合法来源记录外产品品牌全为 Fabushi。
@@ -173,4 +187,4 @@ TDRP-001 只有以下同时成立才能 accepted：
 
 本 Revision 未宣称已逐个阅读全部上游文件、未刷新锁文件/全量账本、未重写产品或运行新 gate。下一任务必须先完成 baseline/ledger/schema/validator 的真实差异审计，再按已有无阻塞 owner 推进实现；旧研究和代码可以复用，但状态必须基于新合同重新证明。
 
-References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 3 ; current canonical Fabushi/Bot specifications.
+References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 4 ; current canonical Fabushi/Bot specifications.

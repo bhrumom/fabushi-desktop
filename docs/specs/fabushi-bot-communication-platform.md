@@ -2,11 +2,11 @@
 
 Status: active  
 Spec ID: FBCP-001  
-Revision: 3  
+Revision: 4  
 Last updated: 2026-10-07  
 Owner: Fabushi Desktop  
 Canonical project: `projects/fabushi-communication-platform`  
-Companion implementation contract: `docs/specs/telegram-desktop-rust-equivalence-migration.md` (TDRP-001 Revision 5)  
+Companion implementation contract: `docs/specs/telegram-desktop-rust-equivalence-migration.md` (TDRP-001 Revision 6)  
 Implementation status: **requirements updated; full migration not accepted**
 
 > **最终产品是一个完整的 Fabushi Bot：在现有 Fabushi 架构内，逐文件、逐模块理解 `telegramdesktop/tdesktop`，把其全部非 UI 代码职责用最合适的语言等价重写；原 UI 表现层由统一 Fabushi UI 替代，但 UI 中承载的功能与业务逻辑不得遗漏。最终同时具备现有 Bot 的全部能力和 Telegram Desktop 源码所体现的全部产品能力，而不是绑定 Telegram、添加入口、做 Provider 接入、选择性借鉴或局部 Demo。**
@@ -58,6 +58,54 @@ upstream exact file/symbol + module behavior
 **ABSORB-02:** 扩展已有 owner，不复制第二份 Identity/Conversation/Message/Resource/Permission 真相。  
 **ABSORB-03:** 只有所有合理 existing owners 都不适合时，记录 rejected owners、原因、唯一状态、生命周期、依赖方向、语言、typed interfaces、测试、迁移方案，并以批准的 ADR 新增最小 owner。  
 **ABSORB-04:** 必需的新网络/媒体/同步基础设施支持现有产品 owner，不得升级为平行 CommunicationCore、TelegramRuntime、TelegramProvider 或 MessengerSubsystem。
+
+### 3.1 Unified Product Workspace / Single-Composition Law
+
+本规则适用于**全部**从 Telegram Desktop 吸收的产品能力，不只适用于会话窗口。所谓“统一 workspace”是 Fabushi 唯一 product shell 及其 canonical workspace composition；不同能力可以拥有 typed component、section、panel、card、overlay、viewer 或专门的最小 domain owner，但不得为 Human/Agent/群/频道/某来源能力分别复制一套完整产品表面和状态链。
+
+**FBCP-UW-01 — 一个产品概念只能有一个 canonical root composition。**  
+以下核心概念必须各自只有一个 canonical implementation：product shell/navigation、ConversationWorkspace、conversation list、Transcript、Composer、Participant/Profile surface、Resource viewer/editor、Search surface、Settings workspace、Notification surface、Marketplace、Task/Automation surface。不得用联系人种类、conversation kind、来源模块或历史产品名再复制完整 root。
+
+明确禁止把差异实现为完整平行窗口，例如：`BotChatWindow + HumanChatWindow`、`AgentConversationWorkspace + HumanConversationWorkspace`、`GroupChatApp + ChannelChatApp`、`AgentProfileRoot + HumanProfileRoot`、`TelegramMediaViewer + FabushiMediaViewer`。即使这些平行实现暂时共用同一个 store，也属于违反本规则，因为它们会形成重复的 navigation/header/history/composer/draft/selection/lifecycle ownership。
+
+**FBCP-UW-02 — 差异只能通过 typed capability composition 表达。**  
+Human、Agent、Group、Channel、Hybrid、Topic 等差异由稳定 typed axes 表达，例如：
+
+```text
+conversation.kind
+participant.kind
+entry.kind
+resource.kind
+capabilities
+policy
+permissions
+runtime_state
+```
+
+统一 workspace 通过明确的 capability/renderer registry 或等价 typed composition 装配差异。允许的差异单位包括 `HumanProfileSection`、`AgentRuntimeSection`、`AgentThinkingEntry`、`PollEntry`、`CallControls`、`StoryCard`、`PaymentReceiptCard` 等；它们不得重新拥有整个 workspace、transcript、composer、identity、resource、permission 或 navigation。
+
+**FBCP-UW-03 — 共享骨架与状态只能有一份。**  
+以下能力不能因为类型不同而分叉成第二套实现：header shell、history/transcript container、scroll/pagination、selection、draft、reply/quote、attachment picker/resource lifecycle、read/unread、send settlement、navigation lifecycle、account scoping、permissions projection、loading/error/empty states、accessibility、theme/i18n。类型化组件只能向这些共享 owner 提供数据、行为和扩展 slot。
+
+**FBCP-UW-04 — Profile/联系人同样遵守单一 composition。**  
+Human、Agent、Group、Channel 使用统一 Participant/Profile framework 与同一 identity/member truth。Human 可以提供 presence、privacy、phone/username、shared groups 等 section；Agent 可以提供 runtime、model、tools、permissions、tasks 等 section；Group/Channel 可以提供 members、roles、media、moderation 等 section。允许 section 不同，不允许形成互不兼容的第二套 identity/profile 基础设施。
+
+**FBCP-UW-05 — Telegram 中当前 Fabushi 完全没有的能力必须新增“最小能力 owner”，而不是新应用。**  
+如果完整 exact-head owner audit 证明某项职责在 Fabushi 中确实没有合理 owner，则该能力仍然在范围内，不能删除、降级或强塞进错误 owner。必须：
+1. 记录所有 rejected existing owners 及理由；
+2. 定义不可再缩小的 domain responsibility、唯一 state/lifecycle owner、commands/events、persistence、security、service dependencies；
+3. 通过 ADR 批准一个 source-neutral 的最小新 owner；
+4. 以 typed capability contract 接入统一 shell/workspace/identity/resource/permission/navigation；
+5. 复用现有 canonical truth，不重新创建 Conversation/Message/Participant/Resource 等总模型；
+6. 取得 production + packaged evidence 后才能 verified。
+
+例如当前架构若没有完整的 CallSession、Story lifecycle、PaymentSettlement、Presence/Sync 等 owner，可以新增相应最小 domain owner；但不得因此出现 CallApp、StoryApp、PaymentsApp 或 TelegramWorkspace 作为第二套产品骨架。某能力确实需要沉浸式界面（例如通话、媒体编辑、Story viewer）时，可以是统一 shell 管理的 capability surface/full-screen overlay，它仍共享 canonical identity/resource/permissions/lifecycle，并由统一 router/composition 打开和销毁。
+
+**FBCP-UW-06 — 新能力不能污染既有 owner。**  
+“必须统一”不等于把所有 Telegram 功能塞进 ConversationWorkspace 或 Coordinator。领域状态仍放在最合适 owner；统一的是产品 composition、canonical truth 和 typed contracts。Coordinator/Host/Runner 只负责 Agent 执行职责；普通通信、Call、Story、Payment 等不能为了复用而错误进入 Agent runtime。
+
+**FBCP-UW-07 — 架构 gate 必须检查 composition duplication。**  
+实现阶段必须建立可执行 architecture/composition gate：枚举 canonical roots、capability registration、state owner 和 production entrypoints；发现按 Human/Agent/Group/Channel/Telegram 来源复制完整 workspace/list/profile/composer/resource/settings 等 root 时 fail closed。不能仅靠文件名扫描，必须结合 import/composition/state-owner graph 与 shipping route/entrypoint 证明没有平行实现。
 
 下面只指定职责方向，实际 target path/symbol 必须读当前代码后写入 ledger：
 
@@ -152,6 +200,10 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 
 **FBCP-UI-06 — 状态连续性。** 切入口/切会话保留草稿、滚动位置、选中对象、未读和运行中任务；支持窗口缩放、最小尺寸、键盘、屏幕阅读器、深浅色、多语言和中文 IME。小窗口可折叠列表，不能把核心入口变得不可达。
 
+**FBCP-UI-07 — 会话 UI 只有一个 canonical composition。** Human、Agent、Group、Channel、Hybrid conversation 必须由同一个 `ConversationWorkspace` composition 构建；不得分别维护完整 Bot/Human/Group/Channel chat window。差异只能通过 typed header/profile section、transcript entry renderer、composer action、capability panel/overlay 和 policy 表达。
+
+**FBCP-UI-08 — 其他产品表面同样只允许 typed differences。** 联系人/Agent/群资料、媒体查看/编辑、搜索、设置、通知、通话、Stories、商业/支付、Mini Apps 等都必须优先接入统一 product shell 和对应 canonical surface。只有当前架构完全缺失且 existing-owner audit 失败时，才可按 FBCP-UW-05 新增最小 capability owner/surface；该 surface 仍由统一 shell/router 管理，不得形成独立应用。
+
 ## 9. 品牌、命名与来源记录
 
 **FBCP-BRAND-01:** 产品名、窗口标题、导航、默认头像/图标、空状态、通知、托盘、设置、安装包、更新界面和用户文案统一使用 Fabushi。不得残留 Telegram、Grok Bot、Gok Bot 的产品品牌、Logo、默认品牌素材或独立产品入口。
@@ -219,6 +271,8 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 | AC-22 | 0 open in-scope blocker、0 stub/no-op/fake fallback、0 用 N/A 隐藏的产品功能 |
 | AC-23 | 最新确认 upstream baseline 及差异审计闭合，无静默跳过新文件/新功能 |
 | AC-24 | 独立逐项验收、许可证/分发审查、支持平台包与 release provenance 完整 |
+| AC-25 | 所有同类产品表面遵守 single-composition：无 Bot/Human/Group/Channel/来源型平行完整 workspace/list/profile/composer/resource/settings 实现；差异均为 typed capability composition |
+| AC-26 | 当前 Fabushi 完全缺失的上游能力均通过 rejected-owner analysis + ADR 建立最小 source-neutral owner，并接入统一 shell/canonical truth；0 因“没有现成架构”而丢失的功能 |
 
 ## 14. 本次交付与后续任务
 

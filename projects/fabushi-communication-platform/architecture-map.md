@@ -1,7 +1,7 @@
 # FBCP Existing-Architecture Absorption Map
 
 Status: active  
-Spec: FBCP-001 Revision 2  
+Spec: FBCP-001 Revision 4  
 Purpose: route researched capabilities into the current Fabushi architecture.
 
 ## 1. There is one product architecture
@@ -38,6 +38,12 @@ Current Fabushi / PR #20 architecture
 ```
 
 Telegram-derived capabilities enter these owners.
+
+## 1.1 Single-composition law
+
+统一不是“所有逻辑放进一个模块”，而是每个产品概念只有一个 canonical root composition。Conversation、Transcript、Composer、Participant/Profile、Resource viewer/editor、Search、Settings、Marketplace 等不得按 Human/Agent/Group/Channel/Telegram 来源复制完整 root。差异以 typed capability/section/renderer/action/panel/overlay 注入。
+
+如果 current Fabushi 完全没有某项职责，先证明 existing owner 不存在；再通过 ADR 新增最小 source-neutral capability owner。该 owner 只拥有不可再缩小的领域状态，必须通过 typed contract 接入统一 product shell，并复用 canonical identity/resource/permission/navigation。Call、Story、Payment、Presence 等可以有专门 domain owner 或 capability surface，但不能形成第二应用或第二套 conversation/profile/state truth。
 
 ## 2. Owner-first examples
 

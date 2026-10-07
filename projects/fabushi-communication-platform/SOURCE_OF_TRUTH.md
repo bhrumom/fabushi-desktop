@@ -2,7 +2,7 @@
 
 Status: active  
 Project ID: FBCP-001  
-Revision: 3  
+Revision: 4  
 Date: 2026-10-07  
 Repository: `bhrumom/fabushi-desktop`
 
@@ -15,8 +15,8 @@ Repository: `bhrumom/fabushi-desktop`
 ## Normative documents
 
 - root `AGENTS.md`
-- `docs/specs/fabushi-bot-communication-platform.md` — FBCP-001 Revision 3
-- `docs/specs/telegram-desktop-rust-equivalence-migration.md` — TDRP-001 Revision 5
+- `docs/specs/fabushi-bot-communication-platform.md` — FBCP-001 Revision 4
+- `docs/specs/telegram-desktop-rust-equivalence-migration.md` — TDRP-001 Revision 6
 - current canonical Bot architecture/spec and exact-head implementation
 - `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md` and `module-map.md`
 - current task, existing architecture-map, dossiers, ledger, ADR and evidence
@@ -31,6 +31,8 @@ Repository: `bhrumom/fabushi-desktop`
 - 无第二 Identity/Conversation/Message/Resource 真相、无平行 CommunicationCore/Telegram runtime。
 - Fabushi 自有身份/通信/同步/媒体/通话/推送服务；不用 Telegram 网络不是省略服务端功能的理由。
 - Human、Agent、群、频道、混合房间使用同一 shell/transcript/composer。
+- 所有同类产品表面遵守 single-composition：统一 ConversationWorkspace/Profile/列表/资源/设置等 canonical root；Human/Agent/Group/Channel/新能力差异只能是 typed capability/section/renderer/action/panel/overlay。
+- Telegram 中当前 Fabushi 完全没有的能力不得丢弃：先证明 existing owner 不存在，再以 ADR 新增最小 source-neutral owner，并接入统一 shell/canonical identity/resource/permission；专用 surface 不得成为第二应用。
 - 微信式结构：左竖栏 + 列表/搜索 + 主工作区；消息、联系人、插件市场均为一级入口，市场复用现有 Plugins/MCP owner。
 - 产品名/图标/窗口/文案/安装更新全部 Fabushi；无 Telegram/Grok Bot/Gok Bot 产品品牌；必要法律声明和 provenance 保留。
 - 所有可执行验证仅 GitHub Actions，不沿用本项目旧 htch-runtime allowance。
@@ -46,4 +48,4 @@ Revision 3 读取：main `860f03a8553c779fe006c7826f190c3014a571dc`；PR #20 已
 
 `management/tasks/P0-product-domain-and-telegram-absorption.md`
 
-先做新基线全量差异与 current owner 对照，再按已明确责任推进真实实现。遇到阻塞记录解除条件并推进不依赖该阻塞的下一项，不能放宽 gate。此次只修订文档，未完成模块迁移或 UI 改造；全产品完成以 FBCP-001 AC-01 至 AC-24 全部通过为准。
+先做新基线全量差异与 current owner 对照，再按已明确责任推进真实实现。遇到阻塞记录解除条件并推进不依赖该阻塞的下一项，不能放宽 gate。此次只修订文档，未完成模块迁移或 UI 改造；全产品完成以 FBCP-001 AC-01 至 AC-26 全部通过为准。
