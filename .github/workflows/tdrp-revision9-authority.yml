@@ -69,7 +69,7 @@ jobs:
           node - <<'NODE'
           const fs = require('node:fs');
           const inventory = require('./projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
-          const discovered = fs.readFileSync('artifacts/tdrp-authority/build-time-acquisition-candidates.txt', 'utf8').split(/\\r?\\n/).filter(Boolean);
+          const discovered = fs.readFileSync('artifacts/tdrp-authority/build-time-acquisition-candidates.txt', 'utf8').split(/\r?\n/).filter(Boolean);
           const liveKeys = new Set(discovered.map(line => {
             const match = line.match(/^(.*):(\d+):/);
             if (!match) throw new Error('unparseable acquisition discovery line: ' + line);
