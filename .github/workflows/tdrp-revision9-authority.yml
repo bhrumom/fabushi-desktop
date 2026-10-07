@@ -216,3 +216,88 @@ jobs:
           if-no-files-found: error
           retention-days: 90
           compression-level: 0
+
+  recursive-child-authority-shards:
+    name: Recursive child authority shard ${{ matrix.shard }}
+    needs: recursive-root-authority-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    env:
+      SHARD_INDEX: ${{ matrix.shard }}
+      SHARD_COUNT: 24
+      PARENT_REPORT_DIR: artifacts/tdrp-parent-recursive
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download parent recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-parent-recursive
+      - name: Recursively discover next immutable child layer
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-child-layer.mjs
+      - name: Upload child recursive authority shard
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-child-${{ github.sha }}-${{ matrix.shard }}
+          path: artifacts/tdrp-recursive-child
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  recursive-child-authority-gate:
+    name: Recursive child authority accounting gate
+    needs: recursive-child-authority-shards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SHARD_COUNT: 24
+      PARENT_REPORT_DIR: artifacts/tdrp-parent-recursive
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download parent recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-parent-recursive
+      - name: Download child recursive authority shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: tdrp-recursive-child-${{ github.sha }}-*
+          path: artifacts/tdrp-recursive-child-merged
+          merge-multiple: true
+      - name: Prove every newly discovered immutable child was scanned exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-child-layer.mjs --validate-reports artifacts/tdrp-recursive-child-merged
+      - name: Upload aggregate child recursive authority evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-recursive-child-merged
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
