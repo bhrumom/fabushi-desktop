@@ -3,12 +3,6 @@ name: TDRP Revision 9 source authority
 on:
   push:
     branches: [main]
-    paths:
-      - 'docs/specs/telegram-desktop-rust-equivalence-migration.md'
-      - 'projects/telegram-desktop-rust/**'
-      - 'projects/fabushi-communication-platform/quality/**'
-      - 'scripts/validate-tdrp-revision9-authority.mjs'
-      - '.github/workflows/tdrp-revision9-authority.yml'
   workflow_dispatch:
 
 permissions:
