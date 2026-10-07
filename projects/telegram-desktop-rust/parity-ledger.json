@@ -2,7 +2,7 @@
   "format_version": 3,
   "project_id": "TDRP-001",
   "spec_revision": 9,
-  "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+  "upstream_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
   "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
   "coverage": {
     "source_entries_total": 15788,
@@ -15,7 +15,7 @@
   "rows": [
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -268,7 +268,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_path": "Telegram/SourceFiles/boxes/url_auth_box.cpp",
       "source_blob_sha": "f68ea15d650a07ed52839020fb46711012b288ae",
       "source_kind": "source",
@@ -513,7 +513,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -737,7 +737,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -969,7 +969,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1184,7 +1184,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1439,7 +1439,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1687,7 +1687,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1909,7 +1909,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -2161,7 +2161,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -2430,7 +2430,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_kind": "source",
       "module_id": "tdesktop.media.stories",
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/story-slider-view-complete-read.md",
@@ -2655,7 +2655,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_kind": "source",
       "module_id": "tdesktop.media.stories",
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/story-slider-view-complete-read.md",
@@ -2884,7 +2884,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_kind": "source",
       "module_id": "tdesktop.media.stories",
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/story-slider-view-complete-read.md",
@@ -3128,7 +3128,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_kind": "source",
       "module_id": "tdesktop.media.stories",
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/story-slider-view-complete-read.md",
@@ -3369,7 +3369,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_kind": "source",
       "module_id": "tdesktop.media.stories",
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/story-stealth-complete-read.md",
@@ -3599,7 +3599,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+      "source_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
       "source_kind": "source",
       "module_id": "tdesktop.media.stories",
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/story-stealth-complete-read.md",
@@ -3833,5 +3833,13 @@
       ],
       "notes": "Read-complete and mapped-open; no implemented/verified claim."
     }
-  ]
+  ],
+  "rebaseline": {
+    "from_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+    "to_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
+    "ahead_by": 15,
+    "changed_paths": 5,
+    "story_reads": "six story source blobs unchanged; provenance rebound after exact blob comparison",
+    "source_authority_evidence": "pending-current-head"
+  }
 }
