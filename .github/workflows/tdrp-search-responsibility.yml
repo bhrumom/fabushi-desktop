@@ -1,0 +1,44 @@
+name: TDRP canonical Search responsibility
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/src/production/command-palette-model.ts'
+      - 'desktop/e2e/tdrp-canonical-search-contract.spec.ts'
+      - '.github/workflows/tdrp-search-responsibility.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canonical-search:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact event SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Typecheck shipping renderer
+        working-directory: desktop
+        run: npm run typecheck
+      - name: Verify canonical participant replacement and dedupe
+        working-directory: desktop
+        run: npx playwright test e2e/tdrp-canonical-search-contract.spec.ts --workers=1
