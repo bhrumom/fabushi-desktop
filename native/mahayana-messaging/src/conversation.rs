@@ -655,4 +655,108 @@ mod child_destination_tests {
             },
         ));
     }
+
+    #[test]
+    fn child_runtime_read_cursor_never_moves_backwards() {
+        let destination = ConversationDestination::saved_sublist(
+            ConversationId::new("conversation:self"),
+            ActorId::new("human:peer"),
+        );
+        let mut state =
+            ConversationChildRuntimeState::new(destination, ActorId::new("human:self"))
+                .expect("valid child state");
+
+        assert!(state.advance_inbox_read_till(
+            ConversationMessagePosition::new(20, "message:20"),
+            Some(3),
+        ));
+        state.marked_unread = true;
+        assert!(!state.advance_inbox_read_till(
+            ConversationMessagePosition::new(10, "message:10"),
+            Some(9),
+        ));
+        assert_eq!(
+            state.inbox_read_till,
+            Some(ConversationMessagePosition::new(20, "message:20"))
+        );
+        assert_eq!(state.unread_count, Some(3));
+        assert!(state.marked_unread);
+
+        assert!(state.advance_inbox_read_till(
+            ConversationMessagePosition::new(30, "message:30"),
+            Some(0),
+        ));
+        assert_eq!(state.unread_count, Some(0));
+        assert!(!state.marked_unread);
+    }
+
+    #[test]
+    fn child_runtime_page_accounting_rejects_duplicates_and_bad_gaps() {
+        let mut page = ConversationChildPaginationState::default();
+        assert!(!page.replace_window(
+            vec!["message:1".into(), "message:1".into()],
+            Some(0),
+            Some(0),
+            Some(2),
+        ));
+        assert!(!page.replace_window(
+            vec!["message:2".into(), "message:1".into()],
+            Some(4),
+            Some(3),
+            Some(8),
+        ));
+        assert!(page.replace_window(
+            vec!["message:2".into(), "message:1".into()],
+            Some(4),
+            Some(3),
+            Some(9),
+        ));
+        assert!(page.has_gap_before());
+        assert!(page.has_gap_after());
+
+        assert!(page.replace_window(
+            vec!["message:2".into(), "message:1".into()],
+            Some(0),
+            Some(0),
+            Some(2),
+        ));
+        assert!(!page.has_gap_before());
+        assert!(!page.has_gap_after());
+    }
+
+    #[test]
+    fn child_runtime_preserves_pin_across_temporary_empty_and_clears_on_destroy() {
+        let destination = ConversationDestination::saved_sublist(
+            ConversationId::new("conversation:self"),
+            ActorId::new("human:peer"),
+        );
+        let mut state =
+            ConversationChildRuntimeState::new(destination, ActorId::new("human:self"))
+                .expect("valid child state");
+        state.pinned = true;
+        state.active = true;
+        state.no_paid_messages = true;
+        state.set_draft("draft", Some("message:reply".into()), 42);
+        assert!(state.pagination.replace_window(
+            vec!["message:1".into()],
+            Some(0),
+            Some(0),
+            Some(1),
+        ));
+
+        state.note_locally_empty();
+        assert!(!state.pinned);
+        assert!(state.restore_pinned_when_non_empty);
+        state.note_non_empty();
+        assert!(state.pinned);
+        assert!(!state.restore_pinned_when_non_empty);
+
+        state.destroy();
+        assert!(!state.active);
+        assert!(!state.pinned);
+        assert!(!state.no_paid_messages);
+        assert!(state.draft_text.is_empty());
+        assert!(state.pagination.message_ids.is_empty());
+    }
+
 }
