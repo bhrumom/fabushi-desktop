@@ -48,6 +48,8 @@ jobs:
   rust-host:
     runs-on: macos-15
     timeout-minutes: 90
+    env:
+      FABUSHI_TESTED_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -93,7 +95,7 @@ jobs:
           mkdir -p .evidence
           cat > .evidence/messaging-responsibilities.json <<EOF
           {
-            "head_sha": "${{ github.sha }}",
+            "head_sha": "$FABUSHI_TESTED_HEAD_SHA",
             "manifest": "native/mahayana-messaging/Cargo.toml",
             "responsibilities": [
               "scheduled-and-silent-forward-preservation",
@@ -108,7 +110,7 @@ jobs:
       - name: Upload canonical Fabushi messaging evidence
         uses: actions/upload-artifact@v4
         with:
-          name: rust-messaging-responsibilities-${{ github.sha }}
+          name: rust-messaging-responsibilities-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           path: .evidence/messaging-responsibilities.json
           if-no-files-found: error
           retention-days: 90
