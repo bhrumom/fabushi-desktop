@@ -311,6 +311,9 @@
     "closure_status": "open",
     "candidate_lines_classified": 320,
     "disposition_closure_status": "complete",
-    "recursive_authority_closure_status": "open"
+    "recursive_authority_closure_status": "open",
+    "recursive_child_input_occurrences_recorded": 10,
+    "recursive_child_unique_repositories_recorded": 8,
+    "recursive_child_unique_external_nested_scans_pending": 2
   }
 }

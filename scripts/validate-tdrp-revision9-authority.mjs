@@ -96,6 +96,20 @@ for (const acquisition of acquisitionInventory.immutable_commit_pin_occurrences 
   fail(raw.includes(acquisition.repository),'acquisition repository missing at accepted upstream: '+acquisition.id);
   fail(raw.includes(acquisition.commit),'acquisition commit missing at accepted upstream: '+acquisition.id);
 }
+const recursiveChildren=acquisitionInventory.recursive_child_inputs || [];
+fail(recursiveChildren.length===lock.build_time_acquisition_inventory.recursive_child_input_occurrences_recorded,'recursive child occurrence count drift');
+const recursiveChildIds=new Set();
+for (const child of recursiveChildren) {
+  fail(typeof child.id==='string' && child.id.length>0,'recursive child missing id');
+  fail(!recursiveChildIds.has(child.id),'duplicate recursive child id: '+child.id);
+  recursiveChildIds.add(child.id);
+  fail(/^[0-9a-f]{40}$/.test(child.parent_commit),'recursive child parent commit is not immutable: '+child.id);
+  fail(/^[0-9a-f]{40}$/.test(child.child_commit),'recursive child commit is not immutable: '+child.id);
+  const tree=await ghTree(child.parent_repository,child.parent_commit);
+  const entry=(tree.tree||[]).find(item=>item.path===child.child_path);
+  fail(entry && entry.mode==='160000','recursive child path is not a gitlink at parent: '+child.id);
+  fail(entry.sha===child.child_commit,'recursive child gitlink SHA drift: '+child.id);
+}
 const rowRequired=schema.$defs?.row?.required||[];
 const responsibilityIds=new Set();
 const targetSymbolOwners=new Map();

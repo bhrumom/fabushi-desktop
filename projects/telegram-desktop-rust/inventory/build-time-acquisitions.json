@@ -16,7 +16,10 @@
     "note": "All 320 corrected-scan candidate lines now have explicit dispositions: 17 immutable commit-pin occurrences plus 303 grouped dispositions. Candidate classification is complete, but recursive authority closure remains open because mutable refs/tags, nested submodules/gitlinks, tool bootstrap inputs, package-manager inputs, and other source/build inputs still require exact child/input accounting. This does not advance baseline_ready or acceptance.",
     "candidate_lines_classified": 320,
     "disposition_closure_status": "complete",
-    "recursive_authority_closure_status": "open"
+    "recursive_authority_closure_status": "open",
+    "recursive_child_input_occurrences_recorded": 10,
+    "recursive_child_unique_repositories_recorded": 8,
+    "recursive_child_unique_external_nested_scans_pending": 2
   },
   "immutable_commit_pin_occurrences": [
     {
@@ -941,6 +944,98 @@
       "observed_short_ref": "e1e7b0ad8e",
       "resolved_commit": null,
       "status": "pending-full-resolution"
+    }
+  ],
+  "recursive_child_inputs": [
+    {
+      "id": "tg-owt-abseil",
+      "parent_repository": "desktop-app/tg_owt",
+      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "child_path": "src/third_party/abseil-cpp",
+      "child_repository": "abseil/abseil-cpp",
+      "child_commit": "d7aaad83b488fd62bd51c81ecf16cd938532cc0a",
+      "nested_scan_status": "no-gitlinks"
+    },
+    {
+      "id": "tg-owt-crc32c",
+      "parent_repository": "desktop-app/tg_owt",
+      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "child_path": "src/third_party/crc32c/src",
+      "child_repository": "google/crc32c",
+      "child_commit": "21fc8ef30415a635e7351ffa0e5d5367943d4a94",
+      "nested_scan_status": "expanded"
+    },
+    {
+      "id": "tg-owt-libsrtp",
+      "parent_repository": "desktop-app/tg_owt",
+      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "child_path": "src/third_party/libsrtp",
+      "child_repository": "cisco/libsrtp",
+      "child_commit": "a566a9cfcd619e8327784aa7cff4a1276dc1e895",
+      "nested_scan_status": "no-gitlinks"
+    },
+    {
+      "id": "tg-owt-libyuv",
+      "parent_repository": "desktop-app/tg_owt",
+      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "child_path": "src/third_party/libyuv",
+      "child_repository": "gitlab.com/chromiumsrc/libyuv",
+      "child_commit": "04821d1e7d60845525e8db55c7bcd41ef5be9406",
+      "nested_scan_status": "pending-external-scan"
+    },
+    {
+      "id": "crc32c-googletest",
+      "parent_repository": "google/crc32c",
+      "parent_commit": "21fc8ef30415a635e7351ffa0e5d5367943d4a94",
+      "child_path": "third_party/googletest",
+      "child_repository": "google/googletest",
+      "child_commit": "3b49be074d5c1340eeb447e6a8e78427051e675a",
+      "nested_scan_status": "no-gitlinks"
+    },
+    {
+      "id": "crc32c-glog",
+      "parent_repository": "google/crc32c",
+      "parent_commit": "21fc8ef30415a635e7351ffa0e5d5367943d4a94",
+      "child_path": "third_party/glog",
+      "child_repository": "google/glog",
+      "child_commit": "56523194b3ce1212414c93d55f31832e94677f55",
+      "nested_scan_status": "no-gitlinks"
+    },
+    {
+      "id": "crc32c-benchmark",
+      "parent_repository": "google/crc32c",
+      "parent_commit": "21fc8ef30415a635e7351ffa0e5d5367943d4a94",
+      "child_path": "third_party/benchmark",
+      "child_repository": "google/benchmark",
+      "child_commit": "e991355c02b93fe17713efe04cbc2e278e00fdbd",
+      "nested_scan_status": "no-gitlinks"
+    },
+    {
+      "id": "xcb-keysyms-m4",
+      "parent_repository": "gitlab-freedesktop-mirrors/libxcb-keysyms",
+      "parent_commit": "ef5cb393d27511ba511c68a54f8ff7b9aab4a384",
+      "child_path": "m4",
+      "child_repository": "gitlab.freedesktop.org/xorg/util/xcb-util-m4",
+      "child_commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
+      "nested_scan_status": "pending-external-scan"
+    },
+    {
+      "id": "xcb-render-util-m4",
+      "parent_repository": "gitlab-freedesktop-mirrors/libxcb-render-util",
+      "parent_commit": "5ad9853d6ddcac394d42dd2d4e34436b5db9da39",
+      "child_path": "m4",
+      "child_repository": "gitlab.freedesktop.org/xorg/util/xcb-util-m4",
+      "child_commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
+      "nested_scan_status": "pending-external-scan"
+    },
+    {
+      "id": "xcb-cursor-m4",
+      "parent_repository": "gitlab-freedesktop-mirrors/libxcb-cursor",
+      "parent_commit": "4929f6051658ba5424b41703a1fb63f9db896065",
+      "child_path": "m4",
+      "child_repository": "gitlab.freedesktop.org/xorg/util/xcb-util-m4",
+      "child_commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
+      "nested_scan_status": "pending-external-scan"
     }
   ]
 }
