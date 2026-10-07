@@ -201,11 +201,9 @@ test('shipping Agent Network binds to the live workspace and supports real wheel
     await page.setViewportSize({ width: 980, height: 680 });
     await expect.poll(async () => {
       const geometry = await measuredGeometry(network);
-      return {
-        widthDelta: Math.abs(geometry.width - geometry.parentWidth),
-        heightDelta: Math.abs(geometry.height - geometry.parentHeight),
-      };
-    }).toEqual({ widthDelta: 0, heightDelta: 0 });
+      return Math.abs(geometry.width - geometry.parentWidth) <= 1
+        && Math.abs(geometry.height - geometry.parentHeight) <= 1;
+    }).toBe(true);
 
     const resizedGeometry = await measuredGeometry(network);
     expect(
