@@ -32,6 +32,10 @@ Symbols: `StealthModeBox`, `MakeButton`, `AddStealthModeMenu`.
 
 Activation is eligibility-gated. The upstream product distinguishes availability, paid entitlement, active state and cooldown state. A single surface-local `requested` fence prevents duplicate concurrent activation; the fence clears on failed completion and the authoritative state transition to active closes the surface, publishes feedback and invokes the continuation exactly once. Cooldown cannot be bypassed by repeatedly pressing the action.
 
+## Revision 9 traceability
+
+The two Story stealth ledger rows are governed by the existing Revision 9 requirements `TDRP-MOD-01`, `TDRP-MOD-02`, `TDRP-OWN-01`, `G-PRODUCTION`, `G-SECURITY-PRIVACY`, and `G-TEMPORAL`. These IDs bind the mapped privacy lifecycle to source/module completeness, canonical ownership, executable production authorization, privacy/security, and temporal recovery gates; they do not claim an implemented or verified stealth service.
+
 ## Existing-owner-first audit
 
 Current Fabushi already has:
