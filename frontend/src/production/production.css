@@ -545,3 +545,75 @@ html[data-sand-high-contrast="true"] :is(button,input,textarea,select,[role="but
   width: auto;
   max-width: 100%;
 }
+
+
+/* Canonical ConversationWorkspace forward surface.
+ * New styles bind to Fabushi semantic names first; cursor/sand values are compatibility fallbacks. */
+.fabushi-forward-dialog {
+  width: min(520px, calc(100vw - 24px));
+  max-height: min(680px, calc(100vh - 24px));
+  overflow: hidden;
+  color: var(--fabushi-text-primary, var(--cursor-text-primary));
+  background: var(--fabushi-surface-raised, var(--cursor-bg-elevated));
+  border: 1px solid var(--fabushi-border-default, var(--cursor-stroke-secondary));
+  border-radius: var(--fabushi-radius-dialog, 12px);
+  box-shadow: var(--fabushi-shadow-dialog, var(--cursor-box-shadow-xl));
+}
+.fabushi-forward-dialog > form { display: grid; min-height: 0; }
+.fabushi-forward-dialog header { display: grid; gap: 4px; padding: 18px 20px 12px; }
+.fabushi-forward-dialog header h2,
+.fabushi-forward-dialog header p,
+.fabushi-forward-dialog__recipients p { margin: 0; }
+.fabushi-forward-dialog header p,
+.fabushi-forward-dialog footer > span { color: var(--fabushi-text-secondary, var(--cursor-text-secondary)); font-size: 12px; }
+.fabushi-forward-dialog__body { display: grid; gap: 14px; min-height: 0; padding: 8px 20px 18px; }
+.fabushi-forward-dialog__search { display: grid; gap: 6px; font-size: 12px; font-weight: 600; }
+.fabushi-forward-dialog__search input {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 10px;
+  color: var(--fabushi-text-primary, var(--cursor-text-primary));
+  background: var(--fabushi-input-background, var(--cursor-bg-input));
+  border: 1px solid var(--fabushi-border-default, var(--cursor-stroke-secondary));
+  border-radius: var(--fabushi-radius-control, var(--cursor-radius-base));
+  outline: none;
+}
+.fabushi-forward-dialog__search input:focus-visible {
+  border-color: var(--fabushi-border-focus, var(--cursor-stroke-accent));
+  box-shadow: 0 0 0 2px var(--fabushi-focus-ring, color-mix(in srgb, var(--cursor-bg-accent) 25%, transparent));
+}
+.fabushi-forward-dialog__recipients {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  max-height: min(300px, 42vh);
+  padding: 4px;
+  overflow: auto;
+  background: var(--fabushi-surface-subtle, var(--cursor-bg-secondary));
+  border-radius: var(--fabushi-radius-control, var(--cursor-radius-lg));
+}
+.fabushi-forward-dialog__recipient,
+.fabushi-forward-dialog__privacy label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 6px 8px;
+  border-radius: var(--fabushi-radius-control, var(--cursor-radius-base));
+}
+.fabushi-forward-dialog__recipient:hover,
+.fabushi-forward-dialog__recipient:focus-within { background: var(--fabushi-surface-hover, var(--cursor-bg-tertiary)); }
+.fabushi-forward-dialog__recipient input,
+.fabushi-forward-dialog__privacy input { width: 16px; height: 16px; accent-color: var(--fabushi-accent, var(--cursor-bg-accent)); }
+.fabushi-forward-dialog__privacy { display: grid; gap: 2px; margin: 0; padding: 8px; border: 1px solid var(--fabushi-border-default, var(--cursor-stroke-secondary)); border-radius: var(--fabushi-radius-control, var(--cursor-radius-lg)); }
+.fabushi-forward-dialog__privacy legend { padding: 0 4px; color: var(--fabushi-text-secondary, var(--cursor-text-secondary)); font-size: 12px; font-weight: 600; }
+.fabushi-forward-dialog__error { margin: 0; color: var(--fabushi-text-danger, var(--cursor-text-error)); font-size: 12px; }
+.fabushi-forward-dialog footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--fabushi-border-default, var(--cursor-stroke-secondary)); }
+.fabushi-forward-dialog footer > span { margin-right: auto; }
+@media (max-width: 560px) {
+  .fabushi-forward-dialog { width: calc(100vw - 12px); max-height: calc(100vh - 12px); }
+  .fabushi-forward-dialog header { padding-inline: 14px; }
+  .fabushi-forward-dialog__body { padding-inline: 14px; }
+  .fabushi-forward-dialog footer { flex-wrap: wrap; }
+  .fabushi-forward-dialog footer > span { flex: 1 0 100%; }
+}
