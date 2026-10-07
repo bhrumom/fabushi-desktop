@@ -27,6 +27,7 @@ export interface ForwardMessageDialogProps {
   readonly onClose: () => void;
   readonly searchRecipients: (input: {
     sourceConversationId: string;
+    sourceEntryId: string;
     query: string;
     limit: number;
   }) => Promise<readonly ForwardRecipient[]>;
@@ -100,11 +101,16 @@ export function ForwardMessageDialog({
   }, [scopeKey, message, sourceConversationId]);
 
   useEffect(() => {
-    if (scopeKey == null || sourceConversationId == null) return;
+    if (scopeKey == null || sourceConversationId == null || message == null) return;
     const generation = ++generationRef.current;
     const timer = window.setTimeout(() => {
       setSearching(true);
-      void searchRecipients({ sourceConversationId, query, limit: 50 })
+      void searchRecipients({
+        sourceConversationId,
+        sourceEntryId: message.id,
+        query,
+        limit: 50,
+      })
         .then((next) => {
           if (generation !== generationRef.current) return;
           setRecipients(next);
@@ -121,7 +127,7 @@ export function ForwardMessageDialog({
         });
     }, query.length === 0 ? 0 : 150);
     return () => window.clearTimeout(timer);
-  }, [query, scopeKey, searchRecipients, sourceConversationId]);
+  }, [message, query, scopeKey, searchRecipients, sourceConversationId]);
 
   const selectedRecipients = useMemo(
     () => recipients.filter((recipient) => selected.has(recipient.id)),

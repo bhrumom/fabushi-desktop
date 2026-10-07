@@ -15,7 +15,10 @@ use crate::payment::Money;
 use crate::protocol::{
     ClientCommand, ClientEnvelope, ServerEnvelope, ServerEvent, FABUSHI_MESSAGING_PROTOCOL_VERSION,
 };
-use crate::search::{RecipientSearchRequirements, SearchIndex, SearchQuery, SearchResultKind};
+use crate::search::{
+    recipient_search_authorized, RecipientAuthorizationInput, RecipientSearchRequirements,
+    SearchIndex, SearchQuery, SearchResultKind,
+};
 use crate::settlement::{SettlementError, SettlementVerifier, SignedSettlement};
 use crate::store::{JournalEntry, MessagingSnapshot, MessagingStateStore, StoreError};
 use crate::wallet::{LedgerEntry, WalletAccountId};
@@ -471,38 +474,20 @@ impl<S: MessagingStateStore> MessagingService<S> {
         conversation: &Conversation,
         requirements: RecipientSearchRequirements,
     ) -> bool {
+        let state = self.engine.state();
         let sender_is_participant = conversation
             .participants
             .iter()
             .any(|participant| &participant.actor_id == actor_id)
             || conversation.owner_id.as_ref() == Some(actor_id);
-        if !sender_is_participant
-            || !conversation.permissions.can_send_messages
-            || (requirements.require_media && !conversation.permissions.can_send_media)
-            || (requirements.require_polls && !conversation.permissions.can_send_polls)
-        {
-            return false;
-        }
-
-        if let Some(member) = self
-            .engine
-            .state()
+        let community_member = state
             .communities
             .get(&conversation.id)
-            .and_then(|community| community.members.get(actor_id))
-        {
-            if matches!(member.status, MemberStatus::Left | MemberStatus::Banned)
-                || (matches!(member.status, MemberStatus::Restricted)
-                    && (member.restrictions.send_messages
-                        || (requirements.require_media && member.restrictions.send_media)
-                        || (requirements.require_polls && member.restrictions.send_polls)))
-            {
-                return false;
-            }
-        }
-
-        if matches!(conversation.kind, ConversationKind::Channel) {
-            let can_post = conversation.owner_id.as_ref() == Some(actor_id)
+            .and_then(|community| community.members.get(actor_id));
+        let restricted = community_member
+            .filter(|member| matches!(member.status, MemberStatus::Restricted));
+        let channel_posting_allowed = if matches!(conversation.kind, ConversationKind::Channel) {
+            conversation.owner_id.as_ref() == Some(actor_id)
                 || conversation.participants.iter().any(|participant| {
                     &participant.actor_id == actor_id
                         && matches!(
@@ -510,23 +495,44 @@ impl<S: MessagingStateStore> MessagingService<S> {
                             ParticipantRole::Owner | ParticipantRole::Admin
                         )
                 })
-                || self
-                    .engine
-                    .state()
-                    .communities
-                    .get(&conversation.id)
-                    .is_some_and(|community| {
-                        community.members.get(actor_id).is_some_and(|member| {
-                            matches!(member.status, MemberStatus::Administrator)
-                                && member.admin_rights.post_messages
-                        })
-                    });
-            if !can_post {
-                return false;
-            }
-        }
+                || community_member.is_some_and(|member| {
+                    matches!(member.status, MemberStatus::Administrator)
+                        && member.admin_rights.post_messages
+                })
+        } else {
+            true
+        };
 
-        true
+        recipient_search_authorized(
+            RecipientAuthorizationInput {
+                conversation_kind: conversation.kind,
+                sender_is_participant,
+                can_send_messages: conversation.permissions.can_send_messages,
+                can_send_media: conversation.permissions.can_send_media,
+                can_send_polls: conversation.permissions.can_send_polls,
+                // Conversation has no canonical send-other permission axis yet; fail closed
+                // whenever a caller requests that capability instead of assuming exposure.
+                can_send_other: false,
+                // Inline/game permissions are not yet represented by the canonical Conversation
+                // owner, so SearchRecipients refuses those typed requests until that owner exists.
+                can_send_inline: false,
+                can_send_games: false,
+                community_forbidden: community_member.is_some_and(|member| {
+                    matches!(member.status, MemberStatus::Left | MemberStatus::Banned)
+                }),
+                community_restrict_messages: restricted
+                    .is_some_and(|member| member.restrictions.send_messages),
+                community_restrict_media: restricted
+                    .is_some_and(|member| member.restrictions.send_media),
+                community_restrict_polls: restricted
+                    .is_some_and(|member| member.restrictions.send_polls),
+                community_restrict_other: false,
+                community_restrict_inline: false,
+                community_restrict_games: false,
+                channel_posting_allowed,
+            },
+            requirements,
+        )
     }
 
     fn community_members_page(

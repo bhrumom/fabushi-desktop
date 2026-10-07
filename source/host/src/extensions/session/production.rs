@@ -2468,6 +2468,7 @@ impl ProductionSessionWorkers {
     pub fn search_human_recipients(
         &self,
         source_conversation_id: &str,
+        source_entry_id: &str,
         query: &str,
         limit: usize,
     ) -> Result<Vec<serde_json::Value>, String> {
@@ -2476,12 +2477,52 @@ impl ProductionSessionWorkers {
         if !self.metadata_has_local_human(&source_metadata)? {
             return Err("local Human identity is not a participant in the source conversation".into());
         }
-
+        let source_entry_id = source_entry_id.trim();
+        if source_entry_id.is_empty() {
+            return Err("recipient search requires sourceEntryId".into());
+        }
+        let source_entry = source_owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?
+            .into_iter()
+            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(source_entry_id))
+            .ok_or_else(|| "recipient search source message is missing".to_string())?;
+        if source_entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+            || source_entry.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
+        {
+            return Err("recipient search source must be a settled canonical message".into());
+        }
+        let requirements = fabushi_messaging_core::RecipientSearchRequirements {
+            require_media: source_entry
+                .get("attachments")
+                .and_then(serde_json::Value::as_array)
+                .is_some_and(|attachments| !attachments.is_empty()),
+            source_protected_content: source_entry
+                .get("protectedContent")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+            ..fabushi_messaging_core::RecipientSearchRequirements::default()
+        };
+        let local_human_id = self.local_human_id()?;
         let normalized_query = query.trim().to_lowercase();
         let mut recipients = self
             .list_human_conversations()?
             .into_iter()
             .filter(|conversation| {
+                let sender_is_participant = conversation
+                    .get("participantIds")
+                    .and_then(serde_json::Value::as_array)
+                    .is_some_and(|ids| {
+                        ids.iter().any(|id| id.as_str() == Some(local_human_id))
+                    });
+                if !fabushi_messaging_core::recipient_search_authorized(
+                    fabushi_messaging_core::RecipientAuthorizationInput::direct_default(
+                        sender_is_participant,
+                    ),
+                    requirements,
+                ) {
+                    return false;
+                }
                 if normalized_query.is_empty() {
                     return true;
                 }
@@ -3498,7 +3539,9 @@ mod sharebox_shipping_tests {
             .unwrap();
         let source_entry_id = source_entry.get("id").and_then(serde_json::Value::as_str).unwrap();
 
-        let search = workers.search_human_recipients(&source, "beta", 50).unwrap();
+        let search = workers
+            .search_human_recipients(&source, source_entry_id, "beta", 50)
+            .unwrap();
         assert_eq!(search.len(), 1);
         assert_eq!(search[0].get("id").and_then(serde_json::Value::as_str), Some(beta.as_str()));
 

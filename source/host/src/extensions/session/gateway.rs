@@ -343,16 +343,18 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 .map_err(SessionGatewayError::internal)
         }),
         "searchHumanRecipients" => required_string(args, "sourceConversationId").and_then(|source_conversation_id| {
-            let query = optional_string(args, "query")?.unwrap_or_default();
-            let limit = args
-                .get("limit")
-                .and_then(Value::as_u64)
-                .and_then(|value| usize::try_from(value).ok())
-                .unwrap_or(50);
-            session
-                .search_human_recipients(source_conversation_id, query, limit)
-                .map(Value::Array)
-                .map_err(SessionGatewayError::internal)
+            required_string(args, "sourceEntryId").and_then(|source_entry_id| {
+                let query = optional_string(args, "query")?.unwrap_or_default();
+                let limit = args
+                    .get("limit")
+                    .and_then(Value::as_u64)
+                    .and_then(|value| usize::try_from(value).ok())
+                    .unwrap_or(50);
+                session
+                    .search_human_recipients(source_conversation_id, source_entry_id, query, limit)
+                    .map(Value::Array)
+                    .map_err(SessionGatewayError::internal)
+            })
         }),
         "forwardHumanMessage" => required_string(args, "sourceConversationId").and_then(|source_conversation_id| {
             required_string(args, "sourceEntryId").and_then(|source_entry_id| {
