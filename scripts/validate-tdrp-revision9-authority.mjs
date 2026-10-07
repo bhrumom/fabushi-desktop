@@ -232,6 +232,25 @@ for (const [name,stage] of [['prepare.py',prepareLibavifStage],['Dockerfile',doc
 }
 fail(snapLibavifStage.includes('source-tag: v1.3.0'),'accepted Snap libavif ref drift');
 
+const adaReachability=recursiveReachability.ada;
+fail(adaReachability?.repository==='https://github.com/ada-url/ada','Ada reachability authority missing');
+fail(adaReachability.commit==='010f7c45aeaff1205452e7da2df8702cf725fb3e','Ada reachability commit drift');
+fail(adaReachability.root_candidate_policy_status==='complete-for-current-ada-authority','Ada root candidate policy is not fail-closed complete');
+const adaPolicy=adaReachability.root_candidate_disposition_policy||[];
+for (const [kind,value] of [
+  ['path_prefix','.github/'],['path_prefix','cmake/'],['path_prefix','benchmarks/'],
+  ['path_prefix','tools/'],['path_prefix','tests/'],['path_exact','README.md']
+]) fail(adaPolicy.some(rule=>rule[kind]===value),'Ada acquisition disposition missing: '+value);
+const prepareAdaStage=prepareQt.match(/stage\('ada',[\s\S]*?\n"""\)/)?.[0]||'';
+const dockerAdaStage=dockerQt.match(/FROM builder AS ada[\s\S]*?rm -rf ada/)?.[0]||'';
+const snapAdaStage=snapQt.match(/\n  ada:\n[\s\S]*?\n  avif:/)?.[0]||'';
+for (const [name,stage] of [['prepare.py',prepareAdaStage],['Dockerfile',dockerAdaStage],['snapcraft.yaml',snapAdaStage]]) {
+  fail(stage.includes('ADA_TESTING=OFF'),'accepted Ada build lost ADA_TESTING=OFF in '+name);
+  fail(stage.includes('ADA_TOOLS=OFF'),'accepted Ada build lost ADA_TOOLS=OFF in '+name);
+  fail(stage.includes('ADA_INCLUDE_URL_PATTERN=OFF'),'accepted Ada build lost ADA_INCLUDE_URL_PATTERN=OFF in '+name);
+}
+fail(snapAdaStage.includes('source-tag: v3.2.4'),'accepted Snap Ada ref drift');
+
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
 fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');
