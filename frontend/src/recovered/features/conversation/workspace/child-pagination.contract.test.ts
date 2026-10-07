@@ -78,7 +78,11 @@ test("same-around duplicate coalesces into exactly one retry after settlement", 
 test("stale before boundary is discarded and retried against the fresh boundary", async () => {
   let beforeBoundary = "m10";
   const requests: ConversationChildPageRequest[] = [];
-  const pending = [deferred<ConversationChildPage>(), deferred<ConversationChildPage>()];
+  const pending = [
+    deferred<ConversationChildPage>(),
+    deferred<ConversationChildPage>(),
+    deferred<ConversationChildPage>()
+  ];
   const commits: string[] = [];
   const controller = createConversationChildPageRequestController({
     fetchPage: (request) => {
@@ -90,30 +94,42 @@ test("stale before boundary is discarded and retried against the fresh boundary"
   });
 
   controller.setScope("saved:one");
-  const first = controller.loadBefore();
+  let settled = false;
+  const first = controller.loadBefore().then(() => {
+    settled = true;
+  });
   assert.equal(requests[0].anchor, "m10");
 
   beforeBoundary = "m9";
   pending[0].resolve(page("stale"));
-  await first;
+  await pending[0].promise;
+  await Promise.resolve();
   await Promise.resolve();
 
   assert.deepEqual(commits, []);
+  assert.equal(settled, false);
   assert.equal(requests.length, 2);
   assert.equal(requests[1].anchor, "m9");
+  assert.equal(controller.getSnapshot().inFlight.before, true);
 
   beforeBoundary = "m8";
   pending[1].resolve(page("still-stale"));
   await pending[1].promise;
   await Promise.resolve();
+  await Promise.resolve();
+
   assert.deepEqual(commits, []);
+  assert.equal(settled, false);
   assert.equal(requests.length, 3);
   assert.equal(requests[2].anchor, "m8");
+  assert.equal(controller.getSnapshot().inFlight.before, true);
 
   pending[2].resolve(page("fresh"));
-  await pending[2].promise;
-  await Promise.resolve();
+  await first;
+
+  assert.equal(settled, true);
   assert.deepEqual(commits, ["fresh"]);
+  assert.equal(controller.getSnapshot().inFlight.before, false);
 });
 
 test("around supersedes an in-flight before request and prevents its commit", async () => {
