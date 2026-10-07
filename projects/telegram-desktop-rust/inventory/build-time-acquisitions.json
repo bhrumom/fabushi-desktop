@@ -1272,6 +1272,11 @@
           "path_exact": "cmake/QtIRGitHelpers.cmake",
           "disposition": "qt-init-repository-helper-not-invoked",
           "basis": "Accepted TDesktop Qt acquisition explicitly initializes only the selected qt5 submodules with git submodule update, then configures/builds the checked-out tree; it does not invoke Qt init-repository or its QtIRGitHelpers clone/fetch machinery."
+        },
+        {
+          "path_exact": "cmake/QtIRHelp.txt",
+          "disposition": "qt-init-repository-documentation-not-invoked",
+          "basis": "QtIRHelp documents init-repository clone/fetch/submodule options. Accepted TDesktop acquisition uses explicit selected submodule updates and does not execute Qt init-repository."
         }
       ],
       "root_candidate_policy_status": "complete-for-current-qt-authorities"
