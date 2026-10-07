@@ -1021,4 +1021,92 @@ fn sync_projects_only_actor_scoped_typed_child_runtime_state() {
             ..
         } if conversation_child_states == &vec![own_child.clone()]
     )));
+
+    let child_destination = own_child.destination.clone();
+    let pinned = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:child-owner"),
+                ClientCommand::UpdateConversationChild {
+                    destination: child_destination.clone(),
+                    mutation: ConversationChildMutation::SetPinned { pinned: true },
+                },
+            ),
+            5,
+        )
+        .unwrap();
+    assert!(pinned.iter().any(|envelope| matches!(
+        &envelope.event,
+        ServerEvent::ConversationChildChanged {
+            actor_id,
+            state: Some(state),
+            ..
+        } if actor_id == &actor && state.pinned
+    )));
+
+    let drafted = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:child-owner"),
+                ClientCommand::UpdateConversationChild {
+                    destination: child_destination.clone(),
+                    mutation: ConversationChildMutation::SetDraft {
+                        text: "updated draft".into(),
+                        reply_to_message_id: Some("message:reply".into()),
+                        updated_at_ms: 6,
+                    },
+                },
+            ),
+            6,
+        )
+        .unwrap();
+    assert!(drafted.iter().any(|envelope| matches!(
+        &envelope.event,
+        ServerEvent::ConversationChildChanged {
+            state: Some(state),
+            ..
+        } if state.draft_text == "updated draft"
+            && state.draft_reply_to_message_id.as_deref() == Some("message:reply")
+    )));
+
+    let destroyed = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:child-owner"),
+                ClientCommand::UpdateConversationChild {
+                    destination: child_destination.clone(),
+                    mutation: ConversationChildMutation::Destroy,
+                },
+            ),
+            7,
+        )
+        .unwrap();
+    assert!(destroyed.iter().any(|envelope| matches!(
+        &envelope.event,
+        ServerEvent::ConversationChildChanged {
+            destination,
+            actor_id,
+            state: None,
+        } if destination == &child_destination && actor_id == &actor
+    )));
+
+    let sync_after_destroy = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:child-owner"),
+                ClientCommand::Sync {
+                    cursor: None,
+                    limit: 100,
+                },
+            ),
+            8,
+        )
+        .unwrap();
+    assert!(sync_after_destroy.iter().any(|envelope| matches!(
+        &envelope.event,
+        ServerEvent::SyncBatch {
+            conversation_child_states,
+            ..
+        } if conversation_child_states.is_empty()
+    )));
 }
