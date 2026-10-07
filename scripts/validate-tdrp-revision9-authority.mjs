@@ -375,6 +375,60 @@ fail(dockerBreakpadStage.includes('./configure')&&dockerBreakpadStage.includes('
 fail(!dockerBreakpadStage.includes('src/testing'),'accepted Breakpad Docker stage unexpectedly initializes testing dependency');
 fail(!/\bgclient\b|depot_tools/.test(dockerBreakpadStage),'accepted Breakpad Docker stage unexpectedly invokes upstream dependency bootstrap');
 
+const highwayReachability=recursiveReachability.highway;
+fail(highwayReachability?.repository==='https://github.com/google/highway','Highway reachability authority missing');
+fail(highwayReachability.commit==='2607d3b5b0113992fe84d3848859eae13b3b52c1','Highway reachability commit drift');
+fail(highwayReachability.root_candidate_policy_status==='complete-for-current-highway-authority','Highway root candidate policy is not fail-closed complete');
+const highwayPolicy=highwayReachability.root_candidate_disposition_policy||[];
+for (const [kind,value] of [
+  ['path_prefix','.github/'],['path_prefix','hwy/contrib/'],['path_prefix','g3doc/'],['path_prefix','docs/'],
+  ['path_exact','README.md'],['path_exact','WORKSPACE'],['path_exact','CMakeLists.txt.in'],['path_exact','hwy/abort_test.cc']
+]) fail(highwayPolicy.some(rule=>rule[kind]===value),'Highway acquisition disposition missing: '+value);
+const dockerHighwayStage=dockerStage(dockerQt,'highway');
+fail(dockerHighwayStage.length>0,'unable to isolate accepted Highway Docker stage');
+fail(dockerHighwayStage.includes('git clone -b 1.4.0 --depth=1 https://github.com/google/highway.git'),'accepted Highway Docker ref drift');
+for (const option of ['BUILD_TESTING=OFF','HWY_ENABLE_CONTRIB=OFF','HWY_ENABLE_EXAMPLES=OFF']) {
+  fail(dockerHighwayStage.includes(option),'accepted Highway Docker option drift: '+option);
+}
+
+const brotliReachability=recursiveReachability.brotli;
+fail(brotliReachability?.repository==='https://github.com/google/brotli','Brotli reachability authority missing');
+fail(brotliReachability.commit==='028fb5a23661f123017c060daa546b55cf4bde29','Brotli reachability commit drift');
+fail(brotliReachability.root_candidate_policy_status==='complete-for-current-brotli-authority','Brotli root candidate policy is not fail-closed complete');
+const brotliPolicy=brotliReachability.root_candidate_disposition_policy||[];
+for (const [kind,value] of [
+  ['path_prefix','.github/'],['path_exact','README.md'],['path_prefix','python/'],['path_prefix','fetch-spec/'],
+  ['path_exact','csharp/transpile.sh'],['path_exact','scripts/download_testdata.sh']
+]) fail(brotliPolicy.some(rule=>rule[kind]===value),'Brotli acquisition disposition missing: '+value);
+const dockerBrotliStage=dockerStage(dockerQt,'brotli');
+fail(dockerBrotliStage.length>0,'unable to isolate accepted Brotli Docker stage');
+fail(dockerBrotliStage.includes('git clone -b v1.2.0 --depth=1 https://github.com/google/brotli.git'),'accepted Brotli Docker ref drift');
+fail(dockerBrotliStage.includes('BUILD_SHARED_LIBS=OFF'),'accepted Brotli Docker shared-library option drift');
+fail(dockerBrotliStage.includes('BROTLI_DISABLE_TESTS=ON'),'accepted Brotli Docker test option drift');
+
+const opusReachability=recursiveReachability.opus;
+fail(opusReachability?.repository==='https://github.com/xiph/opus','Opus reachability authority missing');
+fail(opusReachability.commit==='ddbe48383984d56acd9e1ab6a090c54ca6b735a6','Opus reachability commit drift');
+fail(opusReachability.root_candidate_policy_status==='complete-for-current-opus-authority','Opus root candidate policy is not fail-closed complete');
+const opusPolicy=opusReachability.root_candidate_disposition_policy||[];
+for (const [kind,value] of [
+  ['path_prefix','.github/'],['path_exact','.gitlab-ci.yml'],['path_exact','README'],['path_exact','README.draft'],
+  ['path_exact','dnn/download_model.sh'],['path_prefix','dnn/torch/'],['path_prefix','doc/'],['path_exact','scripts/local_build.py']
+]) fail(opusPolicy.some(rule=>rule[kind]===value),'Opus acquisition disposition missing: '+value);
+const prepareOpusStage=prepareQt.match(/stage\('opus',[\s\S]*?\n"""\)/)?.[0]||'';
+const dockerOpusStage=dockerStage(dockerQt,'opus');
+for (const [name,stage] of [['prepare.py',prepareOpusStage],['Dockerfile',dockerOpusStage]]) {
+  fail(stage.length>0,'unable to isolate accepted Opus build stage in '+name);
+  fail(stage.includes('git clone -b v1.5.2'),'accepted Opus ref drift in '+name);
+  fail(!stage.includes('dnn/download_model.sh')&&!stage.includes('dnn/torch/')&&!stage.includes('scripts/local_build.py'),'accepted Opus stage unexpectedly invokes upstream helper in '+name);
+}
+const opusCmake=await get('https://raw.githubusercontent.com/xiph/opus/'+opusReachability.commit+'/CMakeLists.txt',false);
+for (const option of ['OPUS_BUILD_TESTING','OPUS_BUILD_PROGRAMS','OPUS_DRED','OPUS_OSCE']) {
+  const pattern=new RegExp('option\\('+option+'[^\\n]*OFF\\)');
+  fail(pattern.test(opusCmake),'Opus CMake default no longer keeps '+option+' OFF');
+}
+fail(!opusCmake.includes('download_model.sh')&&!opusCmake.includes('dnn/torch/'),'Opus production CMake unexpectedly invokes neural acquisition/training helper');
+
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
 fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');

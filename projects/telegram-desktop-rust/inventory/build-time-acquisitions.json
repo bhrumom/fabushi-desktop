@@ -1959,6 +1959,176 @@
       ],
       "root_candidate_policy_status": "complete-for-current-breakpad-authorities",
       "note": "This closes acquisition-pattern candidates for both independently acquired Breakpad root snapshots. The selected googletest/LSS inputs, TDesktop breakpad.diff patch authority, and any recursively discovered gitlink/source inputs remain separately governed by root/child/patch reachability accounting."
+    },
+    "highway": {
+      "repository": "https://github.com/google/highway",
+      "commit": "2607d3b5b0113992fe84d3848859eae13b3b52c1",
+      "ref": "1.4.0",
+      "build_entries": [
+        "Telegram/build/docker/centos_env/Dockerfile"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "The accepted highway stage shallow-clones tag 1.4.0, configures CMake with BUILD_TESTING=OFF, HWY_ENABLE_CONTRIB=OFF and HWY_ENABLE_EXAMPLES=OFF, builds and installs directly, and does not invoke Highway CI, docs, Bazel workspace acquisition, contrib helpers or test dependency templates."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-highway-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "hwy/contrib/",
+          "disposition": "upstream-highway-contrib-disabled",
+          "basis": "Accepted TDesktop passes HWY_ENABLE_CONTRIB=OFF; candidate fetch/install strings under contrib are not executed."
+        },
+        {
+          "path_prefix": "g3doc/",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_prefix": "docs/",
+          "disposition": "upstream-highway-doc-helper-not-invoked"
+        },
+        {
+          "path_exact": "README.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "CONTRIBUTING",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "WORKSPACE",
+          "disposition": "bazel-metadata-not-invoked",
+          "basis": "Accepted TDesktop uses CMake, not Bazel."
+        },
+        {
+          "path_exact": "CMakeLists.txt.in",
+          "disposition": "test-dependency-template-disabled",
+          "basis": "The googletest external-project template belongs to Highway testing; accepted TDesktop configures BUILD_TESTING=OFF."
+        },
+        {
+          "path_exact": "hwy/abort_test.cc",
+          "disposition": "test-source-disabled",
+          "basis": "Accepted TDesktop configures BUILD_TESTING=OFF."
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-highway-authority",
+      "note": "This closes acquisition-pattern candidates for the immutable Highway 1.4.0 root used by the accepted Docker build. Highway runtime/SIMD product behavior remains in semantic migration scope."
+    },
+    "brotli": {
+      "repository": "https://github.com/google/brotli",
+      "commit": "028fb5a23661f123017c060daa546b55cf4bde29",
+      "ref": "v1.2.0",
+      "build_entries": [
+        "Telegram/build/docker/centos_env/Dockerfile"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "The accepted brotli stage shallow-clones v1.2.0, configures a static CMake build with BROTLI_DISABLE_TESTS=ON, builds and installs directly, and does not invoke upstream CI, language transpilers, testdata download scripts or README/package installation examples."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-brotli-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_exact": "CONTRIBUTING.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "README.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_prefix": "python/",
+          "disposition": "upstream-brotli-python-package-doc-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "fetch-spec/",
+          "disposition": "specification-text-not-acquisition"
+        },
+        {
+          "path_exact": "csharp/transpile.sh",
+          "disposition": "upstream-brotli-csharp-transpiler-not-invoked"
+        },
+        {
+          "path_exact": "scripts/download_testdata.sh",
+          "disposition": "upstream-brotli-testdata-helper-not-invoked",
+          "basis": "Accepted TDesktop configures BROTLI_DISABLE_TESTS=ON and never invokes this script."
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-brotli-authority",
+      "note": "This closes acquisition-pattern candidates for the immutable Brotli v1.2.0 root used by accepted Docker. Brotli compression/decompression behavior remains in semantic migration scope."
+    },
+    "opus": {
+      "repository": "https://github.com/xiph/opus",
+      "commit": "ddbe48383984d56acd9e1ab6a090c54ca6b735a6",
+      "ref": "v1.5.2",
+      "build_entries": [
+        "Telegram/build/prepare/prepare.py",
+        "Telegram/build/docker/centos_env/Dockerfile"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "The accepted Opus stage clones v1.5.2 and invokes CMake directly for the library. Upstream CMake defaults OPUS_BUILD_TESTING, OPUS_BUILD_PROGRAMS, OPUS_DRED and OPUS_OSCE to OFF; the TDesktop stage does not invoke Opus CI, local_build.py, documentation generators, DNN model download/training helpers or alternate package-manager instructions."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "The accepted Docker opus stage shallow-clones v1.5.2, runs plain CMake build/install, and does not invoke Opus CI, docs, neural-training download helpers or local multi-build tooling."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-opus-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_exact": ".gitlab-ci.yml",
+          "disposition": "upstream-opus-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_exact": "README",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "README.draft",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_prefix": "cmake/README",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_prefix": "meson/README",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "dnn/download_model.sh",
+          "disposition": "upstream-opus-neural-model-download-helper-not-invoked",
+          "basis": "Accepted TDesktop does not invoke this helper; exact Opus CMake defaults optional DRED/OSCE features off."
+        },
+        {
+          "path_prefix": "dnn/torch/",
+          "disposition": "upstream-opus-neural-training-helper-not-invoked",
+          "basis": "These are model training/data acquisition helpers; accepted TDesktop invokes the production CMake library build and exact CMake contains no dnn/torch or download_model invocation."
+        },
+        {
+          "path_prefix": "doc/",
+          "disposition": "upstream-opus-doc-helper-not-invoked"
+        },
+        {
+          "path_exact": "scripts/local_build.py",
+          "disposition": "upstream-opus-developer-build-helper-not-invoked"
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-opus-authority",
+      "note": "This closes acquisition-pattern candidates for the immutable Opus v1.5.2 root used by accepted prepare/Docker builds. Codec/runtime semantics remain in source responsibility scope."
     }
   }
 }

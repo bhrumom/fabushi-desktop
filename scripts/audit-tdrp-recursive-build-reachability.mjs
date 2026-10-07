@@ -243,6 +243,27 @@ for (const authority of breakpad.observed_authorities||[]) {
   );
 }
 
+const highway=rules.highway;
+auditRootCandidates(
+  keyOf(highway.repository,highway.commit),
+  highway.root_candidate_disposition_policy,
+  {requireComplete:highway.root_candidate_policy_status==='complete-for-current-highway-authority',scope:'highway-root-candidates'}
+);
+
+const brotli=rules.brotli;
+auditRootCandidates(
+  keyOf(brotli.repository,brotli.commit),
+  brotli.root_candidate_disposition_policy,
+  {requireComplete:brotli.root_candidate_policy_status==='complete-for-current-brotli-authority',scope:'brotli-root-candidates'}
+);
+
+const opus=rules.opus;
+auditRootCandidates(
+  keyOf(opus.repository,opus.commit),
+  opus.root_candidate_disposition_policy,
+  {requireComplete:opus.root_candidate_policy_status==='complete-for-current-opus-authority',scope:'opus-root-candidates'}
+);
+
 const result={
   project_id:'TDRP-001',
   spec_revision:9,

@@ -34,4 +34,4 @@ Start with:
 
 This work is source-informed, not clean-room. Source/provenance and licensing review remain release gates.
 
-All builds and tests run only in GitHub Actions or on `htch-runtime`.
+Repository-wide execution follows `AGENTS.md`; FBCP/TDRP executable verification and acceptance run in GitHub Actions only.
