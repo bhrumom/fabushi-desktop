@@ -50,9 +50,17 @@ const lock=await readJson('projects/telegram-desktop-rust/upstream.lock.json');
 const schema=await readJson('projects/telegram-desktop-rust/contracts/parity-ledger.schema.json');
 const spec=await read('docs/specs/telegram-desktop-rust-equivalence-migration.md');
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');
+const ledger=await readJson('projects/telegram-desktop-rust/parity-ledger.json');
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
 fail(schema.properties?.spec_revision?.const===9,'ledger schema is not Revision 9');
+fail(ledger.project_id==='TDRP-001' && ledger.spec_revision===9 && ledger.format_version===3,'ledger instance is not Revision 9');
+fail(ledger.upstream_commit===lock.upstream.commit,'ledger upstream commit does not match accepted baseline identity');
+fail(ledger.coverage?.source_entries_total===lock.coverage.recursive_source_entries_total,'ledger recursive source count does not match lock');
+fail(ledger.coverage?.unknown>=lock.coverage.unknown_minimum,'ledger unknown count understates lock minimum');
+fail(ledger.coverage?.unread>=lock.coverage.unread_minimum,'ledger unread count understates lock minimum');
+fail(ledger.coverage?.omitted===lock.coverage.omitted_known,'ledger omitted count disagrees with lock');
+fail(Array.isArray(ledger.rows),'ledger rows must be an array');
 for (const field of ['source_symbols','responsibility_id','existing_owner','fabushi_target_symbols','production_entrypoints','composition_root','search_scope','design_system_version','requirement_ids','oracle_ids','invariant_ids','test_execution_evidence']) {
   fail(JSON.stringify(schema).includes('"'+field+'"'),'schema missing '+field);
 }
@@ -166,7 +174,7 @@ const report={
   root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,recursive_non_directory_entries:recursiveInventory.length,
   direct_component_counts:directComponentCounts,github_nested_gitlinks:nested,github_nested_component_counts:githubNestedCounts,
   gitlab_cppgir_entries:cppTree.length,cppgir_child:{path:childPath,repository:childRepo,commit:cppNested[0].id,entries:childEntries.length},
-  build_time_pin_changes:lock.build_time_pin_changes,coverage:lock.coverage,
+  build_time_pin_changes:lock.build_time_pin_changes,coverage:lock.coverage,ledger_coverage:ledger.coverage,
   baseline_accepted:u.accepted,source_closure_ready:lock.acceptance.baseline_ready
 };
 await fs.writeFile(path.join(root,'artifacts/tdrp-authority/authority-report.json'),JSON.stringify(report,null,2)+'\n');
@@ -175,8 +183,11 @@ if (requireAccepted) {
   fail(u.accepted===true,'accepted mode requires upstream.accepted=true');
   fail(lock.acceptance.accepted===true,'accepted mode requires acceptance.accepted=true');
   fail(lock.acceptance.baseline_ready===true,'accepted mode requires baseline_ready=true');
-  fail(lock.coverage.unknown===0,'G-INVENTORY unknown must be 0');
-  fail(lock.coverage.unread===0,'G-INVENTORY unread must be 0');
-  fail(lock.coverage.omitted===0,'G-INVENTORY omitted must be 0');
+  fail(ledger.target_commit===(process.env.GITHUB_SHA||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
+  fail(ledger.coverage.unknown===0,'G-INVENTORY unknown must be 0');
+  fail(ledger.coverage.unread===0,'G-INVENTORY unread must be 0');
+  fail(ledger.coverage.omitted===0,'G-INVENTORY omitted must be 0');
+  fail(ledger.coverage.unmapped_responsibilities===0,'G-TRACEABILITY unmapped responsibilities must be 0');
+  fail(ledger.rows.length>0,'G-FILE/G-TRACEABILITY ledger cannot be empty at closure');
 }
 console.log(JSON.stringify(report,null,2));
