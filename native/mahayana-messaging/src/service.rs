@@ -3,7 +3,8 @@ use crate::blob_store::{BlobStoreError, FileBlobStore};
 use crate::bot::BotInvocation;
 use crate::community::{CommunityState, MemberStatus};
 use crate::conversation::{
-    Conversation, ConversationDraft, ConversationId, ConversationKind, Topic, TopicDraft,
+    Conversation, ConversationDestination, ConversationDraft, ConversationId, ConversationKind,
+    Topic, TopicDraft,
 };
 use crate::engine::topic_id_from_root;
 use crate::engine::{Command, EngineError, Event, MessagingEngine};
@@ -1433,11 +1434,23 @@ impl<S: MessagingStateStore> MessagingService<S> {
         server_time_ms: i64,
     ) -> u32 {
         let state = self.engine.state();
-        let cursor = state
+        let destination = ConversationDestination::topic(
+            conversation_id.clone(),
+            format!("topic:{topic_id}"),
+        );
+        let typed_cursor = state
+            .conversation_child_states
+            .iter()
+            .find(|child| child.destination == destination && &child.actor_id == actor_id)
+            .and_then(|child| child.inbox_read_till.as_ref())
+            .map(|position| position.message_id.as_str());
+        let legacy_cursor = state
             .topic_read_cursors
             .get(conversation_id)
             .and_then(|by_actor| by_actor.get(actor_id))
-            .and_then(|by_topic| by_topic.get(topic_id));
+            .and_then(|by_topic| by_topic.get(topic_id))
+            .map(|message_id| message_id.0.as_str());
+        let cursor_message_id = typed_cursor.or(legacy_cursor);
         let mut messages = state
             .messages
             .get(conversation_id)
@@ -1449,10 +1462,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 .cmp(&right.created_at_ms)
                 .then_with(|| left.id.cmp(&right.id))
         });
-        let read_index = cursor.and_then(|message_id| {
+        let read_index = cursor_message_id.and_then(|message_id| {
             messages
                 .iter()
-                .position(|message| &message.id == message_id)
+                .position(|message| message.id.0 == message_id)
         });
         let unread = messages
             .iter()
