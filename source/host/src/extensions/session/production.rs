@@ -3562,6 +3562,56 @@ mod sharebox_shipping_tests {
     }
 
     #[test]
+    fn shipping_human_forward_revalidates_recipient_authority_after_search() {
+        let root = std::env::temp_dir().join(format!("fabushi-forward-revalidate-{}", Uuid::new_v4()));
+        let workers = test_workers(&root);
+        let source = conversation_id(&workers.create_human_conversation("human-source", "Source").unwrap());
+        let beta = conversation_id(&workers.create_human_conversation("human-beta", "Beta").unwrap());
+
+        let source_entry = workers
+            .append_human_message(&source, "forward me", "source-revalidate", Some(10.0), None, &[])
+            .unwrap();
+        let source_entry_id = source_entry.get("id").and_then(serde_json::Value::as_str).unwrap();
+
+        let visible = workers
+            .search_human_recipients(&source, source_entry_id, "beta", 50)
+            .unwrap();
+        assert_eq!(visible.len(), 1);
+        assert_eq!(visible[0].get("id").and_then(serde_json::Value::as_str), Some(beta.as_str()));
+
+        let beta_owner = workers.open_human_conversation_db_owner(&beta).unwrap();
+        assert!(beta_owner
+            .set_metadata("participantIds", serde_json::json!(["human-beta"]))
+            .unwrap());
+
+        let settlement = workers
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                std::slice::from_ref(&beta),
+                "forward-revalidate-request",
+                false,
+                false,
+            )
+            .unwrap();
+        assert_eq!(
+            settlement.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("failed"),
+        );
+        assert!(settlement
+            .pointer("/destinations/0/error")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|error| error.contains("no longer authorized")));
+        assert!(
+            workers.read_human_conversation_transcript(&beta).unwrap().is_empty(),
+            "submit-time authorization must fail before a destination transcript mutation"
+        );
+
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn shipping_human_forward_reuses_session_owner_across_retry_and_restart() {
         let root = std::env::temp_dir().join(format!("fabushi-forward-{}", Uuid::new_v4()));
         let workers = test_workers(&root);
