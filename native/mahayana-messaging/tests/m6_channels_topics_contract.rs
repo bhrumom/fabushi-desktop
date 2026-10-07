@@ -488,7 +488,9 @@ fn channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped() 
             if conversations.iter().any(|conversation| {
                 conversation.id == ConversationId::new("channel:m6")
                     && conversation.topics.iter().any(|topic| {
-                        topic.id == "study" && topic.unread_count == 1
+                        // The subscriber has not read either the original topic post
+                        // or the successful same-topic forward exercised above.
+                        topic.id == "study" && topic.unread_count == 2
                     })
             })
     ));
