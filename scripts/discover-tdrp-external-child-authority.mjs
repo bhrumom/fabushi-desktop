@@ -289,7 +289,11 @@ for (const actual of report.targets) {
     fail(value === expected[key], actual.id + ' ' + key + ' drift: ' + value + ' != ' + expected[key]);
   }
   fail(actual.lfs_attribute_detected === expected.lfs_attribute_detected, actual.id + ' LFS attribute drift');
-  fail(JSON.stringify(actual.disposition_counts) === JSON.stringify(expected.disposition_counts), actual.id + ' disposition counts drift');
+  const actualDispositionKeys = Object.keys(actual.disposition_counts).sort();
+  const expectedDispositionKeys = Object.keys(expected.disposition_counts || {}).sort();
+  fail(actualDispositionKeys.length === expectedDispositionKeys.length && actualDispositionKeys.every((key, index) =>
+    key === expectedDispositionKeys[index] && actual.disposition_counts[key] === expected.disposition_counts[key]
+  ), actual.id + ' disposition counts drift: ' + JSON.stringify(actual.disposition_counts) + ' != ' + JSON.stringify(expected.disposition_counts));
   fail(actual.acquisition_dispositions.length === actual.acquisition_candidate_count, actual.id + ' has undispositioned acquisition candidates');
   if (actual.id === 'tg-owt-libyuv') {
     fail(actual.parent_build_exclusion.references.length === expected.parent_build_exclusion.expected_reference_count,
