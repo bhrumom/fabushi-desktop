@@ -14,7 +14,7 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15788,
-    "unread_minimum": 15773,
+    "unread_minimum": 15771,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -39,5 +39,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "This index records machine inventory evidence, not semantic completion. Fifteen exact upstream source entries are read end-to-end, so unread_minimum is 15,773; unknown_minimum remains 15,788 because those files are not responsibility-closed. The live parity ledger remains fail-closed until every source responsibility is read, mapped, implemented, tested, and evidenced."
+  "note": "This index records machine inventory evidence, not semantic completion. Seventeen exact upstream source entries are read end-to-end, so unread_minimum is 15,771; unknown_minimum remains 15,788 because those files are not responsibility-closed. The live parity ledger remains fail-closed until every source responsibility is read, mapped, implemented, tested, and evidenced."
 }
