@@ -111,6 +111,34 @@ async function ensureE2eAuthBackend(): Promise<string> {
         }));
         return;
       }
+      // The shipping logged-in workspace immediately asks the Host to reconcile
+      // canonical Human contacts and calls. Keep this focused backend honest by
+      // implementing the production HTTP envelopes instead of letting those
+      // requests fall through to the auth-only 404 handler. An empty social
+      // account is valid and prevents unrelated Human sync failures from
+      // aborting the Agent Network route transition.
+      if (requestUrl.pathname === '/api/social/friends' && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || request.headers['x-fabushi-device-id'] !== 'fabushi-agent-network-e2e-device') {
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-session' }));
+          return;
+        }
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, data: { friends: [] } }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/calls' && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || request.headers['x-fabushi-device-id'] !== 'fabushi-agent-network-e2e-device') {
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-session' }));
+          return;
+        }
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, calls: [] }));
+        return;
+      }
       response.statusCode = 404;
       response.end(JSON.stringify({ error: 'not-found' }));
     });
