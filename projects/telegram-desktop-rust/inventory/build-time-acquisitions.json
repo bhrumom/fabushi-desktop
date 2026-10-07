@@ -1448,6 +1448,90 @@
       ],
       "root_candidate_policy_status": "complete-for-current-tg-owt-authority",
       "note": "This closes acquisition-pattern candidates for the tg_owt root authority only; child authorities and their own inputs remain governed by recursive closure/reachability accounting."
+    },
+    "libjxl": {
+      "repository": "https://github.com/libjxl/libjxl",
+      "commit": "a7a9c787341cf703dede03c2009fa460cae5e5df",
+      "ref": "v0.12.0",
+      "build_entries": [
+        "Telegram/build/prepare/prepare.py",
+        "Telegram/build/docker/centos_env/Dockerfile"
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "evidence": "Clones libjxl v0.12.0 recursively with shallow submodules, then configures CMake with BUILD_TESTING/FUZZERS/DEVTOOLS/TOOLS/DOXYGEN/MANPAGES/EXAMPLES/JNI/SJPEG/OPENEXR/VIEWERS/TCMALLOC/PLUGINS/COVERAGE disabled."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "evidence": "Clones libjxl v0.12.0 shallow without recursive submodules, supplies lcms2/brotli/highway from prior build stages, disables testing/devtools/tools/docs/benchmarks/examples/JNI/SJPEG/OpenEXR, then builds and installs with CMake."
+        }
+      ],
+      "root_candidate_disposition_policy": [
+        {
+          "path_prefix": ".github/",
+          "disposition": "upstream-libjxl-ci-only-not-tdesktop-build"
+        },
+        {
+          "path_prefix": "doc/",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_prefix": "tools/",
+          "disposition": "upstream-libjxl-tools-disabled-or-not-invoked",
+          "basis": "Accepted TDesktop libjxl CMake explicitly disables JPEGXL_ENABLE_TOOLS and JPEGXL_ENABLE_DEVTOOLS; standalone benchmark/evaluation/install helper scripts are not invoked."
+        },
+        {
+          "path_prefix": ".devcontainer/",
+          "disposition": "upstream-libjxl-devcontainer-not-tdesktop-build"
+        },
+        {
+          "path_exact": "BUILDING.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "BUILDING_OSX.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "CONTRIBUTING.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "README.md",
+          "disposition": "documentation-not-acquisition"
+        },
+        {
+          "path_exact": "ci.sh",
+          "disposition": "upstream-libjxl-ci-tool-not-tdesktop-build"
+        },
+        {
+          "path_exact": "bash_test.sh",
+          "disposition": "upstream-libjxl-test-tool-not-tdesktop-build"
+        },
+        {
+          "path_exact": "deps.sh",
+          "disposition": "dependency-provisioner-not-invoked",
+          "basis": "libjxl only executes deps.sh when PROVISION_DEPENDENCIES is enabled; accepted TDesktop configure lines do not enable it. prepare already obtains pinned recursive submodules, while Docker supplies its selected dependencies from prior stages."
+        },
+        {
+          "path_exact": ".gitmodules",
+          "disposition": "gitlink-metadata-recursively-accounted",
+          "basis": "prepare.py explicitly clones libjxl recursively; immutable child gitlinks are part of recursive authority accounting. Docker does not initialize them and supplies its selected dependencies separately."
+        },
+        {
+          "path_prefix": "plugins/",
+          "disposition": "upstream-libjxl-plugin-content-disabled",
+          "basis": "Accepted TDesktop sets JPEGXL_ENABLE_PLUGINS=OFF."
+        },
+        {
+          "path_exact": "third_party/CMakeLists.txt",
+          "disposition": "dependency-selection-logic-not-build-acquisition",
+          "basis": "The candidate match is dependency guidance/error text inside CMake selection logic. It consumes already-present recursive children or system dependencies and does not execute a download unless the separate PROVISION_DEPENDENCIES path is enabled."
+        }
+      ],
+      "root_candidate_policy_status": "complete-for-current-libjxl-authority",
+      "note": "This closes acquisition-pattern candidates for the libjxl root only. Recursive libjxl child authorities remain separately in source/build reachability accounting."
     }
   }
 }
