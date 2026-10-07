@@ -172,7 +172,7 @@ async function measuredGeometry(network: ReturnType<Page['getByRole']>) {
   });
 }
 
-test('shipping Agent Network binds to the live workspace and supports real wheel zoom', async () => {
+// This acceptance intentionally imports no retired desktop/src/agent-workspace modules:\n// it validates only the shipping recovered ProductShell composition after the architecture cutover.\ntest('shipping Agent Network binds to the live workspace and supports real wheel zoom', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-agent-network-'));
   const app = await launchDesktopApp(appDataDir);
 
