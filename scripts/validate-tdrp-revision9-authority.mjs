@@ -82,11 +82,33 @@ async function gitlabRaw(project, sha, file) {
 const lock=await readJson('projects/telegram-desktop-rust/upstream.lock.json');
 const schema=await readJson('projects/telegram-desktop-rust/contracts/parity-ledger.schema.json');
 const spec=await read('docs/specs/telegram-desktop-rust-equivalence-migration.md');
+const fbcSourceOfTruth=await read('projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md');
+const tdrpSourceOfTruth=await read('projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md');
+const p0Task=await read('projects/fabushi-communication-platform/management/tasks/P0-product-domain-and-telegram-absorption.md');
+const inventoryIndex=await readJson('projects/telegram-desktop-rust/inventory/index.json');
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');
 const ledger=await readJson('projects/telegram-desktop-rust/parity-ledger.json');
 const acquisitionInventory=await readJson('projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
+const authorityCommit=lock.upstream?.commit;
+const authorityTree=lock.upstream?.tree;
+fail(/^[0-9a-f]{40}$/.test(authorityCommit||''),'lock upstream commit is not exact');
+fail(/^[0-9a-f]{40}$/.test(authorityTree||''),'lock upstream tree is not exact');
+const authorityDocs=[
+  ['FBCP SOURCE_OF_TRUTH',fbcSourceOfTruth],
+  ['TDRP SOURCE_OF_TRUTH',tdrpSourceOfTruth],
+  ['P0 task',p0Task],
+  ['TDRP spec',spec],
+];
+for (const [label,document] of authorityDocs) {
+  fail(document.includes(authorityCommit),label+' commit authority differs from lock');
+  fail(document.includes(authorityTree),label+' root-tree authority differs from lock');
+}
+fail(inventoryIndex.upstream?.commit===authorityCommit,'inventory index upstream commit drift');
+fail(inventoryIndex.upstream?.tree===authorityTree,'inventory index upstream tree drift');
+fail(inventoryIndex.rebaseline?.to_commit===authorityCommit,'inventory rebaseline target differs from live authority');
+fail(!lock.coverage?.note?.includes('live authority is now telegramdesktop/tdesktop@e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39'),'lock coverage note still names historical e1ed57a as live authority');
 fail(schema.properties?.spec_revision?.const===9,'ledger schema is not Revision 9');
 fail(ledger.project_id==='TDRP-001' && ledger.spec_revision===9 && ledger.format_version===3,'ledger instance is not Revision 9');
 fail(ledger.upstream_commit===lock.upstream.commit,'ledger upstream commit does not match accepted baseline identity');
@@ -708,8 +730,9 @@ await fs.writeFile(path.join(root,'artifacts/tdrp-authority/upstream-recursive-i
     gitlab_cppgir_entries:cppTree.filter(e=>e.type!=='tree').length,cppgir_child_entries:childEntries.length},
   entries:recursiveInventory
 },null,2)+'\n');
+const targetCommit=process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA||null;
 const report={
-  project_id:'TDRP-001',spec_revision:9,target_commit:process.env.GITHUB_SHA||null,
+  project_id:'TDRP-001',spec_revision:9,target_commit:targetCommit,
   upstream_commit:u.commit,upstream_tree:u.tree,root_tree_truncated:false,
   root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,recursive_non_directory_entries:recursiveInventory.length,
   direct_component_counts:directComponentCounts,github_nested_gitlinks:nested,github_nested_component_counts:githubNestedCounts,
@@ -723,7 +746,7 @@ if (requireAccepted) {
   fail(u.accepted===true,'accepted mode requires upstream.accepted=true');
   fail(lock.acceptance.accepted===true,'accepted mode requires acceptance.accepted=true');
   fail(lock.acceptance.baseline_ready===true,'accepted mode requires baseline_ready=true');
-  fail(ledger.target_commit===(process.env.GITHUB_SHA||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
+  fail(ledger.target_commit===(targetCommit||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact tested GitHub Actions HEAD');
   fail(ledger.coverage.unknown===0,'G-INVENTORY unknown must be 0');
   fail(ledger.coverage.unread===0,'G-INVENTORY unread must be 0');
   fail(ledger.coverage.omitted===0,'G-INVENTORY omitted must be 0');
