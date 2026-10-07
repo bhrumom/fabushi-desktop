@@ -10,7 +10,7 @@ use crate::conversation::{
 };
 use crate::message::{
     ClientMessageId, ForwardPrivacy, Message, MessageContent, MessageId, PendingPresenceSend,
-    PresenceSendTrigger, ReactionSummary,
+    ReactionSummary,
 };
 use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppRequest, MiniAppResponse, MiniAppSession,
