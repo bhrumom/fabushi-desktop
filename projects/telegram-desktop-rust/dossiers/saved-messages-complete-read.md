@@ -108,3 +108,18 @@ Status: open; current code intentionally fails closed.
 ## Accounting
 
 Both source files are now read-complete, so `unread_minimum` may decrease by exactly two. `unknown` remains unchanged because responsibility/production closure is not complete. `omitted` remains zero.
+
+## Ledger invariant aliases
+
+The current machine-readable ledger rows use the following stable invariant aliases in addition to the richer invariants above:
+
+- `INV-TDRP-SAVED-MESSAGES-PARENT-SCOPE-001-AUTHORITY`
+- `INV-TDRP-SAVED-MESSAGES-UNSUPPORTED-001-AUTHORITY`
+- `INV-TDRP-SAVED-MESSAGES-REQUEST-BATCH-001-AUTHORITY`
+- `INV-TDRP-SAVED-MESSAGES-PAGINATION-001-AUTHORITY`
+- `INV-TDRP-SAVED-MESSAGES-PIN-EMPTY-RESTORE-001-AUTHORITY`
+- `INV-TDRP-SAVED-MESSAGES-ACTIVE-SUBSECTION-001-AUTHORITY`
+- `INV-TDRP-SAVED-MESSAGES-CLEANUP-001-AUTHORITY`
+- `INV-TDRP-SAVED-MESSAGES-RECENT-ORDER-001-AUTHORITY`
+- `INV-TDRP-SAVED-MESSAGES-UNREAD-RECONCILE-001-AUTHORITY`
+- `INV-TDRP-SAVED-MESSAGES-MEMBERSHIP-001-AUTHORITY`
