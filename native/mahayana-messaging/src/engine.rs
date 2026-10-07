@@ -1,4 +1,4 @@
-use crate::actor::{Actor, ActorId, ActorKind, Participant, ParticipantRole, Presence};
+use crate::actor::{Actor, ActorId, ActorKind, Participant, ParticipantRole, Presence, PresenceStatus};
 use crate::bot::{BotExecution, BotInvocation, BotProfile, BotRegistry};
 use crate::community::{
     AdminRights, CommunityAuditAction, CommunityAuditEntry, CommunityError, CommunityMember,
@@ -10,7 +10,7 @@ use crate::conversation::{
 };
 use crate::message::{
     ClientMessageId, DeliveryState, ForwardPrivacy, Message, MessageContent, MessageId,
-    ReactionSummary,
+    PendingPresenceSend, PresenceSendTrigger, ReactionSummary,
 };
 use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppPermission, MiniAppRequest, MiniAppResponse,
@@ -91,6 +91,12 @@ pub enum Command {
         scheduled_at_ms: Option<i64>,
         silent: bool,
         protected_content: bool,
+    },
+    QueuePresenceTriggeredSend {
+        pending: PendingPresenceSend,
+    },
+    RemovePresenceTriggeredSend {
+        client_message_id: ClientMessageId,
     },
     ForwardMessage {
         source_conversation_id: ConversationId,
@@ -350,6 +356,12 @@ pub enum Event {
     FolderDeleted {
         folder_id: String,
     },
+    PresenceTriggeredSendQueued {
+        pending: PendingPresenceSend,
+    },
+    PresenceTriggeredSendRemoved {
+        client_message_id: ClientMessageId,
+    },
     MessageQueued {
         message: Message,
     },
@@ -459,6 +471,7 @@ pub struct MessagingState {
     pub marked_unread_by_actor: BTreeMap<ConversationId, BTreeSet<ActorId>>,
     pub drafts: BTreeMap<ConversationId, BTreeMap<ActorId, ConversationDraft>>,
     pub topic_drafts: BTreeMap<ConversationId, BTreeMap<ActorId, BTreeMap<String, TopicDraft>>>,
+    pub pending_presence_sends: BTreeMap<ClientMessageId, PendingPresenceSend>,
     pub invoices: BTreeMap<String, Invoice>,
     pub orders: BTreeMap<String, PaymentOrder>,
     pub wallet: WalletLedger,
@@ -487,6 +500,12 @@ pub enum EngineError {
         conversation_id: ConversationId,
         message_id: MessageId,
     },
+    #[error("presence-triggered send is invalid for this target or conversation")]
+    InvalidPresenceTriggeredSend,
+    #[error("presence-trigger target is already online")]
+    PresenceTriggerAlreadySatisfied,
+    #[error("client message id {0:?} conflicts with an existing presence-triggered send")]
+    DuplicatePresenceTriggeredSend(ClientMessageId),
     #[error("message {message_id:?} already exists in conversation {conversation_id:?}")]
     DuplicateMessage {
         conversation_id: ConversationId,
@@ -947,6 +966,73 @@ impl MessagingEngine {
             }
             Command::UpsertFolder { folder } => Ok(vec![Event::FolderUpserted { folder }]),
             Command::DeleteFolder { folder_id } => Ok(vec![Event::FolderDeleted { folder_id }]),
+            Command::QueuePresenceTriggeredSend { pending } => {
+                self.require_actor(&pending.sender_id)?;
+                let target_actor_id = match &pending.trigger {
+                    PresenceSendTrigger::WhenParticipantOnline { actor_id } => actor_id,
+                };
+                let target = self.require_actor(target_actor_id)?;
+                if target.kind != ActorKind::Human || &pending.sender_id == target_actor_id {
+                    return Err(EngineError::InvalidPresenceTriggeredSend);
+                }
+                if target.presence.status == PresenceStatus::Online {
+                    return Err(EngineError::PresenceTriggerAlreadySatisfied);
+                }
+                let conversation = self.require_conversation(&pending.conversation_id)?;
+                if !matches!(conversation.kind, ConversationKind::Direct) {
+                    return Err(EngineError::InvalidPresenceTriggeredSend);
+                }
+                let target_is_participant = conversation
+                    .participants
+                    .iter()
+                    .any(|participant| &participant.actor_id == target_actor_id)
+                    || conversation.owner_id.as_ref() == Some(target_actor_id);
+                if !target_is_participant {
+                    return Err(EngineError::InvalidPresenceTriggeredSend);
+                }
+                if let Some(existing) = self
+                    .state
+                    .pending_presence_sends
+                    .get(&pending.client_message_id)
+                {
+                    if existing == &pending {
+                        return Ok(Vec::new());
+                    }
+                    return Err(EngineError::DuplicatePresenceTriggeredSend(
+                        pending.client_message_id.clone(),
+                    ));
+                }
+                // Reuse the canonical send decision for all current conversation,
+                // media/poll, membership, channel/community, topic and slow-mode gates.
+                let validation = self.decide(Command::QueueMessage {
+                    conversation_id: pending.conversation_id.clone(),
+                    local_message_id: pending.local_message_id.clone(),
+                    client_message_id: pending.client_message_id.clone(),
+                    sender_id: pending.sender_id.clone(),
+                    content: pending.content.clone(),
+                    reply_to_message_id: pending.reply_to_message_id.clone(),
+                    thread_root_message_id: pending.thread_root_message_id.clone(),
+                    created_at_ms: pending.created_at_ms,
+                    scheduled_at_ms: None,
+                    silent: pending.silent,
+                    protected_content: pending.protected_content,
+                })?;
+                if !matches!(validation.as_slice(), [Event::MessageQueued { .. }]) {
+                    return Err(EngineError::InvalidPresenceTriggeredSend);
+                }
+                Ok(vec![Event::PresenceTriggeredSendQueued { pending }])
+            }
+            Command::RemovePresenceTriggeredSend { client_message_id } => {
+                if self
+                    .state
+                    .pending_presence_sends
+                    .contains_key(&client_message_id)
+                {
+                    Ok(vec![Event::PresenceTriggeredSendRemoved { client_message_id }])
+                } else {
+                    Ok(Vec::new())
+                }
+            }
             Command::QueueMessage {
                 conversation_id,
                 local_message_id,
@@ -2710,6 +2796,14 @@ impl MessagingEngine {
                 for conversation in self.state.conversations.values_mut() {
                     conversation.folder_ids.retain(|id| id != &folder_id);
                 }
+            }
+            Event::PresenceTriggeredSendQueued { pending } => {
+                self.state
+                    .pending_presence_sends
+                    .insert(pending.client_message_id.clone(), pending);
+            }
+            Event::PresenceTriggeredSendRemoved { client_message_id } => {
+                self.state.pending_presence_sends.remove(&client_message_id);
             }
             Event::MessageQueued { message } => {
                 if let Some(conversation) =
