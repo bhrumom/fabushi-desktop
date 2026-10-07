@@ -11,8 +11,10 @@ Root tree: `5db05afa460bb030ac36316beb6496df03742c59`
 | --- | --- | --- |
 | `Telegram/SourceFiles/data/data_saved_messages.h` | `82b9aed5cb2e1250fc0f4c5c2013bd58c689a344` | complete, 154 lines |
 | `Telegram/SourceFiles/data/data_saved_messages.cpp` | `2be216670b644eb012e7a241af78b3adda639619` | complete, 651 lines |
+| `Telegram/SourceFiles/data/components/recent_peers.h` | `5d8b1187d8db1138003cc406d86cbdec6626468a` | complete, 59 lines |
+| `Telegram/SourceFiles/data/components/recent_peers.cpp` | `bf676e4407fcfa4bf93b2bf7e468b8f61c6ffd05` | complete, 184 lines |
 
-These two source entries are semantically read-complete. This dossier does **not** claim the SavedMessages responsibility is production-complete. The existing Fabushi parent-access primitive is only one prerequisite; server/native relation feed, canonical membership source, child-list picker composition and several lifecycle responsibilities remain open.
+These four source entries are semantically read-complete. The `recent_peers` pair is a direct cleanup/navigation dependency and distinguishes ordinary recent Search suggestions from recent-open Thread history. This dossier does **not** claim the SavedMessages responsibility is production-complete. The existing Fabushi parent-access primitive is only one prerequisite; server/native relation feed, canonical membership source, child-list picker composition and several lifecycle responsibilities remain open.
 
 ## Responsibility decomposition
 
@@ -96,6 +98,17 @@ Behavior: a non-empty SavedSublist may accept/project a message only when the ca
 Target owner: canonical MessagingState/Conversation membership relation populated by a single server/native authoritative sync/feed caller.  
 Status: open; current code intentionally fails closed.
 
+## Direct dependency: RecentPeers
+
+The accepted header/cpp split two responsibilities that must not be conflated:
+
+- Ordinary recent participant/conversation suggestions use stable identity bump/remove/clear semantics. Their serialized projection is capped at **48** entries. Empty/malformed data or any per-entry decode failure clears the whole projection rather than retaining a partially trusted prefix.
+- Recent-open Thread history is a separate weak projection capped at **32** live entries. Push prunes dead weak references, moves an existing identity to the front without duplication, evicts the oldest when full, and `chatOpenRemove` removes the exact Topic/SavedSublist/Thread. Cached userpic state is presentation projection only.
+- `RecentPeers::serialize` serializes the ordinary `_list`, not `_opens`; this read therefore does **not** justify inventing durable recent-open persistence.
+- In Fabushi, ordinary suggestions map to canonical Search + existing persistence; recent-open history maps to canonical Conversation/typed-child navigation lifecycle. Neither can mint SavedSublist parent access or message membership.
+
+Current implementation remains incomplete: `ConversationChildDestroyed` removes canonical child runtime state, but the bounded recent-open projection/removal, ordinary recent-suggestion persistence/recovery, shared-media/resource cleanup and full cross-owner destruction composition still require production wiring and exact-head evidence.
+
 ## Required shipping closure
 
 1. Connect `saved_sublist_parent_access` to one authoritative server/native sync/feed caller; renderer/client cannot mint access.
@@ -103,11 +116,13 @@ Status: open; current code intentionally fails closed.
 3. Make child-list pagination/picker consume only canonical child membership/list authority.
 4. Keep legacy-topic fallback explicit and typed; never reinterpret arbitrary community/topic state as SavedMessages.
 5. Close draft/resource/notification cleanup, recent ordering and unread reconciliation through existing owners.
-6. Verify all of the above on the exact target HEAD in GitHub Actions; no local/htch execution counts for FBCP/TDRP.
+6. Wire exact child destruction to remove the canonical recent-open destination without parent fallback; keep it separate from ordinary recent Search suggestions.
+7. Do not delete a canonical parent message/resource merely because one SavedSublist projection is destroyed unless authoritative ownership proves that exact child owns it.
+8. Verify all of the above on the exact target HEAD in GitHub Actions; no local/htch execution counts for FBCP/TDRP.
 
 ## Accounting
 
-Both source files are now read-complete, so `unread_minimum` may decrease by exactly two. `unknown` remains unchanged because responsibility/production closure is not complete. `omitted` remains zero.
+All four source files in this dossier are read-complete. The two newly recorded `recent_peers` entries reduce `unread_minimum` by exactly two more, from 15,746 to 15,744. `unknown` remains 15,788 because responsibility/production closure is not complete. `omitted` remains zero.
 
 ## Ledger invariant aliases
 
