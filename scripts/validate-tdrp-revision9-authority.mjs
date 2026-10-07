@@ -68,7 +68,27 @@ fail(lock.build_time_acquisition_inventory?.path==='projects/telegram-desktop-ru
 fail(acquisitionInventory.discovery?.candidate_lines_total===lock.build_time_acquisition_inventory.candidate_lines_total,'build-time candidate count drift');
 fail(acquisitionInventory.discovery?.immutable_commit_pin_occurrences_classified===lock.build_time_acquisition_inventory.immutable_commit_pin_occurrences_classified,'classified immutable acquisition count drift');
 fail(acquisitionInventory.discovery?.candidate_lines_pending_classification===lock.build_time_acquisition_inventory.candidate_lines_pending_classification,'pending acquisition count drift');
-fail(acquisitionInventory.discovery.candidate_lines_total===acquisitionInventory.discovery.immutable_commit_pin_occurrences_classified+acquisitionInventory.discovery.candidate_lines_pending_classification,'build-time acquisition candidate accounting is not closed arithmetically');
+fail(Number.isInteger(acquisitionInventory.discovery.candidate_lines_classified),'build-time acquisition classified count missing');
+fail(acquisitionInventory.discovery.candidate_lines_total===acquisitionInventory.discovery.candidate_lines_classified+acquisitionInventory.discovery.candidate_lines_pending_classification,'build-time acquisition candidate accounting is not closed arithmetically');
+fail(acquisitionInventory.discovery.candidate_lines_classified===lock.build_time_acquisition_inventory.candidate_lines_classified,'classified acquisition count drift');
+const dispositionGroups=acquisitionInventory.candidate_disposition_groups || [];
+const dispositionKeys=new Set();
+let dispositionedCandidateLines=0;
+for (const group of dispositionGroups) {
+  fail(typeof group.disposition==='string' && group.disposition.length>0,'candidate disposition group missing disposition');
+  fail(typeof group.source_path==='string' && group.source_path.length>0,'candidate disposition group missing source path');
+  fail(Array.isArray(group.source_lines) && group.source_lines.length>0,'candidate disposition group missing source lines');
+  for (const line of group.source_lines) {
+    fail(Number.isInteger(line) && line>0,'candidate disposition line must be a positive integer');
+    const key=group.source_path+':'+line;
+    fail(!dispositionKeys.has(key),'candidate disposition duplicate: '+key);
+    dispositionKeys.add(key);
+    dispositionedCandidateLines += 1;
+  }
+}
+fail(dispositionedCandidateLines+acquisitionInventory.discovery.immutable_commit_pin_occurrences_classified===acquisitionInventory.discovery.candidate_lines_classified,'explicit candidate dispositions do not match classified count');
+const immutableKeys=new Set((acquisitionInventory.immutable_commit_pin_occurrences || []).map(item=>item.source_path+':'+item.source_line));
+for (const key of dispositionKeys) fail(!immutableKeys.has(key),'candidate disposition overlaps immutable occurrence: '+key);
 fail(lock.build_time_acquisition_inventory.closure_status==='open','build-time acquisition closure must remain open while candidate lines are pending');
 for (const acquisition of acquisitionInventory.immutable_commit_pin_occurrences || []) {
   fail(/^[0-9a-f]{40}$/.test(acquisition.commit),'immutable acquisition lacks full commit pin: '+acquisition.id);

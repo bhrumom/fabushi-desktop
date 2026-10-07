@@ -12,8 +12,9 @@
     "candidate_file": "build-time-acquisition-candidates.txt",
     "candidate_lines_total": 326,
     "immutable_commit_pin_occurrences_classified": 17,
-    "candidate_lines_pending_classification": 309,
-    "note": "Counts are candidate-line accounting, not dependency cardinality. GitHub Actions run 37602112794 broadened acquisition discovery beyond clone/fetch/curl/wget and proved the prior 150-line scan incomplete; 326 exact-upstream candidate lines are now accounted for, with 17 existing immutable commit-pin occurrences classified and 309 still requiring explicit disposition. Closure remains open."
+    "candidate_lines_pending_classification": 176,
+    "note": "Counts are candidate-line accounting, not dependency cardinality. GitHub Actions run 37602112794 broadened acquisition discovery and proved 326 exact-upstream candidate lines. The original 150-line discovery set is now fully dispositioned (17 immutable commit-pin occurrences plus 133 explicit line dispositions); 176 newly surfaced candidates remain pending. Closure remains open.",
+    "candidate_lines_classified": 150
   },
   "immutable_commit_pin_occurrences": [
     {
@@ -202,6 +203,362 @@
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
+    }
+  ],
+  "candidate_disposition_groups": [
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/telegram-bot-api/Dockerfile",
+      "source_lines": [
+        16
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/canary.yml",
+      "source_lines": [
+        1208,
+        286,
+        47
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "ci-only",
+      "source_path": ".github/workflows/mac_packaged.yml",
+      "source_lines": [
+        112,
+        130,
+        151,
+        98,
+        99
+      ],
+      "authority_scope": "ci-only"
+    },
+    {
+      "disposition": "docs",
+      "source_path": ".github/CONTRIBUTING.md",
+      "source_lines": [
+        42,
+        43
+      ],
+      "authority_scope": "docs-only"
+    },
+    {
+      "disposition": "docs",
+      "source_path": "Telegram/build/sign_update.py",
+      "source_lines": [
+        97
+      ],
+      "authority_scope": "docs-help-only"
+    },
+    {
+      "disposition": "exact-immutable-input-support",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_lines": [
+        1006,
+        162,
+        172,
+        291,
+        451,
+        466,
+        485,
+        87,
+        953,
+        983
+      ],
+      "authority_scope": "build-source-authority"
+    },
+    {
+      "disposition": "exact-immutable-input-support",
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_lines": [
+        1785,
+        1904,
+        1983,
+        521,
+        526,
+        633
+      ],
+      "authority_scope": "build-source-authority"
+    },
+    {
+      "disposition": "exact-immutable-input-support",
+      "source_path": "snap/snapcraft.yaml",
+      "source_lines": [
+        124,
+        322,
+        460,
+        477,
+        508
+      ],
+      "authority_scope": "build-source-authority"
+    },
+    {
+      "disposition": "exact-ref-requires-full-resolution",
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_lines": [
+        1447,
+        1453,
+        1487,
+        1517,
+        1525,
+        1587,
+        576,
+        773
+      ],
+      "authority_scope": "build-source-authority"
+    },
+    {
+      "disposition": "mutable-tag-or-branch-input",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_lines": [
+        192,
+        203,
+        214,
+        225,
+        236,
+        252,
+        263,
+        278,
+        311,
+        333,
+        348,
+        373,
+        385,
+        398,
+        411,
+        412,
+        423,
+        424,
+        437,
+        438,
+        501,
+        512,
+        523,
+        536,
+        547,
+        558,
+        569,
+        580,
+        581,
+        592,
+        607,
+        760,
+        791,
+        809,
+        825,
+        839,
+        873,
+        966
+      ],
+      "authority_scope": "build-source-authority"
+    },
+    {
+      "disposition": "mutable-tag-or-branch-input",
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_lines": [
+        1024,
+        1067,
+        1129,
+        1164,
+        1168,
+        1172,
+        1355,
+        1417,
+        1452,
+        1492,
+        1599,
+        1668,
+        1883,
+        609,
+        622,
+        671,
+        708,
+        755,
+        825,
+        833,
+        898,
+        956,
+        985
+      ],
+      "authority_scope": "build-source-authority"
+    },
+    {
+      "disposition": "mutable-tag-or-branch-input",
+      "source_path": "snap/snapcraft.yaml",
+      "source_lines": [
+        135,
+        137,
+        149,
+        151,
+        165,
+        167,
+        334,
+        336,
+        349,
+        351,
+        368,
+        370,
+        386,
+        388,
+        396,
+        398,
+        442,
+        444
+      ],
+      "authority_scope": "build-source-authority"
+    },
+    {
+      "disposition": "runtime-service-call",
+      "source_path": "Telegram/build/canary_publish.sh",
+      "source_lines": [
+        75,
+        79,
+        93
+      ],
+      "authority_scope": "runtime-not-acquisition"
+    },
+    {
+      "disposition": "self-repository-release-operation",
+      "source_path": "Telegram/build/release.py",
+      "source_lines": [
+        294
+      ],
+      "authority_scope": "self-repository-operation"
+    },
+    {
+      "disposition": "tool-bootstrap",
+      "source_path": ".github/workflows/docker.yml",
+      "source_lines": [
+        27
+      ],
+      "authority_scope": "toolchain-authority"
+    },
+    {
+      "disposition": "tool-bootstrap",
+      "source_path": ".github/workflows/linux.yml",
+      "source_lines": [
+        72,
+        73
+      ],
+      "authority_scope": "toolchain-authority"
+    },
+    {
+      "disposition": "tool-bootstrap",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_lines": [
+        18,
+        998
+      ],
+      "authority_scope": "toolchain-authority"
+    },
+    {
+      "disposition": "tool-bootstrap",
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_lines": [
+        597
+      ],
+      "authority_scope": "toolchain-authority"
+    },
+    {
+      "disposition": "tool-bootstrap",
+      "source_path": "snap/snapcraft.yaml",
+      "source_lines": [
+        490
+      ],
+      "authority_scope": "toolchain-authority"
+    },
+    {
+      "disposition": "versioned-download-input",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_lines": [
+        903
+      ],
+      "authority_scope": "build-source-authority"
+    },
+    {
+      "disposition": "versioned-download-input",
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_lines": [
+        804
+      ],
+      "authority_scope": "build-source-authority"
+    }
+  ],
+  "resolved_short_ref_contexts": [
+    {
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_line": 576,
+      "repository": "https://github.com/desktop-app/gyp.git",
+      "observed_short_ref": "5e2425c47b",
+      "resolved_commit": "5e2425c47ba62aea63b20887ce545058b2dddec6",
+      "status": "resolved"
+    },
+    {
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_line": 773,
+      "repository": "https://github.com/desktop-app/rnnoise.git",
+      "observed_short_ref": "d8ea2b0",
+      "resolved_commit": "d8ea2b0ec6a88f8a68d6904d75e33b4f09cb2987",
+      "status": "resolved"
+    },
+    {
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_line": 1525,
+      "repository": "https://github.com/desktop-app/crashpad.git",
+      "observed_short_ref": "3279fae3f0",
+      "resolved_commit": "3279fae3f02a0370ef54d4f9d264f52f337b0f1d",
+      "status": "resolved"
+    },
+    {
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_line": 1587,
+      "repository": "https://github.com/desktop-app/tg_angle.git",
+      "observed_short_ref": "48bc60bdb1",
+      "resolved_commit": "48bc60bdb15c9603fd426cf87949e5a4342cee43",
+      "status": "resolved"
+    },
+    {
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_line": 1417,
+      "repository": "https://github.com/telegramdesktop/openal-soft.git",
+      "observed_short_ref": "291c0fdbbd",
+      "resolved_commit": "291c0fdbbdd767f00c45c7fca562614faea57647",
+      "status": "resolved-windows-ref-with-separate-mutable-macos-branch"
+    },
+    {
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_line": 1447,
+      "repository": "https://chromium.googlesource.com/breakpad/breakpad",
+      "observed_short_ref": "dfcb7b6799",
+      "resolved_commit": null,
+      "status": "pending-full-resolution"
+    },
+    {
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_line": 1453,
+      "repository": "https://chromium.googlesource.com/linux-syscall-support",
+      "observed_short_ref": "e1e7b0ad8e",
+      "resolved_commit": null,
+      "status": "pending-full-resolution"
+    },
+    {
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_line": 1487,
+      "repository": "https://chromium.googlesource.com/breakpad/breakpad",
+      "observed_short_ref": "dfcb7b6799",
+      "resolved_commit": null,
+      "status": "pending-full-resolution"
+    },
+    {
+      "source_path": "Telegram/build/prepare/prepare.py",
+      "source_line": 1517,
+      "repository": "https://chromium.googlesource.com/linux-syscall-support",
+      "observed_short_ref": "e1e7b0ad8e",
+      "resolved_commit": null,
+      "status": "pending-full-resolution"
     }
   ]
 }
