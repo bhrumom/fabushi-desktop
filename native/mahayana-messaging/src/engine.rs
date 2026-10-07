@@ -5,7 +5,8 @@ use crate::community::{
     CommunityState, ForumTopicState, InviteLink, JoinRequest, MemberStatus,
 };
 use crate::conversation::{
-    Conversation, ConversationDraft, ConversationFolder, ConversationId, ConversationKind,
+    Conversation, ConversationChildRuntimeState, ConversationDestination, ConversationDraft,
+    ConversationFolder, ConversationId, ConversationKind, ConversationMessagePosition,
     NotificationSettings, TopicDraft,
 };
 use crate::message::{
@@ -471,6 +472,10 @@ pub struct MessagingState {
     pub marked_unread_by_actor: BTreeMap<ConversationId, BTreeSet<ActorId>>,
     pub drafts: BTreeMap<ConversationId, BTreeMap<ActorId, ConversationDraft>>,
     pub topic_drafts: BTreeMap<ConversationId, BTreeMap<ActorId, BTreeMap<String, TopicDraft>>>,
+    /// Canonical source-neutral child lifecycle state. Topic-only legacy maps above
+    /// remain protocol-compatibility projections until their load-time migration
+    /// is completed; new saved-sublist/community child state belongs here.
+    pub conversation_child_states: Vec<ConversationChildRuntimeState>,
     pub pending_presence_sends: BTreeMap<ClientMessageId, PendingPresenceSend>,
     pub invoices: BTreeMap<String, Invoice>,
     pub orders: BTreeMap<String, PaymentOrder>,
@@ -481,6 +486,23 @@ pub struct MessagingState {
     pub mini_apps: BTreeMap<String, MiniAppManifest>,
     pub mini_app_grants: BTreeMap<(String, ActorId), MiniAppGrant>,
     pub mini_app_sessions: BTreeMap<String, MiniAppSession>,
+}
+
+impl MessagingState {
+    fn child_state_mut(
+        &mut self,
+        destination: ConversationDestination,
+        actor_id: ActorId,
+    ) -> Option<&mut ConversationChildRuntimeState> {
+        if let Some(index) = self.conversation_child_states.iter().position(|state| {
+            state.destination == destination && state.actor_id == actor_id
+        }) {
+            return self.conversation_child_states.get_mut(index);
+        }
+        let state = ConversationChildRuntimeState::new(destination, actor_id)?;
+        self.conversation_child_states.push(state);
+        self.conversation_child_states.last_mut()
+    }
 }
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
@@ -2923,6 +2945,30 @@ impl MessagingEngine {
                 actor_id,
                 message_id,
             } => {
+                let position = self
+                    .state
+                    .messages
+                    .get(&conversation_id)
+                    .and_then(|messages| messages.get(&message_id))
+                    .map(|message| {
+                        ConversationMessagePosition::new(
+                            message.created_at_ms,
+                            message.id.0.clone(),
+                        )
+                    });
+                if let Some(position) = position {
+                    let destination = ConversationDestination::topic(
+                        conversation_id.clone(),
+                        format!("topic:{topic_id}"),
+                    );
+                    if let Some(child) =
+                        self.state.child_state_mut(destination, actor_id.clone())
+                    {
+                        let _ = child.advance_inbox_read_till(position, None);
+                    }
+                }
+                // Protocol compatibility projection while topic callers migrate to
+                // the source-neutral child runtime state above.
                 self.state
                     .topic_read_cursors
                     .entry(conversation_id)
@@ -2932,6 +2978,24 @@ impl MessagingEngine {
                     .insert(topic_id, message_id);
             }
             Event::TopicDraftChanged { draft } => {
+                let destination = ConversationDestination::topic(
+                    draft.conversation_id.clone(),
+                    format!("topic:{}", draft.topic_id),
+                );
+                if let Some(child) = self
+                    .state
+                    .child_state_mut(destination, draft.actor_id.clone())
+                {
+                    if draft.text.trim().is_empty() && draft.reply_to_message_id.is_none() {
+                        child.clear_draft();
+                    } else {
+                        child.set_draft(
+                            draft.text.clone(),
+                            draft.reply_to_message_id.clone(),
+                            draft.updated_at_ms,
+                        );
+                    }
+                }
                 if draft.text.trim().is_empty() && draft.reply_to_message_id.is_none() {
                     if let Some(by_actor) = self.state.topic_drafts.get_mut(&draft.conversation_id)
                     {
