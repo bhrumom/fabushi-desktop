@@ -72,8 +72,8 @@ function resolveRef(url,ref,hint){
   const queries=['refs/heads/'+ref,'refs/tags/'+ref,'refs/tags/'+ref+'^{}'];
   const r=tryRun('git',['ls-remote',repo,...queries]);
   if(r.status!==0) return {status:'resolution-error',repository:repo,ref,hint,error:(r.stderr||'').trim()};
-  const matches=(r.stdout||'').split(/\\r?\\n/).filter(Boolean).map(line=>{
-    const m=line.match(/^([0-9a-f]{40})\\s+(.+)$/);
+  const matches=(r.stdout||'').split(/\r?\n/).filter(Boolean).map(line=>{
+    const m=line.match(/^([0-9a-f]{40})\s+(.+)$/);
     return m?{sha:m[1],name:m[2]}:null;
   }).filter(Boolean);
   if(!matches.length) return {status:'ref-not-found',repository:repo,ref,hint};
@@ -99,7 +99,7 @@ function resolveHead(url){
   const repo=normalizeRemote(url);
   const r=tryRun('git',['ls-remote',repo,'HEAD']);
   if(r.status!==0) return {status:'resolution-error',repository:repo,ref:'HEAD',error:(r.stderr||'').trim()};
-  const m=(r.stdout||'').match(/^([0-9a-f]{40})\\s+HEAD/m);
+  const m=(r.stdout||'').match(/^([0-9a-f]{40})\s+HEAD/m);
   return m?{status:'resolved',repository:repo,ref:'HEAD',resolved_kind:'default-head-snapshot',commit:m[1],matches:[{sha:m[1],name:'HEAD'}]}:
     {status:'ref-not-found',repository:repo,ref:'HEAD'};
 }
@@ -107,7 +107,7 @@ function resolveHead(url){
 function resolveDockerImage(image){
   const r=tryRun('docker',['buildx','imagetools','inspect',image]);
   if(r.status!==0) return {status:'resolution-error',image,error:(r.stderr||'').trim()};
-  const m=(r.stdout||'').match(/^Digest:\\s+(sha256:[0-9a-f]{64})$/m);
+  const m=(r.stdout||'').match(/^Digest:\s+(sha256:[0-9a-f]{64})$/m);
   return m?{status:'resolved',image,digest:m[1],resolved_kind:'oci-manifest-digest'}:{status:'digest-not-found',image,output:(r.stdout||'').slice(0,2000)};
 }
 
@@ -128,7 +128,7 @@ for(const [sourcePath,data] of byPath){
     let authorityNote=null;
     if(sourcePath==='Telegram/build/docker/centos_env/Dockerfile' && ref==='v$QT'){
       const preceding=data.lines.slice(Math.max(0,logical.start-8),logical.start-1).reverse().find(line=>/^QT=/.test(line.trim()));
-      const value=preceding?.trim().match(/^QT=([^\\s]+)$/)?.[1]||null;
+      const value=preceding?.trim().match(/^QT=([^\s]+)$/)?.[1]||null;
       fail(value,'unable to resolve Docker QT variable at line '+logical.start);
       ref='v'+value;
       authorityNote='resolved from preceding QT assignment in same Docker RUN block';
@@ -153,12 +153,12 @@ for(const sourcePath of ['Telegram/build/prepare/prepare.py']){
   if(!data) continue;
   for(const item of [...selectedKeys.values()].filter(x=>x.source_path===sourcePath&&x.disposition==='mutable-tag-or-branch-input'&&!covered.has(x.source_path+':'+x.source_line))){
     const text=data.lines[item.source_line-1];
-    const clone=text.match(/git clone\\s+(https?:\\/\\/[^\\s'"]+)/);
+    const clone=text.match(/git clone\s+(https?:\/\/[^\s'"]+)/);
     if(!clone) continue;
     const url=cleanToken(clone[1]);
     if(item.source_line===1067){
-      const nearby=data.lines.slice(item.source_line,Math.min(data.lines.length,item.source_line+8)).join('\\n');
-      const checkout=nearby.match(/git checkout\\s+([^\\s]+)/);
+      const nearby=data.lines.slice(item.source_line,Math.min(data.lines.length,item.source_line+8)).join('\n');
+      const checkout=nearby.match(/git checkout\s+([^\s]+)/);
       fail(checkout,'libvpx mutable clone lacks nearby checkout');
       const ref=cleanToken(checkout[1]);
       acquisitions.push({kind:'git-clone-followed-by-checkout',source_path:sourcePath,line_start:item.source_line,line_end:item.source_line+8,repository:url,ref,resolution:resolveRef(url,ref,null),candidate_lines:[item.source_line]});
@@ -183,7 +183,7 @@ for(const sourcePath of ['Telegram/build/prepare/prepare.py']){
   const key='Telegram/build/docker/centos_env/Dockerfile:3';
   if(selectedKeys.has(key) && !covered.has(key)){
     const line=byPath.get('Telegram/build/docker/centos_env/Dockerfile').lines[2];
-    const m=line.match(/^FROM\\s+(\\S+)/);
+    const m=line.match(/^FROM\s+(\S+)/);
     fail(m,'unable to parse Docker base image authority');
     const image=m[1];
     acquisitions.push({kind:'docker-base-image',source_path:'Telegram/build/docker/centos_env/Dockerfile',line_start:3,line_end:3,image,resolution:resolveDockerImage(image),candidate_lines:[3]});
