@@ -83,6 +83,33 @@ jobs:
           test -f source/mahayana/codex-rs/Cargo.toml
           test -f native/mahayana-messaging/Cargo.toml
           cargo metadata --no-deps --format-version 1 --manifest-path source/mahayana/mahayana-rs/Cargo.toml >/dev/null
+      - name: Test canonical Fabushi messaging responsibilities
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path native/mahayana-messaging/Cargo.toml
+          mkdir -p .evidence
+          cat > .evidence/messaging-responsibilities.json <<EOF
+          {
+            "head_sha": "${{ github.sha }}",
+            "manifest": "native/mahayana-messaging/Cargo.toml",
+            "responsibilities": [
+              "scheduled-and-silent-forward-preservation",
+              "forward-destination-authorization",
+              "formatted-text-utf16-entity-offset",
+              "typed-forward-thread-destination",
+              "missing-closed-hidden-topic-rejection"
+            ],
+            "result": "passed"
+          }
+          EOF
+      - name: Upload canonical Fabushi messaging evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-messaging-responsibilities-${{ github.sha }}
+          path: .evidence/messaging-responsibilities.json
+          if-no-files-found: error
+          retention-days: 90
       - name: Check Grok-aligned shipping Mahayana Host
         shell: bash
         run: cargo check --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml
