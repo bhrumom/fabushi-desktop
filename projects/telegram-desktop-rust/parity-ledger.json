@@ -3,14 +3,268 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
-  "target_commit": "28e9ba327ebf2446df1b0dec72143cea5ebfb67d",
+  "target_commit": "3d874b8e055748f8f01b4a96183a101432ea3a50",
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
     "unread": 15788,
     "omitted": 0,
-    "responsibilities_total": 0,
+    "responsibilities_total": 1,
     "unmapped_responsibilities": 0
   },
-  "rows": []
+  "rows": [
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+      "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
+      "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
+      "source_kind": "source",
+      "module_id": "tdesktop.boxes.share",
+      "responsibility_id": "TDRP-R9-SEARCH-ROW-REPLACEMENT-001",
+      "source_symbols": [
+        "ShareBox::prepare",
+        "ShareBox::searchByUsername",
+        "ShareBox::Inner::Inner/dialogsRowReplacements",
+        "ShareBox::Inner::applyChatFilter"
+      ],
+      "capability_ids": [
+        "CAP-CANONICAL-SEARCH-PARTICIPANT-PROJECTION"
+      ],
+      "dependency_ids": [
+        "Participant",
+        "SearchQuery",
+        "SearchResult",
+        "CommandPalette"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/search-share-box-row-replacement.md",
+      "behavior_contract": "A participant/dialog replacement or collection-scope rebuild must not leave stale duplicate Search results; the current replacement row controls the one canonical participant projection.",
+      "state_machine": "authoritative roster -> optional stale/replacement coexistence -> canonical-id collapse -> tab/query projection -> activation; scope/filter rebuild recomputes the projection from current authoritative rows.",
+      "side_effects": [
+        "Updates Universal Search result projection only",
+        "Preserves existing result position while replacing stale row data"
+      ],
+      "failure_cases": [
+        "Duplicate participant result after row replacement",
+        "Stale hidden/visible state surviving replacement",
+        "Search tab/filter projection deduped against an older collection generation"
+      ],
+      "ui_disposition": "Reuse the existing Fabushi Universal Search Command Palette; do not port Telegram ShareBox presentation.",
+      "non_ui_responsibilities": [
+        "Stable participant identity dedupe",
+        "Latest-row replacement semantics",
+        "Provider stale-response fencing remains owned by existing Command Palette provider lifecycle"
+      ],
+      "platform_delta": "Telegram dialog-row/filter mechanics are re-expressed as a source-neutral canonical participant Search projection in TypeScript.",
+      "existing_owner_candidates": [
+        "frontend/src/production/command-palette-model.ts",
+        "frontend/src/production/command-palette-provider.ts",
+        "frontend/src/production/group-members-root.ts",
+        "source/host/src/extensions/transcript/roster_search.rs"
+      ],
+      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "rejected_existing_owners": [
+        "group-members-root: object-scoped member surface rather than Universal Search truth",
+        "host roster_search: backend/provider responsibility rather than renderer projection identity"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "frontend/src/production/command-palette-model.ts"
+      ],
+      "fabushi_target_symbols": [
+        "dedupeCommandPaletteAgents",
+        "commandPaletteEntries"
+      ],
+      "target_language": "TypeScript",
+      "language_rationale": "This responsibility is a renderer/UI projection over canonical Fabushi state, so it belongs in the existing React/TypeScript Search owner rather than a new Rust or Telegram-specific subsystem.",
+      "command_event_contracts": [
+        "CommandPalette input roster -> commandPaletteEntries",
+        "Participant result activation -> existing canonical agent/conversation open action"
+      ],
+      "state_owner": "Existing authoritative renderer roster plus Command Palette Search projection",
+      "lifecycle_owner": "Existing ProductionRenderer/CommandPalette lifecycle",
+      "persistence_and_restart": "No new persistence. Projection is recomputed from the authoritative roster after reload/restart.",
+      "concurrency_and_cancellation": "Projection is synchronous; existing Command Palette provider request-id/AbortController fencing remains the owner for asynchronous search freshness.",
+      "security_boundary": "The projection can only dedupe/project identities already supplied by the authorized canonical roster/provider; it does not broaden result visibility.",
+      "network_service_dependencies": [
+        "Existing canonical Search/provider services only; no new network contract introduced by this responsibility"
+      ],
+      "service_owner": "Existing Fabushi canonical Search/provider stack",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Independent row review and artifact-bound verified evidence remain open"
+      ],
+      "production_entrypoints": [
+        "ProductShell -> ProductionRenderer -> CommandPalette -> commandPaletteEntries -> canonical participant activation"
+      ],
+      "production_evidence": [
+        "commit:674d60bbc1e9059e6160cbfd321fbfff47612fff",
+        "path:frontend/src/production/command-palette-model.ts#dedupeCommandPaletteAgents"
+      ],
+      "test_evidence": [
+        "desktop/e2e/tdrp-canonical-search-contract.spec.ts",
+        "workflow:37597016700@d99de586173377e4618fc1956bb2f30be8f1db11"
+      ],
+      "target_commit": "674d60bbc1e9059e6160cbfd321fbfff47612fff",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell",
+      "composition_slot": "Universal Search / Command Palette",
+      "capability_component": "Canonical Participant Search result projection",
+      "variation_axes": [
+        "all-vs-agents-vs-groups tab",
+        "query-empty-vs-query-nonempty",
+        "visible-vs-hidden participant"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Participant identity",
+        "Canonical Search query/result model",
+        "Existing Command Palette activation/navigation"
+      ],
+      "duplicate_root_check": "No new Search, Participant, Conversation, route, or visual root was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Universal Search",
+      "primary_navigation_target": "Global Command Palette",
+      "collection_surface": "Existing Command Palette Search surface",
+      "creation_flow": "Not applicable; result activation reuses existing canonical navigation.",
+      "object_action_scope": "Participant result activation",
+      "detail_section": "Not applicable",
+      "capability_surface": "Command Palette result list",
+      "route_contract": "Use existing canonical participant/agent/conversation navigation; no source-specific route.",
+      "search_scope": "Universal Search participant scope",
+      "search_provider": "Existing Fabushi Command Palette providers and canonical roster projection",
+      "search_result_types": [
+        "Participant"
+      ],
+      "search_filters": [
+        "fuzzy text query",
+        "agents tab",
+        "groups tab",
+        "all tab",
+        "hidden-result fallback for nonempty query"
+      ],
+      "search_permission_contract": "Authorization/filtering stays upstream in the canonical roster/provider; projection does not add unauthorized identities.",
+      "search_local_remote_contract": "Local canonical roster projection and existing remote/provider results share one Command Palette result composition; replacement dedupe happens before tab/query projection.",
+      "responsive_disposition": "No responsive contract change; reuse existing Command Palette behavior.",
+      "accessibility_contract": "No a11y root/component change; existing Command Palette result semantics remain authoritative.",
+      "keyboard_contract": "Existing Command Palette keyboard selection/tab/activation contract unchanged.",
+      "state_continuity_contract": "Replacement dedupe is recomputed from current roster on each projection and survives reload by derivation rather than a parallel cache.",
+      "ui_acceptance_scenarios": [
+        "A stale and replacement row with one stable id render one result",
+        "A hidden stale row replaced by visible current row renders one visible result"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Command Palette semantic styling only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "CommandPalette",
+        "ResultRow"
+      ],
+      "screen_pattern_id": "UniversalSearchOverlay",
+      "screen_slots": [
+        "Search input",
+        "scope tabs",
+        "results"
+      ],
+      "visual_state_matrix": [
+        "query-empty",
+        "query-match",
+        "hidden-stale-replaced-by-visible"
+      ],
+      "density_contract": "Existing Command Palette density unchanged.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "Existing canonical participant avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing Command Palette motion behavior unchanged.",
+      "reduced_motion_contract": "Existing application reduced-motion behavior unchanged.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SEARCH-ROW-REPLACEMENT-001",
+        "AC-29",
+        "AC-30",
+        "AC-31",
+        "AC-41",
+        "AC-46"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SEARCH-ROW-REPLACEMENT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SEARCH-CANONICAL-ID-001",
+        "INV-TDRP-SEARCH-LATEST-ROW-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "PROP-TDRP-SEARCH-ROW-REPLACEMENT-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CANONICAL-SEARCH-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-COMMAND-PALETTE-PROJECTION-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-CANONICAL-SEARCH-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-SEARCH-REPLACEMENT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-SEARCH-STALE-ROW-001"
+      ],
+      "ui_functional_case_ids": [
+        "UI-TDRP-CANONICAL-SEARCH-RESULT-001"
+      ],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-SEARCH-AUTHORIZED-INPUT-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-SEARCH-DUPLICATE-PARTICIPANT-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-SEARCH",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "replacedRoster"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions ubuntu-24.04 Node 22 Playwright"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [
+        "37596344185@154014fb1e61c212c0cdcbfef2d3c8cbcabda8ff",
+        "37596506426@cde8979d4939b2c65b6e593f4534bf6016e15799",
+        "37596744958@cc318d81532c44f8710681039cc1dba3dafe72cc",
+        "37597016700@d99de586173377e4618fc1956bb2f30be8f1db11"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted telegramdesktop/tdesktop authority; no Telegram UI/product root or retained C++ runtime was introduced.",
+      "reviewer": null,
+      "notes": "This row covers only the row-replacement/filter-rebuild Search responsibility. It intentionally does not decrement global unknown/unread for the rest of share_box.cpp or mark the responsibility verified."
+    }
+  ]
 }
