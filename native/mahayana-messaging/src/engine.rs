@@ -1788,16 +1788,16 @@ impl MessagingEngine {
                         }
                     }
                     Some(ConversationChildIdentity::SavedSublist { participant_id }) => {
-                        let participant_exists = conversation.owner_id.as_ref() == Some(participant_id)
-                            || conversation
-                                .participants
-                                .iter()
-                                .any(|participant| &participant.actor_id == participant_id)
-                            || community.is_some_and(|community| {
-                                community.members.contains_key(participant_id)
-                                    || community.is_subscriber(participant_id)
-                            });
-                        if !participant_exists {
+                        // Telegram SavedSublist is owned either by self Saved Messages or by
+                        // an explicit monoforum parent chat. Fabushi does not yet model the
+                        // monoforum parent relation, so accept only the canonical self
+                        // SavedMessages parent and fail closed for all other parent kinds.
+                        let self_saved_messages = matches!(
+                            conversation.kind,
+                            ConversationKind::SavedMessages
+                        ) && conversation.owner_id.as_ref() == Some(&actor_id);
+                        let participant_exists = self.state.actors.contains_key(participant_id);
+                        if !self_saved_messages || !participant_exists {
                             return Err(EngineError::InvalidConversationChildDestination);
                         }
                     }
@@ -1922,16 +1922,16 @@ impl MessagingEngine {
                         }
                     }
                     Some(ConversationChildIdentity::SavedSublist { participant_id }) => {
-                        let participant_exists = conversation.owner_id.as_ref() == Some(participant_id)
-                            || conversation
-                                .participants
-                                .iter()
-                                .any(|participant| &participant.actor_id == participant_id)
-                            || community.is_some_and(|community| {
-                                community.members.contains_key(participant_id)
-                                    || community.is_subscriber(participant_id)
-                            });
-                        if !participant_exists {
+                        // Telegram SavedSublist is owned either by self Saved Messages or by
+                        // an explicit monoforum parent chat. Fabushi does not yet model the
+                        // monoforum parent relation, so accept only the canonical self
+                        // SavedMessages parent and fail closed for all other parent kinds.
+                        let self_saved_messages = matches!(
+                            conversation.kind,
+                            ConversationKind::SavedMessages
+                        ) && conversation.owner_id.as_ref() == Some(&actor_id);
+                        let participant_exists = self.state.actors.contains_key(participant_id);
+                        if !self_saved_messages || !participant_exists {
                             return Err(EngineError::InvalidConversationChildDestination);
                         }
                     }
@@ -2083,7 +2083,8 @@ impl MessagingEngine {
                     .find(|state| state.destination == destination && state.actor_id == actor_id)
                     .is_some_and(|state| state.marked_unread || state.unread_count.unwrap_or(0) > 0);
                 let context = crate::conversation::ConversationChildUnreadContext {
-                    parent_is_self: conversation.owner_id.as_ref() == Some(&actor_id),
+                    parent_is_self: matches!(conversation.kind, ConversationKind::SavedMessages)
+                        && conversation.owner_id.as_ref() == Some(&actor_id),
                     parent_is_community: self.state.communities.contains_key(&destination.conversation_id),
                     actor_is_monoforum_admin: false,
                 };

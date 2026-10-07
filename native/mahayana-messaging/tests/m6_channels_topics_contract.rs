@@ -608,15 +608,14 @@ fn typed_child_read_and_draft_share_the_canonical_conversation_state() {
     }
 
     let conversation_id = ConversationId::new("conversation:saved-child");
-    let conversation = Conversation::direct(
+    let mut conversation = Conversation::direct(
         conversation_id.0.clone(),
         "Saved child fixture",
-        vec![
-            participant("human:owner", ParticipantRole::Owner),
-            participant("human:peer", ParticipantRole::Member),
-        ],
+        vec![participant("human:owner", ParticipantRole::Owner)],
         2,
     );
+    conversation.kind = ConversationKind::SavedMessages;
+    conversation.owner_id = Some(ActorId::new("human:owner"));
     service
         .handle(
             ClientEnvelope::new(
@@ -847,6 +846,15 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
 
     let parent_id = ConversationId::new("conversation:child-lifecycle");
     let child_id = ConversationId::new("conversation:child-lifecycle:nested");
+    let saved_parent_id = ConversationId::new("conversation:child-lifecycle:saved");
+    let mut saved_parent = Conversation::direct(
+        saved_parent_id.0.clone(),
+        "Saved child lifecycle parent",
+        vec![participant("human:owner", ParticipantRole::Owner)],
+        2,
+    );
+    saved_parent.kind = ConversationKind::SavedMessages;
+    saved_parent.owner_id = Some(ActorId::new("human:owner"));
     for (request_id, conversation) in [
         (
             "create-child-lifecycle-parent",
@@ -872,6 +880,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
                 2,
             ),
         ),
+        ("create-child-lifecycle-saved", saved_parent),
     ] {
         service
             .handle(
@@ -913,7 +922,27 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
     let destination =
         ConversationDestination::nested_conversation(parent_id.clone(), child_id.clone());
     let saved_destination =
-        ConversationDestination::saved_sublist(parent_id.clone(), ActorId::new("human:peer"));
+        ConversationDestination::saved_sublist(saved_parent_id.clone(), ActorId::new("human:peer"));
+
+    let invalid_direct_saved = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "direct-saved-child-denied"),
+                ClientCommand::SetConversationChildNoPaidMessages {
+                    destination: ConversationDestination::saved_sublist(
+                        parent_id.clone(),
+                        ActorId::new("human:peer"),
+                    ),
+                    no_paid_messages: true,
+                },
+            ),
+            3,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        invalid_direct_saved,
+        MessagingServiceError::Engine(EngineError::InvalidConversationChildDestination)
+    ));
 
     service
         .handle(
