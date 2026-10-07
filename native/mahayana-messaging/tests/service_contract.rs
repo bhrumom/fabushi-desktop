@@ -787,3 +787,147 @@ fn human_group_message_requests_bot_execution_inside_messaging_service() {
         Some("messaging-service")
     );
 }
+
+
+#[test]
+fn presence_triggered_send_persists_releases_once_and_replays_idempotently() {
+    let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
+    let sender = ActorId::new("human:presence-sender");
+    let target = ActorId::new("human:presence-target");
+
+    for (id, name) in [
+        ("human:presence-sender", "Sender"),
+        ("human:presence-target", "Target"),
+    ] {
+        service.handle(
+            ClientEnvelope::new(context(id), ClientCommand::UpsertProfile {
+                actor: Actor::human(id, name),
+            }),
+            1,
+        ).unwrap();
+    }
+
+    service.handle(
+        ClientEnvelope::new(
+            context("human:presence-sender"),
+            ClientCommand::CreateConversation {
+                conversation: Conversation::direct(
+                    "chat:presence-trigger",
+                    "Presence trigger",
+                    vec![
+                        Participant {
+                            actor_id: sender.clone(),
+                            role: ParticipantRole::Owner,
+                            joined_at_ms: 1,
+                            muted_until_ms: None,
+                        },
+                        Participant {
+                            actor_id: target.clone(),
+                            role: ParticipantRole::Member,
+                            joined_at_ms: 1,
+                            muted_until_ms: None,
+                        },
+                    ],
+                    1,
+                ),
+            },
+        ),
+        2,
+    ).unwrap();
+
+    let triggered = || ClientCommand::SendWhenParticipantOnline {
+        conversation_id: ConversationId::new("chat:presence-trigger"),
+        client_message_id: ClientMessageId("client:presence-trigger".into()),
+        target_actor_id: target.clone(),
+        content: MessageContent::Text {
+            text: FormattedText::plain("send when online"),
+        },
+        reply_to_message_id: None,
+        thread_root_message_id: None,
+        silent: false,
+        protected_content: false,
+    };
+
+    service.handle(
+        ClientEnvelope::new(context("human:presence-sender"), triggered()),
+        3,
+    ).unwrap();
+    assert_eq!(service.engine().state().pending_presence_sends.len(), 1);
+    assert!(service.engine().state().messages
+        .get(&ConversationId::new("chat:presence-trigger"))
+        .is_none());
+
+    let sync = service.handle(
+        ClientEnvelope::new(
+            context("human:presence-sender"),
+            ClientCommand::Sync { cursor: None, limit: 100 },
+        ),
+        4,
+    ).unwrap();
+    assert!(sync.iter().any(|envelope| matches!(
+        &envelope.event,
+        ServerEvent::SyncBatch { pending_presence_sends, .. }
+            if pending_presence_sends.len() == 1
+    )));
+
+    let store = service.into_store();
+    let mut service = MessagingService::load(store).unwrap();
+    assert_eq!(service.engine().state().pending_presence_sends.len(), 1);
+
+    service.handle(
+        ClientEnvelope::new(context("human:presence-sender"), triggered()),
+        5,
+    ).unwrap();
+    assert_eq!(service.engine().state().pending_presence_sends.len(), 1);
+
+    service.handle(
+        ClientEnvelope::new(
+            context("human:presence-target"),
+            ClientCommand::SetPresence {
+                presence: Presence {
+                    status: PresenceStatus::Online,
+                    last_seen_at_ms: None,
+                    status_text: None,
+                },
+            },
+        ),
+        6,
+    ).unwrap();
+
+    assert!(service.engine().state().pending_presence_sends.is_empty());
+    let messages = &service.engine().state().messages
+        [&ConversationId::new("chat:presence-trigger")];
+    assert_eq!(messages.len(), 1);
+    assert!(messages.values()
+        .all(|message| matches!(message.delivery_state, DeliveryState::Sent)));
+
+    service.handle(
+        ClientEnvelope::new(
+            context("human:presence-target"),
+            ClientCommand::SetPresence {
+                presence: Presence {
+                    status: PresenceStatus::Online,
+                    last_seen_at_ms: None,
+                    status_text: None,
+                },
+            },
+        ),
+        7,
+    ).unwrap();
+    assert_eq!(
+        service.engine().state().messages
+            [&ConversationId::new("chat:presence-trigger")].len(),
+        1
+    );
+
+    service.handle(
+        ClientEnvelope::new(context("human:presence-sender"), triggered()),
+        8,
+    ).unwrap();
+    assert!(service.engine().state().pending_presence_sends.is_empty());
+    assert_eq!(
+        service.engine().state().messages
+            [&ConversationId::new("chat:presence-trigger")].len(),
+        1
+    );
+}
