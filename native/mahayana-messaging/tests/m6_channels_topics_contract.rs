@@ -995,6 +995,12 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
             6,
         )
         .unwrap();
+    assert_eq!(
+        service
+            .engine()
+            .recent_open_destinations(&ActorId::new("human:owner")),
+        &[destination.clone()]
+    );
     service
         .handle(
             ClientEnvelope::new(
@@ -1181,6 +1187,14 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
         .any(|child| {
             child.destination == destination && child.actor_id == ActorId::new("human:owner")
         }));
+    assert!(
+        service
+            .engine()
+            .recent_open_destinations(&ActorId::new("human:owner"))
+            .iter()
+            .all(|recent| recent != &destination),
+        "destroyed child must be removed from runtime recent-open history"
+    );
 
     let after_destroy = service
         .handle(

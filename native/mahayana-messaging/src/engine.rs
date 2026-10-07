@@ -782,9 +782,15 @@ pub enum EngineError {
     MiniAppHostActionRequired,
 }
 
+const MAX_RECENT_OPEN_DESTINATIONS: usize = 32;
+
 #[derive(Debug, Clone, Default)]
 pub struct MessagingEngine {
     state: MessagingState,
+    // Runtime-only canonical navigation projection. This intentionally does not
+    // live in MessagingState: upstream recent-open Thread history is weak and
+    // non-persistent, and restart must not resurrect stale child authority.
+    recent_open_destinations: BTreeMap<ActorId, Vec<ConversationDestination>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -929,13 +935,56 @@ impl MessagingEngine {
         Self::default()
     }
     pub fn from_state(state: MessagingState) -> Self {
-        Self { state }
+        Self {
+            state,
+            recent_open_destinations: BTreeMap::new(),
+        }
     }
     pub fn state(&self) -> &MessagingState {
         &self.state
     }
+    pub fn recent_open_destinations(
+        &self,
+        actor_id: &ActorId,
+    ) -> &[ConversationDestination] {
+        self.recent_open_destinations
+            .get(actor_id)
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+    }
     pub fn into_state(self) -> MessagingState {
         self.state
+    }
+
+    fn note_destination_opened(
+        &mut self,
+        actor_id: &ActorId,
+        destination: &ConversationDestination,
+    ) {
+        let recent = self
+            .recent_open_destinations
+            .entry(actor_id.clone())
+            .or_default();
+        recent.retain(|item| item != destination);
+        recent.insert(0, destination.clone());
+        recent.truncate(MAX_RECENT_OPEN_DESTINATIONS);
+    }
+
+    fn remove_recent_destination(
+        &mut self,
+        actor_id: &ActorId,
+        destination: &ConversationDestination,
+    ) {
+        let remove_actor = self
+            .recent_open_destinations
+            .get_mut(actor_id)
+            .is_some_and(|recent| {
+                recent.retain(|item| item != destination);
+                recent.is_empty()
+            });
+        if remove_actor {
+            self.recent_open_destinations.remove(actor_id);
+        }
     }
 
     pub fn execute(&mut self, command: Command) -> Result<Vec<Event>, EngineError> {
@@ -3826,8 +3875,12 @@ impl MessagingEngine {
                             child.active = false;
                         }
                     }
+                    self.note_destination_opened(&actor_id, &destination);
                 }
-                if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                if let Some(child) = self
+                    .state
+                    .child_state_mut(destination.clone(), actor_id.clone())
+                {
                     child.set_active(active);
                 }
             }
@@ -3894,6 +3947,22 @@ impl MessagingEngine {
                                 Some(ConversationChildIdentity::SavedSublist { .. })
                             ))
                     });
+                    let remove_actor = self
+                        .recent_open_destinations
+                        .get_mut(&actor_id)
+                        .is_some_and(|recent| {
+                            recent.retain(|destination| {
+                                !(destination.conversation_id == conversation_id
+                                    && matches!(
+                                        &destination.child,
+                                        Some(ConversationChildIdentity::SavedSublist { .. })
+                                    ))
+                            });
+                            recent.is_empty()
+                        });
+                    if remove_actor {
+                        self.recent_open_destinations.remove(&actor_id);
+                    }
                 }
             }
             Event::ConversationChildNoPaidMessagesChanged {
@@ -3912,6 +3981,7 @@ impl MessagingEngine {
                 self.state.conversation_child_states.retain(|child| {
                     child.destination != destination || child.actor_id != actor_id
                 });
+                self.remove_recent_destination(&actor_id, &destination);
             }
             Event::ReactionUpdated {
                 conversation_id,
