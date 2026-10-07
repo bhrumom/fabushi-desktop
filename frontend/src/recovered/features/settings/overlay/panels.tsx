@@ -13,7 +13,7 @@ import { SandSelect } from "../../../ui/sand-floating-primitives";
 import { SandSwitch } from "../../../ui/sand-form-primitives";
 import { OverlayDialog } from "../../../ui/overlay-primitives";
 import { ROUTER_PROVIDERS, routerProviderById, type RouterProviderId } from "./router";
-import { formatAccessibilityPreferenceCount, settingsCopy } from "./localization";
+import { formatAccessibilityPreferenceCount, settingsCopy, type SettingsAdvancedCopy } from "./localization";
 
 export type AccountState =
   | { kind: "logged-out"; errorMessage?: string }
@@ -43,12 +43,7 @@ export interface GeneralSettingsPanelProps {
 
 export type LocalToolPermission = "always" | "ask" | "never";
 
-export const THEME_PREFERENCE_OPTIONS: readonly { value: GeneralSettingsPanelProps["theme"]; label: string }[] = [
-  // @evidence recovered/frontend/app/assets/index-BlqerJhg.js#byteOffset=37830 (immutable theme option map)
-  { value: "system", label: "Follow System" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" }
-];
+export const THEME_PREFERENCE_OPTIONS: readonly GeneralSettingsPanelProps["theme"][] = ["system", "light", "dark"];
 
 export interface LocalToolPermissionState {
   permission: LocalToolPermission;
@@ -66,11 +61,7 @@ export function accountCopyIconCodePoint(copied: boolean): number {
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=580874 (select-item data component)
 
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#L20087-L20091
-const LOCAL_TOOL_PERMISSION_OPTIONS: readonly { value: LocalToolPermission; label: string }[] = [
-  { value: "always", label: "Always allow" },
-  { value: "ask", label: "Ask every time" },
-  { value: "never", label: "Never allow" }
-];
+const LOCAL_TOOL_PERMISSION_VALUES: readonly LocalToolPermission[] = ["always", "ask", "never"];
 
 const LOCAL_TOOL_PERMISSION_RANK: Record<LocalToolPermission, number> = { never: 0, ask: 1, always: 2 };
 
@@ -78,20 +69,31 @@ function localToolPermissionExceedsCeiling(permission: LocalToolPermission, ceil
   return ceiling != null && LOCAL_TOOL_PERMISSION_RANK[permission] > LOCAL_TOOL_PERMISSION_RANK[ceiling];
 }
 
+function permissionLabel(copy: SettingsAdvancedCopy, permission: LocalToolPermission): string {
+  return permission === "always" ? copy.permissionAlways : permission === "ask" ? copy.permissionAsk : copy.permissionNever;
+}
+
 export interface ThemePreferencePickerProps {
   value: GeneralSettingsPanelProps["theme"];
   disabled?: boolean;
+  copy?: SettingsAdvancedCopy;
   onChange(value: GeneralSettingsPanelProps["theme"]): void;
 }
 
-export function ThemePreferencePicker({ value, disabled = false, onChange }: ThemePreferencePickerProps) {
+export function ThemePreferencePicker({ value, disabled = false, copy, onChange }: ThemePreferencePickerProps) {
+  const text = copy ?? settingsCopy("en").advancedSettings;
+  const options = [
+    { value: "system" as const, label: text.themeSystem },
+    { value: "light" as const, label: text.themeLight },
+    { value: "dark" as const, label: text.themeDark }
+  ];
   return <SandSelect
-    ariaLabel="Theme"
+    ariaLabel={text.themeLabel}
     className="ui-select-trigger"
     disabled={disabled}
     menuSize="md"
     onValueChange={onChange}
-    options={THEME_PREFERENCE_OPTIONS}
+    options={options}
     placement="bottom-end"
     value={value}
   />;
@@ -109,9 +111,10 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
     const timeout = window.setTimeout(() => setEmailCopied(false), 2000);
     return () => window.clearTimeout(timeout);
   }, [emailCopied]);
-  const title = signedIn ? account.name : account.kind === "logging-in" ? "Signing in" : "Not signed in";
-  const detail = signedIn ? account.email ?? "Signed in to Cursor" : account.kind === "logging-in" ? "Finish signing in from your browser" : "Connect your Cursor account to Grok Bot";
-  const action = signedIn ? "Sign Out" : account.kind === "logging-in" ? "Cancel" : "Sign In with Cursor";
+  const advancedCopy = copy.advancedSettings;
+  const title = signedIn ? account.name : account.kind === "logging-in" ? advancedCopy.accountSigningIn : advancedCopy.accountNotSignedIn;
+  const detail = signedIn ? account.email ?? advancedCopy.accountSignedIn : account.kind === "logging-in" ? advancedCopy.accountFinishSignIn : advancedCopy.accountConnect;
+  const action = signedIn ? advancedCopy.accountSignOut : account.kind === "logging-in" ? advancedCopy.accountCancel : advancedCopy.accountSignIn;
   // @evidence recovered/frontend/app/assets/index-BlqerJhg.js#L40-L50
   const copyEmail = async () => {
     if (!signedIn || account.email == null || typeof navigator === "undefined" || navigator.clipboard == null) return;
@@ -141,7 +144,7 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
           <span className="sand-account-card__body">
             <strong>{title}</strong>
             <span>{detail}</span>
-            {signedIn && account.email ? <SandIconButton aria-label="Copy email address" className="sand-account-card__copy-email" icon={emailCopied ? "check" : "copy"} label="Copy email address" onClick={() => void copyEmail()} platform={platform} size="sm" title="Copy email address" /> : null}
+            {signedIn && account.email ? <SandIconButton aria-label={advancedCopy.accountCopyEmail} className="sand-account-card__copy-email" icon={emailCopied ? "check" : "copy"} label={advancedCopy.accountCopyEmail} onClick={() => void copyEmail()} platform={platform} size="sm" title={advancedCopy.accountCopyEmail} /> : null}
           </span>
           <SandButton disabled={isAccountPending} onClick={onAccountAction} shape="pill" size="md" variant={signedIn ? "secondary" : "primary"}>{action}</SandButton>
         </div>
@@ -151,7 +154,7 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
       <SettingsGroup title={copy.appearance}>
         <label>
           <span>{copy.theme}</span>
-          <ThemePreferencePicker disabled={themePending} onChange={handleThemeChange} value={theme} />
+          <ThemePreferencePicker copy={advancedCopy} disabled={themePending} onChange={handleThemeChange} value={theme} />
         </label>
       </SettingsGroup>
       {privacyModeEnabled !== undefined ? <SettingsGroup title={copy.privacy}>
@@ -165,11 +168,11 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
       {callMediaPreferences ? <SettingsGroup title={copy.mediaDevices}><CallMediaSettingsPanel copy={copy} {...callMediaPreferences} /></SettingsGroup> : null}
       <SettingsGroup title={copy.desktopBehavior}><DesktopBehaviorSettingsPanel copy={copy} /></SettingsGroup>
       {timeZone || localToolPermission || autoReview ? <SettingsGroup title={copy.advanced}>
-        {timeZone ? <TimeZoneSettingsPanel {...timeZone} /> : null}
-        {localToolPermission ? <LocalToolPermissionSettingsPanel {...localToolPermission} /> : null}
-        {autoReview ? <AutoReviewRulesPanel {...autoReview} /> : null}
+        {timeZone ? <TimeZoneSettingsPanel {...timeZone} copy={advancedCopy} /> : null}
+        {localToolPermission ? <LocalToolPermissionSettingsPanel {...localToolPermission} copy={advancedCopy} /> : null}
+        {autoReview ? <AutoReviewRulesPanel {...autoReview} copy={advancedCopy} /> : null}
       </SettingsGroup> : null}
-      {securityKey ? <SecurityKeySettingsGroup {...securityKey} /> : null}
+      {securityKey ? <SecurityKeySettingsGroup {...securityKey} copy={advancedCopy} /> : null}
     </div>
   );
 }
@@ -266,28 +269,28 @@ export interface SecurityKeySettingsGroupProps {
   enabled: boolean;
   platform: NodeJS.Platform;
   onChange(enabled: boolean): void | Promise<boolean>;
+  copy?: SettingsAdvancedCopy;
 }
 
 // @evidence recovered/frontend/app/assets/index-BlqerJhg.js#L519-L529
-export function SecurityKeySettingsGroup({ enabled, platform, onChange }: SecurityKeySettingsGroupProps) {
+export function SecurityKeySettingsGroup({ enabled, platform, onChange, copy }: SecurityKeySettingsGroupProps) {
+  const text = copy ?? settingsCopy("en").advancedSettings;
   const action = useAsyncAction(onChange);
   const isPending = action.isPending;
   const supported = SECURITY_KEY_PLATFORMS.includes(platform);
-  const description = supported
-    ? "Allow Grok Bot to use a security key (such as a YubiKey) connected to your computer. You’ll be asked to approve each use."
-    : "Security keys from Grok Bot's computer aren't supported on this platform yet.";
+  const description = supported ? text.securityKeyDescription : text.securityKeyUnsupported;
   const handleChange = () => {
     if (!supported || isPending) return;
     action.dispatch(!enabled);
   };
 
   return (
-    <SettingsGroup title="Security Key">
+    <SettingsGroup title={text.securityKeyTitle}>
       <div className="sand-settings-row">
         <SandSwitch
           checked={supported && enabled}
           disabled={isPending || !supported}
-          label={<span className="sand-settings-copy"><strong>Use hardware security keys</strong><small>{description}</small></span>}
+          label={<span className="sand-settings-copy"><strong>{text.securityKeyHardware}</strong><small>{description}</small></span>}
           onCheckedChange={handleChange}
         />
       </div>
@@ -298,9 +301,11 @@ export function SecurityKeySettingsGroup({ enabled, platform, onChange }: Securi
 export interface LocalToolPermissionSettingsPanelProps {
   state: LocalToolPermissionState;
   onChange(permission: LocalToolPermission): void | Promise<LocalToolPermission>;
+  copy?: SettingsAdvancedCopy;
 }
 
-export function LocalToolPermissionSettingsPanel({ state, onChange }: LocalToolPermissionSettingsPanelProps) {
+export function LocalToolPermissionSettingsPanel({ state, onChange, copy }: LocalToolPermissionSettingsPanelProps) {
+  const text = copy ?? settingsCopy("en").advancedSettings;
   const action = useAsyncAction(onChange);
   const isPending = action.isPending;
   const handleChange = (permission: LocalToolPermission) => {
@@ -310,16 +315,16 @@ export function LocalToolPermissionSettingsPanel({ state, onChange }: LocalToolP
   return (
     <label>
       <span>
-        <strong>Execution on Local Computer</strong>
-        <small>Let the assistant open files and run tasks on your computer. Auto-review still checks everything first.</small>
-        {state.ceiling != null ? <small>Your team&apos;s admin allows at most &quot;{LOCAL_TOOL_PERMISSION_OPTIONS.find((option) => option.value === state.ceiling)?.label}&quot;</small> : null}
+        <strong>{text.localExecutionTitle}</strong>
+        <small>{text.localExecutionDescription}</small>
+        {state.ceiling != null ? <small>{text.localExecutionMax.replace("{permission}", permissionLabel(text, state.ceiling))}</small> : null}
       </span>
       <SandSelect
-        ariaLabel="Execution on Local Computer"
+        ariaLabel={text.localExecutionTitle}
         className="ui-select-trigger"
         disabled={isPending}
         onValueChange={handleChange}
-        options={LOCAL_TOOL_PERMISSION_OPTIONS.map((option) => ({ ...option, disabled: localToolPermissionExceedsCeiling(option.value, state.ceiling) }))}
+        options={LOCAL_TOOL_PERMISSION_VALUES.map((value) => ({ value, label: permissionLabel(text, value), disabled: localToolPermissionExceedsCeiling(value, state.ceiling) }))}
         placement="bottom-end"
         value={state.permission}
       />
@@ -330,6 +335,7 @@ export function LocalToolPermissionSettingsPanel({ state, onChange }: LocalToolP
 export interface TimeZoneSettingsPanelProps {
   state: DesktopTimeZoneState;
   onChange(timeZone: string | null): void | Promise<DesktopTimeZoneState>;
+  copy?: SettingsAdvancedCopy;
 }
 
 function formatTimeZoneName(timeZone: string): string {
@@ -344,10 +350,11 @@ function supportedTimeZones(): string[] {
   }
 }
 
-export function TimeZoneSettingsPanel({ state, onChange }: TimeZoneSettingsPanelProps) {
+export function TimeZoneSettingsPanel({ state, onChange, copy }: TimeZoneSettingsPanelProps) {
   const action = useAsyncAction(onChange);
   const isPending = action.isPending;
-  const autoLabel = state.detectedTimeZone == null ? "Auto-detect" : `Auto-detect (${formatTimeZoneName(state.detectedTimeZone)})`;
+  const text = copy ?? settingsCopy("en").advancedSettings;
+  const autoLabel = state.detectedTimeZone == null ? text.autoDetect : text.autoDetectZone.replace("{zone}", formatTimeZoneName(state.detectedTimeZone));
   const options = supportedTimeZones();
   const values = [
     { value: "auto", label: autoLabel },
@@ -362,8 +369,8 @@ export function TimeZoneSettingsPanel({ state, onChange }: TimeZoneSettingsPanel
 
   return (
     <label>
-      <span>Timezone</span>
-      <SandSelect ariaLabel="Timezone" className="ui-select-trigger" disabled={isPending} onValueChange={handleChange} options={values} placement="bottom-end" value={state.overrideTimeZone ?? "auto"} />
+      <span>{text.timezone}</span>
+      <SandSelect ariaLabel={text.timezoneLabel} className="ui-select-trigger" disabled={isPending} onValueChange={handleChange} options={values} placement="bottom-end" value={state.overrideTimeZone ?? "auto"} />
     </label>
   );
 }
@@ -397,7 +404,7 @@ export interface UsageSettingsPanelProps {
 }
 
 const UPGRADE_ERROR = "Couldn’t complete the upgrade action — try again";
-const CANCEL_TRIAL_COPY = "This ends your Grok Bot trial now and removes your remaining trial credits. Your card won’t be charged either way — the trial never turns into a paid plan on its own.";
+const CANCEL_TRIAL_COPY = "This ends your Fabushi trial now and removes your remaining trial credits. Your card won’t be charged either way — the trial never turns into a paid plan on its own.";
 
 export function UsageSettingsPanel({ meters = [], state, onRetry, onUpgrade, onCancelTrial, onCancelDialogOpen, provider = "cursor" }: UsageSettingsPanelProps) {
   const [upgradePending, setUpgradePending] = useState(false);
@@ -453,11 +460,11 @@ export function UsageSettingsPanel({ meters = [], state, onRetry, onUpgrade, onC
   const upgrade = summary?.upgradeCta ?? null;
   const upgradeSupportingText = summary == null ? null : upgrade == null ? null
     : !summary.hasNonZeroIncludedLimit && summary.hasAvailableUsage && summary.sandUsagePercent != null && summary.sandUsagePercent < 100
-      ? "Get more Grok Bot usage"
+      ? "Get more Fabushi usage"
       : summary.isSandTrial
         ? "You’ve used all of your trial usage"
         : summary.hasEndedSandTrial
-          ? "Your trial has ended. Upgrade to continue using Grok Bot."
+          ? "Your trial has ended. Upgrade to continue using Fabushi."
           : null;
   const canCancelTrial = summary?.isSandTrial === true && summary.canCancelSandTrial && onCancelTrial != null;
 
@@ -661,7 +668,7 @@ export function UpdatesSettingsPanel({
       <div className="sand-settings-beta-stack">
         <SettingsGroup title="Updates">
           <div className="sand-settings-beta__status" role="status">
-            <span>Grok Bot couldn&apos;t load update status. Check again to retry.</span>
+            <span>Fabushi couldn&apos;t load update status. Check again to retry.</span>
             <SandButton disabled={checkPending} onClick={() => runPendingAction(onCheck, setCheckPending)} size="md" variant="secondary">{checkPending ? "Checking…" : "Check for Updates"}</SandButton>
           </div>
         </SettingsGroup>
@@ -670,8 +677,8 @@ export function UpdatesSettingsPanel({
           description={egressTunnel.enabled
             ? egressTunnelStatusDescription(egressTunnel.status)
             : egressTunnel.available
-              ? "Route web traffic from Grok Bot's computer out through this desktop instead of the cloud. Applies to new connections."
-              : "Grok Bot's computer wasn't provisioned with the egress tunnel — start a new one to use this."}
+              ? "Route web traffic from Fabushi's computer out through this desktop instead of the cloud. Applies to new connections."
+              : "Fabushi's computer wasn't provisioned with the egress tunnel — start a new one to use this."}
           enabled={egressTunnel.enabled}
           onChange={egressTunnel.onChange}
         /> : null}
@@ -696,8 +703,8 @@ export function UpdatesSettingsPanel({
   const egressDescription = egressTunnel?.enabled === true
     ? egressTunnelStatusDescription(egressTunnel.status)
     : egressAvailable
-      ? "Route web traffic from Grok Bot's computer out through this desktop instead of the cloud. Applies to new connections."
-      : "Grok Bot's computer wasn't provisioned with the egress tunnel — start a new one to use this.";
+      ? "Route web traffic from Fabushi's computer out through this desktop instead of the cloud. Applies to new connections."
+      : "Fabushi's computer wasn't provisioned with the egress tunnel — start a new one to use this.";
   return (
     <div className="sand-settings-beta-stack">
       <SettingsGroup title="Updates">
@@ -714,7 +721,7 @@ export function UpdatesSettingsPanel({
           />
         </div> : null}
         <div className="sand-settings-row">
-          <span className="sand-settings-copy"><strong>Grok Bot {status.currentVersion}</strong><small>Updates follow the {UPDATE_TRACK_LABELS[status.currentTrack]} track</small></span>
+          <span className="sand-settings-copy"><strong>Fabushi {status.currentVersion}</strong><small>Updates follow the {UPDATE_TRACK_LABELS[status.currentTrack]} track</small></span>
           {status.state.type === "ready" ? (
             <SandButton disabled={installPending || onInstall == null} onClick={() => onInstall == null ? undefined : runPendingAction(onInstall, setInstallPending)} size="md" variant="primary">Restart to Update</SandButton>
           ) : (
