@@ -45,7 +45,7 @@ test("scope replacement aborts child-history requests and fences stale settlemen
 
 test("same-around duplicate coalesces into exactly one retry after settlement", async () => {
   const requests: ConversationChildPageRequest[] = [];
-  const pending = [deferred<ConversationChildPage>(), deferred<ConversationChildPage>()];
+  const pending = [deferred<ConversationChildPage>(), deferred<ConversationChildPage>(), deferred<ConversationChildPage>()];
   const commits: string[] = [];
   const controller = createConversationChildPageRequestController({
     fetchPage: (request) => {
@@ -102,8 +102,16 @@ test("stale before boundary is discarded and retried against the fresh boundary"
   assert.equal(requests.length, 2);
   assert.equal(requests[1].anchor, "m9");
 
-  pending[1].resolve(page("fresh"));
+  beforeBoundary = "m8";
+  pending[1].resolve(page("still-stale"));
   await pending[1].promise;
+  await Promise.resolve();
+  assert.deepEqual(commits, []);
+  assert.equal(requests.length, 3);
+  assert.equal(requests[2].anchor, "m8");
+
+  pending[2].resolve(page("fresh"));
+  await pending[2].promise;
   await Promise.resolve();
   assert.deepEqual(commits, ["fresh"]);
 });
