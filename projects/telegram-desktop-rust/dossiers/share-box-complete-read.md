@@ -176,15 +176,16 @@ Disposition: canonical Message formatted-text/entity owner plus OS clipboard ada
 
 ## Shipping composition audit
 
-Current shipping composition is not yet equivalent to the implemented native-core slices:
+The current shipping Human Conversation path now has an implemented Forward surface, but the responsibility is still **not verified**:
 
-- `frontend/src/production/ProductionRenderer.tsx` is the real shipping Conversation root and renders `ConversationTranscript`; its transcript call currently exposes Reply/Thread/Copy/Reaction behavior but no Forward action.
-- Human sends from that renderer call Host method `sendHumanMessage`.
-- `source/host/src/extensions/session/gateway.rs` projects `sendHumanMessage` into `Session::append_human_message`.
-- `Session::append_human_message` is the existing shipping owner for participant checks, reply validation, clientNonce idempotency, pending/dispatching settlement, attachment upload, remote persisted-content validation and retry recovery.
-- `source/host/Cargo.toml` has no dependency on `native/mahayana-messaging` / `fabushi-messaging-core`.
+- `frontend/src/production/ProductionRenderer.tsx` remains the real shipping Conversation root and injects `onForward` only for Human conversations into the existing `ConversationTranscript`; no second conversation route or source-specific app was added.
+- `frontend/src/production/ForwardMessageDialog.tsx` is mounted inside the existing Conversation route. It performs debounced/stale-fenced recipient queries, multi-selection, sender/caption privacy controls, duplicate-submit fencing, and partial-settlement retry while retaining one request identity.
+- recipient query flows `ProductionRenderer -> Host gateway searchHumanRecipients -> ProductionSessionWorkers::search_human_recipients -> list_human_conversations`. This reads the existing Host Session Human Conversation truth and creates no persisted Search/recipient owner.
+- forward submission flows `ProductionRenderer -> Host gateway forwardHumanMessage -> ProductionSessionWorkers::forward_human_message -> append_human_message_with_context`. It therefore reuses the existing Human Message owner for clientNonce durability, pending/dispatching lifecycle, attachment handling, remote settlement and restart recovery rather than introducing another Message store.
+- the focused Host regression `sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart` exercises recipient lookup, duplicate-destination collapse, partial fan-out settlement, privacy coupling, changed-policy replay conflict and restart replay.
+- `source/host/Cargo.toml` still does not depend on `native/mahayana-messaging` / `fabushi-messaging-core`. The shipping Host path mirrors the native `ForwardPrivacy` semantics rather than executing that exact implementation, and the Host recipient query is currently Human-direct scoped rather than the full native `SearchRecipients` media/poll/community/channel authorization contract.
 
-Therefore `TDRP-R9-SHARE-FORWARD-PRIVACY-001` and `TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001` remain implemented domain slices only. They cannot be called shipping-complete or verified until the canonical Host/Coordinator composition carries those responsibilities without creating a second Message/Search owner, and exact-head tests prove that path.
+Therefore the previous “not shipping-wired” blocker is closed, but **policy consolidation and exact-head evidence remain open**. `TDRP-R9-SHARE-FORWARD-PRIVACY-001` cannot become verified until one executable canonical privacy policy is used by shipping and the current-head integration/temporal/recovery/E2E evidence is green. `TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001` cannot become verified until the shipping picker executes the full pre-exposure `SearchRecipients` authorization contract, not merely Human-direct local filtering. There is still no second persisted Message or Search owner.
 
 ## Exact-head evidence routing
 
