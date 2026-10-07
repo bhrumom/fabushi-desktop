@@ -1,70 +1,93 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createConversationWorkspaceController } from "./conversation-workspace-controller.ts";
+import { bindConversationChildSelectionToPagination } from "./child-history-composition.ts";
+import {
+  conversationDestinationScopeKey,
+  createConversationChildSelectionController
+} from "./child-selection.ts";
+import { createConversationChildPageRequestController } from "./child-pagination.ts";
 
-const emptyTranscriptPage = {
-  entries: [],
-  hasMore: false,
-  cursor: null
-};
-
-test("workspace composes canonical child selection with child pagination scope", async () => {
+test("shipping composition projects canonical child selection into child pagination scope", async () => {
   const requests: Array<{ scopeKey: string; direction: string; anchor: string | null }> = [];
   const commits: string[] = [];
-  const controller = createConversationWorkspaceController({
-    accountSlot: "account:one",
-    agentId: "agent:one",
-    fetchTranscriptPage: async () => emptyTranscriptPage,
-    childHistory: {
-      fetchPage: async (request) => {
-        requests.push(request);
-        return { messageIds: ["message:one"] };
-      },
-      getBoundary: () => null,
-      commitPage: (_direction, page) => commits.push(...page.messageIds),
-      resolveLegacyTopicRoot: (_conversationId, legacyTopicId) =>
-        legacyTopicId === "7" ? "message:700" : null
-    }
+  const selection = createConversationChildSelectionController({
+    resolveLegacyTopicRoot: (_conversationId, legacyTopicId) =>
+      legacyTopicId === "7" ? "message:700" : null
   });
+  const pagination = createConversationChildPageRequestController({
+    fetchPage: async (request) => {
+      requests.push(request);
+      return { messageIds: ["message:one"] };
+    },
+    getBoundary: () => null,
+    commitPage: (_direction, page) => commits.push(...page.messageIds)
+  });
+  let changes = 0;
+  const unbind = bindConversationChildSelectionToPagination(
+    selection,
+    pagination,
+    conversationDestinationScopeKey,
+    () => { changes += 1; }
+  );
 
-  assert.equal(controller.selectLegacyTopicChild({
+  assert.equal(pagination.getSnapshot().scopeKey, null);
+  assert.equal(selection.selectLegacyTopic({
     conversationId: "channel:one",
     legacyTopicId: "missing"
   }), false);
-  assert.equal(controller.getChildSelection()?.getSnapshot().selected, null);
-  assert.equal(controller.getChildPagination()?.getSnapshot().scopeKey, null);
+  assert.equal(pagination.getSnapshot().scopeKey, null);
 
-  assert.equal(controller.selectLegacyTopicChild({
+  assert.equal(selection.selectLegacyTopic({
     conversationId: "channel:one",
     legacyTopicId: "7"
   }), true);
   assert.equal(
-    controller.getChildPagination()?.getSnapshot().scopeKey,
+    pagination.getSnapshot().scopeKey,
     "conversation:channel:one:topic:message:700"
   );
 
-  await controller.getChildPagination()?.loadAround("message:700");
+  await pagination.loadAround("message:700");
   assert.equal(requests.length, 1);
   assert.equal(requests[0]?.scopeKey, "conversation:channel:one:topic:message:700");
   assert.deepEqual(commits, ["message:one"]);
+  assert.ok(changes >= 2);
 
-  controller.setScope("account:two", "agent:two");
-  assert.equal(controller.getChildSelection()?.getSnapshot().selected, null);
-  assert.equal(controller.getChildPagination()?.getSnapshot().scopeKey, null);
+  selection.clear();
+  assert.equal(pagination.getSnapshot().scopeKey, null);
 
-  controller.dispose();
+  unbind();
+  pagination.dispose();
+  selection.dispose();
 });
 
-test("workspace without child-history capability preserves the existing Agent path", () => {
-  const controller = createConversationWorkspaceController({
-    fetchTranscriptPage: async () => emptyTranscriptPage
+test("destroying the selected child clears the shipping page scope instead of falling back to parent", () => {
+  const selection = createConversationChildSelectionController();
+  const pagination = createConversationChildPageRequestController({
+    fetchPage: async () => ({ messageIds: [] }),
+    getBoundary: () => null,
+    commitPage: () => {}
   });
-  assert.equal(controller.getChildSelection(), null);
-  assert.equal(controller.getChildPagination(), null);
-  assert.equal(controller.selectConversationChild({
+  const unbind = bindConversationChildSelectionToPagination(
+    selection,
+    pagination,
+    conversationDestinationScopeKey
+  );
+
+  selection.select({
     conversationId: "channel:one",
-    child: { kind: "topic", rootMessageId: "message:1" }
-  }), false);
-  controller.dispose();
+    child: { kind: "topic", rootMessageId: "message:700" }
+  });
+  assert.notEqual(pagination.getSnapshot().scopeKey, null);
+
+  assert.equal(selection.clearDestroyedChild(
+    "channel:one",
+    { kind: "topic", rootMessageId: "message:700" }
+  ), true);
+  assert.equal(selection.getSnapshot().selected, null);
+  assert.equal(pagination.getSnapshot().scopeKey, null);
+
+  unbind();
+  pagination.dispose();
+  selection.dispose();
 });
