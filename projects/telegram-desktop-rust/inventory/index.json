@@ -4,9 +4,9 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+    "commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
     "tree": "b4095fab77f923fca2a4b99d710ec333aa6757ab",
-    "baseline_identity_accepted": true
+    "baseline_identity_accepted": false
   },
   "inventory": {
     "root_non_directory_entries": 6355,
@@ -31,7 +31,8 @@
       "build-time-acquisition-candidates.txt"
     ],
     "evidence_status": "historical-only",
-    "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b"
+    "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+    "superseded_by_upstream_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39"
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,5 +42,27 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Rebased to telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b. Root cardinality remains 6,355 non-directory entries; recursive total remains 15,788. Thirty-three source entries are now read-complete on the accepted baseline. The newly completed story slider/view entries are media_stories_slider.h@37dbca0504c3423a14665c5b692f2dc2699d5469, media_stories_slider.cpp@bdb547186edc53fbfd64dd1434f861a27fb3be0d, media_stories_view.h@0f3e59e99503aa4924937ac715eccdbcd0966fa3, and media_stories_view.cpp@8fe4a5de24fd67abe0b64da0a45ec4e0fd901b30. The Story stealth entries media_stories_stealth.h@649cfa1eb5abcad11706741753bb70232fe43c7a and media_stories_stealth.cpp@8bd47aaf5b5b454a6f2ac0b4641b285646d4a9b3 are also read-complete. unread_minimum is therefore 15,755; unknown remains 15,788 and omitted remains 0 while responsibility closure is open."
+  "note": "Rebased to telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b. Root cardinality remains 6,355 non-directory entries; recursive total remains 15,788. Thirty-three source entries are now read-complete on the accepted baseline. The newly completed story slider/view entries are media_stories_slider.h@37dbca0504c3423a14665c5b692f2dc2699d5469, media_stories_slider.cpp@bdb547186edc53fbfd64dd1434f861a27fb3be0d, media_stories_view.h@0f3e59e99503aa4924937ac715eccdbcd0966fa3, and media_stories_view.cpp@8fe4a5de24fd67abe0b64da0a45ec4e0fd901b30. The Story stealth entries media_stories_stealth.h@649cfa1eb5abcad11706741753bb70232fe43c7a and media_stories_stealth.cpp@8bd47aaf5b5b454a6f2ac0b4641b285646d4a9b3 are also read-complete. unread_minimum is therefore 15,755; unknown remains 15,788 and omitted remains 0 while responsibility closure is open.",
+  "rebaseline": {
+    "from_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+    "to_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
+    "ahead_by": 15,
+    "changed_paths": 5,
+    "unchanged_story_blob_rebind": [
+      "Telegram/SourceFiles/media/stories/media_stories_slider.h@37dbca0504c3423a14665c5b692f2dc2699d5469",
+      "Telegram/SourceFiles/media/stories/media_stories_slider.cpp@bdb547186edc53fbfd64dd1434f861a27fb3be0d",
+      "Telegram/SourceFiles/media/stories/media_stories_view.h@0f3e59e99503aa4924937ac715eccdbcd0966fa3",
+      "Telegram/SourceFiles/media/stories/media_stories_view.cpp@8fe4a5de24fd67abe0b64da0a45ec4e0fd901b30",
+      "Telegram/SourceFiles/media/stories/media_stories_stealth.h@649cfa1eb5abcad11706741753bb70232fe43c7a",
+      "Telegram/SourceFiles/media/stories/media_stories_stealth.cpp@8bd47aaf5b5b454a6f2ac0b4641b285646d4a9b3"
+    ],
+    "changed_authority_paths": [
+      "Telegram/ThirdParty/xxHash",
+      "Telegram/build/docker/centos_env/Dockerfile",
+      "Telegram/build/docker/centos_env/poetry.lock",
+      "Telegram/build/prepare/prepare.py",
+      "snap/snapcraft.yaml"
+    ],
+    "current_head_source_authority_evidence": "pending"
+  }
 }
