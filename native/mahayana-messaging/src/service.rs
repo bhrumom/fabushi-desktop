@@ -1331,6 +1331,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 folders: Vec::new(),
                 drafts: Vec::new(),
                 topic_drafts: Vec::new(),
+                pending_presence_sends: Vec::new(),
                 invoices: Vec::new(),
                 orders: Vec::new(),
                 stories: Vec::new(),
