@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
-  "target_commit": "3d874b8e055748f8f01b4a96183a101432ea3a50",
+  "target_commit": "aa9df7fef3454a81aacf489fecae984099cdeab4",
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
     "unread": 15788,
     "omitted": 0,
-    "responsibilities_total": 1,
+    "responsibilities_total": 2,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -265,6 +265,251 @@
       "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted telegramdesktop/tdesktop authority; no Telegram UI/product root or retained C++ runtime was introduced.",
       "reviewer": null,
       "notes": "This row covers only the row-replacement/filter-rebuild Search responsibility. It intentionally does not decrement global unknown/unread for the rest of share_box.cpp or mark the responsibility verified."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+      "source_path": "Telegram/SourceFiles/boxes/url_auth_box.cpp",
+      "source_blob_sha": "f68ea15d650a07ed52839020fb46711012b288ae",
+      "source_kind": "source",
+      "module_id": "tdesktop.boxes.url_auth",
+      "responsibility_id": "TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001",
+      "source_symbols": [
+        "AcceptedUrlContext",
+        "ActivateButton",
+        "ActivateUrl",
+        "RequestButton",
+        "RequestUrl"
+      ],
+      "capability_ids": [
+        "CAP-EXTERNAL-URL-CREDENTIAL-BOUNDARY",
+        "CAP-ACCOUNT-AUTH"
+      ],
+      "dependency_ids": [
+        "ExternalUrlPolicy",
+        "FabushiAccount",
+        "MainEdge",
+        "NativeShell"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/external-url-auth-context.md",
+      "behavior_contract": "Ordinary external URL opens must not preserve foreign web-login credential parameters. Only a URL returned through the authenticated first-party account flow and validated against the exact Fabushi service origin may retain its server-issued auth parameters.",
+      "state_machine": "untrusted URL -> protocol validation -> strip foreign web-auth parameters -> native open; authenticated account service URL -> exact-origin validation -> accepted-auth context -> native open without stripping server-issued parameters.",
+      "side_effects": [
+        "Sanitizes ordinary HTTP/HTTPS external URL opens before native dispatch",
+        "Allows the existing Fabushi account owner to preserve server-issued login parameters only after exact-origin validation"
+      ],
+      "failure_cases": [
+        "Foreign login token survives an ordinary link click",
+        "Renderer or MainEdge can self-upgrade an arbitrary URL into accepted-auth context",
+        "Accepted account URL crosses origin or embeds userinfo credentials",
+        "Nested percent-encoded parameter name bypasses stripping"
+      ],
+      "ui_disposition": "No new UI surface. Reuse existing ProductShell/MainEdge and Fabushi account login flow; this is a security-policy responsibility.",
+      "non_ui_responsibilities": [
+        "Foreign web-auth parameter stripping",
+        "Server-accepted auth-context privilege",
+        "Exact first-party origin validation",
+        "No renderer-controlled privilege escalation"
+      ],
+      "platform_delta": "Telegram ClickHandlerContext is re-expressed as a source-neutral external URL policy plus a trusted Fabushi account-owner capability; no Telegram URL runtime is retained.",
+      "existing_owner_candidates": [
+        "source/shared/external-url-policy.ts",
+        "source/product/fabushi/fabushi-account-service.ts",
+        "source/product/fabushi/fabushi-account-adapters.ts",
+        "source/electron-main/main-edge.ts",
+        "source/electron-main/main-production-services.ts"
+      ],
+      "existing_owner": "Canonical external URL policy + Fabushi account owner",
+      "rejected_existing_owners": [
+        "MainEdge alone: renderer-accessible generic external-open boundary must not mint accepted-auth privilege",
+        "New Telegram/Auth URL owner: prohibited parallel source-specific architecture"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/shared/external-url-policy.ts",
+        "source/product/fabushi/fabushi-account-adapters.ts"
+      ],
+      "fabushi_target_symbols": [
+        "stripForeignWebAuthTokens",
+        "parseAllowedExternalUrl",
+        "parseServerAcceptedAuthExternalUrl",
+        "openServerAcceptedFabushiLoginUrl"
+      ],
+      "target_language": "TypeScript",
+      "language_rationale": "The responsibility is a desktop URL-policy/account-composition boundary already owned by TypeScript Electron/product code; adding a Rust or source-specific owner would duplicate the shipping authority.",
+      "command_event_contracts": [
+        "MainEdge openExternal -> existing shell.openExternalUrl -> parseAllowedExternalUrl -> native external open",
+        "Fabushi browser sign-in server result -> openServerAcceptedFabushiLoginUrl -> exact-origin accepted auth URL -> native external open"
+      ],
+      "state_owner": "Existing canonical external URL policy for ordinary opens; Fabushi account service/adapters for accepted login URLs",
+      "lifecycle_owner": "Existing Electron main process and Fabushi account-service lifecycle",
+      "persistence_and_restart": "No new persistence. The accepted-auth privilege is derived per server response and exact-origin validation, so it is not persisted across restart.",
+      "concurrency_and_cancellation": "No new concurrency owner. Account login retains its existing AbortController/operationEpoch cancellation; URL sanitization is synchronous.",
+      "security_boundary": "Renderer/MainEdge ordinary URLs are always sanitized. Only the authenticated Fabushi account flow can call the accepted-auth parser, and that parser requires exact first-party origin and rejects URL userinfo.",
+      "network_service_dependencies": [
+        "Existing Fabushi /api/auth/browser/start contract returns the login URL",
+        "Existing first-party Fabushi API origin policy"
+      ],
+      "service_owner": "Existing Fabushi account service / first-party authentication control plane",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Current-head GitHub Actions evidence and independent responsibility review remain open"
+      ],
+      "production_entrypoints": [
+        "ProductShell/MainEdge -> main-production-services.openExternalUrl -> parseAllowedExternalUrl -> existing MCP/native shell",
+        "FabushiAuthService.login -> createFabushiProductionAccountOAuthBinding -> openServerAcceptedFabushiLoginUrl -> native shell"
+      ],
+      "production_evidence": [
+        "commit:aa9df7fef3454a81aacf489fecae984099cdeab4",
+        "path:source/shared/external-url-policy.ts#parseAllowedExternalUrl",
+        "path:source/product/fabushi/fabushi-account-adapters.ts#openServerAcceptedFabushiLoginUrl"
+      ],
+      "test_evidence": [
+        "desktop/e2e/tdrp-external-url-auth-policy.spec.ts",
+        ".github/workflows/tdrp-external-url-auth-responsibility.yml"
+      ],
+      "target_commit": "aa9df7fef3454a81aacf489fecae984099cdeab4",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / Electron main production composition",
+      "composition_slot": "External URL boundary and Fabushi account authentication",
+      "capability_component": "Canonical external URL credential policy",
+      "variation_axes": [
+        "ordinary external URL vs authenticated account URL",
+        "query vs fragment parameters",
+        "plain vs nested-percent-encoded names",
+        "HTTP/HTTPS vs other allowlisted schemes"
+      ],
+      "shared_owner_contracts": [
+        "Canonical MainEdge external-open path",
+        "Fabushi account origin policy",
+        "Native shell external-open adapter"
+      ],
+      "duplicate_root_check": "No new Telegram URL/Auth root, second account owner, second MainEdge, or second native shell path was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "No new UI entry; existing account login and link activation",
+      "primary_navigation_target": "Existing ProductShell / Account surface",
+      "collection_surface": "Not applicable; security policy is shared infrastructure",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "External URL activation / browser sign-in",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing link activation and browser sign-in",
+      "route_contract": "No new route. Existing external-open and account-login routes are reused.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable; this responsibility enforces credential handling before external navigation.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "No responsive UI change.",
+      "accessibility_contract": "No accessibility surface change.",
+      "keyboard_contract": "Existing link/account keyboard activation remains unchanged.",
+      "state_continuity_contract": "Accepted-auth privilege is ephemeral and must be re-derived from a fresh authenticated server response after reload/restart.",
+      "ui_acceptance_scenarios": [
+        "Ordinary link activation opens a sanitized URL",
+        "Account browser sign-in opens the exact server URL only when it matches the first-party origin"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "No new visual tokens"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "ExistingProductShell",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "No visual density change.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "critical",
+      "requirement_ids": [
+        "TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001",
+        "AC-02",
+        "AC-19",
+        "AC-41",
+        "AC-42",
+        "AC-46",
+        "AC-49"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-URL-AUTH-ACCEPTED-CONTEXT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-URL-AUTH-STRIP-FOREIGN-001",
+        "INV-TDRP-URL-AUTH-EXACT-ORIGIN-001",
+        "INV-TDRP-URL-AUTH-NO-RENDERER-UPGRADE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "PROP-TDRP-URL-AUTH-ENCODING-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-URL-AUTH-BOUNDARY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-FABUSHI-ACCOUNT-EXTERNAL-OPEN-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-EXTERNAL-URL-AUTH-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-URL-AUTH-EPHEMERAL-CONTEXT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-URL-AUTH-UNTRUSTED-ORIGIN-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-URL-AUTH-STRIP-001",
+        "SEC-TDRP-URL-AUTH-EXACT-ORIGIN-001",
+        "SEC-TDRP-URL-AUTH-PRIVILEGE-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-URL-AUTH-TOKEN-SMUGGLING-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-SECURITY",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "foreign-auth-query",
+        "foreign-auth-fragment",
+        "server-accepted-first-party-url"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions ubuntu-24.04 Node 22 Playwright"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted telegramdesktop/tdesktop security semantics; no Telegram runtime or product-branded auth owner was retained.",
+      "reviewer": null,
+      "notes": "This row covers only the accepted-auth-context / foreign-token stripping responsibility. It intentionally does not mark the rest of url_auth_box.cpp, click_handler_types.cpp, or ui_integration.cpp as read and does not decrement global unknown/unread."
     }
   ]
 }
