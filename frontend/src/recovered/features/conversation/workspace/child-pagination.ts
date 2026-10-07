@@ -145,12 +145,14 @@ export function createConversationChildPageRequestController(
           const boundaryNow = options.getBoundary(direction);
           if (boundaryNow !== anchor) {
             retryAfterSettlement = true;
-            return;
+          } else {
+            options.commitPage(direction, page);
+            lastFailure = null;
           }
+        } else {
+          options.commitPage(direction, page);
+          lastFailure = null;
         }
-
-        options.commitPage(direction, page);
-        lastFailure = null;
       } catch (error) {
         const request = { serial, scopeGeneration: requestGeneration, scopeKey: requestScope, direction };
         if (!current(request) || controller.signal.aborted || isAbortFailure(error)) return;
@@ -164,14 +166,14 @@ export function createConversationChildPageRequestController(
           const retryAnchor = queuedAroundRetry;
           queuedAroundRetry = undefined;
           emit();
-          void start("around", retryAnchor);
+          await start("around", retryAnchor);
           return;
         }
 
         if (retryAfterSettlement) {
           emit();
           const freshBoundary = options.getBoundary(direction as "before" | "after");
-          if (freshBoundary != null) void start(direction, freshBoundary);
+          if (freshBoundary != null) await start(direction, freshBoundary);
           return;
         }
 
