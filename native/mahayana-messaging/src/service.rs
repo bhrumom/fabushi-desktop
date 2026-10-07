@@ -1338,6 +1338,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 folders: Vec::new(),
                 drafts: Vec::new(),
                 topic_drafts: Vec::new(),
+                conversation_child_states: Vec::new(),
                 pending_presence_sends: Vec::new(),
                 invoices: Vec::new(),
                 orders: Vec::new(),
@@ -1659,6 +1660,15 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .filter_map(|conversation_id| state.topic_drafts.get(conversation_id))
                     .filter_map(|by_actor| by_actor.get(actor_id))
                     .flat_map(|by_topic| by_topic.values())
+                    .cloned()
+                    .collect(),
+                conversation_child_states: state
+                    .conversation_child_states
+                    .iter()
+                    .filter(|child| {
+                        &child.actor_id == actor_id
+                            && visible_conversation_ids.contains(&child.destination.conversation_id)
+                    })
                     .cloned()
                     .collect(),
                 pending_presence_sends: state
