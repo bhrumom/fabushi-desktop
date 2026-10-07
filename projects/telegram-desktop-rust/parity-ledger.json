@@ -7,9 +7,9 @@
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15753,
+    "unread": 15751,
     "omitted": 0,
-    "responsibilities_total": 18,
+    "responsibilities_total": 20,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -4326,6 +4326,566 @@
       "command_event_contracts": [
         "Current TranscriptCard action -> typed transport -> authoritative settlement",
         "scope/dispose -> generation fence -> stale result rejection"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "module_id": "tdesktop.iv.markdown.article-text",
+      "capability_ids": [
+        "CAP-RICH-TEXT-LINKS",
+        "CAP-INLINE-RICH-BUTTON",
+        "CAP-INLINE-MATH",
+        "CAP-INLINE-MEDIA"
+      ],
+      "dependency_ids": [
+        "ConversationTranscript",
+        "TranscriptCard",
+        "ExternalUrl",
+        "Math",
+        "Resource"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/iv-markdown-article-text-complete-read.md",
+      "existing_owner_candidates": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts"
+      ],
+      "existing_owner": "Canonical ConversationTranscript + existing URL/Math/Resource/TranscriptCard action owners",
+      "rejected_existing_owners": [
+        "A source-specific IV/Markdown runtime would duplicate canonical rich-text/transcript ownership.",
+        "A second external URL owner would bypass the existing desktop/native URL boundary.",
+        "A second Math or Resource truth is unnecessary because exact-head owners already exist."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "target_language": "TypeScript/React",
+      "language_rationale": "These responsibilities are rich-text/transcript projection and browser UI interaction. Existing canonical TypeScript/React owners already implement the correct platform boundary; durable service/resource truth stays behind typed existing contracts.",
+      "state_owner": "Canonical transcript entry plus existing URL/Math/Resource/action owners",
+      "lifecycle_owner": "ConversationTranscript/TranscriptCard surface lifecycle with existing resource/action generation fencing",
+      "persistence_and_restart": "Rich-text projections and render caches are derived. Durable transcript/resource/action effects persist only in their existing canonical owners.",
+      "concurrency_and_cancellation": "Late URL/resource/action results and replaced renderer/cache generations must be fenced; media subscriptions unload with the surface; caches invalidate on renderer/palette/DPR changes.",
+      "security_boundary": "Typed link kinds and existing desktop/native external-open boundary prevent renderer rich text from gaining broader navigation/auth privilege. Disabled buttons have no action capability.",
+      "network_service_dependencies": [
+        "Existing link metadata/external-open boundary",
+        "Existing attachment/resource resolver",
+        "Existing typed action transport"
+      ],
+      "service_owner": "Existing Fabushi transcript/resource/account/platform/action owners",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "fabushi-ui-replacement",
+      "blockers": [
+        "Shipping parity for the recovered typed link/button/formula/media edge cases and exact-head quality evidence remains open."
+      ],
+      "production_entrypoints": [
+        "ConversationTranscript -> rich-text URL/Math/Resource/TranscriptCard projection -> existing typed boundaries"
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "path:frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "path:frontend/src/recovered/features/conversation/workspace/media-viewer.tsx"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ConversationTranscript",
+      "composition_slot": "Rich-text content / inline capability slots",
+      "capability_component": "Typed rich-text link/button/math/media projection",
+      "variation_axes": [
+        "external-vs-email-vs-anchor-vs-local",
+        "button-enabled-vs-disabled-vs-pending",
+        "formula-success-vs-fallback",
+        "media-ready-vs-late-vs-unloaded",
+        "rtl/bidi/long-label"
+      ],
+      "shared_owner_contracts": [
+        "Canonical transcript identity",
+        "Desktop external URL boundary",
+        "AssistantMath",
+        "Canonical Resource/media resolver",
+        "TranscriptCard typed action lifecycle"
+      ],
+      "duplicate_root_check": "No IV/Telegram rich-text runtime, second Transcript, second URL owner, second Math product owner or second Resource store is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "capability-component",
+      "primary_navigation_target": "Messages / canonical ConversationWorkspace",
+      "collection_surface": "Canonical ConversationTranscript",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Current transcript rich-text content",
+      "detail_section": "Not applicable",
+      "capability_surface": "Inline rich-text content inside TranscriptCard/message",
+      "route_contract": "Links/actions delegate through existing canonical boundaries while remaining inside the same ConversationWorkspace context.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No Search owner.",
+      "search_local_remote_contract": "No Search owner.",
+      "responsive_disposition": "Use canonical transcript rich-text layout; preserve bounded content work and semantic fallback instead of Qt metrics.",
+      "accessibility_contract": "Links/buttons/formulas/media retain semantic text, keyboard reachability, disabled state and fallback content through canonical components.",
+      "keyboard_contract": "Link/button keyboard activation must share the same typed action/navigation path as pointer activation.",
+      "state_continuity_contract": "Renderer/cache/resource/action generations may change without changing canonical transcript semantics; late async results cannot mutate replaced surfaces.",
+      "ui_acceptance_scenarios": [
+        "Typed links preserve distinct navigation/copy semantics",
+        "Disabled inline button cannot activate",
+        "Formula failure keeps source/fallback text",
+        "Late inline media result is ignored after unload/replacement",
+        "Long bidi/custom-emoji button label remains bounded and semantically stable"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Fabushi rich-text/button/resource semantic components only"
+      ],
+      "legacy_token_adapter": "Existing recovered sand implementation may remain below compatibility adapters; new IV-derived behavior cannot establish a second visual API.",
+      "canonical_component_ids": [
+        "ConversationTranscript",
+        "TranscriptCard",
+        "Button",
+        "Tooltip",
+        "Link",
+        "MediaViewer",
+        "Math"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "transcript rich-text content",
+        "inline action",
+        "inline media"
+      ],
+      "visual_state_matrix": [
+        "link",
+        "button-default",
+        "button-disabled",
+        "button-pending",
+        "math-ready",
+        "math-fallback",
+        "media-loading",
+        "media-ready",
+        "media-error",
+        "rtl",
+        "long-content"
+      ],
+      "density_contract": "Reuse canonical transcript density and content width constraints.",
+      "icon_asset_contract": "Canonical Fabushi icon/assets only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Inline loading/media updates are derived; no animation may own business state.",
+      "reduced_motion_contract": "All semantic states remain available without animation; pending/resource feedback must quiesce after settlement/unload.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "TDRP-COMP-01",
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-PERF-SOAK",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-IV-ARTICLE-TEXT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-IV-LINK-TYPED-001",
+        "INV-TDRP-IV-BUTTON-BOUNDED-001",
+        "INV-TDRP-IV-FORMULA-FALLBACK-001",
+        "INV-TDRP-IV-MEDIA-LIFECYCLE-001",
+        "INV-TDRP-IV-TEXT-DISABLED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-PERF-SOAK",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
+      "reviewer": null,
+      "notes": "Read-complete and mapped only; no implemented/verified claim.",
+      "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_article_text.h",
+      "source_blob_sha": "82da919256c01a0fcd09765d9e22b0c2d0ded1f3",
+      "source_kind": "header",
+      "responsibility_id": "TDRP-R9-IV-ARTICLE-TEXT-CONTRACT-001",
+      "source_symbols": [
+        "CreatePreparedLinkHandler",
+        "BindLinks",
+        "SetTextLeafSpoilerLinkFilter",
+        "CreateInlineFormulaObjectCache",
+        "InvalidateInlineFormulaPaletteCache",
+        "InvalidateInlineFormulaRasterCache",
+        "InlineButtonPaintState",
+        "SetTextLeaf",
+        "TextHasInlineButton",
+        "InlineButtonTooltip",
+        "InlineButtonUrl"
+      ],
+      "behavior_contract": "Expose one source-neutral rich-text projection contract for typed links, spoiler filtering, inline formula cache, inline media/button objects, RTL/resizing and typed button URL/tooltip behavior without creating a parallel transcript truth.",
+      "state_machine": "canonical text/entities -> typed link/formula/media/button projection -> derived render/action/resource state -> invalidate/unload/reproject on scope/resource/renderer change",
+      "side_effects": [
+        "Delegates navigation/action/resource work through existing owners",
+        "Invalidates derived math/render caches"
+      ],
+      "failure_cases": [
+        "typed links collapse into generic external open",
+        "disabled inline button becomes actionable",
+        "formula cache survives incompatible renderer/palette generation",
+        "inline media outlives transcript surface"
+      ],
+      "ui_disposition": "Qt text leaf/public structures are replaced by existing ConversationTranscript rich-text/Math/Resource/TranscriptCard contracts.",
+      "non_ui_responsibilities": [
+        "typed link binding",
+        "spoiler link filtering",
+        "formula cache lifecycle",
+        "inline media/action identity",
+        "RTL/min-resize/fallback contract"
+      ],
+      "platform_delta": "React rich-text/Math/Resource components replace Ui::Text/Qt primitives.",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "normalizeLinkUrl",
+        "AssistantMath",
+        "TranscriptAttachmentGallery"
+      ],
+      "command_event_contracts": [
+        "Typed link -> existing navigation/external-open owner",
+        "Inline action -> existing typed action owner",
+        "Inline media -> existing Resource resolver",
+        "Formula -> existing AssistantMath"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "module_id": "tdesktop.iv.markdown.article-text",
+      "capability_ids": [
+        "CAP-RICH-TEXT-LINKS",
+        "CAP-INLINE-RICH-BUTTON",
+        "CAP-INLINE-MATH",
+        "CAP-INLINE-MEDIA"
+      ],
+      "dependency_ids": [
+        "ConversationTranscript",
+        "TranscriptCard",
+        "ExternalUrl",
+        "Math",
+        "Resource"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/iv-markdown-article-text-complete-read.md",
+      "existing_owner_candidates": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts"
+      ],
+      "existing_owner": "Canonical ConversationTranscript + existing URL/Math/Resource/TranscriptCard action owners",
+      "rejected_existing_owners": [
+        "A source-specific IV/Markdown runtime would duplicate canonical rich-text/transcript ownership.",
+        "A second external URL owner would bypass the existing desktop/native URL boundary.",
+        "A second Math or Resource truth is unnecessary because exact-head owners already exist."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "target_language": "TypeScript/React",
+      "language_rationale": "These responsibilities are rich-text/transcript projection and browser UI interaction. Existing canonical TypeScript/React owners already implement the correct platform boundary; durable service/resource truth stays behind typed existing contracts.",
+      "state_owner": "Canonical transcript entry plus existing URL/Math/Resource/action owners",
+      "lifecycle_owner": "ConversationTranscript/TranscriptCard surface lifecycle with existing resource/action generation fencing",
+      "persistence_and_restart": "Rich-text projections and render caches are derived. Durable transcript/resource/action effects persist only in their existing canonical owners.",
+      "concurrency_and_cancellation": "Late URL/resource/action results and replaced renderer/cache generations must be fenced; media subscriptions unload with the surface; caches invalidate on renderer/palette/DPR changes.",
+      "security_boundary": "Typed link kinds and existing desktop/native external-open boundary prevent renderer rich text from gaining broader navigation/auth privilege. Disabled buttons have no action capability.",
+      "network_service_dependencies": [
+        "Existing link metadata/external-open boundary",
+        "Existing attachment/resource resolver",
+        "Existing typed action transport"
+      ],
+      "service_owner": "Existing Fabushi transcript/resource/account/platform/action owners",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "fabushi-ui-replacement",
+      "blockers": [
+        "Shipping parity for the recovered typed link/button/formula/media edge cases and exact-head quality evidence remains open."
+      ],
+      "production_entrypoints": [
+        "ConversationTranscript -> rich-text URL/Math/Resource/TranscriptCard projection -> existing typed boundaries"
+      ],
+      "production_evidence": [
+        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "path:frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "path:frontend/src/recovered/features/conversation/workspace/media-viewer.tsx"
+      ],
+      "test_evidence": [],
+      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ConversationTranscript",
+      "composition_slot": "Rich-text content / inline capability slots",
+      "capability_component": "Typed rich-text link/button/math/media projection",
+      "variation_axes": [
+        "external-vs-email-vs-anchor-vs-local",
+        "button-enabled-vs-disabled-vs-pending",
+        "formula-success-vs-fallback",
+        "media-ready-vs-late-vs-unloaded",
+        "rtl/bidi/long-label"
+      ],
+      "shared_owner_contracts": [
+        "Canonical transcript identity",
+        "Desktop external URL boundary",
+        "AssistantMath",
+        "Canonical Resource/media resolver",
+        "TranscriptCard typed action lifecycle"
+      ],
+      "duplicate_root_check": "No IV/Telegram rich-text runtime, second Transcript, second URL owner, second Math product owner or second Resource store is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "capability-component",
+      "primary_navigation_target": "Messages / canonical ConversationWorkspace",
+      "collection_surface": "Canonical ConversationTranscript",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Current transcript rich-text content",
+      "detail_section": "Not applicable",
+      "capability_surface": "Inline rich-text content inside TranscriptCard/message",
+      "route_contract": "Links/actions delegate through existing canonical boundaries while remaining inside the same ConversationWorkspace context.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No Search owner.",
+      "search_local_remote_contract": "No Search owner.",
+      "responsive_disposition": "Use canonical transcript rich-text layout; preserve bounded content work and semantic fallback instead of Qt metrics.",
+      "accessibility_contract": "Links/buttons/formulas/media retain semantic text, keyboard reachability, disabled state and fallback content through canonical components.",
+      "keyboard_contract": "Link/button keyboard activation must share the same typed action/navigation path as pointer activation.",
+      "state_continuity_contract": "Renderer/cache/resource/action generations may change without changing canonical transcript semantics; late async results cannot mutate replaced surfaces.",
+      "ui_acceptance_scenarios": [
+        "Typed links preserve distinct navigation/copy semantics",
+        "Disabled inline button cannot activate",
+        "Formula failure keeps source/fallback text",
+        "Late inline media result is ignored after unload/replacement",
+        "Long bidi/custom-emoji button label remains bounded and semantically stable"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing Fabushi rich-text/button/resource semantic components only"
+      ],
+      "legacy_token_adapter": "Existing recovered sand implementation may remain below compatibility adapters; new IV-derived behavior cannot establish a second visual API.",
+      "canonical_component_ids": [
+        "ConversationTranscript",
+        "TranscriptCard",
+        "Button",
+        "Tooltip",
+        "Link",
+        "MediaViewer",
+        "Math"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "transcript rich-text content",
+        "inline action",
+        "inline media"
+      ],
+      "visual_state_matrix": [
+        "link",
+        "button-default",
+        "button-disabled",
+        "button-pending",
+        "math-ready",
+        "math-fallback",
+        "media-loading",
+        "media-ready",
+        "media-error",
+        "rtl",
+        "long-content"
+      ],
+      "density_contract": "Reuse canonical transcript density and content width constraints.",
+      "icon_asset_contract": "Canonical Fabushi icon/assets only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Inline loading/media updates are derived; no animation may own business state.",
+      "reduced_motion_contract": "All semantic states remain available without animation; pending/resource feedback must quiesce after settlement/unload.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-MOD-01",
+        "TDRP-MOD-02",
+        "TDRP-OWN-01",
+        "TDRP-COMP-01",
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-PERF-SOAK",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-IV-ARTICLE-TEXT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-IV-LINK-TYPED-001",
+        "INV-TDRP-IV-BUTTON-BOUNDED-001",
+        "INV-TDRP-IV-FORMULA-FALLBACK-001",
+        "INV-TDRP-IV-MEDIA-LIFECYCLE-001",
+        "INV-TDRP-IV-TEXT-DISABLED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-UI-FUNCTIONAL",
+        "G-TEMPORAL",
+        "G-PERF-SOAK",
+        "G-SECURITY-PRIVACY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
+      "reviewer": null,
+      "notes": "Read-complete and mapped only; no implemented/verified claim.",
+      "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_article_text.cpp",
+      "source_blob_sha": "2fcab1a3e549d320ca38266373d562238c13fe29",
+      "source_kind": "source",
+      "responsibility_id": "TDRP-R9-IV-ARTICLE-TEXT-LIFECYCLE-001",
+      "source_symbols": [
+        "PreparedLinkClickHandler",
+        "ExternalDataForLink",
+        "CopyTextForLink",
+        "InlineButtonActionable",
+        "ActivateInlineButton",
+        "ShortenInlineButtonLabelSpans",
+        "MakeBoundedInlineButtonLabel",
+        "InlineFormulaSharedState",
+        "InlineFormulaObjectCache",
+        "InlineIvImageObject",
+        "SetTextLeaf"
+      ],
+      "behavior_contract": "Preserve typed link/copy/navigation boundaries, bounded and bidi/entity-safe inline-button parsing, disabled/action semantics, formula measurement/raster/fallback generation invalidation, and inline-media subscription/unload fencing inside the canonical transcript.",
+      "state_machine": "text prepare -> typed object resolution -> render/action/resource lifecycle -> authoritative settlement or semantic fallback -> cache/subscription invalidation on replacement/unload",
+      "side_effects": [
+        "May open current typed external link",
+        "May invoke current typed rich-button action",
+        "Loads/render math through existing owner",
+        "Subscribes/unsubscribes derived media updates"
+      ],
+      "failure_cases": [
+        "sender-controlled label causes unbounded work",
+        "entity/bidi cut changes action label semantics",
+        "formula render failure erases source semantics",
+        "stale media callback repaints replacement",
+        "rich-page button gains generic prepared-link privilege"
+      ],
+      "ui_disposition": "Qt paint/layout implementation is replaced; lifecycle/security/performance/fallback semantics remain required in canonical Fabushi rich text.",
+      "non_ui_responsibilities": [
+        "link type/copy/security routing",
+        "bounded hostile-label processing",
+        "inline action disabled/stale semantics",
+        "math cache/fallback lifecycle",
+        "media update subscription lifecycle"
+      ],
+      "platform_delta": "Browser/React/Katex/resource resolvers replace Qt text/custom-emoji/painter implementation.",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts"
+      ],
+      "fabushi_target_symbols": [
+        "createUrlCardProvider",
+        "renderKatexMarkup",
+        "AssistantMessageContent",
+        "createWidgetInteractionTransport"
+      ],
+      "command_event_contracts": [
+        "Typed external link -> desktop/native open boundary",
+        "Inline button -> typed TranscriptCard action transport -> authoritative settlement",
+        "Resource result -> current generation projection only"
       ]
     }
   ],
