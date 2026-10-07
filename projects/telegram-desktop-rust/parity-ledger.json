@@ -9,7 +9,7 @@
     "unknown": 15788,
     "unread": 15748,
     "omitted": 0,
-    "responsibilities_total": 24,
+    "responsibilities_total": 26,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -6004,6 +6004,463 @@
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
       "notes": "Read-complete and mapped only; no implemented/verified claim."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/data/data_thread.cpp",
+      "source_blob_sha": "c1367fdcdb86c22e2b484e648f08edf8854a9478",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.thread-child-unread",
+      "responsibility_id": "TDRP-R9-CHILD-UNREAD-THINGS-001",
+      "source_symbols": [
+        "Thread::unreadMentions",
+        "Thread::unreadReactions",
+        "Thread::unreadPollVotes",
+        "Thread::clearNotifications",
+        "Thread::clearIncomingNotifications",
+        "Thread::setUnreadMarkFlag"
+      ],
+      "capability_ids": [
+        "CAP-CONVERSATION-CHILD-UNREAD-STATE"
+      ],
+      "dependency_ids": [
+        "ConversationChildRuntimeState",
+        "Message",
+        "MessagingEngine"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/share-box-complete-read.md",
+      "behavior_contract": "Represent child-level unread mention/reaction/poll-vote status as server-authoritative known/unknown message-id sets distinct from Message.reactions, with a separate pending incoming-notification projection and exact-child lifecycle cleanup.",
+      "state_machine": "unknown -> authoritative known sets -> replacement reconciliation -> read/destroy lifecycle; message reaction payload remains independent",
+      "side_effects": [
+        "Updates canonical child unread/status projection only",
+        "Does not synthesize or mutate Message.reactions"
+      ],
+      "failure_cases": [
+        "child unread reactions aliased to message reaction payload",
+        "unknown remote state exposed as complete",
+        "duplicate/empty notification ids persisted",
+        "destroy leaves stale child unread state"
+      ],
+      "ui_disposition": "Thread UI badges are projected from canonical Conversation child state; no Telegram-specific row/status owner.",
+      "non_ui_responsibilities": [
+        "known/unknown unread-things truth",
+        "mention/reaction/poll-vote message-id identity",
+        "notification queue separation",
+        "exact-child cleanup"
+      ],
+      "platform_delta": "Telegram Thread containers map to source-neutral ConversationChildRuntimeState.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "existing_owner": "Fabushi canonical Conversation child runtime state + MessagingEngine",
+      "rejected_existing_owners": [
+        "Message.reactions cannot own child unread-reaction truth because reaction payload and unread status are distinct.",
+        "A SavedSublist/Telegram notification store would duplicate the canonical Conversation owner.",
+        "Renderer-owned unread state would let an untrusted client mint server truth."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs"
+      ],
+      "fabushi_target_symbols": [
+        "ConversationChildUnreadThings",
+        "pending_incoming_notification_message_ids",
+        "reconcile_unread_things"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Unread/notification reconciliation is durable canonical Conversation state and native domain policy, so it belongs in the existing Rust messaging owner.",
+      "command_event_contracts": [
+        "server/native authoritative set -> ConversationChildUnreadThings -> canonical child state"
+      ],
+      "state_owner": "ConversationChildRuntimeState under MessagingState",
+      "lifecycle_owner": "MessagingEngine canonical child lifecycle",
+      "persistence_and_restart": "Child unread/notification projections serialize in MessagingState with serde-default compatibility for older snapshots; destroy clears exact-child state.",
+      "concurrency_and_cancellation": "Server reconciliation replaces a complete known set atomically; monotonic read cursors only settle pending incoming notifications through the accepted cursor.",
+      "security_boundary": "No ClientCommand exposes reconciliation. Server/native code must prove child authorization and message membership before installing message ids.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging sync/service path"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Current exact-head GitHub Actions compile/test evidence is pending.",
+        "An actual server-sync caller that supplies authoritative unread/notification sets is not yet shipping-composed.",
+        "SavedSublist non-empty message membership remains fail-closed until a canonical source-neutral relation exists."
+      ],
+      "production_entrypoints": [
+        "Server/native child reconciliation -> MessagingEngine -> MessagingState.conversation_child_states -> SyncBatch child projection"
+      ],
+      "production_evidence": [
+        "commit:9f6c7b5e1a5c3bcbdc3cda30c79f3cdaaf29fac7",
+        "commit:8eeffaa8257282676035b3ab951398c50d2e4603",
+        "commit:654eda436d7891b92758259c563ab3a93e6de47b",
+        "commit:0f5c5fcef31f8e6a1bef295455d65b6ab730691d",
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildUnreadThings",
+        "path:native/mahayana-messaging/src/engine.rs#ReconcileConversationChildUnreadThings"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/src/conversation.rs#child_runtime_reconciles_unread_things_and_notification_ids_without_message_reaction_truth",
+        "native/mahayana-messaging/tests/m6_channels_topics_contract.rs#child_unread_things_and_incoming_notifications_reconcile_without_reaction_payload_aliasing"
+      ],
+      "target_commit": "bf5fe6fe01aee82ba375ba74643694a5590c7230",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical Conversation messaging domain",
+      "composition_slot": "Conversation child runtime state / sync projection",
+      "capability_component": "Typed child unread and incoming-notification reconciliation",
+      "variation_axes": [
+        "known-vs-unknown",
+        "mention-vs-reaction-vs-poll-vote",
+        "topic-vs-saved-sublist-vs-nested-child",
+        "read-before-vs-read-after-notification"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation child identity",
+        "Canonical Message identity",
+        "Canonical MessagingEngine state"
+      ],
+      "duplicate_root_check": "No SavedMessages/Telegram unread store, second Message reaction owner, or renderer truth is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "State projection",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing Conversation list/workspace child projection",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Current typed Conversation child",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical child unread/notification state",
+      "route_contract": "State projects into existing Messages/Conversation surfaces only; no source-specific route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not a Search owner.",
+      "search_local_remote_contract": "Not a Search owner.",
+      "responsive_disposition": "No source-specific layout; existing ConversationRow/Transcript state projection applies.",
+      "accessibility_contract": "Unread/reaction/notification badges eventually project through canonical semantic status components; this native slice adds no custom control.",
+      "keyboard_contract": "No new keyboard path in this native state slice.",
+      "state_continuity_contract": "Known unread sets and pending incoming notifications survive restart through canonical state; read cursor settlement and destroy are exact-child scoped.",
+      "ui_acceptance_scenarios": [
+        "Unread reaction signal remains separate from Message.reactions",
+        "Advancing read clears only pending incoming notifications at/before the cursor",
+        "Destroyed child has no residual unread/notification projection"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationRow",
+        "ConversationTranscript"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "Conversation row unread/status projection",
+        "Transcript state"
+      ],
+      "visual_state_matrix": [
+        "known-unread",
+        "unknown-unread",
+        "pending-notification",
+        "cleared-after-read"
+      ],
+      "density_contract": "No new native layout.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No new avatar behavior.",
+      "content_copy_keys": [],
+      "motion_contract": "No new motion.",
+      "reduced_motion_contract": "No new motion.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-CHILD-UNREAD-THINGS-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CHILD-UNREAD-RECONCILE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CHILD-UNREAD-NOT-MESSAGE-REACTION-001",
+        "INV-TDRP-CHILD-UNREAD-SERVER-AUTHORITY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-TEMPORAL",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "conversation-child-unread-notification"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior is reimplemented source-neutrally from accepted Data::Thread/SavedSublist responsibilities using canonical Fabushi Conversation/Message/Engine owners.",
+      "reviewer": null,
+      "notes": "Implemented native/domain slice only. Current-head execution, server-sync composition and SavedSublist message membership remain open; global source unknown/unread are not decremented by this implementation."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/data/data_saved_sublist.cpp",
+      "source_blob_sha": "68290f41b6edf80bcb04657cabc33e4393cd75f3",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.thread-child-unread",
+      "responsibility_id": "TDRP-R9-SAVED-SUBLIST-UNREAD-NOTIFICATION-001",
+      "source_symbols": [
+        "SavedSublist::readTill",
+        "SavedSublist::setInboxReadTill",
+        "SavedSublist::hasUnreadReactionChanged",
+        "SavedSublist::unreadStateFor",
+        "SavedSublist::apply"
+      ],
+      "capability_ids": [
+        "CAP-CONVERSATION-CHILD-UNREAD-STATE"
+      ],
+      "dependency_ids": [
+        "ConversationChildRuntimeState",
+        "Message",
+        "MessagingEngine"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/share-box-complete-read.md",
+      "behavior_contract": "Reconcile authoritative child unread signals and pending incoming notifications under the canonical child identity; advancing a monotonic inbox cursor clears only notification ids at or before that cursor, while unread-reaction truth remains separate and exact-child destroy clears both.",
+      "state_machine": "server child snapshot -> authorized/member-validated reconciliation -> pending incoming notifications -> monotonic read cursor settles covered notifications -> destroy removes exact child",
+      "side_effects": [
+        "Settles pending incoming notifications through the accepted read position",
+        "Projects server-authoritative child unread state"
+      ],
+      "failure_cases": [
+        "read clears unrelated/newer notification",
+        "read clears unread reaction payload/state by alias",
+        "SavedSublist accepts arbitrary parent message ids",
+        "client can mint unread truth"
+      ],
+      "ui_disposition": "Saved-sublist status belongs to existing Conversation child projection; shipping child-list/picker UI remains open.",
+      "non_ui_responsibilities": [
+        "read-cursor notification settlement",
+        "server-only reconciliation boundary",
+        "SavedSublist membership fail-closed",
+        "destroy cleanup"
+      ],
+      "platform_delta": "Native MessagingEngine state/events replace Telegram history/notifications-manager coupling without creating a second notifications store.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/tests/m6_channels_topics_contract.rs"
+      ],
+      "existing_owner": "Fabushi canonical Conversation child runtime state + MessagingEngine",
+      "rejected_existing_owners": [
+        "Message.reactions cannot own child unread-reaction truth because reaction payload and unread status are distinct.",
+        "A SavedSublist/Telegram notification store would duplicate the canonical Conversation owner.",
+        "Renderer-owned unread state would let an untrusted client mint server truth."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/tests/m6_channels_topics_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "Command::ReconcileConversationChildUnreadThings",
+        "Event::ConversationChildUnreadThingsReconciled",
+        "child_unread_things_and_incoming_notifications_reconcile_without_reaction_payload_aliasing"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Unread/notification reconciliation is durable canonical Conversation state and native domain policy, so it belongs in the existing Rust messaging owner.",
+      "command_event_contracts": [
+        "internal Command::ReconcileConversationChildUnreadThings -> membership/authorization -> Event::ConversationChildUnreadThingsReconciled -> child runtime",
+        "MarkConversationChildRead -> accepted position -> clear covered pending incoming notifications only"
+      ],
+      "state_owner": "ConversationChildRuntimeState under MessagingState",
+      "lifecycle_owner": "MessagingEngine canonical child lifecycle",
+      "persistence_and_restart": "Child unread/notification projections serialize in MessagingState with serde-default compatibility for older snapshots; destroy clears exact-child state.",
+      "concurrency_and_cancellation": "Server reconciliation replaces a complete known set atomically; monotonic read cursors only settle pending incoming notifications through the accepted cursor.",
+      "security_boundary": "No ClientCommand exposes reconciliation. Server/native code must prove child authorization and message membership before installing message ids.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging sync/service path"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Current exact-head GitHub Actions compile/test evidence is pending.",
+        "An actual server-sync caller that supplies authoritative unread/notification sets is not yet shipping-composed.",
+        "SavedSublist non-empty message membership remains fail-closed until a canonical source-neutral relation exists."
+      ],
+      "production_entrypoints": [
+        "Server/native child reconciliation -> MessagingEngine -> MessagingState.conversation_child_states -> SyncBatch child projection"
+      ],
+      "production_evidence": [
+        "commit:9f6c7b5e1a5c3bcbdc3cda30c79f3cdaaf29fac7",
+        "commit:8eeffaa8257282676035b3ab951398c50d2e4603",
+        "commit:654eda436d7891b92758259c563ab3a93e6de47b",
+        "commit:0f5c5fcef31f8e6a1bef295455d65b6ab730691d",
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildUnreadThings",
+        "path:native/mahayana-messaging/src/engine.rs#ReconcileConversationChildUnreadThings"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/src/conversation.rs#child_runtime_reconciles_unread_things_and_notification_ids_without_message_reaction_truth",
+        "native/mahayana-messaging/tests/m6_channels_topics_contract.rs#child_unread_things_and_incoming_notifications_reconcile_without_reaction_payload_aliasing"
+      ],
+      "target_commit": "bf5fe6fe01aee82ba375ba74643694a5590c7230",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical Conversation messaging domain",
+      "composition_slot": "Conversation child runtime state / sync projection",
+      "capability_component": "Typed child unread and incoming-notification reconciliation",
+      "variation_axes": [
+        "known-vs-unknown",
+        "mention-vs-reaction-vs-poll-vote",
+        "topic-vs-saved-sublist-vs-nested-child",
+        "read-before-vs-read-after-notification"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation child identity",
+        "Canonical Message identity",
+        "Canonical MessagingEngine state"
+      ],
+      "duplicate_root_check": "No SavedMessages/Telegram unread store, second Message reaction owner, or renderer truth is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "State projection",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing Conversation list/workspace child projection",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Current typed Conversation child",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical child unread/notification state",
+      "route_contract": "State projects into existing Messages/Conversation surfaces only; no source-specific route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not a Search owner.",
+      "search_local_remote_contract": "Not a Search owner.",
+      "responsive_disposition": "No source-specific layout; existing ConversationRow/Transcript state projection applies.",
+      "accessibility_contract": "Unread/reaction/notification badges eventually project through canonical semantic status components; this native slice adds no custom control.",
+      "keyboard_contract": "No new keyboard path in this native state slice.",
+      "state_continuity_contract": "Known unread sets and pending incoming notifications survive restart through canonical state; read cursor settlement and destroy are exact-child scoped.",
+      "ui_acceptance_scenarios": [
+        "Unread reaction signal remains separate from Message.reactions",
+        "Advancing read clears only pending incoming notifications at/before the cursor",
+        "Destroyed child has no residual unread/notification projection"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationRow",
+        "ConversationTranscript"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "Conversation row unread/status projection",
+        "Transcript state"
+      ],
+      "visual_state_matrix": [
+        "known-unread",
+        "unknown-unread",
+        "pending-notification",
+        "cleared-after-read"
+      ],
+      "density_contract": "No new native layout.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No new avatar behavior.",
+      "content_copy_keys": [],
+      "motion_contract": "No new motion.",
+      "reduced_motion_contract": "No new motion.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SAVED-SUBLIST-UNREAD-NOTIFICATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SAVED-SUBLIST-UNREAD-NOTIFICATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CHILD-NOTIFICATION-READ-CURSOR-001",
+        "INV-TDRP-SAVED-SUBLIST-MEMBERSHIP-FAIL-CLOSED-001",
+        "INV-TDRP-CHILD-DESTROY-CLEARS-UNREAD-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-MODULE",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-TEMPORAL",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "conversation-child-unread-notification"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior is reimplemented source-neutrally from accepted Data::Thread/SavedSublist responsibilities using canonical Fabushi Conversation/Message/Engine owners.",
+      "reviewer": null,
+      "notes": "Implemented native/domain slice only. Current-head execution, server-sync composition and SavedSublist message membership remain open; global source unknown/unread are not decremented by this implementation."
     }
   ],
   "rebaseline": {
