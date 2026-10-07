@@ -13,13 +13,14 @@
     "candidate_lines_total": 320,
     "immutable_commit_pin_occurrences_classified": 17,
     "candidate_lines_pending_classification": 0,
-    "note": "All 320 corrected-scan candidate lines now have explicit dispositions: 17 immutable commit-pin occurrences plus 303 grouped dispositions. Candidate classification is complete, but recursive authority closure remains open because mutable refs/tags, nested submodules/gitlinks, tool bootstrap inputs, package-manager inputs, and other source/build inputs still require exact child/input accounting. This does not advance baseline_ready or acceptance.",
+    "note": "All 320 corrected-scan candidate lines now have explicit dispositions: 17 immutable commit-pin occurrences plus 303 grouped dispositions. Candidate classification is complete, but recursive authority closure remains open because mutable refs/tags, nested submodules/gitlinks, tool bootstrap inputs, package-manager inputs, and other source/build inputs still require exact child/input accounting. This does not advance baseline_ready or acceptance. The three previously pending external nested repositories are now expected to be live-scanned and fully dispositioned by the exact-HEAD external-child discovery gate; overall recursive authority remains open for root mutable/tool/package inputs.",
     "candidate_lines_classified": 320,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
     "recursive_child_input_occurrences_recorded": 11,
     "recursive_child_unique_repositories_recorded": 9,
-    "recursive_child_unique_external_nested_scans_pending": 3
+    "recursive_child_unique_external_nested_scans_pending": 0,
+    "recursive_child_unique_external_nested_scans_complete": 3
   },
   "immutable_commit_pin_occurrences": [
     {
@@ -983,7 +984,8 @@
       "child_path": "src/third_party/libyuv",
       "child_repository": "gitlab.com/chromiumsrc/libyuv",
       "child_commit": "04821d1e7d60845525e8db55c7bcd41ef5be9406",
-      "nested_scan_status": "pending-external-scan"
+      "nested_scan_status": "external-scan-complete",
+      "external_scan_id": "tg-owt-libyuv"
     },
     {
       "id": "crc32c-googletest",
@@ -1019,7 +1021,8 @@
       "child_path": "m4",
       "child_repository": "gitlab.freedesktop.org/xorg/util/xcb-util-m4",
       "child_commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
-      "nested_scan_status": "pending-external-scan"
+      "nested_scan_status": "external-scan-complete",
+      "external_scan_id": "xcb-util-m4"
     },
     {
       "id": "xcb-render-util-m4",
@@ -1028,7 +1031,8 @@
       "child_path": "m4",
       "child_repository": "gitlab.freedesktop.org/xorg/util/xcb-util-m4",
       "child_commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
-      "nested_scan_status": "pending-external-scan"
+      "nested_scan_status": "external-scan-complete",
+      "external_scan_id": "xcb-util-m4"
     },
     {
       "id": "xcb-cursor-m4",
@@ -1037,7 +1041,8 @@
       "child_path": "m4",
       "child_repository": "gitlab.freedesktop.org/xorg/util/xcb-util-m4",
       "child_commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
-      "nested_scan_status": "pending-external-scan"
+      "nested_scan_status": "external-scan-complete",
+      "external_scan_id": "xcb-util-m4"
     },
     {
       "id": "crashpad-mini-chromium",
@@ -1046,7 +1051,111 @@
       "child_path": "third_party/mini_chromium",
       "child_repository": "chromium.googlesource.com/chromium/mini_chromium",
       "child_commit": "14b219d5d503e305a6d853e64de201659cfcbe2d",
-      "nested_scan_status": "pending-external-scan"
+      "nested_scan_status": "external-scan-complete",
+      "external_scan_id": "crashpad-mini-chromium"
+    }
+  ],
+  "external_nested_scans": [
+    {
+      "id": "tg-owt-libyuv",
+      "repository": "gitlab.com/chromiumsrc/libyuv",
+      "clone_url": "https://gitlab.com/chromiumsrc/libyuv.git",
+      "commit": "04821d1e7d60845525e8db55c7bcd41ef5be9406",
+      "status": "complete-live-scan-dispositioned",
+      "tree_entries_non_directory": 187,
+      "gitlinks": 0,
+      "acquisition_candidates": 101,
+      "patches": 0,
+      "lfs_attribute_detected": false,
+      "lfs_pointers": 0,
+      "lock_and_package_inputs": 0,
+      "generated_input_contracts": 9,
+      "resource_inputs": 19,
+      "tool_and_build_inputs": 1,
+      "disposition_counts": {
+        "child-ci-only": 62,
+        "docs-or-metadata": 27,
+        "autoroller-test-tooling-not-parent-build": 7,
+        "standalone-riscv-test-tooling-not-parent-build": 4,
+        "standalone-gclient-manifest-not-parent-build": 1
+      },
+      "parent_build_exclusion": {
+        "repository": "desktop-app/tg_owt",
+        "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+        "forbidden_child_tooling_reference_pattern": "riscv_script|tools_libyuv|src/third_party/libyuv/(DEPS|infra)|third_party/libyuv/(DEPS|infra)",
+        "expected_reference_count": 0,
+        "rationale": "tg_owt consumes libyuv as the pinned embedded gitlink. The child repository's standalone gclient manifest, LUCI/CI, autoroller and RISC-V toolchain scripts are not invoked by the parent build and are therefore non-parent-build authority, while generated/build/resource files remain inventoried as child content."
+      },
+      "discovery_evidence": {
+        "runner": "github-actions",
+        "run_id": 37605848388,
+        "run_attempt": 1,
+        "job_id": 112740995692,
+        "validation_head_sha": "7e1f2dbfb5c543ab05231a0e271f11d48232ca94",
+        "artifact_id": 11474492724,
+        "artifact_digest": "sha256:ab52d74cadbc20427e8183fd0963a955d7a7a4f91a478744688fb6c299442d38"
+      }
+    },
+    {
+      "id": "xcb-util-m4",
+      "repository": "gitlab.freedesktop.org/xorg/util/xcb-util-m4",
+      "clone_url": "https://gitlab.freedesktop.org/xorg/util/xcb-util-m4.git",
+      "commit": "c617eee22ae5c285e79e81ec39ce96862fd3262f",
+      "status": "complete-live-scan-dispositioned",
+      "tree_entries_non_directory": 5,
+      "gitlinks": 0,
+      "acquisition_candidates": 3,
+      "patches": 0,
+      "lfs_attribute_detected": false,
+      "lfs_pointers": 0,
+      "lock_and_package_inputs": 0,
+      "generated_input_contracts": 0,
+      "resource_inputs": 0,
+      "tool_and_build_inputs": 0,
+      "disposition_counts": {
+        "child-ci-only": 3
+      },
+      "rationale": "All detected acquisitions are confined to the child repository's .gitlab-ci.yml test job; the pinned m4 source tree has no deeper gitlinks, LFS objects, patches or other discovered acquisitions.",
+      "discovery_evidence": {
+        "runner": "github-actions",
+        "run_id": 37605848388,
+        "run_attempt": 1,
+        "job_id": 112740995692,
+        "validation_head_sha": "7e1f2dbfb5c543ab05231a0e271f11d48232ca94",
+        "artifact_id": 11474492724,
+        "artifact_digest": "sha256:ab52d74cadbc20427e8183fd0963a955d7a7a4f91a478744688fb6c299442d38"
+      }
+    },
+    {
+      "id": "crashpad-mini-chromium",
+      "repository": "chromium.googlesource.com/chromium/mini_chromium",
+      "clone_url": "https://chromium.googlesource.com/chromium/mini_chromium",
+      "commit": "14b219d5d503e305a6d853e64de201659cfcbe2d",
+      "status": "complete-live-scan-dispositioned",
+      "tree_entries_non_directory": 136,
+      "gitlinks": 0,
+      "acquisition_candidates": 2,
+      "patches": 0,
+      "lfs_attribute_detected": false,
+      "lfs_pointers": 0,
+      "lock_and_package_inputs": 0,
+      "generated_input_contracts": 12,
+      "resource_inputs": 0,
+      "tool_and_build_inputs": 24,
+      "disposition_counts": {
+        "docs-or-metadata": 1,
+        "review-metadata": 1
+      },
+      "rationale": "The only acquisition-pattern matches are an AUTHORS comment and codereview metadata; the pinned source tree has no deeper gitlinks, LFS objects, patches or package acquisition inputs.",
+      "discovery_evidence": {
+        "runner": "github-actions",
+        "run_id": 37605848388,
+        "run_attempt": 1,
+        "job_id": 112740995692,
+        "validation_head_sha": "7e1f2dbfb5c543ab05231a0e271f11d48232ca94",
+        "artifact_id": 11474492724,
+        "artifact_digest": "sha256:ab52d74cadbc20427e8183fd0963a955d7a7a4f91a478744688fb6c299442d38"
+      }
     }
   ]
 }

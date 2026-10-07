@@ -314,6 +314,16 @@
     "recursive_authority_closure_status": "open",
     "recursive_child_input_occurrences_recorded": 11,
     "recursive_child_unique_repositories_recorded": 9,
-    "recursive_child_unique_external_nested_scans_pending": 3
+    "recursive_child_unique_external_nested_scans_pending": 0,
+    "recursive_child_unique_external_nested_scans_complete": 3,
+    "external_nested_scan_evidence": {
+      "runner": "github-actions",
+      "run_id": 37605848388,
+      "run_attempt": 1,
+      "job_id": 112740995692,
+      "validation_head_sha": "7e1f2dbfb5c543ab05231a0e271f11d48232ca94",
+      "artifact_id": 11474492724,
+      "artifact_digest": "sha256:ab52d74cadbc20427e8183fd0963a955d7a7a4f91a478744688fb6c299442d38"
+    }
   }
 }

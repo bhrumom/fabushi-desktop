@@ -98,11 +98,28 @@ for (const acquisition of acquisitionInventory.immutable_commit_pin_occurrences 
 }
 const recursiveChildren=acquisitionInventory.recursive_child_inputs || [];
 fail(recursiveChildren.length===lock.build_time_acquisition_inventory.recursive_child_input_occurrences_recorded,'recursive child occurrence count drift');
+const externalScans=acquisitionInventory.external_nested_scans || [];
+fail(externalScans.length===lock.build_time_acquisition_inventory.recursive_child_unique_external_nested_scans_complete,'external nested scan complete-count drift');
+fail(lock.build_time_acquisition_inventory.recursive_child_unique_external_nested_scans_pending===0,'external nested scans remain pending');
+const externalScanIds=new Set();
+for (const scan of externalScans) {
+  fail(typeof scan.id==='string' && scan.id.length>0,'external nested scan missing id');
+  fail(!externalScanIds.has(scan.id),'duplicate external nested scan id: '+scan.id);
+  externalScanIds.add(scan.id);
+  fail(/^[0-9a-f]{40}$/.test(scan.commit),'external nested scan commit is not immutable: '+scan.id);
+  fail(scan.status==='complete-live-scan-dispositioned','external nested scan is not closed: '+scan.id);
+  const dispositionTotal=Object.values(scan.disposition_counts||{}).reduce((sum,value)=>sum+value,0);
+  fail(dispositionTotal===scan.acquisition_candidates,'external nested scan dispositions do not cover every candidate: '+scan.id);
+  fail(scan.gitlinks===0,'external nested scan discovered unexpanded gitlinks: '+scan.id);
+  fail(scan.lfs_attribute_detected===false && scan.lfs_pointers===0,'external nested scan requires LFS expansion: '+scan.id);
+}
 const recursiveChildIds=new Set();
 for (const child of recursiveChildren) {
   fail(typeof child.id==='string' && child.id.length>0,'recursive child missing id');
   fail(!recursiveChildIds.has(child.id),'duplicate recursive child id: '+child.id);
   recursiveChildIds.add(child.id);
+  fail(child.nested_scan_status!=='pending-external-scan','recursive child external scan is still pending: '+child.id);
+  if (child.external_scan_id) fail(externalScanIds.has(child.external_scan_id),'recursive child references unknown external scan: '+child.id);
   fail(/^[0-9a-f]{40}$/.test(child.parent_commit),'recursive child parent commit is not immutable: '+child.id);
   fail(/^[0-9a-f]{40}$/.test(child.child_commit),'recursive child commit is not immutable: '+child.id);
   const tree=await ghTree(child.parent_repository,child.parent_commit);

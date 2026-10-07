@@ -109,7 +109,66 @@ function selectedPaths(entries, predicate) {
   return entries.filter((entry) => entry.type === 'blob' && predicate(entry.path)).map((entry) => entry.path);
 }
 
+function parseCandidate(raw) {
+  const match = raw.match(/^HEAD:(.*?):(\\d+):(.*)$/);
+  fail(match, 'unparseable external acquisition candidate: ' + raw);
+  return { path: match[1], line: Number(match[2]), text: match[3].trim() };
+}
+
+function classifyCandidate(targetId, raw) {
+  const candidate = parseCandidate(raw);
+  const p = candidate.path;
+  const text = candidate.text;
+  let disposition = null;
+  if (targetId === 'tg-owt-libyuv') {
+    if (p === 'DEPS') disposition = 'standalone-gclient-manifest-not-parent-build';
+    else if (p.startsWith('riscv_script/')) disposition = 'standalone-riscv-test-tooling-not-parent-build';
+    else if (p.startsWith('tools_libyuv/')) disposition = 'autoroller-test-tooling-not-parent-build';
+    else if (p.startsWith('infra/config/') && p !== 'infra/config/codereview.settings' && !text.startsWith('#')) disposition = 'child-ci-only';
+    else if (p.startsWith('docs/') || p === 'codereview.settings' || p === 'infra/config/codereview.settings' || text.startsWith('#')) disposition = 'docs-or-metadata';
+  } else if (targetId === 'xcb-util-m4') {
+    if (p === '.gitlab-ci.yml') disposition = 'child-ci-only';
+  } else if (targetId === 'crashpad-mini-chromium') {
+    if (p === 'AUTHORS') disposition = 'docs-or-metadata';
+    else if (p === 'codereview.settings') disposition = 'review-metadata';
+  }
+  fail(disposition, targetId + ' has an undispositioned external acquisition candidate: ' + raw);
+  return { ...candidate, raw, disposition };
+}
+
+function countDispositions(dispositions) {
+  const out = {};
+  for (const item of dispositions) out[item.disposition] = (out[item.disposition] || 0) + 1;
+  return out;
+}
+
+async function scanLibyuvParentExclusion(tempRoot) {
+  const parentDir = path.join(tempRoot, 'tg-owt-parent');
+  const repository = 'https://github.com/desktop-app/tg_owt.git';
+  const commit = 'e2d0e88d1bde6cc600da5dc92581dc97e4c1e685';
+  run('git', ['clone', '--filter=blob:none', '--no-checkout', '--quiet', repository, parentDir]);
+  git(parentDir, 'checkout', '--detach', '--quiet', commit);
+  fail(git(parentDir, 'rev-parse', 'HEAD').trim() === commit, 'tg_owt parent checkout drift');
+  const pattern = 'riscv_script|tools_libyuv|src/third_party/libyuv/(DEPS|infra)|third_party/libyuv/(DEPS|infra)';
+  const probe = spawnSync('git', ['-C', parentDir, 'grep', '-n', '-I', '-E', pattern, 'HEAD', '--', '.'], {
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  fail(probe.status === 0 || probe.status === 1, 'tg_owt parent exclusion scan failed');
+  return {
+    repository: 'desktop-app/tg_owt',
+    commit,
+    pattern,
+    references: (probe.stdout || '').split(/\\r?\\n/).filter(Boolean).sort(),
+  };
+}
+
+const inventory = JSON.parse(await fs.readFile(path.join(process.cwd(), 'projects/telegram-desktop-rust/inventory/build-time-acquisitions.json'), 'utf8'));
+const expectedScans = new Map((inventory.external_nested_scans || []).map((item) => [item.id, item]));
+fail(expectedScans.size === 3, 'external nested scan inventory must contain exactly three unique scans');
+
 const tempRoot = await fs.mkdtemp(path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'tdrp-external-authority-'));
+const libyuvParentExclusion = await scanLibyuvParentExclusion(tempRoot);
 const report = {
   project_id: 'TDRP-001',
   spec_revision: 9,
@@ -147,6 +206,8 @@ for (const target of targets) {
     .split(/\r?\n/)
     .filter(Boolean)
     .sort();
+  const dispositions = matches.map((match) => classifyCandidate(target.id, match));
+  const dispositionCounts = countDispositions(dispositions);
   for (const match of matches) candidateLines.push(`${target.id}:${match}`);
 
   const attributesProbe = tryGit(targetDir, 'show', 'HEAD:.gitattributes');
@@ -194,6 +255,9 @@ for (const target of targets) {
     gitmodules,
     acquisition_candidate_count: matches.length,
     acquisition_candidates: matches,
+    acquisition_dispositions: dispositions,
+    disposition_counts: dispositionCounts,
+    parent_build_exclusion: target.id === 'tg-owt-libyuv' ? libyuvParentExclusion : null,
     patches: patchPaths,
     lfs_attribute_detected: lfsAttributeDetected,
     lfs_pointers: lfsPointers,
@@ -202,6 +266,35 @@ for (const target of targets) {
     resource_inputs: resourcePaths,
     tool_and_build_inputs: toolPaths,
   });
+}
+
+fail(report.targets.length === expectedScans.size, 'external nested scan target count drift');
+for (const actual of report.targets) {
+  const expected = expectedScans.get(actual.id);
+  fail(expected, 'unexpected external nested scan target: ' + actual.id);
+  fail(actual.repository === expected.repository, actual.id + ' repository drift');
+  fail(actual.actual_commit === expected.commit, actual.id + ' commit drift');
+  const scalarChecks = {
+    tree_entries_non_directory: actual.tree_entries_non_directory,
+    gitlinks: actual.gitlinks.length,
+    acquisition_candidates: actual.acquisition_candidate_count,
+    patches: actual.patches.length,
+    lfs_pointers: actual.lfs_pointers.length,
+    lock_and_package_inputs: actual.lock_and_package_inputs.length,
+    generated_input_contracts: actual.generated_input_contracts.length,
+    resource_inputs: actual.resource_inputs.length,
+    tool_and_build_inputs: actual.tool_and_build_inputs.length,
+  };
+  for (const [key, value] of Object.entries(scalarChecks)) {
+    fail(value === expected[key], actual.id + ' ' + key + ' drift: ' + value + ' != ' + expected[key]);
+  }
+  fail(actual.lfs_attribute_detected === expected.lfs_attribute_detected, actual.id + ' LFS attribute drift');
+  fail(JSON.stringify(actual.disposition_counts) === JSON.stringify(expected.disposition_counts), actual.id + ' disposition counts drift');
+  fail(actual.acquisition_dispositions.length === actual.acquisition_candidate_count, actual.id + ' has undispositioned acquisition candidates');
+  if (actual.id === 'tg-owt-libyuv') {
+    fail(actual.parent_build_exclusion.references.length === expected.parent_build_exclusion.expected_reference_count,
+      'tg_owt parent began invoking libyuv standalone child tooling: ' + JSON.stringify(actual.parent_build_exclusion.references));
+  }
 }
 
 const artifactDir = path.join(process.cwd(), 'artifacts', 'tdrp-authority');
@@ -224,6 +317,8 @@ console.log(JSON.stringify({
     entries: target.tree_entries_non_directory,
     gitlinks: target.gitlinks.length,
     acquisition_candidates: target.acquisition_candidate_count,
+    disposition_counts: target.disposition_counts,
+    parent_build_exclusion_references: target.parent_build_exclusion?.references.length ?? null,
     patches: target.patches.length,
     lfs_attribute_detected: target.lfs_attribute_detected,
     lfs_pointers: target.lfs_pointers.length,
