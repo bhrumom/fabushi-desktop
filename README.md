@@ -18,7 +18,7 @@ See `MIGRATION_SOURCE.md` for the original platform extraction, `RUST_RUNTIME_SO
 
 The product direction is governed by [FBCP-001](docs/specs/fabushi-bot-communication-platform.md):
 
-**The existing Fabushi / PR #20 architecture is the only target architecture. Telegram Desktop is a complete communication-product research source, not Fabushi's network, provider, or second product architecture.**
+**The existing Fabushi / PR #20 architecture is the only target architecture. Telegram Desktop is the complete product-behavior and source authority for this migration, not Fabushi's network, provider, or second product architecture.**
 
 Telegram capabilities are decomposed and absorbed into current Fabushi owners such as the sidebar, conversation workspace, transcript, composer, Shared Room/member model, attachments/artifacts, permissions, settings, Computer, Plugins/MCP and Automations. A new owner is allowed only when no current owner is suitable and an ADR justifies the smallest possible responsibility.
 
@@ -29,8 +29,8 @@ Start with:
 - [FBCP source of truth](projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md)
 - [FBCP absorption map](projects/fabushi-communication-platform/architecture-map.md)
 - [FBCP status](projects/fabushi-communication-platform/STATUS.md)
-- [Telegram research sub-spec](docs/specs/telegram-desktop-rust-equivalence-migration.md)
-- [Telegram research project](projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md)
+- [Telegram equivalence migration spec](docs/specs/telegram-desktop-rust-equivalence-migration.md)
+- [Telegram equivalence migration project](projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md)
 
 This work is source-informed, not clean-room. Source/provenance and licensing review remain release gates.
 

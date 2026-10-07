@@ -354,7 +354,7 @@ for (const [kind,value] of [
   ['path_prefix','docs/'],['path_prefix','src/common/'],['path_prefix','src/third_party/curl/'],
   ['path_prefix','src/third_party/libdisasm/swig/']
 ]) fail(breakpadPolicy.some(rule=>rule[kind]===value),'Breakpad acquisition disposition missing: '+value);
-const prepareBreakpadStage=prepareQt.match(/stage\('breakpad',[\s\S]*?\n"""\)/)?.[0]||'';
+const prepareBreakpadStage=prepareQt.match(/stage\('breakpad',[\s\S]*?\n""" \+ macBreakpadBuild\)/)?.[0]||'';
 const prepareStackwalkStage=prepareQt.match(/stage\('stackwalk',[\s\S]*?\n"""\)/)?.[0]||'';
 const dockerBreakpadStage=dockerStage(dockerQt,'breakpad');
 for (const [name,stage] of [['prepare.py breakpad',prepareBreakpadStage],['prepare.py stackwalk',prepareStackwalkStage]]) {
