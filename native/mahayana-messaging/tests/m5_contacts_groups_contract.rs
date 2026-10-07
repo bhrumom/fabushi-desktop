@@ -275,6 +275,7 @@ fn contacts_and_groups_are_searchable_through_the_messaging_protocol() {
                     requirements: RecipientSearchRequirements {
                         require_media: true,
                         require_polls: false,
+                        ..RecipientSearchRequirements::default()
                     },
                 },
             ),
