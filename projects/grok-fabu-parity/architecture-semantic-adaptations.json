@@ -699,6 +699,381 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Preserves the frozen Settings modal structure, focus trap, keyboard dismissal, and section ownership while adapting visible labels and accessible names to the canonical Fabushi UI locale. Section identity and routing remain unchanged; only localized presentation is added through the existing Settings owner."
+    },
+    {
+      "referencePath": "frontend/src/production/command-palette-root-commands.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "48c7c7878843756a800414aa6f9db68b723aed47",
+      "behavioralEvidence": [
+        "frontend/src/production/command-palette-root-commands.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/production/evidence.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2f97fde079e0ca0180d0ae709fa4c291fd9c7a99",
+      "behavioralEvidence": [
+        "frontend/src/production/evidence.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/access/cover/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c7bd674ed0f6f3a73e6dc532c6db69e5e21f7cb2",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/access/cover/view.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/account/session/menu.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "d7f2fe093ad210eee719441ea54f725222970391",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/account/session/menu.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/agent-info/shared-room/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "5603d2b7dc1ee9dde296a3689786d068cde245a1",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/agent-info/shared-room/view.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/computer/rebuild/banner.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "eaf9324f9f8eef3a264ba80da124f4ab52752282",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/computer/rebuild/banner.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/computer/shell/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "3289962193d6bca326229a0abf63d99e84a65af4",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/computer/shell/view.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/computer/update/confirmation.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "abb473539ed217cf1ee00329c48a1a9795df177d",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/computer/update/confirmation.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/resolver.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "43cbf95294b1954294f3295705ed8661bcb6f032",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/resolver.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/electron-main/account/cursor-auth-wiring.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "41d55e676a84664249a11e134b3d2c3aa7c838b2",
+      "behavioralEvidence": [
+        "source/electron-main/account/cursor-auth-wiring.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/electron-main/account/cursor-auth.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c2e4c95306f8822adb22176d594b488e9717b28f",
+      "behavioralEvidence": [
+        "source/electron-main/account/cursor-auth.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/electron-main/dev/dev-controls-window.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "079aae8e532553edb7984b6b00fdd702bb5ece8b",
+      "behavioralEvidence": [
+        "source/electron-main/dev/dev-controls-window.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/electron-main/startup/startup-move-check.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "f49f51c7497bfc8352b3ba3d9221ae9f582b59ea",
+      "behavioralEvidence": [
+        "source/electron-main/startup/startup-move-check.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/agents/disk-saver.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "d175b498b15fd13290de1f28c160d914efc10fdf",
+      "behavioralEvidence": [
+        "source/shared/agents/disk-saver.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/channel-messaging.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "33a52c1eddd7ea71114d3cccb9071158651b1f24",
+      "behavioralEvidence": [
+        "source/shared/channel-messaging.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/local-exec-gateway.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "a0e6c5e2959ed2169f766c25845baea66e9d6e10",
+      "behavioralEvidence": [
+        "source/shared/local-exec-gateway.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/local-tool-permission-machinery.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "b8b0c1636eef216040c9e8024682f21781af196f",
+      "behavioralEvidence": [
+        "source/shared/local-tool-permission-machinery.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/mcp-account-slot-lifecycle.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "e162c6a2509acea35d3af5e485e29e5cad38855f",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/mcp-account-slot-lifecycle.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/mcp-auth-watch-lifecycle.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "eb538d8bc3df4e86e948cfed805343e31c7c014f",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/mcp-auth-watch-lifecycle.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/mcp-display-runtime.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "ec8cd459d779827629bf8dcd1920faff568b2d2f",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/mcp-display-runtime.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/mcp-listing-summaries.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "bcdc9cbbfd6da7d585a5ef9901514ec5a0c598c9",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/mcp-listing-summaries.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/os-notification.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "ffaf599dada09e938f362d75aa202327eed3a4ad",
+      "behavioralEvidence": [
+        "source/shared/os-notification.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/product-name.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2b3707cc8e2dfb08a8717e7ce9868dcc6bdcf818",
+      "behavioralEvidence": [
+        "source/shared/product-name.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/sand-spotlight.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "21ab8a595ed7cd77c4fd1d674a097401e094cbcc",
+      "behavioralEvidence": [
+        "source/shared/sand-spotlight.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/webauthn-gateway.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c7ad9fa32953417618d9e71dce43d7cf2ca44d2c",
+      "behavioralEvidence": [
+        "source/shared/webauthn-gateway.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
     }
   ]
 }
