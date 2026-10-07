@@ -216,6 +216,32 @@ fn forward_retries_are_idempotent_and_option_conflicts_fail_closed() {
         conflict,
         MessagingServiceError::IdempotencyConflict("client:forward-idempotent".into())
     );
+
+    let privacy_conflict = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:forwarder"),
+                ClientCommand::ForwardMessage {
+                    source_conversation_id: ConversationId::new("chat:source"),
+                    message_id: source_message_id,
+                    destination_conversation_id: ConversationId::new("chat:destination"),
+                    client_message_id: ClientMessageId("client:forward-idempotent".into()),
+                    thread_root_message_id: None,
+                    scheduled_at_ms: Some(50),
+                    silent: true,
+                    privacy: ForwardPrivacy {
+                        drop_sender_names: true,
+                        drop_captions: false,
+                    },
+                },
+            ),
+            7,
+        )
+        .unwrap_err();
+    assert_eq!(
+        privacy_conflict,
+        MessagingServiceError::IdempotencyConflict("client:forward-idempotent".into())
+    );
 }
 
 #[test]
