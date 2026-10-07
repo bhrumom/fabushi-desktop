@@ -1157,5 +1157,88 @@
         "artifact_digest": "sha256:ab52d74cadbc20427e8183fd0963a955d7a7a4f91a478744688fb6c299442d38"
       }
     }
-  ]
+  ],
+  "recursive_build_reachability": {
+    "status": "partial-audited-disposition-open",
+    "accepted_upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+    "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
+    "qt_superproject": {
+      "repository": "https://github.com/qt/qt5",
+      "observed_authorities": [
+        {
+          "commit": "dc2ac680fa9d0ef7b0d9520859593d13951bedea",
+          "ref": "v5.15.19-lts-lgpl",
+          "build_entry": "Telegram/build/prepare/prepare.py",
+          "selected_submodules": [
+            "qtbase",
+            "qtimageformats",
+            "qtsvg"
+          ]
+        },
+        {
+          "commit": "713a36536903d172f9e6737584d428753c119496",
+          "ref": "v6.11.2",
+          "build_entries": [
+            "Telegram/build/prepare/prepare.py",
+            "Telegram/build/docker/centos_env/Dockerfile",
+            "snap/snapcraft.yaml"
+          ],
+          "selected_submodules_union": [
+            "qtbase",
+            "qtdeclarative",
+            "qtwayland",
+            "qtimageformats",
+            "qtsvg",
+            "qtshadertools"
+          ]
+        }
+      ],
+      "accepted_upstream_evidence": [
+        {
+          "path": "Telegram/build/prepare/prepare.py",
+          "blob": "9482a53e60386743ae797d75cecc36767cd63646",
+          "evidence": "Qt 5 initializes only qtbase qtimageformats qtsvg; Qt 6 prepare initializes only qtbase qtimageformats qtshadertools qtsvg."
+        },
+        {
+          "path": "Telegram/build/docker/centos_env/Dockerfile",
+          "blob": "5516c448c628d5928d690687ed948d67b5cdaac3",
+          "evidence": "Qt 6 Linux image initializes only qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools."
+        },
+        {
+          "path": "snap/snapcraft.yaml",
+          "blob": "5cff7cf59aedc430b0a9a2d6d66ab6fe3c29bd9f",
+          "evidence": "Snap Qt source-submodules lists only qtbase qtdeclarative qtimageformats qtshadertools qtsvg qtwayland."
+        }
+      ],
+      "explicitly_non_reachable_dispositions": [
+        {
+          "repository": "https://github.com/qt/qttools",
+          "commits": [
+            "58e16bdc8e3e05dcf1770475237cb876044abc36",
+            "8026c0462f19e9549501718152523ea223a19fd3"
+          ],
+          "parent_repository": "https://github.com/qt/qt5",
+          "disposition": "not-reachable-from-accepted-tdesktop-qt-build",
+          "rationale": "qttools is a tracked Qt superproject gitlink but is absent from every accepted-upstream Qt submodule selection used by TDesktop build/prepare, Linux image, and Snap."
+        },
+        {
+          "repository": "https://code.qt.io/playground/qlitehtml",
+          "commit": "3fe5821dad98747d6e41c9ed54b86c3d0eee9daf",
+          "parent_repository": "https://github.com/qt/qttools",
+          "parent_path": "src/assistant/qlitehtml",
+          "disposition": "not-reachable-via-non-reachable-parent",
+          "rationale": "qlitehtml is reachable only through qttools in the discovered chain, while qttools itself is not initialized by accepted TDesktop Qt build paths."
+        },
+        {
+          "repository": "https://code.qt.io/qt/qttools-litehtml",
+          "commit": "6ca1ab0419e770e6d35a1ef690238773a1dafcee",
+          "parent_repository": "https://code.qt.io/playground/qlitehtml",
+          "parent_path": "src/3rdparty/litehtml",
+          "disposition": "not-reachable-via-non-reachable-parent",
+          "rationale": "qttools-litehtml is a further nested gitlink below qlitehtml and inherits the non-reachability of qttools/qlitehtml for accepted TDesktop builds."
+        }
+      ],
+      "note": "This closes only the audited Qt superproject branch reachability question. Root/child/archive/other recursive acquisitions, patches, generated inputs, resources, and tool/package inputs remain open and require individual build-reachability disposition."
+    }
+  }
 }
