@@ -251,6 +251,34 @@ for (const [name,stage] of [['prepare.py',prepareAdaStage],['Dockerfile',dockerA
 }
 fail(snapAdaStage.includes('source-tag: v3.2.4'),'accepted Snap Ada ref drift');
 
+const openalReachability=recursiveReachability.openal_soft;
+fail(openalReachability?.root_candidate_policy_status==='complete-for-current-openal-authorities','OpenAL root candidate policy is not fail-closed complete');
+const expectedOpenalAuthorities=new Set([
+  'https://github.com/kcat/openal-soft@b2c48f7718ef3fcf67921a8b6534c4914e328970',
+  'https://github.com/kcat/openal-soft@dc7d7054a5b4f3bec1dc23a42fd616a0847af948',
+  'https://github.com/telegramdesktop/openal-soft@291c0fdbbdd767f00c45c7fca562614faea57647',
+  'https://github.com/telegramdesktop/openal-soft@c2eab43d72890c58d4b51d5d98eafb9f011e1c89'
+]);
+for (const authority of openalReachability.observed_authorities||[]) expectedOpenalAuthorities.delete(authority.repository+'@'+authority.commit);
+fail(expectedOpenalAuthorities.size===0,'OpenAL observed authority set drift');
+const openalPolicy=openalReachability.root_candidate_disposition_policy||[];
+for (const [kind,value] of [
+  ['path_prefix','.github/'],['path_exact','.travis.yml'],['path_prefix','fmt-'],
+  ['path_prefix','gsl/'],['path_prefix','tests/'],['path_exact','README.md']
+]) fail(openalPolicy.some(rule=>rule[kind]===value),'OpenAL acquisition disposition missing: '+value);
+const prepareOpenalStage=prepareQt.match(/stage\('openal-soft',[\s\S]*?\n"""\)/)?.[0]||'';
+const dockerOpenalStage=dockerQt.match(/FROM builder AS openal[\s\S]*?rm -rf openal-soft/)?.[0]||'';
+const snapOpenalStage=snapQt.match(/\n  openal:\n[\s\S]*?\n  openssl:/)?.[0]||'';
+for (const option of ['ALSOFT_EXAMPLES=OFF','ALSOFT_UTILS=OFF']) {
+  fail(prepareOpenalStage.includes(option),'accepted prepare.py OpenAL option drift: '+option);
+  fail(dockerOpenalStage.includes(option),'accepted Docker OpenAL option drift: '+option);
+  fail(snapOpenalStage.includes(option),'accepted Snap OpenAL option drift: '+option);
+}
+fail(prepareOpenalStage.includes('git checkout 291c0fdbbd'),'accepted Windows OpenAL pin drift');
+fail(prepareOpenalStage.includes('git checkout coreaudio_device_uid'),'accepted Mac OpenAL branch evidence drift');
+fail(dockerOpenalStage.includes('git clone -b 1.25.2 --depth=1'),'accepted Docker OpenAL ref drift');
+fail(snapOpenalStage.includes('source-tag: 1.24.3'),'accepted Snap OpenAL ref drift');
+
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
 fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');
