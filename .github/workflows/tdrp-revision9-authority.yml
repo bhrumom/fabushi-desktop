@@ -144,3 +144,75 @@ jobs:
           fi
           grep -E 'accepted mode requires|G-INVENTORY' accepted.log
           echo "Fail-closed source-closure gate correctly rejected the unclosed baseline."
+
+  recursive-root-authority-shards:
+    name: Recursive root authority shard ${{ matrix.shard }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    env:
+      SHARD_INDEX: ${{ matrix.shard }}
+      SHARD_COUNT: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Recursively discover locked root source authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-root-authority.mjs
+      - name: Upload recursive root authority shard
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-root-${{ github.sha }}-${{ matrix.shard }}
+          path: artifacts/tdrp-recursive-root
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  recursive-root-authority-gate:
+    name: Recursive root authority accounting gate
+    needs: recursive-root-authority-shards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SHARD_COUNT: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download all recursive authority shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: tdrp-recursive-root-${{ github.sha }}-*
+          path: artifacts/tdrp-recursive-merged
+          merge-multiple: true
+      - name: Prove every locked source authority was scanned exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-root-authority.mjs --validate-reports artifacts/tdrp-recursive-merged
+      - name: Upload aggregate recursive authority evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-recursive-merged
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
