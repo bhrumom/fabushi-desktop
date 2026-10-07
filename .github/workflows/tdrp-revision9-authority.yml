@@ -549,3 +549,81 @@ jobs:
           if-no-files-found: error
           retention-days: 90
           compression-level: 0
+
+
+  boost-source-archive-build-reachability:
+    name: Boost source archive build reachability
+    needs: root-source-archive-accounting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download current-head source archive discovery
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-root-source-archives-${{ github.sha }}
+          path: artifacts/tdrp-source-archives
+      - name: Download and verify exact Boost 1.90.0 archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/tdrp-boost"
+          node - <<'NODE' > "${RUNNER_TEMP}/tdrp-boost/source.env"
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('artifacts/tdrp-source-archives/root-source-archive-discovery.json','utf8'));
+          const boost = report.archives.find((item) => item.id === 'ROOT-ARCHIVE-BOOST-190');
+          if (!boost) throw new Error('Boost source archive evidence missing');
+          console.log('BOOST_URL=' + boost.url);
+          console.log('BOOST_SHA256=' + boost.actual_sha256);
+          NODE
+          source "${RUNNER_TEMP}/tdrp-boost/source.env"
+          curl --fail --location --retry 4 --retry-delay 2 "${BOOST_URL}" -o "${RUNNER_TEMP}/tdrp-boost/boost.tar.gz"
+          echo "${BOOST_SHA256}  ${RUNNER_TEMP}/tdrp-boost/boost.tar.gz" | sha256sum --check -
+          tar -xzf "${RUNNER_TEMP}/tdrp-boost/boost.tar.gz" -C "${RUNNER_TEMP}/tdrp-boost"
+      - name: Execute accepted TDesktop Boost regex build path
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${RUNNER_TEMP}/tdrp-boost/boost_1_90_0"
+          mkdir -p "${GITHUB_WORKSPACE}/artifacts/tdrp-boost-reachability"
+          {
+            echo '$ ./bootstrap.sh --prefix=<temp>/install --with-libraries=regex'
+            ./bootstrap.sh --prefix="${RUNNER_TEMP}/tdrp-boost/install" --with-libraries=regex
+            echo '$ ./b2 release link=static -j2 install'
+            ./b2 release link=static -j2 install
+          } 2>&1 | tee "${GITHUB_WORKSPACE}/artifacts/tdrp-boost-reachability/boost-build.log"
+          cd "${GITHUB_WORKSPACE}"
+          echo "BOOST_BUILD_LOG_SHA256=$(sha256sum artifacts/tdrp-boost-reachability/boost-build.log | awk '{print $1}')" >> "${GITHUB_ENV}"
+      - name: Disposition every Boost acquisition candidate against executed build path
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-tdrp-boost-archive-reachability.mjs
+      - name: Assert Boost acquisition closure is exact and scoped
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('artifacts/tdrp-boost-reachability/boost-build-reachability.json','utf8'));
+          if (report.target_commit !== process.env.GITHUB_SHA) throw new Error('Boost reachability HEAD drift');
+          if (report.acquisition_candidates !== 582 || report.dispositioned !== 582 || report.open !== 0) throw new Error('Boost acquisition accounting is not closed');
+          if (report.status !== 'complete-for-boost-acquisition-candidates') throw new Error('Boost candidate status is not complete');
+          if (report.source_closure_ready !== false) throw new Error('Boost candidate closure must not fabricate full source closure');
+          NODE
+      - name: Upload Boost build-reachability evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-boost-reachability-${{ github.sha }}
+          path: artifacts/tdrp-boost-reachability
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
