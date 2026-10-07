@@ -1987,6 +1987,17 @@ impl MessagingEngine {
                     reply_to_message_id: None,
                     updated_at_ms: 0,
                 })?;
+                // SavedSublist membership is not derivable from the current canonical
+                // Message shape yet. Never accept arbitrary parent messages into that
+                // child just to populate a page; empty lifecycle snapshots remain valid
+                // until a source-neutral message-to-child relation lands.
+                if matches!(
+                    &destination.child,
+                    Some(ConversationChildIdentity::SavedSublist { .. })
+                ) && !message_ids.is_empty()
+                {
+                    return Err(EngineError::ConversationChildMessageMismatch);
+                }
                 for message_id in &message_ids {
                     self.decide(Command::MarkConversationChildRead {
                         destination: destination.clone(),
