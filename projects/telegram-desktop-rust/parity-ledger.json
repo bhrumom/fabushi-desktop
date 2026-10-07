@@ -6504,7 +6504,7 @@
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/service.rs"
       ],
-      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "existing_owner": "Fabushi canonical MessagingState / Conversation child runtime",
       "rejected_existing_owners": [
         "Renderer-local state: cannot mint authoritative parent/membership relations",
         "New SavedMessages subsystem: prohibited parallel conversation/message truth"
@@ -6700,7 +6700,7 @@
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/service.rs"
       ],
-      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "existing_owner": "Fabushi canonical MessagingState / Conversation child runtime",
       "rejected_existing_owners": [
         "Renderer-local state: cannot mint authoritative parent/membership relations",
         "New SavedMessages subsystem: prohibited parallel conversation/message truth"
@@ -6897,7 +6897,7 @@
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/service.rs"
       ],
-      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "existing_owner": "Fabushi canonical MessagingState / Conversation child runtime",
       "rejected_existing_owners": [
         "Renderer-local state: cannot mint authoritative parent/membership relations",
         "New SavedMessages subsystem: prohibited parallel conversation/message truth"
@@ -7095,7 +7095,7 @@
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/service.rs"
       ],
-      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "existing_owner": "Fabushi canonical MessagingState / Conversation child runtime",
       "rejected_existing_owners": [
         "Renderer-local state: cannot mint authoritative parent/membership relations",
         "New SavedMessages subsystem: prohibited parallel conversation/message truth"
@@ -7292,7 +7292,7 @@
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/service.rs"
       ],
-      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "existing_owner": "Fabushi canonical MessagingState / Conversation child runtime",
       "rejected_existing_owners": [
         "Renderer-local state: cannot mint authoritative parent/membership relations",
         "New SavedMessages subsystem: prohibited parallel conversation/message truth"
@@ -7488,7 +7488,7 @@
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/service.rs"
       ],
-      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "existing_owner": "Fabushi canonical MessagingState / Conversation child runtime",
       "rejected_existing_owners": [
         "Renderer-local state: cannot mint authoritative parent/membership relations",
         "New SavedMessages subsystem: prohibited parallel conversation/message truth"
@@ -7686,7 +7686,7 @@
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/service.rs"
       ],
-      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "existing_owner": "Fabushi canonical MessagingState / Conversation child runtime",
       "rejected_existing_owners": [
         "Renderer-local state: cannot mint authoritative parent/membership relations",
         "New SavedMessages subsystem: prohibited parallel conversation/message truth"
@@ -7882,7 +7882,7 @@
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/service.rs"
       ],
-      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "existing_owner": "Fabushi canonical MessagingState / Conversation child runtime",
       "rejected_existing_owners": [
         "Renderer-local state: cannot mint authoritative parent/membership relations",
         "New SavedMessages subsystem: prohibited parallel conversation/message truth"
@@ -8079,7 +8079,7 @@
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/service.rs"
       ],
-      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "existing_owner": "Fabushi canonical MessagingState / Conversation child runtime",
       "rejected_existing_owners": [
         "Renderer-local state: cannot mint authoritative parent/membership relations",
         "New SavedMessages subsystem: prohibited parallel conversation/message truth"
@@ -8276,7 +8276,7 @@
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/service.rs"
       ],
-      "existing_owner": "Fabushi Command Palette canonical Search projection",
+      "existing_owner": "Fabushi canonical MessagingState / Conversation child runtime",
       "rejected_existing_owners": [
         "Renderer-local state: cannot mint authoritative parent/membership relations",
         "New SavedMessages subsystem: prohibited parallel conversation/message truth"
