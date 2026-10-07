@@ -121,8 +121,7 @@ export function createConversationChildPageRequestController(
 
   const start = (
     direction: ConversationChildPageDirection,
-    anchor: string | null,
-    staleBoundaryRetry = false
+    anchor: string | null
   ): Promise<void> => {
     if (disposed || scopeKey == null) return Promise.resolve();
 
@@ -169,10 +168,10 @@ export function createConversationChildPageRequestController(
           return;
         }
 
-        if (retryAfterSettlement && !staleBoundaryRetry) {
+        if (retryAfterSettlement) {
           emit();
           const freshBoundary = options.getBoundary(direction as "before" | "after");
-          if (freshBoundary != null) void start(direction, freshBoundary, true);
+          if (freshBoundary != null) void start(direction, freshBoundary);
           return;
         }
 
