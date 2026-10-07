@@ -1,13 +1,13 @@
 # Story stealth-mode source-completeness dossier
 
 Authority: TDRP-001 Revision 9  
-Accepted upstream: `telegramdesktop/tdesktop@e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39`  
+Accepted upstream: `telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5`  
 Fabushi mapping baseline: `bhrumom/fabushi-desktop@3bc92400826cc4ca7ac665b467708e22261edc61`  
-Status: read-complete / provenance-rebound at e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39 / mapped-open / not implemented / not verified
+Status: read-complete / provenance-rebound at d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 / mapped-open / not implemented / not verified
 
 ### Rebaseline provenance
 
-The accepted upstream advanced 15 commits from `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b` to `e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39`. GitHub exact-file reads at the new commit confirm every source entry in this dossier has the same blob SHA as the prior read. Therefore the semantic read is provenance-rebound rather than inherited blindly; no changed story blob is being treated as read.
+The accepted upstream advanced 16 commits from `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b` to `d346b42a1d30ef60dc989b6e5191bb8e571f6bd5`. GitHub exact-file reads at the new commit confirm every source entry in this dossier has the same blob SHA as the prior read. Therefore the semantic read is provenance-rebound rather than inherited blindly; no changed story blob is being treated as read.
 
 ## Exact source entries
 
