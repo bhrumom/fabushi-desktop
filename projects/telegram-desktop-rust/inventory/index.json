@@ -14,7 +14,7 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15788,
-    "unread_minimum": 15751,
+    "unread_minimum": 15750,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -42,7 +42,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Rebased live authority to telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. Root and recursive cardinality remain subject to current-head source-authority evidence. Thirty-seven source entries are read-complete: the prior thirty-five accepted reads plus iv_markdown_article_text.{h,cpp}, now mapped in iv-markdown-article-text-complete-read.md. The remaining changed IV/Markdown source files and changed lib_ui child receive no inherited semantic-read credit. unread_minimum is 15,751; unknown remains 15,788 and omitted remains 0 while responsibility closure is open.",
+  "note": "Rebased live authority to telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. Root and recursive cardinality remain subject to current-head source-authority evidence. Thirty-eight source entries are read-complete: the prior thirty-seven accepted reads plus iv_markdown_view_widget.cpp, now mapped in iv-markdown-view-widget-complete-read.md. The remaining changed IV/Markdown source files and changed lib_ui child receive no inherited semantic-read credit. unread_minimum is 15,750; unknown remains 15,788 and omitted remains 0 while responsibility closure is open.",
   "rebaseline": {
     "from_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
     "to_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
