@@ -22,6 +22,7 @@ on:
       - 'scripts/check-grok-architecture.mjs'
       - 'contracts/**'
       - 'native/**'
+      - 'projects/telegram-desktop-rust/**'
       - 'source/mahayana/**'
       - '.github/workflows/release-macos-main.yml'
 
