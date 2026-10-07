@@ -168,6 +168,30 @@ for (const commit of byRepo.get('https://github.com/qt/qttools')?.commits||[]) {
   fail(/^[0-9a-f]{40}$/.test(commit),'qttools non-reachable commit is not immutable');
 }
 
+const opensslReachability=recursiveReachability.openssl;
+fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
+fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');
+fail(opensslReachability.disposition==='not-reachable-from-accepted-tdesktop-openssl-build','OpenSSL child disposition missing');
+const prepareOpenSslStage=prepareQt.match(/stage\('openssl3',[\s\S]*?\n"""\)/)?.[0]||'';
+const dockerOpenSslStage=dockerQt.match(/FROM builder AS openssl[\s\S]*?\nFROM builder AS xkbcommon/)?.[0]||'';
+const snapOpenSslStage=snapQt.match(/\n  openssl:\n[\s\S]*?\n  nv-codec-headers:/)?.[0]||'';
+for (const [name,stage] of [['prepare.py',prepareOpenSslStage],['Dockerfile',dockerOpenSslStage],['snapcraft.yaml',snapOpenSslStage]]) {
+  fail(stage.length>0,'unable to isolate accepted OpenSSL build stage in '+name);
+  fail(!/git\s+submodule|source-submodules\s*:/.test(stage),'accepted OpenSSL build unexpectedly fetches submodules in '+name);
+}
+const opensslTree=await ghTree('openssl/openssl',opensslReachability.commit);
+const expectedOpenSslChildren=opensslReachability.direct_gitlinks_not_fetched||[];
+fail(expectedOpenSslChildren.length===10,'OpenSSL unfetched direct-gitlink accounting drift');
+for (const item of expectedOpenSslChildren) {
+  fail(Array.isArray(item)&&item.length===3,'OpenSSL unfetched gitlink record malformed');
+  const [childPath,childRepository,childCommit]=item;
+  fail(/^[0-9a-f]{40}$/.test(childCommit),'OpenSSL child commit is not immutable: '+childPath);
+  const entry=(opensslTree.tree||[]).find(candidate=>candidate.path===childPath);
+  fail(entry?.mode==='160000','OpenSSL recorded child is not a gitlink: '+childPath);
+  fail(entry.sha===childCommit,'OpenSSL recorded child commit drift: '+childPath);
+  fail(typeof childRepository==='string'&&childRepository.length>0,'OpenSSL child repository missing: '+childPath);
+}
+
 const rowRequired=schema.$defs?.row?.required||[];
 const responsibilityIds=new Set();
 const targetSymbolOwners=new Map();
