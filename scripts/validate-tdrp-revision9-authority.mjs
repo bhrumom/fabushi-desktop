@@ -167,6 +167,30 @@ fail(byRepo.get('https://code.qt.io/qt/qttools-litehtml')?.commit==='6ca1ab0419e
 for (const commit of byRepo.get('https://github.com/qt/qttools')?.commits||[]) {
   fail(/^[0-9a-f]{40}$/.test(commit),'qttools non-reachable commit is not immutable');
 }
+fail(qtReachability.root_candidate_policy_status==='complete-for-current-qt-authorities','Qt root candidate policy is not fail-closed complete');
+const qtRootPolicy=qtReachability.root_candidate_disposition_policy||[];
+fail(qtRootPolicy.some(rule=>rule.path_exact==='cmake/QtIRGitHelpers.cmake'&&rule.disposition==='qt-init-repository-helper-not-invoked'),'QtIRGitHelpers acquisition disposition missing');
+
+const tgOwtReachability=recursiveReachability.tg_owt;
+fail(tgOwtReachability?.repository==='https://github.com/desktop-app/tg_owt','tg_owt reachability authority missing');
+fail(tgOwtReachability.commit==='e2d0e88d1bde6cc600da5dc92581dc97e4c1e685','tg_owt reachability commit drift');
+fail(tgOwtReachability.root_candidate_policy_status==='complete-for-current-tg-owt-authority','tg_owt root candidate policy is not fail-closed complete');
+const tgOwtPolicy=tgOwtReachability.root_candidate_disposition_policy||[];
+for (const [kind,value,disposition] of [
+  ['path_prefix','src/','compiled-source-or-comment-not-build-acquisition'],
+  ['path_exact','.gitmodules','gitlink-metadata-recursively-accounted'],
+  ['path_exact','CMakeLists.txt','cmake-project-metadata-not-acquisition']
+]) {
+  fail(tgOwtPolicy.some(rule=>rule[kind]===value&&rule.disposition===disposition),'tg_owt acquisition disposition missing: '+value);
+}
+const prepareTgOwtStage=prepareQt.match(/stage\('tg_owt',[\s\S]*?\n"""\)/)?.[0]||'';
+const dockerTgOwtStage=dockerQt.match(/git init tg_owt[\s\S]*?rm -rf tg_owt/)?.[0]||'';
+const snapTgOwtStage=snapQt.match(/\n  webrtc:\n[\s\S]*?\n  tlottie:/)?.[0]||snapQt.match(/\n  webrtc:\n[\s\S]*$/)?.[0]||'';
+fail(prepareTgOwtStage.includes('git checkout e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted prepare.py tg_owt pin drift');
+fail(prepareTgOwtStage.includes('git submodule update --init --recursive'),'accepted prepare.py tg_owt recursive submodule build drift');
+fail(dockerTgOwtStage.includes('git fetch --depth=1 origin e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted Docker tg_owt pin drift');
+fail(dockerTgOwtStage.includes('git submodule update --init --recursive --depth=1'),'accepted Docker tg_owt recursive submodule build drift');
+fail(snapTgOwtStage.includes('source-commit: e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted Snap tg_owt pin drift');
 
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
