@@ -1317,22 +1317,27 @@
         [
           "fuzz/corpora",
           "https://github.com/openssl/fuzz-corpora",
-          "8663e2d71fa934e7846fa4c5fb6de7cb3afc53fd"
+          "ce771805c094d098c25a218bc8e9f7344eccbc5a"
         ],
         [
           "gost-engine",
           "https://github.com/gost-engine/engine",
-          "2a8a5e0ecaa3e3d6f4ec722a49aa72476755c2b7"
+          "74b1f4fddbc2d6de969815b1992ddc1ae7c643fe"
         ],
         [
           "krb5",
           "https://github.com/krb5/krb5",
-          "aa9b4a2a64046afd2fab7cb49c346295874a5fb6"
+          "784c38f50e70a739400cdd3f2620bac2e2788e6c"
         ],
         [
           "oqs-provider",
-          "https://github.com/open-quantum-safe/oqs-provider",
-          "8c746d7e294d6948c2f361a8f2fa376a63a2db30"
+          "https://github.com/open-quantum-safe/oqs-provider.git",
+          "7bc597c04b534ddea9b6654481deb31ded8e1bbc"
+        ],
+        [
+          "pkcs11-provider",
+          "https://github.com/latchset/pkcs11-provider.git",
+          "64fc325ac0f91d03d76b3546df2998d3a38c525b"
         ],
         [
           "pyca-cryptography",
@@ -1342,17 +1347,17 @@
         [
           "python-ecdsa",
           "https://github.com/tlsfuzzer/python-ecdsa",
-          "4de8d5bf89089d1140eb99aa5d7eb2dc8e6337b6"
+          "4096fa01715929e08b97e73f3173aee9d57f2a3f"
         ],
         [
           "tlsfuzzer",
           "https://github.com/tlsfuzzer/tlsfuzzer",
-          "dbd56c149072e656ca8d6a43a59588f3e7513da2"
+          "61f45d9701294fd87ef92d2a7e3dfb076653a562"
         ],
         [
           "tlslite-ng",
           "https://github.com/tlsfuzzer/tlslite-ng",
-          "771e9f59d639dbb0e2fa8e646c8e588405d3903e"
+          "77ef321dde1a9e6bcf94d73c80f8789a770d8031"
         ],
         [
           "wycheproof",
