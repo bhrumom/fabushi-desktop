@@ -5,9 +5,9 @@ use crate::community::{
     CommunityState, ForumTopicState, InviteLink, JoinRequest, MemberStatus,
 };
 use crate::conversation::{
-    Conversation, ConversationChildRuntimeState, ConversationDestination, ConversationDraft,
-    ConversationFolder, ConversationId, ConversationKind, ConversationMessagePosition,
-    NotificationSettings, TopicDraft,
+    Conversation, ConversationChildIdentity, ConversationChildMutation,
+    ConversationChildRuntimeState, ConversationDestination, ConversationDraft, ConversationFolder,
+    ConversationId, ConversationKind, ConversationMessagePosition, NotificationSettings, TopicDraft,
 };
 use crate::message::{
     ClientMessageId, DeliveryState, ForwardPrivacy, Message, MessageContent, MessageId,
@@ -69,6 +69,11 @@ pub enum Command {
     },
     SetDraft {
         draft: ConversationDraft,
+    },
+    UpdateConversationChild {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        mutation: ConversationChildMutation,
     },
     SetConversationNotifications {
         conversation_id: ConversationId,
@@ -347,6 +352,11 @@ pub enum Event {
     DraftChanged {
         draft: ConversationDraft,
     },
+    ConversationChildChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        mutation: ConversationChildMutation,
+    },
     ConversationNotificationsUpdated {
         conversation_id: ConversationId,
         settings: NotificationSettings,
@@ -517,6 +527,13 @@ pub enum EngineError {
     ConversationNotFound(ConversationId),
     #[error("conversation participant data is invalid")]
     InvalidConversationParticipant,
+    #[error("conversation child destination or mutation is invalid")]
+    InvalidConversationChild,
+    #[error("actor {actor_id:?} does not have access to conversation child {destination:?}")]
+    ConversationChildAccessDenied {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+    },
     #[error("message {message_id:?} does not exist in conversation {conversation_id:?}")]
     MessageNotFound {
         conversation_id: ConversationId,
@@ -975,6 +992,27 @@ impl MessagingEngine {
                 self.require_conversation(&draft.conversation_id)?;
                 self.require_actor(&draft.actor_id)?;
                 Ok(vec![Event::DraftChanged { draft }])
+            }
+            Command::UpdateConversationChild {
+                destination,
+                actor_id,
+                mutation,
+            } => {
+                self.require_child_destination_access(&destination, &actor_id)?;
+                if matches!(
+                    &mutation,
+                    ConversationChildMutation::SetDraft {
+                        reply_to_message_id: Some(message_id),
+                        ..
+                    } if message_id.trim().is_empty() || message_id.len() > 200
+                ) {
+                    return Err(EngineError::InvalidConversationChild);
+                }
+                Ok(vec![Event::ConversationChildChanged {
+                    destination,
+                    actor_id,
+                    mutation,
+                }])
             }
             Command::SetConversationNotifications {
                 conversation_id,
@@ -2802,6 +2840,60 @@ impl MessagingEngine {
                         .insert(draft.actor_id.clone(), draft);
                 }
             }
+            Event::ConversationChildChanged {
+                destination,
+                actor_id,
+                mutation,
+            } => {
+                match mutation {
+                    ConversationChildMutation::Destroy => {
+                        self.state.conversation_child_states.retain(|state| {
+                            state.destination != destination || state.actor_id != actor_id
+                        });
+                    }
+                    ConversationChildMutation::SetActive { active } => {
+                        if active {
+                            for state in &mut self.state.conversation_child_states {
+                                if state.actor_id == actor_id
+                                    && state.destination.conversation_id == destination.conversation_id
+                                {
+                                    state.set_active(false);
+                                }
+                            }
+                        }
+                        if let Some(child) =
+                            self.state.child_state_mut(destination, actor_id)
+                        {
+                            child.set_active(active);
+                        }
+                    }
+                    ConversationChildMutation::SetPinned { pinned } => {
+                        if let Some(child) =
+                            self.state.child_state_mut(destination, actor_id)
+                        {
+                            child.pinned = pinned;
+                            if !pinned {
+                                child.restore_pinned_when_non_empty = false;
+                            }
+                        }
+                    }
+                    ConversationChildMutation::SetDraft {
+                        text,
+                        reply_to_message_id,
+                        updated_at_ms,
+                    } => {
+                        if let Some(child) =
+                            self.state.child_state_mut(destination, actor_id)
+                        {
+                            if text.trim().is_empty() && reply_to_message_id.is_none() {
+                                child.clear_draft();
+                            } else {
+                                child.set_draft(text, reply_to_message_id, updated_at_ms);
+                            }
+                        }
+                    }
+                }
+            }
             Event::ConversationNotificationsUpdated {
                 conversation_id,
                 settings,
@@ -3152,6 +3244,73 @@ impl MessagingEngine {
         order.status = PaymentStatus::Paid;
         order.updated_at_ms = updated_at_ms;
         self.execute(Command::UpsertOrder { order })
+    }
+
+    fn require_child_destination_access(
+        &self,
+        destination: &ConversationDestination,
+        actor_id: &ActorId,
+    ) -> Result<(), EngineError> {
+        self.require_actor(actor_id)?;
+        if !destination.is_valid() || destination.child.is_none() {
+            return Err(EngineError::InvalidConversationChild);
+        }
+        let parent = self.require_conversation(&destination.conversation_id)?;
+        let parent_access = parent.owner_id.as_ref() == Some(actor_id)
+            || parent
+                .participants
+                .iter()
+                .any(|participant| &participant.actor_id == actor_id)
+            || self
+                .state
+                .communities
+                .get(&destination.conversation_id)
+                .is_some_and(|community| community_has_access(community, actor_id));
+        if !parent_access {
+            return Err(EngineError::ConversationChildAccessDenied {
+                destination: destination.clone(),
+                actor_id: actor_id.clone(),
+            });
+        }
+        match destination.child.as_ref().expect("checked above") {
+            ConversationChildIdentity::Topic { root_message_id } => {
+                let topic_id = topic_id_from_root(&MessageId::new(root_message_id.clone()))
+                    .ok_or(EngineError::InvalidConversationChild)?;
+                if !self
+                    .state
+                    .communities
+                    .get(&destination.conversation_id)
+                    .is_some_and(|community| community.topics.contains_key(topic_id))
+                {
+                    return Err(EngineError::InvalidConversationChild);
+                }
+            }
+            ConversationChildIdentity::SavedSublist { .. } => {
+                if !matches!(parent.kind, ConversationKind::SavedMessages) {
+                    return Err(EngineError::InvalidConversationChild);
+                }
+            }
+            ConversationChildIdentity::Conversation { conversation_id } => {
+                let child = self.require_conversation(conversation_id)?;
+                let child_access = child.owner_id.as_ref() == Some(actor_id)
+                    || child
+                        .participants
+                        .iter()
+                        .any(|participant| &participant.actor_id == actor_id)
+                    || self
+                        .state
+                        .communities
+                        .get(conversation_id)
+                        .is_some_and(|community| community_has_access(community, actor_id));
+                if !child_access {
+                    return Err(EngineError::ConversationChildAccessDenied {
+                        destination: destination.clone(),
+                        actor_id: actor_id.clone(),
+                    });
+                }
+            }
+        }
+        Ok(())
     }
 
     fn require_actor(&self, id: &ActorId) -> Result<&Actor, EngineError> {
