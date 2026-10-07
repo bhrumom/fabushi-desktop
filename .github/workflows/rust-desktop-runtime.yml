@@ -347,8 +347,12 @@ jobs:
           await printGitlinks('desktop-app/tg_owt','d1cf250ea73de26c4c1f0a3c8173eb2648efbb04','TGOWT');
           NODE
       - name: Validate Revision 9 authority
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/validate-tdrp-revision9-authority.mjs
       - name: Require accepted mode to fail closed only on incomplete acceptance
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set +e
           node scripts/validate-tdrp-revision9-authority.mjs --require-accepted > /tmp/accepted.log 2>&1
