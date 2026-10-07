@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
-  "target_commit": "aa9df7fef3454a81aacf489fecae984099cdeab4",
+  "target_commit": "470171e326134da2d3ab5753de331aa85552744d",
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
     "unread": 15786,
     "omitted": 0,
-    "responsibilities_total": 2,
+    "responsibilities_total": 4,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -510,6 +510,462 @@
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted telegramdesktop/tdesktop security semantics; no Telegram runtime or product-branded auth owner was retained.",
       "reviewer": null,
       "notes": "This row covers only the accepted-auth-context / foreign-token stripping responsibility. It intentionally does not mark the rest of url_auth_box.cpp, click_handler_types.cpp, or ui_integration.cpp as read and does not decrement global unknown/unread."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+      "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
+      "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
+      "source_kind": "source",
+      "module_id": "tdesktop.boxes.share",
+      "responsibility_id": "TDRP-R9-SHARE-SEND-OPTIONS-001",
+      "source_symbols": [
+        "sendMenuDetails",
+        "showMenu",
+        "ShareBox::submit"
+      ],
+      "capability_ids": [
+        "CAP-MESSAGE-FORWARD-SEND-OPTIONS"
+      ],
+      "dependency_ids": [
+        "ClientCommand::ForwardMessage",
+        "Command::ForwardMessage",
+        "Message"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/share-box-complete-read.md",
+      "behavior_contract": "A forwarded payload must preserve the canonical scheduled-send timestamp and silent-delivery choice through protocol projection, domain execution, persisted message state, and later delivery/replay; forwarding must not silently collapse these send options to immediate/noisy delivery.",
+      "state_machine": "forward request with schedule/silent options -> service projection -> canonical ForwardMessage command -> pending canonical Message preserving scheduled_at_ms/silent -> acknowledgement/delivery through the existing message lifecycle.",
+      "side_effects": [
+        "Creates only the existing canonical pending Message in the destination conversation",
+        "Carries scheduled_at_ms and silent without creating a second forward store"
+      ],
+      "failure_cases": [
+        "Scheduled forward becomes immediate",
+        "Silent forward becomes noisy",
+        "Protocol defaulting loses explicit send options",
+        "Forward-specific state diverges from canonical Message persistence"
+      ],
+      "ui_disposition": "No new ShareBox UI is introduced. Existing Fabushi conversation/composer action surfaces must project typed schedule/silent options into the canonical messaging command.",
+      "non_ui_responsibilities": [
+        "Preserve scheduled_at_ms on forwards",
+        "Preserve silent on forwards",
+        "Keep forward state inside canonical Message lifecycle"
+      ],
+      "platform_delta": "Telegram SendOptions are represented by source-neutral fields on the existing Fabushi messaging protocol/domain Message rather than a source-specific share runtime.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/message.rs"
+      ],
+      "existing_owner": "Fabushi canonical messaging protocol/service/engine/Message owners",
+      "rejected_existing_owners": [
+        "Composer-only ownership: the options must survive the native service/domain boundary",
+        "New Share/Telegram owner: prohibited parallel source-specific state"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/protocol.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/message.rs"
+      ],
+      "fabushi_target_symbols": [
+        "scheduled_at_ms",
+        "silent"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "This is non-UI message state and delivery semantics already owned by the canonical Rust messaging domain.",
+      "command_event_contracts": [
+        "ClientCommand::ForwardMessage -> MessagingService::project_command -> Command::ForwardMessage -> Event::MessageQueued",
+        "MessageQueued persists scheduled_at_ms and silent on the canonical Message"
+      ],
+      "state_owner": "Canonical Message state in mahayana-messaging",
+      "lifecycle_owner": "MessagingService + MessagingEngine canonical send/ack/delivery lifecycle",
+      "persistence_and_restart": "The options live on Message and therefore use the existing messaging state-store snapshot/journal path; no share-specific persistence is added.",
+      "concurrency_and_cancellation": "Forwarding reuses canonical client_message_id/local-message idempotency and the existing messaging service transaction boundary.",
+      "security_boundary": "These delivery options do not bypass destination authorization; destination policy is enforced independently by TDRP-R9-SHARE-DESTINATION-POLICY-001.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Current-head Rust GitHub Actions evidence is pending",
+        "Reminder/schedule-until-online and exact UI menu eligibility remain separate open ShareBox responsibilities"
+      ],
+      "production_entrypoints": [
+        "Fabushi messaging client -> ClientCommand::ForwardMessage -> MessagingService::project_command -> MessagingEngine::ForwardMessage -> canonical Message"
+      ],
+      "production_evidence": [
+        "commit:824daf3aefe47c747d8abe648108265b17d8255f",
+        "path:native/mahayana-messaging/src/protocol.rs#ForwardMessage",
+        "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content"
+      ],
+      "target_commit": "824daf3aefe47c747d8abe648108265b17d8255f",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical Conversation messaging domain",
+      "composition_slot": "Conversation message action / forward command",
+      "capability_component": "Canonical forward send options",
+      "variation_axes": [
+        "scheduled vs immediate",
+        "silent vs normal"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation",
+        "Canonical Message",
+        "Canonical messaging protocol/service"
+      ],
+      "duplicate_root_check": "No ShareBox, Telegram forward store, second Conversation, or second Message owner was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation object action",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Forward message send options",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing conversation message action/composer surfaces",
+      "route_contract": "Remain in the existing Conversation route; no source-specific route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable to option transport; destination authorization is enforced by the canonical messaging owner.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "No layout change in this native-domain slice.",
+      "accessibility_contract": "No new UI control in this native-domain slice; eventual schedule/silent controls remain subject to canonical component/a11y contracts.",
+      "keyboard_contract": "No keyboard behavior change in this native-domain slice.",
+      "state_continuity_contract": "scheduled_at_ms and silent remain attached to the canonical Message across acknowledgement, replay, reload, and restart via existing persistence.",
+      "ui_acceptance_scenarios": [
+        "A scheduled silent forward remains scheduled and silent after canonical command projection"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "No new visual tokens"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "Message actions",
+        "Composer/send options"
+      ],
+      "visual_state_matrix": [
+        "scheduled-forward",
+        "silent-forward"
+      ],
+      "density_contract": "No visual density change.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No new motion.",
+      "reduced_motion_contract": "No new motion.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SHARE-SEND-OPTIONS-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SHARE-SEND-OPTIONS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SHARE-SCHEDULE-PRESERVE-001",
+        "INV-TDRP-SHARE-SILENT-PRESERVE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "PROP-TDRP-SHARE-SEND-OPTIONS-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-SHARE-FORWARD-OPTIONS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-SHARE-FORWARD-OPTIONS-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-SHARE-FORWARD-OPTIONS-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-SHARE-FORWARD-OPTIONS-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [
+        "REG-TDRP-FORWARD-SEND-OPTIONS-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "forward-scheduled-silent"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted ShareBox source authority; no Telegram runtime or product-branded owner is retained.",
+      "reviewer": null,
+      "notes": "This row closes only preservation of scheduled_at_ms and silent through the native forward path. It does not close reminder/schedule-until-online, UI menu eligibility, thread routing, paid-send, fan-out settlement, or the rest of ShareBox."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+      "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
+      "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
+      "source_kind": "source",
+      "module_id": "tdesktop.boxes.share",
+      "responsibility_id": "TDRP-R9-SHARE-DESTINATION-POLICY-001",
+      "source_symbols": [
+        "FastShareMessage/filterCallback",
+        "FastShareLink/filterCallback",
+        "ShareBox::submit"
+      ],
+      "capability_ids": [
+        "CAP-MESSAGE-FORWARD-DESTINATION-AUTHORIZATION"
+      ],
+      "dependency_ids": [
+        "ConversationPermissions",
+        "CommunityState",
+        "Command::ForwardMessage"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/share-box-complete-read.md",
+      "behavior_contract": "Forwarding into a destination is a send operation and must fail before message creation whenever the actor is not a destination participant/owner or the canonical conversation/community/channel policy forbids that send; the forward path may not bypass the same authorization boundary enforced for ordinary messages.",
+      "state_machine": "source message resolved -> destination conversation and actor resolved -> participant/permission/community/channel/slow-mode/secret-content gates -> reject with canonical domain error or create one pending forwarded Message.",
+      "side_effects": [
+        "Rejects unauthorized forward before a destination Message is queued",
+        "Reuses canonical conversation/community errors and state; no parallel forwarding permission cache"
+      ],
+      "failure_cases": [
+        "Forward bypasses can_send_messages",
+        "Member forwards into a read-only channel",
+        "Restricted/banned member forwards despite community policy",
+        "Forwarded media/poll bypasses destination capability policy",
+        "Forward bypasses slow mode or secret-chat content boundary"
+      ],
+      "ui_disposition": "Recipient surfaces must only expose eligible destinations, but the native messaging domain also fails closed at send time so stale UI eligibility cannot authorize a forbidden forward.",
+      "non_ui_responsibilities": [
+        "Destination participant authorization",
+        "Destination message/media/poll permission enforcement",
+        "Community/channel restriction enforcement",
+        "Slow-mode enforcement",
+        "Secret-chat content boundary"
+      ],
+      "platform_delta": "Telegram recipient filters are reinforced by source-neutral canonical Rust authorization at the actual Fabushi send boundary.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/community.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "existing_owner": "Fabushi canonical Conversation/Community policy enforced by MessagingEngine",
+      "rejected_existing_owners": [
+        "Renderer recipient filtering alone: stale or bypassed UI state cannot be an authorization boundary",
+        "New share permission owner: would duplicate canonical Conversation/Community policy"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "fabushi_target_symbols": [
+        "MessageSendPermissionDenied",
+        "CommunitySendRestricted"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Destination authorization is non-UI domain policy and belongs at the existing Rust messaging state-transition boundary.",
+      "command_event_contracts": [
+        "Command::ForwardMessage -> destination policy gates -> Event::MessageQueued only when authorized",
+        "Denied forward -> canonical EngineError with no MessageQueued side effect"
+      ],
+      "state_owner": "Conversation.permissions + CommunityState in canonical MessagingState",
+      "lifecycle_owner": "MessagingEngine command execution under MessagingService transaction/persistence boundary",
+      "persistence_and_restart": "No new policy store. Authorization is derived from canonical conversation/community state restored by the existing state store.",
+      "concurrency_and_cancellation": "Authorization is evaluated inside the same synchronous domain command that creates the pending forward, preventing a UI-only time-of-check/time-of-use bypass within that transition.",
+      "security_boundary": "The native domain is the fail-closed authorization boundary; UI recipient filtering is defense-in-depth, never the sole authority.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service and canonical synchronized Conversation/Community state"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Current-head Rust GitHub Actions evidence is pending",
+        "Recipient-search pre-exposure eligibility for all ShareBox-specific rights remains a separate open mapping"
+      ],
+      "production_entrypoints": [
+        "Fabushi messaging client -> MessagingService::project_command -> MessagingEngine::ForwardMessage -> canonical destination authorization -> MessageQueued"
+      ],
+      "production_evidence": [
+        "commit:470171e326134da2d3ab5753de331aa85552744d",
+        "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content"
+      ],
+      "target_commit": "470171e326134da2d3ab5753de331aa85552744d",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical Conversation messaging domain",
+      "composition_slot": "Conversation message action / destination authorization",
+      "capability_component": "Canonical forward destination policy",
+      "variation_axes": [
+        "participant vs non-participant",
+        "send allowed vs denied",
+        "channel poster vs member",
+        "community restricted vs allowed",
+        "media/poll capability",
+        "slow-mode state",
+        "secret vs ordinary destination"
+      ],
+      "shared_owner_contracts": [
+        "Canonical ConversationPermissions",
+        "Canonical CommunityState",
+        "Canonical Message send state transition"
+      ],
+      "duplicate_root_check": "No forwarding permission store, source-specific recipient authority, or second Conversation policy root was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation object action",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace and canonical recipient picker",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Forward destination eligibility and send authorization",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing forward/recipient-picker surface plus canonical native send boundary",
+      "route_contract": "Reuse existing Conversation/Picker routes; no source-specific route.",
+      "search_scope": "Not applicable to this native send-time slice",
+      "search_provider": "Not applicable to this native send-time slice",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Recipient search must filter before exposure, while this row guarantees a second fail-closed authorization check at actual send time.",
+      "search_local_remote_contract": "Open follow-up: canonical picker/provider eligibility must project the same synchronized policy without creating a second truth.",
+      "responsive_disposition": "No layout change in this native-domain slice.",
+      "accessibility_contract": "No new UI control in this native-domain slice.",
+      "keyboard_contract": "No keyboard behavior change in this native-domain slice.",
+      "state_continuity_contract": "Authorization always derives from current canonical Conversation/Community state, including state restored after reload/restart.",
+      "ui_acceptance_scenarios": [
+        "A destination with can_send_messages=false cannot receive a forward",
+        "A channel member without posting rights cannot forward into the channel"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "No new visual tokens"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "Message actions",
+        "Recipient picker"
+      ],
+      "visual_state_matrix": [
+        "eligible-destination",
+        "permission-denied-destination"
+      ],
+      "density_contract": "No visual density change.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No new motion.",
+      "reduced_motion_contract": "No new motion.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "critical",
+      "requirement_ids": [
+        "TDRP-R9-SHARE-DESTINATION-POLICY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SHARE-DESTINATION-POLICY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-FORWARD-NO-PERMISSION-BYPASS-001",
+        "INV-TDRP-FORWARD-NO-QUEUE-ON-DENY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "PROP-TDRP-FORWARD-DESTINATION-POLICY-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-FORWARD-DESTINATION-POLICY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-FORWARD-AUTHORIZATION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-FORWARD-POLICY-STATE-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-FORWARD-STALE-ELIGIBILITY-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-FORWARD-AUTHORIZATION-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-FORWARD-PERMISSION-BYPASS-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "forward-send-denied",
+        "forward-read-only-channel"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted ShareBox authorization semantics inside the existing Fabushi Conversation/Community policy owner.",
+      "reviewer": null,
+      "notes": "This row closes the send-time destination authorization slice only. Recipient pre-exposure eligibility for inline/game/send-other rights remains open and therefore ShareBox source unknown does not decrement."
     }
   ]
 }

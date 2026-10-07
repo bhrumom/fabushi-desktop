@@ -67,7 +67,7 @@ Existing Fabushi owners inspected:
 - `native/mahayana-messaging/src/service.rs` — visibility and idempotent send replay honor scheduled/silent fields.
 - `native/mahayana-messaging/src/engine.rs` — canonical send/forward state transitions.
 
-Disposition: existing messaging domain owns the state. Open gaps include an explicit reminder/schedule-until-online product contract and exact UI menu/picker evidence.
+Disposition: existing messaging domain owns the state. `824daf3aefe47c747d8abe648108265b17d8255f` now preserves `scheduled_at_ms` and `silent` through the canonical forward protocol/service/engine/Message path. Machine-readable responsibility: `TDRP-R9-SHARE-SEND-OPTIONS-001`; oracle `ORA-TDRP-SHARE-SEND-OPTIONS-001`; invariants `INV-TDRP-SHARE-SCHEDULE-PRESERVE-001` and `INV-TDRP-SHARE-SILENT-PRESERVE-001`. This slice is implemented, not verified. Open gaps still include reminder/schedule-until-online semantics and exact UI menu/picker eligibility/evidence.
 
 ### SB-04 forward provenance, options, fan-out and idempotency
 
@@ -126,7 +126,7 @@ Existing Fabushi owners inspected:
 - `native/mahayana-messaging/src/conversation.rs` — `ConversationPermissions`.
 - `native/mahayana-messaging/src/service.rs` — membership/role authorization and permission-filtered search exposure.
 
-Disposition: extend canonical Conversation permissions plus Search/provider authorization; never “search everything then hide in UI.” Exact equivalence for media/inline/game/send-other rights remains open.
+Disposition: extend canonical Conversation permissions plus Search/provider authorization; never “search everything then hide in UI.” `470171e326134da2d3ab5753de331aa85552744d` now makes the native `ForwardMessage` path fail closed on destination participant/message/media/poll policy, community/channel restrictions, slow mode, and secret-chat content constraints before queueing a destination message. Machine-readable responsibility: `TDRP-R9-SHARE-DESTINATION-POLICY-001`; oracle `ORA-TDRP-SHARE-DESTINATION-POLICY-001`; invariants `INV-TDRP-FORWARD-NO-PERMISSION-BYPASS-001` and `INV-TDRP-FORWARD-NO-QUEUE-ON-DENY-001`. This slice is implemented, not verified. Recipient pre-exposure parity for inline/game/send-other rights remains open.
 
 ### SB-07 interaction lifecycle, keyboard navigation and responsive list behavior
 
@@ -170,4 +170,4 @@ This dossier supports the following narrow counter movement only:
 - `baseline_ready: false`
 - `acceptance.accepted: false`
 
-No production responsibility is declared verified by this read alone. Next work is to promote SB-01…SB-08 into parity-ledger rows with exact existing target symbols, identify real gaps, implement them, and bind tests/current-head evidence.
+No production responsibility is declared verified by this read alone. Two narrow responsibilities are now machine-readable and implemented (`TDRP-R9-SHARE-SEND-OPTIONS-001`, `TDRP-R9-SHARE-DESTINATION-POLICY-001`), but current-head GitHub Actions and independent evidence remain pending and the other SB-01…SB-08 slices remain open. Therefore `unknown` stays 15,788 and ShareBox is not mapped/verified as a whole.
