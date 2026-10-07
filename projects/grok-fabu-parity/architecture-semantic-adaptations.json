@@ -1116,6 +1116,37 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "This recovered settings status copy preserves update and egress behavior while replacing legacy product labels with Fabushi."
+    },
+    {
+      "referencePath": "frontend/src/production/command-palette-model.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "8f3ac50a132c2b2e050a51ccc911b81dca897b21",
+      "behavioralEvidence": [
+        "frontend/src/production/command-palette-model.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/tdrp-canonical-search-contract.spec.ts",
+        ".github/workflows/tdrp-search-responsibility.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok command-palette search/scoring behavior while adapting canonical participant identity reconciliation required by TDRP Revision 9. The shipping projection deduplicates roster rows by stable participant id, preserves the first slot, and replaces that slot with the newest authoritative row before visible/hidden filtering. This prevents stale and replacement roster objects from appearing as duplicate Search results or projecting contradictory hidden state. The adaptation stays inside the existing command-palette/Search owner and is covered by exact-head focused Search contract evidence plus an independent review job; it does not create a parallel participant or search truth."
+    },
+    {
+      "referencePath": "source/shared/external-url-policy.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "a126587a99580c5ea0be801b688cc164a16947df",
+      "behavioralEvidence": [
+        "source/shared/external-url-policy.ts",
+        "source/product/fabushi/fabushi-account-adapters.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/tdrp-external-url-auth-policy.spec.ts",
+        ".github/workflows/tdrp-external-url-auth-responsibility.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok allowlisted external-URL parsing boundary while adapting TDRP Revision 9 credential containment. Ordinary external URLs strip foreign web-login token parameters from query and fragment, including repeatedly encoded parameter names, while a distinct server-accepted path may preserve the exact URL only when it is HTTP(S), credential-free, and matches the expected first-party origin. The accepted-auth capability remains owned by the Fabushi account adapter and is not exposed to MainEdge. Exact-head focused contract evidence and independent review prove this privilege boundary without weakening the general external-URL gate."
     }
   ]
 }
