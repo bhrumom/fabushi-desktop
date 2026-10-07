@@ -1,4 +1,4 @@
-use crate::actor::{ActorId, ActorKind};
+use crate::actor::{ActorId, ActorKind, ParticipantRole};
 use crate::blob_store::{BlobStoreError, FileBlobStore};
 use crate::bot::BotInvocation;
 use crate::community::{CommunityState, MemberStatus};
@@ -12,7 +12,7 @@ use crate::payment::Money;
 use crate::protocol::{
     ClientCommand, ClientEnvelope, ServerEnvelope, ServerEvent, FABUSHI_MESSAGING_PROTOCOL_VERSION,
 };
-use crate::search::{SearchIndex, SearchQuery};
+use crate::search::{RecipientSearchRequirements, SearchIndex, SearchQuery, SearchResultKind};
 use crate::settlement::{SettlementError, SettlementVerifier, SignedSettlement};
 use crate::store::{JournalEntry, MessagingSnapshot, MessagingStateStore, StoreError};
 use crate::wallet::{LedgerEntry, WalletAccountId};
@@ -183,6 +183,15 @@ impl<S: MessagingStateStore> MessagingService<S> {
             ClientCommand::Search { query } => {
                 Ok(vec![self.search_envelope(&actor_id, query, server_time_ms)])
             }
+            ClientCommand::SearchRecipients {
+                query,
+                requirements,
+            } => Ok(vec![self.recipient_search_envelope(
+                &actor_id,
+                query,
+                requirements,
+                server_time_ms,
+            )]),
             ClientCommand::ListCommunityMembers {
                 conversation_id,
                 cursor,
@@ -316,6 +325,109 @@ impl<S: MessagingStateStore> MessagingService<S> {
             server_time_ms,
             event: ServerEvent::SearchResults { query, results },
         }
+    }
+
+    fn recipient_search_envelope(
+        &self,
+        actor_id: &ActorId,
+        query: SearchQuery,
+        requirements: RecipientSearchRequirements,
+        server_time_ms: i64,
+    ) -> ServerEnvelope {
+        let state = self.engine.state();
+        let eligible_conversations = state
+            .conversations
+            .values()
+            .filter(|conversation| {
+                self.actor_can_see_conversation(actor_id, conversation)
+                    && self.actor_can_send_to_recipient(actor_id, conversation, requirements)
+            })
+            .map(|conversation| conversation.id.clone())
+            .collect::<BTreeSet<_>>();
+        let mut index = SearchIndex::default();
+        for conversation in state
+            .conversations
+            .values()
+            .filter(|conversation| eligible_conversations.contains(&conversation.id))
+            .cloned()
+        {
+            index.index_conversation(conversation);
+        }
+        let results = index
+            .search(&query)
+            .into_iter()
+            .filter(|result| matches!(result.kind, SearchResultKind::Conversation))
+            .collect();
+        ServerEnvelope {
+            protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+            cursor: Some(self.cursor.to_string()),
+            server_time_ms,
+            event: ServerEvent::SearchResults { query, results },
+        }
+    }
+
+    fn actor_can_send_to_recipient(
+        &self,
+        actor_id: &ActorId,
+        conversation: &Conversation,
+        requirements: RecipientSearchRequirements,
+    ) -> bool {
+        let sender_is_participant = conversation
+            .participants
+            .iter()
+            .any(|participant| &participant.actor_id == actor_id)
+            || conversation.owner_id.as_ref() == Some(actor_id);
+        if !sender_is_participant
+            || !conversation.permissions.can_send_messages
+            || (requirements.require_media && !conversation.permissions.can_send_media)
+            || (requirements.require_polls && !conversation.permissions.can_send_polls)
+        {
+            return false;
+        }
+
+        if let Some(member) = self
+            .engine
+            .state()
+            .communities
+            .get(&conversation.id)
+            .and_then(|community| community.members.get(actor_id))
+        {
+            if matches!(member.status, MemberStatus::Left | MemberStatus::Banned)
+                || (matches!(member.status, MemberStatus::Restricted)
+                    && (member.restrictions.send_messages
+                        || (requirements.require_media && member.restrictions.send_media)
+                        || (requirements.require_polls && member.restrictions.send_polls)))
+            {
+                return false;
+            }
+        }
+
+        if matches!(conversation.kind, ConversationKind::Channel) {
+            let can_post = conversation.owner_id.as_ref() == Some(actor_id)
+                || conversation.participants.iter().any(|participant| {
+                    &participant.actor_id == actor_id
+                        && matches!(
+                            participant.role,
+                            ParticipantRole::Owner | ParticipantRole::Admin
+                        )
+                })
+                || self
+                    .engine
+                    .state()
+                    .communities
+                    .get(&conversation.id)
+                    .is_some_and(|community| {
+                        community.members.get(actor_id).is_some_and(|member| {
+                            matches!(member.status, MemberStatus::Administrator)
+                                && member.admin_rights.post_messages
+                        })
+                    });
+            if !can_post {
+                return false;
+            }
+        }
+
+        true
     }
 
     fn community_members_page(
