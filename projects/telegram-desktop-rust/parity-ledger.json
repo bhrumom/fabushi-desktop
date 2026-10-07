@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15773,
+    "unread": 15771,
     "omitted": 0,
     "responsibilities_total": 10,
     "unmapped_responsibilities": 0
@@ -1980,7 +1980,8 @@
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current-head Rust GitHub Actions evidence is pending",
-        "Exact shipping forward-options UI and multi-recipient fan-out settlement remain separate open ShareBox responsibilities"
+        "Exact shipping forward-options UI and multi-recipient fan-out settlement remain separate open ShareBox responsibilities",
+        "Shipping ProductionRenderer/Host composition does not yet route this native-core responsibility through the existing Human Conversation owner"
       ],
       "production_entrypoints": [
         "Fabushi forward action -> ClientCommand::ForwardMessage -> MessagingService::project_command -> MessagingEngine::ForwardMessage -> canonical Message"
@@ -2123,7 +2124,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox forward submission semantics using canonical Fabushi MessagingService/Message identity owners.",
       "reviewer": null,
-      "notes": "This row closes only canonical forward sender/caption privacy normalization, native materialization, and replay conflict semantics. Multi-recipient fan-out, paid-send approval revalidation, duplicate-submit UI fencing, and exact shipping forward-options UI remain open."
+      "notes": "This row closes only canonical forward sender/caption privacy normalization, native materialization, and replay conflict semantics. Multi-recipient fan-out, paid-send approval revalidation, duplicate-submit UI fencing, and exact shipping forward-options UI remain open. Shipping audit at 8cd8ee08 confirms ProductionRenderer has no Forward action, sendHumanMessage routes to Session::append_human_message, and mahayana-host-runtime has no fabushi-messaging-core dependency; this row is not shipping-composed."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -2216,7 +2217,8 @@
       "blockers": [
         "Current-head Rust GitHub Actions evidence pending",
         "Shipping forward/picker UI is not yet wired to SearchRecipients",
-        "Inline/game/send-other and content-specific secret/protected recipient eligibility remain open"
+        "Inline/game/send-other and content-specific secret/protected recipient eligibility remain open",
+        "Shipping ProductionRenderer/Host composition does not yet route this native-core responsibility through the existing Human Conversation owner"
       ],
       "production_entrypoints": [
         "Canonical recipient picker request -> ClientCommand::SearchRecipients -> MessagingService pre-exposure authorization -> SearchIndex -> SearchResults"
@@ -2361,7 +2363,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted ShareBox authorization semantics inside the existing Fabushi Conversation/Community policy owner.",
       "reviewer": null,
-      "notes": "This row closes only native pre-exposure filtering for canonical conversation send/media/poll eligibility. Shipping picker wiring, inline/game/send-other parity, topic/child-target eligibility, secret/protected content rules, and current-head evidence remain open."
+      "notes": "This row closes only native pre-exposure filtering for canonical conversation send/media/poll eligibility. Shipping picker wiring, inline/game/send-other parity, topic/child-target eligibility, secret/protected content rules, and current-head evidence remain open. Shipping audit at 8cd8ee08 confirms the canonical Human renderer/Host path does not yet invoke SearchRecipients; native pre-exposure filtering is therefore not shipping-composed."
     }
   ]
 }
