@@ -3,10 +3,6 @@ name: TDRP canonical Search responsibility
 on:
   push:
     branches: [main]
-    paths:
-      - 'frontend/src/production/command-palette-model.ts'
-      - 'desktop/e2e/tdrp-canonical-search-contract.spec.ts'
-      - '.github/workflows/tdrp-search-responsibility.yml'
   workflow_dispatch:
 
 permissions:
