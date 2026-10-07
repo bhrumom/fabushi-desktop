@@ -379,6 +379,60 @@ impl ConversationChildPaginationState {
     }
 }
 
+/// Server-authoritative unread signals attached to a typed child.
+///
+/// `known = false` means the remote/server projection is not authoritative yet;
+/// in that state all id sets are kept empty so callers cannot mistake partial
+/// local evidence for a complete unread state. These ids intentionally remain
+/// separate from `Message.reactions`: they represent whether a child has unread
+/// mention/reaction/poll-vote items, not the reaction payload stored on a message.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConversationChildUnreadThings {
+    pub known: bool,
+    pub mention_message_ids: Vec<String>,
+    pub reaction_message_ids: Vec<String>,
+    pub poll_vote_message_ids: Vec<String>,
+}
+
+impl ConversationChildUnreadThings {
+    fn normalize_ids(ids: Vec<String>) -> Vec<String> {
+        let mut result = Vec::new();
+        for id in ids {
+            if id.trim().is_empty() || result.iter().any(|current| current == &id) {
+                continue;
+            }
+            result.push(id);
+        }
+        result
+    }
+
+    pub fn reconcile(
+        &mut self,
+        known: bool,
+        mention_message_ids: Vec<String>,
+        reaction_message_ids: Vec<String>,
+        poll_vote_message_ids: Vec<String>,
+    ) {
+        self.known = known;
+        if !known {
+            self.mention_message_ids.clear();
+            self.reaction_message_ids.clear();
+            self.poll_vote_message_ids.clear();
+            return;
+        }
+        self.mention_message_ids = Self::normalize_ids(mention_message_ids);
+        self.reaction_message_ids = Self::normalize_ids(reaction_message_ids);
+        self.poll_vote_message_ids = Self::normalize_ids(poll_vote_message_ids);
+    }
+
+    pub fn clear_message(&mut self, message_id: &str) {
+        self.mention_message_ids.retain(|id| id != message_id);
+        self.reaction_message_ids.retain(|id| id != message_id);
+        self.poll_vote_message_ids.retain(|id| id != message_id);
+    }
+}
+
 /// Account-scoped state for a typed child inside the canonical Conversation owner.
 ///
 /// This carries the source-neutral responsibilities shared by topic, saved-sublist,
@@ -394,6 +448,10 @@ pub struct ConversationChildRuntimeState {
     pub outbox_read_till: Option<ConversationMessagePosition>,
     pub unread_count: Option<u32>,
     pub marked_unread: bool,
+    #[serde(default)]
+    pub unread_things: ConversationChildUnreadThings,
+    #[serde(default)]
+    pub pending_incoming_notification_message_ids: Vec<String>,
     pub draft_text: String,
     pub draft_reply_to_message_id: Option<String>,
     pub draft_updated_at_ms: Option<i64>,
@@ -416,6 +474,8 @@ impl ConversationChildRuntimeState {
             outbox_read_till: None,
             unread_count: None,
             marked_unread: false,
+            unread_things: ConversationChildUnreadThings::default(),
+            pending_incoming_notification_message_ids: Vec::new(),
             draft_text: String::new(),
             draft_reply_to_message_id: None,
             draft_updated_at_ms: None,
@@ -446,6 +506,31 @@ impl ConversationChildRuntimeState {
         }
         self.marked_unread = false;
         true
+    }
+
+    pub fn reconcile_unread_things(
+        &mut self,
+        known: bool,
+        mention_message_ids: Vec<String>,
+        reaction_message_ids: Vec<String>,
+        poll_vote_message_ids: Vec<String>,
+    ) {
+        self.unread_things.reconcile(
+            known,
+            mention_message_ids,
+            reaction_message_ids,
+            poll_vote_message_ids,
+        );
+    }
+
+    pub fn replace_pending_incoming_notifications(&mut self, message_ids: Vec<String>) {
+        self.pending_incoming_notification_message_ids =
+            ConversationChildUnreadThings::normalize_ids(message_ids);
+    }
+
+    pub fn clear_pending_incoming_notification(&mut self, message_id: &str) {
+        self.pending_incoming_notification_message_ids
+            .retain(|id| id != message_id);
     }
 
     pub fn advance_outbox_read_till(&mut self, position: ConversationMessagePosition) -> bool {
@@ -507,6 +592,8 @@ impl ConversationChildRuntimeState {
         self.pagination = ConversationChildPaginationState::default();
         self.unread_count = None;
         self.marked_unread = false;
+        self.unread_things = ConversationChildUnreadThings::default();
+        self.pending_incoming_notification_message_ids.clear();
         self.pinned = false;
         self.restore_pinned_when_non_empty = false;
         self.no_paid_messages = false;
@@ -691,6 +778,57 @@ mod child_destination_tests {
     }
 
     #[test]
+    fn child_runtime_reconciles_unread_things_and_notification_ids_without_message_reaction_truth() {
+        let destination = ConversationDestination::saved_sublist(
+            ConversationId::new("conversation:self"),
+            ActorId::new("human:peer"),
+        );
+        let mut state =
+            ConversationChildRuntimeState::new(destination, ActorId::new("human:self"))
+                .expect("valid child state");
+
+        state.reconcile_unread_things(
+            true,
+            vec!["message:mention".into(), "message:mention".into(), "".into()],
+            vec!["message:reaction".into()],
+            vec!["message:poll".into()],
+        );
+        state.replace_pending_incoming_notifications(vec![
+            "message:10".into(),
+            "message:10".into(),
+            "message:20".into(),
+        ]);
+
+        assert!(state.unread_things.known);
+        assert_eq!(state.unread_things.mention_message_ids, vec!["message:mention"]);
+        assert_eq!(state.unread_things.reaction_message_ids, vec!["message:reaction"]);
+        assert_eq!(state.unread_things.poll_vote_message_ids, vec!["message:poll"]);
+        assert_eq!(
+            state.pending_incoming_notification_message_ids,
+            vec!["message:10", "message:20"],
+        );
+
+        state.unread_things.clear_message("message:reaction");
+        state.clear_pending_incoming_notification("message:10");
+        assert!(state.unread_things.reaction_message_ids.is_empty());
+        assert_eq!(
+            state.pending_incoming_notification_message_ids,
+            vec!["message:20"],
+        );
+
+        state.reconcile_unread_things(
+            false,
+            vec!["message:ignored".into()],
+            vec!["message:ignored".into()],
+            vec!["message:ignored".into()],
+        );
+        assert!(!state.unread_things.known);
+        assert!(state.unread_things.mention_message_ids.is_empty());
+        assert!(state.unread_things.reaction_message_ids.is_empty());
+        assert!(state.unread_things.poll_vote_message_ids.is_empty());
+    }
+
+    #[test]
     fn child_runtime_page_accounting_rejects_duplicates_and_bad_gaps() {
         let mut page = ConversationChildPaginationState::default();
         assert!(!page.replace_window(
@@ -736,6 +874,13 @@ mod child_destination_tests {
         state.pinned = true;
         state.active = true;
         state.no_paid_messages = true;
+        state.reconcile_unread_things(
+            true,
+            vec!["message:mention".into()],
+            vec!["message:reaction".into()],
+            vec!["message:poll".into()],
+        );
+        state.replace_pending_incoming_notifications(vec!["message:notify".into()]);
         state.set_draft("draft", Some("message:reply".into()), 42);
         assert!(state.pagination.replace_window(
             vec!["message:1".into()],
@@ -755,6 +900,11 @@ mod child_destination_tests {
         assert!(!state.active);
         assert!(!state.pinned);
         assert!(!state.no_paid_messages);
+        assert!(!state.unread_things.known);
+        assert!(state.unread_things.mention_message_ids.is_empty());
+        assert!(state.unread_things.reaction_message_ids.is_empty());
+        assert!(state.unread_things.poll_vote_message_ids.is_empty());
+        assert!(state.pending_incoming_notification_message_ids.is_empty());
         assert!(state.draft_text.is_empty());
         assert!(state.pagination.message_ids.is_empty());
     }
