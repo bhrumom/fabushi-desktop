@@ -983,6 +983,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
             }
             ClientCommand::MarkConversationChildRead { destination, .. }
             | ClientCommand::SetConversationChildDraft { destination, .. }
+            | ClientCommand::BindMessageToConversationChild { destination, .. }
             | ClientCommand::ReplaceConversationChildWindow { destination, .. }
             | ClientCommand::SetConversationChildPinned { destination, .. }
             | ClientCommand::SetConversationChildActive { destination, .. }
@@ -2104,6 +2105,14 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 reply_to_message_id,
                 updated_at_ms: now_ms,
             }],
+            ClientCommand::BindMessageToConversationChild {
+                destination,
+                message_id,
+            } => vec![Command::BindMessageToConversationChild {
+                destination,
+                actor_id: actor_id.clone(),
+                message_id,
+            }],
             ClientCommand::ReplaceConversationChildWindow {
                 destination,
                 message_ids,
@@ -2538,6 +2547,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
             Event::TopicDraftChanged { draft } => ServerEvent::TopicDraftChanged { draft },
             Event::ConversationChildReadChanged { .. }
             | Event::ConversationChildDraftChanged { .. }
+            | Event::MessageConversationChildBound { .. }
             | Event::ConversationChildWindowReplaced { .. }
             | Event::ConversationChildPinnedChanged { .. }
             | Event::ConversationChildActiveChanged { .. }
