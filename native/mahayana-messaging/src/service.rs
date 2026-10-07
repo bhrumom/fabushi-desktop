@@ -2542,6 +2542,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
             | Event::ConversationChildPinnedChanged { .. }
             | Event::ConversationChildActiveChanged { .. }
             | Event::ConversationChildMarkedUnreadChanged { .. }
+            | Event::ConversationChildUnreadThingsReconciled { .. }
             | Event::ConversationChildNoPaidMessagesChanged { .. }
             | Event::ConversationChildDestroyed { .. } => return None,
             Event::InvoiceCreated { invoice } => ServerEvent::InvoiceChanged { invoice },
